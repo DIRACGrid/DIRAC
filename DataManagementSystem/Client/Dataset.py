@@ -11,15 +11,19 @@ class Dataset:
     """
     self.lfcPath = '/lhcb/dataset'
     self.lfc = FileCatalog(['LcgFileCatalogCombined'])
-    self.lfns = []
-    self.replicas = {}
-    self.handle = ''
-    self.valid = True
-    if handle:
-      self.handle = handle
-      res = self.__retriveDataset()
-      if not res['OK']:
-        self.valid = False
+    if not self.lfc.isOK():
+      self.valid=False
+    else:
+      self.lfns = []
+      self.replicas = {}
+      self.handle = ''
+      self.valid = True
+      if handle:
+        self.handle = handle
+        res = self.__retriveDataset()
+        if not res['OK']:
+          gLogger.fatal("Failed to create dataset.", res['Message'])
+          self.valid = False
 
   def isOK(self):
     return self.valid
@@ -49,42 +53,47 @@ class Dataset:
       return S_ERROR("No handle defined")
     return S_OK(self.handle)
 
-  def removeFile(self,lfn):
-    if not self.handle:
-      return S_ERROR("No handle defined")
-    lfcDir = "%s%s" % (self.lfcPath,self.handle)
-    res = self.lfc.removeFileFromDataset(lfcDir,lfn)
-    if not res['OK']:
-      return res
-    elif lfn in res['Value']['Failed'].keys():
-      return S_ERROR(res['Value']['Failed'][lfn])
-    else:
-      return S_OK()
-
   def createDataset(self):
     if not self.handle:
       return S_ERROR("No handle defined")
     if not self.lfns:
       return S_ERROR("No LFNs defined")
     lfcDir = "%s%s" % (self.lfcPath,self.handle)
-    res = self.lfc.createDataset(lfcDir,self.lfns)
+    res = self.lfc.createDataset({lfcDir:self.lfns})
     if not res['OK']:
       return res
-    elif not len(res['Value']['Failed'].keys()) == 0:
-      return S_ERROR("Failed to create dataset")
+    elif not lfcDir in res['Value']['Successful'].keys():
+      return S_ERROR("Failed to create dataset: %s" % res['Value']['Failed'][lfcDir])
     else:
       return S_OK()
+
+  def removeFile(self,lfn):
+    if type(lfn) in types.StringTypes:
+      lfn = [lfn]
+    if not self.handle:
+      return S_ERROR("No handle defined")
+    lfcDir = "%s%s" % (self.lfcPath,self.handle)
+    res = self.lfc.removeFileFromDataset({lfcDir:lfn})
+    if not res['OK']:
+      return res
+    elif not lfcDir in res['Value']['Successful'].keys():
+      return S_ERROR(res['Value']['Failed'][lfcDir]) 
+    else:
+      res = self.__retriveDataset()
+      return res
 
   def removeDataset(self):
     if not self.handle:
       return S_ERROR("No handle defined")
     lfcDir = "%s%s" % (self.lfcPath,self.handle)
-    res = self.lfc.deleteDataset(lfcDir)
+    res = self.lfc.removeDataset(lfcDir)
     if not res['OK']:
       return res
-    elif not len(res['Value']['Failed'].keys()) == 0:
-      return S_ERROR("Failed to remove dataset")
+    elif not lfcDir in res['Value']['Successful'].keys():
+      return S_ERROR("Failed to remove dataset: %s" % res['Value']['Failed'][lfcDir])
     else:
+      self.lfns = []
+      self.replicas = {}       
       return S_OK()
 
   def __retriveDataset(self):
@@ -94,6 +103,8 @@ class Dataset:
     res = self.lfc.resolveDataset(lfcDir)
     if not res['OK']:
       return res
-    self.lfns = res['Value'].keys()
-    self.replicas = res['Value']
+    elif not lfcDir in res['Value']['Successful'].keys():
+      return S_ERROR(res['Value']['Failed'][lfcDir])
+    self.lfns = res['Value']['Successful'][lfcDir].keys()
+    self.replicas = res['Value']['Successful'][lfcDir]
     return S_OK()
