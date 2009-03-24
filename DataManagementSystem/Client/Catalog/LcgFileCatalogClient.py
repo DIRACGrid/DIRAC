@@ -155,7 +155,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         if not res['OK']:
           failed[path] = res['Message']
         else:
-          successful[path] = res['Message']
+          successful[path] = res['Value']
     if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
@@ -1386,3 +1386,70 @@ class LcgFileCatalogClient(FileCatalogueBase):
       totalError = "%s %s : %s" % (totalError,link,error)
     return S_ERROR(totalError)
 
+
+  ####################################################################
+  #
+  # These are the internal methods used for the admin interface
+  #
+
+  def __getUserDNs(self,userID):
+    value, list = lfc.lfc_getusrmap()
+    if value != 0:
+      return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
+    else:
+      dns = [] 
+      for userMap in list:
+        if userMap.userid == userID: 
+          dns.append(userMap.username)
+      return S_OK(dns)
+
+  def __getDNUserID(self,dn):
+    value, list = lfc.lfc_getusrmap()
+    if value != 0:
+      return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
+    else:
+      for userMap in list:
+        if userMap.username == dn:
+          return S_OK(userMap.userid)
+      return S_ERROR("DN did not exist")
+   
+  def __rmUserDN(self,dn):
+    res = lfc.lfc_rmusrmap(0,dn)
+    if res == 0:
+      return S_OK()
+    else:
+      return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
+
+  def __rmUserID(self,userID):
+    res = lfc.lfc_rmusrmap(userID,'')   
+    if res == 0:
+      return S_OK()
+    else:
+      return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
+
+  def __addUserDN(self,userID,dn):
+    res = lfc.lfc_enterusrmap(userID,dn)
+    if res == 0:
+      return S_OK()
+    errorNo = lfc.cvar.serrno
+    if errorNo == 17:
+      # User DN already exists
+      return S_OK()
+    else:
+      return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
+
+  def __changeOwner(self,lfn,userID):
+    fullLfn = '%s%s' % (self.prefix,lfn)
+    res = lfc.lfc_chown(fullLfn,userID,-1)
+    if res == 0:
+      return S_OK()
+    else:
+      return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
+
+  def __changeMod(self,lfc,mode):
+    fullLfn = '%s%s' % (self.prefix,lfn)
+    res = lfc.lfc_chmod(fullLfn,mode)
+    if res == 0:
+      return S_OK()
+    else:
+      return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
