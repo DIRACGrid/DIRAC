@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TorqueComputingElement.py,v 1.5 2009/03/10 18:55:36 paterson Exp $
+# $Id: TorqueComputingElement.py,v 1.6 2009/03/24 16:56:13 szczypka Exp $
 # File :   TorqueComputingElement.py
 # Author : Stuart Paterson, Paul Szczypka
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: TorqueComputingElement.py,v 1.5 2009/03/10 18:55:36 paterson Exp $"
+__RCSID__ = "$Id: TorqueComputingElement.py,v 1.6 2009/03/24 16:56:13 szczypka Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -65,7 +65,7 @@ class TorqueComputingElement(ComputingElement):
     fopen.write('os.chmod("%s",0755)\n'%executableFileBaseName)
     fopen.write('fopen = open("%s","w")\n' %proxyLocation)
 #    fopen.write('fopen.write("""%s""")\n' %proxy)
-    fopen.write('fopen.write("%s")\n' %proxyString)
+    fopen.write('fopen.write("""%s""")\n' %proxyString)
     fopen.write('fopen.close()\n')
     fopen.write('os.chmod("%s",0600)\n' %proxyLocation)
     fopen.write('os.environ["X509_USER_PROXY"]="%s"\n' %proxyLocation)
