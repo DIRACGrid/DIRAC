@@ -9,4 +9,4 @@ import lfc
 class LcgFileCatalogAdminClient(LcgFileCatalogCombinedClient):
 
   LcgFileCatalogCombinedClient.ro_methods.extend(['getUserDirectory'])
-  LcgFileCatalogCombinedClient.write_methods.extend(['createUserDirectory','changeDirectoryOwner','createUserMapping'])
+  LcgFileCatalogCombinedClient.write_methods.extend(['createUserDirectory','changeDirectoryOwner','createUserMapping','removeUserDirectory'])

@@ -1436,6 +1436,34 @@ class LcgFileCatalogClient(FileCatalogueBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
+  def removeUserDirectory(self,username):
+    """ Remove the user directory and remove the user mapping
+    """ 
+    created = self.__openSession()
+    res = self.getUserDirectory(username)
+    if not res['OK']:
+      return res
+    failed = {}
+    for username,error in res['Value']['Failed'].items():
+      failed[username] = error
+    directoriesToRemove = {}
+    successful = {}
+    for username,directory in res['Value']['Successful'].items():
+      if not directory:
+        successful[username] = True
+      else:
+        directoriesToRemove[directory] = username
+    res = self.removeDirectory(directoriesToRemove.keys())
+    if not res['OK']:
+      return res
+    for directory,error in res['Value']['Failed'].items():
+      failed[directoriesToRemove[directory]] = error
+    for directory,success in res['Value']['Successful'].items():
+      successful[directoriesToRemove[directory]] = True
+    if created: self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)                  
+
   def changeDirectoryOwner(self,directory):
     """ Change the ownership of the directory to the user associated to the supplied DN
     """
