@@ -1164,7 +1164,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     else:
       return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
 
-  def __makeDirs(self,path):
+  def __makeDirs(self,path,mode=0775):
     """  Black magic contained within....
     """
     dir = os.path.dirname(path)
@@ -1177,16 +1177,16 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     if res['Value']:
-      res = self.__makeDirectory(path)
+      res = self.__makeDirectory(path,mode)
     else:
-      res = self.__makeDirs(dir)
-      res = self.__makeDirectory(path)
+      res = self.__makeDirs(dir,mode)
+      res = self.__makeDirectory(path,mode)
     return res
 
-  def __makeDirectory(self, path):
+  def __makeDirectory(self, path, mode):
     fullLfn = '%s%s' % (self.prefix,path)
     lfc.lfc_umask(0000)
-    value = lfc.lfc_mkdir(fullLfn, 0775)
+    value = lfc.lfc_mkdir(fullLfn, mode)
     if value == 0:
       return S_OK()
     else:
@@ -1386,6 +1386,106 @@ class LcgFileCatalogClient(FileCatalogueBase):
       totalError = "%s %s : %s" % (totalError,link,error)
     return S_ERROR(totalError)
 
+
+  ####################################################################
+  #
+  # These are the methods required for the admin interface
+  #
+  
+  def getUserDirectory(self,username):
+    """ Takes a list of users and determines whether their directories already exist
+    """
+    res = self.__checkArgumentFormat(username)
+    if not res['OK']:
+      return res
+    usernames = res['Value'].keys()
+    usernameDict = {}
+    for username in usernames:
+      userDirectory = "/lhcb/user/%s/%s" % (username[0],username)
+      usernameDict[userDirectory] = username
+    res = self.exists(usernameDict.keys())
+    if not res['OK']:
+      return res
+    failed = {}
+    for directory,reason in res['Value']['Failed'].items():
+      failed[usernameDict[directory]] = reason
+    successful = {}
+    for directory,exists in res['Value']['Successful'].items():
+      successful[usernameDict[directory]] = exists
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def createUserDirectory(self,username):
+    """ Creates the user directory
+    """ 
+    res = self.__checkArgumentFormat(username)
+    if not res['OK']:
+      return res
+    usernames = res['Value'].keys()
+    successful = {}
+    failed = {}
+    created = self.__openSession()
+    for username in usernames:
+      userDirectory = "/lhcb/user/%s/%s" % (username[0],username)
+      res = self.__makeDirs(userDirectory,0755)
+      if res['OK']:
+        successful[username] = userDirectory
+      else:
+        failed[username] = res['Message']
+    if created: self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def changeDirectoryOwner(self,directory):
+    """ Change the ownership of the directory to the user associated to the supplied DN
+    """
+    res = self.__checkArgumentFormat(directory)
+    if not res['OK']:
+      return res
+    directory = res['Value']
+    successful = {}
+    failed = {}
+    created = self.__openSession()
+    for dirPath,dn in directory.items():
+       res = self.__getDNUserID(dn)
+       if not res['OK']:
+         failed[dirPath] = res['Message']
+       else:
+         userID = res['Value']
+         res = self.__changeOwner(dirPath,userID)
+         if not res['OK']:
+           failed[dirPath] = res['Message']
+         else:
+           successful[dirPath] = True
+    if created: self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def createUserMapping(self,userDN):
+    """ Create a user with the supplied DN and return the userID
+    """
+    res = self.__checkArgumentFormat(userDN)
+    if not res['OK']:
+      return res
+    userDNs = res['Value']
+    successful = {}
+    failed = {}
+    created = self.__openSession()
+    for userDN,uid in userDNs.items():
+      if not uid:
+        uid = -1
+      res = self.__addUserDN(uid,userDN)
+      if not res['OK']:
+        failed[userDN] = res['Message']
+      else:
+        res = self.__getDNUserID(userDN)
+        if not res['OK']:
+          failed[userDN] = res['Message']
+        else:
+          successful[userDN] = res['Value']
+    if created: self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
 
   ####################################################################
   #
