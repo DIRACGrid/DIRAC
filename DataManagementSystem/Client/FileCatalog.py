@@ -15,7 +15,7 @@ class FileCatalog:
 
   write_methods = ['createLink','removeLink','addFile','addReplica','removeReplica',
                    'removeFile','setReplicaStatus','setReplicaHost','createDirectory',
-                   'removeDirectory','deleteDataset','removeFileFromDataset','createDataset']
+                   'removeDirectory','removeDataset','removeFileFromDataset','createDataset']
 
   def __init__(self,catalogs=[]):
     """ Default constructor
