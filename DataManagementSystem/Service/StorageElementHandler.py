@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StorageElementHandler.py,v 1.9 2009/03/05 10:34:30 acsmith Exp $
+# $Id: StorageElementHandler.py,v 1.10 2009/03/26 10:48:07 rgracian Exp $
 ########################################################################
 
 """
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: StorageElementHandler.py,v 1.9 2009/03/05 10:34:30 acsmith Exp $"
+__RCSID__ = "$Id: StorageElementHandler.py,v 1.10 2009/03/26 10:48:07 rgracian Exp $"
 
 import os, shutil,re
 from stat import *
@@ -46,18 +46,16 @@ def initializeStorageElementHandler(serviceInfo):
   global use_tokens_flag
   global max_storage_size
   cfgPath = serviceInfo['serviceSectionPath']
-  result = gConfig.getOption( "%s/BasePath" % cfgPath )
-  if result['OK']:
-    base_path =  result['Value']
-  else:
+
+  base_path = gConfig.getValue( "%s/BasePath" % cfgPath, base_path )
+  if not base_path:
     gLogger.error('Failed to get the base path')
     return S_ERROR('Failed to get the base path')
-  result = gConfig.getOption( "%s/UseTokens" % cfgPath )
-  if result['OK']:
-    use_tokens_flag =  result['Value']
-  result = gConfig.getOption( "%s/MaxStorageSize" % cfgPath )
-  if result['OK']:
-    max_storage_size = int(result['Value'])
+
+  use_tokens_flag = gConfig.getValue( "%s/UseTokens" % cfgPath, use_tokens_flag )
+
+  max_storage_size = gConfig.getValue( "%s/MaxStorageSize" % cfgPath, max_storage_size )
+
   gLogger.info('Starting DIRAC Storage Element')
   gLogger.info('Base Path: %s' % base_path)
   gLogger.info('Max size: %d MB' % max_storage_size)
@@ -84,7 +82,7 @@ class StorageElementHandler(RequestHandler):
   def export_getMetadata(self,fileID):
     """ Get metadata for the file or directory specified by fileID
     """
-    file_path = base_path+fileID
+    file_path = os.path.join(base_path,fileID)
     return self.__getFileStat(file_path)
 
   def __getFileStat(self,path):
@@ -116,7 +114,7 @@ class StorageElementHandler(RequestHandler):
   def export_exists(self,path):
     """ Check existnce of the path
     """
-    fpath = base_path+path
+    fpath = os.path.join(base_path,path)
     if os.path.exists(fpath):
       return S_OK(True)
     else:
@@ -126,7 +124,7 @@ class StorageElementHandler(RequestHandler):
   def export_createDirectory(self,dir_path):
     """ Creates the directory on the storage
     """
-    path = base_path+dir_path
+    path = os.path.join(base_path,dir_path)
     gLogger.info("StorageElementHandler.createDirectory: Attempting to create %s." % path)
     if os.path.exists(path):
       if os.path.isfile(path):
@@ -150,7 +148,7 @@ class StorageElementHandler(RequestHandler):
     """ Return the dir_path directory listing
     """
     is_file = False
-    path = base_path+dir_path
+    path = os.path.join(base_path,dir_path)
     if not os.path.exists(path):
       return S_ERROR('Directory %s does not exist' % dir_path )
     elif os.path.isfile(path):
@@ -201,7 +199,7 @@ class StorageElementHandler(RequestHandler):
     if not self.__checkForDiskSpace(base_path,fileSize):
       return S_ERROR('Not enough disk space')
 
-    file_path = base_path+fileID
+    file_path = os.path.join(base_path,fileID)
     if not os.path.exists(os.path.dirname(file_path)):
       os.makedirs(os.path.dirname(file_path))
     result = fileHelper.getFileDescriptor(file_path,'w')
@@ -221,7 +219,7 @@ class StorageElementHandler(RequestHandler):
         token is used for access rights confirmation.
     """
 
-    file_path = base_path+fileID
+    file_path = os.path.join(base_path,fileID)
     result = fileHelper.getFileDescriptor(file_path,'r')
     if not result['OK']:
       result = fileHelper.sendEOF()
@@ -243,7 +241,7 @@ class StorageElementHandler(RequestHandler):
         token is used for access rights confirmation.
     """
     dirName = fileID.replace('.bz2','').replace('.tar','')
-    dir_path = base_path+dirName
+    dir_path = os.path.join(base_path,dirName)
     res = fileHelper.networkToBulk(dir_path)
     if not res['OK']: 
       gLogger.error('Failed to receive network to bulk.',res['Message']) 
@@ -260,7 +258,7 @@ class StorageElementHandler(RequestHandler):
         token is used for access rights confirmation.
     """
     tmpList = fileId.split(':')
-    tmpList = [ base_path+x for x in tmpList ]
+    tmpList = [ os.path.join(base_path,x) for x in tmpList ]
     strippedFiles = []
     compress=False
     for fileID in tmpList:
@@ -268,7 +266,7 @@ class StorageElementHandler(RequestHandler):
         fileID = fileID.replace('.bz2','')
         compress = True
       fileID = fileID.replace('.tar','')
-      strippedFiles.append(fileID)   
+      strippedFiles.append(fileID)
     res = fileHelper.bulkToNetwork(strippedFiles,compress=compress)
     if not res['OK']:
       gLogger.error('Failed to send bulk to network',res['Message'])
@@ -286,7 +284,7 @@ class StorageElementHandler(RequestHandler):
     """ Remove one file with fileID name from the storage
     """
 
-    file_path = base_path+fileID
+    file_path = os.path.join(base_path,fileID)
     if self.__confirmToken(token,fileID,'x'):
       try:
         os.remove(file_path)
@@ -304,7 +302,7 @@ class StorageElementHandler(RequestHandler):
   def export_getDirectorySize(self,fileID):
     """ Get the size occupied by the given directory
     """
-    dir_path = base_path+fileID
+    dir_path = os.path.join(base_path,fileID)
     if os.path.exists(dir_path):
       try:
         space = self.__getDirectorySize(dir_path)
@@ -319,7 +317,7 @@ class StorageElementHandler(RequestHandler):
   def export_removeDirectory(self,fileID,token):
     """ Remove the given directory from the storage
     """
-    dir_path = base_path+fileID
+    dir_path = os.path.join(base_path,fileID)
     if not self.__confirmToken(token,fileID,'x'):
       return S_ERROR('Directory removal %s not authorized' % fileID)
     else:
@@ -386,6 +384,5 @@ class StorageElementHandler(RequestHandler):
       return 0
     else:
       output = result['Value'][1] 
-      print output
       size = int(output.split()[0])
       return size
