@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.19 2009/02/05 19:10:17 acasajus Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.19 2009/02/05 19:10:17 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.20 2009/03/30 14:11:15 acasajus Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.20 2009/03/30 14:11:15 acasajus Exp $"
 
 import os
 import md5
@@ -7,6 +7,7 @@ import types
 import threading
 import cStringIO
 import tarfile
+import tempfile
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 
@@ -165,6 +166,24 @@ class FileHelper:
       return S_ERROR( "Error while sending file: %s" % str( e ) )
     return S_OK()
 
+  def DataSourceToNetwork( self, dataSource ):
+    if "read" not in dir( dataSource ):
+      return S_ERROR( "%s data source object does not have a read method" % str( dataSink ) )
+    self.oMD5 = md5.new()
+    iPacketSize = self.packetSize
+    try:
+      sBuffer = dataSource.read( iPacketSize )
+      while len( sBuffer ) > 0:
+        dRetVal = self.sendData( sBuffer )
+        if not dRetVal[ 'OK' ]:
+          return dRetVal
+        sBuffer = dataSource.read( iPacketSize )
+      self.sendEOF()
+    except Exception, e:
+      gLogger.exception( "Error while sending file" )
+      return S_ERROR( "Error while sending file: %s" % str( e ) )
+    return S_OK()
+
   def getFileDescriptor( self, uFile, sFileMode ):
     closeAfter = True
     if type( uFile ) == types.StringType:
@@ -203,8 +222,11 @@ class FileHelper:
     result[ 'closeAfterUse' ] = closeAfter
     return result
 
-  def __createTar( self, fileList, wPipe, compress ):
-    filePipe = os.fdopen( wPipe, "w" )
+  def __createTar( self, fileList, wPipe, compress, autoClose = True ):
+    if 'write' in dir( wPipe ):
+      filePipe = wPipe
+    else:
+      filePipe = os.fdopen( wPipe, "w" )
     tarMode = "w|"
     if compress:
       tarMode = "w|bz2"
@@ -213,15 +235,34 @@ class FileHelper:
     for entry in fileList:
       tar.add( os.path.realpath( entry ), os.path.basename( entry ), recursive = True )
     tar.close()
-    filePipe.close()
+    if autoClose:
+      filePipe.close()
 
-  def bulkToNetwork( self, fileList, compress = True ):
-    rPipe, wPipe = os.pipe()
-    thrd = threading.Thread( target = self.__createTar, args = ( fileList, wPipe, compress ) )
-    thrd.start()
-    response = self.FDToNetwork( rPipe )
-    os.close( rPipe )
-    return response
+  def bulkToNetwork( self, fileList, compress = True, onthefly = True ):
+    if not onthefly:
+      try:
+        filePipe, filePath = tempfile.mkstemp()
+      except Exception, e:
+        return S_ERROR( "Can't create temporary file to pregenerate the bulk: %s" % str(e) )
+      self.__createTar( fileList, filePipe, compress )
+      try:
+        fo = file( filePath, 'rb' )
+      except Exception, e:
+        return S_ERROR( "Can't read pregenerated bulk: %s" % str(e))
+      result = self.DataSourceToNetwork( fo )
+      try:
+        fo.close()
+        os.unlink( filePath )
+      except:
+        pass
+      return result
+    else:
+      rPipe, wPipe = os.pipe()
+      thrd = threading.Thread( target = self.__createTar, args = ( fileList, wPipe, compress ) )
+      thrd.start()
+      response = self.FDToNetwork( rPipe )
+      os.close( rPipe )
+      return response
 
   def __extractTar( self, destDir, rPipe, compress ):
     filePipe = os.fdopen( rPipe, "r" )
