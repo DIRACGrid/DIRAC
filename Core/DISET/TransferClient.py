@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.15 2008/12/16 14:28:44 acasajus Exp $
-__RCSID__ = "$Id: TransferClient.py,v 1.15 2008/12/16 14:28:44 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.16 2009/03/30 15:04:54 acasajus Exp $
+__RCSID__ = "$Id: TransferClient.py,v 1.16 2009/03/30 15:04:54 acasajus Exp $"
 
 import tarfile
 import threading
@@ -105,7 +105,7 @@ class TransferClient( BaseClient ):
         bogusEntries.append( entry )
     return bogusEntries
 
-  def sendBulk( self, fileList, bulkId, token = "", compress = True, bulkSize = -1 ):
+  def sendBulk( self, fileList, bulkId, token = "", compress = True, bulkSize = -1, onthefly = True ):
     """
     Send a bulk of files to server
 
@@ -133,7 +133,7 @@ class TransferClient( BaseClient ):
       return retVal
     transport = retVal[ 'Value' ]
     fileHelper = FileHelper( transport )
-    retVal = fileHelper.bulkToNetwork( fileList, compress )
+    retVal = fileHelper.bulkToNetwork( fileList, compress, onthefly )
     if not retVal[ 'OK' ]:
       return retVal
     retVal = transport.receiveData()
