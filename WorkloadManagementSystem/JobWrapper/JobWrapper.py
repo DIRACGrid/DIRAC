@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.78 2009/03/10 15:36:42 rgracian Exp $
+# $Id: JobWrapper.py,v 1.79 2009/03/30 15:09:53 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.78 2009/03/10 15:36:42 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.79 2009/03/30 15:09:53 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -176,7 +176,7 @@ class JobWrapper:
       os.chdir(str(self.jobID))
     else:
       self.log.info('JobID is not defined, running in current directory')
-      
+
     infoFile = open( 'job.info', 'w' )
     infoFile.write( self.__dictAsInfoString( jobArgs, '/Job' ) )
     infoFile.close()
@@ -205,7 +205,7 @@ class JobWrapper:
           infoString += "%s/%s = %s\n" % ( currentBase, key, ", ".join( value ) )
       else:
         infoString += "%s/%s = %s\n" % ( currentBase, key, str( value ) )
-  
+
     return infoString
 
 
@@ -344,14 +344,14 @@ class JobWrapper:
       print >> errorFile, stderr
       errorFile.close()
     else:
-      self.log.warn('No outputs generated from job execution')
-      toCheck = os.listdir(os.getcwd())
-      for directory in toCheck:
-        if os.path.isdir(directory):
-          self.log.verbose('Files in directory %s are:' %(directory))
-          for i in os.listdir(directory): print i
-        else:
-          self.log.verbose('File %s' %(directory))
+      self.log.error('No outputs generated from job execution')
+
+    self.log.info('Checking directory contents after execution:')
+    res = shellCall(0,'ls -al')
+    if res['OK']:
+      self.log.info(str(res['Value'][1]))
+    else:
+      self.log.warn('Failed to list the current directory',str(res['Value'][2]))
 
     return S_OK()
 
