@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.23 2008/11/25 20:15:30 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.23 2008/11/25 20:15:30 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.24 2009/03/30 14:54:11 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.24 2009/03/30 14:54:11 acasajus Exp $"
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities import DEncode
@@ -106,6 +106,8 @@ class BaseTransport:
       iSeparatorPosition = self.byteStream.find( ":" )
       while iSeparatorPosition == -1:
         retVal = self._read( 1024 )
+        if not retVal[ 'Value' ]:
+          return S_ERROR( "Peer closed connection" )
         if not retVal[ 'OK' ]:
           return retVal
         self.byteStream += retVal[ 'Value' ]
@@ -118,11 +120,13 @@ class BaseTransport:
         retVal = self._read( size - len( self.byteStream ), skipReadyCheck = True )
         if not retVal[ 'OK' ]:
           return retVal
+        if not retVal[ 'Value' ]:
+          return S_ERROR( "Peer closed connection" )
         self.byteStream += retVal[ 'Value' ]
         if maxBufferSize and len( self.byteStream ) > maxBufferSize:
           return S_ERROR( "Read limit exceeded (%s chars)" % maxBufferSize )
       data = self.byteStream[ :size ]
-      self.byteStream = self.byteStream[ size + 1: ]
+      self.byteStream = self.byteStream[ size: ]
       return DEncode.decode( data )[0]
     except Exception, e:
       gLogger.exception( "Network error while receiving data" )
