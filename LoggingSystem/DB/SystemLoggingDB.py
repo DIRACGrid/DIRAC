@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.25 2009/03/31 14:53:20 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingDB.py,v 1.25 2009/03/31 14:53:20 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.26 2009/03/31 17:42:14 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingDB.py,v 1.26 2009/03/31 17:42:14 mseco Exp $"
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -204,7 +204,7 @@ class SystemLoggingDB(DB):
     cmd = "SHOW COLUMNS FROM " + tableName + " WHERE Field in ( '" \
           +  "', '".join( inFields ) + "' )"
     result = self._query( cmd )
-    gLogger.debug(result)
+    gLogger.verbose(result)
     if ( not result['OK'] ) or result['Value'] == ():
       gLogger.debug(result['Message'])
       return S_ERROR( 'Could not get description of the %s table' % tableName )
@@ -318,22 +318,27 @@ class SystemLoggingDB(DB):
     """Insert the persistent data needed by the agents running on top of
        the SystemLoggingDB.
     """
+    result = self._escapeString( data )
+    if not result['OK']:
+      return result
+    escapedData=result['Value']  
+
     outFields = ['AgentID']
     inFields = [ 'AgentName' ]
     inValues = [ agentName ]
+    
     result = self._getFields('AgentPersistentData', outFields, inFields, inValues)
     if not result ['OK']:
       return result
     elif result['Value'] == ():
       inFields = [ 'AgentName', 'AgentData' ]
-      inValues = [ agentName, data]
+      inValues = [ agentName, escapedData]
       result=self._insert( 'AgentPersistentData', inFields, inValues )
       if not result['OK']:
         return result
-    escapeData = self._escapeString( data )
-    cmd = "UPDATE LOW PRIORITY AgentPersistentData SET AgentData='%s' WHERE AgentID='%s'" % \
-          ( agentName, result['Value'] )
-    return self._update(update)
+    cmd = "UPDATE LOW_PRIORITY AgentPersistentData SET AgentData='%s' WHERE AgentID='%s'" % \
+          ( escapedData, result['Value'][0][0] )
+    return self._update( cmd )
 
   def _getDataFromAgentTable( self, agentName ):
     outFields = [ 'AgentData' ]
