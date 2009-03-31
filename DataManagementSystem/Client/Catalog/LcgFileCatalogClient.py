@@ -751,6 +751,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     return S_OK(resDict)
 
   def __addFile(self,lfn,pfn,size,se,guid,checksum):
+    lfc.lfc_umask(0000)
     self.__startTransaction()
     bdir = os.path.dirname(lfn)
     res = self.exists(bdir)
