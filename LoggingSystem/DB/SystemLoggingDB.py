@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.24 2009/03/31 10:35:12 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingDB.py,v 1.24 2009/03/31 10:35:12 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.25 2009/03/31 14:53:20 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingDB.py,v 1.25 2009/03/31 14:53:20 mseco Exp $"
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -201,10 +201,12 @@ class SystemLoggingDB(DB):
          satellite Table if they do not exist and returns
          the unique KEY associated to the given set of values
     """
-    cmd = "SHOW COLUMNS FROM " + tableName + " WHERE Field in ( " \
-          +  ','.join( inFields ) + " )"
+    cmd = "SHOW COLUMNS FROM " + tableName + " WHERE Field in ( '" \
+          +  "', '".join( inFields ) + "' )"
     result = self._query( cmd )
+    gLogger.debug(result)
     if ( not result['OK'] ) or result['Value'] == ():
+      gLogger.debug(result['Message'])
       return S_ERROR( 'Could not get description of the %s table' % tableName )
     for description in result['Value']:
       if re.search( 'varchar', description[1] ):
