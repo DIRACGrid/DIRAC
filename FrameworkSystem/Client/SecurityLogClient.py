@@ -1,5 +1,6 @@
 
-from DIRAC import gLogger
+import syslog
+from DIRAC import gLogger, gConfig
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -21,6 +22,9 @@ class SecurityLogClient:
       timestamp = Time.dateTime()
     msg = ( timestamp, success, sourceIP, sourcePort, sourceIdentity,
             destinationIP, destinationPort, destinationService, action )
+    if gConfig.getValue( "/Security/EnableSysLog", False ):
+      strMsg = "Time=%s Accept=%s Source=%s:%s SourceID=%s Destination=%s:%s Service=%s Action=%s"
+      syslog.syslog( strMsg % msg )
     while len( self.__messagesList ) > self.__maxMessagesWaiting:
       self.__messagesList.pop(0)
     if not self.__securityLogStore:
