@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.23 2009/02/26 08:58:54 rgracian Exp $
-__RCSID__ = "$Id: SystemLoggingDB.py,v 1.23 2009/02/26 08:58:54 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.24 2009/03/31 10:35:12 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingDB.py,v 1.24 2009/03/31 10:35:12 mseco Exp $"
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -201,6 +201,20 @@ class SystemLoggingDB(DB):
          satellite Table if they do not exist and returns
          the unique KEY associated to the given set of values
     """
+    cmd = "SHOW COLUMNS FROM " + tableName + " WHERE Field in ( " \
+          +  ','.join( inFields ) + " )"
+    result = self._query( cmd )
+    if ( not result['OK'] ) or result['Value'] == ():
+      return S_ERROR( 'Could not get description of the %s table' % tableName )
+    for description in result['Value']:
+      if re.search( 'varchar', description[1] ):
+        indexInteger = inFields.index( description[0] )
+        valueLength = len( inValues[ indexInteger ] )
+        fieldLength = int( re.search( r'varchar\((\d*)\)', 
+        	                          description[1] ).groups()[0] )
+        if fieldLength < valueLength:
+          inValues[ indexInteger ] = inValues[ indexInteger ][ :fieldLength ]
+
     result = self._getFields( tableName, outFields, inFields, inValues )
     if not result['OK']:
       return S_ERROR('Unable to query the database')
@@ -305,16 +319,23 @@ class SystemLoggingDB(DB):
     outFields = ['AgentID']
     inFields = [ 'AgentName' ]
     inValues = [ agentName ]
-    result = self._getFields('AgentPersitentData', outFields, inFields, inValues)
+    result = self._getFields('AgentPersistentData', outFields, inFields, inValues)
     if not result ['OK']:
       return result
     elif result['Value'] == ():
       inFields = [ 'AgentName', 'AgentData' ]
       inValues = [ agentName, data]
-      result=self._insert( 'AgentPersitentData', inFields, inValues )
+      result=self._insert( 'AgentPersistentData', inFields, inValues )
       if not result['OK']:
         return result
     escapeData = self._escapeString( data )
-    cmd = "UPDATE LOW PRIORITY AgentPersitentData SET AgentData='%s' WHERE AgentID=%s" % \
+    cmd = "UPDATE LOW PRIORITY AgentPersistentData SET AgentData='%s' WHERE AgentID='%s'" % \
           ( agentName, result['Value'] )
     return self._update(update)
+
+  def _getDataFromAgentTable( self, agentName ):
+    outFields = [ 'AgentData' ]
+    inFields = [ 'AgentName' ]
+    inValues = [ agentName ]
+
+    return self._getFields('AgentPersistentData', outFields, inFields, inValues)
