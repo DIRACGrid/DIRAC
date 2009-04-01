@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.10 2009/02/19 11:18:09 zmathe Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.11 2009/04/01 13:34:48 zmathe Exp $
 ########################################################################
 """ DIRAC Basic Oracle Class
     It provides access to the basic Oracle methods in a multithread-safe mode
@@ -50,7 +50,7 @@
 
 """
 
-__RCSID__ = "$Id: OracleDB.py,v 1.10 2009/02/19 11:18:09 zmathe Exp $"
+__RCSID__ = "$Id: OracleDB.py,v 1.11 2009/04/01 13:34:48 zmathe Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -67,14 +67,14 @@ import string
 import threading
 from types import StringTypes, DictType
 
-maxConnectRetry = 20
+maxConnectRetry = 100
 
 class OracleDB:
   """
   Basic multithreaded DIRAC Oracle Client Class
   """
 
-  def __init__( self, userName, password = '', tnsEntry='', maxQueueSize=20 ):
+  def __init__( self, userName, password = '', tnsEntry='', maxQueueSize=100 ):
     """
     set Oracle connection parameters and try to connect
     """
@@ -342,7 +342,7 @@ class OracleDB:
       self.__connectionSemaphore.release()
       self.logger.debug( '__getConnection: Empty Queue' )
       try:
-        if trial == min(20,maxConnectRetry):
+        if trial == min(100,maxConnectRetry):
           return S_ERROR( 'Could not get a connection after %s retries.' % maxConnectRetry )
         try:
           self.__newConnection()
