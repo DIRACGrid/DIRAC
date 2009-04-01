@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.138 2009/03/20 21:41:57 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.139 2009/04/01 12:51:54 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.138 2009/03/20 21:41:57 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.139 2009/04/01 12:51:54 atsareg Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -1570,8 +1570,8 @@ class JobDB(DB):
   def getSiteSummaryWeb(self,selectDict, sortList, startItem, maxItems):
     """ Get the summary of jobs in a given status on all the sites in the standard Web form
     """
-
-    paramNames = ['Site','Grid','Country','Tier','MaskStatus']
+    
+    paramNames = ['Site','GridType','Country','Tier','MaskStatus']
     paramNames += JOB_STATES
     paramNames += ['Efficiency','Status']
     siteT1List = ['CERN','IN2P3','NIKHEF','PIC','CNAF','RAL','GRIDKA']
@@ -1647,7 +1647,7 @@ class JobDB(DB):
         countryCounts[country] = {}
         for state in JOB_STATES:
            countryCounts[country][state] = 0
-      rList = [grid,siteFullName,country,tier]
+      rList = [siteFullName,grid,country,tier]
       if siteMask.has_key(siteFullName):
         rList.append(siteMask[siteFullName])
       else:
@@ -1710,7 +1710,7 @@ class JobDB(DB):
     finalDict['TotalRecords'] = len(records)
     finalDict['Extras'] = countryCounts
 
-    return S_OK(finalDict) 
+    return S_OK(finalDict)
 
 #################################################################################
   def getUserSummaryWeb(self,selectDict, sortList, startItem, maxItems):
