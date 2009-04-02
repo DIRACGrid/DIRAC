@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.14 2008/10/09 13:14:40 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.14 2008/10/09 13:14:40 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.15 2009/04/02 13:35:48 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.15 2009/04/02 13:35:48 mseco Exp $"
 """
 SystemLoggingReportHandler allows a remote system to access the contest
 of the SystemLoggingDB
@@ -32,96 +32,13 @@ def initializeSystemLoggingReportHandler( serviceInfo ):
 class SystemLoggingReportHandler( RequestHandler ):
   
   types_getMessages=[]
-  
-  def export_getMessages( self, selectionDict = {}, sortList = [], 
-                          startItem = 0, maxItems = 0 ):
-    """ Query the database for all the messages between two given dates.
-        If no date is provided then the records returned are those generated
-        during the last 24 hours.
+
+  def __getMessages( self, selectionDict = {}, sortList = [], 
+                     startItem = 0, maxItems = 0 ):
     """
-    if selectionDict.has_key( 'beginDate' ):
-      beginDate = selectionDict.pop( 'beginDate' )
-    else:
-      beginDate = None
-    if selectionDict.has_key( 'endDate' ):
-      endDate = selectionDict.pop( 'endDate' )
-    else:
-      endDate = None
-
-    if not ( beginDate or endDate ):
-      beginDate= Time.dateTime() - 1 * Time.day 
-      
-    result = LogDB._queryDB( condDict = selectionDict, newer = beginDate, 
-                             older = endDate, orderFields = sortList )
-
-    if not result['OK']: return result
-
-    if maxItems:
-      records = result['Value'][ startItem:maxItems + startItem ]
-    else:
-      records = result['Value'][ startItem: ]
-    
-    retValue = { 'ParameterNames': [ 'MessageTime', 'LogLevel', 
-                                   'FixedTextString', 'VariableText', 
-                                   'SystemName', 'SubSystemName', 
-                                   'OwnerDN', 'OwnerGroup',
-                                   'ClientIPNumberString', 'SiteName' ], 
-                 'Records':  records, 
-                 'TotalRecords': len( result['Value'] ), 'Extras': {}}
-    
-    return S_OK( retValue )
-
-  types_getCountMessages=[]
-
-  def export_getCountMessages( self, selectionDict = {}, sortList = [], 
-                           startItem = 0, maxItems = 0 ):
-    """ Query the database for the number of messages that match 'conds' and
-        were generated between initialDate and endDate. If no condition is
-        provided it returns the total number of messages present in the
-        database
     """
-    if selectionDict.has_key( 'beginDate' ):
-      beginDate = selectionDict.pop( 'beginDate' )
-    else:
-      beginDate = None
-    if selectionDict.has_key( 'endDate' ):
-      endDate = selectionDict.pop( 'endDate' )
-    else:
-      endDate = None
-
-    if not ( beginDate or endDate ):
-      beginDate= Time.dateTime() - 1 * Time.day 
-
-    if selectionDict:
-      fieldList = selectionDict.keys()
-      fieldList.append( 'MessageTime' )
-    else:
-      fieldList = [ 'MessageTime', 'LogLevel', 'FixedTextString',
-                    'VariableText', 'SystemName', 'SubSystemName',
-                    'OwnerDN', 'OwnerGroup', 'ClientIPNumberString',
-                    'SiteName' ]
-
-    result = LogDB._queryDB( showFieldList = fieldList, condDict = selectionDict, 
-                                  older = endDate, newer = initialDate, 
-                                  count = True )
-
-    if not result['OK']: return result
+    from re import search
     
-    retValue = { 'ParameterNames': ['Number of Messages'], 
-                 'Records':  result['Value'][0][0],
-                 'TotalRecords': 1, 'Extras': {}}
-    
-    return S_OK( retValue )
-
-  types_getGroupedMessages = []
-  
-  def export_getGroupedMessages( self, selectionDict = {}, sortList = [], 
-                                 startItem = 0, maxItems = 0 ):
-    """  This function reports the number of messages per fixed text
-         string, system and subsystem that generated them using the 
-         DIRAC convention for communications between services and 
-         web pages
-    """
     if selectionDict.has_key('convertDates'):
       convertDatesToStrings = selectionDict['convertDates']
       del selectionDict['convertDates']
@@ -133,9 +50,11 @@ class SystemLoggingReportHandler( RequestHandler ):
     else:
       dateField = 'MessageTime'
       
-    fieldList = [ dateField, 'LogLevel', 'SystemName', 'SubSystemName',
-                  'FixedTextString', 'VariableText',  'OwnerDN', 'OwnerGroup',
-                  'ClientIPNumberString', 'SiteName' ]
+    if selectionDict.has_key('count'):
+      countMessages = selectionDict['count']
+      del selectionDict['count']
+    else:
+      countMessages = True
 
     if not ( selectionDict.has_key( 'LogLevel' ) and selectionDict['LogLevel'] ):
       selectionDict['LogLevel'] = [ 'ERROR', 'EXCEPT', 'FATAL' ]
@@ -152,16 +71,33 @@ class SystemLoggingReportHandler( RequestHandler ):
       endDate = None
 
     if not ( beginDate or endDate ):
-      beginDate= Time.dateTime() - 1 * Time.day 
+      beginDate= Time.date() - 1 * Time.day 
 
-    if selectionDict.has_key('groupField') and selectionDict['groupField']:
-      groupField = selectionDict.pop( 'groupField' )
+    if selectionDict.has_key('groupField'):
+      groupField = selectionDict['groupField']
+      if not selectionDict.has_key( groupField ):
+        groupField = selectionDict.keys()[0]
+      del selectionDict['groupField']
+    elif countMessages:
+      if selectionDict.has_key('FixedTextString'):
+        groupField = 'FixedTextString'
+      else:
+        groupField = selectionDict.keys()[0]
     else:
-      groupField = 'FixedTextString'
+      groupField = None
       
+    if selectionDict:
+      fieldList = selectionDict.keys()
+      fieldList.append( dateField )
+    else:
+      fieldList = [ dateField, 'LogLevel', 'FixedTextString',
+                    'VariableText', 'SystemName', 'SubSystemName',
+                    'OwnerDN', 'OwnerGroup', 'ClientIPNumberString',
+                    'SiteName' ]
+
     result = LogDB._queryDB( showFieldList = fieldList, condDict = selectionDict, 
                              older = endDate, newer = beginDate, 
-                             count = True, groupColumn = groupField,
+                             count = countMessages, groupColumn = groupField,
                              orderFields = sortList )
 
     if not result['OK']: return result
@@ -177,18 +113,60 @@ class SystemLoggingReportHandler( RequestHandler ):
       records = [ t[1] for t in unOrderedFields ]
       records.reverse()
 
-    if 'count(*) as recordCount' in fieldList:
-      fieldList.remove( 'count(*) as recordCount' )
-    fieldList.append( 'Number of Errors' )
+    if countMessages:
+      if 'count(*) as recordCount' in fieldList:
+        fieldList.remove( 'count(*) as recordCount' )
+      fieldList.append( 'Number of Errors' )
     
     if convertDatesToStrings:
-      fieldList.pop(0)
-      fieldList.insert(0,'MessageTime')
+      for element in fieldList:
+        if search( 'MessageTime',element ):
+          index = fieldList.index( element )
+      fieldList[index] = 'MessageTime'
       
     retValue = { 'ParameterNames': fieldList, 'Records': records ,
                  'TotalRecords': len( result['Value'] ), 'Extras': {}}
   
     return S_OK( retValue )
+
+  def export_getMessages( self, selectionDict = {}, sortList = [], 
+                          startItem = 0, maxItems = 0 ):
+    """ Query the database for all the messages between two given dates.
+        If no date is provided then the records returned are those generated
+        during the last 24 hours.
+    """
+    selectionDict['count'] = False
+    selectionDict['groupField'] = None
+    selectionDict['LogLevel'] = [ 'ERROR', 'EXCEPT', 'FATAL', 'ALWAYS' ]
+    return self.__getMessages( selectionDict, sortList, startItem, maxItems )
+
+  types_getCountMessages=[]
+
+  def export_getCountMessages( self, selectionDict = {}, sortList = [], 
+                           startItem = 0, maxItems = 0 ):
+    """ Query the database for the number of messages that match 'conds' and
+        were generated between initialDate and endDate. If no condition is
+        provided it returns the total number of messages present in the
+        database
+    """
+    selectionDict['count'] = True
+    selectionDict['groupField'] = None
+    
+    return self.__getMessages( selectionDict, sortList, startItem, maxItems )
+
+
+  types_getGroupedMessages = []
+  
+  def export_getGroupedMessages( self, selectionDict = {}, sortList = [], 
+                                 startItem = 0, maxItems = 0 ):
+    """  This function reports the number of messages per fixed text
+         string, system and subsystem that generated them using the 
+         DIRAC convention for communications between services and 
+         web pages
+    """
+    selectionDict['count'] = True
+
+    return self.__getMessages( selectionDict, sortList, startItem, maxItems )
   
   types_getSites = []
 

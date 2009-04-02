@@ -1,5 +1,5 @@
- # $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Client/LoggerClient.py,v 1.7 2009/02/25 16:05:56 mseco Exp $
-__RCSID__ = "$Id: LoggerClient.py,v 1.7 2009/02/25 16:05:56 mseco Exp $"
+ # $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Client/LoggerClient.py,v 1.8 2009/04/02 13:35:47 mseco Exp $
+__RCSID__ = "$Id: LoggerClient.py,v 1.8 2009/04/02 13:35:47 mseco Exp $"
 """ This file contains the methods for accessing the Messages Stored in the LoggingDB;
     getMessagesByDate()
     getMessagesBySite()
@@ -112,10 +112,7 @@ class LoggerClient:
         
     result = loggingQuery.getMessages( conds, [], startRecord, maxRecords )
     if not result['OK']: return result
-    
-    if result['Value']['TotalRecords'] == 0:
-      return S_OK([])
-    
+        
     if showFields:
       columns = result['Value']['ParameterNames']
 
@@ -123,10 +120,8 @@ class LoggerClient:
       for field in showFields:
         fieldIndex.append(columns.index(field))
 
-      records = result['Value']['Records']
-
       retRecords=[]
-      for record in records:
+      for record in result['Value']['Records']:
         retRecords.append( [ record[index] for index in fieldIndex ] )
       result['Value']['ParameterNames'] = showFields
  

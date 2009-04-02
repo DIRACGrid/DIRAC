@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.26 2009/03/31 17:42:14 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingDB.py,v 1.26 2009/03/31 17:42:14 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.27 2009/04/02 13:35:48 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingDB.py,v 1.27 2009/04/02 13:35:48 mseco Exp $"
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -105,7 +105,8 @@ class SystemLoggingDB(DB):
         from the list of variables provided
     """
     import re
-    iDpattern = re.compile( r'ID' )   
+    idPattern = re.compile( r'ID' )
+       
     tableDict = { 'MessageTime':'MessageRepository',
                   'VariableText':'MessageRepository',
                   'LogLevel':'MessageRepository',
@@ -124,10 +125,13 @@ class SystemLoggingDB(DB):
 
     if len(showFieldList):
       for field in showFieldList:
-        if not iDpattern.search( field ) and ( field in tableDictKeys ):
+        if not idPattern.search( field ) and ( field in tableDictKeys ):
           tableList.append( tableDict[field] )
 
+      if re.search( 'MessageTime', ','.join( showFieldList) ):
+        tableList.append('MessageRepository')
       tableList = self.__uniq(tableList)
+
       if len( tableList ) == 1:
         tableString = tableList[0]
       else:
