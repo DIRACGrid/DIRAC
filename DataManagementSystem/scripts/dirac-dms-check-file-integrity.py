@@ -2,10 +2,10 @@
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-check-file-integrity.py,v 1.1 2009/03/12 15:28:15 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-check-file-integrity.py,v 1.2 2009/04/02 12:30:25 acsmith Exp $
 ########################################################################
-__RCSID__   = "$Id: dirac-dms-check-file-integrity.py,v 1.1 2009/03/12 15:28:15 acsmith Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-dms-check-file-integrity.py,v 1.2 2009/04/02 12:30:25 acsmith Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import sortList
@@ -124,6 +124,8 @@ guidMismatches = []
 zeroReplicaFiles = []
 numberOfMissingReplicas = 0
 numberOfBkSESizeMismatch = 0
+pfnsLost = 0
+pfnsUnavailable = 0
 if filesPresentInLFC:
   res = lfcClient.getFileMetadata(filesPresentInLFC) 
   if not res['OK']:
@@ -193,9 +195,11 @@ if filesPresentInLFC:
 
   missingReplicas = {}
   bkSESizeMismatch = {}
+  sePfnsLost = {}
+  sePfnsUnavailable = {}
   for se,pfns in sePfns.items():
     storageElement = StorageElement(se)
-    res = storageElement.getFileSize(pfns)
+    res = storageElement.getFileMetadata(pfns)
     if not res['OK']:
       print 'Failed to get file sizes for pfns: %s' % res['Message']
     else:
@@ -204,12 +208,23 @@ if filesPresentInLFC:
           missingReplicas[se] = []
         missingReplicas[se].append(pfnLfns[pfn])
         numberOfMissingReplicas+=1
-      for pfn,size in res['Value']['Successful'].items():
+      for pfn,metadata in res['Value']['Successful'].items():
+        size = metadata['Size']
         if not size == bkMetadata[pfnLfns[pfn]]['FileSize']:
           if not bkSESizeMismatch.has_key(se):
             bkSESizeMismatch[se] = []
           bkSESizeMismatch[se].append(pfnLfns[pfn])
           numberOfBkSESizeMismatch +=1
+        if metadata['Lost']:
+          if not sePfnsLost.has_key(se):
+            sePfnsLost[se] = []
+          sePfnsLost[se].append(pfnLfns[pfn])
+          pfnsLost += 1
+        if metadata['Unavailable']:
+          if not sePfnsUnavailable.has_key(se):
+            sePfnsUnavailable[se] = []
+          sePfnsUnavailable[se].append(pfnLfns[pfn])
+          pfnsUnavailable += 1
 
   print '\n################### %s ########################\n' % 'SE physical files'.center(20)
   if missingReplicas:
@@ -228,8 +243,24 @@ if filesPresentInLFC:
       for lfn in sortList(lfns):
         print lfn
 
-  if not (missingReplicas or bkSESizeMismatch):
-    print 'All registered replicas existed with the correct size.'
+  if sePfnsLost:
+    print 'The following files are reported lost by %s SEs' % len(sePfnsLost.keys())
+    for se in sortList(sePfnsLost.keys()):
+      lfns = sePfnsLost[se]
+      print '%s : %s' % (se.ljust(10),str(len(lfns)).ljust(10))
+      for lfn in sortList(lfns):
+        print lfn
+
+  if sePfnsUnavailable:
+    print 'The following files are reported unavailable by %s SEs' % len(sePfnsUnavailable.keys())
+    for se in sortList(sePfnsUnavailable.keys()):
+      lfns = sePfnsUnavailable[se]
+      print '%s : %s' % (se.ljust(10),str(len(lfns)).ljust(10))
+      for lfn in sortList(lfns):
+        print lfn
+
+  if not (sePfnsUnavailable or sePfnsLost or missingReplicas or bkSESizeMismatch):
+    print 'All registered replicas existed with the correct size and are accessible.'
 
 
 print '\n################### %s ########################\n' % 'Summary'.center(20)
@@ -263,5 +294,11 @@ if numberOfMissingReplicas:
 
 if numberOfBkSESizeMismatch:
   print 'There were %s physical files with mis-matched size in the BK and SE.' % numberOfBkSESizeMismatch
+
+if pfnsLost:
+  print 'There were %s physical files which are reported lost by the SE.' % pfnsLost
+
+if pfnsUnavailable:
+  print 'There were %s physical files which are reported unavailable by the SE.' % pfnsUnavailable
    
 print '\n'
