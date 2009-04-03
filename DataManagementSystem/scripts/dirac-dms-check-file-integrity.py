@@ -2,10 +2,10 @@
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-check-file-integrity.py,v 1.2 2009/04/02 12:30:25 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-check-file-integrity.py,v 1.3 2009/04/03 14:34:56 acsmith Exp $
 ########################################################################
-__RCSID__   = "$Id: dirac-dms-check-file-integrity.py,v 1.2 2009/04/02 12:30:25 acsmith Exp $"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__   = "$Id: dirac-dms-check-file-integrity.py,v 1.3 2009/04/03 14:34:56 acsmith Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import sortList
@@ -228,7 +228,7 @@ if filesPresentInLFC:
 
   print '\n################### %s ########################\n' % 'SE physical files'.center(20)
   if missingReplicas:
-    print 'The following files were missing at %s SEs' % len(missingReplicas.keys())
+    print '\nThe following files were missing at %s SEs' % len(missingReplicas.keys())
     for se in sortList(missingReplicas.keys()):
       lfns = missingReplicas[se]
       print '%s : %s' % (se.ljust(10),str(len(lfns)).ljust(10))
@@ -236,7 +236,7 @@ if filesPresentInLFC:
         print lfn
 
   if bkSESizeMismatch:
-    print 'The following files had size mis-matches at %s SEs' % len(bkSESizeMismatch.keys())
+    print '\nThe following files had size mis-matches at %s SEs' % len(bkSESizeMismatch.keys())
     for se in sortList(bkSESizeMismatch.keys()):
       lfns = bkSESizeMismatch[se]
       print '%s : %s' % (se.ljust(10),str(len(lfns)).ljust(10))
@@ -244,7 +244,7 @@ if filesPresentInLFC:
         print lfn
 
   if sePfnsLost:
-    print 'The following files are reported lost by %s SEs' % len(sePfnsLost.keys())
+    print '\nThe following files are reported lost by %s SEs' % len(sePfnsLost.keys())
     for se in sortList(sePfnsLost.keys()):
       lfns = sePfnsLost[se]
       print '%s : %s' % (se.ljust(10),str(len(lfns)).ljust(10))
@@ -252,7 +252,7 @@ if filesPresentInLFC:
         print lfn
 
   if sePfnsUnavailable:
-    print 'The following files are reported unavailable by %s SEs' % len(sePfnsUnavailable.keys())
+    print '\nThe following files are reported unavailable by %s SEs' % len(sePfnsUnavailable.keys())
     for se in sortList(sePfnsUnavailable.keys()):
       lfns = sePfnsUnavailable[se]
       print '%s : %s' % (se.ljust(10),str(len(lfns)).ljust(10))
