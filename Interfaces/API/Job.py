@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.56 2009/03/12 10:39:59 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.57 2009/04/04 16:50:17 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.56 2009/03/12 10:39:59 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.57 2009/04/04 16:50:17 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -921,14 +921,15 @@ class Job:
       for name,props in paramsDict.items():
         ptype = paramsDict[name]['type']
         value = paramsDict[name]['value']
-        if value and not value.lower()=='any':
-          if ptype=='JDLReqt':
-            plus = ' && '
-            if re.search(';',value):
-              for val in value.split(';'):
-                exprn += reqtsDict[name].replace('NAME',name).replace('VALUE',str(val))+plus
-            else:
-              exprn += reqtsDict[name].replace('NAME',name).replace('VALUE',str(value))+plus
+        if not ptype=='dict':
+          if value and not value.lower()=='any':
+            if ptype=='JDLReqt':
+              plus = ' && '
+              if re.search(';',value):
+                for val in value.split(';'):
+                  exprn += reqtsDict[name].replace('NAME',name).replace('VALUE',str(val))+plus
+              else:
+                exprn += reqtsDict[name].replace('NAME',name).replace('VALUE',str(value))+plus
 
       if len(plus):
         exprn = exprn[:-len(plus)]
