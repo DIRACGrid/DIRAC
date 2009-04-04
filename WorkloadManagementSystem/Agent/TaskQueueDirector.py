@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.34 2009/03/23 13:29:57 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.35 2009/04/04 18:20:44 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.34 2009/03/23 13:29:57 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.35 2009/04/04 18:20:44 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -599,8 +599,16 @@ class PilotDirector:
       # Need to get VOMS extension for the later interctions with WMS
       ret = gProxyManager.getVOMSAttributes(proxy)
       if not ret['OK']:
+        try:
+          shutil.rmtree( workingDirectory )
+        except:
+          pass
         return ret
       if not ret['Value']:
+        try:
+          shutil.rmtree( workingDirectory )
+        except:
+          pass
         return S_ERROR( ERROR_VOMS )
       vomsGroup = ret['Value'][0]
 
@@ -967,6 +975,7 @@ ShallowRetryCount = 0;
 WMProxyEndPoints = { %s };
 LBEndPoints = { %s };
 MyProxyServer = "no-myproxy.cern.ch";
+EnableServiceDiscovery = false;
 ];
 """ % ( extraReq, workingDirectory, workingDirectory, workingDirectory, ', '.join(RBs), ', '.join(LBs) )
 
