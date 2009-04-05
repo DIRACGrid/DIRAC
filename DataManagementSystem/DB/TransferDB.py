@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransferDB.py,v 1.35 2008/11/09 10:02:20 acsmith Exp $
+# $Id: TransferDB.py,v 1.36 2009/04/05 14:06:12 acsmith Exp $
 ########################################################################
 
 """ RequestDB is a front end to the Request Database.
@@ -9,7 +9,7 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import randomize,stringListToString,intListToString
 import threading,types,string,time,datetime
 
-__RCSID__ = "$Id: TransferDB.py,v 1.35 2008/11/09 10:02:20 acsmith Exp $"
+__RCSID__ = "$Id: TransferDB.py,v 1.36 2009/04/05 14:06:12 acsmith Exp $"
 
 MAGIC_EPOC_NUMBER = 1270000000
 
@@ -488,7 +488,12 @@ class TransferDB(DB):
       return S_ERROR(err)
     files = {}
     for fileID,lfn in res['Value']:
-      files[lfn] = fileID
+      if lfn:
+        files[lfn] = fileID
+      else:
+        error = "TransferDB.getFTSReqLFNs: File does not exist in the Files table."
+        gLogger.error(error,fileID)
+        return S_ERROR(error)
     return S_OK(files)
 
   def setFTSReqFiles(self,ftsReqID,channelID,fileAttributes):
@@ -535,10 +540,10 @@ class TransferDB(DB):
       req = "UPDATE FileToFTS SET Status = '%s', Duration = %s, Reason = '%s', Retries = %s, TerminalTime = UTC_TIMESTAMP() WHERE FileID = %s AND FTSReqID = %s AND ChannelID = %s;" % (status,transferTime,reason,retries,fileID,ftsReqID,channelID)
       res = self._update(req)
       if not res['OK']:
-        err = "TransferDB._setFileToFTSFileAttributes: Failed to set file attributes for FTSReq %s." % ftsReqID
+        err = "TransferDB._setFileToFTSFileAttributes: Failed to set file attributes for FTSReq %s." % ftsReqID 
         return S_ERROR('%s\n%s' % (err,res['Message']))
-    return res
-
+    return res    
+       
   def setFileToFTSFileAttribute(self,ftsReqID,fileID,attribute,attrValue):
     req = "UPDATE FileToFTS SET %s = '%s' WHERE FTSReqID = %s AND FileID = %s;" % (attribute,attrValue,ftsReqID,fileID)
     res = self._update(req)
@@ -685,7 +690,7 @@ class TransferDB(DB):
     return S_OK(tuples)
 
   def setRegistrationWaiting(self,channelID,fileIDs):
-    req = "UPDATE FileToCat SET Status='Waiting' WHERE ChannelID = %s AND Status = 'Executing' AND FileID IN (%s);" % (channelID,intListToString(fileIDs))
+    req = "UPDATE FileToCat SET Status='Waiting' WHERE ChannelID=%s AND Status='Executing' AND FileID IN (%s);" % (channelID,intListToString(fileIDs))
     res = self._update(req)
     if not res['OK']:
       err = "TransferDB._setRegistrationWaiting: Failed to update %s files status." % len(fileIDs)
