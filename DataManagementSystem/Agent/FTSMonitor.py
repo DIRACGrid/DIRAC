@@ -95,6 +95,9 @@ class FTSMonitor(Agent):
       gLogger.error(errStr)
       return S_ERROR(errStr)
     files = res['Value']
+    if not files:
+      gLogger.error('No files present for transfer')
+      return S_ERROR('No files were found in the DB') 
     ftsReq.setLFNs(files.keys())
     gLogger.info('Obtained %s files' % len(files))
 
@@ -159,7 +162,7 @@ class FTSMonitor(Agent):
       for lfn in failedLFNs:
         fileID = files[lfn]
         failReason = ftsReq.getFailReason(lfn)
-        gLogger.error('Failed to replicate file on channel %s.' % channelID,failReason)
+        gLogger.error('Failed to replicate file on channel.', "%s %s" % (channelID,failReason))  
         if self.corruptedTarget(failReason):
           targetsToRemove.append(ftsReq.getDestinationSURL(lfn))
         if self.missingSource(failReason):
@@ -169,12 +172,11 @@ class FTSMonitor(Agent):
         else:
           filesToRetry.append(fileID)
         fileToFTSUpdates.append((fileID,'Failed',ftsReq.getFailReason(lfn),ftsReq.getRetries(lfn),0))
-      gLogger.info('Obtaining file information for successful files')
+      gLogger.info('Obtaining file information for successful files') 
       for lfn in completedLFNs:
         fileID = files[lfn]
         completedFileIDs.append(fileID)
         fileToFTSUpdates.append((fileID,'Completed',ftsReq.getFailReason(lfn),ftsReq.getRetries(lfn),ftsReq.getTransferTime(lfn)))
-
 
       if filesToReschedule:
         gLogger.info('Updating the Channel table for files to reschedule')
@@ -203,7 +205,7 @@ class FTSMonitor(Agent):
         res = self.TransferDB.setRegistrationWaiting(channelID,completedFileIDs)
         if not res['OK']:
           gLogger.error('Failed to update the FileToCat table for successful files.', res['Message'])
-
+             
       gLogger.info('Updating the FileToFTS table for files')
       res = self.TransferDB.setFileToFTSFileAttributes(ftsReqID,channelID,fileToFTSUpdates)
       if not res['OK']:
@@ -244,7 +246,7 @@ class FTSMonitor(Agent):
         gLogger.info("FTSAgent. accounting message prepared. sending....")
         oAccounting.commit()
         gLogger.info("FTSAgent. Accounting sent.")
-
+      
       if targetsToRemove:
         gLogger.info('Removing problematic target files')
         self.removeTargetSURL(targetsToRemove)
@@ -292,7 +294,7 @@ class FTSMonitor(Agent):
     return 0
 
   def missingSource(self,failReason):
-    missingSourceErrors = ['SOURCE error during PREPARATION phase: \[INVALID_PATH\] Failed','SOURCE error during PREPARATION phase: \[INVALID_PATH\] The requested file either does not exist','TRANSFER error during TRANSFER phase: \[INVALID_PATH\] the server sent an error response: 500 500 Command failed. : open error: No such file or directory']
+    missingSourceErrors = ['SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed','SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] No such file or directory','SOURCE error during PREPARATION phase: \[INVALID_PATH\] Failed','SOURCE error during PREPARATION phase: \[INVALID_PATH\] The requested file either does not exist','TRANSFER error during TRANSFER phase: \[INVALID_PATH\] the server sent an error response: 500 500 Command failed. : open error: No such file or directory']
     for error in missingSourceErrors:
       if re.search(error,failReason):
         return 1
