@@ -296,37 +296,6 @@ class LcgFileCatalogClient(FileCatalogueBase):
 
   ####################################################################
   #
-  # The following a write methods for files
-  #
-
-  def removeFile(self, lfn):
-    """ Remove the supplied path
-    """
-    res = self.__checkArgumentFormat(lfn)
-    if not res['OK']:
-      return res  
-    lfns = res['Value']
-    created = self.__openSession()
-    res = self.exists(lfns)
-    if not res['OK']:
-      return res
-    failed = res['Value']['Failed']
-    successful = {}
-    for lfn,exists in res['Value']['Successful'].items():
-      if not exists:
-        successful[lfn] = True
-      else:
-        res = self.__unlinkPath(lfn)
-        if res['OK']:
-          successful[lfn] = True
-        else:
-          failed[lfn] = res['Message']
-    if created: self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  ####################################################################
-  #
   # The following a read methods for directories
   #
 
@@ -463,54 +432,6 @@ class LcgFileCatalogClient(FileCatalogueBase):
 
   ####################################################################
   #
-  # The following are write methods for directories
-  #
-
-  def removeDirectory(self, lfn):
-    res = self.__checkArgumentFormat(lfn)
-    if not res['OK']:
-      return res
-    lfns = res['Value'] 
-    created = self.__openSession()
-    res = self.exists(lfns)
-    if not res['OK']:
-      return res
-    failed = res['Value']['Failed']
-    successful = {}
-    for lfn,exists in res['Value']['Successful'].items():
-      if not exists:   
-        successful[lfn] = True
-      else:
-        res = self.__removeDirectory(lfn)  
-        if res['OK']:
-          successful[lfn] = True
-        else:
-          failed[lfn] = res['Message']
-    if created: self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  def createDirectory(self,lfn):
-    res = self.__checkArgumentFormat(lfn)
-    if not res['OK']:
-      return res
-    lfns = res['Value']
-    created = self.__openSession()
-    failed = {}
-    successful = {}
-    for path in lfns.keys():
-      res = self.__makeDirs(path)
-      if res['OK']:
-        successful[path] = True
-      else:
-        failed[path] = res['Message']
-    if created: self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-
-  ####################################################################
-  #
   # The following are read methods for links
   #
 
@@ -561,6 +482,272 @@ class LcgFileCatalogClient(FileCatalogueBase):
 
   ####################################################################
   #
+  # The following are read methods for datasets
+  #
+    
+  def resolveDataset(self,dataset,allStatus=False):
+    res = self.__checkArgumentFormat(dataset)
+    if not res['OK']:
+      return res
+    datasets = res['Value']
+    created = self.__openSession()
+    successful = {}
+    failed = {}
+    for datasetName in datasets.keys():
+      res = self.__getDirectoryContents(datasetName)
+      if not res['OK']:
+        failed[datasetName] = res['Message']
+      else:
+        #linkDict = res['Value']['Links']
+        linkDict = res['Value']['Files']
+        datasetFiles = {}
+        for link,fileMetadata in linkDict.items():
+          #target = fileMetadata[link]['MetaData']['Target']
+          target = link
+          datasetFiles[target] = fileMetadata['Replicas']
+        successful[datasetName] = datasetFiles
+    if created: self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  ####################################################################
+  #
+  # The following a write methods for files
+  #
+
+  def addFile(self, lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+    created = self.__openSession()
+    failed = {}
+    successful = {}
+    for lfn,info in lfns.items():
+      pfn = info['PFN']
+      se = info['SE']
+      size = info['Size']
+      guid = info['GUID']
+      checksum = info['Checksum']
+      master = True
+      res = self.__checkAddFile(lfn,pfn,size,se,guid)
+      if not res['OK']:
+        errStr = "LcgFileCatalogClient.addFile: Failed pre-registration check."
+        gLogger.error(errStr, res['Message'])
+        failed[lfn] = "%s %s" % (errStr,res['Message'])
+      else:
+        size = long(size)
+        self.__startTransaction()
+        res = self.__addFile(lfn,pfn,size,se,guid,checksum)
+        if not res['OK']:
+          self.__abortTransaction()
+          failed[lfn] = res['Message']
+        else:
+          #Finally, register the pfn replica
+          res = self.__addReplica(guid,pfn,se,master)
+          if not res['OK']:
+            self.__abortTransaction()
+            failed[lfn] = res['Message']
+            res = self.__unlinkPath(lfn)
+            if not res['OK']:
+              gLogger.error("LcgFileCatalogClient.addFile: Failed to remove file after failure." % res['Message'])
+          else:
+            self.__endTransaction()
+            successful[lfn] = True
+    if created: self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def addReplica(self, lfn):
+    """ This adds a replica to the catalogue.
+    """
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+    created = self.__openSession()
+    failed = {}
+    successful = {}
+    for lfn,info in lfns.items():
+      pfn = info['PFN']
+      se = info['SE']
+      if not info.has_key('Master'):
+        master = False
+      else:
+        master = info['Master']
+      res = self.__getLFNGuid(lfn)
+      if not res['OK']:
+        failed[lfn] = res['Message']
+      else:
+        guid = res['Value']
+        res = self.__addReplica(guid,pfn,se,master)
+        if res['OK']:
+          successful[lfn] = True
+        else:
+          failed[lfn] = res['Message']
+    if created: self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def removeFile(self, lfn):
+    """ Remove the supplied path
+    """
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res  
+    lfns = res['Value']
+    created = self.__openSession()
+    res = self.exists(lfns)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    successful = {}
+    for lfn,exists in res['Value']['Successful'].items():
+      if not exists:
+        successful[lfn] = True
+      else:
+        res = self.__unlinkPath(lfn)
+        if res['OK']:
+          successful[lfn] = True
+        else:
+          failed[lfn] = res['Message']
+    if created: self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def removeReplica(self, lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+    created = False
+    if len(lfns) > 2:
+      created = self.__openSession()
+    failed = {}
+    successful = {}
+    for lfn,info in lfns.items():
+      pfn = info['PFN']
+      se = info['SE']
+      res = self.__removeReplica(pfn)
+      if res['OK']:
+        successful[lfn] = True
+      else:
+        failed[lfn] = res['Message']
+    lfnRemoved = successful.keys()
+    if len(lfnRemoved) > 0:
+      res = self.getReplicas(lfnRemoved,True)
+      zeroReplicaFiles = []
+      if not res['OK']:
+        return res
+      else:
+        for lfn,repDict in res['Value']['Successful'].items():
+          if len(repDict.keys()) == 0:
+            zeroReplicaFiles.append(lfn)
+      if len(zeroReplicaFiles) > 0:
+        res = self.removeFile(zeroReplicaFiles)
+        if not res['OK']:
+          return res
+    if created: self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def setReplicaStatus(self,lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+    created = False
+    if len(lfns) > 2:
+      created = self.__openSession()
+    failed = {}
+    successful = {}
+    for lfn,info in lfns.items():
+      pfn = info['PFN']
+      se = info['SE']
+      status = info['Status']
+      res = self.__setReplicaStatus(pfn,status[0])
+      if res['OK']:
+        successful[lfn] = True
+      else:
+        failed[lfn] = res['Message']
+    if created: self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def setReplicaHost(self,lfn):
+    """ This modifies the replica metadata for the SE.
+    """
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+    created = False
+    if len(lfns) > 2:
+      created = self.__openSession()
+    failed = {}
+    successful = {}
+    for lfn,info in lfns.items():
+      pfn = info['PFN']  
+      se = info['SE']
+      newse = info['NewSE']
+      res = self.__modReplica(pfn,newse)
+      if res['OK']:
+        successful[lfn] = True
+      else:
+        failed[lfn] = res['Message']
+    if created: self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict) 
+
+  ####################################################################
+  #
+  # The following are write methods for directories
+  #
+
+  def removeDirectory(self, lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    lfns = res['Value'] 
+    created = self.__openSession()
+    res = self.exists(lfns)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    successful = {}
+    for lfn,exists in res['Value']['Successful'].items():
+      if not exists:   
+        successful[lfn] = True
+      else:
+        res = self.__removeDirectory(lfn)  
+        if res['OK']:
+          successful[lfn] = True
+        else:
+          failed[lfn] = res['Message']
+    if created: self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def createDirectory(self,lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+    created = self.__openSession()
+    failed = {}
+    successful = {}
+    for path in lfns.keys():
+      res = self.__makeDirs(path)
+      if res['OK']:
+        successful[path] = True
+      else:
+        failed[path] = res['Message']
+    if created: self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  ####################################################################
+  #
   # The following are write methods for links
   #
 
@@ -604,36 +791,6 @@ class LcgFileCatalogClient(FileCatalogueBase):
         failed[link] = res['Message']
       else:
         successful[link] = True
-    if created: self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  ####################################################################
-  #
-  # The following are read methods for datasets
-  #
-    
-  def resolveDataset(self,dataset,allStatus=False):
-    res = self.__checkArgumentFormat(dataset)
-    if not res['OK']:
-      return res
-    datasets = res['Value']
-    created = self.__openSession()
-    successful = {}
-    failed = {}
-    for datasetName in datasets.keys():
-      res = self.__getDirectoryContents(datasetName)
-      if not res['OK']:
-        failed[datasetName] = res['Message']
-      else:
-        #linkDict = res['Value']['Links']
-        linkDict = res['Value']['Files']
-        datasetFiles = {}
-        for link,fileMetadata in linkDict.items():
-          #target = fileMetadata[link]['MetaData']['Target']
-          target = link
-          datasetFiles[target] = fileMetadata['Replicas']
-        successful[datasetName] = datasetFiles
     if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
@@ -702,267 +859,6 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
-
-###############################################################################################   
-###############################################################################################   
-###############################################################################################   
-###############################################################################################   
-###############################################################################################   
-
-
-  def addFile(self, fileTuple):
-    """ A tuple should be supplied to this method which contains:
-        (lfn,pfn,size,se,guid)
-        A list of tuples may also be supplied.
-    """
-    if type(fileTuple) == types.TupleType:
-      files = [fileTuple]
-    elif type(fileTuple) == types.ListType:
-      files = fileTuple
-    else:
-      return S_ERROR('LFCClient.addFile: Must supply a file tuple of list of tuples')
-    failed = {}
-    successful = {}
-    self.__openSession()
-    for lfn,pfn,size,se,guid,checksum in files:
-      #Check the registration is correctly specified
-      res = self.__checkAddFile(lfn,pfn,size,se,guid)
-      if not res['OK']:
-        failed[lfn] = "LFCClient.addFile: %s" % res['Message']
-      else:
-        size = long(size)
-        res = self.__addFile(lfn,pfn,size,se,guid,checksum)
-        if not res['OK']:
-          failed[lfn] = res['Message']
-        else:
-          #Finally, register the pfn replica
-          replicaTuple = (lfn,pfn,se,True)
-          res = self.addReplica(replicaTuple)
-          if not res['OK']:
-            failed[lfn] = res['Message']
-            res = self.removeLfn(lfn)
-          elif not lfn in res['Value']['Successful']:
-            failed[lfn] = res['Value']['Failed']
-            res = self.removeLfn(lfn)
-          else:
-            successful[lfn] = True
-    self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  def __addFile(self,lfn,pfn,size,se,guid,checksum):
-    lfc.lfc_umask(0000)
-    self.__startTransaction()
-    bdir = os.path.dirname(lfn)
-    res = self.exists(bdir)
-    # If we failed to find out whether the directory exists
-    if not res['OK']:
-      self.__abortTransaction()
-      return S_ERROR(res['Message'])
-    # If we failed to find out whether the directory exists
-    if lfn in res['Value']['Failed'].keys():
-      self.__abortTransaction()
-      return S_ERROR(res['Value']['Failed'][lfn])
-    # If the directory doesn't exist
-    if not res['Value']['Successful'][bdir]:
-      #Make the directories recursively if needed
-      res = self.__makeDirs(bdir)
-      # If we failed to make the directory for the file
-      if not res['OK']:
-        self.__abortTransaction()
-        return S_ERROR(res['Message'])
-    #Create a new file
-    fullLfn = '%s%s' % (self.prefix,lfn)
-    value = lfc.lfc_creatg(fullLfn,guid,0664)
-    if value != 0:
-      self.__abortTransaction()
-      errStr = lfc.sstrerror(lfc.cvar.serrno)
-      # Remove the file we just attempted to add
-      res = self.removeFile(lfn)
-      return S_ERROR("__addFile: Failed to create GUID: %s" % errStr)
-    #Set the size of the file
-    if not checksum:
-      checksum = ''
-    value = lfc.lfc_setfsizeg(guid,size,'AD',checksum)
-    if value != 0:
-      self.__abortTransaction()
-      errStr = lfc.sstrerror(lfc.cvar.serrno)
-      # Remove the file we just attempted to add
-      res = self.removeFile(lfn)
-      return S_ERROR("__addFile: Failed to set file size: %s" % errStr)
-    self.__endTransaction()
-    return S_OK()
-
-  def __checkAddFile(self,lfn,pfn,size,se,guid):
-    errStr = ""
-    try:
-      size = long(size)
-    except:
-      errStr += "The size of the file must be an 'int','long' or 'string'"
-    if not guid:
-      errStr += "There is no GUID, don't be silly"
-    res = self.__existsGuid(guid)
-    if res['OK'] and res['Value']:
-      errStr += "You can't register the same GUID twice"
-    if not se:
-      errStr += "You really want to register a file without giving the SE?!?!?"
-    if not pfn:
-      errStr += "Without a PFN a registration is nothing"
-    if not lfn:
-      errStr += "You really are rubbish!!!! Sort it out"
-    res = self.exists(lfn)
-    if res['OK'] and res['Value']['Successful'].has_key(lfn):
-      if res['Value']['Successful'][lfn]:
-        errStr += "This LFN is already taken, try another one"
-    if errStr:
-      return S_ERROR(errStr)
-    else:
-      return S_OK()
-
-  def addReplica(self, replicaTuple):
-    """ This adds a replica to the catalogue
-        The tuple to be supplied is of the following form:
-          (lfn,pfn,se,master)
-        where master = True or False
-    """
-    if type(replicaTuple) == types.TupleType:
-      replicas = [replicaTuple]
-    elif type(replicaTuple) == types.ListType:
-      replicas = replicaTuple
-    else:
-      return S_ERROR('LFCClient.addReplica: Must supply a replica tuple of list of tuples')
-    failed = {}
-    successful = {}
-    self.__openSession()
-    for lfn,pfn,se,master in replicas:
-      res = self.__getLFNGuid(lfn)
-      if res['OK']:
-        guid = res['Value']
-        fid = lfc.lfc_fileid()
-        status = 'U'
-        f_type = 'D'
-        poolname = ''
-        fs = ''
-
-        value = lfc.lfc_addreplica(guid,fid,se,pfn,status,f_type,poolname,fs)
-        """
-        if master:
-          r_type = 'S' # S = secondary, P = primary
-        setname = 'SpaceToken'
-        value = lfc.lfc_addreplica(guid,fid,se,pfn,status,f_type,poolname,fs,r_type,setname)
-        """
-        if value == 0:
-          successful[lfn] = True
-        else:
-          errStr = lfc.sstrerror(lfc.cvar.serrno)
-          # This replica already exists, not an error but a duplicate registration - to review !
-          if errStr == "File exists":
-            successful[lfn] = True
-          else:
-            failed[lfn] = errStr
-      else:
-        failed[lfn] = lfc.sstrerror(lfc.cvar.serrno)
-    self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  def removeReplica(self, replicaTuple):
-    if type(replicaTuple) == types.TupleType:
-      replicas = [replicaTuple]
-    elif type(replicaTuple) == types.ListType:
-      replicas = replicaTuple
-    else:
-      return S_ERROR('LFCClient.removeReplica: Must supply a file tuple or list of file typles')
-    self.__openSession()
-    failed = {}
-    successful = {}
-    for lfn,pfn,se in replicas:
-      fid = lfc.lfc_fileid()
-      value = lfc.lfc_delreplica('',fid,pfn)
-      if value == 0:
-        successful[lfn] = True
-      else:
-        errno = lfc.cvar.serrno
-        errStr = lfc.sstrerror(errno).lower()
-        if (errStr.find("no such file or directory") >= 0 ):
-          successful[lfn] = True
-        else:
-          failed[lfn] = lfc.sstrerror(errno)
-    lfnRemoved = successful.keys()
-    if len(lfnRemoved) > 0:
-      res = self.getReplicas(lfnRemoved,True)
-      zeroReplicaFiles = []
-      if not res['OK']:
-        return res
-      else:
-        for lfn,repDict in res['Value']['Successful'].items():
-          if len(repDict.keys()) == 0:
-            zeroReplicaFiles.append(lfn)
-      if len(zeroReplicaFiles) > 0:
-        res = self.removeFile(zeroReplicaFiles)
-        if not res['OK']:
-          return res
-    self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  def setReplicaStatus(self,replicaTuple):
-    if type(replicaTuple) == types.TupleType:
-      replicas = [replicaTuple]
-    elif type(replicaTuple) == types.ListType:
-      replicas = replicaTuple
-    else:
-      return S_ERROR('LFCClient.setReplicaStatus: Must supply a file tuple or list of file typles')
-    successful = {}
-    failed = {}
-    # If we have less than three lfns to query a session doesn't make sense
-    if len(replicas) > 2:
-      self.__openSession()
-    for replicaTuple in replicas:
-      lfn,pfn,se,status = replicaTuple
-      value = lfc.lfc_setrstatus(pfn,status[0])
-      if not value == 0:
-        errno = lfc.cvar.serrno
-        failed[lfn] = lfc.sstrerror(errno)
-      else:
-        successful[lfn] = True
-    if self.session:
-      self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  def setReplicaHost(self,replicaTuple):
-    """ This modifies the replica metadata for the SE and space token.
-        The tuple supplied must be of the following form:
-        (lfn,pfn,oldse,newse)
-    """
-    if type(replicaTuple) == types.TupleType:
-      replicas = [replicaTuple]
-    elif type(replicaTuple) == types.ListType:
-      replicas = replicaTuple
-    else:
-      return S_ERROR('LFCClient.setReplicaHost: Must supply a file tuple or list of file typles')
-    successful = {}
-    failed = {}
-    # If we have less than three lfns to query a session doesn't make sense
-    if len(replicas) > 2:
-      self.__openSession()
-    for lfn,pfn,oldse,newse in replicas:
-      value = lfc.lfc_modreplica(pfn,'','',newse)
-      if not value == 0:
-        errno = lfc.cvar.serrno
-        failed[lfn] = lfc.sstrerror(errno)
-      else:
-        successful[lfn] = True
-    if self.session:
-      self.__closeSession()
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-#########################################################################################
-#########################################################################################
-#########################################################################################
-#########################################################################################
 
   ####################################################################
   #
@@ -1148,10 +1044,112 @@ class LcgFileCatalogClient(FileCatalogueBase):
       if se == replica.host:
         return S_OK(replica.status)
     return S_ERROR("No replica at supplied site")
-    
+
+  def __checkAddFile(self,lfn,pfn,size,se,guid):
+    try:
+      size = long(size)
+    except:
+      return S_ERROR("The size of the file must be an 'int','long' or 'string'")
+    if not se:
+      return S_ERROR("The SE for the file was not supplied.")
+    if not pfn:
+      return S_ERROR("The PFN for the file was not supplied.")
+    if not lfn:
+      return S_ERROR("The LFN for the file was not supplied.")
+    if not guid:
+      return S_ERROR("The GUID for the file was not supplied.")
+    res = self.__executeOperation(lfn,'exists')
+    if res['OK'] and res['Value']:
+      return S_ERROR("The LFN was already used.")
+    res = self.__executeOperation(lfn,'exists')
+    if res['OK'] and res['Value']:
+      return S_ERROR("The GUID is already used for %s." % res['Value'])
+    return S_OK()
+
+  def __addFile(self,lfn,pfn,size,se,guid,checksum):
+    lfc.lfc_umask(0000)
+    bdir = os.path.dirname(lfn)
+    res = self.self.__executeOperation(bdir,'exists')
+    # If we failed to find out whether the directory exists
+    if not res['OK']:
+      return S_ERROR(res['Message'])
+    # If the directory doesn't exist
+    if not res['Value']:
+      #Make the directories recursively if needed
+      res = self.__makeDirs(bdir)
+      # If we failed to make the directory for the file
+      if not res['OK']:
+        return S_ERROR(res['Message'])
+    #Create a new file
+    fullLfn = '%s%s' % (self.prefix,lfn)
+    value = lfc.lfc_creatg(fullLfn,guid,0664)
+    if value != 0:
+      errStr = lfc.sstrerror(lfc.cvar.serrno)
+      # Remove the file we just attempted to add
+      res = self.__unlinkPath(lfn)
+      if not res['OK']:
+        gLogger.error("LcgFileCatalogClient.__addFile: Failed to remove file after failure." % res['Message'])
+      return S_ERROR("LcgFileCatalogClient__addFile: Failed to create GUID: %s" % errStr)
+    #Set the checksum and size of the file
+    if not checksum:
+      checksum = ''
+    value = lfc.lfc_setfsizeg(guid,size,'AD',checksum)
+    if value != 0:
+      errStr = lfc.sstrerror(lfc.cvar.serrno)
+      # Remove the file we just attempted to add
+      res = self.__unlinkPath(lfn)
+      if not res['OK']:
+        gLogger.error("LcgFileCatalogClient.__addFile: Failed to remove file after failure to add checksum and size." % res['Message'])
+      return S_ERROR("LcgFileCatalogClient.__addFile: Failed to set file size: %s" % errStr)
+    return S_OK()
+
+  def __addReplica(self,guid,pfn,se,master):
+    fid = lfc.lfc_fileid()
+    status = 'U'
+    f_type = 'D'
+    poolname = ''
+    setname = ''
+    fs = ''
+    r_type = 'S'
+    if master:
+      r_type = 'P' # S = secondary, P = primary
+    #value = lfc.lfc_addreplica(guid,fid,se,pfn,status,f_type,poolname,fs,r_type,setname) # not really useful in the end.
+    value = lfc.lfc_addreplica(guid,fid,se,pfn,status,f_type,poolname,fs)
+    if value == 0:
+      return S_OK()
+    errStr = lfc.sstrerror(lfc.cvar.serrno)
+    if errStr == "File exists":
+      return S_OK()
+    else:
+      return S_ERROR(errStr)
+
   def __unlinkPath(self, lfn):
     fullLfn = '%s%s' % (self.prefix,lfn)
     value = lfc.lfc_unlink(fullLfn)
+    if value == 0:
+      return S_OK()
+    else:
+      return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
+
+  def __removeReplica(self, pfn):
+    fid = lfc.lfc_fileid()
+    value = lfc.lfc_delreplica('',fid,pfn)
+    if value == 0:
+      return S_OK()
+    elif value == 2:
+      return S_OK()
+    else:
+      return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
+
+  def __setReplicaStatus(self,pfn,status):
+    value = lfc.lfc_setrstatus(pfn,status)
+    if value == 0:
+      return S_OK()
+    else:
+      return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
+
+  def __modReplica(self,pfn,newse):
+    value = lfc.lfc_modreplica(pfn,'','',newse)
     if value == 0:
       return S_OK()
     else:
