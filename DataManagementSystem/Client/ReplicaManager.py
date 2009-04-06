@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.60 2009/03/20 15:22:31 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.61 2009/04/06 11:41:52 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -892,23 +892,6 @@ class ReplicaManager:
     for pfn in res['Value']['Successful'].keys():
       successful[pfnDict[pfn]]
     resDict = {'Successful':successful,'Failed':failed}
-    return res
-
-  def removePhysicalFile(self,storageElementName,pfnToRemove):
-    """ This removes physical files given by a the physical file names
-
-        'storageElementName' is the storage element where the file should be removed from
-        'pfnsToRemove' is the physical files
-    """
-    if type(pfnToRemove) == types.ListType:
-      pfns = pfnToRemove
-    elif type(pfnToRemove) == types.StringType:
-      pfns = [pfnToRemove]
-    else:
-      errStr = "ReplicaManager.removePhysicalFile: Supplied pfns must be string or list of strings."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    res = self.__removePhysicalReplica(storageElementName, pfns)
     return res
 
   def __removePhysicalReplica(self,storageElementName,pfnsToRemove):
