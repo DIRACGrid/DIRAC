@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/RemovalAgent.py,v 1.19 2008/09/28 19:03:28 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/RemovalAgent.py,v 1.20 2009/04/06 11:42:41 acsmith Exp $
 
 """  RemovalAgent takes removal requests from the RequestDB and replicates them
 """
@@ -137,7 +137,7 @@ class RemovalAgent(Agent,RequestAgentMixIn):
               pfnToLfn[pfn] = lfn
               physicalFiles.append(pfn)
           gMonitor.addMark('PhysicalRemovalAtt',len(physicalFiles))
-          res = self.ReplicaManager.removePhysicalFile(diracSE,physicalFiles)
+          res = self.ReplicaManager.removePhysicalFile(physicalFiles,diracSE)
           if res['OK']:
             gMonitor.addMark('PhysicalRemovalDone',len(res['Value']['Successful'].keys()))
             for pfn in res['Value']['Successful'].keys():
