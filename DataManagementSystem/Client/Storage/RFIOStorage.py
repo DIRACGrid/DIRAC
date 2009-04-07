@@ -41,7 +41,7 @@ class RFIOStorage(StorageBase):
   def changeDirectory(self,directory):
     """ Change the current directory
     """
-    if directory[0] == '/':
+    if directory[0] == '/': 
       directory = directory.lstrip('/')
     self.cwd = '%s/%s' % (self.cwd,directory)
 
@@ -96,6 +96,11 @@ class RFIOStorage(StorageBase):
     except Exception,x:
       errStr = "RFIOStorage.getCurrentURL: Failed to create URL %s" % x
       return S_ERROR(errStr)
+
+  def getPFNBase(self,withPort=False):
+    """ This will get the pfn base. This is then appended with the LFN in LHCb convention.
+    """
+    return S_OK(self.path)
 
   def isPfnForProtocol(self,pfn):
     res = pfnparse(pfn)
@@ -344,11 +349,15 @@ class RFIOStorage(StorageBase):
     failed = {}
     successful = {}
     for dest_url,src_file in urls.items():
-      res = self.__putFile(src_file,dest_url,sourceSize)
-      if res['OK']:
-        successful[dest_url] = res['Value']
-      else:
+      res = self.__executeOperation(os.path.dirname(dest_url),'createDirectory')
+      if not res['OK']:
         failed[dest_url] = res['Message']
+      else:
+        res = self.__putFile(src_file,dest_url,sourceSize)
+        if res['OK']:
+          successful[dest_url] = res['Value']
+        else:
+          failed[dest_url] = res['Message']
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -375,6 +384,7 @@ class RFIOStorage(StorageBase):
       errStr = "RFIOStorage.__putFile: Failed to get file size."
       gLogger.error(errStr,src_file)
       return S_ERROR(errStr)
+
     res = self.__getTransportURL(dest_url)
     if not res['OK']:
       gLogger.debug("RFIOStorage.__putFile: Failed to get transport URL for file.")
@@ -1082,4 +1092,4 @@ class RFIOStorage(StorageBase):
     except AttributeError,errMessage:
       exceptStr = "RFIOStorage.__executeOperation: Exception while perfoming %s." % method
       gLogger.exception(exceptStr,'',errMessage)
-      return S_ERROR("%s%s" % (exceptStr,errMessage))   
+      return S_ERROR("%s%s" % (exceptStr,errMessage))
