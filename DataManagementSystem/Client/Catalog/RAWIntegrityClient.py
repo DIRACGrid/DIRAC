@@ -25,15 +25,13 @@ class RAWIntegrityClient(FileCatalogueBase):
   def exists(self,lfn):
     """ LFN may be a string or list of strings
     """
-    if type(lfn) in types.StringTypes:
-      lfns = [lfn]
-    elif type(lfn) == types.ListType:
-      lfns = lfn
-    else:
-      return S_ERROR('RAWIntegrityClient.exists: Must supply a path or list of paths.')
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    lfns = res['Value']
     successful = {}
     failed = {}
-    for lfn in lfns:
+    for lfn in lfns.keys():
       successful[lfn] = False
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
@@ -59,3 +57,16 @@ class RAWIntegrityClient(FileCatalogueBase):
         successful[lfn] = True
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
+
+  def __checkArgumentFormat(self,path):   
+    if type(path) in types.StringTypes:
+      urls = {path:False}
+    elif type(path) == types.ListType:
+      urls = {}
+      for url in path:
+        urls[url] = False
+    elif type(path) == types.DictType:
+     urls = path
+    else:
+      return S_ERROR("RAWIntegrityClient.__checkArgumentFormat: Supplied path is not of the correct format.")
+    return S_OK(urls)
