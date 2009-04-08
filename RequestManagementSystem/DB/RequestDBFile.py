@@ -269,6 +269,9 @@ class RequestDBFile:
       gLogger.exception(errStr,requestName,lException=x)
       return S_ERROR(errStr)
 
+  def getCurrentExecutionOrder(self,argument):
+    return S_OK(0)
+
   #######################################################################################
   #
   # These are the internal methods
