@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.31 2008/10/15 16:09:57 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.31 2008/10/15 16:09:57 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.32 2009/04/08 14:25:50 acasajus Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.32 2009/04/08 14:25:50 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -48,11 +48,22 @@ class AuthManager:
     if self.KW_EXTRA_CREDENTIALS in credDict:
       userString += " extraCredentials=%s" % str( credDict[ self.KW_EXTRA_CREDENTIALS ] )
     self.__authLogger.verbose( "Trying to authenticate %s" % userString )
+    #Get properties
+    requiredProperties = self.getValidPropertiesForMethod( methodQuery )
+    if not requiredProperties and defaultProperties:
+      requiredProperties = List.fromChar( defaultProperties )
+    #Check non secure backends
+    if self.KW_DN not in credDict:
+      if 'all' in requiredProperties or 'any' in requiredProperties:
+        return True
+      else:
+        return False
     #Check if query comes though a gateway/web server
     if self.forwardedCredentials( credDict ):
       self.__authLogger.verbose( "Query comes from a gateway" )
       self.unpackForwardedCredentials( credDict )
       return self.authQuery( methodQuery, credDict )
+    #Get the properties
     #Check for invalid forwarding
     if self.KW_EXTRA_CREDENTIALS in credDict:
       #Invalid forwarding?
@@ -83,10 +94,6 @@ class AuthManager:
         if not self.getUsername( credDict ):
           self.__authLogger.warn( "User is invalid or does not belong to the group it's saying" )
           return False
-    #Check everyone is authorized
-    requiredProperties = self.getValidPropertiesForMethod( methodQuery )
-    if not requiredProperties and defaultProperties:
-      requiredProperties = List.fromChar( defaultProperties )
     if "any" in requiredProperties or "all" in requiredProperties:
       return True
     #Check user is authenticated
