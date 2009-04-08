@@ -1,6 +1,6 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/Attic/ListTopErrorMessages.py,v 1.2 2009/03/31 17:42:13 mseco Exp $
-__RCSID__ = "$Id: ListTopErrorMessages.py,v 1.2 2009/03/31 17:42:13 mseco Exp $"
-"""  ListTopErrorMessages produces a list with the most common errors 
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/TopErrorMessagesReporter.py,v 1.1 2009/04/08 11:22:24 mseco Exp $
+__RCSID__ = "$Id: TopErrorMessagesReporter.py,v 1.1 2009/04/08 11:22:24 mseco Exp $"
+"""  TopErrorMessagesReporter produces a list with the most common errors 
    injected in the SystemLoggingDB and sends a notification to a mailing 
    list and specific users. 
 """
@@ -13,9 +13,9 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.Core.Utilities                            import List
 from DIRAC.Core.Utilities                            import date, toString, fromString, day, hour
 
-AGENT_NAME = 'Logging/ListTopErrorMessages'
+AGENT_NAME = 'Logging/TopErrorMessagesReporter'
 
-class ListTopErrorMessages( Agent ):
+class TopErrorMessagesReporter( Agent ):
 
   def __init__( self ):
     """ Standard constructor
