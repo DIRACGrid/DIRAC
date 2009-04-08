@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.32 2009/04/08 14:25:50 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.32 2009/04/08 14:25:50 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.33 2009/04/08 14:36:14 acasajus Exp $
+__RCSID__ = "$Id: AuthManager.py,v 1.33 2009/04/08 14:36:14 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -55,8 +55,10 @@ class AuthManager:
     #Check non secure backends
     if self.KW_DN not in credDict:
       if 'all' in requiredProperties or 'any' in requiredProperties:
+        self.__authLogger.verbose( "Accepted request from unsecure transport" )
         return True
       else:
+        self.__authLogger.verbose( "Explicit property required and query seems to be coming through an unsecure transport" )
         return False
     #Check if query comes though a gateway/web server
     if self.forwardedCredentials( credDict ):
