@@ -24,3 +24,9 @@ LIMITED_DELEGATION = "LimitedDelegation"
 PRIVATE_LIMITED_DELEGATION = "PrivateLimitedDelegation"
 #Allow managing proxies
 PROXY_MANAGEMENT = "ProxyManagement"
+#Allow managing production
+PRODUCTION_MANAGEMENT = "ProductionManagement"
+#Allow production request approval on behalf of PPG
+PPG_AUTHORITY = "PPGAuthority"
+#Allow Bookkeeping Management
+BOOKKEEPING_MANAGEMENT = "BookkeepingManagement"
