@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-wms-get-normalized-queue-length.py,v 1.2 2009/02/24 08:24:44 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-wms-get-normalized-queue-length.py,v 1.3 2009/04/10 06:44:08 rgracian Exp $
 # File :   dirac-wms-get-normalized-queue-length.py
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id: dirac-wms-get-normalized-queue-length.py,v 1.2 2009/02/24 08:24:44 rgracian Exp $"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__   = "$Id: dirac-wms-get-normalized-queue-length.py,v 1.3 2009/04/10 06:44:08 rgracian Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
@@ -55,6 +55,9 @@ for ceUniqueID in args:
 
   maxCPUTimeOption = '%s/Queues/%s/maxCPUTime' % ( siteCSSEction, queueID )
   maxCPUTime       = gConfig.getValue( maxCPUTimeOption, 0.0 )
+  # For some sites there are crazy values in the CS
+  maxCPUTime       = max( maxCPUTime, 0 )
+  maxCPUTime       = min( maxCPUTime, 86400 * 10 )
   
   if maxCPUTime and benchmarkSI00:
     # To get to the Current LHCb 
