@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.39 2009/04/12 08:11:19 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.40 2009/04/12 09:24:43 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.39 2009/04/12 08:11:19 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.40 2009/04/12 09:24:43 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -863,10 +863,10 @@ class PilotDirector:
           self.resourceBrokers.remove( rb )
           self.log.info( 'Removed RB from list', rb )
           mailadress = "lhcb-dirac@cern.ch"
-          subject    = "%s: error executing List Match"
+          subject    = "%s: error executing List Match" % rb
           msg        = ' '.join( cmd )
           msg        += '\nreturns: %s\n' % str(ret['Value'][0]) +  '\n'.join( ret['Value'][1:3] )
-          result = NotificationClient().sendMail(mailadress,subject,msg)
+          result = NotificationClient().sendMail(mailadress,subject,msg,fromAddress="graciani@ecm.ub.es")
           if not result[ 'OK' ]:
             self.log.error( "Mail could not be sent" )
         except:
@@ -920,10 +920,10 @@ class PilotDirector:
           self.resourceBrokers.remove( rb )
           self.log.info( 'Removed RB from list', rb )
           mailadress = "lhcb-dirac@cern.ch"
-          subject    = "%s: error executing Job Submit"
+          subject    = "%s: error executing Job Submit" %rb
           msg        = ' '.join( cmd )
           msg        += '\nreturns: %s\n' % str(ret['Value'][0]) +  '\n'.join( ret['Value'][1:3] )
-          result = NotificationClient().sendMail(mailadress,subject,msg)
+          result = NotificationClient().sendMail(mailadress,subject,msg,fromAddress="graciani@ecm.ub.es")
           if not result[ 'OK' ]:
             self.log.error( "Mail could not be sent" )
         except:
