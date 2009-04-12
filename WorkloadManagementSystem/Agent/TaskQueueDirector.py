@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.36 2009/04/12 07:32:24 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.37 2009/04/12 07:35:50 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.36 2009/04/12 07:32:24 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.37 2009/04/12 07:35:50 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -438,6 +438,7 @@ ERROR_PROXY      = 'No proxy Available'
 ERROR_VOMS       = 'Proxy without VOMS Extensions'
 ERROR_CE         = 'No queue available for pilot'
 ERROR_TOKEN      = 'Invalid proxy token request'
+ERROR_RB         = 'No Broker available'
 
 LOGGING_SERVER   = 'lb101.cern.ch'
 
@@ -574,6 +575,9 @@ class PilotDirector:
       # Setup.
       pilotOptions.append( '-o /DIRAC/Setup=%s' % taskQueueDict['Setup'] )
 
+      if not self.resourceBrokers:
+        # Since we can exclude RBs from the list, it may become empty
+        return S_ERROR( ERROR_RB )
       # Write JDL
       retDict = self._prepareJDL( taskQueueDict, workingDirectory, pilotOptions, pilotsToSubmit,
                                   ceMask, submitPrivatePilot, privateTQ )
