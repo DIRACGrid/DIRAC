@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.38 2009/04/12 08:02:24 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.39 2009/04/12 08:11:19 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.38 2009/04/12 08:02:24 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.39 2009/04/12 08:11:19 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -445,9 +445,10 @@ LOGGING_SERVER   = 'lb101.cern.ch'
 class PilotDirector:
   def __init__( self, submitPool):
 
-    self.log = gLogger.getSubLogger('%sPilotDirector' % self.gridMiddleware)
-    if submitPool != self.gridMiddleware:
-      self.log = self.log.getSubLogger( submitPool )
+    if submitPool == self.gridMiddleware:
+      self.log = gLogger.getSubLogger('%sPilotDirector' % self.gridMiddleware)
+    else:
+      self.log = gLogger.getSubLogger( '%sPilotDirector/%s' % (self.gridMiddleware, submitPool ) )
 
     if not  'log' in self.__dict__:
       self.log = gLogger.getSubLogger('PilotDirector')
