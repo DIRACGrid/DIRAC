@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.37 2009/04/12 07:35:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.38 2009/04/12 08:02:24 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.37 2009/04/12 07:35:50 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.38 2009/04/12 08:02:24 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -337,7 +337,7 @@ class TaskQueueDirector(AgentModule):
 
     try:
       self.log.info( 'Instantiating Director Object:', directorName )
-      director = eval( '%s( )' %  ( directorName ) )
+      director = eval( '%s( "%s" )' %  ( directorName, submitPool ) )
     except Exception,x:
       self.log.exception( )
       return
@@ -443,8 +443,12 @@ ERROR_RB         = 'No Broker available'
 LOGGING_SERVER   = 'lb101.cern.ch'
 
 class PilotDirector:
-  def __init__(self):
+  def __init__( self, submitPool):
+
     self.log = gLogger.getSubLogger('%sPilotDirector' % self.gridMiddleware)
+    if submitPool != self.gridMiddleware:
+      self.log = self.log.getSubLogger( submitPool )
+
     if not  'log' in self.__dict__:
       self.log = gLogger.getSubLogger('PilotDirector')
     self.log.info('Initialized')
@@ -962,10 +966,10 @@ class PilotDirector:
     return filename
 
 class gLitePilotDirector(PilotDirector):
-  def __init__(self):
+  def __init__(self, submitPool):
     self.gridMiddleware = 'gLite'
-    self.resourceBrokers    = ['wms101.cern.ch']
-    PilotDirector.__init__(self)
+    self.resourceBrokers    = ['wms206.cern.ch']
+    PilotDirector.__init__(self, submitPool)
 
   def configure(self, csSection, submitPool):
     """
@@ -1100,10 +1104,10 @@ ParameterStart = 0;
 
 
 class LCGPilotDirector(PilotDirector):
-  def __init__(self):
+  def __init__(self, submitPool):
     self.gridMiddleware = 'LCG'
     self.resourceBrokers    = ['rb123.cern.ch']
-    PilotDirector.__init__(self)
+    PilotDirector.__init__(self, submitPool)
 
   def configure(self, csSection, submitPool):
     """
