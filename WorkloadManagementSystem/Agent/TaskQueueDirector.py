@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.35 2009/04/04 18:20:44 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.36 2009/04/12 07:32:24 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.35 2009/04/04 18:20:44 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.36 2009/04/12 07:32:24 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -94,6 +94,7 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB               import JobDB
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
+from DIRAC.FrameworkSystem.Client.NotificationClient       import NotificationClient
 from DIRAC.Core.Security.CS                                import getPropertiesForGroup
 
 from DIRAC.Core.Utilities.ThreadPool                       import ThreadPool
@@ -578,6 +579,7 @@ class PilotDirector:
                                   ceMask, submitPrivatePilot, privateTQ )
       jdl = retDict['JDL']
       pilotRequirements = retDict['Requirements']
+      rb  = retDict['RB']
       if not jdl:
         try:
           shutil.rmtree( workingDirectory )
@@ -617,7 +619,7 @@ class PilotDirector:
         availableCEs = []
         now = Time.dateTime()
         if not pilotRequirements in self.listMatch:
-          availableCEs = self._listMatch( proxy, jdl, taskQueueID )
+          availableCEs = self._listMatch( proxy, jdl, taskQueueID, rb )
           if availableCEs != False:
             self.listMatch[pilotRequirements] = {'LastListMatch': now}
             self.listMatch[pilotRequirements]['AvailableCEs'] = availableCEs
@@ -625,7 +627,7 @@ class PilotDirector:
           availableCEs = self.listMatch[pilotRequirements]['AvailableCEs']
           if not Time.timeInterval( self.listMatch[pilotRequirements]['LastListMatch'],
                                     self.listMatchDelay * Time.minute  ).includes( now ):
-            availableCEs = self._listMatch( proxy, jdl, taskQueueID )
+            availableCEs = self._listMatch( proxy, jdl, taskQueueID, rb )
             if availableCEs != False:
               self.listMatch[pilotRequirements] = {'LastListMatch': now}
               self.listMatch[pilotRequirements]['AvailableCEs'] = availableCEs
@@ -827,7 +829,7 @@ class PilotDirector:
 
     return ceMask
 
-  def parseListMatchStdout(self, proxy, cmd, taskQueueID ):
+  def parseListMatchStdout(self, proxy, cmd, taskQueueID, rb ):
     """
       Parse List Match stdout to return list of matched CE's
     """
@@ -837,10 +839,29 @@ class PilotDirector:
     ret = self._gridCommand( proxy, cmd )
 
     if not ret['OK']:
-      self.log.error( 'Failed to execute List Match', ret['Message'] )
+      self.log.error( 'Failed to execute List Match:', ret['Message'] )
+      if rb in self.resourceBrokers:
+        try:
+          self.resourceBrokers.remove( rb )
+          self.log.info( 'Removed RB from list', rb )
+        except:
+          pass
       return False
     if ret['Value'][0] != 0:
       self.log.error( 'Error executing List Match:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
+      if rb in self.resourceBrokers:
+        try:
+          self.resourceBrokers.remove( rb )
+          self.log.info( 'Removed RB from list', rb )
+          mailadress = "lhcb-dirac@cern.ch"
+          subject    = "%s: error executing List Match"
+          msg        = ' '.join( cmd )
+          msg        += '\nreturns: %s\n' % str(ret['Value'][0]) +  '\n'.join( ret['Value'][1:3] )
+          result = NotificationClient().sendMail(mailadress,subject,msg)
+          if not result[ 'OK' ]:
+            self.log.error( "Mail could not be sent" )
+        except:
+          pass
       return False
     self.log.info( 'List Match Execution Time: %.2f for TaskQueue %d' % ((time.time()-start),taskQueueID) )
 
@@ -875,10 +896,29 @@ class PilotDirector:
     ret = self._gridCommand( proxy, cmd )
 
     if not ret['OK']:
-      self.log.error( 'Failed to execute Job Submit', ret['Message'] )
+      self.log.error( 'Failed to execute Job Submit:', ret['Message'] )
+      if rb in self.resourceBrokers:
+        try:
+          self.resourceBrokers.remove( rb )
+          self.log.info( 'Removed RB from list', rb )
+        except:
+          pass
       return False
     if ret['Value'][0] != 0:
       self.log.error( 'Error executing Job Submit:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
+      if rb in self.resourceBrokers:
+        try:
+          self.resourceBrokers.remove( rb )
+          self.log.info( 'Removed RB from list', rb )
+          mailadress = "lhcb-dirac@cern.ch"
+          subject    = "%s: error executing Job Submit"
+          msg        = ' '.join( cmd )
+          msg        += '\nreturns: %s\n' % str(ret['Value'][0]) +  '\n'.join( ret['Value'][1:3] )
+          result = NotificationClient().sendMail(mailadress,subject,msg)
+          if not result[ 'OK' ]:
+            self.log.error( "Mail could not be sent" )
+        except:
+          pass
       return False
     self.log.info( 'Job Submit Execution Time: %.2f for TaskQueue %d' % ((time.time()-start),taskQueueID) )
 
@@ -936,9 +976,9 @@ class gLitePilotDirector(PilotDirector):
       Write JDL for Pilot Submission
     """
     RBs = []
-    for RB in self.resourceBrokers:
-      RBs.append( '"https://%s:7443/glite_wms_wmproxy_server"' % RB )
-    RBs = List.randomize( RBs )
+    # Select Randomly one RB from the list
+    RB = List.randomize( self.resourceBrokers )[0]
+    RBs.append( '"https://%s:7443/glite_wms_wmproxy_server"' % RB )
 
     LBs = []
     for LB in self.loggingServers:
@@ -994,15 +1034,15 @@ ParameterStart = 0;
     jdl = os.path.join( workingDirectory, '%s.jdl' % taskQueueDict['TaskQueueID'] )
     jdl = self._writeJDL( jdl, [pilotJDL, wmsClientJDL] )
 
-    return {'JDL':jdl, 'Requirements':pilotRequirements, 'Pilots':nPilots }
+    return {'JDL':jdl, 'Requirements':pilotRequirements + " && " + extraReq, 'Pilots':nPilots, 'RB':RB }
 
-  def _listMatch(self, proxy, jdl, taskQueueID):
+  def _listMatch(self, proxy, jdl, taskQueueID, rb):
     """
      Check the number of available queues for the pilots to prevent submission
      if there are no matching resources.
     """
     cmd = [ 'glite-wms-job-list-match', '-a', '-c', '%s' % jdl, '%s' % jdl ]
-    return self.parseListMatchStdout( proxy, cmd, taskQueueID )
+    return self.parseListMatchStdout( proxy, cmd, taskQueueID, rb )
 
   def _submitPilot(self, proxy, pilotsToSubmit, jdl, taskQueueID):
     """
@@ -1078,9 +1118,10 @@ class LCGPilotDirector(PilotDirector):
     LDs = []
     NSs = []
     LBs = []
-    for RB in self.resourceBrokers:
-      LDs.append( '"%s:9002"' % RB )
-      LBs.append( '"%s:9000"' % RB )
+    # Select Randomly one RB from the list
+    RB = List.randomize( self.resourceBrokers )[0]
+    LDs.append( '"%s:9002"' % RB )
+    LBs.append( '"%s:9000"' % RB )
 
     for LB in self.loggingServers:
       NSs.append( '"%s:7772"' % LB )
@@ -1124,15 +1165,15 @@ MyProxyServer = "no-myproxy.cern.ch";
     jdl = os.path.join( workingDirectory, '%s.jdl' % taskQueueDict['TaskQueueID'] )
     jdl = self._writeJDL( jdl, [pilotJDL, rbJDL] )
 
-    return {'JDL':jdl, 'Requirements':pilotRequirements, 'Pilots': pilotsToSubmit }
+    return {'JDL':jdl, 'Requirements':pilotRequirements + " && " + extraReq, 'Pilots': pilotsToSubmit, 'RB':RB }
 
-  def _listMatch(self, proxy, jdl, taskQueueID):
+  def _listMatch(self, proxy, jdl, taskQueueID, rb):
     """
      Check the number of available queues for the pilots to prevent submission
      if there are no matching resources.
     """
     cmd = ['edg-job-list-match','-c','%s' % jdl , '--config-vo', '%s' % jdl, '%s' % jdl]
-    return self.parseListMatchStdout( proxy, cmd, taskQueueID )
+    return self.parseListMatchStdout( proxy, cmd, taskQueueID, rb )
 
   def _submitPilot(self, proxy, pilotsToSubmit, jdl, taskQueueID ):
     """
