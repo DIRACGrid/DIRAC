@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.79 2009/03/13 23:12:09 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.80 2009/04/14 10:50:35 rgracian Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.79 2009/03/13 23:12:09 atsareg Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.80 2009/04/14 10:50:35 rgracian Exp $"
 
 import time
 import types
@@ -578,7 +578,7 @@ class TaskQueueDB(DB):
     tqSqlCmd = "SELECT `tq_TaskQueues`.TQId, `tq_TaskQueues`.OwnerDN, `tq_TaskQueues`.OwnerGroup FROM %s WHERE %s" % ( ", ".join( sqlTables ),
                                                                                                                       " AND ".join( sqlCondList ) )
     #Apply priorities
-    tqSqlCmd = "%s ORDER BY `tq_TaskQueues`.CPUTime DESC, RAND() / `tq_TaskQueues`.Priority ASC" % tqSqlCmd
+    tqSqlCmd = "%s ORDER BY RAND() / `tq_TaskQueues`.Priority ASC" % tqSqlCmd
     #Do we want a limit?
     if numQueuesToGet:
       tqSqlCmd = "%s LIMIT %s" % ( tqSqlCmd, numQueuesToGet )
