@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.64 2009/03/20 08:37:20 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.65 2009/04/14 11:14:38 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.64 2009/03/20 08:37:20 paterson Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.65 2009/04/14 11:14:38 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -24,6 +24,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.Core.Security.Misc                            import getProxyInfo
 from DIRAC.Core.Security                                 import Locations
 from DIRAC.Core.Security                                 import Properties
+from DIRAC.WorkloadManagementSystem.Client.JobReport     import JobReport
 
 import os, sys, re, string, time
 
@@ -189,25 +190,20 @@ class JobAgent(Agent):
       ret = getProxyInfo( disableVOMS = True )
       if not ret['OK']:
         self.log.error( 'Invalid Proxy', ret['Message'] )
-        return self.__finish('Invalid Proxy')
+        return self.__rescheduleFailedJob( jobID ,'Invalid Proxy' )
+
       proxyChain = ret['Value']['chain']
       if not 'groupProperties' in ret['Value']:
         print ret['Value']
         print proxyChain.dumpAllToString()
         self.log.error( 'Invalid Proxy', 'Group has no properties defined')
-        return self.__finish('Invalid Proxy')
+        return self.__rescheduleFailedJob( jobID , 'Proxy has no group properties defined')
+
       if Properties.GENERIC_PILOT in ret['Value']['groupProperties']:
         proxyResult = self.__setupProxy(jobID,ownerDN,jobGroup,self.siteRoot)
         if not proxyResult['OK']:
-          self.log.warn('Problem while setting up proxy for job %s' %(jobID))
-          self.__report(jobID,'Failed','Invalid Proxy')
-          result = jobManager.rescheduleJob(jobID)
-          if not result['OK']:
-            self.log.warn(result['Message'])
-            return self.__finish('Problem Rescheduling Job')
-          else:
-            self.log.info('Rescheduled job after Invalid Proxy %s' %(jobID))
-            return self.__finish('Job Rescheduled')
+          self.log.error( 'Invalid Proxy', proxyResult['Message'] )
+          return self.__rescheduleFailedJob( jobID , 'Fail to setup proxy' )
         else:
           proxyChain = proxyResult['Value']
 
@@ -223,14 +219,9 @@ class JobAgent(Agent):
       if not software['OK']:
         self.log.error('Failed to install software for job %s' %(jobID))
         self.log.error(software['Message'])
-        result = jobManager.rescheduleJob(jobID)
-        if not result['OK']:
-          self.log.warn(result['Message'])
-          return self.__finish('Problem Rescheduling Job')
-        else:
-          self.log.info('Rescheduled job after software installation failure %s' %(jobID))
-          return self.__finish('Job Rescheduled')
 
+        return self.__rescheduleFailedJob( jobID, software['Message'] )
+        
       self.log.verbose('Before %sCE submitJob()' %(self.ceName))
       submission = self.__submitJob(jobID,params,resourceParams,optimizerParams,jobJDL,proxyChain)
       if not submission['OK']:
@@ -241,13 +232,7 @@ class JobAgent(Agent):
       self.log.verbose('After %sCE submitJob()' %(self.ceName))
     except Exception, x:
       self.log.exception()
-      result = jobManager.rescheduleJob(jobID)
-      if not result['OK']:
-        self.log.warn(result['Message'])
-      else:
-        self.log.info('Rescheduled job %s' %(jobID))
-
-      return self.__finish('Job processing failed with exception')
+      return self.__rescheduleFailedJob( jobID , 'Job processing failed with exception' )
 
     return S_OK('Job Agent cycle complete')
 
@@ -581,6 +566,32 @@ class JobAgent(Agent):
     fd.close()
     return S_OK(message)
 
+  #############################################################################
+  def __rescheduleFailedJob(jobID,message):
+
+    self.log.warn('Failure during %s' %(message))
+
+    jobManager  = RPCClient('WorkloadManagement/JobManager')
+    jobReport = JobReport(int(jobID),'JobAgent')
+
+    #Setting a job parameter does not help since the job will be rescheduled,
+    #instead set the status with the cause and then another status showing the
+    #reschedule operation.
+
+    jobReport.setJobStatus(  'Failed', message, sendFlag = False )
+    jobReport.setApplicationStatus( 'Failed %s ' % message, sendFlag = False )
+    jobReport.setJobStatus( minor = 'ReschedulingJob', sendFlag = True )
+
+    self.log.info('Job will be rescheduled')
+    result = jobManager.rescheduleJob( jobID)
+    if not result['OK']:
+      self.log.error(result['Message'])
+      return self.__finish('Problem Rescheduling Job')
+    else:
+      self.log.info('Job Rescheduled %s' %(jobID))
+      return self.__finish('Job Rescheduled')
+
+    return
   #############################################################################
   def finalize(self):
     """Force the JobAgent to complete gracefully.
