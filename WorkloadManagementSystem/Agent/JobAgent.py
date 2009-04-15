@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.65 2009/04/14 11:14:38 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.66 2009/04/15 06:56:07 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.65 2009/04/14 11:14:38 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.66 2009/04/15 06:56:07 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -567,7 +567,7 @@ class JobAgent(Agent):
     return S_OK(message)
 
   #############################################################################
-  def __rescheduleFailedJob(jobID,message):
+  def __rescheduleFailedJob( self, jobID, message):
 
     self.log.warn('Failure during %s' %(message))
 
