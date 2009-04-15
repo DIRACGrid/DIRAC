@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.66 2009/04/15 06:56:07 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.67 2009/04/15 07:52:32 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.66 2009/04/15 06:56:07 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.67 2009/04/15 07:52:32 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -218,9 +218,10 @@ class JobAgent(Agent):
       software = self.__checkInstallSoftware(jobID,params,resourceParams)
       if not software['OK']:
         self.log.error('Failed to install software for job %s' %(jobID))
-        self.log.error(software['Message'])
-
-        return self.__rescheduleFailedJob( jobID, software['Message'] )
+        errorMsg = software['Message']
+        if not errorMsg:
+          errorMsg = 'Failed software installation'
+        return self.__rescheduleFailedJob( jobID, errorMsg )
         
       self.log.verbose('Before %sCE submitJob()' %(self.ceName))
       submission = self.__submitJob(jobID,params,resourceParams,optimizerParams,jobJDL,proxyChain)
