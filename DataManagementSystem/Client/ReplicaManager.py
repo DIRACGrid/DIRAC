@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.61 2009/04/06 11:41:52 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.62 2009/04/15 13:31:59 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -573,11 +573,16 @@ class ReplicaManager:
             replicaTuple = (lfn,res['Value'],storageElementName,False)
             replicaTuples.append(replicaTuple)
     gLogger.verbose("ReplicaManager.__registerReplica: Successfully resolved %s replicas for registration." % len(replicaTuples))
+    #HACK!
+    replicaDict = {}
+    for lfn,pfn,se,master in replicaTuples:
+      replicaDict[lfn] = {'SE':se,'PFN':pfn}
+
     if catalog:
       fileCatalog = FileCatalog(catalog)
-      res = fileCatalog.addReplica(replicaTuples)
+      res = fileCatalog.addReplica(replicaDict)
     else:
-      res = self.fileCatalogue.addReplica(replicaTuples)
+      res = self.fileCatalogue.addReplica(replicaDict)
     if not res['OK']:
       errStr = "ReplicaManager.__registerReplica: Completely failed to register replicas."
       gLogger.error(errStr,res['Message'])
@@ -834,7 +839,11 @@ class ReplicaManager:
     oDataOperation = self.__initialiseAccountingObject('removeCatalogReplica','',len(replicaTuple))
     oDataOperation.setStartTime()
     start= time.time()
-    res = self.fileCatalogue.removeReplica(replicaTuple)
+    #HACK!
+    replicaDict = {}
+    for lfn,pfn,se in replicaTuple:
+      replicaDict[lfn] = {'SE':se,'PFN':pfn}
+    res = self.fileCatalogue.removeReplica(replicaDict)
     oDataOperation.setEndTime()
     oDataOperation.setValueByKey('RegistrationTime',time.time()-start)
     if not res['OK']:
@@ -988,7 +997,7 @@ class ReplicaManager:
       gLogger.error(errStr,"%s: %s" % (file,res['Message']))
     else:
       gLogger.info("ReplicaManager.put: Put file to storage in %s seconds." % putTime)
-      successful[lfn] = putTime
+      successful[lfn] = destPfn
     resDict = {'Successful': successful,'Failed':failed}
     return S_OK(resDict)
 
