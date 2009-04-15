@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.79 2009/03/30 15:09:53 paterson Exp $
+# $Id: JobWrapper.py,v 1.80 2009/04/15 06:58:53 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.79 2009/03/30 15:09:53 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.80 2009/04/15 06:58:53 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -695,7 +695,8 @@ class JobWrapper:
     if not type(outputSE)==type([]):
       outputSE=[outputSE]
 
-    if outputData:
+    if outputData and not self.failedFlag:
+      #Do not upload outputdata if the job has failed.
       result = self.__transferOutputDataFiles(owner,outputData,outputSE)
       if not result['OK']:
         return result
