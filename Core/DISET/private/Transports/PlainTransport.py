@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/PlainTransport.py,v 1.14 2009/03/30 14:55:53 acasajus Exp $
-__RCSID__ = "$Id: PlainTransport.py,v 1.14 2009/03/30 14:55:53 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/PlainTransport.py,v 1.15 2009/04/15 15:13:53 acasajus Exp $
+__RCSID__ = "$Id: PlainTransport.py,v 1.15 2009/04/15 15:13:53 acasajus Exp $"
 
 import socket
 import select
@@ -27,8 +27,6 @@ class PlainTransport( BaseTransport ):
       errno = self.oSocket.getsockopt( socket.SOL_SOCKET, socket.SO_ERROR )
       if errno != 0:
         return S_ERROR( "Can't connect: %s" % str( ( errno, os.strerror( errno ) ) ) )
-    else:
-      self.oSocket.connect( self.stServerAddress )
     self.remoteAddress = self.oSocket.getpeername()
     return S_OK( self.oSocket )
 
