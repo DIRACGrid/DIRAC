@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-proxy-init.py,v 1.5 2009/01/12 15:44:15 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-proxy-init.py,v 1.6 2009/04/16 15:39:58 rgracian Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-proxy-init.py,v 1.5 2009/01/12 15:44:15 acasajus Exp $"
-__VERSION__ = "$Revision: 1.5 $"
+__RCSID__   = "$Id: dirac-proxy-init.py,v 1.6 2009/04/16 15:39:58 rgracian Exp $"
+__VERSION__ = "$Revision: 1.6 $"
 
 import sys
+from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyGeneration import CLIParams, generateProxy
 
