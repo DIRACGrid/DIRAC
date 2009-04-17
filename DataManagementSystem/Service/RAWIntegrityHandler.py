@@ -1,4 +1,4 @@
-""" Simple DISET interface to the RAW Integrity DB to allow remote registration of files.
+""" Simple DISET interface to the RAW Integrity DB to allow access to the RAWIntegrityDB
 """
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -26,3 +26,4 @@ class RAWIntegrityHandler(RequestHandler):
       errStr = "RAWIntegrityHandler.addFile: Exception while adding file to database."
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
+
