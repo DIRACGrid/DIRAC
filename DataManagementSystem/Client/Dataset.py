@@ -38,13 +38,6 @@ class Dataset:
         return res
     return S_OK(self.lfns)
 
-  def getReplicas(self):
-    if not self.replicas:
-      res = self.__retriveDataset()
-      if not res['OK']:
-        return res
-    return S_OK(self.replicas)
-
   def setHandle(self,handle):
     self.handle = handle
 
@@ -52,6 +45,13 @@ class Dataset:
     if not self.handle:
       return S_ERROR("No handle defined")
     return S_OK(self.handle)
+
+  def getReplicas(self):
+    if not self.replicas:
+      res = self.__retriveDataset()
+      if not res['OK']:
+        return res
+    return S_OK(self.replicas)
 
   def createDataset(self):
     if not self.handle:
