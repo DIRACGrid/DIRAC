@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.27 2009/04/02 13:35:48 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingDB.py,v 1.27 2009/04/02 13:35:48 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.28 2009/04/18 18:27:00 rgracian Exp $
+__RCSID__ = "$Id: SystemLoggingDB.py,v 1.28 2009/04/18 18:27:00 rgracian Exp $"
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -193,8 +193,8 @@ class SystemLoggingDB(DB):
           sortingFields.append( ' '.join(field) )
         else:
           sortingFields.append( field ) 
-    	ordering='ORDER BY %s' %  ', '.join( sortingFields )
-    	
+      ordering='ORDER BY %s' %  ', '.join( sortingFields )
+    
     cmd = 'SELECT %s FROM %s %s %s %s' % ( ','.join(showFieldList ),
                                     tableList, condition, grouping, ordering )
 
@@ -217,7 +217,7 @@ class SystemLoggingDB(DB):
         indexInteger = inFields.index( description[0] )
         valueLength = len( inValues[ indexInteger ] )
         fieldLength = int( re.search( r'varchar\((\d*)\)', 
-        	                          description[1] ).groups()[0] )
+                           description[1] ).groups()[0] )
         if fieldLength < valueLength:
           inValues[ indexInteger ] = inValues[ indexInteger ][ :fieldLength ]
 

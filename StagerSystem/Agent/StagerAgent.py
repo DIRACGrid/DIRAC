@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerAgent.py,v 1.5 2008/07/14 16:19:25 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerAgent.py,v 1.6 2009/04/18 18:26:57 rgracian Exp $
 # File :   StagerAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
      also manages the proxy environment for the SiteStager instances.
 """
 
-__RCSID__ = "$Id: StagerAgent.py,v 1.5 2008/07/14 16:19:25 acasajus Exp $"
+__RCSID__ = "$Id: StagerAgent.py,v 1.6 2009/04/18 18:26:57 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -90,4 +90,4 @@ class StagerAgent(Agent):
 
     return S_OK()
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

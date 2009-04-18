@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPolicyAgent.py,v 1.5 2008/12/01 16:02:33 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPolicyAgent.py,v 1.6 2009/04/18 18:26:57 rgracian Exp $
 # File :   JobPolicyAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
 
 """
 
-__RCSID__ = "$Id: JobPolicyAgent.py,v 1.5 2008/12/01 16:02:33 acasajus Exp $"
+__RCSID__ = "$Id: JobPolicyAgent.py,v 1.6 2009/04/18 18:26:57 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
@@ -27,4 +27,4 @@ class JobPolicyAgent(OptimizerModule):
     self.log.info("Checking JDL for job: %s" %(job))
     return self.setNextOptimizer(job)
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

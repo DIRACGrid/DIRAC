@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TorqueComputingElement.py,v 1.6 2009/03/24 16:56:13 szczypka Exp $
+# $Id: TorqueComputingElement.py,v 1.7 2009/04/18 18:26:57 rgracian Exp $
 # File :   TorqueComputingElement.py
 # Author : Stuart Paterson, Paul Szczypka
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: TorqueComputingElement.py,v 1.6 2009/03/24 16:56:13 szczypka Exp $"
+__RCSID__ = "$Id: TorqueComputingElement.py,v 1.7 2009/04/18 18:26:57 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -109,4 +109,4 @@ class TorqueComputingElement(ComputingElement):
     result['WaitingJobs'] = 0
     return S_OK(result)
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

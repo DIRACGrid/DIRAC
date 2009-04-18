@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationHandler.py,v 1.1 2009/01/21 11:27:59 rgracian Exp $
+# $Id: NotificationHandler.py,v 1.2 2009/04/18 18:27:00 rgracian Exp $
 ########################################################################
 
 """ The Notification service provides a toolkit to contact people via email
@@ -14,7 +14,7 @@
     Grid, an email could be sent by default with the metadata of the file.
 """
 
-__RCSID__ = "$Id: NotificationHandler.py,v 1.1 2009/01/21 11:27:59 rgracian Exp $"
+__RCSID__ = "$Id: NotificationHandler.py,v 1.2 2009/04/18 18:27:00 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -81,4 +81,4 @@ class NotificationHandler( RequestHandler ):
 
     return result
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

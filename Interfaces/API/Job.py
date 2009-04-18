@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.57 2009/04/04 16:50:17 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.58 2009/04/18 18:26:58 rgracian Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.57 2009/04/04 16:50:17 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.58 2009/04/18 18:26:58 rgracian Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -959,4 +959,4 @@ class Job:
     self._addParameter(self.workflow,name,'JDL',value,'Optional JDL parameter added')
     return self.workflow.setValue(name,value)
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

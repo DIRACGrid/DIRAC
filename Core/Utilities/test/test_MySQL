@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/test/test_MySQL,v 1.4 2007/06/28 13:43:06 rgracian Exp $
-__RCSID__ = "$Id: test_MySQL,v 1.4 2007/06/28 13:43:06 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/test/test_MySQL,v 1.5 2009/04/18 18:26:59 rgracian Exp $
+__RCSID__ = "$Id: test_MySQL,v 1.5 2009/04/18 18:26:59 rgracian Exp $"
 """
 """
 from DIRACEnvironment import DIRAC
@@ -70,7 +70,7 @@ testTable = { 'Id':         'INT NOT NULL AUTO_INCREMENT',
               'Name':       'VARCHAR(128)',
               'MajorState': testMajorStatusTable, 
               'MinorState': testMajorStatusTable, 
-							'Site':       'VARCHAR(128)',
+              'Site':       'VARCHAR(128)',
               }
 
 testTableIndexDict = { 'Site': ['`Site`']}
@@ -114,9 +114,9 @@ def testMultiThreading( tries ):
   DIRAC.gLogger.info( 'Testing MySQL MultiThreading' )
   DIRAC.gLogger.info( 'First adding 10 K records' )
   if not DB.checktable()['OK']: 
-  	return DIRAC.S_ERROR()
+    return DIRAC.S_ERROR()
   if not DB.filltable( 10000 )['OK']: 
-  	return DIRAC.S_ERROR()
+    return DIRAC.S_ERROR()
 
   i = 0
   # overthread = 0
@@ -217,7 +217,7 @@ testlist = [{ 'method'    : DB._connect,
 #              'arguments' : ( ),
 #              'output'    : {'OK': True, 'Value': ''}
 #            },
-					 ]
+           ]
 
 testdict = { 'DIRAC.MySQL': testlist }
 

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/PilotAgent.py,v 1.2 2008/01/16 15:41:36 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/PilotAgent.py,v 1.3 2009/04/18 18:26:57 rgracian Exp $
 # File :   PilotAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      of the PilotDirector instances.
 """
 
-__RCSID__ = "$Id: PilotAgent.py,v 1.2 2008/01/16 15:41:36 paterson Exp $"
+__RCSID__ = "$Id: PilotAgent.py,v 1.3 2009/04/18 18:26:57 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                                      import Agent
 from DIRAC.Core.Utilities                                       import List
@@ -88,4 +88,4 @@ class PilotAgent(Agent):
 
     return S_OK()
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

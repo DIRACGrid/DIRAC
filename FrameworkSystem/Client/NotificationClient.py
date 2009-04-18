@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationClient.py,v 1.1 2009/01/21 11:28:00 rgracian Exp $
+# $Id: NotificationClient.py,v 1.2 2009/04/18 18:26:59 rgracian Exp $
 ########################################################################
 
 """ DIRAC Notification Client class encapsulates the methods exposed
@@ -70,4 +70,4 @@ class NotificationClient:
 
     return result
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: BQSTimeLeft.py,v 1.1 2008/03/13 16:25:58 paterson Exp $
+# $Id: BQSTimeLeft.py,v 1.2 2009/04/18 18:26:59 rgracian Exp $
 ########################################################################
 
 """ The BQS TimeLeft utility interrogates the BQS batch system for the
@@ -9,7 +9,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-__RCSID__ = "$Id: BQSTimeLeft.py,v 1.1 2008/03/13 16:25:58 paterson Exp $"
+__RCSID__ = "$Id: BQSTimeLeft.py,v 1.2 2009/04/18 18:26:59 rgracian Exp $"
 
 import os, string, re, time
 
@@ -83,4 +83,4 @@ class BQSTimeLeft:
     else:
       return S_OK(stdout)
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

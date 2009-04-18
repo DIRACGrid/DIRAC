@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.8 2008/11/22 14:39:28 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.9 2009/04/18 18:26:57 rgracian Exp $
 # File :   SiteStager.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resetting of stage requests as necessary.
 """
 
-__RCSID__ = "$Id: SiteStager.py,v 1.8 2008/11/22 14:39:28 acsmith Exp $"
+__RCSID__ = "$Id: SiteStager.py,v 1.9 2009/04/18 18:26:57 rgracian Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
@@ -172,4 +172,4 @@ class SiteStager(Thread):
 
     return S_OK('Stage requests reset')
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

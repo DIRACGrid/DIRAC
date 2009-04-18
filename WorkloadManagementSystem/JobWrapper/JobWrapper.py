@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.80 2009/04/15 06:58:53 rgracian Exp $
+# $Id: JobWrapper.py,v 1.81 2009/04/18 18:26:58 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.80 2009/04/15 06:58:53 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.81 2009/04/18 18:26:58 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -1202,4 +1202,4 @@ class ExecutionThread(threading.Thread):
 
     return result
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

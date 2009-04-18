@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/dirac-fix-ld-library-path.py,v 1.1 2008/10/17 13:08:16 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/dirac-fix-ld-library-path.py,v 1.2 2009/04/18 18:26:58 rgracian Exp $
 # File :   dirac-fix-ld-lib
 # Author : Joel Closier
 ########################################################################
-__RCSID__   = "$Id: dirac-fix-ld-library-path.py,v 1.1 2008/10/17 13:08:16 rgracian Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-fix-ld-library-path.py,v 1.2 2009/04/18 18:26:58 rgracian Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 
 """  This is a script to fix oversized LD_LIBRARY_PATH variables.
 """
@@ -71,20 +71,20 @@ def fixLDPath( root, ldpath, directory):
           print '**************************'
 
       if not output['Value'][0]:
-	      ldlibs = output['Value'][1].split('\n')
-	      for lib in ldlibs:
-	        if os.path.exists(lib):
-	          filename = os.path.basename(lib)
-	          output = shellCall(0,'ln -s '+str(lib)+' '+str(filename))
-	          #N.B. for Windows this should be a copy...
-	          if DEBUG:
-	            if not output:
-	              print '********************************'
-	              print 'Warning, problem creating link:'
-	              print 'File: ',filename
-	              print 'Path: ',lib
-	              print output
-	              print '********************************'
+        ldlibs = output['Value'][1].split('\n')
+        for lib in ldlibs:
+          if os.path.exists(lib):
+            filename = os.path.basename(lib)
+            output = shellCall(0,'ln -s '+str(lib)+' '+str(filename))
+            #N.B. for Windows this should be a copy...
+            if DEBUG:
+              if not output:
+                print '********************************'
+                print 'Warning, problem creating link:'
+                print 'File: ',filename
+                print 'Path: ',lib
+                print output
+                print '********************************'
 
       if DEBUG:
         print 'Searching for rootmap file in:'
@@ -107,20 +107,20 @@ def fixLDPath( root, ldpath, directory):
           print '**************************'
 
       if not output['Value'][0]:
-	      ldlibs = output['Value'][1].split('\n')
-	      for lib in ldlibs:
-	        if os.path.exists(lib):
-	          if re.search('RELAX',lib) is not None:
-	            filename = os.path.basename(lib)
-	            output = shellCall(0,'ln -s '+str(lib)+' '+str(filename))
-	            if DEBUG:
-	              if not output:
-	                print '********************************'
-	                print 'Warning, problem creating link:'
-	                print 'File: ',filename
-	                print 'Path: ',lib
-	                print output
-	                print '********************************'
+        ldlibs = output['Value'][1].split('\n')
+        for lib in ldlibs:
+          if os.path.exists(lib):
+            if re.search('RELAX',lib) is not None:
+              filename = os.path.basename(lib)
+              output = shellCall(0,'ln -s '+str(lib)+' '+str(filename))
+              if DEBUG:
+                if not output:
+                  print '********************************'
+                  print 'Warning, problem creating link:'
+                  print 'File: ',filename
+                  print 'Path: ',lib
+                  print output
+                  print '********************************'
 
   os.chdir(start)
   sys.stdout.flush()
@@ -130,6 +130,6 @@ Script.parseCommandLine()
 
 positionalArgs = Script.getPositionalArgs()
 if len( positionalArgs ) != 3:
-	DIRAC.abort( 1, "Must specify which is the role you want" )
+  DIRAC.abort( 1, "Must specify which is the role you want" )
 
 fixLDPath(*positionalArgs)

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ModuleFactory.py,v 1.2 2007/12/17 16:29:43 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ModuleFactory.py,v 1.3 2009/04/18 18:26:57 rgracian Exp $
 # File :   ModuleFactory.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,7 +11,7 @@
 
 from DIRAC                                               import S_OK, S_ERROR, gLogger
 
-__RCSID__ = "$Id: ModuleFactory.py,v 1.2 2007/12/17 16:29:43 paterson Exp $"
+__RCSID__ = "$Id: ModuleFactory.py,v 1.3 2009/04/18 18:26:57 rgracian Exp $"
 
 import re,sys,types,string
 
@@ -49,4 +49,4 @@ class ModuleFactory:
 
     return S_OK(moduleInstance)
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

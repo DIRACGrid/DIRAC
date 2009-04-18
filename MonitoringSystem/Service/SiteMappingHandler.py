@@ -1,11 +1,11 @@
 ########################################################################
-# $Id: SiteMappingHandler.py,v 1.10 2008/08/15 08:11:57 asypniew Exp $
+# $Id: SiteMappingHandler.py,v 1.11 2009/04/18 18:26:59 rgracian Exp $
 ########################################################################
 
 """ The SiteMappingHandler...
 """
 
-__RCSID__ = "$Id: SiteMappingHandler.py,v 1.10 2008/08/15 08:11:57 asypniew Exp $"
+__RCSID__ = "$Id: SiteMappingHandler.py,v 1.11 2009/04/18 18:26:59 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -78,4 +78,4 @@ class SiteMappingHandler( RequestHandler ):
     baseName = fileParts[len(fileParts) - 1]
     return baseName
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

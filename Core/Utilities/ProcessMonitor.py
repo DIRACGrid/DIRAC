@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: ProcessMonitor.py,v 1.1 2008/02/29 09:03:06 paterson Exp $
+# $Id: ProcessMonitor.py,v 1.2 2009/04/18 18:26:57 rgracian Exp $
 # File :   ProcessMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,7 +12,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-__RCSID__ = "$Id: ProcessMonitor.py,v 1.1 2008/02/29 09:03:06 paterson Exp $"
+__RCSID__ = "$Id: ProcessMonitor.py,v 1.2 2009/04/18 18:26:57 rgracian Exp $"
 
 import os, string, re, sys, time, platform
 
@@ -155,4 +155,4 @@ class ProcessMonitor:
       self.log.debug('Will determine CPU consumed for %s flavour OS' %(localOS))
     return localOS
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

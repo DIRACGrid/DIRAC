@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.18 2009/03/18 21:38:58 rgracian Exp $
+# $Id: glexecComputingElement.py,v 1.19 2009/04/18 18:26:57 rgracian Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.18 2009/03/18 21:38:58 rgracian Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.19 2009/04/18 18:26:57 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -323,4 +323,4 @@ class glexecComputingElement(ComputingElement):
 
     return S_OK('Proxy checked')
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

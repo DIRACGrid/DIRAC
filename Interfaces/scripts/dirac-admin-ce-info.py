@@ -1,11 +1,11 @@
 #! /usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-admin-ce-info.py,v 1.1 2008/10/16 09:21:27 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-admin-ce-info.py,v 1.2 2009/04/18 18:26:59 rgracian Exp $
 # File :   dirac-admin-site-info
 # Author : Vladimir Romanovsky
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-ce-info.py,v 1.1 2008/10/16 09:21:27 paterson Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-admin-ce-info.py,v 1.2 2009/04/18 18:26:59 rgracian Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
@@ -38,5 +38,5 @@ for site in sites:
     for ce in args:
       if ce in ces:
         print '%s: %s'%(ce,site)
-	
+
 DIRAC.exit(exitCode)

@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TimeLeft.py,v 1.10 2009/04/18 16:01:23 rgracian Exp $
+# $Id: TimeLeft.py,v 1.11 2009/04/18 18:26:59 rgracian Exp $
 ########################################################################
 
 """ The TimeLeft utility allows to calculate the amount of CPU time
@@ -16,7 +16,7 @@
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
-__RCSID__ = "$Id: TimeLeft.py,v 1.10 2009/04/18 16:01:23 rgracian Exp $"
+__RCSID__ = "$Id: TimeLeft.py,v 1.11 2009/04/18 18:26:59 rgracian Exp $"
 
 import os,re
 
@@ -147,4 +147,4 @@ class TimeLeft:
       self.log.warn('Batch system type for site %s is not currently supported' %self.site)
       return S_ERROR('Currrent batch system is not supported')
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

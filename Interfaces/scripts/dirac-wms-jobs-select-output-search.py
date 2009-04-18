@@ -1,11 +1,11 @@
 #! /usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-wms-jobs-select-output-search.py,v 1.2 2008/10/17 13:14:54 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-wms-jobs-select-output-search.py,v 1.3 2009/04/18 18:26:59 rgracian Exp $
 # File :   dirac-wms-jobs-select-output-search
 # Author : Vladimir Romanovsky
 ########################################################################
-__RCSID__   = "$Id: dirac-wms-jobs-select-output-search.py,v 1.2 2008/10/17 13:14:54 rgracian Exp $"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__   = "$Id: dirac-wms-jobs-select-output-search.py,v 1.3 2009/04/18 18:26:59 rgracian Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 import os, sys, popen2
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
@@ -91,8 +91,8 @@ for job in jobs:
       except Exception,x:
         errorList.append( (job, x) )
       for line in lines:
-	if line.count(searchstring):
-	  resultDict[job]= line
+        if line.count(searchstring):
+          resultDict[job]= line
     rmtree("%s" %(job))
   else:
     errorList.append( (job, result['Message']) )

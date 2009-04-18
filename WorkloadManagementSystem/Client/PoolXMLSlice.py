@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: PoolXMLSlice.py,v 1.1 2008/01/31 14:46:53 paterson Exp $
+# $Id: PoolXMLSlice.py,v 1.2 2009/04/18 18:26:56 rgracian Exp $
 # File :   PoolXMLSlice.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
     value pairs.
 """
 
-__RCSID__ = "$Id: PoolXMLSlice.py,v 1.1 2008/01/31 14:46:53 paterson Exp $"
+__RCSID__ = "$Id: PoolXMLSlice.py,v 1.2 2009/04/18 18:26:56 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
@@ -66,4 +66,4 @@ class PoolXMLSlice:
 
     return S_OK('POOL XML Slice created')
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.31 2009/02/02 15:28:21 acasajus Exp $
-__RCSID__ = "$Id: Logger.py,v 1.31 2009/02/02 15:28:21 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.32 2009/04/18 18:27:00 rgracian Exp $
+__RCSID__ = "$Id: Logger.py,v 1.32 2009/04/18 18:27:00 rgracian Exp $"
 """
    DIRAC Logger client
 """
@@ -286,7 +286,7 @@ class Logger:
     """ This function returns the stack as a string to be printed via
      a debug message, the upper 3 levels are skipped since they correspond
      to gLogger.showStack,  self.__getStackString, traceback.print_stack
-	"""
+    """
     stack_list = traceback.extract_stack()
     return ''.join( traceback.format_list( stack_list[:-2] ))
 

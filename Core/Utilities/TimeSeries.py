@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/TimeSeries.py,v 1.3 2008/08/05 14:50:40 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/TimeSeries.py,v 1.4 2009/04/18 18:26:57 rgracian Exp $
 
 """ Class responsible for handling time-series data and calculating trends.
 
 """
 
-__RCSID__ = "$Id: TimeSeries.py,v 1.3 2008/08/05 14:50:40 atsareg Exp $"
+__RCSID__ = "$Id: TimeSeries.py,v 1.4 2009/04/18 18:26:57 rgracian Exp $"
 
 import datetime
 
@@ -247,4 +247,4 @@ class TimeSeries:
   def clear(self):
     self.data = []
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

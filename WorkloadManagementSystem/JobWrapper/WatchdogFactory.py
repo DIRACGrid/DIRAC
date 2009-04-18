@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogFactory.py,v 1.2 2008/07/08 13:36:44 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogFactory.py,v 1.3 2009/04/18 18:26:58 rgracian Exp $
 # File :   WatchdogFactory.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 from DIRAC                                               import S_OK, S_ERROR, gLogger
 
-__RCSID__ = "$Id: WatchdogFactory.py,v 1.2 2008/07/08 13:36:44 acasajus Exp $"
+__RCSID__ = "$Id: WatchdogFactory.py,v 1.3 2009/04/18 18:26:58 rgracian Exp $"
 
 import re,sys,types,platform
 
@@ -58,4 +58,4 @@ class WatchdogFactory:
 
     return S_OK(watchdogInstance)
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

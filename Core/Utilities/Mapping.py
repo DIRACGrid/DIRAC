@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: Mapping.py,v 1.15 2008/10/10 13:39:03 atsareg Exp $
+# $Id: Mapping.py,v 1.16 2009/04/18 18:26:57 rgracian Exp $
 ########################################################################
 
 """ All of the data collection and handling procedures for the SiteMappingHandler
@@ -823,4 +823,4 @@ class Mapping:
 
     return data
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

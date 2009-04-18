@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.15 2009/04/02 13:35:48 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.15 2009/04/02 13:35:48 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.16 2009/04/18 18:26:59 rgracian Exp $
+__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.16 2009/04/18 18:26:59 rgracian Exp $"
 """
 SystemLoggingReportHandler allows a remote system to access the contest
 of the SystemLoggingDB
@@ -258,4 +258,4 @@ class SystemLoggingReportHandler( RequestHandler ):
                  'TotalRecords': len( result['Value'] ), 'Extras': {}}
     
     return S_OK( retValue )
-	
+

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StalledJobAgent.py,v 1.3 2008/02/29 10:22:18 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StalledJobAgent.py,v 1.4 2009/04/18 18:26:57 rgracian Exp $
 # File :   StalledJobAgent.py
 ########################################################################
 
@@ -8,7 +8,7 @@
      seconds will be assigned the "Stalled" state.
 """
 
-__RCSID__ = "$Id: StalledJobAgent.py,v 1.3 2008/02/29 10:22:18 paterson Exp $"
+__RCSID__ = "$Id: StalledJobAgent.py,v 1.4 2009/04/18 18:26:57 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -173,4 +173,4 @@ class StalledJobAgent(Agent):
 
     return result
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

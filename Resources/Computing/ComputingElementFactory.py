@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElementFactory.py,v 1.1 2007/11/26 22:03:13 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElementFactory.py,v 1.2 2009/04/18 18:26:57 rgracian Exp $
 # File :   ComputingElementFactory.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC                                               import S_OK, S_ERROR, gLogger
 
-__RCSID__ = "$Id: ComputingElementFactory.py,v 1.1 2007/11/26 22:03:13 paterson Exp $"
+__RCSID__ = "$Id: ComputingElementFactory.py,v 1.2 2009/04/18 18:26:57 rgracian Exp $"
 
 import sys,types
 
@@ -49,4 +49,4 @@ class ComputingElementFactory:
 
     return S_OK(computingElement)
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
