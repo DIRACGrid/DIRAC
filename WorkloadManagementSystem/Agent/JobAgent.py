@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.67 2009/04/15 07:52:32 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.68 2009/04/18 14:22:05 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.67 2009/04/15 07:52:32 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.68 2009/04/18 14:22:05 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -81,6 +81,8 @@ class JobAgent(Agent):
     """The JobAgent execution method.
     """
     jobManager  = RPCClient('WorkloadManagement/JobManager')
+    result = self.__getCPUTimeLeft()
+    self.log.info('Result from TimeLeft utility:',result)
     #TODO: Initially adding timeleft utility for information, not yet instrumented
     #      to perform scheduling based on the output.
     if self.jobCount:
