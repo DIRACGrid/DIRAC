@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.50 2009/04/18 14:10:39 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.51 2009/04/18 15:55:15 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.50 2009/04/18 14:10:39 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.51 2009/04/18 15:55:15 rgracian Exp $"
 try:
   import os
   import sys
@@ -492,7 +492,7 @@ if pilotRef != 'Unknown':
     dirac.logINFO( 'Queue Normalization = %s SI00' % queueNorm )
     if queueNorm:
       # Update the local normalization factor: We are using seconds @ 500 SI00
-      os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( csCache, cfgFile, 500. / queueNorm ) )
+      os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( csCache, cfgFile, queueNorm / 500. ) )
   else:
     dirac.logERROR( 'Fail to get Normalization of the Queue' )
   child_stdout.close()
