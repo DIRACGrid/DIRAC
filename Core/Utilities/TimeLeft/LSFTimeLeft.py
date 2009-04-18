@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: LSFTimeLeft.py,v 1.6 2008/03/11 12:44:44 paterson Exp $
+# $Id: LSFTimeLeft.py,v 1.7 2009/04/18 17:34:51 rgracian Exp $
 ########################################################################
 
 """ The LSF TimeLeft utility interrogates the LSF batch system for the
@@ -9,7 +9,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-__RCSID__ = "$Id: LSFTimeLeft.py,v 1.6 2008/03/11 12:44:44 paterson Exp $"
+__RCSID__ = "$Id: LSFTimeLeft.py,v 1.7 2009/04/18 17:34:51 rgracian Exp $"
 
 import os, string, re, time
 
@@ -122,4 +122,4 @@ class LSFTimeLeft:
     else:
       return S_OK(stdout)
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

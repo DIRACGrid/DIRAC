@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: Script.py,v 1.1 2008/06/23 14:36:30 paterson Exp $
+# $Id: Script.py,v 1.2 2009/04/18 17:32:27 rgracian Exp $
 # File :   Script.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     or file to run (and is also a simple example of a workflow module).
 """
 
-__RCSID__ = "$Id: Script.py,v 1.1 2008/06/23 14:36:30 paterson Exp $"
+__RCSID__ = "$Id: Script.py,v 1.2 2009/04/18 17:32:27 rgracian Exp $"
 
 
 from DIRAC.Core.Utilities.Subprocess import shellCall
@@ -100,4 +100,4 @@ class Script(object):
     self.log.info('Output written to %s, execution complete.' % (self.logFile))
     return S_OK()
 
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
