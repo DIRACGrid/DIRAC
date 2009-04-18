@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TimeLeft.py,v 1.8 2008/03/13 16:25:10 paterson Exp $
+# $Id: TimeLeft.py,v 1.9 2009/04/18 15:27:55 rgracian Exp $
 ########################################################################
 
 """ The TimeLeft utility allows to calculate the amount of CPU time
@@ -16,7 +16,7 @@
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
-__RCSID__ = "$Id: TimeLeft.py,v 1.8 2008/03/13 16:25:10 paterson Exp $"
+__RCSID__ = "$Id: TimeLeft.py,v 1.9 2009/04/18 15:27:55 rgracian Exp $"
 
 import os,re
 
@@ -66,19 +66,23 @@ class TimeLeft:
 
     cpuFactor = 100*float(resources['CPU'])/float(resources['CPULimit'])
     cpuRemaining = 100-cpuFactor
+    cpuLimit = float(resources['CPULimit'])
     wcFactor = 100*float(resources['WallClock'])/float(resources['WallClockLimit'])
     wcRemaining = 100-wcFactor
+    wcLimit = float(resources['WallClockLimit'])
     self.log.verbose('Used CPU is %.02f, Used WallClock is %.02f.' %(cpuFactor,wcFactor))
     self.log.verbose('Remaining WallClock %.02f, Remaining CPU %.02f, margin %s' %(wcRemaining,cpuRemaining,self.cpuMargin))
 
     timeLeft = None
     if wcRemaining>cpuRemaining and (wcRemaining-cpuRemaining)>self.cpuMargin:
       timeLeft = float(cpuConsumed*self.scaleFactor*cpuRemaining/cpuFactor)
+      timeLeft = float( cpuRemaining * cpuLimit * 100 * self.scaleFactor )
       self.log.verbose('Remaining WallClock %.02f > Remaining CPU %.02f and difference > margin %s' %(wcRemaining,cpuRemaining,self.cpuMargin))
     else:
       if cpuRemaining > self.cpuMargin and wcRemaining > self.cpuMargin:
         self.log.verbose('Remaining WallClock %.02f and Remaining CPU %.02f both > margin %s' %(wcRemaining,cpuRemaining,self.cpuMargin))
         timeLeft = float(cpuConsumed*self.scaleFactor*(wcRemaining-self.cpuMargin)/cpuFactor)
+        timeLeft = float( cpuRemaining * cpuLimit * 100 * self.scaleFactor )
       else:
         self.log.verbose('Remaining CPU %.02f < margin %s and WallClock %.02f < margin %s so no time left' %(cpuRemaining,margin,wcRemaining,margin))
 
