@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.14 2009/02/17 18:14:43 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.15 2009/04/20 15:12:14 acasajus Exp $
 
 
 """  SuperOptimizer
  One optimizer to rule them all, one optimizer to find them, one optimizer to bring them all, and in the darkness bind them.
 """
 
-__RCSID__ = "$Id: MightyOptimizer.py,v 1.14 2009/02/17 18:14:43 acasajus Exp $"
+__RCSID__ = "$Id: MightyOptimizer.py,v 1.15 2009/04/20 15:12:14 acasajus Exp $"
 
 import time
 import os
@@ -73,6 +73,7 @@ class MightyOptimizer(AgentModule):
       return result
     optimizer = result[ 'Value' ]
     if not optimizer:
+      print "NOTOPTIMIZER!"*20
       return S_OK( { 'done' : True } )
     #If there's no job def then get it
     if not jobDef:
@@ -117,6 +118,8 @@ class MightyOptimizer(AgentModule):
       nextOptimizer = "JobPath"
     else:
       nextOptimizer = jobAttrs[ 'MinorStatus' ]
+    if nextOptimizer in self.am_getOption( "FilteredOptimizers", "InputData, BKInputData" ):
+      return S_OK( False )
     gLogger.info( "Next optimizer for job %s is %s" % ( jobAttrs['JobID'], nextOptimizer ) )
     if nextOptimizer not in self._optimizers:
       result = self.__loadOptimizer( nextOptimizer )
