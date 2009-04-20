@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.70 2009/04/20 06:45:19 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.71 2009/04/20 08:48:04 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.70 2009/04/20 06:45:19 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.71 2009/04/20 08:48:04 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -68,7 +68,7 @@ class JobAgent(Agent):
     self.siteName = gConfig.getValue('LocalSite/Site','Unknown')
     self.pilotReference = gConfig.getValue('LocalSite/PilotReference','Unknown')
     # This is the factor to convert raw CPU to Normalized units (based on the CPU Model)
-    self.cpuFactor = gConfig.getValue('LocalSite/CPUNormalizationFactor','Unknown')
+    self.cpuFactor = gConfig.getValue('LocalSite/CPUNormalizationFactor',0.0)
     self.jobWrapperTemplate = self.siteRoot+gConfig.getValue(self.section+'/JobWrapperTemplate','/DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py')
     self.jobSubmissionDelay = gConfig.getValue(self.section+'/SubmissionDelay',10)
     self.defaultProxyLength = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400*5 )
