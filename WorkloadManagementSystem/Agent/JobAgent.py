@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.71 2009/04/20 08:48:04 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.72 2009/04/20 11:01:18 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.71 2009/04/20 08:48:04 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.72 2009/04/20 11:01:18 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -82,10 +82,6 @@ class JobAgent(Agent):
     """The JobAgent execution method.
     """
     jobManager  = RPCClient('WorkloadManagement/JobManager')
-    result = self.__getCPUTimeLeft()
-    self.log.info('Result from TimeLeft utility:',result)
-    #TODO: Initially adding timeleft utility for information, not yet instrumented
-    #      to perform scheduling based on the output.
     if self.jobCount:
       #Only call timeLeft utility after a job has been picked up
       self.log.info('Attempting to check CPU time left for filling mode')
@@ -97,6 +93,13 @@ class JobAgent(Agent):
           return self.__finish(result['Message'])
         timeLeft = result['Value']
         self.log.info('%s normalized CPU units remaining in slot' %(timeLeft))
+        # Need to update the Configuration so that the new value is published in the next matching request
+        result = self.computingElement.setCPUTimeLeft( cpuTimeLeft=timeLeft )
+        if not result['OK']:
+          self.__finish(result['Message'])
+        ceJDL = self.computingElement.getJDL()
+        resourceJDL = ceJDL['Value']
+        self.log.verbose(resourceJDL)
         return self.__finish('Filling Mode is Disabled')
 
     self.log.verbose('Job Agent execution loop')
@@ -237,6 +240,9 @@ class JobAgent(Agent):
     except Exception, x:
       self.log.exception()
       return self.__rescheduleFailedJob( jobID , 'Job processing failed with exception' )
+
+    result = self.__getCPUTimeLeft()
+    self.log.info('Result from TimeLeft utility:',result)
 
     return S_OK('Job Agent cycle complete')
 
