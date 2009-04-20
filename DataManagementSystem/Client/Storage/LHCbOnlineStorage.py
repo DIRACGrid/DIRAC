@@ -72,7 +72,7 @@ class LHCbOnlineStorage(StorageBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def requestRetransfer(self,path):
+  def retransferOnlineFile(self,path):
     """ Tell the Online system that the migration failed and we want to get the request again
     """
     res = self.__checkArgumentFormat(path)
