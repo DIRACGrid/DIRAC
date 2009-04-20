@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.69 2009/03/18 14:23:54 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.70 2009/04/20 06:46:17 rgracian Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.69 2009/03/18 14:23:54 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.70 2009/04/20 06:46:17 rgracian Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -181,6 +181,7 @@ class Dirac:
     if not self.site or self.site == 'Unknown':
       return self.__errorReport('LocalSite/Site configuration section is unknown, please set this correctly')
 
+    # FIXME: DIRAC.rootPath is the current DIRACROOT
     siteRoot = gConfig.getValue('/LocalSite/Root','')
     if not siteRoot:
       self.log.warn('LocalSite/Root configuration section is not defined, trying local directory')
