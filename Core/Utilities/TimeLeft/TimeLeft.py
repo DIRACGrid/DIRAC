@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TimeLeft.py,v 1.11 2009/04/18 18:26:59 rgracian Exp $
+# $Id: TimeLeft.py,v 1.12 2009/04/20 06:46:41 rgracian Exp $
 ########################################################################
 
 """ The TimeLeft utility allows to calculate the amount of CPU time
@@ -16,7 +16,7 @@
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
-__RCSID__ = "$Id: TimeLeft.py,v 1.11 2009/04/18 18:26:59 rgracian Exp $"
+__RCSID__ = "$Id: TimeLeft.py,v 1.12 2009/04/20 06:46:41 rgracian Exp $"
 
 import os,re
 
@@ -30,6 +30,7 @@ class TimeLeft:
     self.log = gLogger.getSubLogger('TimeLeft')
     self.__loadLocalCFGFiles()
     self.site = gConfig.getValue('/LocalSite/Site','Unknown')
+    # This is the ratio SpecInt published by the site over 500 (the reference used for Matching)
     self.scaleFactor = gConfig.getValue('/LocalSite/CPUScalingFactor',0.0)
     self.cpuMargin = gConfig.getValue('/LocalSite/CPUMargin',10) #percent
 
@@ -76,6 +77,7 @@ class TimeLeft:
     timeLeft = None
     if wcRemaining>cpuRemaining and (wcRemaining-cpuRemaining)>self.cpuMargin:
       timeLeft = float(cpuConsumed*self.scaleFactor*cpuRemaining/cpuFactor)
+      # We need time left in the same units used by the Matching
       timeLeft = float( cpuRemaining * cpuLimit / 100 * self.scaleFactor )
       self.log.verbose('Remaining WallClock %.02f > Remaining CPU %.02f and difference > margin %s' %(wcRemaining,cpuRemaining,self.cpuMargin))
     else:
