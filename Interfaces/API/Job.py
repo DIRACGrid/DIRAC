@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.58 2009/04/18 18:26:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.59 2009/04/20 06:46:00 rgracian Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.58 2009/04/18 18:26:58 rgracian Exp $"
+__RCSID__ = "$Id: Job.py,v 1.59 2009/04/20 06:46:00 rgracian Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -544,11 +544,13 @@ class Job:
        @param logLevel: Logging level
        @type logLevel: string
     """
-    #TODO: put protection for allowed logging levels...
-    if type(logLevel) == type("  "):
-      description = 'User specified logging level'
-      self.logLevel = logLevel
-      self._addParameter(self.workflow,'LogLevel','JDL',logLevel,description)
+    if type(logLevel) in types.StringTypes:
+      if logLevel.upper in gLogger._logLevels.getLevels():
+        description = 'User specified logging level'
+        self.logLevel = logLevel
+        self._addParameter(self.workflow,'LogLevel','JDL',logLevel,description)
+      else:
+        raise TypeError,'Error Level "%s" not valid' % logLevel
     else:
       raise TypeError,'Expected string for logging level'
 
