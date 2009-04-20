@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.81 2009/04/18 18:26:58 rgracian Exp $
+# $Id: JobWrapper.py,v 1.82 2009/04/20 06:43:11 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.81 2009/04/18 18:26:58 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.82 2009/04/20 06:43:11 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -62,8 +62,7 @@ class JobWrapper:
     self.root = os.getcwd()
     self.localSiteRoot = gConfig.getValue('/LocalSite/Root',self.root)
     self.__loadLocalCFGFiles(self.localSiteRoot)
-    # FIXME why not use DIRAC.version
-    self.diracVersion = 'DIRAC version v%dr%d build %d' %(DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.patchLevel)
+    self.diracVersion = 'DIRAC version %s' % DIRAC.buildversion
     self.maxPeekLines = gConfig.getValue(self.section+'/MaxJobPeekLines',20)
     self.defaultCPUTime = gConfig.getValue(self.section+'/DefaultCPUTime',600)
     self.defaultOutputFile = gConfig.getValue(self.section+'/DefaultOutputFile','std.out')
@@ -970,7 +969,8 @@ class JobWrapper:
                'FinalMajorStatus' : self.wmsMajorStatus,
                'FinalMinorStatus' : self.wmsMinorStatus,
                'CPUTime' : cpuTime,
-               'NormCPUTime' : cpuTime * gConfig.getValue ( "/LocalSite/CPUScalingFactor", 0.0 ),
+               # Based on the factor to convert raw CPU to Normalized units (based on the CPU Model)
+               'NormCPUTime' : cpuTime * gConfig.getValue ( "/LocalSite/CPUNomalizationFactor", 0.0 ),
                'ExecTime' : execTime,
                'InputDataSize' : self.inputDataSize,
                'OutputDataSize' : self.outputDataSize,
@@ -1073,6 +1073,8 @@ class JobWrapper:
       parameters.append(('Pilot_Reference', ceArgs['PilotReference']))
     if ceArgs.has_key('CPUScalingFactor'):
       parameters.append(('CPUScalingFactor', ceArgs['CPUScalingFactor']))
+    if ceArgs.has_key('CPUNormalizationFactor'):
+      parameters.append(('CPUNormalizationFactor', ceArgs['CPUNormalizationFactor']))
 
     parameters.append (('PilotAgent',self.diracVersion))
     result = self.__setJobParamList(parameters)
