@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.36 2009/04/18 18:26:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.37 2009/04/20 17:42:10 rgracian Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.36 2009/04/18 18:26:58 rgracian Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.37 2009/04/20 17:42:10 rgracian Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
@@ -586,6 +586,22 @@ class DiracAdmin:
     self.log.info('Outputs retrieved in %s' %outputPath)
     return result
 
+  #############################################################################
+  def getPilotLoggingInfo(self,gridReference):
+    """Retrieve the pilot logging info for an existing job in the WMS.
+
+       >>> print dirac.getPilotLoggingInfo(12345)
+       {'OK': True, 'Value': {"The output of the command"}}
+
+       @param gridReference: Gridp pilot job reference Id
+       @type gridReference: string
+       @return: S_OK,S_ERROR
+    """
+    if type(gridReference) not in types.StringTypes:
+      return self.__errorReport(str(x),'Expected string for pilot reference')
+
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
+    return wmsAdmin.getPilotLoggingInfo(gridReference)
   #############################################################################
   def getJobPilots(self,jobID):
     """Extract the list of submitted pilots and their status for a given

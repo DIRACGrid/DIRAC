@@ -1,11 +1,11 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.15 2009/03/19 07:30:48 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.16 2009/04/20 17:42:10 rgracian Exp $
 ########################################################################
 
 """ A set of utilities used in the WMS services
 """
 
-__RCSID__ = "$Id: WMSUtilities.py,v 1.15 2009/03/19 07:30:48 rgracian Exp $"
+__RCSID__ = "$Id: WMSUtilities.py,v 1.16 2009/04/20 17:42:10 rgracian Exp $"
 
 from tempfile import mkdtemp
 import shutil, os
@@ -38,15 +38,15 @@ def getPilotOutput( proxy, grid, pilotRef ):
   status,output,error = ret['Value']
   if error.find('already retrieved') != -1:
     shutil.rmtree(tmp_dir)
-    return S_ERROR('Pilot job output already retrieved')    
-    
-  if error.find('Output not yet Ready') != -1 :  
-    shutil.rmtree(tmp_dir)
-    return S_ERROR(error)  
+    return S_ERROR('Pilot job output already retrieved')
 
-  if output.find('not yet ready') != -1 :  
+  if error.find('Output not yet Ready') != -1 :
     shutil.rmtree(tmp_dir)
-    return S_ERROR(output)  
+    return S_ERROR(error)
+
+  if output.find('not yet ready') != -1 :
+    shutil.rmtree(tmp_dir)
+    return S_ERROR(output)
 
   if status:
     shutil.rmtree(tmp_dir)
@@ -61,20 +61,44 @@ def getPilotOutput( proxy, grid, pilotRef ):
 
   result = S_OK()
   result['FileList'] = fileList
-  
+
   if os.path.exists(tmp_dir+'/std.out'):
     f = file(tmp_dir+'/std.out','r').read()
   else:
-    f = ''  
+    f = ''
   result['StdOut'] = f
   if os.path.exists(tmp_dir+'/std.err'):
     f = file(tmp_dir+'/std.err','r').read()
   else:
-    f = ''    
+    f = ''
   result['StdError'] = f
-  
+
   shutil.rmtree(tmp_dir)
   return result
+
+###########################################################################
+def getPilotLoggingInfo( proxy, grid, pilotRef ):
+  """
+   Get LoggingInfo of a GRID job
+  """
+  if grid == 'LCG':
+    cmd = [ 'edg-job-get-logging-info', '-v', '2' ]
+  elif grid == 'gLite':
+    cmd = [ 'glite-wms-job-logging-info', '-v', '3' ]
+  else:
+    return S_ERROR( 'Unknnown GRID %s' % grid  )
+
+  cmd.extend( ['--noint', pilotRef] )
+
+  ret = _gridCommand( proxy, cmd )
+  if not ret['OK']:
+    return ret
+
+  status,output,error = ret['Value']
+  if status:
+    return S_ERROR(error)
+
+  return S_OK( output )
 
 def _gridCommand( proxy, cmd):
   """
@@ -89,5 +113,4 @@ def _gridCommand( proxy, cmd):
   gridEnv[ 'LOGNAME' ]         = 'dirac'
 
   return systemCall( COMMAND_TIMEOUT, cmd, env = gridEnv )
-  
-  
+

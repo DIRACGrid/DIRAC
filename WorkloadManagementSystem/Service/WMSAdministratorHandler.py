@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.47 2009/03/20 22:48:07 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.48 2009/04/20 17:42:10 rgracian Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.47 2009/03/20 22:48:07 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.48 2009/04/20 17:42:10 rgracian Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -136,7 +136,7 @@ class WMSAdministratorHandler(RequestHandler):
       msites = sites
     return jobDB.getSiteMaskLogging(msites)
 
-##############################################################################
+  ##############################################################################
   types_getPilotOutput = [StringType]
   def export_getPilotOutput(self,pilotReference):
     """ Get the pilot job standard output and standard error files for the Grid
@@ -144,6 +144,31 @@ class WMSAdministratorHandler(RequestHandler):
     """
 
     return self.__getGridJobOutput(pilotReference)
+
+  ##############################################################################
+  types_getPilotLoggingInfo = [StringType]
+  def export_getPilotLoggingInfo(self,pilotReference):
+    """ Get the pilot logging info for the Grid job reference
+    """
+
+    result = pilotDB.getPilotInfo(pilotReference)
+    if not result['OK'] or not result[ 'Value' ]:
+      return S_ERROR('Failed to determine owner for pilot ' + pilotReference)
+
+    pilotDict = result['Value'][pilotReference]
+    owner = pilotDict['OwnerDN']
+    group = pilotDict['OwnerGroup']
+
+    ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
+    if not ret['OK']:
+      gLogger.error( ret['Message'] )
+      gLogger.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( owner, group ) )
+      return S_ERROR("Failed to get the pilot's owner proxy")
+    proxy = ret['Value']
+
+    gridType = pilotDict['GridType']
+
+    return getPilotLoggingInfo( proxy, gridType, pilotReference )
 
   ##############################################################################
   types_getJobPilotOutput = [IntType]
@@ -157,17 +182,17 @@ class WMSAdministratorHandler(RequestHandler):
     result = jobDB.getJobParameter(jobID,'Pilot_Reference')
     if result['OK']:
       pilotReference = result['Value']
-    
+
     if not pilotReference:
       # Failed to get the pilot reference, try to look in the attic parameters
-      result = jobDB.getAtticJobParameters(jobID,['Pilot_Reference'])  
+      result = jobDB.getAtticJobParameters(jobID,['Pilot_Reference'])
       if result['OK']:
         c = -1
         # Get the pilot reference for the last reschedling cycle
         for cycle in result['Value']:
           if cycle > c:
             pilotReference = result['Value'][cycle]['Pilot_Reference']
-            c = cycle    
+            c = cycle
 
     if pilotReference:
       return self.__getGridJobOutput(pilotReference)
@@ -278,7 +303,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     result = jobDB.getSiteSummaryWeb(selectDict, sortList, startItem, maxItems)
     return result
-  
+
   ##############################################################################
   types_getSiteSummarySelectors = []
   def export_getSiteSummarySelectors(self):
@@ -290,20 +315,20 @@ class WMSAdministratorHandler(RequestHandler):
     resultDict['Status'] = statusList
     maskStatus = ['Active','Banned','NoMask','Reduced']
     resultDict['MaskStatus'] = maskStatus
-    
+
     gridTypes = []
     result = gConfig.getSections('Resources/Sites/',[])
     if result['OK']:
       gridTypes = result['Value']
-    
+
     resultDict['GridType'] = gridTypes
     siteList = []
     for grid in gridTypes:
       result = gConfig.getSections('Resources/Sites/%s' % grid,[])
       if result['OK']:
         siteList += result['Value']
-      
-    countryList = []  
+
+    countryList = []
     for site in siteList:
       if site.find('.') != -1:
         grid,sname,country = site.split('.')
@@ -313,9 +338,9 @@ class WMSAdministratorHandler(RequestHandler):
     countryList.sort()
     resultDict['Country'] = countryList
     siteList.sort()
-    resultDict['Site'] = siteList        
-       
-    return S_OK(resultDict)  
+    resultDict['Site'] = siteList
+
+    return S_OK(resultDict)
 
   ##############################################################################
   types_getPilots = [IntType]
@@ -358,7 +383,7 @@ class WMSAdministratorHandler(RequestHandler):
       return result
     if destination:
       result = pilotDB.setPilotDestinationSite(pilotRef,destination)
-        
+
     return result
 
   ##########################################################################################
@@ -374,7 +399,7 @@ class WMSAdministratorHandler(RequestHandler):
   def export_setPilotStatus(self,pilotRef,status,destination=None,reason=None):
     """ Set the pilot agent status
     """
-    
+
     result = pilotDB.setPilotStatus(pilotRef,status,destination=destination,
                                     statusReason=reason)
     return result
