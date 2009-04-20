@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.11 2009/04/18 18:26:57 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.12 2009/04/20 11:01:37 rgracian Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.11 2009/04/18 18:26:57 rgracian Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.12 2009/04/20 11:01:37 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -200,6 +200,23 @@ class ComputingElement:
         return S_OK(result)
       else:
         return S_ERROR('Not all specified parameters available')
+
+  #############################################################################
+  def setCPUTimeLeft(self, cpuTimeLeft = None):
+    """Update the CPUTime parameter of the CE classAd, necessary for running in filling mode
+    """
+    if not cpuTimeLeft:
+      # do nothing
+      return S_OK()
+    try:
+      intCPUTimeLeft = int( cpuTimeLeft )
+    except:
+      return S_ERROR('Wrong type for setCPUTimeLeft argument')
+    
+    self.classAd.insertAttributeInt('CPUTime', intCPUTimeLeft)
+    
+    return S_OK(intCPUTimeLeft)
+    
 
   #############################################################################
   def available(self):
