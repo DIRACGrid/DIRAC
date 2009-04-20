@@ -1,11 +1,11 @@
 """ DISET request handler base class for monitoring the online RunDB."""
+
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 import xmlrpclib,time,sys
 
 allRunFields = ['runID','fillID','state','runType','partitionName','partitionID','startTime','endTime','destination','startLumi','endLumi','beamEnergy']
-selectRunFields = ['runID','fillID','state','runType','partitionName','partitionID','startLumi','endLumi','beamEnergy','startTime','endTime','destination']
 allFileFields = ['fileID','runID','name','state','bytes','events','stream','creationTime','timeStamp','refCount']
 
 server = False
@@ -42,7 +42,6 @@ def initializeRunDBInterfaceHandler(serviceInfo):
   runStateRev = {}
   for key,value in runStates.items():
     runStateRev[value] = key
-
       
   import RunDatabase
   from DbModel import createEngine_Oracle
@@ -53,7 +52,98 @@ class RunDBInterfaceHandler(RequestHandler):
 
   types_getFilesSummaryWeb = [DictType,ListType,IntType,IntType]
   def export_getFilesSummaryWeb(self,selectDict, sortList, startItem, maxItems):
-    pass
+    paramString = ''
+    for selectParam in allFileFields:
+      if selectDict.has_key(selectParam): 
+        selectValue = selectDict[selectParam]
+        if selectParam == 'state':
+          intStates = []
+          for strState in selectValue:
+            intStates.append(fileStateRev[strState])
+          selectValue = intStates
+        if type(selectValue) in StringTypes:
+          paramString = "%s,%s='%s'" % (paramString,selectParam,selectValue)
+        else:
+          paramString = "%s,%s=%s" % (paramString,selectParam,selectValue)
+    decending = False
+    if sortList:
+      paramString = "%s,orderBy='%s'" % (paramString,sortList[0][0])
+      if sortList[0][1] == 'DESC':
+        decending = True
+    paramString = "%s,no=%s" % (paramString,sys.maxint)
+    if paramString:
+      filesQueryString = "success,result = server.getFilesDirac(fields=allFileFields%s)" % paramString
+    else:
+      filesQueryString = "success,result = server.getFilesDirac(fields=allFileFields)"
+    print filesQueryString
+    exec(filesQueryString)
+    if not success:
+      return S_ERROR(result)
+    resultDict = {}
+    nFiles = len(result) 
+    resultDict['TotalRecords'] = nFiles
+    if nFiles == 0:
+      return S_OK(resultDict)
+    if decending:
+      result.reverse()
+
+    statusCountDict = {}
+    for tuple in result:
+      state = tuple[3]
+      if fileStates.has_key(state):
+        state = fileStates[state]
+      else:
+        state = 'UNKNOWN'
+      if not statusCountDict.has_key(state):
+        statusCountDict[state] = 0
+      statusCountDict[state] += 1
+    resultDict['Extras'] = statusCountDict
+
+    iniFile = startItem
+    lastFile = iniFile + maxItems
+    if iniFile >= nFiles:
+      return S_ERROR('Item number out of range')
+    if lastFile > nFiles:
+      lastFile = nFiles
+    fileList = result[iniFile:lastFile]
+
+    # prepare the standard structure now
+    resultDict['ParameterNames'] = allFileFields
+    records = []
+    for tuple in fileList:
+      ['fileID','runID','name','state','bytes','events','stream','creationTime','timeStamp','refCount']
+      fileID,runID,name,state,bytes,events,stream,creationTime,timeStamp,refCount = tuple
+      timeStamp = str(timeStamp)
+      creationTime = str(creationTime)
+      if fileStates.has_key(state):
+        state = fileStates[state]
+      else:
+        state = 'UNKNOWN'
+      records.append((fileID,runID,name,state,bytes,events,stream,creationTime,timeStamp,refCount))
+      
+    resultDict['Records'] = records
+    return S_OK(resultDict)
+    
+  """
+  getFiles(self, fields        = ['name'],
+                     fileID        = None,
+                     runID         = None,
+                     name          = None,
+                     stream        = None,
+                     state         = None,
+                     timeout       = None,
+                     refCount      = None,
+                     runType       = None,
+                     runPartName   = None,
+                     runPartID     = None,
+                     runStartTime  = None,
+                     runEndTime    = None,
+                     runDest       = None,
+                     runState      = None,
+                     orderBy       = None,
+                     no            = 100
+              ):
+  """
 
   types_getFileSelections = []
   def export_getFileSelections(self):
@@ -62,7 +152,7 @@ class RunDBInterfaceHandler(RequestHandler):
   types_getRunsSummaryWeb = [DictType,ListType,IntType,IntType]
   def export_getRunsSummaryWeb(self,selectDict, sortList, startItem, maxItems):
     paramString = ''
-    for selectParam in selectRunFields:
+    for selectParam in allRunFields:
       if selectDict.has_key(selectParam):
         selectValue = selectDict[selectParam]
         if selectParam == 'state':
