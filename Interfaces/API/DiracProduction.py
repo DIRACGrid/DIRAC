@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.59 2009/04/18 18:26:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.60 2009/04/21 11:23:58 acsmith Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.59 2009/04/18 18:26:58 rgracian Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.60 2009/04/21 11:23:58 acsmith Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -950,30 +950,68 @@ class DiracProduction:
     return result
 
   #############################################################################
-  def createProduction(self,fileName,fileMask='',groupSize=0,printOutput=False):
+  def createProduction(self,fileName,fileMask='',groupSize=0,bkQuery={},productionGroup='',productionType='',maxJobs=0,printOutput=False):
     """ Under Development. Create a production, will eventually include
         BK processing pass / sim cond / data taking cond etc.
 
         Usage: createProduction <filename> <filemask> <groupsize>
     """
+    if not os.path.exists(fileName):
+      return self.__errorReport('%s does not exist' %fileName)
+    fopen = open(fileName,'r')
+    xmlString = fopen.read()
+    fopen.close()
+
+    if not type(fileMask)==type(" "):
+      return self.__errorReport('File mask must be a string')
+
     if type(groupSize) == type(" "):
       try:
         groupSize = int(groupSize)
       except Exception,x:
         return self.__errorReport(str(x),'Expected integer or string for group size')
 
-    if not os.path.exists(fileName):
-      return self.__errorReport('%s does not exist' %fileName)
+    if bkQuery:
+      if not type(bkQuery)==type({})
+      return self.__errorReport('BK Query must be a dictionary')
+      selections = {        'SimulationConditions'     : 'All',
+                            'DataTakingConditions'     : 'All',
+                            'ProcessingPass'           : 'No default!',
+                            'FileType'                 : 'DST',
+                            'EventType'                : 90000000,
+                            'ConfigName'               : 'All',
+                            'ConfigVersion'            : 'All',
+                            'ProductionID'             : 0,
+                            'DataQualityFlag'          : 'OK'}
+      # Use some default parameters
+      for key,value in bkQuery.items():
+        selections[key] = value
 
-    if not type(fileMask)==type(" "):
-      return self.__errorReport('File mask must be a string')
+      if selections['SimulationConditions'] != "All" and selections['DataTakingConditions'] != "All":
+        return S_ERROR("SimulationConditions and DataTakingConditions can not be defined simultaneously !")
+      if selections['ProcessingPass'] == "No default!":
+        return S_ERROR("ProcessingPass must be defined !")
+      for par in ['EventType','ProductionID']:
+        try:                
+          dummy = int(resultQuery[par])
+          selections[par] = dummy
+        except:             
+          return S_ERROR("The '%s' parameter must be an integer" % par)
 
-    fopen = open(fileName,'r')
-    xmlString = fopen.read()
-    fopen.close()
+    if not type(productionGroup)==type(" "):
+      return self.__errorReport('Production group must be a string')
+
+    if not type(productionType)==type(" "):
+      return self.__errorReport('Production type must be a string')
+
+    if type(maxJobs) == type(" "):
+      try:
+        maxJobs = int(maxJobs)
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected integer or string for max jobs')
 
     prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
-    result = prodClient.publishProduction(xmlString,fileMask,groupSize,False)
+    result = prodClient.publishProduction(xmlString,fileMask,groupSize,False,bkQuery,productionGroup,productionType,maxJobs)
     if not result['OK']:
       return self.__errorReport(result,'Could not create production from %s' %(fileName))
 
