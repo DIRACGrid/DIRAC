@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.60 2009/04/21 11:23:58 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.61 2009/04/21 12:23:57 acsmith Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.60 2009/04/21 11:23:58 acsmith Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.61 2009/04/21 12:23:57 acsmith Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -950,7 +950,7 @@ class DiracProduction:
     return result
 
   #############################################################################
-  def createProduction(self,fileName,fileMask='',groupSize=0,bkQuery={},productionGroup='',productionType='',maxJobs=0,printOutput=False):
+  def createProduction(self,fileName,fileMask='',groupSize=0,bkQuery={},plugin='',productionGroup='',productionType='',maxJobs=0,printOutput=False):
     """ Under Development. Create a production, will eventually include
         BK processing pass / sim cond / data taking cond etc.
 
@@ -972,8 +972,8 @@ class DiracProduction:
         return self.__errorReport(str(x),'Expected integer or string for group size')
 
     if bkQuery:
-      if not type(bkQuery)==type({})
-      return self.__errorReport('BK Query must be a dictionary')
+      if not type(bkQuery)==type({}):
+        return self.__errorReport('BK Query must be a dictionary')
       selections = {        'SimulationConditions'     : 'All',
                             'DataTakingConditions'     : 'All',
                             'ProcessingPass'           : 'No default!',
@@ -992,11 +992,14 @@ class DiracProduction:
       if selections['ProcessingPass'] == "No default!":
         return S_ERROR("ProcessingPass must be defined !")
       for par in ['EventType','ProductionID']:
-        try:                
-          dummy = int(resultQuery[par])
+        try:
+          dummy = int(selections[par])
           selections[par] = dummy
         except:             
           return S_ERROR("The '%s' parameter must be an integer" % par)
+
+    if not type(plugin)==type(" "):
+      return self.__errorReport('Plugin must be a string')
 
     if not type(productionGroup)==type(" "):
       return self.__errorReport('Production group must be a string')
@@ -1011,7 +1014,7 @@ class DiracProduction:
         return self.__errorReport(str(x),'Expected integer or string for max jobs')
 
     prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
-    result = prodClient.publishProduction(xmlString,fileMask,groupSize,False,bkQuery,productionGroup,productionType,maxJobs)
+    result = prodClient.publishProduction(xmlString,fileMask,groupSize,False,bkQuery,plugin,productionGroup,productionType,maxJobs)
     if not result['OK']:
       return self.__errorReport(result,'Could not create production from %s' %(fileName))
 
