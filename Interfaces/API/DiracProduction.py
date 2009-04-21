@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.61 2009/04/21 12:23:57 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.62 2009/04/21 13:52:53 acsmith Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.61 2009/04/21 12:23:57 acsmith Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.62 2009/04/21 13:52:53 acsmith Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -950,11 +950,11 @@ class DiracProduction:
     return result
 
   #############################################################################
-  def createProduction(self,fileName,fileMask='',groupSize=0,bkQuery={},plugin='',productionGroup='',productionType='',maxJobs=0,printOutput=False):
-    """ Under Development. Create a production, will eventually include
-        BK processing pass / sim cond / data taking cond etc.
+  def createProduction(self,fileName,fileMask='',groupSize=1,bkQuery={},plugin='',productionGroup='',productionType='',derivedProd='',maxJobs=0,printOutput=False):
+    """ Create a production, based on the supplied parameters.
+        Any input data can be specified by either fileMast or bkQuery. If both are specified then the BKQuery takes precedence.
 
-        Usage: createProduction <filename> <filemask> <groupsize>
+        Usage: createProduction <filename> <filemask> <groupsize> <bkquery> <plugin> <prodGroup> <prodType> <maxJobs>
     """
     if not os.path.exists(fileName):
       return self.__errorReport('%s does not exist' %fileName)
@@ -1014,7 +1014,10 @@ class DiracProduction:
         return self.__errorReport(str(x),'Expected integer or string for max jobs')
 
     prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
-    result = prodClient.publishProduction(xmlString,fileMask,groupSize,False,bkQuery,plugin,productionGroup,productionType,maxJobs)
+    if derivedProd:
+      result = prodClient.publishDerivedProduction(derivedProd,xmlString,fileMask,groupSize,bkQuery,plugin,productionType,productionGroup,maxJobs,False)
+    else:
+      result = prodClient.publishProduction(xmlString,fileMask,groupSize,False,bkQuery,plugin,productionGroup,productionType,maxJobs)
     if not result['OK']:
       return self.__errorReport(result,'Could not create production from %s' %(fileName))
 
