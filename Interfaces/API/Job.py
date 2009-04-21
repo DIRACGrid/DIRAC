@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.59 2009/04/20 06:46:00 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.60 2009/04/21 20:46:01 rgracian Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.59 2009/04/20 06:46:00 rgracian Exp $"
+__RCSID__ = "$Id: Job.py,v 1.60 2009/04/21 20:46:01 rgracian Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -545,7 +545,7 @@ class Job:
        @type logLevel: string
     """
     if type(logLevel) in types.StringTypes:
-      if logLevel.upper in gLogger._logLevels.getLevels():
+      if logLevel.upper() in gLogger._logLevels.getLevels():
         description = 'User specified logging level'
         self.logLevel = logLevel
         self._addParameter(self.workflow,'LogLevel','JDL',logLevel,description)
