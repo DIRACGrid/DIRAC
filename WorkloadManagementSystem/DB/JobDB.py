@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.144 2009/04/22 08:00:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.145 2009/04/22 08:24:26 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.144 2009/04/22 08:00:50 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.145 2009/04/22 08:24:26 rgracian Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -169,6 +169,8 @@ class JobDB(DB):
         if not ret['OK']:
           return ret
         attrName = ret['Value']
+        attrName[0] = "`"
+        attrName[-1] = "`"
 
         if type(attrValue) == types.ListType:
           multiValueList = []
@@ -268,6 +270,8 @@ class JobDB(DB):
       attrNames = string.join(map(lambda x: str(x),self.jobAttributeNames),',')
       attr_tmp_list = self.jobAttributeNames
     jobList = string.join(map(lambda x: str(x),jobIDList),',')
+
+    # FIXME: need to check if the attributes are in the list of job Attributes
 
     cmd = 'SELECT JobID,%s FROM Jobs WHERE JobID in ( %s )' % ( attrNames, jobList )
     res = self._query( cmd )
@@ -420,6 +424,9 @@ class JobDB(DB):
         ret = self._escapeString(x)
         if not ret['OK']:
           return ret
+        x = ret['Value']
+        x[0] = "`"
+        x[-1] = "`"
         attrNameList.append(x)
       attrNames = ','.join(attrNameList)
     else:
@@ -428,6 +435,9 @@ class JobDB(DB):
         ret = self._escapeString(x)
         if not ret['OK']:
           return ret
+        x = ret['Value']
+        x[0] = "`"
+        x[-1] = "`"
         attrNameList.append(x)
       attrNames = ','.join(attrNameList)
     self.log.debug( 'JobDB.getAllJobAttributes: Getting Attributes for job = %s.' %jobID )
@@ -781,6 +791,8 @@ class JobDB(DB):
       return ret
     value = ret['Value']
 
+    #FIXME: need to check the validity of attrName
+
     if update:
       cmd = "UPDATE Jobs SET %s=%s,LastUpdateTime=UTC_TIMESTAMP() WHERE JobID=%s" % ( attrName, value, jobID )
     else:
@@ -809,6 +821,7 @@ class JobDB(DB):
     if len(attrNames) != len(attrValues):
       return S_ERROR( 'JobDB.setAttributes: incompatible Argument length' )
 
+    # FIXME: Need to check the validity of attrNames
     attr = []
     for i in range(len(attrNames)):
       ret = self._escapeString(attrValues[i])
