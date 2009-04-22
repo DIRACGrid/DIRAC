@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.143 2009/04/22 07:02:33 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.144 2009/04/22 08:00:50 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.143 2009/04/22 07:02:33 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.144 2009/04/22 08:00:50 rgracian Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -165,31 +165,58 @@ class JobDB(DB):
 
     if condDict != None:
       for attrName, attrValue in condDict.items():
+        ret = self._escapeString(attrName)
+        if not ret['OK']:
+          return ret
+        attrName = ret['Value']
+
         if type(attrValue) == types.ListType:
-          multiValue = ','.join(['"'+x.strip()+'"' for x in attrValue])
+          multiValueList = []
+          for x in attrValue:
+            ret = self._escapeString(x)
+            if not ret['OK']:
+              return ret
+            x = ret['Value']
+            multiValueList.append(x)
+          multiValue = ','.join(multiValueList)
           condition = ' %s %s %s in (%s)' % ( condition,
                                              conjunction,
-                                             str(attrName),
+                                             attrName,
                                              multiValue  )
         else:
-          condition = ' %s %s %s=\'%s\'' % ( condition,
-                                             conjunction,
-                                             str(attrName),
-                                             str(attrValue)  )
+          ret = self._escapeString(attrValue)
+          if not ret['OK']:
+            return ret
+          attrValue = ret['Value']
+
+          condition = ' %s %s %s=%s' % ( condition,
+                                         conjunction,
+                                         attrName,
+                                         attrValue  )
         conjunction = "AND"
 
     if older:
-      condition = ' %s %s %s < \'%s\'' % ( condition,
-                                                 conjunction,
-                                                 timeStamp,
-                                                 str(older) )
+      ret = self._escapeString(older)
+      if not ret['OK']:
+        return ret
+      older = ret['Value']
+
+      condition = ' %s %s %s < %s' % ( condition,
+                                       conjunction,
+                                       timeStamp,
+                                       older )
       conjunction = "AND"
 
     if newer:
-      condition = ' %s %s %s >= \'%s\'' % ( condition,
-                                                 conjunction,
-                                                 timeStamp,
-                                                 str(newer) )
+      ret = self._escapeString(newer)
+      if not ret['OK']:
+        return ret
+      newer = ret['Value']
+
+      condition = ' %s %s %s >= %s' % ( condition,
+                                        conjunction,
+                                        timeStamp,
+                                        newer )
 
     return condition
 
@@ -286,12 +313,23 @@ class JobDB(DB):
         If parameterList is empty - all the parameters are returned.
     """
 
-    self.log.debug( 'JobDB.getParameters: Getting Parameters for job %d' % int(jobID) )
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    e_jobID = ret['Value']
+
+    self.log.debug( 'JobDB.getParameters: Getting Parameters for job %s' % jobID )
 
     resultDict = {}
     if paramList:
-      paramNames = string.join(map(lambda x: '"'+str(x)+'"',paramList ),',')
-      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%d and Name in (%s)" % (int(jobID),paramNames)
+      paramNameList = []
+      for x in paramList:
+        ret = self._escapeString(x)
+        if not ret['OK']:
+          return ret
+        paramNameList.append(x)
+      paramNames = ','.join(paramNameList)
+      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%s and Name in (%s)" % (e_jobID,paramNames)
       result = self._query(cmd)
       if result['OK']:
         if result['Value']:
@@ -326,18 +364,29 @@ class JobDB(DB):
         If recheduleCounter = -1, all cycles are returned.
     """
 
-    self.log.debug( 'JobDB.getAtticJobParameters: Getting Attic Parameters for job %d' % int(jobID) )
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+
+    self.log.debug( 'JobDB.getAtticJobParameters: Getting Attic Parameters for job %s' % jobID )
 
     resultDict = {}
     paramCondition = ''
     if paramList:
-      paramNames = string.join(map(lambda x: '"'+str(x)+'"',paramList ),',')
+      paramNameList = []
+      for x in paramList:
+        ret = self._escapeString(x)
+        if not ret['OK']:
+          return ret
+        paramNameList.append(x)
+      paramNames = ','.join(paramNameList)
       paramCondition = " AND Name in (%s)" % paramNames
     rCounter = ''
     if rescheduleCounter != -1:
       rCounter = ' AND RescheduleCycle=%d' % int(rescheduleCounter)
     cmd = "SELECT Name, Value, RescheduleCycle from AtticJobParameters"
-    cmd +=" WHERE JobID=%d %s %s" % (int(jobID),paramCondition,rCounter)
+    cmd +=" WHERE JobID=%s %s %s" % (jobID,paramCondition,rCounter)
     result = self._query(cmd)
     if result['OK']:
       if result['Value']:
@@ -360,13 +409,30 @@ class JobDB(DB):
         return an empty dictionary if matching job found
     """
 
-    if attrList:
-      attrNames = string.join(map(lambda x: str(x),attrList ),',')
-    else:
-      attrNames = string.join(map(lambda x: str(x),self.jobAttributeNames),',')
-    self.log.debug( 'JobDB.getAllJobAttributes: Getting Attributes for job = "%s".' %jobID )
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
-    cmd = 'SELECT %s FROM Jobs WHERE JobID=%d' % (attrNames,int(jobID))
+    if attrList:
+      attrNameList = []
+      for x in attrList:
+        ret = self._escapeString(x)
+        if not ret['OK']:
+          return ret
+        attrNameList.append(x)
+      attrNames = ','.join(attrNameList)
+    else:
+      attrNameList = []
+      for x in self.jobAttributeNames:
+        ret = self._escapeString(x)
+        if not ret['OK']:
+          return ret
+        attrNameList.append(x)
+      attrNames = ','.join(attrNameList)
+    self.log.debug( 'JobDB.getAllJobAttributes: Getting Attributes for job = %s.' %jobID )
+
+    cmd = 'SELECT %s FROM Jobs WHERE JobID=%s' % (attrNames,jobID)
     res = self._query( cmd )
     if not res['OK']:
       return res
@@ -470,6 +536,16 @@ class JobDB(DB):
     """ Get optimizer parameters for the given job.
     """
 
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+
+    ret = self._escapeString(parameter)
+    if not ret['OK']:
+      return ret
+    parameter = ret['Value']
+
     result = self._getFields( 'OptimizerParameters',['Value'],['JobID','Name'], [jobID,parameter])
     if result['OK']:
       if result['Value']:
@@ -485,13 +561,24 @@ class JobDB(DB):
         empty, get all the parameters then
     """
 
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+
     resultDict = {}
 
     if paramList:
-      paramNames = ','.join( ['"'+str(x)+'"' for x in paramList ] )
-      cmd = "SELECT Name, Value from OptimizerParameters WHERE JobID=%d and Name in (%s)" % (int(jobID),paramNames)
+      paramNameList = []
+      for x in paramList:
+        ret = self._escapeString(x)
+        if not ret['OK']:
+          return ret
+        paramNameList.append(x)
+      paramNames = ','.join(paramNameList)
+      cmd = "SELECT Name, Value from OptimizerParameters WHERE JobID=%s and Name in (%s)" % (jobID,paramNames)
     else:
-      cmd = "SELECT Name, Value from OptimizerParameters WHERE JobID=%d" % jobID
+      cmd = "SELECT Name, Value from OptimizerParameters WHERE JobID=%s" % jobID
 
     result = self._query(cmd)
     if result['OK']:
@@ -510,10 +597,13 @@ class JobDB(DB):
   def getTimings(self,site,period=3600):
     """ Get CPU and wall clock times for the jobs finished in the last hour
     """
+    ret = self._escapeString(site)
+    if not ret['OK']:
+      return ret
+    site = ret['Value']
 
     date = str(Time.dateTime() - datetime.timedelta(seconds=period))
-
-    req = "SELECT JobID from Jobs WHERE Site='%s' and EndExecTime > '%s' " % (site,date)
+    req = "SELECT JobID from Jobs WHERE Site=%s and EndExecTime > '%s' " % (site,date)
     result = self._query(req)
     jobList = [ str(x[0]) for x in result['Value'] ]
     jobString = ','.join(jobList)
@@ -541,7 +631,11 @@ class JobDB(DB):
   def getInputData (self, jobID):
     """Get input data for the given job
     """
-    cmd = 'SELECT LFN FROM InputData WHERE JobID=\'%s\'' %jobID
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+    cmd = 'SELECT LFN FROM InputData WHERE JobID=%s' %jobID
     res = self._query(cmd)
     if not res['OK']:
       return res
@@ -552,13 +646,21 @@ class JobDB(DB):
   def setInputData (self, jobID, inputData):
     """Inserts input data for the given job
     """
-    cmd = 'DELETE FROM InputData WHERE JobID=\'%s\'' % (jobID)
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+    cmd = 'DELETE FROM InputData WHERE JobID=%s' % (jobID)
     result = self._update( cmd )
     if not result['OK']:
       result = S_ERROR('JobDB.setInputData: operation failed.')
 
     for lfn in inputData:
-      cmd = 'INSERT INTO InputData (JobID,LFN) VALUES (\'%s\', \'%s\' )' % ( jobID, lfn.strip() )
+      ret = self._escapeString(lfn.strip())
+      if not ret['OK']:
+        return ret
+      lfn = ret['Value']
+      cmd = 'INSERT INTO InputData (JobID,LFN) VALUES (%s, %s )' % ( jobID, lfn )
       res = self._update( cmd )
       if not res['OK']:
         return res
@@ -669,18 +771,20 @@ class JobDB(DB):
         The LastUpdate time stamp is refreshed if explicitely requested
     """
 
-    if type( attrValue ) in types.StringTypes:
-      ret = self._escapeString(attrValue)
-      if not ret['OK']:
-        return ret
-      value = ret['Value']
-    else:
-      value = attrValue
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+
+    ret = self._escapeString(attrValue)
+    if not ret['OK']:
+      return ret
+    value = ret['Value']
 
     if update:
-      cmd = "UPDATE Jobs SET %s=%s,LastUpdateTime=UTC_TIMESTAMP() WHERE JobID='%s'" % ( attrName, value, jobID )
+      cmd = "UPDATE Jobs SET %s=%s,LastUpdateTime=UTC_TIMESTAMP() WHERE JobID=%s" % ( attrName, value, jobID )
     else:
-      cmd = "UPDATE Jobs SET %s=%s WHERE JobID='%s'" % ( attrName, value, jobID )
+      cmd = "UPDATE Jobs SET %s=%s WHERE JobID=%s" % ( attrName, value, jobID )
 
     if datetime:
       cmd += ' AND LastUpdateTime < %s' % datetime
@@ -697,25 +801,27 @@ class JobDB(DB):
         The LastUpdate time stamp is refreshed if explicitely requested
     """
 
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+
     if len(attrNames) != len(attrValues):
       return S_ERROR( 'JobDB.setAttributes: incompatible Argument length' )
 
     attr = []
     for i in range(len(attrNames)):
-      if type( attrValues[i] ) in types.StringTypes:
-        ret = self._escapeString(attrValues[i])
-        if not ret['OK']:
-          return ret
-        value = ret['Value']
-      else:
-        value = attrValues[i]
+      ret = self._escapeString(attrValues[i])
+      if not ret['OK']:
+        return ret
+      value = ret['Value']
       attr.append( "%s=%s" % (attrNames[i],value))
     if update:
       attr.append( "LastUpdateTime=UTC_TIMESTAMP()" )
     if len(attr) == 0:
       return S_ERROR( 'JobDB.setAttributes: Nothing to do' )
 
-    cmd = 'UPDATE Jobs SET %s WHERE JobID=\'%s\'' % ( ', '.join(attr), jobID )
+    cmd = 'UPDATE Jobs SET %s WHERE JobID=%s' % ( ', '.join(attr), jobID )
 
     if datetime:
       cmd += ' AND LastUpdateTime < %s' % datetime
@@ -762,8 +868,17 @@ class JobDB(DB):
     """ Set EndExecTime time stamp
     """
 
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+
     if endDate:
-      req = "UPDATE Jobs SET EndExecTime='%s' WHERE JobID=%d AND EndExecTime IS NULL" % (endDate,jobID)
+      ret = self._escapeString(endDate)
+      if not ret['OK']:
+        return ret
+      endDate = ret['Value']
+      req = "UPDATE Jobs SET EndExecTime=%s WHERE JobID=%s AND EndExecTime IS NULL" % (endDate,jobID)
     else:
       req = "UPDATE Jobs SET EndExecTime=UTC_TIMESTAMP() WHERE JobID=%s AND EndExecTime IS NULL" % jobID
     result = self._update(req)
@@ -773,8 +888,22 @@ class JobDB(DB):
   def setJobParameter(self,jobID,key,value):
     """ Set a parameter specified by name,value pair for the job JobID
     """
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
-    cmd = 'DELETE FROM JobParameters WHERE JobID=\'%s\' AND Name=\'%s\'' % ( jobID, key )
+    ret = self._escapeString(key)
+    if not ret['OK']:
+      return ret
+    key = ret['Value']
+
+    ret = self._escapeString(value)
+    if not ret['OK']:
+      return ret
+    value = ret['Value']
+
+    cmd = 'DELETE FROM JobParameters WHERE JobID=%s AND Name=%s' % ( jobID, key )
     if not self._update( cmd )['OK']:
       result = S_ERROR('JobDB.setJobParameter: operation failed.')
 
@@ -788,6 +917,10 @@ class JobDB(DB):
   def setJobParameters(self,jobID,parameters):
     """ Set parameters specified by a list of name/value pairs for the job JobID
     """
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
     if not parameters:
       return S_OK()
@@ -795,13 +928,16 @@ class JobDB(DB):
     deleteCondList = []
     insertValueList = []
     for name,value in parameters:
-      if type(value) in types.StringTypes:
-        ret = self._escapeString(value)
-        if not ret['OK']:
-          return ret
-        value = ret['Value']
-      deleteCondList.append( '(JobID=\'%s\' AND Name=\'%s\')' % (jobID, name))
-      insertValueList.append( '(\'%s\',\'%s\',%s)' % (jobID, name, value))
+      ret = self._escapeString(name)
+      if not ret['OK']:
+        return ret
+      name = ret['Value']
+      ret = self._escapeString(value)
+      if not ret['OK']:
+        return ret
+      value = ret['Value']
+      deleteCondList.append( '(JobID=%s AND Name=%s)' % (jobID, name))
+      insertValueList.append( '(%s,%s,%s)' % (jobID, name, value))
 
     cmd = 'DELETE FROM JobParameters WHERE %s ' % ' OR '.join( deleteCondList )
     if not self._update( cmd )['OK']:
@@ -819,8 +955,22 @@ class JobDB(DB):
   def setJobOptParameter(self,jobID,name,value):
     """ Set an optimzer parameter specified by name,value pair for the job JobID
     """
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
-    cmd = 'DELETE FROM OptimizerParameters WHERE JobID=\'%s\' AND Name=\'%s\'' % ( jobID, name )
+    ret = self._escapeString(name)
+    if not ret['OK']:
+      return ret
+    name = ret['Value']
+
+    ret = self._escapeString(value)
+    if not ret['OK']:
+      return ret
+    value = ret['Value']
+
+    cmd = 'DELETE FROM OptimizerParameters WHERE JobID=%s AND Name=%s' % ( jobID, name )
     if not self._update( cmd )['OK']:
       result = S_ERROR('JobDB.setJobOptParameter: operation failed.')
 
@@ -834,8 +984,16 @@ class JobDB(DB):
   def removeJobOptParameter(self,jobID,name):
     """ Remove the specified optimizer parameter for jobID
     """
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+    ret = self._escapeString(name)
+    if not ret['OK']:
+      return ret
+    name = ret['Value']
 
-    cmd = 'DELETE FROM OptimizerParameters WHERE JobID=\'%s\' AND Name=\'%s\'' % ( jobID, name )
+    cmd = 'DELETE FROM OptimizerParameters WHERE JobID=%s AND Name=%s' % ( jobID, name )
     if not self._update( cmd )['OK']:
       return S_ERROR('JobDB.removeJobOptParameter: operation failed.')
     else:
@@ -846,9 +1004,28 @@ class JobDB(DB):
     """ Set attic parameter for job specified by its jobID when job rescheduling
         for later debugging
     """
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
-    cmd = 'INSERT INTO AtticJobParameters VALUES(%d,%d,\'%s\',\'%s\')' % \
-         (int(jobID),rescheduleCounter,key,value)
+    ret = self._escapeString(key)
+    if not ret['OK']:
+      return ret
+    key = ret['Value']
+
+    ret = self._escapeString(value)
+    if not ret['OK']:
+      return ret
+    value = ret['Value']
+
+    ret = self._escapeString(rescheduleCounter)
+    if not ret['OK']:
+      return ret
+    rescheduleCounter = ret['Value']
+
+    cmd = 'INSERT INTO AtticJobParameters VALUES(%s,%s,%s,%s)' % \
+         (jobID,rescheduleCounter,key,value)
     result = self._update( cmd )
     if not result['OK']:
       result = S_ERROR('JobDB.setAtticJobParameter: operation failed.')
@@ -875,6 +1052,20 @@ class JobDB(DB):
   def setJobJDL(self, jobID, JDL=None, originalJDL = None):
     """ Insert JDL's for job specified by jobID
     """
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+
+    ret = self._escapeString(JDL)
+    if not ret['OK']:
+      return ret
+    JDL = ret['Value']
+
+    ret = self._escapeString(originalJDL)
+    if not ret['OK']:
+      return ret
+    originalJDL = ret['Value']
 
     req = "SELECT OriginalJDL FROM JobJDLs WHERE JobID=%s" % jobID
     result = self._query(req)
@@ -886,17 +1077,17 @@ class JobDB(DB):
     if JDL:
 
       if updateFlag:
-        cmd = "UPDATE JobJDLs Set JDL='%s' WHERE JobID=%s" % (JDL,jobID)
+        cmd = "UPDATE JobJDLs Set JDL=%s WHERE JobID=%s" % (JDL,jobID)
       else:
-        cmd = "INSERT INTO JobJDLs (JobID,JDL) VALUES (%s,'%s')" % (jobID,JDL)
+        cmd = "INSERT INTO JobJDLs (JobID,JDL) VALUES (%s,%s)" % (jobID,JDL)
       result = self._update(cmd)
       if not result['OK']:
         return result
     if originalJDL:
       if updateFlag:
-        cmd = "UPDATE JobJDLs Set OriginalJDL='%s' WHERE JobID=%s" % (originalJDL,jobID)
+        cmd = "UPDATE JobJDLs Set OriginalJDL=%s WHERE JobID=%s" % (originalJDL,jobID)
       else:
-        cmd = "INSERT INTO JobJDLs (JobID,OriginalJDL) VALUES (%s,'%s')" % (jobID,originalJDL)
+        cmd = "INSERT INTO JobJDLs (JobID,OriginalJDL) VALUES (%s,%s)" % (jobID,originalJDL)
 
       result = self._update(cmd)
 
@@ -935,14 +1126,24 @@ class JobDB(DB):
     """ Get JDL for job specified by its jobID. By default the current job JDL
         is returned. If 'original' argument is True, original JDL is returned
     """
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+
+    ret = self._escapeString(status)
+    if not ret['OK']:
+      return ret
+    status = ret['Value']
+
 
     if original:
-      cmd = "SELECT OriginalJDL FROM JobJDLs WHERE JobID=%d" % int(jobID)
+      cmd = "SELECT OriginalJDL FROM JobJDLs WHERE JobID=%s" % jobID
     else:
-      cmd = "SELECT JDL FROM JobJDLs WHERE JobID=%d" % int(jobID)
+      cmd = "SELECT JDL FROM JobJDLs WHERE JobID=%s" % jobID
 
     if status:
-      cmd = cmd + " AND Status='%s'" % status
+      cmd = cmd + " AND Status=%s" % status
 
     result = self._query(cmd)
     if result['OK']:
@@ -1080,8 +1281,19 @@ class JobDB(DB):
     if classAdJob.lookupAttribute('InputData'):
       inputData = classAdJob.getListFromExpression('InputData')
     values = []
+
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    e_jobID = ret['Value']
+
     for lfn in inputData:
-      values.append( '(%s, \'%s\' )' % ( jobID, lfn.strip() ) )
+      ret = self._escapeString(lfn.strip())
+      if not ret['OK']:
+        return ret
+      lfn = ret['Value']
+
+      values.append( '(%s, %s )' % ( e_jobID, lfn ) )
 
     if values:
       cmd = 'INSERT INTO InputData (JobID,LFN) VALUES %s' % ', '.join( values )
@@ -1190,6 +1402,11 @@ class JobDB(DB):
        Remove job from the Job DB and clean up all the job related data
        in various tables
     """
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+
 
     # If this is a master job delete the children first
     failedSubjobList = []
@@ -1214,7 +1431,7 @@ class JobDB(DB):
                    'AtticJobParameters'
                    ):
 
-      cmd = 'DELETE FROM %s WHERE JobID=\'%s\'' % ( table, jobID )
+      cmd = 'DELETE FROM %s WHERE JobID=%s' % ( table, jobID )
       result = self._update( cmd )
       if not result['OK']:
         failedTablesList.append(table)
@@ -1233,8 +1450,12 @@ class JobDB(DB):
   def getSubjobs(self,jobID):
     """ Get subjobs of the given job
     """
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
-    cmd = "SELECT SubJobID FROM SubJobs WHERE JobID=%d" % ind(jobID)
+    cmd = "SELECT SubJobID FROM SubJobs WHERE JobID=%s" % jobID
     result = self._query(cmd)
     subjobs = []
     if result['OK']:
@@ -1309,7 +1530,12 @@ class JobDB(DB):
         if not result['OK']:
           break
 
-    cmd = 'DELETE FROM JobParameters WHERE JobID=\'%s\'' %jobID
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    e_jobID = ret['Value']
+
+    cmd = 'DELETE FROM JobParameters WHERE JobID=%s' %e_jobID
     res = self._update( cmd )
     if not res['OK']:
       return res
@@ -1392,10 +1618,15 @@ class JobDB(DB):
     """ Get the currently active site list
     """
 
+    ret = self._escapeString(siteState)
+    if not ret['OK']:
+      return ret
+    siteState = ret['Value']
+
     if siteState == "All":
       cmd = "SELECT Site FROM SiteMask"
     else:
-      cmd = "SELECT Site FROM SiteMask WHERE Status='%s'" % siteState
+      cmd = "SELECT Site FROM SiteMask WHERE Status=%s" % siteState
 
     result = self._query( cmd )
     siteList = []
@@ -1486,14 +1717,18 @@ class JobDB(DB):
     return result
 
 #############################################################################
-  def removeSiteFromMask(selfself,site):
+  def removeSiteFromMask(self,site):
     """ Remove the given site from the mask
     """
+    ret = self._escapeString(site)
+    if not ret['OK']:
+      return ret
+    site = ret['Value']
 
     if site == "All":
       req = "DELETE FROM SiteMask"
     else:
-      req = "DELETE FROM SiteMask WHERE Site='%s'" % site
+      req = "DELETE FROM SiteMask WHERE Site=%s" % site
     return self._update(req)
 
 #############################################################################
@@ -1520,7 +1755,11 @@ class JobDB(DB):
     resultDict = {}
     for site in siteList:
       if not result['Value'] or site not in availableSiteList:
-        req = "SELECT Status Site,Status,LastUpdateTime,Author,Comment FROM SiteMask WHERE Site='%s'" % site
+        ret = self._escapeString(site)
+        if not ret['OK']:
+          continue
+        e_site = ret['Value']
+        req = "SELECT Status Site,Status,LastUpdateTime,Author,Comment FROM SiteMask WHERE Site=%s" % e_site
         resSite = self._query(req)
         if resSite['OK']:
           s,status,lastUpdate,author,comment = resSite['Value'][0]
@@ -1538,6 +1777,11 @@ class JobDB(DB):
   def setSandboxReady(self,jobID,stype='InputSandbox'):
     """ Set the sandbox status ready for the job with jobID
     """
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+
 
     if stype == "InputSandbox":
       field = "ISandboxReadyFlag"
@@ -1546,7 +1790,7 @@ class JobDB(DB):
     else:
       return S_ERROR('Illegal Sandbox type: '+stype)
 
-    cmd = "UPDATE Jobs SET %s='True' WHERE JobID=%d" % (field, int(jobID))
+    cmd = "UPDATE Jobs SET %s='True' WHERE JobID=%s" % (field, jobID)
     result = self._update(cmd)
     return result
 
@@ -1555,8 +1799,8 @@ class JobDB(DB):
     """ Get the summary of jobs in a given status on all the sites
     """
 
-    waitingList = ['Submitted','Assigned','Waiting','Matched']
-    waitingString = ','.join(["'"+x+"'" for x in waitingList])
+    waitingList = ['"Submitted"','"Assigned"','"Waiting"','"Matched"']
+    waitingString = ','.join(waitingList)
 
     result = self.getDistinctJobAttributes('Site')
     if not result['OK']:
@@ -1571,7 +1815,12 @@ class JobDB(DB):
         continue
       # Waiting
       siteDict[site] = {}
-      req = "SELECT COUNT(JobID) FROM Jobs WHERE Status IN (%s) AND Site='%s'" % (waitingString,site)
+      ret = self._escapeString(site)
+      if not ret['OK']:
+        return ret
+      e_site = ret['Value']
+
+      req = "SELECT COUNT(JobID) FROM Jobs WHERE Status IN (%s) AND Site=%s" % (waitingString,e_site)
       result = self._query(req)
       if result['OK']:
         count = result['Value'][0][0]
@@ -1580,8 +1829,8 @@ class JobDB(DB):
       siteDict[site]['Waiting'] = count
       totalDict['Waiting'] += count
       # Running,Stalled,Done,Failed
-      for status in ['Running','Stalled','Done','Failed']:
-        req = "SELECT COUNT(JobID) FROM Jobs WHERE Status='%s' AND Site='%s'" % (status,site)
+      for status in ['"Running"','"Stalled"','"Done"','"Failed"']:
+        req = "SELECT COUNT(JobID) FROM Jobs WHERE Status=%s AND Site=%s" % (status,e_site)
         result = self._query(req)
         if result['OK']:
           count = result['Value'][0][0]
@@ -1849,7 +2098,12 @@ class JobDB(DB):
     """
 
     # Set the time stamp first
-    req = "UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP() WHERE JobID=%d" % jobID
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    e_jobID = ret['Value']
+
+    req = "UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP() WHERE JobID=%s" % e_jobID
     result = self._update(req)
     if not result['OK']:
       return S_ERROR('Failed to set the heart beat time: '+result['Message'])
@@ -1866,12 +2120,17 @@ class JobDB(DB):
     start = time.time()
     valueList = []
     for key,value in dynamicDataDict.items():
+      result = self._escapeString(key)
+      if not result['OK']:
+        self.log.warn('Failed to escape string '+key)
+        continue
+      e_key   = result['Value']
       result = self._escapeString(value)
       if not result['OK']:
         self.log.warn('Failed to escape string '+value)
         continue
       e_value = result['Value']
-      valueList.append("( %d, '%s','%s',UTC_TIMESTAMP())" % (jobID,key,e_value))
+      valueList.append("( %s, %s,%s,UTC_TIMESTAMP())" % (e_jobID,e_key,e_value))
 
     if valueList:
 
@@ -1894,7 +2153,12 @@ class JobDB(DB):
   def getHeartBeatData(self,jobID):
     """ Retrieve the job's heart beat data
     """
-    cmd = 'SELECT Name,Value,HeartBeatTime from HeartBeatLoggingInfo WHERE JobID=%d' % (int(jobID))
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+
+    cmd = 'SELECT Name,Value,HeartBeatTime from HeartBeatLoggingInfo WHERE JobID=%s' % jobID
     res = self._query( cmd )
     if not res['OK']:
       return res
@@ -1914,9 +2178,18 @@ class JobDB(DB):
     """ Store a command to be passed to the job together with the
         next heart beat
     """
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+
+    ret = self._escapeString(command)
+    if not ret['OK']:
+      return ret
+    command = ret['Value']
 
     req = "INSERT INTO JobCommands (JobID,Command,Arguments,ReceptionTime) "
-    req += "VALUES (%d,'%s','%s',UTC_TIMESTAMP())" % (jobID,command, arguments)
+    req += "VALUES (%s,%s,%s,UTC_TIMESTAMP())" % (jobID,command, arguments)
     result = self._update(req)
     return result
 
@@ -1926,7 +2199,17 @@ class JobDB(DB):
         next heart beat
     """
 
-    req = "SELECT Command, Arguments FROM JobCommands WHERE JobID=%d AND Status='%s'" % (jobID,status)
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+
+    ret = self._escapeString(status)
+    if not ret['OK']:
+      return ret
+    status = ret['Value']
+
+    req = "SELECT Command, Arguments FROM JobCommands WHERE JobID=%s AND Status=%s" % (jobID,status)
     result = self._query(req)
     if not result['OK']:
       return result
@@ -1942,8 +2225,22 @@ class JobDB(DB):
   def setJobCommandStatus(self,jobID,command,status):
     """ Set the command status
     """
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
-    req = "UPDATE JobCommands SET Status='%s' WHERE JobID=%d AND Command='%s'" % (status,jobID,command)
+    ret = self._escapeString(command)
+    if not ret['OK']:
+      return ret
+    command = ret['Value']
+
+    ret = self._escapeString(status)
+    if not ret['OK']:
+      return ret
+    status = ret['Value']
+
+    req = "UPDATE JobCommands SET Status=%s WHERE JobID=%s AND Command=%s" % (status,jobID,command)
     result = self._update(req)
     return result
 
