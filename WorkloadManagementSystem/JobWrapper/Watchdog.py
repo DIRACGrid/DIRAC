@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.47 2009/04/18 18:26:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.48 2009/04/22 16:11:43 rgracian Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.47 2009/04/18 18:26:58 rgracian Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.48 2009/04/22 16:11:43 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -345,76 +345,7 @@ class Watchdog(Agent):
     except Exception, e:
       self.log.error( "Cannot convert CPU consumed from string to int: %s" % str(e) )
 
-
     return S_OK()
-
-
-
-    #TODO: test that ok jobs don't die :)
-    if self.nullCPUCount > self.nullCPULimit:
-      stalledTime = self.nullCPULimit*self.sampleCPUTime
-      return S_ERROR('Watchdog identified this job as stalled after no accumulated CPU change in %s seconds' %stalledTime)
-
-    cpuList=[]
-    if self.parameters.has_key('CPUConsumed'):
-      cpuList = self.parameters['CPUConsumed']
-    else:
-      return S_ERROR('No CPU consumed in collected parameters')
-
-    #First restrict cpuList to specified sample time interval
-    #Return OK if time not reached yet
-
-    interval = self.checkingTime
-    sampleTime = self.sampleCPUTime
-    iterations = int(sampleTime/interval)
-    if len(cpuList) < iterations:
-      return S_OK('Job running for less than CPU sample time')
-    else:
-      self.log.debug(cpuList)
-      cut = len(cpuList) - iterations
-      cpuList = cpuList[cut:]
-
-    cpuSample = []
-    for value in cpuList:
-      valueTime = self.__convertCPUTime(value)
-      if not valueTime['OK']:
-        return valueTime
-      cpuSample.append(valueTime['Value'])
-
-    #If total CPU consumed / WallClock for iterations less than X
-    #can fail job.
-
-    totalCPUConsumed = cpuSample[-1]
-    self.log.info('Cumulative CPU consumed by application process is: %s' % (totalCPUConsumed))
-    if len(cpuSample)>1:
-      cpuConsumedInterval = cpuSample[-1]-cpuSample[-2]  #during last interval
-      if not cpuConsumedInterval:
-        self.nullCPUCount += 1
-        self.log.info('No CPU change detected, counter is at %s' %(self.nullCPUCount))
-        return S_OK('No CPU change')
-
-      ratio = float(100*cpuConsumedInterval)/float(sampleTime)
-      limit = float( self.minCPUWallClockRatio )
-      self.log.info('CPU consumed / Wallclock time ratio during last %s seconds is %.2f percent' % (sampleTime,ratio))
-      totalRatio = float(totalCPUConsumed)/float(sampleTime)
-      self.log.info('Overall CPU consumed / Wallclock ratio is %.2f percent' %(totalRatio))
-      if ratio < limit:
-        self.log.info(cpuSample)
-        noCPURecordedFlag = True
-        for i in cpuSample:
-          if i:
-            noCPURecordedFlag = False
-        if noCPURecordedFlag:
-          self.log.info('Watchdog would have identified job as stalled but CPU is consistently zero')
-          return S_OK('Watchdog cannot obtain CPU')
-
-        return S_ERROR('Watchdog identified this job as stalled after detecting CPU/Wallclock ratio of %s' %ratio)
-
-    else:
-      self.log.info('Insufficient CPU consumed information')
-      self.log.verbose(cpuList)
-
-    return S_OK('Job consuming CPU')
 
   #############################################################################
 
