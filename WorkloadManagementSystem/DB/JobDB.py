@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.142 2009/04/22 06:31:59 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.143 2009/04/22 07:02:33 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.142 2009/04/22 06:31:59 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.143 2009/04/22 07:02:33 rgracian Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -1417,16 +1417,33 @@ class JobDB(DB):
     return S_OK()
 
 #############################################################################
-  def __setSiteStatusInMask(self,site,status,author,comment_raw):
+  def __setSiteStatusInMask(self,site,status,authorDN='Unknown',comment='No comment'):
     """  Set the given site status to 'status' or add a new active site
     """
-    comment = comment_raw
-    if comment_raw:
-      result = self._escapeString(comment_raw)
-      if result['OK']:
-        comment = result['Value'].lstrip('"').rstrip('"')
 
-    req = "SELECT Status FROM SiteMask WHERE Site='%s'" % site
+    result = self._escapeString(site)
+    if not result['OK']:
+      return result
+    site = result['Value']
+
+    result = self._escapeString(status)
+    if not result['OK']:
+      return result
+    status = result['Value']
+
+    result = self._escapeString(authorDN)
+    if not result['OK']:
+      return result
+    authorDN = result['Value']
+
+    result = self._escapeString(comment)
+    if not result['OK']:
+      return result
+    comment = result['Value']
+
+
+
+    req = "SELECT Status FROM SiteMask WHERE Site=%s" % site
     result = self._query(req)
     if result['OK']:
       if len(result['Value']) > 0:
@@ -1434,16 +1451,16 @@ class JobDB(DB):
         if current_status == status:
           return S_OK()
         else:
-          req =  "UPDATE SiteMask SET Status='%s',LastUpdateTime=UTC_TIMESTAMP()," \
-                 "Author='%s', Comment='%s' WHERE Site='%s'"
-          req = req % (status,author,comment,site)
+          req =  "UPDATE SiteMask SET Status=%s,LastUpdateTime=UTC_TIMESTAMP()," \
+                 "Author=%s, Comment=%s WHERE Site=%s"
+          req = req % (status,authorDN,comment,site)
       else:
-        req = "INSERT INTO SiteMask VALUES ('%s','%s',UTC_TIMESTAMP(),'%s','%s')" % (site,status,author,comment)
+        req = "INSERT INTO SiteMask VALUES (%s,%s,UTC_TIMESTAMP(),%s,%s)" % (site,status,authorDN,comment)
       result = self._update(req)
       if not result['OK']:
         return S_ERROR('Failed to update the Site Mask')
       # update the site mask logging record
-      req = "INSERT INTO SiteMaskLogging VALUES ('%s','%s',UTC_TIMESTAMP(),'%s','%s')" % (site,status,author,comment)
+      req = "INSERT INTO SiteMaskLogging VALUES (%s,%s,UTC_TIMESTAMP(),%s,%s)" % (site,status,authorDN,comment)
       result = self._update(req)
       if not result['OK']:
         self.log.warn('Failed to update site mask logging for %s' % site)
