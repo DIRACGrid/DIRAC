@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TimeLeft.py,v 1.12 2009/04/20 06:46:41 rgracian Exp $
+# $Id: TimeLeft.py,v 1.13 2009/04/22 16:07:44 rgracian Exp $
 ########################################################################
 
 """ The TimeLeft utility allows to calculate the amount of CPU time
@@ -16,7 +16,7 @@
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
-__RCSID__ = "$Id: TimeLeft.py,v 1.12 2009/04/20 06:46:41 rgracian Exp $"
+__RCSID__ = "$Id: TimeLeft.py,v 1.13 2009/04/22 16:07:44 rgracian Exp $"
 
 import os,re
 
@@ -28,6 +28,7 @@ class TimeLeft:
     """
     gLogger.setLevel('debug')
     self.log = gLogger.getSubLogger('TimeLeft')
+    # FIXME: Why do we need to load any .cfg file here????
     self.__loadLocalCFGFiles()
     self.site = gConfig.getValue('/LocalSite/Site','Unknown')
     # This is the ratio SpecInt published by the site over 500 (the reference used for Matching)
