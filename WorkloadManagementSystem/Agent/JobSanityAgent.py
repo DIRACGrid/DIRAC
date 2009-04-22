@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.18 2009/04/18 18:26:57 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.19 2009/04/22 16:10:48 rgracian Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.18 2009/04/18 18:26:57 rgracian Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.19 2009/04/22 16:10:48 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -220,7 +220,7 @@ class JobSanityAgent(OptimizerModule):
        method will fail the job for the attention of the
        data manager. To be tidied for DIRAC3...
     """
-    #To implement
+    # FIXME: To implement checkOutputDataExists
     return S_OK()
 
   #############################################################################
@@ -229,7 +229,7 @@ class JobSanityAgent(OptimizerModule):
        supported by DIRAC and will check these against what
        the job requests.
     """
-    #To implement
+    # FIXME: To implement checkPlatformSupported
     return S_OK()
 
   #############################################################################
@@ -237,7 +237,7 @@ class JobSanityAgent(OptimizerModule):
     """The number of input sandbox files, as specified in the job
        JDL are checked in the JobDB.
     """
-    #To implement
+    # FIXME: To implement checkInputSandbox
     return S_OK()
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
