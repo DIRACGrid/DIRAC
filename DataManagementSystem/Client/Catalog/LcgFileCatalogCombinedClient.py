@@ -113,6 +113,7 @@ class LcgFileCatalogCombinedClient:
           else:
             result = resMeth
       except Exception,x:
+        gLogger.exception('Exception while calling LFC Master service')
         result = S_ERROR('Exception while calling LFC Master service '+str(x))
       count += 1
 
@@ -155,7 +156,8 @@ class LcgFileCatalogCombinedClient:
             else:
               result = resMeth
         except Exception,x:
-          result = S_ERROR('Exception while calling LFC mirror service '+str(x))
+          gLogger.exception('Exception while calling LFC Mirror service')
+          result = S_ERROR('Exception while calling LFC Mirror service '+str(x))
         i += 1
       count += 1
 
@@ -178,6 +180,7 @@ class LcgFileCatalogCombinedClient:
           else:
             result = resMeth
       except Exception,x:
+        gLogger.exception('Exception while calling LFC Master service')
         result = S_ERROR('Exception while calling LFC Master service '+str(x))
 
     return result
