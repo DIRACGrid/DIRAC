@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.145 2009/04/22 08:24:26 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.146 2009/04/22 08:29:51 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.145 2009/04/22 08:24:26 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.146 2009/04/22 08:29:51 rgracian Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -168,9 +168,7 @@ class JobDB(DB):
         ret = self._escapeString(attrName)
         if not ret['OK']:
           return ret
-        attrName = ret['Value']
-        attrName[0] = "`"
-        attrName[-1] = "`"
+        attrName = "`"+ ret['Value'][1:-1]+"`"
 
         if type(attrValue) == types.ListType:
           multiValueList = []
@@ -424,9 +422,7 @@ class JobDB(DB):
         ret = self._escapeString(x)
         if not ret['OK']:
           return ret
-        x = ret['Value']
-        x[0] = "`"
-        x[-1] = "`"
+        x = "`"+ret['Value'][1:-1]+"`"
         attrNameList.append(x)
       attrNames = ','.join(attrNameList)
     else:
@@ -435,9 +431,7 @@ class JobDB(DB):
         ret = self._escapeString(x)
         if not ret['OK']:
           return ret
-        x = ret['Value']
-        x[0] = "`"
-        x[-1] = "`"
+        x = "`"+ret['Value'][1:-1]+"`"
         attrNameList.append(x)
       attrNames = ','.join(attrNameList)
     self.log.debug( 'JobDB.getAllJobAttributes: Getting Attributes for job = %s.' %jobID )
