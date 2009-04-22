@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.70 2009/04/20 06:46:17 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.71 2009/04/22 16:09:35 rgracian Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.70 2009/04/20 06:46:17 rgracian Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.71 2009/04/22 16:09:35 rgracian Exp $"
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -65,8 +65,7 @@ class Dirac:
     self.setup      = gConfig.getValue('/DIRAC/Setup','Unknown')
     self.section    = '/LocalSite/'
     self.cvsVersion = 'CVS version '+__RCSID__
-    self.diracInfo  = 'DIRAC version v%dr%d build %d' \
-                       %(DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.patchLevel)
+    self.diracInfo  = 'DIRAC version %s' % DIRAC.buildVersion
 
     self.scratchDir = gConfig.getValue(self.section+'/LocalSite/ScratchDir','/tmp')
     self.outputSandboxClient = SandboxClient('Output')
@@ -118,6 +117,7 @@ class Dirac:
         subResult = self._sendJob(job)
         return subResult
       else:
+        # TODO: make use of python tempfile module
         self.log.verbose('Job is a JDL string')
         guid = makeGuid()
         tmpdir = self.scratchDir+'/'+guid
@@ -132,6 +132,7 @@ class Dirac:
     #creating a /tmp/guid/ directory for job submission files
     guid = makeGuid()
     tmpdir = self.scratchDir+'/'+guid
+    # TODO: make use of python tempfile module
     self.log.verbose('Created temporary directory for submission %s' % (tmpdir))
     os.mkdir(tmpdir)
 
@@ -179,21 +180,17 @@ class Dirac:
        site it is submitted from.
     """
     if not self.site or self.site == 'Unknown':
-      return self.__errorReport('LocalSite/Site configuration section is unknown, please set this correctly')
+      return self.__errorReport('/LocalSite/Site configuration Option is unknown, please set this correctly')
 
-    # FIXME: DIRAC.rootPath is the current DIRACROOT
-    siteRoot = gConfig.getValue('/LocalSite/Root','')
-    if not siteRoot:
-      self.log.warn('LocalSite/Root configuration section is not defined, trying local directory')
-      siteRoot = os.getcwd()
-      if not os.path.exists('%s/DIRAC' %(siteRoot)):
-        return self.__errorReport('LocalSite/Root should be set to DIRACROOT')
+    # If not set differently in the CS use the root from the current DIRAC installation
+    siteRoot = gConfig.getValue('/LocalSite/Root',DIRAC.rootPath)
 
     #job must be updated to force destination to local site and disable pilot submissions
     job.setDestination(self.site)
     job.setPlatform('Local')
     job._addJDLParameter('PilotTypes','private')
     #creating a /tmp/guid/ directory for updated job submission files
+    # TODO: make use of python tempfile module
     guid = makeGuid()
     tmpdir = self.scratchDir+'/'+guid
     self.log.verbose('Created temporary directory for submission %s' % (tmpdir))
@@ -337,12 +334,8 @@ class Dirac:
     if not self.site or self.site == 'Unknown':
       return self.__errorReport('LocalSite/Site configuration section is unknown, please set this correctly')
 
-    siteRoot = gConfig.getValue('/LocalSite/Root','')
-    if not siteRoot:
-      self.log.warn('LocalSite/Root configuration section is not defined, trying local directory')
-      siteRoot = os.getcwd()
-      if not os.path.exists('%s/DIRAC' %(siteRoot)):
-        return self.__errorReport('LocalSite/Root should be set to DIRACROOT')
+    # If not set differently in the CS use the root from the current DIRAC installation
+    siteRoot = gConfig.getValue('/LocalSite/Root',DIRAC.rootPath)
 
     result = self.__monitorSubmittedJob(jobID)
     if not result['OK']:
@@ -480,12 +473,8 @@ class Dirac:
     if not self.site or self.site == 'Unknown':
       return self.__errorReport('LocalSite/Site configuration section is unknown, please set this correctly')
 
-    siteRoot = gConfig.getValue('/LocalSite/Root','')
-    if not siteRoot:
-      self.log.warn('LocalSite/Root configuration section is not defined, trying local directory')
-      siteRoot = os.getcwd()
-      if not os.path.exists('%s/DIRAC' %(siteRoot)):
-        return self.__errorReport('LocalSite/Root should be set to DIRACROOT')
+    # If not set differently in the CS use the root from the current DIRAC installation
+    siteRoot = gConfig.getValue('/LocalSite/Root',DIRAC.rootPath)
 
     self.log.info('Preparing environment for site %s to execute job' %self.site)
 
