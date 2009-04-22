@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.16 2009/03/22 13:15:23 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.17 2009/04/22 20:05:35 rgracian Exp $
 
 """
 The Data Management Request contains all the necessary information for
@@ -11,7 +11,7 @@ from DIRAC.Core.Security.Misc import getProxyInfo
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.RequestManagementSystem.Client.DISETSubRequest import DISETSubRequest
 
-__RCSID__ = "$Id: RequestContainer.py,v 1.16 2009/03/22 13:15:23 acsmith Exp $"
+__RCSID__ = "$Id: RequestContainer.py,v 1.17 2009/04/22 20:05:35 rgracian Exp $"
 
 class RequestContainer:
 
@@ -513,9 +513,11 @@ class RequestContainer:
       files = self.getSubRequestFiles(ind,type)['Value']
       for file in files:
         if not file.has_key('Status'):
+          gLogger.info('file=','%s' % file)
           gLogger.error("!!! The file has no status information !!!")
           gLogger.error("Ind:%s Type:%s" % (ind,type),self.toXML()['Value'])
         elif file['Status'] == 'Waiting':
+          gLogger.info('Found Waiting File')
           return S_OK(0)
       datasets = self.getSubRequestDatasets(ind, type)['Value']
       for dataset in datasets:
