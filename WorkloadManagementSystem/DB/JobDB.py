@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.153 2009/04/22 12:54:05 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.154 2009/04/22 12:55:54 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.153 2009/04/22 12:54:05 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.154 2009/04/22 12:55:54 rgracian Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -329,7 +329,7 @@ class JobDB(DB):
         ret = self._escapeString(x)
         if not ret['OK']:
           return ret
-        paramNameList.append(ret)
+        paramNameList.append(ret['Value'])
       paramNames = ','.join(paramNameList)
       cmd = "SELECT Name, Value from JobParameters WHERE JobID=%s and Name in (%s)" % (e_jobID,paramNames)
       result = self._query(cmd)
@@ -568,7 +568,7 @@ class JobDB(DB):
         ret = self._escapeString(x)
         if not ret['OK']:
           return ret
-        paramNameList.append(ret)
+        paramNameList.append(ret['Value'])
       paramNames = ','.join(paramNameList)
       cmd = "SELECT Name, Value from OptimizerParameters WHERE JobID=%s and Name in (%s)" % (jobID,paramNames)
     else:
