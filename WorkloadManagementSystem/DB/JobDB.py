@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.149 2009/04/22 08:56:43 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.150 2009/04/22 09:06:32 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.149 2009/04/22 08:56:43 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.150 2009/04/22 09:06:32 rgracian Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -898,19 +898,14 @@ class JobDB(DB):
     ret = self._escapeString(jobID)
     if not ret['OK']:
       return ret
-    jobID = ret['Value']
+    e_jobID = ret['Value']
 
     ret = self._escapeString(key)
     if not ret['OK']:
       return ret
-    key = ret['Value']
+    e_key = ret['Value']
 
-    ret = self._escapeString(value)
-    if not ret['OK']:
-      return ret
-    value = ret['Value']
-
-    cmd = 'DELETE FROM JobParameters WHERE JobID=%s AND Name=%s' % ( jobID, key )
+    cmd = 'DELETE FROM JobParameters WHERE JobID=%s AND Name=%s' % ( e_jobID, e_key )
     if not self._update( cmd )['OK']:
       result = S_ERROR('JobDB.setJobParameter: operation failed.')
 
@@ -965,19 +960,14 @@ class JobDB(DB):
     ret = self._escapeString(jobID)
     if not ret['OK']:
       return ret
-    jobID = ret['Value']
+    e_jobID = ret['Value']
 
     ret = self._escapeString(name)
     if not ret['OK']:
       return ret
-    name = ret['Value']
+    e_name = ret['Value']
 
-    ret = self._escapeString(value)
-    if not ret['OK']:
-      return ret
-    value = ret['Value']
-
-    cmd = 'DELETE FROM OptimizerParameters WHERE JobID=%s AND Name=%s' % ( jobID, name )
+    cmd = 'DELETE FROM OptimizerParameters WHERE JobID=%s AND Name=%s' % ( e_jobID, e_name )
     if not self._update( cmd )['OK']:
       result = S_ERROR('JobDB.setJobOptParameter: operation failed.')
 
@@ -2131,7 +2121,7 @@ class JobDB(DB):
       if not result['OK']:
         self.log.warn('Failed to escape string '+key)
         continue
-      e_key   = result['Value'][1:-1]
+      e_key   = result['Value']
       result = self._escapeString(value)
       if not result['OK']:
         self.log.warn('Failed to escape string '+value)
