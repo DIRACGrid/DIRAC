@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.140 2009/04/22 06:09:04 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.141 2009/04/22 06:28:36 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.140 2009/04/22 06:09:04 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.141 2009/04/22 06:28:36 rgracian Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -669,10 +669,18 @@ class JobDB(DB):
         The LastUpdate time stamp is refreshed if explicitely requested
     """
 
-    if update:
-      cmd = 'UPDATE Jobs SET %s=\'%s\',LastUpdateTime=UTC_TIMESTAMP() WHERE JobID=\'%s\'' % ( attrName, attrValue, jobID )
+    if type( attrValue ) in types.StringTypes:
+      ret = self._escapeString(attrValue)
+      if not ret['OK']:
+        return ret
+      value = ret['Value']
     else:
-      cmd = 'UPDATE Jobs SET %s=\'%s\' WHERE JobID=\'%s\'' % ( attrName, attrValue, jobID )
+      value = attrValue
+
+    if update:
+      cmd = "UPDATE Jobs SET %s='%s',LastUpdateTime=UTC_TIMESTAMP() WHERE JobID='%s'" % ( attrName, attrValue, jobID )
+    else:
+      cmd = "UPDATE Jobs SET %s='%s' WHERE JobID='%s'" % ( attrName, attrValue, jobID )
 
     if datetime:
       cmd += ' AND LastUpdateTime < %s' % datetime
@@ -701,7 +709,7 @@ class JobDB(DB):
         value = ret['Value']
       else:
         value = attrValues[i]
-      attr.append( '%s=\'%s\'' % (attrNames[i],value))
+      attr.append( "%s='%s'" % (attrNames[i],value))
     if update:
       attr.append( "LastUpdateTime=UTC_TIMESTAMP()" )
     if len(attr) == 0:
