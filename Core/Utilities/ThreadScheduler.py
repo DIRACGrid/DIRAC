@@ -159,7 +159,6 @@ class ThreadScheduler:
     try:
       task[ 'func' ]( *task[ 'args' ] )
     except Exception, e:
-      #TODO: Something with e
       gLogger.exception( "Exception while executing scheduled task" )
       return False
     return True
