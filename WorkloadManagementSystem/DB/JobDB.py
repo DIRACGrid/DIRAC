@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.148 2009/04/22 08:51:12 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.149 2009/04/22 08:56:43 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.148 2009/04/22 08:51:12 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.149 2009/04/22 08:56:43 rgracian Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -2131,7 +2131,7 @@ class JobDB(DB):
       if not result['OK']:
         self.log.warn('Failed to escape string '+key)
         continue
-      e_key   = result['Value']
+      e_key   = result['Value'][1:-1]
       result = self._escapeString(value)
       if not result['OK']:
         self.log.warn('Failed to escape string '+value)
