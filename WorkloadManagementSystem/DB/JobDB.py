@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.139 2009/04/01 12:51:54 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.140 2009/04/22 06:09:04 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.139 2009/04/01 12:51:54 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.140 2009/04/22 06:09:04 rgracian Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -317,7 +317,7 @@ class JobDB(DB):
             resultDict[name] = value
 
         return S_OK(resultDict)
-      
+
 #############################################################################
   def getAtticJobParameters(self, jobID, paramList=[], rescheduleCounter = -1 ):
     """ Get Attic Job Parameters defined for a job with jobID.
@@ -338,12 +338,12 @@ class JobDB(DB):
       rCounter = ' AND RescheduleCycle=%d' % int(rescheduleCounter)
     cmd = "SELECT Name, Value, RescheduleCycle from AtticJobParameters"
     cmd +=" WHERE JobID=%d %s %s" % (int(jobID),paramCondition,rCounter)
-    result = self._query(cmd)    
+    result = self._query(cmd)
     if result['OK']:
       if result['Value']:
         for name,value,counter in result['Value']:
           if not resultDict.has_key(counter):
-            resultDict[counter] = {} 
+            resultDict[counter] = {}
           try:
             resultDict[counter][name] = value.tostring()
           except:
@@ -351,7 +351,7 @@ class JobDB(DB):
 
       return S_OK(resultDict)
     else:
-      return S_ERROR('JobDB.getAtticJobParameters: failed to retrieve parameters')        
+      return S_ERROR('JobDB.getAtticJobParameters: failed to retrieve parameters')
 
 #############################################################################
   def getJobAttributes(self,jobID,attrList=[]):
@@ -694,7 +694,14 @@ class JobDB(DB):
 
     attr = []
     for i in range(len(attrNames)):
-      attr.append( '%s=\'%s\'' % (attrNames[i],attrValues[i]))
+      if type( attrValues[i] ) in types.StringTypes:
+        ret = self._escapeString(attrValues[i])
+        if not ret['OK']:
+          return ret
+        value = ret['Value']
+      else:
+        value = attrValues[i]
+      attr.append( '%s=\'%s\'' % (attrNames[i],value))
     if update:
       attr.append( "LastUpdateTime=UTC_TIMESTAMP()" )
     if len(attr) == 0:
@@ -1025,21 +1032,12 @@ class JobDB(DB):
       return retVal
 
     classAdJob.insertAttributeInt( 'JobID', jobID )
-    result = self.__checkAndPrepareJob( classAdJob, classAdReq, owner, ownerDN, ownerGroup, diracSetup )
+    result = self.__checkAndPrepareJob( jobID, classAdJob, classAdReq,
+                                        owner, ownerDN,
+                                        ownerGroup, diracSetup,
+                                        jobAttrNames, jobAttrValues )
     if not result['OK']:
-      jobAttrNames.append('Status')
-      jobAttrValues.append('Failed')
-
-      jobAttrNames.append('MinorStatus')
-      jobAttrValues.append(result['Message'])
-
-      resultInsert = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
-      if not resultInsert['OK']:
-        return resultInsert
-
-      retVal['Status'] = 'Failed'
-      retVal['MinorStatus'] = result['Message']
-      return retVal
+      return result
 
     priority      = classAdJob.getAttributeInt( 'Priority' )
     jobAttrNames.append( 'UserPriority' )
@@ -1096,7 +1094,7 @@ class JobDB(DB):
 
     return retVal
 
-  def __checkAndPrepareJob(self, classAdJob, classAdReq, owner, ownerDN, ownerGroup, diracSetup ):
+  def __checkAndPrepareJob(self, jobID, classAdJob, classAdReq, owner, ownerDN, ownerGroup, diracSetup, jobAttrNames, jobAttrValues):
     """
       Check Consistence of Submitted JDL and set some defaults
       Prepare subJDL with Job Requirements
@@ -1157,7 +1155,22 @@ class JobDB(DB):
           error = 'No compatible Platform found for %s' % systemConfig
 
     if error:
-      return S_ERROR(error)
+
+      retVal = S_ERROR()
+      retVal['JobId'] = jobId
+      retVal['Status'] = 'Failed'
+      retVal['MinorStatus'] = error
+
+      jobAttrNames.append('Status')
+      jobAttrValues.append('Failed')
+
+      jobAttrNames.append('MinorStatus')
+      jobAttrValues.append(error)
+      resultInsert = self.setJobAttributes( jobID, jobAttrNames, jobAttrValues )
+      if not resultInsert['OK']:
+        retVal['MinorStatus'] += '; %s' % resultInsert['Message']
+
+      return retVal
 
     return S_OK()
 
@@ -1309,24 +1322,13 @@ class JobDB(DB):
     retVal['JobID'] = jobID
 
     classAdJob.insertAttributeInt( 'JobID', jobID )
-    result = self.__checkAndPrepareJob( classAdJob, classAdReq, resultDict['Owner'],
+    result = self.__checkAndPrepareJob( jobID, classAdJob, classAdReq, resultDict['Owner'],
                                         resultDict['OwnerDN'], resultDict['OwnerGroup'],
-                                        resultDict['DIRACSetup'] )
+                                        resultDict['DIRACSetup'],
+                                        jobAttrNames, jobAttrValues )
 
     if not result['OK']:
-      jobAttrNames.append('Status')
-      jobAttrValues.append('Failed')
-
-      jobAttrNames.append('MinorStatus')
-      jobAttrValues.append(result['Message'])
-
-      resultInsert = self._insert( 'Jobs', jobAttrNames, jobAttrValues )
-      if not resultInsert['OK']:
-        return resultInsert
-
-      retVal['Status'] = 'Failed'
-      retVal['MinorStatus'] = result['Message']
-      return retVal
+      return result
 
     priority      = classAdJob.getAttributeInt( 'Priority' )
     jobAttrNames.append( 'UserPriority' )
@@ -1570,7 +1572,7 @@ class JobDB(DB):
   def getSiteSummaryWeb(self,selectDict, sortList, startItem, maxItems):
     """ Get the summary of jobs in a given status on all the sites in the standard Web form
     """
-    
+
     paramNames = ['Site','GridType','Country','Tier','MaskStatus']
     paramNames += JOB_STATES
     paramNames += ['Efficiency','Status']
@@ -1596,7 +1598,7 @@ class JobDB(DB):
     resultDay = self.getCounters('Jobs',['Site','Status'],
                                  {},newer=last_day,
                                  timeStamp='EndExecTime')
-                                 
+
     # Get the site mask status
     siteMask = {}
     resultMask = self.getSiteMask('All')
@@ -1621,7 +1623,7 @@ class JobDB(DB):
         resultDict[siteFullName] = {}
         for state in JOB_STATES:
           resultDict[siteFullName][state] = 0
-      if status not in JOB_FINAL_STATES:    
+      if status not in JOB_FINAL_STATES:
         resultDict[siteFullName][status] = count
     for attDict,count in resultDay['Value']:
       siteFullName = attDict['Site']
@@ -1638,11 +1640,11 @@ class JobDB(DB):
         grid,site,country = siteFullName.split('.')
       else:
         grid,site,country = 'Unknown','Unknown','Unknown'
-      
+
       tier = 'Tier-2'
       if site in siteT1List:
         tier = 'Tier-1'
-        
+
       if not countryCounts.has_key(country):
         countryCounts[country] = {}
         for state in JOB_STATES:
@@ -1651,7 +1653,7 @@ class JobDB(DB):
       if siteMask.has_key(siteFullName):
         rList.append(siteMask[siteFullName])
       else:
-        rList.append('NoMask')        
+        rList.append('NoMask')
       for status in JOB_STATES:
         rList.append(siteDict[status])
         countryCounts[country][status] += siteDict[status]
@@ -1683,7 +1685,7 @@ class JobDB(DB):
         if type(values) != type([]):
           values = [values]
         indices = range(len(records))
-        indices.reverse()  
+        indices.reverse()
         for ind in indices:
           if records[ind][selectItem] not in values:
             del records[ind]
