@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.146 2009/04/22 08:29:51 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.147 2009/04/22 08:39:06 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.146 2009/04/22 08:29:51 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.147 2009/04/22 08:39:06 rgracian Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -1067,12 +1067,12 @@ class JobDB(DB):
     ret = self._escapeString(JDL)
     if not ret['OK']:
       return ret
-    JDL = ret['Value']
+    e_JDL = ret['Value']
 
     ret = self._escapeString(originalJDL)
     if not ret['OK']:
       return ret
-    originalJDL = ret['Value']
+    e_originalJDL = ret['Value']
 
     req = "SELECT OriginalJDL FROM JobJDLs WHERE JobID=%s" % jobID
     result = self._query(req)
@@ -1084,17 +1084,17 @@ class JobDB(DB):
     if JDL:
 
       if updateFlag:
-        cmd = "UPDATE JobJDLs Set JDL=%s WHERE JobID=%s" % (JDL,jobID)
+        cmd = "UPDATE JobJDLs Set JDL=%s WHERE JobID=%s" % (e_JDL,jobID)
       else:
-        cmd = "INSERT INTO JobJDLs (JobID,JDL) VALUES (%s,%s)" % (jobID,JDL)
+        cmd = "INSERT INTO JobJDLs (JobID,JDL) VALUES (%s,%s)" % (jobID,e_JDL)
       result = self._update(cmd)
       if not result['OK']:
         return result
     if originalJDL:
       if updateFlag:
-        cmd = "UPDATE JobJDLs Set OriginalJDL=%s WHERE JobID=%s" % (originalJDL,jobID)
+        cmd = "UPDATE JobJDLs Set OriginalJDL=%s WHERE JobID=%s" % (e_originalJDL,jobID)
       else:
-        cmd = "INSERT INTO JobJDLs (JobID,OriginalJDL) VALUES (%s,%s)" % (jobID,originalJDL)
+        cmd = "INSERT INTO JobJDLs (JobID,OriginalJDL) VALUES (%s,%s)" % (jobID,e_originalJDL)
 
       result = self._update(cmd)
 
