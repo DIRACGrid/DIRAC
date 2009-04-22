@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.82 2009/04/20 06:43:11 rgracian Exp $
+# $Id: JobWrapper.py,v 1.83 2009/04/22 16:06:13 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.82 2009/04/20 06:43:11 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.83 2009/04/22 16:06:13 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -58,12 +58,16 @@ class JobWrapper:
     else:
       self.jobReport = JobReport(self.jobID,'JobWrapper')
 
-    # FIXME: this info is in DIRAC.rootPath
+    # self.root is the path the Wrapper is running at
     self.root = os.getcwd()
-    self.localSiteRoot = gConfig.getValue('/LocalSite/Root',self.root)
+    # self.localSiteRoot is the path where the local DIRAC installation used to run the payload
+    # is taken from
+    self.localSiteRoot = gConfig.getValue('/LocalSite/Root',DIRAC.rootPath)
+    # FIXME: Why do we need to load any .cfg file here????
     self.__loadLocalCFGFiles(self.localSiteRoot)
-    self.diracVersion = 'DIRAC version %s' % DIRAC.buildversion
+    self.diracVersion = 'DIRAC version %s' % DIRAC.buildVersion
     self.maxPeekLines = gConfig.getValue(self.section+'/MaxJobPeekLines',20)
+    if self.maxPeekLines < 0: self.maxPeekLines = 0
     self.defaultCPUTime = gConfig.getValue(self.section+'/DefaultCPUTime',600)
     self.defaultOutputFile = gConfig.getValue(self.section+'/DefaultOutputFile','std.out')
     self.defaultErrorFile = gConfig.getValue(self.section+'/DefaultErrorFile','std.err')
@@ -73,6 +77,7 @@ class JobWrapper:
     self.cleanUpFlag  = gConfig.getValue(self.section+'/CleanUpFlag',False)
     self.localSite = gConfig.getValue('/LocalSite/Site','Unknown')
     self.pilotRef = gConfig.getValue('/LocalSite/PilotReference','Unknown')
+    self.cpuNormalizationFactor = gConfig.getValue ( "/LocalSite/CPUNomalizationFactor", 0.0 )
     self.vo = gConfig.getValue('/DIRAC/VirtualOrganization','lhcb')
     self.bufferLimit = gConfig.getValue(self.section+'/BufferLimit',10485760)
     self.defaultOutputSE = gConfig.getValue(self.section+'/DefaultOutputSE','CERN-FAILOVER')
@@ -313,11 +318,13 @@ class JobWrapper:
       errorFileName = self.defaultErrorFile
       outputFileName = self.defaultOutputFile
       status = threadResult['Value'][0]
+      # will be empty since we are using a callback in the subprocess call
       stdout = threadResult['Value'][1]
+      # will be empty since we are using a callback in the subprocess call
       stderr = threadResult['Value'][2]
       #Send final heartbeat of a configurable number of lines here
       self.log.verbose('Sending final application standard output heartbeat')
-      self.__sendFinalStdOut(stdout)
+      self.__sendFinalStdOut(exeThread)
       self.log.verbose('Execution thread status = %s' %(status))
 
       if not status:
@@ -355,24 +362,28 @@ class JobWrapper:
     return S_OK()
 
   #############################################################################
-  def __sendFinalStdOut(self,stdout):
+  def __sendFinalStdOut(self,exeThread):
     """After the Watchdog process has finished, this function sends a final
        report to be presented in the StdOut in the web page via the heartbeat
        mechanism.
     """
     cpuConsumed = self.__getCPU()['Value']
-    self.log.info('Total CPU Consumed is: %s' %(cpuConsumed))
-    #TODO: add cpu units after normalization
-    splitRes = stdout.split('\n')
-    appStdOut = ''
-    if len(splitRes)>self.maxPeekLines:
-      appStdOut = string.join(splitRes[len(splitRes)-self.maxPeekLines:],'\n')
-    else:
-      self.log.verbose('Standard output is less than %s lines long' %(self.maxPeekLines))
-      appStdOut = stdout
+    self.log.info('Total CPU Consumed is: %s' %cpuConsumed[1])
+    self.__setJobParam('TotalCPUTime(s)',cpuConsumed[0])
+    normCPU = cpuConsumed[0] * self.cpuNormalizationFactor
+    self.__setJobParam('NormCPUTime(s)',cpuConsumed[0])
+    if self.cpuNormalizationFactor:
+      self.log.info('Normalized CPU Consumed is:', normCPU )
 
-    curTime = time.asctime(time.gmtime())
-    header = 'Last %s lines of application output from JobWrapper on %s [UTC]:' % (self.maxPeekLines,curTime)
+    result = exeThread.getOutput(self.maxPeekLines)
+    if not result['OK']:
+      lines = 0
+      appStdOut = ''
+    else:
+      lines = len(result['Value'])
+      appStdOut = '\n'.join(result['Value'])
+
+    header = 'Last %s lines of application output from JobWrapper on %s :' % (lines,DIRAC.Time.toString())
     border = ''
     for i in xrange(len(header)):
       border+='='
@@ -389,7 +400,7 @@ class JobWrapper:
         self.log.warn('Problem sending final heartbeat standard output from JobWrapper')
         self.log.warn(result)
 
-    return result
+    return
 
   #############################################################################
   def __getCPU(self):
@@ -408,8 +419,7 @@ class JobWrapper:
     hours, mins = divmod(mins, 60)
     humanTime = '%02d:%02d:%02d' % (hours, mins, secs)
     self.log.verbose('Human readable CPU time is: %s' %humanTime)
-    self.__setJobParam('TotalCPUTime(s)',cpuTime)
-    return S_OK(humanTime)
+    return S_OK((cpuTime,humanTime))
 
   #############################################################################
   def resolveInputData(self,arguments):
@@ -970,7 +980,7 @@ class JobWrapper:
                'FinalMinorStatus' : self.wmsMinorStatus,
                'CPUTime' : cpuTime,
                # Based on the factor to convert raw CPU to Normalized units (based on the CPU Model)
-               'NormCPUTime' : cpuTime * gConfig.getValue ( "/LocalSite/CPUNomalizationFactor", 0.0 ),
+               'NormCPUTime' : cpuTime * self.cpuNormalizationFactor,
                'ExecTime' : execTime,
                'InputDataSize' : self.inputDataSize,
                'OutputDataSize' : self.outputDataSize,
@@ -1179,16 +1189,13 @@ class ExecutionThread(threading.Thread):
       print >> errorFile, line
       errorFile.close()
     self.outputLines.append(line)
+    if size > self.maxPeekLines:
+      # reduce max size of output peeking
+      self.outputLines.pop(0)
 
   #############################################################################
   def getOutput(self,lines=0):
     if self.outputLines:
-      size = len(self.outputLines)
-      #reduce max size of output peeking
-      # FIXME: this should be done in the receiving method (sendOutput)
-      if size > self.maxPeekLines:
-        cut = size - self.maxPeekLines
-        self.outputLines = self.outputLines[cut:]
       #restrict to smaller number of lines for regular
       #peeking by the watchdog
       # FIXME: this is multithread, thus single line would be better
