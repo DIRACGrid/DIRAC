@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.15 2009/04/18 18:26:57 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.16 2009/04/22 16:10:32 rgracian Exp $
 # File :   JobPathAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,7 +12,7 @@
       path through the optimizers.
 
 """
-__RCSID__ = "$Id: JobPathAgent.py,v 1.15 2009/04/18 18:26:57 rgracian Exp $"
+__RCSID__ = "$Id: JobPathAgent.py,v 1.16 2009/04/22 16:10:32 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -58,7 +58,7 @@ class JobPathAgent(OptimizerModule):
     jobDesc = JobDescription()
     result = jobDesc.loadDescription( classAdJob.asJDL() )
     if not result[ 'OK' ]:
-      #TODO: Set error
+      self.setFailedJob(job, result['Message'])
       return result
     self.__syncJobDesc( job, jobDesc, classAdJob )
 
@@ -79,9 +79,10 @@ class JobPathAgent(OptimizerModule):
       moduleFactory = ModuleFactory()
       moduleInstance = moduleFactory.getModule(self.voPlugin,argumentsDict)
       if not moduleInstance['OK']:
-        self.log.error('Could not instantiate module %s, holding pending jobs' %(self.voPlugin))
-        # FIXME: this should be marked as Error, otherwise they will be retry on every iteration
-        return S_OK('Holding pending jobs')
+        self.log.error('Could not instantiate module:', '%s' %(self.voPlugin))
+        self.setFailedJob(job, 'Could not instantiate module: %s' %(self.voPlugin))
+        return S_ERROR('Holding pending jobs')
+
       module = moduleInstance['Value']
       result = module.execute()
       if not result['OK']:
@@ -100,14 +101,8 @@ class JobPathAgent(OptimizerModule):
       self.log.warn(result['Message'])
       return result
 
-    # FIXME: this can be simplify: if result['OK'] and result['Value']: # (it is not an empty tuple)
-    ok = False
     if result['Value']:
-      for i in result['Value']:
-        if i:
-          ok = True
-
-    if result['Value'] and ok:
+      # if the returned tuple is not empty it will evaluate true
       self.log.info('Job %s has an input data requirement' % (job))
       path.extend( self.inputData )
     else:
