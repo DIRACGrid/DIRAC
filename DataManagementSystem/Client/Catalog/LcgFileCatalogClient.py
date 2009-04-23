@@ -524,12 +524,20 @@ class LcgFileCatalogClient(FileCatalogueBase):
     created = self.__openSession()
     failed = {}
     successful = {}
-    for lfn,info in lfns.items():
-      pfn = info['PFN']
-      se = info['SE']
-      size = info['Size']
-      guid = info['GUID']
-      checksum = info['Checksum']
+    #for lfn,info in lfns.items():
+    for fileTuple in lfns:
+      lfn = fileTuple[0]
+      pfn = fileTuple[1]
+      #pfn = info['PFN']
+      se = fileTuple[3]
+      #se = info['SE']
+      size = fileTuple[2]
+      #size = info['Size']
+      guid = fileTuple[4]
+      #guid = info['GUID']
+      checksum = fileTuple[5]
+      #checksum = info['Checksum']
+
       master = True
       res = self.__checkAddFile(lfn,pfn,size,se,guid)
       if not res['OK']:
@@ -1070,7 +1078,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
   def __addFile(self,lfn,pfn,size,se,guid,checksum):
     lfc.lfc_umask(0000)
     bdir = os.path.dirname(lfn)
-    res = self.self.__executeOperation(bdir,'exists')
+    res = self.__executeOperation(bdir,'exists')
     # If we failed to find out whether the directory exists
     if not res['OK']:
       return S_ERROR(res['Message'])
