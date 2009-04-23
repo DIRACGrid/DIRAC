@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.10 2009/02/17 11:38:48 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.10 2009/02/17 11:38:48 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.11 2009/04/23 07:29:27 rgracian Exp $
+__RCSID__ = "$Id: CFG.py,v 1.11 2009/04/23 07:29:27 rgracian Exp $"
 
 import types
 import copy
@@ -463,6 +463,7 @@ class CFG:
     @param tabLevelString: Tab string to apply to entries before representing them
     @return: String with the contents of the CFG
     """
+    indentation = "  "
     CFGSTring = ""
     for entryName in self.__orderedList:
       if entryName in self.__commentDict:
@@ -470,8 +471,7 @@ class CFG:
           CFGSTring += "%s#%s\n" % ( tabLevelString, commentLine )
       if entryName in self.listSections():
         CFGSTring += "%s%s\n%s{\n" % ( tabLevelString, entryName, tabLevelString )
-        # FIXME: I have change the tab by spaces (we may want to put 4)
-        CFGSTring += self.__dataDict[ entryName ].serialize( "%s  " % tabLevelString )
+        CFGSTring += self.__dataDict[ entryName ].serialize( "%s%s" % ( tabLevelString, indentation ) )
         CFGSTring += "%s}\n" % tabLevelString
       elif entryName in self.listOptions():
         valueList = List.fromChar( self.__dataDict[ entryName ] )
