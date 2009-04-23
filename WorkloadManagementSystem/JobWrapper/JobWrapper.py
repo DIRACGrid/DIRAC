@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.86 2009/04/23 04:20:43 rgracian Exp $
+# $Id: JobWrapper.py,v 1.87 2009/04/23 22:10:47 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.86 2009/04/23 04:20:43 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.87 2009/04/23 22:10:47 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -27,7 +27,7 @@ from DIRAC.Core.Utilities.ModuleFactory                             import Modul
 from DIRAC.Core.Utilities.Subprocess                                import shellCall
 from DIRAC.Core.Utilities.Subprocess                                import Subprocess
 from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize
-from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, List
 import DIRAC
 
 import os, re, sys, string, time, shutil, threading, tarfile, glob, types
@@ -80,7 +80,8 @@ class JobWrapper:
     self.cpuNormalizationFactor = gConfig.getValue ( "/LocalSite/CPUNomalizationFactor", 0.0 )
     self.vo = gConfig.getValue('/DIRAC/VirtualOrganization','lhcb')
     self.bufferLimit = gConfig.getValue(self.section+'/BufferLimit',10485760)
-    self.defaultOutputSE = gConfig.getValue(self.section+'/DefaultOutputSE','CERN-FAILOVER')
+    self.defaultOutputSE = gConfig.getValue('/Resources/StorageElementGroups/Tier1-USER',[])
+    self.defaultOutputPath = ''
     self.rm = ReplicaManager()
     self.log.verbose('===========================================================================')
     self.log.verbose('CVS version %s' %(__RCSID__))
@@ -135,42 +136,46 @@ class JobWrapper:
     self.outputSandboxSize=0
     self.outputDataSize=0
     self.processedEvents = 0
-
+    self.wmsAccountingSent = False
+    
   #############################################################################
   def initialize(self, arguments):
     """ Initializes parameters and environment for job.
     """
-    #self.__report('Running','Job Initialization')
+    self.__report('Running','Job Initialization')
     self.log.info('Starting Job Wrapper Initialization for Job %s' %(self.jobID))
-    jobArgs = arguments['Job']
-    self.log.verbose(jobArgs)
-    ceArgs = arguments ['CE']
-    self.log.verbose(ceArgs)
-    self.__setInitialJobParameters(arguments)
-
+    self.jobArgs = arguments['Job']
+    self.log.verbose(self.jobArgs)
+    self.ceArgs = arguments ['CE']
+    self.log.verbose(self.ceArgs)
+    self.__setInitialJobParameters()
+    if arguments.has_key('Optimizer'):
+      self.optArgs = arguments['Optimizer']
+    else:
+      self.optArgs = {}
     #Fill some parameters for the accounting report
-    if jobArgs.has_key('Owner'):
-      self.owner=jobArgs['Owner']
-    if jobArgs.has_key('JobGroup'):
-      self.jobGroup=jobArgs['JobGroup']
-    if jobArgs.has_key('JobType'):
-      self.jobType=jobArgs['JobType']
-    if jobArgs.has_key('InputData'):
-      dataParam=jobArgs['InputData']
+    if self.jobArgs.has_key('Owner'):
+      self.owner=self.jobArgs['Owner']
+    if self.jobArgs.has_key('JobGroup'):
+      self.jobGroup=self.jobArgs['JobGroup']
+    if self.jobArgs.has_key('JobType'):
+      self.jobType=self.jobArgs['JobType']
+    if self.jobArgs.has_key('InputData'):
+      dataParam=self.jobArgs['InputData']
       if dataParam and not type(dataParam)==type([]):
         dataParam=[dataParam]
       self.inputDataFiles=len(dataParam)
-    if jobArgs.has_key('OutputData'):
-      dataParam=jobArgs['OutputData']
+    if self.jobArgs.has_key('OutputData'):
+      dataParam=self.jobArgs['OutputData']
       if dataParam and not type(dataParam)==type([]):
         dataParam=[dataParam]
       self.outputDataFiles=len(dataParam)
-    if jobArgs.has_key('ProcessingType'):
-      self.processingType=jobArgs['ProcessingType']
-    if jobArgs.has_key('OwnerGroup'):
-      self.userGroup=jobArgs['OwnerGroup']
-    if jobArgs.has_key('JobSplitType'):
-      self.jobClass=jobArgs['JobSplitType']
+    if self.jobArgs.has_key('ProcessingType'):
+      self.processingType=self.jobArgs['ProcessingType']
+    if self.jobArgs.has_key('OwnerGroup'):
+      self.userGroup=self.jobArgs['OwnerGroup']
+    if self.jobArgs.has_key('JobSplitType'):
+      self.jobClass=self.jobArgs['JobSplitType']
 
     # Prepare the working directory and cd to there
     if self.jobID:
@@ -182,7 +187,7 @@ class JobWrapper:
       self.log.info('JobID is not defined, running in current directory')
 
     infoFile = open( 'job.info', 'w' )
-    infoFile.write( self.__dictAsInfoString( jobArgs, '/Job' ) )
+    infoFile.write( self.__dictAsInfoString( self.jobArgs, '/Job' ) )
     infoFile.close()
 
   #############################################################################
@@ -225,32 +230,29 @@ class JobWrapper:
     os.environ['DIRACSITE'] = self.localSite
     self.log.verbose('DIRACSITE = %s' %(self.localSite))
 
-    jobArgs = arguments['Job']
-    ceArgs = arguments ['CE']
-
     outputFile = self.defaultOutputFile
     errorFile  = self.defaultErrorFile
-    if jobArgs.has_key('StdError'):
-      errorFile = jobArgs['StdError']
-    if jobArgs.has_key('StdOutput'):
-      outputFile = jobArgs['StdOutput']
+    if self.jobArgs.has_key('StdError'):
+      errorFile = self.jobArgs['StdError']
+    if self.jobArgs.has_key('StdOutput'):
+      outputFile = self.jobArgs['StdOutput']
 
-    if jobArgs.has_key('MaxCPUTime'):
-      jobCPUTime = int(jobArgs['MaxCPUTime'])
+    if self.self.jobArgs.has_key('MaxCPUTime'):
+      jobCPUTime = int(self.jobArgs['MaxCPUTime'])
     else:
       self.log.info('Job %s has no CPU time limit specified, applying default of %s' %(self.jobID,self.defaultCPUTime))
       jobCPUTime = self.defaultCPUTime
 
-    if jobArgs.has_key('Executable'):
-      executable = jobArgs['Executable']
+    if self.jobArgs.has_key('Executable'):
+      executable = self.jobArgs['Executable']
     else:
       msg = 'Job %s has no specified executable' %(self.jobID)
       self.log.warn(msg)
       return S_ERROR(msg)
 
     jobArguments = ' '
-    if jobArgs.has_key('Arguments'):
-      jobArguments = jobArgs['Arguments']
+    if self.jobArgs.has_key('Arguments'):
+      jobArguments = self.jobArgs['Arguments']
 
     executable = os.path.expandvars(executable)
     exeThread = None
@@ -261,9 +263,9 @@ class JobWrapper:
       self.log.verbose('Replaced $DIRACROOT for executable as %s' %(self.localSiteRoot))
 
     exeEnv = dict(os.environ)
-    if jobArgs.has_key('ExecutionEnvironment'):
+    if self.jobArgs.has_key('ExecutionEnvironment'):
       self.log.verbose('Adding variables to execution environment')
-      variableList = jobArgs['ExecutionEnvironment']
+      variableList = self.jobArgs['ExecutionEnvironment']
       for var in variableList:
         nameEnv = var.split('=')[0]
         valEnv = var.split('=')[1]
@@ -271,7 +273,7 @@ class JobWrapper:
         self.log.verbose('%s = %s' %(nameEnv,valEnv))
 
     if os.path.exists(executable):
-      self.__report('Running','Application')
+      self.__report('Running','Application',sendFlag=True)
       spObject = Subprocess(timeout=False,bufferLimit=int(self.bufferLimit))
       command = '%s %s' % (executable,jobArguments)
       self.log.verbose('Execution command: %s' %(command))
@@ -315,13 +317,7 @@ class JobWrapper:
         outputs = threadResult['Value']
 
     if outputs:
-      errorFileName = self.defaultErrorFile
-      outputFileName = self.defaultOutputFile
       status = threadResult['Value'][0]
-      # will be empty since we are using a callback in the subprocess call
-      stdout = threadResult['Value'][1]
-      # will be empty since we are using a callback in the subprocess call
-      stderr = threadResult['Value'][2]
       #Send final heartbeat of a configurable number of lines here
       self.log.verbose('Sending final application standard output heartbeat')
       self.__sendFinalStdOut(exeThread)
@@ -337,27 +333,15 @@ class JobWrapper:
 
         self.failedFlag = True
 
-      if jobArgs.has_key('StdError'):
-        errorFileName = jobArgs['StdError']
-      if jobArgs.has_key('StdOutput'):
-        outputFileName = jobArgs['StdOutput']
-      self.log.verbose('Writing stdOutput to %s' %(outputFileName))
-      outputFile = open(outputFileName,'w')
-      print >> outputFile, stdout
-      outputFile.close()
-      self.log.verbose('Writing stdError to %s' %(errorFileName))
-      errorFile = open(errorFileName,'w')
-      print >> errorFile, stderr
-      errorFile.close()
     else:
       self.log.error('No outputs generated from job execution')
 
     self.log.info('Checking directory contents after execution:')
-    res = shellCall(0,'ls -al')
+    res = shellCall( 0, ['l', '-al'] )
     if res['OK']:
-      self.log.info(str(res['Value'][1]))
+      self.log.info(res['Value'][1])
     else:
-      self.log.warn('Failed to list the current directory',str(res['Value'][2]))
+      self.log.warn('Failed to list the current directory', res['Value'][2])
 
     return S_OK()
 
@@ -395,10 +379,9 @@ class JobWrapper:
     staticParamDict = {'StandardOutput':appStdOut}
     if self.jobID:
       jobReport  = RPCClient('WorkloadManagement/JobStateUpdate',timeout=120)
-      result = jobReport.sendHeartBeat(int(self.jobID),heartBeatDict,staticParamDict)
+      result = jobReport.sendHeartBeat(self.jobID,heartBeatDict,staticParamDict)
       if not result['OK']:
-        self.log.warn('Problem sending final heartbeat standard output from JobWrapper')
-        self.log.warn(result)
+        self.log.error('Problem sending final heartbeat from JobWrapper',result['Message'])
 
     return
 
@@ -422,35 +405,27 @@ class JobWrapper:
     return S_OK((cpuTime,humanTime))
 
   #############################################################################
-  def resolveInputData(self,arguments):
+  def resolveInputData(self):
     """Input data is resolved here for the first iteration of SRM2 testing.
     """
     self.__report('Running','Input Data Resolution')
 
-    jobArgs = arguments['Job']
-    if not jobArgs.has_key('InputData'):
-      msg = 'Could not obtain job input data requirement from available parameters'
-      self.log.warn(msg)
-      return S_ERROR(msg)
-
-    ceArgs = arguments['CE']
-    if not ceArgs.has_key('LocalSE'):
-      csLocalSE = gConfig.getValue('LocalSite/LocalSE','')
-      if not csLocalSE:
+    if self.ceArgs.has_key('LocalSE'):
+      localSEList = ceArgs['LocalSE']
+    else:
+      localSEList = gConfig.getValue('/LocalSite/LocalSE',[])
+      if not localSEList:
         msg = 'Job has input data requirement but no site LocalSE defined'
         self.log.warn(msg)
         return S_ERROR(msg)
-      else:
-        ceArgs['LocalSE'] = csLocalSE
 
-    inputData = jobArgs['InputData']
+    inputData = self.jobArgs['InputData']
     self.log.verbose('Input Data is: \n%s' %(inputData))
-    if type(inputData)==type(' '):
+    if type(inputData) in types.StringTypes:
       inputData = [inputData]
 
-    localSEList = ceArgs['LocalSE']
-    if type(localSEList)==type(' '):
-      localSEList=localSEList.split(',')
+    if type(localSEList) in types.StringTypes:
+      localSEList = List.fromChar(localSEList)
 
     msg = 'Job Wrapper cannot resolve input data with null '
     if not inputData:
@@ -458,16 +433,16 @@ class JobWrapper:
       self.log.warn(msg)
       return S_ERROR(msg)
     if not localSEList:
-      msg += 'site localSE list'
+      msg += 'site localSEList list'
       self.log.warn(msg)
       return S_ERROR(msg)
 
-    if not jobArgs.has_key('InputDataModule'):
+    if not self.jobArgs.has_key('InputDataModule'):
       msg = 'Job has no input data resolution module'
       self.log.warn(msg)
       return S_ERROR(msg)
 
-    inputDataPolicy = jobArgs['InputDataModule']
+    inputDataPolicy = self.jobArgs['InputDataModule']
     self.log.verbose('Job input data requirement is \n%s' %(string.join(inputData,',\n')))
     self.log.verbose('Job input data resolution policy module is %s' %(inputDataPolicy))
     self.log.info('Site has the following local SEs: %s' %(string.join(localSEList,', ')))
@@ -475,11 +450,10 @@ class JobWrapper:
 
     optReplicas = {}
     optGUIDs = {}
-    if arguments.has_key('Optimizer'):
-      optArgs = arguments['Optimizer']
+    if self.optArgs:
       optDict = None
       try:
-        optDict = eval(optArgs['InputData'])
+        optDict = eval(self.optArgs['InputData'])
         optReplicas = optDict['Value']
         self.log.info('Found optimizer catalogue result')
         self.log.verbose(optReplicas)
@@ -642,17 +616,15 @@ class JobWrapper:
   def processJobOutputs(self,arguments):
     """Outputs for a job may be treated here.
     """
-    #self.__report('Completed','Uploading Job Outputs')
-    jobArgs = arguments['Job']
 
     #first iteration of this, no checking of wildcards or oversize sandbox files etc.
     outputSandbox = []
-    if jobArgs.has_key('OutputSandbox'):
-      outputSandbox = jobArgs['OutputSandbox']
+    if self.jobArgs.has_key('OutputSandbox'):
+      outputSandbox = self.jobArgs['OutputSandbox']
       self.log.verbose('OutputSandbox files are: %s' %(string.join(outputSandbox,', ')))
     outputData = []
-    if jobArgs.has_key('OutputData'):
-      outputData = jobArgs['OutputData']
+    if self.jobArgs.has_key('OutputData'):
+      outputData = self.jobArgs['OutputData']
       if not type(outputData) == type([]):
         outputData = string.split(outputData,';')
       self.log.verbose('OutputData files are: %s' %(string.join(outputData,', ')))
@@ -667,16 +639,16 @@ class JobWrapper:
     fileList = resolvedSandbox['Value']['Files']
     missingFiles = resolvedSandbox['Value']['Missing']
     if missingFiles:
-      self.__setJobParam('OutputSandbox','MissingFiles: %s' %(string.join(missingFiles,', ')))
+      self.jobReport.setJobParameter('OutputSandboxMissingFiles', string.join(missingFiles,', '),sendFlag=False)
 
-    if jobArgs.has_key('Owner'):
-      owner = jobArgs['Owner']
+    if self.jobArgs.has_key('Owner'):
+      owner = self.jobArgs['Owner']
     else:
       msg = 'Job has no owner specified'
       self.log.warn(msg)
       return S_OK(msg)
 
-    #self.__report('Completed','Uploading Output Sandbox')
+    self.__report('Completed','Uploading Output Sandbox')
     if fileList and self.jobID:
       self.outputSandboxSize = getGlobbedTotalSize(fileList)
       outputSandboxClient = SandboxClient('Output')
@@ -688,25 +660,29 @@ class JobWrapper:
           outputSandboxData = result['SandboxFileName']
           self.log.info('Attempting to upload %s as output data' %(outputSandboxData))
           outputData.append(outputSandboxData)
-          self.__setJobParam('OutputSandbox','Sandbox files > 10MB, uploaded to grid storage')
-          self.__setJobParam('OutputSandboxLFN',str(self.__getLFNfromOutputFile(owner,outputSandboxData)))
+          self.jobReport.setJobParameter('OutputSandbox','Sandbox uploaded to grid storage',sendFlag=False)
+          self.jobReport.setJobParameter('OutputSandboxLFN',self.__getLFNfromOutputFile(owner,outputSandboxData)[0],sendFlag=False)
         else:
           self.log.info('Could not get SandboxFileName to attempt upload to Grid storage')
           return S_ERROR('Output sandbox upload failed and no file name supplied for failover to Grid storage')
       else:
         self.log.info('Sandbox uploaded successfully')
 
-    if jobArgs.has_key('OutputSE'):
-      outputSE = jobArgs['OutputSE']
-    else:
-      outputSE = self.defaultOutputSE
-
-    if not type(outputSE)==type([]):
-      outputSE=[outputSE]
-
     if outputData and not self.failedFlag:
       #Do not upload outputdata if the job has failed.
-      result = self.__transferOutputDataFiles(owner,outputData,outputSE)
+      if self.jobArgs.has_key('OutputSE'):
+        outputSE = self.jobArgs['OutputSE']
+        if type( outputSE ) in types.StringTypes:
+          outputSE = [outputSE]
+      else:
+        outputSE = self.defaultOutputSE
+  
+      if self.jobArgs.has_key('OutputPath') and type(self.jobArgs['OutputPath']) in types.StringTypes:
+        outputPath = self.jobArgs['OutputPath']
+      else:
+        outputPath = self.defaultOutputPath
+  
+      result = self.__transferOutputDataFiles(owner,outputData,outputSE,outputPath)
       if not result['OK']:
         return result
 
@@ -750,11 +726,11 @@ class JobWrapper:
     return S_OK(result)
 
   #############################################################################
-  def __transferOutputDataFiles(self,owner,outputData,outputSE):
+  def __transferOutputDataFiles(self,owner,outputData,outputSE,outputPath):
     """Performs the upload and registration in the LFC
     """
     self.log.verbose('Uploading output data files')
-    #self.__report('Completed','Uploading Output Data')
+    self.__report('Completed','Uploading Output Data')
     self.log.verbose('Output data files %s to be uploaded to %s SE' %(string.join(outputData,', '),outputSE))
     missing = []
     uploaded = []
@@ -767,42 +743,35 @@ class JobWrapper:
       pfnGUID = result['Value']
 
     for outputFile in outputData:
-      if os.path.exists(outputFile):
-        self.outputDataSize+=getGlobbedTotalSize(outputFile)
-        lfn = self.__getLFNfromOutputFile(owner,outputFile)
-        outputFilePath = '%s/%s' %(os.getcwd(),outputFile)
+      ( lfn, localfile ) = self.__getLFNfromOutputFile(owner,outputFile,outputPath)
+      if os.path.exists(localfile):
+        self.outputDataSize+=getGlobbedTotalSize(localfile)
+        outputFilePath = os.path.join(os.getcwd(),localfile)
         fileGUID=None
-        if pfnGUID.has_key(outputFile):
-          fileGUID=pfnGUID[outputFile]
-          self.log.verbose('Found GUID for file from POOL XML catalogue %s' %outputFile)
+        if pfnGUID.has_key(localfile):
+          fileGUID=pfnGUID[localfile]
+          self.log.verbose('Found GUID for file from POOL XML catalogue %s' %localfile)
         upload=S_ERROR('No result')
         for se in outputSE:
-          self.log.info('Attempting putAndRegister("%s","%s","%s",guid=%s,catalog="LcgFileCatalogCombined")' %(lfn,outputFilePath,se,fileGUID))
+          self.log.verbose('Attempting putAndRegister("%s","%s","%s",guid=%s,catalog="LcgFileCatalogCombined")' %(lfn,outputFilePath,se,fileGUID))
           upload = self.rm.putAndRegister(lfn,outputFilePath,se,guid=fileGUID,catalog='LcgFileCatalogCombined')
-          self.log.info(upload)
-          if upload['OK']:
-            break
-
-        if not upload['OK']:
-          self.log.warn(upload['Message'])
-          missing.append(outputFile)
-        else:
-          failed = upload['Value']['Failed']
-          if failed:
-            self.log.error('Could not putAndRegister file %s with LFN %s to %s with GUID %s' %(outputFile,lfn,outputSE,fileGUID))
-            self.log.error(failed)
-            missing.append(outputFile)
-          else:
+          if upload['OK'] and not upload['Value']['Failed']:
+            self.log.info('"%s" successfully uploaded to "%s" as "LFN:%s"' % ( localfile, se, lfn ) )
             uploaded.append(lfn)
+            break
+          if not upload['OK']:
+            self.log.warn(upload['Message'])
+
+        if not upload['OK'] or upload['Value']['Failed']:
+          self.log.error('Could not putAndRegister file %s with LFN %s to %s with GUID %s' %(localfile,lfn,outputSE,fileGUID))
+          missing.append(outputFile)
       else:
-        self.log.error('Specified output data file: %s is missing after execution' %(outputFile))
+        self.log.error('Missing specified output data file:', outputFile )
 
     #For files correctly uploaded must report LFNs to job parameters
     if uploaded:
       report = string.join(uploaded,', ')
-      result = self.jobReport.setJobParameter('UploadedOutputData',report)
-      if not result['OK']:
-        self.log.error('Failed to report job parameter',result['Message'])
+      self.jobReport.setJobParameter('UploadedOutputData',report,sendFlag=False)
 
     #TODO Notify the user of any output data / output sandboxes
 
@@ -814,24 +783,7 @@ class JobWrapper:
     return S_OK('OutputData uploaded successfully')
 
   #############################################################################
-#  def __getLFNfromOutputFile(self, owner, outputFile):
-#    """Provides a generic convention for VO output data
-#       files if no path is specified.
-#    """
-#    localfile = os.path.basename(string.replace(outputFile,"LFN:",""))
-#    lfn = outputFile
-#    if not re.search('^LFN:',outputFile):
-#      initial = owner[:1]
-#      timeTuple = time.gmtime()
-#      yearMonth = '%s_%s' %(timeTuple[0],timeTuple[1])
-#      lfn = '/'+self.vo+'/user/'+initial+'/'+owner+'/'+yearMonth+'/'+str(self.jobID)+'/'+localfile
-#    else:
-#      lfn = string.replace(outputFile,"LFN:","")
-#
-#    return lfn
-
-  #############################################################################
-  def __getLFNfromOutputFile(self, owner, outputFile):
+  def __getLFNfromOutputFile(self, owner, outputFile, outputPath=''):
     """Provides a generic convention for VO output data
        files if no path is specified.
     """
@@ -840,17 +792,20 @@ class JobWrapper:
     # extra subdirectory name in the LFN to avoid confuion with a poorly
     # defined date
 
-    localfile = os.path.basename(string.replace(outputFile,"LFN:",""))
-    lfn = outputFile
     if not re.search('^LFN:',outputFile):
+      localfile = outputFile
       initial = owner[:1]
       timeTuple = time.gmtime()
-      subdir = str(int(self.jobID)/1000)
-      lfn = '/'+self.vo+'/user/'+initial+'/'+owner+'/'+subdir+'/'+str(self.jobID)+'/'+localfile
+      subdir = str(self.jobID/1000)
+      if outputPath:
+        # Add output Path if given
+        subdir = outputPath + '/' + subdir
+      lfn = '/'+self.vo+'/user/'+initial+'/'+owner+'/'+subdir+'/'+str(self.jobID)+'/'+os.path.basename(localfile)
     else:
+      localfile = os.path.basename(string.replace(outputFile,"LFN:",""))
       lfn = string.replace(outputFile,"LFN:","")
 
-    return lfn
+    return ( lfn, localfile )
 
   #############################################################################
   def transferInputSandbox(self,inputSandbox):
@@ -875,7 +830,7 @@ class JobWrapper:
       self.log.info('No JobID defined, no sandbox to download')
     else:
       inputSandboxClient = SandboxClient()
-      result = inputSandboxClient.getSandbox(int(self.jobID))
+      result = inputSandboxClient.getSandbox(self.jobID)
       if not result['OK']:
         self.log.warn(result)
         self.__report('Running','Failed Downloading InputSandbox')
@@ -894,7 +849,7 @@ class JobWrapper:
         lfns.append(i)
 
     if lfns:
-      #self.__report('Running','Downloading InputSandbox LFN(s)')
+      self.__report('Running','Downloading InputSandbox LFN(s)')
       lfns = [fname.replace('LFN:','').replace('lfn:','') for fname in lfns]
       download = self.rm.getFile(lfns)
       if not download['OK']:
@@ -954,6 +909,8 @@ class JobWrapper:
   def sendWMSAccounting(self,status='',minorStatus=''):
     """Send WMS accounting data.
     """
+    if self.wmsAccountingSent:
+      return S_OK{}
     if status:
       self.wmsMajorStatus = status
     if minorStatus:
@@ -995,10 +952,12 @@ class JobWrapper:
     self.log.verbose(acData)
     self.accountingReport.setValuesFromDict( acData )
     result = self.accountingReport.commit()
+    # Even if it fails a failover request will be created
+    self.wmsAccountingSent = True
     return result
 
   #############################################################################
-  def sendFailoverRequest(self):
+  def sendFailoverRequest(self,status='',minorStatus=''):
     """ Create and send a combined job failover request if any
     """
     request = RequestContainer()
@@ -1018,7 +977,7 @@ class JobWrapper:
     if not self.jobID:
       self.log.verbose('No accounting to be sent since running locally')
     else:
-      result = self.sendWMSAccounting()
+      result = self.sendWMSAccounting(status,minorStatus)
       if not result['OK']:
         request.setDISETRequest(result['rpcStub'])
 
@@ -1066,79 +1025,66 @@ class JobWrapper:
     os.chdir(self.root)
     if cleanUp:
       self.log.verbose('Cleaning up job working directory')
-      if os.path.exists(self.jobID):
-        shutil.rmtree(self.jobID)
+      if os.path.exists(str(self.jobID)):
+        shutil.rmtree(str(self.jobID))
 
   #############################################################################
-  def __setInitialJobParameters(self,arguments):
+  def __setInitialJobParameters(self):
     """Sets some initial job parameters
     """
     parameters = []
-    ceArgs = arguments['CE']
-    if ceArgs.has_key('LocalSE'):
-      parameters.append(('AgentLocalSE',string.join(ceArgs['LocalSE'],',')))
-    if ceArgs.has_key('CompatiblePlatforms'):
-      parameters.append(('AgentCompatiblePlatforms',string.join(ceArgs['CompatiblePlatforms'],',')))
-    if ceArgs.has_key('PilotReference'):
-      parameters.append(('Pilot_Reference', ceArgs['PilotReference']))
-    if ceArgs.has_key('CPUScalingFactor'):
-      parameters.append(('CPUScalingFactor', ceArgs['CPUScalingFactor']))
-    if ceArgs.has_key('CPUNormalizationFactor'):
-      parameters.append(('CPUNormalizationFactor', ceArgs['CPUNormalizationFactor']))
+    if self.ceArgs.has_key('LocalSE'):
+      parameters.append(('AgentLocalSE',string.join(self.ceArgs['LocalSE'],',')))
+    if self.ceArgs.has_key('CompatiblePlatforms'):
+      parameters.append(('AgentCompatiblePlatforms',string.join(self.ceArgs['CompatiblePlatforms'],',')))
+    if self.ceArgs.has_key('PilotReference'):
+      parameters.append(('Pilot_Reference', self.ceArgs['PilotReference']))
+    if self.ceArgs.has_key('CPUScalingFactor'):
+      parameters.append(('CPUScalingFactor', self.ceArgs['CPUScalingFactor']))
+    if self.ceArgs.has_key('CPUNormalizationFactor'):
+      parameters.append(('CPUNormalizationFactor', self.ceArgs['CPUNormalizationFactor']))
 
     parameters.append (('PilotAgent',self.diracVersion))
     result = self.__setJobParamList(parameters)
     return result
 
   #############################################################################
-  def __report(self,status='',minorStatus=''):
+  def __report(self,status='',minorStatus='',sendFlag=False):
     """Wraps around setJobStatus of state update client
     """
     if status:
       self.wmsMajorStatus = status
     if minorStatus:
       self.wmsMinorStatus = minorStatus
-    jobStatus = S_OK()
+    jobStatus = self.jobReport.setJobStatus(status,minorStatus,sendFlag)
+    if not jobStatus['OK']:
+      self.log.warn(jobStatus['Message'])
     if self.jobID:
-      #jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
-      jobStatus = self.jobReport.setJobStatus(status,minorStatus)
       self.log.verbose('setJobStatus(%s,%s,%s,%s)' %(self.jobID,status,minorStatus,'JobWrapper'))
-      if not jobStatus['OK']:
-        self.log.warn(jobStatus['Message'])
-    else:
-      self.log.verbose('JobID not defined, no status updates will be sent')
 
     return jobStatus
 
   #############################################################################
-  def __setJobParam(self,name,value):
+  def __setJobParam(self,name,value,sendFlag=False):
     """Wraps around setJobParameter of state update client
     """
-    jobParam = S_OK()
+    jobParam = self.jobReport.setJobParameter(str(name),str(value),sendFlag)
+    if not jobParam['OK']:
+      self.log.warn(jobParam['Message'])
     if self.jobID:
-      #jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
-      jobParam = self.jobReport.setJobParameter(str(name),str(value))
       self.log.verbose('setJobParameter(%s,%s,%s)' %(self.jobID,name,value))
-      if not jobParam['OK']:
-        self.log.warn(jobParam['Message'])
-    else:
-      self.log.verbose('JobID not defined, no parameter information will be reported')
 
     return jobParam
 
   #############################################################################
-  def __setJobParamList(self,value):
+  def __setJobParamList(self,value,sendFlag=False):
     """Wraps around setJobParameters of state update client
     """
-    jobParam = S_OK()
+    jobParam = self.jobReport.setJobParameters(value,sendFlag)
+    if not jobParam['OK']:
+      self.log.warn(jobParam['Message'])
     if self.jobID:
-      #jobReport  = RPCClient('WorkloadManagement/JobStateUpdate')
-      jobParam = self.jobReport.setJobParameters(value)
       self.log.verbose('setJobParameters(%s,%s)' %(self.jobID,value))
-      if not jobParam['OK']:
-        self.log.warn(jobParam['Message'])
-    else:
-      self.log.verbose('JobID not defined, no parameter information will be reported')
 
     return jobParam
 
@@ -1165,7 +1111,7 @@ class ExecutionThread(threading.Thread):
     spObject = self.spObject
     start = time.time()
     initialStat = os.times()
-    output = spObject.systemCall( cmd, env= self.exeEnv, callbackFunction = self.sendOutput, shell = True )
+    output = spObject.systemCall( cmd, env= self.exeEnv, callbackFunction = self.sendOutput, shell = False )
     EXECUTION_RESULT['Thread'] = output
     timing = time.time() - start
     EXECUTION_RESULT['Timing']=timing
