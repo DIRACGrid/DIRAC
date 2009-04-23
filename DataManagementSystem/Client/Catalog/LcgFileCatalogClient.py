@@ -520,6 +520,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     lfns = res['Value']
+    gLogger.verbose('I think this is not right', '%s' % lfns)
     created = self.__openSession()
     failed = {}
     successful = {}
