@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.40 2009/04/12 09:24:43 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.41 2009/04/23 07:32:53 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.40 2009/04/12 09:24:43 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.41 2009/04/23 07:32:53 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -96,6 +96,7 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB               import JobDB
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.FrameworkSystem.Client.NotificationClient       import NotificationClient
 from DIRAC.Core.Security.CS                                import getPropertiesForGroup
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import outputSandboxFiles
 
 from DIRAC.Core.Utilities.ThreadPool                       import ThreadPool
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig, List, Time, Source, systemCall
@@ -233,7 +234,7 @@ class TaskQueueDirector(AgentModule):
     self.log.verbose( 'Jobs in TaskQueue %s:' % taskQueueID, taskQueueJobs )
 
     # Determine number of pilots to submit, boosting TaskQueues with low CPU requirements
-    pilotsToSubmit = poisson( ( self.pilotsPerPriority * taskQueuePriority + 
+    pilotsToSubmit = poisson( ( self.pilotsPerPriority * taskQueuePriority +
                                 self.pilotsPerJob * taskQueueJobs ) * maxCPU / taskQueueCPU )
     # limit the number of pilots according to the number of waiting job in the TaskQueue
     # and the number of already submitted pilots for that TaskQueue
@@ -724,12 +725,12 @@ class PilotDirector:
 
     pilotJDL += 'Rank          = %s;\n' % self.rank
     pilotJDL += 'FuzzyRank     = %s;\n' % self.fuzzyRank
-    pilotJDL += 'StdOutput     = "std.out";\n'
-    pilotJDL += 'StdError      = "std.err";\n'
+    pilotJDL += 'StdOutput     = "%s";\n' % outputSandboxFiles[0]
+    pilotJDL += 'StdError      = "%s";\n' % outputSandboxFiles[1]
 
     pilotJDL += 'InputSandbox  = { "%s" };\n' % '", "'.join( [ self.install, executable ] )
 
-    pilotJDL += 'OutputSandbox = { "std.out", "std.err" };\n'
+    pilotJDL += 'OutputSandbox = { % };\n' % ', '.join( [ '"%s"' % f for f in outputSandboxFiles ] )
 
     self.log.verbose( pilotJDL )
 
@@ -880,7 +881,7 @@ class PilotDirector:
     # Parse std.out
     for line in List.fromChar(stdout,'\n'):
       if re.search('jobmanager',line):
-        # FIXME: the line has to be stripped from extra info
+        # TODO: the line has to be stripped from extra info
         availableCEs.append(line)
 
     if not availableCEs:

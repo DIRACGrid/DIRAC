@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.48 2009/04/20 17:42:10 rgracian Exp $
+# $Id: WMSAdministratorHandler.py,v 1.49 2009/04/23 07:32:53 rgracian Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.48 2009/04/20 17:42:10 rgracian Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.49 2009/04/23 07:32:53 rgracian Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -213,15 +213,15 @@ class WMSAdministratorHandler(RequestHandler):
     owner = pilotDict['OwnerDN']
     group = pilotDict['OwnerGroup']
 
-    # FIXME: What if the OutputSandBox is not StdOut and StdErr
+    # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
     result = pilotDB.getPilotOutput(pilotReference)
     if result['OK']:
       stdout = result['Value']['StdOut']
-      error = result['Value']['StdError']
+      error = result['Value']['StdErr']
       if stdout or error:
         resultDict = {}
         resultDict['StdOut'] = stdout
-        resultDict['StdError'] = error
+        resultDict['StdErr'] = error
         resultDict['OwnerDN'] = owner
         resultDict['OwnerGroup'] = group
         resultDict['FileList'] = []
@@ -240,9 +240,9 @@ class WMSAdministratorHandler(RequestHandler):
 
     if not result['OK']:
       return S_ERROR('Failed to get pilot output: '+result['Message'])
-    # FIXME: What if the OutputSandBox is not StdOut and StdErr
+    # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
     stdout = result['StdOut']
-    error = result['StdError']
+    error = result['StdErr']
     fileList = result['FileList']
     result = pilotDB.storePilotOutput(pilotReference,stdout,error)
     if not result['OK']:
@@ -250,7 +250,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     resultDict = {}
     resultDict['StdOut'] = stdout
-    resultDict['StdError'] = error
+    resultDict['StdErr'] = error
     resultDict['OwnerDN'] = owner
     resultDict['OwnerGroup'] = group
     resultDict['FileList'] = fileList

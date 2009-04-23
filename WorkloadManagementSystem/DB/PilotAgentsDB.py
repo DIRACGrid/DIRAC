@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.52 2009/03/03 11:04:54 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.53 2009/04/23 07:32:52 rgracian Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.52 2009/03/03 11:04:54 rgracian Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.53 2009/04/23 07:32:52 rgracian Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -136,7 +136,7 @@ class PilotAgentsDB(DB):
     return S_OK()
 
 ##########################################################################################
-  def setPilotStatus( self, pilotRef, status, destination=None, 
+  def setPilotStatus( self, pilotRef, status, destination=None,
                       updateTime=None, statusReason=None, gridSite=None, conn = False ):
     """ Set pilot job LCG status """
 
@@ -147,10 +147,10 @@ class PilotAgentsDB(DB):
     else:
       setList.append("LastUpdateTime=UTC_TIMESTAMP()")
     if not statusReason:
-      statusReason = "Not given"  
-    setList.append("StatusReason='%s'" % statusReason)   
+      statusReason = "Not given"
+    setList.append("StatusReason='%s'" % statusReason)
     if gridSite:
-      setList.append("GridSite='%s'" % gridSite)     
+      setList.append("GridSite='%s'" % gridSite)
 
     set_string = ','.join(setList)
     req = "UPDATE PilotAgents SET "+set_string+" WHERE PilotJobReference='%s'" % pilotRef
@@ -158,12 +158,12 @@ class PilotAgentsDB(DB):
     result = self._update( req, conn = conn )
     if not result['OK']:
       return result
-      
+
     if destination:
       result = self.setPilotDestinationSite(pilotRef,destination, conn = conn)
       if not result['OK']:
         return result
-    return S_OK()    
+    return S_OK()
 
 ##########################################################################################
   def selectPilots(self,condDict, older=None, newer=None, timeStamp='SubmissionTime',
@@ -243,19 +243,19 @@ class PilotAgentsDB(DB):
 
     if type(pilotIDs) != type([]):
       return S_ERROR('Input argument is not a List')
-      
-    failed = False  
+
+    failed = False
     for table in ['PilotAgents','PilotOutput','PilotRequirements','JobToPilotMapping']:
       idString = ','.join([ str(id) for id in pilotIDs ])
       req = "DELETE FROM %s WHERE PilotID in ( %s )" % (table,idString)
       result = self._update(req, conn = conn)
       if not result['OK']:
         failed = table
-        
+
     if failed:
       return S_ERROR('Failed to remove pilot from %s table' % table)
     else:
-      return S_OK()      
+      return S_OK()
 
 ##########################################################################################
   def deletePilot(self,pilotRef, conn=False):
@@ -265,8 +265,8 @@ class PilotAgentsDB(DB):
       pilotID = self.__getPilotID(pilotRef)
     else:
       pilotID = pilotRef
-      
-    return self.deletePilots([pilotID],conn=conn)    
+
+    return self.deletePilots([pilotID],conn=conn)
 
 ##########################################################################################
   def clearPilots(self,interval=30,aborted_interval=7):
@@ -284,7 +284,7 @@ class PilotAgentsDB(DB):
         idList = [ x[0] for x in result['Value'] ]
         result = self.deletePilots(idList)
         if not result['OK']:
-          gLogger.warn('Error while deleting pilots')  
+          gLogger.warn('Error while deleting pilots')
 
     return S_OK()
 
@@ -413,7 +413,7 @@ class PilotAgentsDB(DB):
     if not result['OK']:
       return S_ERROR('Failed to escape error string')
     e_error = result['Value']
-    req = "INSERT INTO PilotOutput VALUES (%d,'%s','%s')" % (pilotID,e_output,e_error)
+    req = "INSERT INTO PilotOutput VALUES (%d,%s,%s)" % (pilotID,e_output,e_error)
     result = self._update(req)
     return result
 
@@ -430,12 +430,12 @@ class PilotAgentsDB(DB):
     else:
       if result['Value']:
         stdout = result['Value'][0][0]
-        error = result['Value'][0][0]
+        error = result['Value'][0][1]
         if stdout == '""':
           stdout = ''
         if error == '""':
           error = ''
-        return S_OK({'StdOut':stdout,'StdError':error})
+        return S_OK({'StdOut':stdout,'StdErr':error})
       else:
         return S_ERROR('PilotJobReference '+pilotRef+' not found')
 
@@ -457,13 +457,13 @@ class PilotAgentsDB(DB):
     else:
       refString = ','.join(["'"+ref+"'" for ref in pilotRef])
       req = "SELECT PilotID from PilotAgents WHERE PilotJobReference in ( %s )" % refString
-      result = self._query(req)      
+      result = self._query(req)
       if not result['OK']:
         return []
       elif result['Value']:
-        return [ x[0] for x in result['Value'] ] 
+        return [ x[0] for x in result['Value'] ]
       else:
-        return []   
+        return []
 
 ##########################################################################################
   def setJobForPilot(self,jobID,pilotRef,site=None):
@@ -690,25 +690,25 @@ class PilotAgentsDB(DB):
     if selectDict.has_key('LastUpdateTime'):
       last_update = selectDict['LastUpdateTime']
       del selectDict['LastUpdateTime']
-    site_select = []  
-    if selectDict.has_key('GridSite'):  
+    site_select = []
+    if selectDict.has_key('GridSite'):
       site_select = selectDict['GridSite']
       if type(site_select) != type([]):
         site_select = [site_select]
-      del selectDict['GridSite'] 
-         
-    status_select = []    
-    if selectDict.has_key('Status'):  
+      del selectDict['GridSite']
+
+    status_select = []
+    if selectDict.has_key('Status'):
       status_select = selectDict['Status']
       if type(status_select) != type([]):
-        status_select = [status_select]  
-      del selectDict['Status']  
-      
-    expand_site = ''  
-    if selectDict.has_key('ExpandSite'):  
-      expand_site = selectDict['ExpandSite']  
+        status_select = [status_select]
+      del selectDict['Status']
+
+    expand_site = ''
+    if selectDict.has_key('ExpandSite'):
+      expand_site = selectDict['ExpandSite']
       site_select = [expand_site]
-      del selectDict['ExpandSite']  
+      del selectDict['ExpandSite']
 
     start = time.time()
     # Get all the data from the database with various selections
@@ -822,14 +822,14 @@ class PilotAgentsDB(DB):
         # Add the total number of pilots seen in the last day
         itemList.append(total)
         # Add pilot submission efficiency evaluation
-        if (done-empty) > 0:  
+        if (done-empty) > 0:
           eff = float(done)/float(done-empty)
         elif done == 0:
-          eff = 0.  
+          eff = 0.
         elif empty == done:
-          eff = 99.   
+          eff = 99.
         else:
-          eff = 0.  
+          eff = 0.
         itemList.append('%.2f' % eff)
         # Add pilot job efficiency evaluation
         if total > 0:
@@ -850,17 +850,17 @@ class PilotAgentsDB(DB):
             itemList.append('Good')
         else:
           itemList.append('Idle')
-          
-        if len(resultDict[site]) == 1 or expand_site:  
+
+        if len(resultDict[site]) == 1 or expand_site:
           records.append(itemList)
 
-      if len(resultDict[site]) > 1 and not expand_site:  
+      if len(resultDict[site]) > 1 and not expand_site:
         itemList = [site,'Multiple']
         for state in allStateNames+['Total']:
           if sumDict.has_key(state):
             itemList.append(sumDict[state])
           else:
-            itemList.append(0)  
+            itemList.append(0)
         done = sumDict["Done"]
         empty = sumDict["Done_Empty"]
         aborted = sumDict["Aborted"]
@@ -868,12 +868,12 @@ class PilotAgentsDB(DB):
         total = sumDict["Total"]
 
         # Add pilot submission efficiency evaluation
-        if (done-empty) > 0:      
+        if (done-empty) > 0:
           eff = float(done)/float(done-empty)
         elif done == 0:
-          eff = 0.  
+          eff = 0.
         elif empty == done:
-          eff = 99.   
+          eff = 99.
         else:
           eff = 0.
         itemList.append('%.2f' % eff)
@@ -897,29 +897,29 @@ class PilotAgentsDB(DB):
         else:
           itemList.append('Idle')
         records.append(itemList)
-        
+
       for state in allStateNames+['Total']:
         if not siteSumDict.has_key(state):
           siteSumDict[state] = sumDict[state]
         else:
           siteSumDict[state] += sumDict[state]
-          
-    # Perform site selection 
+
+    # Perform site selection
     if site_select:
       new_records = []
       for r in records:
         if r[0] in site_select:
           new_records.append(r)
-      records = new_records  
-      
+      records = new_records
+
     # Perform status selection
     if status_select:
       new_records = []
       for r in records:
         if r[14] in status_select:
           new_records.append(r)
-      records = new_records   
-      
+      records = new_records
+
     # Get the Site Mask data
     client = RPCClient('WorkloadManagement/WMSAdministrator')
     result = client.getSiteMask()
@@ -929,10 +929,10 @@ class PilotAgentsDB(DB):
         if r[0] in siteMask:
           r.append('Yes')
         else:
-          r.append('No')   
+          r.append('No')
     else:
       for r in records:
-        r.append('Unknown')            
+        r.append('Unknown')
 
     finalDict = {}
     finalDict['TotalRecords'] = len(records)
@@ -955,9 +955,9 @@ class PilotAgentsDB(DB):
     if (done-empty) > 0:
       eff = float(done)/float(done-empty)
     elif done == 0:
-      eff = 0.  
+      eff = 0.
     elif empty == done:
-      eff = 99.   
+      eff = 99.
     else:
       eff = 0.
     siteSumDict['PilotsPerJob'] = '%.2f' % eff

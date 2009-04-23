@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.37 2009/04/20 17:42:10 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.38 2009/04/23 07:32:53 rgracian Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.37 2009/04/20 17:42:10 rgracian Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.38 2009/04/23 07:32:53 rgracian Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
@@ -574,10 +574,10 @@ class DiracAdmin:
     else:
       self.log.warn('No standard output returned')
 
-    if outputs.has_key('StdError'):
+    if outputs.has_key('StdErr'):
       stderr = '%s/std.err' %(outputPath)
       fopen = open(stderr,'w')
-      fopen.write(outputs['StdError'])
+      fopen.write(outputs['StdErr'])
       fopen.close()
       self.log.verbose('Standard error written to %s' %(stderr))
     else:

@@ -1,11 +1,11 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.16 2009/04/20 17:42:10 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.17 2009/04/23 07:32:53 rgracian Exp $
 ########################################################################
 
 """ A set of utilities used in the WMS services
 """
 
-__RCSID__ = "$Id: WMSUtilities.py,v 1.16 2009/04/20 17:42:10 rgracian Exp $"
+__RCSID__ = "$Id: WMSUtilities.py,v 1.17 2009/04/23 07:32:53 rgracian Exp $"
 
 from tempfile import mkdtemp
 import shutil, os
@@ -13,6 +13,10 @@ from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 
 from DIRAC import S_OK, S_ERROR
+
+# List of files to be inserted/retrieved into/from pilot Output Sandbox
+# first will be defined as StdOut in JDL and the second as StdErr
+outputSandboxFiles = [ 'StdOut', 'StdErr', 'std.out', 'std.err' ]
 
 COMMAND_TIMEOUT = 60
 ###########################################################################
@@ -53,25 +57,25 @@ def getPilotOutput( proxy, grid, pilotRef ):
     return S_ERROR(error)
 
   # Get the list of files
-  # FIXME: the name of standard Error and Output are set on the JDL
-  fileList = os.listdir(tmp_dir)
+
   if grid == 'LCG':
-    tmp_dir = os.path.join(tmp_dir,fileList[0])
-    fileList = os.listdir(tmp_dir)
+    # LCG always creates an unique sub-directory
+    tmp_dir = os.path.join(tmp_dir,os.listdir(tmp_dir)[0])
 
   result = S_OK()
-  result['FileList'] = fileList
+  result['FileList'] = outputSandboxFiles
 
-  if os.path.exists(tmp_dir+'/std.out'):
-    f = file(tmp_dir+'/std.out','r').read()
-  else:
-    f = ''
-  result['StdOut'] = f
-  if os.path.exists(tmp_dir+'/std.err'):
-    f = file(tmp_dir+'/std.err','r').read()
-  else:
-    f = ''
-  result['StdError'] = f
+  for filename in [ os.path.join( tmp_dir, x ) for x in outputSandboxFiles ]:
+    if os.path.exists(filename):
+      file = file(filename,'r')
+      f = file.read()
+      file.close()
+    else:
+      f = ''
+    # HACK: removed after the current scheme has been in production for at least 1 week
+    if filename == 'std.out': filename = 'StdOut'
+    if filename == 'std.err': filename = 'StdErr'
+    result[filename] = f
 
   shutil.rmtree(tmp_dir)
   return result
