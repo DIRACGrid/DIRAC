@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.85 2009/04/22 18:15:42 rgracian Exp $
+# $Id: JobWrapper.py,v 1.86 2009/04/23 04:20:43 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.85 2009/04/22 18:15:42 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.86 2009/04/23 04:20:43 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -371,7 +371,7 @@ class JobWrapper:
     self.log.info('Total CPU Consumed is: %s' %cpuConsumed[1])
     self.__setJobParam('TotalCPUTime(s)',cpuConsumed[0])
     normCPU = cpuConsumed[0] * self.cpuNormalizationFactor
-    self.__setJobParam('NormCPUTime(s)',cpuConsumed[0])
+    self.__setJobParam('NormCPUTime(s)',normCPU)
     if self.cpuNormalizationFactor:
       self.log.info('Normalized CPU Consumed is:', normCPU )
 
