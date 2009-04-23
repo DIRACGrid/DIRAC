@@ -110,7 +110,8 @@ class VOMS( BaseSecurity ):
       return S_ERROR('Failed to call voms-proxy-info')
 
     status, output, error = result['Value']
-
+    # FIXME: if the local copy of the voms server certificate is not up to date the command returns 0.
+    # the stdout needs to be parsed.
     if status:
       if error.find('VOMS extension not found') == -1:
         return S_ERROR('Failed to get proxy info. Command: %s; StdOut: %s; StdErr: %s' % (cmd,output,error))
