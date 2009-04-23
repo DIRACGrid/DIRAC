@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.60 2009/04/21 20:46:01 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.61 2009/04/23 22:59:44 rgracian Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.60 2009/04/21 20:46:01 rgracian Exp $"
+__RCSID__ = "$Id: Job.py,v 1.61 2009/04/23 22:59:44 rgracian Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -61,7 +61,6 @@ class Job:
     if gConfig.getValue(self.section+'/LogLevel','DEBUG') == 'DEBUG':
       self.dbg = True
 
-    self.defaultOutputSE = 'CERN-USER' # default SE CS location to be decided
     #gConfig.getValue('Tier0SE-tape','SEName')
     self.stepCount = 0
     self.owner = 'NotSpecified'
@@ -273,7 +272,7 @@ class Job:
       raise TypeError,'Expected String or List'
 
   #############################################################################
-  def setOutputData(self,lfns,OutputSE=None):
+  def setOutputData(self,lfns,OutputSE=[],OutputPath=''):
     """Helper function.
 
        For specifying output data to be registered in Grid storage.  If a list
@@ -288,8 +287,10 @@ class Job:
        @param lfns: Output data file or files
        @type lfns: Single string or list of strings ['','']
        @param OutputSE: Optional parameter to specify the Storage
+       @param OutputPath: Optional parameter to specify the Path in the Storage
        Element to store data or files, e.g. CERN-tape
        @type OutputSE: string or list
+       @type OutputPath: string
     """
     if type(lfns)==list and len(lfns):
       outputDataStr = string.join(lfns,';')
@@ -303,13 +304,20 @@ class Job:
 
     if OutputSE:
       description = 'User specified Output SE'
-      if type(OutputSE)==type([]):
-        OutputSE = string.join(OutputSE,';')
-
+      if type(OutputSE) in types.StringTypes:
+        OutputSE = [OutputSE]
+      elif type(OutputSE) != types.ListType:
+        raise TypeError,'Expected string or list for OutputSE'
+      OutputSE = ';'.join(OutputSE)
       self._addParameter(self.workflow,'OutputSE','JDL',OutputSE,description)
-    else:
-      description = 'Default Output SE'
-      self._addParameter(self.workflow,'OutputSE','JDL',self.defaultOutputSE,description)
+
+    if OutputPath:
+      description = 'User specified Output Path'
+      if not type(OutputPath) in types.StringTypes:
+        raise TypeError,'Expected string for OutputPath'
+      # Remove leading "/" that might cause problems with os.path.join
+      while OutputPath[0] == '/': OutputPath=OutputPath[1:] 
+      self._addParameter(self.workflow,'OutputPath','JDL',OutputPath,description)
 
   #############################################################################
   def setPlatform(self, backend):
