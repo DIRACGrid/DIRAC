@@ -1,11 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.19 2009/03/05 11:37:31 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/JobReport.py,v 1.20 2009/04/24 05:13:16 rgracian Exp $
 
 """
   JobReport class encapsulates various
   methods of the job status reporting
 """
 
-__RCSID__ = "$Id: JobReport.py,v 1.19 2009/03/05 11:37:31 paterson Exp $"
+__RCSID__ = "$Id: JobReport.py,v 1.20 2009/04/24 05:13:16 rgracian Exp $"
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC import S_OK, S_ERROR, Time
@@ -91,6 +91,8 @@ class JobReport:
     if sendFlag:
       # and send
       return self.sendStoredJobParameters()
+
+    return S_OK()
 
   def sendStoredStatusInfo(self):
     """ Send the job status information stored in the internal cache
