@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.24 2009/03/30 14:54:11 acasajus Exp $
-__RCSID__ = "$Id: BaseTransport.py,v 1.24 2009/03/30 14:54:11 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/BaseTransport.py,v 1.25 2009/04/24 09:25:04 acasajus Exp $
+__RCSID__ = "$Id: BaseTransport.py,v 1.25 2009/04/24 09:25:04 acasajus Exp $"
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities import DEncode
@@ -106,10 +106,10 @@ class BaseTransport:
       iSeparatorPosition = self.byteStream.find( ":" )
       while iSeparatorPosition == -1:
         retVal = self._read( 1024 )
-        if not retVal[ 'Value' ]:
-          return S_ERROR( "Peer closed connection" )
         if not retVal[ 'OK' ]:
           return retVal
+        if not retVal[ 'Value' ]:
+          return S_ERROR( "Peer closed connection" )
         self.byteStream += retVal[ 'Value' ]
         iSeparatorPosition = self.byteStream.find( ":" )
         if maxBufferSize and len( self.byteStream ) > maxBufferSize and iSeparatorPosition == -1 :
