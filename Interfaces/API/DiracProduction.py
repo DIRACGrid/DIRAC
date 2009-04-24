@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.62 2009/04/21 13:52:53 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.63 2009/04/24 11:28:30 acsmith Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.62 2009/04/21 13:52:53 acsmith Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.63 2009/04/24 11:28:30 acsmith Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -976,7 +976,7 @@ class DiracProduction:
         return self.__errorReport('BK Query must be a dictionary')
       selections = {        'SimulationConditions'     : 'All',
                             'DataTakingConditions'     : 'All',
-                            'ProcessingPass'           : 'No default!',
+                            'ProcessingPass'           : 'All',
                             'FileType'                 : 'DST',
                             'EventType'                : 90000000,
                             'ConfigName'               : 'All',
@@ -989,8 +989,6 @@ class DiracProduction:
 
       if selections['SimulationConditions'] != "All" and selections['DataTakingConditions'] != "All":
         return S_ERROR("SimulationConditions and DataTakingConditions can not be defined simultaneously !")
-      if selections['ProcessingPass'] == "No default!":
-        return S_ERROR("ProcessingPass must be defined !")
       for par in ['EventType','ProductionID']:
         try:
           dummy = int(selections[par])
