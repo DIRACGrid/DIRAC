@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.96 2009/04/24 22:25:44 rgracian Exp $
+# $Id: JobWrapper.py,v 1.97 2009/04/24 23:02:09 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.96 2009/04/24 22:25:44 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.97 2009/04/24 23:02:09 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -276,8 +276,8 @@ class JobWrapper:
       self.__report('Running','Application',sendFlag=True)
       spObject = Subprocess(timeout=False,bufferLimit=int(self.bufferLimit))
       command = executable
-	  if jobArguments:
-	    command += ' ' + jobArguments
+      if jobArguments:
+        command += ' ' + jobArguments
       self.log.verbose('Execution command: %s' %(command))
       maxPeekLines = self.maxPeekLines
       exeThread = ExecutionThread(spObject,command,maxPeekLines,outputFile,errorFile,exeEnv)

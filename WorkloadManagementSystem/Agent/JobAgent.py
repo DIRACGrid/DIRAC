@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.74 2009/04/24 22:43:08 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.75 2009/04/24 23:01:27 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.74 2009/04/24 22:43:08 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.75 2009/04/24 23:01:27 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -359,7 +359,7 @@ class JobAgent(Agent):
     else:
       self.log.error('Job submission failed',jobID)
       self.__setJobParam(jobID,'ErrorMessage','%s CE Submission Error' %(self.ceName))
-	  return S_ERROR('%s CE Submission Error: %s' %(self.ceName,submission['Message']))
+      return S_ERROR('%s CE Submission Error: %s' %(self.ceName,submission['Message']))
 
     return S_OK('Job submitted')
 
