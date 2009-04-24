@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.94 2009/04/24 22:06:21 rgracian Exp $
+# $Id: JobWrapper.py,v 1.95 2009/04/24 22:18:33 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.94 2009/04/24 22:06:21 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.95 2009/04/24 22:18:33 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -250,7 +250,7 @@ class JobWrapper:
       self.log.warn(msg)
       return S_ERROR(msg)
 
-    jobArguments = ' '
+    jobArguments = ''
     if self.jobArgs.has_key('Arguments'):
       jobArguments = self.jobArgs['Arguments']
 
@@ -275,7 +275,7 @@ class JobWrapper:
     if os.path.exists(executable):
       self.__report('Running','Application',sendFlag=True)
       spObject = Subprocess(timeout=False,bufferLimit=int(self.bufferLimit))
-      command = '%s %s' % (executable,jobArguments)
+      command = [ executable, jobArguments ]
       self.log.verbose('Execution command: %s' %(command))
       maxPeekLines = self.maxPeekLines
       exeThread = ExecutionThread(spObject,command,maxPeekLines,outputFile,errorFile,exeEnv)
@@ -706,7 +706,7 @@ class JobWrapper:
           okFiles.append(check)
         if os.path.isdir(check):
           self.log.verbose('Found locally existing OutputSandbox directory: %s' %check)
-          cmd = 'tar cf %s.tar %s' %(check,check)
+          cmd = ['tar', 'cf', '%s.tar' % check, check]
           result = systemCall(60,cmd)
           if not result['OK']:
             self.log.error('Failed to create OutputSandbox tar', result['Message'])
