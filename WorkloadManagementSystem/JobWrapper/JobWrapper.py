@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.95 2009/04/24 22:18:33 rgracian Exp $
+# $Id: JobWrapper.py,v 1.96 2009/04/24 22:25:44 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.95 2009/04/24 22:18:33 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.96 2009/04/24 22:25:44 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -24,7 +24,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder                    import getSy
 from DIRAC.WorkloadManagementSystem.Client.JobReport                import JobReport
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
-from DIRAC.Core.Utilities.Subprocess                                import systemCall
+from DIRAC.Core.Utilities.Subprocess                                import systemCall, shellCall
 from DIRAC.Core.Utilities.Subprocess                                import Subprocess
 from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, List
@@ -275,7 +275,9 @@ class JobWrapper:
     if os.path.exists(executable):
       self.__report('Running','Application',sendFlag=True)
       spObject = Subprocess(timeout=False,bufferLimit=int(self.bufferLimit))
-      command = [ executable, jobArguments ]
+      command = executable
+	  if jobArguments:
+	    command += ' ' + jobArguments
       self.log.verbose('Execution command: %s' %(command))
       maxPeekLines = self.maxPeekLines
       exeThread = ExecutionThread(spObject,command,maxPeekLines,outputFile,errorFile,exeEnv)
@@ -1115,7 +1117,7 @@ class ExecutionThread(threading.Thread):
     spObject = self.spObject
     start = time.time()
     initialStat = os.times()
-    output = spObject.systemCall( cmd, env= self.exeEnv, callbackFunction = self.sendOutput, shell = False )
+    output = spObject.systemCall( cmd, env= self.exeEnv, callbackFunction = self.sendOutput, shell = True )
     EXECUTION_RESULT['Thread'] = output
     timing = time.time() - start
     EXECUTION_RESULT['Timing']=timing
