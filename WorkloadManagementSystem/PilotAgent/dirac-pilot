@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.52 2009/04/20 06:42:10 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.53 2009/04/24 08:22:32 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.52 2009/04/20 06:42:10 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.53 2009/04/24 08:22:32 rgracian Exp $"
 try:
   import os
   import sys
@@ -35,8 +35,8 @@ try:
   diracGroup    = None
   ownerDN       = None
 
-  # JOB_AGENT_CE = 'InProcess'
-  MAX_CYCLES   = 2
+  MAX_CYCLES    = 5
+  maxCycles     = 1
 
   installScript = 'dirac-install'
   csCache = 'dirac-configuration-dump-local-cache'
@@ -69,7 +69,7 @@ def parse_options():
    parse command line options:
   """
   import getopt
-  global debugFlag, rootPath, localPlatform, minDiskSpace, testFlag, jobCPUReqt, diracGroup, ownerDN
+  global debugFlag, rootPath, localPlatform, minDiskSpace, testFlag, jobCPUReqt, diracGroup, ownerDN, maxCycles
   help = """
    -b --build                  Force local compilation
    -d --debug                  Set debug flag
@@ -83,8 +83,9 @@ def parse_options():
    -u --url=<url>              Use <url> to download tarballs
    -v --version=<version>      DIRAC <version> to install
    -C --cvs                    Retrieve from CVS (implies -b)
-   -N --Name=<CEName>          Use <CEName> to determine Site Name
    -D --disk=<space>           Require at least <space> MB available
+   -M --MaxCycles=<n>          Maximum Number of JobAgent cycles to run
+   -N --Name=<CEName>          Use <CEName> to determine Site Name
    -P --path=<root>            Install under <root>
    -S --server                 Make a full server installation
    -T --CPUTime=<Time>         Requested CPU Time
@@ -99,10 +100,10 @@ def parse_options():
     -c --cert=<cert>           Use server certificate <cert> to connect to Core Services
 
   """
-  shortOptions = 'bde:hi:n:p:r:tu:v:o:s:CN:D:P:ST:G:O:U'
+  shortOptions = 'bde:hi:n:p:r:tu:v:o:s:CM:N:D:P:ST:G:O:U'
   longOptions  = ['build', 'debug', 'external=', 'help', 'python=', 'name=',
                   'platform=', 'repository', 'test', 'url=', 'version=',
-                  'cvs', 'Name=', 'disk=', 'path=', 'server', 'CPUTime=', 'Group=',
+                  'cvs', 'MaxCycles=', 'Name=', 'disk=', 'path=', 'server', 'CPUTime=', 'Group=',
                   'OwnerDN=','Upload',
                   'option=', 'section=', 'cert=']
   try:
@@ -157,6 +158,12 @@ def parse_options():
       installOpts.append(v)
     elif o == '-D' or o == '--disk':
       minDiskSpace = int(v)
+    elif o == '-M' or o == '--MaxCycles':
+      try:
+        maxCycles = int(v)
+      except:
+        pass
+      maxCycles = min(MAX_CYCLES, maxCycles)
     elif o in ('-P', '--path'):
       rootPath = v
       installOpts.append('-P')
@@ -530,7 +537,7 @@ inProcessOpts+= ' -o MaxTotalJobs=%s' % 10
 jobAgentOpts = ''
 # jobAgentOpts += ' -o CEUniqueID=%s' % JOB_AGENT_CE
 # jobAgentOpts += ' -o ControlDirectory=%s' % jobAgentControl
-jobAgentOpts+= ' -o MaxCycles=%s' % MAX_CYCLES
+jobAgentOpts+= ' -o MaxCycles=%s' % maxCycles
 if debugFlag:
   jobAgentOpts+= ' -o LogLevel=DEBUG'
 
