@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.62 2009/04/15 13:31:59 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.63 2009/04/24 14:32:45 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -40,6 +40,10 @@ class ReplicaManager:
     gLogger.debug(formatProxyInfoAsString(proxyInfo))
     if not proxyInfo.has_key('group'):
       errStr = "ReplicaManager.__getClientCertGroup: Proxy information does not contain the group."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    if not proxyInfo.has_key('VOMS'):
+      errStr = "ReplicaManager.__getClientCertGroup: Proxy information does not contain the VOMs information."     
       gLogger.error(errStr)
       return S_ERROR(errStr)
     resDict = {'DN':proxyInfo['identity'],'Role':proxyInfo['VOMS']}
