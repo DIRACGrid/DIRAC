@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.41 2009/02/13 15:14:40 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.41 2009/02/13 15:14:40 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.42 2009/04/24 09:27:40 acasajus Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.42 2009/04/24 09:27:40 acasajus Exp $"
 
 import os
 import types
@@ -116,14 +116,19 @@ class RequestHandler:
     self.__logRemoteQuery( "FileTransfer/%s" % sDirection, fileInfo )
     fileHelper = FileHelper( self._clientTransport )
     if sDirection == "fromClient":
+      fileHelper.setDirection( "fromClient" )
       uRetVal = self.transfer_fromClient( fileInfo[0], fileInfo[1], fileInfo[2], fileHelper )
     elif sDirection == "toClient" :
+      fileHelper.setDirection( "toClient" )
       uRetVal = self.transfer_toClient( fileInfo[0], fileInfo[1], fileHelper )
     elif sDirection == "bulkFromClient" :
+      fileHelper.setDirection( "fromClient" )
       uRetVal = self.transfer_bulkFromClient( fileInfo[0], fileInfo[1], fileInfo[2], fileHelper )
     elif sDirection == "bulkToClient" :
+      fileHelper.setDirection( "toClient" )
       uRetVal = self.transfer_bulkToClient( fileInfo[0], fileInfo[1], fileHelper )
-    elif sDirection == "listBulk" :
+    elif sDirection == "listBulk":
+      fileHelper.setDirection( "toClient" )
       uRetVal = self.transfer_listBulk( fileInfo[0], fileInfo[1], fileHelper )
     else:
       return S_ERROR( "Direction %s does not exist!!!" % sDirection )
