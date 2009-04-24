@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.72 2009/04/20 11:01:18 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.73 2009/04/24 08:33:08 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.72 2009/04/20 11:01:18 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.73 2009/04/24 08:33:08 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -73,7 +73,7 @@ class JobAgent(Agent):
     self.jobSubmissionDelay = gConfig.getValue(self.section+'/SubmissionDelay',10)
     self.defaultProxyLength = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400*5 )
     self.defaultLogLevel = gConfig.getValue(self.section+'/DefaultLogLevel','debug')
-    self.fillingMode = gConfig.getValue(self.section+'/FillingModeFlag',1)
+    self.fillingMode = gConfig.getValue(self.section+'/FillingModeFlag',False)
     self.jobCount=0
     return result
 
@@ -96,10 +96,13 @@ class JobAgent(Agent):
         # Need to update the Configuration so that the new value is published in the next matching request
         result = self.computingElement.setCPUTimeLeft( cpuTimeLeft=timeLeft )
         if not result['OK']:
-          self.__finish(result['Message'])
+          return self.__finish(result['Message'])
         ceJDL = self.computingElement.getJDL()
         resourceJDL = ceJDL['Value']
         self.log.verbose(resourceJDL)
+        # Enable Filling Mode
+        # return self.__finish('Filling Mode is Disabled')
+      else:
         return self.__finish('Filling Mode is Disabled')
 
     self.log.verbose('Job Agent execution loop')
@@ -597,11 +600,10 @@ class JobAgent(Agent):
     if not result['OK']:
       self.log.error(result['Message'])
       return self.__finish('Problem Rescheduling Job')
-    else:
-      self.log.info('Job Rescheduled %s' %(jobID))
-      return self.__finish('Job Rescheduled')
 
-    return
+    self.log.info('Job Rescheduled %s' %(jobID))
+    return self.__finish('Job Rescheduled')
+
   #############################################################################
   def finalize(self):
     """Force the JobAgent to complete gracefully.
