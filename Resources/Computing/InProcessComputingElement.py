@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InProcessComputingElement.py,v 1.7 2009/04/18 18:26:57 rgracian Exp $
+# $Id: InProcessComputingElement.py,v 1.8 2009/04/24 21:48:08 rgracian Exp $
 # File :   InProcessComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,12 +7,12 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: InProcessComputingElement.py,v 1.7 2009/04/18 18:26:57 rgracian Exp $"
+__RCSID__ = "$Id: InProcessComputingElement.py,v 1.8 2009/04/24 21:48:08 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.Core.Utilities.ThreadScheduler                import gThreadScheduler
-from DIRAC.Core.Utilities.Subprocess                     import shellCall
+from DIRAC.Core.Utilities.Subprocess                     import systemCall
 from DIRAC.Core.Security.Misc                            import getProxyInfoAsString
 from DIRAC                                               import gConfig,S_OK,S_ERROR
 
@@ -51,10 +51,14 @@ class InProcessComputingElement(ComputingElement):
       os.chmod(executableFile,0755)
     cmd = os.path.abspath(executableFile)
     self.log.verbose('CE submission command: %s' %(cmd))
-    result = shellCall(0,cmd,callbackFunction = self.sendOutput)
+    result = systemCall(0,cmd,callbackFunction = self.sendOutput)
+
     if not result['OK']:
-      self.log.warn('===========>In process CE result NOT OK')
-      self.log.debug(result)
+      self.log.error('Fail to run InProcess',result['Message'])
+    elif result['Value'][0]:
+      self.log.error('InProcess Job Execution Failed')
+      self.log.info('Exit status:',result['Value'][0])
+      return S_ERROR('InProcess Job Execution Failed')
     else:
       self.log.debug('InProcess CE result OK')
 
