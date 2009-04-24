@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.42 2009/04/24 08:25:55 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.43 2009/04/24 08:35:58 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.42 2009/04/24 08:25:55 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.43 2009/04/24 08:35:58 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -662,7 +662,7 @@ class PilotDirector:
       # Now we are ready for the actual submission, so
 
       self.log.verbose('Submitting Pilots for TaskQueue', taskQueueID )
-      submitRet = self._submitPilot( proxy, pilotsToSubmit, jdl, taskQueueID )
+      submitRet = self._submitPilot( proxy, pilotsToSubmit, jdl, taskQueueID, rb )
       try:
         shutil.rmtree( workingDirectory )
       except:
@@ -901,7 +901,7 @@ class PilotDirector:
 
     return availableCEs
 
-  def parseJobSubmitStdout(self, proxy, cmd, taskQueueID):
+  def parseJobSubmitStdout(self, proxy, cmd, taskQueueID, rb):
     """
       Parse Job Submit stdout to return pilot reference
     """
@@ -1059,13 +1059,13 @@ ParameterStart = 0;
     cmd = [ 'glite-wms-job-list-match', '-a', '-c', '%s' % jdl, '%s' % jdl ]
     return self.parseListMatchStdout( proxy, cmd, taskQueueID, rb )
 
-  def _submitPilot(self, proxy, pilotsToSubmit, jdl, taskQueueID):
+  def _submitPilot(self, proxy, pilotsToSubmit, jdl, taskQueueID, rb):
     """
      Submit pilot and get back the reference
     """
     result = []
     cmd = [ 'glite-wms-job-submit', '-a', '-c', '%s' % jdl, '%s' % jdl ]
-    ret = self.parseJobSubmitStdout( proxy, cmd, taskQueueID )
+    ret = self.parseJobSubmitStdout( proxy, cmd, taskQueueID, rb )
     if ret:
       result.append(ret)
 
@@ -1190,14 +1190,14 @@ MyProxyServer = "no-myproxy.cern.ch";
     cmd = ['edg-job-list-match','-c','%s' % jdl , '--config-vo', '%s' % jdl, '%s' % jdl]
     return self.parseListMatchStdout( proxy, cmd, taskQueueID, rb )
 
-  def _submitPilot(self, proxy, pilotsToSubmit, jdl, taskQueueID ):
+  def _submitPilot(self, proxy, pilotsToSubmit, jdl, taskQueueID, rb ):
     """
      Submit pilot and get back the reference
     """
     result = []
     for i in range(pilotsToSubmit):
       cmd = [ 'edg-job-submit', '-c', '%s' % jdl, '--config-vo', '%s' % jdl, '%s' % jdl ]
-      ret = self.parseJobSubmitStdout( proxy, cmd, taskQueueID )
+      ret = self.parseJobSubmitStdout( proxy, cmd, taskQueueID, rb )
       if ret:
         result.append(ret)
 
