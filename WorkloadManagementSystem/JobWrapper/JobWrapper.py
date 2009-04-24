@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.91 2009/04/24 07:56:45 rgracian Exp $
+# $Id: JobWrapper.py,v 1.92 2009/04/24 19:50:09 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.91 2009/04/24 07:56:45 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.92 2009/04/24 19:50:09 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -121,7 +121,7 @@ class JobWrapper:
       self.log.fatal(msg)
       self.log.fatal(str(x))
     #Failure flag
-    self.failedFlag = False
+    self.failedFlag = True
     #Set defaults for some global parameters to be defined for the accounting report
     self.owner='unknown'
     self.jobGroup='unknown'
@@ -324,24 +324,27 @@ class JobWrapper:
       self.log.verbose('Execution thread status = %s' %(status))
 
       if not status:
-        self.__report('Completed','Application Finished Successfully')
+        self.failedFlag = False
+        self.__report('Completed','Application Finished Successfully',sendFlag=True)
       else:
         if watchdog.checkError:
-          self.__report('Completed',watchdog.checkError)
+          self.__report('Completed',watchdog.checkError,sendFlag=True)
         else:
-          self.__report('Completed','Application Finished With Errors')
-
-        self.failedFlag = True
+          self.__report('Completed','Application Finished With Errors',sendFlag=True)
 
     else:
-      self.log.error('No outputs generated from job execution')
+      return S_ERROR('No outputs generated from job execution')
 
     self.log.info('Checking directory contents after execution:')
-    res = shellCall( 0, ['l', '-al'] )
-    if res['OK']:
+    res = shellCall( 5, ['l', '-al'] )
+    if res['OK'] and not res['Value'][0]:
+      # no timeout and exit code is 0
       self.log.info(res['Value'][1])
     else:
-      self.log.warn('Failed to list the current directory', res['Value'][2])
+      if res['OK']:
+        self.log.error('Failed to list the current directory', res['Value'][2])
+      else:
+        self.log.error('Failed to list the current directory', res['message'])
 
     return S_OK()
 
