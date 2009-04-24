@@ -1,11 +1,11 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.17 2009/04/23 07:32:53 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.18 2009/04/24 11:13:32 rgracian Exp $
 ########################################################################
 
 """ A set of utilities used in the WMS services
 """
 
-__RCSID__ = "$Id: WMSUtilities.py,v 1.17 2009/04/23 07:32:53 rgracian Exp $"
+__RCSID__ = "$Id: WMSUtilities.py,v 1.18 2009/04/24 11:13:32 rgracian Exp $"
 
 from tempfile import mkdtemp
 import shutil, os
@@ -28,7 +28,7 @@ def getPilotOutput( proxy, grid, pilotRef ):
   if grid == 'LCG':
     cmd = [ 'edg-job-get-output' ]
   elif grid == 'gLite':
-    cmd = [ 'glite-wms-job-output','--vo','lhcb' ]
+    cmd = [ 'glite-wms-job-output' ]
   else:
     return S_ERROR( 'Unknnown GRID %s' % grid  )
 
@@ -65,16 +65,17 @@ def getPilotOutput( proxy, grid, pilotRef ):
   result = S_OK()
   result['FileList'] = outputSandboxFiles
 
-  for filename in [ os.path.join( tmp_dir, x ) for x in outputSandboxFiles ]:
-    if os.path.exists(filename):
-      file = file(filename,'r')
-      f = file.read()
-      file.close()
+  for filename in outputSandboxFiles:
+    tmpname = os.path.join( tmp_dir, filename )
+    if os.path.exists(tmpname):
+      myfile = file(tmpname,'r')
+      f = myfile.read()
+      myfile.close()
     else:
       f = ''
     # HACK: removed after the current scheme has been in production for at least 1 week
-    if filename == 'std.out': filename = 'StdOut'
-    if filename == 'std.err': filename = 'StdErr'
+    if filename == 'std.out' and f: filename = 'StdOut'
+    if filename == 'std.err' and f: filename = 'StdErr'
     result[filename] = f
 
   shutil.rmtree(tmp_dir)
