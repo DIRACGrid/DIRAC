@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.20 2009/03/30 14:11:15 acasajus Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.20 2009/03/30 14:11:15 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.21 2009/04/24 09:27:03 acasajus Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.21 2009/04/24 09:27:03 acasajus Exp $"
 
 import os
 import md5
@@ -15,18 +15,33 @@ gLogger = gLogger.getSubLogger( "FileTransmissionHelper" )
 
 class FileHelper:
 
+  __validDirections = ( "toClient", "fromClient" )
+
   def __init__( self, oTransport = None ):
     self.oTransport = oTransport
-    self.oMD5 = md5.new()
+    self.__oMD5 = md5.new()
     self.bFinishedTransmission = False
     self.bReceivedEOF = False
+    self.direction = False
     self.packetSize = 1048576
+    self.__fileBytes = 0
+    self.__log = gLogger.getSubLogger( "FileHelper" )
 
   def setTransport( self, oTransport ):
     self.oTransport = oTransport
 
+  def setDirection( self, direction ):
+    if direction in FileHelper.__validDirections:
+      self.direction = direction
+
+  def getHash( self ):
+    return self.__oMD5.hexdigest()
+
+  def getTransferedBytes( self ):
+    return self.__fileBytes
+
   def sendData( self, sBuffer ):
-    self.oMD5.update( sBuffer )
+    self.__oMD5.update( sBuffer )
     retVal = self.oTransport.sendData( S_OK( ( True, sBuffer ) ) )
     if not retVal[ 'OK' ]:
       return retVal
@@ -34,17 +49,17 @@ class FileHelper:
     return retVal
 
   def sendEOF( self ):
-    retVal = self.oTransport.sendData( S_OK( ( False, self.oMD5.hexdigest() ) ) )
+    retVal = self.oTransport.sendData( S_OK( ( False, self.__oMD5.hexdigest() ) ) )
     if not retVal[ 'OK' ]:
       return retVal
-    self.markAsTransferred()
+    self.__finishedTransmission()
     return S_OK()
 
   def sendError( self, errorMsg ):
     retVal = self.oTransport.sendData( S_ERROR( errorMsg ) )
     if not retVal[ 'OK' ]:
       return retVal
-    self.markAsTransferred()
+    self.__finishedTransmission()
     return S_OK()
 
   def receiveData( self, maxBufferSize = 0 ):
@@ -53,13 +68,13 @@ class FileHelper:
       return retVal
     stBuffer = retVal[ 'Value' ]
     if stBuffer[0]:
-      self.oMD5.update( stBuffer[1] )
+      self.__oMD5.update( stBuffer[1] )
       self.oTransport.sendData( S_OK() )
     else:
       self.bReceivedEOF = True
-      if not self.oMD5.hexdigest() == stBuffer[1]:
+      if not self.__oMD5.hexdigest() == stBuffer[1]:
         self.bErrorInMD5 = True
-      self.markAsTransferred()
+      self.__finishedTransmission()
       return S_OK( "" )
     return S_OK( stBuffer[1] )
 
@@ -67,6 +82,15 @@ class FileHelper:
     return self.bReceivedEOF
 
   def markAsTransferred( self ):
+    if not self.bFinishedTransmission:
+      if self.direction == "fromClient":
+        self.oTransport.receiveData()
+        abortTrans = S_OK()
+        abortTrans[ 'AbortTransfer' ] = True
+        self.oTransport.sendData( abortTrans )
+    self.__finishedTransmission()
+
+  def __finishedTransmission( self ):
     self.bFinishedTransmission = True
 
   def finishedTransmission( self ):
@@ -98,7 +122,7 @@ class FileHelper:
   def networkToDataSink( self, dataSink, maxFileSize = 0 ):
     if "write" not in dir( dataSink ):
       return S_ERROR( "%s data sink object does not have a write method" % str( dataSink ) )
-    self.oMD5 = md5.new()
+    self.__oMD5 = md5.new()
     self.bReceivedEOF = False
     self.bErrorInMD5 = False
     receivedBytes = 0
@@ -124,6 +148,7 @@ class FileHelper:
       return S_ERROR( "Error while receiving file, %s" % str( e ) )
     if self.errorInTransmission():
       return S_ERROR( "Error in the file CRC" )
+    self.__fileBytes = receivedBytes
     return S_OK()
 
   def stringToNetwork( self, stringVal ):
@@ -143,33 +168,46 @@ class FileHelper:
           result = self.sendData( stringVal[ioffset:strlen] )
         if not result['OK']:
           return result
+        if 'AbortTransfer' in dRetVal and dRetVal[ 'AbortTransfer' ]:
+          self.__log.verbose( "Transfer aborted" )
+          return S_OK()
         ioffset += iPacketSize
       self.sendEOF()
     except Exception, e:
       return S_ERROR( "Error while sending string: %s" % str( e ) )
-    stringIO.close()
+    try:
+      stringIO.close()
+    except:
+      pass
     return S_OK()
 
   def FDToNetwork( self, iFD ):
-    self.oMD5 = md5.new()
+    self.__oMD5 = md5.new()
     iPacketSize = self.packetSize
+    self.__fileBytes = 0
+    sentBytes = 0
     try:
       sBuffer = os.read( iFD, iPacketSize )
       while len( sBuffer ) > 0:
         dRetVal = self.sendData( sBuffer )
         if not dRetVal[ 'OK' ]:
           return dRetVal
+        if 'AbortTransfer' in dRetVal and dRetVal[ 'AbortTransfer' ]:
+          self.__log.verbose( "Transfer aborted" )
+          return S_OK()
+        sentBytes += len( sBuffer )
         sBuffer = os.read( iFD, iPacketSize )
       self.sendEOF()
     except Exception, e:
       gLogger.exception( "Error while sending file" )
       return S_ERROR( "Error while sending file: %s" % str( e ) )
+    self.__fileBytes = sentBytes
     return S_OK()
 
   def DataSourceToNetwork( self, dataSource ):
     if "read" not in dir( dataSource ):
       return S_ERROR( "%s data source object does not have a read method" % str( dataSink ) )
-    self.oMD5 = md5.new()
+    self.__oMD5 = md5.new()
     iPacketSize = self.packetSize
     try:
       sBuffer = dataSource.read( iPacketSize )
@@ -177,6 +215,9 @@ class FileHelper:
         dRetVal = self.sendData( sBuffer )
         if not dRetVal[ 'OK' ]:
           return dRetVal
+        if 'AbortTransfer' in dRetVal and dRetVal[ 'AbortTransfer' ]:
+          self.__log.verbose( "Transfer aborted" )
+          return S_OK()
         sBuffer = dataSource.read( iPacketSize )
       self.sendEOF()
     except Exception, e:
@@ -236,7 +277,10 @@ class FileHelper:
       tar.add( os.path.realpath( entry ), os.path.basename( entry ), recursive = True )
     tar.close()
     if autoClose:
-      filePipe.close()
+      try:
+        filePipe.close()
+      except:
+        pass
 
   def bulkToNetwork( self, fileList, compress = True, onthefly = True ):
     if not onthefly:
@@ -261,7 +305,10 @@ class FileHelper:
       thrd = threading.Thread( target = self.__createTar, args = ( fileList, wPipe, compress ) )
       thrd.start()
       response = self.FDToNetwork( rPipe )
-      os.close( rPipe )
+      try:
+        os.close( rPipe )
+      except:
+        pass
       return response
 
   def __extractTar( self, destDir, rPipe, compress ):
@@ -273,7 +320,10 @@ class FileHelper:
     for tarInfo in tar:
       tar.extract( tarInfo, destDir )
     tar.close()
-    filePipe.close()
+    try:
+      filePipe.close()
+    except:
+      pass
 
   def __receiveToPipe( self, wPipe, retList, maxFileSize ):
     retList.append( self.networkToFD( wPipe, maxFileSize = maxFileSize ) )
