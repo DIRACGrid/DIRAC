@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.73 2009/04/24 08:33:08 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.74 2009/04/24 22:43:08 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.73 2009/04/24 08:33:08 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.74 2009/04/24 22:43:08 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -235,8 +235,7 @@ class JobAgent(Agent):
       self.log.verbose('Before %sCE submitJob()' %(self.ceName))
       submission = self.__submitJob(jobID,params,resourceParams,optimizerParams,jobJDL,proxyChain)
       if not submission['OK']:
-        self.log.warn('Job submission failed during creation of the Job Wrapper')
-        self.__report(jobID,'Failed','Job Wrapper Creation')
+        self.__report(jobID,'Failed',submission['Message'])
         return self.__finish('Error During CE Submission')
 
       self.log.verbose('After %sCE submitJob()' %(self.ceName))
@@ -358,9 +357,9 @@ class JobAgent(Agent):
       self.__setJobParam(jobID,'LocalBatchID',str(batchID))
       time.sleep(self.jobSubmissionDelay)
     else:
-      self.log.warn('Job '+str(jobID)+' submission failed')
+      self.log.error('Job submission failed',jobID)
       self.__setJobParam(jobID,'ErrorMessage','%s CE Submission Error' %(self.ceName))
-      self.__report(jobID,'Failed','%s CE Submission Error' %(self.ceName))
+	  return S_ERROR('%s CE Submission Error: %s' %(self.ceName,submission['Message']))
 
     return S_OK('Job submitted')
 
@@ -379,8 +378,8 @@ class JobAgent(Agent):
       try:
         os.makedirs('%s/job/Wrapper' %(workingDir))
       except Exception,x:
-        self.log.error('Could not create directory %s/job/Wrapper for job wrapper script' %(workingDir),str(x))
-        return S_ERROR('Could not create directory %s/job/Wrapper for job wrapper script' %(workingDir))
+        self.log.exception()    
+        return S_ERROR('Could not create directory for wrapper script')
 
     jobWrapperFile = '%s/job/Wrapper/Wrapper_%s' %(workingDir,jobID)
     if os.path.exists(jobWrapperFile):
@@ -418,7 +417,7 @@ class JobAgent(Agent):
     if not systemConfig or systemConfig=='ANY':
       systemConfig = gConfig.getValue('/LocalSite/Architecture','')
       if not systemConfig:
-        return S_ERROR('Could not establish system configuration from Job requirements or LocalSite/Architecture section')
+        return S_ERROR('Could not establish SystemConfig')
 
     logLevel=self.defaultLogLevel
     if jobParams.has_key('LogLevel'):
