@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.43 2009/04/24 08:35:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.44 2009/04/24 15:05:19 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.43 2009/04/24 08:35:58 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.44 2009/04/24 15:05:19 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -574,7 +574,7 @@ class PilotDirector:
 
         pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
 
-        pilotsToSubmit = PilotsToSubmit / 2
+        pilotsToSubmit = pilotsToSubmit / 2
       # FIXME: This for testing for the moment
       # Use Filling mode
       pilotOptions.append( '-M %s' % 2 )
@@ -735,7 +735,7 @@ class PilotDirector:
 
     pilotJDL += 'InputSandbox  = { "%s" };\n' % '", "'.join( [ self.install, executable ] )
 
-    pilotJDL += 'OutputSandbox = { % };\n' % ', '.join( [ '"%s"' % f for f in outputSandboxFiles ] )
+    pilotJDL += 'OutputSandbox = { %s };\n' % ', '.join( [ '"%s"' % f for f in outputSandboxFiles ] )
 
     self.log.verbose( pilotJDL )
 
