@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.88 2009/04/23 22:36:40 rgracian Exp $
+# $Id: JobWrapper.py,v 1.89 2009/04/24 07:24:05 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.88 2009/04/23 22:36:40 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.89 2009/04/24 07:24:05 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -137,7 +137,7 @@ class JobWrapper:
     self.outputDataSize=0
     self.processedEvents = 0
     self.wmsAccountingSent = False
-    
+
   #############################################################################
   def initialize(self, arguments):
     """ Initializes parameters and environment for job.
@@ -179,7 +179,7 @@ class JobWrapper:
 
     # Prepare the working directory and cd to there
     if self.jobID:
-      if os.path.exists(self.jobID):
+      if os.path.exists(str(self.jobID)):
         shutil.rmtree(str(self.jobID))
       os.mkdir(str(self.jobID))
       os.chdir(str(self.jobID))
@@ -676,12 +676,12 @@ class JobWrapper:
           outputSE = [outputSE]
       else:
         outputSE = self.defaultOutputSE
-  
+
       if self.jobArgs.has_key('OutputPath') and type(self.jobArgs['OutputPath']) in types.StringTypes:
         outputPath = self.jobArgs['OutputPath']
       else:
         outputPath = self.defaultOutputPath
-  
+
       result = self.__transferOutputDataFiles(owner,outputData,outputSE,outputPath)
       if not result['OK']:
         return result
@@ -924,7 +924,7 @@ class JobWrapper:
       utime, stime, cutime, cstime, elapsed = os.times()
     cpuTime = utime + stime + cutime + cstime
     execTime = elapsed
-    diskSpaceConsumed = getGlobbedTotalSize('%s/%s' %(self.root,self.jobID))
+    diskSpaceConsumed = getGlobbedTotalSize(os.path.join( self.root,str(self.jobID)))
     #Fill the data
     acData = {
                'User' : self.owner,
