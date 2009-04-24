@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.41 2009/04/23 07:32:53 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.42 2009/04/24 08:25:55 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.41 2009/04/23 07:32:53 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.42 2009/04/24 08:25:55 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -573,6 +573,11 @@ class PilotDirector:
         pilotsToSubmit = min( numberOfUses, pilotsToSubmit )
 
         pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
+
+        pilotsToSubmit = PilotsToSubmit / 2
+      # FIXME: This for testing for the moment
+      # Use Filling mode
+      pilotOptions.append( '-M %s' % 2 )
 
       # Requested version of DIRAC
       pilotOptions.append( '-v %s' % self.diracVersion )
