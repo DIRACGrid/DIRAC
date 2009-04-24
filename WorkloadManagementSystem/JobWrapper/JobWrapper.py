@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.89 2009/04/24 07:24:05 rgracian Exp $
+# $Id: JobWrapper.py,v 1.90 2009/04/24 07:38:09 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.89 2009/04/24 07:24:05 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.90 2009/04/24 07:38:09 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -237,7 +237,7 @@ class JobWrapper:
     if self.jobArgs.has_key('StdOutput'):
       outputFile = self.jobArgs['StdOutput']
 
-    if self.self.jobArgs.has_key('MaxCPUTime'):
+    if self.jobArgs.has_key('MaxCPUTime'):
       jobCPUTime = int(self.jobArgs['MaxCPUTime'])
     else:
       self.log.info('Job %s has no CPU time limit specified, applying default of %s' %(self.jobID,self.defaultCPUTime))
