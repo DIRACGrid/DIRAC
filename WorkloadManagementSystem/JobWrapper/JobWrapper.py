@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.93 2009/04/24 21:27:13 rgracian Exp $
+# $Id: JobWrapper.py,v 1.94 2009/04/24 22:06:21 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.93 2009/04/24 21:27:13 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.94 2009/04/24 22:06:21 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -24,7 +24,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder                    import getSy
 from DIRAC.WorkloadManagementSystem.Client.JobReport                import JobReport
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
-from DIRAC.Core.Utilities.Subprocess                                import shellCall
+from DIRAC.Core.Utilities.Subprocess                                import systemCall
 from DIRAC.Core.Utilities.Subprocess                                import Subprocess
 from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, List
@@ -312,7 +312,7 @@ class JobWrapper:
     if EXECUTION_RESULT.has_key('Thread'):
       threadResult = EXECUTION_RESULT['Thread']
       if not threadResult['OK']:
-        self.log.warn(threadResult['Message'])
+        self.log.error('Failed to execute the payload',threadResult['Message'])
       else:
         outputs = threadResult['Value']
 
@@ -336,15 +336,14 @@ class JobWrapper:
       return S_ERROR('No outputs generated from job execution')
 
     self.log.info('Checking directory contents after execution:')
-    res = shellCall( 5, ['ls', '-al'] )
-    if res['OK'] and not res['Value'][0]:
+    res = systemCall( 5, ['ls', '-al'] )
+    if not res['OK']:
+      self.log.error('Failed to list the current directory', res['Message'])
+    elif res['Value'][0]:
+      self.log.error('Failed to list the current directory', res['Value'][2])
+    else:
       # no timeout and exit code is 0
       self.log.info(res['Value'][1])
-    else:
-      if res['OK']:
-        self.log.error('Failed to list the current directory', res['Value'][2])
-      else:
-        self.log.error('Failed to list the current directory', res['message'])
 
     return S_OK()
 
@@ -708,9 +707,11 @@ class JobWrapper:
         if os.path.isdir(check):
           self.log.verbose('Found locally existing OutputSandbox directory: %s' %check)
           cmd = 'tar cf %s.tar %s' %(check,check)
-          result = shellCall(60,cmd)
+          result = systemCall(60,cmd)
           if not result['OK']:
-            self.log.warn(result)
+            self.log.error('Failed to create OutputSandbox tar', result['Message'])
+          elif result['Value'][0]:
+            self.log.error('Failed to create OutputSandbox tar', result['Value'][2])
           if os.path.isfile('%s.tar' %(check)):
             self.log.verbose('Appending %s.tar to OutputSandbox' %check)
             okFiles.append('%s.tar' %(check))
@@ -1114,7 +1115,7 @@ class ExecutionThread(threading.Thread):
     spObject = self.spObject
     start = time.time()
     initialStat = os.times()
-    output = spObject.systemCall( cmd, env= self.exeEnv, callbackFunction = self.sendOutput, shell = True )
+    output = spObject.systemCall( cmd, env= self.exeEnv, callbackFunction = self.sendOutput, shell = False )
     EXECUTION_RESULT['Thread'] = output
     timing = time.time() - start
     EXECUTION_RESULT['Timing']=timing
