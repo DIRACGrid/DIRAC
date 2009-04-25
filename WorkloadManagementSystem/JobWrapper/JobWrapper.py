@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.97 2009/04/24 23:02:09 rgracian Exp $
+# $Id: JobWrapper.py,v 1.98 2009/04/25 00:45:35 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.97 2009/04/24 23:02:09 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.98 2009/04/25 00:45:35 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -670,6 +670,7 @@ class JobWrapper:
           self.log.info('Could not get SandboxFileName to attempt upload to Grid storage')
           return S_ERROR('Output sandbox upload failed and no file name supplied for failover to Grid storage')
       else:
+        self.__report('Completed','Output Sandbox Uploaded')
         self.log.info('Sandbox uploaded successfully')
 
     if outputData and not self.failedFlag:
@@ -786,6 +787,7 @@ class JobWrapper:
       self.__report('Failed','Uploading Job OutputData')
       return S_ERROR('Failed to upload OutputData')
 
+    self.__report('Completed','Output Data Uploaded')
     return S_OK('OutputData uploaded successfully')
 
   #############################################################################
