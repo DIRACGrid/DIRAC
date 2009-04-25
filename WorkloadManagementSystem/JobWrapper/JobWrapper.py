@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.98 2009/04/25 00:45:35 rgracian Exp $
+# $Id: JobWrapper.py,v 1.99 2009/04/25 07:38:25 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.98 2009/04/25 00:45:35 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.99 2009/04/25 07:38:25 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -652,7 +652,9 @@ class JobWrapper:
       self.log.warn(msg)
       return S_OK(msg)
 
-    self.__report('Completed','Uploading Output Sandbox')
+    # Do not overwrite in case of Error
+    if not self.failedFlag: self.__report('Completed','Uploading Output Sandbox')
+
     if fileList and self.jobID:
       self.outputSandboxSize = getGlobbedTotalSize(fileList)
       outputSandboxClient = SandboxClient('Output')
@@ -670,7 +672,8 @@ class JobWrapper:
           self.log.info('Could not get SandboxFileName to attempt upload to Grid storage')
           return S_ERROR('Output sandbox upload failed and no file name supplied for failover to Grid storage')
       else:
-        self.__report('Completed','Output Sandbox Uploaded')
+        # Do not overwrite in case of Error
+        if not self.failedFlag: self.__report('Completed','Output Sandbox Uploaded')
         self.log.info('Sandbox uploaded successfully')
 
     if outputData and not self.failedFlag:
@@ -1008,6 +1011,7 @@ class JobWrapper:
         digest = resDigest['Value']
         resultSet = self.jobReport.setJobParameter('PendingRequest',digest)
       else:
+        self.__report('Failed','Failover Request Failed')
         self.log.error('Failed to set failover request',result['Message'])
       return result
     else:
