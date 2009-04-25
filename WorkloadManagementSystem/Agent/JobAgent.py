@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.75 2009/04/24 23:01:27 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.76 2009/04/25 01:16:02 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.75 2009/04/24 23:01:27 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.76 2009/04/25 01:16:02 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -576,7 +576,7 @@ class JobAgent(Agent):
     fd = open(self.controlDir+'/stop_agent','w')
     fd.write('JobAgent Stopped at %s [UTC]' % (time.asctime(time.gmtime())))
     fd.close()
-    return S_OK(message)
+    return S_ERROR(message)
 
   #############################################################################
   def __rescheduleFailedJob( self, jobID, message):
