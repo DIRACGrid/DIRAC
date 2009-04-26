@@ -1,11 +1,11 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.18 2009/04/24 11:13:32 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.19 2009/04/26 06:14:24 rgracian Exp $
 ########################################################################
 
 """ A set of utilities used in the WMS services
 """
 
-__RCSID__ = "$Id: WMSUtilities.py,v 1.18 2009/04/24 11:13:32 rgracian Exp $"
+__RCSID__ = "$Id: WMSUtilities.py,v 1.19 2009/04/26 06:14:24 rgracian Exp $"
 
 from tempfile import mkdtemp
 import shutil, os
@@ -51,6 +51,10 @@ def getPilotOutput( proxy, grid, pilotRef ):
   if output.find('not yet ready') != -1 :
     shutil.rmtree(tmp_dir)
     return S_ERROR(output)
+
+  if error.find('the status is ABORTED') != -1 :
+    shutil.rmtree(tmp_dir)
+    return S_ERROR(error)
 
   if status:
     shutil.rmtree(tmp_dir)
