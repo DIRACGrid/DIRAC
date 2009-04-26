@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.45 2009/04/26 07:14:30 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.46 2009/04/26 07:43:37 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.45 2009/04/26 07:14:30 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.46 2009/04/26 07:43:37 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -964,7 +964,7 @@ class PilotDirector:
         self.log.info( 'Removed RB from list', rb )
       except:
         pass
-      if not self.__failingWMSCache.exist(rb):
+      if not self.__failingWMSCache.exists(rb):
         self.__failingWMSCache.add(rb,30*60) # disable for 30 minutes
         mailaddress = "lhcb-dirac@cern.ch"
         if not result['OK']:
