@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.44 2009/04/24 15:05:19 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.45 2009/04/26 07:14:30 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.44 2009/04/24 15:05:19 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.45 2009/04/26 07:14:30 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -99,7 +99,7 @@ from DIRAC.Core.Security.CS                                import getPropertiesF
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import outputSandboxFiles
 
 from DIRAC.Core.Utilities.ThreadPool                       import ThreadPool
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig, List, Time, Source, systemCall
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig, List, Time, Source, systemCall, DictCache
 
 import random
 import DIRAC
@@ -456,6 +456,8 @@ class PilotDirector:
     self.log.info('Initialized')
     self.listMatch = {}
 
+    self.__failingWMSCache = DictCache()
+
   def configure(self, csSection, submitPool ):
     """
      Here goes common configuration for all PilotDirectors
@@ -527,6 +529,14 @@ class PilotDirector:
     self.fuzzyRank            = gConfig.getValue( mySection+'/FuzzyRank'            , self.fuzzyRank )
     self.loggingServers       = gConfig.getValue( mySection+'/LoggingServers'       , self.loggingServers )
     self.privatePilotFraction = gConfig.getValue( mySection+'/PrivatePilotFraction' , self.privatePilotFraction )
+
+    self.__failingWMSCache.purgeExpired()
+    for rb in self.__failingWMSCache.getKeys():
+      if rb in self.resourceBrokers:
+        try:
+          self.resourceBrokers.remove( rb )
+        except:
+          pass
 
   def submitPilots(self, taskQueueDict, pilotsToSubmit, workDir=None ):
     """
@@ -855,28 +865,11 @@ class PilotDirector:
 
     if not ret['OK']:
       self.log.error( 'Failed to execute List Match:', ret['Message'] )
-      if rb in self.resourceBrokers:
-        try:
-          self.resourceBrokers.remove( rb )
-          self.log.info( 'Removed RB from list', rb )
-        except:
-          pass
+      self.__sendErrorMail( rb, 'List Match', cmd, ret )
       return False
     if ret['Value'][0] != 0:
       self.log.error( 'Error executing List Match:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
-      if rb in self.resourceBrokers:
-        try:
-          self.resourceBrokers.remove( rb )
-          self.log.info( 'Removed RB from list', rb )
-          mailadress = "lhcb-dirac@cern.ch"
-          subject    = "%s: error executing List Match" % rb
-          msg        = ' '.join( cmd )
-          msg        += '\nreturns: %s\n' % str(ret['Value'][0]) +  '\n'.join( ret['Value'][1:3] )
-          result = NotificationClient().sendMail(mailadress,subject,msg,fromAddress="graciani@ecm.ub.es")
-          if not result[ 'OK' ]:
-            self.log.error( "Mail could not be sent" )
-        except:
-          pass
+      self.__sendErrorMail( rb, 'List Match', cmd, ret )
       return False
     self.log.info( 'List Match Execution Time: %.2f for TaskQueue %d' % ((time.time()-start),taskQueueID) )
 
@@ -912,28 +905,11 @@ class PilotDirector:
 
     if not ret['OK']:
       self.log.error( 'Failed to execute Job Submit:', ret['Message'] )
-      if rb in self.resourceBrokers:
-        try:
-          self.resourceBrokers.remove( rb )
-          self.log.info( 'Removed RB from list', rb )
-        except:
-          pass
+      self.__sendErrorMail( rb, 'Job Submit', cmd, ret )
       return False
     if ret['Value'][0] != 0:
       self.log.error( 'Error executing Job Submit:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
-      if rb in self.resourceBrokers:
-        try:
-          self.resourceBrokers.remove( rb )
-          self.log.info( 'Removed RB from list', rb )
-          mailadress = "lhcb-dirac@cern.ch"
-          subject    = "%s: error executing Job Submit" %rb
-          msg        = ' '.join( cmd )
-          msg        += '\nreturns: %s\n' % str(ret['Value'][0]) +  '\n'.join( ret['Value'][1:3] )
-          result = NotificationClient().sendMail(mailadress,subject,msg,fromAddress="graciani@ecm.ub.es")
-          if not result[ 'OK' ]:
-            self.log.error( "Mail could not be sent" )
-        except:
-          pass
+      self.__sendErrorMail( rb, 'Job Submit', cmd, ret )
       return False
     self.log.info( 'Job Submit Execution Time: %.2f for TaskQueue %d' % ((time.time()-start),taskQueueID) )
 
@@ -971,6 +947,41 @@ class PilotDirector:
       return ''
 
     return filename
+
+  def __sendErrorMail( self, rb, name, command, result ):
+    """
+     In case or error with RB/WM:
+     - check if RB/WMS still in use
+      - remove RB/WMS from current list
+      - check if RB/WMS not in cache
+        - add RB/WMS to cache
+        - send Error mail
+
+    """
+    if rb in self.resourceBrokers:
+      try:
+        self.resourceBrokers.remove( rb )
+        self.log.info( 'Removed RB from list', rb )
+      except:
+        pass
+      if not self.__failingWMSCache.exist(rb):
+        self.__failingWMSCache.add(rb,30*60) # disable for 30 minutes
+        mailaddress = "lhcb-dirac@cern.ch"
+        if not result['OK']:
+          subject    = "%s: timeout executing %s" % ( rb, name )
+          msg        = ' '.join( command )
+          msg       += '\n%s' % result['Message']
+        elif result['Value'][0] != 0:
+          subject    = "%s: error executing %s"  % ( rb, name )
+          msg        += '\nreturns: %s\n' % str(result[0]) +  '\n'.join( result[1:3] )
+        else:
+          return
+
+        result = NotificationClient().sendMail(mailaddress,subject,msg,fromAddress="graciani@ecm.ub.es")
+        if not result[ 'OK' ]:
+          self.log.error( "Mail could not be sent" )
+
+    return
 
 class gLitePilotDirector(PilotDirector):
   def __init__(self, submitPool):
