@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/DictCache.py,v 1.5 2008/12/15 17:02:05 acasajus Exp $
-__RCSID__ = "$Id: DictCache.py,v 1.5 2008/12/15 17:02:05 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/DictCache.py,v 1.6 2009/04/26 07:52:06 rgracian Exp $
+__RCSID__ = "$Id: DictCache.py,v 1.6 2009/04/26 07:52:06 rgracian Exp $"
 
 import threading
 import datetime
@@ -117,7 +117,7 @@ class DictCache:
       limitTime = datetime.datetime.now() + datetime.timedelta( seconds = validSeconds )
       for cKey in self.__cache:
         if self.__cache[ cKey ][ 'expirationTime' ] > limitTime:
-          keys.append( ckey )
+          keys.append( cKey )
       return keys
     finally:
       self.__lock.release()
