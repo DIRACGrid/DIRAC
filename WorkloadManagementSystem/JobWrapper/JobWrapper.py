@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.99 2009/04/25 07:38:25 rgracian Exp $
+# $Id: JobWrapper.py,v 1.100 2009/04/26 15:51:09 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.99 2009/04/25 07:38:25 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.100 2009/04/26 15:51:09 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -914,7 +914,10 @@ class JobWrapper:
 
     self.sendFailoverRequest()
     self.__cleanUp()
-    return S_OK()
+    if self.failedFlag:
+      return 1
+    else:
+      return 0
 
   #############################################################################
   def sendWMSAccounting(self,status='',minorStatus=''):
