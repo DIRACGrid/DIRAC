@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.11 2009/04/01 13:34:48 zmathe Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.12 2009/04/27 09:46:05 zmathe Exp $
 ########################################################################
 """ DIRAC Basic Oracle Class
     It provides access to the basic Oracle methods in a multithread-safe mode
@@ -50,7 +50,7 @@
 
 """
 
-__RCSID__ = "$Id: OracleDB.py,v 1.11 2009/04/01 13:34:48 zmathe Exp $"
+__RCSID__ = "$Id: OracleDB.py,v 1.12 2009/04/27 09:46:05 zmathe Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -68,7 +68,7 @@ import threading
 from types import StringTypes, DictType
 
 maxConnectRetry = 100
-
+maxArraysize = 5000 #max allowed 
 class OracleDB:
   """
   Basic multithreaded DIRAC Oracle Client Class
@@ -192,6 +192,7 @@ class OracleDB:
 
     try:
       cursor = connection.cursor()
+      cursor.arraysize = maxArraysize
       if cursor.execute(cmd):
         res = cursor.fetchall()
       else:
@@ -233,7 +234,7 @@ class OracleDB:
       results = None
       if output == True:
         result = connection.cursor()
-        result.arraysize=500 # 500x faster!!
+        result.arraysize=maxArraysize # 500x faster!!
         parameters +=[result]
         cursor.callproc(packageName, parameters)
         results = result.fetchall()
@@ -259,6 +260,7 @@ class OracleDB:
     connection = retDict['Value']
     try:
       cursor = connection.cursor()
+      cursor.arraysize = maxArraysize
       result = cursor.callfunc(packageName, returnType, parameters)
       retDict = S_OK( result )
     except Exception ,x:
