@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/WMSHistory.py,v 1.4 2009/04/27 13:47:14 acasajus Exp $
-__RCSID__ = "$Id: WMSHistory.py,v 1.4 2009/04/27 13:47:14 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/WMSHistory.py,v 1.5 2009/04/27 13:49:17 acasajus Exp $
+__RCSID__ = "$Id: WMSHistory.py,v 1.5 2009/04/27 13:49:17 acasajus Exp $"
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 
@@ -24,4 +24,5 @@ class WMSHistory( BaseAccountingType ):
                            ( 15552000, 86400 ), #>5d <6m = 1d
                            ( 31104000, 604800 ), #>6m = 1w
                          ]
+    self.dataTimespan = 86400*90 #Only keep the last 90 days of data
     self.checkType()

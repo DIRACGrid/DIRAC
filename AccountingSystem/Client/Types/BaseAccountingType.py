@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.18 2008/07/09 13:53:56 rgracian Exp $
-__RCSID__ = "$Id: BaseAccountingType.py,v 1.18 2008/07/09 13:53:56 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.19 2009/04/27 13:49:17 acasajus Exp $
+__RCSID__ = "$Id: BaseAccountingType.py,v 1.19 2009/04/27 13:49:17 acasajus Exp $"
 
 import types
 from DIRAC import S_OK, S_ERROR
@@ -17,6 +17,7 @@ class BaseAccountingType:
     self.valuesList = []
     self.startTime = 0
     self.endTime = 0
+    self.dataTimespan = 0
     self.bucketsLength = [ ( 604800, 3600 ), #<1w = 1h
                            ( 15552000, 86400 ), #>1w <6m = 1d
                            ( 31104000, 604800 ), #>6m = 1w
