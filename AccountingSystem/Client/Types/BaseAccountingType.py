@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.19 2009/04/27 13:49:17 acasajus Exp $
-__RCSID__ = "$Id: BaseAccountingType.py,v 1.19 2009/04/27 13:49:17 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.20 2009/04/27 14:43:27 acasajus Exp $
+__RCSID__ = "$Id: BaseAccountingType.py,v 1.20 2009/04/27 14:43:27 acasajus Exp $"
 
 import types
 from DIRAC import S_OK, S_ERROR
@@ -40,6 +40,12 @@ class BaseAccountingType:
     self.fieldsList.extend( self.valueFieldsList )
     if len( self.valuesList ) != len( self.fieldsList ):
       self.valuesList = [ None for i in range( len( self.fieldsList ) ) ]
+
+  def getDataTimespan( self ):
+    """
+    Get the data timespan for the time. Data older than dataTimespan will be deleted
+    """
+    return self.dataTimespan
 
   def setStartTime( self, startTime = False ):
     """

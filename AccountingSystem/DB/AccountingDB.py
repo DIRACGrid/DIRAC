@@ -1,11 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.11 2009/03/02 11:41:30 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.11 2009/03/02 11:41:30 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.12 2009/04/27 14:43:27 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.12 2009/04/27 14:43:27 acasajus Exp $"
 
 import datetime, time
 import types
 import threading
 import os, os.path
 import re
+import random
 import DIRAC
 from DIRAC.Core.Base.DB import DB
 from DIRAC import S_OK, S_ERROR, gLogger, gMonitor, gConfig
@@ -62,7 +63,9 @@ class AccountingDB(DB):
     th.start()
 
   def __periodicAutoCompactDB(self):
-    compactTime = datetime.time( hour = 4, minute = 30, second = 2 )
+    compactTime = datetime.time( hour = random.randint( 3, 6 ),
+                                 minute = random.randint( 0, 59 ),
+                                 second = random.randint( 0, 59 ) )
     while self.autoCompact:
       nct = Time.dateTime()
       if nct.hour >= compactTime.hour:
@@ -121,6 +124,9 @@ class AccountingDB(DB):
                                         definitionAccountingFields, bucketsLength )
             if not retVal[ 'OK' ]:
               self.log.error( "Can't register type %s:%s" % ( typeName, retVal[ 'Message' ] ) )
+            #Set the timespan
+            self.dbCatalog[ typeName ][ 'dataTimespan' ] = typeClass().getDataTimespan()
+
     return S_OK()
 
   def __loadCatalogFromDB(self):
@@ -879,6 +885,9 @@ class AccountingDB(DB):
     Compact buckets for all defined types
     """
     for typeName in self.dbCatalog:
+      if self.dbCatalog[ typeName ][ 'dataTimespan' ] > 0:
+        self.log.info( "Deleting records older that timespan for type %s" % typeName )
+        self.__deleteRecordsOlderThanDataTimespan( typeName )
       self.log.info( "Compacting %s" % typeName )
       self.__compactBucketsForType( typeName )
     return S_OK()
@@ -960,6 +969,26 @@ class AccountingDB(DB):
           self.__rollbackTransaction( connObj )
           self.log.error( "Error while compacting data for record in %s: %s" % ( typeName, retVal[ 'Value' ] ) )
     return self.__commitTransaction( connObj )
+
+  def __deleteRecordsOlderThanDataTimespan( self, typeName ):
+    """
+    IF types define dataTimespan, then records older than datatimespan seconds will be deleted
+    automatically
+    """
+    dataTimespan = self.dbCatalog[ typeName ][ 'dataTimespan' ]
+    if dataTimespan < 86400*30:
+      return
+    for table, field in ( ( self.__getTableName( "type", typeName ), 'endTime' ),
+                          ( self.__getTableName( "bucket", typeName ), 'startTime + bucketLength' ) ):
+      gLogger.info( "Deleting old records for table %s" % table )
+      sqlCmd = "DELETE FROM `%s` WHERE %s < UNIX_TIMESTAMP()-%d" % ( table, field, dataTimespan )
+      result = self._update( sqlCmd )
+      if not result[ 'OK' ]:
+        gLogger.error( "Cannot delete old records", "Table: %s Timespan: %s Error: %s" %( table,
+                                                                                          dataTimespan,
+                                                                                          result[ 'Message' ] ) )
+      else:
+        gLogger.info( "Deleted %d records for %s table" % ( result[ 'Value' ], table ) )
 
   def regenerateBuckets( self, typeName ):
     retVal = self._getConnection()
