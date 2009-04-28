@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.16 2009/02/23 20:03:36 acasajus Exp $
-__RCSID__ = "$Id: Dispatcher.py,v 1.16 2009/02/23 20:03:36 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.17 2009/04/28 13:45:51 acasajus Exp $
+__RCSID__ = "$Id: Dispatcher.py,v 1.17 2009/04/28 13:45:51 acasajus Exp $"
 
 import DIRAC
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -113,6 +113,10 @@ class Dispatcher:
         gLogger.error( "Missing %s" % prop[0] )
         value = 'unset'
       gMonitor.setComponentExtraParam( prop[1], value )
+    for secondaryName in serviceCfg.registerAlsoAs():
+      if secondaryName not in self.servicesDict:
+        gLogger.info( "Registering %s also as %s" % ( serviceName, secondaryName ) )
+        self.servicesDict[ secondaryName ] = self.servicesDict[ serviceName ]
     return S_OK()
 
   def _getHandlerInfo( self, serviceName ):
@@ -200,6 +204,11 @@ class Dispatcher:
     if proposalTuple[2]:
       clientTransport.setExtraCredentials( proposalTuple[2] )
     requestedService = proposalTuple[0][0]
+    if requestedService not in self.servicesDict:
+      gLogger.error( "Client is trying to connect to an invalid service", "%s is not one of %s"  % ( requestedService,
+                                                                                                     self.servicesDict.keys() ) )
+      clientTransport.sendData( S_ERROR( "%s is not up in this service" % requestedService ) )
+      return
     if not self._authorizeClientProposal( requestedService, proposalTuple[1], clientTransport ):
       return
     try:

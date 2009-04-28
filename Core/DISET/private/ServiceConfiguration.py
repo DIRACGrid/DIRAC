@@ -1,7 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/ServiceConfiguration.py,v 1.7 2008/10/07 15:58:29 acasajus Exp $
-__RCSID__ = "$Id: ServiceConfiguration.py,v 1.7 2008/10/07 15:58:29 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/ServiceConfiguration.py,v 1.8 2009/04/28 13:45:51 acasajus Exp $
+__RCSID__ = "$Id: ServiceConfiguration.py,v 1.8 2009/04/28 13:45:51 acasajus Exp $"
 
-from DIRAC.Core.Utilities import Network
+from DIRAC.Core.Utilities import Network, List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection, getSystemSection
 from DIRAC.Core.DISET.private.Protocols import gDefaultProtocol
@@ -39,6 +39,13 @@ class ServiceConfiguration:
         return URL
     else:
         return self.serviceURL
+
+  def registerAlsoAs( self ):
+    optionValue = self.getOption( "RegisterAlsoAs" )
+    if optionValue:
+      return List.fromChar( optionValue )
+    else:
+      return []
 
   def getMaxThreads( self ):
     try:
