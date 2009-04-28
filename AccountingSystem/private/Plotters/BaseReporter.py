@@ -167,7 +167,6 @@ class BaseReporter(DBUtils):
         pass
     if self._EA_TITLE in self._extraArgs and self._extraArgs[ self._EA_TITLE ]:
       metadata[ 'title' ] = self._extraArgs[ self._EA_TITLE ]
-    print metadata
 
   def __checkThumbnailMetadata( self, metadata ):
     if self._EA_THUMBNAIL in self._extraArgs and self._extraArgs[ self._EA_THUMBNAIL ]:
