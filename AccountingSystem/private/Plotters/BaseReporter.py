@@ -17,9 +17,10 @@ class BaseReporter(DBUtils):
   _EA_THUMBNAIL = 'thumbnail'
   _EA_WIDTH = 'width'
   _EA_HEIGHT = 'height'
-  _EA_THB_WIDTH = 'thb_width'
-  _EA_THB_HEIGHT = 'thb_height'
-  _EA_PADDING = 'figure_padding'
+  _EA_THB_WIDTH = 'thbWidth'
+  _EA_THB_HEIGHT = 'thbHeight'
+  _EA_PADDING = 'figurePadding'
+  _EA_TITLE = 'plotTitle'
 
   def __init__( self, db, setup, extraArgs = {} ):
     DBUtils.__init__( self, db, setup )
@@ -164,6 +165,9 @@ class BaseReporter(DBUtils):
         metadata[ self._EA_HEIGHT ] = min( 1600, max( 200, int( self._extraArgs[ self._EA_HEIGHT ] ) ) )
       except:
         pass
+    if self._EA_TITLE in self._extraArgs and self._extraArgs[ self._EA_TITLE ]:
+      metadata[ 'title' ] = self._extraArgs[ self._EA_TITLE ]
+    print metadata
 
   def __checkThumbnailMetadata( self, metadata ):
     if self._EA_THUMBNAIL in self._extraArgs and self._extraArgs[ self._EA_THUMBNAIL ]:
