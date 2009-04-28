@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/OptimizerModule.py,v 1.10 2009/04/18 18:26:57 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/OptimizerModule.py,v 1.11 2009/04/28 18:00:59 rgracian Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,10 +9,11 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: OptimizerModule.py,v 1.10 2009/04/18 18:26:57 rgracian Exp $"
+__RCSID__ = "$Id: OptimizerModule.py,v 1.11 2009/04/28 18:00:59 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB         import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB  import JobLoggingDB
+from DIRAC.AccountingSystem.Client.Types.Job         import Job as AccountingJob
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight       import ClassAd
 from DIRAC.Core.Base.AgentModule                     import AgentModule
 from DIRAC.ConfigurationSystem.Client.Config         import gConfig
@@ -90,7 +91,7 @@ class OptimizerModule(AgentModule):
     self.log.info('Job %s will be processed by %sAgent' % ( job, self.am_getModuleParam( 'optimizerName' ) ) )
     result = self.checkJob( job, classAdJob )
     if not result['OK']:
-      self.setFailedJob( job, result['Message'] )
+      self.setFailedJob( job, result['Message'], classAdJob )
     return result
 
   #############################################################################
@@ -216,13 +217,14 @@ class OptimizerModule(AgentModule):
     return self.jobDB.setJobParameter(job,reportName,value)
 
   #############################################################################
-  def setFailedJob(self, job, msg ):
+  def setFailedJob(self, job, msg, classAdJob ):
     """This method moves the job to the failed status
     """
     self.log.verbose("self.updateJobStatus(%s,'%s','%s')" % ( job, self.failedStatus, msg ) )
     if not self.am_Enabled():
       return S_OK()
     self.updateJobStatus( job, self.failedStatus, msg )
+    self.sendAccountingRecord( job, msg, classAdJob )
 
   #############################################################################
   def checkJob(self,job,classad):
@@ -230,5 +232,60 @@ class OptimizerModule(AgentModule):
     """
     self.log.warn('Optimizer: checkJob method should be implemented in a subclass')
     return S_ERROR('Optimizer: checkJob method should be implemented in a subclass')
+
+  #############################################################################
+  def sendAccountingRecord(self, job, msg, classAdJob ):
+    """
+      Send and accounting record for the failed job
+    """
+    accountingReport = AccountingJob()
+    accountingReport.setStartTime()
+    accountingReport.setEndTime()
+
+    owner = classAdJob.getAttributeString('Owner')
+    userGroup = classAdJob.getAttributeString('OwnerGroup')
+    jobGroup = classAdJob.getAttributeString('JobGroup')
+    jobType = classAdJob.getAttributeString('JobType')
+    jobClass='unknown'
+    if classAdJob.lookupAttribute('JobSplitType'):
+      jobClass = classAdJob.getAttributeString('JobSplitType')
+    inputData = []
+    processingType='unknown'
+    if classAdJob.lookupAttribute('ProcessingType'):
+      processingType = classAdJob.getAttributeString('ProcessingType')
+    if classAdJob.lookupAttribute('InputData'):
+      inputData = classAdJob.getListFromExpression('InputData')
+    inputDataFiles = len( inputData )
+    outputData = []
+    if classAdJob.lookupAttribute('OutputData'):
+      outputData = classAdJob.getListFromExpression('OutputData')
+    outputDataFiles = len( outputData )
+
+    acData = {
+               'User' : owner,
+               'UserGroup' : userGroup,
+               'JobGroup' : jobGroup,
+               'JobType' : jobType,
+               'JobClass' : jobClass,
+               'ProcessingType' : processingType,
+               'FinalMajorStatus' : self.failedStatus,
+               'FinalMinorStatus' : msg,
+               'CPUTime' : 0.0,
+               'NormCPUTime' : 0.0,
+               'ExecTime' : 0.0,
+               'InputDataSize' : 0.0,
+               'OutputDataSize' : 0.0,
+               'InputDataFiles' : inputDataFiles,
+               'OutputDataFiles' : outputDataFiles,
+               'DiskSpace' : 0.0,
+               'InputSandBoxSize' : 0.0,
+               'OutputSandBoxSize' : 0.0,
+               'ProcessedEvents' : 0.0
+             }
+
+    self.log.verbose('Accounting Report is:')
+    self.log.verbose(acData)
+    accountingReport.setValuesFromDict( acData )
+    return accountingReport.commit()
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
