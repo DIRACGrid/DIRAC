@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.46 2009/04/26 07:43:37 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.47 2009/04/28 10:59:53 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.46 2009/04/26 07:43:37 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.47 2009/04/28 10:59:53 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -443,6 +443,9 @@ ERROR_RB         = 'No Broker available'
 
 LOGGING_SERVER   = 'lb101.cern.ch'
 
+ERRORCLEARTIME   = 60*60  # 1 hour
+ERRORTICKETTIME  = 60*60  # 1 hour (added to the above)
+
 class PilotDirector:
   def __init__( self, submitPool):
 
@@ -457,6 +460,7 @@ class PilotDirector:
     self.listMatch = {}
 
     self.__failingWMSCache = DictCache()
+    self.__ticketsWMSCache = DictCache()
 
   def configure(self, csSection, submitPool ):
     """
@@ -481,6 +485,9 @@ class PilotDirector:
     self.rank                 = RANK
     self.fuzzyRank            = FUZZY_RANK
     self.privatePilotFraction = PRIVATE_PILOT_FRACTION
+
+    self.errorClearTime       = ERRORCLEARTIME
+    self.errorTicketTime      = ERRORTICKETTIME
 
     self.configureFromSection( csSection )
     """
@@ -521,6 +528,8 @@ class PilotDirector:
     self.listMatchDelay       = gConfig.getValue( mySection+'/ListMatchDelay'       , self.listMatchDelay )
     self.gridEnv              = gConfig.getValue( mySection+'/GridEnv'              , self.gridEnv )
     self.resourceBrokers      = gConfig.getValue( mySection+'/ResourceBrokers'      , self.resourceBrokers )
+    self.errorClearTime       = gConfig.getValue( mySection+'/ErrorClearTime'       , self.errorClearTime )
+    self.errorTicketTime      = gConfig.getValue( mySection+'/ErrorTicketTime'      , self.errorTicketTime )
     self.genericPilotDN       = gConfig.getValue( mySection+'/GenericPilotDN'       , self.genericPilotDN )
     self.genericPilotGroup    = gConfig.getValue( mySection+'/GenericPilotGroup'    , self.genericPilotGroup )
     self.timePolicy           = gConfig.getValue( mySection+'/TimePolicy'           , self.timePolicy )
@@ -531,6 +540,7 @@ class PilotDirector:
     self.privatePilotFraction = gConfig.getValue( mySection+'/PrivatePilotFraction' , self.privatePilotFraction )
 
     self.__failingWMSCache.purgeExpired()
+    self.__ticketsWMSCache.purgeExpired()
     for rb in self.__failingWMSCache.getKeys():
       if rb in self.resourceBrokers:
         try:
@@ -964,8 +974,8 @@ class PilotDirector:
         self.log.info( 'Removed RB from list', rb )
       except:
         pass
-      if not self.__failingWMSCache.exists(rb):
-        self.__failingWMSCache.add(rb,30*60) # disable for 30 minutes
+      if not self.__failingWMSCache.exists( rb ):
+        self.__failingWMSCache.add( rb, self.errorClearTime ) # disable for 30 minutes
         mailaddress = "lhcb-dirac@cern.ch"
         if not result['OK']:
           subject    = "%s: timeout executing %s" % ( rb, name )
@@ -976,6 +986,15 @@ class PilotDirector:
           msg        += '\nreturns: %s\n' % str(result[0]) +  '\n'.join( result[1:3] )
         else:
           return
+
+        ticketTime = self.errorClearTime + self.errorTicketTime
+
+        if self.__ticketsWMSCache.exists( rb ):
+          # the RB was already detected failing a short time ago
+          msg        = 'Submit GGUS Ticket for this error if not already opened\n' + \
+                       'It has been failing at least for %s hours\n' % ticketTime + msg
+        else:
+          self.__ticketsWMSCache.add( rb, ticketTime )
 
         result = NotificationClient().sendMail(mailaddress,subject,msg,fromAddress="graciani@ecm.ub.es")
         if not result[ 'OK' ]:
