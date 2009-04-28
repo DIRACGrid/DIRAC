@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxStoreHandler.py,v 1.1 2009/04/28 16:25:09 acasajus Exp $
+# $Id: SandboxStoreHandler.py,v 1.2 2009/04/28 17:15:56 acasajus Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.1 2009/04/28 16:25:09 acasajus Exp $"
+__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.2 2009/04/28 17:15:56 acasajus Exp $"
 
 from types import *
 import os
@@ -321,7 +321,8 @@ class SandboxStoreHandler( RequestHandler ):
     """
     if not entitiesSetup:
       entitiesSetup = self.serviceInfoDict[ 'clientSetup' ]
-    return sandboxDB.unassignEntities( { entitiesSetup : entitiesList } )
+    credDict = self.getRemoteCredentials()
+    return sandboxDB.unassignEntities( { entitiesSetup : entitiesList }, credDict[ 'username' ], credDict[ 'group' ] )
 
   ##################
   # Getting assigned sandboxes

@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/Attic/SandboxMetadataDB.py,v 1.1 2009/04/28 16:25:09 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/Attic/SandboxMetadataDB.py,v 1.2 2009/04/28 17:15:48 acasajus Exp $
 ########################################################################
 """ SandboxMetadataDB class is a front-end to the metadata for sandboxes
 """
 
-__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.1 2009/04/28 16:25:09 acasajus Exp $"
+__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.2 2009/04/28 17:15:48 acasajus Exp $"
 
 import time
 import types
@@ -183,7 +183,37 @@ class SandboxMetadataDB(DB):
     sqlCmd = "UPDATE `sb_SandBoxes` SET Assigned=1 WHERE SBId in ( %s )" % ", ".join( sbIds )
     return self._update( sqlCmd )
 
-  def unassignEntities( self, entitiesDict ):
+  def __filterEntitiesByRequester( self, entitiesList, entitiesSetup, requesterName, requesterGroup ):
+    """
+    Given a list of entities and a requester, return the ones that the requester is allowed to modify
+    """
+    sqlCond = [ "s.OwnerId=o.OwnerId" , "s.SBId=e.SBId", "e.EntitySetup=%s" %  entitiesSetup ]
+    requesterProps = CS.getPropertiesForGroup( requesterGroup )
+    if Properties.JOB_ADMINISTRATOR in requesterProps:
+      #Do nothing, just ensure it doesn't fit in the other cases
+      pass
+    elif Properties.JOB_SHARING in requesterProps:
+      sqlCond.append( "o.OwnerGroup='%s'" % requesterGroup )
+    elif Properties.NORMAL_USER in requesterProps:
+      sqlCond.append( "o.OwnerGroup='%s'" % requesterGroup )
+      sqlCond.append( "o.Owner='%s'" % requesterName )
+    else:
+      return S_ERROR( "Not authorized to access sandbox" )
+    for i in range( len( entitiesList ) ):
+      entitiesList[i] = self._escapeString( entitiesList[ i ] )[ 'Value' ]
+    if len( entitiesList ) == 1:
+      sqlCond.append( "e.EntityId = %s" % entitiesList[0] )
+    else:
+      sqlCond.append( "e.EntityId in ( %s )" % ", ".join( entitiesList ) )
+    sqlCmd = "SELECT DISTINCT e.EntityId FROM `sb_EntityMapping` e, `sb_SandBoxes` s, `sb_Owners` o WHERE"
+    sqlCmd = "%s %s" % ( sqlCmd, " AND ".join( sqlCond ) )
+    print sqlCmd
+    result = self._query( sqlCmd )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( [ row[0] for row in result[ 'Value' ] ] )
+
+  def unassignEntities( self, entitiesDict, requesterName, requesterGroup ):
     """
     Unassign jobs to sandboxes
     entitiesDict = { 'setup' : [ 'entityId', 'entityId' ] }
@@ -192,11 +222,16 @@ class SandboxMetadataDB(DB):
       entitiesIds = entitiesDict[ entitySetup ]
       if not entitiesIds:
         continue
-      sqlCond = [ "EntitySetup = %s" % self._escapeString( entitySetup )[ 'Value' ] ]
-      ids = []
-      for entityId in entitiesIds:
-        ids.append( self._escapeString( entityId )[ 'Value' ] )
-      sqlCond.append( "EntityId in ( %s )" % ", ".join ( [ str(eid) for eid in ids ] ) )
+      escapedSetup = self._escapeString( entitySetup )[ 'Value' ]
+      print "PREFILTER", entitiesIds
+      result = self.__filterEntitiesByRequester( entitiesIds, escapedSetup, requesterName, requesterGroup )
+      if not result[ 'OK' ]:
+        gLogger.error( "Cannot filter entities: %s" % result[ 'Message' ] )
+        continue
+      ids = result[ 'Value' ]
+      print "POSTFILTER", ids
+      sqlCond = [ "EntitySetup = %s" % escapedSetup ]
+      sqlCond.append( "EntityId in ( %s )" % ", ".join ( [ "'%s'" % str(eid) for eid in ids ] ) )
       sqlCmd = "DELETE FROM `sb_EntityMapping` WHERE %s" % " AND ".join( sqlCond )
       result = self._update( sqlCmd )
       if not result[ 'OK' ]:
