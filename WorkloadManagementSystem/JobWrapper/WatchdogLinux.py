@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogLinux.py,v 1.9 2009/04/18 18:26:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogLinux.py,v 1.10 2009/04/28 15:23:02 rgracian Exp $
 # Author: Stuart Paterson
 # eMail : Stuart.Paterson@cern.ch
 ########################################################################
@@ -11,12 +11,13 @@
      This is the Unix / Linux compatible Watchdog subclass.
 """
 
-__RCSID__ = "$Id: WatchdogLinux.py,v 1.9 2009/04/18 18:26:58 rgracian Exp $"
+__RCSID__ = "$Id: WatchdogLinux.py,v 1.10 2009/04/28 15:23:02 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                               import Agent
 from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog  import Watchdog
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC                                               import S_OK, S_ERROR
+from DIRAC.Core.Utilities.Os import getDiskSpace
 
 import string,re,socket
 
@@ -100,16 +101,14 @@ class WatchdogLinux(Watchdog):
     """Obtains the disk space used.
     """
     result = S_OK()
-    comm = 'df -P -m .'
-    spaceDict = shellCall(5,comm)
-    if spaceDict['OK']:
-      space = string.split(spaceDict['Value'][1]) [10]
-      result['Value'] = float(space)
-    else:
+    diskSpace = getDiskSpace()
+
+    if diskSpace == -1:
       result = S_ERROR('Could not obtain disk usage')
       self.log.warn('Could not obtain disk usage')
-      result['Value'] = 0
+      result['Value'] = -1
 
+    result['Value'] = float(diskSpace)
     return result
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

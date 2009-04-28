@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.48 2009/04/22 16:11:43 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.49 2009/04/28 15:23:02 rgracian Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.48 2009/04/22 16:11:43 rgracian Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.49 2009/04/28 15:23:02 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -412,7 +412,7 @@ class Watchdog(Agent):
     """
     if self.parameters.has_key('DiskSpace'):
       availSpace = self.parameters['DiskSpace'][-1]
-      if availSpace < self.minDiskSpace:
+      if availSpace >=0 and availSpace < self.minDiskSpace:
         self.log.info('Not enough local disk space for job to continue, defined in CS as %s MB' % (self.minDiskSpace))
         return S_ERROR('Job has insufficient disk space to continue')
       else:
