@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.48 2009/04/28 14:39:35 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.49 2009/04/28 20:50:48 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.48 2009/04/28 14:39:35 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.49 2009/04/28 20:50:48 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -977,15 +977,16 @@ class PilotDirector:
       if not self.__failingWMSCache.exists( rb ):
         self.__failingWMSCache.add( rb, self.errorClearTime ) # disable for 30 minutes
         mailaddress = "lhcb-dirac@cern.ch"
+        msg = ''
         if not result['OK']:
           subject    = "%s: timeout executing %s" % ( rb, name )
-          msg        = ' '.join( command )
           msg       += '\n%s' % result['Message']
         elif result['Value'][0] != 0:
           subject    = "%s: error executing %s"  % ( rb, name )
-          msg        += '\nreturns: %s\n' % str(result[0]) +  '\n'.join( result[1:3] )
         else:
           return
+        msg        += ' '.join( command )
+        msg        += '\nreturns: %s\n' % str(result['Value'][0]) +  '\n'.join( result['Value'][1:3] )
 
         ticketTime = self.errorClearTime + self.errorTicketTime
 
