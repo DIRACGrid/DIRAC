@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.50 2009/04/29 04:40:38 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.51 2009/04/29 05:10:06 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.50 2009/04/29 04:40:38 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.51 2009/04/29 05:10:06 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -445,8 +445,8 @@ LOGGING_SERVER   = 'lb101.cern.ch'
 
 ERROR_CLEAR_TIME   = 60*60  # 1 hour
 ERROR_TICKET_TIME  = 60*60  # 1 hour (added to the above)
-ERROR_MAIL         = "dirac.alarm@gmail.com"
-ALARM_MAIL         = "dirac.alarm@gmail.com"
+ERROR_MAIL         = "dirac.alarms@gmail.com"
+ALARM_MAIL         = "dirac.alarms@gmail.com"
 FROM_MAIL          = "lhcb-dirac@cern.ch"
 
 class PilotDirector:
@@ -538,7 +538,7 @@ class PilotDirector:
     self.errorTicketTime      = gConfig.getValue( mySection+'/ErrorTicketTime'      , self.errorTicketTime )
     self.errorMailAddress     = gConfig.getValue( mySection+'/ErrorMailAddress'     , self.errorMailAddress )
     self.alarmMailAddress     = gConfig.getValue( mySection+'/AlarmMailAddress'     , self.alarmMailAddress )
-    self.mailFromAddress      = gConfig.getValue( mySection+'/;ailFromAddress'      , self.mailFromAddress )
+    self.mailFromAddress      = gConfig.getValue( mySection+'/MailFromAddress'      , self.mailFromAddress )
     self.genericPilotDN       = gConfig.getValue( mySection+'/GenericPilotDN'       , self.genericPilotDN )
     self.genericPilotGroup    = gConfig.getValue( mySection+'/GenericPilotGroup'    , self.genericPilotGroup )
     self.timePolicy           = gConfig.getValue( mySection+'/TimePolicy'           , self.timePolicy )
