@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.49 2009/04/28 20:50:48 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.50 2009/04/29 04:40:38 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.49 2009/04/28 20:50:48 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.50 2009/04/29 04:40:38 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -443,8 +443,11 @@ ERROR_RB         = 'No Broker available'
 
 LOGGING_SERVER   = 'lb101.cern.ch'
 
-ERRORCLEARTIME   = 60*60  # 1 hour
-ERRORTICKETTIME  = 60*60  # 1 hour (added to the above)
+ERROR_CLEAR_TIME   = 60*60  # 1 hour
+ERROR_TICKET_TIME  = 60*60  # 1 hour (added to the above)
+ERROR_MAIL         = "dirac.alarm@gmail.com"
+ALARM_MAIL         = "dirac.alarm@gmail.com"
+FROM_MAIL          = "lhcb-dirac@cern.ch"
 
 class PilotDirector:
   def __init__( self, submitPool):
@@ -486,8 +489,11 @@ class PilotDirector:
     self.fuzzyRank            = FUZZY_RANK
     self.privatePilotFraction = PRIVATE_PILOT_FRACTION
 
-    self.errorClearTime       = ERRORCLEARTIME
-    self.errorTicketTime      = ERRORTICKETTIME
+    self.errorClearTime       = ERROR_CLEAR_TIME
+    self.errorTicketTime      = ERROR_TICKET_TIME
+    self.errorMailAddress     = ERROR_MAIL
+    self.alarmMailAddress     = ALARM_MAIL
+    self.mailFromAddress      = FROM_MAIL
 
     self.configureFromSection( csSection )
     """
@@ -530,6 +536,9 @@ class PilotDirector:
     self.resourceBrokers      = gConfig.getValue( mySection+'/ResourceBrokers'      , self.resourceBrokers )
     self.errorClearTime       = gConfig.getValue( mySection+'/ErrorClearTime'       , self.errorClearTime )
     self.errorTicketTime      = gConfig.getValue( mySection+'/ErrorTicketTime'      , self.errorTicketTime )
+    self.errorMailAddress     = gConfig.getValue( mySection+'/ErrorMailAddress'     , self.errorMailAddress )
+    self.alarmMailAddress     = gConfig.getValue( mySection+'/AlarmMailAddress'     , self.alarmMailAddress )
+    self.mailFromAddress      = gConfig.getValue( mySection+'/;ailFromAddress'      , self.mailFromAddress )
     self.genericPilotDN       = gConfig.getValue( mySection+'/GenericPilotDN'       , self.genericPilotDN )
     self.genericPilotGroup    = gConfig.getValue( mySection+'/GenericPilotGroup'    , self.genericPilotGroup )
     self.timePolicy           = gConfig.getValue( mySection+'/TimePolicy'           , self.timePolicy )
@@ -875,11 +884,11 @@ class PilotDirector:
 
     if not ret['OK']:
       self.log.error( 'Failed to execute List Match:', ret['Message'] )
-      self.__sendErrorMail( rb, 'List Match', cmd, ret )
+      self.__sendErrorMail( rb, 'List Match', cmd, ret, proxy )
       return False
     if ret['Value'][0] != 0:
       self.log.error( 'Error executing List Match:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
-      self.__sendErrorMail( rb, 'List Match', cmd, ret )
+      self.__sendErrorMail( rb, 'List Match', cmd, ret, proxy )
       return False
     self.log.info( 'List Match Execution Time: %.2f for TaskQueue %d' % ((time.time()-start),taskQueueID) )
 
@@ -915,11 +924,11 @@ class PilotDirector:
 
     if not ret['OK']:
       self.log.error( 'Failed to execute Job Submit:', ret['Message'] )
-      self.__sendErrorMail( rb, 'Job Submit', cmd, ret )
+      self.__sendErrorMail( rb, 'Job Submit', cmd, ret, proxy )
       return False
     if ret['Value'][0] != 0:
       self.log.error( 'Error executing Job Submit:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
-      self.__sendErrorMail( rb, 'Job Submit', cmd, ret )
+      self.__sendErrorMail( rb, 'Job Submit', cmd, ret, proxy )
       return False
     self.log.info( 'Job Submit Execution Time: %.2f for TaskQueue %d' % ((time.time()-start),taskQueueID) )
 
@@ -958,7 +967,7 @@ class PilotDirector:
 
     return filename
 
-  def __sendErrorMail( self, rb, name, command, result ):
+  def __sendErrorMail( self, rb, name, command, result, proxy ):
     """
      In case or error with RB/WM:
      - check if RB/WMS still in use
@@ -976,7 +985,7 @@ class PilotDirector:
         pass
       if not self.__failingWMSCache.exists( rb ):
         self.__failingWMSCache.add( rb, self.errorClearTime ) # disable for 30 minutes
-        mailaddress = "lhcb-dirac@cern.ch"
+        mailAddress = self.errorMailAddress
         msg = ''
         if not result['OK']:
           subject    = "%s: timeout executing %s" % ( rb, name )
@@ -985,21 +994,24 @@ class PilotDirector:
           subject    = "%s: error executing %s"  % ( rb, name )
         else:
           return
-        msg        += ' '.join( command )
-        msg        += '\nreturns: %s\n' % str(result['Value'][0]) +  '\n'.join( result['Value'][1:3] )
+        msg += ' '.join( command )
+        msg += '\nreturns: %s\n' % str(result['Value'][0]) +  '\n'.join( result['Value'][1:3] )
+        #msg += '\nUsing Proxy:\n' + gProxyManager.
 
         ticketTime = self.errorClearTime + self.errorTicketTime
 
         if self.__ticketsWMSCache.exists( rb ):
+          mailAddress = self.alarmMailAddress
           # the RB was already detected failing a short time ago
           msg        = 'Submit GGUS Ticket for this error if not already opened\n' + \
                        'It has been failing at least for %s hours\n' % ticketTime + msg
         else:
           self.__ticketsWMSCache.add( rb, ticketTime/60/60 )
 
-        result = NotificationClient().sendMail(mailaddress,subject,msg,fromAddress="graciani@ecm.ub.es")
-        if not result[ 'OK' ]:
-          self.log.error( "Mail could not be sent" )
+        if mailAddress:
+          result = NotificationClient().sendMail(mailAddress,subject,msg,fromAddress=self.mailFromAddress)
+          if not result[ 'OK' ]:
+            self.log.error( "Mail could not be sent" )
 
     return
 
