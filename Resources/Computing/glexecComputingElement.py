@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.19 2009/04/18 18:26:57 rgracian Exp $
+# $Id: glexecComputingElement.py,v 1.20 2009/04/30 12:35:40 rgracian Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.19 2009/04/18 18:26:57 rgracian Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.20 2009/04/30 12:35:40 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -185,6 +185,11 @@ class glexecComputingElement(ComputingElement):
     """
     if not resultTuple:
       return S_OK()
+
+    # FIXME: the wrapper will return:
+    #   > 0 if there are problems with the payload
+    #   < 0 if there are problems with the wrapper itself
+    #   0 if everything is OK
 
     codes = {}
     codes[127]='Shell exited, command not found'
