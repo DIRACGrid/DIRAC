@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.77 2009/04/30 06:58:39 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.78 2009/04/30 13:23:23 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.77 2009/04/30 06:58:39 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.78 2009/04/30 13:23:23 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -235,7 +235,10 @@ class JobAgent(Agent):
       submission = self.__submitJob(jobID,params,resourceParams,optimizerParams,jobJDL,proxyChain)
       if not submission['OK']:
         self.__report(jobID,'Failed',submission['Message'])
-        return self.__finish('Error During CE Submission')
+        return self.__finish(submission['Message'])
+      elif 'PayloadFailed' in submission:
+        # Do not keep running and do not overwrite the Payload error
+        return self.__finish('Payload execution failed with error code %s' % submission['PayloadFailed'])
 
       self.log.verbose('After %sCE submitJob()' %(self.ceName))
     except Exception, x:
@@ -349,18 +352,23 @@ class JobAgent(Agent):
     batchID = 'dc%s' %(jobID)
     submission = self.computingElement.submitJob(wrapperFile,jobJDL,payloadProxy,batchID)
 
+    ret = S_OK('Job submitted')
+
     if submission['OK']:
       batchID = submission['Value']
       self.log.info('Job %s submitted as %s' %(jobID,batchID))
       self.log.verbose('Set JobParameter: Local batch ID %s' %(batchID))
       self.__setJobParam(jobID,'LocalBatchID',str(batchID))
+      if 'PayloadFailed' in submission:
+        ret['PayloadFailed'] = submission['PayloadFailed']
+        return ret
       time.sleep(self.jobSubmissionDelay)
     else:
       self.log.error('Job submission failed',jobID)
       self.__setJobParam(jobID,'ErrorMessage','%s CE Submission Error' %(self.ceName))
       return S_ERROR('%s CE Submission Error: %s' %(self.ceName,submission['Message']))
 
-    return S_OK('Job submitted')
+    return ret
 
   #############################################################################
   def __createJobWrapper(self,jobID,jobParams,resourceParams,optimizerParams):
