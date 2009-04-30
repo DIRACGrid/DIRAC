@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.82 2009/03/05 15:05:01 atsareg Exp $
+# $Id: TransformationDB.py,v 1.83 2009/04/30 15:03:02 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -967,10 +967,10 @@ PRIMARY KEY (FileID)
       res = self._update(req)
       if not res['OK']:
         return S_ERROR("TransformationDB.removeFile: Failed to remove file replicas.")
-      req = "DELETE FROM DataFiles WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
-      res = self._update(req)
-      if not res['OK']:
-        return S_ERROR("TransformationDB.removeFile: Failed to remove files.")
+      #req = "DELETE FROM DataFiles WHERE FileID IN (%s);" % intListToString(fileIDs.keys())
+      #res = self._update(req)
+      #if not res['OK']:
+      #  return S_ERROR("TransformationDB.removeFile: Failed to remove files.")
     for lfn in fileIDs.values():
       successful[lfn] = True
     resDict = {'Successful':successful,'Failed':failed}
