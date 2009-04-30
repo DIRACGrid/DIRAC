@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.51 2009/04/29 05:10:06 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.52 2009/04/30 06:59:05 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.51 2009/04/29 05:10:06 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.52 2009/04/30 06:59:05 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -445,8 +445,6 @@ LOGGING_SERVER   = 'lb101.cern.ch'
 
 ERROR_CLEAR_TIME   = 60*60  # 1 hour
 ERROR_TICKET_TIME  = 60*60  # 1 hour (added to the above)
-ERROR_MAIL         = "dirac.alarms@gmail.com"
-ALARM_MAIL         = "dirac.alarms@gmail.com"
 FROM_MAIL          = "lhcb-dirac@cern.ch"
 
 class PilotDirector:
@@ -491,8 +489,8 @@ class PilotDirector:
 
     self.errorClearTime       = ERROR_CLEAR_TIME
     self.errorTicketTime      = ERROR_TICKET_TIME
-    self.errorMailAddress     = ERROR_MAIL
-    self.alarmMailAddress     = ALARM_MAIL
+    self.errorMailAddress     = DIRAC.errorMail
+    self.alarmMailAddress     = DIRAC.alarmMail
     self.mailFromAddress      = FROM_MAIL
 
     self.configureFromSection( csSection )
