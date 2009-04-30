@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.49 2009/04/28 15:23:02 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.50 2009/04/30 07:00:02 rgracian Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.49 2009/04/28 15:23:02 rgracian Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.50 2009/04/30 07:00:02 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -27,6 +27,7 @@ from DIRAC.Core.Utilities.Subprocess                    import shellCall
 from DIRAC.Core.Utilities.ProcessMonitor                import ProcessMonitor
 from DIRAC                                              import S_OK, S_ERROR
 from DIRAC.Core.Security                                import Properties
+from DIRAC.Core.Utilities.TimeLeft.TimeLeft             import TimeLeft
 
 import os,thread,time,shutil
 
@@ -53,6 +54,7 @@ class Watchdog(Agent):
     self.processMonitor = ProcessMonitor()
     self.checkError = ''
 
+
   #############################################################################
   def initialize(self,loops=0):
     """ Watchdog initialization.
@@ -69,11 +71,12 @@ class Watchdog(Agent):
     self.testLoadAvg     = gConfig.getValue(self.section+'/CheckLoadAvgFlag',1)
     self.testCPUConsumed = gConfig.getValue(self.section+'/CheckCPUConsumedFlag',1)
     self.testCPULimit    = gConfig.getValue(self.section+'/CheckCPULimitFlag',0)
+    self.testTimeLeft    = gConfig.getValue(self.section+'/CheckTimeLeftFlag',1)
     #Other parameters
     self.pollingTime      = gConfig.getValue(self.section+'/PollingTime',10) # 10 seconds
     self.checkingTime     = gConfig.getValue(self.section+'/CheckingTime',30*60) #30 minute period
     self.minCheckingTime   = gConfig.getValue(self.section+'/MinCheckingTime',20*60) # 20 mins
-    self.maxWallClockTime = gConfig.getValue(self.section+'/MaxWallClockTime',4*24*60*60) # e.g. 4 days
+    self.maxWallClockTime = gConfig.getValue(self.section+'/MaxWallClockTime',3*24*60*60) # e.g. 4 days
     self.jobPeekFlag      = gConfig.getValue(self.section+'/JobPeekFlag',1) # on / off
     self.minDiskSpace     = gConfig.getValue(self.section+'/MinDiskSpace',10) #MB
     self.loadAvgLimit     = gConfig.getValue(self.section+'/LoadAverageLimit',1000) # > 1000 and jobs killed
@@ -86,6 +89,13 @@ class Watchdog(Agent):
     if self.checkingTime < self.minCheckingTime:
       self.log.info('Requested CheckingTime of %s setting to %s seconds (minimum)' %(self.checkingTime,self.minCheckingTime))
       self.checkingTime=self.minCheckingTime
+
+    self.grossTimeLeftLimit = self.checkingTime
+    self.fineTimeLeftLimit  = gConfig.getValue(self.section+'/TimeLeftLimit', 3 * self.pollingTime )
+
+    self.timeLeftUtil = TimeLeft()
+    self.litleTimeLeft = False
+    self.__timeLeft()
     return result
 
   #############################################################################
@@ -96,6 +106,14 @@ class Watchdog(Agent):
       #print self.parameters
       self.__getUsageSummary()
       self.log.info('Process to monitor has completed, Watchdog will exit.')
+      self.__finish()
+      return S_OK()
+
+    if self.litleTimeLeft and self.__timeLeft() == -1:
+      self.checkError = 'Job has reached the CPU limit of the queue'
+      self.log.error( self.checkError )
+      self.__killRunningThread()
+      self.__getUsageSummary()
       self.__finish()
       return S_OK()
 
@@ -293,16 +311,23 @@ class Watchdog(Agent):
       if not result['OK']:
         return result
     else:
-      report += 'CPUConsumed: NA,'
+      report += 'CPUConsumed: NA, '
 
     if self.testCPULimit:
       result = self.__checkCPULimit()
-      report += 'CPULimit OK. '
+      report += 'CPULimit OK, '
       if not result['OK']:
         self.log.warn(result['Message'])
         return result
     else:
-      report += 'CPUConsumed: NA.'
+      report += 'CPUConsumed: NA, '
+
+    if self.testTimeLeft:
+      self.__timeLeft()
+      if self.timeLeft:
+        report += 'TimeLeft: OK'
+    else:
+      report += 'TimeLeft: NA'
 
 
     self.log.info(report)
@@ -536,6 +561,32 @@ class Watchdog(Agent):
 
     result = S_OK()
     return result
+
+  def __timeLeft(self):
+    """
+      return Normalized CPU time left in the batch system
+      0 if not available
+      update self.timeLeft and self.litleTimeLeft
+    """
+    # Get CPU time left in the batch system
+    result = self.timeLeftUtil.getTimeLeft(0.0)
+    if not result['OK']:
+      # Could not get CPU time left, we might need to wait for the first loop
+      # or the Utility is not working properly for this batch system
+      # or we are in a batch system
+      timeLeft = 0
+    else:
+      timeLeft = result['Value']
+
+    self.timeLeft = timeLeft
+    if not self.litleTimeLeft:
+      if self.timeLeft < self.grossTimeLeftLimit:
+        self.litleTimeLeft = True
+    else:
+      if self.timeLeft < self.fineTimeLeftLimit:
+        timeLeft = -1
+
+    return timeLeft
 
   #############################################################################
   def __finish(self):
