@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InProcessComputingElement.py,v 1.9 2009/04/30 12:32:20 rgracian Exp $
+# $Id: InProcessComputingElement.py,v 1.10 2009/04/30 13:20:49 rgracian Exp $
 # File :   InProcessComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: InProcessComputingElement.py,v 1.9 2009/04/30 12:32:20 rgracian Exp $"
+__RCSID__ = "$Id: InProcessComputingElement.py,v 1.10 2009/04/30 13:20:49 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -53,17 +53,23 @@ class InProcessComputingElement(ComputingElement):
     self.log.verbose('CE submission command: %s' %(cmd))
     result = systemCall(0,cmd,callbackFunction = self.sendOutput)
 
+    ret = S_OK(localID)
+
     if not result['OK']:
       self.log.error('Fail to run InProcess',result['Message'])
     elif result['Value'][0] < 0:
       self.log.error('InProcess Job Execution Failed')
       self.log.info('Exit status:',result['Value'][0])
       return S_ERROR('InProcess Job Execution Failed')
+    elif result['Value'][0] > 0:
+      self.log.error('Fail in payload execution')
+      self.log.info('Exit status:',result['Value'][0])
+      ret['PayloadFailed'] = result['Value'][0]
     else:
       self.log.debug('InProcess CE result OK')
 
     self.submittedJobs += 1
-    return S_OK(localID)
+    return ret
 
   #############################################################################
   def getDynamicInfo(self):
