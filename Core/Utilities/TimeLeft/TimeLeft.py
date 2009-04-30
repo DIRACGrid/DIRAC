@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TimeLeft.py,v 1.14 2009/04/24 06:54:12 rgracian Exp $
+# $Id: TimeLeft.py,v 1.15 2009/04/30 06:57:13 rgracian Exp $
 ########################################################################
 
 """ The TimeLeft utility allows to calculate the amount of CPU time
@@ -16,7 +16,7 @@
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
-__RCSID__ = "$Id: TimeLeft.py,v 1.14 2009/04/24 06:54:12 rgracian Exp $"
+__RCSID__ = "$Id: TimeLeft.py,v 1.15 2009/04/30 06:57:13 rgracian Exp $"
 
 import os,re
 
@@ -33,6 +33,8 @@ class TimeLeft:
     self.site = gConfig.getValue('/LocalSite/Site','Unknown')
     # This is the ratio SpecInt published by the site over 500 (the reference used for Matching)
     self.scaleFactor = gConfig.getValue('/LocalSite/CPUScalingFactor',0.0)
+    if not self.scaleFactor:
+      self.log.warn('/LocalSite/CPUScalingFactor not defined for site %s' %self.site)
     self.cpuMargin = gConfig.getValue('/LocalSite/CPUMargin',10) #percent
 
   #############################################################################
@@ -42,7 +44,6 @@ class TimeLeft:
     """
     #Quit if no scale factor available
     if not self.scaleFactor:
-      self.log.warn('/LocalSite/CPUScalingFactor not defined for site %s' %self.site)
       return S_ERROR('/LocalSite/CPUScalingFactor not defined for site %s' %self.site)
 
     #Work out which type of batch system to query and attempt to instantiate plugin
