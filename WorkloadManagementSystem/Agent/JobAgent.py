@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.76 2009/04/25 01:16:02 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.77 2009/04/30 06:58:39 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.76 2009/04/25 01:16:02 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.77 2009/04/30 06:58:39 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -72,7 +72,7 @@ class JobAgent(Agent):
     self.jobWrapperTemplate = self.siteRoot+gConfig.getValue(self.section+'/JobWrapperTemplate','/DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py')
     self.jobSubmissionDelay = gConfig.getValue(self.section+'/SubmissionDelay',10)
     self.defaultProxyLength = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400*5 )
-    self.defaultLogLevel = gConfig.getValue(self.section+'/DefaultLogLevel','debug')
+    self.defaultLogLevel = gConfig.getValue(self.section+'/DefaultLogLevel','info')
     self.fillingMode = gConfig.getValue(self.section+'/FillingModeFlag',False)
     self.jobCount=0
     return result
@@ -99,7 +99,6 @@ class JobAgent(Agent):
           return self.__finish(result['Message'])
         ceJDL = self.computingElement.getJDL()
         resourceJDL = ceJDL['Value']
-        self.log.verbose(resourceJDL)
         # Enable Filling Mode
         # return self.__finish('Filling Mode is Disabled')
       else:
@@ -378,7 +377,7 @@ class JobAgent(Agent):
       try:
         os.makedirs('%s/job/Wrapper' %(workingDir))
       except Exception,x:
-        self.log.exception()    
+        self.log.exception()
         return S_ERROR('Could not create directory for wrapper script')
 
     jobWrapperFile = '%s/job/Wrapper/Wrapper_%s' %(workingDir,jobID)
