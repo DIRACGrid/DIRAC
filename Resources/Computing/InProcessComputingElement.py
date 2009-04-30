@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InProcessComputingElement.py,v 1.8 2009/04/24 21:48:08 rgracian Exp $
+# $Id: InProcessComputingElement.py,v 1.9 2009/04/30 12:32:20 rgracian Exp $
 # File :   InProcessComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: InProcessComputingElement.py,v 1.8 2009/04/24 21:48:08 rgracian Exp $"
+__RCSID__ = "$Id: InProcessComputingElement.py,v 1.9 2009/04/30 12:32:20 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -55,7 +55,7 @@ class InProcessComputingElement(ComputingElement):
 
     if not result['OK']:
       self.log.error('Fail to run InProcess',result['Message'])
-    elif result['Value'][0]:
+    elif result['Value'][0] < 0:
       self.log.error('InProcess Job Execution Failed')
       self.log.info('Exit status:',result['Value'][0])
       return S_ERROR('InProcess Job Execution Failed')
