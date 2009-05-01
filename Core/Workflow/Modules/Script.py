@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: Script.py,v 1.2 2009/04/18 17:32:27 rgracian Exp $
+# $Id: Script.py,v 1.3 2009/05/01 11:00:02 rgracian Exp $
 # File :   Script.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     or file to run (and is also a simple example of a workflow module).
 """
 
-__RCSID__ = "$Id: Script.py,v 1.2 2009/04/18 17:32:27 rgracian Exp $"
+__RCSID__ = "$Id: Script.py,v 1.3 2009/05/01 11:00:02 rgracian Exp $"
 
 
 from DIRAC.Core.Utilities.Subprocess import shellCall
@@ -77,8 +77,6 @@ class Script(object):
 
     self.log.info('Command is: %s' %cmd)
     outputDict = shellCall(0,cmd)
-    if not outputDict:
-      self.log.info('Could not execute script %s' %(self.executable))
     if not outputDict['OK']:
       self.log.info('Shell call execution failed:')
       self.log.info(outputDict['Message'])

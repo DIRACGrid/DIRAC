@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.29 2009/05/01 10:43:36 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.30 2009/05/01 10:56:11 rgracian Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.29 2009/05/01 10:43:36 rgracian Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.30 2009/05/01 10:56:11 rgracian Exp $"
 
 import os
 import threading
@@ -272,7 +272,7 @@ class Agent:
           # Send Memory consumption mark
           pid = os.getpid()
           result = shellCall(0,'ps -p %d -o rsz=' % pid)
-          if result['OK'] and result['Value'] == 0:
+          if result['OK'] and result['Value'][0] == 0:
             returnCode,stdOut,stdErr = result['Value']
             mem = float(stdOut)
             gLogger.verbose("Sending Memory consumption %.2f MB" % (mem/1024.,))
