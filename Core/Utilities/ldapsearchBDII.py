@@ -11,7 +11,7 @@ Return standart DIRAC answer with Value equals to list of ldapsearch responses
 Each element of list is dictionary with keys:
   'dn':                 Distinguished name of ldapsearch response
   'objectClass':        List of classes in response
-  'attr':               Dictionary of attributes 
+  'attr':               Dictionary of attributes
 '''
 
   if filt == None:
@@ -23,12 +23,13 @@ Each element of list is dictionary with keys:
   if base == None:
     base = 'Mds-Vo-name=local,o=grid'
   from DIRAC.Core.Utilities.Subprocess import shellCall
+  from DIRAC import S_OK, S_ERROR
 
   cmd = 'ldapsearch -x -LLL -h %s -b %s "%s" "%s"'%(host,base,filt,attr)
   result = shellCall(0,cmd)
-  
+
   response = []
-  
+
   if not result['OK']:
     return result
 
@@ -37,7 +38,7 @@ Each element of list is dictionary with keys:
   stderr = result['Value'][2]
 
   if not status==0:
-    return { 'OK':False, 'Message':stderr }
+    return S_ERROR( stderr )
 
   lines = []
   for line in stdout.split("\n"):
@@ -52,7 +53,7 @@ Each element of list is dictionary with keys:
       record = {'dn':line.replace('dn:','').strip(),'objectClass':[],'attr':{'dn':line.replace('dn:','').strip()}}
       response.append(record)
       continue
-    if record:  
+    if record:
       if line.find('objectClass:')==0:
         record['objectClass'].append(line.replace('objectClass:','').strip())
         continue
@@ -68,9 +69,9 @@ Each element of list is dictionary with keys:
               record['attr'][attr] = [record['attr'][attr],value]
           else:
             record['attr'][attr] = value
-          
-  return { 'OK':True, 'Value':response }
-    
+
+  return S_OK(response)
+
 
 def ldapSite( site, attr=None, host=None ):
   '''
@@ -89,11 +90,11 @@ For example result['Value'][0]['GlueSiteLocation']
 
   if not result['OK']:
     return result
-  
+
   sites = []
   for value in result['Value']:
     sites.append(value['attr'])
-  
+
   return {'OK':True,'Value':sites}
 
 def ldapCluster( ce, attr=None, host=None ):
@@ -102,7 +103,7 @@ CE (really SubCluster in definition of bdii) information from bdii.
 It contains by the way host information for ce.
 Input parameter:
   ce:           ce or part of it whith globbing
-                for example  "ce0?.tier2.hep.manchester*"             
+                for example  "ce0?.tier2.hep.manchester*"
 Return standart DIRAC answer with Value equals to list of clusters.
 Each cluster is dictionary which contains attributes of ce.
 For example result['Value'][0]['GlueHostBenchmarkSI00']
@@ -114,20 +115,20 @@ For example result['Value'][0]['GlueHostBenchmarkSI00']
 
   if not result['OK']:
     return result
-  
+
   clusters = []
   for value in result['Value']:
     clusters.append(value['attr'])
-  
-  return {'OK':True,'Value':clusters}
-  
+
+  return S_OK(clusters)
+
 def ldapCE( ce, attr=None, host=None ):
   '''
 CE (really SubCluster in definition of bdii) information from bdii.
 It contains by the way host information for ce.
 Input parameter:
   ce:           ce or part of it whith globbing
-                for example  "ce0?.tier2.hep.manchester*"             
+                for example  "ce0?.tier2.hep.manchester*"
 Return standart DIRAC answer with Value equals to list of clusters.
 Each cluster is dictionary which contains attributes of ce.
 For example result['Value'][0]['GlueHostBenchmarkSI00']
@@ -139,19 +140,19 @@ For example result['Value'][0]['GlueHostBenchmarkSI00']
 
   if not result['OK']:
     return result
-  
+
   ces = []
   for value in result['Value']:
     ces.append(value['attr'])
-  
-  return {'OK':True,'Value':ces}
-  
+
+  return S_OK(ces)
+
 def ldapCEState( ce, vo='lhcb', attr=None, host=None ):
   '''
 CEState information from bdii. Only CE with CEAccessControlBaseRule=VO:lhcb are selected.
 Input parameter:
   ce:           ce or part of it whith globbing
-                for example  "ce0?.tier2.hep.manchester*"             
+                for example  "ce0?.tier2.hep.manchester*"
 Return standart DIRAC answer with Value equals to list of ceStates.
 Each ceState is dictionary which contains attributes of ce.
 For example result['Value'][0]['GlueCEStateStatus']
@@ -163,25 +164,25 @@ For example result['Value'][0]['GlueCEStateStatus']
 
   if not result['OK']:
     return result
-  
+
   states = []
   for value in result['Value']:
     states.append(value['attr'])
-  
-  return {'OK':True,'Value':states}
-  
+
+  return S_OK(states)
+
 def ldapCEVOView( ce, vo='lhcb', attr=None, host=None ):
   '''
 CEVOView information from bdii. Only CE with CEAccessControlBaseRule=VO:lhcb are selected.
 Input parameter:
   ce:           ce or part of it whith globbing
-                for example  "ce0?.tier2.hep.manchester*"             
+                for example  "ce0?.tier2.hep.manchester*"
 Return standart DIRAC answer with Value equals to list of ceVOViews.
 Each ceVOView is dictionary which contains attributes of ce.
 For example result['Value'][0]['GlueCEStateRunningJobs']
 '''
 
-  
+
   filt = '(&(GlueCEUniqueID=%s*)(GlueCEAccessControlBaseRule=VO:%s))'%(ce,vo)
   result = ldapsearchBDII( filt, attr, host )
 
@@ -192,27 +193,27 @@ For example result['Value'][0]['GlueCEStateRunningJobs']
 
   filt = '(&(objectClass=GlueVOView)(GlueCEAccessControlBaseRule=VO:%s))'%vo
   views = []
-  
+
   for ce in ces:
     dn = ce['dn']
     result = ldapsearchBDII( filt, attr, host, base=dn )
     if result['OK']:
       views.append(result['Value'][0]['attr'])
-  
-  return {'OK':True,'Value':views}
+
+  return S_OK(views)
 
 def ldapSA( site, vo='lhcb', attr=None, host=None ):
   '''
 CEVOView information from bdii. Only CE with CEAccessControlBaseRule=VO:lhcb are selected.
 Input parameter:
   ce:    ce or part of it whith globbing
-    for example  "ce0?.tier2.hep.manchester*"               
+    for example  "ce0?.tier2.hep.manchester*"
 Return standart DIRAC answer with Value equals to list of ceVOViews.
 Each ceVOView is dictionary which contains attributes of ce.
 For example result['Value'][0]['GlueCEStateRunningJobs']
 '''
 
-  
+
   filt = '(&(GlueSEUniqueID=*)(GlueForeignKey=GlueSiteUniqueID=%s))'%(site)
   result = ldapsearchBDII( filt, attr, host )
 
@@ -223,13 +224,13 @@ For example result['Value'][0]['GlueCEStateRunningJobs']
 
   filt = 'GlueSALocalID=%s'%vo
   sas = []
-  
+
   for se in ses:
     dn = se['dn']
     result = ldapsearchBDII( filt, attr, host, base=dn )
     if result['OK']:
       if result['Value']:
         sas.append(result['Value'][0]['attr'])
-  
-  return {'OK':True,'Value':sas}
- 
+
+  return S_OK(sas)
+
