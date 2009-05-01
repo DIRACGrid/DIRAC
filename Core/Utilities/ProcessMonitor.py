@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: ProcessMonitor.py,v 1.2 2009/04/18 18:26:57 rgracian Exp $
+# $Id: ProcessMonitor.py,v 1.3 2009/05/01 10:23:23 rgracian Exp $
 # File :   ProcessMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,7 +12,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-__RCSID__ = "$Id: ProcessMonitor.py,v 1.2 2009/04/18 18:26:57 rgracian Exp $"
+__RCSID__ = "$Id: ProcessMonitor.py,v 1.3 2009/05/01 10:23:23 rgracian Exp $"
 
 import os, string, re, sys, time, platform
 
@@ -109,11 +109,10 @@ class ProcessMonitor:
     procPath = '/proc/%s/stat' %(pid)
     try:
       fopen = open(procPath,'r')
+      procStat = fopen.readline()
+      fopen.close()
     except Exception,x:
       return S_ERROR('Not able to check %s' %pid)
-
-    procStat = fopen.readline()
-    fopen.close()
     return S_OK(procStat.split(' '))
 
   #############################################################################
@@ -135,7 +134,7 @@ class ProcessMonitor:
 
     if status:
       self.log.debug('Status %s while executing %s' %(status,cmd))
-      return S_OK(stdout)
+      return S_ERROR(stderr)
     else:
       return S_OK(stdout)
 
