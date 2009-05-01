@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.20 2009/04/30 12:35:40 rgracian Exp $
+# $Id: glexecComputingElement.py,v 1.21 2009/05/01 11:04:32 rgracian Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.20 2009/04/30 12:35:40 rgracian Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.21 2009/05/01 11:04:32 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -118,14 +118,14 @@ class glexecComputingElement(ComputingElement):
     userID = None
 
     res = shellCall(0,'ls -al')
-    if res['OK']:
+    if res['OK'] and res['Value'][0] == 0:
       self.log.info('Contents of the working directory before permissions change:')
       self.log.info(str(res['Value'][1]))
     else:
       self.log.error('Failed to list the log directory contents',str(res['Value'][2]))
 
     res = shellCall(0,'id -u')
-    if res['OK']:
+    if res['OK'] and res['Value'][0] == 0:
       userID = res['Value'][1]
       self.log.info('Current user ID is: %s' %(userID))
     else:
@@ -133,7 +133,7 @@ class glexecComputingElement(ComputingElement):
       return res
 
     res = shellCall(0,'ls -al %s/../' %currentDir)
-    if res['OK']:
+    if res['OK'] and res['Value'][0] == 0:
       self.log.info('Contents of the parent directory before permissions change:')
       self.log.info(str(res['Value'][1]))
     else:
@@ -153,14 +153,14 @@ class glexecComputingElement(ComputingElement):
 
     self.log.info('Permissions in current directory %s updated successfully' %(currentDir))
     res = shellCall(0,'ls -al')
-    if res['OK']:
+    if res['OK'] and res['Value'][0] == 0:
       self.log.info('Contents of the working directory after changing permissions:')
       self.log.info(str(res['Value'][1]))
     else:
       self.log.error('Failed to list the log directory contents',str(res['Value'][2]))
 
     res = shellCall(0,'ls -al %s/../' %currentDir)
-    if res['OK']:
+    if res['OK'] and res['Value'][0] == 0:
       self.log.info('Contents of the parent directory after permissions change:')
       self.log.info(str(res['Value'][1]))
     else:

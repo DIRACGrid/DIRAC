@@ -36,7 +36,7 @@ class SandboxClient:
 
     if error_files:
       return S_ERROR('Failed to locate files: \n'+string.join(error_files,','))
-    
+
     if sizeLimit > 0:
       # Evaluate the compressed size of the sandbox
       if getGlobbedTotalSize( files_to_send ) > sizeLimit:
@@ -72,7 +72,7 @@ class SandboxClient:
         else:
           comm = 'tar czf '+bzname+' '+bname
         result = shellCall(0,comm)
-        if not result['OK']:
+        if not result['OK'] or result['Value'][0]:
           return S_ERROR('Failed to send directory '+fname)
 
         sendName = `jobID`+"::"+bzname

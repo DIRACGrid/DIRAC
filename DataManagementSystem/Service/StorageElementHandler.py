@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StorageElementHandler.py,v 1.10 2009/03/26 10:48:07 rgracian Exp $
+# $Id: StorageElementHandler.py,v 1.11 2009/05/01 11:00:53 rgracian Exp $
 ########################################################################
 
 """
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: StorageElementHandler.py,v 1.10 2009/03/26 10:48:07 rgracian Exp $"
+__RCSID__ = "$Id: StorageElementHandler.py,v 1.11 2009/05/01 11:00:53 rgracian Exp $"
 
 import os, shutil,re
 from stat import *
@@ -107,7 +107,7 @@ class StorageElementHandler(RequestHandler):
     resultDict['TimeStamps'] = (statTuple[ST_ATIME],statTuple[ST_MTIME],statTuple[ST_CTIME])
     resultDict['Cached'] = 1
     resultDict['Migrated'] = 0
-    resultDict['Permissions'] = S_IMODE(mode) 
+    resultDict['Permissions'] = S_IMODE(mode)
     return S_OK(resultDict)
 
   types_exists = [StringTypes]
@@ -243,8 +243,8 @@ class StorageElementHandler(RequestHandler):
     dirName = fileID.replace('.bz2','').replace('.tar','')
     dir_path = os.path.join(base_path,dirName)
     res = fileHelper.networkToBulk(dir_path)
-    if not res['OK']: 
-      gLogger.error('Failed to receive network to bulk.',res['Message']) 
+    if not res['OK']:
+      gLogger.error('Failed to receive network to bulk.',res['Message'])
     try:
       os.chmod(dir_path,0755)
     except Exception,x:
@@ -312,7 +312,7 @@ class StorageElementHandler(RequestHandler):
         return S_ERROR("Exception while getting size of directory")
     else:
       result = S_ERROR("Directory does not exists")
-  
+
   types_removeDirectory = [StringType,StringType]
   def export_removeDirectory(self,fileID,token):
     """ Remove the given directory from the storage
@@ -323,7 +323,7 @@ class StorageElementHandler(RequestHandler):
     else:
       if not os.path.exists(dir_path):
         return S_OK()
-      else:    
+      else:
         try:
           shutil.rmtree(dir_path)
           return S_OK()
@@ -380,9 +380,9 @@ class StorageElementHandler(RequestHandler):
     """
     comm = "du -sb %s" % path
     result = shellCall(0,comm)
-    if not result['OK']:
+    if not result['OK'] or result['Value'][0]:
       return 0
     else:
-      output = result['Value'][1] 
+      output = result['Value'][1]
       size = int(output.split()[0])
       return size

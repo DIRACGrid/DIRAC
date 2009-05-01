@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TorqueComputingElement.py,v 1.7 2009/04/18 18:26:57 rgracian Exp $
+# $Id: TorqueComputingElement.py,v 1.8 2009/05/01 11:05:48 rgracian Exp $
 # File :   TorqueComputingElement.py
 # Author : Stuart Paterson, Paul Szczypka
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: TorqueComputingElement.py,v 1.7 2009/04/18 18:26:57 rgracian Exp $"
+__RCSID__ = "$Id: TorqueComputingElement.py,v 1.8 2009/05/01 11:05:48 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -79,7 +79,7 @@ class TorqueComputingElement(ComputingElement):
       for command in commands:
         self.log.verbose('Executing site admin command: %s' %command)
         result = shellCall(0,command,callbackFunction=self.sendOutput)
-        if not result['OK']:
+        if not result['OK'] or result['Value'][0]:
           self.log.error('Error during "%s":' %command,result)
           return S_ERROR('Error executing %s CE AdminCommands' %CE_NAME)
 
@@ -90,7 +90,7 @@ class TorqueComputingElement(ComputingElement):
     self.log.verbose('CE submission command: %s' %(cmd))
 
     result = shellCall(0,cmd, callbackFunction = self.sendOutput)
-    if not result['OK']:
+    if not result['OK'] or result['Value'][0]:
       self.log.warn('===========>Torque CE result NOT OK')
       self.log.debug(result)
     else:

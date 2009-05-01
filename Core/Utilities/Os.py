@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Os.py,v 1.8 2009/04/28 15:03:51 rgracian Exp $
-__RCSID__ = "$Id: Os.py,v 1.8 2009/04/28 15:03:51 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Os.py,v 1.9 2009/05/01 10:57:22 rgracian Exp $
+__RCSID__ = "$Id: Os.py,v 1.9 2009/05/01 10:57:22 rgracian Exp $"
 """
    Collection of DIRAC useful os related modules
    by default on Error they return None
@@ -40,12 +40,12 @@ def getDiskSpace(path='.'):
     return -1
   comm = 'df -P -m %s | tail -1' % path
   resultDF = shellCall(0,comm)
-  if resultDF['OK']:
+  if resultDF['OK'] and resultDF['Value'][0] == 0:
     output = resultDF['Value'][1]
     if output.find(' /afs') >= 0 :    # AFS disk space
       comm = 'fs lq | tail -1'
       resultAFS = shellCall(0,comm)
-      if resultAFS['OK']:
+      if resultAFS['OK'] and resultASF['Value'][0] == 0:
         output = resultAFS['Value'][1]
         fields = output.split()
         quota = long(fields[1])
@@ -67,7 +67,7 @@ def getDirectorySize(path):
 
   comm = "du -s -m %s" % path
   result = shellCall(0,comm)
-  if not result['OK']:
+  if not result['OK'] or result['Value'][0] != 0:
     return 0
   else:
     output = result['Value'][1]
