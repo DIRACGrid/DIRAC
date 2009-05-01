@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.71 2009/04/22 16:09:35 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.72 2009/05/01 06:55:37 rgracian Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,9 +23,9 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.71 2009/04/22 16:09:35 rgracian Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.72 2009/05/01 06:55:37 rgracian Exp $"
 
-import re, os, sys, string, time, shutil, types
+import re, os, sys, string, time, shutil, types, tempfile
 import pprint
 import DIRAC
 
@@ -111,69 +111,78 @@ class Dirac:
     """
     self.__printInfo()
 
-    if type(job) == type(" "):
-      if os.path.exists(job):
+    cleanPath = ''
+
+    jobDescription = ''
+
+    if type( job ) in types.StringTypes:
+      if os.path.exists( job ):
         self.log.verbose('Found job JDL file %s' % (job))
-        subResult = self._sendJob(job)
-        return subResult
+        jdl = job
+        # subResult = self._sendJob( job )
+        # return subResult
       else:
-        # TODO: make use of python tempfile module
+        ( fd, jdl ) = tempfile.mkstemp( prefix='DIRAC_', suffix='.jdl', text=True)
         self.log.verbose('Job is a JDL string')
-        guid = makeGuid()
-        tmpdir = self.scratchDir+'/'+guid
-        os.mkdir(tmpdir)
-        jdlfile = open(tmpdir+'/job.jdl','w')
-        print >> jdlfile, job
-        jdlfile.close()
-        jobID = self._sendJob(tmpdir+'/job.jdl')
-        shutil.rmtree(tmpdir)
-        return jobID
+        os.write( fd, job )
+        os.close( fd )
+        cleanPath = jdl
+        # jobID = self._sendJob( name )
+        # os.unlink(name)
+        # return jobID
+    else:
+      tmpdir = tempfile.mkdtemp( prefix='DIRAC_' )
+      self.log.verbose('Created temporary directory for submission %s' % (tmpdir))
 
-    #creating a /tmp/guid/ directory for job submission files
-    guid = makeGuid()
-    tmpdir = self.scratchDir+'/'+guid
-    # TODO: make use of python tempfile module
-    self.log.verbose('Created temporary directory for submission %s' % (tmpdir))
-    os.mkdir(tmpdir)
+      jobDescription = tmpdir+'/jobDescription.xml'
+      fd = os.open( jobDescription, os.O_RDWR|os.O_CREAT )
+      os.write( fd, job._toXML() )
+      os.close( fd )
 
-    jfilename = tmpdir+'/jobDescription.xml'
-    jfile=open(jfilename,'w')
-    print >> jfile , job._toXML()
-    jfile.close()
-
-    jdlfilename = tmpdir+'/jobDescription.jdl'
-    jdlfile=open(jdlfilename,'w')
-
-    print >> jdlfile , job._toJDL(xmlFile=jfilename)
-    jdlfile.close()
-
-    jdl=jdlfilename
+      jdl = tmpdir+'/job.jdl'
+      fd = os.open( jdl, os.O_RDWR|os.O_CREAT )
+      os.write( fd, job._toJDL(xmlFile=jobDescription) )
+      os.close( fd )
+      cleanPath = tmpdir
 
     if mode:
       if mode.lower()=='local':
         self.log.info('Executing workflow locally without WMS submission')
-        result = self.runLocal(jdl,jfilename)
-        self.log.verbose('Cleaning up %s...' %tmpdir)
-        shutil.rmtree(tmpdir)
-        return result
+        curDir = os.getcwd()
+        jobDir = tempfile.mkdtemp(suffix='_JobDir', prefix='Local_', dir=curDir)
+        os.chdir( jobDir )
+        self.log.info('Executing at', os.getcwd())
+        result = self.runLocal( jdl, jobDescription, curDir )
+        os.chdir( curDir )
       if mode.lower()=='agent':
         self.log.info('Executing workflow locally with full WMS submission and DIRAC Job Agent')
-        result = self.runLocalAgent(job)
-        self.log.verbose('Cleaning up %s...' %tmpdir)
-        shutil.rmtree(tmpdir)
-        return result
+        result = self.runLocalAgent( jdl, jobDescription )
       if mode.lower()=='wms':
         self.log.info('Will submit job to WMS') #this will happen by default anyway
+        result = self._sendJob(jdl)
+        if not result['OK']:
+          self.log.error('Job submission failure',result['Message'])
 
-    jobID = self._sendJob(jdl)
-    shutil.rmtree(tmpdir)
-    if not jobID['OK']:
-      self.log.error('Job submission failure',jobID['Message'])
+    self.log.verbose('Cleaning up %s...' %cleanPath)
+    self.__cleanTmp( cleanPath )
+    return result
 
-    return jobID
+  def __cleanTmp( self, cleanPath ):
+    """Remove tmp file or directory
+    """
+    if not cleanPath:
+      return
+    if os.path.isfile( cleanPath ):
+      os.unlink(cleanPath)
+      return
+    if os.path.isdir( cleanPath ):
+      shutil.rmtree(cleanPath, ignore_errors=True)
+      return
+    self.__printOutput(std.out, 'Could not remove %s' % str(cleanPath) )
+    return
 
   #############################################################################
-  def runLocalAgent(self,job):
+  def runLocalAgent(self, jdl, jobDescription ):
     """Internal function.  This method is equivalent to submit(job,mode='Agent').
        All output files are written to a <jobID> directory where <jobID> is the
        result of submission to the WMS.  Please note that the job must be eligible to the
@@ -185,32 +194,10 @@ class Dirac:
     # If not set differently in the CS use the root from the current DIRAC installation
     siteRoot = gConfig.getValue('/LocalSite/Root',DIRAC.rootPath)
 
-    #job must be updated to force destination to local site and disable pilot submissions
-    job.setDestination(self.site)
-    job.setPlatform('Local')
-    job._addJDLParameter('PilotTypes','private')
-    #creating a /tmp/guid/ directory for updated job submission files
-    # TODO: make use of python tempfile module
-    guid = makeGuid()
-    tmpdir = self.scratchDir+'/'+guid
-    self.log.verbose('Created temporary directory for submission %s' % (tmpdir))
-    os.mkdir(tmpdir)
-
-    jfilename = tmpdir+'/jobDescription.xml'
-    jfile=open(jfilename,'w')
-    print >> jfile , job._toXML()
-    jfile.close()
-
-    jdlfilename = tmpdir+'/jobDescription.jdl'
-    jdlfile=open(jdlfilename,'w')
-
-    print >> jdlfile , job._toJDL(xmlFile=jfilename)
-    jdlfile.close()
-
-    jdl=jdlfilename
+    jdl = self.__forceLocal( jdl )
 
     jobID = self._sendJob(jdl)
-    shutil.rmtree(tmpdir)
+
     if not jobID['OK']:
       self.log.error('Job submission failure',jobID['Message'])
       return S_ERROR('Could not submit job to WMS')
@@ -226,7 +213,28 @@ class Dirac:
 
     #now run job agent targetted to pick up this job
     result = self.__runJobAgent(jobID)
+
     return result
+
+  def __forceLocal(self, job ):
+    """Update Job description to avoid pilot submission by WMS
+    """
+    if os.path.exists( job ):
+      jdlFile = open(job,'r')
+      jdl = jdlFile.read()
+      jdlFile.close()
+    else:
+      jdl = job
+
+    if not re.search('\[',jdl):
+      jdl = '['+jdl+']'
+    classAdJob = ClassAd(jdl)
+
+    classAdJob.insertAttributeString('Site', self.site)
+    classAdJob.insertAttributeString('SubmitPools', 'Local')
+    classAdJob.insertAttributeString('PilotTypes', 'private')
+
+    return classAdJob.asJDL()
 
   #############################################################################
   def __runJobAgent(self,jobID):
@@ -253,7 +261,12 @@ class Dirac:
     localCfg.addDefaultEntry('/LocalSite/MaxTotalJobs',1)
 #    if os.environ.has_key('VO_LHCB_SW_DIR'):
 #      localCfg.addDefaultEntry('/LocalSite/SharedArea',os.environ['VO_LHCB_SW_DIR'])
-    localCfg.addDefaultEntry('/AgentJobRequirements/JobID',jobID)
+    # Running twice in the same process, the second time it use the initial JobID.
+    ( fd, jobidCfg ) = tempfile.mkstemp('.cfg', 'DIRAC_JobId', text=True)
+    os.write( fd, 'AgentJobRequirements\n {\n  JobID = %s\n }\n' % jobID )
+    os.close( fd )
+    gConfig.loadFile(jobidCfg)
+    self.__cleanTmp(jobidCfg)
     localCfg.addDefaultEntry('/AgentJobRequirements/PilotType','private')
     ownerDN = self.__getCurrentDN()
     ownerGroup = self.__getCurrentGroup()
@@ -265,7 +278,7 @@ class Dirac:
     localCfg.addDefaultEntry('/Resources/Computing/%s/PilotType' %ceType,'private')
     localCfg.addDefaultEntry('/Resources/Computing/%s/OwnerDN' %ceType,ownerDN)
     localCfg.addDefaultEntry('/Resources/Computing/%s/OwnerGroup' %ceType,ownerGroup)
-    localCfg.addDefaultEntry('/Resources/Computing/%s/JobID' %ceType,jobID)
+    # localCfg.addDefaultEntry('/Resources/Computing/%s/JobID' %ceType,jobID)
 
     #SKP can add compatible platforms here
     localCfg.setConfigurationForAgent(agentName)
@@ -466,10 +479,11 @@ class Dirac:
     return result
 
   #############################################################################
-  def runLocal(self,jobJDL,jobXML):
+  def runLocal( self, jobJDL, jobXML, baseDir ):
     """Internal function.  This method is equivalent to submit(job,mode='Local').
        All output files are written to the local directory.
     """
+    # FIXME: Better create an unique local directory for this job
     if not self.site or self.site == 'Unknown':
       return self.__errorReport('LocalSite/Site configuration section is unknown, please set this correctly')
 
@@ -567,67 +581,82 @@ class Dirac:
       return result
 
     if parameters['Value'].has_key('InputSandbox'):
-      for isFile in parameters['Value']['InputSandbox']:
-        if not os.path.exists('%s/%s' %(os.getcwd(),os.path.basename(isFile))):
-          if os.path.exists(isFile):
-            self.log.verbose('Input sandbox file %s will be copied present working directory' %(isFile))
-            shutil.copy(isFile,os.getcwd())
+      sandbox = parameters['Value']['InputSandbox']
+      if type(sandbox) in types.StringTypes:
+        sandbox = [sandbox]
+      for isFile in sandbox:
+        if not os.path.isabs(isFile):
+          # if a relative path, it is relative to the user working directory
+          isFile = os.path.join( baseDir, isFile )
+
+        # Attempt to copy into job working directory
+        if os.path.isdir(isFile):
+          shutil.copytree(isFile, os.path.basename(isFile), symlinks=True )
+        elif os.path.exists(isFile):
+          shutil.copy(isFile, os.getcwd())
+        else:
+          return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
 
     self.log.info('Attempting to submit job to local site: %s' %self.site)
-    if parameters['Value'].has_key('Executable') and parameters['Value'].has_key('Arguments'):
+
+    if parameters['Value'].has_key('Executable'):
       executable = os.path.expandvars(parameters['Value']['Executable'])
-      arguments = parameters['Value']['Arguments']
-      args = arguments.split(' ')
-      args[0] = jobXML #in order to retain the full path to the /tmp directory for the XML file
-      command = '%s %s' % (executable,string.join(args,' '))
-      self.log.info('Executing: %s' %command)
-      executionEnv = dict(os.environ)
-      if parameters['Value'].has_key('ExecutionEnvironment'):
-        self.log.verbose('Adding variables to execution environment')
-        variableList = parameters['Value']['ExecutionEnvironment']
-        for var in variableList:
-          nameEnv = var.split('=')[0]
-          valEnv = var.split('=')[1]
-          executionEnv[nameEnv] = valEnv
-          self.log.verbose('%s = %s' %(nameEnv,valEnv))
-
-      result = shellCall(0,command,env=executionEnv,callbackFunction=self.__printOutput)
-      if not result['OK']:
-        return result
-
-      status = result['Value'][0]
-      self.log.verbose('Status after execution is %s' %(status))
-
-      outputFileName = None
-      errorFileName = None
-      if parameters['Value'].has_key('StdOutput'):
-        outputFileName = parameters['Value']['StdOutput']
-      if parameters['Value'].has_key('StdError'):
-        errorFileName = parameters['Value']['StdError']
-
-      if outputFileName:
-        stdout = result['Value'][1]
-        if os.path.exists(outputFileName):
-          os.remove(outputFileName)
-        self.log.info('Standard output written to %s' %(outputFileName))
-        outputFile =  open(outputFileName,'w')
-        print >> outputFile, stdout
-        outputFile.close()
-      else:
-        self.log.warn('Job JDL has no StdOutput file parameter defined')
-
-      if errorFileName:
-        stderr = result['Value'][2]
-        if os.path.exists(errorFileName):
-          os.remove(errorFileName)
-        self.log.verbose('Standard error written to %s' %(errorFileName))
-        errorFile = open(errorFileName,'w')
-        print >> errorFile, stderr
-        errorFile.close()
-      else:
-        self.log.warn('Job JDL has no StdError file parameter defined')
     else:
-      return self.__errorReport('Missing job arguments or executable')
+      return self.__errorReport('Missing job "Executable"')
+
+    arguments = ''
+    if parameters['Value'].has_key('Arguments'):
+      arguments = parameters['Value']['Arguments']
+
+    command = '%s %s' % ( executable, arguments )
+
+    self.log.info('Executing: %s' %command)
+    executionEnv = dict(os.environ)
+    if parameters['Value'].has_key('ExecutionEnvironment'):
+      self.log.verbose('Adding variables to execution environment')
+      variableList = parameters['Value']['ExecutionEnvironment']
+      for var in variableList:
+        nameEnv = var.split('=')[0]
+        valEnv = var.split('=')[1]
+        executionEnv[nameEnv] = valEnv
+        self.log.verbose('%s = %s' %(nameEnv,valEnv))
+
+    result = shellCall(0,command,env=executionEnv,callbackFunction=self.__printOutput)
+    if not result['OK']:
+      return result
+
+    status = result['Value'][0]
+    self.log.verbose('Status after execution is %s' %(status))
+
+    outputFileName = None
+    errorFileName = None
+    # FIXME: if there is an callbackFunction, StdOutput and StdError will be empty soon
+    if parameters['Value'].has_key('StdOutput'):
+      outputFileName = parameters['Value']['StdOutput']
+    if parameters['Value'].has_key('StdError'):
+      errorFileName = parameters['Value']['StdError']
+
+    if outputFileName:
+      stdout = result['Value'][1]
+      if os.path.exists(outputFileName):
+        os.remove(outputFileName)
+      self.log.info('Standard output written to %s' %(outputFileName))
+      outputFile =  open(outputFileName,'w')
+      print >> outputFile, stdout
+      outputFile.close()
+    else:
+      self.log.warn('Job JDL has no StdOutput file parameter defined')
+
+    if errorFileName:
+      stderr = result['Value'][2]
+      if os.path.exists(errorFileName):
+        os.remove(errorFileName)
+      self.log.verbose('Standard error written to %s' %(errorFileName))
+      errorFile = open(errorFileName,'w')
+      print >> errorFile, stderr
+      errorFile.close()
+    else:
+      self.log.warn('Job JDL has no StdError file parameter defined')
 
     if status:
       return S_ERROR('Execution completed with non-zero status %s' %(status))
