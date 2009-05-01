@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.72 2009/05/01 06:55:37 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.73 2009/05/01 16:32:20 rgracian Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.72 2009/05/01 06:55:37 rgracian Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.73 2009/05/01 16:32:20 rgracian Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile
 import pprint
@@ -85,7 +85,7 @@ class Dirac:
       self.fileCatalog=False
 
   #############################################################################
-  def submit(self,job,mode=None):
+  def submit(self,job,mode='wms'):
     """Submit jobs to DIRAC WMS.
        These can be either:
 
