@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.53 2009/04/30 07:03:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.54 2009/05/01 18:37:33 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.53 2009/04/30 07:03:50 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.54 2009/05/01 18:37:33 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -989,7 +989,7 @@ class PilotDirector:
           subject    = "%s: timeout executing %s" % ( rb, name )
           msg       += '\n%s' % result['Message']
         elif result['Value'][0] != 0:
-          if re.search('Unavailable service (the server is temporarily drained)',' '.join(result['Value'][1:3])):
+          if re.search('the server is temporarily drained',' '.join(result['Value'][1:3])):
             return
           subject    = "%s: error executing %s"  % ( rb, name )
         else:
