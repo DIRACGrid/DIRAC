@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.51 2009/04/30 11:49:32 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.52 2009/05/01 01:55:30 rgracian Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.51 2009/04/30 11:49:32 rgracian Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.52 2009/05/01 01:55:30 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -90,8 +90,11 @@ class Watchdog(Agent):
       self.log.info('Requested CheckingTime of %s setting to %s seconds (minimum)' %(self.checkingTime,self.minCheckingTime))
       self.checkingTime=self.minCheckingTime
 
-    self.grossTimeLeftLimit = self.checkingTime
-    self.fineTimeLeftLimit  = gConfig.getValue(self.section+'/TimeLeftLimit', 3 * self.pollingTime )
+    # The time left is returned in seconds @ 500 SI00,
+    # the self.checkingTime and self.pollingTime are in seconds,
+    # thus they need to be multiplied by a large enough factor
+    self.grossTimeLeftLimit = 5 * self.checkingTime
+    self.fineTimeLeftLimit  = gConfig.getValue(self.section+'/TimeLeftLimit', 5 * self.pollingTime )
 
     self.timeLeftUtil = TimeLeft()
     self.litleTimeLeft = False
