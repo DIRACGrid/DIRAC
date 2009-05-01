@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.52 2009/05/01 01:55:30 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.53 2009/05/01 14:06:12 rgracian Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.52 2009/05/01 01:55:30 rgracian Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.53 2009/05/01 14:06:12 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -98,7 +98,6 @@ class Watchdog(Agent):
 
     self.timeLeftUtil = TimeLeft()
     self.litleTimeLeft = False
-    self.__timeLeft()
     return result
 
   #############################################################################
@@ -114,7 +113,7 @@ class Watchdog(Agent):
 
     if self.litleTimeLeft and self.__timeLeft() == -1:
       self.checkError = 'Job has reached the CPU limit of the queue'
-      self.log.error( self.checkError )
+      self.log.error( self.checkError, self.timeLeft )
       self.__killRunningThread()
       self.__getUsageSummary()
       self.__finish()
@@ -201,6 +200,8 @@ class Watchdog(Agent):
         for i in xrange(len(recentStdOut)):
           border+='='
         cpuTotal = 'Last reported CPU consumed for job is %s (h:m:s)' %(hmsCPU)
+        if self.timeLeft:
+          cpuTotal += ', Batch Queue Time Left %s (s @ 500 SI00)' % self.timeLeft
         recentStdOut = '\n%s\n%s\n%s\n%s\n' % (border,recentStdOut,cpuTotal,border)
         self.log.info(recentStdOut)
         for line in outputList:
@@ -583,7 +584,8 @@ class Watchdog(Agent):
 
     self.timeLeft = timeLeft
     if not self.litleTimeLeft:
-      if self.timeLeft < self.grossTimeLeftLimit:
+      if timeLeft and timeLeft < self.grossTimeLeftLimit:
+        self.log.info( 'TimeLeft bellow %s, now checking with higher frequency' % timeLeft)
         self.litleTimeLeft = True
     else:
       if self.timeLeft and self.timeLeft < self.fineTimeLeftLimit:
