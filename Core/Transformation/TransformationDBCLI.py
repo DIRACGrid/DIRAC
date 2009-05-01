@@ -218,7 +218,7 @@ class TransformationDBCLI(cmd.Cmd):
     """
     comm = args
     res = shellCall(0,comm)
-    if res['OK']:
+    if res['OK'] and res['Value'][0] == 0:
       returnCode,stdOut,stdErr = res['Value']
       print "%s\n%s" % (stdOut,stdErr)
     else:
@@ -593,7 +593,7 @@ class TransformationDBCLI(cmd.Cmd):
 
     if not result['OK']:
       print "Failed to reset status for file",lfn
-      
+
   def do_createBkQuery(self,args):
     """ Create a new Bookkeeping Query to be used in production definitions.
 
@@ -683,29 +683,29 @@ class TransformationDBCLI(cmd.Cmd):
       elif value.lower() == 'r':
         pass
       else:
-        done = True  
-        
+        done = True
+
   def do_deleteBkQuery(self,args):
-    """ Delete an existing Bookkeeping Query 
+    """ Delete an existing Bookkeeping Query
 
         Usage: deleteBkQuery queryID
 
         - queryID - ID of a Bookkeeping Query to be deleted
-    """    
-    
+    """
+
     argss, length = self.check_params(args, 1)
-    queryID = int(argss[0]) 
-    
+    queryID = int(argss[0])
+
     result = self.server.deleteBookkeepingQuery(queryID)
     if not result['OK']:
       print "Failed to delete Bookkeeping Query:",result['Message']
-        
+
   def do_listBkQueries(self,args):
     """ Show existing Bookkeeping queries in the system
 
         Usage: listBkQueries
-    """        
-    
+    """
+
     fields = ['BkQueryID',
               'SimulationConditions',
               'DataTakingConditions',
@@ -716,7 +716,7 @@ class TransformationDBCLI(cmd.Cmd):
               'ConfigVersion',
               'ProductionID',
               'DataQualityFlag']
-    
+
     widths = {'BkQueryID':9,
               'SimulationConditions':30,
               'DataTakingConditions':20,
@@ -727,17 +727,17 @@ class TransformationDBCLI(cmd.Cmd):
               'ConfigVersion':15,
               'ProductionID':12,
               'DataQualityFlag':15}
-    
+
     result = self.server.getBookkeepingQuery(0)
     if not result['OK']:
       print "Failed to get response from the service:",result['Message']
       return
-    
+
     keys = [ string.ljust(string.rjust(x,widths[x]-(widths[x]-len(x))/2),widths[x]) for x in fields ]
     print 164*'-'
     print '|'.join(keys)+"|"
     print 164*'-'
-    
+
     bkDict = result['Value']
     queryIDList = bkDict.keys()
     queryIDList.sort()
@@ -745,10 +745,10 @@ class TransformationDBCLI(cmd.Cmd):
       values = ''
       for field in fields:
         width = widths[field]
-        value = str(bkDict[queryID][field]) 
+        value = str(bkDict[queryID][field])
         values += string.ljust(string.rjust(value,width-(width-len(value))/2),width) + '|'
       print values
-    print 164*'-'  
+    print 164*'-'
 
 if __name__ == "__main__":
 

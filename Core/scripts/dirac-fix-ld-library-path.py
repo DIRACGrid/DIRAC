@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/dirac-fix-ld-library-path.py,v 1.2 2009/04/18 18:26:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/dirac-fix-ld-library-path.py,v 1.3 2009/05/01 10:46:51 rgracian Exp $
 # File :   dirac-fix-ld-lib
 # Author : Joel Closier
 ########################################################################
-__RCSID__   = "$Id: dirac-fix-ld-library-path.py,v 1.2 2009/04/18 18:26:58 rgracian Exp $"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__   = "$Id: dirac-fix-ld-library-path.py,v 1.3 2009/05/01 10:46:51 rgracian Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 
 """  This is a script to fix oversized LD_LIBRARY_PATH variables.
 """
@@ -54,7 +54,7 @@ def fixLDPath( root, ldpath, directory):
         print path
         print '-----------------------------------------------'
         res = shellCall(0,'ls '+path+'/*.so*')
-        if res:
+        if res['OK']:
           print res['Value']
         else:
           print res
@@ -64,7 +64,7 @@ def fixLDPath( root, ldpath, directory):
       #must be tidied for Windows (same below)
 
       if DEBUG:
-        if not output:
+        if not output['OK']:
           print '**************************'
           print 'Warning, problem with ls:'
           print output
@@ -78,7 +78,7 @@ def fixLDPath( root, ldpath, directory):
             output = shellCall(0,'ln -s '+str(lib)+' '+str(filename))
             #N.B. for Windows this should be a copy...
             if DEBUG:
-              if not output:
+              if not output['OK']:
                 print '********************************'
                 print 'Warning, problem creating link:'
                 print 'File: ',filename
@@ -91,7 +91,7 @@ def fixLDPath( root, ldpath, directory):
         print path
         print '-----------------------------------------------'
         res = shellCall(0,'ls '+path+'/*rootmap*')
-        if res:
+        if res['OK']:
           print res['Value']
         else:
           print res
@@ -100,7 +100,7 @@ def fixLDPath( root, ldpath, directory):
       output = shellCall(0,'ls '+path+'/*rootmap*')
 
       if DEBUG:
-        if not output:
+        if not output['OK']:
           print '**************************'
           print 'Warning, problem with rootmap:'
           print output
@@ -114,7 +114,7 @@ def fixLDPath( root, ldpath, directory):
               filename = os.path.basename(lib)
               output = shellCall(0,'ln -s '+str(lib)+' '+str(filename))
               if DEBUG:
-                if not output:
+                if not output['OK']:
                   print '********************************'
                   print 'Warning, problem creating link:'
                   print 'File: ',filename
