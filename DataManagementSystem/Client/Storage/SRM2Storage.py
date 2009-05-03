@@ -656,10 +656,10 @@ class SRM2Storage(StorageBase):
       nbstreams = 1
     else:
       nbstreams = 1
-    gLogger.debug("SRM2Storage.__putFile: Executing transfer of %s to %s" % (src_url, dest_url))
+    gLogger.info("SRM2Storage.__putFile: Executing transfer of %s to %s" % (src_url, dest_url))
     errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
     if errCode == 0:
-      gLogger.debug('SRM2Storage.__putFile: Successfully put file to storage.')
+      gLogger.info('SRM2Storage.__putFile: Successfully put file to storage.')
       res = self.__executeOperation(dest_url,'getFileSize')
       if res['OK']:
         destinationSize = res['Value']
