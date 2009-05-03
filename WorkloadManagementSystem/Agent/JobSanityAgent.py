@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.19 2009/04/22 16:10:48 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.20 2009/05/03 19:22:41 rgracian Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.19 2009/04/22 16:10:48 rgracian Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.20 2009/05/03 19:22:41 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -193,7 +193,7 @@ class JobSanityAgent(OptimizerModule):
 
     if incorrectDataFlag:
       result = S_ERROR()
-      result['Value'] = "Input data not corrrectly specified"
+      result['Value'] = "Input data not correctly specified"
       return result
 
     if slashFlag:
