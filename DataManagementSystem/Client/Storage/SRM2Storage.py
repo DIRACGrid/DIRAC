@@ -653,7 +653,7 @@ class SRM2Storage(StorageBase):
       return S_ERROR(errStr)
     timeout = int(sourceSize/self.MIN_BANDWIDTH + 300)
     if sourceSize > self.MAX_SINGLE_STREAM_SIZE:
-      nbstreams = 1
+      nbstreams = 4
     else:
       nbstreams = 1
     gLogger.info("SRM2Storage.__putFile: Executing transfer of %s to %s" % (src_url, dest_url))
