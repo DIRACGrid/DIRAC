@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.21 2009/04/24 09:27:03 acasajus Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.21 2009/04/24 09:27:03 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.22 2009/05/03 20:32:49 rgracian Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.22 2009/05/03 20:32:49 rgracian Exp $"
 
 import os
 import md5
@@ -168,7 +168,7 @@ class FileHelper:
           result = self.sendData( stringVal[ioffset:strlen] )
         if not result['OK']:
           return result
-        if 'AbortTransfer' in dRetVal and dRetVal[ 'AbortTransfer' ]:
+        if 'AbortTransfer' in result and result[ 'AbortTransfer' ]:
           self.__log.verbose( "Transfer aborted" )
           return S_OK()
         ioffset += iPacketSize
