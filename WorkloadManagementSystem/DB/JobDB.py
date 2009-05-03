@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.155 2009/04/22 13:20:47 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.156 2009/05/03 19:20:44 rgracian Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.155 2009/04/22 13:20:47 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.156 2009/05/03 19:20:44 rgracian Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -650,6 +650,8 @@ class JobDB(DB):
       result = S_ERROR('JobDB.setInputData: operation failed.')
 
     for lfn in inputData:
+      # some jobs are setting empty string as InputData
+      if not lfn: continue
       ret = self._escapeString(lfn.strip())
       if not ret['OK']:
         return ret
@@ -1275,6 +1277,8 @@ class JobDB(DB):
     e_jobID = ret['Value']
 
     for lfn in inputData:
+      # some jobs are setting empty string as InputData
+      if not lfn: continue
       ret = self._escapeString(lfn.strip())
       if not ret['OK']:
         return ret
