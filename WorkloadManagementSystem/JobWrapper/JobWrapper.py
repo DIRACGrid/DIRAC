@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.101 2009/04/28 18:02:01 rgracian Exp $
+# $Id: JobWrapper.py,v 1.102 2009/05/03 14:08:50 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.101 2009/04/28 18:02:01 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.102 2009/05/03 14:08:50 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -415,7 +415,7 @@ class JobWrapper:
     self.__report('Running','Input Data Resolution')
 
     if self.ceArgs.has_key('LocalSE'):
-      localSEList = ceArgs['LocalSE']
+      localSEList = self.ceArgs['LocalSE']
     else:
       localSEList = gConfig.getValue('/LocalSite/LocalSE',[])
       if not localSEList:
