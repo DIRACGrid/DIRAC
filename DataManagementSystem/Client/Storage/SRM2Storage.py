@@ -653,7 +653,7 @@ class SRM2Storage(StorageBase):
       return S_ERROR(errStr)
     timeout = int(sourceSize/self.MIN_BANDWIDTH + 300)
     if sourceSize > self.MAX_SINGLE_STREAM_SIZE:
-      nbstreams = 4
+      nbstreams = 1
     else:
       nbstreams = 1
     gLogger.debug("SRM2Storage.__putFile: Executing transfer of %s to %s" % (src_url, dest_url))
@@ -735,7 +735,7 @@ class SRM2Storage(StorageBase):
       errorMessage = "SRM2Storage.__getFile: Failed to get file from storage."
       if errCode > 0:
         errStr = "%s %s" % (errStr,os.strerror(errCode))
-      gLogger.error(errorMessage,errStr)      
+      gLogger.error(errorMessage,errStr)
     if os.path.exists(dest_file):
       gLogger.debug("SRM2Storage.getFile: Removing local file %s." % dest_file)
       os.remove(dest_file)
