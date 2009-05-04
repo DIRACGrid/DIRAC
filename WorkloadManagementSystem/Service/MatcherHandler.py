@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.34 2009/03/09 13:49:31 acasajus Exp $
+# $Id: MatcherHandler.py,v 1.35 2009/05/04 14:06:11 acasajus Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.34 2009/03/09 13:49:31 acasajus Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.35 2009/05/04 14:06:11 acasajus Exp $"
 
 import re, os, sys, time
 import string
@@ -195,3 +195,10 @@ class MatcherHandler(RequestHandler):
     """ Return all task queues
     """
     return taskQueueDB.retrieveTaskQueues()
+
+##############################################################################
+  types_getMatchingTaskQueues = [ types.DictType ]
+  def export_getMatchingTaskQueues( self, resourceDict ):
+    """ Return all task queues
+    """
+    return taskQueueDB.retrieveTaskQueuesThatMatch( resourceDict )
