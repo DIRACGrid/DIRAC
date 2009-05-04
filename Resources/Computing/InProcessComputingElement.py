@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InProcessComputingElement.py,v 1.10 2009/04/30 13:20:49 rgracian Exp $
+# $Id: InProcessComputingElement.py,v 1.11 2009/05/04 05:46:23 rgracian Exp $
 # File :   InProcessComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: InProcessComputingElement.py,v 1.10 2009/04/30 13:20:49 rgracian Exp $"
+__RCSID__ = "$Id: InProcessComputingElement.py,v 1.11 2009/05/04 05:46:23 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -52,6 +52,9 @@ class InProcessComputingElement(ComputingElement):
     cmd = os.path.abspath(executableFile)
     self.log.verbose('CE submission command: %s' %(cmd))
     result = systemCall(0,cmd,callbackFunction = self.sendOutput)
+
+    os.environ[ 'X509_USER_PROXY' ] = pilotProxy
+    os.unlink(payloadProxy)
 
     ret = S_OK(localID)
 
