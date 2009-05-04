@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: ProcessMonitor.py,v 1.3 2009/05/01 10:23:23 rgracian Exp $
+# $Id: ProcessMonitor.py,v 1.4 2009/05/04 05:24:23 rgracian Exp $
 # File :   ProcessMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,7 +12,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-__RCSID__ = "$Id: ProcessMonitor.py,v 1.3 2009/05/01 10:23:23 rgracian Exp $"
+__RCSID__ = "$Id: ProcessMonitor.py,v 1.4 2009/05/04 05:24:23 rgracian Exp $"
 
 import os, string, re, sys, time, platform
 
@@ -79,10 +79,13 @@ class ProcessMonitor:
   def __getProcListLinux(self):
     """Gets list of process IDs from /proc/*.
     """
-    result = self.__runCommand('ls -d /proc/[0-9]*')
+    result = shellCall(0,'ls -d /proc/[0-9]*')
+
     if not result['OK']:
-      return result
-    procList = result['Value'].replace('/proc','').split('\n')
+      if not 'Value' in result:
+        return result
+    procList = result['Value'][1].replace('/proc','').split('\n')
+
     return S_OK(procList)
 
   #############################################################################
@@ -119,24 +122,12 @@ class ProcessMonitor:
   def __getProcGroupLinux(self,pid):
     """Returns UID for given PID.
     """
-    return self.__runCommand('ps --no-headers -o pgrp -p %s' %(pid))
+    result = shellCall(0,'ps --no-headers -o pgrp -p %s' %(pid))
+    if not result[OK]:
+      if  not 'Value' in result:
+        return result
 
-  #############################################################################
-  def __runCommand(self,cmd):
-    """Wrapper around shellCall to return S_OK(stdout) or S_ERROR(message)
-    """
-    result = shellCall(0,cmd)
-    if not result['OK']:
-      return result
-    status = result['Value'][0]
-    stdout = result['Value'][1]
-    stderr = result['Value'][2]
-
-    if status:
-      self.log.debug('Status %s while executing %s' %(status,cmd))
-      return S_ERROR(stderr)
-    else:
-      return S_OK(stdout)
+    return S_OK(result['Value'][1])
 
   #############################################################################
   def __checkCurrentOS(self):
