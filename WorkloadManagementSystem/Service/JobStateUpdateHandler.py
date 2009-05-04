@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.35 2009/03/19 07:29:32 rgracian Exp $
+# $Id: JobStateUpdateHandler.py,v 1.36 2009/05/04 06:01:00 rgracian Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.35 2009/03/19 07:29:32 rgracian Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.36 2009/05/04 06:01:00 rgracian Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -76,21 +76,21 @@ class JobStateUpdateHandler( RequestHandler ):
       result = jobDB.setJobStatus(jobID,status,minorStatus)
       if not result['OK']:
         continue
-  
+
       if status in JOB_FINAL_STATES:
         result = jobDB.setEndExecTime(jobID)
-  
+
       result = jobDB.getJobAttributes(jobID, ['Status','MinorStatus'] )
       if not result['OK']:
         continue
-  
+
       status = result['Value']['Status']
       minorStatus = result['Value']['MinorStatus']
       if datetime:
         result = logDB.addLoggingRecord(jobID,status,minorStatus,datetime,source)
       else:
         result = logDB.addLoggingRecord(jobID,status,minorStatus,source=source)
-  
+
     return S_OK()
 
   ###########################################################################
@@ -109,6 +109,18 @@ class JobStateUpdateHandler( RequestHandler ):
     application = ""
     appCounter  = ""
     endDate = ''
+
+    result = jobDB.getJobAttributes(jobID, ['Status'] )
+    if not result['OK']:
+      return result
+
+    if not result['Value']:
+      # if there is no matching Job it returns an empty dictionary
+      return S_ERROR( 'No Matching Job' )
+
+    new_status = result['Value']['Status']
+    if new_status == "Stalled":
+      status = 'Running'
 
     # Get the last status values
     for date in dates:
