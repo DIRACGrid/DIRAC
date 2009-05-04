@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: ProcessMonitor.py,v 1.4 2009/05/04 05:24:23 rgracian Exp $
+# $Id: ProcessMonitor.py,v 1.5 2009/05/04 08:06:12 rgracian Exp $
 # File :   ProcessMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,7 +12,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-__RCSID__ = "$Id: ProcessMonitor.py,v 1.4 2009/05/04 05:24:23 rgracian Exp $"
+__RCSID__ = "$Id: ProcessMonitor.py,v 1.5 2009/05/04 08:06:12 rgracian Exp $"
 
 import os, string, re, sys, time, platform
 
@@ -123,7 +123,7 @@ class ProcessMonitor:
     """Returns UID for given PID.
     """
     result = shellCall(0,'ps --no-headers -o pgrp -p %s' %(pid))
-    if not result[OK]:
+    if not result['OK']:
       if  not 'Value' in result:
         return result
 
