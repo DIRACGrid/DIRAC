@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.80 2009/04/14 10:50:35 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.81 2009/05/04 14:05:43 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.80 2009/04/14 10:50:35 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.81 2009/05/04 14:05:43 acasajus Exp $"
 
 import time
 import types
@@ -173,13 +173,21 @@ class TaskQueueDB(DB):
       else:
         if fieldValueType not in ( types.StringType, types.UnicodeType ):
           return S_ERROR( "Mandatory field %s value type is not valid: %s" % ( field, fieldValueType ) )
+        result = self._escapeString( tqDefDict[ field ] )
+        if not result[ 'OK' ]:
+          return result
+        tqDefDict[ field ] = result[ 'Value' ]
     for field in self.__multiValueDefFields:
-      if field in tqDefDict:
-        fieldValueType = type( tqDefDict[ field ] )
-      else:
+      if field not in tqDefDict:
         continue
+      fieldValueType = type( tqDefDict[ field ] )
       if fieldValueType not in ( types.ListType, types.TupleType ):
         return S_ERROR( "Multi value field %s value type is not valid: %s" % ( field, fieldValueType ) )
+      result = self._escapeValues( tqDefDict[ field ] )
+      if not result[ 'OK' ]:
+        return result
+      tqDefDict[ field ] = result[ 'Value' ]
+    #FIXME: This is not used
     if 'PrivatePilots' in tqDefDict:
       validPilotTypes = self.getValidPilotTypes()
       for pilotType in tqDefDict[ 'PrivatePilots' ]:
@@ -187,19 +195,26 @@ class TaskQueueDB(DB):
           return S_ERROR( "PilotType %s is invalid" % pilotType )
     return S_OK( tqDefDict )
 
-  def _checkMatchDefinition( self, tqMatchDict, checkTypes = True ):
+  def _checkMatchDefinition( self, tqMatchDict ):
     """
     Check a task queue match dict is valid
     """
-    def travelAndCheckType( value, validTypes ):
+    def travelAndCheckType( value, validTypes, escapeValues = True ):
       valueType = type( value )
       if valueType in ( types.ListType, types.TupleType ):
         for subValue in value:
-          if type( subValue ) not in validTypes :
-            return False
-        return True
+          subValueType = type( subValue )
+          if subValueType not in validTypes:
+            return S_ERROR( "List contained type %s is not valid -> %s" % ( subValueType, validTypes ) )
+        if escapeValues:
+          return self._escapeValues( value )
+        return S_OK( value )
       else:
-        return valueType in validTypes
+        if valueType not in validTypes:
+          return S_ERROR( "Type %s is not valid -> %s" % ( valueType, validTypes ) )
+        if escapeValues:
+          return self._escapeString( value )
+        return S_OK( value )
 
     for field in self.__singleValueDefFields:
       if field not in tqMatchDict:
@@ -208,29 +223,29 @@ class TaskQueueDB(DB):
         continue
       fieldValue = tqMatchDict[ field ]
       if field in [ "CPUTime" ]:
-        if not travelAndCheckType( fieldValue, ( types.IntType, types.LongType ) ):
-          return S_ERROR( "Match definition field %s value type is not valid: %s" % ( field, type( fieldValue ) ) )
+        result = travelAndCheckType( fieldValue, ( types.IntType, types.LongType ), escapeValues = False )
       else:
-        if not travelAndCheckType( fieldValue, ( types.StringType, types.UnicodeType ) ):
-          return S_ERROR( "Match definition field %s value type is not valid: %s" % ( field, type( fieldValue ) ) )
+        result = travelAndCheckType( fieldValue, ( types.StringType, types.UnicodeType ) )
+      if not result[ 'OK' ]:
+        return S_ERROR( "Match definition field %s failed : %s" % ( field, result[ 'Message' ] ) )
+      tqMatchDict[ field ] = result[ 'Value' ]
     #Check multivalue
     for multiField in self.__multiValueMatchFields:
       for field in ( multiField, "Banned%s" % multiField ):
         if field in tqMatchDict:
-          if not travelAndCheckType( tqMatchDict[ field ], ( types.StringType, types.UnicodeType ) ):
-            return S_ERROR( "Match definition field %s value type is not valid: %s" % ( field, type( tqMatchDict[ field ] ) ) )
+          fieldValue = tqMatchDict[ field ]
+          result = travelAndCheckType( fieldValue, ( types.StringType, types.UnicodeType ) )
+          if not result[ 'OK' ]:
+            return S_ERROR( "Match definition field %s failed : %s" % ( field, result[ 'Message' ] ) )
+          tqMatchDict[ field ] = result[ 'Value' ]
+
     return S_OK( tqMatchDict )
 
-  def __createTaskQueue( self, tqDefDict, priority = 1, skipDefinitionCheck = False, enabled = False, connObj = False ):
+  def __createTaskQueue( self, tqDefDict, priority = 1, enabled = False, connObj = False ):
     """
     Create a task queue
       Returns S_OK( tqId ) / S_ERROR
     """
-    if not skipDefinitionCheck:
-      result = self._checkTaskQueueDefinition( tqDefDict )
-      if not result[ 'OK' ]:
-        self.log.error( "TQ definition check failed", result[ 'Value' ] )
-        return result
     if not connObj:
       result = self._getConnection()
       if not result[ 'OK' ]:
@@ -241,11 +256,11 @@ class TaskQueueDB(DB):
     sqlValues = [ "0", str( priority ) ]
     for field in self.__singleValueDefFields:
       sqlSingleFields.append( field )
-      sqlValues.append( "'%s'" % tqDefDict[ field ] )
+      sqlValues.append( tqDefDict[ field ] )
     #Insert the TQ Disabled
     sqlSingleFields.append( "Enabled" )
     sqlValues.append( str( int( enabled ) ) )
-    cmd = "INSERT INTO tq_TaskQueues ( %s ) VALUES ( %s )" % ( ", ".join( sqlSingleFields ), ", ".join( sqlValues ) )
+    cmd = "INSERT INTO tq_TaskQueues ( %s ) VALUES ( %s )" % ( ", ".join( sqlSingleFields ), ", ".join( [ str(v) for v in sqlValues ] ) )
     result = self._update( cmd, conn = connObj )
     if not result[ 'OK' ]:
       self.log.error( "Can't insert TQ in DB", result[ 'Value' ] )
@@ -265,7 +280,7 @@ class TaskQueueDB(DB):
       if not values:
         continue
       cmd = "INSERT INTO `tq_TQTo%s` ( TQId, Value ) VALUES " % field
-      cmd += ", ".join( [ "( %s, '%s' )" % ( tqId, str( value ) ) for value in values ] )
+      cmd += ", ".join( [ "( %s, %s )" % ( tqId, str( value ) ) for value in values ] )
       result = self._update( cmd, conn = connObj )
       if not result[ 'OK' ]:
         self.log.error( "Failed to insert %s condition" % field, result[ 'Message' ] )
@@ -313,15 +328,21 @@ class TaskQueueDB(DB):
     Insert a job in a task queue
       Returns S_OK( tqId ) / S_ERROR
     """
+    try:
+      test = long( jobId )
+    except:
+      return S_ERROR( "JobId is not a number!" )
     retVal = self._getConnection()
     if not retVal[ 'OK' ]:
       return S_ERROR( "Can't insert job: %s" % retVal[ 'Message' ] )
     connObj = retVal[ 'Value' ]
     if not skipTQDefCheck:
+      tqDefDict = dict( tqDefDict )
       retVal = self._checkTaskQueueDefinition( tqDefDict )
       if not retVal[ 'OK' ]:
         self.log.error( "TQ definition check failed", retVal[ 'Message' ] )
         return retVal
+      tqDefDict = retVal[ 'Value' ]
     tqDefDict[ 'CPUTime' ] = self.fitCPUTimeToSegments( tqDefDict[ 'CPUTime' ] )
     self.log.info( "Inserting job %s with requirements: %s" % ( jobId, self.__strDict( tqDefDict ) ) )
     retVal = self.findTaskQueue( tqDefDict, skipDefinitionCheck = True, connObj = connObj )
@@ -379,16 +400,15 @@ class TaskQueueDB(DB):
       Find a task queue that has exactly the same requirements
     """
     if not skipDefinitionCheck:
+      tqDefDict = dict( tqDefDict )
       result = self._checkTaskQueueDefinition( tqDefDict )
       if not result[ 'OK' ]:
         return result
+      tqDefDict = result[ 'Value' ]
     sqlCmd = "SELECT `tq_TaskQueues`.TQId FROM `tq_TaskQueues` WHERE"
     sqlCondList = []
     for field in self.__singleValueDefFields:
-      if field in ( 'CPUTime' ):
-        sqlCondList.append( "`tq_TaskQueues`.%s = %s" % ( field, tqDefDict[ field ] ) )
-      else:
-        sqlCondList.append( "`tq_TaskQueues`.%s = '%s'" % ( field, tqDefDict[ field ] ) )
+      sqlCondList.append( "`tq_TaskQueues`.%s = %s" % ( field, tqDefDict[ field ] ) )
     #MAGIC SUBQUERIES TO ENSURE STRICT MATCH
     for field in self.__multiValueDefFields:
       tableName = '`tq_TQTo%s`' % field
@@ -398,7 +418,7 @@ class TaskQueueDB(DB):
         valuesList = List.uniqueElements( [ value.strip() for value in tqDefDict[ field ] if value.strip() ] )
         numValues = len( valuesList )
         secondQuery = "%s AND %s.Value in (%s)" % ( firstQuery, tableName,
-                                                        ",".join( [ "'%s'" % str( value ) for value in valuesList ] ) )
+                                                        ",".join( [ "%s" % str( value ) for value in valuesList ] ) )
         sqlCondList.append( "%s = (%s %s)" % ( numValues, firstQuery, grouping ) )
         sqlCondList.append( "%s = (%s %s)" % ( numValues, secondQuery, grouping ) )
       else:
@@ -419,6 +439,8 @@ class TaskQueueDB(DB):
     """
     Match a job
     """
+    #Make a copy to avoid modification of original if escaping needs to be done
+    tqMatchDict = dict( tqMatchDict )
     self.log.info( "Starting match for requirements", self.__strDict( tqMatchDict ) )
     retVal = self._checkMatchDefinition( tqMatchDict )
     if not retVal[ 'OK' ]:
@@ -480,6 +502,8 @@ class TaskQueueDB(DB):
     """
     Get a queue that matches the requirements
     """
+    #Make a copy to avoid modification of original if escaping needs to be done
+    tqMatchDict = dict( tqMatchDict )
     if not skipMatchDictDef:
       retVal = self._checkMatchDefinition( tqMatchDict )
       if not retVal[ 'OK' ]:
@@ -519,16 +543,16 @@ class TaskQueueDB(DB):
       ownerConds = []
       for group in groups:
         if Properties.JOB_SHARING in CS.getPropertiesForGroup( group ):
-          ownerConds.append( "`tq_TaskQueues`.OwnerGroup = '%s'" % group )
+          ownerConds.append( "`tq_TaskQueues`.OwnerGroup = %s" % group )
         else:
           for dn in dns:
-            ownerConds.append( "( `tq_TaskQueues`.OwnerDN = '%s' AND `tq_TaskQueues`.OwnerGroup = '%s' )"  % ( dn, group ) )
+            ownerConds.append( "( `tq_TaskQueues`.OwnerDN = %s AND `tq_TaskQueues`.OwnerGroup = %s )"  % ( dn, group ) )
       sqlCondList.append( " OR ".join( ownerConds ) )
     else:
       #If not both are defined, just add the ones that are defined
       for field in ( 'OwnerGroup', 'OwnerDN' ):
         if field in tqMatchDict:
-          sqlCondList.append( self.__generateSQLSubCond( "`tq_TaskQueues`.%s = '%%s'" % field,
+          sqlCondList.append( self.__generateSQLSubCond( "`tq_TaskQueues`.%s = %%s" % field,
                                                          tqMatchDict[ field ] ) )
     #Type of single value conditions
     for field in ( 'CPUTime', 'Setup' ):
@@ -536,7 +560,7 @@ class TaskQueueDB(DB):
         if field in ( 'CPUTime' ):
           sqlCondList.append( self.__generateSQLSubCond( "`tq_TaskQueues`.%s <= %%s" % field, tqMatchDict[ field ] ) )
         else:
-          sqlCondList.append( self.__generateSQLSubCond( "`tq_TaskQueues`.%s = '%%s'" % field, tqMatchDict[ field ] ) )
+          sqlCondList.append( self.__generateSQLSubCond( "`tq_TaskQueues`.%s = %%s" % field, tqMatchDict[ field ] ) )
     #Match multi value fields
     for field in self.__multiValueMatchFields:
       #It has to be %ss , with an 's' at the end because the columns names
@@ -551,14 +575,14 @@ class TaskQueueDB(DB):
           # that the GridCE matches explicetly so the COUNT can not be 0 (that means
           # not specified for the corresponding jobs.
           sqlMultiCondList.append( "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId ) = 0 " % (tableName,tableName,tableName ) )
-        csql = self.__generateSQLSubCond( "'%%s' in ( SELECT %s.Value FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId )" % ( tableName, tableName, tableName ),
+        csql = self.__generateSQLSubCond( "%%s in ( SELECT %s.Value FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId )" % ( tableName, tableName, tableName ),
                                           tqMatchDict[ field ] )
         sqlMultiCondList.append( csql )
         sqlCondList.append( "( %s )" % " OR ".join( sqlMultiCondList ) )
         #In case of Site, check it's not in job banned sites
         if field in self.__bannedJobMatchFields:
           bannedTable = '`tq_TQToBanned%ss`' % field
-          csql = self.__generateSQLSubCond( "'%%s' not in ( SELECT %s.Value FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId )" % ( bannedTable, bannedTable, bannedTable ),
+          csql = self.__generateSQLSubCond( "%%s not in ( SELECT %s.Value FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId )" % ( bannedTable, bannedTable, bannedTable ),
                                             tqMatchDict[ field ],
                                             boolOp = 'AND' )
           sqlCondList.append( csql )
@@ -566,7 +590,7 @@ class TaskQueueDB(DB):
       bannedField = "Banned%s" % field
       if bannedField in tqMatchDict and tqMatchDict[ bannedField ]:
         tableName = '`tq_TQTo%ss`' % field
-        csql = self.__generateSQLSubCond( "'%%s' not in ( SELECT %s.Value FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId )" % ( tableName, tableName, tableName ),
+        csql = self.__generateSQLSubCond( "%%s not in ( SELECT %s.Value FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId )" % ( tableName, tableName, tableName ),
                                      tqMatchDict[ bannedField ],
                                      boolOp = 'AND' )
         sqlCondList.append( csql )
@@ -643,7 +667,7 @@ class TaskQueueDB(DB):
       return S_ERROR('Not in TaskQueues')
 
     return S_OK( retVal['Value'][0][0] )
-  
+
   def getTaskQueueForJobs( self, jobIDs, connObj = False ):
     """
     Return TaskQueues for a given list of Jobs
