@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.16 2009/04/22 16:10:32 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.17 2009/05/04 18:03:26 atsareg Exp $
 # File :   JobPathAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,7 +12,7 @@
       path through the optimizers.
 
 """
-__RCSID__ = "$Id: JobPathAgent.py,v 1.16 2009/04/22 16:10:32 rgracian Exp $"
+__RCSID__ = "$Id: JobPathAgent.py,v 1.17 2009/05/04 18:03:26 atsareg Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -58,7 +58,7 @@ class JobPathAgent(OptimizerModule):
     jobDesc = JobDescription()
     result = jobDesc.loadDescription( classAdJob.asJDL() )
     if not result[ 'OK' ]:
-      self.setFailedJob(job, result['Message'])
+      self.setFailedJob(job, result['Message'],classAdJob)
       return result
     self.__syncJobDesc( job, jobDesc, classAdJob )
 
@@ -80,7 +80,7 @@ class JobPathAgent(OptimizerModule):
       moduleInstance = moduleFactory.getModule(self.voPlugin,argumentsDict)
       if not moduleInstance['OK']:
         self.log.error('Could not instantiate module:', '%s' %(self.voPlugin))
-        self.setFailedJob(job, 'Could not instantiate module: %s' %(self.voPlugin))
+        self.setFailedJob(job, 'Could not instantiate module: %s' %(self.voPlugin),classAdJob)
         return S_ERROR('Holding pending jobs')
 
       module = moduleInstance['Value']
