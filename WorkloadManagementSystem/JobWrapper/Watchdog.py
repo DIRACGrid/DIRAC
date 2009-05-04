@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.55 2009/05/04 05:08:56 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.56 2009/05/04 08:23:50 rgracian Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.55 2009/05/04 05:08:56 rgracian Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.56 2009/05/04 08:23:50 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -233,7 +233,7 @@ class Watchdog(Agent):
       cpuTime = self.processMonitor.getCPUConsumed(self.wrapperPID)
     except Exception,x:
       self.log.warn('Could not determine CPU time consumed with exception')
-      self.log.warn(str(x))
+      self.log.exception()
       return S_OK(cpuTime) #just return null CPU
 
     if not cpuTime['OK']:
@@ -368,7 +368,8 @@ class Watchdog(Agent):
       ratio = ( cpuTime / wallClockTime ) * 100.
 
       self.log.info( "CPU/Wallclock ratio is %.2f%%" % ratio )
-      if ratio < self.minCPUWallClockRatio:
+      # in case of error cpuTime might be 0, exclude this
+      if ratio and ratio < self.minCPUWallClockRatio:
         self.log.info( "Job is stalled!" )
         return S_ERROR( 'Watchdog identified this job as stalled' )
     except Exception, e:
