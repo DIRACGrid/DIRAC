@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.54 2009/05/03 22:41:53 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.55 2009/05/04 05:08:56 rgracian Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.54 2009/05/03 22:41:53 rgracian Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.55 2009/05/04 05:08:56 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -228,7 +228,7 @@ class Watchdog(Agent):
   def __getCPU(self):
     """Uses os.times() to get CPU time and returns HH:MM:SS after conversion.
     """
-    cpuTime = 0.0
+    cpuTime = '00:00:00'
     try:
       cpuTime = self.processMonitor.getCPUConsumed(self.wrapperPID)
     except Exception,x:
@@ -239,7 +239,7 @@ class Watchdog(Agent):
     if not cpuTime['OK']:
       self.log.warn('Problem while checking consumed CPU')
       self.log.warn(cpuTime)
-      return S_OK(0.0) #again return null CPU in this case
+      return S_OK('00:00:00') #again return null CPU in this case
 
     cpuTime = cpuTime['Value']
     self.log.verbose("Raw CPU time consumed (s) = %s" % (cpuTime))
