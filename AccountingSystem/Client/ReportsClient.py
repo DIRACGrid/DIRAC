@@ -1,9 +1,17 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/ReportsClient.py,v 1.5 2008/10/10 17:29:49 acasajus Exp $
-__RCSID__ = "$Id: ReportsClient.py,v 1.5 2008/10/10 17:29:49 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/ReportsClient.py,v 1.6 2009/05/04 17:13:29 acasajus Exp $
+__RCSID__ = "$Id: ReportsClient.py,v 1.6 2009/05/04 17:13:29 acasajus Exp $"
 
 import tempfile
+import base64
+
+try:
+  import zlib
+  zCompressionEnabled = True
+except:
+  zCompressionEnabled = False
+
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import Time, DEncode
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
 
@@ -32,7 +40,10 @@ class ReportsClient:
 
   def listReports( self, typeName ):
     rpcClient = self.__getRPCClient()
-    return rpcClient.listReports( typeName )
+    result = rpcClient.listReports( typeName )
+    if 'rpcStub' in result:
+      del( result[ 'rpcStub' ] )
+    return result
 
   def getReport( self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs = {} ):
     rpcClient = self.__getRPCClient()
@@ -43,7 +54,10 @@ class ReportsClient:
                     'condDict' : condDict,
                     'grouping' : grouping,
                     'extraArgs' : extraArgs }
-    return rpcClient.getReport( plotRequest )
+    result = rpcClient.getReport( plotRequest )
+    if 'rpcStub' in result:
+      del( result[ 'rpcStub' ] )
+    return result
 
   def generatePlot( self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs = {} ):
     rpcClient = self.__getRPCClient()
@@ -54,7 +68,33 @@ class ReportsClient:
                     'condDict' : condDict,
                     'grouping' : grouping,
                     'extraArgs' : extraArgs }
-    return rpcClient.generatePlot( plotRequest )
+    result = rpcClient.generatePlot( plotRequest )
+    if 'rpcStub' in result:
+      del( result[ 'rpcStub' ] )
+    return result
+
+  def generateDelayedPlot( self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs = {}, compress = True ):
+    plotRequest = { 'typeName' : typeName,
+                    'reportName' : reportName,
+                    'startTime' : startTime,
+                    'endTime' : endTime,
+                    'condDict' : condDict,
+                    'grouping' : grouping,
+                    'extraArgs' : extraArgs }
+    compress = compress and zCompressionEnabled
+    if compress:
+      plotStub = "ZP:%s" % base64.b64encode( zlib.compress( DEncode.encode( plotRequest ), 9 ) )
+    else:
+      plotStub = "UP:%s" % DEncode.encode( plotRequest )
+    thbStub = False
+    if 'thumbnail' in extraArgs and extraArgs[ 'thumbnail' ]:
+      thbStub = plotStub
+      extraArgs[ 'thumbnail' ] = False
+      if compress:
+        plotStub = "ZP:%s" % base64.b64encode( zlib.compress( DEncode.encode( plotRequest ), 9 ) )
+      else:
+        plotStub = "UP:%s" % DEncode.encode( plotRequest )
+    return S_OK( { 'plot' : plotStub, 'thumbnail' : thbStub } )
 
   def getPlotToMem( self, plotName ):
     transferClient = self.__getTransferClient()

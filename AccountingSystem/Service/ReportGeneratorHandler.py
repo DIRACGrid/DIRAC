@@ -1,7 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.21 2009/04/08 14:33:48 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.21 2009/04/08 14:33:48 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.22 2009/05/04 17:13:30 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.22 2009/05/04 17:13:30 acasajus Exp $"
 import types
 import os
+import base64
+import zlib
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
 from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
 from DIRAC.AccountingSystem.private.Summaries import Summaries
@@ -11,7 +13,7 @@ from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 from DIRAC.AccountingSystem.private.Policies import gPoliciesList
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import Time, DEncode
 
 gAccountingDB = False
 
@@ -56,6 +58,17 @@ class ReportGeneratorHandler( RequestHandler ):
 
 
   def __checkPlotRequest( self, reportRequest ):
+    if 'lastSeconds' in self.__reportRequestDict:
+      try:
+        lastSeconds = long( self.__reportRequestDict[ 'lastSeconds' ] )
+      except:
+        return S_ERROR( "lastSeconds key must be a number" )
+      if lastSeconds < 3600:
+        return S_ERROR( "lastSeconds must be more than 3600" )
+      now = Time.toEpoch()
+      self.__reportRequestDict[ 'endTime' ] = now
+      self.__reportRequestDict[ 'startTime' ] = now - lastSeconds
+      del( self.__reportRequestDict[ 'lastSeconds' ] )
     for key in self.__reportRequestDict:
       if key == 'extraArgs' and key not in reportRequest:
         reportRequest[ key ] = {}
@@ -145,11 +158,51 @@ class ReportGeneratorHandler( RequestHandler ):
       return retVal
     return policyFilter.filterListingValues( credDict, retVal[ 'Value' ] )
 
+  def __generatePlotFromFileId( self, fileId ):
+    stub = fileId[3:]
+    type = fileId[0]
+    if type == 'Z':
+      gLogger.info( "Compressed request, uncompressing")
+      try:
+        stub = zlib.decompress( base64.b64decode( stub ) )
+      except Exception, e:
+        gLogger.error( "Oops! Plot request is invalid!", str(e) )
+        return S_ERROR( "Oops! Plot request is invalid!: %s" % str(e) )
+    elif type == 'U':
+      #Do nothing, it's already uncompressed
+      pass
+    else:
+      gLogger.error( "Oops! Stub type '%s' is unknown :P" % type )
+      return S_ERROR( "Oops! Stub type '%s' is unknown :P" % type )
+    plotRequest, stubLength = DEncode.decode( stub )
+    if len( stub ) != stubLength:
+      gLogger.error( "Oops! The stub is longer than the data :P" )
+      return S_ERROR( "Oops! The stub is longer than the data :P" )
+    gLogger.info( "Generating the plots..")
+    result = self.export_generatePlot( plotRequest )
+    if not result[ 'OK' ]:
+      gLogger.error( "Error while generating the plots", result[ 'Message' ] )
+      return result
+    fileToReturn = 'plot'
+    if 'extraArgs' in plotRequest:
+      extraArgs = plotRequest[ 'extraArgs' ]
+      if 'thumbnail' in extraArgs and extraArgs[ 'thumbnail' ]:
+        fileToReturn = 'thumbnail'
+    gLogger.info( "Returning %s file: %s " % ( fileToReturn, result[ 'Value' ][ fileToReturn ] ) )
+    return S_OK( result[ 'Value' ][ fileToReturn ] )
 
   def transfer_toClient( self, fileId, token, fileHelper ):
     """
     Get graphs data
     """
+    #First check if we've got to generate the plot
+    if len( fileId ) > 5 and fileId[1:3] == 'P:':
+      gLogger.info( "Seems the file request is a plot generation request!" )
+      #Seems a request for a plot!
+      result = self.__generatePlotFromFileId( fileId )
+      if not result[ 'OK' ]:
+        return result
+      fileId = result[ 'Value' ]
     retVal = gDataCache.getPlotData( fileId )
     if not retVal[ 'OK' ]:
       return retVal
