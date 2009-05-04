@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.17 2009/05/04 18:03:26 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.18 2009/05/04 19:07:37 atsareg Exp $
 # File :   JobPathAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,7 +12,7 @@
       path through the optimizers.
 
 """
-__RCSID__ = "$Id: JobPathAgent.py,v 1.17 2009/05/04 18:03:26 atsareg Exp $"
+__RCSID__ = "$Id: JobPathAgent.py,v 1.18 2009/05/04 19:07:37 atsareg Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -40,7 +40,7 @@ class JobPathAgent(OptimizerModule):
     self.basePath     = self.am_getOption( 'BasePath',  ['JobPath','JobSanity'] )
     self.inputData    = self.am_getOption( 'InputData', ['InputData','BKInputData'] )
     self.endPath      = self.am_getOption( 'EndPath',   ['JobScheduling','TaskQueue'] )
-    self.voPlugin     = self.am_getOption( 'VOPlugin',  'WorkflowLib.Utilities.JobPathResolution' )
+    self.voPlugin     = self.am_getOption( 'VOPlugin',  '' )
 
     return S_OK()
 
