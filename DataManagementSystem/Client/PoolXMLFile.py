@@ -1,11 +1,11 @@
 ########################################################################
-# $Id: PoolXMLFile.py,v 1.3 2009/04/28 08:50:33 acsmith Exp $
+# $Id: PoolXMLFile.py,v 1.4 2009/05/04 07:23:52 rgracian Exp $
 ########################################################################
 """ The POOL XML File module provides a means to extract the GUID of a file or list
     of files by searching for an appropriate POOL XML Catalog in the specified directory.
 """
 
-__RCSID__ = "$Id: PoolXMLFile.py,v 1.3 2009/04/28 08:50:33 acsmith Exp $"
+__RCSID__ = "$Id: PoolXMLFile.py,v 1.4 2009/05/04 07:23:52 rgracian Exp $"
 
 import os,glob,re,tarfile,string
 
@@ -72,7 +72,7 @@ def getGUID(fileNames,directory=''):
   for fname in fileNames:
     guid = str(catalog.getGuidByPfn(fname))
     if not guid:
-      guid = makeGuid()
+      guid = makeGuid(fname)
       generated.append(fname)
 
     pfnGUIDs[fname]=guid
