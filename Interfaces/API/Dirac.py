@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.76 2009/05/05 16:08:24 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.77 2009/05/05 21:36:54 rgracian Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,9 +23,9 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.76 2009/05/05 16:08:24 rgracian Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.77 2009/05/05 21:36:54 rgracian Exp $"
 
-import re, os, sys, string, time, shutil, types, tempfile
+import re, os, sys, string, time, shutil, types, tempfile, glob
 import pprint
 import DIRAC
 
@@ -674,6 +674,27 @@ class Dirac:
       errorFile.close()
     else:
       self.log.warn('Job JDL has no StdError file parameter defined')
+
+    # do not do anything with OSB if working directory is the same as baseDir
+    if os.path.abspath(baseDir) != os.getcwd():
+      if parameters['Value'].has_key('OutputSandbox'):
+        sandbox = parameters['Value']['OutputSandbox']
+        if type(sandbox) in types.StringTypes:
+          sandbox = [sandbox]
+
+        for i in sandbox:
+          globList = glob.glob(i)
+          for isFile in globList:
+            if os.path.isabs(isFile):
+              # if a relative path, it is relative to the user working directory
+              isFile = os.path.basename( isFile )
+            # Attempt to copy back from job working directory
+            if os.path.isdir(isFile):
+              shutil.copytree(isFile, baseDir, symlinks=True )
+            elif os.path.exists(isFile):
+              shutil.copy(isFile, baseDir)
+            else:
+              return S_ERROR( 'Can not copy OutputSandbox file %s' % isFile )
 
     if status:
       return S_ERROR('Execution completed with non-zero status %s' %(status))
