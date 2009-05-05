@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.75 2009/05/05 15:38:26 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.76 2009/05/05 16:08:24 rgracian Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.75 2009/05/05 15:38:26 rgracian Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.76 2009/05/05 16:08:24 rgracian Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile
 import pprint
@@ -595,22 +595,24 @@ class Dirac:
       self.log.warn('Software installation failed with result:\n%s' %(result))
       return result
 
-    if parameters['Value'].has_key('InputSandbox'):
-      sandbox = parameters['Value']['InputSandbox']
-      if type(sandbox) in types.StringTypes:
-        sandbox = [sandbox]
-      for isFile in sandbox:
-        if not os.path.isabs(isFile):
-          # if a relative path, it is relative to the user working directory
-          isFile = os.path.join( baseDir, isFile )
+    # do not do anything with ISB if working directory is the same as baseDir
+    if os.path.abspath(baseDir) != os.getcwd():
+      if parameters['Value'].has_key('InputSandbox'):
+        sandbox = parameters['Value']['InputSandbox']
+        if type(sandbox) in types.StringTypes:
+          sandbox = [sandbox]
+        for isFile in sandbox:
+          if not os.path.isabs(isFile):
+            # if a relative path, it is relative to the user working directory
+            isFile = os.path.join( baseDir, isFile )
 
-        # Attempt to copy into job working directory
-        if os.path.isdir(isFile):
-          shutil.copytree(isFile, os.path.basename(isFile), symlinks=True )
-        elif os.path.exists(isFile):
-          shutil.copy(isFile, os.getcwd())
-        else:
-          return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
+          # Attempt to copy into job working directory
+          if os.path.isdir(isFile):
+            shutil.copytree(isFile, os.path.basename(isFile), symlinks=True )
+          elif os.path.exists(isFile):
+            shutil.copy(isFile, os.getcwd())
+          else:
+            return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
 
     self.log.info('Attempting to submit job to local site: %s' %self.site)
 
