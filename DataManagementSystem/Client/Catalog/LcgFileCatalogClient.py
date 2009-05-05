@@ -186,7 +186,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def getFileMetadata(self,lfn):
+  def getFileMetadata(self,lfn,ownership=False):
     """ Returns the file metadata associated to a supplied LFN
     """
     res = self.__checkArgumentFormat(lfn)
@@ -212,17 +212,18 @@ class LcgFileCatalogClient(FileCatalogueBase):
         successful[lfn]['CreationTime'] = time.ctime(fstat.ctime)
         successful[lfn]['ModificationTime'] = time.ctime(fstat.mtime)
         successful[lfn]['NumberOfLinks'] = fstat.nlink
-        res = self.__getDNFromUID(fstat.uid)
-        if res['OK']:
-          successful[lfn]['OwnerDN'] = res['Value']
-        else:
-          successful[lfn]['OwnerDN'] = None  
-        res = self.__getRoleFromGID(fstat.gid)
-        if res['OK']:
-          successful[lfn]['OwnerRole'] = res['Value']
-        else:
-          successful[lfn]['OwnerRole'] = None
         successful[lfn]['Permissions'] = S_IMODE(fstat.filemode)
+        if ownership:
+          res = self.__getDNFromUID(fstat.uid)
+          if res['OK']:
+            successful[lfn]['OwnerDN'] = res['Value']
+          else:
+            successful[lfn]['OwnerDN'] = None
+          res = self.__getRoleFromGID(fstat.gid)
+          if res['OK']:
+            successful[lfn]['OwnerRole'] = res['Value']
+          else:
+            successful[lfn]['OwnerRole'] = None
     if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
@@ -520,24 +521,15 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     lfns = res['Value']
-    gLogger.verbose('I think this is not right', '%s' % lfns)
     created = self.__openSession()
     failed = {}
     successful = {}
-    #for lfn,info in lfns.items():
-    for fileTuple in lfns:
-      lfn = fileTuple[0]
-      pfn = fileTuple[1]
-      #pfn = info['PFN']
-      se = fileTuple[3]
-      #se = info['SE']
-      size = fileTuple[2]
-      #size = info['Size']
-      guid = fileTuple[4]
-      #guid = info['GUID']
-      checksum = fileTuple[5]
-      #checksum = info['Checksum']
-
+    for lfn,info in lfns.items():
+      pfn = info['PFN']
+      se = info['SE']
+      size = info['Size']
+      guid = info['GUID']
+      checksum = info['Checksum']
       master = True
       res = self.__checkAddFile(lfn,pfn,size,se,guid)
       if not res['OK']:
