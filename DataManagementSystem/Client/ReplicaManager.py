@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.63 2009/04/24 14:32:45 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.64 2009/05/05 12:53:53 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -69,7 +69,7 @@ class ReplicaManager:
     for vomsRole in clientInfo['Role']:
       if vomsRole.endswith(lfcPerm['Role']):
         groupMatch = True
-    if (lfcPerm['DN'] == clientInfo['DN']):
+    if (clientInfo['DN'] in lfcPerm['DN']):
       if groupMatch:  
         perms = lfcPerm['user']
       else:
