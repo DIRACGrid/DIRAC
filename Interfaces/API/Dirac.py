@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.73 2009/05/01 16:32:20 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.74 2009/05/05 13:47:11 atsareg Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.73 2009/05/01 16:32:20 rgracian Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.74 2009/05/05 13:47:11 atsareg Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile
 import pprint
@@ -146,6 +146,11 @@ class Dirac:
       cleanPath = tmpdir
 
     if mode:
+      if mode.lower()=='sam':
+        self.log.info('Executing SAM workflow locally without WMS submission')
+        curDir = os.getcwd()
+        self.log.info('Executing at', os.getcwd())
+        result = self.runLocal( jdl, jobDescription, curDir )
       if mode.lower()=='local':
         self.log.info('Executing workflow locally without WMS submission')
         curDir = os.getcwd()
