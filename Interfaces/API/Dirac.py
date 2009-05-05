@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.74 2009/05/05 13:47:11 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.75 2009/05/05 15:38:26 rgracian Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.74 2009/05/05 13:47:11 atsareg Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.75 2009/05/05 15:38:26 rgracian Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile
 import pprint
@@ -85,7 +85,7 @@ class Dirac:
       self.fileCatalog=False
 
   #############################################################################
-  def submit(self,job,mode='wms'):
+  def submit(self,job,mode='wms',path=''):
     """Submit jobs to DIRAC WMS.
        These can be either:
 
@@ -106,6 +106,8 @@ class Dirac:
        @param job: Instance of Job class or JDL string
        @type job: Job() or string
        @param mode: Submit job locally with mode = 'wms' (default), 'local' to run workflow or 'agent' to run full Job Wrapper locally
+       @type mode: string
+       @param path: When running in 'local' mode, can be used to specify the working directory for the job
        @type mode: string
        @return: S_OK,S_ERROR
     """
@@ -146,18 +148,26 @@ class Dirac:
       cleanPath = tmpdir
 
     if mode:
-      if mode.lower()=='sam':
-        self.log.info('Executing SAM workflow locally without WMS submission')
-        curDir = os.getcwd()
-        self.log.info('Executing at', os.getcwd())
-        result = self.runLocal( jdl, jobDescription, curDir )
       if mode.lower()=='local':
         self.log.info('Executing workflow locally without WMS submission')
         curDir = os.getcwd()
-        jobDir = tempfile.mkdtemp(suffix='_JobDir', prefix='Local_', dir=curDir)
-        os.chdir( jobDir )
-        self.log.info('Executing at', os.getcwd())
+        if not path:
+          jobDir = tempfile.mkdtemp(suffix='_JobDir', prefix='Local_', dir=curDir)
+        else:
+          jobDir = path
+          if not os.path.exists(jobDir):
+            try:
+              os.mkdir(jobDir)
+            except:
+              self.log.exception()
+              return S_ERROR( 'Fail to create working directory %s' % jobDir )
+        try:
+          os.chdir( jobDir )
+        except:
+          return S_ERROR('Could not change working directory to %s' % jobDir )
+        self.log.info('Executing at', jobDir)
         result = self.runLocal( jdl, jobDescription, curDir )
+        result['JobDir'] = jobDir
         os.chdir( curDir )
       if mode.lower()=='agent':
         self.log.info('Executing workflow locally with full WMS submission and DIRAC Job Agent')
