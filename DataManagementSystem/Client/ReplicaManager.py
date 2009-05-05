@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.65 2009/05/05 13:37:03 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.66 2009/05/05 13:51:20 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -47,6 +47,8 @@ class ReplicaManager:
       gLogger.error(errStr)
       return S_ERROR(errStr)
     resDict = {'DN':proxyInfo['identity'],'Role':proxyInfo['VOMS'],'User':proxyInfo['username']}
+    # TODO: Must obtain all the DNs associated to the user here
+    resDict['AllDNs'] = proxyInfo['identity']
     return S_OK(resDict)
 
   def __verifyOperationPermission(self,path):
@@ -69,7 +71,7 @@ class ReplicaManager:
     for vomsRole in clientInfo['Role']:
       if vomsRole.endswith(lfcPerm['Role']):
         groupMatch = True
-    if (clientInfo['DN'] in lfcPerm['DN']):
+    if (lfcPerm['DN'] in clientInfo['AllDNs']):
       if groupMatch:  
         perms = lfcPerm['user']
       else:
