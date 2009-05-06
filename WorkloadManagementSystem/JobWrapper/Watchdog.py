@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.56 2009/05/04 08:23:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.57 2009/05/06 19:35:01 rgracian Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.56 2009/05/04 08:23:50 rgracian Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.57 2009/05/06 19:35:01 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -93,8 +93,8 @@ class Watchdog(Agent):
     # The time left is returned in seconds @ 500 SI00,
     # the self.checkingTime and self.pollingTime are in seconds,
     # thus they need to be multiplied by a large enough factor
-    self.grossTimeLeftLimit = 5 * self.checkingTime
-    self.fineTimeLeftLimit  = gConfig.getValue(self.section+'/TimeLeftLimit', 5 * self.pollingTime )
+    self.grossTimeLeftLimit = 10 * self.checkingTime
+    self.fineTimeLeftLimit  = gConfig.getValue(self.section+'/TimeLeftLimit', 15 * self.pollingTime )
 
     self.timeLeftUtil = TimeLeft()
     self.litleTimeLeft = False
