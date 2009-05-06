@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.66 2009/05/05 13:51:20 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.67 2009/05/06 10:13:35 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -12,6 +12,7 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.File import makeGuid,fileAdler
 from DIRAC.Core.Utilities.File import getSize
 from DIRAC.Core.Security.Misc import getProxyInfo,formatProxyInfoAsString
+from DIRAC.Core.Security.CS import getDNForUsername
 
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
@@ -46,9 +47,12 @@ class ReplicaManager:
       errStr = "ReplicaManager.__getClientCertGroup: Proxy information does not contain the VOMs information."     
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    resDict = {'DN':proxyInfo['identity'],'Role':proxyInfo['VOMS'],'User':proxyInfo['username']}
-    # TODO: Must obtain all the DNs associated to the user here
-    resDict['AllDNs'] = proxyInfo['identity']
+    res = getDNForUsername(proxyInfo['username'])
+    if not res['OK']:
+      errStr = "ReplicaManager.__getClientCertGroup: Error getting known proxies for user."
+      gLogger.error(errStr,res['Message'])
+      return S_ERROR(errStr)
+    resDict = {'DN':proxyInfo['identity'],'Role':proxyInfo['VOMS'],'User':proxyInfo['username'],'AllDNs':res['Value']}
     return S_OK(resDict)
 
   def __verifyOperationPermission(self,path):
@@ -500,7 +504,7 @@ class ReplicaManager:
       seDict[storageElementName].append((lfn,physicalFile,fileSize,storageElementName,fileGuid,checksum))
     successful = {}
     failed = {}
-    fileTuples = []
+    fileDict = {}
     for storageElementName,fileTuple in seDict.items():
       destStorageElement = StorageElement(storageElementName)
       if not destStorageElement.isValid()['Value']:
@@ -517,13 +521,13 @@ class ReplicaManager:
           else:
             pfn = res['Value']
           tuple = (lfn,pfn,fileSize,storageElementName,fileGuid,checksum)
-          fileTuples.append(tuple)
-    gLogger.verbose("ReplicaManager.__registerFile: Resolved %s files for registration." % len(fileTuples))
+          fileDict[lfn] = {'PFN':pfn,'Size':fileSize,'SE':storageElementName,'GUID':fileGuid,'Checksum':checksum}
+    gLogger.verbose("ReplicaManager.__registerFile: Resolved %s files for registration." % len(fileDict.keys()))
     if catalog:
       fileCatalog = FileCatalog(catalog)
-      res = fileCatalog.addFile(fileTuples)
+      res = fileCatalog.addFile(fileDict)
     else:
-      res = self.fileCatalogue.addFile(fileTuples)
+      res = self.fileCatalogue.addFile(fileDict)
     if not res['OK']:
       errStr = "ReplicaManager.__registerFile: Completely failed to register files."
       gLogger.error(errStr,res['Message'])
