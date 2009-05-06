@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.78 2009/04/30 13:23:23 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.79 2009/05/06 19:34:04 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.78 2009/04/30 13:23:23 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.79 2009/05/06 19:34:04 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -75,6 +75,9 @@ class JobAgent(Agent):
     self.defaultLogLevel = gConfig.getValue(self.section+'/DefaultLogLevel','info')
     self.fillingMode = gConfig.getValue(self.section+'/FillingModeFlag',False)
     self.jobCount=0
+    self.timeLeftUtil = TimeLeft()
+    self.timeLeft = 0
+    self.timeLeftError = ''
     return result
 
   #############################################################################
@@ -86,21 +89,16 @@ class JobAgent(Agent):
       #Only call timeLeft utility after a job has been picked up
       self.log.info('Attempting to check CPU time left for filling mode')
       if self.fillingMode:
-        result = self.__getCPUTimeLeft()
-        self.log.info('Result from TimeLeft utility:')
-        if not result['OK']:
-          self.log.warn(result['Message'])
-          return self.__finish(result['Message'])
-        timeLeft = result['Value']
-        self.log.info('%s normalized CPU units remaining in slot' %(timeLeft))
+        if self.timeLeftError:
+          self.log.warn(self.timeLeftError)
+          return self.__finish(self.timeLeftError)
+        self.log.info('%s normalized CPU units remaining in slot' %(self.timeLeft))
         # Need to update the Configuration so that the new value is published in the next matching request
-        result = self.computingElement.setCPUTimeLeft( cpuTimeLeft=timeLeft )
+        result = self.computingElement.setCPUTimeLeft( cpuTimeLeft=self.timeLeft )
         if not result['OK']:
           return self.__finish(result['Message'])
         ceJDL = self.computingElement.getJDL()
         resourceJDL = ceJDL['Value']
-        # Enable Filling Mode
-        # return self.__finish('Filling Mode is Disabled')
       else:
         return self.__finish('Filling Mode is Disabled')
 
@@ -186,6 +184,10 @@ class JobAgent(Agent):
     else:
       jobCPUReqt = params['MaxCPUTime']
 
+    result = self.timeLeftUtil.getTimeLeft()
+    if result['OK']:
+      self.timeLeft = result['Value']
+
     self.log.verbose('Job request successful: \n %s' %(jobRequest['Value']))
     self.log.info('Received JobID=%s, JobType=%s, SystemConfig=%s' %(jobID,jobType,systemConfig))
     self.log.info('OwnerDN: %s JobGroup: %s' %(ownerDN,jobGroup) )
@@ -245,8 +247,15 @@ class JobAgent(Agent):
       self.log.exception()
       return self.__rescheduleFailedJob( jobID , 'Job processing failed with exception' )
 
-    result = self.__getCPUTimeLeft()
-    self.log.info('Result from TimeLeft utility:',result)
+    result = self.timeLeftUtil.getTimeLeft()
+    if result['OK']:
+      finalTimeLeft = result['Value']
+      scaledCPUTime = finalTimeLeft - self.timeLeft
+      self.timeLeft = finalTimeLeft
+    else:
+      scaledCPUTime = 0.0
+      self.timeLeftError = result['Message']
+    self.__setJobParam(jobID,'ScaledCPUTime',str(scaledCPUTime))
 
     return S_OK('Job Agent cycle complete')
 
@@ -259,8 +268,7 @@ class JobAgent(Agent):
     utime, stime, cutime, cstime, elapsed = os.times()
     cpuTime = utime + stime + cutime
     self.log.info('Current raw CPU time consumed is %s' %cpuTime)
-    tl = TimeLeft()
-    result = tl.getTimeLeft(cpuTime)
+    result = self.timeLeftUtil.getTimeLeft(cpuTime)
     return result
 
   #############################################################################
