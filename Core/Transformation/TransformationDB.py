@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.83 2009/04/30 15:03:02 acsmith Exp $
+# $Id: TransformationDB.py,v 1.84 2009/05/06 13:15:16 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -557,8 +557,10 @@ class TransformationDB(DB):
         if not result['Value']:
           continue
         for fileID,jobStatus in result['Value']:
-          lfn = fileIDs[fileID]
-          resultDict[lfn][transID]['JobStatus'] = jobStatus
+          # If the file was not requested then just ignore it
+          if fileID in fileIDs.keys():
+            lfn = fileIDs[fileID]
+            resultDict[lfn][transID]['JobStatus'] = jobStatus
 
     return S_OK({'Successful':resultDict,'Failed':failedDict})
 
