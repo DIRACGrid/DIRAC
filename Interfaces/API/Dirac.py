@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.77 2009/05/05 21:36:54 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.78 2009/05/06 06:59:11 rgracian Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,9 +23,9 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.77 2009/05/05 21:36:54 rgracian Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.78 2009/05/06 06:59:11 rgracian Exp $"
 
-import re, os, sys, string, time, shutil, types, tempfile, glob
+import re, os, sys, string, time, shutil, types, tempfile
 import pprint
 import DIRAC
 
@@ -85,7 +85,7 @@ class Dirac:
       self.fileCatalog=False
 
   #############################################################################
-  def submit(self,job,mode='wms',path=''):
+  def submit(self,job,mode='wms'):
     """Submit jobs to DIRAC WMS.
        These can be either:
 
@@ -106,8 +106,6 @@ class Dirac:
        @param job: Instance of Job class or JDL string
        @type job: Job() or string
        @param mode: Submit job locally with mode = 'wms' (default), 'local' to run workflow or 'agent' to run full Job Wrapper locally
-       @type mode: string
-       @param path: When running in 'local' mode, can be used to specify the working directory for the job
        @type mode: string
        @return: S_OK,S_ERROR
     """
@@ -151,23 +149,10 @@ class Dirac:
       if mode.lower()=='local':
         self.log.info('Executing workflow locally without WMS submission')
         curDir = os.getcwd()
-        if not path:
-          jobDir = tempfile.mkdtemp(suffix='_JobDir', prefix='Local_', dir=curDir)
-        else:
-          jobDir = path
-          if not os.path.exists(jobDir):
-            try:
-              os.mkdir(jobDir)
-            except:
-              self.log.exception()
-              return S_ERROR( 'Fail to create working directory %s' % jobDir )
-        try:
-          os.chdir( jobDir )
-        except:
-          return S_ERROR('Could not change working directory to %s' % jobDir )
-        self.log.info('Executing at', jobDir)
+        jobDir = tempfile.mkdtemp(suffix='_JobDir', prefix='Local_', dir=curDir)
+        os.chdir( jobDir )
+        self.log.info('Executing at', os.getcwd())
         result = self.runLocal( jdl, jobDescription, curDir )
-        result['JobDir'] = jobDir
         os.chdir( curDir )
       if mode.lower()=='agent':
         self.log.info('Executing workflow locally with full WMS submission and DIRAC Job Agent')
@@ -595,24 +580,22 @@ class Dirac:
       self.log.warn('Software installation failed with result:\n%s' %(result))
       return result
 
-    # do not do anything with ISB if working directory is the same as baseDir
-    if os.path.abspath(baseDir) != os.getcwd():
-      if parameters['Value'].has_key('InputSandbox'):
-        sandbox = parameters['Value']['InputSandbox']
-        if type(sandbox) in types.StringTypes:
-          sandbox = [sandbox]
-        for isFile in sandbox:
-          if not os.path.isabs(isFile):
-            # if a relative path, it is relative to the user working directory
-            isFile = os.path.join( baseDir, isFile )
+    if parameters['Value'].has_key('InputSandbox'):
+      sandbox = parameters['Value']['InputSandbox']
+      if type(sandbox) in types.StringTypes:
+        sandbox = [sandbox]
+      for isFile in sandbox:
+        if not os.path.isabs(isFile):
+          # if a relative path, it is relative to the user working directory
+          isFile = os.path.join( baseDir, isFile )
 
-          # Attempt to copy into job working directory
-          if os.path.isdir(isFile):
-            shutil.copytree(isFile, os.path.basename(isFile), symlinks=True )
-          elif os.path.exists(isFile):
-            shutil.copy(isFile, os.getcwd())
-          else:
-            return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
+        # Attempt to copy into job working directory
+        if os.path.isdir(isFile):
+          shutil.copytree(isFile, os.path.basename(isFile), symlinks=True )
+        elif os.path.exists(isFile):
+          shutil.copy(isFile, os.getcwd())
+        else:
+          return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
 
     self.log.info('Attempting to submit job to local site: %s' %self.site)
 
@@ -675,26 +658,28 @@ class Dirac:
     else:
       self.log.warn('Job JDL has no StdError file parameter defined')
 
-    # do not do anything with OSB if working directory is the same as baseDir
-    if os.path.abspath(baseDir) != os.getcwd():
       if parameters['Value'].has_key('OutputSandbox'):
         sandbox = parameters['Value']['OutputSandbox']
         if type(sandbox) in types.StringTypes:
           sandbox = [sandbox]
 
-        for i in sandbox:
-          globList = glob.glob(i)
-          for isFile in globList:
-            if os.path.isabs(isFile):
-              # if a relative path, it is relative to the user working directory
-              isFile = os.path.basename( isFile )
-            # Attempt to copy back from job working directory
-            if os.path.isdir(isFile):
-              shutil.copytree(isFile, baseDir, symlinks=True )
-            elif os.path.exists(isFile):
-              shutil.copy(isFile, baseDir)
-            else:
-              return S_ERROR( 'Can not copy OutputSandbox file %s' % isFile )
+    if parameters['Value'].has_key('OutputSandbox'):
+      sandbox = parameters['Value']['OutputSandbox']
+      if type(sandbox) in types.StringTypes:
+        sandbox = [sandbox]
+      for i in sandbox:
+        globList = glob.glob(i)
+        for isFile in globList:
+          if os.path.isabs(isFile):
+            # if a relative path, it is relative to the user working directory
+            isFile = os.path.basename( isFile )
+          # Attempt to copy back from job working directory
+          if os.path.isdir(isFile):
+            shutil.copytree(isFile, baseDir, symlinks=True )
+          elif os.path.exists(isFile):
+            shutil.copy(isFile, baseDir)
+          else:
+            return S_ERROR( 'Can not copy OutputSandbox file %s' % isFile )
 
     if status:
       return S_ERROR('Execution completed with non-zero status %s' %(status))
