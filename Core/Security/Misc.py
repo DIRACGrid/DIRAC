@@ -58,6 +58,8 @@ def getProxyInfo( proxy = False, disableVOMS = False ):
     retVal = VOMS().getVOMSAttributes( chain )
     if retVal[ 'OK' ]:
       infoDict[ 'VOMS' ] = retVal[ 'Value' ]
+    else:
+      infoDict[ 'VOMSError' ] = retVal[ 'Message' ].strip()
 
   return S_OK( infoDict )
 
@@ -72,7 +74,8 @@ def formatProxyInfoAsString( infoDict ):
   leftAlign = 13
   contentList = []
   for field in ( 'subject', 'issuer', 'identity', ( 'secondsLeft', 'timeleft' ),
-                 ( 'group', 'DIRAC group' ), 'path', 'username', ( 'hasVOMS', 'VOMS' ), ( 'VOMS', 'VOMS fqan' ) ):
+                 ( 'group', 'DIRAC group' ), 'path', 'username',
+                 ( 'hasVOMS', 'VOMS' ), ( 'VOMS', 'VOMS fqan' ), ( 'VOMSError', 'VOMS Error' ) ):
     if type( field ) == types.StringType:
       dispField = field
     else:
