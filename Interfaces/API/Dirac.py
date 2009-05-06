@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.78 2009/05/06 06:59:11 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.79 2009/05/06 08:09:18 rgracian Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,9 +23,9 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.78 2009/05/06 06:59:11 rgracian Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.79 2009/05/06 08:09:18 rgracian Exp $"
 
-import re, os, sys, string, time, shutil, types, tempfile
+import re, os, sys, string, time, shutil, types, tempfile, glob
 import pprint
 import DIRAC
 
