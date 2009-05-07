@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxStoreHandler.py,v 1.2 2009/04/28 17:15:56 acasajus Exp $
+# $Id: SandboxStoreHandler.py,v 1.3 2009/05/07 14:25:35 acasajus Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.2 2009/04/28 17:15:56 acasajus Exp $"
+__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.3 2009/05/07 14:25:35 acasajus Exp $"
 
 from types import *
 import os
@@ -44,6 +44,7 @@ class SandboxStoreHandler( RequestHandler ):
   def initialize( self ):
     self.__backend = self.getCSOption( "Backend", "local" )
     self.__localSEName = self.getCSOption( "LocalSE", "SandboxSE" )
+    self.__maxUploadBytes = self.getCSOption( "MaxSandboxSizeMiB", 10 ) * 1048576
     if self.__backend.lower() == "local" or self.__backend == self.__localSEName:
       self.__useLocalStorage = True
       self.__seNameToUse = self.__localSEName
@@ -76,6 +77,9 @@ class SandboxStoreHandler( RequestHandler ):
     """
     Receive a file as a sandbox
     """
+    if self.__maxUploadBytes and fileSize > self.__maxUploadBytes:
+      return S_ERROR( "Sandbox is too big. Please upload it to a grid storage element" )
+
     extPos = fileId.find( ".tar" )
     if extPos > -1:
       extension = fileId[ extPos + 1: ]
@@ -222,7 +226,7 @@ class SandboxStoreHandler( RequestHandler ):
       fd = open( destFileName, "wb" )
     except Exception, e:
       return S_ERROR( "Cannot open destination file %s" % destFileName )
-    result = fileHelper.networkToDataSink( fd )
+    result = fileHelper.networkToDataSink( fd, maxFileSize = self.__maxUploadBytes )
     if not result[ 'OK' ]:
       return result
     if tfd:
