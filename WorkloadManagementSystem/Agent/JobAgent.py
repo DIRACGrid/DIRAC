@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.80 2009/05/06 20:40:04 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.81 2009/05/07 15:27:02 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.80 2009/05/06 20:40:04 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.81 2009/05/07 15:27:02 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -247,7 +247,7 @@ class JobAgent(Agent):
       self.log.exception()
       return self.__rescheduleFailedJob( jobID , 'Job processing failed with exception' )
 
-    result = self.timeLeftUtil.getTimeLeft()
+    result = self.timeLeftUtil.getTimeLeft(0.0)
     if result['OK']:
       finalTimeLeft = result['Value']
       scaledCPUTime = finalTimeLeft - self.timeLeft
