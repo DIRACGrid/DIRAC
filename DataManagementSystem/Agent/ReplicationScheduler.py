@@ -337,7 +337,7 @@ class StrategyHandler:
   def __init__(self,bandwidths,channels,configSection):
     """ Standard constructor
     """
-    self.supportedStrategies = ['MinimiseTotalWait_0','MinimiseTotalWait_10','MinimiseTotalWait_100','MinimiseTotalWait_1000','Simple','DynamicThroughput','Swarm','MinimiseTotalWait','DynamicThroughput_0','DynamicThroughput_10','DynamicThroughput_100','DynamicThroughput_1000']
+    self.supportedStrategies = ['Simple','DynamicThroughput','Swarm','MinimiseTotalWait']
     self.sigma = gConfig.getValue(configSection+'/HopSigma',0.0)
     self.schedulingType = gConfig.getValue(configSection+'/SchedulingType','File')
     self.activeStrategies = gConfig.getValue(configSection+'/ActiveStrategies',['Simple','MinimiseTotalWait','DynamicThroughput'])
