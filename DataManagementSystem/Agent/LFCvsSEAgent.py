@@ -42,7 +42,7 @@ class LFCvsSEAgent(Agent):
       result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
       if not result[ 'OK' ]:
         self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
-      return result
+        return result
 
     res = self.RequestDBClient.getRequest('integrity')
     if not res['OK']:
@@ -51,8 +51,8 @@ class LFCvsSEAgent(Agent):
     elif not res['Value']:
       gLogger.info("LFCvsSEAgent.execute: No requests to be executed found.")
       return S_OK()
-    requestString = res['Value']['requestString']
-    requestName = res['Value']['requestName']
+    requestString = res['Value']['RequestString']
+    requestName = res['Value']['RequestName']
     sourceServer= res['Value']['Server']
     gLogger.info("LFCvsSEAgent.execute: Obtained request %s" % requestName)
     oRequest = RequestContainer(request=requestString)
@@ -123,16 +123,16 @@ class LFCvsSEAgent(Agent):
                         lfn = pfnLfnDict[pfn]
                         fileMetadata = {'Prognosis':'MissingSEPfn','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName,'Size':lfnSizeDict[lfn]}
                         IntegrityDB = RPCClient('DataManagement/DataIntegrity')
-                        res = IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
-                        if res['OK']:
+                        resInsert = IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
+                        if resInsert['OK']:
                           gLogger.info("LFCvsSEAgent.execute: Successfully added to IntegrityDB.")
                           gLogger.error("Change the status in the LFC,ProcDB....")
                         else:
                           gLogger.error("Shit, fuck, bugger. Add the failover.")
                       for pfn,pfnDict in res['Value']['Successful'].items():
                         lfn = pfnLfnDict[pfn]
-                        catalogSize = lfnSizeDict[lfn]
-                        storageSize = pfnDict['Size']
+                        catalogSize = int(lfnSizeDict[lfn])
+                        storageSize = int(pfnDict['Size'])
                         if int(catalogSize) == int(storageSize):
                           gLogger.info("LFCvsSEAgent.execute: Catalog and storage sizes match.","%s %s" % (pfn,storageElementName))
                           gLogger.info("Change the status in the LFC")
@@ -140,8 +140,8 @@ class LFCvsSEAgent(Agent):
                           gLogger.error("LFCvsSEAgent.execute: Catalog and storage size mis-match.","%s %s" % (pfn,storageElementName))
                           fileMetadata = {'Prognosis':'PfnSizeMismatch','LFN':lfn,'PFN':pfn,'StorageElement':storageElementName}
                           IntegrityDB = RPCClient('DataManagement/DataIntegrity')
-                          res = IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
-                          if res['OK']:
+                          resInsert = IntegrityDB.insertProblematic(AGENT_NAME,fileMetadata)
+                          if resInsert['OK']:
                             gLogger.info("LFCvsSEAgent.execute: Successfully added to IntegrityDB.")
                             gLogger.error("Change the status in the LFC,ProcDB....")
                           else:
