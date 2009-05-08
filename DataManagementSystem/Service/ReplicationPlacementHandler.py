@@ -22,15 +22,14 @@ class ReplicationPlacementHandler(TransformationHandler):
     self.setDatabase(placementDB)
     TransformationHandler.__init__(self,*args,**kargs)
 
-  types_publishTransformation = []
-  def export_publishTransformation(self, transName, desciption,longDesription, type, plugin, fileMask):
+  types_publishTransformation = [ StringType, StringType, StringType, StringType, IntType, BooleanType, DictType, StringType, StringType, StringType ]
+  def export_publishTransformation( self,transName,description,longDescription,fileMask='',groupsize=0,update=False,bkQuery = {},plugin='',transGroup='',transType=''):
     """ Publish new transformation in the TransformationDB
     """
     authorDN = self._clientTransport.peerCredentials['DN']
-    #authorName = self._clientTransport.peerCredentials['user']
     authorGroup = self._clientTransport.peerCredentials['group']
     try:
-      res = placementDB.addTransformation(transName,desciption,longDesription,authorDN,authorGroup,type,plugin,'ReplicationPlacementAgent',fileMask)
+      res = placementDB.addTransformation(transName,description,longDescription,authorDN,authorGroup,transType,plugin,'ReplicationPlacementAgent',fileMask,bkQuery,transGroup)
       if res['OK']:
         message = 'Transformation created'
         res = self.database.updateTransformationLogging(transName,message,authorDN)
