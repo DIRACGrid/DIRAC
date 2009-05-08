@@ -95,7 +95,8 @@ class ReplicationScheduler(Agent):
       return S_OK()
     requestString = res['Value']['RequestString']
     requestName = res['Value']['RequestName']
-    gLogger.info("ReplicationScheduler._execute: Obtained Request %s from RequestDB." % requestName)
+    infoStr = "ReplicationScheduler._execute: Obtained Request %s from RequestDB." % (requestName)
+    gLogger.info(infoStr)
 
     ######################################################################################
     #
@@ -176,6 +177,7 @@ class ReplicationScheduler(Agent):
         return S_ERROR(errStr)
       for lfn,failure in res['Value']['Failed'].items():
         gLogger.error("ReplicationScheduler._execute: Failed to get replicas.",'%s: %s' % (lfn,failure))
+        oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Failed')
       replicas = res['Value']['Successful']
       if not replicas.keys():
         gLogger.error("ReplicationScheduler._execute: Failed to get replica information for all files.")
@@ -194,6 +196,7 @@ class ReplicationScheduler(Agent):
         return S_ERROR(errStr)
       for lfn,failure in res['Value']['Failed'].items():
         gLogger.error('ReplicationScheduler._execute: Failed to get file size.','%s: %s' % (lfn,failure))
+        oRequest.setSubRequestFileAttributeValue(ind,'transfer',lfn,'Status','Failed')
       metadata = res['Value']['Successful']
       if not metadata.keys():
         gLogger.error("ReplicationScheduler._execute: Failed to get metadata for all files.")
@@ -373,20 +376,20 @@ class StrategyHandler:
       if len(elements) > 1:
         self.sigma = float(elements[-1])
         print 'SET self.sigma TO BE %s' % self.sigma
-      if sourceSE:
-        tree = self.__dynamicThroughput([sourceSE],targetSEs)
+      if sourceSE == 'None':
+        tree = self.__dynamicThroughput(replicas.keys(),targetSEs)
       else:
-        tree = self.__dynamicThroughput(replica.keys(),targetSEs)
+        tree = self.__dynamicThroughput([sourceSE],targetSEs)
 
     elif re.search('MinimiseTotalWait',strategy):
       elements = strategy.split('_')
       if len(elements) > 1:
         self.sigma = float(elements[-1])
         print 'SET self.sigma TO BE %s' % self.sigma
-      if sourceSE:
-        tree = self.__minimiseTotalWait([sourceSE],targetSEs)
+      if sourceSE == 'None':
+        tree = self.__minimiseTotalWait(replicas.keys(),targetSEs)
       else:
-        tree = self.__minimiseTotalWait(replica.keys(),targetSEs)
+        tree = self.__minimiseTotalWait([sourceSE],targetSEs)
 
     elif strategy == 'Swarm':
       tree = self.__swarm(targetSEs[0],replicas)
