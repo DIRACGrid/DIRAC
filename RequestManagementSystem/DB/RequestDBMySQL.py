@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.34 2009/02/05 10:55:19 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.35 2009/05/08 14:35:51 acsmith Exp $
 
 """ RequestDBMySQL is the MySQL plug in for the request DB
 """
 
-__RCSID__ = "$Id: RequestDBMySQL.py,v 1.34 2009/02/05 10:55:19 acsmith Exp $"
+__RCSID__ = "$Id: RequestDBMySQL.py,v 1.35 2009/05/08 14:35:51 acsmith Exp $"
 
 from DIRAC.Core.Base.DB import DB
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
@@ -459,7 +459,7 @@ class RequestDBMySQL(DB):
       fileAttributes = ['SubRequestID']
       attributeValues = [subRequestID]
       for fileAttribute,attributeValue in fileDict.items():
-        if not fileAttribute == 'FileID':
+        if not fileAttribute in ['FileID','TargetSE']:
           if attributeValue:
             fileAttributes.append(fileAttribute)
             attributeValues.append(attributeValue)
@@ -468,6 +468,7 @@ class RequestDBMySQL(DB):
         attributeValues.append('Waiting')
       res = self._insert('Files',fileAttributes,attributeValues)
       if not res['OK']:
+        gLogger.error('Failed to insert file into db',res['Message'])
         return S_ERROR('Failed to insert file into db')
     return S_OK()
 
@@ -537,7 +538,7 @@ class RequestDBMySQL(DB):
     if res['OK']:
       return res
     else:
-      return S_ERROR('RequestDB.setRequestAttribute: failed to set attribute')
+      return S_ERROR('RequestDB.setSubRequestAttribute: failed to set attribute')
 
   def _setSubRequestLastUpdate(self,subRequestID):
     req = "UPDATE SubRequests SET LastUpdate=UTC_TIMESTAMP() WHERE  RequestID=%s AND SubRequestID='%s';" % (requestID,subRequestID)
