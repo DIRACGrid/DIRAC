@@ -9,7 +9,7 @@ class TransformationPlugin:
     self.valid = True
     self.params = False
     self.data = False
-    supportedPlugins = ['LoadBalance','Automatic','Broadcast']
+    supportedPlugins = ['LoadBalance','Automatic','Broadcast','MCBroadcast']
     if not plugin in supportedPlugins:
       self.valid = False
     else:
@@ -34,22 +34,34 @@ class TransformationPlugin:
     if not self.params:
       return S_ERROR("TransformationPlugin._MCBroadcast: The 'MCBroadcast' plugin requires additional parameters.")
 
-    sourceSEs = self.params['SourceSE'].split(',')
-    targetSEs = self.params['TargetSE'].split(',')
     destinations = int(self.params['Destinations'])
 
     seFiles = {}
     for lfn,se in self.data:
-      random.shuffle(targetSEs)
-      selectedTargets = 0
-      if se in sourceSEs:
-        sourceSite = se.split('_')[0].split('-')[0]
-        targets = []
-        for targetSE in targetSEs:
-          if not targetSE.startswith(sourceSite):
-            if selectedTargets < destinations:
+      lfnTargetSEs = self.params['TargetSE'].split(',')
+      random.shuffle(lfnTargetSEs)
+      lfnSourceSEs = self.params['SourceSE'].split(',')
+      random.shuffle(lfnSourceSEs)
+      sourceSites = [se.split('_')[0].split('-')[0]]
+      if se in lfnSourceSEs:
+        # If the file is not at CERN then it should be
+        if not 'CERN' in sourceSites:
+          targets = ['CERN_MC_M-DST']
+          sourceSites.append('CERN')
+        # Otherwise make sure it is at another tape SE
+        else:
+          otherTape = se
+          while otherTape == se:
+            random.shuffle(lfnSourceSEs) 
+            otherTape = lfnSourceSEs[-1]
+          targets = [otherTape]
+          sourceSites.append(otherTape.split('_')[0].split('-')[0])
+        for targetSE in lfnTargetSEs:
+          possibleTargetSite = targetSE.split('_')[0].split('-')[0]
+          if not possibleTargetSite in sourceSites: 
+            if len(sourceSites) < destinations:
               targets.append(targetSE)
-              selectedTargets+=1
+              sourceSites.append(possibleTargetSite)
         strTargetSE = ','.join(targets)
         if not seFiles.has_key(se):
           seFiles[se] = {}
