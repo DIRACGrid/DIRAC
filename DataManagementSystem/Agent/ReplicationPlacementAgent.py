@@ -11,6 +11,8 @@ from DIRAC.DataManagementSystem.Client.Catalog.PlacementDBClient import Placemen
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
+from DIRAC.Core.Utilities.List import sortList
 
 import time
 from types import *
@@ -26,6 +28,8 @@ class ReplicationPlacementAgent(Agent):
 
   def initialize(self):
     result = Agent.initialize(self)
+    self.checkLFC = gConfig.getValue(self.section+'/CheckLFCFlag','yes')
+    self.shifterDN = gConfig.getValue('/Operations/Production/ShiftManager','') 
     self.transferDBUrl = PathFinder.getServiceURL('RequestManagement/centralURL')
     self.TransferDB = RequestClient()
     self.DataLog = DataLoggingClient()
@@ -34,6 +38,11 @@ class ReplicationPlacementAgent(Agent):
 
   def execute(self):
     gMonitor.addMark('Iteration',1)
+
+    result = setupShifterProxyInEnv( "DataManager")
+    if not result[ 'OK' ]:
+      self.log.error("Can't get shifter's proxy: %s" % result[ 'Message' ])
+      return result
 
     transName = gConfig.getValue(self.section+'/Transformation','All')
     if transName == 'All':
@@ -100,7 +109,15 @@ class ReplicationPlacementAgent(Agent):
       gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
     data = res['Value']
-    gLogger.info("ReplicationPlacementAgent.processTransformation: %s files found for transformation '%s'." % (len(data),transName))
+
+    if self.checkLFC == 'yes' and data:
+      result = self.checkDataWithLFC(transName,data)
+      if not res['OK']:
+        errStr = "ReplicationPlacementAgent.processTransformation: Failed to check input data against LFC."
+        gLogger.error(errStr,res['Message'])
+        return S_ERROR(errStr)  
+      data = result['Value']
+    gLogger.info("ReplicationPlacementAgent.processTransformation: %s replicas found for transformation '%s'." % (len(data),transName))
 
     if not transDict.has_key('Plugin'):
       errStr = "ReplicationPlacementAgent.processTransformation: No plugin defined."
@@ -190,3 +207,46 @@ class ReplicationPlacementAgent(Agent):
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
     return S_OK(oPlugin)
+
+  def checkDataWithLFC(self,transName,data):
+    """ Check the lfns and replicas with the LFC catalog
+    """
+    # Sort files by LFN
+    datadict = {}
+    for lfn,se in data:
+      if not datadict.has_key(lfn):
+        datadict[lfn] = []
+      datadict[lfn].append(se)
+
+    lfns = datadict.keys()
+    start = time.time()
+    fc = FileCatalog()   
+    result = fc.getReplicas(lfns,self.shifterDN)
+    delta = time.time() - start
+    gLogger.verbose('LFC results for %d files obtained in %.2f seconds' % (len(lfns),delta))
+    lfc_datadict = {}
+    lfc_data = []
+    if not result['OK']:
+      return result
+    replicas = result['Value']['Successful']
+    for lfn, replicaDict in replicas.items():
+      lfc_datadict[lfn] = []
+      for se,pfn in replicaDict.items():
+        lfc_datadict[lfn].append(se)
+        lfc_data.append((lfn,se))   
+    lfc_lfns = lfc_datadict.keys() 
+
+    # Check all the input files if they are known by LFC
+    missing_lfns = []
+    for lfn in lfns: 
+      if lfn not in lfc_lfns:
+        missing_lfns.append(lfn)
+        gLogger.warn('LFN: %s not found in the LFC' % lfn)
+    if missing_lfns:
+      # Mark this file in the transformation
+      PlacementDB = RPCClient("DataManagement/PlacementDB")
+      result = PlacementDB.setFileStatusForTransformation(transName,'MissingLFC',missing_lfns)
+      if not result['OK']:
+        gLogger.warn(result['Message'])
+        
+    return S_OK(lfc_data)
