@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.54 2009/05/01 18:37:33 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.55 2009/05/10 14:00:53 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.54 2009/05/01 18:37:33 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.55 2009/05/10 14:00:53 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -96,6 +96,7 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB               import JobDB
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.FrameworkSystem.Client.NotificationClient       import NotificationClient
 from DIRAC.Core.Security.CS                                import getPropertiesForGroup
+from DIRAC.Core.Security.Misc                              import getProxyInfoAsString
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import outputSandboxFiles
 
 from DIRAC.Core.Utilities.ThreadPool                       import ThreadPool
@@ -991,11 +992,15 @@ class PilotDirector:
         elif result['Value'][0] != 0:
           if re.search('the server is temporarily drained',' '.join(result['Value'][1:3])):
             return
+          if re.search('System load is too high:',' '.join(result['Value'][1:3])):
+            return
           subject    = "%s: error executing %s"  % ( rb, name )
         else:
           return
         msg += ' '.join( command )
         msg += '\nreturns: %s\n' % str(result['Value'][0]) +  '\n'.join( result['Value'][1:3] )
+        msg += '\nUsing Proxy:\n' + getProxyInfoAsString( proxy )['Value']
+
         #msg += '\nUsing Proxy:\n' + gProxyManager.
 
         ticketTime = self.errorClearTime + self.errorTicketTime
