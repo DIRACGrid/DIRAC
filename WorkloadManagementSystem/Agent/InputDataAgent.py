@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.35 2009/04/18 18:26:57 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.36 2009/05/10 19:48:16 atsareg Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.35 2009/04/18 18:26:57 rgracian Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.36 2009/05/10 19:48:16 atsareg Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -30,6 +30,7 @@ class InputDataAgent(OptimizerModule):
     #this will ignore failover SE files
     self.diskSE            = self.am_getOption( '/DiskSE',['-disk','-DST','-USER'] )
     self.tapeSE            = self.am_getOption( '/TapeSE',['-tape','-RDST','-RAW'] )
+    self.checkFileMetadata = self.am_getOption( '/CheckFileMetadata',True )
 
     #Define the shifter proxy needed
     self.am_setModuleParam( "shifterProxy", "ProductionManager" )
@@ -80,7 +81,7 @@ class InputDataAgent(OptimizerModule):
     start = time.time()
     replicas = self.fileCatalog.getReplicas(lfns)
     timing = time.time() - start
-    self.log.info('LFC Lookup Time: %.2f seconds ' % (timing) )
+    self.log.info('LFC Replicas Lookup Time: %.2f seconds ' % (timing) )
     if not replicas['OK']:
       self.log.warn(replicas['Message'])
       return replicas
@@ -110,28 +111,35 @@ class InputDataAgent(OptimizerModule):
       return S_ERROR('Input Data Not Available')
 
     inputData = catalogResult['Successful']
+    start = time.time()
     siteCandidates = self.__getSiteCandidates(inputData)
+    timing = time.time() - start
+    self.log.info('Site candidate evaluation time: %.2f seconds ' % (timing) )
     if not siteCandidates['OK']:
       self.log.warn(siteCandidates['Message'])
       return siteCandidates
 
-    guids = True
-    guidDict = self.fileCatalog.getFileMetadata(lfns)
-    if not guidDict['OK']:
-      self.log.warn(guidDict['Message'])
-      guids = False
+    if self.checkFileMetadata:
+      guids = True
+      start = time.time()
+      guidDict = self.fileCatalog.getFileMetadata(lfns)
+      timing = time.time() - start
+      self.log.info('LFC Metadata Lookup Time: %.2f seconds ' % (timing) )
 
-    failed = guidDict['Value']['Failed']
-    if failed:
-      self.log.warn('Failed to establish some GUIDs')
-      self.log.warn(failed)
-      guids = False
+      if not guidDict['OK']:
+        self.log.warn(guidDict['Message'])
+        guids = False
 
-    if guids:
-      for lfn,reps in replicas['Value']['Successful'].items():
-        guidDict['Value']['Successful'][lfn].update(reps)
+      failed = guidDict['Value']['Failed']
+      if failed:
+        self.log.warn('Failed to establish some GUIDs')
+        self.log.warn(failed)
+        guids = False
 
-      replicas = guidDict
+      if guids:
+        for lfn,reps in replicas['Value']['Successful'].items():
+          guidDict['Value']['Successful'][lfn].update(reps)
+        replicas = guidDict
 
     result = {}
     result['Value'] = replicas
