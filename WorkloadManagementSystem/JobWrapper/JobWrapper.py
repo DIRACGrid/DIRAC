@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.102 2009/05/03 14:08:50 rgracian Exp $
+# $Id: JobWrapper.py,v 1.103 2009/05/10 19:58:02 atsareg Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.102 2009/05/03 14:08:50 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.103 2009/05/10 19:58:02 atsareg Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -556,7 +556,10 @@ class JobWrapper:
     if failedGUIDs:
       self.log.info('The following file(s) were found not to have a GUID:\n%s' %(string.join(failedGUIDs,',\n')))
 
-    return replicas
+    if failedReplicas or failedGUIDs:
+      return S_ERROR('File metadata is not available')
+    else:
+      return replicas
 
   #############################################################################
   def __getReplicaMetadata(self,lfns):
