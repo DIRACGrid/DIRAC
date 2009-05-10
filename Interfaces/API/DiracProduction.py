@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.63 2009/04/24 11:28:30 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.64 2009/05/10 20:24:57 acsmith Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.63 2009/04/24 11:28:30 acsmith Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.64 2009/05/10 20:24:57 acsmith Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -62,7 +62,7 @@ class DiracProduction:
                         'TransformationName':'Name','Type':'Type'}
     self.prodAdj = 22
     self.proxy = None
-    self.commands = {'start':['Active','Manual'],'stop':['Stopped','Manual'],'automatic':['Active','Automatic'],'manual':['Active','Manual'],'completed':['Completed','Manual'],'cleaning':['Cleaning','Manual'],'deleted':['Deleted','Manual'],'archived':['Archived','Manual']}
+    self.commands = {'start':['Active','Manual'],'stop':['Stopped','Manual'],'automatic':['Active','Automatic'],'manual':['Active','Manual'],'completed':['Completed','Manual'],'cleaning':['Cleaning','Manual'],'flush':['Flush','Automatic'],'deleted':['Deleted','Manual'],'archived':['Archived','Manual']}
 
   #############################################################################
   def getAllProductions(self,printOutput=False):
