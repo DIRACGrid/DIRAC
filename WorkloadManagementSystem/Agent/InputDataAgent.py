@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.36 2009/05/10 19:48:16 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.37 2009/05/11 10:41:06 atsareg Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.36 2009/05/10 19:48:16 atsareg Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.37 2009/05/11 10:41:06 atsareg Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -42,6 +42,10 @@ class InputDataAgent(OptimizerModule):
       msg = 'Failed to create LcgFileCatalogClient with exception:'
       self.log.fatal(msg,str(x))
       return S_ERROR(msg+str(x))
+      
+    self.SEToSiteMapping = {}
+    self.lastCScheck = 0
+    self.cacheLength = 600  
 
     return S_OK()
 
@@ -145,6 +149,26 @@ class InputDataAgent(OptimizerModule):
     result['Value'] = replicas
     result['SiteCandidates'] = siteCandidates['Value']
     return S_OK(result)
+    
+  #############################################################################
+  def __getSitesForSE(self,se):
+    """ Returns a list of sites having the given SE as a local one.
+        Uses the local cache of the site-se information  
+    """  
+    
+    # Empty the cache if too old
+    if (time.time() - self.lastCScheck) > self.cacheLength:
+      self.log.verbose('Resetting the SE to site mapping cache')
+      self.SEToSiteMapping = {}
+      self.lastCScheck = time.time()
+    
+    if se not in self.SEToSiteMapping:
+      sites = getSitesForSE(se)
+      if sites['OK']:
+        self.SEToSiteMapping[se] = list(sites['Value']) 
+      return sites
+    else:
+      return S_OK(self.SEToSiteMapping[se])   
 
   #############################################################################
   def __getSiteCandidates(self,inputData):
@@ -152,14 +176,15 @@ class InputDataAgent(OptimizerModule):
        job input data requirement.  For each site candidate, the number of files
        on disk and tape is resolved.
     """
+        
     fileSEs = {}
     for lfn,replicas in inputData.items():
       siteList = []
       for se in replicas.keys():
-        sites = getSitesForSE(se)
+        sites = self.__getSitesForSE(se)
         if sites['OK']:
           siteList += sites['Value']
-      fileSEs[lfn] = siteList
+      fileSEs[lfn] = siteList 
 
     siteCandidates = []
     i = 0
@@ -184,7 +209,7 @@ class InputDataAgent(OptimizerModule):
 
     for lfn,replicas in inputData.items():
       for se,surl in replicas.items():
-        sites = getSitesForSE(se)
+        sites = self.__getSitesForSE(se)
         if sites['OK']:
           for site in sites['Value']:
             if site in siteCandidates:
