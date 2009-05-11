@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.17 2009/04/28 13:45:51 acasajus Exp $
-__RCSID__ = "$Id: Dispatcher.py,v 1.17 2009/04/28 13:45:51 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.18 2009/05/11 12:48:24 acasajus Exp $
+__RCSID__ = "$Id: Dispatcher.py,v 1.18 2009/05/11 12:48:24 acasajus Exp $"
 
 import DIRAC
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -204,11 +204,6 @@ class Dispatcher:
     if proposalTuple[2]:
       clientTransport.setExtraCredentials( proposalTuple[2] )
     requestedService = proposalTuple[0][0]
-    if requestedService not in self.servicesDict:
-      gLogger.error( "Client is trying to connect to an invalid service", "%s is not one of %s"  % ( requestedService,
-                                                                                                     self.servicesDict.keys() ) )
-      clientTransport.sendData( S_ERROR( "%s is not up in this service" % requestedService ) )
-      return
     if not self._authorizeClientProposal( requestedService, proposalTuple[1], clientTransport ):
       return
     try:
@@ -233,6 +228,11 @@ class Dispatcher:
     """
     Authorize the action being proposed by the client
     """
+    if requestedService not in self.servicesDict:
+      gLogger.error( "Client is trying to connect to an invalid service", "%s is not one of %s"  % ( requestedService,
+                                                                                                     self.servicesDict.keys() ) )
+      clientTransport.sendData( S_ERROR( "%s is not up in this service" % requestedService ) )
+      return
     #serviceInfoDict = self._getServiceInfo( service )
     if actionTuple[0] == 'RPC':
       action = actionTuple[1]
