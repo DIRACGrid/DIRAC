@@ -11,11 +11,12 @@ class JobPlotter(BaseReporter):
 
   def _translateGrouping( self, grouping ):
     if grouping == "Country":
-      return [ 'upper( substring( Site, locate( ".", Site, length( Site ) - 4 ) + 1 ) )' ]
+      sqlRepr = 'upper( substring( %s, locate( ".", %s, length( %s ) - 4 ) + 1 ) )'
+      return ( sqlRepr, [ 'Site', 'Site', 'Site' ], sqlRepr )
     elif grouping == "Grid":
-      return [ 'substring_index( Site, ".", 1 )' ]
+      return ( 'substring_index( %s, ".", 1 )', [ 'Site' ] )
     else:
-      return [ grouping ]
+      return ( "%s", [ grouping ] )
 
   def _reportCPUEfficiency( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s), SUM(%s)",
