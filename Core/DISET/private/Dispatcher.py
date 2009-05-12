@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.18 2009/05/11 12:48:24 acasajus Exp $
-__RCSID__ = "$Id: Dispatcher.py,v 1.18 2009/05/11 12:48:24 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.19 2009/05/12 10:10:38 acasajus Exp $
+__RCSID__ = "$Id: Dispatcher.py,v 1.19 2009/05/12 10:10:38 acasajus Exp $"
 
 import DIRAC
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -228,10 +228,10 @@ class Dispatcher:
     """
     Authorize the action being proposed by the client
     """
-    if requestedService not in self.servicesDict:
-      gLogger.error( "Client is trying to connect to an invalid service", "%s is not one of %s"  % ( requestedService,
+    if serviceName not in self.servicesDict:
+      gLogger.error( "Client is trying to connect to an invalid service", "%s is not one of %s"  % ( serviceName,
                                                                                                      self.servicesDict.keys() ) )
-      clientTransport.sendData( S_ERROR( "%s is not up in this service" % requestedService ) )
+      clientTransport.sendData( S_ERROR( "%s is not up in this service" % serviceName ) )
       return
     #serviceInfoDict = self._getServiceInfo( service )
     if actionTuple[0] == 'RPC':
