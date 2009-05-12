@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.14 2009/05/12 17:30:21 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.14 2009/05/12 17:30:21 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.15 2009/05/12 17:34:06 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.15 2009/05/12 17:34:06 acasajus Exp $"
 
 import datetime, time
 import types
@@ -798,14 +798,16 @@ class AccountingDB(DB):
     cmd = "SELECT"
     sqlLinkList = []
     #Check if groupFields and orderFields are in ( "%s", ( field1, ) ) form
-    try:
-      groupFields[0] % tuple( groupFields[1] )
-    except Exception, e:
-      return S_ERROR( "Cannot format properly group string: %s" % str(e) )
-    try:
-      orderFields[0] % tuple( orderFields[1] )
-    except Exception, e:
-      return S_ERROR( "Cannot format properly order string: %s" % str(e) )
+    if groupFields:
+      try:
+        groupFields[0] % tuple( groupFields[1] )
+      except Exception, e:
+        return S_ERROR( "Cannot format properly group string: %s" % str(e) )
+    if orderFields:
+      try:
+        orderFields[0] % tuple( orderFields[1] )
+      except Exception, e:
+        return S_ERROR( "Cannot format properly order string: %s" % str(e) )
     #Calculate fields to retrieve
     realFieldList = []
     for rawFieldName in selectFields[1]:
