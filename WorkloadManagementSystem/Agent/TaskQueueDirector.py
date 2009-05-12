@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.55 2009/05/10 14:00:53 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.56 2009/05/12 14:04:08 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -84,7 +84,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.55 2009/05/10 14:00:53 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.56 2009/05/12 14:04:08 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -1009,9 +1009,9 @@ class PilotDirector:
           mailAddress = self.alarmMailAddress
           # the RB was already detected failing a short time ago
           msg        = 'Submit GGUS Ticket for this error if not already opened\n' + \
-                       'It has been failing at least for %s hours\n' % ticketTime + msg
+                       'It has been failing at least for %s hours\n' % ticketTime/60/60 + msg
         else:
-          self.__ticketsWMSCache.add( rb, ticketTime/60/60 )
+          self.__ticketsWMSCache.add( rb, ticketTime )
 
         if mailAddress:
           result = NotificationClient().sendMail(mailAddress,subject,msg,fromAddress=self.mailFromAddress)
