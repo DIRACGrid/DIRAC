@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.15 2009/05/12 17:34:06 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.15 2009/05/12 17:34:06 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.16 2009/05/12 17:35:51 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.16 2009/05/12 17:35:51 acasajus Exp $"
 
 import datetime, time
 import types
@@ -826,7 +826,9 @@ class AccountingDB(DB):
     #Calculate tables needed
     sqlFromList = [ "`%s`" % tableName ]
     for key in self.dbCatalog[ typeName ][ 'keys' ]:
-      if key in condDict or key in groupFields[1] or key in selectFields[1] or key in orderFields[1]:
+      if key in condDict or key in selectFields[1]  \
+          or ( groupFields and key in groupFields[1] ) \
+          or ( orderFields and key in orderFields[1] ):
         sqlFromList.append( "`%s`" % self.__getTableName( "key", typeName, key ) )
     cmd += " FROM %s" % ", ".join( sqlFromList )
     #Calculate time conditions
