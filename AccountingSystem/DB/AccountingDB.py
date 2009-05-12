@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.12 2009/04/27 14:43:27 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.12 2009/04/27 14:43:27 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.13 2009/05/12 17:10:10 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.13 2009/05/12 17:10:10 acasajus Exp $"
 
 import datetime, time
 import types
@@ -744,10 +744,10 @@ class AccountingDB(DB):
     missing = self.__checkFieldsExistsInType( typeName, condDict, tableType )
     if missing:
       return S_ERROR( "Condition keys %s are not defined" % ", ".join( missing ) )
-    missing = self.__checkFieldsExistsInType( typeName, groupFields, tableType )
+    missing = self.__checkFieldsExistsInType( typeName, groupFields[1], tableType )
     if missing:
       return S_ERROR( "Group fields %s are not defined" % ", ".join( missing ) )
-    missing = self.__checkFieldsExistsInType( typeName,  orderFields, tableType )
+    missing = self.__checkFieldsExistsInType( typeName,  orderFields[1], tableType )
     if missing:
       return S_ERROR( "Order fields %s are not defined" % ", ".join( missing ) )
     return S_OK()
@@ -765,6 +765,9 @@ class AccountingDB(DB):
                     key -> name of the field
                     value -> list of possible values
         groupFields -> list of fields to group by
+                    ( "%s, %s, %s", ( "field1name", "field2name", "field3name" ) )
+        orderFields -> list of fields to order by
+                    ( "%s, %s, %s", ( "field1name", "field2name", "field3name" ) )
     """
     if typeName not in self.dbCatalog:
       return S_ERROR( "Type %s is not defined" % typeName )
@@ -792,6 +795,15 @@ class AccountingDB(DB):
     tableName = self.__getTableName( tableType, typeName )
     cmd = "SELECT"
     sqlLinkList = []
+    #Check if groupFields and orderFields are in ( "%s", ( field1, ) ) form
+    try:
+      groupFields[0] % tuple( groupFields[1] )
+    except Exception, e:
+      return S_ERROR( "Cannot format properly group string: %s" % str(e) )
+    try:
+      orderFields[0] % tuple( orderFields[1] )
+    except Exception, e:
+      return S_ERROR( "Cannot format properly order string: %s" % str(e) )
     #Calculate fields to retrieve
     realFieldList = []
     for rawFieldName in selectFields[1]:
@@ -810,7 +822,7 @@ class AccountingDB(DB):
     #Calculate tables needed
     sqlFromList = [ "`%s`" % tableName ]
     for key in self.dbCatalog[ typeName ][ 'keys' ]:
-      if key in condDict or key in groupFields or key in selectFields[1]:
+      if key in condDict or key in groupFields[1] or key in selectFields[1] or key in orderFields[1]:
         sqlFromList.append( "`%s`" % self.__getTableName( "key", typeName, key ) )
     cmd += " FROM %s" % ", ".join( sqlFromList )
     #Calculate time conditions
@@ -847,36 +859,25 @@ class AccountingDB(DB):
       sqlCondList.append( "( %s )" % " OR ".join( sqlORList ) )
     if sqlCondList:
       cmd += " AND %s" % " AND ".join( sqlCondList )
-    #Calculate grouping
-    sqlGroupList = []
-    if groupFields:
-      for field in groupFields:
-        if field in self.dbCatalog[ typeName ][ 'keys' ]:
-          List.appendUnique( sqlLinkList, "`%s`.`%s` = `%s`.`id`" % ( tableName,
-                                                                      field,
-                                                                      self.__getTableName( "key", typeName, field )
-                                                                    ) )
-          sqlGroupList.append( "`%s`.`value`" % self.__getTableName( "key", typeName, field ) )
-        else:
-          sqlGroupList.append( "`%s`.`%s`" % ( tableName, field ) )
-    #Calculate ordering
-    sqlOrderList = []
-    if orderFields:
-      for field in orderFields:
-        if field in self.dbCatalog[ typeName ][ 'keys' ]:
-          List.appendUnique( sqlLinkList, "`%s`.`%s` = `%s`.`id`" % ( tableName,
-                                                                      field,
-                                                                      self.__getTableName( "key", typeName, field )
-                                                                    ) )
-          sqlOrderList.append( "`%s`.`value`" % self.__getTableName( "key", typeName, field ) )
-        else:
-          sqlOrderList.append( "`%s`.`%s`" % ( tableName, field ) )
+    #Calculate grouping and sorting
+    for preGenFields in ( groupFields, orderFields ):
+      if preGenFields:
+        for i in range( len( preGenFields[1] ) ):
+          field = preGenFields[1][i]
+          if field in self.dbCatalog[ typeName ][ 'keys' ]:
+            List.appendUnique( sqlLinkList, "`%s`.`%s` = `%s`.`id`" % ( tableName,
+                                                                        field,
+                                                                        self.__getTableName( "key", typeName, field )
+                                                                      ) )
+            preGenFields[1][i] = "`%s`.id" % self.__getTableName( "key", typeName, field )
+          else:
+            preGenFields[1][i] =  "`%s`.`%s`" % ( tableName, field )
     if sqlLinkList:
       cmd += " AND %s" % " AND ".join( sqlLinkList )
-    if sqlGroupList:
-      cmd += " GROUP BY %s" % ", ".join( sqlGroupList )
-    if sqlOrderList:
-      cmd += " ORDER BY %s" % ", ".join( sqlOrderList )
+    if groupFields:
+      cmd += " GROUP BY %s" % ( groupFields[0] % tuple( groupFields[1] ) )
+    if orderFields:
+      cmd += " ORDER BY %s" % ( orderFields[0] % tuple( orderFields[1] ) )
     return self._query( cmd, conn = connObj )
 
   @gSynchro

@@ -27,7 +27,7 @@ class BaseReporter(DBUtils):
     self._extraArgs = extraArgs
 
   def _translateGrouping( self, grouping ):
-    return [ grouping ]
+    return ( "%s", [ grouping ] )
 
   def generate( self, reportRequest ):
     reportRequest[ 'groupingFields' ] = self._translateGrouping( reportRequest[ 'grouping' ] )
@@ -92,13 +92,14 @@ class BaseReporter(DBUtils):
       if keyword in preCondDict:
         condDict[ keyword ] = preCondDict[ keyword ]
     #Query!
+    timeGrouping = ( "%%s, %s" % groupingFields[0], [ 'startTime' ] + groupingFields[1] )
     retVal = self._retrieveBucketedData( self._typeName,
                                           startTime,
                                           endTime,
                                           selectFields,
                                           condDict,
-                                          [ 'startTime' ] + groupingFields,
-                                          [ 'startTime' ]
+                                          timeGrouping,
+                                          ( '%s', [ 'startTime' ] )
                                           )
     if not retVal[ 'OK' ]:
       return retVal
@@ -148,11 +149,14 @@ class BaseReporter(DBUtils):
         dataDict[ key ] = reduceFunc( dataDict[ key ] )
     return S_OK( dataDict )
 
-  def _getSQLStringForGrouping( self, groupingFields ):
-    if len( groupingFields ) == 1:
-      return "%s"
+  def _getSelectStringForGrouping( self, groupingFields ):
+    if len( groupingFields ) == 3:
+      return groupingFields[2]
+    if len( groupingFields[1] ) == 1:
+      #If there's only one field, then we send the sql representation in pos 0
+      return groupingFields[0]
     else:
-      return "CONCAT( %s, ' -> ', %s )"
+      return "CONCAT( %s )" % ", ".join( [ "%s, '-'" % sqlRep for sqlRep in groupingFields[0] ] )
 
   def __checkPlotMetadata( self, metadata ):
     if self._EA_WIDTH in self._extraArgs and self._extraArgs[ self._EA_WIDTH ]:

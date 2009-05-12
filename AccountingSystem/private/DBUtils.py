@@ -26,8 +26,10 @@ class DBUtils:
         condDict -> conditions for the query
                     key -> name of the key field
                     value -> list of possible values
-        groupFields -> list of fields to group by
-        orderFields -> list of fields to order by
+        groupFields -> list of fields to group by, can be in form
+                        ( "%s, %s", ( "field1name", "field2name", "field3name" ) )
+        orderFields -> list of fields to order by, can be in form
+                       ( "%s, %s", ( "field1name", "field2name", "field3name" )
     """
     typeName = "%s_%s" % ( self._setup, typeName )
     validCondDict = {}

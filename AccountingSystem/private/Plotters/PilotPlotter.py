@@ -10,8 +10,8 @@ class PilotPlotter(BaseReporter):
   _typeKeyFields = [ dF[0] for dF in Pilot().definitionKeyFields ]
 
   def _reportCumulativeNumberOfJobs( self, reportRequest ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
-                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'Jobs'
                                    ]
                    )
@@ -29,7 +29,7 @@ class PilotPlotter(BaseReporter):
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotCumulativeNumberOfJobs( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'Cumulative Jobs by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+    metadata = { 'title' : 'Cumulative Jobs by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
@@ -38,8 +38,8 @@ class PilotPlotter(BaseReporter):
     return self._generateCumulativePlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportNumberOfJobs( self, reportRequest ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
-                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'Jobs'
                                    ]
                    )
@@ -57,7 +57,7 @@ class PilotPlotter(BaseReporter):
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotNumberOfJobs( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'Jobs by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+    metadata = { 'title' : 'Jobs by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
@@ -65,8 +65,8 @@ class PilotPlotter(BaseReporter):
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportCumulativeNumberOfPilots( self, reportRequest ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
-                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'entriesInBucket'
                                    ]
                    )
@@ -84,7 +84,7 @@ class PilotPlotter(BaseReporter):
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotCumulativeNumberOfPilots( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'Cumulative Pilots by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+    metadata = { 'title' : 'Cumulative Pilots by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
@@ -93,8 +93,8 @@ class PilotPlotter(BaseReporter):
     return self._generateCumulativePlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportNumberOfPilots( self, reportRequest ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
-                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'entriesInBucket'
                                    ]
                    )
@@ -112,7 +112,7 @@ class PilotPlotter(BaseReporter):
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotNumberOfPilots( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'Pilots by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+    metadata = { 'title' : 'Pilots by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
@@ -120,8 +120,8 @@ class PilotPlotter(BaseReporter):
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportJobsPerPilot( self, reportRequest ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s), SUM(%s)",
-                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s), SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'Jobs', 'entriesInBucket'
                                    ]
                    )
@@ -141,7 +141,7 @@ class PilotPlotter(BaseReporter):
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotJobsPerPilot( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'Jobs per pilot by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+    metadata = { 'title' : 'Jobs per pilot by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],

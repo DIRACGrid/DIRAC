@@ -9,9 +9,17 @@ class JobPlotter(BaseReporter):
   _typeName = "Job"
   _typeKeyFields = [ dF[0] for dF in Job().definitionKeyFields ]
 
+  def _translateGrouping( self, grouping ):
+    if grouping == "Country":
+      return [ 'upper( substring( Site, locate( ".", Site, length( Site ) - 4 ) + 1 ) )' ]
+    elif grouping == "Grid":
+      return [ 'substring_index( Site, ".", 1 )' ]
+    else:
+      return [ grouping ]
+
   def _reportCPUEfficiency( self, reportRequest ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s), SUM(%s)",
-                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s), SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'CPUTime', 'ExecTime'
                                    ]
                    )
@@ -55,15 +63,15 @@ class JobPlotter(BaseReporter):
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotCPUEfficiency( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'Job CPU efficiency by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+    metadata = { 'title' : 'Job CPU efficiency by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ] }
     return self._generateQualityPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportCPUUsed( self, reportRequest ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/86400",
-                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/86400",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'CPUTime'
                                    ]
                    )
@@ -81,7 +89,7 @@ class JobPlotter(BaseReporter):
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotCPUUsed( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'CPU used by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+    metadata = { 'title' : 'CPU used by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
@@ -90,8 +98,8 @@ class JobPlotter(BaseReporter):
     return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportCPUUsage( self, reportRequest ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/86400",
-                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/86400",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'CPUTime'
                                    ]
                    )
@@ -109,7 +117,7 @@ class JobPlotter(BaseReporter):
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotCPUUsage( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'CPU usage by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+    metadata = { 'title' : 'CPU usage by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
@@ -117,8 +125,8 @@ class JobPlotter(BaseReporter):
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportCumulativeNumberOfJobs( self, reportRequest ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
-                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'entriesInBucket'
                                    ]
                    )
@@ -136,7 +144,7 @@ class JobPlotter(BaseReporter):
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotCumulativeNumberOfJobs( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'Cumulative Jobs by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+    metadata = { 'title' : 'Cumulative Jobs by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
@@ -145,8 +153,8 @@ class JobPlotter(BaseReporter):
     return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportNumberOfJobs( self, reportRequest ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
-                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'entriesInBucket'
                                    ]
                    )
@@ -164,7 +172,7 @@ class JobPlotter(BaseReporter):
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotNumberOfJobs( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'Jobs by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+    metadata = { 'title' : 'Jobs by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
@@ -172,8 +180,8 @@ class JobPlotter(BaseReporter):
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportTotalNumberOfJobs( self, reportRequest ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", SUM(%s)",
-                     reportRequest[ 'groupingFields' ] + [ 'entriesInBucket'
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'entriesInBucket'
                                    ]
                    )
     retVal = self._getSummaryData( reportRequest[ 'startTime' ],
@@ -188,7 +196,7 @@ class JobPlotter(BaseReporter):
     return S_OK( { 'data' : dataDict  } )
 
   def _plotTotalNumberOfJobs( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'Total Number of Jobs by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+    metadata = { 'title' : 'Total Number of Jobs by %s' % reportRequest[ 'grouping' ],
                  'ylabel' : 'Jobs'
                 }
     return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )
@@ -209,8 +217,8 @@ class JobPlotter(BaseReporter):
     return self.__reportFieldSizeinMB( reportRequest, ( "OutputDataSize", "Output data" ) )
 
   def __reportFieldSizeinMB( self, reportRequest, fieldTuple ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/1000000",
-                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength', fieldTuple[0] ]
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/1000000",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength', fieldTuple[0] ]
                    )
     retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
@@ -241,7 +249,7 @@ class JobPlotter(BaseReporter):
     return self.__plotFieldSizeinMB( reportRequest, plotInfo, filename, ( "OutputDataSize", "Output data" ) )
 
   def __plotFieldSizeinMB( self, reportRequest, plotInfo, filename, fieldTuple ):
-    metadata = { 'title' : '%s by %s' % ( fieldTuple[1], " -> ".join( reportRequest[ 'groupingFields' ] ) ),
+    metadata = { 'title' : '%s by %s' % ( fieldTuple[1], reportRequest[ 'grouping' ] ),
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
@@ -255,8 +263,8 @@ class JobPlotter(BaseReporter):
     return self.__reportDataFiles( reportRequest, ( "OutputDataFiles", "Output files" ) )
 
   def __reportDataFiles( self, reportRequest, fieldTuple ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
-                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength', fieldTuple[0] ]
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength', fieldTuple[0] ]
                    )
     retVal = self._getTimedData( reportRequest[ 'startTime' ],
                                 reportRequest[ 'endTime' ],
@@ -278,7 +286,7 @@ class JobPlotter(BaseReporter):
     return self.__plotDataFiles( reportRequest, plotInfo, filename, ( "OutputDataFiles", "Output files" ) )
 
   def __plotDataFiles( self, reportRequest, plotInfo, filename, fieldTuple ):
-    metadata = { 'title' : '%s by %s' % ( fieldTuple[1], " -> ".join( reportRequest[ 'groupingFields' ] ) ),
+    metadata = { 'title' : '%s by %s' % ( fieldTuple[1], reportRequest[ 'grouping' ] ),
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
@@ -286,8 +294,8 @@ class JobPlotter(BaseReporter):
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportTotalCPUUsed( self, reportRequest ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ]) + ", SUM(%s)/86400",
-                     reportRequest[ 'groupingFields' ] + [ 'CPUTime'
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", SUM(%s)/86400",
+                     reportRequest[ 'groupingFields' ][1] + [ 'CPUTime'
                                    ]
                    )
     retVal = self._getSummaryData( reportRequest[ 'startTime' ],
@@ -302,7 +310,7 @@ class JobPlotter(BaseReporter):
     return S_OK( { 'data' : dataDict  } )
 
   def _plotTotalCPUUsed( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'CPU days used by %s' % " -> ".join( reportRequest[ 'groupingFields' ] ) ,
+    metadata = { 'title' : 'CPU days used by %s' % reportRequest[ 'grouping' ],
                  'ylabel' : 'cpu days'
                 }
     return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )

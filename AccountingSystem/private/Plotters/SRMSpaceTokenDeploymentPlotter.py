@@ -37,8 +37,8 @@ class SRMSpaceTokenDeploymentPlotter(BaseReporter):
     return self._historicReport( reportRequest, "ReservedNearline" )
 
   def _historicReport( self, reportRequest, fieldToBeReported ):
-    selectFields = ( self._getSQLStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s/%s)/1073741824",
-                     reportRequest[ 'groupingFields' ] + [ 'startTime', 'bucketLength',
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s/%s)/1073741824",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     fieldToBeReported, 'entriesInBucket'
                                    ]
                    )
@@ -56,39 +56,39 @@ class SRMSpaceTokenDeploymentPlotter(BaseReporter):
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotAvailableSpace( self, reportRequest, plotInfo, filename ):
-    title = 'Available space by %s' % " -> ".join( reportRequest[ 'groupingFields' ] )
+    title = 'Available space by %s' % reportRequest[ 'grouping' ]
     return self._historicPlot( title, reportRequest, plotInfo, filename )
 
   def _plotUsedSpace( self, reportRequest, plotInfo, filename ):
-    title = 'Used space by %s' % " -> ".join( reportRequest[ 'groupingFields' ] )
+    title = 'Used space by %s' % reportRequest[ 'grouping' ]
     return self._historicPlot( title, reportRequest, plotInfo, filename )
 
   def _plotTotalOnlineSpace( self, reportRequest, plotInfo, filename ):
-    title = 'Total online space by %s' % " -> ".join( reportRequest[ 'groupingFields' ] )
+    title = 'Total online space by %s' % reportRequest[ 'grouping' ]
     return self._historicPlot( title, reportRequest, plotInfo, filename )
 
   def _plotUsedOnlineSpace( self, reportRequest, plotInfo, filename ):
-    title = 'Used online space by %s' % " -> ".join( reportRequest[ 'groupingFields' ] )
+    title = 'Used online space by %s' % reportRequest[ 'grouping' ]
     return self._historicPlot( title, reportRequest, plotInfo, filename )
 
   def _plotFreeOnlineSpace( self, reportRequest, plotInfo, filename ):
-    title = 'Free online space by %s' % " -> ".join( reportRequest[ 'groupingFields' ] )
+    title = 'Free online space by %s' % reportRequest[ 'grouping' ]
     return self._historicPlot( title, reportRequest, plotInfo, filename )
 
   def _plotTotalNearlineSpace( self, reportRequest, plotInfo, filename ):
-    title = 'Total nearline space by %s' % " -> ".join( reportRequest[ 'groupingFields' ] )
+    title = 'Total nearline space by %s' % reportRequest[ 'grouping' ]
     return self._historicPlot( title, reportRequest, plotInfo, filename )
 
   def _plotUsedNearlineSpace( self, reportRequest, plotInfo, filename ):
-    title = 'Used nearline space by %s' % " -> ".join( reportRequest[ 'groupingFields' ] )
+    title = 'Used nearline space by %s' % reportRequest[ 'grouping' ]
     return self._historicPlot( title, reportRequest, plotInfo, filename )
 
   def _plotFreeNearlineSpace( self, reportRequest, plotInfo, filename ):
-    title = 'Free nearline space by %s' % " -> ".join( reportRequest[ 'groupingFields' ] )
+    title = 'Free nearline space by %s' % reportRequest[ 'grouping' ]
     return self._historicPlot( title, reportRequest, plotInfo, filename )
 
   def _plotReservedNearlineSpace( self, reportRequest, plotInfo, filename ):
-    title = 'Reserved nearline space by %s' % " -> ".join( reportRequest[ 'groupingFields' ] )
+    title = 'Reserved nearline space by %s' % reportRequest[ 'grouping' ]
     return self._historicPlot( title, reportRequest, plotInfo, filename )
 
   def _historicPlot( self, title, reportRequest, plotInfo, filename ):
