@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.13 2009/05/12 17:10:10 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.13 2009/05/12 17:10:10 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.14 2009/05/12 17:30:21 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.14 2009/05/12 17:30:21 acasajus Exp $"
 
 import datetime, time
 import types
@@ -744,12 +744,14 @@ class AccountingDB(DB):
     missing = self.__checkFieldsExistsInType( typeName, condDict, tableType )
     if missing:
       return S_ERROR( "Condition keys %s are not defined" % ", ".join( missing ) )
-    missing = self.__checkFieldsExistsInType( typeName, groupFields[1], tableType )
-    if missing:
-      return S_ERROR( "Group fields %s are not defined" % ", ".join( missing ) )
-    missing = self.__checkFieldsExistsInType( typeName,  orderFields[1], tableType )
-    if missing:
-      return S_ERROR( "Order fields %s are not defined" % ", ".join( missing ) )
+    if groupFields:
+      missing = self.__checkFieldsExistsInType( typeName, groupFields[1], tableType )
+      if missing:
+        return S_ERROR( "Group fields %s are not defined" % ", ".join( missing ) )
+    if orderFields:
+      missing = self.__checkFieldsExistsInType( typeName,  orderFields[1], tableType )
+      if missing:
+        return S_ERROR( "Order fields %s are not defined" % ", ".join( missing ) )
     return S_OK()
 
 
