@@ -240,7 +240,7 @@ class RAWIntegrityAgent(Agent):
         size = activeFiles[lfn]['Size']
         se = activeFiles[lfn]['SE']
         guid = activeFiles[lfn]['GUID']
-        res = self.ReplicaManager.removePhysicalFile(se,pfn)
+        res = self.ReplicaManager.removePhysicalFile(pfn,se)
         if not res['OK']:
           self.DataLog.addFileRecord(lfn,'RemoveReplicaFailed',se,'','RAWIntegrityAgent')
           gLogger.error("RAWIntegrityAgent.execute: Completely failed to remove pfn from the storage element.", res['Message'])
