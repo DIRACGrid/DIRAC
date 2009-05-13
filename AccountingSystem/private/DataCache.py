@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/DataCache.py,v 1.5 2008/12/11 11:54:54 acasajus Exp $
-__RCSID__ = "$Id: DataCache.py,v 1.5 2008/12/11 11:54:54 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/private/DataCache.py,v 1.6 2009/05/13 11:00:06 acasajus Exp $
+__RCSID__ = "$Id: DataCache.py,v 1.6 2009/05/13 11:00:06 acasajus Exp $"
 
 import os
 import os.path
@@ -42,6 +42,7 @@ class DataCache:
   def __deleteGraph( self, plotDict ):
     try:
       for key in plotDict:
+        gLogger.info( "Deleting plot from cache", key )
         value = plotDict[ key ]
         if value and os.path.isfile( value ):
           os.unlink( value )
