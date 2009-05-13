@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.16 2009/05/12 17:35:51 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.16 2009/05/12 17:35:51 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.17 2009/05/13 10:56:20 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.17 2009/05/13 10:56:20 acasajus Exp $"
 
 import datetime, time
 import types
@@ -875,7 +875,7 @@ class AccountingDB(DB):
                                                                         field,
                                                                         self.__getTableName( "key", typeName, field )
                                                                       ) )
-            preGenFields[1][i] = "`%s`.id" % self.__getTableName( "key", typeName, field )
+            preGenFields[1][i] = "`%s`.Value" % self.__getTableName( "key", typeName, field )
           else:
             preGenFields[1][i] =  "`%s`.`%s`" % ( tableName, field )
     if sqlLinkList:
@@ -884,6 +884,7 @@ class AccountingDB(DB):
       cmd += " GROUP BY %s" % ( groupFields[0] % tuple( groupFields[1] ) )
     if orderFields:
       cmd += " ORDER BY %s" % ( orderFields[0] % tuple( orderFields[1] ) )
+    self.log.verbose( cmd )
     return self._query( cmd, conn = connObj )
 
   @gSynchro
