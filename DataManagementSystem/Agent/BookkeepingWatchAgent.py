@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/BookkeepingWatchAgent.py,v 1.1 2009/05/08 14:30:59 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/BookkeepingWatchAgent.py,v 1.2 2009/05/13 12:22:38 acsmith Exp $
 ########################################################################
 
 """  The Transformation Agent prepares production jobs for processing data
      according to transformation definitions in the Production database.
 """
 
-__RCSID__ = "$Id: BookkeepingWatchAgent.py,v 1.1 2009/05/08 14:30:59 acsmith Exp $"
+__RCSID__ = "$Id: BookkeepingWatchAgent.py,v 1.2 2009/05/13 12:22:38 acsmith Exp $"
 
 from DIRAC.Core.Base.Agent    import Agent
 from DIRAC                    import S_OK, S_ERROR, gConfig, gLogger, gMonitor
@@ -68,8 +68,10 @@ class BookkeepingWatchAgent(Agent):
         
         # Make sure that default values are not passed and int values are converted to strings
         for name,value in bkDict.items():
-          if name == "ProductionID" or name == "EventType" or name == "BkQueryID" :
-            if value == 0:
+          if name == "BkQueryID" :
+            del bkDict[name]
+          elif name == "ProductionID" or name == "EventType":
+            if int(value) == 0:
               del bkDict[name]
             else:
               bkDict[name] = str(value)
@@ -77,7 +79,7 @@ class BookkeepingWatchAgent(Agent):
             if value.lower() == "all":
               del bkDict[name]
               
-        start = time.time()              
+        start = time.time()
         result = bkserver.getFilesWithGivenDataSets(bkDict)    
         rtime = time.time()-start    
         gLogger.verbose('Bk query time: %.2f sec for query %d, transformation %d' % (rtime,bkQueryID,transID) )
