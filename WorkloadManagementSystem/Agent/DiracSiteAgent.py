@@ -19,7 +19,7 @@ import os, sys, re, string, time, urllib
 
 AGENT_NAME = 'WorkloadManagement/DiracSiteAgent'
     
-class CEAgent(Agent):
+class DiracSiteAgent(Agent):
 
   #############################################################################
   def __init__(self):
@@ -258,17 +258,17 @@ export LD_LIBRARY_PATH=
 
   #############################################################################
   def __finish(self,message):
-    """Force the CEAgent to complete gracefully.
+    """Force the Dirac Site Agent to complete gracefully.
     """
-    self.log.info('CEAgent will stop with message "%s", execution complete.' %message)
+    self.log.info('Dirac site agent will stop with message "%s", execution complete.' %message)
     fd = open(self.controlDir+'/stop_agent','w')
-    fd.write('CEAgent Stopped at %s [UTC]' % (time.asctime(time.gmtime())))
+    fd.write('Dirac site agent Stopped at %s [UTC]' % (time.asctime(time.gmtime())))
     fd.close()
     return S_OK(message)
 
   #############################################################################
   def finalize(self):
-    """Force the CEAgent to complete gracefully.
+    """Force the Dirac site agent to complete gracefully.
     """
 
     Agent.finalize(self)
