@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.81 2009/05/04 14:05:43 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.82 2009/05/18 13:10:19 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.81 2009/05/04 14:05:43 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.82 2009/05/18 13:10:19 acasajus Exp $"
 
 import time
 import types
@@ -895,6 +895,7 @@ class TaskQueueDB(DB):
     """
     self.log.info( "Setting priorities to %s@%s TQs" % ( userDN, userGroup ) )
     tqCond = [ "t.OwnerGroup='%s'" % userGroup ]
+    allowBgTQs = gConfig.getValue( "/Security/Groups/%s/AllowBackgroundTQs" % userGroup, False )
     if Properties.JOB_SHARING not in CS.getPropertiesForGroup( userGroup ):
       tqCond.append( "t.OwnerDN='%s'" % userDN )
     tqCond.append( "t.TQId = j.TQId" )
@@ -910,11 +911,15 @@ class TaskQueueDB(DB):
     #Calculate Sum of priorities
     totalPrio = 0
     for k in tqDict:
-      totalPrio += tqDict[ k ]
+      if tqDict[k] > 0.1 or not allowBgTQs:
+        totalPrio += tqDict[ k ]
     #Group by priorities
     prioDict = {}
     for tqId in tqDict:
-      prio = ( share / totalPrio ) * tqDict[ tqId ]
+      if tqDict[ tqId ] > 0.1 or not allowBgTQs:
+        prio = ( share / totalPrio ) * tqDict[ tqId ]
+      else:
+        prio = 0.001
       if prio not in prioDict:
         prioDict[ prio ] = []
       prioDict[ prio ].append( tqId )
