@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.57 2009/05/06 19:35:01 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.58 2009/05/19 20:31:55 rgracian Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.57 2009/05/06 19:35:01 rgracian Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.58 2009/05/19 20:31:55 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -114,6 +114,7 @@ class Watchdog(Agent):
     if self.litleTimeLeft and self.__timeLeft() == -1:
       self.checkError = 'Job has reached the CPU limit of the queue'
       self.log.error( self.checkError, self.timeLeft )
+      self.checkError = 'Job has reached the CPU limit of the queue'
       self.__killRunningThread()
       self.__getUsageSummary()
       self.__finish()
@@ -263,6 +264,7 @@ class Watchdog(Agent):
     if type(signalDict) == type({}):
       if signalDict.has_key('Kill'):
         self.log.info('Received Kill signal, stopping job via control signal')
+        self.checkError = 'Received Kill signal'
         self.__killRunningThread()
         self.__getUsageSummary()
         self.__finish()
@@ -703,6 +705,7 @@ class Watchdog(Agent):
     """ Will kill the running thread process and any child processes."""
     self.log.info('Sending kill signal to application PID %s' %(self.spObject.getChildPID()))
     result = self.spObject.killChild()
+    self.applicationKilled = True
     self.log.info('Subprocess.killChild() returned:%s ' %(result))
     return S_OK('Thread killed')
 
