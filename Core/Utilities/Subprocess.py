@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.35 2009/05/01 07:46:03 rgracian Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.35 2009/05/01 07:46:03 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.36 2009/05/19 13:26:13 rgracian Exp $
+__RCSID__ = "$Id: Subprocess.py,v 1.36 2009/05/19 13:26:13 rgracian Exp $"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.
@@ -123,10 +123,9 @@ class Subprocess:
 
   def __poll( self, pid ):
     try:
-      pid, sts = os.waitpid( pid, os.WNOHANG )
+      return os.waitpid( pid, os.WNOHANG )
     except os.error:
       return None
-    return sts
 
   def killChild( self, recursive = True ):
     if self.childPID < 1:
@@ -151,10 +150,12 @@ class Subprocess:
       time.sleep( 0.000001 )
       exitStatus = self.__poll( self.childPID )
     try:
-      pid, exitStatus = os.waitpid( self.childPID, 0 )
+      exitStatus = os.waitpid( self.childPID, 0 )
     except os.error:
       pass
-    return exitStatus
+    if exitStatus == None:
+      return exitStatus
+    return exitStatus[1]
 
   def pythonCall( self, function, *stArgs, **stKeyArgs ):
     readFD, writeFD = os.pipe()
@@ -282,7 +283,10 @@ class Subprocess:
       initialTime = time.time()
       exitStatus = self.child.poll()
 
-      while exitStatus == None:
+      # while exitStatus == None:
+      exitStatus = self.__poll(self.child.pid)
+
+      while (0,0) == exitStatus:
         retDict = self.__readFromCommand()
         if not retDict[ 'OK' ]:
           return retDict
@@ -295,9 +299,12 @@ class Subprocess:
                       "Timeout (%d seconds) for '%s' call" %
                       ( self.timeout, cmdSeq ) )
 
-        exitStatus = self.child.poll()
+        exitStatus = self.__poll(self.child.pid)
 
       self.__readFromCommand()
+
+      if exitStatus:
+        exitStatus = exitStatus[1]
 
       if exitStatus >= 256:
         exitStatus /= 256
