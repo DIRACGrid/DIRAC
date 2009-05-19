@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.103 2009/05/10 19:58:02 atsareg Exp $
+# $Id: JobWrapper.py,v 1.104 2009/05/19 20:43:33 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.103 2009/05/10 19:58:02 atsareg Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.104 2009/05/19 20:43:33 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -318,6 +318,9 @@ class JobWrapper:
       else:
         outputs = threadResult['Value']
 
+    if watchdog.checkError:
+      self.__report('Completed',watchdog.checkError,sendFlag=True)
+
     if outputs:
       status = threadResult['Value'][0]
       #Send final heartbeat of a configurable number of lines here
@@ -325,14 +328,11 @@ class JobWrapper:
       self.__sendFinalStdOut(exeThread)
       self.log.verbose('Execution thread status = %s' %(status))
 
-      if not status:
+      if not watchdog.checkError and not status:
         self.failedFlag = False
         self.__report('Completed','Application Finished Successfully',sendFlag=True)
-      else:
-        if watchdog.checkError:
-          self.__report('Completed',watchdog.checkError,sendFlag=True)
-        else:
-          self.__report('Completed','Application Finished With Errors',sendFlag=True)
+      elif not watchdog.checkError:
+        self.__report('Completed','Application Finished With Errors',sendFlag=True)
 
     else:
       return S_ERROR('No outputs generated from job execution')
