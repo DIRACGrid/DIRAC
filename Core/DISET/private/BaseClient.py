@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.60 2009/02/23 15:52:53 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.60 2009/02/23 15:52:53 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.61 2009/05/25 18:18:33 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.61 2009/05/25 18:18:33 acasajus Exp $"
 
 import sys
 import types
@@ -36,6 +36,7 @@ class BaseClient:
     self.kwargs = kwargs
     self.__initStatus = S_OK()
     self.__idDict = {}
+    self.__enableThreadCheck = False
     for initFunc in ( self.__discoverSetup, self.__discoverTimeout, self.__discoverURL,
                       self.__discoverCredentialsToUse, self.__discoverExtraCredentials,
                       self.__checkTransportSanity ):
@@ -161,7 +162,8 @@ and this is thread %s
   def _connect( self ):
     if not self.__initStatus[ 'OK' ]:
       return self.__initStatus
-    self.__checkThreadID()
+    if self.__enableThreadCheck:
+      self.__checkThreadID()
     gLogger.debug( "Connecting to: %s" % self.serviceURL )
     try:
       transport = gProtocolDict[ self.URLTuple[0] ][ 'transport' ]( self.URLTuple[1:3], **self.kwargs )
