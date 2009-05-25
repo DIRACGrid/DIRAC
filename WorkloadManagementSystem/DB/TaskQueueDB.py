@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.82 2009/05/18 13:10:19 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.83 2009/05/25 07:17:59 rgracian Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.82 2009/05/18 13:10:19 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.83 2009/05/25 07:17:59 rgracian Exp $"
 
 import time
 import types
@@ -14,6 +14,8 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security import Properties, CS
+
+maxCPUSegments = ( 500, 5000, 50000, 300000 )
 
 class TaskQueueDB(DB):
 
@@ -29,7 +31,7 @@ class TaskQueueDB(DB):
     self.__bannedJobMatchFields = ( 'Site', )
     self.__singleValueDefFields = ( 'OwnerDN', 'OwnerGroup', 'Setup', 'CPUTime' )
     self.__mandatoryMatchFields = ( 'Setup', 'CPUTime' )
-    self.maxCPUSegments = ( 500, 5000, 50000, 300000 )
+    self.maxCPUSegments = maxCPUSegments
     self.__maxMatchRetry = 3
     self.__jobPriorityBoundaries = ( 0.001, 10 )
     self.__groupShares = {}
@@ -770,6 +772,12 @@ class TaskQueueDB(DB):
       self.recalculateTQSharesForEntity( tqOwnerDN, tqOwnerGroup, connObj = connObj )
       return S_OK( True )
     return S_OK( False )
+
+  def getMatchingTaskQueues(self, tqMatchDict):
+    """
+     rename to have the same method as exposed in the Matcher
+    """
+    return self.retrieveTaskQueuesThatMatch( tqMatchDict )
 
   def retrieveTaskQueuesThatMatch( self, tqMatchDict ):
     """
