@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.82 2009/05/07 20:55:14 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.83 2009/05/25 07:14:06 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.82 2009/05/07 20:55:14 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.83 2009/05/25 07:14:06 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -353,6 +353,7 @@ class JobAgent(Agent):
       return S_ERROR('Payload Proxy Not Found')
 
     payloadProxy=proxy['Value']
+    # FIXME: how can we set the batchID before we submit, this makes no sense
     batchID = 'dc%s' %(jobID)
     submission = self.computingElement.submitJob(wrapperFile,jobJDL,payloadProxy,batchID)
 
