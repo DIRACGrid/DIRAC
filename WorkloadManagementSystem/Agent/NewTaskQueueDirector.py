@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/NewTaskQueueDirector.py,v 1.1 2009/05/25 07:20:40 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/NewTaskQueueDirector.py,v 1.2 2009/05/25 14:35:39 rgracian Exp $
 # File :   New TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -126,7 +126,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: NewTaskQueueDirector.py,v 1.1 2009/05/25 07:20:40 rgracian Exp $"
+__RCSID__ = "$Id: NewTaskQueueDirector.py,v 1.2 2009/05/25 14:35:39 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -140,7 +140,7 @@ from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB,
 from DIRAC.Core.Utilities.ThreadPool                       import ThreadPool
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig, List, Time, Source, systemCall, DictCache
 
-import random
+import random, time
 import DIRAC
 
 random.seed()
@@ -190,7 +190,7 @@ class NewTaskQueueDirector(AgentModule):
 
     self.__checkDirectorDict()
 
-    result = taskQueueDB.getMatchingTaskQueues( self.directorDict() )
+    result = taskQueueDB.getMatchingTaskQueues( self.directorDict )
     if not result['OK']:
       self.log.error( 'Could not retrieve TaskQueues from TaskQueueDB', result['Message'] )
       return result
@@ -230,7 +230,7 @@ class NewTaskQueueDirector(AgentModule):
     for taskQueueID in taskQueueDict:
       self.log.verbose( 'Processing TaskQueue', taskQueueID )
 
-      result = pilotAgentsDB.countPilots( {'TaskQueueID': taskQueueID, 'Status': waitingStatusList}, newer = timeLimitToConsider )
+      result = pilotAgentsDB.countPilots( {'TaskQueueID': taskQueueID, 'Status': waitingStatusList}, None, timeLimitToConsider )
       if not result['OK']:
         self.log.error('Fail to get Number of Waiting pilots',result['Message'])
         waitingPilots = 0
@@ -364,6 +364,7 @@ class NewTaskQueueDirector(AgentModule):
     """
      Retrieve and update Resource Dict for Local Installation
     """
+    from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import maxCPUSegments
     ret = gConfig.getOptionsDict('/LocalSite/ResourceDict')
     if not ret['OK']:
       self.directorDict = {}
@@ -371,6 +372,10 @@ class NewTaskQueueDirector(AgentModule):
       # FIXME: es mejor copiar el diccionario?
       self.directorDict = dict(ret['Value'])
 
+    # now add some defaults
+    self.directorDict['Setup'] = gConfig.getValue('/DIRAC/Setup','None')
+    if not 'CPUTime' in self.directorDict:
+      self.directorDict['CPUTime'] = maxCPUSegments[-1]
 
   def __createDirector(self,submitPool):
     """
@@ -429,7 +434,7 @@ class NewTaskQueueDirector(AgentModule):
 
     else:
       if submitPool not in self.directors:
-        DIRAC.abort(-1)
+        DIRAC.abort(-1, "Submit Pool not available", submitPool)
       director = self.directors[submitPool]['director']
 
       # Pass reference to our CS section so that defaults can be taken from there

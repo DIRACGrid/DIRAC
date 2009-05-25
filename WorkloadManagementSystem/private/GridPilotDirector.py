@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.1 2009/05/25 07:19:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.2 2009/05/25 14:35:19 rgracian Exp $
 # File :   GridPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -12,7 +12,7 @@
   underlying resources.
 
 """
-__RCSID__ = "$Id: GridPilotDirector.py,v 1.1 2009/05/25 07:19:50 rgracian Exp $"
+__RCSID__ = "$Id: GridPilotDirector.py,v 1.2 2009/05/25 14:35:19 rgracian Exp $"
 
 
 GRIDENV                = ''
@@ -26,10 +26,15 @@ ERROR_CE         = 'No queue available for pilot'
 ERROR_JDL        = 'Could not create Grid JDL'
 ERROR_RB         = 'No Broker available'
 
+import os, tempfile, time, re
+
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import outputSandboxFiles
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.private.PilotDirector  import PilotDirector
 from DIRAC.FrameworkSystem.Client.NotificationClient       import NotificationClient
 from DIRAC.Core.Security.Misc                              import getProxyInfoAsString
-from DIRAC import S_OK, S_ERROR, DictCache
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB
+from DIRAC import S_OK, S_ERROR, DictCache, List, Time, systemCall
 
 class GridPilotDirector(PilotDirector):
   """
@@ -54,13 +59,13 @@ class GridPilotDirector(PilotDirector):
     self.__failingWMSCache = DictCache()
     self.__ticketsWMSCache = DictCache()
 
-    PilotDirector.__init__( submitPool )
+    PilotDirector.__init__( self, submitPool )
 
   def configure(self, csSection, submitPool ):
     """
      Here goes common configuration for all Grid PilotDirectors
     """
-    PilotDirector.configure( csSection, submitPool )
+    PilotDirector.configure( self, csSection, submitPool )
     self.reloadConfiguration( csSection, submitPool )
 
     self.__failingWMSCache.purgeExpired()
@@ -92,7 +97,7 @@ class GridPilotDirector(PilotDirector):
     self.rank                 = gConfig.getValue( mySection+'/Rank'                 , self.rank )
     self.fuzzyRank            = gConfig.getValue( mySection+'/FuzzyRank'            , self.fuzzyRank )
 
-  def _submitPilots( self, taskQueueDict, pilotOptions, pilotsToSubmit,
+  def _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
                      ceMask, submitPrivatePilot, privateTQ, proxy ):
     """
       This method does the actual pilot submission to the Grid RB
@@ -104,6 +109,8 @@ class GridPilotDirector(PilotDirector):
         it has some part common to gLite and LCG (the payload description)
         it has some part specific to each middleware
     """
+    taskQueueID = taskQueueDict['TaskQueueID']
+    ownerDN = taskQueueDict['OwnerDN']
 
     if not self.resourceBrokers:
       # Since we can exclude RBs from the list, it may become empty
@@ -184,8 +191,8 @@ class GridPilotDirector(PilotDirector):
         pilotReference = self._getChildrenReferences( proxy, pilotReference, taskQueueID )
         submittedPilots += len(pilotReference)
         pilotAgentsDB.addPilotTQReference(pilotReference, taskQueueID, ownerDN,
-                      vomsGroup, broker=resourceBroker, gridType=self.gridMiddleware,
-                      requirements=pilotRequirements )
+                      vomsGroup, resourceBroker, self.gridMiddleware,
+                      pilotRequirements )
     else:
       for pilotReference, resourceBroker in submitRet:
         pilotReference = [pilotReference]

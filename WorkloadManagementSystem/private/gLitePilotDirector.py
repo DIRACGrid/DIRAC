@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/gLitePilotDirector.py,v 1.1 2009/05/25 07:19:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/gLitePilotDirector.py,v 1.2 2009/05/25 14:35:19 rgracian Exp $
 # File :   gLitePilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,10 +9,12 @@
    - basic configuration for gLite
    - submit and monitor methods for gLite MiddleWare.
 """
-__RCSID__ = "$Id: gLitePilotDirector.py,v 1.1 2009/05/25 07:19:50 rgracian Exp $"
+__RCSID__ = "$Id: gLitePilotDirector.py,v 1.2 2009/05/25 14:35:19 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.private.GridPilotDirector  import GridPilotDirector
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gConfig, List
+
+import os, time, re
 
 # Some default values
 
@@ -31,13 +33,13 @@ class gLitePilotDirector(GridPilotDirector):
     # FIXME: We might be able to remove this
     self.loggingServers     = [ LOGGING_SERVER ]
 
-    GridPilotDirector.__init__(self, submitPool)
+    GridPilotDirector.__init__( self, submitPool )
 
   def configure(self, csSection, submitPool):
     """
      Here goes especific configuration for gLite PilotDirectors
     """
-    GridPilotDirector.configure( csSection, submitPool )
+    GridPilotDirector.configure( self, csSection, submitPool )
 
     self.reloadConfiguration( csSection, submitPool )
 

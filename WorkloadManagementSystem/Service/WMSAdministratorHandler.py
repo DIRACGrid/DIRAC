@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.50 2009/05/25 07:19:22 rgracian Exp $
+# $Id: WMSAdministratorHandler.py,v 1.51 2009/05/25 14:36:14 rgracian Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.50 2009/05/25 07:19:22 rgracian Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.51 2009/05/25 14:36:14 rgracian Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -137,12 +137,12 @@ class WMSAdministratorHandler(RequestHandler):
     return jobDB.getSiteMaskLogging(msites)
 
 ##########################################################################################
-  types_countPilots = [ DictTypes ]
+  types_countPilots = [ DictType ]
   def export_countPilots( self, condDict, older=None, newer=None, timeStamp='SubmissionTime' ):
     return pilotDB.countPilots( condDict, older, newer, timeStamp )
 
 ##########################################################################################
-  types_addPilotTQReference( StringTypes, [IntType, LongType], StringTypes, StringTypes )
+  types_addPilotTQReference = [ ListType, [IntType, LongType], StringTypes, StringTypes ]
   def export_addPilotTQReference( self, pilotRef, taskQueueID, ownerDN, ownerGroup, broker='Unknown',
                         gridType='DIRAC', requirements='Unknown'):
     """ Add a new pilot job reference """

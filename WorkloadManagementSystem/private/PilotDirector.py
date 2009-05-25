@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/PilotDirector.py,v 1.1 2009/05/25 07:19:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/PilotDirector.py,v 1.2 2009/05/25 14:35:19 rgracian Exp $
 # File :   PilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -15,11 +15,14 @@
   This means that DIRAC direct submission to Grid CE's (CREAM, ...) will be handled by DIRAC Pilot
   Director making use of a DIRAC CREAM Computing Element class
 """
-__RCSID__ = "$Id: PilotDirector.py,v 1.1 2009/05/25 07:19:50 rgracian Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.2 2009/05/25 14:35:19 rgracian Exp $"
 
 
-import os, time, tempfile, shutil, re
+import os, time, tempfile, shutil, re, random
+random.seed()
 
+
+import DIRAC
 # Some reasonable Defaults
 DIRAC_PILOT   = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot' )
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'scripts', 'dirac-install' )
@@ -45,12 +48,10 @@ ERROR_PROXY      = 'No proxy Available'
 ERROR_TOKEN      = 'Invalid proxy token request'
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
-from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import outputSandboxFiles
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import jobDB
 from DIRAC.Core.Security.CS                                import getPropertiesForGroup
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig, DictCache
-import DIRAC
 
 #from DIRAC import S_OK, S_ERROR, gLogger, gConfig, List, Time, Source, systemCall, DictCache
 
@@ -62,7 +63,7 @@ class PilotDirector:
           that must call the parent class __init__ method and then do its own initialization
       * configure( self, csSection, submitPool ):
           that must call the parent class configure method and the do its own configuration
-      * _submitPilots( self, taskQueueDict, pilotOptions, pilotsToSubmit, ceMask,
+      * _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit, ceMask,
                       submitPrivatePilot, privateTQ, proxy )
           actual method doing the submission to the backend once the submitPilots method
           has prepared the common part
@@ -162,7 +163,7 @@ class PilotDirector:
     self.genericPilotGroup    = gConfig.getValue( mySection+'/GenericPilotGroup'    , self.genericPilotGroup )
     self.privatePilotFraction = gConfig.getValue( mySection+'/PrivatePilotFraction' , self.privatePilotFraction )
 
-  def __resolveCECandidates( self, taskQueueDict ):
+  def _resolveCECandidates( self, taskQueueDict ):
     """
       Return a list of CEs for this TaskQueue
     """
@@ -231,7 +232,7 @@ class PilotDirector:
 
     return ceMask
 
-  def _getPilotOptions(self, taskQueueDict):
+  def _getPilotOptions( self, taskQueueDict, pilotsToSubmit ):
 
     pilotOptions = []
     privateIfGenericTQ = self.privatePilotFraction > random.random()
@@ -239,7 +240,7 @@ class PilotDirector:
     forceGeneric = 'ForceGeneric' in taskQueueDict
     submitPrivatePilot = ( privateIfGenericTQ or privateTQ ) and not forceGeneric
     if submitPrivatePilot:
-      self.log.verbose('Submitting private pilots for TaskQueue %s' % taskQueueID)
+      self.log.verbose('Submitting private pilots for TaskQueue %s' % taskQueueDict['TaskQueueID'] )
       ownerDN    = taskQueueDict['OwnerDN']
       ownerGroup = taskQueueDict['OwnerGroup']
       # User Group requirement
@@ -253,7 +254,7 @@ class PilotDirector:
         pilotOptions.append( '-o /Resources/Computing/CEDefaults/PilotType=private' )
     else:
       #For generic jobs we'll submit mixture of generic and private pilots
-      self.log.verbose('Submitting generic pilots for TaskQueue %s' % taskQueueID)
+      self.log.verbose('Submitting generic pilots for TaskQueue %s' % taskQueueDict['TaskQueueID'] )
       ownerDN    = self.genericPilotDN
       ownerGroup = self.genericPilotGroup
       result = gProxyManager.requestToken( ownerDN, ownerGroup, pilotsToSubmit )
@@ -276,9 +277,9 @@ class PilotDirector:
     # Setup.
     pilotOptions.append( '-o /DIRAC/Setup=%s' % taskQueueDict['Setup'] )
 
-    return S_OK( (pilotOptions, pilotsToSubmit) )
+    return S_OK( (pilotOptions, pilotsToSubmit, ownerDN, ownerGroup, submitPrivatePilot, privateTQ) )
 
-  def _submitPilots( self, taskQueueDict, pilotOptions, pilotsToSubmit,
+  def _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
                      ceMask, submitPrivatePilot, privateTQ, proxy ):
     """
       This method must be implemented on the Backend specific derived class.
@@ -306,7 +307,7 @@ class PilotDirector:
       result = self._getPilotOptions( taskQueueDict, pilotsToSubmit )
       if not result['OK']:
         return result
-      (pilotOptions, pilotsToSubmit) = result['Value']
+      (pilotOptions, pilotsToSubmit, ownerDN, ownerGroup, submitPrivatePilot, privateTQ ) = result['Value']
       # get a valid proxy, submit with a long proxy to avoid renewal
       ret = gProxyManager.getPilotProxyFromDIRACGroup( ownerDN, ownerGroup, requiredTimeLeft = 86400 * 5 )
       if not ret['OK']:
@@ -319,7 +320,7 @@ class PilotDirector:
         return S_ERROR( ERROR_PROXY )
       proxy = ret['Value']
       # Now call a Grid Specific method to handle the final submission of the pilots
-      return self._submitPilots( taskQueueDict, pilotOptions,
+      return self._submitPilots( workDir, taskQueueDict, pilotOptions,
                                  pilotsToSubmit, ceMask,
                                  submitPrivatePilot, privateTQ,
                                  proxy )

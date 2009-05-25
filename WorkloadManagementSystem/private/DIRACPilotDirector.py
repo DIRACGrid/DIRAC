@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.1 2009/05/25 07:19:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.2 2009/05/25 14:35:19 rgracian Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.1 2009/05/25 07:19:50 rgracian Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.2 2009/05/25 14:35:19 rgracian Exp $"
 
 import os, sys, tempfile, shutil
 
@@ -45,14 +45,14 @@ class DIRACPilotDirector(PilotDirector):
     self.__failingCECache  = DictCache()
     self.__ticketsCECache  = DictCache()
 
-    PilotDirector.__init__( submitPool )
+    PilotDirector.__init__( self, submitPool )
 
   def configure(self, csSection, submitPool ):
     """
      Here goes common configuration for DIRAC PilotDirector
     """
 
-    PilotDirector.configure( csSection, submitPool )
+    PilotDirector.configure( self, csSection, submitPool )
     self.reloadConfiguration( csSection, submitPool )
 
     self.__failingCECache.purgeExpired()
@@ -79,7 +79,7 @@ class DIRACPilotDirector(PilotDirector):
     self.computingElements    = gConfig.getValue( mySection+'/ComputingElements'      , self.computingElements )
     self.siteName             = gConfig.getValue( mySection+'/SiteName'               , self.siteName )
 
-  def _submitPilots( self, taskQueueDict, pilotOptions, pilotsToSubmit,
+  def _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
                      ceMask, submitPrivatePilot, privateTQ, proxy ):
     """
       This method does the actual pilot submission to the DIRAC CE
