@@ -148,7 +148,7 @@ class JobDescription:
     result = self.__checkMultiChoiceInDescription( "PilotTypes", [ 'private' ] )
     if not result[ 'OK' ]:
       return result
-    result = self.__checkMaxInputData( 100 )
+    result = self.__checkMaxInputData( 200 )
     if not result[ 'OK' ]:
       return result
     result = self.__checkMultiChoiceInDescription( "JobType",
