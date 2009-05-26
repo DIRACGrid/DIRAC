@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.2 2009/05/25 14:35:19 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.3 2009/05/26 15:35:32 rgracian Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,16 +13,17 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.2 2009/05/25 14:35:19 rgracian Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.3 2009/05/26 15:35:32 rgracian Exp $"
 
 import os, sys, tempfile, shutil
 
 from DIRAC.WorkloadManagementSystem.private.PilotDirector import PilotDirector
 from DIRAC.Resources.Computing.ComputingElementFactory   import ComputingElementFactory
-from DIRAC import S_OK, S_ERROR, DictCache
+from DIRAC import S_OK, S_ERROR, DictCache, gConfig
 
 ERROR_CE         = 'No CE available'
-ERROR_JDL        = 'Could not create Pilot scrips'
+ERROR_JDL        = 'Could not create Pilot script'
+ERROR_SCRIPT     = 'Could not copy Pilot script'
 
 COMPUTING_ELEMENTS = ['InProcess']
 
@@ -38,7 +39,7 @@ class DIRACPilotDirector(PilotDirector):
 
     self.computingElements = COMPUTING_ELEMENTS
     self.siteName          = gConfig.getValue('/LocalSite/Site','')
-    if not siteName:
+    if not self.siteName:
       self.log.error( 'Can not run a Director if Site Name is not defined' )
       sys.exit()
 
@@ -68,7 +69,7 @@ class DIRACPilotDirector(PilotDirector):
       self.log.info( ' ComputingElements:', ', '.join(self.computingElements) )
 
     if self.siteName:
-      self.log.info( ' SiteName:', ', '.join(self.siteName) )
+      self.log.info( ' SiteName:', self.siteName )
 
 
   def configureFromSection( self, mySection ):
@@ -88,24 +89,33 @@ class DIRACPilotDirector(PilotDirector):
       - It creates a temp directory
       - Prepare a PilotScript
     """
+    taskQueueID = taskQueueDict['TaskQueueID']
+    ownerDN = taskQueueDict['OwnerDN']
 
     if not self.computingElements:
       # Since we can exclude CEs from the list, it may become empty
       return S_ERROR( ERROR_CE )
 
+    baseDir = os.getcwd()
     workingDirectory = tempfile.mkdtemp( prefix= 'TQ_%s_' % taskQueueID, dir = workDir )
     self.log.verbose( 'Using working Directory:', workingDirectory )
+    os.chdir( workingDirectory )
 
     # set the Site Name
     if self.siteName:
-      pilotOptions.append( '-n "%s"' % self.siteName)
+      pilotOptions.append( "-n '%s'" % self.siteName)
 
     try:
-      pilotScript = self._pilotScript( workingDirectory, pilotOptions )
+      pilotScript = self._writePilotScript( workingDirectory, pilotOptions )
       shutil.copy( self.pilot, os.path.join( workingDirectory, os.path.basename(self.pilot) ) )
       shutil.copy( self.install, os.path.join( workingDirectory, os.path.basename(self.install) ) )
     except:
       self.log.exception( ERROR_SCRIPT )
+      try:
+        os.chdir( baseDir )
+        shutil.rmtree( workingDirectory )
+      except:
+        pass
       return S_ERROR( ERROR_SCRIPT )
 
     # FIXME: this is to start testing
@@ -114,11 +124,22 @@ class DIRACPilotDirector(PilotDirector):
     ceInstance = ceFactory.getCE()
     if not ceInstance['OK']:
       self.log.warn(ceInstance['Message'])
+      try:
+        os.chdir( baseDir )
+        shutil.rmtree( workingDirectory )
+      except:
+        pass
       return ceInstance
 
     computingElement = ceInstance['Value']
+    submission = computingElement.submitJob(pilotScript,'',proxy.dumpAllToString()['Value'],'')
+    try:
+      os.chdir( baseDir )
+      shutil.rmtree( workingDirectory )
+    except:
+      pass
+    return S_OK(1)
 
-    submission = computingElement.submitJob(pilotScript,'',proxy.dumpAllToString(),'')
     return submission
 
   def _writePilotScript( self, workingDirectory, pilotOptions ):
@@ -128,19 +149,19 @@ class DIRACPilotDirector(PilotDirector):
     """
 
     pilot = os.path.basename( self.pilot )
-    isntall = os.path.basename(self.install)
+    install = os.path.basename(self.install)
     localPilot = """#!/usr/bin/env python
 #
-import os, tempfile, sys
+import os, tempfile, sys, shutil
 try:
-  pilotWorkingDirectory = tempfile.mkdtemp( sufix = 'pilot', prefix= 'DIRAC_' )
+  pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix= 'DIRAC_' )
+  shutil.move( "%s",  pilotWorkingDirectory )
+  shutil.move( "%s", pilotWorkingDirectory )
   os.chdir( pilotWorkingDirectory )
-  shutil.move( %s,  pilotWorkingDirectory )
-  shutil.move( %s, pilotWorkingDirectory )
- except exception, x:
+except Exception, x:
   print >> sys.stderr, x
   sys.exit(-1)
-cmd = 'python %s %s'
+cmd = "python %s %s"
 print 'Executing:', cmd
 os.system( cmd )
 
@@ -151,4 +172,4 @@ os.system( cmd )
     fd.write( localPilot )
     fd.close()
 
-    return localPilot
+    return pilotScript

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/NewTaskQueueDirector.py,v 1.2 2009/05/25 14:35:39 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/NewTaskQueueDirector.py,v 1.3 2009/05/26 15:36:02 rgracian Exp $
 # File :   New TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -126,7 +126,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: NewTaskQueueDirector.py,v 1.2 2009/05/25 14:35:39 rgracian Exp $"
+__RCSID__ = "$Id: NewTaskQueueDirector.py,v 1.3 2009/05/26 15:36:02 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -337,9 +337,12 @@ class NewTaskQueueDirector(AgentModule):
 
       self.__configureDirector(submitPool)
 
-      # Now enable the director for this iteration, if some RB/WMS is defined
-      if submitPool in self.directors and self.directors[submitPool]['director'].resourceBrokers:
-        self.directors[submitPool]['isEnabled'] = True
+      # Now enable the director for this iteration, if some RB/WMS/CE is defined
+      if submitPool in self.directors:
+        if 'resourceBrokers' in dir(self.directors[submitPool]['director']) and self.directors[submitPool]['director'].resourceBrokers:
+          self.directors[submitPool]['isEnabled'] = True
+        if 'computingElements' in dir(self.directors[submitPool]['director']) and self.directors[submitPool]['director'].computingElements:
+          self.directors[submitPool]['isEnabled'] = True
 
     # Now remove directors that are not Enable (they have been used but are no
     # longer required in the CS).
