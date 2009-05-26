@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.3 2009/05/26 15:35:32 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.4 2009/05/26 15:42:59 rgracian Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.3 2009/05/26 15:35:32 rgracian Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.4 2009/05/26 15:42:59 rgracian Exp $"
 
 import os, sys, tempfile, shutil
 
@@ -164,6 +164,8 @@ except Exception, x:
 cmd = "python %s %s"
 print 'Executing:', cmd
 os.system( cmd )
+
+shutil.rmtree( pilotWorkingDirectory )
 
 """ % ( pilot, install, pilot, ' '.join( pilotOptions ) )
 
