@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/NewTaskQueueDirector.py,v 1.3 2009/05/26 15:36:02 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/Attic/NewTaskQueueDirector.py,v 1.4 2009/05/27 06:46:14 rgracian Exp $
 # File :   New TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -126,7 +126,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: NewTaskQueueDirector.py,v 1.3 2009/05/26 15:36:02 rgracian Exp $"
+__RCSID__ = "$Id: NewTaskQueueDirector.py,v 1.4 2009/05/27 06:46:14 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -189,6 +189,7 @@ class NewTaskQueueDirector(AgentModule):
     self.__checkSubmitPools()
 
     self.__checkDirectorDict()
+    print self.directorDict
 
     result = taskQueueDB.getMatchingTaskQueues( self.directorDict )
     if not result['OK']:
@@ -379,6 +380,9 @@ class NewTaskQueueDirector(AgentModule):
     self.directorDict['Setup'] = gConfig.getValue('/DIRAC/Setup','None')
     if not 'CPUTime' in self.directorDict:
       self.directorDict['CPUTime'] = maxCPUSegments[-1]
+    if not 'PilotType' in self.directorDict:
+      # FIXME: this is a test, we need the list of available types
+      self.directorDict['PilotType'] = 'private'
 
   def __createDirector(self,submitPool):
     """
