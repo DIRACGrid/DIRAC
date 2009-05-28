@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InProcessComputingElement.py,v 1.14 2009/05/28 03:24:44 rgracian Exp $
+# $Id: InProcessComputingElement.py,v 1.15 2009/05/28 13:00:21 rgracian Exp $
 # File :   InProcessComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: InProcessComputingElement.py,v 1.14 2009/05/28 03:24:44 rgracian Exp $"
+__RCSID__ = "$Id: InProcessComputingElement.py,v 1.15 2009/05/28 13:00:21 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -43,7 +43,7 @@ class InProcessComputingElement(ComputingElement):
 
     payloadProxy = result['Value']
     # FIXME: when not running on a WN this will not work
-    result = getProxyInfo()
+    result = getProxyInfo(payloadProxy)
     if not result['OK']:
       return result
     pilotProxy = result['Value']['path']
