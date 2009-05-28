@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InProcessComputingElement.py,v 1.12 2009/05/25 07:14:06 rgracian Exp $
+# $Id: InProcessComputingElement.py,v 1.13 2009/05/28 03:16:16 rgracian Exp $
 # File :   InProcessComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: InProcessComputingElement.py,v 1.12 2009/05/25 07:14:06 rgracian Exp $"
+__RCSID__ = "$Id: InProcessComputingElement.py,v 1.13 2009/05/28 03:16:16 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -43,7 +43,11 @@ class InProcessComputingElement(ComputingElement):
 
     payloadProxy = result['Value']
     # FIXME: when not running on a WN this will not work
-    pilotProxy = os.environ['X509_USER_PROXY']
+    result = getProxyInfo()
+    if not result['OK']:
+      return result
+    pilotProxy = result['Value']['path']
+    # pilotProxy = os.environ['X509_USER_PROXY']
     os.environ[ 'X509_USER_PROXY' ] = payloadProxy
     self.log.verbose('Starting process for monitoring payload proxy')
     gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod,self.monitorProxy,taskArgs=(pilotProxy,payloadProxy),executions=0,elapsedTime=0)
