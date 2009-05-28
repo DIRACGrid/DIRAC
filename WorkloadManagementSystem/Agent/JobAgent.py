@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.83 2009/05/25 07:14:06 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.84 2009/05/28 03:58:43 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.83 2009/05/25 07:14:06 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.84 2009/05/28 03:58:43 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -250,7 +250,8 @@ class JobAgent(Agent):
       self.timeLeft = newTimeLeft
     else:
       scaledCPUTime = 0.0
-      self.timeLeftError = result['Message']
+      if result['Message'] != 'Currrent batch system is not supported':
+        self.timeLeftError = result['Message']
     self.__setJobParam(jobID,'ScaledCPUTime',str(scaledCPUTime))
 
     return S_OK('Job Agent cycle complete')
