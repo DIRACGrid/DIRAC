@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.2 2009/05/25 14:35:19 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.3 2009/05/28 05:29:50 rgracian Exp $
 # File :   GridPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -12,7 +12,7 @@
   underlying resources.
 
 """
-__RCSID__ = "$Id: GridPilotDirector.py,v 1.2 2009/05/25 14:35:19 rgracian Exp $"
+__RCSID__ = "$Id: GridPilotDirector.py,v 1.3 2009/05/28 05:29:50 rgracian Exp $"
 
 
 GRIDENV                = ''
@@ -88,6 +88,7 @@ class GridPilotDirector(PilotDirector):
     """
       reload from CS
     """
+    PilotDirector.configureFromSection( self, mySection )
 
     self.gridEnv              = gConfig.getValue( mySection+'/GridEnv'              , self.gridEnv )
     self.resourceBrokers      = gConfig.getValue( mySection+'/ResourceBrokers'      , self.resourceBrokers )

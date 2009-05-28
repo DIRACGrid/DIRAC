@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.5 2009/05/28 04:53:33 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.6 2009/05/28 05:29:50 rgracian Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.5 2009/05/28 04:53:33 rgracian Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.6 2009/05/28 05:29:50 rgracian Exp $"
 
 import os, sys, tempfile, shutil
 
@@ -76,9 +76,11 @@ class DIRACPilotDirector(PilotDirector):
     """
       reload from CS
     """
+    PilotDirector.configureFromSection( self, mySection )
 
     self.computingElements    = gConfig.getValue( mySection+'/ComputingElements'      , self.computingElements )
     self.siteName             = gConfig.getValue( mySection+'/SiteName'               , self.siteName )
+
 
   def _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
                      ceMask, submitPrivatePilot, privateTQ, proxy ):
