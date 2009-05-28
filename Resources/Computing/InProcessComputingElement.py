@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InProcessComputingElement.py,v 1.15 2009/05/28 13:00:21 rgracian Exp $
+# $Id: InProcessComputingElement.py,v 1.16 2009/05/28 13:34:23 rgracian Exp $
 # File :   InProcessComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: InProcessComputingElement.py,v 1.15 2009/05/28 13:00:21 rgracian Exp $"
+__RCSID__ = "$Id: InProcessComputingElement.py,v 1.16 2009/05/28 13:34:23 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -36,29 +36,35 @@ class InProcessComputingElement(ComputingElement):
   def submitJob(self,executableFile,jdl,proxy,localID):
     """ Method to submit job, should be overridden in sub-class.
     """
+    # FIXME: when not running on a WN this will not work
+    ret = getProxyInfo()
+    if not ret['OK']:
+      pilotProxy = None
+    else:
+      pilotProxy = ret['Value']['path']
+
     self.log.verbose('Setting up proxy for payload')
     result = self.writeProxyToFile(proxy)
     if not result['OK']:
       return result
 
     payloadProxy = result['Value']
-    # FIXME: when not running on a WN this will not work
-    result = getProxyInfo(payloadProxy)
-    if not result['OK']:
-      return result
-    pilotProxy = result['Value']['path']
     # pilotProxy = os.environ['X509_USER_PROXY']
     os.environ[ 'X509_USER_PROXY' ] = payloadProxy
     self.log.verbose('Starting process for monitoring payload proxy')
     gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod,self.monitorProxy,taskArgs=(pilotProxy,payloadProxy),executions=0,elapsedTime=0)
-
+    
     if not os.access(executableFile, 5):
       os.chmod(executableFile,0755)
     cmd = os.path.abspath(executableFile)
     self.log.verbose('CE submission command: %s' %(cmd))
     result = systemCall(0,cmd,callbackFunction = self.sendOutput)
+    
+    if pilotProxy:
+      os.environ[ 'X509_USER_PROXY' ] = pilotProxy
+    else:
+      del( os.environ[ 'X509_USER_PROXY' ] )
 
-    os.environ[ 'X509_USER_PROXY' ] = pilotProxy
     os.unlink(payloadProxy)
 
     ret = S_OK(localID)
