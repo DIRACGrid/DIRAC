@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/ReportsClient.py,v 1.6 2009/05/04 17:13:29 acasajus Exp $
-__RCSID__ = "$Id: ReportsClient.py,v 1.6 2009/05/04 17:13:29 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/ReportsClient.py,v 1.7 2009/05/28 17:20:28 acasajus Exp $
+__RCSID__ = "$Id: ReportsClient.py,v 1.7 2009/05/28 17:20:28 acasajus Exp $"
 
 import tempfile
 import base64
@@ -21,6 +21,7 @@ class ReportsClient:
     self.serviceName = "Accounting/ReportGenerator"
     self.rpcClient = rpcClient
     self.transferClient = transferClient
+    self.__forceRawEncoding = False
 
   def __getRPCClient(self):
     if not self.rpcClient:
@@ -83,17 +84,21 @@ class ReportsClient:
                     'extraArgs' : extraArgs }
     compress = compress and zCompressionEnabled
     if compress:
-      plotStub = "ZP:%s" % base64.b64encode( zlib.compress( DEncode.encode( plotRequest ), 9 ) )
+      plotStub = "ZP:%s" % base64.urlsafe_b64encode( zlib.compress( DEncode.encode( plotRequest ), 9 ) )
+    elif not self.__forceRawEncoding:
+      plotStub = "SP:%s" % base64.urlsafe_b64encode( DEncode.encode( plotRequest ) )
     else:
-      plotStub = "UP:%s" % DEncode.encode( plotRequest )
+      plotStub = "RP:%s" % DEncode.encode( plotRequest )
     thbStub = False
     if 'thumbnail' in extraArgs and extraArgs[ 'thumbnail' ]:
       thbStub = plotStub
       extraArgs[ 'thumbnail' ] = False
       if compress:
-        plotStub = "ZP:%s" % base64.b64encode( zlib.compress( DEncode.encode( plotRequest ), 9 ) )
+        plotStub = "ZP:%s" % base64.urlsafe_b64encode( zlib.compress( DEncode.encode( plotRequest ), 9 ) )
+      elif not self.__forceRawEncoding:
+        plotStub = "SP:%s" % base64.urlsafe_b64encode( DEncode.encode( plotRequest ) )
       else:
-        plotStub = "UP:%s" % DEncode.encode( plotRequest )
+        plotStub = "RP:%s" % DEncode.encode( plotRequest )
     return S_OK( { 'plot' : plotStub, 'thumbnail' : thbStub } )
 
   def getPlotToMem( self, plotName ):

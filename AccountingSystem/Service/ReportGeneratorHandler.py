@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.22 2009/05/04 17:13:30 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.22 2009/05/04 17:13:30 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.23 2009/05/28 17:20:28 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.23 2009/05/28 17:20:28 acasajus Exp $"
 import types
 import os
 import base64
@@ -164,11 +164,23 @@ class ReportGeneratorHandler( RequestHandler ):
     if type == 'Z':
       gLogger.info( "Compressed request, uncompressing")
       try:
-        stub = zlib.decompress( base64.b64decode( stub ) )
+        stub = base64.urlsafe_b64decode( stub )
+      except Exception, e:
+        gLogger.error( "Oops! Plot request is not properly encoded!", str(e) )
+        return S_ERROR( "Oops! Plot request is not properly encoded!: %s" % str(e) )
+      try:
+        stub = zlib.decompress( stub )
       except Exception, e:
         gLogger.error( "Oops! Plot request is invalid!", str(e) )
         return S_ERROR( "Oops! Plot request is invalid!: %s" % str(e) )
-    elif type == 'U':
+    elif type == 'S':
+      gLogger.info( "Base64 request, decoding")
+      try:
+        stub = base64.urlsafe_b64decode( stub )
+      except Exception, e:
+        gLogger.error( "Oops! Plot request is not properly encoded!", str(e) )
+        return S_ERROR( "Oops! Plot request is not properly encoded!: %s" % str(e) )
+    elif type == 'R':
       #Do nothing, it's already uncompressed
       pass
     else:
