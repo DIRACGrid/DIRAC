@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InProcessComputingElement.py,v 1.13 2009/05/28 03:16:16 rgracian Exp $
+# $Id: InProcessComputingElement.py,v 1.14 2009/05/28 03:24:44 rgracian Exp $
 # File :   InProcessComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,13 +7,13 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: InProcessComputingElement.py,v 1.13 2009/05/28 03:16:16 rgracian Exp $"
+__RCSID__ = "$Id: InProcessComputingElement.py,v 1.14 2009/05/28 03:24:44 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.Core.Utilities.ThreadScheduler                import gThreadScheduler
 from DIRAC.Core.Utilities.Subprocess                     import systemCall
-from DIRAC.Core.Security.Misc                            import getProxyInfoAsString
+from DIRAC.Core.Security.Misc                            import getProxyInfoAsString, getProxyInfo
 from DIRAC                                               import gConfig,S_OK,S_ERROR
 
 import os,sys
