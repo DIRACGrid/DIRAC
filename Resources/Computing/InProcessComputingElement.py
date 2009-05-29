@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InProcessComputingElement.py,v 1.17 2009/05/28 13:48:18 rgracian Exp $
+# $Id: InProcessComputingElement.py,v 1.18 2009/05/29 08:08:21 rgracian Exp $
 # File :   InProcessComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: InProcessComputingElement.py,v 1.17 2009/05/28 13:48:18 rgracian Exp $"
+__RCSID__ = "$Id: InProcessComputingElement.py,v 1.18 2009/05/29 08:08:21 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -97,6 +97,8 @@ class InProcessComputingElement(ComputingElement):
   def monitorProxy(self,pilotProxy,payloadProxy):
     """ Monitor the payload proxy and renew as necessary.
     """
+    if not pilotProxy:
+      return S_OK('Using server Certificate')
     if not os.path.exists(pilotProxy):
       return S_ERROR('Pilot proxy not found at %s' %pilotProxy)
     if not os.path.exists(payloadProxy):
