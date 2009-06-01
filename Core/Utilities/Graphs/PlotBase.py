@@ -1,6 +1,6 @@
 import types, random
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PlotBase.py,v 1.1 2009/06/01 22:03:05 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PlotBase.py,v 1.2 2009/06/01 22:37:40 atsareg Exp $
 ########################################################################
 
 """ PlotBase is a base class for various Graphs plots
@@ -9,7 +9,7 @@ import types, random
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: PlotBase.py,v 1.1 2009/06/01 22:03:05 atsareg Exp $"
+__RCSID__ = "$Id: PlotBase.py,v 1.2 2009/06/01 22:37:40 atsareg Exp $"
 
 from matplotlib.patches import Rectangle
 from matplotlib.text import Text
@@ -54,12 +54,13 @@ class PlotBase:
     ylabel = prefs.get('ylabel','') 
     text_size = prefs['text_size']
     text_size_point = pixelToPoint(text_size,dpi)
-    plot_title_size = prefs['plot_title_size']
-    plot_title_padding = prefs['text_padding']
-    plot_title = prefs['plot_title']
+    plot_title = prefs.get('plot_title','')
     if not plot_title:
       plot_title_size = 0
       plot_title_padding = 0
+    else:
+      plot_title_size = prefs['plot_title_size']
+      plot_title_padding = prefs['text_padding']  
     plot_title_size_point = pixelToPoint(plot_title_size,dpi)
     figure_padding = prefs['figure_padding']
     frame_flag = prefs['frame']

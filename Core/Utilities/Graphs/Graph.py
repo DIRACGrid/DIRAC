@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.1 2009/06/01 22:03:05 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.2 2009/06/01 22:37:40 atsareg Exp $
 ########################################################################
 
 """ Graph is a class providing layouts for the complete plot images including
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: Graph.py,v 1.1 2009/06/01 22:03:05 atsareg Exp $"
+__RCSID__ = "$Id: Graph.py,v 1.2 2009/06/01 22:37:40 atsareg Exp $"
 
 import types
 from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -53,7 +53,7 @@ class Graph(object):
     figure.text(0.5,1.-(title_size+figure_padding)/height,title,
                 ha='center',va='bottom',size=pixelToPoint(title_size,dpi) )
      
-    subtitle = prefs['subtitle'] 
+    subtitle = prefs.get('subtitle','') 
     if subtitle:            
       subtitle_size = prefs['subtitle_size']
       subtitle_padding = float(prefs['subtitle_padding'])    
