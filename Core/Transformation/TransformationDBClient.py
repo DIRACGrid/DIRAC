@@ -19,108 +19,91 @@ class TransformationDBClient(FileCatalogueBase):
     """
     return self.name
 
-  def addReplica(self,tuple,force=False):
-    """ Add a replica to the database
-    """
-    if type(tuple) == types.TupleType:
-      tuples = [tuple]
-    elif type(tuple) == types.ListType:
-      tuples = tuple
-    else:
-      errStr = "TransformationDBClient.addReplica: Supplied file info must be tuple or list of tuples."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    server = RPCClient(self.server,timeout=120)
-    return server.addReplica(tuples,force)
-
-  def removeReplica(self,tuple):
-    """ Remove replica from database
-    """
-    if type(tuple) == types.TupleType:
-      tuples = [tuple]
-    elif type(tuple) == types.ListType:
-      tuples = tuple
-    else:
-      errStr = "TransformationDBClient.removeReplica: Supplied file info must be tuple or list of tuples."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    server = RPCClient(self.server,timeout=120)
-    return server.removeReplica(tuples)
-
-  def addFile(self,tuple,force=False):
-    """ Add a file to the database
-    """
-    if type(tuple) == types.TupleType:
-      tuples = [tuple]
-    elif type(tuple) == types.ListType:
-      tuples = tuple
-    else:
-      errStr = "TransformationDBClient.addFile: Supplied file info must be tuple or list of tuples."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    server = RPCClient(self.server,timeout=120)
-    return server.addFile(tuples,force)
-
-  def removeFile(self,lfn):
-    """ Remove file from the database
-    """
-    if type(lfn) in types.StringTypes:
-      lfns = [lfn]
-    elif type(lfn) == types.ListType:
-      lfns = lfn
-    else:
-      errStr = "TransformationDBClient.removeFile: Supplied lfn must be string or list of strings."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    server = RPCClient(self.server,timeout=120)
-    return server.removeFile(lfns)
-
   def getReplicas(self,lfn):
-    """ Remove file from the database
-    """
-    if type(lfn) in types.StringTypes:
-      lfns = [lfn]
-    elif type(lfn) == types.ListType:
-      lfns = lfn
-    else:
-      errStr = "TransformationDBClient.getReplicas: Supplied lfn must be string or list of strings."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    lfns = res['Value'].keys()
     server = RPCClient(self.server,timeout=120)
     return server.getReplicas(lfns)
 
-  def getReplicaStatus(self,tuple):
-    if type(tuple) == types.TupleType:
-      tuples = [tuple]
-    elif type(tuple) == types.ListType:
-      tuples = tuple
-    else:
-      errStr = "TransformationDBClient.getReplicasStatus: Supplied file info must be tuple or list of tuples."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    server = RPCClient(self.server)
+  def addFile(self,lfn,force=False):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    tuples = []
+    for lfn,info in res['Value'].items():
+      tuples.append((lfn,info['PFN'],info['Size'],info['SE'],info['GUID'],info['Checksum']))     
+    server = RPCClient(self.server,timeout=120)
+    return server.addFile(tuples,force)
+
+  def addReplica(self,lfn,force=False):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    tuples = []
+    for lfn,info in res['Value'].items():
+      tuples.append((lfn,info['PFN'],info['SE'],False))
+    server = RPCClient(self.server,timeout=120)
+    return server.addReplica(tuples,force)
+
+  def removeFile(self,lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    lfns = res['Value'].keys()
+    server = RPCClient(self.server,timeout=120)
+    return server.removeFile(lfns)
+
+  def removeReplica(self,lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    tuples = []
+    for lfn,info in res['Value'].items():
+      tuples.append((lfn,info['PFN'],info['SE']))
+    server = RPCClient(self.server,timeout=120)
+    return server.removeReplica(tuples)
+
+  def getReplicaStatus(self,lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    tuples = []
+    for lfn,info in res['Value'].items():
+      tuples.append((lfn,info['SE']))
+    server = RPCClient(self.server,timeout=120)
     return server.getReplicaStatus(tuples)
 
-  def setReplicaStatus(self,tuple):
-    if type(tuple) == types.TupleType:
-      tuples = [tuple]
-    elif type(tuple) == types.ListType:
-      tuples = tuple
-    else:
-      errStr = "TransformationDBClient.setReplicasStatus: Supplied file info must be tuple or list of tuples."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
+  def setReplicaStatus(self,lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    tuples = []
+    for lfn,info in res['Value'].items():
+      tuples.append((lfn,info['PFN'],info['SE'],info['Status']))
     server = RPCClient(self.server,timeout=120)
     return server.setReplicaStatus(tuples)
 
-  def setReplicaHost(self,tuple):
-    if type(tuple) == types.TupleType:
-      tuples = [tuple]
-    elif type(tuple) == types.ListType:
-      tuples = tuple
-    else:
-      errStr = "TransformationDBClient.setReplicaHost: Supplied file info must be tuple or list of tuples."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
+  def setReplicaHost(self,lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    tuples = []
+    for lfn,info in res['Value'].items():
+      tuples.append((lfn,info['PFN'],info['SE'],info['NewSE']))
     server = RPCClient(self.server,timeout=120)
     return server.setReplicaHost(tuples)
+
+  def __checkArgumentFormat(self,path):
+    if type(path) in types.StringTypes:
+      urls = {path:False}
+    elif type(path) == types.ListType:
+      urls = {}
+      for url in path:
+        urls[url] = False
+    elif type(path) == types.DictType:
+     urls = path
+    else:
+      return S_ERROR("TransformationDBClient.__checkArgumentFormat: Supplied path is not of the correct format.")
+    return S_OK(urls)
