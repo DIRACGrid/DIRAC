@@ -1,15 +1,15 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/BookkeepingDBClient.py,v 1.16 2008/10/08 12:33:22 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/BookkeepingDBClient.py,v 1.17 2009/06/02 08:18:10 acsmith Exp $
 
 """ Client for BookkeepingDB file catalog
 """
 
-__RCSID__ = "$Id: BookkeepingDBClient.py,v 1.16 2008/10/08 12:33:22 rgracian Exp $"
+__RCSID__ = "$Id: BookkeepingDBClient.py,v 1.17 2009/06/02 08:18:10 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.DataManagementSystem.Client.Catalog.FileCatalogueBase import FileCatalogueBase
 import types, os
-from DIRAC.ConfigurationSystem.Client import PathFinder
 
 class BookkeepingDBClient(FileCatalogueBase):
   """ File catalog client for bookkeeping DB
@@ -24,19 +24,101 @@ class BookkeepingDBClient(FileCatalogueBase):
         self.url = PathFinder.getServiceURL('Bookkeeping/BookkeepingManager')
       else:
         self.url = url
-    except Exception,x:
-      print x
+    except Exception,exceptionMessage:
+      gLogger.exception('BookkeepingDBClient.__init__: Exception while obtaining Bookkeeping service URL.','',exceptionMessage)
       self.valid = False
 
   def isOK(self):
     return self.valid
 
-  def __setHasReplicaFlag(self,lfns):
+  def addFile(self,lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    fileList = []
+    for lfn, info in res['Value'].items():
+      fileList.append(lfn)
+    return self.__setHasReplicaFlag(fileList)
 
-    failed = {}
+  def addReplica(self,lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    fileList = []
+    for lfn, info in res['Value'].items():
+      fileList.append(lfn)
+    return self.__setHasReplicaFlag(fileList)
+
+  def removeFile(self,path):
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    lfns = res['Value'].keys()  
+    res = self.__exists(lfns)
+    if not res['OK']:
+      return res
+    lfnsToRemove = []
     successful = {}
+    for lfn,exists in res['Value']['Successful'].items():
+      if exists:
+        lfnsToRemove.append(lfn)
+      else:
+        successful[lfn] = True
+    res = self.__unsetHasReplicaFlag(lfnsToRemove)
+    failed = res['Value']['Failed']
+    successful.update(res['Value']['Successful'])
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
+  def removeReplica(self,lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    successful = {}
+    for lfn, info in res['Value'].items():
+      successful[lfn] = True
+    resDict = {'Failed':{},'Successful':successful}
+    return S_OK(resDict)
+
+  def exists(self,path):
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    lfns = res['Value'].keys()
+    return self.__exists(lfns)
+
+  def getFileMetadata(self,path):
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    lfns = res['Value'].keys()
+    return self.__getFileMetadata(lfns)
+
+  ################################################################
+  #
+  # These are the internal methods used for actual interaction with the BK service
+  #
+
+  def __checkArgumentFormat(self,path):
+    if type(path) in types.StringTypes:
+      urls = {path:False}
+    elif type(path) == types.ListType:
+      urls = {}
+      for url in path:
+        urls[url] = False
+    elif type(path) == types.DictType:
+     urls = path
+    else:
+      errStr = "BookkeepingDBClient.__checkArgumentFormat: Supplied path is not of the correct format."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    return S_OK(urls)
+
+  def __setHasReplicaFlag(self,lfns):
     server = RPCClient(self.url,timeout=120)
     res = server.addFiles(lfns)
+    successful = {}
+    failed = {}
     if not res['OK']:
       for lfn in lfns:
         failed[lfn] = res['Message']
@@ -54,11 +136,10 @@ class BookkeepingDBClient(FileCatalogueBase):
       return result
 
   def __unsetHasReplicaFlag(self,lfns):
-
-    failed = {}
-    successful = {}
     server = RPCClient(self.url,timeout=120)
     res = server.removeFiles(lfns)
+    successful = {}
+    failed = {}
     if not res['OK']:
       for lfn in lfns:
         failed[lfn] = res['Message']
@@ -74,11 +155,10 @@ class BookkeepingDBClient(FileCatalogueBase):
       return S_OK(resDict)
 
   def __exists(self,lfns):
-
-    failed = {}
-    successful = {}
     server = RPCClient(self.url,timeout=120)
     res = server.exists(lfns)
+    successful = {}
+    failed = {}
     if not res['OK']:
       for lfn in lfns:
         failed[lfn] = res['Message']
@@ -108,94 +188,3 @@ class BookkeepingDBClient(FileCatalogueBase):
           successful[lfn] = result
       resDict = {'Successful':successful,'Failed':failed}
       return S_OK(resDict)
-
-  def addFile(self,fileTuple):
-    """ A tuple should be supplied to this method which contains:
-        (lfn,pfn,size,se,guid,checksum)
-        A list of tuples may also be supplied.
-    """
-    successful = {}
-    failed = {}
-    if type(fileTuple) == types.TupleType:
-      files = [fileTuple]
-    elif type(fileTuple) == types.ListType:
-      files = fileTuple
-    else:
-      return S_ERROR('BookkeepingDBClient.addFile: Must supply a file tuple of list of tuples')
-    fileList = []
-    for lfn,pfn,size,se,guid,checksum in files:
-      fileList.append(lfn)
-    return self.__setHasReplicaFlag(fileList)
-
-  def addReplica(self,replicaTuple):
-    """ This adds a replica to the catalogue
-        The tuple to be supplied is of the following form:
-          (lfn,pfn,se,master)
-        where master = True or False
-    """
-    if type(replicaTuple) == types.TupleType:
-      replicas = [replicaTuple]
-    elif type(replicaTuple) == types.ListType:
-      replicas = replicaTuple
-    else:
-      return S_ERROR('BookkeepingDBClient.addReplica: Must supply a replica tuple of list of tuples')
-    fileList = []
-    for lfn,pfn,se,master in replicas:
-      fileList.append(lfn)
-    return self.__setHasReplicaFlag(fileList)
-
-  def removeFile(self,path):
-    if type(path) == types.StringType:
-      lfns = [path]
-    elif type(path) == types.ListType:
-       lfns = path
-    else:
-      return S_ERROR('BookkeepingDBClient.removeFile: Must supply a path or list of paths')
-    res = self.__exists(lfns)
-    if not res['OK']:
-      return res
-    lfnsToRemove = []
-    successful = {}
-    for lfn,exists in res['Value']['Successful'].items():
-      if exists:
-        lfnsToRemove.append(lfn)
-      else:
-        successful[lfn] = True
-    res = self.__unsetHasReplicaFlag(lfnsToRemove)
-    failed = res['Value']['Failed']
-    successful.update(res['Value']['Successful'])
-    resDict = {'Failed':failed,'Successful':successful}
-    return S_OK(resDict)
-
-  def removeReplica(self,replicaTuple):
-    if type(replicaTuple) == types.TupleType:
-      replicas = [replicaTuple]
-    elif type(replicaTuple) == types.ListType:
-      replicas = replicaTuple
-    else:
-      return S_ERROR('BookkeepingDBClient.setReplicaStatus: Must supply a file tuple or list of file typles')
-    successful = {}
-    for lfn,pfn,se in replicas:
-      successful[lfn] = True
-    resDict = {'Failed':{},'Successful':successful}
-    return S_OK(resDict)
-
-  def exists(self,path):
-    if type(path) == types.StringType:
-      lfns = [path]
-    elif type(path) == types.ListType:
-       lfns = path
-    else:
-      return S_ERROR('BookkeepingDBClient.exists: Must supply a path or list of paths')
-    return self.__exists(lfns)
-
-  def getFileMetadata(self,path):
-    if type(path) == types.StringType:
-      lfns = [path]
-    elif type(path) == types.ListType:
-       lfns = path
-    else:
-      return S_ERROR('BookkeepingDBClient.exists: Must supply a path or list of paths')
-    return self.__getFileMetadata(lfns)
-
-
