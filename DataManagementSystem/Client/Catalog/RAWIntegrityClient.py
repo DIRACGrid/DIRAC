@@ -36,21 +36,20 @@ class RAWIntegrityClient(FileCatalogueBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def addFile(self, fileTuple):
-    """ A tuple should be supplied to this method which contains: (lfn,pfn,size,se,guid)
-        A list of tuples may also be supplied.
-    """
-    if type(fileTuple) == types.TupleType:
-      files = [fileTuple]
-    elif type(fileTuple) == types.ListType:
-      files = fileTuple
-    else:
-      return S_ERROR('RAWIntegrityClient.addFile: Must supply a file tuple of list of tuples')
+  def addFile(self, lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
     failed = {}
     successful = {}
-    for lfn,pfn,size,se,guid,checksum in files:
+    for lfn,info in res['Value'].items():
       server = RPCClient(self.url,timeout=120)
-      res = server.addFile(str(lfn),str(pfn),int(size),str(se),str(guid),str(checksum))
+      pfn = str(info['PFN'])
+      size = int(info['Size'])
+      se = str(info['SE'])
+      guid = str(info['GUID'])
+      checksum = str(info['Checksum'])      
+      res = server.addFile(lfn,pfn,size,se,guid,checksum)
       if not res['OK']:
         failed[lfn] = res['Message']
       else:
@@ -58,7 +57,7 @@ class RAWIntegrityClient(FileCatalogueBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def __checkArgumentFormat(self,path):   
+  def __checkArgumentFormat(self,path):
     if type(path) in types.StringTypes:
       urls = {path:False}
     elif type(path) == types.ListType:
