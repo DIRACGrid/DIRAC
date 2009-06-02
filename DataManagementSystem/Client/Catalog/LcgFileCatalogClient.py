@@ -543,6 +543,9 @@ class LcgFileCatalogClient(FileCatalogueBase):
         if not res['OK']:
           self.__abortTransaction()
           failed[lfn] = res['Message']
+          res = self.__unlinkPath(lfn)
+          if not res['OK']:
+            gLogger.error("LcgFileCatalogClient.addFile: Failed to remove file after failure." % res['Message'])
         else:
           #Finally, register the pfn replica
           res = self.__addReplica(guid,pfn,se,master)
@@ -866,7 +869,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
   # These are the internal methods to be used by all methods
   #
 
-  def __checkArgumentFormat(self,path):   
+  def __checkArgumentFormat(self,path):
     if type(path) in types.StringTypes:
       urls = {path:False}
     elif type(path) == types.ListType:
