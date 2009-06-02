@@ -2,6 +2,7 @@
 """
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Client.Catalog.FileCatalogueBase import FileCatalogueBase
+from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.DISET.RPCClient import RPCClient
 import types
 
@@ -53,7 +54,17 @@ class TransformationDBClient(FileCatalogueBase):
       return res
     lfns = res['Value'].keys()
     server = RPCClient(self.server,timeout=120)
-    return server.removeFile(lfns)
+    successful = {}
+    failed = {}
+    listOfLists = breakListIntoChunks(lfns,100)
+    for list in listOfLists:
+      res = server.removeFile(list)
+      if not res['OK']:
+        return res
+      successful.update(res['Value']['Successful'])
+      failed.update(res['Value']['Failed'])
+    resDict = {'Successful': successful, 'Failed':failed}
+    return S_OK(resDict) 
 
   def removeReplica(self,lfn):
     res = self.__checkArgumentFormat(lfn)
@@ -63,7 +74,17 @@ class TransformationDBClient(FileCatalogueBase):
     for lfn,info in res['Value'].items():
       tuples.append((lfn,info['PFN'],info['SE']))
     server = RPCClient(self.server,timeout=120)
-    return server.removeReplica(tuples)
+    successful = {}
+    failed = {}
+    listOfLists = breakListIntoChunks(tuples,100)
+    for list in listOfLists:
+      res = server.removeReplica(list)
+      if not res['OK']:
+        return res
+      successful.update(res['Value']['Successful'])
+      failed.update(res['Value']['Failed'])
+    resDict = {'Successful': successful, 'Failed':failed}
+    return S_OK(resDict)
 
   def getReplicaStatus(self,lfn):
     res = self.__checkArgumentFormat(lfn)
