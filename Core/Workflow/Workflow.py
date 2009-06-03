@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.37 2009/06/03 12:19:26 paterson Exp $
+# $Id: Workflow.py,v 1.38 2009/06/03 14:25:14 paterson Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.37 $"
+__RCSID__ = "$Revision: 1.38 $"
 
 import os, re, types
 import xml.sax
@@ -280,7 +280,8 @@ class Workflow(AttributeCollection):
         if self.workflowStatus['OK']:
           error_message = result['Message']
         self.workflowStatus = S_ERROR(result['Message'])
-      step_result = result['Value']
+      if result.has_key('Value'):
+        step_result = result['Value']
 
     # now we need to copy output values to the STEP!!! parameters
     #print "WorkflowInstance output assignment"
