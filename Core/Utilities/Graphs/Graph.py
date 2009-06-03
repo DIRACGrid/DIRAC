@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.2 2009/06/01 22:37:40 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.3 2009/06/03 07:46:12 atsareg Exp $
 ########################################################################
 
 """ Graph is a class providing layouts for the complete plot images including
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: Graph.py,v 1.2 2009/06/01 22:37:40 atsareg Exp $"
+__RCSID__ = "$Id: Graph.py,v 1.3 2009/06/03 07:46:12 atsareg Exp $"
 
 import types
 from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -112,11 +112,13 @@ class Graph(object):
     
     return legend_ax, plot_axes
 
-  def makeGraph(self, data, metadata, *args, **kw):
+  def makeGraph(self, data, *args, **kw):
   
     # Evaluate all the preferences
-    self.prefs = evalPrefs(metadata,*args,**kw)
+    self.prefs = evalPrefs(*args,**kw)
     prefs = self.prefs
+    
+    metadata = prefs.get('metadata',{})
     
     legend_ax, plot_axes = self.layoutFigure(metadata,*args,**kw)
     nPlots = len(plot_axes)
@@ -137,7 +139,8 @@ class Graph(object):
     # Make plots    
     graphData = []
     for i in range(nPlots):
-      plot_type = metadata[i]['plot_type']     
+      plot_prefs = evalPrefs(prefs,metadata[i])
+      plot_type = plot_prefs['plot_type']     
       try:
         exec "import %s" % plot_type
       except ImportError, x:
@@ -146,12 +149,15 @@ class Graph(object):
         
       ax = plot_axes[i]  
       gdata = GraphData(data[i])
-      if metadata[i].has_key('limit_labels'):
-        gdata.truncateLabels(metadata[i]['limit_labels'])
-      if metadata[i].has_key('cumulate_data'):  
+      if plot_prefs.has_key('limit_labels'):
+        gdata.truncateLabels(plot_prefs['limit_labels'])
+      if plot_prefs.has_key('cumulate_data'):  
         gdata.makeCumulativeGraph()
       graphData.append(gdata)
-      plot = eval("%s.%s(graphData[i],ax,metadata[i],prefs)" % (plot_type,plot_type) )
+      if gdata.key_type == "time":
+        time_title = add_time_to_title(gdata.min_key,gdata.max_key)
+        plot_prefs['plot_title'] = plot_prefs.get('plot_title','')+' '+time_title
+      plot = eval("%s.%s(graphData[i],ax,plot_prefs)" % (plot_type,plot_type) )
       plot.draw()
       if i == 0:
         legendData = plot.getLegendData()

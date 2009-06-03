@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphUtilities.py,v 1.1 2009/06/01 22:03:05 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphUtilities.py,v 1.2 2009/06/03 07:46:12 atsareg Exp $
 ########################################################################
 
 """ GraphUtilities is a a collection of utility functions and classes used
@@ -9,11 +9,12 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: GraphUtilities.py,v 1.1 2009/06/01 22:03:05 atsareg Exp $"
+__RCSID__ = "$Id: GraphUtilities.py,v 1.2 2009/06/03 07:46:12 atsareg Exp $"
 
 import types, time, datetime, calendar, math, pytz, numpy, os
 from matplotlib.ticker import ScalarFormatter
-from matplotlib.dates import AutoDateLocator, AutoDateFormatter, DateFormatter, RRuleLocator, rrulewrapper, HOURLY, MINUTELY, SECONDLY, YEARLY, MONTHLY, DAILY
+from matplotlib.dates import AutoDateLocator, AutoDateFormatter, DateFormatter, RRuleLocator, \
+                             rrulewrapper, HOURLY, MINUTELY, SECONDLY, YEARLY, MONTHLY, DAILY
 from dateutil.relativedelta import relativedelta
 
 def evalPrefs(*args,**kw):
@@ -39,39 +40,39 @@ def pixelToPoint(size,dpi):
 datestrings = ['%x %X', '%x', '%Y-%m-%d %H:%M:%S']
 
 def convert_to_datetime( string ):
-      orig_string = str( string )
-      try:
-        if type(string) == datetime.datetime:
-          results = string
-        else:
-          results = eval(str(string),{'__builtins__':None,'time':time,'math':math},{})
-        if type(results) == types.FloatType or type(results) == types.IntType:
-          results = datetime.datetime.utcfromtimestamp( int(results) )
-        elif type(results) == datetime.datetime:
-          pass
-        else:
-          raise ValueError( "Unknown datetime type!" )
-      except Exception, e:
-        t = None
-        for dateformat in datestrings:
-            try:
-                t = time.strptime(string, dateformat)
-                timestamp = calendar.timegm(t) #-time.timezone
-                results = datetime.datetime.utcfromtimestamp(timestamp)
-                break
-            except:
-                pass
-        if t == None:
-            try:
-                string = string.split('.', 1)[0]
-                t = time.strptime(string, dateformat)
-                timestamp = calendar.timegm(t) #-time.timezone
-                results = datetime.datetime.utcfromtimestamp(timestamp)
-            except:
-                raise
-                raise ValueError("Unable to create time from string!\nExpecting " \
-                    "format of: '12/06/06 12:54:67'\nRecieved:%s" % orig_string)
-      return results
+  orig_string = str( string )
+  try:
+    if type(string) == datetime.datetime:
+      results = string
+    else:
+      results = eval(str(string),{'__builtins__':None,'time':time,'math':math},{})
+    if type(results) == types.FloatType or type(results) == types.IntType:
+      results = datetime.datetime.utcfromtimestamp( int(results) )
+    elif type(results) == datetime.datetime:
+      pass
+    else:
+      raise ValueError( "Unknown datetime type!" )
+  except Exception, e:
+    t = None
+    for dateformat in datestrings:
+        try:
+            t = time.strptime(string, dateformat)
+            timestamp = calendar.timegm(t) #-time.timezone
+            results = datetime.datetime.utcfromtimestamp(timestamp)
+            break
+        except:
+            pass
+    if t == None:
+        try:
+            string = string.split('.', 1)[0]
+            t = time.strptime(string, dateformat)
+            timestamp = calendar.timegm(t) #-time.timezone
+            results = datetime.datetime.utcfromtimestamp(timestamp)
+        except:
+            raise
+            raise ValueError("Unable to create time from string!\nExpecting " \
+                "format of: '12/06/06 12:54:67'\nRecieved:%s" % orig_string)
+  return results
 
 def to_timestamp( val ):
     val = convert_to_datetime( val )
@@ -90,7 +91,7 @@ day_switch = 7
 # out the weeks in the subtitle.
 week_switch = 7
 
-def add_time_to_title( begin, end, metadata ):
+def add_time_to_title( begin, end, metadata={} ):
     """ Given a title and two times, adds the time info to the title.
         Example results:
            "Number of Attempted Transfers\n(24 Hours from 4:45 12-14-2006 to

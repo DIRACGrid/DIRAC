@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphData.py,v 1.1 2009/06/01 22:03:05 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphData.py,v 1.2 2009/06/03 07:46:12 atsareg Exp $
 ########################################################################
 
 """ GraphData encapsulates input data for the DIRAC Graphs plots
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: GraphData.py,v 1.1 2009/06/01 22:03:05 atsareg Exp $"
+__RCSID__ = "$Id: GraphData.py,v 1.2 2009/06/03 07:46:12 atsareg Exp $"
 
 import types, datetime
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import convert_to_datetime, to_timestamp
@@ -112,6 +112,9 @@ class GraphData:
       self.all_keys = self.plotdata.getKeys()   
     else:
       self.all_keys.sort()
+      
+    self.min_key = min(self.all_keys)
+    self.max_key = max(self.all_keys)  
       
   def makeNumKeys(self):
   
