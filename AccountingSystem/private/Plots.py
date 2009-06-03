@@ -78,8 +78,8 @@ def generateTimedStackedBarPlot( fileName, data, metadata ):
     fn = file( fileName, "wb" )
   except:
     return S_ERROR( "Can't open %s" % filename )
-  if not data:
-    return S_ERROR( "No data for that selection" )
+  #if not data:
+  #  return S_ERROR( "No data for that selection" )
   metadata, data = convertUTCToLocal( metadata, data )
   alignToGranularity( metadata )
   plotter = TimeStackedBarGraph()
@@ -92,8 +92,8 @@ def generateQualityPlot( fileName, data, metadata ):
     fn = file( fileName, "wb" )
   except:
     return S_ERROR( "Can't open %s" % filename )
-  if not data:
-    return S_ERROR( "No data for that selection" )
+  #if not data:
+  #  return S_ERROR( "No data for that selection" )
   plotter = QualityMap()
   metadata, data = convertUTCToLocal( metadata, data )
   alignToGranularity( metadata )
@@ -108,8 +108,8 @@ def generateCumulativePlot( fileName, data, metadata ):
     return S_ERROR( "Can't open %s" % filename )
   if 'is_cumulative' not in metadata:
     metadata[ 'is_cumulative' ] = True
-  if not data:
-    return S_ERROR( "No data for that selection" )
+  #if not data:
+  #  return S_ERROR( "No data for that selection" )
   plotter = CumulativeGraph()
   metadata, data = convertUTCToLocal( metadata, data )
   alignToGranularity( metadata )
