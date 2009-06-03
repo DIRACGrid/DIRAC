@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/ReportsClient.py,v 1.7 2009/05/28 17:20:28 acasajus Exp $
-__RCSID__ = "$Id: ReportsClient.py,v 1.7 2009/05/28 17:20:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/ReportsClient.py,v 1.8 2009/06/03 12:30:35 acasajus Exp $
+__RCSID__ = "$Id: ReportsClient.py,v 1.8 2009/06/03 12:30:35 acasajus Exp $"
 
 import tempfile
 import base64
@@ -84,21 +84,21 @@ class ReportsClient:
                     'extraArgs' : extraArgs }
     compress = compress and zCompressionEnabled
     if compress:
-      plotStub = "ZP:%s" % base64.urlsafe_b64encode( zlib.compress( DEncode.encode( plotRequest ), 9 ) )
+      plotStub = "Z:%s" % base64.urlsafe_b64encode( zlib.compress( DEncode.encode( plotRequest ), 9 ) )
     elif not self.__forceRawEncoding:
-      plotStub = "SP:%s" % base64.urlsafe_b64encode( DEncode.encode( plotRequest ) )
+      plotStub = "S:%s" % base64.urlsafe_b64encode( DEncode.encode( plotRequest ) )
     else:
-      plotStub = "RP:%s" % DEncode.encode( plotRequest )
+      plotStub = "R:%s" % DEncode.encode( plotRequest )
     thbStub = False
     if 'thumbnail' in extraArgs and extraArgs[ 'thumbnail' ]:
       thbStub = plotStub
       extraArgs[ 'thumbnail' ] = False
       if compress:
-        plotStub = "ZP:%s" % base64.urlsafe_b64encode( zlib.compress( DEncode.encode( plotRequest ), 9 ) )
+        plotStub = "Z:%s" % base64.urlsafe_b64encode( zlib.compress( DEncode.encode( plotRequest ), 9 ) )
       elif not self.__forceRawEncoding:
-        plotStub = "SP:%s" % base64.urlsafe_b64encode( DEncode.encode( plotRequest ) )
+        plotStub = "S:%s" % base64.urlsafe_b64encode( DEncode.encode( plotRequest ) )
       else:
-        plotStub = "RP:%s" % DEncode.encode( plotRequest )
+        plotStub = "R:%s" % DEncode.encode( plotRequest )
     return S_OK( { 'plot' : plotStub, 'thumbnail' : thbStub } )
 
   def getPlotToMem( self, plotName ):

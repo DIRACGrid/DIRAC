@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.23 2009/05/28 17:20:28 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.23 2009/05/28 17:20:28 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.24 2009/06/03 12:30:35 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.24 2009/06/03 12:30:35 acasajus Exp $"
 import types
 import os
 import base64
@@ -159,7 +159,7 @@ class ReportGeneratorHandler( RequestHandler ):
     return policyFilter.filterListingValues( credDict, retVal[ 'Value' ] )
 
   def __generatePlotFromFileId( self, fileId ):
-    stub = fileId[3:]
+    stub = fileId[2:]
     type = fileId[0]
     if type == 'Z':
       gLogger.info( "Compressed request, uncompressing")
@@ -208,7 +208,7 @@ class ReportGeneratorHandler( RequestHandler ):
     Get graphs data
     """
     #First check if we've got to generate the plot
-    if len( fileId ) > 5 and fileId[1:3] == 'P:':
+    if len( fileId ) > 5 and fileId[1] == ':':
       gLogger.info( "Seems the file request is a plot generation request!" )
       #Seems a request for a plot!
       result = self.__generatePlotFromFileId( fileId )
