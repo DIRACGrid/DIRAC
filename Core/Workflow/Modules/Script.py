@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: Script.py,v 1.3 2009/05/01 11:00:02 rgracian Exp $
+# $Id: Script.py,v 1.4 2009/06/03 11:27:59 paterson Exp $
 # File :   Script.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     or file to run (and is also a simple example of a workflow module).
 """
 
-__RCSID__ = "$Id: Script.py,v 1.3 2009/05/01 11:00:02 rgracian Exp $"
+__RCSID__ = "$Id: Script.py,v 1.4 2009/06/03 11:27:59 paterson Exp $"
 
 
 from DIRAC.Core.Utilities.Subprocess import shellCall
@@ -59,15 +59,17 @@ class Script(object):
   def execute(self):
     """ Main execution function.
     """
+    failed = False
     result = self.resolveInputVariables()
     if not result['OK']:
       return result
     self.log.info('Script Module Instance Name: %s' %(self.name))
+    cmd = self.executable
     if os.path.exists(os.path.basename(self.executable)):
       self.executable = os.path.basename(self.executable)
       if not os.access('%s/%s' %(os.getcwd(),self.executable), 5):
         os.chmod('%s/%s' %(os.getcwd(),self.executable),0755)
-    cmd = self.executable
+      cmd = '%s/%s' %(os.getcwd(),self.executable)
     if re.search('.py$',self.executable):
       cmd = '%s %s' %(sys.executable,self.executable)
     if re.search('.sh$',self.executable) or re.search('.csh$',self.executable):
@@ -78,13 +80,19 @@ class Script(object):
     self.log.info('Command is: %s' %cmd)
     outputDict = shellCall(0,cmd)
     if not outputDict['OK']:
-      self.log.info('Shell call execution failed:')
-      self.log.info(outputDict['Message'])
+      failed=True
+      self.log.error('Shell call execution failed:')
+      self.log.error(outputDict['Message'])
     resTuple = outputDict['Value']
     status = resTuple[0]
     stdout = resTuple[1]
     stderr = resTuple[2]
-    self.log.info('%s execution completed with status %s' %(self.executable,status))
+    if status:
+      failed=True
+      self.log.error('Non-zero status %s while executing %s' %(status,cmd))
+    else:
+      self.log.info('%s execution completed with status %s' %(self.executable,status))
+
     self.log.verbose(stdout)
     self.log.verbose(stderr)
     if os.path.exists(self.logFile):
@@ -96,6 +104,10 @@ class Script(object):
       fopen.write('<<<<<<<<<< %s Standard Error >>>>>>>>>>\n\n%s ' %(self.executable,stderr))
     fopen.close()
     self.log.info('Output written to %s, execution complete.' % (self.logFile))
+
+    if failed:
+      return S_ERROR('Exit Status %s' %(status))
+
     return S_OK()
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
