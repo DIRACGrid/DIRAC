@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.4 2009/06/03 18:15:41 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.5 2009/06/03 18:46:36 atsareg Exp $
 ########################################################################
 
 """ Graph is a class providing layouts for the complete plot images including
@@ -9,9 +9,9 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: Graph.py,v 1.4 2009/06/03 18:15:41 atsareg Exp $"
+__RCSID__ = "$Id: Graph.py,v 1.5 2009/06/03 18:46:36 atsareg Exp $"
 
-import types
+import types, datetime
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure 
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
@@ -58,7 +58,7 @@ class Graph(object):
       subtitle_size = prefs['subtitle_size']
       subtitle_padding = float(prefs['subtitle_padding'])    
       figure.text(0.5,1.-(subtitle_size+subtitle_padding+title_size+figure_padding)/height,
-                  subtitle,ha='center',va='bottom',size=pixelToPoint(subtitle_size,dpi) )            
+                  subtitle,ha='center',va='bottom',size=pixelToPoint(subtitle_size,dpi),fontstyle='italic' )            
 
     graph_width = width - 2.*figure_padding
     graph_height = height - 2.*figure_padding - title_padding - title_size
@@ -66,6 +66,12 @@ class Graph(object):
       graph_height = graph_height - subtitle_size - subtitle_padding     
     graph_left = figure_padding
     graph_bottom = figure_padding      
+                
+    #########################################
+    # Make the plot time stamp
+    timeString = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S ')+'UTC'
+    time_size = prefs['text_size']
+    figure.text(0.995,0.005,timeString,ha='right',va='bottom',size=pixelToPoint(time_size,dpi),fontstyle='italic' )               
                 
     #########################################
     # Make the graph Legend if requested     
