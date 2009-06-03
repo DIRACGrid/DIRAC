@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Palette.py,v 1.1 2009/06/01 22:03:05 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Palette.py,v 1.2 2009/06/03 14:49:57 atsareg Exp $
 ########################################################################
 
 """ Palette is a tool to generate colors for various Graphs plots and legends
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: Palette.py,v 1.1 2009/06/01 22:03:05 atsareg Exp $"
+__RCSID__ = "$Id: Palette.py,v 1.2 2009/06/03 14:49:57 atsareg Exp $"
 
 import md5
 
@@ -23,12 +23,14 @@ job_status_palette = {
    'Completed': '#00FF21',
    'Done':      '#238802',
    'Failed':    '#FF0000',
+   'failed':    '#FF0000',
    'Killed':    '#111111'
 }
 
 miscelaneous_pallette = {
    'Others':    '#666666',
-   'NoLabels':  '#0025AD'
+   'NoLabels':  '#0025AD',
+   'Total':     '#00FFDC'
 }
 
 country_palette = {
