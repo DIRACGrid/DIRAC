@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: PoolXMLCatalog.py,v 1.4 2009/02/26 10:51:43 paterson Exp $
+# $Id: PoolXMLCatalog.py,v 1.5 2009/06/03 12:51:34 paterson Exp $
 ########################################################################
 """ POOL XML Catalog Class
     This class handles simple XML-based File Catalog following the
@@ -7,7 +7,7 @@
     although not complete and with several extensions
 """
 
-__RCSID__ = "$Id: PoolXMLCatalog.py,v 1.4 2009/02/26 10:51:43 paterson Exp $"
+__RCSID__ = "$Id: PoolXMLCatalog.py,v 1.5 2009/06/03 12:51:34 paterson Exp $"
 
 import re, os, xml.dom.minidom, types
 from DIRAC import S_OK, S_ERROR
@@ -336,13 +336,15 @@ class PoolXMLCatalog:
 
     failed = {}
     successful = {}
-    for lfn,pfn,size,se,guid in files:
+    for lfn,pfn,size,se,guid,pfnType in files:
+      print '>'*10
+      print pfnType
       pf = PoolFile()
       pf.guid = guid
       if lfn:
         pf.addLfn(lfn)
       if pfn:
-        pf.addPfn(pfn,None,se)
+        pf.addPfn(pfn,pfnType,se)
 
       self.files[guid]=pf
       successful[lfn] = True
