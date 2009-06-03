@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.85 2009/06/03 09:07:50 acsmith Exp $
+# $Id: TransformationDB.py,v 1.86 2009/06/03 09:18:51 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -1235,7 +1235,7 @@ PRIMARY KEY (FileID)
     for lfn,pfn,oldse,newse in replicaTuples:
       fileIDs = self.__getFileIDsForLfns([lfn])
       if not lfn in fileIDs.values():
-        failed[lfn] = "TransformationDB.setReplicaHost: File not found."
+        successful[lfn] = True # If the file does not exist then return that it was OK
       else:
         ############## Need to consider the case where the new se already exists for the file (breaks the primary key restriction)
         fileID = fileIDs.keys()[0]
