@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphUtilities.py,v 1.2 2009/06/03 07:46:12 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphUtilities.py,v 1.3 2009/06/03 18:15:41 atsareg Exp $
 ########################################################################
 
 """ GraphUtilities is a a collection of utility functions and classes used
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: GraphUtilities.py,v 1.2 2009/06/03 07:46:12 atsareg Exp $"
+__RCSID__ = "$Id: GraphUtilities.py,v 1.3 2009/06/03 18:15:41 atsareg Exp $"
 
 import types, time, datetime, calendar, math, pytz, numpy, os
 from matplotlib.ticker import ScalarFormatter
@@ -327,10 +327,12 @@ class PrettyDateLocator( AutoDateLocator ):
                               bysecond=bysecond )
         
         locator = RRuleLocator(rrule, self.tz)
-        
-        locator.set_view_interval(self.viewInterval)
-        locator.set_data_interval(self.dataInterval)
+        locator.set_axis(self.axis)
+
+        locator.set_view_interval(*self.axis.get_view_interval())
+        locator.set_data_interval(*self.axis.get_data_interval())
         return locator
+
 
 def pretty_float( num ):
 

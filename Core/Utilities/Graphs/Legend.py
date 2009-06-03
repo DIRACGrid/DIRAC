@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Legend.py,v 1.1 2009/06/01 22:03:05 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Legend.py,v 1.2 2009/06/03 18:15:41 atsareg Exp $
 ########################################################################
 
 """ Legend encapsulates a graphical plot legend drawing tool
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: Legend.py,v 1.1 2009/06/01 22:03:05 atsareg Exp $"
+__RCSID__ = "$Id: Legend.py,v 1.2 2009/06/03 18:15:41 atsareg Exp $"
 
 from matplotlib.patches import Rectangle
 from matplotlib.text import Text
@@ -67,16 +67,17 @@ class Legend:
         max_column_text = '%s  %s' % (str(label),str(num))
                 
     text = Text(0.,0.,text=max_column_text,size=self.text_size)
+    text.set_figure(self.ax.figure)
     bbox = text.get_window_extent(self.canvas.get_renderer())
-    self.column_width = bbox.width()+6*self.prefs['text_size']
+    self.column_width = bbox.width+6*self.prefs['text_size']
     
   def draw(self):
   
     dpi = self.prefs['dpi']
     self.text_size = float(self.prefs['text_size'])*100./float(dpi)
     self.__get_column_width()
-    ax_xsize = self.ax.get_window_extent().width()
-    ax_ysize = self.ax.get_window_extent().height()
+    ax_xsize = self.ax.get_window_extent().width
+    ax_ysize = self.ax.get_window_extent().height
   
     nLabels = len(self.labels)
     nColumns = min(self.prefs['max_columns'],int(ax_xsize/self.column_width))

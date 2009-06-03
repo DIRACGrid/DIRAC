@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.3 2009/06/03 07:46:12 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.4 2009/06/03 18:15:41 atsareg Exp $
 ########################################################################
 
 """ Graph is a class providing layouts for the complete plot images including
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: Graph.py,v 1.3 2009/06/03 07:46:12 atsareg Exp $"
+__RCSID__ = "$Id: Graph.py,v 1.4 2009/06/03 18:15:41 atsareg Exp $"
 
 import types
 from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -17,7 +17,7 @@ from matplotlib.figure import Figure
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
 from DIRAC.Core.Utilities.Graphs.Legend import Legend
-from DIRAC import S_OK, S_ERROR
+#from DIRAC import S_OK, S_ERROR
 
 class Graph(object):
 
@@ -129,7 +129,9 @@ class Graph(object):
         metadata = [metadata]
     else:
       if type(data) != types.ListType:
-        return S_ERROR('Single data for multiplot graph')
+        #return S_ERROR('Single data for multiplot graph')
+        print 'Single data for multiplot graph'
+        return 
       if type(metadata) != types.ListType:
         metaList = []
         for ip in range(nPlots):
@@ -167,7 +169,7 @@ class Graph(object):
       legend = Legend(legendData,legend_ax,prefs)
       legend.draw()  
       
-    return S_OK()  
+    #return S_OK()  
       
   def writeGraph(self,fname,format):
 

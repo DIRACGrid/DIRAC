@@ -1,6 +1,6 @@
 import types, random
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PlotBase.py,v 1.2 2009/06/01 22:37:40 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PlotBase.py,v 1.3 2009/06/03 18:15:41 atsareg Exp $
 ########################################################################
 
 """ PlotBase is a base class for various Graphs plots
@@ -9,7 +9,7 @@ import types, random
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: PlotBase.py,v 1.2 2009/06/01 22:37:40 atsareg Exp $"
+__RCSID__ = "$Id: PlotBase.py,v 1.3 2009/06/03 18:15:41 atsareg Exp $"
 
 from matplotlib.patches import Rectangle
 from matplotlib.text import Text
@@ -67,8 +67,8 @@ class PlotBase:
     
     # Create plot axes, and set properties
     
-    left,bottom,width,height = self.ax_contain.get_window_extent().get_bounds()
-    l,b,f_width,f_height = self.figure.get_window_extent().get_bounds()
+    left,bottom,width,height = self.ax_contain.get_window_extent().bounds
+    l,b,f_width,f_height = self.figure.get_window_extent().bounds
         
     ax_plot_rect = (float(figure_padding+left)/f_width,
                     float(figure_padding+bottom)/f_height,
@@ -76,7 +76,7 @@ class PlotBase:
                     float(height-figure_padding-plot_title_size-2*plot_title_padding)/f_height)
     ax = Axes(self.figure,ax_plot_rect)                
     if prefs['square_axis']:
-      l,b,a_width,a_height = ax.get_window_extent().get_bounds()
+      l,b,a_width,a_height = ax.get_window_extent().bounds
       delta = abs(a_height-a_width)
       if a_height>a_width:
         a_height = a_width
@@ -95,7 +95,7 @@ class PlotBase:
                     
     self.figure.add_axes(ax)   
     self.ax = ax                
-    frame = ax.get_frame()
+    frame = ax.patch
     frame.set_fill( False )
 
     if frame_flag.lower() == 'off':
@@ -127,7 +127,7 @@ class PlotBase:
       setp( ax.get_yticklines(),  markersize=pixelToPoint(text_size/2.,dpi) )
       setp( ax.get_xticklines(),  zorder=4.0 )
 
-      setp( ax.get_frame(), linewidth=pixelToPoint(.1,dpi) )
+      setp( ax.patch, linewidth=pixelToPoint(.1,dpi) )
       setp( ax.axesFrame, linewidth=pixelToPoint(1.0,dpi) )
       #setp( ax.axvline(), linewidth=pixelToPoint(1.0,dpi) ) 
       ax.grid( True, color='#555555', linewidth=pixelToPoint(0.1,dpi) )
