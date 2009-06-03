@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.84 2009/05/06 13:15:16 acsmith Exp $
+# $Id: TransformationDB.py,v 1.85 2009/06/03 09:07:50 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -989,7 +989,6 @@ PRIMARY KEY (FileID)
     res = self.addFile(fileTuples,force)
     return res
 
-
   def addFile(self,fileTuples,force=False):
     """  Add a new file to the TransformationDB together with its first replica.
     """
@@ -1186,7 +1185,7 @@ PRIMARY KEY (FileID)
     for lfn,pfn,se,status in replicaTuples:
       fileIDs = self.__getFileIDsForLfns([lfn])
       if not lfn in fileIDs.values():
-        failed[lfn] = "TransformationDB.setReplicaStatus: File not found."
+        successful[lfn] = True # In the case that the file does not exist then return ok
       else:
         fileID = fileIDs.keys()[0]
         if se.lower() == "any" :
