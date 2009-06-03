@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.3 2009/05/28 05:29:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.4 2009/06/03 08:02:30 rgracian Exp $
 # File :   GridPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -12,7 +12,7 @@
   underlying resources.
 
 """
-__RCSID__ = "$Id: GridPilotDirector.py,v 1.3 2009/05/28 05:29:50 rgracian Exp $"
+__RCSID__ = "$Id: GridPilotDirector.py,v 1.4 2009/06/03 08:02:30 rgracian Exp $"
 
 
 GRIDENV                = ''
@@ -34,7 +34,7 @@ from DIRAC.WorkloadManagementSystem.private.PilotDirector  import PilotDirector
 from DIRAC.FrameworkSystem.Client.NotificationClient       import NotificationClient
 from DIRAC.Core.Security.Misc                              import getProxyInfoAsString
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB
-from DIRAC import S_OK, S_ERROR, DictCache, List, Time, systemCall
+from DIRAC import S_OK, S_ERROR, DictCache, List, Time, systemCall, gConfig, Source
 
 class GridPilotDirector(PilotDirector):
   """
