@@ -1,8 +1,8 @@
-# $Id: Workflow.py,v 1.36 2008/07/31 08:49:25 paterson Exp $
+# $Id: Workflow.py,v 1.37 2009/06/03 12:19:26 paterson Exp $
 """
     This is a comment
 """
-__RCSID__ = "$Revision: 1.36 $"
+__RCSID__ = "$Revision: 1.37 $"
 
 import os, re, types
 import xml.sax
@@ -248,6 +248,7 @@ class Workflow(AttributeCollection):
     wf_exec_steps={}
     #print 'Executing Workflow',self.getType()
     error_message = ''
+    step_result = ''
     for step_inst in self.step_instances:
       step_inst_name = step_inst.getName()
       step_inst_type = step_inst.getType()
@@ -279,7 +280,7 @@ class Workflow(AttributeCollection):
         if self.workflowStatus['OK']:
           error_message = result['Message']
         self.workflowStatus = S_ERROR(result['Message'])
-
+      step_result = result['Value']
 
     # now we need to copy output values to the STEP!!! parameters
     #print "WorkflowInstance output assignment"
@@ -303,7 +304,7 @@ class Workflow(AttributeCollection):
     if not self.workflowStatus['OK']:
       return S_ERROR(error_message)
     else:
-      return S_OK(result['Value'])
+      return S_OK(step_result)
 
 from DIRAC.Core.Workflow.WorkflowReader import WorkflowXMLHandler
 
