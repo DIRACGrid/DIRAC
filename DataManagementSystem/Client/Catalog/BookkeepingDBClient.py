@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/BookkeepingDBClient.py,v 1.17 2009/06/02 08:18:10 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/BookkeepingDBClient.py,v 1.18 2009/06/03 09:39:50 acsmith Exp $
 
 """ Client for BookkeepingDB file catalog
 """
 
-__RCSID__ = "$Id: BookkeepingDBClient.py,v 1.17 2009/06/02 08:18:10 acsmith Exp $"
+__RCSID__ = "$Id: BookkeepingDBClient.py,v 1.18 2009/06/03 09:39:50 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -71,6 +71,66 @@ class BookkeepingDBClient(FileCatalogueBase):
     return S_OK(resDict)
 
   def removeReplica(self,lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    successful = {}
+    for lfn, info in res['Value'].items():
+      successful[lfn] = True
+    resDict = {'Failed':{},'Successful':successful}
+    return S_OK(resDict)
+
+  def setReplicaStatus(self,lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    successful = {}  
+    for lfn, info in res['Value'].items():
+      successful[lfn] = True  
+    resDict = {'Failed':{},'Successful':successful}
+    return S_OK(resDict)
+
+  def setReplicaHost(self,lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    successful = {}  
+    for lfn, info in res['Value'].items():
+      successful[lfn] = True  
+    resDict = {'Failed':{},'Successful':successful}
+    return S_OK(resDict)
+
+  def removeDirectory(self,lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    successful = {}
+    for lfn, info in res['Value'].items():
+      successful[lfn] = True
+    resDict = {'Failed':{},'Successful':successful}
+    return S_OK(resDict)
+
+  def createDirectory(self,lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    successful = {}
+    for lfn, info in res['Value'].items():
+      successful[lfn] = True
+    resDict = {'Failed':{},'Successful':successful}
+    return S_OK(resDict)
+
+  def removeLink(self,lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    successful = {}
+    for lfn, info in res['Value'].items():
+      successful[lfn] = True
+    resDict = {'Failed':{},'Successful':successful}
+    return S_OK(resDict)
+
+  def createLink(self,lfn):
     res = self.__checkArgumentFormat(lfn)
     if not res['OK']:
       return res

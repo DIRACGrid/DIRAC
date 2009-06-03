@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.68 2009/06/02 14:57:11 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.69 2009/06/03 09:38:20 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -1289,7 +1289,7 @@ class ReplicaManager:
 
   ##########################################################################
   #
-  # These are the file catalog wrapper functions (read only)
+  # These are the file catalog wrapper functions
   #
 
   def getCatalogExists(self,lfn,singleFile=False):
@@ -1332,15 +1332,15 @@ class ReplicaManager:
     else:
       return self.__executeFileCatalogFunction(lfn,'getFileSize')
 
-  def getCatalogReplicas(self,lfn,singleFile=False):
+  def getCatalogReplicas(self,lfn,allStatus=False,singleFile=False):
     """ Get the replicas registered for files in the FileCatalog
 
         'lfn' is the files to check (can be a single lfn or list of lfns)
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'getReplicas')
+      return self.__executeSingleFileCatalogFunction(lfn,'getReplicas',argsDict={'allStatus':allStatus})
     else:
-      return self.__executeFileCatalogFunction(lfn,'getReplicas')
+      return self.__executeFileCatalogFunction(lfn,'getReplicas',argsDict={'allStatus':allStatus})
 
   def getCatalogReplicaStatus(self,lfn,singleFile=False):
     """ Get the status of the replica as registered in the FileCatalog
@@ -1421,6 +1421,106 @@ class ReplicaManager:
       return self.__executeSingleFileCatalogFunction(lfn,'readLink')
     else:
       return self.__executeFileCatalogFunction(lfn,'readLink')
+
+  def addCatalogFile(self,lfn,singleFile=False):
+    """ Add a new file to the FileCatalog
+        
+        'lfn' is the dictionary containing the file properties
+    """
+    if singleFile:
+      return self.__executeSingleFileCatalogFunction(lfn,'addFile')
+    else:
+      return self.__executeFileCatalogFunction(lfn,'addFile')
+
+  def addCatalogReplica(self,lfn,singleFile=False):
+    """ Add a new replica to the FileCatalog
+
+        'lfn' is the dictionary containing the replica properties
+    """
+    if singleFile:
+      return self.__executeSingleFileCatalogFunction(lfn,'addReplica')
+    else:
+      return self.__executeFileCatalogFunction(lfn,'addReplica')
+
+  def removeCatalogFile(self,lfn,singleFile=False):
+    """ Remove a file from the FileCatalog
+  
+        'lfn' is the file to be removed
+    """
+    if singleFile:
+      return self.__executeSingleFileCatalogFunction(lfn,'removeFile')
+    else:
+      return self.__executeFileCatalogFunction(lfn,'removeFile')
+
+  def removeCatalogReplica(self,lfn,singleFile=False):
+    """ Remove a replica from the FileCatalog
+  
+        'lfn' is the file to be removed
+    """
+    if singleFile:
+      return self.__executeSingleFileCatalogFunction(lfn,'removeReplica')
+    else:
+      return self.__executeFileCatalogFunction(lfn,'removeReplica')
+
+  def setCatalogReplicaStatus(self,lfn,singleFile=False):
+    """ Change the status for a replica in the FileCatalog
+      
+        'lfn' is the replica information to change
+    """
+    if singleFile:
+      return self.__executeSingleFileCatalogFunction(lfn,'setReplicaStatus')
+    else:
+      return self.__executeFileCatalogFunction(lfn,'setReplicaStatus')
+
+  def setCatalogReplicaHost(self,lfn,singleFile=False):
+    """ Change the registered SE for a replica in the FileCatalog
+      
+        'lfn' is the replica information to change
+    """
+    if singleFile:
+      return self.__executeSingleFileCatalogFunction(lfn,'setReplicaHost')
+    else:
+      return self.__executeFileCatalogFunction(lfn,'setReplicaHost')
+
+  def createCatalogDirectory(self,lfn,singleFile=False):
+    """ Create the directory supplied in the FileCatalog
+
+        'lfn' is the directory to create
+    """
+    if singleFile:
+      return self.__executeSingleFileCatalogFunction(lfn,'createDirectory')
+    else:
+      return self.__executeFileCatalogFunction(lfn,'createDirectory')
+
+  def removeCatalogDirectory(self,lfn,singleFile=False):
+    """ Remove the directory supplied from the FileCatalog
+
+        'lfn' is the directory to remove
+    """
+    if singleFile:
+      return self.__executeSingleFileCatalogFunction(lfn,'removeDirectory')
+    else:
+      return self.__executeFileCatalogFunction(lfn,'removeDirectory')
+
+  def createCatalogLink(self,lfn,singleFile=False):
+    """ Create the link supplied in the FileCatalog
+
+        'lfn' is the link dictionary containing the target lfn and link name to create 
+    """
+    if singleFile:
+      return self.__executeSingleFileCatalogFunction(lfn,'createLink')
+    else:
+      return self.__executeFileCatalogFunction(lfn,'createLink')
+
+  def removeCatalogLink(self,lfn,singleFile=False):
+    """ Remove the link supplied from the FileCatalog
+
+        'lfn' is the link to remove
+    """
+    if singleFile:
+      return self.__executeSingleFileCatalogFunction(lfn,'removeLink')
+    else:
+      return self.__executeFileCatalogFunction(lfn,'removeLink')
 
   def __executeSingleFileCatalogFunction(self,lfn,method,argsDict={}):
     res = self.__executeFileCatalogFunction(lfn,method,argsDict)

@@ -116,6 +116,28 @@ class TransformationDBClient(FileCatalogueBase):
     server = RPCClient(self.server,timeout=120)
     return server.setReplicaHost(tuples)
 
+  def removeDirectory(self,lfn):
+    return self.__returnOK(lfn)
+
+  def createDirectory(self,lfn):
+    return self.__returnOK(lfn)
+
+  def createLink(self,lfn):
+    return self.__returnOK(lfn)
+
+  def removeLink(self,lfn):
+    return self.__returnOK(lfn)
+
+  def __returnOK(self,lfn):
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    successful = {}
+    for lfn in res['Value'].keys():
+      successful[lfn] = True     
+    resDict = {'Successful':successful,'Failed':{}}
+    return S_OK(resDict)
+
   def __checkArgumentFormat(self,path):
     if type(path) in types.StringTypes:
       urls = {path:False}
