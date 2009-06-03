@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/__init__.py,v 1.3 2009/06/03 07:46:12 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/__init__.py,v 1.4 2009/06/03 14:52:57 atsareg Exp $
 ########################################################################
 
 """ DIRAC Graphs package provides tools for creation of various plots to provide
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: __init__.py,v 1.3 2009/06/03 07:46:12 atsareg Exp $"
+__RCSID__ = "$Id: __init__.py,v 1.4 2009/06/03 14:52:57 atsareg Exp $"
 
 from DIRAC.Core.Utilities.Graphs.Graph import Graph
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import evalPrefs
@@ -136,18 +136,18 @@ def graph(data,file,*args,**kw):
   graph.makeGraph(data,defaults,prefs)
   graph.writeGraph(file,'PNG')
 
-def bar_graph(data,file,*args,**kw):
+def barGraph(data,file,*args,**kw):
   
   graph(data,file,plot_type='BarGraph',*args,**kw)
   
-def line_graph(data,file,*args,**kw):
+def lineGraph(data,file,*args,**kw):
   
   graph(data,file,plot_type='LineGraph',*args,**kw)  
   
-def cumulative_graph(data,file,*args,**kw):
+def cumulativeGraph(data,file,*args,**kw):
   
   graph(data,file,plot_type='LineGraph',cumulate_data=True,*args,**kw)  
   
-def pie_graph(data,file,*args,**kw):
+def pieGraph(data,file,*args,**kw):
   
   graph(data,file,plot_type='PieGraph',*args,**kw)  
