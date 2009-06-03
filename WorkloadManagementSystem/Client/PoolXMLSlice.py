@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: PoolXMLSlice.py,v 1.2 2009/04/18 18:26:56 rgracian Exp $
+# $Id: PoolXMLSlice.py,v 1.3 2009/06/03 12:52:11 paterson Exp $
 # File :   PoolXMLSlice.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
     value pairs.
 """
 
-__RCSID__ = "$Id: PoolXMLSlice.py,v 1.2 2009/04/18 18:26:56 rgracian Exp $"
+__RCSID__ = "$Id: PoolXMLSlice.py,v 1.3 2009/06/03 12:52:11 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
@@ -44,9 +44,9 @@ class PoolXMLSlice:
         local = os.path.basename(mdata['pfn'])
         #lfn,pfn,size,se,guid tuple taken by POOL XML Catalogue
         if os.path.exists(local):
-          poolXMLCat.addFile((lfn,os.path.abspath(local),0,mdata['se'],mdata['guid']))
+          poolXMLCat.addFile((lfn,os.path.abspath(local),0,mdata['se'],mdata['guid'],mdata['pfntype']))
         else:
-          poolXMLCat.addFile((lfn,mdata['turl'],0,mdata['se'],mdata['guid']))
+          poolXMLCat.addFile((lfn,mdata['turl'],0,mdata['se'],mdata['guid'],mdata['pfntype']))
 
       xmlSlice = poolXMLCat.toXML()
       self.log.verbose('POOL XML Slice is: ')
@@ -61,7 +61,7 @@ class PoolXMLSlice:
       poolSlice_temp.write(xmlSlice)
       poolSlice_temp.close()
     except Exception,x:
-      self.log.warn(str(x))
+      self.log.error(str(x))
       return S_ERROR('Exception during construction of POOL XML slice')
 
     return S_OK('POOL XML Slice created')
