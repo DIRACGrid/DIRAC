@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PieGraph.py,v 1.1 2009/06/01 22:03:05 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PieGraph.py,v 1.2 2009/06/04 09:54:17 atsareg Exp $
 ########################################################################
 
 """ PieGraph represents a pie graph
@@ -8,14 +8,13 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: PieGraph.py,v 1.1 2009/06/01 22:03:05 atsareg Exp $"
+__RCSID__ = "$Id: PieGraph.py,v 1.2 2009/06/04 09:54:17 atsareg Exp $"
 
 import numpy, math
 from matplotlib.patches import Wedge, Shadow
 from matplotlib.cbook import is_string_like
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
-from DIRAC.Core.Utilities.Graphs.Palette import Palette
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
 
 class PieGraph( PlotBase ):
@@ -24,7 +23,6 @@ class PieGraph( PlotBase ):
   
     PlotBase.__init__(self,data,ax,prefs,*args,**kw)
     self.pdata = data
-    self.palette = Palette()
 
   def pie(self, explode=None,
             colors=None,      

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/LineGraph.py,v 1.1 2009/06/01 22:03:05 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/LineGraph.py,v 1.2 2009/06/04 09:54:17 atsareg Exp $
 ########################################################################
 
 """ LineGraph represents line graphs both simple and stacked. It includes
@@ -9,11 +9,10 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: LineGraph.py,v 1.1 2009/06/01 22:03:05 atsareg Exp $"
+__RCSID__ = "$Id: LineGraph.py,v 1.2 2009/06/04 09:54:17 atsareg Exp $"
 
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
-from DIRAC.Core.Utilities.Graphs.Palette import Palette
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
 from pylab import setp
 from matplotlib.patches import Polygon
@@ -38,7 +37,6 @@ class LineGraph( PlotBase ):
       self.width = 3600.
       #if self.gdata.key_type == "time":
       #  self.width = time_interval(min(self.gdata.all_keys),max(self.gdata.all_keys))
-      self.palette = Palette()
      
 #    def make_bottom_text(self ):
 #        """

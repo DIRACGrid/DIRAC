@@ -1,6 +1,5 @@
-import types, random
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PlotBase.py,v 1.3 2009/06/03 18:15:41 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PlotBase.py,v 1.4 2009/06/04 09:54:17 atsareg Exp $
 ########################################################################
 
 """ PlotBase is a base class for various Graphs plots
@@ -9,8 +8,10 @@ import types, random
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: PlotBase.py,v 1.3 2009/06/03 18:15:41 atsareg Exp $"
+__RCSID__ = "$Id: PlotBase.py,v 1.4 2009/06/04 09:54:17 atsareg Exp $"
 
+import types, random
+from DIRAC.Core.Utilities.Graphs.Palette import Palette
 from matplotlib.patches import Rectangle
 from matplotlib.text import Text
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
@@ -31,6 +32,7 @@ class PlotBase:
       self.ax_contain.set_axis_off()
     self.prefs = evalPrefs(*aw,**kw)
     self.coords = {}
+    self.palette = Palette()
 
   def dumpPrefs(self):
   
@@ -49,6 +51,12 @@ class PlotBase:
   
     prefs = self.prefs
     dpi = self.ax_contain.figure.get_dpi()
+    
+    # Update palette
+    palette = prefs.get('colors',{})
+    if palette:
+      self.palette.addPalette(palette)
+    
     
     xlabel = prefs.get('xlabel','') 
     ylabel = prefs.get('ylabel','') 
@@ -159,4 +167,4 @@ class PlotBase:
       self.ax.title.set_transform(self.ax.transAxes)                                                  
       self.ax.title.set_family( prefs['font_family'] )
       self.ax.title.set_fontname( prefs['font'] )
-                                          
+                                              
