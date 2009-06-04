@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.79 2009/05/06 08:09:18 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.80 2009/06/04 10:05:03 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.79 2009/05/06 08:09:18 rgracian Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.80 2009/06/04 10:05:03 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob
 import pprint
@@ -74,8 +74,6 @@ class Dirac:
     self.pPrint = pprint.PrettyPrinter()
     self.defaultFileCatalog = gConfig.getValue(self.section+'/FileCatalog','LcgFileCatalogCombined')
     try:
-#      from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
-#      self.fileCatalog = LcgFileCatalogCombinedClient()
       from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
       self.fileCatalog=FileCatalog()
     except Exception,x:
@@ -479,6 +477,51 @@ class Dirac:
     return result
 
   #############################################################################
+  def _runInputDataResolution(self,inputData):
+    """ Run the VO plugin input data resolution mechanism.
+    """
+    localSEList = gConfig.getValue('/LocalSite/LocalSE','')
+    if not localSEList:
+      return self.__errorReport('LocalSite/LocalSE should be defined in your config file')
+    if re.search(',',localSEList):
+      localSEList = localSEList.replace(' ','').split(',')
+    else:
+      localSEList = [localSEList.replace(' ','')]
+    self.log.verbose(localSEList)
+    inputDataPolicy = gConfig.getValue('DIRAC/VOPolicy/InputDataModule','')
+    if not inputDataPolicy:
+      return self.__errorReport('Could not retrieve DIRAC/VOPolicy/InputDataModule for VO')
+
+    self.log.info('Job has input data requirement, will attempt to resolve data for %s' %self.site)
+    self.log.verbose('%s' %(string.join(inputData,'\n')))
+    replicaDict = self.getReplicas(inputData)
+    if not replicaDict['OK']:
+      return replicaDict
+    guidDict = self.getMetadata(inputData)
+    if not guidDict['OK']:
+      return guidDict
+    for lfn,reps in replicaDict['Value']['Successful'].items():
+      guidDict['Value']['Successful'][lfn].update(reps)
+    resolvedData = guidDict
+    diskSE = gConfig.getValue(self.section+'/DiskSE',['-disk','-DST','-USER'])
+    tapeSE = gConfig.getValue(self.section+'/TapeSE',['-tape','-RDST','-RAW'])
+    configDict = {'JobID':None,'LocalSEList':localSEList,'DiskSEList':diskSE,'TapeSEList':tapeSE}
+    self.log.verbose(configDict)
+    argumentsDict = {'FileCatalog':resolvedData,'Configuration':configDict,'InputData':inputData}
+    self.log.verbose(argumentsDict)
+    moduleFactory = ModuleFactory()
+    moduleInstance = moduleFactory.getModule(inputDataPolicy,argumentsDict)
+    if not moduleInstance['OK']:
+      self.log.warn('Could not create InputDataModule')
+      return moduleInstance
+
+    module = moduleInstance['Value']
+    result = module.execute()
+    if not result['OK']:
+      self.log.error('Input data resolution failed')
+    return result
+
+  #############################################################################
   def runLocal( self, jobJDL, jobXML, baseDir ):
     """Internal function.  This method is equivalent to submit(job,mode='Local').
        All output files are written to the local directory.
@@ -615,6 +658,8 @@ class Dirac:
     if parameters['Value'].has_key('ExecutionEnvironment'):
       self.log.verbose('Adding variables to execution environment')
       variableList = parameters['Value']['ExecutionEnvironment']
+      if type(variableList)==type(" "):
+        variableList=[variableList]
       for var in variableList:
         nameEnv = var.split('=')[0]
         valEnv = var.split('=')[1]
@@ -690,6 +735,24 @@ class Dirac:
     """Internal callback function to return standard output when running locally.
     """
     print message
+
+  #############################################################################
+  def listCatalog(self,directory,printOutput=False):
+    """ Under development.
+        Obtain listing of the specified directory.
+    """
+    if not self.fileCatalog:
+      return self.__errorReport('File catalog client was not successfully imported')
+    listing = self.fileCatalog.listDirectory(directory)
+    if re.search('\/$',directory):
+      directory = directory[:-1]
+
+    if printOutput:
+      for fileKey,metaDict in listing['Value']['Successful'][directory]['Files'].items():
+        print '#'*len(fileKey)
+        print fileKey
+        print '#'*len(fileKey)
+        print self.pPrint.pformat(metaDict)
 
   #############################################################################
   def getReplicas(self,lfns,printOutput=False):
