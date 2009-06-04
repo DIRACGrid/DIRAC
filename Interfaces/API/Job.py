@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.61 2009/04/23 22:59:44 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.62 2009/06/04 12:46:43 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.61 2009/04/23 22:59:44 rgracian Exp $"
+__RCSID__ = "$Id: Job.py,v 1.62 2009/06/04 12:46:43 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -316,7 +316,7 @@ class Job:
       if not type(OutputPath) in types.StringTypes:
         raise TypeError,'Expected string for OutputPath'
       # Remove leading "/" that might cause problems with os.path.join
-      while OutputPath[0] == '/': OutputPath=OutputPath[1:] 
+      while OutputPath[0] == '/': OutputPath=OutputPath[1:]
       self._addParameter(self.workflow,'OutputPath','JDL',OutputPath,description)
 
   #############################################################################
@@ -561,6 +561,17 @@ class Job:
         raise TypeError,'Error Level "%s" not valid' % logLevel
     else:
       raise TypeError,'Expected string for logging level'
+
+  #############################################################################
+  def setConfigArgs(self,cfgString):
+    """Developer function. Allow to pass arbitrary settings to the payload
+       configuration service environment.
+    """
+    if type(cfgString) == type(" "):
+      description = 'User specified cfg settings'
+      self._addParameter(self.workflow,'JobConfigArgs','JDL',cfgString,description)
+    else:
+      raise TypeError,'Expected string for DIRAC Job Config Args'
 
   #############################################################################
   def setMode(self,mode):
@@ -858,6 +869,11 @@ class Job:
         arguments.append('-o JobMode=%s' %(paramsDict['JobMode']['value']))
       else:
         self.log.warn('Job Mode defined with null value')
+    if paramsDict.has_key('JobConfigArgs'):
+      if paramsDict['JobConfigArgs']['value']:
+        arguments.append('%s' %(paramsDict['JobConfigArgs']['value']))
+      else:
+        self.log.warn('JobConfigArgs defined with null value')
 
     classadJob.insertAttributeString('Arguments',string.join(arguments,' '))
     classadJob.insertAttributeString('Executable',self.executable)
