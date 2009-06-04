@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.25 2009/06/04 15:59:14 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.25 2009/06/04 15:59:14 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.26 2009/06/04 15:59:43 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.26 2009/06/04 15:59:43 acasajus Exp $"
 import types
 import os
 import base64
@@ -58,6 +58,7 @@ class ReportGeneratorHandler( RequestHandler ):
 
 
   def __checkPlotRequest( self, reportRequest ):
+    #Check sliding plots
     if 'lastSeconds' in reportRequest:
       try:
         lastSeconds = long( reportRequest[ 'lastSeconds' ] )
@@ -69,7 +70,7 @@ class ReportGeneratorHandler( RequestHandler ):
       reportRequest[ 'endTime' ] = now
       reportRequest[ 'startTime' ] = now - lastSeconds
       del( reportRequest[ 'lastSeconds' ] )
-    print "ASFSD", reportRequest
+    #Check keys
     for key in self.__reportRequestDict:
       if key == 'extraArgs' and key not in reportRequest:
         reportRequest[ key ] = {}
