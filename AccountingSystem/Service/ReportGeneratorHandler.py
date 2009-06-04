@@ -1,9 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.26 2009/06/04 15:59:43 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.26 2009/06/04 15:59:43 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.27 2009/06/04 16:19:54 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.27 2009/06/04 16:19:54 acasajus Exp $"
 import types
 import os
 import base64
 import zlib
+import datetime
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
 from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
 from DIRAC.AccountingSystem.private.Summaries import Summaries
@@ -58,22 +59,25 @@ class ReportGeneratorHandler( RequestHandler ):
 
 
   def __checkPlotRequest( self, reportRequest ):
+    #If extraArgs is not there add it
+    if 'extraArgs' not in reportRequest:
+        reportRequest[ 'extraArgs' ] = {}
+    if type( reportRequest[ 'extraArgs' ] ) != self.__reportRequestDict[ 'extraArgs' ]:
+      return S_ERROR( "Extra args has to be of type %s" % self.__reportRequestDict[ 'extraArgs' ] )
+    reportRequestExtra = reportRequest[ 'extraArgs' ]
     #Check sliding plots
-    if 'lastSeconds' in reportRequest:
+    if 'lastSeconds' in reportRequestExtra:
       try:
-        lastSeconds = long( reportRequest[ 'lastSeconds' ] )
+        lastSeconds = long( reportRequestExtra[ 'lastSeconds' ] )
       except:
         return S_ERROR( "lastSeconds key must be a number" )
       if lastSeconds < 3600:
         return S_ERROR( "lastSeconds must be more than 3600" )
-      now = Time.toEpoch()
+      now = Time.dateTime()
       reportRequest[ 'endTime' ] = now
-      reportRequest[ 'startTime' ] = now - lastSeconds
-      del( reportRequest[ 'lastSeconds' ] )
+      reportRequest[ 'startTime' ] = now - datetime.timedelta( seconds = lastSeconds )
     #Check keys
     for key in self.__reportRequestDict:
-      if key == 'extraArgs' and key not in reportRequest:
-        reportRequest[ key ] = {}
       if not key in reportRequest:
         return S_ERROR( 'Missing mandatory field %s in plot reques' % key )
       requestKeyType = type( reportRequest[ key ] )
