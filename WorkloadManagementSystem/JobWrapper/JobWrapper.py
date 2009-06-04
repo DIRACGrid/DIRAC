@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.105 2009/05/19 21:41:09 rgracian Exp $
+# $Id: JobWrapper.py,v 1.106 2009/06/04 09:28:37 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.105 2009/05/19 21:41:09 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.106 2009/06/04 09:28:37 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -266,6 +266,8 @@ class JobWrapper:
     if self.jobArgs.has_key('ExecutionEnvironment'):
       self.log.verbose('Adding variables to execution environment')
       variableList = self.jobArgs['ExecutionEnvironment']
+      if type(variableList)==type(" "):
+        variableList = [variableList]
       for var in variableList:
         nameEnv = var.split('=')[0]
         valEnv = var.split('=')[1]
