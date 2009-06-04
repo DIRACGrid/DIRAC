@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.5 2009/06/03 18:46:36 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.6 2009/06/04 09:26:31 atsareg Exp $
 ########################################################################
 
 """ Graph is a class providing layouts for the complete plot images including
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: Graph.py,v 1.5 2009/06/03 18:46:36 atsareg Exp $"
+__RCSID__ = "$Id: Graph.py,v 1.6 2009/06/04 09:26:31 atsareg Exp $"
 
 import types, datetime
 from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -55,22 +55,29 @@ class Graph(object):
      
     subtitle = prefs.get('subtitle','') 
     if subtitle:            
+      sublines = subtitle.split('\n')
+      nsublines = len(sublines)
       subtitle_size = prefs['subtitle_size']
-      subtitle_padding = float(prefs['subtitle_padding'])    
-      figure.text(0.5,1.-(subtitle_size+subtitle_padding+title_size+figure_padding)/height,
-                  subtitle,ha='center',va='bottom',size=pixelToPoint(subtitle_size,dpi),fontstyle='italic' )            
+      subtitle_padding = float(prefs['subtitle_padding']) 
+      top_offset = subtitle_size+subtitle_padding+title_size+figure_padding  
+      for subline in sublines:
+        figure.text(0.5,1.-(top_offset)/height,
+                    subline,ha='center',va='bottom',
+                    size=pixelToPoint(subtitle_size,dpi),fontstyle='italic' ) 
+        top_offset +=  subtitle_size + subtitle_padding          
 
     graph_width = width - 2.*figure_padding
     graph_height = height - 2.*figure_padding - title_padding - title_size
     if subtitle:
-      graph_height = graph_height - subtitle_size - subtitle_padding     
+      graph_height = graph_height - nsublines*(subtitle_size + subtitle_padding)     
     graph_left = figure_padding
     graph_bottom = figure_padding      
                 
     #########################################
     # Make the plot time stamp
-    timeString = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S ')+'UTC'
-    time_size = prefs['text_size']
+    timeString = "Generated on " + \
+                 datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S ')+'UTC'
+    time_size = prefs['text_size']*.8
     figure.text(0.995,0.005,timeString,ha='right',va='bottom',size=pixelToPoint(time_size,dpi),fontstyle='italic' )               
                 
     #########################################
