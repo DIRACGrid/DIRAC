@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.80 2009/06/04 10:05:03 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.81 2009/06/04 19:07:46 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.80 2009/06/04 10:05:03 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.81 2009/06/04 19:07:46 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob
 import pprint
@@ -147,10 +147,16 @@ class Dirac:
       if mode.lower()=='local':
         self.log.info('Executing workflow locally without WMS submission')
         curDir = os.getcwd()
-        jobDir = tempfile.mkdtemp(suffix='_JobDir', prefix='Local_', dir=curDir)
-        os.chdir( jobDir )
+
+        stopCopies=False
+        if gConfig.getValue('/LocalSite/DisableLocalJobDirectory',''):
+          stopCopies=True
+        else:
+          jobDir = tempfile.mkdtemp(suffix='_JobDir', prefix='Local_', dir=curDir)
+          os.chdir( jobDir )
+
         self.log.info('Executing at', os.getcwd())
-        result = self.runLocal( jdl, jobDescription, curDir )
+        result = self.runLocal( jdl, jobDescription, curDir, disableCopies=stopCopies )
         os.chdir( curDir )
       if mode.lower()=='agent':
         self.log.info('Executing workflow locally with full WMS submission and DIRAC Job Agent')
@@ -522,13 +528,17 @@ class Dirac:
     return result
 
   #############################################################################
-  def runLocal( self, jobJDL, jobXML, baseDir ):
+  def runLocal( self, jobJDL, jobXML, baseDir, disableCopies=False ):
     """Internal function.  This method is equivalent to submit(job,mode='Local').
        All output files are written to the local directory.
     """
     # FIXME: Better create an unique local directory for this job
     if not self.site or self.site == 'Unknown':
       return self.__errorReport('LocalSite/Site configuration section is unknown, please set this correctly')
+
+    if disableCopies:
+      self.log.verbose('DisableLocalJobDirectory is set, leaving everything in local dir')
+      shutil.copy(jobXML,'%s/%s' %(os.getcwd(),os.path.basename(jobXML)))
 
     # If not set differently in the CS use the root from the current DIRAC installation
     siteRoot = gConfig.getValue('/LocalSite/Root',DIRAC.rootPath)
@@ -628,6 +638,8 @@ class Dirac:
       if type(sandbox) in types.StringTypes:
         sandbox = [sandbox]
       for isFile in sandbox:
+        if disableCopies:
+          break
         if not os.path.isabs(isFile):
           # if a relative path, it is relative to the user working directory
           isFile = os.path.join( baseDir, isFile )
@@ -713,6 +725,8 @@ class Dirac:
       if type(sandbox) in types.StringTypes:
         sandbox = [sandbox]
       for i in sandbox:
+        if disableCopies:
+          break
         globList = glob.glob(i)
         for isFile in globList:
           if os.path.isabs(isFile):
