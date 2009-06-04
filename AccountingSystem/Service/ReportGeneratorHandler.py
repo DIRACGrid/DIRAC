@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.24 2009/06/03 12:30:35 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.24 2009/06/03 12:30:35 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.25 2009/06/04 15:59:14 acasajus Exp $
+__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.25 2009/06/04 15:59:14 acasajus Exp $"
 import types
 import os
 import base64
@@ -58,17 +58,18 @@ class ReportGeneratorHandler( RequestHandler ):
 
 
   def __checkPlotRequest( self, reportRequest ):
-    if 'lastSeconds' in self.__reportRequestDict:
+    if 'lastSeconds' in reportRequest:
       try:
-        lastSeconds = long( self.__reportRequestDict[ 'lastSeconds' ] )
+        lastSeconds = long( reportRequest[ 'lastSeconds' ] )
       except:
         return S_ERROR( "lastSeconds key must be a number" )
       if lastSeconds < 3600:
         return S_ERROR( "lastSeconds must be more than 3600" )
       now = Time.toEpoch()
-      self.__reportRequestDict[ 'endTime' ] = now
-      self.__reportRequestDict[ 'startTime' ] = now - lastSeconds
-      del( self.__reportRequestDict[ 'lastSeconds' ] )
+      reportRequest[ 'endTime' ] = now
+      reportRequest[ 'startTime' ] = now - lastSeconds
+      del( reportRequest[ 'lastSeconds' ] )
+    print "ASFSD", reportRequest
     for key in self.__reportRequestDict:
       if key == 'extraArgs' and key not in reportRequest:
         reportRequest[ key ] = {}
