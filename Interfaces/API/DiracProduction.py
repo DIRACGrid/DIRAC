@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.64 2009/05/10 20:24:57 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.65 2009/06/05 09:03:02 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.64 2009/05/10 20:24:57 acsmith Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.65 2009/06/05 09:03:02 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -993,7 +993,7 @@ class DiracProduction:
         try:
           dummy = int(selections[par])
           selections[par] = dummy
-        except:             
+        except:
           return S_ERROR("The '%s' parameter must be an integer" % par)
 
     if not type(plugin)==type(" "):
@@ -1123,6 +1123,9 @@ class DiracProduction:
     """ Temporary function that attempts to calculate the output LFN structure
         based on workflow conventions.
     """
+    if not os.path.exists(jobDescription): # e.g. when using as a developer function
+      self.__createJobDescriptionFile(jobDescription)
+
     job = Job(jobDescription)
 
     commons = job._getParameters()
