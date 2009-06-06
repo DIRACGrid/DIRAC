@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.66 2009/06/06 15:45:45 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.67 2009/06/06 15:47:47 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.66 2009/06/06 15:45:45 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.67 2009/06/06 15:47:47 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -762,7 +762,7 @@ class DiracProduction:
       if not type(productionID) == type(" "):
         return self.__errorReport('Expected string, long or int for production ID')
 
-    jobs = d.selectProductionJobs(prodID,Status=status,MinorStatus=minorStatus,Site=site)
+    jobs = self.selectProductionJobs(prodID,Status=status,MinorStatus=minorStatus,Site=site)
     if not jobs['OK']:
       self.log.error(jobs)
       return jobs
@@ -770,7 +770,7 @@ class DiracProduction:
     jobs = jobs['Value']
     self.log.info('Selected %s jobs:\n%s' %(len(jobs),string.join(jobs,', ')))
     lfns = []
-    res = diracAPI.getJobInputData(jobs)
+    res = self.diracAPI.getJobInputData(jobs)
     #print res
     if not res['OK']:
       self.log.error('Could not determine input data for all jobs')
