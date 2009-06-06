@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.65 2009/06/05 09:03:02 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.66 2009/06/06 15:45:45 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.65 2009/06/05 09:03:02 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.66 2009/06/06 15:45:45 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -751,6 +751,55 @@ class DiracProduction:
       self._prettyPrint(fileStatus['Value'])
     return fileStatus
 
+
+  #############################################################################
+  def selectAndSetFileStatus(self,productionID,selectStatus,selectMinorStatus='',site='',setFlag=1,setStatus='Unused',printOutput=False):
+    """ Set status for the given files in the lfns list for production specified by its ID
+    """
+    if type(productionID)==type(2):
+      productionID=long(productionID)
+    if not type(productionID)==type(long(1)):
+      if not type(productionID) == type(" "):
+        return self.__errorReport('Expected string, long or int for production ID')
+
+    jobs = d.selectProductionJobs(prodID,Status=status,MinorStatus=minorStatus,Site=site)
+    if not jobs['OK']:
+      self.log.error(jobs)
+      return jobs
+
+    jobs = jobs['Value']
+    self.log.info('Selected %s jobs:\n%s' %(len(jobs),string.join(jobs,', ')))
+    lfns = []
+    res = diracAPI.getJobInputData(jobs)
+    #print res
+    if not res['OK']:
+      self.log.error('Could not determine input data for all jobs')
+      return res
+
+    lfnsDict = res['Value']
+    for job,lfnList in lfnsDict.items():
+      lfns+=lfnList
+
+    lfns = [i.replace('LFN:','') for i in lfns]
+
+    self.log.verbose('Found LFNs:\n%s' %(string.join(lfns,'\n')))
+
+    if setFlag:
+      prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
+      result = prodClient.setFileStatusForTransformation(productionID,[(setStatus,lfns)])
+      if printOutput:
+        if not result['OK']:
+          print result
+          print "Failed to update status for files:\n%s" %(string.join(lfns,'\n'))
+        for lfn,message in result['Value']['Successful'].items():
+          print "Successful:",lfn,":",message
+        for lfn,message in result['Value']['Failed'].items():
+          print "Failed:",lfn,":",message
+      return result
+    else:
+      self.log.info('setFlag disabled, would have set %s files to %s' %(len(lfns),setStatus))
+      return S_OK()
+
   #############################################################################
   def setFileStatus(self,lfns,productionID,status,printOutput=False):
     """ Set status for the given files in the lfns list for production specified by its ID
@@ -775,7 +824,7 @@ class DiracProduction:
     if printOutput:
       if not result['OK']:
         print result
-        print "Failed to update status for files:\n%s" %(string.join(lfns,'\n'))
+        print "Failed to update status for files:\n%s" %(string.join(lfnList,'\n'))
       for lfn,message in result['Value']['Successful'].items():
         print "Successful:",lfn,":",message
       for lfn,message in result['Value']['Failed'].items():
