@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphUtilities.py,v 1.4 2009/06/07 20:01:21 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphUtilities.py,v 1.5 2009/06/07 22:52:32 atsareg Exp $
 ########################################################################
 
 """ GraphUtilities is a a collection of utility functions and classes used
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: GraphUtilities.py,v 1.4 2009/06/07 20:01:21 atsareg Exp $"
+__RCSID__ = "$Id: GraphUtilities.py,v 1.5 2009/06/07 22:52:32 atsareg Exp $"
 
 import types, time, datetime, calendar, math, pytz, numpy, os
 from matplotlib.ticker import ScalarFormatter
@@ -153,7 +153,7 @@ def add_time_to_title( begin, end, metadata={} ):
         time_slice = 1
 
     begin_tuple = time.gmtime(begin); end_tuple = time.gmtime(end)
-    added_title = '\n%i %s from ' % (int((end-begin)/time_slice), format_name)
+    added_title = '%i %s from ' % (int((end-begin)/time_slice), format_name)
     added_title += time.strftime('%s to' % format_str, begin_tuple)
     if time_slice < 86400:
         add_utc = ' UTC'

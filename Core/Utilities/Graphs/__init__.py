@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/__init__.py,v 1.7 2009/06/07 20:01:21 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/__init__.py,v 1.8 2009/06/07 22:52:32 atsareg Exp $
 ########################################################################
 
 """ DIRAC Graphs package provides tools for creation of various plots to provide
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: __init__.py,v 1.7 2009/06/07 20:01:21 atsareg Exp $"
+__RCSID__ = "$Id: __init__.py,v 1.8 2009/06/07 22:52:32 atsareg Exp $"
 
 from DIRAC.Core.Utilities.Graphs.Graph import Graph
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import evalPrefs
@@ -166,3 +166,7 @@ def cumulativeGraph(data,file,*args,**kw):
 def pieGraph(data,file,*args,**kw):
   
   graph(data,file,plot_type='PieGraph',*args,**kw)  
+  
+def qualityGraph(data,file,*args,**kw):  
+  
+  graph(data,file,plot_type='QualityMapGraph',*args,**kw)  

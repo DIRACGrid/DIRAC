@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphData.py,v 1.5 2009/06/07 20:58:26 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphData.py,v 1.6 2009/06/07 22:52:32 atsareg Exp $
 ########################################################################
 
 """ GraphData encapsulates input data for the DIRAC Graphs plots
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: GraphData.py,v 1.5 2009/06/07 20:58:26 atsareg Exp $"
+__RCSID__ = "$Id: GraphData.py,v 1.6 2009/06/07 22:52:32 atsareg Exp $"
 
 import types, datetime, numpy, time
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import convert_to_datetime, to_timestamp
@@ -428,7 +428,7 @@ class PlotData:
       if self.parsed_data.has_key(key):
         result_pairs.append(key,self.parsed_data[key])
       else:
-        result_pairs.append(key,0.)        
+        result_pairs.append(key,None)        
         
     return result_pairs
     
@@ -440,7 +440,7 @@ class PlotData:
         ind = self.num_keys.index(num_key)
         result_pairs.append((self.num_keys[ind],self.values[ind]))
       except ValueError:
-        result_pairs.append((num_key,0.))        
+        result_pairs.append((num_key,None))        
         
     return result_pairs      
       

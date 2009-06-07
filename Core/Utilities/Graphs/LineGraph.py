@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/LineGraph.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/LineGraph.py,v 1.4 2009/06/07 22:52:32 atsareg Exp $
 ########################################################################
 
 """ LineGraph represents line graphs both simple and stacked. It includes
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: LineGraph.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $"
+__RCSID__ = "$Id: LineGraph.py,v 1.4 2009/06/07 22:52:32 atsareg Exp $"
 
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
@@ -146,6 +146,8 @@ class LineGraph( PlotBase ):
         tmp_y = []
         plot_data = self.gdata.getPlotNumData(label)
         for key, value in plot_data:
+          if value is None:
+            value = 0.
           tmp_x.append( key )
           tmp_y.append( float(value)+tmp_b[ind] )   
           ind += 1       

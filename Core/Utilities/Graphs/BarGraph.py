@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/BarGraph.py,v 1.4 2009/06/07 20:31:07 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/BarGraph.py,v 1.5 2009/06/07 22:52:32 atsareg Exp $
 ########################################################################
 
 """ BarGraph represents bar graphs with vertical bars both simple
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: BarGraph.py,v 1.4 2009/06/07 20:31:07 atsareg Exp $"
+__RCSID__ = "$Id: BarGraph.py,v 1.5 2009/06/07 22:52:32 atsareg Exp $"
 
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
@@ -38,6 +38,7 @@ class BarGraph( PlotBase ):
         self.width = 1.0
         if self.gdata.key_type == "time":
           self.width = time_interval(min(self.gdata.all_keys),max(self.gdata.all_keys))
+      # ToDo: guess automatically the time span for time plots    
      
 #    def make_bottom_text(self ):
 #        """
@@ -126,13 +127,12 @@ class BarGraph( PlotBase ):
       labels = self.gdata.getLabels()  
       nKeys = self.gdata.getNumberOfKeys()
       tmp_b = []
-      for n in range(nKeys):
-        if self.prefs.has_key('log_yaxis'):
-          tmp_b.append(0.001)
-          ymin = 0.001
-        else:
-          tmp_b.append(0.)  
-          ymin = 0.
+      if self.prefs.has_key('log_yaxis'):
+        tmp_b = [0.001]*nKeys
+        ymin = 0.001
+      else:
+        tmp_b = [0.]*nKeys
+        ymin = 0.
           
       self.bars = []    
       self.legendData = []
@@ -143,6 +143,8 @@ class BarGraph( PlotBase ):
         tmp_x = []
         tmp_y = []
         for key, value in self.gdata.getPlotNumData(label):
+          if value is None:
+            value = 0.
           tmp_x.append( key + offset )
           tmp_y.append( float(value) )          
         self.bars += self.ax.bar( tmp_x, tmp_y, bottom=tmp_b, width=width, color=color )

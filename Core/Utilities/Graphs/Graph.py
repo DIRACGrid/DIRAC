@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.7 2009/06/07 20:01:21 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.8 2009/06/07 22:52:32 atsareg Exp $
 ########################################################################
 
 """ Graph is a class providing layouts for the complete plot images including
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: Graph.py,v 1.7 2009/06/07 20:01:21 atsareg Exp $"
+__RCSID__ = "$Id: Graph.py,v 1.8 2009/06/07 22:52:32 atsareg Exp $"
 
 import types, datetime
 from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -195,7 +195,9 @@ class Graph(object):
       if plot_title != "NoTitle":
         if gdata.key_type == "time":        
           time_title = add_time_to_title(gdata.min_key,gdata.max_key)
-          plot_prefs['plot_title'] = plot_prefs.get('plot_title','')+' '+time_title
+          if plot_title:
+            plot_title += ":"
+          plot_prefs['plot_title'] = plot_title+' '+time_title
       plot = eval("%s.%s(graphData[i],ax,plot_prefs)" % (plot_type,plot_type) )
       plot.draw()
       if i == 0:
