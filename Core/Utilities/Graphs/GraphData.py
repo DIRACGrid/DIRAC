@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphData.py,v 1.4 2009/06/07 20:31:07 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphData.py,v 1.5 2009/06/07 20:58:26 atsareg Exp $
 ########################################################################
 
 """ GraphData encapsulates input data for the DIRAC Graphs plots
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: GraphData.py,v 1.4 2009/06/07 20:31:07 atsareg Exp $"
+__RCSID__ = "$Id: GraphData.py,v 1.5 2009/06/07 20:58:26 atsareg Exp $"
 
 import types, datetime, numpy, time
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import convert_to_datetime, to_timestamp
@@ -238,14 +238,14 @@ class GraphData:
       return zip(self.plotdata.getNumKeys(),self.plotdata.getValues())
     elif label:
       if label == "Others":
-        return self.otherPlot.getPlotNumDataForKeys(self.all_num_keys)     
+        return self.otherPlot.getPlotDataForNumKeys(self.all_num_keys)     
       else:
-        return self.subplots[label].getPlotNumDataForKeys(self.all_num_keys)    
+        return self.subplots[label].getPlotDataForNumKeys(self.all_num_keys)    
     else:
       # Get the sum of all the subplots
       arrays = []
       for label in self.subplots:
-        arrays.append(numpy.array([ x[1] for x in self.subplots[label].getPlotNumDataForKeys(self.all_num_keys)]))
+        arrays.append(numpy.array([ x[1] for x in self.subplots[label].getPlotDataForNumKeys(self.all_num_keys)]))
       sum_array = sum(arrays)
       return zip(self.all_num_keys,list(sum_array))
       
@@ -432,7 +432,7 @@ class PlotData:
         
     return result_pairs
     
-  def getPlotNumDataForKeys(self,num_keys):
+  def getPlotDataForNumKeys(self,num_keys):
   
     result_pairs = []
     for num_key in num_keys:
