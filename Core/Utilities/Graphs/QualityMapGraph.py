@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/QualityMapGraph.py,v 1.2 2009/06/07 23:20:40 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/QualityMapGraph.py,v 1.3 2009/06/07 23:25:41 atsareg Exp $
 ########################################################################
 
 """ QualityGraph represents a Quality Map of entities as a special color schema 
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: QualityMapGraph.py,v 1.2 2009/06/07 23:20:40 atsareg Exp $"
+__RCSID__ = "$Id: QualityMapGraph.py,v 1.3 2009/06/07 23:25:41 atsareg Exp $"
 
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
@@ -101,7 +101,7 @@ class QualityMapGraph( PlotBase ):
       self.bars += self.ax.bar( tmp_x, tmp_y, bottom=tmp_b, width=width, color=colors )
                     
       dpi = self.prefs.get('dpi',100) 
-      setp( self.bars, linewidth=pixelToPoint(0.5,dpi) )
+      setp( self.bars, linewidth=pixelToPoint(0.5,dpi), edgecolor='#AAAAAA' )
       
       #pivots = keys
       #for idx in range(len(pivots)):
