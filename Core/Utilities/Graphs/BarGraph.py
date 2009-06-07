@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/BarGraph.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/BarGraph.py,v 1.4 2009/06/07 20:31:07 atsareg Exp $
 ########################################################################
 
 """ BarGraph represents bar graphs with vertical bars both simple
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: BarGraph.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $"
+__RCSID__ = "$Id: BarGraph.py,v 1.4 2009/06/07 20:31:07 atsareg Exp $"
 
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
@@ -117,6 +117,7 @@ class BarGraph( PlotBase ):
           width = width / 86400.0
           offset = 0
       elif self.gdata.key_type == 'string':
+          self.bar_graph_space = 0.1
           width = (1 - self.bar_graph_space) * width
           offset = self.bar_graph_space / 2.0
       else:

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphData.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphData.py,v 1.4 2009/06/07 20:31:07 atsareg Exp $
 ########################################################################
 
 """ GraphData encapsulates input data for the DIRAC Graphs plots
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: GraphData.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $"
+__RCSID__ = "$Id: GraphData.py,v 1.4 2009/06/07 20:31:07 atsareg Exp $"
 
 import types, datetime, numpy, time
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import convert_to_datetime, to_timestamp
@@ -326,8 +326,8 @@ class PlotData:
        
     self.min_value = float(min(self.values))
     self.max_value = float(max(self.values))    
-    self.min_key = float(min(self.keys))
-    self.max_key = float(max(self.keys))  
+    self.min_key = self.keys[0]
+    self.max_key = self.keys[-1] 
     self.sum_value = float(sum(self.values))    
     self.last_value = float(self.values[-1])    
               
@@ -339,7 +339,7 @@ class PlotData:
     if self.sorted_keys:
       return self.sorted_keys
     if sort_type=='weight':
-      pairs = zip(self.keys(),self.parsed_data.values())
+      pairs = zip(self.parsed_data.keys(),self.parsed_data.values())
       pairs.sort(key=lambda x: x[1])
       self.sorted_keys = [ x[0] for x in pairs ]
     elif sort_type=='alpha':  
@@ -436,10 +436,10 @@ class PlotData:
   
     result_pairs = []
     for num_key in num_keys:
-      ind = self.num_keys.index(num_key)
-      if ind != -1:
+      try:
+        ind = self.num_keys.index(num_key)
         result_pairs.append((self.num_keys[ind],self.values[ind]))
-      else:
+      except ValueError:
         result_pairs.append((num_key,0.))        
         
     return result_pairs      
