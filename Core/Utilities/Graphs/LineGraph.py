@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/LineGraph.py,v 1.2 2009/06/04 09:54:17 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/LineGraph.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $
 ########################################################################
 
 """ LineGraph represents line graphs both simple and stacked. It includes
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: LineGraph.py,v 1.2 2009/06/04 09:54:17 atsareg Exp $"
+__RCSID__ = "$Id: LineGraph.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $"
 
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
@@ -144,7 +144,8 @@ class LineGraph( PlotBase ):
         ind = 0
         tmp_x = []
         tmp_y = []
-        for key, value in self.gdata.getPlotNumData(label):
+        plot_data = self.gdata.getPlotNumData(label)
+        for key, value in plot_data:
           tmp_x.append( key )
           tmp_y.append( float(value)+tmp_b[ind] )   
           ind += 1       
@@ -156,7 +157,7 @@ class LineGraph( PlotBase ):
         tmp_b = list(tmp_y)  
         zorder -= 0.1
         
-        self.legendData.append((label,num,color))
+        self.legendData.append((label,num))
                       
       ymax = max(tmp_b); ymax *= 1.1
       if self.log_xaxis:  

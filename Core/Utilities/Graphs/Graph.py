@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.6 2009/06/04 09:26:31 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.7 2009/06/07 20:01:21 atsareg Exp $
 ########################################################################
 
 """ Graph is a class providing layouts for the complete plot images including
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: Graph.py,v 1.6 2009/06/04 09:26:31 atsareg Exp $"
+__RCSID__ = "$Id: Graph.py,v 1.7 2009/06/07 20:01:21 atsareg Exp $"
 
 import types, datetime
 from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -18,6 +18,8 @@ from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
 from DIRAC.Core.Utilities.Graphs.Legend import Legend
 #from DIRAC import S_OK, S_ERROR
+
+DEBUG=0
 
 class Graph(object):
 
@@ -42,43 +44,51 @@ class Graph(object):
     figure.set_size_inches( width_inch, height_inch )
     figure.set_dpi( dpi )
     figure.set_facecolor('white')
+    figure_padding = float(prefs['figure_padding'])
     
     #######################################
     # Make the graph title
     
     title = prefs['title']
-    title_size = prefs['title_size']
-    title_padding = float(prefs['title_padding'])
-    figure_padding = float(prefs['figure_padding'])
-    figure.text(0.5,1.-(title_size+figure_padding)/height,title,
-                ha='center',va='bottom',size=pixelToPoint(title_size,dpi) )
-     
-    subtitle = prefs.get('subtitle','') 
-    if subtitle:            
-      sublines = subtitle.split('\n')
-      nsublines = len(sublines)
-      subtitle_size = prefs['subtitle_size']
-      subtitle_padding = float(prefs['subtitle_padding']) 
-      top_offset = subtitle_size+subtitle_padding+title_size+figure_padding  
-      for subline in sublines:
-        figure.text(0.5,1.-(top_offset)/height,
-                    subline,ha='center',va='bottom',
-                    size=pixelToPoint(subtitle_size,dpi),fontstyle='italic' ) 
-        top_offset +=  subtitle_size + subtitle_padding          
+    subtitle = ''
+    if title:
+      title_size = prefs['title_size']
+      title_padding = float(prefs['title_padding'])
+      figure.text(0.5,1.-(title_size+figure_padding)/height,title,
+                  ha='center',va='bottom',size=pixelToPoint(title_size,dpi) )
+       
+      subtitle = prefs.get('subtitle','') 
+      if subtitle:            
+        sublines = subtitle.split('\n')
+        nsublines = len(sublines)
+        subtitle_size = prefs['subtitle_size']
+        subtitle_padding = float(prefs['subtitle_padding']) 
+        top_offset = subtitle_size+subtitle_padding+title_size+figure_padding  
+        for subline in sublines:
+          figure.text(0.5,1.-(top_offset)/height,
+                      subline,ha='center',va='bottom',
+                      size=pixelToPoint(subtitle_size,dpi),fontstyle='italic' ) 
+          top_offset +=  subtitle_size + subtitle_padding          
 
+    ########################################
+    # Evaluate the plot area dimensions
     graph_width = width - 2.*figure_padding
-    graph_height = height - 2.*figure_padding - title_padding - title_size
+    graph_height = height - 2.*figure_padding 
+    if title:
+      graph_height = graph_height - title_padding - title_size
     if subtitle:
       graph_height = graph_height - nsublines*(subtitle_size + subtitle_padding)     
     graph_left = figure_padding
     graph_bottom = figure_padding      
                 
     #########################################
-    # Make the plot time stamp
-    timeString = "Generated on " + \
-                 datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S ')+'UTC'
-    time_size = prefs['text_size']*.8
-    figure.text(0.995,0.005,timeString,ha='right',va='bottom',size=pixelToPoint(time_size,dpi),fontstyle='italic' )               
+    # Make the plot time stamp if requested
+    flag = prefs.get('graph_time_stamp',True)
+    if flag:
+      timeString = "Generated on " + \
+                   datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S ')+'UTC'
+      time_size = prefs['text_size']*.8
+      figure.text(0.995,0.005,timeString,ha='right',va='bottom',size=pixelToPoint(time_size,dpi),fontstyle='italic' )               
                 
     #########################################
     # Make the graph Legend if requested     
@@ -127,9 +137,15 @@ class Graph(object):
 
   def makeGraph(self, data, *args, **kw):
   
+    start = time.time()
+  
     # Evaluate all the preferences
     self.prefs = evalPrefs(*args,**kw)
     prefs = self.prefs
+    
+    if DEBUG:
+      print "makeGraph time 1",time.time()-start
+      start = time.time()
     
     metadata = prefs.get('metadata',{})
     
@@ -150,6 +166,10 @@ class Graph(object):
         for ip in range(nPlots):
           metaList.append(metadata)
         metadata = metaList
+     
+    if DEBUG:  
+      print "makeGraph time layout",time.time()-start
+      start = time.time()  
       
     # Make plots    
     graphData = []
@@ -163,34 +183,46 @@ class Graph(object):
         return None
         
       ax = plot_axes[i]  
-      gdata = GraphData(data[i])
+      gdata = GraphData(data[i])      
+      if plot_prefs.has_key('sort_labels'):
+        gdata.sortLabels(plot_prefs['sort_labels'])      
       if plot_prefs.has_key('limit_labels'):
         gdata.truncateLabels(plot_prefs['limit_labels'])
       if plot_prefs.has_key('cumulate_data'):  
         gdata.makeCumulativeGraph()
       graphData.append(gdata)
-      if gdata.key_type == "time":
-        time_title = add_time_to_title(gdata.min_key,gdata.max_key)
-        plot_prefs['plot_title'] = plot_prefs.get('plot_title','')+' '+time_title
+      plot_title = plot_prefs.get('plot_title','')
+      if plot_title != "NoTitle":
+        if gdata.key_type == "time":        
+          time_title = add_time_to_title(gdata.min_key,gdata.max_key)
+          plot_prefs['plot_title'] = plot_prefs.get('plot_title','')+' '+time_title
       plot = eval("%s.%s(graphData[i],ax,plot_prefs)" % (plot_type,plot_type) )
       plot.draw()
       if i == 0:
         legendData = plot.getLegendData()
+    
+    if DEBUG:  
+      print "makeGraph time plots",time.time()-start
+      start = time.time()  
       
     # Make legend
     if legend_ax:
       legend = Legend(legendData,legend_ax,prefs)
       legend.draw()  
       
+    if DEBUG:  
+      print "makeGraph time legend",time.time()-start
+      start = time.time()  
     #return S_OK()  
       
   def writeGraph(self,fname,format):
 
+    start = time.time()
     self.canvas.draw()
     if format.lower() == 'png':
       self.canvas.print_png(fname)
     elif format.lower() == 'svg':
-      self.canvas.print_svg(fname)     
+      self.canvas.print_svg(fname)   
         
                      
     

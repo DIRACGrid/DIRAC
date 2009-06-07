@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/BarGraph.py,v 1.2 2009/06/04 09:54:17 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/BarGraph.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $
 ########################################################################
 
 """ BarGraph represents bar graphs with vertical bars both simple
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: BarGraph.py,v 1.2 2009/06/04 09:54:17 atsareg Exp $"
+__RCSID__ = "$Id: BarGraph.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $"
 
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
@@ -148,9 +148,14 @@ class BarGraph( PlotBase ):
         for i in range(nKeys):
           tmp_b[i] += tmp_y[i]
           
-        self.legendData.append((label,num,color))  
+        self.legendData.append((label,num))  
           
-      setp( self.bars, linewidth=0.5 )
+      dpi = self.prefs.get('dpi',100)
+      tight_bars_flag = self.prefs.get('tight_bars',False)  
+      if not tight_bars_flag:  
+        setp( self.bars, linewidth=pixelToPoint(0.5,dpi) )
+      else:
+        setp( self.bars, linewidth=0. )  
       
       #pivots = keys
       #for idx in range(len(pivots)):

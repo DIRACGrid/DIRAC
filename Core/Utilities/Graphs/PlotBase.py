@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PlotBase.py,v 1.4 2009/06/04 09:54:17 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PlotBase.py,v 1.5 2009/06/07 20:01:21 atsareg Exp $
 ########################################################################
 
 """ PlotBase is a base class for various Graphs plots
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: PlotBase.py,v 1.4 2009/06/04 09:54:17 atsareg Exp $"
+__RCSID__ = "$Id: PlotBase.py,v 1.5 2009/06/07 20:01:21 atsareg Exp $"
 
 import types, random
 from DIRAC.Core.Utilities.Graphs.Palette import Palette
@@ -63,7 +63,7 @@ class PlotBase:
     text_size = prefs['text_size']
     text_size_point = pixelToPoint(text_size,dpi)
     plot_title = prefs.get('plot_title','')
-    if not plot_title:
+    if not plot_title or plot_title == 'NoTitle':
       plot_title_size = 0
       plot_title_padding = 0
     else:
@@ -129,29 +129,36 @@ class PlotBase:
       setp( ax.get_yticklabels(), fontname=prefs['font'] )
       setp( ax.get_yticklabels(), size=text_size_point )
 
-      setp( ax.get_xticklines(),  markeredgewidth=pixelToPoint(1.0,dpi) )
+      setp( ax.get_xticklines(),  markeredgewidth=pixelToPoint(0.5,dpi) )
       setp( ax.get_xticklines(),  markersize=pixelToPoint(text_size/2.,dpi) )
-      setp( ax.get_yticklines(),  markeredgewidth=pixelToPoint(1.0,dpi) )
+      setp( ax.get_yticklines(),  markeredgewidth=pixelToPoint(0.5,dpi) )
       setp( ax.get_yticklines(),  markersize=pixelToPoint(text_size/2.,dpi) )
       setp( ax.get_xticklines(),  zorder=4.0 )
 
       setp( ax.patch, linewidth=pixelToPoint(.1,dpi) )
       setp( ax.axesFrame, linewidth=pixelToPoint(1.0,dpi) )
       #setp( ax.axvline(), linewidth=pixelToPoint(1.0,dpi) ) 
-      ax.grid( True, color='#555555', linewidth=pixelToPoint(0.1,dpi) )
+      axis_grid_flag = prefs.get('plot_axis_grid',True)
+      if axis_grid_flag:  
+        ax.grid( True, color='#555555', linewidth=pixelToPoint(0.1,dpi) )
       
+      plot_axis_flag = prefs.get('plot_axis',True)
+      if plot_axis_flag:
       # Set labels
-      if xlabel:
-        t = ax.set_xlabel( xlabel )
-        t.set_family(prefs['font_family'])
-        t.set_fontname(prefs['font'])
-        t.set_size(prefs['text_size'])
-
-      if ylabel:
-        t = ax.set_ylabel( ylabel )
-        t.set_family(prefs['font_family'])
-        t.set_fontname(prefs['font'])
-        t.set_size(prefs['text_size']) 
+        if xlabel:
+          t = ax.set_xlabel( xlabel )
+          t.set_family(prefs['font_family'])
+          t.set_fontname(prefs['font'])
+          t.set_size(prefs['text_size'])
+  
+        if ylabel:
+          t = ax.set_ylabel( ylabel )
+          t.set_family(prefs['font_family'])
+          t.set_fontname(prefs['font'])
+          t.set_size(prefs['text_size']) 
+      else:
+        self.ax.set_axis_off()    
+        
 
     # Create a plot title, if necessary
     if plot_title:    

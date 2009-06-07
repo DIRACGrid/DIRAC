@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphUtilities.py,v 1.3 2009/06/03 18:15:41 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphUtilities.py,v 1.4 2009/06/07 20:01:21 atsareg Exp $
 ########################################################################
 
 """ GraphUtilities is a a collection of utility functions and classes used
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: GraphUtilities.py,v 1.3 2009/06/03 18:15:41 atsareg Exp $"
+__RCSID__ = "$Id: GraphUtilities.py,v 1.4 2009/06/07 20:01:21 atsareg Exp $"
 
 import types, time, datetime, calendar, math, pytz, numpy, os
 from matplotlib.ticker import ScalarFormatter
@@ -75,6 +75,14 @@ def convert_to_datetime( string ):
   return results
 
 def to_timestamp( val ):
+  
+    try:
+      v = float(val)
+      if v > 1000000000 and v < 1300000000:
+        return v
+    except:
+      pass  
+  
     val = convert_to_datetime( val )
     return calendar.timegm( val.timetuple() )
     

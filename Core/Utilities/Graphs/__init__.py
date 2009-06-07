@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/__init__.py,v 1.6 2009/06/04 09:26:31 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/__init__.py,v 1.7 2009/06/07 20:01:21 atsareg Exp $
 ########################################################################
 
 """ DIRAC Graphs package provides tools for creation of various plots to provide
@@ -9,10 +9,11 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: __init__.py,v 1.6 2009/06/04 09:26:31 atsareg Exp $"
+__RCSID__ = "$Id: __init__.py,v 1.7 2009/06/07 20:01:21 atsareg Exp $"
 
 from DIRAC.Core.Utilities.Graphs.Graph import Graph
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import evalPrefs
+import time
 
 graph_large_prefs = {
   'width':1000,
@@ -35,10 +36,11 @@ graph_large_prefs = {
   'legend':True,
   'legend_position':'bottom',
   'legend_width':600,
-  'legend_height':200,
+  'legend_height':150,
   'legend_padding':20,
   'plot_grid':'1:1',
-  'limit_labels':15                        
+  'limit_labels':15,
+  'graph_time_stamp':True                        
 }
 
 graph_normal_prefs = {
@@ -65,7 +67,8 @@ graph_normal_prefs = {
   'legend_height':120,
   'legend_padding':20,
   'plot_grid':'1:1',
-  'limit_labels':15                        
+  'limit_labels':15,
+  'graph_time_stamp':True                        
 }
 
 graph_small_prefs = {
@@ -91,8 +94,9 @@ graph_small_prefs = {
   'legend_width':300,
   'legend_height':50,
   'legend_padding':10,
-  'plot_grid':'2:2',
-  'limit_labels':15                        
+  'plot_grid':'1:1',
+  'limit_labels':15,
+  'graph_time_stamp':True                         
 }
 
 graph_thumbnail_prefs = {
@@ -114,7 +118,12 @@ graph_thumbnail_prefs = {
   'font_family' : 'sans-serif',
   'square_axis':False,
   'legend':False,
-  'plot_grid':'1:1'                       
+  'plot_grid':'1:1',
+  'plot_axis_grid':False,
+  'plot_axis':False,
+  'plot_axis_labels':False,
+  'graph_time_stamp':False,
+  'tight_bars':True                        
 }
 
 def graph(data,file,*args,**kw):
@@ -130,11 +139,17 @@ def graph(data,file,*args,**kw):
   elif graph_size == "small":
     defaults = graph_small_prefs  
   elif graph_size == "thumbnail":
-    defaults = graph_thumbnail_prefs    
+    defaults = graph_thumbnail_prefs   
+  elif graph_size == "large":
+    defaults = graph_large_prefs    
         
   graph = Graph()
+  start = time.time()
   graph.makeGraph(data,defaults,prefs)
+  #print "AT >>>> makeGraph time",time.time()-start
+  start = time.time()
   graph.writeGraph(file,'PNG')
+  #print "AT >>>> writeGraph time",time.time()-start
 
 def barGraph(data,file,*args,**kw):
   

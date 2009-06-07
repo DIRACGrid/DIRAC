@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PieGraph.py,v 1.2 2009/06/04 09:54:17 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PieGraph.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $
 ########################################################################
 
 """ PieGraph represents a pie graph
@@ -8,9 +8,9 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: PieGraph.py,v 1.2 2009/06/04 09:54:17 atsareg Exp $"
+__RCSID__ = "$Id: PieGraph.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $"
 
-import numpy, math
+import numpy, math, time
 from matplotlib.patches import Wedge, Shadow
 from matplotlib.cbook import is_string_like
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
@@ -30,10 +30,12 @@ class PieGraph( PlotBase ):
             pctdistance=0.6,
             shadow=False
             ):
-            
+               
+        start = time.time()       
         labels = self.pdata.getLabels()
         values = [l[1] for l in labels]    
         x = numpy.array(values, numpy.float64)
+        self.legendData = labels
 
         sx = float(numpy.sum(x))
         if sx>1: x = numpy.divide(x,sx)
@@ -42,6 +44,7 @@ class PieGraph( PlotBase ):
         if explode is None: explode = [0]*len(x)
         assert(len(x)==len(labels))
         assert(len(x)==len(explode))
+        plot_axis_labels = self.prefs.get('plot_axis_labels',True)
 
         center = 0,0
         radius = 1
@@ -50,7 +53,7 @@ class PieGraph( PlotBase ):
         texts = []
         slices = []
         autotexts = []
-        self.legendData = []
+             
         for frac, label, expl in zip(x,labels, explode):
             x, y = center 
             theta2 = theta1 + frac
@@ -64,9 +67,7 @@ class PieGraph( PlotBase ):
             slices.append(w)
             self.ax.add_patch(w)
             w.set_label(label)
-            
-            self.legendData.append( (label,0.,color) )
-            
+                        
             if shadow:
                 # make sure to add a shadow after the call to
                 # add_patch so the figure and transform props will be
@@ -77,59 +78,62 @@ class PieGraph( PlotBase ):
                 shad.set_zorder(0.9*w.get_zorder())
                 self.ax.add_patch(shad)
 
-            
-            xt = x + 1.05*radius*math.cos(thetam)
-            yt = y + 1.05*radius*math.sin(thetam)
-            
-            thetam %= 2*math.pi
-            
-            if 0 <thetam and thetam < math.pi:
-                valign = 'bottom'
-            elif thetam == 0 or thetam == math.pi:
-                valign = 'center'
-            else:
-                valign = 'top'
-            
-            if thetam > math.pi/2.0 and thetam < 3.0*math.pi/2.0:
-                halign = 'right'
-            elif thetam == math.pi/2.0 or thetam == 3.0*math.pi/2.0:
-                halign = 'center'
-            else:
-                halign = 'left'
-            
-            t = self.ax.text(xt, yt, label,
-                          size=pixelToPoint(self.prefs['subtitle_size'],self.dpi),
-                          horizontalalignment=halign,
-                          verticalalignment=valign)
-            
-            t.set_family( self.prefs['font_family'] )
-            t.set_fontname( self.prefs['font'] )
-            t.set_size( pixelToPoint(self.prefs['subtitle_size'],self.dpi) )
-            
-            texts.append(t)
-            
-            if autopct is not None:
-                xt = x + pctdistance*radius*math.cos(thetam)
-                yt = y + pctdistance*radius*math.sin(thetam)
-                if is_string_like(autopct):
-                    s = autopct%(100.*frac)
-                elif callable(autopct):
-                    s = autopct(100.*frac)
-                else:                    raise TypeError('autopct must be callable or a format string')
+            if plot_axis_labels:
+              if frac > 0.03:
+                xt = x + 1.05*radius*math.cos(thetam)
+                yt = y + 1.05*radius*math.sin(thetam)
                 
-                t = self.ax.text(xt, yt, s,
-                              horizontalalignment='center',
-                              verticalalignment='center')
+                thetam %= 2*math.pi
+                
+                if 0 <thetam and thetam < math.pi:
+                    valign = 'bottom'
+                elif thetam == 0 or thetam == math.pi:
+                    valign = 'center'
+                else:
+                    valign = 'top'
+                
+                if thetam > math.pi/2.0 and thetam < 3.0*math.pi/2.0:
+                    halign = 'right'
+                elif thetam == math.pi/2.0 or thetam == 3.0*math.pi/2.0:
+                    halign = 'center'
+                else:
+                    halign = 'left'
+                
+                t = self.ax.text(xt, yt, label,
+                              size=pixelToPoint(self.prefs['subtitle_size'],self.dpi),
+                              horizontalalignment=halign,
+                              verticalalignment=valign)
                 
                 t.set_family( self.prefs['font_family'] )
                 t.set_fontname( self.prefs['font'] )
-                t.set_size( pixelToPoint(self.prefs['subtitle_size'],self.dpi) )
+                t.set_size( pixelToPoint(self.prefs['text_size'],self.dpi) )
                 
-                autotexts.append(t)
+                texts.append(t)
+              
+              if autopct is not None:
+                  xt = x + pctdistance*radius*math.cos(thetam)
+                  yt = y + pctdistance*radius*math.sin(thetam)
+                  if is_string_like(autopct):
+                      s = autopct%(100.*frac)
+                  elif callable(autopct):
+                      s = autopct(100.*frac)
+                  else:                    raise TypeError('autopct must be callable or a format string')
+                  
+                  t = self.ax.text(xt, yt, s,
+                                horizontalalignment='center',
+                                verticalalignment='center')
+                  
+                  t.set_family( self.prefs['font_family'] )
+                  t.set_fontname( self.prefs['font'] )
+                  t.set_size( pixelToPoint(self.prefs['text_size'],self.dpi) )
+                  
+                  autotexts.append(t)
 
             
             theta1 = theta2
             i += 1
+                
+        self.legendData.reverse()
         
         self.ax.set_xlim((-1.25, 1.25))
         self.ax.set_ylim((-1.25, 1.25))
@@ -144,71 +148,20 @@ class PieGraph( PlotBase ):
   
     return self.legendData
 
-  def setup( self ):
-    super( PieGraph, self ).setup()
-
-    results = self.results
-    parsed_data = self.parsed_data
-
-    column_units = getattr( self, 'column_units', self.metadata.get('column_units','') )
-    column_units = column_units.strip()
-    sql_vars = getattr( self, 'vars', {} )
-    title = getattr( self, 'title', self.metadata.get('title','') )
-
-    if len(column_units) > 0:
-      title += ' (Sum: %i ' + column_units + ')'
-    else:
-      title += ' (Sum: %i)'
-    title = expand_string( title, sql_vars )
-  
-    labels = []
-    amt = [] 
-    keys = self.sort_keys( parsed_data )
-    for key in keys:
-      labels.append( str(key) + (' (%i)' % round(float(parsed_data[key]))) )
-      amt.append( float(parsed_data[key]) )
-    self.labels = labels
-    self.labels.reverse()
-    self.title = title % int(float(sum(amt)))
-    self.amt_sum = float(sum(amt))
-    self.amt = amt
-
-    #labels.reverse()
-
   def draw( self ):
 
     self.ylabel = ''
     self.prefs['square_axis'] = True
-    self.prefs['watermark'] = False
     PlotBase.draw(self)
     def my_display( x ):
       if x > 100*self.min_amount:
-        my_amt = int(x/100.0 * 1000. )
-        return str(my_amt)
+        return '%.1f' % x + '%'
       else:
         return ""
 
-    labels = self.pdata.getLabels()
-    explode = [0. for i in range(len(labels))]   
+    nLabels = self.pdata.getNumberOfLabels()
+    explode = [0.]*nLabels
     explode[0] = 0.1
     self.wedges, text_labels, percent = self.pie( explode=explode, autopct=my_display )
     
-  def get_coords( self ):
-    try:
-      coords = self.coords
-      height = self.prefs['height']
-      wedges = self.wedges
-      labels = self.labels
-      wedges_len = len(wedges)
-      for idx in range(wedges_len):
-        my_label = labels[idx] 
-        orig_label = my_label[:my_label.rfind(' ')]
-        wedge = wedges[ wedges_len - idx - 1 ]
-        v = wedge.get_verts()
-        t = wedge.get_transform()
-        my_coords = t.seq_xy_tups( v )
-        coords[ orig_label ] = tuple( [(i[0],height-i[1]) for i in my_coords] )
-      self.coords = coords
-      return coords
-    except:
-      return None
+

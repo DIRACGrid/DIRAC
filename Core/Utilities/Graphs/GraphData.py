@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphData.py,v 1.2 2009/06/03 07:46:12 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphData.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $
 ########################################################################
 
 """ GraphData encapsulates input data for the DIRAC Graphs plots
@@ -8,13 +8,17 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: GraphData.py,v 1.2 2009/06/03 07:46:12 atsareg Exp $"
+__RCSID__ = "$Id: GraphData.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $"
 
-import types, datetime
+import types, datetime, numpy, time
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import convert_to_datetime, to_timestamp
 from matplotlib.dates import date2num
 
+DEBUG = 0
+
 def get_key_type(keys):
+  """ A utility function to guess the type of the plot keys
+  """
   
   min_time_stamp = 1000000000
   max_time_stamp = 1300000000
@@ -55,16 +59,22 @@ class GraphData:
     self.truncated = 0
     self.all_keys = []
     self.labels = []
+    self.label_values = []
     self.subplots = {}
     self.plotdata = None
     self.data = dict(data)
     self.initialize()
     
   def isEmpty(self):
+    """ Check if there is no data inserted
+    """
     
     return not self.plotdata and not self.subplots  
     
   def setData(self,data):
+    """ Add data to the GraphData object
+    """
+    
     self.data = dict(data)
     self.initialize()  
     
@@ -74,11 +84,18 @@ class GraphData:
     if not keys:
       print "GraphData Error: empty data"
       
+      
+    start = time.time()  
+      
     if type(self.data[keys[0]]) == types.DictType:
       for key in self.data:
         self.subplots[key] = PlotData(self.data[key])
     else:
       self.plotdata = PlotData(self.data)   
+      
+    if DEBUG:  
+      print "Time: plot data", time.time() - start, len(self.subplots)  
+      
       
     if self.plotdata:
       self.all_keys = self.plotdata.getKeys()
@@ -95,17 +112,48 @@ class GraphData:
           
     self.sortLabels()   
           
-  def sortLabels(self):
+  def sortLabels(self,sort_type='max_value'):
+    """ Sort labels with a specified method:
+          alpha - alphabetic order
+          max_value - by max value of the subplot
+          sum - by the sum of values of the subplot
+    """
      
     if self.plotdata:
       if self.key_type == "string":
-        self.labels = self.plotdata.sortKeys()    
+        if sort_type in ['max_value','sum']:
+          self.labels = self.plotdata.sortKeys('weight')  
+        else:
+          self.labels = self.plotdata.sortKeys()   
+        self.label_values = [ self.plotdata[l] for l in self.labels]     
     else:
-      pairs = zip(self.subplots.keys(),self.subplots.values())
-      pairs.sort(key = lambda x: x[1].max_value,reverse=True)
-      self.labels = [ x[0] for x in pairs ]
+      if sort_type == 'max_value':
+        pairs = zip(self.subplots.keys(),self.subplots.values())
+        pairs.sort(key = lambda x: x[1].max_value,reverse=True)
+        self.labels = [ x[0] for x in pairs ]
+        self.label_values = [ x[1].max_value for x in pairs ]
+      elif sort_type == 'last_value':
+        pairs = zip(self.subplots.keys(),self.subplots.values())
+        pairs.sort(key = lambda x: x[1].last_value,reverse=True)
+        self.labels = [ x[0] for x in pairs ]
+        self.label_values = [ x[1].last_value for x in pairs ]  
+      elif sort_type == 'sum':
+        pairs = []
+        for key in self.subplots:
+          pairs.append( (key,self.subplots[key].sum_value) )
+        pairs.sort(key = lambda x: x[1],reverse=True)
+        self.labels = [ x[0] for x in pairs ]   
+        self.label_values = [ x[1] for x in pairs ] 
+      elif sort_type == 'alpha':  
+        self.labels = self.subplots.keys()
+        self.labels.sort()
+        self.label_values = [ self.subplots[x].sum_value for x in self.labels ]
+      else:
+        self.labels = self.subplots.keys()  
       
   def sortKeys(self):
+    """ Sort the graph keys in a natural order
+    """
   
     if self.plotdata:
       self.plotdata.sortKeys()
@@ -117,6 +165,8 @@ class GraphData:
     self.max_key = max(self.all_keys)  
       
   def makeNumKeys(self):
+    """ Make numerical representation of the graph keys suitable for plotting
+    """
   
     self.all_num_keys = []
     if self.key_type == "string":
@@ -135,6 +185,8 @@ class GraphData:
     self.max_num_key = max(self.all_num_keys)       
       
   def makeCumulativeGraph(self):
+    """ Prepare data for the cumulative graph
+    """
   
     if self.plotdata:
       self.plotdata.makeCumulativePlot()
@@ -147,26 +199,38 @@ class GraphData:
     self.sortLabels()       
       
   def getLabels(self):
+    """ Get the graph labels together with the numeric values used for the label 
+        sorting
+    """
         
     labels = []  
     if self.plotdata:
       labels = [('NoLabels',0.)]
     elif self.truncated:
       tlabels = self.labels[:self.truncated]
-      labels = zip(tlabels,[ self.subplots[l].max_value for l in tlabels])  
-      labels.append(('Others',self.otherPlot.max_value)) 
+      tvalues = self.label_values[:self.truncated]
+      labels = zip(tlabels,tvalues)  
+      labels.append(('Others',sum(self.label_values[self.truncated:]))) 
     else:    
-      labels = zip(self.labels,[ self.subplots[l].max_value for l in self.labels]) 
+      labels = zip(self.labels,self.label_values) 
         
     return labels
     
   def getStringMap(self):
-  
+    """ Get string to number mapping for numeric type keys
+    """
     return self.all_string_map 
     
   def getNumberOfKeys(self):
-  
+    
     return len(self.all_keys)  
+  
+  def getNumberOfLabels(self):
+    
+    if self.truncated:
+      return self.truncated+1 
+    else: 
+      return len(self.labels)
     
   def getPlotNumData(self,label=None):
   
@@ -176,7 +240,14 @@ class GraphData:
       if label == "Others":
         return self.otherPlot.getPlotNumDataForKeys(self.all_num_keys)     
       else:
-        return self.subplots[label].getPlotNumDataForKeys(self.all_num_keys)        
+        return self.subplots[label].getPlotNumDataForKeys(self.all_num_keys)    
+    else:
+      # Get the sum of all the subplots
+      arrays = []
+      for label in self.subplots:
+        arrays.append(numpy.array([ x[1] for x in self.subplots[label].getPlotNumDataForKeys(self.all_num_keys)]))
+      sum_array = sum(arrays)
+      return zip(self.all_num_keys,list(sum_array))
       
   def truncateLabels(self,limit=10):
   
@@ -257,13 +328,13 @@ class PlotData:
     self.max_value = float(max(self.values))    
     self.min_key = float(min(self.keys))
     self.max_key = float(max(self.keys))  
+    self.sum_value = float(sum(self.values))    
+    self.last_value = float(self.values[-1])    
               
   def sortKeys(self,sort_type='alpha'):
-    """
-    Sort keys according to the max data size; 
-
-    :Returns:s
-        - `sorted_keys` : Keys sorted according to maximum data size.
+    """ Sort keys according to the specified method :
+        alpha - sort in alphabetic order
+        weight - sort in the order of values
     """
     if self.sorted_keys:
       return self.sorted_keys

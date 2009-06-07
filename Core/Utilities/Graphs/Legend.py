@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Legend.py,v 1.2 2009/06/03 18:15:41 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Legend.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $
 ########################################################################
 
 """ Legend encapsulates a graphical plot legend drawing tool
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: Legend.py,v 1.2 2009/06/03 18:15:41 atsareg Exp $"
+__RCSID__ = "$Id: Legend.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $"
 
 from matplotlib.patches import Rectangle
 from matplotlib.text import Text
@@ -35,8 +35,8 @@ class Legend:
     if self.ax:
       self.canvas = self.ax.figure.canvas
       self.ax.set_axis_off()
-    self.palette = Palette()
     self.prefs = evalPrefs(*aw,**kw)
+    self.palette = Palette()
     
   def dumpPrefs(self):
   
@@ -57,7 +57,7 @@ class Legend:
   
     max_length = 0
     max_column_text = ''
-    for label,num,color in self.labels:
+    for label,num in self.labels:
       if num is not None:
         column_length = len(str(label)+str(num)) + 1
       else:
@@ -97,9 +97,9 @@ class Legend:
     
     nc = 0
     self.labels.reverse()
-    for label,num,color in self.labels:
+    for label,num in self.labels:
       num = "%.1f" % num
-      #color = self.palette.getColor(label)
+      color = self.palette.getColor(label)
       row = nc%nRows 
       column = nc/nRows          
       if row == nRows-1 and column == nColumns-1 and nc != nLabels-1:
