@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/__init__.py,v 1.9 2009/06/08 23:48:42 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/__init__.py,v 1.10 2009/06/08 23:57:08 atsareg Exp $
 ########################################################################
 
 """ DIRAC Graphs package provides tools for creation of various plots to provide
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: __init__.py,v 1.9 2009/06/08 23:48:42 atsareg Exp $"
+__RCSID__ = "$Id: __init__.py,v 1.10 2009/06/08 23:57:08 atsareg Exp $"
 
 from DIRAC.Core.Utilities.Graphs.Graph import Graph
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import evalPrefs
@@ -30,6 +30,7 @@ graph_large_prefs = {
   'figure_padding':15,
   'plot_title_size':12,
   'plot_padding':50,
+  'plot_bottom_padding':25,
   'frame':'On',
   'font' : 'Lucida Grande',
   'font_family' : 'sans-serif',
@@ -37,7 +38,7 @@ graph_large_prefs = {
   'legend':True,
   'legend_position':'bottom',
   'legend_width':800,
-  'legend_height':600,
+  'legend_height':150,
   'legend_padding':20,
   'plot_grid':'1:1',
   'limit_labels':15,
@@ -59,6 +60,7 @@ graph_normal_prefs = {
   'figure_padding':12,
   'plot_title_size':12,
   'plot_padding':50,
+  'plot_bottom_padding':25,
   'frame':'On',
   'font' : 'Lucida Grande',
   'font_family' : 'sans-serif',
@@ -88,6 +90,7 @@ graph_small_prefs = {
   'figure_padding':10,
   'plot_title_size':8,
   'plot_padding':35,
+  'plot_bottom_padding':15,
   'frame':'On',
   'font' : 'Lucida Grande',
   'font_family' : 'sans-serif',
