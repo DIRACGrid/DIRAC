@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PlotBase.py,v 1.5 2009/06/07 20:01:21 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PlotBase.py,v 1.6 2009/06/08 23:48:42 atsareg Exp $
 ########################################################################
 
 """ PlotBase is a base class for various Graphs plots
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: PlotBase.py,v 1.5 2009/06/07 20:01:21 atsareg Exp $"
+__RCSID__ = "$Id: PlotBase.py,v 1.6 2009/06/08 23:48:42 atsareg Exp $"
 
 import types, random
 from DIRAC.Core.Utilities.Graphs.Palette import Palette
@@ -71,6 +71,7 @@ class PlotBase:
       plot_title_padding = prefs['text_padding']  
     plot_title_size_point = pixelToPoint(plot_title_size,dpi)
     figure_padding = prefs['figure_padding']
+    plot_padding = prefs['plot_padding']
     frame_flag = prefs['frame']
     
     # Create plot axes, and set properties
@@ -78,26 +79,26 @@ class PlotBase:
     left,bottom,width,height = self.ax_contain.get_window_extent().bounds
     l,b,f_width,f_height = self.figure.get_window_extent().bounds
         
-    ax_plot_rect = (float(figure_padding+left)/f_width,
-                    float(figure_padding+bottom)/f_height,
-                    float(width-figure_padding)/f_width,
-                    float(height-figure_padding-plot_title_size-2*plot_title_padding)/f_height)
+    ax_plot_rect = (float(plot_padding+left)/f_width,
+                    float(plot_padding+bottom)/f_height,
+                    float(width-plot_padding)/f_width,
+                    float(height-plot_padding-plot_title_size-2*plot_title_padding)/f_height)
     ax = Axes(self.figure,ax_plot_rect)                
     if prefs['square_axis']:
       l,b,a_width,a_height = ax.get_window_extent().bounds
       delta = abs(a_height-a_width)
       if a_height>a_width:
         a_height = a_width
-        ax_plot_rect = (float(figure_padding+left)/f_width,
-                        float(figure_padding+bottom+delta/2.)/f_height,
-                        float(width-figure_padding)/f_width,
-                        float(height-figure_padding-plot_title_size-2*plot_title_padding-delta)/f_height)
+        ax_plot_rect = (float(plot_padding+left)/f_width,
+                        float(plot_padding+bottom+delta/2.)/f_height,
+                        float(width-plot_padding)/f_width,
+                        float(height-plot_padding-plot_title_size-2*plot_title_padding-delta)/f_height)
       else:
         a_width = a_height
-        ax_plot_rect = (float(figure_padding+left+delta/2.)/f_width,
-                        float(figure_padding+bottom)/f_height,
-                        float(width-figure_padding-delta)/f_width,
-                        float(height-figure_padding-plot_title_size-2*plot_title_padding)/f_height)
+        ax_plot_rect = (float(plot_padding+left+delta/2.)/f_width,
+                        float(plot_padding+bottom)/f_height,
+                        float(width-plot_padding-delta)/f_width,
+                        float(height-plot_padding-plot_title_size-2*plot_title_padding)/f_height)
       ax.set_position(ax_plot_rect)                  
                               
                     

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Legend.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Legend.py,v 1.4 2009/06/08 23:48:42 atsareg Exp $
 ########################################################################
 
 """ Legend encapsulates a graphical plot legend drawing tool
@@ -8,13 +8,15 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: Legend.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $"
+__RCSID__ = "$Id: Legend.py,v 1.4 2009/06/08 23:48:42 atsareg Exp $"
 
 from matplotlib.patches import Rectangle
 from matplotlib.text import Text
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import *  
 from DIRAC.Core.Utilities.Graphs.Palette import Palette  
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
+from matplotlib.figure import Figure 
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 import types
 
 class Legend:
@@ -30,6 +32,7 @@ class Legend:
       self.labels = data.getLabels()    
     else:
       self.labels = data  
+    self.labels.reverse()  
     self.ax = axes
     self.canvas = None
     if self.ax:
@@ -37,6 +40,7 @@ class Legend:
       self.ax.set_axis_off()
     self.prefs = evalPrefs(*aw,**kw)
     self.palette = Palette()
+    self.__get_column_width()
     
   def dumpPrefs(self):
   
@@ -53,6 +57,28 @@ class Legend:
     self.canvas = self.ax.figure.canvas
     self.ax.set_axis_off() 
     
+  def getLegendSize(self):
+    self.__get_column_width()
+    legend_position = self.prefs['legend_position']
+    legend_width = float(self.prefs['legend_width']) 
+    legend_height = float(self.prefs['legend_height']) 
+    legend_padding = float(self.prefs['legend_padding'])   
+    if legend_position in ['right','left']:
+      # One column in case of vertical legend
+      legend_width = self.column_width+legend_padding
+    elif legend_position == 'bottom':
+      nColumns = min(self.prefs['max_columns'],int(legend_width/self.column_width))
+      nLabels = len(self.labels)
+      maxRows = self.prefs['max_rows']
+      nRows_ax = int(legend_height/1.6/self.prefs['text_size'])
+      nRows_label = nLabels/nColumns + (nLabels%nColumns != 0)
+      nRows = max(1,min(min(nRows_label,maxRows),nRows_ax ))
+      text_padding = self.prefs['text_padding']    
+      text_padding = pixelToPoint(text_padding,self.prefs['dpi'])    
+      legend_height = min(legend_height,(nRows*(self.text_size+text_padding)+text_padding))
+      
+    return legend_width,legend_height  
+
   def __get_column_width(self):
   
     max_length = 0
@@ -65,17 +91,22 @@ class Legend:
       if column_length > max_length:
         max_length = column_length
         max_column_text = '%s  %s' % (str(label),str(num))
-                
+               
+    figure = Figure()   
+    canvas = FigureCanvasAgg(figure) 
+    dpi = self.prefs['dpi']
+    figure.set_dpi( dpi ) 
+    text_size = self.prefs['text_size']    
+    self.text_size = pixelToPoint(text_size,dpi)           
     text = Text(0.,0.,text=max_column_text,size=self.text_size)
-    text.set_figure(self.ax.figure)
-    bbox = text.get_window_extent(self.canvas.get_renderer())
+    text.set_figure(figure)
+    bbox = text.get_window_extent(canvas.get_renderer())
     self.column_width = bbox.width+6*self.prefs['text_size']
     
   def draw(self):
   
     dpi = self.prefs['dpi']
     self.text_size = float(self.prefs['text_size'])*100./float(dpi)
-    self.__get_column_width()
     ax_xsize = self.ax.get_window_extent().width
     ax_ysize = self.ax.get_window_extent().height
   

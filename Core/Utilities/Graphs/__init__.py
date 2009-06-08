@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/__init__.py,v 1.8 2009/06/07 22:52:32 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/__init__.py,v 1.9 2009/06/08 23:48:42 atsareg Exp $
 ########################################################################
 
 """ DIRAC Graphs package provides tools for creation of various plots to provide
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: __init__.py,v 1.8 2009/06/07 22:52:32 atsareg Exp $"
+__RCSID__ = "$Id: __init__.py,v 1.9 2009/06/08 23:48:42 atsareg Exp $"
 
 from DIRAC.Core.Utilities.Graphs.Graph import Graph
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import evalPrefs
@@ -24,19 +24,20 @@ graph_large_prefs = {
   'subtitle_size':10,
   'subtitle_padding':5,
   'title_size':15,
-  'title_padding':10,
+  'title_padding':5,
   'dpi':100,
   'text_padding':5,
-  'figure_padding':50,
+  'figure_padding':15,
   'plot_title_size':12,
+  'plot_padding':50,
   'frame':'On',
   'font' : 'Lucida Grande',
   'font_family' : 'sans-serif',
   'square_axis':False,
   'legend':True,
   'legend_position':'bottom',
-  'legend_width':600,
-  'legend_height':150,
+  'legend_width':800,
+  'legend_height':600,
   'legend_padding':20,
   'plot_grid':'1:1',
   'limit_labels':15,
@@ -55,8 +56,9 @@ graph_normal_prefs = {
   'title_padding':10,
   'dpi':100,
   'text_padding':5,
-  'figure_padding':50,
+  'figure_padding':12,
   'plot_title_size':12,
+  'plot_padding':50,
   'frame':'On',
   'font' : 'Lucida Grande',
   'font_family' : 'sans-serif',
@@ -83,8 +85,9 @@ graph_small_prefs = {
   'title_padding':6,
   'dpi':100,
   'text_padding':3,
-  'figure_padding':20,
+  'figure_padding':10,
   'plot_title_size':8,
+  'plot_padding':35,
   'frame':'On',
   'font' : 'Lucida Grande',
   'font_family' : 'sans-serif',
@@ -113,6 +116,7 @@ graph_thumbnail_prefs = {
   'text_padding':1,
   'figure_padding':2,
   'plot_title_size':8,
+  'plot_padding':0,
   'frame':'On',
   'font' : 'Lucida Grande',
   'font_family' : 'sans-serif',

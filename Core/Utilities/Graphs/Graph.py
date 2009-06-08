@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.8 2009/06/07 22:52:32 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.9 2009/06/08 23:48:42 atsareg Exp $
 ########################################################################
 
 """ Graph is a class providing layouts for the complete plot images including
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: Graph.py,v 1.8 2009/06/07 22:52:32 atsareg Exp $"
+__RCSID__ = "$Id: Graph.py,v 1.9 2009/06/08 23:48:42 atsareg Exp $"
 
 import types, datetime
 from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -26,7 +26,7 @@ class Graph(object):
   def __init__( self, *args, **kw ):
     super( Graph, self ).__init__( *args, **kw )
     
-  def layoutFigure(self,*args,**kw):
+  def layoutFigure(self,legend):
   
     prefs = self.prefs
   
@@ -95,12 +95,16 @@ class Graph(object):
                   
     legend_flag = prefs['legend']
     legend_ax = None
+    column_width = legend.column_width
     if legend_flag:
       legend_position = prefs['legend_position']
-      legend_width = float(prefs['legend_width']) 
-      legend_height = float(prefs['legend_height']) 
+      #legend_width = float(prefs['legend_width']) 
+      #legend_height = float(prefs['legend_height']) 
+      legend_width,legend_height = legend.getLegendSize()
       legend_padding = float(prefs['legend_padding']) 
       if legend_position in ['right','left']:
+        # One column in case of vertical legend
+        legend_width = column_width+legend_padding
         bottom = (height-title_size-title_padding-legend_height)/2./height
         if legend_position == 'right':
           left = 1. - (figure_padding+legend_width)/width
@@ -124,8 +128,8 @@ class Graph(object):
     ny = int(plot_grid.split(':')[1]) 
     
     plot_axes = []
-    for i in range(nx):
-      for j in range(ny):
+    for j in range(ny-1,-1,-1):
+      for i in range(nx):
         plot_rect = ((graph_left+graph_width*i/nx)/width,
                      (graph_bottom+graph_height*j/ny)/height,
                      graph_width/nx/width,
@@ -148,9 +152,10 @@ class Graph(object):
       start = time.time()
     
     metadata = prefs.get('metadata',{})
-    
-    legend_ax, plot_axes = self.layoutFigure(metadata,*args,**kw)
-    nPlots = len(plot_axes)
+    plot_grid = prefs['plot_grid']
+    nx = int(plot_grid.split(':')[0])
+    ny = int(plot_grid.split(':')[1]) 
+    nPlots = nx*ny
     if nPlots == 1:
       if type(data) != types.ListType:
         data = [data]
@@ -166,16 +171,38 @@ class Graph(object):
         for ip in range(nPlots):
           metaList.append(metadata)
         metadata = metaList
+        
+    # Initialize plot data    
+    graphData = []
+    plot_prefs = []
+    for i in range(nPlots):
+      plot_prefs.append(evalPrefs(prefs,metadata[i]))        
+      gdata = GraphData(data[i])      
+      if plot_prefs[i].has_key('sort_labels'):
+        gdata.sortLabels(plot_prefs[i]['sort_labels'])      
+      if plot_prefs[i].has_key('limit_labels'):
+        gdata.truncateLabels(plot_prefs[i]['limit_labels'])
+      if plot_prefs[i].has_key('cumulate_data'):  
+        gdata.makeCumulativeGraph()
+      plot_title = plot_prefs[i].get('plot_title','')
+      if plot_title != "NoTitle":
+        if gdata.key_type == "time":        
+          time_title = add_time_to_title(gdata.min_key,gdata.max_key)
+          if plot_title:
+            plot_title += ":"
+          plot_prefs[i]['plot_title'] = plot_title+' '+time_title
+      graphData.append(gdata)     
+    
+    legend = Legend(graphData[0],None,prefs)
+    legend_ax, plot_axes = self.layoutFigure(legend)
      
     if DEBUG:  
       print "makeGraph time layout",time.time()-start
       start = time.time()  
       
     # Make plots    
-    graphData = []
     for i in range(nPlots):
-      plot_prefs = evalPrefs(prefs,metadata[i])
-      plot_type = plot_prefs['plot_type']     
+      plot_type = plot_prefs[i]['plot_type']     
       try:
         exec "import %s" % plot_type
       except ImportError, x:
@@ -183,22 +210,7 @@ class Graph(object):
         return None
         
       ax = plot_axes[i]  
-      gdata = GraphData(data[i])      
-      if plot_prefs.has_key('sort_labels'):
-        gdata.sortLabels(plot_prefs['sort_labels'])      
-      if plot_prefs.has_key('limit_labels'):
-        gdata.truncateLabels(plot_prefs['limit_labels'])
-      if plot_prefs.has_key('cumulate_data'):  
-        gdata.makeCumulativeGraph()
-      graphData.append(gdata)
-      plot_title = plot_prefs.get('plot_title','')
-      if plot_title != "NoTitle":
-        if gdata.key_type == "time":        
-          time_title = add_time_to_title(gdata.min_key,gdata.max_key)
-          if plot_title:
-            plot_title += ":"
-          plot_prefs['plot_title'] = plot_title+' '+time_title
-      plot = eval("%s.%s(graphData[i],ax,plot_prefs)" % (plot_type,plot_type) )
+      plot = eval("%s.%s(graphData[i],ax,plot_prefs[i])" % (plot_type,plot_type) )
       plot.draw()
       if i == 0:
         legendData = plot.getLegendData()
@@ -209,7 +221,7 @@ class Graph(object):
       
     # Make legend
     if legend_ax:
-      legend = Legend(legendData,legend_ax,prefs)
+      legend.setAxes(legend_ax)
       legend.draw()  
       
     if DEBUG:  
