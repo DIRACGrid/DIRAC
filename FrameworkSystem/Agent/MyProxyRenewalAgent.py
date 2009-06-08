@@ -1,30 +1,22 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Agent/MyProxyRenewalAgent.py,v 1.4 2008/07/18 11:06:15 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Agent/MyProxyRenewalAgent.py,v 1.5 2009/06/08 17:10:30 acasajus Exp $
 ########################################################################
 
 """  Proxy Renewal agent is the key element of the Proxy Repository
      which maintains the user proxies alive
 """
 
-from DIRAC.Core.Base.Agent import Agent
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 
-AGENT_NAME = 'Framework/MyProxyRenewalAgent'
-
-class MyProxyRenewalAgent(Agent):
-
-  def __init__(self):
-    """ Standard constructor
-    """
-    Agent.__init__( self, AGENT_NAME, initializeMonitor = True )
+class MyProxyRenewalAgent(AgentModule):
 
   def initialize(self):
 
-
-    requiredLifeTime = gConfig.getValue( "%s/MinimumLifeTime" % self.section, 3600 )
-    renewedLifeTime = gConfig.getValue( "%s/RenewedLifeTime" % self.section, 54000 )
+    requiredLifeTime = self.am_getOption( "MinimumLifeTime", 3600 )
+    renewedLifeTime = self.am_getOption( "RenewedLifeTime", 54000 )
     myProxyServer = gConfig.getValue( "/DIRAC/VOPolicy/MyProxyServer" , "myproxy.cern.ch" )
     self.proxyDB = ProxyDB( requireVoms = True,
                             useMyProxy = True
@@ -36,7 +28,6 @@ class MyProxyRenewalAgent(Agent):
     gLogger.info( "MyProxy max proxy time : %s" % self.proxyDB.getMyProxyMaxLifeTime() )
 
     self.__threadPool = ThreadPool( 1, 10 )
-    Agent.initialize( self )
     return S_OK()
 
   def __renewProxyForCredentials( self, userDN, userGroup ):
