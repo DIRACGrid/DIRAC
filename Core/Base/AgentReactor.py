@@ -1,7 +1,7 @@
 
 import time
 import os
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Utilities import ThreadScheduler
 
 class AgentReactor:
@@ -35,21 +35,30 @@ class AgentReactor:
       return S_ERROR( "Can't load %s: Invalid agent name" % ( fullName ) )
     gLogger.info( "Loading %s" % fullName )
     system, agentName = modList
-    try:
-      agentModule = __import__( 'DIRAC.%sSystem.Agent.%s' % ( system, agentName ),
-                              globals(),
-                              locals(), agentName )
-      agentClass = getattr( agentModule, agentName )
-      if not self.__checkHandler( agentClass ):
-        return S_ERROR( "%s is not a valid agent module. It has to inherit from AgentModule" % fullName )
-      agent = agentClass( fullName, self.__baseAgentName )
-      result = agent.am_initialize()
-      if not result[ 'OK' ]:
-        return S_ERROR( "Error while calling initialize method of %s: %s" %( fullName, result[ 'Message' ] ) )
-    except Exception, e:
-      if not hideExceptions:
-        gLogger.exception( "Can't load agent %s" % fullName )
-      return S_ERROR( "Can't load agent %s: %s" % ( fullName, str(e) ) )
+    rootModulesToLook = gConfig.getValue( "/LocalSite/Extensions", [] ) + [ 'DIRAC' ]
+    for rootModule in rootModulesToLook:
+      moduleLoaded = False
+      try:
+        gLogger.verbose( "Trying to load from root module %s" % rootModule )
+        importString = '%s.%sSystem.Agent.%s' % ( rootModule, system, agentName )
+        gLogger.debug( "Trying to load %s" % importString )
+        agentModule = __import__( importString,
+                                globals(),
+                                locals(), agentName )
+        agentClass = getattr( agentModule, agentName )
+        if not self.__checkHandler( agentClass ):
+          gLogger.error( "Invalid Agent module", "%s has to inherit from AgentModule" % fullName )
+          continue
+        agent = agentClass( fullName, self.__baseAgentName )
+        result = agent.am_initialize()
+        if not result[ 'OK' ]:
+          return S_ERROR( "Error while calling initialize method of %s: %s" %( fullName, result[ 'Message' ] ) )
+        moduleLoaded = True
+      except Exception, e:
+        if not hideExceptions:
+          gLogger.exception( "Can't load agent %s" % fullName )
+    if not moduleLoaded:
+        return S_ERROR( "Can't load agent %s in root modules %s" % ( fullName, rootModulesToLook ) )
     self.__agentModules[ fullName ] = { 'instance' : agent,
                                         'class' : agentClass,
                                         'module' : agentModule }
