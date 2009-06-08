@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.69 2009/06/03 09:38:20 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.70 2009/06/08 10:24:05 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -1292,238 +1292,238 @@ class ReplicaManager:
   # These are the file catalog wrapper functions
   #
 
-  def getCatalogExists(self,lfn,singleFile=False):
+  def getCatalogExists(self,lfn,singleFile=False,catalogs=[]):
     """ Determine whether the path is registered in the FileCatalog
        
         'lfn' is the files to check (can be a single file or list of lfns)
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'exists')    
+      return self.__executeSingleFileCatalogFunction(lfn,'exists',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'exists')
+      return self.__executeFileCatalogFunction(lfn,'exists',catalogs=catalogs)
 
-  def getCatalogIsFile(self,lfn,singleFile=False):
+  def getCatalogIsFile(self,lfn,singleFile=False,catalogs=[]):
     """ Determine whether the path is registered as a file in the FileCatalog
     
         'lfn' is the files to check (can be a single file or list of lfns)
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'isFile')
+      return self.__executeSingleFileCatalogFunction(lfn,'isFile',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'isFile')
+      return self.__executeFileCatalogFunction(lfn,'isFile',catalogs=catalogs)
 
-  def getCatalogFileMetadata(self,lfn,singleFile=False):
+  def getCatalogFileMetadata(self,lfn,singleFile=False,catalogs=[]):
     """ Get the metadata associated to a file in the FileCatalog
     
         'lfn' is the files to check (can be a single file or list of lfns)
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'getFileMetadata')
+      return self.__executeSingleFileCatalogFunction(lfn,'getFileMetadata',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'getFileMetadata')
+      return self.__executeFileCatalogFunction(lfn,'getFileMetadata',catalogs=catalogs)
 
-  def getCatalogFileSize(self,lfn,singleFile=False):
+  def getCatalogFileSize(self,lfn,singleFile=False,catalogs=[]):
     """ Get the size registered for files in the FileCatalog
 
         'lfn' is the files to check (can be a single lfn or list of lfns)
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'getFileSize')     
+      return self.__executeSingleFileCatalogFunction(lfn,'getFileSize',catalogs=catalogs)     
     else:
-      return self.__executeFileCatalogFunction(lfn,'getFileSize')
+      return self.__executeFileCatalogFunction(lfn,'getFileSize',catalogs=catalogs)
 
-  def getCatalogReplicas(self,lfn,allStatus=False,singleFile=False):
+  def getCatalogReplicas(self,lfn,allStatus=False,singleFile=False,catalogs=[]):
     """ Get the replicas registered for files in the FileCatalog
 
         'lfn' is the files to check (can be a single lfn or list of lfns)
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'getReplicas',argsDict={'allStatus':allStatus})
+      return self.__executeSingleFileCatalogFunction(lfn,'getReplicas',argsDict={'allStatus':allStatus},catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'getReplicas',argsDict={'allStatus':allStatus})
+      return self.__executeFileCatalogFunction(lfn,'getReplicas',argsDict={'allStatus':allStatus},catalogs=catalogs)
 
-  def getCatalogReplicaStatus(self,lfn,singleFile=False):
+  def getCatalogReplicaStatus(self,lfn,singleFile=False,catalogs=[]):
     """ Get the status of the replica as registered in the FileCatalog
 
         'lfn' is a dictionary containing {LFN:SE}
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'getReplicaStatus')
+      return self.__executeSingleFileCatalogFunction(lfn,'getReplicaStatus',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'getReplicaStatus')
+      return self.__executeFileCatalogFunction(lfn,'getReplicaStatus',catalogs=catalogs)
 
-  def getCatalogIsDirectory(self,lfn,singleFile=False):
+  def getCatalogIsDirectory(self,lfn,singleFile=False,catalogs=[]):
     """ Determine whether the path is registered as a directory in the FileCatalog
       
         'lfn' is the files to check (can be a single file or list of lfns)
     """ 
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'isDirectory')
+      return self.__executeSingleFileCatalogFunction(lfn,'isDirectory',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'isDirectory')
+      return self.__executeFileCatalogFunction(lfn,'isDirectory',catalogs=catalogs)
 
-  def getCatalogDirectoryMetadata(self,lfn,singleFile=False):
+  def getCatalogDirectoryMetadata(self,lfn,singleFile=False,catalogs=[]):
     """ Get the metadata associated to a directory in the FileCatalog
       
         'lfn' is the directories to check (can be a single directory or list of directories)
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'getDirectoryMetadata')
+      return self.__executeSingleFileCatalogFunction(lfn,'getDirectoryMetadata',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'getDirectoryMetadata')
+      return self.__executeFileCatalogFunction(lfn,'getDirectoryMetadata',catalogs=catalogs)
 
-  def getCatalogDirectoryReplicas(self,lfn,singleFile=False):
+  def getCatalogDirectoryReplicas(self,lfn,singleFile=False,catalogs=[]):
     """ Get the replicas for the contents of a directory in the FileCatalog
       
         'lfn' is the directories to check (can be a single directory or list of directories)
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'getDirectoryReplicas')
+      return self.__executeSingleFileCatalogFunction(lfn,'getDirectoryReplicas',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'getDirectoryReplicas')
+      return self.__executeFileCatalogFunction(lfn,'getDirectoryReplicas',catalogs=catalogs)
 
-  def getCatalogListDirectory(self,lfn,singleFile=False):
+  def getCatalogListDirectory(self,lfn,singleFile=False,catalogs=[]):
     """ Get the contents of a directory in the FileCatalog
       
         'lfn' is the directories to check (can be a single directory or list of directories)
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'listDirectory')
+      return self.__executeSingleFileCatalogFunction(lfn,'listDirectory',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'listDirectory')
+      return self.__executeFileCatalogFunction(lfn,'listDirectory',catalogs=catalogs)
 
-  def getCatalogDirectorySize(self,lfn,singleFile=False):
+  def getCatalogDirectorySize(self,lfn,singleFile=False,catalogs=[]):
     """ Get the size a directory in the FileCatalog
       
         'lfn' is the directories to check (can be a single directory or list of directories)
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'getDirectorySize')
+      return self.__executeSingleFileCatalogFunction(lfn,'getDirectorySize',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'getDirectorySize')
+      return self.__executeFileCatalogFunction(lfn,'getDirectorySize',catalogs=catalogs)
 
-  def getCatalogIsLink(self,lfn,singleFile=False):
+  def getCatalogIsLink(self,lfn,singleFile=False,catalogs=[]):
     """ Determine whether the path is registered as a link in the FileCatalog
       
         'lfn' is the paths to check (can be a single path or list of paths)
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'isLink')
+      return self.__executeSingleFileCatalogFunction(lfn,'isLink',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'isLink')
+      return self.__executeFileCatalogFunction(lfn,'isLink',catalogs=catalogs)
 
-  def getCatalogReadLink(self,lfn,singleFile=False):
+  def getCatalogReadLink(self,lfn,singleFile=False,catalogs=[]):
     """ Get the target of a link as registered in the FileCatalog
       
         'lfn' is the links to check (can be a single link or list of links)
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'readLink')
+      return self.__executeSingleFileCatalogFunction(lfn,'readLink',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'readLink')
+      return self.__executeFileCatalogFunction(lfn,'readLink',catalogs=catalogs)
 
-  def addCatalogFile(self,lfn,singleFile=False):
+  def addCatalogFile(self,lfn,singleFile=False,catalogs=[]):
     """ Add a new file to the FileCatalog
         
         'lfn' is the dictionary containing the file properties
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'addFile')
+      return self.__executeSingleFileCatalogFunction(lfn,'addFile',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'addFile')
+      return self.__executeFileCatalogFunction(lfn,'addFile',catalogs=catalogs)
 
-  def addCatalogReplica(self,lfn,singleFile=False):
+  def addCatalogReplica(self,lfn,singleFile=False,catalogs=[]):
     """ Add a new replica to the FileCatalog
 
         'lfn' is the dictionary containing the replica properties
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'addReplica')
+      return self.__executeSingleFileCatalogFunction(lfn,'addReplica',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'addReplica')
+      return self.__executeFileCatalogFunction(lfn,'addReplica',catalogs=catalogs)
 
-  def removeCatalogFile(self,lfn,singleFile=False):
+  def removeCatalogFile(self,lfn,singleFile=False,catalogs=[]):
     """ Remove a file from the FileCatalog
   
         'lfn' is the file to be removed
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'removeFile')
+      return self.__executeSingleFileCatalogFunction(lfn,'removeFile',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'removeFile')
+      return self.__executeFileCatalogFunction(lfn,'removeFile',catalogs=catalogs)
 
-  def removeCatalogReplica(self,lfn,singleFile=False):
+  def removeCatalogReplica(self,lfn,singleFile=False,catalogs=[]):
     """ Remove a replica from the FileCatalog
   
         'lfn' is the file to be removed
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'removeReplica')
+      return self.__executeSingleFileCatalogFunction(lfn,'removeReplica',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'removeReplica')
+      return self.__executeFileCatalogFunction(lfn,'removeReplica',catalogs=catalogs)
 
-  def setCatalogReplicaStatus(self,lfn,singleFile=False):
+  def setCatalogReplicaStatus(self,lfn,singleFile=False,catalogs=[]):
     """ Change the status for a replica in the FileCatalog
       
         'lfn' is the replica information to change
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'setReplicaStatus')
+      return self.__executeSingleFileCatalogFunction(lfn,'setReplicaStatus',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'setReplicaStatus')
+      return self.__executeFileCatalogFunction(lfn,'setReplicaStatus',catalogs=catalogs)
 
-  def setCatalogReplicaHost(self,lfn,singleFile=False):
+  def setCatalogReplicaHost(self,lfn,singleFile=False,catalogs=[]):
     """ Change the registered SE for a replica in the FileCatalog
       
         'lfn' is the replica information to change
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'setReplicaHost')
+      return self.__executeSingleFileCatalogFunction(lfn,'setReplicaHost',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'setReplicaHost')
+      return self.__executeFileCatalogFunction(lfn,'setReplicaHost',catalogs=catalogs)
 
-  def createCatalogDirectory(self,lfn,singleFile=False):
+  def createCatalogDirectory(self,lfn,singleFile=False,catalogs=[]):
     """ Create the directory supplied in the FileCatalog
 
         'lfn' is the directory to create
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'createDirectory')
+      return self.__executeSingleFileCatalogFunction(lfn,'createDirectory',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'createDirectory')
+      return self.__executeFileCatalogFunction(lfn,'createDirectory',catalogs=catalogs)
 
-  def removeCatalogDirectory(self,lfn,singleFile=False):
+  def removeCatalogDirectory(self,lfn,singleFile=False,catalogs=[]):
     """ Remove the directory supplied from the FileCatalog
 
         'lfn' is the directory to remove
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'removeDirectory')
+      return self.__executeSingleFileCatalogFunction(lfn,'removeDirectory',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'removeDirectory')
+      return self.__executeFileCatalogFunction(lfn,'removeDirectory',catalogs=catalogs)
 
-  def createCatalogLink(self,lfn,singleFile=False):
+  def createCatalogLink(self,lfn,singleFile=False,catalogs=[]):
     """ Create the link supplied in the FileCatalog
 
         'lfn' is the link dictionary containing the target lfn and link name to create 
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'createLink')
+      return self.__executeSingleFileCatalogFunction(lfn,'createLink',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'createLink')
+      return self.__executeFileCatalogFunction(lfn,'createLink',catalogs=catalogs)
 
-  def removeCatalogLink(self,lfn,singleFile=False):
+  def removeCatalogLink(self,lfn,singleFile=False,catalogs=[]):
     """ Remove the link supplied from the FileCatalog
 
         'lfn' is the link to remove
     """
     if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'removeLink')
+      return self.__executeSingleFileCatalogFunction(lfn,'removeLink',catalogs=catalogs)
     else:
-      return self.__executeFileCatalogFunction(lfn,'removeLink')
+      return self.__executeFileCatalogFunction(lfn,'removeLink',catalogs=catalogs)
 
-  def __executeSingleFileCatalogFunction(self,lfn,method,argsDict={}):
-    res = self.__executeFileCatalogFunction(lfn,method,argsDict)
+  def __executeSingleFileCatalogFunction(self,lfn,method,argsDict={},catalogs=[]):
+    res = self.__executeFileCatalogFunction(lfn,method,argsDict,catalogs=catalogs)
     if type(lfn) == types.ListType:
       singleLfn = lfn[0]
     elif type(lfn) == types.DictType:   
@@ -1538,7 +1538,7 @@ class ReplicaManager:
     else:
       return S_OK(res['Value']['Successful'][singleLfn])
   
-  def __executeFileCatalogFunction(self,lfn,method,argsDict={}):
+  def __executeFileCatalogFunction(self,lfn,method,argsDict={},catalogs=[]):
     """ A simple wrapper around the file catalog functionality
     """
     # First check the supplied lfn(s) are the correct format.
@@ -1561,7 +1561,7 @@ class ReplicaManager:
       return S_ERROR(errMessage)
     gLogger.debug("ReplicaManager.__executeFileCatalogFunction: Attempting to perform '%s' operation with %s lfns." % (method,len(lfns)))
     # Check we can instantiate the file catalog correctly
-    fileCatalog = FileCatalog()
+    fileCatalog = FileCatalog(catalogs)
     # Generate the execution string 
     if argsDict:
       execString = "res = fileCatalog.%s(lfns" % method
