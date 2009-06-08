@@ -30,7 +30,6 @@ class FileCatalog:
       catalogs = [catalogs]
     if catalogs:
       res = self._getSelectedCatalogs(catalogs)
-      
     else:
       res = self._getCatalogs()
     if not res['OK']:
@@ -62,28 +61,36 @@ class FileCatalog:
     successful = {}
     failed = {}
     failedCatalogs = []
+    fileInfo = parms[0]
+    allLfns = fileInfo.keys()
     for catalogName,oCatalog,master in self.writeCatalogs:
       method = getattr(oCatalog,self.call)
-      res = method(*parms,**kws)
+      res = method(fileInfo,**kws)
       if not res['OK']:
-        # If this is the master catalog and it fails we dont want to continue with the other catalogs
         if master:
+          # If this is the master catalog and it fails we dont want to continue with the other catalogs
+          gLogger.error("FileCatalog.w_execute: Failed to execute %s on master catalog %s." % (self.call,catalogName),res['Message'])
           return res
-        # Otherwise we keep the failed catalogs so we can update their state later
         else:
+          # Otherwise we keep the failed catalogs so we can update their state later
           failedCatalogs.append((catalogName,res['Message']))
       else:
-        for key,item in res['Value']['Successful'].items():
-          if not successful.has_key(key):
-            successful[key] = {}
-          successful[key][catalogName] = item
-        for key,item in res['Value']['Failed'].items():
-          if not failed.has_key(key):
-            failed[key] = {}
-          failed[key][catalogName] = item
-    # This recovers the states of the files that completely failed
+        for lfn,message in res['Value']['Failed'].items():
+          # Save the error message for the failed operations
+          if not failed.has_key(lfn):
+            failed[lfn] = {}
+          failed[lfn][catalogName] = message
+          if master:
+            # If this is the master catalog then we should not attempt the operation on other catalogs
+            fileInfo.pop(lfn)
+        for lfn,result in res['Value']['Successful'].items():
+          # Save the result return for each file for the successful operations
+          if not successful.has_key(lfn):
+            successful[lfn] = {}
+          successful[lfn][catalogName] = result
+    # This recovers the states of the files that completely failed i.e. when S_ERROR is returned by a catalog
     for catalogName,errorMessage in failedCatalogs:
-      for file in uniqueElements(failed.keys()+successful.keys()):
+      for file in allLfns:
         if not failed.has_key(file):
           failed[file] = {}
         failed[file][catalogName] = errorMessage
