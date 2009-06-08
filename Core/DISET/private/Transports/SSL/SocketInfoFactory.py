@@ -1,11 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.13 2008/12/02 15:22:00 acasajus Exp $
-__RCSID__ = "$Id: SocketInfoFactory.py,v 1.13 2008/12/02 15:22:00 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.14 2009/06/08 18:18:22 acasajus Exp $
+__RCSID__ = "$Id: SocketInfoFactory.py,v 1.14 2009/06/08 18:18:22 acasajus Exp $"
 
 import socket
 import select
 import os
 import GSI
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
+from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfo import SocketInfo
 from DIRAC.Core.DISET.private.Transports.SSL.SessionManager import gSessionManager
 from DIRAC.Core.DISET.private.Transports.SSL.FakeSocket import FakeSocket
@@ -34,12 +35,8 @@ class SocketInfoFactory:
     except Exception, e:
       return S_ERROR( str( e ) )
 
-  def getSocket( self, hostAddress, **kwargs ):
+  def __connect( self, socketInfo, hostAddress ):
     osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
-    retVal = self.generateClientInfo( hostAddress[0], kwargs )
-    if not retVal[ 'OK' ]:
-      return retVal
-    socketInfo = retVal[ 'Value' ]
     sslSocket = GSI.SSL.Connection( socketInfo.getSSLContext(), osSocket )
     sessionId = str( hash( str( hostAddress ) + ":".join( socketInfo.getLocalCredentialsLocation() )  ) )
     socketInfo.sslContext.set_session_id( str( hash( sessionId ) ) )
@@ -62,6 +59,31 @@ class SocketInfoFactory:
       errno = sslSocket.getsockopt( socket.SOL_SOCKET, socket.SO_ERROR )
       if errno != 0:
         return S_ERROR( "Can't connect: %s" % str( ( errno, os.strerror( errno ) ) ) )
+    #Connected!
+    return S_OK( sslSocket )
+
+  def getSocket( self, hostAddress, **kwargs ):
+    hostName = hostAddress[0]
+    retVal = self.generateClientInfo( hostName, kwargs )
+    if not retVal[ 'OK' ]:
+      return retVal
+    socketInfo = retVal[ 'Value' ]
+    retVal = Network.getIPsForHostName( hostName )
+    if not retVal[ 'OK' ]:
+      return S_ERROR( "Could not resolve %s: %s" % ( hostName, retVal[ 'Message' ] ) )
+    ipList = List.randomize( retVal[ 'Value' ] )
+    connected = False
+    errorsList = []
+    for ip in ipList :
+      ipAddress = ( ip, hostAddress[1] )
+      retVal = self.__connect( socketInfo, ipAddress )
+      if retVal[ 'OK' ]:
+        sslSocket = retVal[ 'Value' ]
+        connected = True
+        break
+      errorsList.append( "%s: %s" % ( ipAddress, retVal[ 'Message' ] ) )
+    if not connected:
+      return S_ERROR( "Could not connect to %s: %s" % ( hostAddress, "," .join( [ e for e in errorsList ] ) ) )
     retVal = socketInfo.doClientHandshake()
     if not retVal[ 'OK' ]:
       return retVal
