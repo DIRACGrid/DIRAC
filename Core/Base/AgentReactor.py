@@ -36,8 +36,10 @@ class AgentReactor:
     gLogger.info( "Loading %s" % fullName )
     system, agentName = modList
     rootModulesToLook = gConfig.getValue( "/LocalSite/Extensions", [] ) + [ 'DIRAC' ]
+    moduleLoaded = False
     for rootModule in rootModulesToLook:
-      moduleLoaded = False
+      if moduleLoaded:
+        break
       try:
         gLogger.verbose( "Trying to load from root module %s" % rootModule )
         importString = '%s.%sSystem.Agent.%s' % ( rootModule, system, agentName )
