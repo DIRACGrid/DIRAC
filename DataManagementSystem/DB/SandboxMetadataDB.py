@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/Attic/SandboxMetadataDB.py,v 1.2 2009/04/28 17:15:48 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/Attic/SandboxMetadataDB.py,v 1.3 2009/06/09 08:48:42 acasajus Exp $
 ########################################################################
 """ SandboxMetadataDB class is a front-end to the metadata for sandboxes
 """
 
-__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.2 2009/04/28 17:15:48 acasajus Exp $"
+__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.3 2009/06/09 08:48:42 acasajus Exp $"
 
 import time
 import types
@@ -67,6 +67,7 @@ class SandboxMetadataDB(DB):
                                              'Indexes': { 'Entity': [ 'EntityId', 'EntitySetup' ],
                                                           'SBIndex' : [ 'SBId' ]
                                                         },
+                                              'UniqueIndexes' : { 'Mapping' : [ 'SBId', 'EntitySetup', 'EntityId', 'Type' ] }
                                            }
 
     for tableName in self.__tablesDesc:
@@ -179,7 +180,8 @@ class SandboxMetadataDB(DB):
     sqlCmd = "INSERT INTO `sb_EntityMapping` ( entityId, entitySetup, Type, SBId ) VALUES %s" % ", ".join( insertValues )
     result = self._update( sqlCmd )
     if not result[ 'OK' ]:
-      return result
+      if result[ 'Message' ].find( "Duplicate entry" ) == -1:
+        return result
     sqlCmd = "UPDATE `sb_SandBoxes` SET Assigned=1 WHERE SBId in ( %s )" % ", ".join( sbIds )
     return self._update( sqlCmd )
 
