@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransferDB.py,v 1.37 2009/06/09 09:49:10 acsmith Exp $
+# $Id: TransferDB.py,v 1.38 2009/06/09 12:41:52 acsmith Exp $
 ########################################################################
 
 """ RequestDB is a front end to the Request Database.
@@ -9,7 +9,7 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import randomize,stringListToString,intListToString
 import threading,types,string,time,datetime
 
-__RCSID__ = "$Id: TransferDB.py,v 1.37 2009/06/09 09:49:10 acsmith Exp $"
+__RCSID__ = "$Id: TransferDB.py,v 1.38 2009/06/09 12:41:52 acsmith Exp $"
 
 MAGIC_EPOC_NUMBER = 1270000000
 
@@ -104,7 +104,7 @@ class TransferDB(DB):
       channels[channelID]['Source'] = sourceSite
       channels[channelID]['Destination'] = destSite
       channels[channelID]['Status'] = status
-      channels[channelID]['Files'] = files
+      #channels[channelID]['Files'] = files
       channels[channelID]['ChannelName'] = channelName
     return S_OK(channels)
 
