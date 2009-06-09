@@ -93,23 +93,51 @@ class SandboxClient:
   ##############
   # Download sandbox
 
-  def downloadSandboxAsBundle( self, sbLocation, destinationDir ):
+  def downloadSandbox( self, sbLocation, destinationDir ):
     """
     Download a sandbox file and keep it in bundled form
     """
-    split = List.fromChar( sbLocation, ":" )
-    if len( split ) < 2:
-      return S_ERROR( "The Sandbox must be in the form SEName:SEPFN" )
+    if sbLocation.find( "SB:" ) != 0:
+      return S_ERROR( "Invalid sandbox URL" )
+    sbLocation = sbLocation[ 3: ]
+    sbSplit = sbLocation.split( "|" )
+    if len( sbSplit ) < 2:
+      return S_ERROR( "Invalid sandbox URL" )
+    SEName = sbSplit[0]
+    SEPFN = "|".join( sbSplit[1:] )
     try:
       os.makedirs( destinationDir )
     except:
       pass
-    SEName = split[0]
-    SEPFN = ":".join( split[1:] )
-    print SEName, SEPFN
-    print "."*10
+
+    try:
+      tmpSBDir = tempfile.mkdtemp( prefix="TMSB." )
+    except Exception, e:
+      return S_ERROR( "Cannot create temporal file: %s" % str(e) )
+
     rm = ReplicaManager()
-    return rm.getPhysicalFile( SEPFN, SEName, destinationDir, singleFile = True )
+    result = rm.getPhysicalFile( SEPFN, SEName, tmpSBDir, singleFile = True )
+    if not result[ 'OK' ]:
+      return result
+    sbFileName = os.path.basename( SEPFN )
+
+    result = S_OK()
+    tarFileName = os.path.join( tmpSBDir, sbFileName )
+    try:
+      tf = tarfile.open( name = tarFileName, mode = "r" )
+      for tarinfo in tf:
+        tf.extract( tarinfo, path = destinationDir )
+      tf.close()
+    except Exception, e:
+      result = S_ERROR( "Could not open bundle: %s" % str(e) )
+
+    try:
+      os.unlink( tarFileName )
+      os.rmdir( tmpSBDir )
+    except Exception, e:
+      gLogger.warn( "Could not remove temporary dir %s: %s" % ( tmpSBDir, str(e) ) )
+
+    return result
 
   ##############
   # Jobs
@@ -131,6 +159,19 @@ class SandboxClient:
       entitiesList.append( "Job:%s" % jobId )
     return self.__unassignEntities( entitiesList )
 
+  def downloadSandboxForJob( self, jobId, sbType, destinationPath ):
+    result = self.__getSandboxesForEntity( "Job:%s" % jobId )
+    if not result[ 'OK' ]:
+      return result
+    sbDict = result[ 'Value' ]
+    if sbType not in sbDict:
+      return S_ERROR( "No %s sandbox registered for job %s" % ( sbType, jobId ) )
+    for sbLocation in sbDict[ sbType ]:
+      result = self.downloadSandbox( sbLocation, destinationPath )
+      if not result[ 'OK' ]:
+        return result
+    return S_OK()
+
   ##############
   # Pilots
 
@@ -150,6 +191,19 @@ class SandboxClient:
     for pilotId in pilotIdIdList:
       entitiesList.append( "Pilot:%s" % pilotId )
     return self.__unassignEntities( entitiesList )
+
+  def downloadSandboxForPilot( self, jobId, sbType, destinationPath ):
+    result = self.__getSandboxesForEntity( "Pilot:%s" % jobId )
+    if not result[ 'OK' ]:
+      return result
+    sbDict = result[ 'Value' ]
+    if sbType not in sbDict:
+      return S_ERROR( "No %s sandbox registered for pilot %s" % ( sbType, jobId ) )
+    for sbLocation in sbDict[ sbType ]:
+      result = self.downloadSandbox( sbLocation, destinationPath )
+      if not result[ 'OK' ]:
+        return result
+    return S_OK()
 
   ##############
   # Entities
@@ -181,5 +235,4 @@ class SandboxClient:
     Unassign a list of jobs of their respective sandboxes
     """
     return self.__getRPCClient().unassignEntities( eIdList )
-
 
