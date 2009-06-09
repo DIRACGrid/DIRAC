@@ -48,8 +48,8 @@ class FTSMonitor(Agent):
     gLogger.info('Obtaining requests to monitor')
     res = self.TransferDB.getFTSReq()
     if not res['OK']:
-      errStr = "FTSAgent.%s" % res['Message']
-      gLogger.error(errStr)
+      errStr = "FTSAgent.execute: Failed to get FTS requests"
+      gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
     if not res['Value']:
       infoStr = "FTSAgent. No FTS requests found to monitor."
@@ -91,8 +91,8 @@ class FTSMonitor(Agent):
     gLogger.info('Obtaining the LFNs associated to this request')
     res = self.TransferDB.getFTSReqLFNs(ftsReqID)
     if not res['OK']:
-      errStr = "FTSAgent.%s" % res['Message']
-      gLogger.error(errStr)
+      errStr = "FTSAgent.monitorTransfer: Failed to obtain FTS request LFNs"
+      gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
     files = res['Value']
     if not files:
@@ -111,28 +111,28 @@ class FTSMonitor(Agent):
     gLogger.info(infoStr)
     res = ftsReq.updateSummary()
     if not res['OK']:
-      errStr = "FTSAgent.%s" % res['Message']
-      gLogger.error(errStr)
+      errStr = "FTSAgent.monitorTransfer: Failed to update the FTS request summary"
+      gLogger.error(errStr,res['Message'])
       res = self.TransferDB.setFTSReqLastMonitor(ftsReqID)
       if not res['OK']:
-        errStr = "FTSAgent.%s" % res['Message']
-        gLogger.error(errStr)
+        errStr = "FTSAgent.monitorTransfer: Failed to set FTS last monitor time"
+        gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
     gLogger.info("%s%s\n\n" % ('Request Summary:'.ljust(20),ftsReq.getStatusSummary()))
     percentComplete = ftsReq.getPercentageComplete()
     gLogger.info('FTS Request found to be %s percent complete' % int(percentComplete))
     res = self.TransferDB.setFTSReqAttribute(ftsReqID,'PercentageComplete',percentComplete)
     if not res['OK']:
-      errStr = "FTSAgent.%s" % res['Message']
-      gLogger.error(errStr)
+      errStr = "FTSAgent.monitorTransfer: Failed to update FTS request attribute"
+      gLogger.error(errStr,res['Message'])
     res = self.TransferDB.addLoggingEvent(ftsReqID,percentComplete)
     if not res['OK']:
-      errStr = "FTSAgent.%s" % res['Message']
-      gLogger.error(errStr)
+      errStr = "FTSAgent.monitorTransfer: Failed to add FTS logging event"
+      gLogger.error(errStr,res['Message'])
     res = self.TransferDB.setFTSReqLastMonitor(ftsReqID)
     if not res['OK']:
-      errStr = "FTSAgent.%s" % res['Message']
-      gLogger.error(errStr)
+      errStr = "FTSAgent.monitorTransfer: Failed to set FTS last monitor time"
+      gLogger.error(errStr,res['Message'])
 
     #########################################################################
     # Update the information in the TransferDB if the transfer is terminal.
@@ -140,8 +140,8 @@ class FTSMonitor(Agent):
       gLogger.info('FTS Request found to be terminal, updating file states')
       res = ftsReq.updateFileStates()
       if not res['OK']:
-        errStr = "FTSAgent.%s" % res['Message']
-        gLogger.error(errStr)
+        errStr = "FTSAgent.monitorTransfer: Failed to update FTS file states"
+        gLogger.error(errStr,res['Message'])
         return S_ERROR(errStr)
 
       # Update the entries in the data logging for successful and failed files
