@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxStoreHandler.py,v 1.4 2009/06/09 08:26:26 acasajus Exp $
+# $Id: SandboxStoreHandler.py,v 1.5 2009/06/09 19:23:47 acasajus Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.4 2009/06/09 08:26:26 acasajus Exp $"
+__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.5 2009/06/09 19:23:47 acasajus Exp $"
 
 from types import *
 import os
@@ -110,7 +110,7 @@ class SandboxStoreHandler( RequestHandler ):
     if result[ 'OK' ]:
       gLogger.info( "Sandbox already exists. Skipping upload" )
       fileHelper.markAsTransferred()
-      sbURL = "%s:%s" % ( seName, sePFN )
+      sbURL = "SB:%s|%s" % ( seName, sePFN )
       assignTo = dict( [ ( key,  [ ( sbURL, assignTo[ key ] ) ] ) for key in assignTo ] )
       result = self.export_assignSandboxesToEntities( assignTo )
       if not result[ 'OK' ]:
@@ -142,14 +142,14 @@ class SandboxStoreHandler( RequestHandler ):
         return result
       sbPath = result[ 'Value' ][1]
     #Register!
-    gLogger.info( "Registering sandbox in the DB with", "%s:%s" % ( self.__seNameToUse, sbPath ) )
+    gLogger.info( "Registering sandbox in the DB with", "SB:%s|%s" % ( self.__seNameToUse, sbPath ) )
     result = sandboxDB.registerAndGetSandbox( credDict[ 'username' ], credDict[ 'DN' ], credDict[ 'group' ],
                                               self.__seNameToUse, sbPath, fileHelper.getTransferedBytes() )
     if not result[ 'OK' ]:
       self.__secureUnlinkFile( hdPath )
       return result
 
-    sbURL = "%s:%s" % ( self.__seNameToUse, sbPath )
+    sbURL = "SB:%s|%s" % ( self.__seNameToUse, sbPath )
     assignTo = dict( [ ( key,  [ ( sbURL, assignTo[ key ] ) ] ) for key in assignTo ] )
     result = self.export_assignSandboxesToEntities( assignTo )
     if not result[ 'OK' ]:
@@ -178,7 +178,7 @@ class SandboxStoreHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
     result = sandboxDB.getSandboxId( seName, sePFN, credDict[ 'username' ], credDict[ 'group' ] )
     if result[ 'OK' ]:
-      return S_OK( "%s:%s" % ( seName, sePFN ) )
+      return S_OK( "SB:%s|%s" % ( seName, sePFN ) )
 
     result = sandboxDB.registerAndGetSandbox( credDict[ 'username' ], credDict[ 'DN' ], credDict[ 'group' ],
                                               seName, sePFN, fileHelper.getTransferedBytes() )
@@ -198,7 +198,7 @@ class SandboxStoreHandler( RequestHandler ):
 
     #Unlink temporal file if it's there
     self.__secureUnlinkFile( tmpFilePath )
-    return S_OK( "%s:%s" % ( seName, sePFN ) )
+    return S_OK( "SB:%s|%s" % ( seName, sePFN ) )
 
   def __generateLocation( self, sbPath ):
     """
@@ -323,9 +323,13 @@ class SandboxStoreHandler( RequestHandler ):
           return S_ERROR( "Entry for job %s is not a iterable of tuples/lists" % jobId )
         if len( sbTuple ) != 2:
           return S_ERROR( "SB definition is not ( SBLocation, Type )! It's '%s'" % str( sbTuple ) )
-        splitted = List.fromChar( sbTuple[0], ":" )
+        SBLocation = sbTuple[0]
+        if SBLocation.find( "SB:" ) != 0:
+          return S_ERROR( "%s doesn't seem to be a sandbox" % SBLocation )
+        SBLocation = SBLocation[3:]
+        splitted = List.fromChar( SBLocation, "|" )
         if len( splitted ) < 2:
-          return S_ERROR( "SB Location has to have SEName:SEPFN form" )
+          return S_ERROR( "SB Location has to have SEName|SEPFN form" )
         SEName = splitted[0]
         SEPFN = ":".join( splitted[1:] )
         assignList.append( ( entityId, entitySetup, sbTuple[1], SEName, SEPFN ) )
@@ -365,7 +369,7 @@ class SandboxStoreHandler( RequestHandler ):
     for SEName, SEPFN, SBType in result[ 'Value' ]:
       if SBType not in sbDict:
         sbDict[ SBType ] = []
-      sbDict[ SBType ].append( "%s:%s" % ( SEName, SEPFN ) )
+      sbDict[ SBType ].append( "SB:%s|%s" % ( SEName, SEPFN ) )
     return S_OK( sbDict )
 
 
@@ -419,7 +423,7 @@ class SandboxStoreHandler( RequestHandler ):
       gLogger.error( "Cannot delete sandbox from DB", result[ 'Message' ] )
 
   def __deleteSandboxFromBackend( self, SEName, SEPFN ):
-    gLogger.info( "Purging sandbox" "%s:%s" % ( SEName, SEPFN ) )
+    gLogger.info( "Purging sandbox" "SB:%s|%s" % ( SEName, SEPFN ) )
     if SEName != self.__localSEName:
      return self.__deleteSandboxFromExternalBackend( SEName, SEPFN )
     else:
@@ -459,7 +463,7 @@ class SandboxStoreHandler( RequestHandler ):
         index = result['Value']
         fileDict = { 'PFN' : SEPFN, 'Status' : 'Waiting' }
         request.setSubRequestFiles( index, 'removal', [ fileDict ] )
-        return RequestClient().setRequest( "RemoteSBDeletion:%s:%s:%s" % ( SEName, SEPFN, time.time() ),
+        return RequestClient().setRequest( "RemoteSBDeletion:%s|%s:%s" % ( SEName, SEPFN, time.time() ),
                                     request.toXML()[ 'Value' ] )
       except Exception, e:
         gLogger.exception( "Exception while setting deletion request" )
