@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransferDB.py,v 1.36 2009/04/05 14:06:12 acsmith Exp $
+# $Id: TransferDB.py,v 1.37 2009/06/09 09:49:10 acsmith Exp $
 ########################################################################
 
 """ RequestDB is a front end to the Request Database.
@@ -9,7 +9,7 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import randomize,stringListToString,intListToString
 import threading,types,string,time,datetime
 
-__RCSID__ = "$Id: TransferDB.py,v 1.36 2009/04/05 14:06:12 acsmith Exp $"
+__RCSID__ = "$Id: TransferDB.py,v 1.37 2009/06/09 09:49:10 acsmith Exp $"
 
 MAGIC_EPOC_NUMBER = 1270000000
 
@@ -93,17 +93,18 @@ class TransferDB(DB):
     return res
 
   def getChannels(self):
-    req = "SELECT ChannelID,SourceSite,DestinationSite,Status,ChannelName from Channels;"
+    req = "SELECT ChannelID,SourceSite,DestinationSite,Status,Files,ChannelName from Channels;"
     res = self._query(req)
     if not res['OK']:
       err = 'TransferDB._getChannels: Failed to retrieve channel information.'
       return S_ERROR('%s\n%s' % (err,res['Message']))
     channels = {}
-    for channelID,sourceSite,destSite,status,channelName in res['Value']:
+    for channelID,sourceSite,destSite,status,files,channelName in res['Value']:
       channels[channelID] = {}
       channels[channelID]['Source'] = sourceSite
       channels[channelID]['Destination'] = destSite
       channels[channelID]['Status'] = status
+      channels[channelID]['Files'] = files
       channels[channelID]['ChannelName'] = channelName
     return S_OK(channels)
 
@@ -123,6 +124,21 @@ class TransferDB(DB):
     resDict = {'ChannelIDs':channelIDs,'Channels':channels}
     return S_OK(resDict)
 
+  def decreaseChannelFiles(self,channelID):
+    req = "UPDATE Channels SET Files = Files-1 WHERE ChannelID = %s;" % (channelID)
+    res = self._update(req)
+    if not res['OK']:
+      err = 'TransferDB.decreaseChannelFiles: Failed to update Files for Channel %s.' % (channelID)
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    return res
+
+  def increaseChannelFiles(self,channelID):
+    req = "UPDATE Channels SET Files = Files+1 WHERE ChannelID = %s;" % (channelID)
+    res = self._update(req)
+    if not res['OK']:
+      err = 'TransferDB.increaseChannelFiles: Failed to update Files for Channel %s.' % (channelID)
+      return S_ERROR('%s\n%s' % (err,res['Message']))
+    return res
 
   #################################################################################
   # These are the methods for managing the Channel table

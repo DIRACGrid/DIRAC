@@ -54,6 +54,24 @@ def initializeTransferDBMonitoringHandler(serviceInfo):
 
 class TransferDBMonitoringHandler(RequestHandler):
 
+  types_getChannels = []
+  def export_getChannels(self):
+    """ Get the details of the channels
+    """
+    return transferDB.getChannels()
+    
+  types_increaseChannelFiles = [IntType]
+  def export_increaseChannelFiles(self,channelID):
+    """ Increase the numner of files on a channel
+    """  
+    return transferDB.increaseChannelFiles(channelID)
+  
+  types_decreaseChannelFiles = [IntType]
+  def export_decreaseChannelFiles(self,channelID):
+    """ Decrease the numner of files on a channel
+    """
+    return transferDB.decreaseChannelFiles(channelID)
+    
   types_getSites = []
   def export_getSites(self):
     """ Get the details of the sites
