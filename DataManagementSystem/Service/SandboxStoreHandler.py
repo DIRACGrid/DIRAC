@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxStoreHandler.py,v 1.3 2009/05/07 14:25:35 acasajus Exp $
+# $Id: SandboxStoreHandler.py,v 1.4 2009/06/09 08:26:26 acasajus Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.3 2009/05/07 14:25:35 acasajus Exp $"
+__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.4 2009/06/09 08:26:26 acasajus Exp $"
 
 from types import *
 import os
@@ -80,6 +80,15 @@ class SandboxStoreHandler( RequestHandler ):
     if self.__maxUploadBytes and fileSize > self.__maxUploadBytes:
       return S_ERROR( "Sandbox is too big. Please upload it to a grid storage element" )
 
+    if type( fileId ) in ( types.ListType, types.TupleType ):
+      if len( fileId ) > 1:
+        assignTo = fileId[1]
+        fileId = fileId[0]
+      else:
+        return S_ERROR( "File identified tuple has to have length greater than 1" )
+    else:
+      assignTo = {}
+
     extPos = fileId.find( ".tar" )
     if extPos > -1:
       extension = fileId[ extPos + 1: ]
@@ -101,7 +110,12 @@ class SandboxStoreHandler( RequestHandler ):
     if result[ 'OK' ]:
       gLogger.info( "Sandbox already exists. Skipping upload" )
       fileHelper.markAsTransferred()
-      return S_OK( "%s:%s" % ( seName, sePFN ) )
+      sbURL = "%s:%s" % ( seName, sePFN )
+      assignTo = dict( [ ( key,  [ ( sbURL, assignTo[ key ] ) ] ) for key in assignTo ] )
+      result = self.export_assignSandboxesToEntities( assignTo )
+      if not result[ 'OK' ]:
+        return result
+      return S_OK( sbURL )
 
     if self.__useLocalStorage:
       hdPath = self.__sbToHDPath( sbPath )
@@ -134,8 +148,13 @@ class SandboxStoreHandler( RequestHandler ):
     if not result[ 'OK' ]:
       self.__secureUnlinkFile( hdPath )
       return result
-    return S_OK( "%s:%s" % ( self.__seNameToUse, sbPath ) )
 
+    sbURL = "%s:%s" % ( self.__seNameToUse, sbPath )
+    assignTo = dict( [ ( key,  [ ( sbURL, assignTo[ key ] ) ] ) for key in assignTo ] )
+    result = self.export_assignSandboxesToEntities( assignTo )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( sbURL )
 
   def transfer_bulkFromClient( self, fileId, token, fileSize, fileHelper ):
     """ Receive files packed into a tar archive by the fileHelper logic.

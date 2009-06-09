@@ -22,13 +22,29 @@ class SandboxClient:
   def __getTransferClient( self ):
     return TransferClient( self.__serviceName )
 
-  def uploadFilesAsSandbox( self, fileList, sizeLimit = 0 ):
+  #Upload sandbox to jobs and pilots
+
+  def uploadFilesAsSandboxForJob( self, fileList, jobId, sbType, sizeLimit = 0 ):
+    return self.uploadFilesAsSandbox( fileList, sizeLimit, assignTo = { "Job:%s" % jobId: sbType } )
+
+  def uploadFilesAsSandboxForPilot( self, fileList, jobId, sbType, sizeLimit = 0 ):
+    return self.uploadFilesAsSandbox( fileList, sizeLimit, assignTo = { "Pilot:%s" % jobId: sbType } )
+
+  #Upload generic sandbox
+
+  def uploadFilesAsSandbox( self, fileList, sizeLimit = 0, assignTo = {} ):
     """ Send files in the fileList to a Sandbox service for the given jobID.
         This is the preferable method to upload sandboxes. fileList can contain
         both files and directories
+        Parameters:
+          - assignTo : Dict containing { 'Job:<jobid>' : '<sbType>', ... }
     """
     errorFiles = []
     files2Upload = []
+
+    if type( fileList ) not in ( types.TupleType, types.ListType ):
+      return S_ERROR( "fileList must be a tuple!" )
+
     for file in fileList:
       if re.search( '^lfn:', file ) or re.search( '^LFN:', file ):
         pass
@@ -67,7 +83,7 @@ class SandboxClient:
     fd.close()
 
     transferClient = self.__getTransferClient()
-    result = transferClient.sendFile( tmpFilePath, "%s.tar.bz2" % oMD5.hexdigest() )
+    result = transferClient.sendFile( tmpFilePath, ( "%s.tar.bz2" % oMD5.hexdigest(), assignTo ) )
     try:
       os.unlink( tmpFilePath )
     except:
