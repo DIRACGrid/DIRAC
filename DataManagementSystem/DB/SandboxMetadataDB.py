@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/Attic/SandboxMetadataDB.py,v 1.3 2009/06/09 08:48:42 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/Attic/SandboxMetadataDB.py,v 1.4 2009/06/10 11:18:34 acasajus Exp $
 ########################################################################
 """ SandboxMetadataDB class is a front-end to the metadata for sandboxes
 """
 
-__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.3 2009/06/09 08:48:42 acasajus Exp $"
+__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.4 2009/06/10 11:18:34 acasajus Exp $"
 
 import time
 import types
@@ -190,7 +190,7 @@ class SandboxMetadataDB(DB):
     Given a list of entities and a requester, return the ones that the requester is allowed to modify
     """
     sqlCond = [ "s.OwnerId=o.OwnerId" , "s.SBId=e.SBId", "e.EntitySetup=%s" %  entitiesSetup ]
-    requesterProps = CS.getPropertiesForGroup( requesterGroup )
+    requesterProps = CS.getPropertiesForEntity( requesterGroup, name = requesterName )
     if Properties.JOB_ADMINISTRATOR in requesterProps:
       #Do nothing, just ensure it doesn't fit in the other cases
       pass
@@ -248,9 +248,11 @@ class SandboxMetadataDB(DB):
     sqlCond = [ "s.SBId = e.SBId",
                "e.EntityId = %s" % self._escapeString( entityId )[ 'Value' ],
                "e.EntitySetup = %s" % self._escapeString( entitySetup )[ 'Value' ] ]
-    requesterProps = CS.getPropertiesForGroup( requesterGroup )
+    requesterProps = CS.getPropertiesForEntity( requesterGroup, name = requesterName )
+    print requesterProps, requesterGroup, requesterName
     if Properties.JOB_ADMINISTRATOR in requesterProps:
       #Do nothing, just ensure it doesn't fit in the other cases
+      print "ADMIN!"
       pass
     elif Properties.JOB_SHARING in requesterProps:
       sqlTables.append( "`sb_Owners` o" )
@@ -302,7 +304,7 @@ class SandboxMetadataDB(DB):
                 "s.SEName=%s" % self._escapeString( SEName )['Value'],
                 's.OwnerId=o.OwnerId' ]
     sqlCmd = "SELECT s.SBId FROM `sb_SandBoxes` s, `sb_Owners` o WHERE"
-    requesterProps = CS.getPropertiesForGroup( requesterGroup )
+    requesterProps = CS.getPropertiesForEntity( requesterGroup, name = requesterName )
     if Properties.JOB_ADMINISTRATOR in requesterProps:
       #Do nothing, just ensure it doesn't fit in the other cases
       pass
