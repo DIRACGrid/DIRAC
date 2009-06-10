@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.38 2009/02/23 20:03:36 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.38 2009/02/23 20:03:36 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.39 2009/06/10 13:18:20 acasajus Exp $
+__RCSID__ = "$Id: Server.py,v 1.39 2009/06/10 13:18:20 acasajus Exp $"
 
 import socket
 import sys
@@ -62,7 +62,7 @@ class Server:
     for serviceCfg in self.servicesList:
       self.__initializeTransport( serviceCfg )
       maxThreads = max( maxThreads, serviceCfg.getMaxThreads() )
-    self.threadPool = ThreadPool( 1, maxThreads )
+    self.threadPool = ThreadPool( 1, maxThreads, serviceCfg.getMaxWaitingPetitions() )
     self.threadPool.daemonize()
     self.__monitorLastStatsUpdate = time.time()
     gThreadScheduler.addPeriodicTask( self.transportLifeTime, self.__purgeStalledTransports )
