@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.20 2009/05/03 19:22:41 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.21 2009/06/10 12:53:07 acasajus Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,13 +13,14 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.20 2009/05/03 19:22:41 rgracian Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.21 2009/06/10 12:53:07 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
 from DIRAC                                                 import S_OK, S_ERROR
+from DIRAC.DataManagementSystem.Client.SandboxClient       import SandboxClient
 import os, re, time, string
 
 class JobSanityAgent(OptimizerModule):
@@ -32,12 +33,14 @@ class JobSanityAgent(OptimizerModule):
     #Test control flags N.B. JDL check is mandatory
     self.inputDataCheck    = self.am_getOption( 'InputDataCheck', 1 )
     self.outputDataCheck   = self.am_getOption( 'OutputDataCheck', 0 )
-    self.inputSandboxCheck = self.am_getOption( 'InputSandboxCheck', 0 )
+    self.inputSandboxCheck = self.am_getOption( 'InputSandboxCheck', 1 )
     self.platformCheck     = self.am_getOption( 'PlatformCheck', 0 )
     #Other parameters
     self.voName               = self.am_getOption( 'VO', 'lhcb' )
     self.successStatus        = self.am_getOption( 'SuccessfulJobStatus', 'OutputReady' )
     self.maxDataPerJob        = self.am_getOption( 'MaxInputDataPerJob', 100 )
+    #Sandbox
+    self.sandboxClient        = SandboxClient()
 
     self.log.debug(   'JDL Check          ==>  Enabled'                    )
     if self.inputDataCheck:
@@ -129,14 +132,14 @@ class JobSanityAgent(OptimizerModule):
     if self.inputSandboxCheck: # disabled
       inputSandbox = self.checkInputSandbox( job, classAdJob )
       if inputSandbox['OK']:
-        filesUploaded = inputSandbox['Value']
-        message+= ' Input Sandbox Files: '+filesUploaded+', OK.'
+        sbChecked = inputSandbox['Value']
+        message+= ' Input Sandboxes: %s, OK.' % sbChecked
       else:
-        res = 'Job: '+str(job)+' Failed since input sandbox not uploaded.'
-        minorStatus=inputSandbox['Value']
-        self.log.info(message)
-        self.log.info(res)
-        return S_ERROR(message)
+        res = 'Job: %s failed due some missing sandboxes' % job
+        minorStatus = inputSandbox['Message']
+        self.log.info( message )
+        self.log.info( res )
+        return S_ERROR( minorStatus )
 
     self.log.info(message)
     self.setJobParam(job,'JobSanityCheck',message)
@@ -237,7 +240,30 @@ class JobSanityAgent(OptimizerModule):
     """The number of input sandbox files, as specified in the job
        JDL are checked in the JobDB.
     """
-    # FIXME: To implement checkInputSandbox
-    return S_OK()
+    sbToCheck = []
+    isbList = classAdJob.getListFromExpression( 'InputSandbox' )
+    for isb in isbList:
+      if isb.find( "SB:" ) == 0:
+        self.log.info( "Found a sandbox", isb )
+        sbToCheck.append( isb )
+    if not sbToCheck:
+      return S_OK( 0 )
+    result = self.sandboxClient.getSandboxesForJob( job )
+    if not result[ 'OK' ]:
+      self.log.error( "Could not get sandboxes from SandboxStore", "assigned to job %s" % job )
+      return result
+    jobSBs = result[ 'Value' ]
+    if 'Input' not in jobSBs:
+      return S_ERROR( "No Input sandbox registered for job" )
+    missingSBs = []
+    jobISBs = jobSBs[ 'Input' ]
+    for isb in sbToCheck:
+      if isb not in jobISBs:
+        self.log.error( "Defined input sandbox in job description is not associated to the job", "Job %s SB : %s" % ( job, isb ) )
+        missingSBs.append( isb )
+    if missingSBs:
+      return S_ERROR( "Input sandboxes %s is not registered for job" % missingSBs )
+    self.log.info( "All sandboxes are registered for job %s" % job )
+    return S_OK( len( sbToCheck ) )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
