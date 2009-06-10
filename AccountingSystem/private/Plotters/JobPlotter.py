@@ -18,6 +18,12 @@ class JobPlotter(BaseReporter):
     else:
       return ( "%s", [ grouping ] )
 
+  def __efficiencyConsolidation( self, cpuTime, execTime ):
+    if execTime == 0:
+      return 0
+    else:
+      return cpuTime/execTime
+
   def _reportCPUEfficiency( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s), SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
@@ -33,7 +39,7 @@ class JobPlotter(BaseReporter):
                                 { 'checkNone' : True,
                                   'convertToGranularity' : 'sum',
                                   'calculateProportionalGauges' : False,
-                                  'consolidationFunction' : lambda x,y: x/y } )
+                                  'consolidationFunction' : self.__efficiencyConsolidation } )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
@@ -54,7 +60,7 @@ class JobPlotter(BaseReporter):
                                   { 'checkNone' : True,
                                   'convertToGranularity' : 'sum',
                                   'calculateProportionalGauges' : False,
-                                  'consolidationFunction' : lambda x,y: x/y  } )
+                                  'consolidationFunction' : self.__efficiencyConsolidation  } )
       if not retVal[ 'OK' ]:
         return retVal
       totalDict = retVal[ 'Value' ][0]
