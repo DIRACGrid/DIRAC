@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.13 2008/10/08 12:33:20 rgracian Exp $
+# $Id: WMSClient.py,v 1.14 2009/06/10 18:10:36 acasajus Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
@@ -8,8 +8,9 @@
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC import S_OK, S_ERROR
-from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient
+from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient as OldSandboxClient
+from DIRAC.DataManagementSystem.Client.SandboxClient     import SandboxClient as NewSandboxClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 
 import os
@@ -22,13 +23,9 @@ class WMSClient:
     gProxyManager.uploadProxy()
 
 ###############################################################################
-  def __checkInputSandbox(self, classAdJob):
-    """Checks the validity of the job Input Sandbox.
-       The function returns the list of Input Sandbox files.
-       The total volume of the input sandbox is evaluated
-    """
 
-    if (classAdJob.lookupAttribute("InputSandbox")):
+  def __getInputSandboxEntries( self, classAdJob ):
+    if classAdJob.lookupAttribute("InputSandbox"):
       inputSandbox = classAdJob.get_expression("InputSandbox")
       inputSandbox = inputSandbox.replace('","',"\n")
       inputSandbox = inputSandbox.replace('{',"")
@@ -36,6 +33,115 @@ class WMSClient:
       inputSandbox = inputSandbox.replace('"',"")
       inputSandbox = inputSandbox.replace(',',"")
       inputSandbox = inputSandbox.split()
+    else:
+      inputSandbox = []
+
+    return inputSandbox
+
+  #This are the NEW methods
+
+  def __uploadInputSandbox(self, classAdJob):
+    """Checks the validity of the job Input Sandbox.
+       The function returns the list of Input Sandbox files.
+       The total volume of the input sandbox is evaluated
+    """
+    sandboxClient = NewSandboxClient()
+    inputSandbox = self.__getInputSandboxEntries( classAdJob )
+
+    realFiles = []
+    badFiles = []
+    okFiles = []
+    for file in inputSandbox:
+      for tag  in ( 'lfn:', 'LFN:', 'SB:' ):
+        if file.find( tag ) == 0:
+          continue
+      realFiles.append( file )
+    #Check real files
+    for file in realFiles:
+      if not os.path.exists( file ):
+        badFiles.append( file )
+        print "inputSandbox file/directory "+file+" not found"
+        continue
+      okFiles.append( file )
+
+    #print "Total size of the inputSandbox: "+str(totalSize)
+    totalSize = File.getGlobbedTotalSize( okFiles )
+    if badFiles:
+      result = S_ERROR('Input Sandbox is not valid')
+      result['BadFile'] = badFiles
+      result['TotalSize'] = totalSize
+      return result
+
+    result = sandboxClient.uploadFilesAsSandbox( okFiles )
+    if not result[ 'OK' ]:
+      return result
+    inputSandbox.append( result[ 'Value' ] )
+    classAdJob.insertAttributeVectorString( "InputSandbox", inputSandbox )
+
+    return S_OK()
+
+  def __assignSandboxesToJob( self, jobID, classAdJob ):
+    sandboxClient = NewSandboxClient()
+    inputSandboxes = self.__getInputSandboxEntries( classAdJob )
+    sbToAssign = []
+    for isb in inputSandboxes:
+      if isb.find( "SB:" ) == 0:
+        sbToAssign.append( isb )
+    if sbToAssign:
+      assignList = [ ( isb, 'Input' ) for isb in sbToAssign ]
+      result = sandboxClient.assignSandboxesToJob( jobID, assignList )
+      if not result[ 'OK' ]:
+        return result
+    return S_OK()
+
+  def newSubmitJob(self,jdl):
+    """ Submit one job specified by its JDL to WMS
+    """
+    jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False,timeout=120)
+    if os.path.exists(jdl):
+      fic = open (jdl, "r")
+      jdlString = fic.read()
+      fic.close()
+    else:
+      # If file JDL does not exist, assume that the JDL is
+      # passed as a string
+      jdlString = jdl
+
+    # Check the validity of the input JDL
+    classAdJob = ClassAd('['+jdlString+']')
+    if not classAdJob.isOK():
+      return S_ERROR('Invalid job JDL')
+
+    # Check the size and the contents of the input sandbox
+    result = self.__uploadInputSandbox(classAdJob)
+    if not result['OK']:
+      return result
+
+    # Submit the job now and get the new job ID
+    result = jobManager.submitJob(classAdJob.asJDL())
+
+    if not result['OK']:
+      return result
+    jobID = result['Value']
+    if 'requireProxyUpload' in result and result[ 'requireProxyUpload' ]:
+      gProxyManager.uploadProxy()
+
+    #Assign sandbox to job
+    result = self.__assignSandboxesToJob( jobID, classAdJob )
+
+    #print "Sandbox uploading"
+    return S_OK(jobID)
+
+  #This is the OLD method
+
+  def __checkInputSandbox(self, classAdJob):
+    """Checks the validity of the job Input Sandbox.
+       The function returns the list of Input Sandbox files.
+       The total volume of the input sandbox is evaluated
+    """
+
+    inputSandbox = self.__getInputSandboxEntries( classAdJob )
+    if inputSandbox:
       ok = 1
       #print inputSandbox
       # Check the Input Sandbox files
@@ -80,11 +186,11 @@ class WMSClient:
       result['InputSandbox'] = None
       return result
 
-  def submitJob(self,jdl):
+  def oldSubmitJob(self,jdl):
     """ Submit one job specified by its JDL to WMS
     """
     jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False,timeout=120)
-    sandbox = SandboxClient()
+    sandbox = OldSandboxClient()
     if os.path.exists(jdl):
       fic = open (jdl, "r")
       jdlString = fic.read()
@@ -93,7 +199,6 @@ class WMSClient:
       # If file JDL does not exist, assume that the JDL is
       # passed as a string
       jdlString = jdl
-
     # Check the validity of the input JDL
     classAdJob = ClassAd('['+jdlString+']')
     if not classAdJob.isOK():
@@ -134,6 +239,16 @@ class WMSClient:
         return S_ERROR('Failed to set the Input Sandbox flag to ready')
 
     return S_OK(jobID)
+
+  #Submit "decider"
+  def submitJob( self, jdl ):
+    if gConfig.getValue( "/DIRAC/UseOldSandboxes", True ):
+      print "USING OLD METHOD"
+      result = self.oldSubmitJob( jdl )
+      print "RESULT", result
+      return result
+    else:
+      return self.newSubmitJob( jdl )
 
   def killJob(self,jobID):
     """ Kill running job.
