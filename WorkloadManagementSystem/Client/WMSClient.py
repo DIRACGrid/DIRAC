@@ -1,14 +1,15 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.14 2009/06/10 18:10:36 acasajus Exp $
+# $Id: WMSClient.py,v 1.15 2009/06/10 18:22:44 acasajus Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
     methods necessary to communicate with the Workload Management System
 """
 
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.DISET.RPCClient                import RPCClient
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC                                     import S_OK, S_ERROR, gConfig
+from DIRAC.Core.Utilities                      import File
 from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient as OldSandboxClient
 from DIRAC.DataManagementSystem.Client.SandboxClient     import SandboxClient as NewSandboxClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -108,7 +109,10 @@ class WMSClient:
       jdlString = jdl
 
     # Check the validity of the input JDL
-    classAdJob = ClassAd('['+jdlString+']')
+    jdlString = jdlString.strip()
+    if jdlString.find( "[" ) != 0:
+      jdlString = "[%s]" % jdlString
+    classAdJob = ClassAd( jdlString )
     if not classAdJob.isOK():
       return S_ERROR('Invalid job JDL')
 
@@ -242,7 +246,7 @@ class WMSClient:
 
   #Submit "decider"
   def submitJob( self, jdl ):
-    if gConfig.getValue( "/DIRAC/UseOldSandboxes", True ):
+    if False and gConfig.getValue( "/DIRAC/UseOldSandboxes", True ):
       print "USING OLD METHOD"
       result = self.oldSubmitJob( jdl )
       print "RESULT", result
