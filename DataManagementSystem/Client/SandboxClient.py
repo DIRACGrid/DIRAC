@@ -218,7 +218,7 @@ class SandboxClient:
     """
     Assign sandboxes to a job.
     sbList must be a list of sandboxes and relation types
-      sbList = [ ( "SEName:SEPFN", "Input" ), ( "SEName:SEPFN", "Output" ) ]
+      sbList = [ ( "SB:SEName|SEPFN", "Input" ), ( "SB:SEName|SEPFN", "Output" ) ]
     """
     return self.__getRPCClient().assignSandboxesToEntities( { eId : sbList } )
 
