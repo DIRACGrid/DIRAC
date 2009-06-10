@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/Attic/SandboxMetadataDB.py,v 1.4 2009/06/10 11:18:34 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/Attic/SandboxMetadataDB.py,v 1.5 2009/06/10 11:19:03 acasajus Exp $
 ########################################################################
 """ SandboxMetadataDB class is a front-end to the metadata for sandboxes
 """
 
-__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.4 2009/06/10 11:18:34 acasajus Exp $"
+__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.5 2009/06/10 11:19:03 acasajus Exp $"
 
 import time
 import types
@@ -249,10 +249,8 @@ class SandboxMetadataDB(DB):
                "e.EntityId = %s" % self._escapeString( entityId )[ 'Value' ],
                "e.EntitySetup = %s" % self._escapeString( entitySetup )[ 'Value' ] ]
     requesterProps = CS.getPropertiesForEntity( requesterGroup, name = requesterName )
-    print requesterProps, requesterGroup, requesterName
     if Properties.JOB_ADMINISTRATOR in requesterProps:
       #Do nothing, just ensure it doesn't fit in the other cases
-      print "ADMIN!"
       pass
     elif Properties.JOB_SHARING in requesterProps:
       sqlTables.append( "`sb_Owners` o" )
