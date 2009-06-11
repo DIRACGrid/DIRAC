@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.86 2009/06/03 09:18:51 acsmith Exp $
+# $Id: TransformationDB.py,v 1.87 2009/06/11 11:12:35 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -395,6 +395,23 @@ class TransformationDB(DB):
     req = "UPDATE Transformations SET TransformationName='%s' WHERE TransformationID=%s;" % (newName,transID)
     res = self._update(req)
     return res
+
+  def getTransformationLFNs(self,transName,status='Unused'):
+    """  Get input LFNs for the given transformation, only files
+        with a given status which is defined for the file replicas.
+    """
+    transID = self.getTransformationID(transName)
+    if not status:
+      req = "SELECT D.LFN from T_%s as T LEFT JOIN DataFiles as D ON (T.FileID=D.FileID);" % (transID)
+    else:
+      req = "SELECT D.LFN FROM DataFiles AS D,T_%s AS T WHERE T.FileID=D.FileID and T.Status='%s';" % (transID,status)
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    lfns = []
+    for tuple in res['Value']:
+      lfns.append(tuple[0]) 
+    return S_OK(lfns)
 
   def getInputData(self,transName,status):
     """ Get input data for the given transformation, only files
