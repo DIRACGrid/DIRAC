@@ -13,7 +13,7 @@ from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 
 class SandboxClient:
 
-  self.__validSandboxTypes = ( 'Input', 'Output' )
+  __validSandboxTypes = ( 'Input', 'Output' )
 
   def __init__( self ):
     self.__serviceName = "DataManagement/SandboxStore"
@@ -27,9 +27,13 @@ class SandboxClient:
   #Upload sandbox to jobs and pilots
 
   def uploadFilesAsSandboxForJob( self, fileList, jobId, sbType, sizeLimit = 0 ):
+    if sbType not in self.__validSandboxTypes:
+      return S_ERROR( "Invalid Sandbox type %s" % sbType )
     return self.uploadFilesAsSandbox( fileList, sizeLimit, assignTo = { "Job:%s" % jobId: sbType } )
 
   def uploadFilesAsSandboxForPilot( self, fileList, jobId, sbType, sizeLimit = 0 ):
+    if sbType not in self.__validSandboxTypes:
+      return S_ERROR( "Invalid Sandbox type %s" % sbType )
     return self.uploadFilesAsSandbox( fileList, sizeLimit, assignTo = { "Pilot:%s" % jobId: sbType } )
 
   #Upload generic sandbox
@@ -43,6 +47,10 @@ class SandboxClient:
     """
     errorFiles = []
     files2Upload = []
+    
+    for key in assignTo:
+      if assignTo[ key ] not in self.__validSandboxTypes:
+        return S_ERROR( "Invalid sandbox type %s" % assignTo[ key ] )
 
     if type( fileList ) not in ( types.TupleType, types.ListType ):
       return S_ERROR( "fileList must be a tuple!" )
@@ -227,6 +235,9 @@ class SandboxClient:
     sbList must be a list of sandboxes and relation types
       sbList = [ ( "SB:SEName|SEPFN", "Input" ), ( "SB:SEName|SEPFN", "Output" ) ]
     """
+    for sbT in sbList:
+      if sbT[1] not in self.__validSandboxTypes:
+        return S_ERROR( "Invalid Sandbox type %s" % sbT[1] )
     return self.__getRPCClient().assignSandboxesToEntities( { eId : sbList } )
 
   def __assignSandboxToEntity( self, eId, sbLocation, sbType ):
