@@ -93,7 +93,7 @@ class SandboxClient:
   ##############
   # Download sandbox
 
-  def downloadSandbox( self, sbLocation, destinationDir ):
+  def downloadSandbox( self,  sbLocation,  destinationDir=""  ):
     """
     Download a sandbox file and keep it in bundled form
     """
@@ -105,10 +105,15 @@ class SandboxClient:
       return S_ERROR( "Invalid sandbox URL" )
     SEName = sbSplit[0]
     SEPFN = "|".join( sbSplit[1:] )
-    try:
-      os.makedirs( destinationDir )
-    except:
-      pass
+    #If destination dir is not specified use current working dir
+    #If its defined ensure the dir structure is there
+    if not destinationPath:
+      destinationPath = os.getcwd()
+    else:
+      try:
+        os.makedirs( destinationDir )
+      except:
+        pass
 
     try:
       tmpSBDir = tempfile.mkdtemp( prefix="TMSB." )
@@ -159,7 +164,7 @@ class SandboxClient:
       entitiesList.append( "Job:%s" % jobId )
     return self.__unassignEntities( entitiesList )
 
-  def downloadSandboxForJob( self, jobId, sbType, destinationPath ):
+  def downloadSandboxForJob( self, jobId, sbType, destinationPath="" ):
     result = self.__getSandboxesForEntity( "Job:%s" % jobId )
     if not result[ 'OK' ]:
       return result
@@ -192,7 +197,7 @@ class SandboxClient:
       entitiesList.append( "Pilot:%s" % pilotId )
     return self.__unassignEntities( entitiesList )
 
-  def downloadSandboxForPilot( self, jobId, sbType, destinationPath ):
+  def downloadSandboxForPilot( self, jobId, sbType, destinationPath="" ):
     result = self.__getSandboxesForEntity( "Pilot:%s" % jobId )
     if not result[ 'OK' ]:
       return result
