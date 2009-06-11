@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.16 2009/06/11 08:32:10 acasajus Exp $
+# $Id: WMSClient.py,v 1.17 2009/06/11 10:25:43 acasajus Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
@@ -246,8 +246,7 @@ class WMSClient:
 
   #Submit "decider"
   def submitJob( self, jdl ):
-    setup = gConfig.getValue( "/DIRAC/Setup", "Default" )
-    if gConfig.getValue( "/DIRAC/%s-UseOldSandboxes", True ):
+    if NewSandboxClient.useOldSandboxes():
       result = self.oldSubmitJob( jdl )
       return result
     else:
