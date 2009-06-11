@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.81 2009/06/04 19:07:46 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.82 2009/06/11 08:22:43 acasajus Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.81 2009/06/04 19:07:46 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.82 2009/06/11 08:22:43 acasajus Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob
 import pprint
@@ -35,7 +35,8 @@ from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.WorkloadManagementSystem.Client.WMSClient     import WMSClient
-from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient
+from DIRAC.DataManagementSystem.Client.SandboxClient     import SandboxClient as NewSandboxClient
+from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient as OldSandboxClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager    import ReplicaManager
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Core.Security.Misc                            import getProxyInfo
@@ -68,8 +69,9 @@ class Dirac:
     self.diracInfo  = 'DIRAC version %s' % DIRAC.buildVersion
 
     self.scratchDir = gConfig.getValue(self.section+'/LocalSite/ScratchDir','/tmp')
-    self.outputSandboxClient = SandboxClient('Output')
-    self.inputSandboxClient = SandboxClient('Input')
+    self.outputSandboxClient = OldSandboxClient('Output')
+    self.inputSandboxClient = OldSandboxClient('Input')
+    self.sandboxClient = NewSandboxClient()
     self.client = WMSClient()
     self.pPrint = pprint.PrettyPrinter()
     self.defaultFileCatalog = gConfig.getValue(self.section+'/FileCatalog','LcgFileCatalogCombined')
@@ -1304,9 +1306,7 @@ class Dirac:
       jobID = self.client.submitJob(jdl)
       #raise 'problem'
     except Exception,x:
-      result = getProxyInfo()
-      if not result['OK']:
-        return self.__errorReport(str(x),result['Message'])
+      return S_ERROR( "Cannot submit job: %s" % str(x) )
 
     return jobID
 
@@ -1354,6 +1354,9 @@ class Dirac:
     result = self.inputSandboxClient.getSandbox(jobID,dirPath)
     if not result['OK']:
       self.log.warn(result['Message'])
+      result = self.sandboxClient.downloadSandboxForJob( jobID, 'Input', dirPath )
+      if not result[ 'OK' ]:
+        self.log.warn( result[ 'Message' ] )
     else:
       self.log.info('Files retrieved and extracted in %s' %(dirPath))
     return result
@@ -1401,12 +1404,21 @@ class Dirac:
     except Exception,x:
       return self.__errorReport(str(x),'Could not create directory in %s' %(dirPath))
 
-    result = self.outputSandboxClient.getSandbox(jobID,dirPath)
-    if not result['OK']:
-      self.log.warn(result['Message'])
-    else:
+    #New download
+    result = self.sandboxClient.downloadSandboxForJob( jobID, 'Output', dirPath )
+    if result['OK']:
       self.log.info('Files retrieved and extracted in %s' %(dirPath))
       return result
+    self.log.warn( result[ 'Message' ] )
+
+    #Old download
+    result = self.outputSandboxClient.getSandbox(jobID,dirPath)
+    if result['OK']:
+      self.log.info('Files retrieved and extracted in %s' %(dirPath))
+      return result
+    self.log.warn(result['Message'])
+
+    result = self.outputSandboxClient.getSandbox(jobID,dirPath)
 
     if not oversized:
       return result
