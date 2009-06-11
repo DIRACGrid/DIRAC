@@ -89,7 +89,6 @@ class SandboxClient:
         sendName = `jobID`+"::"+bname
         sandbox = TransferClient('WorkloadManagement/%sSandbox' % self.sandbox_type)
         result = sandbox.sendFile(bname, sendName)
-        print "0000",result
         if not result['OK']:
           gLogger.error('Failed to send file '+bname+' to Sandbox service for job '+`jobID`)
           return result
@@ -128,13 +127,16 @@ class SandboxClient:
       else:
         if f.find('__Sandbox__.tar') != -1 or f.find('__Sandbox__.tgz') != -1 :
           if f.find('.bz') != -1:
-            os.system('tar xjf '+f)
+            decRes = os.system('tar xjf '+f)
           elif f.find('.gz') != -1 or f.find('.tgz') != -1:
-            os.system('tar xzf '+f)
+            decRes = os.system('tar xzf '+f)
           else:
-            os.system('tar xf '+f)
+            decRes = os.system('tar xf '+f)
 
           os.remove(f)
+
+    if decRes != 0:
+      return S_ERROR( "Could not decompress sandbox" )
 
     if output_dir:
       os.chdir(cwd)
