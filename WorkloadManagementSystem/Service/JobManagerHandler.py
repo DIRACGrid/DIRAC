@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.30 2009/01/23 13:59:10 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.31 2009/06/11 13:26:45 atsareg Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.30 2009/01/23 13:59:10 atsareg Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.31 2009/06/11 13:26:45 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -250,7 +250,7 @@ class JobManagerHandler( RequestHandler ):
     good_ids = []
     for jobID in validJobList:
       # kill jobID
-      result = gJobDB.setJobCommand(jobID,'Kill','')
+      result = gJobDB.setJobCommand(jobID,'Kill')
       if not result['OK']:
         bad_ids.append(jobID)
       else:
