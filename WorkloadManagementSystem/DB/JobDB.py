@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.159 2009/06/11 08:45:10 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.160 2009/06/11 13:35:00 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.159 2009/06/11 08:45:10 acasajus Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.160 2009/06/11 13:35:00 atsareg Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -1388,42 +1388,49 @@ class JobDB(DB):
 
 
 #############################################################################
-  def removeJobFromDB(self, jobID):
+  def removeJobFromDB(self, jobIDs):
     """Remove job from DB
 
        Remove job from the Job DB and clean up all the job related data
        in various tables
     """
-    ret = self._escapeString(jobID)
-    if not ret['OK']:
-      return ret
-    e_jobID = ret['Value']
+    
+    #ret = self._escapeString(jobID)
+    #if not ret['OK']:
+    #  return ret
+    #e_jobID = ret['Value']
 
+    if type(jobIDs) != type([]):
+      jobIDList = [jobIDs]
+    else:
+      jobIDList = jobIDs  
 
     # If this is a master job delete the children first
     failedSubjobList = []
-    result = self.getJobAttribute(jobID,'JobSplitType')
-    if result['OK']:
-      if result['Value'] == "Master":
-        result = self.getSubjobs(jobID)
-        if result['OK']:
-          subjobs = result['Value']
-          if subjobs:
-            for job in subjobs:
-              result = self.removeJobFromDB(job)
+    for jobID in jobIDList:
+      result = self.getJobAttribute(jobID,'JobSplitType')
+      if result['OK']:
+        if result['Value'] == "Master":
+          result = self.getSubjobs(jobID)
+          if result['OK']:
+            subjobs = result['Value']
+            if subjobs:
+              result = self.removeJobFromDB(subjobs)
               if not result['OK']:
-                failedSubjobList.append(job)
-                self.log.error("Failed to delete job "+str(job)+" from JobDB")
+                failedSubjobList += subjobs
+                self.log.error("Failed to delete subjobs "+str(subjobs)+" from JobDB")
 
     failedTablesList = []
+    jobIDString = ','.join([str(j) for j in jobIDList])
     for table in ( 'Jobs',
                    'JobJDLs',
                    'InputData',
                    'JobParameters',
-                   'AtticJobParameters'
+                   'AtticJobParameters',
+                   'HeartBeatLoggingInfo'
                    ):
 
-      cmd = 'DELETE FROM %s WHERE JobID=%s' % ( table, jobID )
+      cmd = 'DELETE FROM %s WHERE JobID in (%s)' % ( table, jobIDString )      
       result = self._update( cmd )
       if not result['OK']:
         failedTablesList.append(table)
@@ -2166,7 +2173,7 @@ class JobDB(DB):
     return S_OK(result)
 
 #####################################################################################
-  def setJobCommand(self,jobID,command,arguments=''):
+  def setJobCommand(self,jobID,command,arguments=None):
     """ Store a command to be passed to the job together with the
         next heart beat
     """
@@ -2179,8 +2186,16 @@ class JobDB(DB):
     if not ret['OK']:
       return ret
     command = ret['Value']
+    
+    if arguments:
+      ret = self._escapeString(arguments)
+      if not ret['OK']:
+        return ret
+      arguments = ret['Value']
+    else:
+      arguments = "''"  
 
-    req = "INSERT INTO JobCommands (JobID,Command,Arguments,ReceptionTime) "
+    req = "INSERT INTO JobCommands (JobID,Command,Arguments,ReceptionTime) "    
     req += "VALUES (%s,%s,%s,UTC_TIMESTAMP())" % (jobID,command, arguments)
     result = self._update(req)
     return result
