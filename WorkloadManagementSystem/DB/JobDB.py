@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.158 2009/05/05 21:37:32 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.159 2009/06/11 08:45:10 acasajus Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.158 2009/05/05 21:37:32 rgracian Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.159 2009/06/11 08:45:10 acasajus Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -1088,7 +1088,7 @@ class JobDB(DB):
     """
     res = self._getConnection()
     if not res['OK']:
-      return False
+      return res
     connection = res['Value']
     res = self._insert( 'JobJDLs' , ['OriginalJDL'],[JDL], connection)
 
@@ -1097,7 +1097,7 @@ class JobDB(DB):
     if not res['OK']:
       connection.close()
       self.log.error( 'Can not retrieve LAST_INSERT_ID', res['Message'] )
-      return False
+      return res
 
     try:
       connection.close()
@@ -1105,9 +1105,9 @@ class JobDB(DB):
       self.log.info( 'JobDB: New JobID served "%s"' % jobID )
     except Exception, x:
       self.log.exception( 'Exception retrieving LAST_INSERT_ID' )
-      return False
+      return S_ERROR( "Can not retrieve LAST_INSERT_ID: %s" % str(x) )
 
-    return jobID
+    return S_OK( jobID )
 
 
 #############################################################################
@@ -1182,9 +1182,10 @@ class JobDB(DB):
     # Fix the possible lack of the brackets in the JDL
     if JDL.strip()[0].find('[') != 0 :
       JDL = '['+JDL+']'
-    jobID = self.__insertNewJDL( JDL )
-    if not jobID:
+    result = self.__insertNewJDL( JDL )
+    if not result[ 'OK' ]:
       return S_ERROR( 'Can not insert JDL in to DB' )
+    jobID = result[ 'Value' ]
 
     jDesc.setVar( 'JobID', jobID )
 
