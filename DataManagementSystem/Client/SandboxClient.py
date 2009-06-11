@@ -9,9 +9,11 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.Core.Utilities.File import getSize, getGlobbedTotalSize
 from DIRAC.Core.Utilities import List
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 
 class SandboxClient:
+
+  self.__validSandboxTypes = ( 'Input', 'Output' )
 
   def __init__( self ):
     self.__serviceName = "DataManagement/SandboxStore"
@@ -241,3 +243,7 @@ class SandboxClient:
     """
     return self.__getRPCClient().unassignEntities( eIdList )
 
+  #TODO: DELETEME WHEn OLD SANDBOXES ARE REMOVED
+  def useOldSandboxes( self ):
+    setup = gConfig.getValue( "/DIRAC/Setup", "Default" )
+    return gConfig.getValue( "/DIRAC/%s-UseOldSandboxes", True )

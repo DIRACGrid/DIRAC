@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.106 2009/06/04 09:28:37 paterson Exp $
+# $Id: JobWrapper.py,v 1.107 2009/06/11 10:05:25 acasajus Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.106 2009/06/04 09:28:37 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.107 2009/06/11 10:05:25 acasajus Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -17,7 +17,8 @@ from DIRAC.DataManagementSystem.Client.PoolXMLFile                  import getGU
 from DIRAC.RequestManagementSystem.Client.RequestContainer          import RequestContainer
 from DIRAC.RequestManagementSystem.Client.RequestClient             import RequestClient
 from DIRAC.RequestManagementSystem.Client.DISETSubRequest           import DISETSubRequest
-from DIRAC.WorkloadManagementSystem.Client.SandboxClient            import SandboxClient
+from DIRAC.WorkloadManagementSystem.Client.SandboxClient            import SandboxClient as OldSandboxClient
+from DIRAC.DataManagementSystem.Client.SandboxClient            import SandboxClient as NewSandboxClient
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory      import WatchdogFactory
 from DIRAC.AccountingSystem.Client.Types.Job                        import Job as AccountingJob
 from DIRAC.ConfigurationSystem.Client.PathFinder                    import getSystemSection
@@ -662,9 +663,13 @@ class JobWrapper:
 
     if fileList and self.jobID:
       self.outputSandboxSize = getGlobbedTotalSize(fileList)
-      outputSandboxClient = SandboxClient('Output')
       self.log.info('Attempting to upload Sandbox with limit:', self.sandboxSizeLimit )
-      result = outputSandboxClient.sendFiles(self.jobID, fileList, self.sandboxSizeLimit) # 1024*1024*10
+      newSandboxClient = NewSandboxClient()
+      if newSandboxClient.useOldSandboxes():
+        outputSandboxClient = OldSandboxClient('Output')
+        result = outputSandboxClient.sendFiles(self.jobID, fileList, self.sandboxSizeLimit) # 1024*1024*10
+      else:
+        result = newSandboxClient.uploadFilesAsSandboxForJob( fileList, self.jobID, 'Output', self.sandboxSizeLimit )
       if not result['OK']:
         self.log.error('Output sandbox upload failed with message',result['Message'])
         if result.has_key('SandboxFileName'):
@@ -845,12 +850,16 @@ class JobWrapper:
     elif not self.jobID:
       self.log.info('No JobID defined, no sandbox to download')
     else:
-      inputSandboxClient = SandboxClient()
-      result = inputSandboxClient.getSandbox(self.jobID)
-      if not result['OK']:
-        self.log.warn(result)
-        self.__report('Running','Failed Downloading InputSandbox')
-        return S_ERROR('InputSandbox download failed for job %s and sandbox %s' %(self.jobID,string.join(sandboxFiles)))
+      downloadedIS = False
+      result = NewSandboxClient().downloadSandboxForJob( self.JobID, "Input" )
+      if not result[ 'OK' ]:
+        self.log.warn( result['Message' ] )
+        inputSandboxClient = OldSandboxClient()
+        result = inputSandboxClient.getSandbox( self.jobID )
+        if not result['OK']:
+          self.log.warn( result['Message' ] )
+          self.__report('Running','Failed Downloading InputSandbox')
+          return S_ERROR('InputSandbox download failed for job %s and sandbox %s' %(self.jobID,string.join(sandboxFiles)))
 
     self.log.verbose('Sandbox download result: %s' %(result))
     #for accounting report exclude input sandbox LFNs not passing through sandbox mechanism
