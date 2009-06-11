@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/Attic/SandboxMetadataDB.py,v 1.5 2009/06/10 11:19:03 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/Attic/SandboxMetadataDB.py,v 1.6 2009/06/11 08:28:16 acasajus Exp $
 ########################################################################
 """ SandboxMetadataDB class is a front-end to the metadata for sandboxes
 """
 
-__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.5 2009/06/10 11:19:03 acasajus Exp $"
+__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.6 2009/06/11 08:28:16 acasajus Exp $"
 
 import time
 import types
@@ -209,7 +209,6 @@ class SandboxMetadataDB(DB):
       sqlCond.append( "e.EntityId in ( %s )" % ", ".join( entitiesList ) )
     sqlCmd = "SELECT DISTINCT e.EntityId FROM `sb_EntityMapping` e, `sb_SandBoxes` s, `sb_Owners` o WHERE"
     sqlCmd = "%s %s" % ( sqlCmd, " AND ".join( sqlCond ) )
-    print sqlCmd
     result = self._query( sqlCmd )
     if not result[ 'OK' ]:
       return result
@@ -225,20 +224,18 @@ class SandboxMetadataDB(DB):
       if not entitiesIds:
         continue
       escapedSetup = self._escapeString( entitySetup )[ 'Value' ]
-      print "PREFILTER", entitiesIds
       result = self.__filterEntitiesByRequester( entitiesIds, escapedSetup, requesterName, requesterGroup )
       if not result[ 'OK' ]:
         gLogger.error( "Cannot filter entities: %s" % result[ 'Message' ] )
         continue
       ids = result[ 'Value' ]
-      print "POSTFILTER", ids
       sqlCond = [ "EntitySetup = %s" % escapedSetup ]
       sqlCond.append( "EntityId in ( %s )" % ", ".join ( [ "'%s'" % str(eid) for eid in ids ] ) )
       sqlCmd = "DELETE FROM `sb_EntityMapping` WHERE %s" % " AND ".join( sqlCond )
       result = self._update( sqlCmd )
       if not result[ 'OK' ]:
         gLogger.error( "Cannot unassign entities: %s" % result[ 'Message' ] )
-    return S_OK()
+    return S_OK( result[ 'Value' ] )
 
   def getSandboxesAssignedToEntity( self, entityId, entitySetup, requesterName, requesterGroup ):
     """
