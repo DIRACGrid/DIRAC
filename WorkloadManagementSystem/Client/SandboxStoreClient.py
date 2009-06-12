@@ -255,6 +255,8 @@ class SandboxStoreClient:
     return self.__getRPCClient().unassignEntities( eIdList )
 
   #TODO: DELETEME WHEn OLD SANDBOXES ARE REMOVED
-  def useOldSandboxes( self ):
+  def useOldSandboxes( self, prefix = "" ):
+    if prefix:
+      prefix="%s-" % prefix
     setup = gConfig.getValue( "/DIRAC/Setup", "Default" )
-    return gConfig.getValue( "/DIRAC/%s-UseOldSandboxes", True )
+    return gConfig.getValue( "/DIRAC/%s%s-UseOldSandboxes" % ( prefix, setup ), True )
