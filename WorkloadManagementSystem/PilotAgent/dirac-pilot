@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.56 2009/05/06 19:49:34 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.57 2009/06/12 06:34:19 rgracian Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.56 2009/05/06 19:49:34 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.57 2009/06/12 06:34:19 rgracian Exp $"
 try:
   import os
   import sys
@@ -69,11 +69,12 @@ def parse_options():
    parse command line options:
   """
   import getopt
-  global debugFlag, rootPath, localPlatform, minDiskSpace, testFlag, jobCPUReqt, diracGroup, ownerDN, maxCycles
+  global debugFlag, rootPath, localPlatform, minDiskSpace, testFlag, jobCPUReqt, diracGroup, ownerDN, maxCycles, lcgVer
   help = """
    -b --build                  Force local compilation
    -d --debug                  Set debug flag
    -e --external=<version>     DIRAC-external <version> to install (overwrites -v)
+   -g --grid=<version>         lcg tools package version
    -h --help                   Print this
    -i --python=<24|25>         Use python<24|25> interpreter
    -n --name=<Site>            Set <Site> as Site Name
@@ -100,8 +101,8 @@ def parse_options():
     -c --cert=<cert>           Use server certificate <cert> to connect to Core Services
 
   """
-  shortOptions = 'bde:hi:n:p:r:tu:v:o:s:CM:N:D:P:ST:G:O:U'
-  longOptions  = ['build', 'debug', 'external=', 'help', 'python=', 'name=',
+  shortOptions = 'bde:g:hi:n:p:r:tu:v:o:s:CM:N:D:P:ST:G:O:U'
+  longOptions  = ['build', 'debug', 'external=', 'grid=','help', 'python=', 'name=',
                   'platform=', 'repository', 'test', 'url=', 'version=',
                   'cvs', 'MaxCycles=', 'Name=', 'disk=', 'path=', 'server', 'CPUTime=', 'Group=',
                   'OwnerDN=','Upload',
@@ -128,6 +129,9 @@ def parse_options():
       installOpts.append('-d')
     elif o == '-e' or o == '--external':
       installOpts.append('-e')
+      installOpts.append(v)
+    elif o == '-g' or o == '--grid':
+      installOpts.append('-g')
       installOpts.append(v)
     elif o == '-i' or o == '--python':
       installOpts.append('-i')
