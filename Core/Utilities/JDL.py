@@ -86,7 +86,7 @@ def loadJDLAsCFG( jdl ):
     elif c == "[" and not insideLiteral:
       key = key.strip()
       if not key:
-        return S_ERROR( "Invalid key" )
+        return S_ERROR( "Invalid key in JDL" )
       if value.strip():
         return S_ERROR( "Key %s seems to have a value and open a sub JDL at the same time" % key )
       result = loadJDLAsCFG( jdl[ iPos: ] )
