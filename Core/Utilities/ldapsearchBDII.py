@@ -83,7 +83,7 @@ Return standart DIRAC answer with Value equals to list of sites.
 Each site is dictionary which contains attributes of site.
 For example result['Value'][0]['GlueSiteLocation']
 '''
-
+  from DIRAC import S_OK, S_ERROR
   filt = '(GlueSiteUniqueID=%s)'%site
 
   result = ldapsearchBDII( filt, attr, host )
@@ -95,7 +95,7 @@ For example result['Value'][0]['GlueSiteLocation']
   for value in result['Value']:
     sites.append(value['attr'])
 
-  return {'OK':True,'Value':sites}
+  return S_OK(sites)
 
 def ldapCluster( ce, attr=None, host=None ):
   '''
@@ -108,7 +108,7 @@ Return standart DIRAC answer with Value equals to list of clusters.
 Each cluster is dictionary which contains attributes of ce.
 For example result['Value'][0]['GlueHostBenchmarkSI00']
 '''
-
+  from DIRAC import S_OK, S_ERROR
   filt = '(GlueClusterUniqueID=%s)'%ce
 
   result = ldapsearchBDII( filt, attr, host )
@@ -133,7 +133,7 @@ Return standart DIRAC answer with Value equals to list of clusters.
 Each cluster is dictionary which contains attributes of ce.
 For example result['Value'][0]['GlueHostBenchmarkSI00']
 '''
-
+  from DIRAC import S_OK, S_ERROR
   filt = '(GlueSubClusterUniqueID=%s)'%ce
 
   result = ldapsearchBDII( filt, attr, host )
@@ -157,7 +157,7 @@ Return standart DIRAC answer with Value equals to list of ceStates.
 Each ceState is dictionary which contains attributes of ce.
 For example result['Value'][0]['GlueCEStateStatus']
 '''
-
+  from DIRAC import S_OK, S_ERROR
   filt = '(&(GlueCEUniqueID=%s*)(GlueCEAccessControlBaseRule=VO:%s))'%(ce,vo)
 
   result = ldapsearchBDII( filt, attr, host )
@@ -181,7 +181,7 @@ Return standart DIRAC answer with Value equals to list of ceVOViews.
 Each ceVOView is dictionary which contains attributes of ce.
 For example result['Value'][0]['GlueCEStateRunningJobs']
 '''
-
+  from DIRAC import S_OK, S_ERROR
 
   filt = '(&(GlueCEUniqueID=%s*)(GlueCEAccessControlBaseRule=VO:%s))'%(ce,vo)
   result = ldapsearchBDII( filt, attr, host )
@@ -212,7 +212,7 @@ Return standart DIRAC answer with Value equals to list of ceVOViews.
 Each ceVOView is dictionary which contains attributes of ce.
 For example result['Value'][0]['GlueCEStateRunningJobs']
 '''
-
+  from DIRAC import S_OK, S_ERROR
 
   filt = '(&(GlueSEUniqueID=*)(GlueForeignKey=GlueSiteUniqueID=%s))'%(site)
   result = ldapsearchBDII( filt, attr, host )
