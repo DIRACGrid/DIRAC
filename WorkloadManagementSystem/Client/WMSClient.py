@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.17 2009/06/11 10:25:43 acasajus Exp $
+# $Id: WMSClient.py,v 1.18 2009/06/12 08:19:16 acasajus Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
@@ -10,8 +10,8 @@ from DIRAC.Core.DISET.RPCClient                import RPCClient
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC                                     import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities                      import File
-from DIRAC.WorkloadManagementSystem.Client.SandboxClient import SandboxClient as OldSandboxClient
-from DIRAC.DataManagementSystem.Client.SandboxClient     import SandboxClient as NewSandboxClient
+from DIRAC.WorkloadManagementSystem.Client.SandboxClient       import SandboxClient
+from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 
 import os
@@ -46,7 +46,7 @@ class WMSClient:
        The function returns the list of Input Sandbox files.
        The total volume of the input sandbox is evaluated
     """
-    sandboxClient = NewSandboxClient()
+    sandboxClient = SandboxStoreClient()
     inputSandbox = self.__getInputSandboxEntries( classAdJob )
 
     realFiles = []
@@ -82,7 +82,7 @@ class WMSClient:
     return S_OK()
 
   def __assignSandboxesToJob( self, jobID, classAdJob ):
-    sandboxClient = NewSandboxClient()
+    sandboxClient = SandboxStoreClient()
     inputSandboxes = self.__getInputSandboxEntries( classAdJob )
     sbToAssign = []
     for isb in inputSandboxes:
@@ -194,7 +194,7 @@ class WMSClient:
     """ Submit one job specified by its JDL to WMS
     """
     jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False,timeout=120)
-    sandbox = OldSandboxClient()
+    sandbox = SandboxClient()
     if os.path.exists(jdl):
       fic = open (jdl, "r")
       jdlString = fic.read()
@@ -246,7 +246,7 @@ class WMSClient:
 
   #Submit "decider"
   def submitJob( self, jdl ):
-    if NewSandboxClient.useOldSandboxes():
+    if SandboxStoreClient.useOldSandboxes():
       result = self.oldSubmitJob( jdl )
       return result
     else:

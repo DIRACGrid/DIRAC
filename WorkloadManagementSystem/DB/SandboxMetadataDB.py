@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/Attic/SandboxMetadataDB.py,v 1.6 2009/06/11 08:28:16 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxMetadataDB.py,v 1.1 2009/06/12 08:20:13 acasajus Exp $
 ########################################################################
 """ SandboxMetadataDB class is a front-end to the metadata for sandboxes
 """
 
-__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.6 2009/06/11 08:28:16 acasajus Exp $"
+__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.1 2009/06/12 08:20:13 acasajus Exp $"
 
 import time
 import types

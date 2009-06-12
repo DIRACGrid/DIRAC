@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.File import getSize, getGlobbedTotalSize
 from DIRAC.Core.Utilities import List
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 
-class SandboxClient:
+class SandboxStoreClient:
 
   __validSandboxTypes = ( 'Input', 'Output' )
 
