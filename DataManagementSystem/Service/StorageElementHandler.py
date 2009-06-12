@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StorageElementHandler.py,v 1.11 2009/05/01 11:00:53 rgracian Exp $
+# $Id: StorageElementHandler.py,v 1.12 2009/06/12 14:34:27 acsmith Exp $
 ########################################################################
 
 """
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: StorageElementHandler.py,v 1.11 2009/05/01 11:00:53 rgracian Exp $"
+__RCSID__ = "$Id: StorageElementHandler.py,v 1.12 2009/06/12 14:34:27 acsmith Exp $"
 
 import os, shutil,re
 from stat import *
@@ -240,16 +240,22 @@ class StorageElementHandler(RequestHandler):
     """ Receive files packed into a tar archive by the fileHelper logic.
         token is used for access rights confirmation.
     """
+    if not self.__checkForDiskSpace(base_path,10*1024*1024):
+      return S_ERROR('Less than 10MB remaining')
     dirName = fileID.replace('.bz2','').replace('.tar','')
     dir_path = os.path.join(base_path,dirName)
     res = fileHelper.networkToBulk(dir_path)
     if not res['OK']:
+      errStr = 'Failed to receive network to bulk.'
       gLogger.error('Failed to receive network to bulk.',res['Message'])
+      return res
+    if not os.path.exists(dir_path):
+      return S_ERROR('Failed to receive data')
     try:
       os.chmod(dir_path,0755)
     except Exception,x:
-      gLogger.error('Could not set permissions of destination directory.' % dir_path)
-    return res
+      gLogger.exception('Could not set permissions of destination directory.', dir_path,x)
+    return S_OK()
 
   def transfer_bulkToClient( self, fileId, token, fileHelper ):
     """ Send directories and files specified in the fileID.
