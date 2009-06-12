@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxStoreHandler.py,v 1.1 2009/06/12 08:20:14 acasajus Exp $
+# $Id: SandboxStoreHandler.py,v 1.2 2009/06/12 08:58:03 acasajus Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.1 2009/06/12 08:20:14 acasajus Exp $"
+__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.2 2009/06/12 08:58:03 acasajus Exp $"
 
 from types import *
 import os
@@ -18,7 +18,7 @@ import types
 import tempfile
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.DataManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
+from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
