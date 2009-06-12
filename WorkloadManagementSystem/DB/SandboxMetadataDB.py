@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxMetadataDB.py,v 1.1 2009/06/12 08:20:13 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxMetadataDB.py,v 1.2 2009/06/12 08:49:27 acasajus Exp $
 ########################################################################
 """ SandboxMetadataDB class is a front-end to the metadata for sandboxes
 """
 
-__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.1 2009/06/12 08:20:13 acasajus Exp $"
+__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.2 2009/06/12 08:49:27 acasajus Exp $"
 
 import time
 import types
@@ -16,7 +16,7 @@ from DIRAC.Core.Security import Properties, CS
 class SandboxMetadataDB(DB):
 
   def __init__( self, maxQueueSize = 10 ):
-    DB.__init__( self, 'SandboxMetadataDB', 'DataManagement/SandboxMetadataDB', maxQueueSize )
+    DB.__init__( self, 'SandboxMetadataDB', 'WorkloadManagmenent/SandboxMetadataDB', maxQueueSize )
     result = self.__initializeDB()
     if not result[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % result[ 'Message' ])
