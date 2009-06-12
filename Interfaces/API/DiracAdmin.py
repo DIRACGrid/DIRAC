@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.38 2009/04/23 07:32:53 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.39 2009/06/12 14:48:11 paterson Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.38 2009/04/23 07:32:53 rgracian Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.39 2009/06/12 14:48:11 paterson Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
@@ -55,6 +55,25 @@ class DiracAdmin:
     self.scratchDir = gConfig.getValue(self.section+'/ScratchDir','/tmp')
     self.currentDir = os.getcwd()
     self.pPrint = pprint.PrettyPrinter()
+
+  #############################################################################
+  def uploadProxy(self,group):
+    """Upload a proxy to the DIRAC WMS.  This method
+
+       Example usage:
+
+       >>> print diracAdmin.uploadProxy('lhcb_pilot')
+       {'OK': True, 'Value': 0L}
+
+       @param group: DIRAC Group
+       @type job: string
+       @return: S_OK,S_ERROR
+
+       @param permanent: Indefinitely update proxy
+       @type permanent: boolean
+
+    """
+    return gProxyManager.uploadProxy(diracGroup=group)
 
   #############################################################################
   def setProxyPersistency( self, userDN, userGroup, persistent = True ):
