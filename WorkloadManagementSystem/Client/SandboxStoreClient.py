@@ -257,4 +257,4 @@ class SandboxStoreClient:
   #TODO: DELETEME WHEn OLD SANDBOXES ARE REMOVED
   def useOldSandboxes( self ):
     setup = gConfig.getValue( "/DIRAC/Setup", "Default" )
-    return Fasle and gConfig.getValue( "/DIRAC/%s-UseOldSandboxes", True )
+    return gConfig.getValue( "/DIRAC/%s-UseOldSandboxes", True )
