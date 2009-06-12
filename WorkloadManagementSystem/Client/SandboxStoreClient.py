@@ -16,7 +16,7 @@ class SandboxStoreClient:
   __validSandboxTypes = ( 'Input', 'Output' )
 
   def __init__( self ):
-    self.__serviceName = "DataManagement/SandboxStore"
+    self.__serviceName = "WorkloadManagement/SandboxStore"
 
   def __getRPCClient( self ):
     return RPCClient( self.__serviceName )
