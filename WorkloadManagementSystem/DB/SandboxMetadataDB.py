@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxMetadataDB.py,v 1.3 2009/06/12 12:34:52 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxMetadataDB.py,v 1.4 2009/06/12 12:44:57 acasajus Exp $
 ########################################################################
 """ SandboxMetadataDB class is a front-end to the metadata for sandboxes
 """
 
-__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.3 2009/06/12 12:34:52 acasajus Exp $"
+__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.4 2009/06/12 12:44:57 acasajus Exp $"
 
 import time
 import types
@@ -219,6 +219,7 @@ class SandboxMetadataDB(DB):
     Unassign jobs to sandboxes
     entitiesDict = { 'setup' : [ 'entityId', 'entityId' ] }
     """
+    updated = 0
     for entitySetup in entitiesDict:
       entitiesIds = entitiesDict[ entitySetup ]
       if not entitiesIds:
@@ -235,7 +236,9 @@ class SandboxMetadataDB(DB):
       result = self._update( sqlCmd )
       if not result[ 'OK' ]:
         gLogger.error( "Cannot unassign entities: %s" % result[ 'Message' ] )
-    return S_OK( result[ 'Value' ] )
+      else:
+        updated += 1
+    return S_OK( updated )
 
   def getSandboxesAssignedToEntity( self, entityId, entitySetup, requesterName, requesterGroup ):
     """
