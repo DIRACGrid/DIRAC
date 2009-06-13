@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.28 2009/03/20 21:24:55 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.29 2009/06/13 22:23:28 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.28 2009/03/20 21:24:55 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.29 2009/06/13 22:23:28 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -241,10 +241,17 @@ class JobMonitoringHandler( RequestHandler ):
     """
 
     resultDict = {}
-    last_update = None
-    if selectDict.has_key('LastUpdate'):
-      last_update = selectDict['LastUpdate']
+    startDate = selectDict.get('FromDate',None)
+    if startDate:
+      del selectDict['FromDate']
+    # For backward compatibility
+    startDate = selectDict.get('LastUpdate',None)
+    if startDate:
       del selectDict['LastUpdate']
+    # For backward compatibility  
+    endDate = selectDict('ToDate')
+    if endDate:
+      del selectDict['FromDate']  
 
     # Sorting instructions. Only one for the moment.
     if sortList:
@@ -252,7 +259,8 @@ class JobMonitoringHandler( RequestHandler ):
     else:
       orderAttribute = None
 
-    result = jobDB.selectJobs(selectDict, orderAttribute=orderAttribute, newer=last_update)
+    result = jobDB.selectJobs(selectDict, orderAttribute=orderAttribute, 
+                              newer=startDate, older=endDate )
     if not result['OK']:
       return S_ERROR('Failed to select jobs: '+result['Message'])
 
