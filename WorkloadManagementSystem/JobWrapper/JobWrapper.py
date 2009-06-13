@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.108 2009/06/12 08:19:04 acasajus Exp $
+# $Id: JobWrapper.py,v 1.109 2009/06/13 05:14:15 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.108 2009/06/12 08:19:04 acasajus Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.109 2009/06/13 05:14:15 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -851,7 +851,7 @@ class JobWrapper:
       self.log.info('No JobID defined, no sandbox to download')
     else:
       downloadedIS = False
-      result = SandboxStoreClient().downloadSandboxForJob( self.JobID, "Input" )
+      result = SandboxStoreClient().downloadSandboxForJob( self.jobID, "Input" )
       if not result[ 'OK' ]:
         self.log.warn( result['Message' ] )
         inputSandboxClient = SandboxClient()
