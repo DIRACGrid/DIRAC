@@ -117,8 +117,8 @@ class SandboxStoreClient:
     SEPFN = "|".join( sbSplit[1:] )
     #If destination dir is not specified use current working dir
     #If its defined ensure the dir structure is there
-    if not destinationPath:
-      destinationPath = os.getcwd()
+    if not destinationDir:
+      destinationDir = os.getcwd()
     else:
       try:
         os.makedirs( destinationDir )
