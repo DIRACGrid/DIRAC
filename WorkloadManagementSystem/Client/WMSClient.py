@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.20 2009/06/12 12:59:55 acasajus Exp $
+# $Id: WMSClient.py,v 1.21 2009/06/13 13:10:16 rgracian Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
@@ -73,11 +73,12 @@ class WMSClient:
       result['TotalSize'] = totalSize
       return result
 
-    result = sandboxClient.uploadFilesAsSandbox( okFiles )
-    if not result[ 'OK' ]:
-      return result
-    inputSandbox.append( result[ 'Value' ] )
-    classAdJob.insertAttributeVectorString( "InputSandbox", inputSandbox )
+    if okFiles:
+      result = sandboxClient.uploadFilesAsSandbox( okFiles )
+      if not result[ 'OK' ]:
+        return result
+      inputSandbox.append( result[ 'Value' ] )
+      classAdJob.insertAttributeVectorString( "InputSandbox", inputSandbox )
 
     return S_OK()
 
