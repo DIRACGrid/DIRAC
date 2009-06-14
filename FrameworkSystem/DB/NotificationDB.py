@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.1 2009/06/13 23:21:11 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.2 2009/06/14 22:35:46 atsareg Exp $
 ########################################################################
 """ NotificationDB class is a front-end to the Notifications database
 """
 
-__RCSID__ = "$Id: NotificationDB.py,v 1.1 2009/06/13 23:21:11 atsareg Exp $"
+__RCSID__ = "$Id: NotificationDB.py,v 1.2 2009/06/14 22:35:46 atsareg Exp $"
 
 import time
 import types
@@ -20,12 +20,30 @@ class NotificationDB(DB):
     DB.__init__( self, 'NotificationDB', 'Framework/NotificationDB', maxQueueSize )
     self.lock = threading.Lock()
 
-  def setAlarm( self, name='', body='', group='', atype = 'Action' ):
+  def setAlarm( self, name='', body='', group='', atype = 'Action', 
+               author='Unknown', view='Any', comment='No comments',
+               source='Unknown' ):
     """ Create a new alarm record
     """
     
-    names = ['AlarmName','AlarmBody','DestinationGroup','AlarmType']
-    values = [name,body,group,atype]
+    parameters = ['AlarmName','AlarmBody','Comment','DestinationGroup',
+                  'DestinationView','AlarmType','Author','Source',
+                  'Status','Action','CreationDate','StatusDate']
+    pString = ','.join(parameters)
+    evalues = []
+    values = [name,body,comment,group,view,atype,author,source]
+    for v in values:
+      result = self._escapeString(v)
+      if result['OK']:
+        evalues.append(result['Value'])
+      else:
+        return S_ERROR('Failed to escape value %s' % v)  
+    vString = ','.join(evalues)    
+    vString += ",'New','NoAction',UTC_TIMESTAMP(),UTC_TIMESTAMP()" 
+    
+    req = "INSERT INTO Alarms (%s) VALUES (%s)" % (pString,vString)
+    
+    print "AT >>>>",req
     
     self.lock.acquire()
     result = self._getConnection()
@@ -34,7 +52,7 @@ class NotificationDB(DB):
     else:
       self.lock.release()
       return S_ERROR('Failed to get connection to MySQL: '+result['Message'])
-    res = self._insert('Alarms',names,values,connection)
+    res = self._update(req,connection)
     if not res['OK']:
       self.lock.release()
       return res
@@ -44,6 +62,7 @@ class NotificationDB(DB):
     if not res['OK']:
       return res
     alarmID = int(res['Value'][0][0])
+    return S_OK(alarmID)
     
   def getAlarmAttribute(self,alarmID,attribute):
     """ Get alarm info
@@ -60,7 +79,7 @@ class NotificationDB(DB):
     value = result['Value'][0][0]
     return S_OK(value)
     
-  def updateAlarm(self, alarmID, status='',actionTaken='',comment='',author):
+  def updateAlarm(self, alarmID,status='',actionTaken='',comment='',author=''):
     """ Update the given alarm
     """  
     
@@ -82,7 +101,7 @@ class NotificationDB(DB):
         
     updates.append(" Author='%s'" % author)    
         
-    updateString = updates.join(',')    
+    updateString = ','.join(updates)    
     
     req = "UPDATE Alarms SET %s, StatusDate=UTC_TIMESTAMP() WHERE AlarmID=%d" % (updateString,int(alarmID))
     result = self._update(req)
@@ -111,24 +130,23 @@ class NotificationDB(DB):
     """ 
     """
         
-    condition = buildCondition(self, condDict, older=startTime, newer=endTime, 
-                               timeStamp='StatusDate')
+    conditions = self.buildCondition(selectDict, older=startTime, 
+                                    newer=endTime, timeStamp='StatusDate')
     if startID:
-      if condition:
-        condition += ' AND AlarmID > %d' % int(startID) 
+      if conditions:
+        conditions += ' AND AlarmID > %d' % int(startID) 
       else:
-        condition += ' WHERE AlarmID > %d' % int(startID)
+        conditions += ' WHERE AlarmID > %d' % int(startID)
         
-    parameters = [ 'AlarmID', 'AlarmName', 'AlarmStatus', 'AlarmBody','DestinationView',
-                   'Author', 'Source', 'CreationTime', 'AlarmType' ]    
+    parameters = [ 'AlarmID', 'AlarmName', 'Status', 'AlarmBody','DestinationView',
+                   'Author', 'Source', 'CreationDate', 'StatusDate', 'AlarmType' ]    
     
-    parString = parameters.join(',')    
+    parString = ','.join(parameters)    
         
     req = "SELECT %s FROM Alarms " % parString
     req += conditions
     if order:
       req += " %s" % order
-    
     result = self._query(req)
     if not result['OK']:
       return result
@@ -138,7 +156,7 @@ class NotificationDB(DB):
 
     resultDict = {}
     resultDict['ParameterNames'] = parameters
-    resultDict['Records'] = result['Value']
+    resultDict['Records'] = [ list(v) for v in result['Value'] ]
     return S_OK(resultDict)
       
       

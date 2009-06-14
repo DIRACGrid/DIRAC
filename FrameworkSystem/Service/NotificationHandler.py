@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationHandler.py,v 1.3 2009/06/13 23:20:24 atsareg Exp $
+# $Id: NotificationHandler.py,v 1.4 2009/06/14 22:35:47 atsareg Exp $
 ########################################################################
 
 """ The Notification service provides a toolkit to contact people via email
@@ -17,19 +17,20 @@
     subscribing to them. 
 """
 
-__RCSID__ = "$Id: NotificationHandler.py,v 1.3 2009/06/13 23:20:24 atsareg Exp $"
+__RCSID__ = "$Id: NotificationHandler.py,v 1.4 2009/06/14 22:35:47 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.Mail import Mail
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Framework.DB.NotificationDB import NotificationDB
+from DIRAC.FrameworkSystem.DB.NotificationDB import NotificationDB
 
 notificationDB = None
 
 def initializeNotificationHandler( serviceInfo ):
 
+  global notificationDB
   notificationDB = NotificationDB()
   return S_OK()
 
@@ -96,21 +97,26 @@ class NotificationHandler( RequestHandler ):
     return result
   
   ###########################################################################
-  types_setAlarm = [StringType,StringType,StringType]
-  def export_setAlarm(self,name,body,group):
+  types_setAlarm = [StringType,StringType,StringType,StringType]
+  def export_setAlarm(self,name,body,group,alarmType,view='Any',comment='',source=''):
     """ Set a new alarm in the Notification database
     """
     
-    result = notificationDB.setAlarm(name,body,group)   
+    result = notificationDB.setAlarm(name,body,group,alarmType,
+                                     author=self.clientDN,
+                                     view=view,
+                                     comment=comment,
+                                     source=source)   
     return result
   
   ###########################################################################
-  types_updateAlarm = [StringType,StringType,StringType]
-  def export_updateAlarm(self,status,action,comment):
+  types_updateAlarm = [IntType,StringType,StringType,StringType]
+  def export_updateAlarm(self,alarmID,status,action,comment):
     """ update an existing alarm in the Notification database
     """
     
-    result = notificationDB.updateAlarm(status,action,comment,author=self.clientDN)   
+    result = notificationDB.updateAlarm(alarmID,status,action,comment,
+                                        author=self.clientDN)   
     return result
   
   ###########################################################################
@@ -128,6 +134,7 @@ class NotificationHandler( RequestHandler ):
     """ Select existing alarms suitable for the Web monitoring
     """ 
     
+    order = ''
     if sortList:
       order = sortList[0]
       
@@ -141,7 +148,7 @@ class NotificationHandler( RequestHandler ):
     if endTime:
       del selectDict['ToDate']
       
-    result = notificationDB.selectAlarms(self,selectDict,order,startID,startTime,endTime) 
+    result = notificationDB.selectAlarms(selectDict,order,startID,startTime,endTime) 
     if not result['OK']:
       return result
     parameters = result['Value']['ParameterNames']
