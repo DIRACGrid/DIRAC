@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.21 2009/06/13 13:10:16 rgracian Exp $
+# $Id: WMSClient.py,v 1.22 2009/06/15 14:57:09 acasajus Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
@@ -130,9 +130,6 @@ class WMSClient:
     jobID = result['Value']
     if 'requireProxyUpload' in result and result[ 'requireProxyUpload' ]:
       gProxyManager.uploadProxy()
-
-    #Assign sandbox to job
-    result = self.__assignSandboxesToJob( jobID, classAdJob )
 
     #print "Sandbox uploading"
     return S_OK(jobID)
