@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.18 2009/02/26 08:33:42 rgracian Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.19 2009/06/15 18:35:49 rgracian Exp $
 
 --------------------------------------------------------------------------------
 --
@@ -60,7 +60,7 @@ CREATE TABLE JobToPilotMapping (
     PilotID INTEGER NOT NULL,
     JobID INTEGER NOT NULL,
     StartTime DATETIME NOT NULL,
-    PRIMARY KEY (PilotID),
+    INDEX (PilotID),
     INDEX (JobID)
 ) ENGINE = InnoDB;
 
