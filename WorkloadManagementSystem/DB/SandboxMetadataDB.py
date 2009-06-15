@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxMetadataDB.py,v 1.4 2009/06/12 12:44:57 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxMetadataDB.py,v 1.5 2009/06/15 14:30:22 acasajus Exp $
 ########################################################################
 """ SandboxMetadataDB class is a front-end to the metadata for sandboxes
 """
 
-__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.4 2009/06/12 12:44:57 acasajus Exp $"
+__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.5 2009/06/15 14:30:22 acasajus Exp $"
 
 import time
 import types
@@ -157,12 +157,19 @@ class SandboxMetadataDB(DB):
     sqlCond = [ "%s=%s" % ( key, condDict[ key ] ) for key in condDict ]
     return self._update( "UPDATE `sb_SandBoxes` SET LastAccessTime=UTC_TIMESTAMP() WHERE %s" % " AND ".join( condDict ) )
 
-  def assignSandboxesToEntities( self, entitiesToSandboxList, requesterName, requesterGroup ):
+  def assignSandboxesToEntities( self, entitiesToSandboxList, requesterName, requesterGroup, ownerName = "", ownerGroup = "" ):
     """
     Assign jobs to entities
     """
     insertValues = []
     sbIds = []
+    if ownerName or ownerGroup:
+      requesterProps = CS.getPropertiesForEntity( requesterGroup, name = requesterName )
+      if Properties.JOB_ADMINISTRATOR in requesterProps:
+        if ownerName:
+          requesterName = ownerName
+        if ownerGroup:
+          requesterGroup = ownerGroup
     for entityId, entitySetup, SBType, SEName, SEPFN in entitiesToSandboxList:
       result = self.getSandboxId( SEName, SEPFN, requesterName, requesterGroup )
       if not result[ 'OK' ]:
@@ -176,7 +183,7 @@ class SandboxMetadataDB(DB):
                                                       sbId ) )
 
     if not insertValues:
-      return S_ERROR( "Sandbox does not exist or you're not authorized to assign it" )
+      return S_ERROR( "Sandbox does not exist or you're not authorized to assign it being %s@%s" % ( requesterName, requesterGroup ) )
     sqlCmd = "INSERT INTO `sb_EntityMapping` ( entityId, entitySetup, Type, SBId ) VALUES %s" % ", ".join( insertValues )
     result = self._update( sqlCmd )
     if not result[ 'OK' ]:

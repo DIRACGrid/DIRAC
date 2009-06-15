@@ -160,11 +160,11 @@ class SandboxStoreClient:
   def getSandboxesForJob( self, jobId ):
     return self.__getSandboxesForEntity( "Job:%s" % jobId )
 
-  def assignSandboxesToJob( self, jobId, sbList ):
-    return self.__assignSandboxesToEntity( "Job:%s" % jobId, sbList )
+  def assignSandboxesToJob( self, jobId, sbList, ownerName = "", ownerGroup = "", eSetup = "" ):
+    return self.__assignSandboxesToEntity( "Job:%s" % jobId, sbList, ownerName, ownerGroup, eSetup )
 
-  def assignSandboxToJob( self, jobId, sbLocation, sbType ):
-    return self.__assignSandboxToEntity( "Job:%s" % jobId, sbLocation, sbType )
+  def assignSandboxToJob( self, jobId, sbLocation, sbType, ownerName = "", ownerGroup = "", eSetup = "" ):
+    return self.__assignSandboxToEntity( "Job:%s" % jobId, sbLocation, sbType, ownerName, ownerGroup, eSetup )
 
   def unassignJobs( self, jobIdList ):
     if type( jobIdList ) in ( types.IntType, types.LongType ):
@@ -193,11 +193,11 @@ class SandboxStoreClient:
   def getSandboxesForPilot( self, pilotId ):
     return self.__getSandboxesForEntity( "Pilot:%s" % pilotId )
 
-  def assignSandboxesToPilot( self, pilotId, sbList ):
-    return self.__assignSandboxesToEntity( "Pilot:%s" % pilotId, sbList )
+  def assignSandboxesToPilot( self, pilotId, sbList, ownerName = "", ownerGroup = "", eSetup = "" ):
+    return self.__assignSandboxesToEntity( "Pilot:%s" % pilotId, sbList, ownerName, ownerGroup, eSetup )
 
-  def assignSandboxToPilot( self, pilotId, sbLocation, sbType ):
-    return self.__assignSandboxToEntity( "Pilot:%s" % pilotId, sbLocation, sbType )
+  def assignSandboxToPilot( self, pilotId, sbLocation, sbType, ownerName = "", ownerGroup = "", eSetup = "" ):
+    return self.__assignSandboxToEntity( "Pilot:%s" % pilotId, sbLocation, sbType, ownerName, ownerGroup, eSetup )
 
   def unassignPilots( self, pilotIdIdList ):
     if type( pilotIdIdList ) in ( types.IntType, types.LongType ):
@@ -229,7 +229,7 @@ class SandboxStoreClient:
     """
     return self.__getRPCClient().getSandboxesAssignedToEntity( eId )
 
-  def __assignSandboxesToEntity( self, eId, sbList ):
+  def __assignSandboxesToEntity( self, eId, sbList, ownerName = "", ownerGroup = "", eSetup = "" ):
     """
     Assign sandboxes to a job.
     sbList must be a list of sandboxes and relation types
@@ -238,15 +238,15 @@ class SandboxStoreClient:
     for sbT in sbList:
       if sbT[1] not in self.__validSandboxTypes:
         return S_ERROR( "Invalid Sandbox type %s" % sbT[1] )
-    return self.__getRPCClient().assignSandboxesToEntities( { eId : sbList } )
+    return self.__getRPCClient().assignSandboxesToEntities( { eId : sbList }, ownerName, ownerGroup, eSetup )
 
-  def __assignSandboxToEntity( self, eId, sbLocation, sbType ):
+  def __assignSandboxToEntity( self, eId, sbLocation, sbType, ownerName = "", ownerGroup = "", eSetup = "" ):
     """
     Assign a sandbox to a job
       sbLocation is "SEName:SEPFN"
       sbType is Input or Output
     """
-    return self.__assignSandboxesToEntity( eId, [ ( sbLocation, sbType ) ] )
+    return self.__assignSandboxesToEntity( eId, [ ( sbLocation, sbType ) ], ownerName, ownerGroup, eSetup )
 
   def __unassignEntities( self, eIdList ):
     """

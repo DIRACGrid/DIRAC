@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxStoreHandler.py,v 1.2 2009/06/12 08:58:03 acasajus Exp $
+# $Id: SandboxStoreHandler.py,v 1.3 2009/06/15 14:30:22 acasajus Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.2 2009/06/12 08:58:03 acasajus Exp $"
+__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.3 2009/06/15 14:30:22 acasajus Exp $"
 
 from types import *
 import os
@@ -244,7 +244,7 @@ class SandboxStoreHandler( RequestHandler ):
     try:
       fd = open( destFileName, "wb" )
     except Exception, e:
-      return S_ERROR( "Cannot open destination file %s" % destFileName )
+      return S_ERROR( "Cannot open to write destination file %s" % destFileName )
     result = fileHelper.networkToDataSink( fd, maxFileSize = self.__maxUploadBytes )
     if not result[ 'OK' ]:
       return result
@@ -309,7 +309,7 @@ class SandboxStoreHandler( RequestHandler ):
   # Assigning sbs to jobs
 
   types_assignSandboxesToEntities = [ types.DictType ]
-  def export_assignSandboxesToEntities( self, enDict, entitySetup = False ):
+  def export_assignSandboxesToEntities( self, enDict, ownerName = "", ownerGroup = "", entitySetup = False ):
     """
     Assign sandboxes to jobs.
     Expects a dict of { entityId : [ ( SB, SBType ), ... ] }
@@ -336,7 +336,8 @@ class SandboxStoreHandler( RequestHandler ):
     if not assignList:
       return S_OK()
     credDict = self.getRemoteCredentials()
-    return sandboxDB.assignSandboxesToEntities( assignList, credDict[ 'username' ], credDict[ 'group' ] )
+    return sandboxDB.assignSandboxesToEntities( assignList, credDict[ 'username' ], credDict[ 'group' ], 
+                                                ownerName, ownerGroup )
 
   ##################
   # Unassign sbs to jobs
