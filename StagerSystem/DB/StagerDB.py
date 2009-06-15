@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.16 2009/02/02 17:31:15 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.17 2009/06/15 15:25:34 joel Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -12,7 +12,7 @@
     The Pins table keeps the SRM Request ID for the requests that issued the pin request along with when it was issued and for how long.
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.16 2009/02/02 17:31:15 acsmith Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.17 2009/06/15 15:25:34 joel Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import intListToString,stringListToString
@@ -119,7 +119,7 @@ class StagerDB(DB):
       gLogger.error('StagerDB.getFilesWithStatus: Failed to get files for %s status' % status,res['Message'])
       return res
     files = {}
-    for fileID,lfn,storageElement,fileSize,pfn in res['Value']:
+    for taskID,fileID,lfn,storageElement,fileSize,pfn in res['Value']:
       files[fileID] = (lfn,storageElement,fileSize,pfn)
     return S_OK(files)
 
