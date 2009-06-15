@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.13 2009/02/27 16:28:20 acsmith Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.14 2009/06/15 15:01:04 atsareg Exp $
 -- ------------------------------------------------------------------------------
 --
 --  Schema definition for the TransformationDB database -
@@ -100,7 +100,7 @@ DROP TABLE IF EXISTS TransformationParameters;
 CREATE TABLE TransformationParameters (
     TransformationID INTEGER NOT NULL,
     ParameterName VARCHAR(32) NOT NULL,
-    ParameterValue VARCHAR(255) NOT NULL,
+    ParameterValue BLOB NOT NULL,
     PRIMARY KEY(TransformationID,ParameterName)
 );
 
