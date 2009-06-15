@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.22 2009/06/12 08:18:39 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.23 2009/06/15 15:05:51 acasajus Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.22 2009/06/12 08:18:39 acasajus Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.23 2009/06/15 15:05:51 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -240,30 +240,26 @@ class JobSanityAgent(OptimizerModule):
     """The number of input sandbox files, as specified in the job
        JDL are checked in the JobDB.
     """
-    sbToCheck = []
+    ownerName = classAdJob.getAttributeString( "OwnerName" )
+    ownerGroup = classAdJob.getAttributeString( "OwnerGroup" )
+    jobSetup = classAdJob.getAttributeString( "DIRACSetup" )
     isbList = classAdJob.getListFromExpression( 'InputSandbox' )
+    sbsToAssign = []
     for isb in isbList:
       if isb.find( "SB:" ) == 0:
         self.log.info( "Found a sandbox", isb )
-        sbToCheck.append( isb )
-    if not sbToCheck:
+        sbsToAssign.append( ( isb, "Input" ) )
+    numSBsToAssign = len( sbsToAssign )
+    if not numSBsToAssign:
       return S_OK( 0 )
-    result = self.sandboxClient.getSandboxesForJob( job )
+    self.log.info( "Assigning %s sandboxes on behalf of %s@%s" % ( numSBsToAssign, ownerName, ownerGroup ) )
+    result = self.sandboxClient.assignSandboxesToJob( job, sbsToAssign, ownerName, ownerGroup, jobSetup  )
     if not result[ 'OK' ]:
-      self.log.error( "Could not get sandboxes from SandboxStore", "assigned to job %s" % job )
+      self.log.error( "Could not assign sandboxes in the SandboxStore", "assigned to job %s" % job )
       return result
-    jobSBs = result[ 'Value' ]
-    if 'Input' not in jobSBs:
-      return S_ERROR( "No Input sandbox registered for job" )
-    missingSBs = []
-    jobISBs = jobSBs[ 'Input' ]
-    for isb in sbToCheck:
-      if isb not in jobISBs:
-        self.log.error( "Defined input sandbox in job description is not associated to the job", "Job %s SB : %s" % ( job, isb ) )
-        missingSBs.append( isb )
-    if missingSBs:
-      return S_ERROR( "Input sandboxes %s is not registered for job" % missingSBs )
-    self.log.info( "All sandboxes are registered for job %s" % job )
-    return S_OK( len( sbToCheck ) )
-
+    assigned = result[ 'Value' ]
+    if assigned != numSBsToAssign:
+      self.log.error( "Could not assign all sandboxes (%s). Only assigned %s" % ( numSBsToAssign, assigned ) )
+    return S_OK( numSBsToAssign )
+  
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
