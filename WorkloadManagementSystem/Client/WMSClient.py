@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.22 2009/06/15 14:57:09 acasajus Exp $
+# $Id: WMSClient.py,v 1.23 2009/06/15 18:20:56 acasajus Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
@@ -53,10 +53,16 @@ class WMSClient:
     badFiles = []
     okFiles = []
     for file in inputSandbox:
+      valid = True
       for tag  in ( 'lfn:', 'LFN:', 'SB:' ):
         if file.find( tag ) == 0:
-          continue
-      realFiles.append( file )
+          valid = False
+          break
+      if valid:
+        realFiles.append( file )
+    #If there are no files, skip!
+    if not realfiles:
+      return S_OK()
     #Check real files
     for file in realFiles:
       if not os.path.exists( file ):
