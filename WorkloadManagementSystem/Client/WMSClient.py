@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.23 2009/06/15 18:20:56 acasajus Exp $
+# $Id: WMSClient.py,v 1.24 2009/06/15 18:27:33 acasajus Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
@@ -52,6 +52,7 @@ class WMSClient:
     realFiles = []
     badFiles = []
     okFiles = []
+    realFiles = []
     for file in inputSandbox:
       valid = True
       for tag  in ( 'lfn:', 'LFN:', 'SB:' ):
