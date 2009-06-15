@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.83 2009/06/12 08:19:04 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.84 2009/06/15 17:54:27 acasajus Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.83 2009/06/12 08:19:04 acasajus Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.84 2009/06/15 17:54:27 acasajus Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob
 import pprint
@@ -1336,6 +1336,7 @@ class Dirac:
       except Exception,x:
         return self.__errorReport(str(x),'Expected integer or string for existing jobID')
 
+    #TODO: Do not check if dir already exists
     dirPath = ''
     if outputDir:
       dirPath = '%s/InputSandbox%s' %(outputDir,jobID)
@@ -1353,6 +1354,10 @@ class Dirac:
 
     result = self.inputSandboxClient.getSandbox(jobID,dirPath)
     if not result['OK']:
+      try:
+        os.rmdir( dirPath )
+      except:
+        pass
       self.log.warn(result['Message'])
       result = self.sandboxClient.downloadSandboxForJob( jobID, 'Input', dirPath )
       if not result[ 'OK' ]:
@@ -1389,6 +1394,7 @@ class Dirac:
       except Exception,x:
         return self.__errorReport(str(x),'Expected integer or string for existing jobID')
 
+    #TODO: Do not check if dir already exists
     dirPath = ''
     if outputDir:
       dirPath = '%s/%s' %(outputDir,jobID)
