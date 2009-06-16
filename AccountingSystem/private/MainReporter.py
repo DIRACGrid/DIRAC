@@ -20,6 +20,7 @@ class MainReporter:
       requestToHash[ key ] = epoch - epoch % granularity
     m = md5.new()
     m.update( repr( requestToHash ) )
+    m.update( self.setup )
     return m.hexdigest()
 
   def generate( self, reportRequest, credDict ):
