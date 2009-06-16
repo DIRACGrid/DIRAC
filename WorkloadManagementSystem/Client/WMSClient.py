@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.25 2009/06/16 10:35:41 acasajus Exp $
+# $Id: WMSClient.py,v 1.26 2009/06/16 13:53:49 acasajus Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
@@ -157,7 +157,7 @@ class WMSClient:
 
       totalSize = 0
       for file in inputSandbox:
-        if file.find('lfn:') != -1 or file.find('LFN:'):
+        if file.find('lfn:') != 0 and file.find('LFN:') != 0 and file.find( "SB:" ) != 0:
           if not os.path.exists(file):
             badfile = file
             print "inputSandbox file/directory "+file+" not found"
