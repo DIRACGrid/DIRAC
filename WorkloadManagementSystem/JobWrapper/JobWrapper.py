@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.109 2009/06/13 05:14:15 rgracian Exp $
+# $Id: JobWrapper.py,v 1.110 2009/06/16 16:50:09 acasajus Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.109 2009/06/13 05:14:15 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.110 2009/06/16 16:50:09 acasajus Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -833,10 +833,20 @@ class JobWrapper:
     """Downloads the input sandbox for the job
     """
     sandboxFiles = []
+    registeredISB = []
+    lfns = []
     self.__report('Running','Downloading InputSandbox')
-    for i in inputSandbox: sandboxFiles.append(os.path.basename(i))
-    if type( inputSandbox ) != type([]):
-      sandboxFiles = [inputSandbox]
+    if type( inputSandbox ) not in ( types.TupleType, types.ListType ):
+      inputSandbox = [ inputSandbox ]
+    for isb in inputSandbox:
+      if isb.find( "LFN:" ) == 0 or isb.find( "lfn:" ) == 0:
+        lfns.append( isb )
+      else:
+        if isb.find( "SB:" ) == 0:
+          registeredISB.append( isb )
+        else:
+          sandboxFiles.append( os.path.basename( isb ) )
+
 
     self.log.info('Downloading InputSandbox for job %s: %s' %(self.jobID,string.join(sandboxFiles)))
     if os.path.exists('%s/inputsandbox' %(self.root)):
@@ -850,28 +860,25 @@ class JobWrapper:
     elif not self.jobID:
       self.log.info('No JobID defined, no sandbox to download')
     else:
-      downloadedIS = False
-      result = SandboxStoreClient().downloadSandboxForJob( self.jobID, "Input" )
-      if not result[ 'OK' ]:
-        self.log.warn( result['Message' ] )
-        inputSandboxClient = SandboxClient()
-        result = inputSandboxClient.getSandbox( self.jobID )
-        if not result['OK']:
-          self.log.warn( result['Message' ] )
-          self.__report('Running','Failed Downloading InputSandbox')
-          return S_ERROR('InputSandbox download failed for job %s and sandbox %s' %(self.jobID,string.join(sandboxFiles)))
-
-    self.log.verbose('Sandbox download result: %s' %(result))
-    #for accounting report exclude input sandbox LFNs not passing through sandbox mechanism
-    checkFileSize = []
-    for sandboxFile in sandboxFiles:
-      if not re.search('^lfn:',i) and not re.search('^LFN:',i):
-        checkFileSize.append(sandboxFile)
-
-    lfns = []
-    for i in inputSandbox:
-      if re.search('^lfn:',i) or re.search('^LFN:',i):
-        lfns.append(i)
+      gotISB = True
+      if registeredISB:
+        for isb in registeredISB:
+          self.log.info( "Downloading ISB %s" % isb )
+          result = SandboxStoreClient().downloadSandbox( isb, "Input" )
+          if not result[ 'OK' ]:
+            self.log.error( "Cannot download Input sandbox", "%s: %s" % ( isb, result[ 'Message' ] ) )
+            gotISB = False
+      else:
+        if sandboxFiles:
+          inputSandboxClient = SandboxClient()
+          self.log.info( "Downloading sandbox for job %s" % self.jobID )
+          result = inputSandboxClient.getSandbox( self.jobID )
+          if not result['OK']:
+            self.log.error( result['Message' ] )
+            gotISB = False
+      if not gotISB:
+        self.__report('Running','Failed Downloading InputSandbox')
+        return S_ERROR('InputSandbox download failed for job %s and sandbox %s' %(self.jobID,string.join(sandboxFiles)))
 
     if lfns:
       self.__report('Running','Downloading InputSandbox LFN(s)')
@@ -891,19 +898,22 @@ class JobWrapper:
           checkFileSize.append(os.path.basename(download['Value']['Successful'][lfn]))
           sandboxFiles.append(os.path.basename(download['Value']['Successful'][lfn]))
 
-    for sandboxFile in sandboxFiles:
-      if os.path.exists(sandboxFile):
-        try:
-          if tarfile.is_tarfile(sandboxFile):
-            self.log.info('Unpacking input sandbox file %s' %(sandboxFile))
-            tarFile = tarfile.open(sandboxFile,'r')
-            for member in tarFile.getmembers():
-              tarFile.extract(member,os.getcwd())
-        except Exception,x :
-          return S_ERROR( 'Could not untar %s with exception %s' %(sandboxFile,str(x)) )
+    userFiles = sandboxFiles + [ os.path.basename( lfn ) for lfn in lfns ]
+    for possibleTarFile in userFiles:
+      if not os.path.exists( possibleTarFile ):
+        continue
+      try:
+        if tarfile.is_tarfile( possibleTarFile ):
+          self.log.info( 'Unpacking input sandbox file %s' %( possibleTarFile ) )
+          tarFile = tarfile.open( possibleTarFile, 'r' )
+          for member in tarFile.getmembers():
+            tarFile.extract( member, os.getcwd() )
+      except Exception,x :
+        return S_ERROR( 'Could not untar %s with exception %s' %(sandboxFile,str(x)) )
 
-    if checkFileSize:
-      self.inputSandboxSize = getGlobbedTotalSize(checkFileSize)
+    if userFiles:
+      self.inputSandboxSize = getGlobbedTotalSize( userFiles )
+      self.log.info( "Total size of input sandbox: %0.2f MiB (%s bytes)" % ( self.inputSandboxSize/1048576.0, self.inputSandboxSize ) )
 
     return S_OK('InputSandbox downloaded')
 
