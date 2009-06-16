@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxStoreHandler.py,v 1.3 2009/06/15 14:30:22 acasajus Exp $
+# $Id: SandboxStoreHandler.py,v 1.4 2009/06/16 11:02:37 acasajus Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.3 2009/06/15 14:30:22 acasajus Exp $"
+__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.4 2009/06/16 11:02:37 acasajus Exp $"
 
 from types import *
 import os
@@ -78,6 +78,7 @@ class SandboxStoreHandler( RequestHandler ):
     Receive a file as a sandbox
     """
     if self.__maxUploadBytes and fileSize > self.__maxUploadBytes:
+      fileHelper.markAsTransferred()
       return S_ERROR( "Sandbox is too big. Please upload it to a grid storage element" )
 
     if type( fileId ) in ( types.ListType, types.TupleType ):
