@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.23 2009/06/15 15:05:51 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.24 2009/06/16 14:08:32 acasajus Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,13 +13,14 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.23 2009/06/15 15:05:51 acasajus Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.24 2009/06/16 14:08:32 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Utilities.Subprocess                       import shellCall
 from DIRAC                                                 import S_OK, S_ERROR
+from DIRAC.Core.Security                                   import CS
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient   import SandboxStoreClient
 import os, re, time, string
 
@@ -240,7 +241,10 @@ class JobSanityAgent(OptimizerModule):
     """The number of input sandbox files, as specified in the job
        JDL are checked in the JobDB.
     """
-    ownerName = classAdJob.getAttributeString( "OwnerName" )
+    ownerName = classAdJob.getAttributeString( "Owner" )
+    if not ownerName:
+      ownerDN = classAdJob.getAttributeString( "OwnerDN" )
+      ownerName = CS.getUsernameForDN( ownerDN )
     ownerGroup = classAdJob.getAttributeString( "OwnerGroup" )
     jobSetup = classAdJob.getAttributeString( "DIRACSetup" )
     isbList = classAdJob.getListFromExpression( 'InputSandbox' )
