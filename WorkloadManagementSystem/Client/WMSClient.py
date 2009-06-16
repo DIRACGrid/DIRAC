@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.24 2009/06/15 18:27:33 acasajus Exp $
+# $Id: WMSClient.py,v 1.25 2009/06/16 10:35:41 acasajus Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
@@ -62,7 +62,7 @@ class WMSClient:
       if valid:
         realFiles.append( file )
     #If there are no files, skip!
-    if not realfiles:
+    if not realFiles:
       return S_OK()
     #Check real files
     for file in realFiles:
