@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.84 2009/05/28 03:58:43 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.85 2009/06/17 15:26:21 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.84 2009/05/28 03:58:43 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.85 2009/06/17 15:26:21 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -586,9 +586,12 @@ class JobAgent(Agent):
     """Force the JobAgent to complete gracefully.
     """
     self.log.info('JobAgent will stop with message "%s", execution complete.' %message)
-    fd = open(self.controlDir+'/stop_agent','w')
-    fd.write('JobAgent Stopped at %s [UTC]' % (time.asctime(time.gmtime())))
-    fd.close()
+    try:
+      fd = open(self.controlDir+'/stop_agent','w')
+      fd.write('JobAgent Stopped at %s [UTC]' % (time.asctime(time.gmtime())))
+      fd.close()
+    except:
+      self.log.exception()
     return S_ERROR(message)
 
   #############################################################################
