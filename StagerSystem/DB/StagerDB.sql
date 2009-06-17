@@ -6,55 +6,67 @@
 DROP DATABASE IF EXISTS StagerDB;
 
 CREATE DATABASE StagerDB;
---
---
--- Create user DIRAC
+
 use mysql;
 GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON StagerDB.* TO 'Dirac'@'localhost' IDENTIFIED BY 'must_be_set';
-#GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON StagerDB.* TO 'Dirac'@'%' IDENTIFIED BY 'must_be_set';
-
 FLUSH PRIVILEGES;
 
 use StagerDB;
 
-DROP TABLE IF EXISTS Files;
-CREATE TABLE Files(
-  FileID INTEGER AUTO_INCREMENT,
+DROP TABLE IF EXISTS Tasks;
+CREATE TABLE Tasks(
+  TaskID INTEGER AUTO_INCREMENT,
+  Status VARCHAR(32) DEFAULT 'New',
+  Source VARCHAR(32) NOT NULL,
+  SubmitTime DATETIME NOT NULL,
+  CompleteTime DATETIME,
+  CallBackMethod VARCHAR(255),
+  PRIMARY KEY(TaskID,Status),
+  INDEX(TaskID,Status)
+)ENGINE=INNODB;
+
+DROP TABLE IF EXISTS Replicas;
+CREATE TABLE Replicas(
+  ReplicaID INTEGER AUTO_INCREMENT,
   Status VARCHAR(32) DEFAULT 'New',
   StorageElement VARCHAR(32) NOT NULL,
   LFN VARCHAR(255) NOT NULL,
-  FileSize INTEGER(32) DEFAULT 0,
   PFN VARCHAR(255),
-  PRIMARY KEY (FileID,LFN,StorageElement),
-  INDEX(StorageElement,Status)
-);
+  FileSize INTEGER(32) DEFAULT 0,
+  PRIMARY KEY (ReplicaID,LFN,StorageElement),
+  INDEX(ReplicaID,Status,StorageElement)
+)ENGINE=INNODB;
 
-DROP TABLE IF EXISTS Tasks;
-CREATE TABLE Tasks(
-  FileID INTEGER NOT NULL,
-  Status VARCHAR(32) DEFAULT 'New',
-  TaskID INTEGER(8) NOT NULL,
-  Source VARCHAR(32) NOT NULL,
-  SubmitTime DATETIME NOT NULL,
-  CallBackMethod VARCHAR(255),
-  PRIMARY KEY(FileID,Source,TaskID)
-);
+DROP TABLE IF EXISTS TaskReplicas;
+CREATE TABLE TaskReplicas(
+  TaskID INTEGER(8) NOT NULL REFERENCES Tasks(TaskID),
+  ReplicaID INTEGER(8) NOT NULL REFERENCES Replicas(ReplicaID),
+  Status VARCHAR(32) DEFAULT 'New' REFERENCES Replicas(Status),
+  PRIMARY KEY (TaskID,ReplicaID),
+  INDEX(TaskID,ReplicaID),
+  FOREIGN KEY (TaskID) REFERENCES Tasks(TaskID),
+  FOREIGN KEY (ReplicaID,Status) REFERENCES Replicas(ReplicaID,Status) ON UPDATE CASCADE
+)ENGINE=INNODB;
 
 DROP TABLE IF EXISTS StageRequests;
 CREATE TABLE StageRequests(
-  FileID INTEGER NOT NULL,
-  StageStatus VARCHAR(32) DEFAULT 'Submitted',
-  SRMRequestID INTEGER(32),
+  ReplicaID INTEGER(8) NOT NULL REFERENCES Replicas(ReplicaID),
+  StageStatus VARCHAR(32) DEFAULT 'StageSubmitted',
+  RequestID INTEGER(32),
   StageRequestSubmitTime DATETIME NOT NULL,
   INDEX (StageStatus)
-);
+)ENGINE=INNODB;
+CREATE TRIGGER stageAfterInsert AFTER INSERT ON StageRequests FOR EACH ROW UPDATE Replicas SET Replicas.Status = NEW.StageStatus WHERE NEW.ReplicaID=Replicas.ReplicaID;
+CREATE TRIGGER stageAfterUpdate AFTER UPDATE ON StageRequests FOR EACH ROW UPDATE Replicas SET Replicas.Status = NEW.StageStatus WHERE NEW.ReplicaID=Replicas.ReplicaID;
 
 DROP TABLE IF EXISTS Pins;
 CREATE TABLE Pins(
-  FileID INTEGER NOT NULL,
-  PinStatus VARCHAR(32) DEFAULT 'Created',
-  SRMRequestID INTEGER(32),
+  ReplicaID INTEGER(8) NOT NULL REFERENCES Replicas(ReplicaID),
+  PinStatus VARCHAR(32) DEFAULT 'PinCreated',
+  RequestID INTEGER(32),
   PinCreationTime DATETIME NOT NULL,
   PinExpiryTime DATETIME NOT NULL,
   INDEX(PinStatus)
-);
+)ENGINE=INNODB;
+CREATE TRIGGER pinsAfterInsert AFTER INSERT ON Pins FOR EACH ROW UPDATE Replicas SET Replicas.Status = NEW.PinStatus WHERE NEW.ReplicaID=Replicas.ReplicaID;
+CREATE TRIGGER pinsAfterUpdate AFTER UPDATE ON Pins FOR EACH ROW UPDATE Replicas SET Replicas.Status = NEW.PinStatus WHERE NEW.ReplicaID=Replicas.ReplicaID;
