@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.6 2009/02/03 17:02:46 acasajus Exp $
-__RCSID__ = "$Id: GatewayDispatcher.py,v 1.6 2009/02/03 17:02:46 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.7 2009/06/17 11:00:25 acasajus Exp $
+__RCSID__ = "$Id: GatewayDispatcher.py,v 1.7 2009/06/17 11:00:25 acasajus Exp $"
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -104,7 +104,7 @@ class GatewayDispatcher( Dispatcher ):
       gLogger.warn( "Received a file transfer action from %s" % userDesc )
       retVal =  S_ERROR( "File transfer can't be forwarded" )
     elif actionType == "RPC":
-      gLogger.info( "Forwarding %s action from %s" % ( actionType, userDesc ) )
+      gLogger.info( "Forwarding %s/%s action to %s for %s" % ( actionType, actionMethod, targetService, userDesc ) )
       retVal = self.__forwardRPCCall( targetService, clientInitArgs, actionMethod, retVal[ 'Value' ] )
     else:
       gLogger.warn( "Received an unknown %s action from %s" % ( actionType, userDesc ) )
