@@ -54,7 +54,8 @@ CREATE TABLE StageRequests(
   StageStatus VARCHAR(32) DEFAULT 'StageSubmitted',
   RequestID INTEGER(32),
   StageRequestSubmitTime DATETIME NOT NULL,
-  INDEX (StageStatus)
+  INDEX (StageStatus),
+  FOREIGN KEY (ReplicaID) REFERENCES Replicas(ReplicaID)
 )ENGINE=INNODB;
 CREATE TRIGGER stageAfterInsert AFTER INSERT ON StageRequests FOR EACH ROW UPDATE Replicas SET Replicas.Status = NEW.StageStatus WHERE NEW.ReplicaID=Replicas.ReplicaID;
 CREATE TRIGGER stageAfterUpdate AFTER UPDATE ON StageRequests FOR EACH ROW UPDATE Replicas SET Replicas.Status = NEW.StageStatus WHERE NEW.ReplicaID=Replicas.ReplicaID;
@@ -66,7 +67,8 @@ CREATE TABLE Pins(
   RequestID INTEGER(32),
   PinCreationTime DATETIME NOT NULL,
   PinExpiryTime DATETIME NOT NULL,
-  INDEX(PinStatus)
+  INDEX(PinStatus),
+  FOREIGN KEY (ReplicaID) REFERENCES Replicas(ReplicaID)
 )ENGINE=INNODB;
 CREATE TRIGGER pinsAfterInsert AFTER INSERT ON Pins FOR EACH ROW UPDATE Replicas SET Replicas.Status = NEW.PinStatus WHERE NEW.ReplicaID=Replicas.ReplicaID;
 CREATE TRIGGER pinsAfterUpdate AFTER UPDATE ON Pins FOR EACH ROW UPDATE Replicas SET Replicas.Status = NEW.PinStatus WHERE NEW.ReplicaID=Replicas.ReplicaID;
