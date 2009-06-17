@@ -1,9 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.7 2009/06/17 11:00:25 acasajus Exp $
-__RCSID__ = "$Id: GatewayDispatcher.py,v 1.7 2009/06/17 11:00:25 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.8 2009/06/17 12:58:51 acasajus Exp $
+__RCSID__ = "$Id: GatewayDispatcher.py,v 1.8 2009/06/17 12:58:51 acasajus Exp $"
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.Security.X509Chain import X509Chain
 
 from DIRAC.Core.DISET.AuthManager import AuthManager
@@ -154,6 +155,16 @@ class GatewayDispatcher( Dispatcher ):
     return "%s@%s" % ( DN, group )
 
   def __forwardRPCCall( self, targetService, clientInitArgs, method, params ):
+    if targetService == "Configuration/Server":
+      if method == "getCompressedDataIfNewer":
+        #Relay CS data directly
+        serviceVersion = gConfigurationData.getVersion()
+        retDict = { 'newestVersion' : serviceVersion }
+        clientVersion = params[0]
+        if clientVersion < serviceVersion:
+          retDict[ 'data' ] = gConfigurationData.getCompressedData()
+        return S_OK( retDict )
+    #Default
     rpcClient = RPCClient( targetService, **clientInitArgs )
     methodObj = getattr( rpcClient, method )
     return methodObj( *params )
