@@ -1,18 +1,19 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.17 2009/06/15 15:25:34 joel Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.18 2009/06/17 22:40:31 acsmith Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
 
-    There are four tables in the StagerDB: Files, Tasks, StageRequests and Pins.
+    There are five tables in the StagerDB: Tasks, Replicas, TaskReplicas, StageRequests and Pins.
 
-    The Files table keeps the information on all the files to be staged. It maps all the file information LFN, PFN, SE to an assigned FileID.
-    The Tasks table is a mapping of each FileID to the different tasks that requested the file to be staged. These can be from different systems.
-    The StageRequests table contains each of the SRM bring-online request IDs for each of the files.
-    The Pins table keeps the SRM Request ID for the requests that issued the pin request along with when it was issued and for how long.
+    The Tasks table is the place holder for the tasks that have requested files to be staged. These can be from different systems and have different associated call back methods.
+    The Replicas table keeps the information on all the Replicas in the system. It maps all the file information LFN, PFN, SE to an assigned ReplicaID.
+    The TaskReplicas table maps the TaskIDs from the Tasks table to the ReplicaID from the Replicas table.
+    The StageRequests table contains each of the prestage request IDs for each of the replicas.
+    The Pins table keeps the pinning request ID along with when it was issued and for how long for each of the replicas.
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.17 2009/06/15 15:25:34 joel Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.18 2009/06/17 22:40:31 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import intListToString,stringListToString
@@ -27,88 +28,93 @@ class StagerDB(DB):
     DB.__init__(self,'StagerDB','Stager/StagerDB',maxQueueSize)
     self.getIdLock = threading.Lock()
 
-  def _getExistingFiles(self,storageElement,lfns):
-    """ internal method for retrieving the fileIDs for existing files
-    """
-    req = "SELECT FileID,LFN FROM Files WHERE StorageElement = '%s' AND LFN IN (%s);" % (storageElement,stringListToString(lfns))
-    res = self._query(req)
-    if not res['OK']:
-      gLogger.error('StagerDB._getExistingFiles: Failed to get existing files',res['Message'])
-      self.getIdLock.release()
-      return res
-    existingFiles = {}
-    for fileID,lfn in res['Value']:
-      existingFiles[lfn] = fileID
-    return S_OK(existingFiles)
+  ####################################################################
+  #
+  # The setRequest method is used to initially insert tasks and their associated files.
+  # TODO: Implement a rollback in case of a failure at any step
 
-  def _getExistingTasks(self,fileIDs):
-    """ internal method for retrieving the taskIDs for a list of file IDs
-    """
-    req = "SELECT FileID,TaskID FROM Tasks WHERE FileID IN (%s);" % (intListToString(fileIDs))
-    res = self._query(req)
-    if not res['OK']:
-      gLogger.error('StagerDB._getExistingTasks: Failed to get existing file tasks',res['Message'])
-      self.getIdLock.release()
-      return res
-    existingTasks = {}
-    for fileID,taskID in res['Value']:
-      if not existingTasks.has_key(fileID):
-        existingTasks[fileID] = []
-      existingTasks[fileID].append(taskID)
-    return S_OK(existingTasks)
-
-  def setRequest(self,lfns,storageElement,source,callbackMethod,taskID):
+  def setRequest(self,lfns,storageElement,source,callbackMethod,sourceTaskID):
     """ This method populates the StagerDB Files and Tasks tables with the requested files.
     """
-    self.getIdLock.acquire()
-    # The first step is to obtain the FileIDs for the files already requested for the storage element
-    res = self._getExistingFiles(storageElement,lfns)
+    # The first step is to create the task in the Tasks table
+    res = self._createTask(source,callbackMethod,sourceTaskID)
     if not res['OK']:
       return res
-    existingFiles = res['Value']
-
-    # Create the entry in the Files table for files that do not already exist
+    taskID = res['Value']
+    # Get the Replicas which already exist in the Replicas table
+    res = self._getExistingReplicas(storageElement,lfns)
+    if not res['OK']:
+      return res
+    existingReplicas = res['Value']
+    # Insert the Replicas that do not already exist
     for lfn in lfns:
-      if lfn in existingFiles.keys():
-        gLogger.debug('StagerDB.setRequest: File already exists in Files table',lfn)
+      if lfn in existingReplicas.keys():
+        gLogger.verbose('StagerDB.setRequest: Replica already exists in Replicas table %s @ %s' % (lfn,storageElement))
       else:
-        res = self._insert('Files',['LFN','StorageElement'],[lfn,storageElement])
+        res = self._insertReplicaInformation(lfn,storageElement)
         if not res['OK']:
-          gLogger.error('StagerDB.setRequest: Failed to insert to Files table',res['Message'])
-          self.getIdLock.release()
-          return res
+          gLogger.warn("Perform roll back")
         else:
-          fileID = res['lastRowId']
-          gLogger.debug('StagerDB.setRequest: File inserted with FileID %s' % fileID)
-          existingFiles[lfn] = fileID
-
-    # Need to obtain the files for which we do not already have an identical request
-    res = self._getExistingTasks(existingFiles.values())
+          existingReplicas[lfn] = res['Value']
+    # Insert all the replicas into the TaskReplicas table
+    res = self._insertTaskReplicaInformation(taskID,existingReplicas.values())
     if not res['OK']:
+      gLogger.warn("Perform roll back")
+    return S_OK(taskID)
+
+  def _createTask(self,source,callbackMethod,sourceTaskID):
+    """ Enter the task details into the Tasks table """
+    self.getIdLock.acquire()
+    req = "INSERT INTO Tasks (Source,SubmitTime,CallBackMethod,SourceTaskID) VALUES ('%s',UTC_TIMESTAMP(),'%s','%s');" % (source,callbackMethod,sourceTaskID)
+    res = self._update(req)
+    self.getIdLock.release() 
+    if not res['OK']:
+      gLogger.error("StagerDB._createTask: Failed to create task.", res['Message'])
       return res
-    existingTasks = res['Value']
+    taskID = res['lastRowId']
+    gLogger.info("StagerDB._createTask: Created task with ('%s','%s','%s') and obtained TaskID %s" % (source,callbackMethod,sourceTaskID,taskID))
+    return S_OK(taskID)
 
-    filesToAddToTasks = []
-    for lfn in lfns:
-      fileID = existingFiles[lfn]
-      if not fileID in existingTasks.keys():
-        filesToAddToTasks.append(fileID)
-      elif not taskID in existingTasks[fileID]:
-        filesToAddToTasks.append(fileID)
+  def _getExistingReplicas(self,storageElement,lfns):
+    """ Obtains the ReplicasIDs for the replicas already entered in the Replicas table """
+    req = "SELECT ReplicaID,LFN FROM Replicas WHERE StorageElement = '%s' AND LFN IN (%s);" % (storageElement,stringListToString(lfns))
+    res = self._query(req)
+    if not res['OK']:
+      gLogger.error('StagerDB._getExistingReplicas: Failed to get existing replicas.', res['Message'])
+      return res
+    existingReplicas = {}
+    for replicaID,lfn in res['Value']:
+      existingReplicas[lfn] = replicaID
+    return S_OK(existingReplicas)
 
-    for fileID in filesToAddToTasks:
-      req = "INSERT INTO Tasks (FileID,Source,TaskID,SubmitTime,CallBackMethod) VALUES (%s,'%s',%s,NOW(),'%s');" % (fileID,source,taskID,callbackMethod)
-      res = self._update(req)
-      if not res['OK']:
-        gLogger.error('StagerDB.setRequest: Failed to insert to Tasks table',res['Message'])
-        self.getIdLock.release()
-        return res
-      else:
-        gLogger.debug('StagerDB.setRequest: Task inserted for file %s and task %s' % (fileID,taskID))
+  def _insertReplicaInformation(self,lfn,storageElement):
+    """ Enter the replica into the Replicas table """
+    res = self._insert('Replicas',['LFN','StorageElement'],[lfn,storageElement])
+    if not res['OK']:
+      gLogger.error('StagerDB._insertReplicaInformation: Failed to insert to Replicas table.',res['Message'])
+      return res
+    replicaID = res['lastRowId']
+    gLogger.verbose("StagerDB._insertReplicaInformation: Inserted Replica ('%s','%s') and obtained ReplicaID %s" % (lfn,storageElement,replicaID))
+    return S_OK(replicaID)
 
-    # We successfully inserted all of the elements into the database
-    self.getIdLock.release()
+  def _insertTaskReplicaInformation(self,taskID,replicaIDs):
+    """ Enter the replicas into TaskReplicas table """
+    req = "INSERT INTO TaskReplicas (TaskID,ReplicaID) VALUES "
+    for replicaID in replicaIDs:
+      replicaString = "(%s,%s)," % (taskID,replicaID)
+      req = "%s %s" % (req,replicaString)
+    req = req.rstrip(',')
+    res = self._update(req)
+    if not res['OK']:
+      gLogger.error('StagerDB._insertTaskReplicaInformation: Failed to insert to TaskReplicas table.',res['Message'])
+      return res
+    gLogger.info("StagerDB._insertTaskReplicaInformation: Successfully added %s Replicas to Task %s." % (res['Value'],taskID))
     return S_OK()
+
+  ####################################################################
+  #
+  # This code manages the state transition of the Replicas from New to Waiting.
+  #
 
   def getFilesWithStatus(self,status):
     """ This method retrieves the FileID and LFN from the Files table with the supplied Status.
