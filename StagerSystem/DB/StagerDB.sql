@@ -1,3 +1,8 @@
+########################################################################
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.sql,v 1.5 2009/06/17 22:33:52 acsmith Exp $
+__RCSID__ = "$Id: StagerDB.sql,v 1.5 2009/06/17 22:33:52 acsmith Exp $"
+########################################################################
+   
 -------------------------------------------------------------
 -- author: A. Smith
 -- StagerDB definition
@@ -21,6 +26,7 @@ CREATE TABLE Tasks(
   SubmitTime DATETIME NOT NULL,
   CompleteTime DATETIME,
   CallBackMethod VARCHAR(255),
+  SourceTaskID VARCHAR(32), 
   PRIMARY KEY(TaskID,Status),
   INDEX(TaskID,Status)
 )ENGINE=INNODB;
