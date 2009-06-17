@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.28 2009/02/26 14:54:59 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.28 2009/02/26 14:54:59 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.29 2009/06/17 10:41:54 rgracian Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.29 2009/06/17 10:41:54 rgracian Exp $"
 
 import threading
 import time
@@ -96,7 +96,7 @@ class Refresher( threading.Thread ):
     sGateway = getGatewayURL()
     updatingErrorsList = []
     if sGateway:
-      lInitialListOfServers = [ sGateway ]
+      lInitialListOfServers = sGateway
       gLogger.debug( "Using configuration gateway", str( lInitialListOfServers[0] ) )
     else:
       lInitialListOfServers = gConfigurationData.getServers()
