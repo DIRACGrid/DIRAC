@@ -1,12 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.29 2009/06/17 10:41:54 rgracian Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.29 2009/06/17 10:41:54 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.30 2009/06/17 11:05:38 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.30 2009/06/17 11:05:38 acasajus Exp $"
 
 import threading
 import time
 import os
 import random
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.ConfigurationSystem.Client.PathFinder import getGatewayURL
+from DIRAC.ConfigurationSystem.Client.PathFinder import getGatewayURLs
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -93,10 +93,10 @@ class Refresher( threading.Thread ):
   def __refresh( self ):
     self.iLastUpdateTime = time.time()
     gLogger.debug( "Refreshing configuration..." )
-    sGateway = getGatewayURL()
+    gatewayList = getGatewayURLs( "Configuration/Server" )
     updatingErrorsList = []
-    if sGateway:
-      lInitialListOfServers = sGateway
+    if gatewayList:
+      lInitialListOfServers = gatewayList
       gLogger.debug( "Using configuration gateway", str( lInitialListOfServers[0] ) )
     else:
       lInitialListOfServers = gConfigurationData.getServers()

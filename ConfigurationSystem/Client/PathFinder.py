@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/PathFinder.py,v 1.5 2007/12/19 17:51:18 acasajus Exp $
-__RCSID__ = "$Id: PathFinder.py,v 1.5 2007/12/19 17:51:18 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/PathFinder.py,v 1.6 2009/06/17 11:05:38 acasajus Exp $
+__RCSID__ = "$Id: PathFinder.py,v 1.6 2009/06/17 11:05:38 acasajus Exp $"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
@@ -59,8 +59,13 @@ def getServiceURL( serviceName, serviceTuple = False, setup = False ):
   systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )
   return gConfigurationData.extractOptionFromCFG( "%s/URLs/%s" % ( systemSection, serviceTuple[1] ) )
 
-def getGatewayURL():
-  gatewayList = gConfigurationData.extractOptionFromCFG( "/DIRAC/Gateway" )
+def getGatewayURLs( serviceName = "" ):
+  siteName = gConfigurationData.extractOptionFromCFG( "/LocalSite/Site" )
+  if not siteName:
+    return False
+  gatewayList = gConfigurationData.extractOptionFromCFG( "/DIRAC/Gateways/%s" % siteName )
   if not gatewayList:
     return False
-  return List.randomize( List.fromChar( gatewayList, "," ) )
+  if serviceName:
+    gatewayList = [ "%s/%s" % ( gw, serviceName ) for gw in List.fromChar( gatewayList, "," ) ]
+  return List.randomize( gatewayList )
