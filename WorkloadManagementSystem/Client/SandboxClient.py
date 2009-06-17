@@ -118,6 +118,7 @@ class SandboxClient:
       os.chdir(os.path.realpath(output_dir))
 
     error_files = []
+    decRes = 1
     for f in fileList:
       sname = `jobID`+"::"+f
       sandbox = TransferClient('WorkloadManagement/%sSandbox' % self.sandbox_type)
