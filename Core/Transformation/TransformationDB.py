@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.87 2009/06/11 11:12:35 acsmith Exp $
+# $Id: TransformationDB.py,v 1.88 2009/06/19 08:05:07 atsareg Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -246,23 +246,20 @@ class TransformationDB(DB):
   def getTransformationStats(self,transName):
     """ Get number of files in Transformation Table for each status
     """
+
     transID = self.getTransformationID(transName)
-    req = "SELECT DISTINCT Status FROM T_%s;" % transID
-    result1 = self._query(req)
-    if not result1['OK']:
-      return result1
+    resultStats = self.getCounters('T_%s' % transID,['Status'],{})
+    if not resultStats['OK']:
+      return resultStats
+    if not resultStats['Value']:
+      return S_ERROR('No records found')
 
     statusList = {}
     total=0
-    for status_ in result1["Value"]:
-      status = status_[0]
-      statusList[status]=0
-      req = "SELECT count(FileID) FROM T_%s WHERE Status='%s';" % (transID, status)
-      result2 = self._query(req)
-      if not result2['OK']:
-        return result2
-      statusList[status]=result2['Value'][0][0]
-      total = total + result2['Value'][0][0]
+    for attrDict,count in resultStats["Value"]:
+      status = attrDict['Status']
+      statusList[status]=count
+      total += count
     statusList['Total']=total
     return S_OK(statusList)
 
