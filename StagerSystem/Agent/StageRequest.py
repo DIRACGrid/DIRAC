@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StageRequest.py,v 1.3 2009/06/19 20:49:52 acsmith Exp $
-__RCSID__ = "$Id: StageRequest.py,v 1.3 2009/06/19 20:49:52 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StageRequest.py,v 1.4 2009/06/19 20:51:28 acsmith Exp $
+__RCSID__ = "$Id: StageRequest.py,v 1.4 2009/06/19 20:51:28 acsmith Exp $"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
@@ -101,14 +101,14 @@ class StageRequest(Agent):
       res = self.replicaManager.prestagePhysicalFile(pfnRepIDs.keys(),storageElement)
       if not res['OK']:
         gLogger.error("StageRequest.submitStageRequests: Completely failed to sumbmit stage requests for replicas.",res['Message'])
-      for pfn,reason in res['Value']['Failed'].items():
-        if re.search('File does not exist',reason):
-          terminalReplicaIDs[pfnRepIDs[pfn]] = 'PFN did not exist in the StorageElement'
-      requestIDs = {}
-      for pfn,requestID in res['Value']['Successful'].items():
-        if not stageRequestMetadata.has_key(requestID):
-          stageRequestMetadata[requestID] = []
-        stageRequestMetadata[requestID].append(pfnRepIDs[pfn])
+      else:
+        for pfn,reason in res['Value']['Failed'].items():
+          if re.search('File does not exist',reason):
+            terminalReplicaIDs[pfnRepIDs[pfn]] = 'PFN did not exist in the StorageElement'
+        for pfn,requestID in res['Value']['Successful'].items():
+          if not stageRequestMetadata.has_key(requestID):
+            stageRequestMetadata[requestID] = []
+          stageRequestMetadata[requestID].append(pfnRepIDs[pfn])
     # Update the states of the replicas in the database
     if terminalReplicaIDs:
       gLogger.info("StageRequest.submitStageRequests: %s replicas are terminally failed." % len(terminalReplicaIDs))
