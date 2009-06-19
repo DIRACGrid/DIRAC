@@ -543,6 +543,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         if not res['OK']:
           self.__abortTransaction()
           failed[lfn] = res['Message']
+          gLogger.error("LcgFileCatalogClient.addFile: Failed to perform __addFile.",res['Message'])
           res = self.__unlinkPath(lfn)
           if not res['OK']:
             gLogger.error("LcgFileCatalogClient.addFile: Failed to remove file after failure.", res['Message'])
@@ -1089,6 +1090,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     value = lfc.lfc_creatg(fullLfn,guid,0664)
     if value != 0:
       errStr = lfc.sstrerror(lfc.cvar.serrno)
+      gLogger.error("LcgFileCatalogClient__addFile: Failed to create GUID.", errStr)
       # Remove the file we just attempted to add
       res = self.__unlinkPath(lfn)
       if not res['OK']:
