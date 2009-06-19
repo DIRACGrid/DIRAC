@@ -545,7 +545,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
           failed[lfn] = res['Message']
           res = self.__unlinkPath(lfn)
           if not res['OK']:
-            gLogger.error("LcgFileCatalogClient.addFile: Failed to remove file after failure." % res['Message'])
+            gLogger.error("LcgFileCatalogClient.addFile: Failed to remove file after failure.", res['Message'])
         else:
           #Finally, register the pfn replica
           res = self.__addReplica(guid,pfn,se,master)
@@ -554,7 +554,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
             failed[lfn] = res['Message']
             res = self.__unlinkPath(lfn)
             if not res['OK']:
-              gLogger.error("LcgFileCatalogClient.addFile: Failed to remove file after failure." % res['Message'])
+              gLogger.error("LcgFileCatalogClient.addFile: Failed to remove file after failure.", res['Message'])
           else:
             self.__endTransaction()
             successful[lfn] = True
@@ -1092,7 +1092,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       # Remove the file we just attempted to add
       res = self.__unlinkPath(lfn)
       if not res['OK']:
-        gLogger.error("LcgFileCatalogClient.__addFile: Failed to remove file after failure." % res['Message'])
+        gLogger.error("LcgFileCatalogClient.__addFile: Failed to remove file after failure.", res['Message'])
       return S_ERROR("LcgFileCatalogClient__addFile: Failed to create GUID: %s" % errStr)
     #Set the checksum and size of the file
     if not checksum:
