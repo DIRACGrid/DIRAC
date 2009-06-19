@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.18 2009/06/17 22:40:31 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.19 2009/06/19 14:31:57 acsmith Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -13,7 +13,7 @@
     The Pins table keeps the pinning request ID along with when it was issued and for how long for each of the replicas.
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.18 2009/06/17 22:40:31 acsmith Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.19 2009/06/19 14:31:57 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import intListToString,stringListToString
@@ -26,7 +26,7 @@ class StagerDB(DB):
 
   def __init__(self, systemInstance='Default', maxQueueSize=10 ):
     DB.__init__(self,'StagerDB','Stager/StagerDB',maxQueueSize)
-    self.getIdLock = threading.Lock()
+    self.lock = threading.Lock()
 
   ####################################################################
   #
@@ -55,19 +55,20 @@ class StagerDB(DB):
         if not res['OK']:
           gLogger.warn("Perform roll back")
         else:
-          existingReplicas[lfn] = res['Value']
+          existingReplicas[lfn] = (res['Value'],'New')
     # Insert all the replicas into the TaskReplicas table
     res = self._insertTaskReplicaInformation(taskID,existingReplicas.values())
     if not res['OK']:
-      gLogger.warn("Perform roll back")
+      gLogger.error("Perform roll back")
+      return res
     return S_OK(taskID)
 
   def _createTask(self,source,callbackMethod,sourceTaskID):
     """ Enter the task details into the Tasks table """
-    self.getIdLock.acquire()
+    self.lock.acquire()
     req = "INSERT INTO Tasks (Source,SubmitTime,CallBackMethod,SourceTaskID) VALUES ('%s',UTC_TIMESTAMP(),'%s','%s');" % (source,callbackMethod,sourceTaskID)
     res = self._update(req)
-    self.getIdLock.release() 
+    self.lock.release() 
     if not res['OK']:
       gLogger.error("StagerDB._createTask: Failed to create task.", res['Message'])
       return res
@@ -77,14 +78,14 @@ class StagerDB(DB):
 
   def _getExistingReplicas(self,storageElement,lfns):
     """ Obtains the ReplicasIDs for the replicas already entered in the Replicas table """
-    req = "SELECT ReplicaID,LFN FROM Replicas WHERE StorageElement = '%s' AND LFN IN (%s);" % (storageElement,stringListToString(lfns))
+    req = "SELECT ReplicaID,LFN,Status FROM Replicas WHERE StorageElement = '%s' AND LFN IN (%s);" % (storageElement,stringListToString(lfns))
     res = self._query(req)
     if not res['OK']:
       gLogger.error('StagerDB._getExistingReplicas: Failed to get existing replicas.', res['Message'])
       return res
     existingReplicas = {}
-    for replicaID,lfn in res['Value']:
-      existingReplicas[lfn] = replicaID
+    for replicaID,lfn,status in res['Value']:
+      existingReplicas[lfn] = (replicaID,status)
     return S_OK(existingReplicas)
 
   def _insertReplicaInformation(self,lfn,storageElement):
@@ -100,7 +101,7 @@ class StagerDB(DB):
   def _insertTaskReplicaInformation(self,taskID,replicaIDs):
     """ Enter the replicas into TaskReplicas table """
     req = "INSERT INTO TaskReplicas (TaskID,ReplicaID) VALUES "
-    for replicaID in replicaIDs:
+    for replicaID,status in replicaIDs:
       replicaString = "(%s,%s)," % (taskID,replicaID)
       req = "%s %s" % (req,replicaString)
     req = req.rstrip(',')
@@ -112,22 +113,140 @@ class StagerDB(DB):
     return S_OK()
 
   ####################################################################
-  #
-  # This code manages the state transition of the Replicas from New to Waiting.
-  #
 
-  def getFilesWithStatus(self,status):
-    """ This method retrieves the FileID and LFN from the Files table with the supplied Status.
-    """
-    req = "SELECT t.TaskID,f.FileID,f.LFN,f.StorageElement,f.FileSize,f.PFN FROM Files as f, Tasks as t WHERE f.Status = '%s' and f.FileID=t.FileID;" % (status)
+  def getReplicasWithStatus(self,status):
+    """ This method retrieves the ReplicaID and LFN from the Replicas table with the supplied Status. """
+    req = "SELECT ReplicaID,LFN,StorageElement,FileSize,PFN from Replicas WHERE Status = '%s';" % status
     res = self._query(req)
     if not res['OK']:
-      gLogger.error('StagerDB.getFilesWithStatus: Failed to get files for %s status' % status,res['Message'])
+      gLogger.error('StagerDB.getReplicasWithStatus: Failed to get replicas for %s status' % status,res['Message'])
       return res
-    files = {}
-    for taskID,fileID,lfn,storageElement,fileSize,pfn in res['Value']:
-      files[fileID] = (lfn,storageElement,fileSize,pfn)
-    return S_OK(files)
+    replicas = {}
+    for replicaID,lfn,storageElement,fileSize,pfn in res['Value']:
+      replicas[replicaID] = (lfn,storageElement,fileSize,pfn)
+    return S_OK(replicas)
+ 
+  ####################################################################
+  # 
+  # The state transition of the Replicas from *->Failed
+  #   
+
+  def updateReplicaFailure(self,terminalReplicaIDs):
+    """ This method sets the status to Failure with the failure reason for the supplied Replicas. """
+    for replicaID,reason in terminalReplicaIDs.items():
+      req = "UPDATE Replicas SET Status = 'Failed',Reason = '%s' WHERE ReplicaID = %s;" % (reason,replicaID)
+      res = self._update(req)
+      if not res['OK']:
+        gLogger.error('StagerDB.updateReplicaFailure: Failed to update replica to failed.',res['Message'])
+    return S_OK()
+
+  ####################################################################
+  #
+  # The state transition of the Replicas from New->Waiting
+  #
+
+  def updateReplicaInformation(self,replicaTuples):
+    """ This method set the replica size information and pfn for the requested storage element.  """
+    for replicaID,pfn,size in replicaTuples:
+      req = "UPDATE Replicas SET PFN = '%s', FileSize = %s, Status = 'Waiting' WHERE ReplicaID = %s and Status != 'Cancelled';" % (pfn,size,replicaID)
+      res = self._update(req)
+      if not res['OK']:
+        gLogger.error('StagerDB.updateReplicaInformation: Failed to insert replica information.', res['Message'])
+    return S_OK()
+
+  ####################################################################
+  #
+  # The state transition of the Replicas from Waiting->StageSubmitted
+  #
+
+  def insertStageRequest(self,requestDict):
+    req = "INSERT INTO StageRequests (ReplicaID,RequestID,StageRequestSubmitTime) VALUES "
+    for requestID,replicaIDs in requestDict.items():
+      for replicaID in replicaIDs:
+        replicaString = "(%s,%s,NOW())," % (replicaID,requestID)
+        req = "%s %s" % (req,replicaString)
+    req = req.rstrip(',')
+    res = self._update(req)
+    if not res['OK']:
+      gLogger.error('StagerDB.insertStageRequest: Failed to insert to StageRequests table.',res['Message'])
+      return res
+    gLogger.info("StagerDB.insertStageRequest: Successfully added %s StageRequests with RequestID %s." % (res['Value'],requestID))
+    return S_OK()
+
+  def getSubmittedStagePins(self):
+    req = "SELECT StorageElement,COUNT(*),SUM(FileSize) from Replicas WHERE Status NOT IN ('New','Waiting','Failed') GROUP BY StorageElement;"
+    res = self._query(req)
+    if not res['OK']:
+      gLogger.error('StagerDB.getSubmittedStagePins: Failed to obtain submitted requests.',res['Message'])
+      return res
+    storageRequests = {}
+    for storageElement,replicas,totalSize in res['Value']:
+      storageRequests[storageElement] = {'Replicas':int(replicas),'TotalSize':int(totalSize)}
+    return S_OK(storageRequests)
+
+  ####################################################################
+  #
+  # This code allows the monitoring of the stage tasks
+  #
+  
+  def getTaskStatus(self,taskID):
+    """ Obtain the task status from the Tasks table. """
+    res = self.getTaskInfo(taskID)
+    if not res['OK']:
+      return res
+    taskInfo = res['Value'][taskID]
+    return S_OK(taskInfo['Status'])
+
+  def getTaskInfo(self,taskID):
+    """ Obtain all the information from the Tasks table for a supplied task. """
+    req = "SELECT TaskID,Status,Source,SubmitTime,CompleteTime,CallBackMethod,SourceTaskID from Tasks WHERE TaskID = %s;" % taskID
+    res = self._query(req)
+    if not res['OK']:
+      gLogger.error('StagerDB.getTaskInfo: Failed to get task information.', res['Message'])
+      return res
+    resDict = {}
+    for taskID,status,source,submitTime,completeTime,callBackMethod,sourceTaskID in res['Value']:
+      resDict[taskID] = {'Status':status,'Source':source,'SubmitTime':submitTime,'CompleteTime':completeTime,'CallBackMethod':callBackMethod,'SourceTaskID':sourceTaskID}      
+    if not resDict:
+      gLogger.error('StagerDB.getTaskInfo: The supplied task did not exist')
+      return S_ERROR('The supplied task did not exist')
+    return S_OK(resDict)
+
+  def getTaskSummary(self,taskID):
+    """ Obtain the task summary from the database. """
+    res = self.getTaskInfo(taskID)
+    if not res['OK']:
+      return res
+    taskInfo = res['Value']
+    req = "SELECT R.LFN,R.StorageElement,R.PFN,R.FileSize,R.Status,R.Reason FROM Replicas AS R, TaskReplicas AS TR WHERE TR.TaskID = %s AND TR.ReplicaID=R.ReplicaID;" % taskID
+    res = self._query(req)
+    if not res['OK']:
+      gLogger.error('StagerDB.getTaskSummary: Failed to get Replica summary for task.',res['Message'])
+      return res
+    replicaInfo = {} 
+    for lfn,storageElement,pfn,fileSize,status,reason in res['Value']:
+      replicaInfo[lfn] = {'StorageElement':storageElement,'PFN':pfn,'FileSize':fileSize,'Status':status,'Reason':reason}
+    resDict = {'TaskInfo':taskInfo,'ReplicaInfo':replicaInfo}
+    return S_OK(resDict)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ###########################################################
+  #
+  # These are not used
+  #
 
   def getFileSRMReqInfo(self,status):
     """ This methods retrieves the FileID, StorageElement, PFN, SRMRequestID from the Files and StageRequests table for the supplied status
@@ -141,32 +260,6 @@ class StagerDB(DB):
     for fileID,storageElement,pfn,srmReqID in res['Value']:
       files[fileID] = (storageElement,pfn,srmReqID)
     return S_OK(files)
-
-  def updateFileInformation(self,fileTuples):
-    """ This method set the file size information and pfn for the requested storage element
-    """
-    for lfn,storageElement,pfn,size in fileTuples:
-      req = "UPDATE Files SET PFN = '%s', FileSize = %s, Status = 'Waiting' WHERE StorageElement = '%s' AND LFN = '%s';" % (pfn,size,storageElement,lfn)
-      res = self._update(req)
-      if not res['OK']:
-        gLogger.error('StagerDB.insertFileInformation: Failed to insert file information.', res['Message'])
-        return res
-    return S_OK()
-
-  def insertStageRequests(self,fileIDs,requestID):
-    """ This method inserts the FileIDs and SRMRequestID provided into the StageRequests table
-    """
-    successful = []
-    for fileID in fileIDs:
-      req = "INSERT INTO StageRequests (FileID,SRMRequestID,StageRequestSubmitTime) VALUES (%s,%s,NOW());" % (fileID,requestID)
-      res = self._update(req)
-      if not res['OK']:
-        gLogger.error('StagerDB.insertStageRequest: Failed to insert to StageRequests table',res['Message'])
-      else:
-        successful.append(fileID)
-    res = self.updateFilesStatus(successful,'Staged')
-    print res
-    return S_OK(successful)
 
   def insertPins(self,fileIDs,requestID,pinLifeTime):
     """ This method inserts the FileIDs, SRMRequestID, PinCreationTime and PinExpiryTime into the Pins table
