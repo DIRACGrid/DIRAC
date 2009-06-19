@@ -1,6 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.sql,v 1.5 2009/06/17 22:33:52 acsmith Exp $
-__RCSID__ = "$Id: StagerDB.sql,v 1.5 2009/06/17 22:33:52 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.sql,v 1.6 2009/06/19 14:47:46 acsmith Exp $
 ########################################################################
    
 -------------------------------------------------------------
@@ -39,20 +38,30 @@ CREATE TABLE Replicas(
   LFN VARCHAR(255) NOT NULL,
   PFN VARCHAR(255),
   FileSize INTEGER(32) DEFAULT 0,
+  Reason VARCHAR(255),
+  Links INTEGER DEFAULT 0,
   PRIMARY KEY (ReplicaID,LFN,StorageElement),
   INDEX(ReplicaID,Status,StorageElement)
 )ENGINE=INNODB;
+delimiter //
+CREATE TRIGGER replicasAfterUpdate AFTER UPDATE ON Replicas
+FOR EACH ROW
+BEGIN
+  IF NEW.Status = 'Failed' THEN
+    UPDATE Tasks SET Status='Failed' WHERE TaskID IN (SELECT TaskID from TaskReplicas WHERE ReplicaID=NEW.ReplicaID);
+  END IF;
+END;//
+delimiter ;
 
 DROP TABLE IF EXISTS TaskReplicas;
 CREATE TABLE TaskReplicas(
   TaskID INTEGER(8) NOT NULL REFERENCES Tasks(TaskID),
   ReplicaID INTEGER(8) NOT NULL REFERENCES Replicas(ReplicaID),
-  Status VARCHAR(32) DEFAULT 'New' REFERENCES Replicas(Status),
   PRIMARY KEY (TaskID,ReplicaID),
-  INDEX(TaskID,ReplicaID),
-  FOREIGN KEY (TaskID) REFERENCES Tasks(TaskID),
-  FOREIGN KEY (ReplicaID,Status) REFERENCES Replicas(ReplicaID,Status) ON UPDATE CASCADE
+  INDEX(TaskID,ReplicaID)
 )ENGINE=INNODB;
+CREATE TRIGGER taskreplicasAfterInsert AFTER INSERT ON TaskReplicas FOR EACH ROW UPDATE Replicas SET Replicas.Links=Replicas.Links+1 WHERE Replicas.ReplicaID=NEW.ReplicaID;
+CREATE TRIGGER taskreplicasAfterDelete AFTER DELETE ON TaskReplicas FOR EACH ROW UPDATE Replicas SET Replicas.Links=Replicas.Links-1 WHERE Replicas.ReplicaID=OLD.ReplicaID;
 
 DROP TABLE IF EXISTS StageRequests;
 CREATE TABLE StageRequests(
