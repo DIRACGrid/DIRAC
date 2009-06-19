@@ -55,6 +55,19 @@ class FileCatalog:
     else:
       raise AttributeError
 
+  def __checkArgumentFormat(self,path):   
+    if type(path) in types.StringTypes:
+      urls = {path:False}
+    elif type(path) == types.ListType:
+      urls = {}
+      for url in path:
+        urls[url] = False
+    elif type(path) == types.DictType:
+     urls = path
+    else:
+      return S_ERROR("FileCatalog.__checkArgumentFormat: Supplied path is not of the correct format.")
+    return S_OK(urls)   
+
   def w_execute(self, *parms, **kws):
     """ Write method executor.
     """
@@ -62,6 +75,10 @@ class FileCatalog:
     failed = {}
     failedCatalogs = []
     fileInfo = parms[0]
+    res = self.__checkArgumentFormat(fileInfo)
+    if not res['OK']:
+      return res
+    fileInfo = res['Value']
     allLfns = fileInfo.keys()
     for catalogName,oCatalog,master in self.writeCatalogs:
       method = getattr(oCatalog,self.call)
