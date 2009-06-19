@@ -1,26 +1,18 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/RequestPreparation.py,v 1.3 2009/06/19 10:35:28 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/RequestPreparation.py,v 1.4 2009/06/19 14:41:10 acsmith Exp $
 
-"""  TransferAgent takes transfer requests from the RequestDB and replicates them
-"""
+__RCSID__ = "$Id: RequestPreparation.py,v 1.4 2009/06/19 14:41:10 acsmith Exp $"
 
-__RCSID__ = "$Id: RequestPreparation.py,v 1.3 2009/06/19 10:35:28 acsmith Exp $"
+from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
-
+from DIRAC.Core.Base.Agent import Agent
 from DIRAC.Core.DISET.RPCClient import RPCClient
-import os,sys,re
+from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
+from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
  
-from DIRAC import gLogger,S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient import DataIntegrityClient
 
-from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
-from DIRAC.Core.Base.Agent import Agent
-from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.Core.DISET.RPCClient import RPCClient
-
-import time,os
+import time,os,sys,re
 from types import *
 
 AGENT_NAME = 'Stager/RequestPreparation'
@@ -55,7 +47,7 @@ class RequestPreparation(Agent):
       return res
     replicas = res['Value']['Replicas']
     replicaIDs = res['Value']['ReplicaIDs']
-    gLogger.info("RequestPreparation.prepareNewReplicas: Obtained %s New replicas for preparation." % len(replicas))
+    gLogger.info("RequestPreparation.prepareNewReplicas: Obtained %s New replicas for preparation." % len(replicaIDs))
 
     # Check that the files exist in the FileCatalog
     res = self.__getExistingFiles(replicas.keys())
