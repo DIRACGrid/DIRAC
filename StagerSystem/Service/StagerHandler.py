@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.15 2009/02/02 17:34:06 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.16 2009/06/19 14:37:37 acsmith Exp $
 ########################################################################
 
 """
     StagerHandler is the implementation of the StagerDB in the DISET framework
 """
 
-__RCSID__ = "$Id: StagerHandler.py,v 1.15 2009/02/02 17:34:06 acsmith Exp $"
+__RCSID__ = "$Id: StagerHandler.py,v 1.16 2009/06/19 14:37:37 acsmith Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -22,6 +22,61 @@ def initializeStagerHandler(serviceInfo):
   return S_OK()
 
 class StagerHandler(RequestHandler):
+
+  ######################################################################
+  #
+  #  Monitoring methods
+  #
+  
+  types_getTaskStatus = [IntType]
+  def export_getTaskStatus(self,taskID):
+    """ Obtain the status of the stage task from the DB. """ 
+    try:
+      res = stagerDB.getTaskStatus(taskID)
+      if res['OK']:
+        gLogger.info('StagerHandler.getTaskStatus: Successfully obtained task status')
+      else:
+        gLogger.error('StagerHandler.getTaskStatus: Failed to get task status',res['Message'])
+      return res
+    except Exception,x:
+      errMsg = 'StagerHandler.getTaskStatus: Exception when getting task status'
+      gLogger.exception(errMsg,'',x)
+      return S_ERROR(errMsg)
+
+  types_getTaskInfo = [IntType]
+  def export_getTaskInfo(self,taskID):
+    """ Obtain the metadata of the stage task from the DB. """
+    try:
+      res = stagerDB.getTaskInfo(taskID)
+      if res['OK']:
+        gLogger.info('StagerHandler.getTaskInfo: Successfully obtained task metadata')
+      else:
+        gLogger.error('StagerHandler.getTaskInfo: Failed to get task metadata',res['Message'])
+      return res
+    except Exception,x:
+      errMsg = 'StagerHandler.getTaskInfo: Exception when getting task metadata'
+      gLogger.exception(errMsg,'',x)
+      return S_ERROR(errMsg)
+
+  types_getTaskSummary = [IntType]
+  def export_getTaskSummary(self,taskID):
+    """ Obtain the summary of the stage task from the DB. """
+    try:
+      res = stagerDB.getTaskSummary(taskID)
+      if res['OK']:
+        gLogger.info('StagerHandler.getTaskSummary: Successfully obtained task summary')
+      else:
+        gLogger.error('StagerHandler.getTaskSummary: Failed to get task summary',res['Message'])
+      return res
+    except Exception,x:
+      errMsg = 'StagerHandler.getTaskSummary: Exception when getting task summary'
+      gLogger.exception(errMsg,'',x)
+      return S_ERROR(errMsg)
+
+  ####################################################################
+  #
+  # setRequest is used to initially insert tasks and their associated files. Leaves files in New status.
+  # 
 
   types_setRequest = [ListType,StringType,StringType,StringType,IntType]
   def export_setRequest(self,lfns,storageElement,source,callbackMethod,taskID):
@@ -40,90 +95,110 @@ class StagerHandler(RequestHandler):
       gLogger.exception(errMsg,'',x)
       return S_ERROR(errMsg)
 
-  types_getFilesWithStatus = [StringType]
-  def export_getFilesWithStatus(self,status):
+  types_getReplicasWithStatus = [StringType]
+  def export_getReplicasWithStatus(self,status):
     """
-        This method allows to retrieve files with the supplied status
+        This method allows to retrieve replicas with the supplied status
     """
     try:
-      res = stagerDB.getFilesWithStatus(status)
+      res = stagerDB.getReplicasWithStatus(status)
       if res['OK']:
-        gLogger.info('StagerHandler.getFilesWithStatus: Successfully get files with %s status' % status)
+        gLogger.info('StagerHandler.getReplicasWithStatus: Successfully got replicas with %s status' % status)
       else:
-        gLogger.error('StagerHandler.getFilesWithStatus: Failed to get files with %s status' % status,res['Message'])
+        gLogger.error('StagerHandler.getReplicasWithStatus: Failed to get replicas with %s status' % status,res['Message'])
       return res
     except Exception,x:
-      errMsg = 'StagerHandler.getFilesWithStatus: Exception when getting files with %s status' % status
+      errMsg = 'StagerHandler.getReplicasWithStatus: Exception when getting replicas with %s status' % status
       gLogger.exception(errMsg,'',x)
       return S_ERROR(errMsg)
 
-  types_getFileSRMReqInfo = [StringType]
-  def export_getFileSRMReqInfo(self,status):
+  ####################################################################
+  #
+  # The state transition of the Replicas from New->Waiting
+  #
+
+  types_updateReplicaInformation = [ListType]
+  def export_updateReplicaInformation(self,replicaTuples):
     """
-        This method retrieves files and srm request IDs with the supplied status
+        This method sets the pfn and size for the supplied replicas
     """
     try:
-      res = stagerDB.getFileSRMReqInfo(status)
+      res = stagerDB.updateReplicaInformation(replicaTuples)
       if res['OK']:
-        gLogger.info('StagerHandler.getFileSRMReqInfo: Successfully got file information for %s status.' % status)
+        gLogger.info('StagerHandler.updateReplicaInformation: Successfully updated replica information')
       else:
-        gLogger.error('StagerHandler.getFileSRMReqInfo: Failed to get file information for %s status files.' % status, res['Message'])
+        gLogger.error('StagerHandler.updateRelicaInformation: Failed to update replica information',res['Message'])
       return res
     except Exception,x:
-      errMsg = 'StagerHandler.getFileSRMReqInfo: Exception when getting file information of %s status files.' % status
+      errMsg = 'StagerHandler.updateReplicaInformation: Exception when updating replica information'
       gLogger.exception(errMsg,'',x)
       return S_ERROR(errMsg)
 
-  types_updateFilesStatus = [ListType,StringType]
-  def export_updateFilesStatus(self,fileIDs,status):
+  ####################################################################
+  #
+  # The state transition of the Replicas from Waiting->StageSubmitted
+  #
+
+  types_getSubmittedStagePins = []
+  def export_getSubmittedStagePins(self):
     """
-        This method sets the status for the supplied files
+        This method obtains the number of files and size of the requests submitted for each storage element 
     """
     try:
-      res = stagerDB.updateFilesStatus(fileIDs,status)
+      res = stagerDB.getSubmittedStagePins()
       if res['OK']:
-        gLogger.info('StagerHandler.updateFilesStatus: Successfully updated files to %s status' % status)
+        gLogger.info('StagerHandler.getSubmittedStagePins: Successfully obtained submitted request summary')
       else:
-        gLogger.error('StagerHandler.updateFilesStatus: Failed to update files to %s status' % status,res['Message'])
+        gLogger.error('StagerHandler.getSubmittedStagePins: Failed to obtain submitted request summary',res['Message'])
       return res
     except Exception,x:
-      errMsg = 'StagerHandler.updateFilesStatus: Exception when updating files to %s status' % status
+      errMsg = 'StagerHandler.getSubmittedStagePins: Exception when obtaining submitted request summary.'
       gLogger.exception(errMsg,'',x)
       return S_ERROR(errMsg)
 
-  types_updateFileInformation = [ListType]
-  def export_updateFileInformation(self,fileTuples):
+  types_insertStageRequest = [DictType]
+  def export_insertStageRequest(self,requestReplicas):
     """
-        This method sets the pfn and size for the supplied files
+        This method inserts the stage request ID assocaited to supplied replicaIDs
     """
     try:
-      res = stagerDB.updateFileInformation(fileTuples)
+      res = stagerDB.insertStageRequest(requestReplicas)
       if res['OK']:
-        gLogger.info('StagerHandler.updateFileInformation: Successfully updated file information')
+        gLogger.info('StagerHandler.insertStageRequest: Successfully inserted stage request information')
       else:
-        gLogger.error('StagerHandler.updateFileInformation: Failed to update file information',res['Message'])
+        gLogger.error('StagerHandler.insertStageRequest: Failed to insert stage request information',res['Message'])
       return res
     except Exception,x:
-      errMsg = 'StagerHandler.updateFileInformation: Exception when updating file information'
+      errMsg = 'StagerHandler.insertStageRequest: Exception when inserting stage request.'
       gLogger.exception(errMsg,'',x)
       return S_ERROR(errMsg)
 
-  types_insertStageRequests = [ListType,[IntType,LongType]]
-  def export_insertStageRequests(self,fileIDs,requestID):
+  ####################################################################
+  #
+  # The state transition of the Replicas from *->Failed
+  #
+
+  types_updateReplicaFailure = [DictType]
+  def export_updateReplicaFailure(self,replicaFailures):
     """
-        This method inserts stage requests for the supplied files
-    """
+        This method sets the status of the replica to failed with the supplied reason
+    """ 
     try:
-      res = stagerDB.insertStageRequests(fileIDs,requestID)
+      res = stagerDB.updateReplicaFailure(replicaFailures)
       if res['OK']:
-        gLogger.info('StagerHandler.insertStageRequests: Successfully inserted stage requests')
+        gLogger.info('StagerHandler.updateReplicaFailure: Successfully updated replica failure information')
       else:
-        gLogger.error('StagerHandler.insertStageRequests: Failed to insert stage requests',res['Message'])
+        gLogger.error('StagerHandler.updateRelicaFailure: Failed to update replica failure information',res['Message'])
       return res
     except Exception,x:
-      errMsg = 'StagerHandler.insertStageRequests: Exception when inserting stage requests'
+      errMsg = 'StagerHandler.updateReplicaFailure: Exception when updating replica failure information'
       gLogger.exception(errMsg,'',x)
       return S_ERROR(errMsg)
+
+  ##################################################################
+  #
+  # Still to be tested
+  #
 
   types_insertPins = [ListType,IntType,IntType]
   def export_insertPins(self,fileIDs,requestID,pinLifeTime):
