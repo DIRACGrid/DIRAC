@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.16 2009/06/19 14:37:37 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.17 2009/06/19 21:27:27 acsmith Exp $
 ########################################################################
 
 """
     StagerHandler is the implementation of the StagerDB in the DISET framework
 """
 
-__RCSID__ = "$Id: StagerHandler.py,v 1.16 2009/06/19 14:37:37 acsmith Exp $"
+__RCSID__ = "$Id: StagerHandler.py,v 1.17 2009/06/19 21:27:27 acsmith Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -170,6 +170,46 @@ class StagerHandler(RequestHandler):
       return res
     except Exception,x:
       errMsg = 'StagerHandler.insertStageRequest: Exception when inserting stage request.'
+      gLogger.exception(errMsg,'',x)
+      return S_ERROR(errMsg)
+
+
+  ####################################################################
+  #
+  # The state transition of the Replicas from StageSubmitted->Staged
+  #
+      
+  types_getStageSubmittedReplicas = []
+  def export_getStageSubmittedReplicas(self):
+    """
+        This method obtains the replica metadata and the stage requestID for the replicas in StageSubmitted status
+    """
+    try:
+      res = stagerDB.getStageSubmittedReplicas()
+      if res['OK']:
+        gLogger.info('StagerHandler.getStageSubmittedReplicas: Successfully obtained StageSubmitted replicas')
+      else:
+        gLogger.error('StagerHandler.getStageSubmittedReplicas: Failed to obtain StageSubmitted replicas',res['Message'])
+      return res
+    except Exception,x:
+      errMsg = 'StagerHandler.getStageSubmittedReplicas: Exception when obtaining StageSubmitted replicas.'
+      gLogger.exception(errMsg,'',x)
+      return S_ERROR(errMsg)
+
+  types_setStageComplete = [ListType] 
+  def export_setStageComplete(self,replicaIDs):
+    """
+        This method updates the status of the stage request for the supplied replica IDs
+    """
+    try:
+      res = stagerDB.setStageComplete(replicaIDs)
+      if res['OK']:
+        gLogger.info('StagerHandler.setStageComplete: Successfully set StageRequest complete')
+      else:
+        gLogger.error('StagerHandler.setStageComplete: Failed to set StageRequest complete',res['Message'])
+      return res
+    except Exception,x:
+      errMsg = 'StagerHandler.setStageComplete: Exception when setting StageRequest complete.'
       gLogger.exception(errMsg,'',x)
       return S_ERROR(errMsg)
 

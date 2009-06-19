@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.19 2009/06/19 14:31:57 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.20 2009/06/19 21:28:33 acsmith Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -13,7 +13,7 @@
     The Pins table keeps the pinning request ID along with when it was issued and for how long for each of the replicas.
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.19 2009/06/19 14:31:57 acsmith Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.20 2009/06/19 21:28:33 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import intListToString,stringListToString
@@ -183,6 +183,30 @@ class StagerDB(DB):
     for storageElement,replicas,totalSize in res['Value']:
       storageRequests[storageElement] = {'Replicas':int(replicas),'TotalSize':int(totalSize)}
     return S_OK(storageRequests)
+
+  ####################################################################
+  #
+  # The state transition of the Replicas from StageSubmitted->Staged
+  #
+
+  def getStageSubmittedReplicas(self):
+    req = "SELECT R.ReplicaID,R.StorageElement,R.LFN,R.PFN,R.FileSize,SR.RequestID from Replicas as R, StageRequests as SR WHERE R.Status = 'StageSubmitted' and R.ReplicaID=SR.ReplicaID;"
+    res = self._query(req)
+    if not res['OK']:
+      gLogger.error('StagerDB.getStageSubmittedReplicas: Failed to obtain submitted requests.',res['Message'])
+      return res  
+    replicas = {}
+    for replicaID,storageElement,lfn,pfn,fileSize,requestID in res['Value']:
+      replicas[replicaID] = {'LFN':lfn,'StorageElement':storageElement,'PFN':pfn,'Size':fileSize,'RequestID':requestID}
+    return S_OK(replicas)
+
+  def setStageComplete(self,replicaIDs):
+    req = "UPDATE StageRequests SET StageStatus='Staged',StageRequestCompletedTime = NOW() WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
+    res = self._update(req)
+    if not res['OK']:
+      gLogger.error("StagerDB.setStageComplete: Failed to set StageRequest completed.", res['Message'])
+      return res
+    return res
 
   ####################################################################
   #
