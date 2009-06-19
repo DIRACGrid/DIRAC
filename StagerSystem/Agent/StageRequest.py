@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StageRequest.py,v 1.1 2009/06/19 14:29:32 acsmith Exp $
-__RCSID__ = "$Id: StageRequest.py,v 1.1 2009/06/19 14:29:32 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StageRequest.py,v 1.2 2009/06/19 20:04:53 acsmith Exp $
+__RCSID__ = "$Id: StageRequest.py,v 1.2 2009/06/19 20:04:53 acsmith Exp $"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
@@ -59,13 +59,44 @@ class StageRequest(Agent):
       return res
 
     for storageElement,seReplicaIDs in seReplicas.items():
-      terminalReplicaIDs = {}
-      stageRequestMetadata = {}
-      gLogger.info("StageRequest.submitStageRequests: Submitting %s stage requests for %s." % (len(replicaIDs),storageElement))
-      pfnRepIDs = {}
-      for replicaID in seReplicaIDs:
-        pfn = replicaIDs[replicaID]['PFN']
-        pfnRepIDs[pfn] = replicaID
+      self.__issuePrestageRequests(storageElement,seReplicaIDs,replicaIDs)
+    return S_OK()
+
+  def __issuePrestageRequests(self,storageElement,seReplicaIDs,replicaIDs):
+    terminalReplicaIDs = {}
+    stageRequestMetadata = {}
+    pfnRepIDs = {}
+    for replicaID in seReplicaIDs:
+      pfn = replicaIDs[replicaID]['PFN']
+      pfnRepIDs[pfn] = replicaID
+    # Check the integrity of the files to ensure they are available
+    gLogger.info("StageRequest.submitStageRequests: Checking the integrity of %s replicas at %s." % (len(pfnRepIDs),storageElement))
+    res = self.replicaManager.getPhysicalFileMetadata(pfnRepIDs.keys(),storageElement)
+    if not res['OK']:
+      gLogger.error("StageRequest.submitStageRequests: Completely failed to obtain metadat for replicas.",res['Message'])
+    for pfn,metadata in res['Value']['Successful'].items():
+      if metadata['Cached']:
+        gLogger.info("StageRequest.submitStageRequests: Cache hit for file.")
+      if metadata['Size'] != replicaIDs[pfnRepIDs[pfn]]['Size']:
+        gLogger.error("StageRequest.submitStageRequests: PFN StorageElement size does not match FileCatalog",pfn)
+        terminalReplicaIDs[pfnRepIDs[pfn]] = 'PFN StorageElement size does not match FileCatalog'
+        pfnRepIDs.pop(pfn) 
+      elif metadata['Lost']:
+        gLogger.error("StageRequest.submitStageRequests: PFN has been Lost by the StorageElement",pfn)
+        terminalReplicaIDs[pfnRepIDs[pfn]] = 'PFN has been Lost by the StorageElement'
+        pfnRepIDs.pop(pfn)
+      elif metadata['Unavailable']:
+        gLogger.error("StageRequest.submitStageRequests: PFN is declared Unavailable by the StorageElement",pfn)
+        terminalReplicaIDs[pfnRepIDs[pfn]] = 'PFN is declared Unavailable by the StorageElement'
+        pfnRepIDs.pop(pfn)
+    for pfn,reason in res['Value']['Failed'].items():
+      if re.search('File does not exist',reason):
+        gLogger.error("StageRequest.submitStageRequests: PFN does not exist in the StorageElement",pfn)
+        terminalReplicaIDs[pfnRepIDs[pfn]] = 'PFN does not exist in the StorageElement'
+        pfnRepIDs.pop(pfn) 
+    # Now issue the prestage requests for the remaining replicas
+    if pfnRepIDs:
+      gLogger.info("StageRequest.submitStageRequests: Submitting %s stage requests for %s." % (len(pfnRepIDs),storageElement))
       res = self.replicaManager.prestagePhysicalFile(pfnRepIDs.keys(),storageElement)
       if not res['OK']:
         gLogger.error("StageRequest.submitStageRequests: Completely failed to sumbmit stage requests for replicas.",res['Message'])
@@ -77,18 +108,17 @@ class StageRequest(Agent):
         if not stageRequestMetadata.has_key(requestID):
           stageRequestMetadata[requestID] = []
         stageRequestMetadata[requestID].append(pfnRepIDs[pfn])
-      # Update the states of the replicas in the database
-      if terminalReplicaIDs:
-        gLogger.info("StageRequest.submitStageRequests: %s replicas are terminally failed." % len(terminalReplicaIDs))
-        res = self.stagerClient.updateReplicaFailure(terminalReplicaIDs)
-        if not res['OK']:
-          gLogger.error("StageRequest.submitStageRequest: Failed to update replica failures.", res['Message'])
-      if stageRequestMetadata:
-        gLogger.info("StageRequest.submitStageRequest: %s stage request metadata to be updated." % len(stageRequestMetadata))
-        res = self.stagerClient.insertStageRequest(stageRequestMetadata)
-        if not res['OK']:
-          gLogger.error("StageRequest.submitStageRequest: Failed to insert stage request metadata.", res['Message'])
-    return S_OK()
+    # Update the states of the replicas in the database
+    if terminalReplicaIDs:
+      gLogger.info("StageRequest.submitStageRequests: %s replicas are terminally failed." % len(terminalReplicaIDs))
+      res = self.stagerClient.updateReplicaFailure(terminalReplicaIDs)
+      if not res['OK']:
+        gLogger.error("StageRequest.submitStageRequest: Failed to update replica failures.", res['Message'])
+    if stageRequestMetadata:
+      gLogger.info("StageRequest.submitStageRequest: %s stage request metadata to be updated." % len(stageRequestMetadata))
+      res = self.stagerClient.insertStageRequest(stageRequestMetadata)
+      if not res['OK']:
+        gLogger.error("StageRequest.submitStageRequest: Failed to insert stage request metadata.", res['Message'])
 
   def __getWaitingReplicas(self):
     """ This obtains the Waiting replicas from the Replicas table and for each LFN the requested storage element """
