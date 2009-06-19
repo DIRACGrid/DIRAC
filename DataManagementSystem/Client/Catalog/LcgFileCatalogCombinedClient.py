@@ -113,10 +113,9 @@ class LcgFileCatalogCombinedClient:
           else:
             result = resMeth
       except Exception,x:
-        gLogger.exception('Exception while calling LFC Master service')
+        gLogger.exception('Exception while calling LFC Master service','',x)
         result = S_ERROR('Exception while calling LFC Master service '+str(x))
       count += 1
-
     return result
 
   def r_execute(self, *parms, **kws):
