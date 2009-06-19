@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StageRequest.py,v 1.2 2009/06/19 20:04:53 acsmith Exp $
-__RCSID__ = "$Id: StageRequest.py,v 1.2 2009/06/19 20:04:53 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StageRequest.py,v 1.3 2009/06/19 20:49:52 acsmith Exp $
+__RCSID__ = "$Id: StageRequest.py,v 1.3 2009/06/19 20:49:52 acsmith Exp $"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
@@ -73,7 +73,8 @@ class StageRequest(Agent):
     gLogger.info("StageRequest.submitStageRequests: Checking the integrity of %s replicas at %s." % (len(pfnRepIDs),storageElement))
     res = self.replicaManager.getPhysicalFileMetadata(pfnRepIDs.keys(),storageElement)
     if not res['OK']:
-      gLogger.error("StageRequest.submitStageRequests: Completely failed to obtain metadat for replicas.",res['Message'])
+      gLogger.error("StageRequest.submitStageRequests: Completely failed to obtain metadata for replicas.",res['Message'])
+      return
     for pfn,metadata in res['Value']['Successful'].items():
       if metadata['Cached']:
         gLogger.info("StageRequest.submitStageRequests: Cache hit for file.")
@@ -119,6 +120,7 @@ class StageRequest(Agent):
       res = self.stagerClient.insertStageRequest(stageRequestMetadata)
       if not res['OK']:
         gLogger.error("StageRequest.submitStageRequest: Failed to insert stage request metadata.", res['Message'])
+    return
 
   def __getWaitingReplicas(self):
     """ This obtains the Waiting replicas from the Replicas table and for each LFN the requested storage element """
