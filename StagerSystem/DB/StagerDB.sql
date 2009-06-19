@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.sql,v 1.6 2009/06/19 14:47:46 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.sql,v 1.7 2009/06/19 21:29:50 acsmith Exp $
 ########################################################################
    
 -------------------------------------------------------------
@@ -69,6 +69,7 @@ CREATE TABLE StageRequests(
   StageStatus VARCHAR(32) DEFAULT 'StageSubmitted',
   RequestID INTEGER(32),
   StageRequestSubmitTime DATETIME NOT NULL,
+  StageRequestCompletedTime DATETIME,
   INDEX (StageStatus),
   FOREIGN KEY (ReplicaID) REFERENCES Replicas(ReplicaID)
 )ENGINE=INNODB;
