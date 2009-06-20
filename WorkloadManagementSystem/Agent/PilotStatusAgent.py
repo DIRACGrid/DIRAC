@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.56 2009/01/23 18:16:46 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.57 2009/06/20 07:13:25 rgracian Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.56 2009/01/23 18:16:46 atsareg Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.57 2009/06/20 07:13:25 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -74,71 +74,79 @@ class PilotStatusAgent(Agent):
     for ownerDN, ownerGroup, gridType, broker in result['Value']:
       self.log.verbose( 'Getting pilots for %s:%s @ %s %s' % ( ownerDN, ownerGroup, gridType, broker ) )
 
-      condDict = {'Status':self.queryStateList,
-                  'OwnerDN':ownerDN,
-                  'OwnerGroup':ownerGroup,
-                  'GridType':gridType,
-                  'Broker':broker}
+      condDict1 = {'Status':'Done',
+                   'StatusReason':'Report from JobAgent',
+                   'OwnerDN':ownerDN,
+                   'OwnerGroup':ownerGroup,
+                   'GridType':gridType,
+                   'Broker':broker}
+
+      condDict2 = {'Status':self.queryStateList,
+                   'OwnerDN':ownerDN,
+                   'OwnerGroup':ownerGroup,
+                   'GridType':gridType,
+                   'Broker':broker}
            
-      result = self.clearWaitingPilots(condDict)
-      if not result['OK']:
-        self.log.warn('Failed to clear Waiting Pilot Jobs')     
+      for condDict in [ condDict1, condDict2]:   
+        result = self.clearWaitingPilots(condDict)
+        if not result['OK']:
+          self.log.warn('Failed to clear Waiting Pilot Jobs')     
 
-      result = self.pilotDB.selectPilots(condDict)
-      if not result['OK']:
-        self.log.warn('Failed to get the Pilot Agents')
-        return result
-      if not result['Value']:
-        continue
-      refList = result['Value']
+        result = self.pilotDB.selectPilots(condDict)
+        if not result['OK']:
+          self.log.warn('Failed to get the Pilot Agents')
+          return result
+        if not result['Value']:
+          continue
+        refList = result['Value']
 
-      ret = gProxyManager.getPilotProxyFromVOMSGroup( ownerDN, ownerGroup )
-      if not ret['OK']:
-        self.log.error( ret['Message'] )
-        self.log.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( ownerDN, ownerGroup ) )
-        continue
-      proxy = ret['Value']
+        ret = gProxyManager.getPilotProxyFromVOMSGroup( ownerDN, ownerGroup )
+        if not ret['OK']:
+          self.log.error( ret['Message'] )
+          self.log.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( ownerDN, ownerGroup ) )
+          continue
+        proxy = ret['Value']
 
-      self.log.verbose("Getting status for %s pilots for owner %s and group %s" % ( len( refList ),
+        self.log.verbose("Getting status for %s pilots for owner %s and group %s" % ( len( refList ),
                                                                                       ownerDN, ownerGroup))
 
-      for start_index in range( 0, len( refList ), MAX_JOBS_QUERY ):
-        refsToQuery = refList[ start_index : start_index+MAX_JOBS_QUERY ]
-        self.log.verbose( 'Querying %d pilots of %s starting at %d' % ( len( refsToQuery ), len( refList ), start_index ) )
-        result = self.getPilotStatus( proxy, gridType, refsToQuery )
-        if not result['OK']:
-          if result['Message'] == 'Broker not Available': 
-            self.log.error( 'Broker %s not Available' % broker )
-            break
-          self.log.warn('Failed to get pilot status:')
-          self.log.warn('%s:%s @ %s' % ( ownerDN, ownerGroup, gridType ))
-          continue
+        for start_index in range( 0, len( refList ), MAX_JOBS_QUERY ):
+          refsToQuery = refList[ start_index : start_index+MAX_JOBS_QUERY ]
+          self.log.verbose( 'Querying %d pilots of %s starting at %d' % ( len( refsToQuery ), len( refList ), start_index ) )
+          result = self.getPilotStatus( proxy, gridType, refsToQuery )
+          if not result['OK']:
+            if result['Message'] == 'Broker not Available': 
+              self.log.error( 'Broker %s not Available' % broker )
+              break
+            self.log.warn('Failed to get pilot status:')
+            self.log.warn('%s:%s @ %s' % ( ownerDN, ownerGroup, gridType ))
+            continue
 
-        statusDict = result[ 'Value' ]
-        for pRef in statusDict:
-          pDict = statusDict[ pRef ]
-          if pDict:
-            if pDict['isParent']:
-              self.log.verbose('Clear parametric parent %s' % pRef)
-              result = self.clearParentJob(pRef,pDict,connection)
-              if not result['OK']:
-                self.log.warn(result['Message'])
+          statusDict = result[ 'Value' ]
+          for pRef in statusDict:
+            pDict = statusDict[ pRef ]
+            if pDict:
+              if pDict['isParent']:
+                self.log.verbose('Clear parametric parent %s' % pRef)
+                result = self.clearParentJob(pRef,pDict,connection)
+                if not result['OK']:
+                  self.log.warn(result['Message'])
+                else:
+                  self.log.info('Parameteric parent removed: %s' % pRef)  
+              if pDict[ 'FinalStatus' ]:
+                self.log.verbose('Marking Status for %s to %s' % (pRef,pDict['Status']) )
+                pilotsToAccount[ pRef ] = pDict
               else:
-                self.log.info('Parameteric parent removed: %s' % pRef)  
-            if pDict[ 'FinalStatus' ]:
-              self.log.verbose('Marking Status for %s to %s' % (pRef,pDict['Status']) )
-              pilotsToAccount[ pRef ] = pDict
-            else:
-              self.log.verbose('Setting Status for %s to %s' % (pRef,pDict['Status']) )
-              result = self.pilotDB.setPilotStatus( pRef,
-                                                    pDict['Status'],
-                                                    pDict['DestinationSite'],
-                                                    pDict['StatusDate'],
-                                                    conn = connection )
+                self.log.verbose('Setting Status for %s to %s' % (pRef,pDict['Status']) )
+                result = self.pilotDB.setPilotStatus( pRef,
+                                                      pDict['Status'],
+                                                      pDict['DestinationSite'],
+                                                      pDict['StatusDate'],
+                                                      conn = connection )
 
-        if len( pilotsToAccount ) > 100:
-          self.accountPilots( pilotsToAccount, connection )
-          pilotsToAccount = {}
+          if len( pilotsToAccount ) > 100:
+            self.accountPilots( pilotsToAccount, connection )
+            pilotsToAccount = {}
 
     self.accountPilots( pilotsToAccount, connection )
     # Now handle pilots not updated in the last N days (most likely the Broker is no 
