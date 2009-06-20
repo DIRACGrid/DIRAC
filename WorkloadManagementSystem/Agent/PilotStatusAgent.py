@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.57 2009/06/20 07:13:25 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotStatusAgent.py,v 1.58 2009/06/20 11:08:36 rgracian Exp $
 ########################################################################
 
 """  The Pilot Status Agent updates the status of the pilot jobs if the
      PilotAgents database.
 """
 
-__RCSID__ = "$Id: PilotStatusAgent.py,v 1.57 2009/06/20 07:13:25 rgracian Exp $"
+__RCSID__ = "$Id: PilotStatusAgent.py,v 1.58 2009/06/20 11:08:36 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent import Agent
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
@@ -23,7 +23,7 @@ from types import *
 
 AGENT_NAME = 'WorkloadManagement/PilotStatusAgent'
 MAX_JOBS_QUERY = 10
-MAX_WAITING_STATE_LENGTH = 6
+MAX_WAITING_STATE_LENGTH = 3
 
 class PilotStatusAgent(Agent):
 
@@ -178,7 +178,7 @@ class PilotStatusAgent(Agent):
     
     for pilotRef in refList:
       self.log.info('Setting Waiting pilot to Aborted: %s' % pilotRef)
-      result = self.pilotDB.setPilotStatus(pilotRef,'Aborted',statusReason='Exceeded max waiting time')
+      result = self.pilotDB.setPilotStatus(pilotRef,'Stalled',statusReason='Exceeded max waiting time')
       
     return S_OK()              
     
