@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/BookkeepingDBClient.py,v 1.18 2009/06/03 09:39:50 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/BookkeepingDBClient.py,v 1.19 2009/06/21 05:18:10 rgracian Exp $
 
 """ Client for BookkeepingDB file catalog
 """
 
-__RCSID__ = "$Id: BookkeepingDBClient.py,v 1.18 2009/06/03 09:39:50 acsmith Exp $"
+__RCSID__ = "$Id: BookkeepingDBClient.py,v 1.19 2009/06/21 05:18:10 rgracian Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -203,7 +203,7 @@ class BookkeepingDBClient(FileCatalogueBase):
     if not res['OK']:
       for lfn in lfns:
         failed[lfn] = res['Message']
-        resDict = {'Successful':{},'Failed':failed}
+      resDict = {'Successful':{},'Failed':failed}
       return S_OK(resDict)
     else:
       for lfn in lfns:
