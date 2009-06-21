@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.160 2009/06/11 13:35:00 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.161 2009/06/21 14:19:47 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.160 2009/06/11 13:35:00 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.161 2009/06/21 14:19:47 atsareg Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -884,7 +884,7 @@ class JobDB(DB):
     return result
 
 #############################################################################
-  def setJobParameter(self,jobID,key,value):
+  def setJobParameter_old(self,jobID,key,value):
     """ Set a parameter specified by name,value pair for the job JobID
     """
     ret = self._escapeString(jobID)
@@ -906,11 +906,33 @@ class JobDB(DB):
       result = S_ERROR('JobDB.setJobParameter: operation failed.')
 
     return result
+    
+#############################################################################
+  def setJobParameter(self,jobID,key,value):
+    """ Set a parameter specified by name,value pair for the job JobID
+    """
+
+    ret = self._escapeString(key)
+    if not ret['OK']:
+      return ret
+    e_key = ret['Value']
+    ret = self._escapeString(value)
+    if not ret['OK']:
+      return ret
+    e_value = ret['Value']
+
+    cmd = 'REPLACE JobParameters (JobID,Name,Value) VALUES (%d,%s,%s)' % (int(jobID),e_key,e_value)
+    result = self._update( cmd )
+    if not result['OK']:
+      result = S_ERROR('JobDB.setJobParameter: operation failed.')
+
+    return result    
 
 #############################################################################
-  def setJobParameters(self,jobID,parameters):
+  def setJobParameters_old(self,jobID,parameters):
     """ Set parameters specified by a list of name/value pairs for the job JobID
-    """
+    """ 
+
     ret = self._escapeString(jobID)
     if not ret['OK']:
       return ret
@@ -944,6 +966,34 @@ class JobDB(DB):
       return S_ERROR('JobDB.setJobParameters: operation failed.')
 
     return result
+    
+#############################################################################
+  def setJobParameters(self,jobID,parameters):
+    """ Set parameters specified by a list of name/value pairs for the job JobID
+    """ 
+
+    if not parameters:
+      return S_OK()
+
+    deleteCondList = []
+    insertValueList = []
+    for name,value in parameters:
+      ret = self._escapeString(name)
+      if not ret['OK']:
+        return ret
+      e_name = ret['Value']
+      ret = self._escapeString(value)
+      if not ret['OK']:
+        return ret
+      e_value = ret['Value']
+      insertValueList.append( '(%s,%s,%s)' % (jobID, e_name, e_value))
+
+    cmd = 'REPLACE JobParameters (JobID,Name,Value) VALUES %s' % ', '.join(insertValueList)
+    result = self._update( cmd )
+    if not result['OK']:
+      return S_ERROR('JobDB.setJobParameters: operation failed.')
+
+    return result    
 
  #############################################################################
   def setJobOptParameter(self,jobID,name,value):
