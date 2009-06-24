@@ -409,7 +409,7 @@ class SRM2Storage(StorageBase):
     listOfResults = resDict['AllResults']
     successful = {}
     for urlDict in listOfResults:
-      if urlDict.has_key('surl'):
+      if urlDict.has_key('surl') and urlDict['surl']:
         pathSURL = self.getUrl(urlDict['surl'])['Value']
         if urlDict['status'] == 0:
           statDict = self.__parse_file_metadata(urlDict)
@@ -428,6 +428,10 @@ class SRM2Storage(StorageBase):
           errMessage = urlDict['ErrorMessage']
           gLogger.error(errStr,"%s: %s" % (pathSURL,errMessage))
           failed[pathSURL] = "%s %s" % (errStr,errMessage)
+      else:
+        errStr = "SRM2Storage.getFileMetadata: Returned element does not contain surl."
+        gLogger.fatal(errStr,self.name)
+        return S_ERROR(errStr)
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -445,7 +449,7 @@ class SRM2Storage(StorageBase):
     listOfResults = resDict['AllResults']
     successful = {}
     for urlDict in listOfResults:
-      if urlDict.has_key('surl'):
+      if urlDict.has_key('surl') and urlDict['surl']:
         pathSURL = self.getUrl(urlDict['surl'])['Value']
         if urlDict['status'] == 0:
           statDict = self.__parse_file_metadata(urlDict)
@@ -463,6 +467,10 @@ class SRM2Storage(StorageBase):
           errMessage = urlDict['ErrorMessage']
           gLogger.error(errStr,"%s: %s" % (pathSURL,errMessage))
           failed[pathSURL] = "%s %s" % (errStr,errMessage)
+      else:
+        errStr = "SRM2Storage.isFile: Returned element does not contain surl."
+        gLogger.fatal(errStr,self.name)
+        return S_ERROR(errStr)
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -542,7 +550,7 @@ class SRM2Storage(StorageBase):
     listOfResults = resDict['AllResults']
     successful = {}
     for urlDict in listOfResults:
-      if urlDict.has_key('surl'):
+      if urlDict.has_key('surl') and urlDict['surl']:
         pathSURL = self.getUrl(urlDict['surl'])['Value']
         if urlDict['status'] == 0:
           gLogger.debug("SRM2Storage.exists: Path exists: %s" % pathSURL)
@@ -555,6 +563,10 @@ class SRM2Storage(StorageBase):
           errMessage = urlDict['ErrorMessage']
           gLogger.error(errStr,"%s: %s" % (pathSURL,errMessage))
           failed[pathSURL] = "%s %s" % (errStr,errMessage)
+      else:
+        errStr = "SRM2Storage.exists: Returned element does not contain surl."
+        gLogger.fatal(errStr,self.name)
+        return S_ERROR(errStr)
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -572,7 +584,7 @@ class SRM2Storage(StorageBase):
     listOfResults = resDict['AllResults']
     successful = {}
     for urlDict in listOfResults:
-      if urlDict.has_key('surl'):
+      if urlDict.has_key('surl') and urlDict['surl']:
         pathSURL = self.getUrl(urlDict['surl'])['Value']
         if urlDict['status'] == 0:
           statDict = self.__parse_file_metadata(urlDict)
@@ -591,6 +603,10 @@ class SRM2Storage(StorageBase):
           errMessage = urlDict['ErrorMessage']
           gLogger.error(errStr,"%s: %s" % (pathSURL,errMessage))
           failed[pathSURL] = "%s %s" % (errStr,errMessage)
+      else:
+        errStr = "SRM2Storage.getFileSize: Returned element does not contain surl."
+        gLogger.fatal(errStr,self.name)
+        return S_ERROR(errStr)
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -777,7 +793,7 @@ class SRM2Storage(StorageBase):
     listOfResults = resDict['AllResults']
     successful = {}
     for urlDict in listOfResults:
-      if urlDict.has_key('surl'):
+      if urlDict.has_key('surl') and urlDict['surl']:
         dirSURL = self.getUrl(urlDict['surl'])['Value']
         if urlDict['status'] == 0:
           statDict = self.__parse_file_metadata(urlDict)
@@ -794,6 +810,10 @@ class SRM2Storage(StorageBase):
           errMessage = urlDict['ErrorMessage']
           gLogger.error(errStr,"%s: %s" % (dirSURL,errMessage))
           failed[dirSURL] = "%s %s" % (errStr,errMessage)
+      else:
+        errStr = "SRM2Storage.isDirectory: Returned element does not contain surl."
+        gLogger.fatal(errStr,self.name)
+        return S_ERROR(errStr)
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -811,7 +831,7 @@ class SRM2Storage(StorageBase):
     listOfResults = resDict['AllResults']
     successful = {}
     for urlDict in listOfResults:
-      if urlDict.has_key('surl'):
+      if urlDict.has_key('surl') and urlDict['surl']:
         pathSURL = self.getUrl(urlDict['surl'])['Value']
         if urlDict['status'] == 0:
           statDict = self.__parse_file_metadata(urlDict)
@@ -830,6 +850,10 @@ class SRM2Storage(StorageBase):
           errMessage = urlDict['ErrorMessage']
           gLogger.error(errStr,"%s: %s" % (pathSURL,errMessage))
           failed[pathSURL] = "%s %s" % (errStr,errMessage)
+      else:
+        errStr = "SRM2Storage.getDirectoryMetadata: Returned element does not contain surl."
+        gLogger.fatal(errStr,self.name)
+        return S_ERROR(errStr)
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -888,7 +912,7 @@ class SRM2Storage(StorageBase):
     listOfResults = resDict['AllResults']
     successful = {}
     for urlDict in listOfResults:
-      if urlDict.has_key('surl'):
+      if urlDict.has_key('surl') and urlDict['surl']:
         pathSURL = self.getUrl(urlDict['surl'])['Value']
         if urlDict['status'] == 0:
           successful[pathSURL] = {}
@@ -913,7 +937,10 @@ class SRM2Storage(StorageBase):
           errMessage = urlDict['ErrorMessage']
           gLogger.error(errStr,"%s: %s" % (pathSURL,errMessage))
           failed[pathSURL] = "%s %s" % (errStr,errMessage)
-
+      else:
+        errStr = "SRM2Storage.listDirectory: Returned element does not contain surl."
+        gLogger.fatal(errStr,self.name)
+        return S_ERROR(errStr)
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
