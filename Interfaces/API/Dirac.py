@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.84 2009/06/15 17:54:27 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.85 2009/06/24 09:23:20 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.84 2009/06/15 17:54:27 acasajus Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.85 2009/06/24 09:23:20 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob
 import pprint
@@ -1449,6 +1449,7 @@ class Dirac:
     getFile = self.getFile(oversizedSandbox)
     if not getFile['OK']:
       self.log.warn('Failed to download %s with error:%s' %(oversizedSandbox,getFile['Message']))
+      os.chdir(start)
       return getFile
 
     fileName = os.path.basename( oversizedSandbox )
@@ -1460,6 +1461,7 @@ class Dirac:
         for member in tarFile.getmembers():
           tarFile.extract( member, dirPath )
     except Exception,x :
+      os.chdir(start) 
       result = S_ERROR( str(x) )
 
     if os.path.exists(fileName):
