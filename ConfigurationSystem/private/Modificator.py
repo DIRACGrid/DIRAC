@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.13 2009/02/13 12:01:35 acasajus Exp $
-__RCSID__ = "$Id: Modificator.py,v 1.13 2009/02/13 12:01:35 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.14 2009/06/25 12:54:16 acasajus Exp $
+__RCSID__ = "$Id: Modificator.py,v 1.14 2009/06/25 12:54:16 acasajus Exp $"
 
 import zlib
 import difflib
 from DIRAC.Core.Utilities import List
-from DIRAC.ConfigurationSystem.Client.CFG import CFG
+from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
 class Modificator:

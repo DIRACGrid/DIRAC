@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.20 2009/02/13 12:01:35 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.20 2009/02/13 12:01:35 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.21 2009/06/25 12:54:16 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.21 2009/06/25 12:54:16 acasajus Exp $"
 
 import os.path
 import zlib
@@ -9,7 +9,7 @@ import time
 import DIRAC
 from DIRAC.Core.Utilities import List, Time
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.CFG import CFG
+from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 
 class ConfigurationData:

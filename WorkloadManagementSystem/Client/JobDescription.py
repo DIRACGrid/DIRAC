@@ -2,7 +2,7 @@
 import types
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getAgentSection
-from DIRAC.ConfigurationSystem.Client.CFG import CFG
+from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.JDL import loadJDLAsCFG, dumpCFGAsJDL
 
