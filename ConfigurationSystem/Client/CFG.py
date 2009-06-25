@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.11 2009/04/23 07:29:27 rgracian Exp $
-__RCSID__ = "$Id: CFG.py,v 1.11 2009/04/23 07:29:27 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.12 2009/06/25 12:42:51 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.12 2009/06/25 12:42:51 acasajus Exp $"
 
 import types
 import copy
@@ -194,7 +194,16 @@ class CFG:
     @param key: Name to check
     @return: Boolean with the results
     """
-    return key in self.__dataDict and type( self.__dataDict[ key ] ) != types.StringType
+    if key.find( "/" ) != -1:
+      keyDict = self.getRecursive( key, -1 )
+      if not keyDict:
+        return False
+      section = keyDict[ 'value' ]
+      if type( section ) in ( types.StringType, types.UnicodeType ):
+        return False
+      secKey = keyDict[ 'levelsBelow' ]
+      return section.isSection( secKey )
+    return key in self.__dataDict and type( self.__dataDict[ key ] ) not in ( types.StringType, types.UnicodeType )
 
   @gCFGSynchro
   def isOption( self, key ):
@@ -205,6 +214,15 @@ class CFG:
     @param key: Name to check
     @return: Boolean with the results
     """
+    if key.find( "/" ) != -1:
+      keyDict = self.getRecursive( key, -1 )
+      if not keyDict:
+        return False
+      section = keyDict[ 'value' ]
+      if type( section ) in ( types.StringType, types.UnicodeType ):
+        return False
+      secKey = keyDict[ 'levelsBelow' ]
+      return section.isOption( secKey )
     return key in self.__dataDict and type( self.__dataDict[ key ] ) == types.StringType
 
   def listAll( self ):
@@ -252,12 +270,29 @@ class CFG:
     if len( pathList ) - levelsAbove < 0:
       return False
     if len( pathList ) - levelsAbove == 0:
-      return { 'key' : "", 'value' : self, 'comment' : "" }
+      return { 'key' : "", 'value' : self, 'comment' : "", 'levelsBelow' : "" }
+    levelsBelow = ""
     if levelsAbove > 0:
+      levelsBelow = "/".join( pathList[-levelsAbove:] )
       pathList = pathList[:-levelsAbove]
-    return self.__recurse( pathList )
+    retDict = self.__recurse( pathList )
+    if not retDict:
+      return False
+    retDict[ 'levelsBelow' ] = levelsBelow
+    return retDict
 
   def getOption( self, opName, defaultValue = None ):
+    """
+    Get option value with default applied
+
+    @type opName: string
+    @param opName: Path to the option to retrieve
+    @type defaultValue: optional (any python type)
+    @param defaultValue: Default value for the option if the option is not defined.
+                         If the option is defined, the value will be returned casted to
+                         the type of defaultValue if it is defined.
+    @return: Value of the option casted to defaultValue type, or defaultValue
+    """
     levels = List.fromChar( opName, "/" )
     dataD = self.__dataDict
     while len( levels ) > 1:
@@ -302,6 +337,25 @@ class CFG:
         return defaultType( optionValue )
       except:
         return None
+
+  def getOptionsDict( self, secPath ):
+    """
+    Get the options below a give path
+
+    @type secPath: string
+    @param secPath: Path of the section to retrieve the options from
+    @return : Dictionary containing the options in the path
+    """
+    resVal = {}
+    reqDict = self.getRecursive( secPath )
+    if not reqDict:
+      return resVal
+    keyCfg = reqDict[ 'value' ]
+    if type( keyCfg ) in ( types.StringType, types.UnicodeType ):
+      return resVal
+    for op in keyCfg.listOptions():
+      resVal[ op ] = keyCfg[ op ]
+    return resVal
 
   @gCFGSynchro
   def appendToOption( self, optionName, value ):
@@ -601,6 +655,21 @@ class CFG:
           currentlyParsedString += line[ index ]
     return self
 
+  def writeToFile( self, fileName ):
+    """
+    Write the contents of the cfg to file
+
+    @type fileName: string
+    @param fileName: Name of the file to write the cfg to
+    @return: True/False
+    """
+    try:
+      fd = file( fileName, "w" )
+      fd.write( str( self ) )
+      fd.close()
+      return True
+    except:
+      return False
 
 
 
