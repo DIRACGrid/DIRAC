@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.87 2009/06/25 22:46:32 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.88 2009/06/25 23:24:06 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.87 2009/06/25 22:46:32 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.88 2009/06/25 23:24:06 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob
 import pprint
@@ -1568,6 +1568,26 @@ class Dirac:
     return result
 
   #############################################################################
+  def monitorRepository(self):
+    """Monitor the jobs present in the repository
+       
+       Example Usage:
+       
+       >>> print dirac.monitorRepository()
+       {'OK': True, 'Value': ''}
+       
+       @return: S_OK,S_ERROR
+    """
+    if not self.jobRepo:
+      gLogger.warn("No repository is initialised")
+      return S_OK()
+    jobs = self.jobRepo.readRepository()['Value']
+    jobIDs = jobs.keys()
+    res = self.status(jobIDs)
+    if not res['OK']:
+      return res
+    return S_OK() 
+
   def status(self,jobID):
     """Monitor the status of DIRAC Jobs.
 
