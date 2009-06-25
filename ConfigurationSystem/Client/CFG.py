@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.12 2009/06/25 12:42:51 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.12 2009/06/25 12:42:51 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Attic/CFG.py,v 1.13 2009/06/25 12:45:40 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.13 2009/06/25 12:45:40 acasajus Exp $"
 
 import types
 import copy
@@ -429,6 +429,11 @@ class CFG:
     @param key: Name of the section/option to retrieve
     @return: String/CFG with the contents
     """
+    if key.find( "/" ) > -1:
+      subDict = self.getRecursive( key )
+      if not subDict:
+        return False
+      return subDict[ 'value' ]
     return self.__dataDict[ key ]
 
   def __iter__( self ):
