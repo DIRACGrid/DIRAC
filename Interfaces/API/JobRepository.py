@@ -1,6 +1,6 @@
 """ This is the Job Repository which stores and manipulates DIRAC job metadata in CFG format """
 
-__RCSID__ = "$Id: JobRepository.py,v 1.1 2009/06/25 15:37:32 acsmith Exp $"
+__RCSID__ = "$Id: JobRepository.py,v 1.2 2009/06/25 22:47:49 acsmith Exp $"
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
@@ -58,7 +58,7 @@ class JobRepository:
                   'Retrieved'   : int(retrieved),
                   'OutputData'  : outputData}    
     self._writeJob(jobID, paramDict, update)
-    return S_OK()
+    return S_OK(jobID)
 
   def updateJob(self, jobID, state=None, retrieved=None, outputData=None):
     paramDict = {}
@@ -86,6 +86,7 @@ class JobRepository:
       self.repo.createNewSection('Jobs/%s' % jobID)
     for key,value in paramDict.items():
       self.repo.setOption('Jobs/%s/%s' % (jobID,key),value)
+    self._writeRepository(self.location)
     return S_OK()
 
   def existsJob(self,jobID):
