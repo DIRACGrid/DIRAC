@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.1 2009/06/25 12:54:17 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.1 2009/06/25 12:54:17 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.2 2009/06/25 13:32:44 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.2 2009/06/25 13:32:44 acasajus Exp $"
 
 import types
 import copy
@@ -338,23 +338,27 @@ class CFG:
       except:
         return None
 
-  def getOptionsDict( self, secPath ):
+  def getAsDict( self, path = "" ):
     """
-    Get the options below a give path
+    Get the contents below a give path as a dict
 
     @type secPath: string
-    @param secPath: Path of the section to retrieve the options from
-    @return : Dictionary containing the options in the path
+    @param secPath: Path to retrieve as dict
+    @return : Dictionary containing the data
     """
     resVal = {}
-    reqDict = self.getRecursive( secPath )
-    if not reqDict:
-      return resVal
-    keyCfg = reqDict[ 'value' ]
-    if type( keyCfg ) in ( types.StringType, types.UnicodeType ):
-      return resVal
-    for op in keyCfg.listOptions():
-      resVal[ op ] = keyCfg[ op ]
+    if path:
+      reqDict = self.getRecursive( path )
+      if not reqDict:
+        return resVal
+      keyCfg = reqDict[ 'value' ]
+      if type( keyCfg ) in ( types.StringType, types.UnicodeType ):
+        return resVal
+      return keyCfg.getAsDict()
+    for op in self.listOptions():
+      resVal[ op ] = self[ op ]
+    for sec in self.listSections():
+      resVal[ sec ] = self[ sec ].getAsDict()
     return resVal
 
   @gCFGSynchro
