@@ -1,7 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.9 2009/06/25 15:12:58 acasajus Exp $
-__RCSID__ = "$Id: GatewayDispatcher.py,v 1.9 2009/06/25 15:12:58 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.10 2009/06/25 16:15:47 acasajus Exp $
+__RCSID__ = "$Id: GatewayDispatcher.py,v 1.10 2009/06/25 16:15:47 acasajus Exp $"
 
-import StringIO
+import cStringIO
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
@@ -229,7 +229,7 @@ class TransferRelay( TransferClient ):
     gLogger.error( "[%s] %s" % ( self.__currentMethod, msg ), dynMsg )
 
   def getDataFromClient( self, clientFileHelper ):
-    sIO = StringIO.StringIO()
+    sIO = cStringIO.StringIO()
     self.infoMsg( "About to get data from client" )
     result = clientFileHelper.networkToDataSink( sIO, self.__transferBytesLimit )
     if not result[ 'OK' ]:
@@ -241,13 +241,22 @@ class TransferRelay( TransferClient ):
     self.infoMsg( "Got %s bytes from client" % len( data ) )
     return S_OK( data )
 
+  def sendDataToClient( self, clientFileHelper, dataToSend ):
+    self.infoMsg( "About to get send data to client" )
+    result = clientFileHelper.BufferToNetwork( dataToSend )
+    if not result[ 'OK' ]:
+      self.errMsg( "Could not send data to client", result[ 'Message' ] )
+      return result
+    self.infoMsg( "Sent %s bytes from client" % len( dataToSend ) )
+    return S_OK()
+
   def sendDataToService( self, srvMethod, params, data ):
-    self.infoMsg( "Sending header request to %s" % self.serviceName )
+    self.infoMsg( "Sending header request to %s" % self.serviceName, str( params ) )
     result = self._sendTransferHeader( srvMethod, params )
     if not result[ 'OK' ]:
       self.errMsg( "Could not send header", result[ 'Message' ] )
       return result
-    self.infoMsg( "Starting sending data to service" )
+    self.infoMsg( "Starting to send data to service" )
     srvTransport = result[ 'Value' ]
     srvFileHelper = FileHelper( srvTransport )
     srvFileHelper.setDirection( "send" )
@@ -256,13 +265,40 @@ class TransferRelay( TransferClient ):
       self.errMsg( "Could send data to server", result[ 'Message' ] )
       srvTransport.close()
       return result
-    self.infoMsg( "Data sent to service" )
+    self.infoMsg( "Data sent to service (%s bytes)" % len( data ) )
     retVal = srvTransport.receiveData()
     srvTransport.close()
     return retVal
 
+  def getDataFromService( self, srvMethod, params ):
+    self.infoMsg( "Sending header request to %s" % self.serviceName, str( params ) )
+    result = self._sendTransferHeader( srvMethod, params )
+    if not result[ 'OK' ]:
+      self.errMsg( "Could not send header", result[ 'Message' ] )
+      return result
+    self.infoMsg( "Starting to receive data from service" )
+    srvTransport = result[ 'Value' ]
+    srvFileHelper = FileHelper( srvTransport )
+    srvFileHelper.setDirection( "receive" )
+    sIO = cStringIO.StringIO()
+    result = srvFileHelper.networkToDataSink( sIO, self.__transferBytesLimit )
+    if not result[ 'OK' ]:
+      self.errMsg( "Could receive data from server", result[ 'Message' ] )
+      srvTransport.close()
+      sIO.close()
+      return result
+    dataReceived = sIO.getvalue()
+    sIO.close()
+    self.infoMsg( "Received %s bytes from service" % len( dataReceived ) )
+    retVal = srvTransport.receiveData()
+    srvTransport.close()
+    if not retVal[ 'OK' ]:
+      return retVal
+    return S_OK( { 'data' : dataReceived, 'srvResponse' : retVal } )
+
   def forwardFromClient( self, clientFileHelper, params ):
-    fileId, token = params[1:]
+    print params
+    fileId, token = params[:2]
     self.__currentMethod = "FromClient"
     result = self.getDataFromClient( clientFileHelper )
     if not result[ 'OK' ]:
@@ -272,7 +308,7 @@ class TransferRelay( TransferClient ):
     return self.sendDataToService( "FromClient", ( fileId, token, receivedBytes ), dataReceived )
 
   def forwardBulkFromClient( self, clientFileHelper, params ):
-    fileId, token = params[1:]
+    fileId, token = params[:2]
     self.__currentMethod = "BulkFromClient"
     result = self.getDataFromClient( clientFileHelper )
     if not result[ 'OK' ]:
@@ -280,3 +316,31 @@ class TransferRelay( TransferClient ):
     dataReceived = result[ 'Value' ]
     receivedBytes = clientFileHelper.getTransferedBytes()
     return self.sendDataToService( "BulkFromClient", ( fileId, token, receivedBytes ), dataReceived )
+
+  def forwardToClient( self, clientFileHelper, params ):
+    print params
+    fileId, token = params[:2]
+    self.__currentMethod = "ToClient"
+    result = self.getDataFromService( "ToClient", ( fileId, token ) )
+    if not result[ 'OK' ]:
+      return result
+    dataReceived = result[ 'Value' ][ 'data' ]
+    srvResponse = result[ 'Value' ][ 'srvResponse' ]
+    result = self.sendDataToClient( clientFileHelper, dataReceived )
+    if not result[ 'OK' ]:
+      return result
+    return srvResponse
+
+  def forwardBulkToClient( self, clientFileHelper, params ):
+    print params
+    fileId, token = params[:2]
+    self.__currentMethod = "BulkToClient"
+    result = self.getDataFromService( "BulkToClient", ( fileId, token ) )
+    if not result[ 'OK' ]:
+      return result
+    dataReceived = result[ 'Value' ][ 'data' ]
+    srvResponse = result[ 'Value' ][ 'srvResponse' ]
+    result = self.sendDataToClient( clientFileHelper, dataReceived )
+    if not result[ 'OK' ]:
+      return result
+    return srvResponse
