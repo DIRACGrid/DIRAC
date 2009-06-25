@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.22 2009/05/03 20:32:49 rgracian Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.22 2009/05/03 20:32:49 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.23 2009/06/25 15:12:15 acasajus Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.23 2009/06/25 15:12:15 acasajus Exp $"
 
 import os
 import md5
@@ -15,7 +15,8 @@ gLogger = gLogger.getSubLogger( "FileTransmissionHelper" )
 
 class FileHelper:
 
-  __validDirections = ( "toClient", "fromClient" )
+  __validDirections = ( "toClient", "fromClient", 'receive', 'send' )
+  __directionsMapping = { 'toClient' : 'send', 'fromClient' : 'receive' }
 
   def __init__( self, oTransport = None ):
     self.oTransport = oTransport
@@ -32,7 +33,10 @@ class FileHelper:
 
   def setDirection( self, direction ):
     if direction in FileHelper.__validDirections:
-      self.direction = direction
+      if direction in FileHelper.__directionsMapping:
+        self.direction = FileHelper.__directionsMapping[ direction ]
+      else:
+        self.direction = direction
 
   def getHash( self ):
     return self.__oMD5.hexdigest()
@@ -83,7 +87,7 @@ class FileHelper:
 
   def markAsTransferred( self ):
     if not self.bFinishedTransmission:
-      if self.direction == "fromClient":
+      if self.direction == "receive":
         self.oTransport.receiveData()
         abortTrans = S_OK()
         abortTrans[ 'AbortTransfer' ] = True
@@ -203,6 +207,13 @@ class FileHelper:
       return S_ERROR( "Error while sending file: %s" % str( e ) )
     self.__fileBytes = sentBytes
     return S_OK()
+
+  def BufferToNetwork( self, stringToSend ):
+    sIO = cStringIO.StringIO( stringToSend )
+    try:
+      return self.DataSourceToNetwork( sIO )
+    finally:
+      sIO.close()
 
   def DataSourceToNetwork( self, dataSource ):
     if "read" not in dir( dataSource ):
