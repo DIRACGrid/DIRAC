@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.2 2009/06/25 13:32:44 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.2 2009/06/25 13:32:44 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.3 2009/06/25 14:59:19 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.3 2009/06/25 14:59:19 acasajus Exp $"
 
 import types
 import copy
@@ -40,7 +40,11 @@ class CFG:
     if sectionName == "":
       raise Exception( "Creating a section with empty name! You shouldn't do that!" )
     if sectionName.find( "/" ) > -1:
-      raise Exception( "Sections and options can't contain '/' character. Correct %s" % sectionName )
+      recDict = self.getRecursive( sectionName, -1 )
+      parentSection = recDict[ 'value' ]
+      if type( parentSection ) in ( types.StringType, types.UnicodeType ):
+        raise Exception( "Entry %s doesn't seem to be a section" % recDict[ 'key' ] )
+      return parentSection.createNewSection( recDict[ 'levelsBelow' ], comment, contents )
     self.__addEntry( sectionName, comment )
     if sectionName not in self.__dataDict:
       if not contents:
@@ -79,7 +83,11 @@ class CFG:
     if optionName == "":
       raise Exception( "Creating an option with empty name! You shouldn't do that!" )
     if optionName.find( "/" ) > -1:
-      raise Exception( "Sections and options can't contain '/' character. Correct %s" % optionName )
+      recDict = self.getRecursive( optionName, -1 )
+      parentSection = recDict[ 'value' ]
+      if type( parentSection ) in ( types.StringType, types.UnicodeType ):
+        raise Exception( "Entry %s doesn't seem to be a section" % recDict[ 'key' ] )
+      return parentSection.setOption( recDict[ 'levelsBelow' ], value, comment )
     self.__addEntry( optionName, comment )
     self.__dataDict[ optionName ] = str( value )
 
