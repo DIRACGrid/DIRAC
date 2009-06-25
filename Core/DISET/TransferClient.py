@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.17 2009/06/25 16:20:26 acasajus Exp $
-__RCSID__ = "$Id: TransferClient.py,v 1.17 2009/06/25 16:20:26 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.18 2009/06/25 16:20:54 acasajus Exp $
+__RCSID__ = "$Id: TransferClient.py,v 1.18 2009/06/25 16:20:54 acasajus Exp $"
 
 import tarfile
 import threading
@@ -54,7 +54,7 @@ class TransferClient( BaseClient ):
     if not retVal[ 'OK' ]:
       return retVal
     fd = retVal[ 'Value' ]
-    retVal = self.__sendTransferHeader( "FromClient", ( fileId, token, File.getSize( filename ) ) )
+    retVal = self._sendTransferHeader( "FromClient", ( fileId, token, File.getSize( filename ) ) )
     if not retVal[ 'OK' ]:
       return retVal
     transport = retVal[ 'Value' ]
@@ -84,7 +84,7 @@ class TransferClient( BaseClient ):
       return retVal
     dS = retVal[ 'Value' ]
     closeAfterUse = retVal[ 'closeAfterUse' ]
-    retVal = self.__sendTransferHeader( "ToClient", ( fileId, token ) )
+    retVal = self._sendTransferHeader( "ToClient", ( fileId, token ) )
     if not retVal[ 'OK' ]:
       return retVal
     transport = retVal[ 'Value' ]
@@ -128,7 +128,7 @@ class TransferClient( BaseClient ):
       bulkId = "%s.tar.bz2" % bulkId
     else:
       bulkId = "%s.tar" % bulkId
-    retVal = self.__sendTransferHeader( "BulkFromClient", ( bulkId, token, bulkSize ) )
+    retVal = self._sendTransferHeader( "BulkFromClient", ( bulkId, token, bulkSize ) )
     if not retVal[ 'OK' ]:
       return retVal
     transport = retVal[ 'Value' ]
@@ -160,7 +160,7 @@ class TransferClient( BaseClient ):
       bulkId = "%s.tar.bz2" % bulkId
     else:
       bulkId = "%s.tar" % bulkId
-    retVal = self.__sendTransferHeader( "BulkToClient", ( bulkId, token ) )
+    retVal = self._sendTransferHeader( "BulkToClient", ( bulkId, token ) )
     if not retVal[ 'OK' ]:
       return retVal
     transport = retVal[ 'Value' ]
@@ -188,7 +188,7 @@ class TransferClient( BaseClient ):
       bulkId = "%s.tar.bz2" % bulkId
     else:
       bulkId = "%s.tar" % bulkId
-    retVal = self.__sendTransferHeader( "ListBulk", ( bulkId, token ) )
+    retVal = self._sendTransferHeader( "ListBulk", ( bulkId, token ) )
     if not retVal[ 'OK' ]:
       return retVal
     transport = retVal[ 'Value' ]
