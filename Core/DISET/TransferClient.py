@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.16 2009/03/30 15:04:54 acasajus Exp $
-__RCSID__ = "$Id: TransferClient.py,v 1.16 2009/03/30 15:04:54 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.17 2009/06/25 16:20:26 acasajus Exp $
+__RCSID__ = "$Id: TransferClient.py,v 1.17 2009/06/25 16:20:26 acasajus Exp $"
 
 import tarfile
 import threading
@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities import File
 
 class TransferClient( BaseClient ):
 
-  def __sendTransferHeader( self, actionName, fileInfo ):
+  def _sendTransferHeader( self, actionName, fileInfo ):
     """
     Send the header of the transfer
 
