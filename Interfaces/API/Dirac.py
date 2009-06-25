@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.85 2009/06/24 09:23:20 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.86 2009/06/25 22:37:23 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,13 +23,14 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.85 2009/06/24 09:23:20 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.86 2009/06/25 22:37:23 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob
 import pprint
 import DIRAC
 
 from DIRAC.Interfaces.API.Job                            import Job
+from DIRAC.Interfaces.API.JobRepository                  import JobRepository
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
 from DIRAC.Core.Utilities.File                           import makeGuid
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -57,16 +58,19 @@ COMPONENT_NAME='DiracAPI'
 class Dirac:
 
   #############################################################################
-  def __init__(self):
+  def __init__(self, WithRepo=False, RepoLocation=''):
     """Internal initialization of the DIRAC API.
     """
-    #self.log = gLogger
     self.log = gLogger.getSubLogger(COMPONENT_NAME)
     self.site       = gConfig.getValue('/LocalSite/Site','Unknown')
     self.setup      = gConfig.getValue('/DIRAC/Setup','Unknown')
     self.section    = '/LocalSite/'
     self.cvsVersion = 'CVS version '+__RCSID__
     self.diracInfo  = 'DIRAC version %s' % DIRAC.buildVersion
+
+    self.jobRepo = False
+    if WithRepo:
+      self.jobRepo = JobRepository(RepoLocation)
 
     self.scratchDir = gConfig.getValue(self.section+'/LocalSite/ScratchDir','/tmp')
     self.outputSandboxClient = SandboxClient('Output')
@@ -168,6 +172,9 @@ class Dirac:
         result = self._sendJob(jdl)
         if not result['OK']:
           self.log.error('Job submission failure',result['Message'])
+        elif self.jobRepo:
+          jobID = result['Value']
+          result = self.jobRepo.addJob(jobID, '', 'Submitted')
 
     self.log.verbose('Cleaning up %s...' %cleanPath)
     self.__cleanTmp( cleanPath )
@@ -1604,6 +1611,9 @@ class Dirac:
     result = {}
     for job,vals in statusDict['Value'].items():
       result[job]=vals
+      if self.jobRepo:
+        if self.jobRepo.existsJob(job):
+          self.jobRepo.updateJob(job, state=vals['Status'])
     for job,vals in siteDict['Value'].items():
       result[job].update(vals)
     for job,vals in minorStatusDict['Value'].items():
