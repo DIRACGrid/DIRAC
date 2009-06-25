@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.10 2009/06/25 16:15:47 acasajus Exp $
-__RCSID__ = "$Id: GatewayDispatcher.py,v 1.10 2009/06/25 16:15:47 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.11 2009/06/25 16:22:08 acasajus Exp $
+__RCSID__ = "$Id: GatewayDispatcher.py,v 1.11 2009/06/25 16:22:08 acasajus Exp $"
 
 import cStringIO
 import DIRAC
@@ -344,3 +344,16 @@ class TransferRelay( TransferClient ):
     if not result[ 'OK' ]:
       return result
     return srvResponse
+
+  def forwardListBulk( self, clientFileHelper, params ):
+    self.__currentMethod = "ListBulk"
+    self.infoMsg( "Sending header request to %s" % self.serviceName, str( params ) )
+    result = self._sendTransferHeader( "ListBulk", params )
+    if not result[ 'OK' ]:
+      self.errMsg( "Could not send header", result[ 'Message' ] )
+      return result
+    srvTransport = result[ 'Value' ]
+    response = srvTransport.receiveData( 1048576 )
+    srvTransport.close()
+    self.infoMsg( "Sending data back to client" )
+    return response
