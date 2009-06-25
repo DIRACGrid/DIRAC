@@ -1,15 +1,18 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.8 2009/06/17 12:58:51 acasajus Exp $
-__RCSID__ = "$Id: GatewayDispatcher.py,v 1.8 2009/06/17 12:58:51 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.9 2009/06/25 15:12:58 acasajus Exp $
+__RCSID__ = "$Id: GatewayDispatcher.py,v 1.9 2009/06/25 15:12:58 acasajus Exp $"
 
+import StringIO
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.Core.DISET.private.FileHelper import FileHelper
 from DIRAC.Core.Security.X509Chain import X509Chain
 
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.DISET.private.Dispatcher import Dispatcher
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.DISET.private.BaseClient import BaseClient
 
 class GatewayDispatcher( Dispatcher ):
@@ -18,6 +21,7 @@ class GatewayDispatcher( Dispatcher ):
 
   def __init__( self, serviceCfgList ):
     Dispatcher.__init__( self, serviceCfgList )
+    self.__transferBytesLimit = 1024*1024*100 #100MiB
 
   def loadHandlers( self ):
     """
@@ -95,7 +99,7 @@ class GatewayDispatcher( Dispatcher ):
     retVal = clientTransport.receiveData()
     if not retVal[ 'OK' ]:
       gLogger.error( "Error while receiving file description", retVal[ 'Message' ] )
-      self._clientTransport.sendData(  S_ERROR( "Error while receiving file description: %s" % retVal[ 'Message' ] ) )
+      clientTransport.sendData(  S_ERROR( "Error while receiving file description: %s" % retVal[ 'Message' ] ) )
       return
     actionType = proposalTuple[1][0]
     actionMethod = proposalTuple[1][1]
@@ -103,7 +107,9 @@ class GatewayDispatcher( Dispatcher ):
     #Filetransfer not here yet :P
     if actionType == "FileTransfer":
       gLogger.warn( "Received a file transfer action from %s" % userDesc )
-      retVal =  S_ERROR( "File transfer can't be forwarded" )
+      clientTransport.sendData( S_OK( "Accepted" ) )
+      retVal =  self.__forwardFileTransferCall( targetService, clientInitArgs,
+                                                actionMethod, retVal[ 'Value' ], clientTransport )
     elif actionType == "RPC":
       gLogger.info( "Forwarding %s/%s action to %s for %s" % ( actionType, actionMethod, targetService, userDesc ) )
       retVal = self.__forwardRPCCall( targetService, clientInitArgs, actionMethod, retVal[ 'Value' ] )
@@ -168,3 +174,109 @@ class GatewayDispatcher( Dispatcher ):
     rpcClient = RPCClient( targetService, **clientInitArgs )
     methodObj = getattr( rpcClient, method )
     return methodObj( *params )
+
+  def __forwardFileTransferCall( self, targetService, clientInitArgs, method,
+                                 params, clientTransport ):
+    transferRelay = TransferRelay( targetService, **clientInitArgs )
+    transferRelay.setTransferLimit( self.__transferBytesLimit )
+    cliFH = FileHelper( clientTransport )
+    #Check file size
+    if method.find( "ToClient" ) > -1:
+      cliFH.setDirection( "send" )
+    elif method.find( "FromClient" ) > -1:
+      cliFH.setDirection( "receive" )
+      if not self.__ftCheckMaxTransferSize( params[2] ):
+        cliFH.markAsTransferred()
+        return S_ERROR( "Transfer size is too big" )
+    #Forward queries
+    try:
+      relayMethodObject = getattr( transferRelay, 'forward%s' % method )
+    except:
+      return S_ERROR( "Cannot forward unknown method %s" % method )
+    result = relayMethodObject( cliFH, params )
+    return result
+
+  def __ftCheckMaxTransferSize( self, requestedTransferSize ):
+    if not self.__transferBytesLimit:
+      return True
+    if not requestedTransferSize:
+      return True
+    if requestedTransferSize <= self.__transferBytesLimit:
+      return True
+    return False
+
+  def __ftFromClient( self, sIO, fileHelper, fileId, token ):
+    gLogger.info( "[FromClient] About to get data from client" )
+    result = fileHelper.networkToDataSink( sIO, self.__transferBytesLimit )
+    if not result[ 'OK' ]:
+      return result
+    gLogger.info( "[FromClient] Got %s bytes from client" % fileHelper.getTransferedBytes() )
+    result = transferClient.sendFile( sIO, fileId, token )
+    gLogger.info( "[FromClient] Sent data to service %s (%s)" % ( targetService, result ) )
+    return result
+
+
+class TransferRelay( TransferClient ):
+
+  def setTransferLimit( self, trLimit ):
+    self.__transferBytesLimit = trLimit
+    self.__currentMethod = ""
+
+  def infoMsg( self, msg, dynMsg = "" ):
+    gLogger.info( "[%s] %s" % ( self.__currentMethod, msg ), dynMsg )
+
+  def errMsg( self, msg, dynMsg = "" ):
+    gLogger.error( "[%s] %s" % ( self.__currentMethod, msg ), dynMsg )
+
+  def getDataFromClient( self, clientFileHelper ):
+    sIO = StringIO.StringIO()
+    self.infoMsg( "About to get data from client" )
+    result = clientFileHelper.networkToDataSink( sIO, self.__transferBytesLimit )
+    if not result[ 'OK' ]:
+      sIO.close()
+      self.errMsg( "Could not get data from client", result[ 'Message' ] )
+      return result
+    data = sIO.getvalue()
+    sIO.close()
+    self.infoMsg( "Got %s bytes from client" % len( data ) )
+    return S_OK( data )
+
+  def sendDataToService( self, srvMethod, params, data ):
+    self.infoMsg( "Sending header request to %s" % self.serviceName )
+    result = self._sendTransferHeader( srvMethod, params )
+    if not result[ 'OK' ]:
+      self.errMsg( "Could not send header", result[ 'Message' ] )
+      return result
+    self.infoMsg( "Starting sending data to service" )
+    srvTransport = result[ 'Value' ]
+    srvFileHelper = FileHelper( srvTransport )
+    srvFileHelper.setDirection( "send" )
+    result = srvFileHelper.BufferToNetwork( data )
+    if not result[ 'OK' ]:
+      self.errMsg( "Could send data to server", result[ 'Message' ] )
+      srvTransport.close()
+      return result
+    self.infoMsg( "Data sent to service" )
+    retVal = srvTransport.receiveData()
+    srvTransport.close()
+    return retVal
+
+  def forwardFromClient( self, clientFileHelper, params ):
+    fileId, token = params[1:]
+    self.__currentMethod = "FromClient"
+    result = self.getDataFromClient( clientFileHelper )
+    if not result[ 'OK' ]:
+      return result
+    dataReceived = result[ 'Value' ]
+    receivedBytes = clientFileHelper.getTransferedBytes()
+    return self.sendDataToService( "FromClient", ( fileId, token, receivedBytes ), dataReceived )
+
+  def forwardBulkFromClient( self, clientFileHelper, params ):
+    fileId, token = params[1:]
+    self.__currentMethod = "BulkFromClient"
+    result = self.getDataFromClient( clientFileHelper )
+    if not result[ 'OK' ]:
+      return result
+    dataReceived = result[ 'Value' ]
+    receivedBytes = clientFileHelper.getTransferedBytes()
+    return self.sendDataToService( "BulkFromClient", ( fileId, token, receivedBytes ), dataReceived )
