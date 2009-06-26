@@ -1,6 +1,6 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.57 2009/06/22 05:51:00 rgracian Exp $
-# File :   New TaskQueueDirector.py
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.58 2009/06/26 15:02:50 rgracian Exp $
+# File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
 
@@ -126,7 +126,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.57 2009/06/22 05:51:00 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.58 2009/06/26 15:02:50 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -145,8 +145,7 @@ import DIRAC
 
 random.seed()
 
-# FIXME: To be renamed when it replaces the current TaskQueueDirector
-class NewTaskQueueDirector(AgentModule):
+class TaskQueueDirector(AgentModule):
 
   def initialize(self):
     """ Standard constructor
