@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.4 2009/06/03 08:02:30 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.5 2009/06/26 17:17:06 rgracian Exp $
 # File :   GridPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -12,7 +12,7 @@
   underlying resources.
 
 """
-__RCSID__ = "$Id: GridPilotDirector.py,v 1.4 2009/06/03 08:02:30 rgracian Exp $"
+__RCSID__ = "$Id: GridPilotDirector.py,v 1.5 2009/06/26 17:17:06 rgracian Exp $"
 
 
 GRIDENV                = ''
@@ -111,7 +111,9 @@ class GridPilotDirector(PilotDirector):
         it has some part specific to each middleware
     """
     taskQueueID = taskQueueDict['TaskQueueID']
-    ownerDN = taskQueueDict['OwnerDN']
+    # ownerDN = taskQueueDict['OwnerDN']
+    ownerDN = proxy.getCredentials()['Value']['identity']
+    
 
     if not self.resourceBrokers:
       # Since we can exclude RBs from the list, it may become empty
