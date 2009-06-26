@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.88 2009/06/25 23:24:06 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.89 2009/06/26 08:58:38 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.88 2009/06/25 23:24:06 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.89 2009/06/26 08:58:38 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob
 import pprint
@@ -1504,6 +1504,10 @@ class Dirac:
         return self.__errorReport(str(x),'Expected integer or string for existing jobID')
 
     result = self.client.deleteJob(jobID)
+    if result['OK']:
+      if self.jobRepo:
+        for jobID in result['Value']:
+          self.jobRepo.removeJob(jobID)
     return result
 
   #############################################################################
@@ -1535,6 +1539,10 @@ class Dirac:
         return self.__errorReport(str(x),'Expected integer or string for existing jobID')
 
     result = self.client.rescheduleJob(jobID)
+    if result['OK']:
+      if self.jobRepo:
+        for jobID in result['Value']:
+          self.jobRepo.updateJob(jobID, state='Submitted')
     return result
 
   #############################################################################
@@ -1565,6 +1573,10 @@ class Dirac:
         return self.__errorReport(str(x),'Expected integer or string for existing jobID')
 
     result = self.client.killJob(jobID)
+    if result['OK']:
+      if self.jobRepo:
+        for jobID in result['Value']:
+          self.jobRepo.removeJob(jobID)
     return result
 
   #############################################################################
