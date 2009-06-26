@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.4 2009/06/26 14:15:47 acsmith Exp $
-__RCSID__ = "$Id: CFG.py,v 1.4 2009/06/26 14:15:47 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.5 2009/06/26 15:04:06 acsmith Exp $
+__RCSID__ = "$Id: CFG.py,v 1.5 2009/06/26 15:04:06 acsmith Exp $"
 
 import types
 import copy
@@ -683,7 +683,7 @@ class CFG:
     """
     try:
       directory = os.path.dirname(fileName)
-      if not os.path.exists(directory):
+      if directory and (not os.path.exists(directory)):
         os.makedirs(directory)
       fd = file( fileName, "w" )
       fd.write( str( self ) )
