@@ -1,8 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.3 2009/06/25 14:59:19 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.3 2009/06/25 14:59:19 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.4 2009/06/26 14:15:47 acsmith Exp $
+__RCSID__ = "$Id: CFG.py,v 1.4 2009/06/26 14:15:47 acsmith Exp $"
 
 import types
 import copy
+import os
 
 from DIRAC.Core.Utilities import List, ThreadSafe
 
@@ -681,6 +682,9 @@ class CFG:
     @return: True/False
     """
     try:
+      directory = os.path.dirname(fileName)
+      if not os.path.exists(directory):
+        os.makedirs(directory)
       fd = file( fileName, "w" )
       fd.write( str( self ) )
       fd.close()
