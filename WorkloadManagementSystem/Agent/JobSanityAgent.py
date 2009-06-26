@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.24 2009/06/16 14:08:32 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.25 2009/06/26 16:33:52 acasajus Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.24 2009/06/16 14:08:32 acasajus Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.25 2009/06/26 16:33:52 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -260,7 +260,7 @@ class JobSanityAgent(OptimizerModule):
     result = self.sandboxClient.assignSandboxesToJob( job, sbsToAssign, ownerName, ownerGroup, jobSetup  )
     if not result[ 'OK' ]:
       self.log.error( "Could not assign sandboxes in the SandboxStore", "assigned to job %s" % job )
-      return result
+      return S_ERROR( "Cannot assign sandbox to job" )
     assigned = result[ 'Value' ]
     if assigned != numSBsToAssign:
       self.log.error( "Could not assign all sandboxes (%s). Only assigned %s" % ( numSBsToAssign, assigned ) )
