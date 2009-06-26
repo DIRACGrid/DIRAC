@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.12 2009/02/13 11:27:45 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.12 2009/02/13 11:27:45 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.13 2009/06/26 13:48:20 rgracian Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.13 2009/06/26 13:48:20 rgracian Exp $"
 
 import sys
 import os
@@ -72,6 +72,8 @@ class ServiceInterface( threading.Thread ):
       gConfigurationData.writeRemoteConfigurationToDisk()
 
   def publishSlaveServer( self, sSlaveURL ):
+    if not self.isMaster():
+      return S_ERROR( "This is not the master service" )
     gLogger.info( "Pinging slave %s" % sSlaveURL )
     rpcClient = RPCClient( sSlaveURL, timeout = 10, useCertificates = True )
     retVal = rpcClient.ping()
