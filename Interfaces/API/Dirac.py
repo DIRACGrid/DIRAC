@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.90 2009/06/26 09:17:37 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.91 2009/06/26 14:18:19 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.90 2009/06/26 09:17:37 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.91 2009/06/26 14:18:19 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob
 import pprint
@@ -71,6 +71,9 @@ class Dirac:
     self.jobRepo = False
     if WithRepo:
       self.jobRepo = JobRepository(RepoLocation)
+      if not self.jobRepo.isOK():
+        gLogger.error("Unable to write to supplied repository location")
+        self.jobRepo = False
 
     self.scratchDir = gConfig.getValue(self.section+'/LocalSite/ScratchDir','/tmp')
     self.outputSandboxClient = SandboxClient('Output')
