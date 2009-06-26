@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.29 2009/06/13 22:23:28 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.30 2009/06/26 15:35:00 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.29 2009/06/13 22:23:28 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.30 2009/06/26 15:35:00 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -249,9 +249,9 @@ class JobMonitoringHandler( RequestHandler ):
     if startDate:
       del selectDict['LastUpdate']
     # For backward compatibility  
-    endDate = selectDict('ToDate')
+    endDate = selectDict.get('ToDate',None)
     if endDate:
-      del selectDict['FromDate']  
+      del selectDict['ToDate']  
 
     # Sorting instructions. Only one for the moment.
     if sortList:
