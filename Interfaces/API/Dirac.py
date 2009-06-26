@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.89 2009/06/26 08:58:38 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.90 2009/06/26 09:17:37 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.89 2009/06/26 08:58:38 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.90 2009/06/26 09:17:37 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob
 import pprint
@@ -1421,6 +1421,8 @@ class Dirac:
     result = self.sandboxClient.downloadSandboxForJob( jobID, 'Output', dirPath )
     if result['OK']:
       self.log.info('Files retrieved and extracted in %s' %(dirPath))
+      if self.jobRepo:
+        self.jobRepo.updateJob(jobID,retrieved=1)
       return result
     self.log.warn( result[ 'Message' ] )
 
@@ -1428,12 +1430,16 @@ class Dirac:
     result = self.outputSandboxClient.getSandbox(jobID,dirPath)
     if result['OK']:
       self.log.info('Files retrieved and extracted in %s' %(dirPath))
+      if self.jobRepo:
+        self.jobRepo.updateJob(jobID,retrieved=1)
       return result
     self.log.warn(result['Message'])
 
     result = self.outputSandboxClient.getSandbox(jobID,dirPath)
 
     if not oversized:
+      if self.jobRepo:
+        self.jobRepo.updateJob(jobID,retrieved=1)
       return result
 
     params = self.parameters(int(jobID))
@@ -1475,6 +1481,9 @@ class Dirac:
       os.unlink( fileName )
 
     os.chdir(start)
+    if result['OK']:
+      if self.jobRepo:
+        self.jobRepo.updateJob(jobID,retrieved=1)
     return result
 
   #############################################################################
@@ -1705,7 +1714,7 @@ class Dirac:
 
        Example Usage:
 
-       >>> dirac.getJobOutputData(1405)
+       >>> dirac.getJobOutputLFNs(1405)
        {'OK':True,'Value':[<LFN>]}
 
        @param jobID: JobID
@@ -1797,6 +1806,8 @@ class Dirac:
         self.log.error('Failed to download %s' %outputFile)
         return result
 
+    if self.jobRepo:
+      self.jobRepo.updateJob(jobID, outputData=1)
     return S_OK(outputData)
 
   #############################################################################
