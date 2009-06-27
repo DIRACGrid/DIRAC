@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.5 2009/06/26 17:17:06 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.6 2009/06/27 09:03:45 rgracian Exp $
 # File :   GridPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -12,7 +12,7 @@
   underlying resources.
 
 """
-__RCSID__ = "$Id: GridPilotDirector.py,v 1.5 2009/06/26 17:17:06 rgracian Exp $"
+__RCSID__ = "$Id: GridPilotDirector.py,v 1.6 2009/06/27 09:03:45 rgracian Exp $"
 
 
 GRIDENV                = ''
@@ -419,7 +419,7 @@ class GridPilotDirector(PilotDirector):
           mailAddress = self.alarmMailAddress
           # the RB was already detected failing a short time ago
           msg        = 'Submit GGUS Ticket for this error if not already opened\n' + \
-                       'It has been failing at least for %s hours\n' % ticketTime/60/60 + msg
+                       'It has been failing at least for %s hours\n' % ( ticketTime/60/60 ) + msg
         else:
           self.__ticketsWMSCache.add( rb, ticketTime )
 
