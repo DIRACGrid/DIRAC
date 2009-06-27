@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.91 2009/06/26 14:18:19 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.92 2009/06/27 09:01:52 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.91 2009/06/26 14:18:19 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.92 2009/06/27 09:01:52 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob
 import pprint
@@ -1592,6 +1592,8 @@ class Dirac:
     return result
 
   #############################################################################
+  # Repository specific methods
+  #############################################################################
   def monitorRepository(self):
     """Monitor the jobs present in the repository
        
@@ -1612,6 +1614,28 @@ class Dirac:
       return res
     return S_OK() 
 
+  def retrieveRepositorySandboxes(self,requestedStates=['Done','Failed'],destinationDirectory=''):
+    """Obtain the output sandbox for the jobs in supplied states in the repository
+    
+       Example Usage:
+      
+       >>> print dirac.retrieveRepositorySandboxes()
+       {'OK': True, 'Value': ''}
+       
+       @return: S_OK,S_ERROR
+    """
+    if not self.jobRepo:
+      gLogger.warn("No repository is initialised")
+      return S_OK()
+    jobs = self.jobRepo.readRepository()['Value']
+    toRetrieve = []
+    for jobID,jobDict in jobs.items():
+      if jobDict.has_key('State') and (jobDict['State'] in requestedStates):
+        if (jobDict.has_key('Retrieved') and (not int(jobDict['Retrieved']))) or (not jobDict.has_key('Retrieved')):
+          self.getOutputSandbox(jobID,destinationDirectory)
+    return S_OK() 
+
+  #############################################################################
   def status(self,jobID):
     """Monitor the status of DIRAC Jobs.
 
