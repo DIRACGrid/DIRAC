@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.92 2009/06/27 09:01:52 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.93 2009/06/27 10:43:02 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.92 2009/06/27 09:01:52 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.93 2009/06/27 10:43:02 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob
 import pprint
@@ -1594,7 +1594,7 @@ class Dirac:
   #############################################################################
   # Repository specific methods
   #############################################################################
-  def monitorRepository(self):
+  def monitorRepository(self,printOutput=False):
     """Monitor the jobs present in the repository
        
        Example Usage:
@@ -1612,10 +1612,21 @@ class Dirac:
     res = self.status(jobIDs)
     if not res['OK']:
       return res
+    if printOutput:
+      jobs = self.jobRepo.readRepository()['Value']
+      statusDict = {}
+      for jobDict in jobs.values():
+        state = 'Unknown'
+        if jobDict.has_key('State'):
+          state = jobDict['State']
+        if not statusDict.has_key(state):
+          statusDict[state] = 0
+        statusDict[state] += 1
+      print self.pPrint.pformat(statusDict)
     return S_OK() 
 
   def retrieveRepositorySandboxes(self,requestedStates=['Done','Failed'],destinationDirectory=''):
-    """Obtain the output sandbox for the jobs in supplied states in the repository
+    """ Obtain the output sandbox for the jobs in requested states in the repository
     
        Example Usage:
       
@@ -1633,7 +1644,28 @@ class Dirac:
       if jobDict.has_key('State') and (jobDict['State'] in requestedStates):
         if (jobDict.has_key('Retrieved') and (not int(jobDict['Retrieved']))) or (not jobDict.has_key('Retrieved')):
           self.getOutputSandbox(jobID,destinationDirectory)
-    return S_OK() 
+    return S_OK()
+
+  def retrieveRepositoryData(self,requestedStates=['Done'],destinationDirectory=''):
+    """ Obtain the output data for the jobs in requested states in the repository
+
+       Example Usage:
+
+       >>> print dirac.retrieveRepositoryData()
+       {'OK': True, 'Value': ''}
+    
+       @return: S_OK,S_ERROR
+    """
+    if not self.jobRepo:
+      gLogger.warn("No repository is initialised") 
+      return S_OK()  
+    jobs = self.jobRepo.readRepository()['Value']
+    toRetrieve = []
+    for jobID,jobDict in jobs.items():
+      if jobDict.has_key('State') and (jobDict['State'] in requestedStates):
+        if (jobDict.has_key('OutputData') and (not int(jobDict['OutputData']))) or (not jobDict.has_key('OutputData')):
+          self.getJobOutputData(jobID)
+    return S_OK()
 
   #############################################################################
   def status(self,jobID):
