@@ -1,6 +1,6 @@
 """ This is the Job Repository which stores and manipulates DIRAC job metadata in CFG format """
 
-__RCSID__ = "$Id: JobRepository.py,v 1.5 2009/06/26 14:17:06 acsmith Exp $"
+__RCSID__ = "$Id: JobRepository.py,v 1.6 2009/06/28 11:33:04 acsmith Exp $"
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
@@ -13,9 +13,9 @@ class JobRepository:
     self.location = repository
     if not self.location:
       if os.environ.has_key('HOME'):
-        self.location = '%s/.repo.cfg' % os.environ['HOME']
+        self.location = '%s/.dirac.repo.cfg' % os.environ['HOME']
       else:
-        self.location = '%s/.repo.cfg' % os.getcwd()
+        self.location = '%s/.dirac.repo.cfg' % os.getcwd()
     self.repo = CFG()
     if os.path.exists(self.location):
       self.repo = CFG()
@@ -45,6 +45,18 @@ class JobRepository:
       return S_ERROR("Failed to write repository")
     return S_OK(destination) 
 
+  def resetRepository(self,jobIDs=[]):
+    if not jobIDs:
+      jobs = self.readRepository()['Value']
+      jobID = jobs.keys()
+    paramDict = {'State'       : 'Submitted',
+                 'Retrieved'   : 0,
+                 'OutputData'  : 0}
+    for jobID in jobIDs:
+      self._writeJob(jobID, paramDict, True)
+    self._writeRepository(self.location)
+    return S_OK()
+ 
   def _writeRepository(self,path):
     if os.path.exists(path):
       gLogger.debug("Replacing %s" % path)
@@ -65,6 +77,7 @@ class JobRepository:
                   'Retrieved'   : int(retrieved),
                   'OutputData'  : outputData}    
     self._writeJob(jobID, paramDict, update)
+    self._writeRepository(self.location)
     return S_OK(jobID)
 
   def updateJob(self, jobID, state=None, retrieved=None, outputData=None):
@@ -77,6 +90,7 @@ class JobRepository:
       paramDict['OutputData'] = outputData
     paramDict['Time'] = self._getTime()
     self._writeJob(jobID, paramDict, True)
+    self._writeRepository(self.location)
     return S_OK()
 
   def _getTime( self ):
@@ -93,7 +107,6 @@ class JobRepository:
       self.repo.createNewSection('Jobs/%s' % jobID)
     for key,value in paramDict.items():
       self.repo.setOption('Jobs/%s/%s' % (jobID,key),value)
-    self._writeRepository(self.location)
     return S_OK()
 
   def removeJob(self,jobID):
