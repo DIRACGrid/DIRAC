@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxMetadataDB.py,v 1.6 2009/06/15 15:05:51 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxMetadataDB.py,v 1.7 2009/06/29 15:28:49 acasajus Exp $
 ########################################################################
 """ SandboxMetadataDB class is a front-end to the metadata for sandboxes
 """
 
-__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.6 2009/06/15 15:05:51 acasajus Exp $"
+__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.7 2009/06/29 15:28:49 acasajus Exp $"
 
 import time
 import types
@@ -242,6 +242,8 @@ class SandboxMetadataDB(DB):
         gLogger.error( "Cannot filter entities: %s" % result[ 'Message' ] )
         continue
       ids = result[ 'Value' ]
+      if not ids:
+        return S_OK( 0 )
       sqlCond = [ "EntitySetup = %s" % escapedSetup ]
       sqlCond.append( "EntityId in ( %s )" % ", ".join ( [ "'%s'" % str(eid) for eid in ids ] ) )
       sqlCmd = "DELETE FROM `sb_EntityMapping` WHERE %s" % " AND ".join( sqlCond )
