@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/PlottingHandler.py,v 1.1 2009/02/22 23:57:01 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/PlottingHandler.py,v 1.2 2009/06/29 06:45:02 rgracian Exp $
 
 """ Plotting Services generates graphs according to the client specifications
     and data
 """
 
-__RCSID__ = "$Id: PlottingHandler.py,v 1.1 2009/02/22 23:57:01 atsareg Exp $"
+__RCSID__ = "$Id: PlottingHandler.py,v 1.2 2009/06/29 06:45:02 rgracian Exp $"
 
 import types
 import os
@@ -13,7 +13,7 @@ from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities.Graphs.PieGraph import DiracPieGraph
+from DIRAC.Core.Utilities.Graphs.PieGraph import PieGraph
 from PlotCache import gPlotCache
 import tempfile
 
