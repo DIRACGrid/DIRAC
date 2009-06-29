@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.70 2009/06/08 10:24:05 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.71 2009/06/29 14:23:02 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -137,7 +137,7 @@ class ReplicaManager:
       gLogger.info("ReplicaManager.put: Put directory to storage in %s seconds." % putTime)
     return res
 
-  def getFile(self,lfn):
+  def getFile(self,lfn,destinationDir=''):
     """ Get a local copy of a LFN from Storage Elements.
 
         'lfn' is the logical file name for the desired file
@@ -192,7 +192,7 @@ class ReplicaManager:
       for diracSE,pfn in replicas:
         if not gotFile:
           storageElement = StorageElement(diracSE)
-          res = storageElement.getFile(pfn,singleFile=True)
+          res = storageElement.getFile(pfn,localPath=destinationDir,singleFile=True)
           if res['OK']:
             gotFile = True
             successful[lfn] = os.path.basename(lfn)
@@ -940,10 +940,6 @@ class ReplicaManager:
       gLogger.info(infoStr)
       return res
 
-  #def removeReplica(self,lfn,storageElementName,singleFile=False):
-  #def putReplica(self,lfn,storageElementName,singleFile=False):
-  #def replicateReplica(self,lfn,size,storageElementName,singleFile=False):
-
   #########################################################################
   #
   # File transfer methods
@@ -1138,6 +1134,10 @@ class ReplicaManager:
     gDataStoreClient.addRegister(oDataOperation)
     resDict = {'Successful': successful,'Failed':failed}
     return S_OK(resDict)
+
+  #def removeReplica(self,lfn,storageElementName,singleFile=False):
+  #def putReplica(self,lfn,storageElementName,singleFile=False):
+  #def replicateReplica(self,lfn,size,storageElementName,singleFile=False):
 
   ##########################################################################
   #
