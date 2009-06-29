@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.93 2009/06/27 10:43:02 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.94 2009/06/29 17:50:38 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,9 +23,9 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.93 2009/06/27 10:43:02 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.94 2009/06/29 17:50:38 acsmith Exp $"
 
-import re, os, sys, string, time, shutil, types, tempfile, glob
+import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
 import DIRAC
 
@@ -90,6 +90,9 @@ class Dirac:
       self.log.verbose(msg)
       self.log.debug(str(x))
       self.fileCatalog=False
+
+  def version(self):
+    return S_OK(DIRAC.buildVersion)
 
   #############################################################################
   def submit(self,job,mode='wms'):
@@ -979,7 +982,7 @@ class Dirac:
     return result
 
   #############################################################################
-  def getFile(self,lfn,printOutput=False):
+  def getFile(self,lfn,destinationDir='',printOutput=False):
     """Retrieve a single file or list of files from Grid storage to the current directory. lfn is the
        desired logical file name for the file, fullPath is the local path to the file and diracSE is the
        Storage Element name for the upload.  The fileGuid is optional, if not specified a GUID will be
@@ -1008,7 +1011,7 @@ class Dirac:
       return self.__errorReport('Expected single string or list of strings for LFN(s)')
 
     rm = ReplicaManager()
-    result = rm.getFile(lfn)
+    result = rm.getFile(lfn,destinationDir=destinationDir)
     if not result['OK']:
       return self.__errorReport('Problem during getFile call',result['Message'])
 
@@ -1416,25 +1419,28 @@ class Dirac:
         return self.__errorReport('Job output directory %s already exists' %(dirPath))
 
     try:
-      os.mkdir(dirPath)
+      if not os.path.exists(dirPath):
+        os.makedirs(dirPath)
     except Exception,x:
       return self.__errorReport(str(x),'Could not create directory in %s' %(dirPath))
 
     #New download
+    """
     result = self.sandboxClient.downloadSandboxForJob( jobID, 'Output', dirPath )
     if result['OK']:
       self.log.info('Files retrieved and extracted in %s' %(dirPath))
       if self.jobRepo:
-        self.jobRepo.updateJob(jobID,retrieved=1)
+        self.jobRepo.updateJob(jobID,{'Retrieved':1,'Sandbox':os.path.realpath(dirPath)})
       return result
     self.log.warn( result[ 'Message' ] )
+    """
 
     #Old download
     result = self.outputSandboxClient.getSandbox(jobID,dirPath)
     if result['OK']:
       self.log.info('Files retrieved and extracted in %s' %(dirPath))
       if self.jobRepo:
-        self.jobRepo.updateJob(jobID,retrieved=1)
+        self.jobRepo.updateJob(jobID,{'Retrieved':1,'Sandbox':os.path.realpath(dirPath)})
       return result
     self.log.warn(result['Message'])
 
@@ -1442,7 +1448,7 @@ class Dirac:
 
     if not oversized:
       if self.jobRepo:
-        self.jobRepo.updateJob(jobID,retrieved=1)
+        self.jobRepo.updateJob(jobID,{'Retrieved':1,'Sandbox':os.path.realpath(dirPath)})
       return result
 
     params = self.parameters(int(jobID))
@@ -1486,7 +1492,7 @@ class Dirac:
     os.chdir(start)
     if result['OK']:
       if self.jobRepo:
-        self.jobRepo.updateJob(jobID,retrieved=1)
+        self.jobRepo.updateJob(jobID,{'Retrieved':1,'Sandbox':os.path.realpath(dirPath)})
     return result
 
   #############################################################################
@@ -1554,7 +1560,7 @@ class Dirac:
     if result['OK']:
       if self.jobRepo:
         for jobID in result['Value']:
-          self.jobRepo.updateJob(jobID, state='Submitted')
+          self.jobRepo.updateJob(jobID, {'State':'Submitted'})
     return result
 
   #############################################################################
@@ -1611,7 +1617,7 @@ class Dirac:
     jobIDs = jobs.keys()
     res = self.status(jobIDs)
     if not res['OK']:
-      return res
+      return self.__errorReport(res['Message'],'Failed to get status of jobs from WMS')
     if printOutput:
       jobs = self.jobRepo.readRepository()['Value']
       statusDict = {}
@@ -1630,9 +1636,13 @@ class Dirac:
     
        Example Usage:
       
-       >>> print dirac.retrieveRepositorySandboxes()
+       >>> print dirac.retrieveRepositorySandboxes(requestedStates=['Done','Failed'],destinationDirectory='sandboxes')
        {'OK': True, 'Value': ''}
-       
+
+       @param requestedStates: List of jobs states to be considered
+       @type requestedStates: list of strings
+       @param destinationDirectory: The target directory to place sandboxes (each jobID will have a directory created beneath this)
+       @type destinationDirectory: string
        @return: S_OK,S_ERROR
     """
     if not self.jobRepo:
@@ -1640,7 +1650,8 @@ class Dirac:
       return S_OK()
     jobs = self.jobRepo.readRepository()['Value']
     toRetrieve = []
-    for jobID,jobDict in jobs.items():
+    for jobID in sortList(jobs.keys()):
+      jobDict = jobs[jobID]
       if jobDict.has_key('State') and (jobDict['State'] in requestedStates):
         if (jobDict.has_key('Retrieved') and (not int(jobDict['Retrieved']))) or (not jobDict.has_key('Retrieved')):
           self.getOutputSandbox(jobID,destinationDirectory)
@@ -1651,9 +1662,13 @@ class Dirac:
 
        Example Usage:
 
-       >>> print dirac.retrieveRepositoryData()
+       >>> print dirac.retrieveRepositoryData(requestedStates=['Done'],destinationDirectory='outputData')
        {'OK': True, 'Value': ''}
-    
+
+       @param requestedStates: List of jobs states to be considered
+       @type requestedStates: list of strings
+       @param destinationDirectory: The target directory to place sandboxes (each jobID will have a directory created beneath this)
+       @type destinationDirectory: string    
        @return: S_OK,S_ERROR
     """
     if not self.jobRepo:
@@ -1661,11 +1676,128 @@ class Dirac:
       return S_OK()  
     jobs = self.jobRepo.readRepository()['Value']
     toRetrieve = []
-    for jobID,jobDict in jobs.items():
+    for jobID in sortList(jobs.keys()):
+      jobDict = jobs[jobID]
       if jobDict.has_key('State') and (jobDict['State'] in requestedStates):
         if (jobDict.has_key('OutputData') and (not int(jobDict['OutputData']))) or (not jobDict.has_key('OutputData')):
-          self.getJobOutputData(jobID)
+          destDir = jobID
+          if destinationDirectory:
+             destDir = "%s/%s" % (destinationDirectory,jobID)
+          self.getJobOutputData(jobID,destinationDir=destDir)
     return S_OK()
+
+  def resetRepository(self,jobIDs=[]):
+    """ Reset all the status of the (optionally supplied) jobs in the repository
+
+       Example Usage:
+
+       >>> print dirac.resetRepository(jobIDs = [1111,2222,'3333'])
+       {'OK': True, 'Value': ''}
+
+       @param requestedStates: List of jobs IDs to reset. If not supplied all jobs will be reset.
+       @type resetRepository: list of (strings or ints)
+       @return: S_OK,S_ERROR
+    """
+    if not self.jobRepo:
+      gLogger.warn("No repository is initialised")
+      return S_OK()
+    self.jobRepo.resetRepository(jobIDs=jobIDs)
+    return S_OK()
+
+  # This code should go in some LHCb specific place
+  def rootMergeRepository(self,outputFileName,inputFileMask='*.root',location='Sandbox',requestedStates=['Done']):
+    """ Create a merged ROOT file using root files retrived in the sandbox or output data
+    
+       Example Usage:
+
+       >>> print dirac.rootMergeRepository('MyMergedRootFile.root',inputFileMask='DVHistos.root',location='Sandbox', requestedStates = ['Done'])
+       {'OK': True, 'Value': ''}
+     
+       @param outputFileName: The target merged file
+       @type outputFileName: string
+       @param inputFileMask: Mask to be used when locating input files. Can support wildcards like 'Tuple*.root'
+       @type inputFileMask: string
+       @param location: The input files present either in the 'Sandbox' (retrieved with getOutputSandbox) or 'OutputFiles' (getJobOutputData)
+       @type location: string
+       @param requestedStates: List of jobs states to be considered
+       @type requestedStates: list of strings
+       @return: S_OK,S_ERROR
+    """
+    if not self.jobRepo:
+      gLogger.warn("No repository is initialised") 
+      return S_OK()  
+
+    # Setup the root enviroment
+    res = self.__setupRootEnvironment()
+    if not res['OK']:
+      return self.__errorReport(res['Message'],"Failed to setup the ROOT environment")
+    rootEnv = res['Value']
+
+    # Get the input files to be used
+    jobs = self.jobRepo.readRepository()['Value']
+    inputFiles = []
+    for jobID in sortList(jobs.keys()):
+      jobDict = jobs[jobID]
+      if jobDict.has_key('State') and jobDict['State'] in requestedStates:
+        if location == 'OutputFiles':
+          jobFiles = eval(jobDict[location])
+          for jobFile in jobFiles:
+            fileName = os.path.basename(jobFile)
+            if fnmatch.fnmatch(fileName,inputFileMask):
+              if os.path.exists(jobFile):
+                inputFiles.append(jobFile)
+              else:
+                self.log.warn("Repository output file does not exist locally",jobFile)
+        elif location == 'Sandbox':
+          globStr = "%s/%s" % (jobDict[location],inputFileMask)
+          print glob.glob(globStr)
+          inputFiles.extend(glob.glob(globStr))
+        else:
+          return self.__errorReport("Location of .root should be 'Sandbox' or 'OutputFiles'.")
+
+    # Perform the merging
+    lists = breakListIntoChunks(inputFiles,20)
+    tempFiles = []
+    counter = 0
+    for list in lists:
+      counter += 1
+      tempOutputFile = "/tmp/tempRootFile-%s.root" % counter
+      res = self.__mergeRootFiles(tempOutputFile,list,rootEnv)
+      if not res['OK']:
+        return self.__errorReport(res['Message'],"Failed to perform ROOT merger")
+      tempFiles.append(tempOutputFile)
+    res = self.__mergeRootFiles(outputFileName,tempFiles,rootEnv)   
+    if not res['OK']:
+      return self.__errorReport(res['Message'],"Failed to perform final ROOT merger")
+    return S_OK()   
+
+  def __mergeRootFiles(self,outputFile,inputFiles,rootEnv):
+    cmd = "hadd %s" % outputFile
+    for file in inputFiles:
+      cmd = "%s %s" % (cmd,file)
+    res = DIRAC.shellCall(1800, cmd, env=rootEnv)
+    return res
+
+  def __setupRootEnvironment(self,daVinciVersion=''):
+    if os.environ.has_key('VO_LHCB_SW_DIR'):
+      sharedArea = os.path.join(os.environ['VO_LHCB_SW_DIR'],'lib')
+      self.log.verbose( 'Using VO_LHCB_SW_DIR at "%s"' % sharedArea )
+    elif DIRAC.gConfig.getValue('/LocalSite/SharedArea',''):
+      sharedArea = DIRAC.gConfig.getValue('/LocalSite/SharedArea')
+      self.log.verbose( 'Using SharedArea at "%s"' % sharedArea )
+    lbLogin = '%s/lib/LbLogin' %sharedArea 
+    ret = DIRAC.Source( 60,[lbLogin], dict(os.environ))
+    if not ret['OK']:
+      self.log.warn('Error during lbLogin\n%s' %ret)
+      return ret
+    setupProject = ['%s/%s' %(os.path.dirname(os.path.realpath('%s.sh' %lbLogin)),'SetupProject')]
+    setupProject.append('DaVinci ROOT')
+    ret = DIRAC.Source( 60, setupProject, ret['outputEnv'])
+    if not ret['OK']:
+      gLogger.warn('Error during SetupProject\n%s' %ret)
+      return ret
+    appEnv = ret['outputEnv']
+    return S_OK(appEnv)
 
   #############################################################################
   def status(self,jobID):
@@ -1713,7 +1845,7 @@ class Dirac:
       result[job]=vals
       if self.jobRepo:
         if self.jobRepo.existsJob(job)['Value']:
-          self.jobRepo.updateJob(job, state=vals['Status'])
+          self.jobRepo.updateJob(job, {'State':vals['Status']})
     for job,vals in siteDict['Value'].items():
       result[job].update(vals)
     for job,vals in minorStatusDict['Value'].items():
@@ -1802,7 +1934,7 @@ class Dirac:
     return S_OK(outputData)
 
   #############################################################################
-  def getJobOutputData(self,jobID,outputFiles=''):
+  def getJobOutputData(self,jobID,outputFiles='',destinationDir=''):
     """ Retrieve the output data files of a given job locally.
 
        Optionally restrict the download of output data to a given file name or
@@ -1858,15 +1990,22 @@ class Dirac:
           self.log.verbose('%s will be ignored' %outputFile)
       outputData = newOutputData
 
+    # These two lines will break backwards compatibility.
+    #if not destinationDir:
+    #  destinationDir = jobID
+    obtainedFiles = []
     for outputFile in outputData:
       self.log.info('Attempting to retrieve %s' %outputFile)
-      result = self.getFile(outputFile)
+      result = self.getFile(outputFile,destinationDir=destinationDir)
       if not result['OK']:
         self.log.error('Failed to download %s' %outputFile)
         return result
+      else:
+        localPath = "%s/%s" % (destinationDir,os.path.basename(outputFile))
+        obtainedFiles.append(os.path.realpath(localPath))
 
     if self.jobRepo:
-      self.jobRepo.updateJob(jobID, outputData=1)
+      self.jobRepo.updateJob(jobID, {'OutputData':1,'OutputFiles':obtainedFiles})
     return S_OK(outputData)
 
   #############################################################################
