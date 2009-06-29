@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.83 2009/05/25 07:17:59 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.84 2009/06/29 13:37:50 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.83 2009/05/25 07:17:59 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.84 2009/06/29 13:37:50 acasajus Exp $"
 
 import time
 import types
@@ -778,6 +778,16 @@ class TaskQueueDB(DB):
      rename to have the same method as exposed in the Matcher
     """
     return self.retrieveTaskQueuesThatMatch( tqMatchDict )
+  
+  def getNumTaskQueues( self ):
+    """
+     Get the number of task queues in the system
+    """
+    sqlCmd = "SELECT COUNT( TQId ) FROM `tq_TaskQueues`"
+    retVal = self._query( sqlCmd )
+    if not retVal[ 'OK' ]:
+      return retVal
+    return S_OK( retVal[ 'Value' ][0][0] )
 
   def retrieveTaskQueuesThatMatch( self, tqMatchDict ):
     """
