@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.94 2009/06/29 17:50:38 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.95 2009/06/29 18:57:09 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.94 2009/06/29 17:50:38 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.95 2009/06/29 18:57:09 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -93,6 +93,113 @@ class Dirac:
 
   def version(self):
     return S_OK(DIRAC.buildVersion)
+
+  #############################################################################
+  # Repository specific methods
+  #############################################################################
+  def monitorRepository(self,printOutput=False):
+    """Monitor the jobs present in the repository
+       
+       Example Usage:
+       
+       >>> print dirac.monitorRepository()
+       {'OK': True, 'Value': ''}
+       
+       @return: S_OK,S_ERROR
+    """
+    if not self.jobRepo:
+      gLogger.warn("No repository is initialised")
+      return S_OK()
+    jobs = self.jobRepo.readRepository()['Value']
+    jobIDs = jobs.keys()
+    res = self.status(jobIDs)
+    if not res['OK']:
+      return self.__errorReport(res['Message'],'Failed to get status of jobs from WMS')
+    if printOutput:
+      jobs = self.jobRepo.readRepository()['Value']
+      statusDict = {}
+      for jobDict in jobs.values():
+        state = 'Unknown'
+        if jobDict.has_key('State'):
+          state = jobDict['State']
+        if not statusDict.has_key(state):
+          statusDict[state] = 0
+        statusDict[state] += 1
+      print self.pPrint.pformat(statusDict)
+    return S_OK() 
+
+  def retrieveRepositorySandboxes(self,requestedStates=['Done','Failed'],destinationDirectory=''):
+    """ Obtain the output sandbox for the jobs in requested states in the repository
+    
+       Example Usage:
+      
+       >>> print dirac.retrieveRepositorySandboxes(requestedStates=['Done','Failed'],destinationDirectory='sandboxes')
+       {'OK': True, 'Value': ''}
+
+       @param requestedStates: List of jobs states to be considered
+       @type requestedStates: list of strings
+       @param destinationDirectory: The target directory to place sandboxes (each jobID will have a directory created beneath this)
+       @type destinationDirectory: string
+       @return: S_OK,S_ERROR
+    """
+    if not self.jobRepo:
+      gLogger.warn("No repository is initialised")
+      return S_OK()
+    jobs = self.jobRepo.readRepository()['Value']
+    toRetrieve = []
+    for jobID in sortList(jobs.keys()):
+      jobDict = jobs[jobID]
+      if jobDict.has_key('State') and (jobDict['State'] in requestedStates):
+        if (jobDict.has_key('Retrieved') and (not int(jobDict['Retrieved']))) or (not jobDict.has_key('Retrieved')):
+          self.getOutputSandbox(jobID,destinationDirectory)
+    return S_OK()
+
+  def retrieveRepositoryData(self,requestedStates=['Done'],destinationDirectory=''):
+    """ Obtain the output data for the jobs in requested states in the repository
+
+       Example Usage:
+
+       >>> print dirac.retrieveRepositoryData(requestedStates=['Done'],destinationDirectory='outputData')
+       {'OK': True, 'Value': ''}
+
+       @param requestedStates: List of jobs states to be considered
+       @type requestedStates: list of strings
+       @param destinationDirectory: The target directory to place sandboxes (each jobID will have a directory created beneath this)
+       @type destinationDirectory: string    
+       @return: S_OK,S_ERROR
+    """
+    if not self.jobRepo:
+      gLogger.warn("No repository is initialised") 
+      return S_OK()  
+    jobs = self.jobRepo.readRepository()['Value']
+    toRetrieve = []
+    for jobID in sortList(jobs.keys()):
+      jobDict = jobs[jobID]
+      if jobDict.has_key('State') and (jobDict['State'] in requestedStates):
+        if (jobDict.has_key('OutputData') and (not int(jobDict['OutputData']))) or (not jobDict.has_key('OutputData')):
+          destDir = jobID
+          if destinationDirectory:
+             destDir = "%s/%s" % (destinationDirectory,jobID)
+          self.getJobOutputData(jobID,destinationDir=destDir)
+    return S_OK()
+
+  def resetRepository(self,jobIDs=[]):
+    """ Reset all the status of the (optionally supplied) jobs in the repository
+
+       Example Usage:
+
+       >>> print dirac.resetRepository(jobIDs = [1111,2222,'3333'])
+       {'OK': True, 'Value': ''}
+
+       @param requestedStates: List of jobs IDs to reset. If not supplied all jobs will be reset.
+       @type resetRepository: list of (strings or ints)
+       @return: S_OK,S_ERROR
+    """
+    if not self.jobRepo:
+      gLogger.warn("No repository is initialised")
+      return S_OK()
+    self.jobRepo.resetRepository(jobIDs=jobIDs)
+    return S_OK()
 
   #############################################################################
   def submit(self,job,mode='wms'):
@@ -1563,7 +1670,6 @@ class Dirac:
           self.jobRepo.updateJob(jobID, {'State':'Submitted'})
     return result
 
-  #############################################################################
   def kill(self,jobID):
     """Issue a kill signal to a running job.  If a job has already completed this
        action is harmless but otherwise the process will be killed on the compute
@@ -1596,208 +1702,6 @@ class Dirac:
         for jobID in result['Value']:
           self.jobRepo.removeJob(jobID)
     return result
-
-  #############################################################################
-  # Repository specific methods
-  #############################################################################
-  def monitorRepository(self,printOutput=False):
-    """Monitor the jobs present in the repository
-       
-       Example Usage:
-       
-       >>> print dirac.monitorRepository()
-       {'OK': True, 'Value': ''}
-       
-       @return: S_OK,S_ERROR
-    """
-    if not self.jobRepo:
-      gLogger.warn("No repository is initialised")
-      return S_OK()
-    jobs = self.jobRepo.readRepository()['Value']
-    jobIDs = jobs.keys()
-    res = self.status(jobIDs)
-    if not res['OK']:
-      return self.__errorReport(res['Message'],'Failed to get status of jobs from WMS')
-    if printOutput:
-      jobs = self.jobRepo.readRepository()['Value']
-      statusDict = {}
-      for jobDict in jobs.values():
-        state = 'Unknown'
-        if jobDict.has_key('State'):
-          state = jobDict['State']
-        if not statusDict.has_key(state):
-          statusDict[state] = 0
-        statusDict[state] += 1
-      print self.pPrint.pformat(statusDict)
-    return S_OK() 
-
-  def retrieveRepositorySandboxes(self,requestedStates=['Done','Failed'],destinationDirectory=''):
-    """ Obtain the output sandbox for the jobs in requested states in the repository
-    
-       Example Usage:
-      
-       >>> print dirac.retrieveRepositorySandboxes(requestedStates=['Done','Failed'],destinationDirectory='sandboxes')
-       {'OK': True, 'Value': ''}
-
-       @param requestedStates: List of jobs states to be considered
-       @type requestedStates: list of strings
-       @param destinationDirectory: The target directory to place sandboxes (each jobID will have a directory created beneath this)
-       @type destinationDirectory: string
-       @return: S_OK,S_ERROR
-    """
-    if not self.jobRepo:
-      gLogger.warn("No repository is initialised")
-      return S_OK()
-    jobs = self.jobRepo.readRepository()['Value']
-    toRetrieve = []
-    for jobID in sortList(jobs.keys()):
-      jobDict = jobs[jobID]
-      if jobDict.has_key('State') and (jobDict['State'] in requestedStates):
-        if (jobDict.has_key('Retrieved') and (not int(jobDict['Retrieved']))) or (not jobDict.has_key('Retrieved')):
-          self.getOutputSandbox(jobID,destinationDirectory)
-    return S_OK()
-
-  def retrieveRepositoryData(self,requestedStates=['Done'],destinationDirectory=''):
-    """ Obtain the output data for the jobs in requested states in the repository
-
-       Example Usage:
-
-       >>> print dirac.retrieveRepositoryData(requestedStates=['Done'],destinationDirectory='outputData')
-       {'OK': True, 'Value': ''}
-
-       @param requestedStates: List of jobs states to be considered
-       @type requestedStates: list of strings
-       @param destinationDirectory: The target directory to place sandboxes (each jobID will have a directory created beneath this)
-       @type destinationDirectory: string    
-       @return: S_OK,S_ERROR
-    """
-    if not self.jobRepo:
-      gLogger.warn("No repository is initialised") 
-      return S_OK()  
-    jobs = self.jobRepo.readRepository()['Value']
-    toRetrieve = []
-    for jobID in sortList(jobs.keys()):
-      jobDict = jobs[jobID]
-      if jobDict.has_key('State') and (jobDict['State'] in requestedStates):
-        if (jobDict.has_key('OutputData') and (not int(jobDict['OutputData']))) or (not jobDict.has_key('OutputData')):
-          destDir = jobID
-          if destinationDirectory:
-             destDir = "%s/%s" % (destinationDirectory,jobID)
-          self.getJobOutputData(jobID,destinationDir=destDir)
-    return S_OK()
-
-  def resetRepository(self,jobIDs=[]):
-    """ Reset all the status of the (optionally supplied) jobs in the repository
-
-       Example Usage:
-
-       >>> print dirac.resetRepository(jobIDs = [1111,2222,'3333'])
-       {'OK': True, 'Value': ''}
-
-       @param requestedStates: List of jobs IDs to reset. If not supplied all jobs will be reset.
-       @type resetRepository: list of (strings or ints)
-       @return: S_OK,S_ERROR
-    """
-    if not self.jobRepo:
-      gLogger.warn("No repository is initialised")
-      return S_OK()
-    self.jobRepo.resetRepository(jobIDs=jobIDs)
-    return S_OK()
-
-  # This code should go in some LHCb specific place
-  def rootMergeRepository(self,outputFileName,inputFileMask='*.root',location='Sandbox',requestedStates=['Done']):
-    """ Create a merged ROOT file using root files retrived in the sandbox or output data
-    
-       Example Usage:
-
-       >>> print dirac.rootMergeRepository('MyMergedRootFile.root',inputFileMask='DVHistos.root',location='Sandbox', requestedStates = ['Done'])
-       {'OK': True, 'Value': ''}
-     
-       @param outputFileName: The target merged file
-       @type outputFileName: string
-       @param inputFileMask: Mask to be used when locating input files. Can support wildcards like 'Tuple*.root'
-       @type inputFileMask: string
-       @param location: The input files present either in the 'Sandbox' (retrieved with getOutputSandbox) or 'OutputFiles' (getJobOutputData)
-       @type location: string
-       @param requestedStates: List of jobs states to be considered
-       @type requestedStates: list of strings
-       @return: S_OK,S_ERROR
-    """
-    if not self.jobRepo:
-      gLogger.warn("No repository is initialised") 
-      return S_OK()  
-
-    # Setup the root enviroment
-    res = self.__setupRootEnvironment()
-    if not res['OK']:
-      return self.__errorReport(res['Message'],"Failed to setup the ROOT environment")
-    rootEnv = res['Value']
-
-    # Get the input files to be used
-    jobs = self.jobRepo.readRepository()['Value']
-    inputFiles = []
-    for jobID in sortList(jobs.keys()):
-      jobDict = jobs[jobID]
-      if jobDict.has_key('State') and jobDict['State'] in requestedStates:
-        if location == 'OutputFiles':
-          jobFiles = eval(jobDict[location])
-          for jobFile in jobFiles:
-            fileName = os.path.basename(jobFile)
-            if fnmatch.fnmatch(fileName,inputFileMask):
-              if os.path.exists(jobFile):
-                inputFiles.append(jobFile)
-              else:
-                self.log.warn("Repository output file does not exist locally",jobFile)
-        elif location == 'Sandbox':
-          globStr = "%s/%s" % (jobDict[location],inputFileMask)
-          print glob.glob(globStr)
-          inputFiles.extend(glob.glob(globStr))
-        else:
-          return self.__errorReport("Location of .root should be 'Sandbox' or 'OutputFiles'.")
-
-    # Perform the merging
-    lists = breakListIntoChunks(inputFiles,20)
-    tempFiles = []
-    counter = 0
-    for list in lists:
-      counter += 1
-      tempOutputFile = "/tmp/tempRootFile-%s.root" % counter
-      res = self.__mergeRootFiles(tempOutputFile,list,rootEnv)
-      if not res['OK']:
-        return self.__errorReport(res['Message'],"Failed to perform ROOT merger")
-      tempFiles.append(tempOutputFile)
-    res = self.__mergeRootFiles(outputFileName,tempFiles,rootEnv)   
-    if not res['OK']:
-      return self.__errorReport(res['Message'],"Failed to perform final ROOT merger")
-    return S_OK()   
-
-  def __mergeRootFiles(self,outputFile,inputFiles,rootEnv):
-    cmd = "hadd %s" % outputFile
-    for file in inputFiles:
-      cmd = "%s %s" % (cmd,file)
-    res = DIRAC.shellCall(1800, cmd, env=rootEnv)
-    return res
-
-  def __setupRootEnvironment(self,daVinciVersion=''):
-    if os.environ.has_key('VO_LHCB_SW_DIR'):
-      sharedArea = os.path.join(os.environ['VO_LHCB_SW_DIR'],'lib')
-      self.log.verbose( 'Using VO_LHCB_SW_DIR at "%s"' % sharedArea )
-    elif DIRAC.gConfig.getValue('/LocalSite/SharedArea',''):
-      sharedArea = DIRAC.gConfig.getValue('/LocalSite/SharedArea')
-      self.log.verbose( 'Using SharedArea at "%s"' % sharedArea )
-    lbLogin = '%s/lib/LbLogin' %sharedArea 
-    ret = DIRAC.Source( 60,[lbLogin], dict(os.environ))
-    if not ret['OK']:
-      self.log.warn('Error during lbLogin\n%s' %ret)
-      return ret
-    setupProject = ['%s/%s' %(os.path.dirname(os.path.realpath('%s.sh' %lbLogin)),'SetupProject')]
-    setupProject.append('DaVinci ROOT')
-    ret = DIRAC.Source( 60, setupProject, ret['outputEnv'])
-    if not ret['OK']:
-      gLogger.warn('Error during SetupProject\n%s' %ret)
-      return ret
-    appEnv = ret['outputEnv']
-    return S_OK(appEnv)
 
   #############################################################################
   def status(self,jobID):
