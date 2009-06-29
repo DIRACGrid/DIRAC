@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.20 2009/02/25 17:45:27 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationClient.py,v 1.20 2009/02/25 17:45:27 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.21 2009/06/29 16:04:27 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationClient.py,v 1.21 2009/06/29 16:04:27 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities import List
@@ -117,3 +117,9 @@ class ConfigurationClient:
       return S_OK( optionsDict )
     else:
       return S_ERROR( "Path %s does not exist or it's not a section" % sectionPath )
+    
+  def setOptionValue( self, optionPath, value ):
+    """
+    Set a value in the local configuration
+    """
+    gConfigurationData.setOptionInCFG( optionPath, value )
