@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.36 2009/05/04 14:07:49 acasajus Exp $
+# $Id: MatcherHandler.py,v 1.37 2009/06/29 13:38:07 acasajus Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.36 2009/05/04 14:07:49 acasajus Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.37 2009/06/29 13:38:07 acasajus Exp $"
 
 import re, os, sys, time
 import string
@@ -17,7 +17,7 @@ from   types import *
 import threading
 
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
-from DIRAC.Core.Utilities.ClassAd.ClassAdCondor        import ClassAd, matchClassAd
+#from DIRAC.Core.Utilities.ClassAd.ClassAdCondor        import ClassAd, matchClassAd
 from DIRAC                                             import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB           import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB    import JobLoggingDB
@@ -42,12 +42,26 @@ def initializeMatcherHandler( serviceInfo ):
   jobDB        = JobDB()
   jobLoggingDB = JobLoggingDB()
   taskQueueDB  = TaskQueueDB()
-  taskQueueDB.recalculateTQSharesForAll()
-  gThreadScheduler.addPeriodicTask( 120, taskQueueDB.recalculateTQSharesForAll )
-
+  
   gMonitor.registerActivity( 'matchTime', "Job matching time", 'Matching', "secs" ,gMonitor.OP_MEAN, 300 )
   gMonitor.registerActivity( 'matchTaskQueues', "Task queues checked per job", 'Matching', "task queues" ,gMonitor.OP_MEAN, 300 )
+  gMonitor.registerActivity( 'matchesDone', "Job Matches", 'Matching', "matches" ,gMonitor.OP_MEAN, 300 )
+  gMonitor.registerActivity( 'numTQs', "Number of Task Queues", 'Matching', "tqsk queues" ,gMonitor.OP_MEAN, 300 )
+  
+  taskQueueDB.recalculateTQSharesForAll()
+  gThreadScheduler.addPeriodicTask( 120, taskQueueDB.recalculateTQSharesForAll )
+  gThreadScheduler.addPeriodicTask( 120, sendNumTaskQueues )
+  
+  sendNumTaskQueues()
+
   return S_OK()
+
+def sendNumTaskQueues():
+  result = taskQueueDB.getNumTaskQueues()
+  if result[ 'OK' ]:
+    gMonitor.addMark( 'numTQs', result[ 'Value' ] )
+  else:
+    gLogger.error( "Cannot get the number of task queues", result[ 'Message' ] )
 
 class MatcherHandler(RequestHandler):
 
@@ -152,6 +166,7 @@ class MatcherHandler(RequestHandler):
     #print "requestJob: ",resourceJDL
 
     result = self.selectJob(resourceJDL)
+    gMonitor.addMark( "matchesDone" )
     return result
 
 ##############################################################################
