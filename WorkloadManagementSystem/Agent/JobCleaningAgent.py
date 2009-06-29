@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobCleaningAgent.py,v 1.9 2009/06/12 12:07:28 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobCleaningAgent.py,v 1.10 2009/06/29 16:24:33 acasajus Exp $
 # File :   JobCleaningAgent.py
 # Author : A.T.
 ########################################################################
@@ -7,7 +7,7 @@
 """  The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
 """
 
-__RCSID__ = "$Id: JobCleaningAgent.py,v 1.9 2009/06/12 12:07:28 rgracian Exp $"
+__RCSID__ = "$Id: JobCleaningAgent.py,v 1.10 2009/06/29 16:24:33 acasajus Exp $"
 
 from DIRAC.Core.Base.Agent                            import Agent
 from DIRAC.WorkloadManagementSystem.DB.JobDB          import JobDB
@@ -75,7 +75,7 @@ class JobCleaningAgent(Agent):
     jobList = result['Value']
     count = 0
     error_count = 0
-    result = SandboxStoreClient().unassignJobs( jobList )
+    result = SandboxStoreClient( useCertificates = True ).unassignJobs( jobList )
     if not result[ 'OK' ]:
       gLogger.warn( "Cannot unassign jobs to sandboxes", result[ 'Message' ] )
     for jobID in jobList:

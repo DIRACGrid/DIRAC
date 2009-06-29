@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.25 2009/06/26 16:33:52 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobSanityAgent.py,v 1.26 2009/06/29 16:23:22 acasajus Exp $
 # File :   JobSanityAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -13,7 +13,7 @@
        - Input sandbox not correctly uploaded.
 """
 
-__RCSID__ = "$Id: JobSanityAgent.py,v 1.25 2009/06/26 16:33:52 acasajus Exp $"
+__RCSID__ = "$Id: JobSanityAgent.py,v 1.26 2009/06/29 16:23:22 acasajus Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -41,7 +41,7 @@ class JobSanityAgent(OptimizerModule):
     self.successStatus        = self.am_getOption( 'SuccessfulJobStatus', 'OutputReady' )
     self.maxDataPerJob        = self.am_getOption( 'MaxInputDataPerJob', 100 )
     #Sandbox
-    self.sandboxClient        = SandboxStoreClient()
+    self.sandboxClient        = SandboxStoreClient( useCertificates = True )
 
     self.log.debug(   'JDL Check          ==>  Enabled'                    )
     if self.inputDataCheck:
