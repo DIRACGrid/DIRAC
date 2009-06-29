@@ -15,14 +15,15 @@ class SandboxStoreClient:
 
   __validSandboxTypes = ( 'Input', 'Output' )
 
-  def __init__( self ):
+  def __init__( self, useCertificates = False ):
     self.__serviceName = "WorkloadManagement/SandboxStore"
+    self.__useCertificates = useCertificates
 
   def __getRPCClient( self ):
-    return RPCClient( self.__serviceName )
+    return RPCClient( self.__serviceName, useCertificates = self.__useCertificates )
 
   def __getTransferClient( self ):
-    return TransferClient( self.__serviceName )
+    return TransferClient( self.__serviceName, useCertificates = self.__useCertificates )
 
   #Upload sandbox to jobs and pilots
 
