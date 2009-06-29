@@ -1,6 +1,6 @@
 """ This is the Job Repository which stores and manipulates DIRAC job metadata in CFG format """
 
-__RCSID__ = "$Id: JobRepository.py,v 1.6 2009/06/28 11:33:04 acsmith Exp $"
+__RCSID__ = "$Id: JobRepository.py,v 1.7 2009/06/29 13:53:31 acsmith Exp $"
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
@@ -48,7 +48,7 @@ class JobRepository:
   def resetRepository(self,jobIDs=[]):
     if not jobIDs:
       jobs = self.readRepository()['Value']
-      jobID = jobs.keys()
+      jobIDs = jobs.keys()
     paramDict = {'State'       : 'Submitted',
                  'Retrieved'   : 0,
                  'OutputData'  : 0}
@@ -70,9 +70,8 @@ class JobRepository:
     self._writeRepository(self.location)
     return S_OK()
     
-  def addJob(self, jobID, name, state='Submitted', retrieved=0, outputData=0, update=False):
-    paramDict = { 'Name'        : name,    
-                  'State'       : state,
+  def addJob(self, jobID, state='Submitted', retrieved=0, outputData=0, update=False):
+    paramDict = { 'State'       : state,
                   'Time'        : self._getTime(),
                   'Retrieved'   : int(retrieved),
                   'OutputData'  : outputData}    
@@ -80,14 +79,7 @@ class JobRepository:
     self._writeRepository(self.location)
     return S_OK(jobID)
 
-  def updateJob(self, jobID, state=None, retrieved=None, outputData=None):
-    paramDict = {}
-    if state:
-      paramDict['State'] = state
-    if retrieved:
-      paramDict['Retrieved'] = retrieved
-    if outputData:
-      paramDict['OutputData'] = outputData
+  def updateJob(self, jobID, paramDict):
     paramDict['Time'] = self._getTime()
     self._writeJob(jobID, paramDict, True)
     self._writeRepository(self.location)
