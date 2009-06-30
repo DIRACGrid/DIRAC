@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.21 2009/06/25 12:54:16 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.21 2009/06/25 12:54:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.22 2009/06/30 19:32:49 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.22 2009/06/30 19:32:49 acasajus Exp $"
 
 import os.path
 import zlib
@@ -41,11 +41,13 @@ class ConfigurationData:
     self.mergedCFG = self.remoteCFG.mergeWith( self.localCFG )
     self.remoteServerList = []
     localServers = self.extractOptionFromCFG( "%s/Servers" % self.configurationPath,
-                                        self.localCFG )
+                                        self.localCFG,
+                                        disableDangerZones = True )
     if localServers:
       self.remoteServerList.extend( List.fromChar( localServers, "," ) )
     remoteServers = self.extractOptionFromCFG( "%s/Servers" % self.configurationPath,
-                                        self.remoteCFG )
+                                        self.remoteCFG,
+                                        disableDangerZones = True )
     if remoteServers:
       self.remoteServerList.extend( List.fromChar( remoteServers, "," ) )
     self.remoteServerList = List.uniqueElements( self.remoteServerList )
@@ -76,12 +78,17 @@ class ConfigurationData:
     self.unlock()
     self.sync()
 
-  def loadConfigurationData( self ):
+  def loadConfigurationData( self, fileName = False ):
     name = self.getName()
     self.lock()
     try:
-      self.remoteCFG.loadFromFile( os.path.join( DIRAC.rootPath, "etc", "%s.cfg" % name ) )
-    except:
+      if not fileName:
+        fileName = "%s.cfg" % name
+      if fileName[0] != "/":
+        fileName = os.path.join( DIRAC.rootPath, "etc", fileName )
+      self.remoteCFG.loadFromFile( fileName )
+    except Exception, e:
+      print e
       pass
     self.unlock()
     self.sync()
@@ -125,10 +132,11 @@ class ConfigurationData:
       pass
     return self.dangerZoneEnd( None )
 
-  def extractOptionFromCFG( self, path, cfg = False ):
+  def extractOptionFromCFG( self, path, cfg = False, disableDangerZones = False ):
     if not cfg:
       cfg = self.mergedCFG
-    self.dangerZoneStart()
+    if not disableDangerZones:
+      self.dangerZoneStart()
     try:
       levelList = [ level.strip() for level in path.split( "/" ) if level.strip() != "" ]
       for section in levelList[:-1]:
@@ -137,12 +145,14 @@ class ConfigurationData:
         return self.dangerZoneEnd( cfg[ levelList[ -1 ] ] )
     except Exception, e:
       pass
-    return self.dangerZoneEnd( None )
+    if not disableDangerZones:
+      self.dangerZoneEnd()
 
-  def setOptionInCFG( self, path, value, cfg = False ):
+  def setOptionInCFG( self, path, value, cfg = False, disableDangerZones = False ):
     if not cfg:
       cfg = self.localCFG
-    self.dangerZoneStart()
+    if not disableDangerZones:
+      self.dangerZoneStart()
     try:
       levelList = [ level.strip() for level in path.split( "/" ) if level.strip() != "" ]
       for section in levelList[:-1]:
@@ -151,7 +161,8 @@ class ConfigurationData:
         cfg = cfg[ section ]
       cfg.setOption( levelList[ -1 ], value )
     finally:
-      self.dangerZoneEnd()
+      if not disableDangerZones:
+        self.dangerZoneEnd()
     self.sync()
 
   def deleteOptionInCFG( self, path, value, cfg = False ):
@@ -294,6 +305,9 @@ class ConfigurationData:
       return S_ERROR( "Can't dump cfg file '%s'" % fileName )
     return S_OK()
 
+  def getRemoteCFG( self ):
+    return self.remoteCFG
+
   def getMergedCFGAsString( self ):
     return str( self.mergedCFG )
 
@@ -340,9 +354,10 @@ class ConfigurationData:
     self.__backupCurrentConfiguration( backupName )
     return S_OK()
 
-  def setRemoteCFG( self, cfg ):
+  def setRemoteCFG( self, cfg, disableSync = False ):
     self.remoteCFG = cfg.clone()
-    self.sync()
+    if not disableSync:
+      self.sync()
 
   def lock(self):
     """
