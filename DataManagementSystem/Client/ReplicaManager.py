@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.72 2009/06/30 09:18:41 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.73 2009/06/30 17:34:06 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -1774,10 +1774,11 @@ class ReplicaManager:
     gLogger.debug("ReplicaManager.__executeStorageElementFunction: Attempting to perform '%s' operation with %s pfns." % (method,len(pfns)))
     # Check we can instantiate the storage element correctly
     storageElement = StorageElement(storageElementName)
-    if not storageElement.isValid()['Value']:   
+    res = storageElement.isValid(method)
+    if not res['OK']:
       errStr = "ReplicaManager.__executeStorageElementFunction: Failed to instantiate Storage Element"
       gLogger.error(errStr, "for performing %s at %s." % (method,storageElementName))
-      return S_ERROR(errStr)
+      return res
     # Generate the execution string 
     if argsDict:
       execString = "res = storageElement.%s(pfns" % method
