@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.13 2009/06/26 13:48:20 rgracian Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.13 2009/06/26 13:48:20 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.14 2009/06/30 19:33:37 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.14 2009/06/30 19:33:37 acasajus Exp $"
 
 import sys
 import os
@@ -17,10 +17,13 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class ServiceInterface( threading.Thread ):
 
+  __prevConfData = ConfigurationData()
+
   def __init__( self, sURL ):
     threading.Thread.__init__( self )
     self.sURL = sURL
     gLogger.info( "Initializing Configuration Service", "URL is %s" % sURL )
+    self.__modificationsIgnoreMask = [ '/DIRAC/Configuration/Servers', '/DIRAC/Configuration/Version' ]
     gConfigurationData.setAsService()
     if not gConfigurationData.isMaster():
       gLogger.info( "Starting configuration service as slave" )
@@ -65,6 +68,16 @@ class ServiceInterface( threading.Thread ):
 
       if bBuiltNewConfiguration:
         gConfigurationData.writeRemoteConfigurationToDisk()
+    #Load previous version
+    backups = self.__getCfgBackups( gConfigurationData.getBackupDir() )
+    if backups:
+      backFile = backups[0]
+      if backFile[0] == "/":
+        backFile = backFile[1:]
+      prevFile = os.path.join( gConfigurationData.getBackupDir(), backFile )
+    else:
+      prevFile = False
+    self.__prevConfData.loadConfigurationData( prevFile )
 
   def __generateNewVersion( self ):
     if gConfigurationData.isMaster():
@@ -72,8 +85,8 @@ class ServiceInterface( threading.Thread ):
       gConfigurationData.writeRemoteConfigurationToDisk()
 
   def publishSlaveServer( self, sSlaveURL ):
-    if not self.isMaster():
-      return S_ERROR( "This is not the master service" )
+    if not gConfigurationData.isMaster():
+      return S_ERROR( "Configuration modification is not allowed in this server" )
     gLogger.info( "Pinging slave %s" % sSlaveURL )
     rpcClient = RPCClient( sSlaveURL, timeout = 10, useCertificates = True )
     retVal = rpcClient.ping()
@@ -124,19 +137,34 @@ class ServiceInterface( threading.Thread ):
     sLocalVersion = gConfigurationData.getVersion()
     gLogger.info( "Checking versions\nremote: %s\nlocal:  %s" % (  sRemoteVersion, sLocalVersion ) )
     if sRemoteVersion != sLocalVersion:
-      return S_ERROR( "Versions differ: Server %s is and remote is %s" % ( sLocalVersion, sRemoteVersion ) )
+      gLogger.info( "AutoMerging new data!" )
+      if updateVersionOption:
+        return S_ERROR( "Cannot AutoMerge! version was overwritten" )
+      result = self.__mergeIndependentUpdates( oRemoteConfData )
+      if not result[ 'OK' ]:
+        gLogger.warn( "Could not AutoMerge!", result[ 'Message' ] )
+        return S_ERROR( "AutoMerge failed: %s" % result[ 'Message' ] )
+      requestedRemoteCFG = result[ 'Value' ]
+      gLogger.info( "AutoMerge successful!" )
+      oRemoteConfData.setRemoteCFG( requestedRemoteCFG )
     #Test that configuration names are the same
     sRemoteName = oRemoteConfData.getName()
     sLocalName = gConfigurationData.getName()
     if sRemoteName != sLocalName:
       return S_ERROR( "Names differ: Server is %s and remote is %s" % ( sLocalName, sRemoteName ) )
     #Update and generate a new version
+    gLogger.info( "Committing new data..." )
+    self.__prevConfData.setRemoteCFG( gConfigurationData.getRemoteCFG() )
     gConfigurationData.lock()
-    gConfigurationData.loadRemoteCFGFromCompressedMem( sBuffer )
+    gLogger.info( "Setting the new CFG" )
+    gConfigurationData.setRemoteCFG( oRemoteConfData.getRemoteCFG() )
+    gConfigurationData.unlock()
+    gLogger.info( "Generating new version" )
     gConfigurationData.generateNewVersion()
     #self.__checkSlavesStatus( forceWriteConfiguration = True )
+    gLogger.info( "Writing new version to disk!" )
     retVal = gConfigurationData.writeRemoteConfigurationToDisk( "%s@%s" % ( commiterDN, gConfigurationData.getVersion() ) )
-    gConfigurationData.unlock()
+    gLogger.info( "New version it is!" )
     return retVal
 
   def getCompressedConfigurationData( self ):
@@ -181,4 +209,77 @@ class ServiceInterface( threading.Thread ):
         if rs.search( entry ):
           backupsList.append( "%s/%s" % ( subPath, entry ) )
     return backupsList
-
+  
+  def __getPreviousCFG( self, oRemoteConfData ):
+    remoteExpectedVersion = oRemoteConfData.getVersion()
+    backupsList = self.__getCfgBackups( gConfigurationData.getBackupDir(), date = oRemoteConfData.getVersion() )
+    if not backupsList:
+      return S_ERROR( "Could not AutoMerge. Could not retrieve original commiter's version" )
+    prevRemoteConfData = ConfigurationData()
+    backFile = backupsList[0]
+    if backFile[0] == "/":
+      backFile = os.path.join( gConfigurationData.getBackupDir(), backFile[1:] )
+    try:
+      prevRemoteConfData.loadConfigurationData( backFile )
+    except Exception, e:
+      return S_ERROR( "Could not load original commiter's version: %s" % str(e) )
+    gLogger.info( "Loaded client original version %s" % prevRemoteConfData.getVersion() )
+    return S_OK( prevRemoteConfData.getRemoteCFG() )
+  
+  def __checkConflictsInModifications( self, realModList, reqModList, parentSection = "" ):
+    realModifiedSections = dict( [ ( modAc[1], modAc[2] ) for modAc in realModList if modAc[0].find( 'Sec' ) == len( modAc[0] ) - 3 ] )
+    reqOptionsModificationList = dict( [ ( modAc[1], modAc[2] ) for modAc in reqModList if modAc[0].find( 'Opt' ) == len( modAc[0] ) - 3 ] )
+    optionModRequests = 0
+    for modAc in reqModList:
+      action = modAc[0]
+      objectName = modAc[1]
+      if action == "addSec":
+        if objectName in realModifiedSections:
+          return S_ERROR( "Section %s/%s already exists" % ( parentSection, objectName ) )
+      elif action == "delSec":
+        if objectName in realModifiedSections:
+          return S_ERROR( "Section %s/%s cannot be deleted. It has been modified." % ( parentSection, objectName ) )
+      elif action == "modSec":
+        if objectName in realModifiedSections:
+          result = self.__checkConflictsInModifications( realModifiedSections[ objectName ], 
+                                                         modAc[2], "%s/%s" % ( parentSection, objectName ) )
+          if not result[ 'OK' ]:
+            return result
+    for modAc in realModList:
+      action = modAc[0]
+      objectName = modAc[1]
+      if action.find( "Opt") == len( action ) - 3:
+        return S_ERROR( "Section %s cannot be merged. Option %s/%s has been modified" % ( parentSection, parentSection, objectName ) )
+    return S_OK()
+    
+  def __mergeIndependentUpdates( self, oRemoteConfData ):
+    return S_ERROR( "AutoMerge is still not finished. Meanwhile... why don't you get the newest conf and update from there?" )
+    #Get all the CFGs
+    prevSrvCFG = self.__prevConfData.getRemoteCFG().clone()
+    curSrvCFG = gConfigurationData.getRemoteCFG().clone()
+    curCliCFG = oRemoteConfData.getRemoteCFG().clone()
+    result = self.__getPreviousCFG( oRemoteConfData )
+    if not result[ 'OK' ]:
+      return result
+    prevCliCFG = result[ 'Value' ]
+    #Try to merge the curCli with prevSrv
+    #To do so we check incompatibilities between cliReqModList and prevCliToprevSrvModList
+    cliReqModList = prevCliCFG.getModifications( curCliCFG )
+    prevCliToprevSrvModList = prevCliCFG.getModifications( prevSrvCFG )
+    result = self.__checkConflictsInModifications( prevCliToprevSrvModList, cliReqModList )
+    if not result[ 'OK' ]:
+      return S_ERROR( "Cannot AutoMerge: %s" % result[ 'Message' ] )
+    result = curCliCFG.applyModifications( prevCliToprevSrvModList )
+    if not result[ 'OK' ]:
+      return result
+    #OK. Now curCli and curSrv start from prevSrv. Try to merge!
+    #Check revSrvToCurSrvModList with cliReqModList
+    prevSrvToCurSrvModList = prevSrvCFG.getModifications( curSrvCFG )
+    result = self.__checkConflictsInModifications( prevSrvToCurSrvModList, cliReqModList )
+    if not result[ 'OK' ]:
+      return S_ERROR( "Cannot AutoMerge: %s" % result[ 'Message' ] )
+    #Merge!
+    result = curSrvCFG.applyModifications( cliReqModList )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( curSrvCFG )
