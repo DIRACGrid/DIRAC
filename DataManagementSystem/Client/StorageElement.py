@@ -1,8 +1,8 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/StorageElement.py,v 1.31 2009/06/30 14:20:53 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/StorageElement.py,v 1.32 2009/06/30 17:33:41 acsmith Exp $
 ########################################################################
 
-__RCSID__ = "$Id: StorageElement.py,v 1.31 2009/06/30 14:20:53 acsmith Exp $"
+__RCSID__ = "$Id: StorageElement.py,v 1.32 2009/06/30 17:33:41 acsmith Exp $"
 
 """ This is the StorageElement class.
 
@@ -117,6 +117,7 @@ class StorageElement:
       writing = False
     # Determine whether the requested operation can be fulfilled    
     if (not operation) and (not reading) and (not writing):
+      gLogger.error("StorageElement.isValid: Read and write access not permitted.")
       return S_ERROR("StorageElement.isValid: Read and write access not permitted.")
     if not operation:
       gLogger.warn("StorageElement.isValid: The 'operation' argument is not supplied. It should be supplied in the future.")
@@ -129,13 +130,16 @@ class StorageElement:
     elif operation in ['Read','Write']:
       pass
     else:
+      gLogger.error("StorageElement.isValid: The supplied operation is not known.", operation)
       return S_ERROR("StorageElement.isValid: The supplied operation is not known.")
     # Check if the operation is valid
     if operation == 'Read':
       if not reading:
+        gLogger.error("StorageElement.isValid: Read access not currently permitted.")
         return S_ERROR("StorageElement.isValid: Read access not currently permitted.")
     if operation == 'Write':  
       if not writing:
+        gLogger.error("StorageElement.isValid: Write access not currently permitted.")
         return S_ERROR("StorageElement.isValid: Write access not currently permitted.")
     return S_OK()
 
