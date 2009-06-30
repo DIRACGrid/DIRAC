@@ -1,10 +1,16 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.5 2009/06/26 15:04:06 acsmith Exp $
-__RCSID__ = "$Id: CFG.py,v 1.5 2009/06/26 15:04:06 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.6 2009/06/30 19:30:59 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.6 2009/06/30 19:30:59 acasajus Exp $"
 
 import types
 import copy
 import os
+try:
+  import zipfile
+  zipEnabled = True
+except:
+  zipEnabled = False
 
+from DIRAC.Core.Utilities import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List, ThreadSafe
 
 gCFGSynchro = ThreadSafe.Synchronizer( recursive = True )
@@ -407,7 +413,6 @@ class CFG:
       self.__orderedList.append( key )
     else:
       refKeyPos = self.__orderedList.index( beforeKey )
-      print "RefKeyPos", refKeyPos
       self.__orderedList.insert( refKeyPos, key )
 
   @gCFGSynchro
@@ -491,7 +496,7 @@ class CFG:
     if not self.__orderedList == cfg.__orderedList:
       return False
     for key in self.__orderedList:
-      if not self.__commentDict[ key ] == cfg.__commentDict[ key ]:
+      if not self.__commentDict[ key ].strip() == cfg.__commentDict[ key ].strip():
         return False
       if not self.__dataDict[ key ] == cfg.__dataDict[ key ]:
         return False
@@ -608,7 +613,127 @@ class CFG:
                                     cfgToMergeWith.getComment( section ),
                                     cfgToMergeWith[ section ] )
     return mergedCFG
-
+  
+  def getModifications( self, newerCfg, ignoreMask = [], parentPath = "" ):
+    """
+    Compare two cfgs
+    
+    @type newerCfg: CFG
+    @param newerCfg: Cfg to compare with
+    @type prefix: string
+    @param prefix: Internal use only
+    @return: A list of modifications
+    """
+    modList = []
+    #Options
+    oldOptions = self.listOptions( True )
+    newOptions = newerCfg.listOptions( True )
+    for iPos in range( len( newOptions ) ):
+      newOption = newOptions[ iPos ]
+      newOptPath = "%s/%s" % ( parentPath, newOption )
+      if newOptPath in ignoreMask:
+        continue
+      if newOption not in oldOptions:
+        modList.append( ( 'addOpt', newOption, iPos,
+                          newerCfg[ newOption ], 
+                          newerCfg.getComment( newOption ) ) )
+      elif newerCfg[ newOption ] != self[ newOption ]:
+        modList.append( ( 'modOpt', newOption, 
+                          newerCfg[ newOption ], 
+                          newerCfg.getComment( newOption ) ) )
+    for oldOption in oldOptions:
+      oldOptPath = "%s/%s" % ( parentPath, oldOption )
+      if oldOptPath in ignoreMask:
+        continue
+      if oldOption not in newOptions:
+        modList.append( ( 'delOpt', oldOption, '' ) )
+    #Sections
+    oldSections = self.listSections( True )
+    newSections = newerCfg.listSections( True )
+    for iPos in range( len( newSections ) ):
+      newSection = newSections[ iPos ]
+      newSecPath = "%s/%s" % ( parentPath, newSection )
+      if newSecPath in ignoreMask:
+        continue
+      if newSection not in oldSections:
+        modList.append( ( 'addSec', newSection, iPos, 
+                          str( newerCfg[ newSection ] ), 
+                          newerCfg.getComment( newSection ) ) )
+      else:
+        subMod = self[ newSection ].getModifications( newerCfg[ newSection ], 
+                                                      ignoreMask, newSecPath )
+        if subMod:
+          modList.append( ( 'modSec', newSection, subMod, 
+                          newerCfg.getComment( newSection ) ) )
+    for oldSection in oldSections:
+      oldSecPath = "%s/%s" % ( parentPath, oldSection )
+      if oldSecPath in ignoreMask:
+        continue
+      if oldSection not in newSections:
+        modList.append( ( 'delSec', oldSection, '' ) )
+    return modList
+    
+  def applyModifications( self, modList, parentSection = "" ):
+    """
+    Apply modifications to a CFG
+    
+    @type modList: List
+    @param modList: Modifications from a getModifications call
+    @return: True/False
+    """
+    for modAction in modList:
+      action = modAction[0]
+      key = modAction[1]
+      if action == 'addSec':
+        if key in self.listSections():
+          return S_ERROR( "Section %s/%s already exists" % ( parentSection, key ) )
+        #key, value, comment, beforeKey = ""
+        iPos = modAction[2]
+        value = CFG().loadFromBuffer( modAction[3].strip() )
+        comment = modAction[4].strip()
+        if iPos < len( self.__orderedList ):
+          beforeKey = self.__orderedList[ iPos ]
+        else:
+          beforeKey = ""
+        self.addKey( key, value, comment, beforeKey )
+      elif action == 'delSec':
+        if key not in self.listSections():
+          return S_ERROR( "Section %s/%s does not exist" % ( parentSection, key ) )
+        self.deleteKey( key )
+      elif action == 'modSec':
+        subModList = modAction[2]
+        comment = modAction[3].strip()
+        self.setComment( key, comment )
+        if key not in self.listSections():
+          return S_ERROR( "Section %s/%s does not exist" % ( parentSection, key ) )
+        result = self[ key ].applyModifications( subModList, "%s/%s" % ( parentSection, key ) )
+        if not result[ 'OK' ]:
+          return result
+      elif action == "addOpt":
+        if key in self.listOptions():
+          return S_ERROR( "Option %s/%s exists already" % ( parentSection, key ) )
+        #key, value, comment, beforeKey = ""
+        iPos = modAction[2]
+        value = modAction[3]
+        comment = modAction[4].strip()
+        if iPos < len( self.__orderedList ):
+          beforeKey = self.__orderedList[ iPos ]
+        else:
+          beforeKey = ""
+        self.addKey( key, value, comment, beforeKey )
+      elif action == "modOpt":
+        if key not in self.listOptions():
+          return S_ERROR( "Option %s/%s does not exist" % ( parentSection, key ) )
+        value = modAction[2]
+        comment = modAction[3].strip()
+        self.setOption( key , value, comment )
+      elif action == "delOpt":
+        if key not in self.listOptions():
+          return S_ERROR( "Option %s/%s does not exist" % ( parentSection, key ) )
+        self.deleteKey( key )
+      
+    return S_OK()
+        
   #Functions to load a CFG
   def loadFromFile( self, fileName ):
     """
@@ -618,9 +743,17 @@ class CFG:
     @param fileName: File name to load the contents from
     @return: This CFG
     """
-    fd = file( fileName )
-    fileData = fd.read()
-    fd.close()
+    if zipEnabled and fileName.find( ".zip" ) == len( fileName ) - 4:
+      #Zipped file
+      zipHandler = zipfile.ZipFile( fileName )
+      nameList = zipHandler.namelist()
+      fileToRead = nameList[0]
+      fileData = zipHandler.read( fileToRead )
+      zipHandler.close()
+    else:
+      fd = file( fileName )
+      fileData = fd.read()
+      fd.close()
     return self.loadFromBuffer( fileData )
 
   @gCFGSynchro
