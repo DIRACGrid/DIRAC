@@ -1,3 +1,9 @@
+########################################################################
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/StorageElement.py,v 1.31 2009/06/30 14:20:53 acsmith Exp $
+########################################################################
+
+__RCSID__ = "$Id: StorageElement.py,v 1.31 2009/06/30 14:20:53 acsmith Exp $"
+
 """ This is the StorageElement class.
 
     self.name is the resolved name of the StorageElement i.e CERN-tape
@@ -18,12 +24,14 @@ import re, time,os,types
 
 class StorageElement:
 
-  def __init__(self,name,protocols=[]):
+  def __init__(self,name,protocols=[],overwride=False):
+    self.overwride = overwride
     self.valid = True
     res = StorageFactory().getStorages(name,protocolList=protocols)
     if not res['OK']:
       self.valid = False
       self.name = name
+      self.errorReason = res['Message']
     else:
       factoryDict = res['Value']
       self.name = factoryDict['StorageName']
@@ -33,6 +41,39 @@ class StorageElement:
       self.storages = factoryDict['StorageObjects']
       self.protocolOptions = factoryDict['ProtocolOptions']
       self.turlProtocols = factoryDict['TurlProtocols']
+     
+    self.readMethods  = [  'getStorageElementName',
+                           'getProtocols',
+                           'getRemoteProtocols',
+                           'getLocalProtocols',
+                           'getStorageElementOption',
+                           'getStorageParameters',
+                           'isLocalSE',
+                           'getPfnForProtocol',
+                           'getPfnPath',
+                           'getPfnForLfn',
+                           'exists',
+                           'isFile',
+                           'getFile',
+                           'getFileMetadata',
+                           'getFileSize',
+                           'getAccessUrl',
+                           'isDirectory',
+                           'getDirectoryMetadata',
+                           'getDirectorySize',
+                           'listDirectory',
+                           'getDirectory']
+    self.writeMethods = [  'retransferOnlineFile',
+                           'putFile',
+                           'replicateFile',
+                           'removeFile',
+                           'prestageFile',
+                           'prestageFileStatus',
+                           'pinFile',
+                           'releaseFile',
+                           'createDirectory',
+                           'removeDirectory',
+                           'putDirectory']
 
   def dump(self):
     """
@@ -62,9 +103,41 @@ class StorageElement:
     gLogger.verbose("StorageElement.getStorageElementName: The Storage Element name is %s." % self.name)
     return S_OK(self.name)
 
-  def isValid(self):
+  def isValid(self,operation=''):
     gLogger.verbose("StorageElement.isValid: Determining whether the StorageElement %s is valid for use." % self.name)
-    return S_OK(self.valid)
+    if not self.valid:
+      gLogger.error("StorageElement.isValid: Failed to create StorageElement plugins.",self.errorReason)
+      return S_ERROR(self.errorReason)
+    # Determine wheter the StorageElement is valid for reading and writing
+    reading = True
+    if self.options.has_key('ReadAccess') and self.options['ReadAccess'] != 'Active':
+      reading = False
+    writing = True
+    if self.options.has_key('WriteAccess') and self.options['WriteAccess'] != 'Active':
+      writing = False
+    # Determine whether the requested operation can be fulfilled    
+    if (not operation) and (not reading) and (not writing):
+      return S_ERROR("StorageElement.isValid: Read and write access not permitted.")
+    if not operation:
+      gLogger.warn("StorageElement.isValid: The 'operation' argument is not supplied. It should be supplied in the future.")
+      return S_OK()
+    # The supplied operation can be 'Read','Write' or any of the possible StorageElement methods.
+    if operation in self.readMethods:
+      operation = 'Read'
+    elif operation in self.writeMethods:
+      operation = 'Write'
+    elif operation in ['Read','Write']:
+      pass
+    else:
+      return S_ERROR("StorageElement.isValid: The supplied operation is not known.")
+    # Check if the operation is valid
+    if operation == 'Read':
+      if not reading:
+        return S_ERROR("StorageElement.isValid: Read access not currently permitted.")
+    if operation == 'Write':  
+      if not writing:
+        return S_ERROR("StorageElement.isValid: Write access not currently permitted.")
+    return S_OK()
 
   def getProtocols(self):
     """ Get the list of all the protocols defined for this Storage Element
@@ -391,7 +464,12 @@ class StorageElement:
       gLogger.verbose("StorageElement.__executeFunction: No pfns supplied.")
       return S_OK({'Failed':{}, 'Successful':{}})
     gLogger.verbose("StorageElement.__executeFunction: Attempting to perform '%s' operation with %s pfns." % (method,len(pfns)))
- 
+
+    if not self.overwride:
+      res = self.isValid(operation=method)
+      if not res['OK']:
+        return res
+
     successful = {}
     failed = {}
     localSE = self.isLocalSE()['Value']
