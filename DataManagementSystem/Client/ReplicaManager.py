@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.71 2009/06/29 14:23:02 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.72 2009/06/30 09:18:41 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -1046,7 +1046,9 @@ class ReplicaManager:
     if not guid:
       guid = makeGuid(file)
     if not checksum:
+      gLogger.info("ReplicaManager.putAndRegister: Checksum information not provided. Calculating adler32.") 
       checksum = fileAdler(file)
+      gLogger.info("ReplicaManager.putAndRegister: Checksum calculated to be %s." % checksum)
     res = self.fileCatalogue.exists({lfn:guid})
     if not res['OK']:
       errStr = "ReplicaManager.putAndRegister: Completey failed to determine existence of destination LFN."
