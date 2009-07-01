@@ -74,7 +74,7 @@ class WMSHistoryPlotter(BaseReporter):
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportAverageNumberOfJobs( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", SUM(%s)",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", SUM(%s), SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'Jobs', 'entriesInBucket'
                                    ]
                    )
