@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.95 2009/06/29 18:57:09 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.96 2009/07/01 11:03:08 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.95 2009/06/29 18:57:09 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.96 2009/07/01 11:03:08 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -198,6 +198,8 @@ class Dirac:
     if not self.jobRepo:
       gLogger.warn("No repository is initialised")
       return S_OK()
+    if not type(jobIDs) == types.ListType:
+      return self.__errorReport('The jobIDs must be a list of (strings or ints).')
     self.jobRepo.resetRepository(jobIDs=jobIDs)
     return S_OK()
 
@@ -287,7 +289,7 @@ class Dirac:
           self.log.error('Job submission failure',result['Message'])
         elif self.jobRepo:
           jobID = result['Value']
-          result = self.jobRepo.addJob(jobID, '', 'Submitted')
+          result = self.jobRepo.addJob(jobID, 'Submitted')
 
     self.log.verbose('Cleaning up %s...' %cleanPath)
     self.__cleanTmp( cleanPath )
@@ -1532,7 +1534,6 @@ class Dirac:
       return self.__errorReport(str(x),'Could not create directory in %s' %(dirPath))
 
     #New download
-    """
     result = self.sandboxClient.downloadSandboxForJob( jobID, 'Output', dirPath )
     if result['OK']:
       self.log.info('Files retrieved and extracted in %s' %(dirPath))
@@ -1540,7 +1541,6 @@ class Dirac:
         self.jobRepo.updateJob(jobID,{'Retrieved':1,'Sandbox':os.path.realpath(dirPath)})
       return result
     self.log.warn( result[ 'Message' ] )
-    """
 
     #Old download
     result = self.outputSandboxClient.getSandbox(jobID,dirPath)
