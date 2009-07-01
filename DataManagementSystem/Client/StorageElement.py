@@ -1,8 +1,8 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/StorageElement.py,v 1.32 2009/06/30 17:33:41 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/StorageElement.py,v 1.33 2009/07/01 10:35:31 acsmith Exp $
 ########################################################################
 
-__RCSID__ = "$Id: StorageElement.py,v 1.32 2009/06/30 17:33:41 acsmith Exp $"
+__RCSID__ = "$Id: StorageElement.py,v 1.33 2009/07/01 10:35:31 acsmith Exp $"
 
 """ This is the StorageElement class.
 
@@ -58,6 +58,7 @@ class StorageElement:
                            'getFileMetadata',
                            'getFileSize',
                            'getAccessUrl',
+                           'getTransportURL',
                            'isDirectory',
                            'getDirectoryMetadata',
                            'getDirectorySize',
