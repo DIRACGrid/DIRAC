@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.96 2009/07/01 11:03:08 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.97 2009/07/01 16:11:45 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.96 2009/07/01 11:03:08 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.97 2009/07/01 16:11:45 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -181,6 +181,33 @@ class Dirac:
           if destinationDirectory:
              destDir = "%s/%s" % (destinationDirectory,jobID)
           self.getJobOutputData(jobID,destinationDir=destDir)
+    return S_OK()
+
+  def removeRepository(self):
+    """ Removes the job repository and all sandboxes and output data retrieved
+       
+       Example Usage:
+       
+       >>> print dirac.removeRepository()
+       {'OK': True, 'Value': ''}
+
+       @return: S_OK,S_ERROR
+    """
+    if not self.jobRepo:
+      gLogger.warn("No repository is initialised")
+      return S_OK()  
+    jobs = self.jobRepo.readRepository()['Value']
+    for jobID in sortList(jobs.keys()):
+      jobDict = jobs[jobID]
+      if jobDict.has_key('Sandbox') and os.path.exists(jobDict['Sandbox']):
+        shutil.rmtree(jobDict['Sandbox'], ignore_errors=True)
+      if jobDict.has_key('OutputFiles'):
+        for file in eval(jobDict['OutputFiles']):
+          if os.path.exists(file):
+            os.remove(file)
+    self.delete(sortList(jobs.keys()))
+    os.remove(self.jobRepo.getLocation()['Value'])
+    self.jobRepo = False
     return S_OK()
 
   def resetRepository(self,jobIDs=[]):
