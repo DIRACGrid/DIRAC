@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.61 2009/05/25 18:18:33 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.61 2009/05/25 18:18:33 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.62 2009/07/01 09:50:35 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.62 2009/07/01 09:50:35 acasajus Exp $"
 
 import sys
 import types
@@ -116,11 +116,7 @@ class BaseClient:
     return S_OK()
 
   def __findServiceURL( self ):
-    for protocol in gProtocolDict.keys():
-      if self.serviceName.find( "%s://" % protocol ) == 0:
-        gLogger.debug( "Already given a valid url", self.serviceName )
-        return S_OK( self.serviceName )
-
+    gatewayURL = False
     if self.KW_IGNORE_GATEWAYS not in self.kwargs or not self.kwargs[ self.KW_IGNORE_GATEWAYS ]:
       dRetVal = gConfig.getOption( "/LocalSite/Site" )
       if dRetVal[ 'OK' ]:
@@ -129,8 +125,21 @@ class BaseClient:
         if dRetVal[ 'OK' ]:
           rawGatewayURL = List.randomize( List.fromChar( dRetVal[ 'Value'], "," ) )[0]
           gatewayURL = "/".join( rawGatewayURL.split( "/" )[:3] )
-          gLogger.debug( "Using gateway", gatewayURL )
-          return S_OK( "%s/%s" % (  gatewayURL, self.serviceName ) )
+          
+    for protocol in gProtocolDict.keys():
+      if self.serviceName.find( "%s://" % protocol ) == 0:
+        gLogger.debug( "Already given a valid url", self.serviceName )
+        if not gatewayURL:
+          return S_OK( self.serviceName )
+        gLogger.debug( "Reconstructing given URL to pass through gateway" )
+        path = "/".join( self.serviceName.split( "/" )[3:] )
+        finalURL = "%s/%s" % (  gatewayURL, path )
+        gLogger.debug( "Gateway URL conversion:\n %s -> %s" % ( self.serviceName, finalURL ) )
+        return S_OK( finalURL )
+
+    if gatewayURL:
+      gLogger.debug( "Using gateway", gatewayURL )
+      return S_OK( "%s/%s" % (  gatewayURL, self.serviceName ) )
 
     try:
       urls = getServiceURL( self.serviceName, setup = self.setup )
