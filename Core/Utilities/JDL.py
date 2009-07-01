@@ -1,5 +1,5 @@
 from DIRAC import S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.CFG import CFG
+from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities import List
 
 def loadJDLAsCFG( jdl ):
