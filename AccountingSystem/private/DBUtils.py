@@ -71,7 +71,7 @@ class DBUtils:
 
   def _getBins( self, typeName, startTime, endTime ):
     typeName = "%s_%s" % ( self._setup, typeName )
-    return self._acDB.calculateBuckets( typeName )
+    return self._acDB.calculateBuckets( typeName, startTime, endTime )
 
   def _getBucketLengthForTime( self, typeName, momentEpoch ):
     nowEpoch = Time.toEpoch()
