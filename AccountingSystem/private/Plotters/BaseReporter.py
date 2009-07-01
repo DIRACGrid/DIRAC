@@ -28,6 +28,12 @@ class BaseReporter(DBUtils):
 
   def _translateGrouping( self, grouping ):
     return ( "%s", [ grouping ] )
+  
+  def _averageConsolidation( self, a, b ):
+    if b == 0:
+      return 0
+    else:
+      return float(a)/float(b)
 
   def generate( self, reportRequest ):
     reportRequest[ 'groupingFields' ] = self._translateGrouping( reportRequest[ 'grouping' ] )
