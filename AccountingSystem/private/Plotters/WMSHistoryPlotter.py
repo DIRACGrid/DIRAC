@@ -72,3 +72,26 @@ class WMSHistoryPlotter(BaseReporter):
                  'skipEdgeColor' : True,
                  'ylabel' : "reschedules"  }
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
+
+  def _reportAverageNumberOfJobs( self, reportRequest ):
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'Jobs', 'entriesInBucket'
+                                   ]
+                   )
+    retVal = self._getSummaryData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
+                                selectFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
+                                {},
+                                reduceFunc = self._averageConsolidation )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict = retVal[ 'Value' ]
+    return S_OK( { 'data' : dataDict  } )
+
+  def _plotAverageNumberOfJobs( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Average Number of Jobs by %s' % reportRequest[ 'grouping' ],
+                 'ylabel' : 'Jobs'
+                }
+    return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )
