@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.6 2009/06/27 09:03:45 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.7 2009/07/01 08:25:08 rgracian Exp $
 # File :   GridPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -12,7 +12,7 @@
   underlying resources.
 
 """
-__RCSID__ = "$Id: GridPilotDirector.py,v 1.6 2009/06/27 09:03:45 rgracian Exp $"
+__RCSID__ = "$Id: GridPilotDirector.py,v 1.7 2009/07/01 08:25:08 rgracian Exp $"
 
 
 GRIDENV                = ''
@@ -26,7 +26,7 @@ ERROR_CE         = 'No queue available for pilot'
 ERROR_JDL        = 'Could not create Grid JDL'
 ERROR_RB         = 'No Broker available'
 
-import os, tempfile, time, re
+import os, tempfile, time, re, shutil
 
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import outputSandboxFiles
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
