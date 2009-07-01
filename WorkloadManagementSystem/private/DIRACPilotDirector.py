@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.6 2009/05/28 05:29:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.7 2009/07/01 06:33:38 rgracian Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,12 +13,14 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.6 2009/05/28 05:29:50 rgracian Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.7 2009/07/01 06:33:38 rgracian Exp $"
 
 import os, sys, tempfile, shutil
 
 from DIRAC.WorkloadManagementSystem.private.PilotDirector import PilotDirector
-from DIRAC.Resources.Computing.ComputingElementFactory   import ComputingElementFactory
+from DIRAC.Resources.Computing.ComputingElementFactory    import ComputingElementFactory
+from DIRAC.Core.Security import CS
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient      import gProxyManager
 from DIRAC import S_OK, S_ERROR, DictCache, gConfig
 
 ERROR_CE         = 'No CE available'
@@ -178,3 +180,17 @@ shutil.rmtree( pilotWorkingDirectory )
     fd.close()
 
     return pilotScript
+
+  def _getPilotProxyFromDIRACGroup( ownerDN, ownerGroup, requiredTimeLeft ):
+    """
+    Download a limited pilot proxy with VOMS extensions depending on the group
+    """
+    #Assign VOMS attribute
+    vomsAttr = CS.getVOMSAttributeForGroup( ownerGroup )
+    if not vomsAttr:
+      return S_ERROR( "No voms attribute assigned to group %s" % ownerGroup )
+    return self.downloadVOMSProxy( ownerDN,
+                                   ownerGroup,
+                                   limited = True,
+                                   requiredTimeLeft = requiredTimeLeft,
+                                   requiredVOMSAttribute = vomsAttr )    

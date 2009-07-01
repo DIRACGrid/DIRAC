@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/PilotDirector.py,v 1.2 2009/05/25 14:35:19 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/PilotDirector.py,v 1.3 2009/07/01 06:33:38 rgracian Exp $
 # File :   PilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -15,7 +15,7 @@
   This means that DIRAC direct submission to Grid CE's (CREAM, ...) will be handled by DIRAC Pilot
   Director making use of a DIRAC CREAM Computing Element class
 """
-__RCSID__ = "$Id: PilotDirector.py,v 1.2 2009/05/25 14:35:19 rgracian Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.3 2009/07/01 06:33:38 rgracian Exp $"
 
 
 import os, time, tempfile, shutil, re, random
@@ -309,7 +309,7 @@ class PilotDirector:
         return result
       (pilotOptions, pilotsToSubmit, ownerDN, ownerGroup, submitPrivatePilot, privateTQ ) = result['Value']
       # get a valid proxy, submit with a long proxy to avoid renewal
-      ret = gProxyManager.getPilotProxyFromDIRACGroup( ownerDN, ownerGroup, requiredTimeLeft = 86400 * 5 )
+      ret = self._getPilotProxyFromDIRACGroup( ownerDN, ownerGroup, requiredTimeLeft = 86400 * 5 )
       if not ret['OK']:
         self.log.error( ret['Message'] )
         self.log.error( 'No proxy Available', 'User "%s", Group "%s"' % ( ownerDN, ownerGroup ) )
@@ -329,6 +329,12 @@ class PilotDirector:
       self.log.exception( 'Error in Pilot Submission' )
 
     return S_OK(0)
+
+  def _getPilotProxyFromDIRACGroup( ownerDN, ownerGroup, requiredTimeLeft ):
+    """
+     To be overwritten if a given Pilot does not require a full proxy
+    """
+    return gProxyManager.getPilotProxyFromDIRACGroup( ownerDN, ownerGroup, requiredTimeLeft )
 
   def exceptionCallBack(self, threadedJob, exceptionInfo ):
     self.log.exception( 'Error in Pilot Submission' )
