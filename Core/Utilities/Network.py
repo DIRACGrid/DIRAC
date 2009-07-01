@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Network.py,v 1.5 2009/03/02 17:01:45 acasajus Exp $
-__RCSID__ = "$Id: Network.py,v 1.5 2009/03/02 17:01:45 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Network.py,v 1.6 2009/07/01 10:12:55 rgracian Exp $
+__RCSID__ = "$Id: Network.py,v 1.6 2009/07/01 10:12:55 rgracian Exp $"
 """
    Collection of DIRAC useful network related modules
    by default on Error they return None
@@ -77,7 +77,7 @@ def getIPsForHostName( hostName ):
   try:
     ips = [ t[4][0] for t in socket.getaddrinfo( hostName, 0 ) ]
   except Exception, e:
-    return S_ERROR( "Can't get info for host %s: %s" % ( host, str( e ) ) )
+    return S_ERROR( "Can't get info for host %s: %s" % ( hostName, str( e ) ) )
   uniqueIPs = []
   for ip in ips:
     if ip not in uniqueIPs:
