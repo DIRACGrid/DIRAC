@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-admin-sync-users-from-file.py,v 1.2 2009/04/18 18:26:59 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-admin-sync-users-from-file.py,v 1.3 2009/07/01 14:18:24 acasajus Exp $
 # File :   dirac-admin-sync-users-from-file
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-sync-users-from-file.py,v 1.2 2009/04/18 18:26:59 rgracian Exp $"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__   = "$Id: dirac-admin-sync-users-from-file.py,v 1.3 2009/07/01 14:18:24 acasajus Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.ConfigurationSystem.Client.CFG import CFG
+from DIRAC.Core.Utilities.CFG import CFG
 
 Script.registerSwitch( "t", "test", "Only test. Don't commit changes" )
 
