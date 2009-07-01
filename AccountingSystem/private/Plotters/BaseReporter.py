@@ -152,7 +152,7 @@ class BaseReporter(DBUtils):
       if not reduceFunc:
         dataDict[ key ] = dataDict[ key ][0][0]
       else:
-        dataDict[ key ] = reduceFunc( dataDict[ key ] )
+        dataDict[ key ] = self._executeConsolidation( reduceFunc, dataDict[ key ] )
     #HACK to allow serialization of the type because MySQL decides to return data in a non python standard format
     for key in dataDict:
       dataDict[ key ] = float( dataDict[ key ] )
