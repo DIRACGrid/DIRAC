@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.74 2009/07/01 20:04:22 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.75 2009/07/01 20:28:33 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -111,12 +111,12 @@ class ReplicaManager:
     ##########################################################
     #  Instantiate the destination storage element here.
     storageElement = StorageElement(diracSE)
-    if not storageElement.isValid()['Value']:
-      errStr = "ReplicaManager.put: Failed to instantiate destination StorageElement."
-      gLogger.error(errStr,diracSE)
+    res = storageElement.isValid()
+    if not res['OK']:
+      errStr = "ReplicaManager.putDirectory: The storage element is not currently valid."
+      gLogger.error(errStr,"%s %s" % (diracSE,res['Message']))
       return S_ERROR(errStr)
     destinationSE = storageElement.getStorageElementName()['Value']
-
     res = storageElement.getPfnForLfn(storagePath)
     if not res['OK']:
       errStr = "ReplicaManager.putDirectory: Failed to generate destination PFN."
@@ -169,16 +169,16 @@ class ReplicaManager:
       for diracSE,pfn in lfnReplicas[lfn].items():
         storageElement = StorageElement(diracSE)
         res = storageElement.isValid()
-        if res['OK']:
+        if not res['OK']:
+          errStr = "ReplicaManager.getFile: The storage element is not currently valid."
+          gLogger.error(errStr,"%s %s" % (diracSE,res['Message']))
+        else:
           local = storageElement.isLocalSE()['Value']
           fileTuple = (diracSE,pfn)
           if local:
             replicas.insert(0,fileTuple)
           else:
             replicas.append(fileTuple)
-        else:
-          errStr = "ReplicaManager.getFile: The storage element is not currently valid."
-          gLogger.error(errStr,diracSE)
       if not replicas:
         errStr = "ReplicaManager.getFile: Failed to find any valid StorageElements."
         gLogger.error(errStr,lfn)
@@ -345,14 +345,15 @@ class ReplicaManager:
     gLogger.error(errStr,lfn)
     return S_ERROR(errStr)
 
-  def __initializeReplication(self,lfn,sourceSE,destSE,):
+  def __initializeReplication(self,lfn,sourceSE,destSE):
     ###########################################################
     # Check that the destination storage element is sane and resolve its name
     gLogger.verbose("ReplicaManager.__initializeReplication: Verifying destination Storage Element validity (%s)." % destSE)
     destStorageElement = StorageElement(destSE)
-    if not destStorageElement.isValid()['Value']:
-      errStr = "ReplicaManager.__initializeReplication: Failed to instantiate destination StorageElement."
-      gLogger.error(errStr,destSE)
+    res = destStorageElement.isValid()
+    if not res['OK']:
+      errStr = "ReplicaManager.__initializeReplication: The storage element is not currently valid."
+      gLogger.error(errStr,"%s %s" % (destSE,res['Message']))
       return S_ERROR(errStr)
     destSE = destStorageElement.getStorageElementName()['Value']
     gLogger.info("ReplicaManager.__initializeReplication: Destination Storage Element verified.")
@@ -431,7 +432,11 @@ class ReplicaManager:
       else:
         gLogger.info("ReplicaManager.__resolveBestReplicas: %s is available for use." % diracSE)
         storageElement = StorageElement(diracSE)
-        if storageElement.isValid()['Value']:
+        res = storageElement.isValid()
+        if not res['OK']:
+          errStr = "ReplicaManager.__resolveBestReplicas: The storage element is not currently valid."
+          gLogger.error(errStr,"%s %s" % (diracSE,res['Message']))
+        else:
           if storageElement.getRemoteProtocols()['Value']:
             gLogger.verbose("ReplicaManager.__resolveBestReplicas: Attempting to get source pfns for remote protocols.")
             res = storageElement.getPfnForProtocol(pfn,self.thirdPartyProtocols)
@@ -461,9 +466,6 @@ class ReplicaManager:
           else:
             errStr = "ReplicaManager.__resolveBestReplicas: Source Storage Element has no remote protocols."
             gLogger.info(errStr,diracSE)
-        else:
-          errStr = "ReplicaManager.__resolveBestReplicas: Failed to get valid Storage Element."
-          gLogger.error(errStr,diracSE)
     if not replicaPreference:
       errStr = "ReplicaManager.__resolveBestReplicas: Failed to find any valid source Storage Elements."
       gLogger.error(errStr)
@@ -507,10 +509,11 @@ class ReplicaManager:
     failed = {}
     fileDict = {}
     for storageElementName,fileTuple in seDict.items():
-      destStorageElement = StorageElement(storageElementName)
-      if not destStorageElement.isValid()['Value']:
-        errStr = "ReplicaManager.__registerFile: Failed to instantiate destination Storage Element."
-        gLogger.error(errStr,storageElementName)
+      destStorageElement = StorageElement(storageElementName,True)
+      res = destStorageElement.isValid()
+      if not res['OK']:
+        errStr = "ReplicaManager.__registerFile: The storage element is not currently valid."
+        gLogger.error(errStr,"%s %s" % (storageElementName,res['Message']))
         for lfn,physicalFile,fileSize,storageElementName,fileGuid,checksum in fileTuple:
           failed[lfn] = errStr
       else:
@@ -569,9 +572,10 @@ class ReplicaManager:
     replicaTuples = []
     for storageElementName,replicaTuple in seDict.items():
       destStorageElement = StorageElement(storageElementName)
-      if not destStorageElement.isValid()['Value']:
-        errStr = "ReplicaManager.__registerReplica: Failed to instantiate destination Storage Element."
-        gLogger.error(errStr,storageElementName)
+      res = destStorageElement.isValid()
+      if not res['OK']:
+        errStr = "ReplicaManager.__registerReplica: The storage element is not currently valid."
+        gLogger.error(errStr,"%s %s" % (storageElementName,res['Message']))
         for lfn,pfn in replicaTuple:
           failed[lfn] = errStr
       else:
@@ -917,9 +921,10 @@ class ReplicaManager:
   def __removePhysicalReplica(self,storageElementName,pfnsToRemove):
     gLogger.verbose("ReplicaManager.__removePhysicalReplica: Attempting to remove %s pfns at %s." % (len(pfnsToRemove),storageElementName))
     storageElement = StorageElement(storageElementName)
-    if not storageElement.isValid()['Value']:
-      errStr = "ReplicaManager.__removePhysicalReplica: Failed to instantiate Storage Element for removal."
-      gLogger.error(errStr,storageElement)
+    res = storageElement.isValid()
+    if not res['OK']:
+      errStr = "ReplicaManager.__removePhysicalReplica: The storage element is not currently valid."
+      gLogger.error(errStr,"%s %s" % (storageElementName,res['Message']))
       return S_ERROR(errStr)
     oDataOperation = self.__initialiseAccountingObject('removePhysicalReplica',storageElementName,len(pfnsToRemove))
     oDataOperation.setStartTime()
@@ -978,9 +983,10 @@ class ReplicaManager:
     ##########################################################
     #  Instantiate the destination storage element here.
     storageElement = StorageElement(diracSE)
-    if not storageElement.isValid()['Value']:
-      errStr = "ReplicaManager.put: Failed to instantiate destination StorageElement."
-      gLogger.error(errStr,diracSE)
+    res = storageElement.isValid()
+    if not res['OK']:
+      errStr = "ReplicaManager.put: The storage element is not currently valid."
+      gLogger.error(errStr,"%s %s" % (diracSE,res['Message']))
       return S_ERROR(errStr)
     destinationSE = storageElement.getStorageElementName()['Value']
     res = storageElement.getPfnForLfn(lfn)
@@ -1077,9 +1083,10 @@ class ReplicaManager:
     ##########################################################
     #  Instantiate the destination storage element here.
     storageElement = StorageElement(diracSE)
-    if not storageElement.isValid()['Value']:
-      errStr = "ReplicaManager.putAndRegister: Failed to instantiate destination StorageElement."
-      gLogger.error(errStr,diracSE)
+    res = storageElement.isValid()
+    if not res['OK']:
+      errStr = "ReplicaManager.putAndRegister: The storage element is not currently valid."
+      gLogger.error(errStr,"%s %s" % (diracSE,res['Message']))
       return S_ERROR(errStr)
     destinationSE = storageElement.getStorageElementName()['Value']
     res = storageElement.getPfnForLfn(lfn)
