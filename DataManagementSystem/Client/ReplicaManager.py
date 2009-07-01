@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.73 2009/06/30 17:34:06 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.74 2009/07/01 20:04:22 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -168,7 +168,8 @@ class ReplicaManager:
       replicas = []
       for diracSE,pfn in lfnReplicas[lfn].items():
         storageElement = StorageElement(diracSE)
-        if storageElement.isValid()['Value']:
+        res = storageElement.isValid()
+        if res['OK']:
           local = storageElement.isLocalSE()['Value']
           fileTuple = (diracSE,pfn)
           if local:
@@ -176,7 +177,7 @@ class ReplicaManager:
           else:
             replicas.append(fileTuple)
         else:
-          errStr = "ReplicaManager.getFile: Failed to determine whether SE is local."
+          errStr = "ReplicaManager.getFile: The storage element is not currently valid."
           gLogger.error(errStr,diracSE)
       if not replicas:
         errStr = "ReplicaManager.getFile: Failed to find any valid StorageElements."
