@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.14 2009/06/30 19:33:37 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.14 2009/06/30 19:33:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.15 2009/07/01 16:45:16 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.15 2009/07/01 16:45:16 acasajus Exp $"
 
 import sys
 import os
@@ -16,8 +16,6 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class ServiceInterface( threading.Thread ):
-
-  __prevConfData = ConfigurationData()
 
   def __init__( self, sURL ):
     threading.Thread.__init__( self )
@@ -68,16 +66,6 @@ class ServiceInterface( threading.Thread ):
 
       if bBuiltNewConfiguration:
         gConfigurationData.writeRemoteConfigurationToDisk()
-    #Load previous version
-    backups = self.__getCfgBackups( gConfigurationData.getBackupDir() )
-    if backups:
-      backFile = backups[0]
-      if backFile[0] == "/":
-        backFile = backFile[1:]
-      prevFile = os.path.join( gConfigurationData.getBackupDir(), backFile )
-    else:
-      prevFile = False
-    self.__prevConfData.loadConfigurationData( prevFile )
 
   def __generateNewVersion( self ):
     if gConfigurationData.isMaster():
@@ -154,7 +142,6 @@ class ServiceInterface( threading.Thread ):
       return S_ERROR( "Names differ: Server is %s and remote is %s" % ( sLocalName, sRemoteName ) )
     #Update and generate a new version
     gLogger.info( "Committing new data..." )
-    self.__prevConfData.setRemoteCFG( gConfigurationData.getRemoteCFG() )
     gConfigurationData.lock()
     gLogger.info( "Setting the new CFG" )
     gConfigurationData.setRemoteCFG( oRemoteConfData.getRemoteCFG() )
@@ -227,8 +214,8 @@ class ServiceInterface( threading.Thread ):
     return S_OK( prevRemoteConfData.getRemoteCFG() )
   
   def __checkConflictsInModifications( self, realModList, reqModList, parentSection = "" ):
-    realModifiedSections = dict( [ ( modAc[1], modAc[2] ) for modAc in realModList if modAc[0].find( 'Sec' ) == len( modAc[0] ) - 3 ] )
-    reqOptionsModificationList = dict( [ ( modAc[1], modAc[2] ) for modAc in reqModList if modAc[0].find( 'Opt' ) == len( modAc[0] ) - 3 ] )
+    realModifiedSections = dict( [ ( modAc[1], modAc[3] ) for modAc in realModList if modAc[0].find( 'Sec' ) == len( modAc[0] ) - 3 ] )
+    reqOptionsModificationList = dict( [ ( modAc[1], modAc[3] ) for modAc in reqModList if modAc[0].find( 'Opt' ) == len( modAc[0] ) - 3 ] )
     optionModRequests = 0
     for modAc in reqModList:
       action = modAc[0]
@@ -242,7 +229,7 @@ class ServiceInterface( threading.Thread ):
       elif action == "modSec":
         if objectName in realModifiedSections:
           result = self.__checkConflictsInModifications( realModifiedSections[ objectName ], 
-                                                         modAc[2], "%s/%s" % ( parentSection, objectName ) )
+                                                         modAc[3], "%s/%s" % ( parentSection, objectName ) )
           if not result[ 'OK' ]:
             return result
     for modAc in realModList:
@@ -253,33 +240,24 @@ class ServiceInterface( threading.Thread ):
     return S_OK()
     
   def __mergeIndependentUpdates( self, oRemoteConfData ):
-    return S_ERROR( "AutoMerge is still not finished. Meanwhile... why don't you get the newest conf and update from there?" )
+    #return S_ERROR( "AutoMerge is still not finished. Meanwhile... why don't you get the newest conf and update from there?" )
     #Get all the CFGs
-    prevSrvCFG = self.__prevConfData.getRemoteCFG().clone()
     curSrvCFG = gConfigurationData.getRemoteCFG().clone()
     curCliCFG = oRemoteConfData.getRemoteCFG().clone()
     result = self.__getPreviousCFG( oRemoteConfData )
     if not result[ 'OK' ]:
       return result
     prevCliCFG = result[ 'Value' ]
-    #Try to merge the curCli with prevSrv
-    #To do so we check incompatibilities between cliReqModList and prevCliToprevSrvModList
-    cliReqModList = prevCliCFG.getModifications( curCliCFG )
-    prevCliToprevSrvModList = prevCliCFG.getModifications( prevSrvCFG )
-    result = self.__checkConflictsInModifications( prevCliToprevSrvModList, cliReqModList )
-    if not result[ 'OK' ]:
-      return S_ERROR( "Cannot AutoMerge: %s" % result[ 'Message' ] )
-    result = curCliCFG.applyModifications( prevCliToprevSrvModList )
-    if not result[ 'OK' ]:
-      return result
-    #OK. Now curCli and curSrv start from prevSrv. Try to merge!
-    #Check revSrvToCurSrvModList with cliReqModList
-    prevSrvToCurSrvModList = prevSrvCFG.getModifications( curSrvCFG )
-    result = self.__checkConflictsInModifications( prevSrvToCurSrvModList, cliReqModList )
+    #Try to merge curCli with curSrv. To do so we check the updates from
+    # prevCli -> curSrv VS prevCli -> curCli
+    prevCliToCurCliModList = prevCliCFG.getModifications( curCliCFG )
+    prevCliToCurSrvModList = prevCliCFG.getModifications( curSrvCFG )
+    result = self.__checkConflictsInModifications( prevCliToCurSrvModList, 
+                                                   prevCliToCurCliModList )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot AutoMerge: %s" % result[ 'Message' ] )
     #Merge!
-    result = curSrvCFG.applyModifications( cliReqModList )
+    result = curSrvCFG.applyModifications( prevCliToCurCliModList )
     if not result[ 'OK' ]:
       return result
     return S_OK( curSrvCFG )
