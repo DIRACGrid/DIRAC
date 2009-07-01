@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.6 2009/06/30 19:30:59 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.6 2009/06/30 19:30:59 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.7 2009/07/01 16:45:35 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.7 2009/07/01 16:45:35 acasajus Exp $"
 
 import types
 import copy
@@ -637,16 +637,24 @@ class CFG:
         modList.append( ( 'addOpt', newOption, iPos,
                           newerCfg[ newOption ], 
                           newerCfg.getComment( newOption ) ) )
-      elif newerCfg[ newOption ] != self[ newOption ]:
-        modList.append( ( 'modOpt', newOption, 
-                          newerCfg[ newOption ], 
-                          newerCfg.getComment( newOption ) ) )
+      else:
+        modified = False
+        if iPos != oldOptions.index( newOption ):
+          modified = True
+        elif newerCfg[ newOption ] != self[ newOption ]:
+          modified = True
+        elif newerCfg.getComment( newOption ) != self.getComment( newOption ):
+          modified = True
+        if modified:
+          modList.append( ( 'modOpt', newOption, iPos,
+                            newerCfg[ newOption ], 
+                            newerCfg.getComment( newOption ) ) )
     for oldOption in oldOptions:
       oldOptPath = "%s/%s" % ( parentPath, oldOption )
       if oldOptPath in ignoreMask:
         continue
       if oldOption not in newOptions:
-        modList.append( ( 'delOpt', oldOption, '' ) )
+        modList.append( ( 'delOpt', oldOption, -1, '' ) )
     #Sections
     oldSections = self.listSections( True )
     newSections = newerCfg.listSections( True )
@@ -660,17 +668,25 @@ class CFG:
                           str( newerCfg[ newSection ] ), 
                           newerCfg.getComment( newSection ) ) )
       else:
+        modified = False
+        if iPos != oldSections.index( newSection ):
+          modified = True
+        elif newerCfg.getComment( newSection ) != self.getComment( newSection ):
+          modified = True
         subMod = self[ newSection ].getModifications( newerCfg[ newSection ], 
                                                       ignoreMask, newSecPath )
         if subMod:
-          modList.append( ( 'modSec', newSection, subMod, 
-                          newerCfg.getComment( newSection ) ) )
+          modified = True
+        if modified:
+          modList.append( ( 'modSec', newSection, iPos,
+                            subMod, 
+                            newerCfg.getComment( newSection ) ) )
     for oldSection in oldSections:
       oldSecPath = "%s/%s" % ( parentPath, oldSection )
       if oldSecPath in ignoreMask:
         continue
       if oldSection not in newSections:
-        modList.append( ( 'delSec', oldSection, '' ) )
+        modList.append( ( 'delSec', oldSection, -1, '' ) )
     return modList
     
   def applyModifications( self, modList, parentSection = "" ):
@@ -684,12 +700,13 @@ class CFG:
     for modAction in modList:
       action = modAction[0]
       key = modAction[1]
+      iPos = modAction[2]
+      value = modAction[3]
       if action == 'addSec':
         if key in self.listSections():
           return S_ERROR( "Section %s/%s already exists" % ( parentSection, key ) )
         #key, value, comment, beforeKey = ""
-        iPos = modAction[2]
-        value = CFG().loadFromBuffer( modAction[3].strip() )
+        value = CFG().loadFromBuffer( value )
         comment = modAction[4].strip()
         if iPos < len( self.__orderedList ):
           beforeKey = self.__orderedList[ iPos ]
@@ -701,20 +718,22 @@ class CFG:
           return S_ERROR( "Section %s/%s does not exist" % ( parentSection, key ) )
         self.deleteKey( key )
       elif action == 'modSec':
-        subModList = modAction[2]
-        comment = modAction[3].strip()
-        self.setComment( key, comment )
         if key not in self.listSections():
           return S_ERROR( "Section %s/%s does not exist" % ( parentSection, key ) )
-        result = self[ key ].applyModifications( subModList, "%s/%s" % ( parentSection, key ) )
-        if not result[ 'OK' ]:
-          return result
+        comment = modAction[4].strip()
+        self.setComment( key, comment )
+        if value:
+          result = self[ key ].applyModifications( value, "%s/%s" % ( parentSection, key ) )
+          if not result[ 'OK' ]:
+            return result
+        if iPos >= len( self.__orderedList ) or key != self.__orderedList[ iPos ]:
+          prevPos = self.__orderedList.find( key )
+          del( self.__orderedList[ prevPos ] )
+          self.__orderedList.insert( iPos, key )
       elif action == "addOpt":
         if key in self.listOptions():
           return S_ERROR( "Option %s/%s exists already" % ( parentSection, key ) )
         #key, value, comment, beforeKey = ""
-        iPos = modAction[2]
-        value = modAction[3]
         comment = modAction[4].strip()
         if iPos < len( self.__orderedList ):
           beforeKey = self.__orderedList[ iPos ]
@@ -727,6 +746,13 @@ class CFG:
         value = modAction[2]
         comment = modAction[3].strip()
         self.setOption( key , value, comment )
+        #-------
+        comment = modAction[4].strip()
+        self.setOption( key , value, comment )
+        if iPos >= len( self.__orderedList ) or key != self.__orderedList[ iPos ]:
+          prevPos = self.__orderedList.find( key )
+          del( self.__orderedList[ prevPos ] )
+          self.__orderedList.insert( iPos, key )
       elif action == "delOpt":
         if key not in self.listOptions():
           return S_ERROR( "Option %s/%s does not exist" % ( parentSection, key ) )
