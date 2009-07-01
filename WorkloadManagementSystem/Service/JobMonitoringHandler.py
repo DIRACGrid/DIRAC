@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.31 2009/06/26 15:37:44 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py,v 1.32 2009/07/01 13:02:05 atsareg Exp $
 ########################################################################
 
 """ JobMonitoringHandler is the implementation of the JobMonitoring service
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.31 2009/06/26 15:37:44 atsareg Exp $"
+__RCSID__ = "$Id: JobMonitoringHandler.py,v 1.32 2009/07/01 13:02:05 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -239,16 +239,15 @@ class JobMonitoringHandler( RequestHandler ):
     """ Get the summary of the job information for a given page in the
         job monitor in a generic format
     """
-
     resultDict = {}
     startDate = selectDict.get('FromDate',None)
     if startDate:
       del selectDict['FromDate']
     # For backward compatibility
-    startDate = selectDict.get('LastUpdate',None)
-    if startDate:
-      del selectDict['LastUpdate']
-    # For backward compatibility  
+    if startDate is None:
+      startDate = selectDict.get('LastUpdate',None)
+      if startDate:
+        del selectDict['LastUpdate']
     endDate = selectDict.get('ToDate',None)
     if endDate:
       del selectDict['ToDate']  
