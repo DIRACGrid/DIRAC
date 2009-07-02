@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.86 2009/07/02 14:58:16 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.87 2009/07/02 15:06:30 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.86 2009/07/02 14:58:16 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.87 2009/07/02 15:06:30 acasajus Exp $"
 
 import types
 import random
@@ -15,7 +15,10 @@ from DIRAC.Core.Utilities import List
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security import Properties, CS
 
-maxCPUSegments = ( 500, 2000, 5000, 20000, 50000, 100000, 200000, 300000 ) 
+_MIN = 60
+_HOUR = 3600
+_DAY = 86400
+maxCPUSegments = ( 6*_MIN, 30*_MIN, 1*_HOUR, 6*_HOUR, 12*_HOUR, 1*_DAY, 2*_DAY, 3*_DAY, 4*_DAY)
 
 class TaskQueueDB(DB):
 
