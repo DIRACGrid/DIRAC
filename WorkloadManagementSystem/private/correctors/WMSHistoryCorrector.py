@@ -1,35 +1,32 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/Attic/PriorityCorrector.py,v 1.1 2009/07/02 14:59:09 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/correctors/WMSHistoryCorrector.py,v 1.1 2009/07/02 16:30:49 acasajus Exp $
 ########################################################################
-""" Pritority corrector for the group and ingroup shares
+""" WMSHistory corrector for the group and ingroup shares
 """
 
-__RCSID__ = "$Id: PriorityCorrector.py,v 1.1 2009/07/02 14:59:09 acasajus Exp $"
+__RCSID__ = "$Id: WMSHistoryCorrector.py,v 1.1 2009/07/02 16:30:49 acasajus Exp $"
 
 import datetime
+import time as nativetime
 from DIRAC.Core.Utilities import List, Time
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 
-class PriorityCorrector:
+class WMSHistoryCorrector:
   
   _GLOBAL_MAX_CORRECTION = 'MaxGlobalCorrection'
   _SLICE_TIME_SPAN = 'TimeSpan'
   _SLICE_WEIGHT = 'Weight'
   _SLICE_MAX_CORRECTION = 'MaxCorrection'
   
-  def __init__( self, group = False ):
-    baseCSPath = "/PriorityCorrection"
-    if not group:
-      self.__log = gLogger.getSubLogger( "GlobalPriorityCorrector" )
-      self.__baseCSPath = "%s/Global" % baseCSPath
-    else:
-      self.__log = gLogger.getSubLogger( "%s:PriorityCorrector" % group )
-      self.__baseCSPath = "%s/Groups/%s" % ( baseCSPath, group )
+  def __init__( self, baseCSPath, group ):
+    self.__log = gLogger.getSubLogger( "WMSHistoryCorrector" )
+    self.__baseCSPath = baseCSPath
     self.__group = group
     self.__reportsClient = ReportsClient()
     self.__usageHistory = {}
     self.__slices = {}
+    self.__lastHistoryUpdate = 0
     self.__globalCorrectionFactor = 5
     self._fillSlices()
     
@@ -64,7 +61,14 @@ class PriorityCorrector:
       self.__slices[ timeSlice ][ self._SLICE_WEIGHT ] /= float( weightSum )
     self.__log.info( "Found %s time slices" % len( self.__slices ) )
       
-  def updateUsageHistory( self ):
+  def updateHistoryKnowledge( self ):
+    updatePeriod = self.__getCSValue( 'UpdateHistoryPeriod', 900 )
+    now = nativetime.time()
+    if self.__lastHistoryUpdate + updatePeriod > now:
+      self.__log.verbose( "Skipping history update. Last update was less than %s secs ago" % updatePeriod)
+      return
+    self.__lastHistoryUpdate = now
+    self.__log.info( "Updating history knowledge" )
     self.__usageHistory = {}
     for timeSlice in self.__slices:
       result = self._getUsageHistoryForTimeSpan( self.__slices[ timeSlice ][ self._SLICE_TIME_SPAN ], 
@@ -74,7 +78,8 @@ class PriorityCorrector:
         self.__log.error( "Could not get history for slice", "%s: %s" % ( timeSlice, result[ 'Message' ] ) )
         return
       self.__usageHistory[ timeSlice ] = result[ 'Value' ]
-      self.__log.error( "Got history for slice %s (%s entities in slice)" % ( timeSlice, len( self.__usageHistory[ timeSlice ] ) ) )
+      self.__log.info( "Got history for slice %s (%s entities in slice)" % ( timeSlice, len( self.__usageHistory[ timeSlice ] ) ) )
+    self.__log.info( "Updated history knowledge for time slice %s" % timeSlice )
       
   def _getUsageHistoryForTimeSpan( self, timeSpan, groupToUse = "" ):
     reportCondition = { 'Status' : [ 'Running' ] }
@@ -89,6 +94,7 @@ class PriorityCorrector:
                                              reportCondition, reportGrouping, 
                                              { 'lastSeconds' : timeSpan } )
     if not result[ 'OK' ]:
+      self.__log.error( "Cannot get history from Accounting", result[ 'Message' ] )
       return result
     data = result[ 'Value' ][ 'data' ]
     return S_OK( data )
@@ -110,6 +116,10 @@ class PriorityCorrector:
   def applyCorrection( self, entitiesExpectedShare ):
     #Normalize expected shares
     normalizedShares = self.__normalizeShares( entitiesExpectedShare )
+    
+    if not self.__usageHistory:
+      self.__log.verbose( "No history knowledge available. Correction is 1 for all entities" )
+      return entitiesExpectedShare
     
     entitiesSliceCorrections = dict( [ ( entity, [] ) for entity in entitiesExpectedShare ] )
     for timeSlice in self.__usageHistory:
@@ -147,15 +157,20 @@ class PriorityCorrector:
     minGlobalCorrectionFactor = 1.0/maxGlobalCorrectionFactor
     for entity in entitiesSliceCorrections:
       entityCorrectionFactor = 0.0
-      for cF in entitiesSliceCorrections[ entity ]:
-        entityCorrectionFactor += cF
-      entityCorrectionFactor = min( entityCorrectionFactor, maxGlobalCorrectionFactor )
-      entityCorrectionFactor = max( entityCorrectionFactor, minGlobalCorrectionFactor )
-      correctedShare = entitiesExpectedShare[ entity ] * entityCorrectionFactor
-      correctedEntityShare[ entity ] = correctedShare
-      self.__log.verbose( "Final correction factor for entity %s is %.3f\n Final share is %.3f" % ( entity,
-                                                                                                  entityCorrectionFactor,
-                                                                                                  correctedShare ) )
+      slicesCorrections = entitiesSliceCorrections[ entity ]
+      if not slicesCorrections:
+        self.__log.verbose( "Entity does not have any correction %s" % entity )
+        correctedEntityShare[ entity ] = entitiesExpectedShare[ entity ]
+      else:
+        for cF in entitiesSliceCorrections[ entity ]:
+          entityCorrectionFactor += cF
+        entityCorrectionFactor = min( entityCorrectionFactor, maxGlobalCorrectionFactor )
+        entityCorrectionFactor = max( entityCorrectionFactor, minGlobalCorrectionFactor )
+        correctedShare = entitiesExpectedShare[ entity ] * entityCorrectionFactor
+        correctedEntityShare[ entity ] = correctedShare
+        self.__log.verbose( "Final correction factor for entity %s is %.3f\n Final share is %.3f" % ( entity,
+                                                                                                    entityCorrectionFactor,
+                                                                                                    correctedShare ) )
       
     return correctedEntityShare
     
