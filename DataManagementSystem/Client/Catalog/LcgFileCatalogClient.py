@@ -631,13 +631,16 @@ class LcgFileCatalogClient(FileCatalogueBase):
     failed = {}
     successful = {}
     for lfn,info in lfns.items():
-      pfn = info['PFN']
-      se = info['SE']
-      res = self.__removeReplica(pfn)
-      if res['OK']:
-        successful[lfn] = True
+      if (not info.has_key('PFN')) or (not info.has_key('SE')):
+        failed[lfn] = "Required parameters not supplied"
       else:
-        failed[lfn] = res['Message']
+        pfn = info['PFN']
+        se = info['SE']
+        res = self.__removeReplica(pfn)
+        if res['OK']:
+          successful[lfn] = True
+        else:
+          failed[lfn] = res['Message']
     lfnRemoved = successful.keys()
     if len(lfnRemoved) > 0:
       res = self.getReplicas(lfnRemoved,True)
