@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/SharesCorrector.py,v 1.1 2009/07/02 16:30:49 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/SharesCorrector.py,v 1.2 2009/07/02 17:23:39 acasajus Exp $
 ########################################################################
 """ Pritority corrector for the group and ingroup shares
 """
 
-__RCSID__ = "$Id: SharesCorrector.py,v 1.1 2009/07/02 16:30:49 acasajus Exp $"
+__RCSID__ = "$Id: SharesCorrector.py,v 1.2 2009/07/02 17:23:39 acasajus Exp $"
 
 import datetime
 import time as nativetime
@@ -18,7 +18,6 @@ class SharesCorrector:
     self.__baseCSPath = "/SharesCorrection" 
     self.__shareCorrectors = {}
     self.__correctorsOrder = []
-    self.instantiateCorrectors()
     
   def __getCSValue( self, path, defaultValue = '' ):
     return gConfig.getValue( "%s/%s" % ( self.__baseCSPath, path ), defaultValue )
@@ -35,7 +34,7 @@ class SharesCorrector:
       return S_ERROR( "Can't import corrector %s: %s" % ( fullCN, str( e ) ) )
     return S_OK( correctorClass )
       
-  def instantiateCorrectors( self ):
+  def instantiateRequiredCorrectors( self ):
     correctorsToStart = self.__getCSValue( "ShareCorrectorsToStart", [] )
     self.__correctorsOrder = correctorsToStart
     gLogger.info( "Correctors requested: %s" % ", ".join( correctorsToStart ) )
@@ -78,6 +77,10 @@ class SharesCorrector:
     for corrector in self.__shareCorrectors:
       for groupTC in self.__shareCorrectors[ corrector ]:
         self.__shareCorrectors[ corrector ][ groupTC ].updateHistoryKnowledge()
+        
+  def update(self):
+    self.instantiateRequiredCorrectors()
+    self.updateCorrectorsKnowledge()
 
   def correctShares( self, shareDict, group = '' ):
     if group:
