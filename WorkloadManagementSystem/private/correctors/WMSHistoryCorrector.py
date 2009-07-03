@@ -1,16 +1,17 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/correctors/WMSHistoryCorrector.py,v 1.2 2009/07/03 14:51:47 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/correctors/WMSHistoryCorrector.py,v 1.3 2009/07/03 17:17:03 acasajus Exp $
 ########################################################################
 """ WMSHistory corrector for the group and ingroup shares
 """
 
-__RCSID__ = "$Id: WMSHistoryCorrector.py,v 1.2 2009/07/03 14:51:47 acasajus Exp $"
+__RCSID__ = "$Id: WMSHistoryCorrector.py,v 1.3 2009/07/03 17:17:03 acasajus Exp $"
 
 import datetime
 import time as nativetime
 from DIRAC.Core.Utilities import List, Time
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Security import CS
 
 class WMSHistoryCorrector:
   
@@ -97,6 +98,19 @@ class WMSHistoryCorrector:
       self.__log.error( "Cannot get history from Accounting", result[ 'Message' ] )
       return result
     data = result[ 'Value' ][ 'data' ]
+    
+    #Map the usernames to DNs
+    if groupToUse:
+      mappedData = {}
+      for userName in data:
+        result = CS.getDNForUsername( userName )
+        if not result[ 'OK' ]:
+          self.__log.error( "User does not have any DN assigned", "%s :%s" % ( userName, result[ 'Message' ] ) )
+          continue
+        for userDN in result[ 'Value' ]:
+          mappedData[ userDN ] = data[ userName ]
+      data = mappedData
+      
     return S_OK( data )
     
   def __normalizeShares( self, entityShares ):
@@ -171,6 +185,7 @@ class WMSHistoryCorrector:
         self.__log.verbose( "Final correction factor for entity %s is %.3f\n Final share is %.3f" % ( entity,
                                                                                                     entityCorrectionFactor,
                                                                                                     correctedShare ) )
-      
+    self.__log.verbose( "Initial shares:\n  %s" % "\n  ".join( [ "%s : %.2f" % ( en, entitiesExpectedShare[ en ] ) for en in entitiesExpectedShare ] ) )
+    self.__log.verbose( "Corrected shares:\n  %s" % "\n  ".join( [ "%s : %.2f" % ( en, correctedEntityShare[ en ] ) for en in correctedEntityShare ] ) )
     return correctedEntityShare
     

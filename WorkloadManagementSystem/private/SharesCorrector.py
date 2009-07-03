@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/SharesCorrector.py,v 1.3 2009/07/03 14:51:47 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/SharesCorrector.py,v 1.4 2009/07/03 17:17:03 acasajus Exp $
 ########################################################################
 """ Pritority corrector for the group and ingroup shares
 """
 
-__RCSID__ = "$Id: SharesCorrector.py,v 1.3 2009/07/03 14:51:47 acasajus Exp $"
+__RCSID__ = "$Id: SharesCorrector.py,v 1.4 2009/07/03 17:17:03 acasajus Exp $"
 
 import datetime
 import time as nativetime
@@ -17,11 +17,11 @@ class SharesCorrector:
     if not csBasePath:
       csBasePath = "/Operations/Scheduling/%s/" % gConfig.getValue( "/DIRAC/Setup" )
     self.__baseCSPath = "%s/ShareCorrections" % csBasePath 
+    self.__log = gLogger.getSubLogger( "SharesCorrector" )
     self.__shareCorrectors = {}
     self.__correctorsOrder = []
     
   def __getCSValue( self, path, defaultValue = '' ):
-    print "GETTING %s" % "%s/%s" % ( self.__baseCSPath, path )
     return gConfig.getValue( "%s/%s" % ( self.__baseCSPath, path ), defaultValue )
     
   def __getCorrectorClass( self, correctorName ):
@@ -32,45 +32,48 @@ class SharesCorrector:
                                     locals(), fullCN )
       correctorClass  = getattr( correctorModule, fullCN )
     except Exception, e:
-      gLogger.exception()
+      self.__log.exception()
       return S_ERROR( "Can't import corrector %s: %s" % ( fullCN, str( e ) ) )
     return S_OK( correctorClass )
       
   def instantiateRequiredCorrectors( self ):
     correctorsToStart = self.__getCSValue( "ShareCorrectorsToStart", [] )
     self.__correctorsOrder = correctorsToStart
-    gLogger.info( "Correctors requested: %s" % ", ".join( correctorsToStart ) )
+    self.__log.info( "Correctors requested: %s" % ", ".join( correctorsToStart ) )
     for corrector in self.__shareCorrectors:
       if corrector not in correctorsToStart:
-        gLogger.info( "Stopping corrector %s" % corrector )
+        self.__log.info( "Stopping corrector %s" % corrector )
         del( self.__shareCorrectors[ corrector ] )
     for corrector in correctorsToStart:
       if corrector not in self.__shareCorrectors:
-        gLogger.info( "Starting corrector %s" % corrector )
+        self.__log.info( "Starting corrector %s" % corrector )
         result = gConfig.getSections( "%s/%s" % ( self.__baseCSPath, corrector ) )
         if not result[ 'OK' ]:
-          gLogger.error( "Cannot get list of correctors to instantiate", 
+          self.__log.error( "Cannot get list of correctors to instantiate", 
                          " for corrector type %s: %s" % ( corrector, result[ 'Message' ] ) )
           continue
         groupCorrectors = result[ 'Value' ]
         self.__shareCorrectors[ corrector ] = {}
         result = self.__getCorrectorClass( corrector )
         if not result[ 'OK' ]:
-          gLogger.error( "Cannot instantiate corrector", "%s %s" % ( corrector, result[ 'Message' ] ) )
+          self.__log.error( "Cannot instantiate corrector", "%s %s" % ( corrector, result[ 'Message' ] ) )
           continue
         correctorClass = result[ 'Value' ]
         for groupCor in groupCorrectors:
-          groupCorPath = "%s/%s" % ( corrector, groupCor )
-          groupToCorrect = self.__getCSValue( "%s/Group" % ( groupCorPath ), "" )
+          groupPath = "%s/%s/Group" % ( corrector, groupCor )
+          groupToCorrect = self.__getCSValue( groupPath, "" )
           if groupToCorrect:
             groupKey = "gr:%s" % groupToCorrect
           else:
             groupKey = "global"
-          gLogger.info( "Instantiating group corrector %s of type %s" % ( groupToCorrect, corrector ) )
+          self.__log.info( "Instantiating group corrector %s (%s) of type %s" % ( groupCor, 
+                                                                                  groupToCorrect,
+                                                                                  corrector ) )
           if groupKey in self.__shareCorrectors[ corrector ]:
-            gLogger.error( "There are two group correctors defined",
+            self.__log.error( "There are two group correctors defined",
                            " for %s type (group %s)" % ( corrector, groupToCorrect ) )
           else:
+            groupCorPath = "/%s/%s/%s" % ( self.__baseCSPath, corrector, groupCor )
             self.__shareCorrectors[ corrector ][ groupKey ] = correctorClass( groupCorPath, 
                                                                               groupToCorrect )
     return S_OK()
