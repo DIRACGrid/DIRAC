@@ -1,16 +1,16 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.87 2009/07/02 15:06:30 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.88 2009/07/03 17:17:21 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.87 2009/07/02 15:06:30 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.88 2009/07/03 17:17:21 acasajus Exp $"
 
 import types
 import random
 import time
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
+from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security import Properties, CS
@@ -18,7 +18,7 @@ from DIRAC.Core.Security import Properties, CS
 _MIN = 60
 _HOUR = 3600
 _DAY = 86400
-maxCPUSegments = ( 6*_MIN, 30*_MIN, 1*_HOUR, 6*_HOUR, 12*_HOUR, 1*_DAY, 2*_DAY, 3*_DAY, 4*_DAY)
+maxCPUSegments = [ 6*_MIN, 30*_MIN, 1*_HOUR, 6*_HOUR, 12*_HOUR, 1*_DAY, 2*_DAY, 3*_DAY, 4*_DAY ]
 
 class TaskQueueDB(DB):
 
@@ -34,16 +34,20 @@ class TaskQueueDB(DB):
     self.__bannedJobMatchFields = ( 'Site', )
     self.__singleValueDefFields = ( 'OwnerDN', 'OwnerGroup', 'Setup', 'CPUTime' )
     self.__mandatoryMatchFields = ( 'Setup', 'CPUTime' )
-    self.maxCPUSegments = maxCPUSegments
+    self.__defaultCPUSegments = maxCPUSegments
     self.__maxMatchRetry = 3
     self.__jobPriorityBoundaries = ( 0.001, 10 )
     self.__groupShares = {}
-    self.__csSection = getDatabaseSection( "WorkloadManagement/TaskQueueDB" )
+    self.__csSection = "/Operations/Scheduling/%s/" % gConfig.getValue( "/DIRAC/Setup" )
     self.__ensureInsertionIsSingle = False
+    self.__sharesCorrector = SharesCorrector( self.__csSection )
     result = self.__initializeDB()
     if not result[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % result[ 'Message' ])
-
+    
+  def isSharesCorrectionEnabled( self ):
+    return self.__getCSOption( "EnableSharesCorrection", False )
+      
   def getSingleValueTQDefFields( self ):
     return self.__singleValueDefFields
 
@@ -135,6 +139,13 @@ class TaskQueueDB(DB):
         return result
 
     return S_OK()
+  
+  def getGroupsInTQs( self ):
+    cmdSQL = "SELECT DISTINCT( OwnerGroup ) FROM `tq_TaskQueues`"
+    result = self._query( cmdSQL )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( [ row[0] for row in result[ 'Value' ] ] )
 
   def forceRecreationOfTables( self ):
     dropSQL = "DROP TABLE IF EXISTS %s" % ", ".join( self.__tablesDesc )
@@ -158,11 +169,24 @@ class TaskQueueDB(DB):
     """
     Fit the CPU time to the valid segments
     """
-    for iP in range( len( self.maxCPUSegments ) ):
-      cpuSegment = self.maxCPUSegments[ iP ]
+    maxCPUSegments = self.__getCSOption( "taskQueueCPUTimeIntervals", self.__defaultCPUSegments )
+    try:
+      maxCPUSegments = [ int( seg ) for seg in maxCPUSegments ]
+      #Check segments in the CS
+      last = 0
+      for cpuS in maxCPUSegments:
+        if cpuS <= last:
+          maxCPUSegments = self.__defaultCPUSegments
+          break
+        last = cpuS
+    except:
+      maxCPUSegments = self.__defaultCPUSegments
+    #Map to a segment
+    for iP in range( len( maxCPUSegments ) ):
+      cpuSegment = maxCPUSegments[ iP ]
       if cpuTime <= cpuSegment:
         return cpuSegment
-    return self.maxCPUSegments[-1]
+    return maxCPUSegments[-1]
 
   def _checkTaskQueueDefinition( self, tqDefDict ):
     """
@@ -854,17 +878,34 @@ class TaskQueueDB(DB):
       self.cleanOrphanedTaskQueues()
     return S_OK( tqData )
 
-  def __updateShares(self):
+  def __updateGlobalShares(self):
     """
     Update internal structure for shares
     """
     #Update group shares
     self.__groupShares = self.getGroupShares()
+    #Apply corrections if enabled
+    if self.isSharesCorrectionEnabled():
+      result = self.getGroupsInTQs()
+      if not result[ 'OK' ]:
+        self.log.error( "Could not get groups in the TQs", result[ 'Message' ] )
+      activeGroups = result[ 'Value' ]
+      newShares = {}
+      for group in activeGroups:
+        if group in self.__groupShares:
+          newShares[ group ] = self.__groupShares[ group ]
+      newShares = self.__sharesCorrector.correctShares( newShares )
+      for group in self.__groupShares:
+        if group in newShares:
+          self.__groupShares[ group ] = newShares[ group ]
 
   def recalculateTQSharesForAll(self):
     """
     Recalculate all priorities for TQ's
     """
+    self.log.info( "Updating correctors state" )
+    if self.isSharesCorrectionEnabled():
+      self.__sharesCorrector.update()
     self.log.info( "Recalculating shares for all TQs" )
     retVal = self._getConnection()
     if not retVal[ 'OK' ]:
@@ -881,9 +922,12 @@ class TaskQueueDB(DB):
     """
     Recalculate the shares for a userDN/userGroup combo
     """
-    self.__updateShares()
+    self.__updateGlobalShares()
     self.log.info( "Recalculating shares for %s@%s TQs" % ( userDN, userGroup ) )
-    share = gConfig.getValue( "/Security/Groups/%s/JobShare" % userGroup, float( self.defaultGroupShare ) )
+    if userGroup in self.__groupShares:
+      share = self.__groupShares[ userGroup ]
+    else:
+      share = float( self.defaultGroupShare[ userGroup ] )
     if Properties.JOB_SHARING in CS.getPropertiesForGroup( userGroup ):
       #If group has JobSharing just set prio for that entry, userDN is irrelevant
       return self.__setPrioritiesForEntity( userDN, userGroup, share, connObj = connObj )
@@ -900,14 +944,19 @@ class TaskQueueDB(DB):
       return S_OK()
     #Split the share amongst the number of owners
     share /= numOwners
+    entitiesShares = dict( [ ( row[0], share ) for row in data ] )
+    #If corrector is enabled let it work it's magic
+    if self.isSharesCorrectionEnabled():
+      entitiesShares = self.__sharesCorrector.correctShares( entitiesShares, group = userGroup )
+    #Keep updating
     owners = dict( data )
     #IF the user is already known and has more than 1 tq, the rest of the users don't need to be modified
     #(The number of owners didn't change)
     if userDN in owners and owners[ userDN ] > 1:
-      return self.__setPrioritiesForEntity( userDN, userGroup, share, connObj = connObj )
+      return self.__setPrioritiesForEntity( userDN, userGroup, entitiesShares[ userDN ], connObj = connObj )
     #Oops the number of owners may have changed so we recalculate the prio for all owners in the group
     for userDN in owners:
-      self.__setPrioritiesForEntity( userDN, userGroup, share, connObj = connObj )
+      self.__setPrioritiesForEntity( userDN, userGroup, entitiesShares[ userDN ], connObj = connObj )
     return S_OK()
 
   def __setPrioritiesForEntity( self, userDN, userGroup, share, connObj = False ):
