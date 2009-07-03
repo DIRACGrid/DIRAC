@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.88 2009/07/03 17:17:21 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.89 2009/07/03 17:19:02 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.88 2009/07/03 17:17:21 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.89 2009/07/03 17:19:02 acasajus Exp $"
 
 import types
 import random
@@ -906,6 +906,7 @@ class TaskQueueDB(DB):
     self.log.info( "Updating correctors state" )
     if self.isSharesCorrectionEnabled():
       self.__sharesCorrector.update()
+      self.__updateGlobalShares()
     self.log.info( "Recalculating shares for all TQs" )
     retVal = self._getConnection()
     if not retVal[ 'OK' ]:
@@ -922,7 +923,6 @@ class TaskQueueDB(DB):
     """
     Recalculate the shares for a userDN/userGroup combo
     """
-    self.__updateGlobalShares()
     self.log.info( "Recalculating shares for %s@%s TQs" % ( userDN, userGroup ) )
     if userGroup in self.__groupShares:
       share = self.__groupShares[ userGroup ]
