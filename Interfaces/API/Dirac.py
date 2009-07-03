@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.97 2009/07/01 16:11:45 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.98 2009/07/03 10:48:32 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.97 2009/07/01 16:11:45 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.98 2009/07/03 10:48:32 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -801,7 +801,11 @@ class Dirac:
         elif os.path.exists(isFile):
           shutil.copy(isFile, os.getcwd())
         else:
-          return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
+          # perhaps the file is in an LFN attempt to download it.
+          getFile = self.getFile(isFile)
+          if not getFile['OK']:
+            self.log.warn('Failed to download %s with error:%s' %(isFile,getFile['Message']))
+            return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
 
     self.log.info('Attempting to submit job to local site: %s' %self.site)
 
