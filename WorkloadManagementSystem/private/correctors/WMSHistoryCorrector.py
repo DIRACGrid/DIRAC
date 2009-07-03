@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/correctors/WMSHistoryCorrector.py,v 1.1 2009/07/02 16:30:49 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/correctors/WMSHistoryCorrector.py,v 1.2 2009/07/03 14:51:47 acasajus Exp $
 ########################################################################
 """ WMSHistory corrector for the group and ingroup shares
 """
 
-__RCSID__ = "$Id: WMSHistoryCorrector.py,v 1.1 2009/07/02 16:30:49 acasajus Exp $"
+__RCSID__ = "$Id: WMSHistoryCorrector.py,v 1.2 2009/07/03 14:51:47 acasajus Exp $"
 
 import datetime
 import time as nativetime
@@ -79,7 +79,7 @@ class WMSHistoryCorrector:
         return
       self.__usageHistory[ timeSlice ] = result[ 'Value' ]
       self.__log.info( "Got history for slice %s (%s entities in slice)" % ( timeSlice, len( self.__usageHistory[ timeSlice ] ) ) )
-    self.__log.info( "Updated history knowledge for time slice %s" % timeSlice )
+    self.__log.info( "Updated history knowledge" )
       
   def _getUsageHistoryForTimeSpan( self, timeSpan, groupToUse = "" ):
     reportCondition = { 'Status' : [ 'Running' ] }

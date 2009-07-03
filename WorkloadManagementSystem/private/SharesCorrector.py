@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/SharesCorrector.py,v 1.2 2009/07/02 17:23:39 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/SharesCorrector.py,v 1.3 2009/07/03 14:51:47 acasajus Exp $
 ########################################################################
 """ Pritority corrector for the group and ingroup shares
 """
 
-__RCSID__ = "$Id: SharesCorrector.py,v 1.2 2009/07/02 17:23:39 acasajus Exp $"
+__RCSID__ = "$Id: SharesCorrector.py,v 1.3 2009/07/03 14:51:47 acasajus Exp $"
 
 import datetime
 import time as nativetime
@@ -13,13 +13,15 @@ from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 
 class SharesCorrector:
   
-  def __init__( self ):
-    #self.__baseCSPath = "/Operations/Scheduling"
-    self.__baseCSPath = "/SharesCorrection" 
+  def __init__( self, csBasePath = "" ):
+    if not csBasePath:
+      csBasePath = "/Operations/Scheduling/%s/" % gConfig.getValue( "/DIRAC/Setup" )
+    self.__baseCSPath = "%s/ShareCorrections" % csBasePath 
     self.__shareCorrectors = {}
     self.__correctorsOrder = []
     
   def __getCSValue( self, path, defaultValue = '' ):
+    print "GETTING %s" % "%s/%s" % ( self.__baseCSPath, path )
     return gConfig.getValue( "%s/%s" % ( self.__baseCSPath, path ), defaultValue )
     
   def __getCorrectorClass( self, correctorName ):
@@ -58,7 +60,7 @@ class SharesCorrector:
           continue
         correctorClass = result[ 'Value' ]
         for groupCor in groupCorrectors:
-          groupCorPath = "%s/%s/%s" % ( self.__baseCSPath, corrector, groupCor )
+          groupCorPath = "%s/%s" % ( corrector, groupCor )
           groupToCorrect = self.__getCSValue( "%s/Group" % ( groupCorPath ), "" )
           if groupToCorrect:
             groupKey = "gr:%s" % groupToCorrect
