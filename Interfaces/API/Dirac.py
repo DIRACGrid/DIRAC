@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.99 2009/07/07 15:10:13 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.100 2009/07/07 15:27:00 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.99 2009/07/07 15:10:13 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.100 2009/07/07 15:27:00 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -1009,8 +1009,8 @@ class Dirac:
     replicaDict = self.getReplicas(lfns)
     if not replicaDict['OK']:
       return replicaDict
-    if len(replicaDict['Successful']) == 0:
-      return self.__errorReport(replicaDict['Failed'].items()[0],'Failed to get replica information')
+    if len(replicaDict['Value']['Successful']) == 0:
+      return self.__errorReport(replicaDict['Value']['Failed'].items()[0],'Failed to get replica information')
     siteLfns = {}
     for lfn,reps in replicaDict['Value']['Successful'].items():
       possibleSites = []
