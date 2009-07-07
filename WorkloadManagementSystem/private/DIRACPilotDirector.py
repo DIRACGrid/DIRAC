@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.7 2009/07/01 06:33:38 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.8 2009/07/07 07:28:52 rgracian Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.7 2009/07/01 06:33:38 rgracian Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.8 2009/07/07 07:28:52 rgracian Exp $"
 
 import os, sys, tempfile, shutil
 
@@ -181,7 +181,7 @@ shutil.rmtree( pilotWorkingDirectory )
 
     return pilotScript
 
-  def _getPilotProxyFromDIRACGroup( ownerDN, ownerGroup, requiredTimeLeft ):
+  def _getPilotProxyFromDIRACGroup( self, ownerDN, ownerGroup, requiredTimeLeft ):
     """
     Download a limited pilot proxy with VOMS extensions depending on the group
     """
