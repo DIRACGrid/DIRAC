@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.89 2009/07/03 17:19:02 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.90 2009/07/07 07:23:07 rgracian Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.89 2009/07/03 17:19:02 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.90 2009/07/07 07:23:07 rgracian Exp $"
 
 import types
 import random
@@ -927,7 +927,7 @@ class TaskQueueDB(DB):
     if userGroup in self.__groupShares:
       share = self.__groupShares[ userGroup ]
     else:
-      share = float( self.defaultGroupShare[ userGroup ] )
+      share = float( defaultGroupShare )
     if Properties.JOB_SHARING in CS.getPropertiesForGroup( userGroup ):
       #If group has JobSharing just set prio for that entry, userDN is irrelevant
       return self.__setPrioritiesForEntity( userDN, userGroup, share, connObj = connObj )
@@ -1011,7 +1011,7 @@ class TaskQueueDB(DB):
       groups = []
     shares = {}
     for group in groups:
-      shares[ group ] = gConfig.getValue( "/Security/Groups/%s/JobShare" % group, self.defaultGroupShare )
+      shares[ group ] = gConfig.getValue( "/Security/Groups/%s/JobShare" % group, defaultGroupShare )
     return shares
 
   def propagateTQSharesIfChanged(self):
