@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.76 2009/07/08 12:29:15 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.77 2009/07/08 13:32:52 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -509,7 +509,7 @@ class ReplicaManager:
     failed = {}
     fileDict = {}
     for storageElementName,fileTuple in seDict.items():
-      destStorageElement = StorageElement(storageElementName,True)
+      destStorageElement = StorageElement(storageElementName,overwride=True)
       res = destStorageElement.isValid()
       if not res['OK']:
         errStr = "ReplicaManager.__registerFile: The storage element is not currently valid."
