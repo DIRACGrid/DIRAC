@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.37 2009/06/29 13:38:07 acasajus Exp $
+# $Id: MatcherHandler.py,v 1.38 2009/07/08 13:56:30 atsareg Exp $
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.37 2009/06/29 13:38:07 acasajus Exp $"
+__RCSID__ = "$Id: MatcherHandler.py,v 1.38 2009/07/08 13:56:30 atsareg Exp $"
 
 import re, os, sys, time
 import string
@@ -17,7 +17,7 @@ from   types import *
 import threading
 
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
-#from DIRAC.Core.Utilities.ClassAd.ClassAdCondor        import ClassAd, matchClassAd
+from DIRAC.Core.Utilities.ClassAd.ClassAdCondor        import ClassAd, matchClassAd
 from DIRAC                                             import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB           import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB    import JobLoggingDB
@@ -106,7 +106,7 @@ class MatcherHandler(RequestHandler):
       if 'GridCE' in resourceDict:
         del resourceDict['Site']
       else:
-        return S_ERROR('Site in mask and GridCE not specified')
+        return S_ERROR('Site not in mask and GridCE not specified')
 
     resourceDict['Setup'] = self.serviceInfoDict['clientSetup']
 
@@ -168,41 +168,6 @@ class MatcherHandler(RequestHandler):
     result = self.selectJob(resourceJDL)
     gMonitor.addMark( "matchesDone" )
     return result
-
-##############################################################################
-  types_checkForJobs = [StringType]
-  def export_checkForJobs(self, resourceJDL):
-    """ Check if jobs eligible for the given resource capacity are available
-        and with which priority
-    """
-
-    agentClassAd = ClassAd(resourceJDL)
-    result = jobDB.getTaskQueues()
-    if not result['OK']:
-      return S_ERROR('Internal error: can not get the Task Queues')
-
-    taskQueues = result['Value']
-    matching_queues = []
-    matching_priority = 0
-    for tqID, tqReqs, priority in taskQueues:
-      queueClassAd = ClassAd(tqReqs)
-      result = matchClassAd(classAdAgent,queueClassAd)
-      if result['OK']:
-        symmetricMatch, leftToRightMatch, rightToLeftMatch = result['Value']
-        if leftToRightMatch:
-          matching_queues.append(tqID)
-          if priority > matching_priority:
-            matching_priority = priority
-
-    if matching_queues:
-      result = jobDB.getTaskQueueReport(matching_queues)
-      if result['OK']:
-        return result
-      else:
-        gLogger.warn('Failed to extract the Task Queue report')
-        return S_ERROR('Failed to extract the Task Queue report')
-    else:
-      return S_OK([])
 
 ##############################################################################
   types_getActiveTaskQueues = []
