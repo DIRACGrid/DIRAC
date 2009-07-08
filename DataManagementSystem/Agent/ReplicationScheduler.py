@@ -324,7 +324,8 @@ class ReplicationScheduler(Agent):
     """ Creates the targetSURL for the storage and LFN supplied
     """
     storageElement = StorageElement(sourceSE)
-    if storageElement.isValid()['Value']:
+    res = storageElement.isValid()
+    if res['OK']:
       res = storageElement.getPfnForProtocol(pfn,['SRM2'])
       return res
     else:

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.17 2009/01/28 11:00:07 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.18 2009/07/08 09:13:06 acsmith Exp $
 # File :   SiteMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """  The SiteMonitor base-class monitors staging requests for a given site.
 """
 
-__RCSID__ = "$Id: SiteMonitor.py,v 1.17 2009/01/28 11:00:07 acasajus Exp $"
+__RCSID__ = "$Id: SiteMonitor.py,v 1.18 2009/07/08 09:13:06 acsmith Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
@@ -121,7 +121,8 @@ class SiteMonitor(Thread):
     totalFiles = len(pfnLfnDict.keys())
     for se,pfnList in seFilesDict.items():
       storageElement = StorageElement(se)
-      if not storageElement.isValid()['Value']:
+      res = storageElement.isValid()
+      if not res['OK']:
         return S_ERROR('%s SiteMonitor Failed to instantiate StorageElement for: %s' %(self.site,se))
 
       start = time.time()

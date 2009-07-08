@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.9 2009/04/18 18:26:57 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.10 2009/07/08 09:14:07 acsmith Exp $
 # File :   SiteStager.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resetting of stage requests as necessary.
 """
 
-__RCSID__ = "$Id: SiteStager.py,v 1.9 2009/04/18 18:26:57 rgracian Exp $"
+__RCSID__ = "$Id: SiteStager.py,v 1.10 2009/07/08 09:14:07 acsmith Exp $"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
@@ -129,7 +129,8 @@ class SiteStager(Thread):
     submitted = [] #even if files fail, still report them as submitted since they will fail after several retries
     for se,pfnList in seFilesDict.items():
       storageElement = StorageElement(se)
-      if not storageElement.isValid()['Value']:
+      res = storageElement.isValid():
+      if not res['OK']:
         return S_ERROR('%s SiteStager Failed to instantiate StorageElement for: %s' %(self.site,se))
 
       start = time.time()

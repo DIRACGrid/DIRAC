@@ -86,7 +86,8 @@ class SEvsLFCAgent(Agent):
             if subRequestFile['Status'] == 'Waiting':
               lfn = subRequestFile['LFN']
               storageElement = StorageElement(storageElementName)
-              if not storageElement.isValid()['Value']:
+              res = storageElement.isValid()
+              if not res['OK']:
                 errStr = "SEvsLFCAgent.execute: Failed to instantiate destination StorageElement."
                 gLogger.error(errStr,storageElement)
               else:
