@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.75 2009/07/01 20:28:33 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.76 2009/07/08 12:29:15 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -1462,15 +1462,15 @@ class ReplicaManager:
     else:
       return self.__executeFileCatalogFunction(lfn,'removeFile',catalogs=catalogs)
 
-  def removeCatalogReplica(self,lfn,singleFile=False,catalogs=[]):
-    """ Remove a replica from the FileCatalog
-  
-        'lfn' is the file to be removed
-    """
-    if singleFile:
-      return self.__executeSingleFileCatalogFunction(lfn,'removeReplica',catalogs=catalogs)
-    else:
-      return self.__executeFileCatalogFunction(lfn,'removeReplica',catalogs=catalogs)
+  #def removeCatalogReplica(self,lfn,singleFile=False,catalogs=[]):
+  #  """ Remove a replica from the FileCatalog
+  # 
+  #       'lfn' is the file to be removed
+  #  """
+  #  if singleFile:
+  #    return self.__executeSingleFileCatalogFunction(lfn,'removeReplica',catalogs=catalogs)
+  #  else:
+  #    return self.__executeFileCatalogFunction(lfn,'removeReplica',catalogs=catalogs)
 
   def setCatalogReplicaStatus(self,lfn,singleFile=False,catalogs=[]):
     """ Change the status for a replica in the FileCatalog
