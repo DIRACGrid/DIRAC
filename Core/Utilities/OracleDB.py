@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.12 2009/04/27 09:46:05 zmathe Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.13 2009/07/08 12:37:35 zmathe Exp $
 ########################################################################
 """ DIRAC Basic Oracle Class
     It provides access to the basic Oracle methods in a multithread-safe mode
@@ -50,7 +50,7 @@
 
 """
 
-__RCSID__ = "$Id: OracleDB.py,v 1.12 2009/04/27 09:46:05 zmathe Exp $"
+__RCSID__ = "$Id: OracleDB.py,v 1.13 2009/07/08 12:37:35 zmathe Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -108,7 +108,7 @@ class OracleDB:
     self.__initialized = True
     self._connect()
 
-  """
+  
   def __del__( self ):
     global instances
 
@@ -120,7 +120,7 @@ class OracleDB:
       except Queue.Empty,x:
         self.logger.debug( 'No more connection in Queue' )
         break
-   """
+  
   def __checkQueueSize( self, maxQueueSize ):
 
     if maxQueueSize <= 0:
@@ -207,8 +207,13 @@ class OracleDB:
 
       retDict = S_OK( res )
     except Exception ,x:
+
       self.logger.debug( '_query:', cmd )
       retDict = self._except( '_query', x, 'Excution failed.' )
+      print __connectionQueue.queue
+      self.logger.debug('Start Roolback transaktio!')
+      connection.rollback()
+      self.logger.debug('End Roolback transaktio!')
 
     try:
       connection.commit()
@@ -242,8 +247,12 @@ class OracleDB:
         cursor.callproc(packageName, parameters)
       retDict = S_OK( results )
     except Exception ,x:
+      
       self.logger.debug( '_query:', packageName+"("+str(parameters)+")" )
-      retDict = self._except( '_query', x, 'Excution failed.' )
+      retDict = self._except( '_query', x, 'Excution failed.' )  
+      connection.rollback()
+    
+
 
     try:
       cursor.close()
@@ -266,6 +275,8 @@ class OracleDB:
     except Exception ,x:
       self.logger.debug( '_query:', packageName+"("+str(parameters)+")" )
       retDict = self._except( '_query', x, 'Excution failed.' )
+      connection.rollback()
+
 
     try:
       cursor.close()
