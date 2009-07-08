@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.113 2009/07/01 07:48:17 rgracian Exp $
+# $Id: JobWrapper.py,v 1.114 2009/07/08 11:04:54 atsareg Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.113 2009/07/01 07:48:17 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.114 2009/07/08 11:04:54 atsareg Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -635,9 +635,9 @@ class JobWrapper:
     outputSandbox = []
     if self.jobArgs.has_key('OutputSandbox'):
       outputSandbox = self.jobArgs['OutputSandbox']
-      if not type(outputData) == type([]):
-        outputData = [ outputData ]
-      self.log.verbose('OutputSandbox files are: %s' %(string.join(outputData,', ')))
+      if not type(outputSandbox) == type([]):
+        outputSandbox = [ outputSandbox ]
+      self.log.verbose('OutputSandbox files are: %s' %(string.join(outputSandbox,', ')))
     outputData = []
     if self.jobArgs.has_key('OutputData'):
       outputData = self.jobArgs['OutputData']
