@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxStoreHandler.py,v 1.4 2009/06/16 11:02:37 acasajus Exp $
+# $Id: SandboxStoreHandler.py,v 1.5 2009/07/08 08:56:01 acsmith Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.4 2009/06/16 11:02:37 acasajus Exp $"
+__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.5 2009/07/08 08:56:01 acsmith Exp $"
 
 from types import *
 import os
@@ -209,7 +209,8 @@ class SandboxStoreHandler( RequestHandler ):
       return S_OK( ( self.__localSEName, sbPath ) )
     #It's external storage
     storageElement = StorageElement( self.__externalSEName )
-    if not storageElement.isValid()['Value']:
+    res = storageElement.isValid()
+    if not res['OK']:
       errStr = "Failed to instantiate destination StorageElement"
       gLogger.error( errStr, self.__externalSEName )
       return S_ERROR( errStr )

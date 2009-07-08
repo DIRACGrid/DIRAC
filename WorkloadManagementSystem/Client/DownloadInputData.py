@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DownloadInputData.py,v 1.8 2009/04/18 18:26:56 rgracian Exp $
+# $Id: DownloadInputData.py,v 1.9 2009/07/08 08:59:17 acsmith Exp $
 # File :   DownloadInputData.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: DownloadInputData.py,v 1.8 2009/04/18 18:26:56 rgracian Exp $"
+__RCSID__ = "$Id: DownloadInputData.py,v 1.9 2009/07/08 08:59:17 acsmith Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -215,7 +215,8 @@ class DownloadInputData:
       return S_OK(fileDict)
 
     storageElement = StorageElement(se)
-    if not storageElement.isValid()['Value']:
+    res = storageElement.isValid()
+    if not res['OK']:
       return S_ERROR('Failed to instantiate StorageElement for: %s' %(se))
 
     result = storageElement.getFile(pfn,size)
