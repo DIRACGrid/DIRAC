@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.90 2009/07/07 07:23:07 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.91 2009/07/08 08:44:28 atsareg Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.90 2009/07/07 07:23:07 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.91 2009/07/08 08:44:28 atsareg Exp $"
 
 import types
 import random
@@ -19,10 +19,9 @@ _MIN = 60
 _HOUR = 3600
 _DAY = 86400
 maxCPUSegments = [ 6*_MIN, 30*_MIN, 1*_HOUR, 6*_HOUR, 12*_HOUR, 1*_DAY, 2*_DAY, 3*_DAY, 4*_DAY ]
+DEFAULT_GROUP_SHARE = 1000
 
 class TaskQueueDB(DB):
-
-  defaultGroupShare = 1000
 
   def __init__( self, maxQueueSize = 10 ):
     random.seed()
@@ -927,7 +926,7 @@ class TaskQueueDB(DB):
     if userGroup in self.__groupShares:
       share = self.__groupShares[ userGroup ]
     else:
-      share = float( defaultGroupShare )
+      share = float( DEFAULT_GROUP_SHARE )
     if Properties.JOB_SHARING in CS.getPropertiesForGroup( userGroup ):
       #If group has JobSharing just set prio for that entry, userDN is irrelevant
       return self.__setPrioritiesForEntity( userDN, userGroup, share, connObj = connObj )
@@ -1011,7 +1010,7 @@ class TaskQueueDB(DB):
       groups = []
     shares = {}
     for group in groups:
-      shares[ group ] = gConfig.getValue( "/Security/Groups/%s/JobShare" % group, defaultGroupShare )
+      shares[ group ] = gConfig.getValue( "/Security/Groups/%s/JobShare" % group, DEFAULT_GROUP_SHARE )
     return shares
 
   def propagateTQSharesIfChanged(self):
