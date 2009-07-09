@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/PilotDirector.py,v 1.4 2009/07/07 07:28:52 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/PilotDirector.py,v 1.5 2009/07/09 06:04:03 rgracian Exp $
 # File :   PilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -15,7 +15,7 @@
   This means that DIRAC direct submission to Grid CE's (CREAM, ...) will be handled by DIRAC Pilot
   Director making use of a DIRAC CREAM Computing Element class
 """
-__RCSID__ = "$Id: PilotDirector.py,v 1.4 2009/07/07 07:28:52 rgracian Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.5 2009/07/09 06:04:03 rgracian Exp $"
 
 
 import os, time, tempfile, shutil, re, random
@@ -97,9 +97,7 @@ class PilotDirector:
     self.genericPilotGroup    = PILOT_GROUP
     self.enableListMatch      = ENABLE_LISTMATCH
     self.listMatchDelay       = LISTMATCH_DELAY
-    #FIXME: replace dict match dict by a DictCache object
     self.listMatchCache       = DictCache()
-    self.listMatch = {}
 
     self.privatePilotFraction = PRIVATE_PILOT_FRACTION
 
@@ -130,6 +128,7 @@ class PilotDirector:
     self.log.info( ' Private %:      ', self.privatePilotFraction * 100 )
     if self.enableListMatch:
       self.log.info( ' ListMatch Delay:', self.listMatchDelay )
+    self.listMatchCache.purgeExpired()
 
   def reloadConfiguration(self, csSection, submitPool):
     """
@@ -307,7 +306,7 @@ class PilotDirector:
       result = self._getPilotOptions( taskQueueDict, pilotsToSubmit )
       if not result['OK']:
         return result
-      (pilotOptions, pilotsToSubmit, ownerDN, ownerGroup, submitPrivatePilot, privateTQ ) = result['Value']
+      (pilotOptions, pilotsPerJob, ownerDN, ownerGroup, submitPrivatePilot, privateTQ ) = result['Value']
       # get a valid proxy, submit with a long proxy to avoid renewal
       ret = self._getPilotProxyFromDIRACGroup( ownerDN, ownerGroup, requiredTimeLeft = 86400 * 5 )
       if not ret['OK']:
@@ -323,7 +322,7 @@ class PilotDirector:
       return self._submitPilots( workDir, taskQueueDict, pilotOptions,
                                  pilotsToSubmit, ceMask,
                                  submitPrivatePilot, privateTQ,
-                                 proxy )
+                                 proxy, pilotsPerJob )
 
     except Exception,x:
       self.log.exception( 'Error in Pilot Submission' )

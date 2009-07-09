@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.58 2009/06/26 15:02:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.59 2009/07/09 06:04:03 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -126,7 +126,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.58 2009/06/26 15:02:50 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.59 2009/07/09 06:04:03 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -469,6 +469,11 @@ class TaskQueueDirector(AgentModule):
   def callBack(self, threadedJob, submitResult):
     if not submitResult['OK']:
       self.log.error( 'submitPilot Failed: ', submitResult['Message'] )
+      if 'Value' in submitResult:
+        submittedPilots = submitResult['Value']
+        self.callBackLock.acquire()
+        self.submittedPilots += submittedPilots
+        self.callBackLock.release()        
     else:
       submittedPilots = submitResult['Value']
       self.callBackLock.acquire()

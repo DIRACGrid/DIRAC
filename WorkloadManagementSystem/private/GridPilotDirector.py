@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.7 2009/07/01 08:25:08 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.8 2009/07/09 06:04:03 rgracian Exp $
 # File :   GridPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -12,7 +12,7 @@
   underlying resources.
 
 """
-__RCSID__ = "$Id: GridPilotDirector.py,v 1.7 2009/07/01 08:25:08 rgracian Exp $"
+__RCSID__ = "$Id: GridPilotDirector.py,v 1.8 2009/07/09 06:04:03 rgracian Exp $"
 
 
 GRIDENV                = ''
@@ -56,8 +56,9 @@ class GridPilotDirector(PilotDirector):
     self.rank                 = RANK
     self.fuzzyRank            = FUZZY_RANK
 
-    self.__failingWMSCache = DictCache()
-    self.__ticketsWMSCache = DictCache()
+    self.__failingWMSCache   = DictCache()
+    self.__ticketsWMSCache   = DictCache()
+    self.__listMatchWMSCache = DictCache()
 
     PilotDirector.__init__( self, submitPool )
 
@@ -99,7 +100,7 @@ class GridPilotDirector(PilotDirector):
     self.fuzzyRank            = gConfig.getValue( mySection+'/FuzzyRank'            , self.fuzzyRank )
 
   def _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
-                     ceMask, submitPrivatePilot, privateTQ, proxy ):
+                     ceMask, submitPrivatePilot, privateTQ, proxy, pilotsPerJob ):
     """
       This method does the actual pilot submission to the Grid RB
       The logic is as follows:
@@ -132,7 +133,7 @@ class GridPilotDirector(PilotDirector):
     self.log.verbose( 'Using working Directory:', workingDirectory )
 
     # Write JDL
-    retDict = self._prepareJDL( taskQueueDict, workingDirectory, pilotOptions, pilotsToSubmit,
+    retDict = self._prepareJDL( taskQueueDict, workingDirectory, pilotOptions, pilotsPerJob,
                                 ceMask, submitPrivatePilot, privateTQ )
     jdl = retDict['JDL']
     pilotRequirements = retDict['Requirements']
@@ -148,25 +149,14 @@ class GridPilotDirector(PilotDirector):
     if self.enableListMatch:
       availableCEs = []
       now = Time.dateTime()
-      if not pilotRequirements in self.listMatch:
+      availableCEs = self.listMatchCache.get( pilotRequirements )
+      if availableCEs == False:
         availableCEs = self._listMatch( proxy, jdl, taskQueueID, rb )
         if availableCEs != False:
-          self.listMatch[pilotRequirements] = {'LastListMatch': now}
-          self.listMatch[pilotRequirements]['AvailableCEs'] = availableCEs
-      else:
-        availableCEs = self.listMatch[pilotRequirements]['AvailableCEs']
-        if not Time.timeInterval( self.listMatch[pilotRequirements]['LastListMatch'],
-                                  self.listMatchDelay * Time.minute  ).includes( now ):
-          availableCEs = self._listMatch( proxy, jdl, taskQueueID, rb )
-          if availableCEs != False:
-            self.listMatch[pilotRequirements] = {'LastListMatch': now}
-            self.listMatch[pilotRequirements]['AvailableCEs'] = availableCEs
-          else:
-            del self.listMatch[pilotRequirements]
-        else:
-          self.log.verbose( 'LastListMatch', self.listMatch[pilotRequirements]['LastListMatch'] )
+          self.log.verbose( 'LastListMatch', now )
           self.log.verbose( 'AvailableCEs ', availableCEs )
-
+          self.listMatchCache.add( pilotRequirements, self.listMatchDelay * 60,
+                                   value = availableCEs )                      # it is given in minutes
       if not availableCEs:
         try:
           shutil.rmtree( workingDirectory )
@@ -177,7 +167,7 @@ class GridPilotDirector(PilotDirector):
     # Now we are ready for the actual submission, so
 
     self.log.verbose('Submitting Pilots for TaskQueue', taskQueueID )
-    submitRet = self._submitPilot( proxy, pilotsToSubmit, jdl, taskQueueID, rb )
+    submitRet = self._submitPilot( proxy, pilotsPerJob, jdl, taskQueueID, rb )
     try:
       shutil.rmtree( workingDirectory )
     except:
@@ -188,7 +178,7 @@ class GridPilotDirector(PilotDirector):
 
     submittedPilots = 0
 
-    if pilotsToSubmit != 1 and len( submitRet ) != pilotsToSubmit:
+    if pilotsPerJob != 1 and len( submitRet ) != pilotsPerJob:
       # Parametric jobs are used
       for pilotReference, resourceBroker in submitRet:
         pilotReference = self._getChildrenReferences( proxy, pilotReference, taskQueueID )
@@ -205,7 +195,30 @@ class GridPilotDirector(PilotDirector):
                       requirements=pilotRequirements )
 
     # add some sleep here
-    time.sleep(1.0*submittedPilots)
+    time.sleep(0.1*submittedPilots)
+
+    if pilotsToSubmit > pilotsPerJob:
+      # Additional submissions are necessary, need to get a new token and iterate.
+      pilotsToSubmit -= pilotsPerJob
+      ownerDN    = self.genericPilotDN
+      ownerGroup = self.genericPilotGroup
+      result = gProxyManager.requestToken( ownerDN, ownerGroup, pilotsPerJob )
+      if not result[ 'OK' ]:
+        self.log.error( ERROR_TOKEN, result['Message'] )
+        return S_ERROR( ERROR_TOKEN )
+      (token, numberOfUses) = result[ 'Value' ]
+      for option in pilotOptions:
+        if option.find('-o /Security/ProxyToken=') == 0:
+          pilotOptions.remove(option)
+      pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
+      result = self._submitPilots( workDir, taskQueueDict, pilotOptions,
+                                   pilotsToSubmit, ceMask,
+                                   submitPrivatePilot, privateTQ,
+                                   proxy, pilotsPerJob )
+      if not result['OK']:
+        result['Value'] = submittedPilots
+        return result
+      submittedPilots += result['Value']
 
     return S_OK( submittedPilots )
 
