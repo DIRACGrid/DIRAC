@@ -2,10 +2,10 @@
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-check-file-integrity.py,v 1.3 2009/04/03 14:34:56 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-check-file-integrity.py,v 1.4 2009/07/09 15:20:59 acsmith Exp $
 ########################################################################
-__RCSID__   = "$Id: dirac-dms-check-file-integrity.py,v 1.3 2009/04/03 14:34:56 acsmith Exp $"
-__VERSION__ = "$Revision: 1.3 $"
+__RCSID__   = "$Id: dirac-dms-check-file-integrity.py,v 1.4 2009/07/09 15:20:59 acsmith Exp $"
+__VERSION__ = "$Revision: 1.4 $"
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import sortList
@@ -135,10 +135,11 @@ if filesPresentInLFC:
   for lfn,fileMetadata in res['Value']['Successful'].items():
     size = fileMetadata['Size']
     guid = fileMetadata['GUID']
-    if bkMetadata[lfn]['FileSize'] != size:
-      sizeMismatches.append(lfn)
-    if bkMetadata[lfn]['GUID'] != guid:
-      guidMismatches.append(lfn)
+    if bkMetadata.has_key(lfn):
+      if bkMetadata[lfn]['FileSize'] != size:
+        sizeMismatches.append(lfn)
+      if bkMetadata[lfn]['GUID'] != guid:
+        guidMismatches.append(lfn)
 
   print '\n################### %s ########################\n' % 'LFC metadata'.center(20)
   print '%s : %s' % ('Supplied files'.ljust(20),str(len(filesPresentInLFC)).ljust(20))
