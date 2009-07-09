@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.8 2009/07/07 07:28:52 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.9 2009/07/09 09:48:59 ffeldhau Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.8 2009/07/07 07:28:52 rgracian Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.9 2009/07/09 09:48:59 ffeldhau Exp $"
 
 import os, sys, tempfile, shutil
 
@@ -189,7 +189,7 @@ shutil.rmtree( pilotWorkingDirectory )
     vomsAttr = CS.getVOMSAttributeForGroup( ownerGroup )
     if not vomsAttr:
       return S_ERROR( "No voms attribute assigned to group %s" % ownerGroup )
-    return self.downloadVOMSProxy( ownerDN,
+    return gProxyManager.downloadVOMSProxy( ownerDN,
                                    ownerGroup,
                                    limited = True,
                                    requiredTimeLeft = requiredTimeLeft,
