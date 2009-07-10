@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.13 2009/07/08 12:37:35 zmathe Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.14 2009/07/10 09:52:32 zmathe Exp $
 ########################################################################
 """ DIRAC Basic Oracle Class
     It provides access to the basic Oracle methods in a multithread-safe mode
@@ -50,7 +50,7 @@
 
 """
 
-__RCSID__ = "$Id: OracleDB.py,v 1.13 2009/07/08 12:37:35 zmathe Exp $"
+__RCSID__ = "$Id: OracleDB.py,v 1.14 2009/07/10 09:52:32 zmathe Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -210,7 +210,6 @@ class OracleDB:
 
       self.logger.debug( '_query:', cmd )
       retDict = self._except( '_query', x, 'Excution failed.' )
-      print __connectionQueue.queue
       self.logger.debug('Start Roolback transaktio!')
       connection.rollback()
       self.logger.debug('End Roolback transaktio!')
