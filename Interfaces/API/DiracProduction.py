@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.68 2009/07/10 09:21:40 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.69 2009/07/10 10:09:19 atsareg Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.68 2009/07/10 09:21:40 atsareg Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.69 2009/07/10 10:09:19 atsareg Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -1090,8 +1090,15 @@ class DiracProduction:
     submitted =  []
     failed = []
     xmlString = prodDict['Body']
+    prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
     #creating a /tmp/guid/ directory for job submission files
     jfilename = self.__createJobDescriptionFile(xmlString)
+    if not jfilename:
+      self.log.error('Failed to create job description XML file')
+      for jobNumber,paramsDict in jobDict.items():
+        result = prodClient.setJobStatus(long(prodID),long(jobNumber),self.createdStatus)
+        if not result['OK']:
+          self.log.warn(result['Message'])
     prodJob = Job(jfilename)
     self.log.verbose(jobDict)
     jobs_available = len(jobDict)
@@ -1130,7 +1137,6 @@ class DiracProduction:
       prodJob._setParamValue('PRODUCTION_ID',str(prodID).zfill(8))
       prodJob._setParamValue('JOB_ID',str(jobNumber).zfill(8))
       ###self.log.debug(prodJob.createCode()) #never create the code, it resolves global vars ;)
-      prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
       updatedJob = self.__createJobDescriptionFile(prodJob._toXML())
       if not updatedJob:
         failed.append(jobNumber)
