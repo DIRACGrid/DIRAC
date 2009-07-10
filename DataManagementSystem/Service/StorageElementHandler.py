@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StorageElementHandler.py,v 1.12 2009/06/12 14:34:27 acsmith Exp $
+# $Id: StorageElementHandler.py,v 1.13 2009/07/10 18:07:57 mseco Exp $
 ########################################################################
 
 """
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: StorageElementHandler.py,v 1.12 2009/06/12 14:34:27 acsmith Exp $"
+__RCSID__ = "$Id: StorageElementHandler.py,v 1.13 2009/07/10 18:07:57 mseco Exp $"
 
 import os, shutil,re
 from stat import *
@@ -334,7 +334,7 @@ class StorageElementHandler(RequestHandler):
           shutil.rmtree(dir_path)
           return S_OK()
         except Exception, x:
-          gLogger.error("Failed to remove directory %s" % dir_path)
+          gLogger.error("Failed to remove directory", dir_path)
           gLogger.error(str(x))
           return S_ERROR("Failed to remove directory %s" % dir_path)
 

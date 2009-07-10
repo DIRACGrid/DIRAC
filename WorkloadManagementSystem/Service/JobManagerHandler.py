@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.31 2009/06/11 13:26:45 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py,v 1.32 2009/07/10 18:07:57 mseco Exp $
 ########################################################################
 
 """ JobManagerHandler is the implementation of the JobManager service
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: JobManagerHandler.py,v 1.31 2009/06/11 13:26:45 atsareg Exp $"
+__RCSID__ = "$Id: JobManagerHandler.py,v 1.32 2009/07/10 18:07:57 mseco Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -96,7 +96,7 @@ class JobManagerHandler( RequestHandler ):
   def __checkIfProxyUploadIsRequired( self ):
     result = gProxyManager.userHasProxy( self.ownerDN, self.ownerGroup, validSeconds = 18000 )
     if not result[ 'OK' ]:
-      gLogger.error( "Can't check if the user has proxy uploaded: %s" % result[ 'Message' ] )
+      gLogger.error( "Can't check if the user has proxy uploaded:", result[ 'Message' ] )
       return True
     #Check if an upload is required
     return result[ 'Value' ] == False

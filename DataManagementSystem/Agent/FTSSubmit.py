@@ -38,7 +38,7 @@ class FTSSubmit(Agent):
     if self.useProxies:
       result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
       if not result[ 'OK' ]:
-        self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
+        self.log.error( "Can't get shifter's proxy:", "%s" % result[ 'Message' ] )
         return result
 
     #########################################################################

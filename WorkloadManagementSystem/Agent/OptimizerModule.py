@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/OptimizerModule.py,v 1.12 2009/05/04 19:08:45 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/OptimizerModule.py,v 1.13 2009/07/10 18:07:58 mseco Exp $
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      optimizer instances and associated actions are performed there.
 """
 
-__RCSID__ = "$Id: OptimizerModule.py,v 1.12 2009/05/04 19:08:45 atsareg Exp $"
+__RCSID__ = "$Id: OptimizerModule.py,v 1.13 2009/07/10 18:07:58 mseco Exp $"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB         import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB  import JobLoggingDB
@@ -103,13 +103,13 @@ class OptimizerModule(AgentModule):
       if 'jdlOriginal' == self.requiredJobInfo:
         result = self.jobDB.getJobJDL( job, original=True )
         if not result[ 'OK' ]:
-          self.log.error( "No JDL for job %s" % job )
+          self.log.error( "No JDL for job", "%s" % job )
           return S_ERROR( "No JDL for job" )
         jobDef[ 'jdl' ] = result[ 'Value' ]
       if 'jdl' == self.requiredJobInfo:
         result = self.jobDB.getJobJDL( job )
         if not result[ 'OK' ]:
-          self.log.error( "No JDL for job %s" % job )
+          self.log.error( "No JDL for job", "%s" % job )
           return S_ERROR( "No JDL for job" )
         jobDef[ 'jdl' ] = result[ 'Value' ]
     #Load the classad if needed

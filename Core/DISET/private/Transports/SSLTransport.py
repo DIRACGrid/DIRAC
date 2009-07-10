@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.32 2008/12/01 18:44:53 acasajus Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.32 2008/12/01 18:44:53 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.33 2009/07/10 18:07:57 mseco Exp $
+__RCSID__ = "$Id: SSLTransport.py,v 1.33 2009/07/10 18:07:57 mseco Exp $"
 
 import os
 import types
@@ -173,7 +173,7 @@ def checkSanity( urlTuple, kwargs ):
         notAfter = notAfter[ 'Value' ]
       else:
         notAfter = "unknown"
-      gLogger.error( "PEM file %s has expired, not valid after %s" % ( certFile, notAfter ) )
+      gLogger.error( "PEM file has expired", "%s is not valid after %s" % ( certFile, notAfter ) )
       return S_ERROR( "PEM file %s has expired, not valid after %s" % ( certFile, notAfter ) )
 
   idDict = {}

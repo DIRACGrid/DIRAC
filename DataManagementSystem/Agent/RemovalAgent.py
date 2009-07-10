@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/RemovalAgent.py,v 1.20 2009/04/06 11:42:41 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/RemovalAgent.py,v 1.21 2009/07/10 18:07:57 mseco Exp $
 
 """  RemovalAgent takes removal requests from the RequestDB and replicates them
 """
@@ -64,7 +64,7 @@ class RemovalAgent(Agent,RequestAgentMixIn):
     if self.useProxies:
       result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
       if not result[ 'OK' ]:
-        self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
+        self.log.error( "Can't get shifter's proxy:", "%s" % result[ 'Message' ] )
         return result
 
     for i in range(self.threadPoolDepth):
