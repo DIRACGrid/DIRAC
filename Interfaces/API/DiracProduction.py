@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.67 2009/06/06 15:47:47 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.68 2009/07/10 09:21:40 atsareg Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.67 2009/06/06 15:47:47 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.68 2009/07/10 09:21:40 atsareg Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -1130,13 +1130,27 @@ class DiracProduction:
       prodJob._setParamValue('PRODUCTION_ID',str(prodID).zfill(8))
       prodJob._setParamValue('JOB_ID',str(jobNumber).zfill(8))
       ###self.log.debug(prodJob.createCode()) #never create the code, it resolves global vars ;)
+      prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
       updatedJob = self.__createJobDescriptionFile(prodJob._toXML())
+      if not updatedJob:
+        failed.append(jobNumber)
+        self.log.info('Job description failed for productionID %s and prodJobID %s, setting prodJob status to %s' %(prodID,jobNumber,self.createdStatus))
+        result = prodClient.setJobStatus(long(prodID),long(jobNumber),self.createdStatus)
+        if not result['OK']:
+          self.log.warn(result)
+          
       result = self._getOutputLFNs(updatedJob,prodID,jobNumber,inputData) #prodJob._toXML()
       if result['OK']:
         newProdJob = Job(updatedJob)
         for name,output in result['Value'].items():
           newProdJob._addJDLParameter(name,string.join(output,';'))
         updatedJob = self.__createJobDescriptionFile(newProdJob._toXML())
+        if not updatedJob:
+          failed.append(jobNumber)
+          self.log.info('Job description failed for productionID %s and prodJobID %s, setting prodJob status to %s' %(prodID,jobNumber,self.createdStatus))
+          result = prodClient.setJobStatus(long(prodID),long(jobNumber),self.createdStatus)
+          if not result['OK']:
+            self.log.warn(result)
       else:
         self.log.error('Could not create production LFN',result['Message'])
       newJob = Job(updatedJob)
@@ -1144,7 +1158,6 @@ class DiracProduction:
       subResult = self.__submitJob(newJob)
 #      subResult = S_ERROR('blocking submission')
       self.log.verbose(subResult)
-      prodClient = RPCClient('ProductionManagement/ProductionManager',timeout=120)
       if subResult['OK']:
         jobID = subResult['Value']
         submitted.append(jobID)
@@ -1156,7 +1169,7 @@ class DiracProduction:
       else:
         failed.append(jobNumber)
         self.log.error('Production Job Submission Failed',subResult['Message'])
-        self.log.info('Job submission failed for productionID %s and prodJobID %s setting prodJob status to %s' %(prodID,jobNumber,self.createdStatus))
+        self.log.info('Job submission failed for productionID %s and prodJobID %s, setting prodJob status to %s' %(prodID,jobNumber,self.createdStatus))
         result = prodClient.setJobStatus(long(prodID),long(jobNumber),self.createdStatus)
         if not result['OK']:
           self.log.warn(result)
@@ -1227,9 +1240,13 @@ class DiracProduction:
     os.mkdir(tmpdir)
 
     jfilename = tmpdir+'/jobDescription.xml'
-    jfile=open(jfilename,'w')
-    print >> jfile , xmlString
-    jfile.close()
+    try:
+      jfile=open(jfilename,'w')
+      print >> jfile , xmlString
+      jfile.close()
+    except IOError,x:
+      self.log.error('Error creating description file %s: %s' % (jfilename,str(x)))   
+      return None
     self.toCleanUp.append(tmpdir)
     return jfilename
 
