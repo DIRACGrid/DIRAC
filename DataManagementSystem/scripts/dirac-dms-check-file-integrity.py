@@ -2,10 +2,10 @@
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-check-file-integrity.py,v 1.4 2009/07/09 15:20:59 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-check-file-integrity.py,v 1.5 2009/07/10 13:00:18 acsmith Exp $
 ########################################################################
-__RCSID__   = "$Id: dirac-dms-check-file-integrity.py,v 1.4 2009/07/09 15:20:59 acsmith Exp $"
-__VERSION__ = "$Revision: 1.4 $"
+__RCSID__   = "$Id: dirac-dms-check-file-integrity.py,v 1.5 2009/07/10 13:00:18 acsmith Exp $"
+__VERSION__ = "$Revision: 1.5 $"
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import sortList
@@ -211,11 +211,12 @@ if filesPresentInLFC:
         numberOfMissingReplicas+=1
       for pfn,metadata in res['Value']['Successful'].items():
         size = metadata['Size']
-        if not size == bkMetadata[pfnLfns[pfn]]['FileSize']:
-          if not bkSESizeMismatch.has_key(se):
-            bkSESizeMismatch[se] = []
-          bkSESizeMismatch[se].append(pfnLfns[pfn])
-          numberOfBkSESizeMismatch +=1
+        if bkMetadata.has_key(pfnLfns[pfn]):
+          if not size == bkMetadata[pfnLfns[pfn]]['FileSize']:
+            if not bkSESizeMismatch.has_key(se):
+              bkSESizeMismatch[se] = []
+            bkSESizeMismatch[se].append(pfnLfns[pfn])
+            numberOfBkSESizeMismatch +=1
         if metadata['Lost']:
           if not sePfnsLost.has_key(se):
             sePfnsLost[se] = []
