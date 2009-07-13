@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.161 2009/06/21 14:19:47 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.162 2009/07/13 10:17:39 atsareg Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.161 2009/06/21 14:19:47 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.162 2009/07/13 10:17:39 atsareg Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -2152,7 +2152,7 @@ class JobDB(DB):
       return ret
     e_jobID = ret['Value']
 
-    req = "UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP() WHERE JobID=%s" % e_jobID
+    req = "UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP(), Status='Running' WHERE JobID=%s" % e_jobID
     result = self._update(req)
     if not result['OK']:
       return S_ERROR('Failed to set the heart beat time: '+result['Message'])
