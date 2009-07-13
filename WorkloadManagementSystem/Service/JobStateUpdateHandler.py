@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.37 2009/06/09 08:33:58 atsareg Exp $
+# $Id: JobStateUpdateHandler.py,v 1.38 2009/07/13 10:22:55 atsareg Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.37 2009/06/09 08:33:58 atsareg Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.38 2009/07/13 10:22:55 atsareg Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -216,7 +216,7 @@ class JobStateUpdateHandler( RequestHandler ):
       return S_ERROR( 'No Matching Job' )
 
     status = result['Value']['Status']
-    if status == "Stalled":
+    if status == "Stalled" or status == "Matched":
       new_status = 'Running'
     else:
       new_status = status
@@ -273,18 +273,18 @@ class JobStateUpdateHandler( RequestHandler ):
       gLogger.warn('Failed to set the heart beat data for job %d ' % jobID)
 
     # Restore the Running status if necessary
-    result = jobDB.getJobAttributes(jobID,['Status'])
-    if not result['OK']:
-      return result
+    #result = jobDB.getJobAttributes(jobID,['Status'])
+    #if not result['OK']:
+    #  return result
 
-    if not result['Value']:
-      return S_ERROR('Job %d not found' % jobID)
+    #if not result['Value']:
+    #  return S_ERROR('Job %d not found' % jobID)
 
-    status = result['Value']['Status']
-    if status == "Stalled":
-      result = jobDB.setJobAttribute(jobID,'Status','Running',True)
-      if not result['OK']:
-        gLogger.warn('Failed to restore the job status to Running')
+    #status = result['Value']['Status']
+    #if status == "Stalled" or status == "Matched":
+    #  result = jobDB.setJobAttribute(jobID,'Status','Running',True)
+    #  if not result['OK']:
+    #    gLogger.warn('Failed to restore the job status to Running')
 
     jobMessageDict = {}
     result = jobDB.getJobCommand(jobID)
