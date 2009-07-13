@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.51 2009/05/25 14:36:14 rgracian Exp $
+# $Id: WMSAdministratorHandler.py,v 1.52 2009/07/13 10:27:31 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.51 2009/05/25 14:36:14 rgracian Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.52 2009/07/13 10:27:31 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -368,20 +368,22 @@ class WMSAdministratorHandler(RequestHandler):
     pilots = []
     result = pilotDB.getPilotsForJobID(jobID)
     if not result['OK']:
-      return S_ERROR('Failed to get pilot: '+result['Message'])
-    pilots += result['Value']
-
+      if result['Message'].find('not found') == -1:
+        return S_ERROR('Failed to get pilot: '+result['Message'])
+    else:    
+      pilots += result['Value']  
     if not pilots:
       # Pilots were not found try to look in the Task Queue
       taskQueueID = 0
       result = taskQueueDB.getTaskQueueForJob( jobID )
-      if not result['OK'] or not result['Value']:
+      if result['OK'] and result['Value']:
         taskQueueID = result['Value']
-      result = pilotDB.getPilotsForTaskQueue( result['Value'], limit=10 )
-      if not result['OK']:
-        return S_ERROR('Failed to get pilot: '+result['Message'])
-      pilots += result['Value']
-
+      if taskQueueID:  
+        result = pilotDB.getPilotsForTaskQueue( taskQueueID, limit=10 )
+        if not result['OK']:
+          return S_ERROR('Failed to get pilot: '+result['Message'])
+        pilots += result['Value']         
+    
     return pilotDB.getPilotInfo(pilotID=pilots)
 
   ##############################################################################
