@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: OnlineInputData.py,v 1.1 2009/07/13 15:55:51 rgracian Exp $
+# $Id: OnlineInputData.py,v 1.2 2009/07/14 10:39:26 rgracian Exp $
 # File :   OnlineInputData.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -8,7 +8,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: OnlineInputData.py,v 1.1 2009/07/13 15:55:51 rgracian Exp $"
+__RCSID__ = "$Id: OnlineInputData.py,v 1.2 2009/07/14 10:39:26 rgracian Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -55,7 +55,7 @@ class OnlineInputData:
       # Make sure the files are available
       # we need to exclude the first "/" to get os.path.join to work
       localPath = os.path.join('/castorfs/cern.ch/grid/',i[1:])
-      if not os.path.isfile( locaPath ):
+      if not os.path.isfile( localPath ):
         self.log.error( 'Can not find Input Data:', i )
         return S_ERROR( 'Can not find Input Data:', i )
     
