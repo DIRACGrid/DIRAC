@@ -70,6 +70,7 @@ class SandboxStoreClient:
 
     try:
       fd, tmpFilePath = tempfile.mkstemp( prefix="LDSB." )
+      os.close(fd)
     except Exception, e:
       return S_ERROR( "Cannot create temporal file: %s" % str(e) )
 
