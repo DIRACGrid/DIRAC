@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: OnlineInputData.py,v 1.2 2009/07/14 10:39:26 rgracian Exp $
+# $Id: OnlineInputData.py,v 1.3 2009/07/14 12:42:22 rgracian Exp $
 # File :   OnlineInputData.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -8,7 +8,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: OnlineInputData.py,v 1.2 2009/07/14 10:39:26 rgracian Exp $"
+__RCSID__ = "$Id: OnlineInputData.py,v 1.3 2009/07/14 12:42:22 rgracian Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -72,7 +72,23 @@ class OnlineInputData:
       if not localReplica:
         failedReplicas.append(lfn)
 
-    
+    seFilesDict = {}
+    trackLFNs = {}
+    for localSE in localSEList:
+      for lfn,reps in replicas.items():
+        if lfn in self.inputData:
+          if reps.has_key(localSE):
+            pfn = reps[localSE]
+            if seFilesDict.has_key(localSE):
+              currentFiles = seFilesDict[localSE]
+              if not lfn in trackLFNs.keys():
+                currentFiles.append(pfn)
+              seFilesDict[localSE] = currentFiles
+              trackLFNs[lfn] = pfn
+            else:
+              seFilesDict[localSE] = [pfn]
+              trackLFNs[lfn] = pfn
+                  
     #Construct resolvedData dictionary with final metadata for selected replicas
     #knowing each file has one site replica from above
     resolvedData = {}
