@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.43 2009/07/15 07:49:37 rgracian Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.43 2009/07/15 07:49:37 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.44 2009/07/15 09:23:45 rgracian Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.44 2009/07/15 09:23:45 rgracian Exp $"
 
 import os
 import types
@@ -141,7 +141,7 @@ class RequestHandler:
           return S_ERROR( "Incomplete transfer" )
         return uRetVal
       finally:
-        self._lockManager.unlock( method )
+        self._lockManager.unlock( sDirection )
 
     except Exception, v:
       gLogger.exception( "Uncaught exception when serving Transfer", "%s" % sDirection )
