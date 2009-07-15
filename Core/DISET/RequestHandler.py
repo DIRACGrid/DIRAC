@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.42 2009/04/24 09:27:40 acasajus Exp $
-__RCSID__ = "$Id: RequestHandler.py,v 1.42 2009/04/24 09:27:40 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RequestHandler.py,v 1.43 2009/07/15 07:49:37 rgracian Exp $
+__RCSID__ = "$Id: RequestHandler.py,v 1.43 2009/07/15 07:49:37 rgracian Exp $"
 
 import os
 import types
@@ -114,28 +114,38 @@ class RequestHandler:
     if not retVal[ 'OK' ]:
       return retVal
     self.__logRemoteQuery( "FileTransfer/%s" % sDirection, fileInfo )
-    fileHelper = FileHelper( self._clientTransport )
-    if sDirection == "fromClient":
-      fileHelper.setDirection( "fromClient" )
-      uRetVal = self.transfer_fromClient( fileInfo[0], fileInfo[1], fileInfo[2], fileHelper )
-    elif sDirection == "toClient" :
-      fileHelper.setDirection( "toClient" )
-      uRetVal = self.transfer_toClient( fileInfo[0], fileInfo[1], fileHelper )
-    elif sDirection == "bulkFromClient" :
-      fileHelper.setDirection( "fromClient" )
-      uRetVal = self.transfer_bulkFromClient( fileInfo[0], fileInfo[1], fileInfo[2], fileHelper )
-    elif sDirection == "bulkToClient" :
-      fileHelper.setDirection( "toClient" )
-      uRetVal = self.transfer_bulkToClient( fileInfo[0], fileInfo[1], fileHelper )
-    elif sDirection == "listBulk":
-      fileHelper.setDirection( "toClient" )
-      uRetVal = self.transfer_listBulk( fileInfo[0], fileInfo[1], fileHelper )
-    else:
-      return S_ERROR( "Direction %s does not exist!!!" % sDirection )
-    if uRetVal[ 'OK' ] and not fileHelper.finishedTransmission():
-      gLogger.error( "You haven't finished receiving/sending the file", str( fileInfo ) )
-      return S_ERROR( "Incomplete transfer" )
-    return uRetVal
+
+    self._lockManager.lock( sDirection )
+    try:
+      try:
+        fileHelper = FileHelper( self._clientTransport )
+        if sDirection == "fromClient":
+          fileHelper.setDirection( "fromClient" )
+          uRetVal = self.transfer_fromClient( fileInfo[0], fileInfo[1], fileInfo[2], fileHelper )
+        elif sDirection == "toClient" :
+          fileHelper.setDirection( "toClient" )
+          uRetVal = self.transfer_toClient( fileInfo[0], fileInfo[1], fileHelper )
+        elif sDirection == "bulkFromClient" :
+          fileHelper.setDirection( "fromClient" )
+          uRetVal = self.transfer_bulkFromClient( fileInfo[0], fileInfo[1], fileInfo[2], fileHelper )
+        elif sDirection == "bulkToClient" :
+          fileHelper.setDirection( "toClient" )
+          uRetVal = self.transfer_bulkToClient( fileInfo[0], fileInfo[1], fileHelper )
+        elif sDirection == "listBulk":
+          fileHelper.setDirection( "toClient" )
+          uRetVal = self.transfer_listBulk( fileInfo[0], fileInfo[1], fileHelper )
+        else:
+          return S_ERROR( "Direction %s does not exist!!!" % sDirection )
+        if uRetVal[ 'OK' ] and not fileHelper.finishedTransmission():
+          gLogger.error( "You haven't finished receiving/sending the file", str( fileInfo ) )
+          return S_ERROR( "Incomplete transfer" )
+        return uRetVal
+      finally:
+        self._lockManager.unlock( method )
+
+    except Exception, v:
+      gLogger.exception( "Uncaught exception when serving Transfer", "%s" % sDirection )
+      return S_ERROR( "Server error while serving %s: %s" % ( sDirection, str( v ) ) )
 
   def transfer_fromClient( self, fileId, token, fileSize, fileHelper ):
     return S_ERROR( "This server does no allow receiving files" )

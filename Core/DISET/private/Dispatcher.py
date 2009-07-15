@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.19 2009/05/12 10:10:38 acasajus Exp $
-__RCSID__ = "$Id: Dispatcher.py,v 1.19 2009/05/12 10:10:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.20 2009/07/15 07:49:11 rgracian Exp $
+__RCSID__ = "$Id: Dispatcher.py,v 1.20 2009/07/15 07:49:11 rgracian Exp $"
 
 import DIRAC
 from DIRAC.LoggingSystem.Client.Logger import gLogger
@@ -65,6 +65,11 @@ class Dispatcher:
         exportedMethodName = methodName.replace( "export_", "" )
         threadLimit = serviceCfg.getMaxThreadsPerFunction( exportedMethodName )
         funcLockManager.createNewLock( exportedMethodName, threadLimit )
+      elif methodName.find( "transfer_" ) == 0:
+        exportedMethodName = methodName.replace( "transfer_", "" )
+        threadLimit = serviceCfg.getMaxThreadsPerFunction( exportedMethodName )
+        funcLockManager.createNewLock( exportedMethodName, threadLimit )
+
 
   def __registerHandler( self, serviceName ):
     """
