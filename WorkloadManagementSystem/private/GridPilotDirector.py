@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.8 2009/07/09 06:04:03 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.9 2009/07/15 14:04:34 rgracian Exp $
 # File :   GridPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -12,7 +12,7 @@
   underlying resources.
 
 """
-__RCSID__ = "$Id: GridPilotDirector.py,v 1.8 2009/07/09 06:04:03 rgracian Exp $"
+__RCSID__ = "$Id: GridPilotDirector.py,v 1.9 2009/07/15 14:04:34 rgracian Exp $"
 
 
 GRIDENV                = ''
@@ -25,6 +25,7 @@ ERROR_VOMS       = 'Proxy without VOMS Extensions'
 ERROR_CE         = 'No queue available for pilot'
 ERROR_JDL        = 'Could not create Grid JDL'
 ERROR_RB         = 'No Broker available'
+ERROR_TOKEN      = 'Invalid proxy token request'
 
 import os, tempfile, time, re, shutil
 
