@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.77 2009/07/08 13:32:52 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.78 2009/07/16 11:32:57 rgracian Exp $"
 
 import re, time, commands, random,os
 import types
@@ -1812,6 +1812,7 @@ class ReplicaManager:
     return res
 
   def __initialiseAccountingObject(self,operation,se,files):
+    import DIRAC
     accountingDict = {}
     accountingDict['OperationType'] = operation
     accountingDict['User'] = 'acsmith'
@@ -1825,7 +1826,7 @@ class ReplicaManager:
     accountingDict['TransferSize'] = files
     accountingDict['TransferTime'] = 0.0
     accountingDict['FinalStatus'] = 'Successful'
-    accountingDict['Source'] = gConfig.getValue('/LocalSite/Site','Unknown')
+    accountingDict['Source'] = DIRAC.siteName()
     oDataOperation = DataOperation()
     oDataOperation.setValuesFromDict(accountingDict)
     return oDataOperation

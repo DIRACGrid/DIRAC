@@ -1,8 +1,8 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/StorageElement.py,v 1.33 2009/07/01 10:35:31 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/StorageElement.py,v 1.34 2009/07/16 11:32:57 rgracian Exp $
 ########################################################################
 
-__RCSID__ = "$Id: StorageElement.py,v 1.33 2009/07/01 10:35:31 acsmith Exp $"
+__RCSID__ = "$Id: StorageElement.py,v 1.34 2009/07/16 11:32:57 rgracian Exp $"
 
 """ This is the StorageElement class.
 
@@ -197,10 +197,9 @@ class StorageElement:
   def isLocalSE(self):
     """ Test if the Storage Element is local in the current context
     """
+    import DIRAC
     gLogger.verbose("StorageElement.isLocalSE: Determining whether %s is a local SE." % self.name)
-    configStr = '/LocalSite/Site'
-    localSite = gConfig.getValue(configStr)
-    localSEs = getSEsForSite(localSite)['Value']
+    localSEs = getSEsForSite(DIRAC.siteName())['Value']
     if self.name in localSEs:
       return S_OK(True)
     else:

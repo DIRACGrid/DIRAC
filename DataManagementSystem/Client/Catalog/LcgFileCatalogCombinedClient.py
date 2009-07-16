@@ -20,14 +20,6 @@ class LcgFileCatalogCombinedClient:
   def __init__(self, infosys=None, master_host=None, mirrors = []):
     """ Default constructor
     """
-    # Obtain the site configuration
-    result = gConfig.getOption('/LocalSite/Site')
-    if not result['OK']:
-      gLogger.error('Failed to get the /LocalSite/Site')
-      self.site = 'Unknown'
-    else:
-      self.site = result['Value']
-
     if not infosys:
       configPath = '/Resources/FileCatalogs/LcgFileCatalogCombined/LcgGfalInfosys'
       infosys = gConfig.getValue(configPath)

@@ -37,13 +37,6 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if infosys:
       os.environ['LCG_GFAL_INFOSYS'] = infosys
 
-    result = gConfig.getOption('/LocalSite/Site')
-    if not result['OK']:
-      gLogger.error('Failed to get the /LocalSite/Site')
-      self.site = 'Unknown'
-    else:
-      self.site = result['Value']
-
     self.prefix = '/grid'
     self.session = False
     self.name = "LFC"
@@ -69,7 +62,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if self.session:
       return False
     else:
-      sessionName = 'DIRAC_%s.%s at %s' % (DIRAC.majorVersion,DIRAC.minorVersion,self.site)
+      sessionName = 'DIRAC_%s.%s at %s' % (DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.siteName())
       lfc.lfc_startsess(self.host,sessionName)
       self.session = True
       return True
@@ -82,7 +75,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
 
   def __startTransaction(self):
     """ Begin transaction for one time commit """
-    transactionName = 'Transaction: DIRAC_%s.%s at %s' % (DIRAC.majorVersion,DIRAC.minorVersion,self.site)
+    transactionName = 'Transaction: DIRAC_%s.%s at %s' % (DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.siteName())
     lfc.lfc_starttrans(self.host,transactionName)
     self.transaction = True
 

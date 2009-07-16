@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.30 2009/05/01 10:56:11 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.31 2009/07/16 11:32:58 rgracian Exp $
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.30 2009/05/01 10:56:11 rgracian Exp $"
+__RCSID__ = "$Id: Agent.py,v 1.31 2009/07/16 11:32:58 rgracian Exp $"
 
 import os
 import threading
@@ -94,7 +94,7 @@ class Agent:
     gLogger.info('')
     gLogger.info('==========================================================')
     gLogger.info('Starting %s Agent' % self.fullname)
-    gLogger.info('At site '+ gConfig.getValue('/LocalSite/Site','Unknown'))
+    gLogger.info('At site '+ DIRAC.siteName() )
     gLogger.info('Within the '+ self.diracSetup +' setup')
     gLogger.info('CVS version '+__RCSID__)
     gLogger.info('DIRAC version v%dr%d build %d' % \

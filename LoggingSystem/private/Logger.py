@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.33 2009/07/09 08:57:25 mseco Exp $
-__RCSID__ = "$Id: Logger.py,v 1.33 2009/07/09 08:57:25 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.34 2009/07/16 11:32:58 rgracian Exp $
+__RCSID__ = "$Id: Logger.py,v 1.34 2009/07/16 11:32:58 rgracian Exp $"
 """
    DIRAC Logger client
 """
@@ -16,6 +16,7 @@ from DIRAC.LoggingSystem.private.Message import Message
 from DIRAC.Core.Utilities import Time, List
 from DIRAC.LoggingSystem.private.backends.BackendIndex import gBackendIndex
 from DIRAC.Core.Utilities import ExitCallback, ColorCLI
+import DIRAC
 
 class Logger:
 
@@ -51,7 +52,6 @@ class Logger:
     if self._systemName == "Framework":
       from DIRAC.ConfigurationSystem.Client.Config import gConfig
       from os import getpid
-      from DIRAC import siteName
       #Get the options for the different output backends
       retDict = gConfig.getOptionsDict( "%s/BackendsOptions" % cfgPath )
       if not retDict[ 'OK' ]:
@@ -75,7 +75,7 @@ class Logger:
         else:
           self.backendsOptions[ 'Interactive' ] = True
 
-      self.backendsOptions[ 'Site' ] = siteName
+      self.backendsOptions[ 'Site' ] = DIRAC.siteName()
 
       #Configure outputs
       desiredBackends = gConfig.getValue( "%s/LogBackends" % cfgPath,

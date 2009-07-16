@@ -1626,6 +1626,7 @@ class SRM2Storage(StorageBase):
     return result
 
   def __initialiseAccountingObject(self,operation,se,files):
+    import DIRAC
     accountingDict = {}
     accountingDict['OperationType'] = operation
     accountingDict['User'] = 'acsmith'
@@ -1639,7 +1640,7 @@ class SRM2Storage(StorageBase):
     accountingDict['TransferSize'] = files
     accountingDict['TransferTime'] = 0.0
     accountingDict['FinalStatus'] = 'Successful'
-    accountingDict['Source'] = gConfig.getValue('/LocalSite/Site','Unknown')
+    accountingDict['Source'] = DIRAC.siteName()
     oDataOperation = DataOperation()
     oDataOperation.setValuesFromDict(accountingDict)
     return oDataOperation

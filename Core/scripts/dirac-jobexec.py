@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/dirac-jobexec.py,v 1.2 2008/12/15 16:17:47 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/dirac-jobexec.py,v 1.3 2009/07/16 11:32:59 rgracian Exp $
 # File :   dirac-jobexec
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-jobexec.py,v 1.2 2008/12/15 16:17:47 atsareg Exp $"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__   = "$Id: dirac-jobexec.py,v 1.3 2009/07/16 11:32:59 rgracian Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 
 """ The dirac-jobexec script is equipped to execute workflows that
     are specified via their XML description.  The main client of
@@ -25,6 +25,8 @@ from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.ProductionManagementSystem.Client.FileReport import FileReport
 from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
+
+import DIRAC
 
 import os,os.path,sys
 
@@ -47,8 +49,7 @@ def jobexec(jobxml,wfParameters={}):
   jobID = 0
   if os.environ.has_key('JOBID'):
     jobID = os.environ['JOBID']
-    localSite = gConfig.getValue('/LocalSite/Site','LCG.Unknown.ch')
-    gLogger.info('DIRAC JobID %s is running at site %s' %(jobID,localSite))
+    gLogger.info('DIRAC JobID %s is running at site %s' %( jobID, DIRAC.siteName() ))
 
   workflow.addTool('JobReport',JobReport(jobID))
   workflow.addTool('FileReport',FileReport())

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.62 2009/07/01 09:50:35 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.62 2009/07/01 09:50:35 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.63 2009/07/16 11:32:56 rgracian Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.63 2009/07/16 11:32:56 rgracian Exp $"
 
 import sys
 import types
@@ -118,13 +118,10 @@ class BaseClient:
   def __findServiceURL( self ):
     gatewayURL = False
     if self.KW_IGNORE_GATEWAYS not in self.kwargs or not self.kwargs[ self.KW_IGNORE_GATEWAYS ]:
-      dRetVal = gConfig.getOption( "/LocalSite/Site" )
+      dRetVal = gConfig.getOption( "/DIRAC/Gateways/%s" % DIRAC.siteName() )
       if dRetVal[ 'OK' ]:
-        siteName = dRetVal[ 'Value' ]
-        dRetVal = gConfig.getOption( "/DIRAC/Gateways/%s" % siteName )
-        if dRetVal[ 'OK' ]:
-          rawGatewayURL = List.randomize( List.fromChar( dRetVal[ 'Value'], "," ) )[0]
-          gatewayURL = "/".join( rawGatewayURL.split( "/" )[:3] )
+        rawGatewayURL = List.randomize( List.fromChar( dRetVal[ 'Value'], "," ) )[0]
+        gatewayURL = "/".join( rawGatewayURL.split( "/" )[:3] )
           
     for protocol in gProtocolDict.keys():
       if self.serviceName.find( "%s://" % protocol ) == 0:

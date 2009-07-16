@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.100 2009/07/07 15:27:00 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.101 2009/07/16 11:32:57 rgracian Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.100 2009/07/07 15:27:00 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.101 2009/07/16 11:32:57 rgracian Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -62,7 +62,6 @@ class Dirac:
     """Internal initialization of the DIRAC API.
     """
     self.log = gLogger.getSubLogger(COMPONENT_NAME)
-    self.site       = gConfig.getValue('/LocalSite/Site','Unknown')
     self.setup      = gConfig.getValue('/DIRAC/Setup','Unknown')
     self.section    = '/LocalSite/'
     self.cvsVersion = 'CVS version '+__RCSID__
@@ -343,8 +342,6 @@ class Dirac:
        result of submission to the WMS.  Please note that the job must be eligible to the
        site it is submitted from.
     """
-    if not self.site or self.site == 'Unknown':
-      return self.__errorReport('/LocalSite/Site configuration Option is unknown, please set this correctly')
 
     # If not set differently in the CS use the root from the current DIRAC installation
     siteRoot = gConfig.getValue('/LocalSite/Root',DIRAC.rootPath)
@@ -385,7 +382,7 @@ class Dirac:
       jdl = '['+jdl+']'
     classAdJob = ClassAd(jdl)
 
-    classAdJob.insertAttributeString('Site', self.site)
+    classAdJob.insertAttributeString('Site', DIRAC.siteName())
     classAdJob.insertAttributeString('SubmitPools', 'Local')
     classAdJob.insertAttributeString('PilotTypes', 'private')
 
@@ -499,9 +496,6 @@ class Dirac:
        successful WMS submission, this takes the jobID and allows to retry the job agent
        running.
     """
-    if not self.site or self.site == 'Unknown':
-      return self.__errorReport('LocalSite/Site configuration section is unknown, please set this correctly')
-
     # If not set differently in the CS use the root from the current DIRAC installation
     siteRoot = gConfig.getValue('/LocalSite/Root',DIRAC.rootPath)
 
@@ -550,7 +544,7 @@ class Dirac:
     """This utility will create a pool xml catalogue slice for the specified LFNs using
        the full input data resolution policy plugins for the VO.
 
-       If not specified the site is assumed to be the /LocalSite/Site in the local
+       If not specified the site is assumed to be the DIRAC.siteName() from the local
        configuration.  The fileName can be a full path.
 
        Example usage:
@@ -580,9 +574,7 @@ class Dirac:
       return self.__errorReport('Expected single string or list of strings for LFN(s)')
 
     if not siteName:
-      if not self.site or self.site == 'Unknown':
-        return self.__errorReport('LocalSite/Site configuration section is unknown, please set this correctly')
-      siteName = self.site
+      siteName = DIRAC.siteName()
 
     if ignoreMissing:
       self.log.verbose('Ignore missing flag is enabled')
@@ -649,7 +641,7 @@ class Dirac:
     if not inputDataPolicy:
       return self.__errorReport('Could not retrieve DIRAC/VOPolicy/InputDataModule for VO')
 
-    self.log.info('Job has input data requirement, will attempt to resolve data for %s' %self.site)
+    self.log.info('Job has input data requirement, will attempt to resolve data for %s' %DIRAC.siteName())
     self.log.verbose('%s' %(string.join(inputData,'\n')))
     replicaDict = self.getReplicas(inputData)
     if not replicaDict['OK']:
@@ -684,8 +676,6 @@ class Dirac:
        All output files are written to the local directory.
     """
     # FIXME: Better create an unique local directory for this job
-    if not self.site or self.site == 'Unknown':
-      return self.__errorReport('LocalSite/Site configuration section is unknown, please set this correctly')
 
     if disableCopies:
       self.log.verbose('DisableLocalJobDirectory is set, leaving everything in local dir')
@@ -694,7 +684,7 @@ class Dirac:
     # If not set differently in the CS use the root from the current DIRAC installation
     siteRoot = gConfig.getValue('/LocalSite/Root',DIRAC.rootPath)
 
-    self.log.info('Preparing environment for site %s to execute job' %self.site)
+    self.log.info('Preparing environment for site %s to execute job' %DIRAC.siteName())
 
     os.environ['DIRACROOT'] = siteRoot
     self.log.verbose('DIRACROOT = %s' %(siteRoot))
@@ -731,7 +721,7 @@ class Dirac:
       if not inputDataPolicy:
         return self.__errorReport('Could not retrieve DIRAC/VOPolicy/InputDataModule for VO')
 
-      self.log.info('Job has input data requirement, will attempt to resolve data for %s' %self.site)
+      self.log.info('Job has input data requirement, will attempt to resolve data for %s' %DIRAC.siteName())
       self.log.verbose('%s' %(string.join(inputData,'\n')))
       replicaDict = self.getReplicas(inputData)
       if not replicaDict['OK']:
@@ -807,7 +797,7 @@ class Dirac:
             self.log.warn('Failed to download %s with error:%s' %(isFile,getFile['Message']))
             return S_ERROR( 'Can not copy InputSandbox file %s' % isFile )
 
-    self.log.info('Attempting to submit job to local site: %s' %self.site)
+    self.log.info('Attempting to submit job to local site: %s' %DIRAC.siteName())
 
     if parameters['Value'].has_key('Executable'):
       executable = os.path.expandvars(parameters['Value']['Executable'])
@@ -2614,6 +2604,6 @@ class Dirac:
     """
     self.log.info('<=====%s=====>' % (self.diracInfo))
     self.log.verbose(self.cvsVersion)
-    self.log.verbose('DIRAC is running at %s in setup %s' % (self.site,self.setup))
+    self.log.verbose('DIRAC is running at %s in setup %s' % (DIRAC.siteName(),self.setup))
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

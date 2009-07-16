@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.18 2009/07/08 09:13:06 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.19 2009/07/16 11:32:58 rgracian Exp $
 # File :   SiteMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,8 +7,9 @@
 """  The SiteMonitor base-class monitors staging requests for a given site.
 """
 
-__RCSID__ = "$Id: SiteMonitor.py,v 1.18 2009/07/08 09:13:06 acsmith Exp $"
+__RCSID__ = "$Id: SiteMonitor.py,v 1.19 2009/07/16 11:32:58 rgracian Exp $"
 
+import DIRAC
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
 from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
@@ -260,7 +261,7 @@ class SiteMonitor(Thread):
     accountingDict['TransferOK'] = 1
     accountingDict['TransferTime'] = 0.0
     accountingDict['FinalStatus'] = 'Successful'
-    accountingDict['Source'] = gConfig.getValue('/LocalSite/Site','Unknown')
+    accountingDict['Source'] = DIRAC.siteName()
     accountingDict['Destination'] = self.site
     oDataOperation = DataOperation()
     oDataOperation.setEndTime()

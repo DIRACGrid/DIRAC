@@ -1,9 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.40 2009/02/26 12:02:57 acasajus Exp $
-__RCSID__ = "$Id: MonitoringClient.py,v 1.40 2009/02/26 12:02:57 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Client/MonitoringClient.py,v 1.41 2009/07/16 11:32:58 rgracian Exp $
+__RCSID__ = "$Id: MonitoringClient.py,v 1.41 2009/07/16 11:32:58 rgracian Exp $"
 
 import threading
 import time
 import types
+import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities import Time, ExitCallback, Network, ThreadScheduler
@@ -82,7 +83,7 @@ class MonitoringClient:
     self.logger = gLogger.getSubLogger( "Monitoring" )
     self.logger.debug( "Initializing Monitoring Client")
     self.sourceDict[ 'setup' ] = gConfig.getValue( "/DIRAC/Setup" )
-    self.sourceDict[ 'site' ] = gConfig.getValue( "/LocalSite/Site", "Not specified" )
+    self.sourceDict[ 'site' ] = DIRAC.siteName()
     if self.sourceDict[ 'componentType' ] == self.COMPONENT_SERVICE:
       self.cfgSection = PathFinder.getSystemSection( self.sourceDict[ 'componentName' ] )
     elif self.sourceDict[ 'componentType' ] == self.COMPONENT_AGENT:

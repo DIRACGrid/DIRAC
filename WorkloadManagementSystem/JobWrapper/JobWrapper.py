@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.114 2009/07/08 11:04:54 atsareg Exp $
+# $Id: JobWrapper.py,v 1.115 2009/07/16 11:32:57 rgracian Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.114 2009/07/08 11:04:54 atsareg Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.115 2009/07/16 11:32:57 rgracian Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -76,7 +76,6 @@ class JobWrapper:
     self.tapeSE            = gConfig.getValue(self.section+'/TapeSE',['-tape','-RDST','-RAW'])
     self.sandboxSizeLimit  = gConfig.getValue(self.section+'/OutputSandboxLimit',1024*1024*10)
     self.cleanUpFlag  = gConfig.getValue(self.section+'/CleanUpFlag',False)
-    self.localSite = gConfig.getValue('/LocalSite/Site','Unknown')
     self.pilotRef = gConfig.getValue('/LocalSite/PilotReference','Unknown')
     self.cpuNormalizationFactor = gConfig.getValue ( "/LocalSite/CPUNomalizationFactor", 0.0 )
     self.vo = gConfig.getValue('/DIRAC/VirtualOrganization','lhcb')
@@ -228,8 +227,8 @@ class JobWrapper:
     self.log.verbose('DIRACROOT = %s' %(self.localSiteRoot))
     os.environ['DIRACPYTHON'] = sys.executable
     self.log.verbose('DIRACPYTHON = %s' %(sys.executable))
-    os.environ['DIRACSITE'] = self.localSite
-    self.log.verbose('DIRACSITE = %s' %(self.localSite))
+    os.environ['DIRACSITE'] = DIRAC.siteName()
+    self.log.verbose('DIRACSITE = %s' %(DIRAC.siteName()))
 
     outputFile = self.defaultOutputFile
     errorFile  = self.defaultErrorFile

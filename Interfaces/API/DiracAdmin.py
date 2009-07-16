@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.39 2009/06/12 14:48:11 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracAdmin.py,v 1.40 2009/07/16 11:32:57 rgracian Exp $
 # File :   DiracAdmin.py
 # Author : Stuart Paterson
 ########################################################################
@@ -14,7 +14,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
-__RCSID__ = "$Id: DiracAdmin.py,v 1.39 2009/06/12 14:48:11 paterson Exp $"
+__RCSID__ = "$Id: DiracAdmin.py,v 1.40 2009/07/16 11:32:57 rgracian Exp $"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
@@ -40,7 +40,6 @@ class DiracAdmin:
     """Internal initialization of the DIRAC Admin API.
     """
     self.log = gLogger.getSubLogger('DIRACAdminAPI')
-    self.site       = gConfig.getValue('/LocalSite/Site','Unknown')
     self.setup      = gConfig.getValue('/DIRAC/Setup','Unknown')
     self.section    = COMPONENT_NAME
     self.cvsVersion = 'CVS version '+__RCSID__

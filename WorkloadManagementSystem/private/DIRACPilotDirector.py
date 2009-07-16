@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.9 2009/07/09 09:48:59 ffeldhau Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.10 2009/07/16 11:32:58 rgracian Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.9 2009/07/09 09:48:59 ffeldhau Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.10 2009/07/16 11:32:58 rgracian Exp $"
 
 import os, sys, tempfile, shutil
 
@@ -40,6 +40,8 @@ class DIRACPilotDirector(PilotDirector):
     self.gridMiddleware    = 'DIRAC'
 
     self.computingElements = COMPUTING_ELEMENTS
+    # To run a DIRAC Pilot Director we require Site Name to be properly defined in the 
+    # local configuration file
     self.siteName          = gConfig.getValue('/LocalSite/Site','')
     if not self.siteName:
       self.log.error( 'Can not run a Director if Site Name is not defined' )

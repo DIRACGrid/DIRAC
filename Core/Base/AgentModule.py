@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.14 2009/02/23 20:03:36 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.15 2009/07/16 11:32:58 rgracian Exp $
 ########################################################################
 """ Base class for all agent modules
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: AgentModule.py,v 1.14 2009/02/23 20:03:36 acasajus Exp $"
+__RCSID__ = "$Id: AgentModule.py,v 1.15 2009/07/16 11:32:58 rgracian Exp $"
 
 import os
 import threading
@@ -106,7 +106,7 @@ class AgentModule:
       return S_ERROR( "Agent is disabled via the configuration")
     self.log.info( "="*40 )
     self.log.info( "Loaded agent module %s" % self.__moduleProperties[ 'fullName' ] )
-    self.log.info( " Site: %s" % gConfig.getValue( '/LocalSite/Site', 'Unknown' ) )
+    self.log.info( " Site: %s" % DIRAC.siteName() )
     self.log.info( " Setup: %s" % gConfig.getValue( "/DIRAC/Setup" ) )
     self.log.info( " Base Module version: %s " % __RCSID__ )
     self.log.info( " Agent version: %s" % self.__codeProperties[ 'version' ] )

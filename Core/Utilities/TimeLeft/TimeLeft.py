@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TimeLeft.py,v 1.16 2009/05/01 07:14:28 rgracian Exp $
+# $Id: TimeLeft.py,v 1.17 2009/07/16 11:32:58 rgracian Exp $
 ########################################################################
 
 """ The TimeLeft utility allows to calculate the amount of CPU time
@@ -14,9 +14,9 @@
     CPU time remaining for a given slot.
 """
 
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-
-__RCSID__ = "$Id: TimeLeft.py,v 1.16 2009/05/01 07:14:28 rgracian Exp $"
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR, rootPath
+import DIRAC
+__RCSID__ = "$Id: TimeLeft.py,v 1.17 2009/07/16 11:32:58 rgracian Exp $"
 
 import os,re
 
@@ -29,11 +29,10 @@ class TimeLeft:
     self.log = gLogger.getSubLogger('TimeLeft')
     # FIXME: Why do we need to load any .cfg file here????
     self.__loadLocalCFGFiles()
-    self.site = gConfig.getValue('/LocalSite/Site','Unknown')
     # This is the ratio SpecInt published by the site over 500 (the reference used for Matching)
     self.scaleFactor = gConfig.getValue('/LocalSite/CPUScalingFactor',0.0)
     if not self.scaleFactor:
-      self.log.warn('/LocalSite/CPUScalingFactor not defined for site %s' %self.site)
+      self.log.warn( '/LocalSite/CPUScalingFactor not defined for site %s' % DIRAC.siteName() )
     self.cpuMargin = gConfig.getValue('/LocalSite/CPUMargin',10) #percent
 
   #############################################################################
@@ -43,7 +42,7 @@ class TimeLeft:
     """
     #Quit if no scale factor available
     if not self.scaleFactor:
-      return S_ERROR('/LocalSite/CPUScalingFactor not defined for site %s' %self.site)
+      return S_ERROR( '/LocalSite/CPUScalingFactor not defined for site %s' % DIRAC.siteName() )
 
     #Work out which type of batch system to query and attempt to instantiate plugin
     result = self.__checkCurrentBatchSystem()
@@ -58,7 +57,7 @@ class TimeLeft:
     batchSystem = batchInstance['Value']
     resourceDict = batchSystem.getResourceUsage()
     if not resourceDict['OK']:
-      self.log.warn('Could not determine timeleft for batch system %s at site %s' %(name,self.site))
+      self.log.warn( 'Could not determine timeleft for batch system %s at site %s' %( name, DIRAC.siteName() ) )
       return resourceDict
 
     resources = resourceDict['Value']
@@ -101,13 +100,12 @@ class TimeLeft:
   def __loadLocalCFGFiles(self):
     """Loads any extra CFG files residing in the local DIRAC site root.
     """
-    localRoot=gConfig.getValue('/LocalSite/Root',os.getcwd())
-    files = os.listdir(localRoot)
-    self.log.debug('Checking directory %s' %localRoot)
+    files = os.listdir( rootPath )
+    self.log.debug( 'Checking directory %s' % rootPath )
     for i in files:
-      if re.search('.cfg$',i):
-        gConfig.loadFile('%s/%s' %(localRoot,i))
-        self.log.debug('Found local .cfg file %s' %i)
+      if re.search( '.cfg$', i ):
+        gConfig.loadFile( '%s/%s' % ( rootPath, i ) )
+        self.log.debug( 'Found local .cfg file %s' % i )
 
   #############################################################################
   def __getBatchSystemPlugin(self,name):
@@ -149,7 +147,7 @@ class TimeLeft:
     if current:
       return S_OK(current)
     else:
-      self.log.warn('Batch system type for site %s is not currently supported' %self.site)
+      self.log.warn( 'Batch system type for site %s is not currently supported' % DIRAC.siteName() )
       return S_ERROR('Currrent batch system is not supported')
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
