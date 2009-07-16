@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.40 2009/03/06 14:48:36 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.41 2009/07/16 06:25:01 rgracian Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.40 2009/03/06 14:48:36 acasajus Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.41 2009/07/16 06:25:01 rgracian Exp $"
 
 import time
 import random
@@ -474,7 +474,10 @@ class ProxyDB(DB):
         retVal = chain.getRemainingSecs()
         if retVal[ 'OK' ]:
           remainingSecs = retVal[ 'Value' ]
-          if requiredLifeTime and requiredLifeTime <= vomsTime and requiredLifeTime <= remainingSecs:
+          # FIXME: gProxyManager request 1.5 longer time than needed.
+          # when adding VOMS extension the resulting proxy is, for jobs, too short, 
+          # so we never make use of the cache
+          if requiredLifeTime and requiredLifeTime / 1.5 <= vomsTime and requiredLifeTime / 1.5 <= remainingSecs:
             return S_OK( chain )
 
     retVal = self.getProxy( userDN, userGroup, requiredLifeTime )
