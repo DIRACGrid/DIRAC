@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StorageElementHandler.py,v 1.13 2009/07/10 18:07:57 mseco Exp $
+# $Id: StorageElementHandler.py,v 1.14 2009/07/16 11:16:23 rgracian Exp $
 ########################################################################
 
 """
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: StorageElementHandler.py,v 1.13 2009/07/10 18:07:57 mseco Exp $"
+__RCSID__ = "$Id: StorageElementHandler.py,v 1.14 2009/07/16 11:16:23 rgracian Exp $"
 
 import os, shutil,re
 from stat import *
@@ -208,6 +208,7 @@ class StorageElementHandler(RequestHandler):
 
     fileDescriptor = result['Value']
     result = fileHelper.networkToFD(fileDescriptor)
+    fileHelper.oFile.close()
     if not result['OK']:
       return S_ERROR('Failed to put file '+fileID)
     else:
@@ -231,6 +232,7 @@ class StorageElementHandler(RequestHandler):
 
     fileDescriptor = result['Value']
     result = fileHelper.FDToNetwork(fileDescriptor)
+    fileHelper.oFile.close()
     if not result['OK']:
       return S_ERROR('Failed to get file '+fileID)
     else:

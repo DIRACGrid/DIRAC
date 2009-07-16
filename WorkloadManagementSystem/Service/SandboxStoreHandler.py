@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxStoreHandler.py,v 1.5 2009/07/08 08:56:01 acsmith Exp $
+# $Id: SandboxStoreHandler.py,v 1.6 2009/07/16 11:21:06 rgracian Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.5 2009/07/08 08:56:01 acsmith Exp $"
+__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.6 2009/07/16 11:21:06 rgracian Exp $"
 
 from types import *
 import os
@@ -398,8 +398,10 @@ class SandboxStoreHandler( RequestHandler ):
     if not result[ 'OK' ]:
       return S_ERROR( 'Failed to get file descriptor: %s' % result[ 'Message' ] )
     fd = result[ 'Value' ]
-    return fileHelper.FDToNetwork( fd )
-
+    result = fileHelper.FDToNetwork( fd )
+    fileHelper.oFile.close()
+    return result
+  
   ##################
   # Purge sandboxes
 
