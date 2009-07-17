@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.92 2009/07/14 17:47:10 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.93 2009/07/17 16:41:42 rgracian Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.92 2009/07/14 17:47:10 atsareg Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.93 2009/07/17 16:41:42 rgracian Exp $"
 
 import types
 import random
@@ -516,9 +516,10 @@ class TaskQueueDB(DB):
           self.log.info( "Trying to extract job %s from TQ %s" % ( jobId, tqId ) )
           retVal = self.deleteJob( jobId, connObj = connObj )
           if not retVal[ 'OK' ]:
-            msg = "Could not take job %s out from the TQ %s: %s" % ( jobId, tqId, retVal[ 'Message' ] )
-            self.log.error( msg )
-            return S_ERROR( msg )
+            msgFix = "Could not take job"
+            msgVar = " %s out from the TQ %s: %s" % ( jobId, tqId, retVal[ 'Message' ] )
+            self.log.error( msgFix, msgVar )
+            return S_ERROR( msgFix + msgVar )
           if retVal[ 'Value' ] == True :
             self.log.info( "Extracted job %s with prio %s from TQ %s" % ( jobId, prio, tqId ) )
             return S_OK( { 'matchFound' : True, 'jobId' : jobId, 'taskQueueId' : tqId, 'tqMatch' : tqMatchDict } )
