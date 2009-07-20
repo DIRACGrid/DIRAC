@@ -35,7 +35,7 @@ class CSAPI:
     self.__userGroup = issuerCert.getDIRACGroup()[ 'Value' ]
     retVal = gConfig.getOption( "/DIRAC/Configuration/MasterServer")
     if not retVal[ 'OK' ]:
-      gLogger.error( "Master server is not known. Is everything initialized?" )
+      gLogger.warn( "Master server is not known. Is everything initialized?" )
       return False
     self.__rpcClient = RPCClient( gConfig.getValue( "/DIRAC/Configuration/MasterServer", "" ) )
     self.__csMod = Modificator( self.__rpcClient, "%s - %s" % ( self.__userGroup, self.__userDN ) )
