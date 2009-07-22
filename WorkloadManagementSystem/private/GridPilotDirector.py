@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.9 2009/07/15 14:04:34 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.10 2009/07/22 18:28:26 rgracian Exp $
 # File :   GridPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -12,7 +12,7 @@
   underlying resources.
 
 """
-__RCSID__ = "$Id: GridPilotDirector.py,v 1.9 2009/07/15 14:04:34 rgracian Exp $"
+__RCSID__ = "$Id: GridPilotDirector.py,v 1.10 2009/07/22 18:28:26 rgracian Exp $"
 
 
 GRIDENV                = ''
@@ -203,7 +203,7 @@ class GridPilotDirector(PilotDirector):
       pilotsToSubmit -= pilotsPerJob
       ownerDN    = self.genericPilotDN
       ownerGroup = self.genericPilotGroup
-      result = gProxyManager.requestToken( ownerDN, ownerGroup, pilotsPerJob )
+      result = gProxyManager.requestToken( ownerDN, ownerGroup, pilotsToSubmit )
       if not result[ 'OK' ]:
         self.log.error( ERROR_TOKEN, result['Message'] )
         return S_ERROR( ERROR_TOKEN )
