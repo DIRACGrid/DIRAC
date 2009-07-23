@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.115 2009/07/16 11:32:57 rgracian Exp $
+# $Id: JobWrapper.py,v 1.116 2009/07/23 08:11:22 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.115 2009/07/16 11:32:57 rgracian Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.116 2009/07/23 08:11:22 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -416,7 +416,7 @@ class JobWrapper:
 
   #############################################################################
   def resolveInputData(self):
-    """Input data is resolved here for the first iteration of SRM2 testing.
+    """Input data is resolved here using a VO specific plugin module.
     """
     self.__report('Running','Input Data Resolution')
 
@@ -501,7 +501,7 @@ class JobWrapper:
 
     configDict = {'JobID':self.jobID,'LocalSEList':localSEList,'DiskSEList':self.diskSE,'TapeSEList':self.tapeSE}
     self.log.info(configDict)
-    argumentsDict = {'FileCatalog':resolvedData,'Configuration':configDict,'InputData':lfns}
+    argumentsDict = {'FileCatalog':resolvedData,'Configuration':configDict,'InputData':lfns,'Job':self.jobArgs}
     self.log.info(argumentsDict)
     moduleFactory = ModuleFactory()
     moduleInstance = moduleFactory.getModule(inputDataPolicy,argumentsDict)
