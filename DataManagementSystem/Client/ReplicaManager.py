@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.78 2009/07/16 11:32:57 rgracian Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.79 2009/07/23 07:43:27 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -1114,6 +1114,9 @@ class ReplicaManager:
       oDataOperation.setValueByKey('FinalStatus','Failed')
       oDataOperation.setEndTime()
       gDataStoreClient.addRegister(oDataOperation)
+      startTime = time.time()
+      gDataStoreClient.commit()
+      gLogger.info('ReplicaManger.putAndRegister: Sending accounting took %.1f seconds' % (time.time()-startTime))
       gLogger.error(errStr,"%s: %s" % (file,res['Message']))
       return S_ERROR("%s %s" % (errStr,res['Message']))
     successful[lfn] = {'put': putTime}
@@ -1142,6 +1145,9 @@ class ReplicaManager:
       oDataOperation.setValueByKey('RegistrationOK',1)
     oDataOperation.setEndTime()
     gDataStoreClient.addRegister(oDataOperation)
+    startTime = time.time()
+    gDataStoreClient.commit()
+    gLogger.info('ReplicaManger.putAndRegister: Sending accounting took %.1f seconds' % (time.time()-startTime))
     resDict = {'Successful': successful,'Failed':failed}
     return S_OK(resDict)
 
