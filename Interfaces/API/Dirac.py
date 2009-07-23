@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.101 2009/07/16 11:32:57 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.102 2009/07/23 08:13:03 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.101 2009/07/16 11:32:57 rgracian Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.102 2009/07/23 08:13:03 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -98,12 +98,12 @@ class Dirac:
   #############################################################################
   def monitorRepository(self,printOutput=False):
     """Monitor the jobs present in the repository
-       
+
        Example Usage:
-       
+
        >>> print dirac.monitorRepository()
        {'OK': True, 'Value': ''}
-       
+
        @return: S_OK,S_ERROR
     """
     if not self.jobRepo:
@@ -125,13 +125,13 @@ class Dirac:
           statusDict[state] = 0
         statusDict[state] += 1
       print self.pPrint.pformat(statusDict)
-    return S_OK() 
+    return S_OK()
 
   def retrieveRepositorySandboxes(self,requestedStates=['Done','Failed'],destinationDirectory=''):
     """ Obtain the output sandbox for the jobs in requested states in the repository
-    
+
        Example Usage:
-      
+
        >>> print dirac.retrieveRepositorySandboxes(requestedStates=['Done','Failed'],destinationDirectory='sandboxes')
        {'OK': True, 'Value': ''}
 
@@ -164,12 +164,12 @@ class Dirac:
        @param requestedStates: List of jobs states to be considered
        @type requestedStates: list of strings
        @param destinationDirectory: The target directory to place sandboxes (each jobID will have a directory created beneath this)
-       @type destinationDirectory: string    
+       @type destinationDirectory: string
        @return: S_OK,S_ERROR
     """
     if not self.jobRepo:
-      gLogger.warn("No repository is initialised") 
-      return S_OK()  
+      gLogger.warn("No repository is initialised")
+      return S_OK()
     jobs = self.jobRepo.readRepository()['Value']
     toRetrieve = []
     for jobID in sortList(jobs.keys()):
@@ -184,9 +184,9 @@ class Dirac:
 
   def removeRepository(self):
     """ Removes the job repository and all sandboxes and output data retrieved
-       
+
        Example Usage:
-       
+
        >>> print dirac.removeRepository()
        {'OK': True, 'Value': ''}
 
@@ -194,7 +194,7 @@ class Dirac:
     """
     if not self.jobRepo:
       gLogger.warn("No repository is initialised")
-      return S_OK()  
+      return S_OK()
     jobs = self.jobRepo.readRepository()['Value']
     for jobID in sortList(jobs.keys()):
       jobDict = jobs[jobID]
@@ -736,7 +736,7 @@ class Dirac:
       tapeSE = gConfig.getValue(self.section+'/TapeSE',['-tape','-RDST','-RAW'])
       configDict = {'JobID':None,'LocalSEList':localSEList,'DiskSEList':diskSE,'TapeSEList':tapeSE}
       self.log.verbose(configDict)
-      argumentsDict = {'FileCatalog':resolvedData,'Configuration':configDict,'InputData':inputData}
+      argumentsDict = {'FileCatalog':resolvedData,'Configuration':configDict,'InputData':inputData,'Job':parameters['Value']}
       self.log.verbose(argumentsDict)
       moduleFactory = ModuleFactory()
       moduleInstance = moduleFactory.getModule(inputDataPolicy,argumentsDict)
@@ -1613,7 +1613,7 @@ class Dirac:
         for member in tarFile.getmembers():
           tarFile.extract( member, dirPath )
     except Exception,x :
-      os.chdir(start) 
+      os.chdir(start)
       result = S_ERROR( str(x) )
 
     if os.path.exists(fileName):
