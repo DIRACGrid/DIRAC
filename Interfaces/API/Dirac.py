@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.103 2009/07/23 15:15:58 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.104 2009/07/23 15:19:16 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.103 2009/07/23 15:15:58 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.104 2009/07/23 15:19:16 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -632,7 +632,8 @@ class Dirac:
       for n,v in catalogFailed.items():
         self.log.error('%s %s' %(n,v))
       if result.has_key('Value'):
-        result['Value']['Failed'] = catalogFailed.keys()
+        failedKeys = catalogFailed.keys()
+        result['Value']['Failed'] = failedKeys
 
     return result
 
@@ -689,7 +690,8 @@ class Dirac:
       for n,v in catalogFailed.items():
         self.log.error('%s %s' %(n,v))
       if result.has_key('Value'):
-        result['Value']['Failed'] = catalogFailed.keys()
+        failedKeys = catalogFailed.keys()
+        result['Value']['Failed'] = failedKeys
 
     return result
 
