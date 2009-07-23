@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.102 2009/07/23 08:13:03 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.103 2009/07/23 15:15:58 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.102 2009/07/23 08:13:03 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.103 2009/07/23 15:15:58 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -588,11 +588,15 @@ class Dirac:
     if not inputDataPolicy:
       return self.__errorReport('Could not retrieve DIRAC/VOPolicy/InputDataModule for VO')
 
+    catalogFailed = {}
     self.log.info('Attempting to resolve data for %s' %siteName)
     self.log.verbose('%s' %(string.join(lfns,'\n')))
     replicaDict = self.getReplicas(lfns)
     if not replicaDict['OK']:
       return replicaDict
+    if replicaDict['Value'].has_key('Failed'):
+      catalogFailed = replicaDict['Value']['Failed']
+
     guidDict = self.getMetadata(lfns)
     if not guidDict['OK']:
       return guidDict
@@ -623,6 +627,13 @@ class Dirac:
       if result.has_key('Failed'):
         self.log.error('Input data resolution failed for the following files:\n%s' %(string.join(result['Failed'],'\n')))
 
+    if catalogFailed:
+      self.log.error('Replicas not found for the following files:')
+      for n,v in catalogFailed.items():
+        self.log.error('%s %s' %(n,v))
+      if result.has_key('Value'):
+        result['Value']['Failed'] = catalogFailed.keys()
+
     return result
 
   #############################################################################
@@ -646,6 +657,10 @@ class Dirac:
     replicaDict = self.getReplicas(inputData)
     if not replicaDict['OK']:
       return replicaDict
+    catalogFailed = {}
+    if replicaDict['Value'].has_key('Failed'):
+      catalogFailed = replicaDict['Value']['Failed']
+
     guidDict = self.getMetadata(inputData)
     if not guidDict['OK']:
       return guidDict
@@ -668,6 +683,14 @@ class Dirac:
     result = module.execute()
     if not result['OK']:
       self.log.error('Input data resolution failed')
+
+    if catalogFailed:
+      self.log.error('Replicas not found for the following files:')
+      for n,v in catalogFailed.items():
+        self.log.error('%s %s' %(n,v))
+      if result.has_key('Value'):
+        result['Value']['Failed'] = catalogFailed.keys()
+
     return result
 
   #############################################################################
