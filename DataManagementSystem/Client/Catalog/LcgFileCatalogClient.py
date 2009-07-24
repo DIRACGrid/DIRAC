@@ -1283,11 +1283,14 @@ class LcgFileCatalogClient(FileCatalogueBase):
         pathDict['TotalSize'] += fileSize
         pathDict['Files'] += 1
         replicaDict = {}
-        for replica in fileInfo:
-          if not pathDict['SiteUsage'].has_key(replica.host):
-            pathDict['SiteUsage'][replica.host] = {'Files':0,'Size':0}
-          pathDict['SiteUsage'][replica.host]['Size'] += fileSize
-          pathDict['SiteUsage'][replica.host]['Files'] += 1
+        if not fileInfo:
+          gLogger.error("LcgFileCatalogClient.__getDirectorySize: File found with no replicas", "%s/%s" % (path,entry.d_name))
+        else: 
+          for replica in fileInfo:
+            if not pathDict['SiteUsage'].has_key(replica.host):
+              pathDict['SiteUsage'][replica.host] = {'Files':0,'Size':0}
+            pathDict['SiteUsage'][replica.host]['Size'] += fileSize
+            pathDict['SiteUsage'][replica.host]['Files'] += 1
     res = self.__closeDirectory(oDirectory)
     return S_OK(pathDict)
 
