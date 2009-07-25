@@ -124,7 +124,7 @@ class VOMS( BaseSecurity ):
 
     return S_OK( output )
 
-  def setVOMSAttributes( self, proxy, attribute, vo = False ):
+  def setVOMSAttributes( self, proxy, attribute=None, vo = False ):
     """ Sets voms attributes to a proxy
     """
     if not vo:
@@ -155,7 +155,10 @@ class VOMS( BaseSecurity ):
     cmdArgs.append( '-cert "%s"' % proxyLocation )
     cmdArgs.append( '-key "%s"' % proxyLocation )
     cmdArgs.append( '-out "%s"' % newProxyLocation )
-    cmdArgs.append( '-voms "%s:%s"' % ( vo, attribute ) )
+    if attribute and attribute != 'NoRole':
+      cmdArgs.append( '-voms "%s:%s"' % ( vo, attribute ) )
+    else:
+      cmdArgs.append( '-voms "%s"' % vo )  
     cmdArgs.append( '-valid "%s:%s"' % ( hours, mins ) )
     if 'DIRAC_VOMSES' in os.environ:
       vomsesDir = os.environ[ 'DIRAC_VOMSES' ]
