@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.17 2009/05/13 10:56:20 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.17 2009/05/13 10:56:20 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.18 2009/07/28 10:46:43 rgracian Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.18 2009/07/28 10:46:43 rgracian Exp $"
 
 import datetime, time
 import types
@@ -25,7 +25,7 @@ class AccountingDB(DB):
     self.dbCatalog = {}
     self.dbBucketsLength = {}
     maxParallelInsertions = self.getCSOption( "ParallelRecordInsertions", maxQueueSize )
-    self.__threadPool = ThreadPool( 1, 5 )
+    self.__threadPool = ThreadPool( 1, 10 )
     self.__threadPool.daemonize()
     self.catalogTableName = self.__getTableName( "catalog", "Types" )
     self._createTables( { self.catalogTableName : { 'Fields' : { 'name' : "VARCHAR(64) UNIQUE NOT NULL",
@@ -430,7 +430,11 @@ class AccountingDB(DB):
     """
       Finds id number for value in a key table
     """
-    retVal = self._query( "SELECT `id` FROM `%s` WHERE `value`='%s'" % ( self.__getTableName( "key", typeName, keyName ),
+    retVal = self._escapeString( keyValue )
+    if not retVal[ 'OK' ]:
+      return retVal
+    keyValue = retVal[ 'Value' ]
+    retVal = self._query( "SELECT `id` FROM `%s` WHERE `value`=%s" % ( self.__getTableName( "key", typeName, keyName ),
                                                                          keyValue ), conn = conn )
     if not retVal[ 'OK' ]:
       return retVal
@@ -445,6 +449,8 @@ class AccountingDB(DB):
     keyTable = self.__getTableName( "key", typeName, keyName )
     if type( keyValue ) != types.StringType:
       keyValue = str( keyValue )
+    if len(keyValue) > 64:
+      keyValue = keyValue[:64]
     retVal = self.__getIdForKeyValue( typeName, keyName, keyValue )
     if retVal[ 'OK' ]:
       return retVal
