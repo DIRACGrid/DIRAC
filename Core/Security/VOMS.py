@@ -37,7 +37,9 @@ class VOMS( BaseSecurity ):
       elif j[0].strip()=="attribute":
         # Cut off unsupported Capability selection part
         j[1] = j[1].replace("/Capability=NULL","")
-        if j[1].find('Role=NULL') == -1 and j[1].find('Role') != -1:
+        if j[1].find('Role=NULL') != -1 or j[1].find('Role') == -1:
+          attributes.append('NoRole')
+        else:
           attributes.append(j[1].strip())
         if j[1].find('nickname') != -1:
           nickName = j[1].strip().split()[2]
