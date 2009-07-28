@@ -44,8 +44,6 @@ class SimpleFileContainerTestCase(FileContainerTestCase):
     self.assert_(res['OK'])
     self.assert_(res['Value'])
 
- 
-
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(SimpleFileContainerTestCase)
   testResult = unittest.TextTestRunner(verbosity=1).run(suite)
