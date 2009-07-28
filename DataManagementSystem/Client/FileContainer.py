@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/FileContainer.py,v 1.1 2009/07/28 12:49:26 acsmith Exp $
-__RCSID__ = "$Id: FileContainer.py,v 1.1 2009/07/28 12:49:26 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/FileContainer.py,v 1.2 2009/07/28 14:02:38 acsmith Exp $
+__RCSID__ = "$Id: FileContainer.py,v 1.2 2009/07/28 14:02:38 acsmith Exp $"
 
 """ The file container is to store all information associated to a file
 """
@@ -40,7 +40,7 @@ class FileContainer:
       if item in self.fileAttributes.keys():
         return self.__get_attribute
       else:
-        raise AttributeError, item
+        return S_ERROR("Item %s not known" % item)
     # If the client has attempted to set a file attribute
     elif name.find('set') == 0:
       item = name[3:]
@@ -48,10 +48,10 @@ class FileContainer:
       if item in self.fileAttributes.keys():
         return self.__set_attribute
       else:
-        raise AttributeError, item
+        return S_ERROR("Item %s not known" % item)
     # Otherwise they are trying to do something we dont like
     else:
-      raise AttributeError, name
+      return S_ERROR("Action %s not known" % name)
 
   def __get_attribute(self):
     """ Generic method to get attributes
@@ -62,7 +62,7 @@ class FileContainer:
     """ Generic method to set attribute value
     """
     if type(value) != type(self.fileAttributes[self.item_called]):
-      raise AttributeError, name, type(value)
+      return S_ERROR("%s should be type %s and not %s" % (self.item_called,type(self.fileAttributes[self.item_called]),type(value)))
     self.fileAttributes[self.item_called] = value
     return S_OK()
 
@@ -90,5 +90,5 @@ class FileContainer:
     if self.fileAttributes['Attempt']:
       digestList.append(self.fileAttributes['Attempt'])
       digestList.append(self.fileAttributes['Error'])
-    digestString = ":".join(digestList))
+    digestString = ":".join(digestList)
     return S_OK(digestString)
