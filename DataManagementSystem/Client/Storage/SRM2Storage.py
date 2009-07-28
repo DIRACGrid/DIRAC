@@ -766,6 +766,9 @@ class SRM2Storage(StorageBase):
       if not res['OK']:
         return S_ERROR(res['Message'])
       elif not res['Value']['Successful'].has_key(url):
+        if not res['Value']['Failed'].has_key(url):
+          gLogger.error( 'Wrong Return structure', str(res['Value']) )
+          return S_ERROR( 'Wrong Return structure' )
         return S_ERROR(res['Value']['Failed'][url])
       else:
         return S_OK(res['Value']['Successful'][url])
