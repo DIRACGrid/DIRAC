@@ -1,9 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.14 2009/06/08 18:18:22 acasajus Exp $
-__RCSID__ = "$Id: SocketInfoFactory.py,v 1.14 2009/06/08 18:18:22 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfoFactory.py,v 1.15 2009/07/28 16:53:03 acasajus Exp $
+__RCSID__ = "$Id: SocketInfoFactory.py,v 1.15 2009/07/28 16:53:03 acasajus Exp $"
 
 import socket
 import select
 import os
+import md5
 import GSI
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities import List, Network
@@ -38,7 +39,16 @@ class SocketInfoFactory:
   def __connect( self, socketInfo, hostAddress ):
     osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
     sslSocket = GSI.SSL.Connection( socketInfo.getSSLContext(), osSocket )
-    sessionId = str( hash( str( hostAddress ) + ":".join( socketInfo.getLocalCredentialsLocation() )  ) )
+    #Generate sessionId
+    sessionHash = md5.new()
+    sessionHash.update( str( hostAddress ) )
+    sessionHash.update( "|%s" % str( socketInfo.getLocalCredentialsLocation() ) )
+    for key in ( 'proxyLocation', 'proxyString' ):
+      if key in socketInfo.infoDict:
+        sessionHash.update( "|%s" % str( socketInfo.infoDict[ key ] ) )
+    if 'proxyChain' in socketInfo.infoDict:
+      sessionHash.update( "|%s" % socketInfo.infoDict[ 'proxyChain' ].dumpAllToString()[ 'Value' ] )
+    sessionId = sessionHash.hexdigest()
     socketInfo.sslContext.set_session_id( str( hash( sessionId ) ) )
     socketInfo.setSSLSocket( sslSocket )
     if gSessionManager.isValid( sessionId ):
