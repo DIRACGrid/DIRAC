@@ -6,7 +6,16 @@ class FileContainerTestCase(unittest.TestCase):
   """ FileContainer base test case
   """
   def setUp(self):
-    pass
+    self.attributesTypes ={ 'FileID'     :  0,
+                            'Status'     :  'Waiting',
+                            'LFN'        :  '',
+                            'PFN'        :  '',
+                            'Size'       :  0,   
+                            'GUID'       :  '',
+                            'Md5'        :  '',
+                            'Adler'      :  '',
+                            'Attempt'    :  0,   
+                            'Error'      :  ''}
   def tearDown(self):
     pass
 
@@ -14,22 +23,26 @@ class SimpleFileContainerTestCase(FileContainerTestCase):
 
   def test_defaults(self):
     oFile = FileContainer()
-    attributesTypes =     { 'FileID'     :  types.IntType,
-                            'Status'     :  types.StringType,
-                            'LFN'        :  types.StringType,
-                            'PFN'        :  types.StringType,
-                            'Size'       :  types.IntType,
-                            'GUID'       :  types.StringType,
-                            'Md5'        :  types.StringType,
-                            'Adler'      :  types.StringType,
-                            'Attempt'    :  types.IntType,
-                            'Error'      :  types.StringType}
-    for attribute in attributesTypes.keys():
+    for attribute in self.attributesTypes.keys():
       execString = "res = oFile.get%s()" % attribute
       exec(execString) 
       self.assert_(res['OK'])
-      self.assertEqual(type(res['Value']),attributesTypes[attribute])
+      self.assertEqual(type(res['Value']),type(self.attributesTypes[attribute]))
 
+  def test_update(self):
+    oFile = FileContainer()
+    badNewAttribute = []
+    for attribute in self.attributesTypes.keys():
+      execString = "res = oFile.set%s(%s)" % (attribute,badNewAttribute)
+      exec(execString)
+      self.assertFalse(res['OK'])
+      if type(self.attributesTypes[attribute]) == types.IntType:
+        execString = "res = oFile.set%s(%s)" % (attribute,self.attributesTypes[attribute])
+      else:
+        execString = "res = oFile.set%s('%s')" % (attribute,self.attributesTypes[attribute])
+      exec(execString)
+      self.assert_(res['OK'])
+ 
   def test_isEmpty(self):
     oFile = FileContainer()
     res = oFile.isEmpty()
