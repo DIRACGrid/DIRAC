@@ -1,11 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/ReplicaContainers.py,v 1.1 2009/07/29 21:50:05 acsmith Exp $
-__RCSID__ = "$Id: ReplicaContainers.py,v 1.1 2009/07/29 21:50:05 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/ReplicaContainers.py,v 1.2 2009/07/29 22:00:24 acsmith Exp $
+__RCSID__ = "$Id: ReplicaContainers.py,v 1.2 2009/07/29 22:00:24 acsmith Exp $"
 
-""" This module contains three classes assoicated to Replicas.
+""" This module contains three classes associated to Replicas.
 
-    The Replica class contains simply two member elements:  SE and PFN and provides access methods for each (inluding type checking).
-    The CatalogReplica class inherits the Replica class and adds the 'status' member.
-    The PhysicalReplica class inherits the Replica class and adds the 'status','size','checksum','online' and 'migrated' members.
+    The Replica class contains simply three member elements:  SE, PFN and Status and provides access methods for each (inluding type checking).
+    The CatalogReplica class inherits the Replica class.
+    The PhysicalReplica class inherits the Replica class and adds the 'size','checksum','online' and 'migrated' members.
 
     In this context Replica refers to any copy of a file. This can be the either the first or an additional copy.
 """
@@ -15,7 +15,7 @@ from DIRAC import S_OK, S_ERROR
 
 class Replica:
 
-  def __init__(self,pfn='',storageElement=''):
+  def __init__(self,pfn='',storageElement='',status=''):
     # These are the possible attributes for a replica
     if not type(pfn) in types.StringTypes:
       raise AttributeError, "pfn should be string type"
@@ -23,6 +23,9 @@ class Replica:
     if not type(storageElement) in types.StringTypes:
       raise AttributeError, "storageElement should be string type"
     self.se = str(storageElement)
+    if not type(status) in types.StringTypes:
+      raise AttributeError, "status should be string type"
+    self.status = str(status)
 
   def setPFN(self,pfn):
     if not type(pfn) in types.StringTypes:
@@ -36,50 +39,40 @@ class Replica:
     self.se = str(se)
     return S_OK()
 
+  def setStatus(self,status):
+    if not type(status) in types.StringTypes:
+      return S_ERROR("Status should be %s and not %s" % (types.StringType,type(status)))
+    self.status = str(status)
+    return S_OK()
+
   def getPFN(self):
     return S_OK(self.pfn)
 
   def getSE(self):
     return S_OK(self.se)
 
-  def digest(self):
-    """ Get short description string of replica and status
-    """
-    return S_OK("%s:%s" % (self.se,self.pfn))
-
-class CatalogReplica(Replica):
-
-  def __init__(self,pfn='',storageElement='',status=''):
-    # These are the possible attributes for a catalog replica
-    Replica.__init__(self,pfn,storageElement)
-    if not type(status) in types.StringTypes:
-      raise AttributeError, "status should be string type"
-    self.status = str(status)
-
-  def setStatus(self,status):
-    if not type(status) in types.StringTypes:
-      return S_ERROR("Status should be %s and not %s" % (types.StringType,type(status)))
-    self.status = str(status)
-    return S_OK()
-    
   def getStatus(self):
     return S_OK(self.status)
 
   def digest(self):
+    """ Get short description string of replica and status
+    """
     return S_OK("%s:%s:%s" % (self.se,self.pfn,self.status))
+
+class CatalogReplica(Replica):
+
+  def __init__(self,pfn='',storageElement='',status=''):
+    Replica.__init__(self,pfn,storageElement,status)
 
 class PhysicalReplica(Replica):
 
   def __init__(self,pfn='',storageElement='',status='',size=0,checksum='',online=False,migrated=False):
     # These are the possible attributes for a physical replica
-    Replica.__init__(self,pfn,storageElement)
+    Replica.__init__(self,pfn,storageElement,status)
     try:
       self.size = int(size)
     except:
       raise AttributeError, "size should be integer type"
-    if not type(status) in types.StringTypes:
-      raise AttributeError, "status should be string type"
-    self.status = str(status)
     if not type(checksum) in types.StringTypes:
       raise AttributeError, "checksum should be string type"
     self.checksum = str(checksum)
@@ -96,12 +89,6 @@ class PhysicalReplica(Replica):
       return S_OK()
     except:
       return S_ERROR("Size should be %s and not %s" % (types.IntType,type(size)))
-
-  def setStatus(self,status):
-    if not type(status) in types.StringTypes:
-      return S_ERROR("Status should be %s and not %s" % (types.StringType,type(status)))
-    self.status = str(status)
-    return S_OK()
 
   def setChecksum(self,checksum):
     if not type(checksum) in types.StringTypes:
@@ -124,9 +111,6 @@ class PhysicalReplica(Replica):
   def getSize(self):
     return S_OK(self.size)
 
-  def getStatus(self):
-    return S_OK(self.status)
-
   def getChecksum(self):
     return S_OK(self.checksum)
 
@@ -144,4 +128,3 @@ class PhysicalReplica(Replica):
     if self.migrated:
       migrated = 'Migrated'
     return S_OK("%s:%s:%d:%s:%s:%s" % (self.se,self.pfn,self.size,self.status,online,migrated))
-
