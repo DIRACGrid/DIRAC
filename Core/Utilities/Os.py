@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Os.py,v 1.9 2009/05/01 10:57:22 rgracian Exp $
-__RCSID__ = "$Id: Os.py,v 1.9 2009/05/01 10:57:22 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Os.py,v 1.10 2009/07/29 08:20:33 paterson Exp $
+__RCSID__ = "$Id: Os.py,v 1.10 2009/07/29 08:20:33 paterson Exp $"
 """
    Collection of DIRAC useful os related modules
    by default on Error they return None
@@ -45,7 +45,7 @@ def getDiskSpace(path='.'):
     if output.find(' /afs') >= 0 :    # AFS disk space
       comm = 'fs lq | tail -1'
       resultAFS = shellCall(0,comm)
-      if resultAFS['OK'] and resultASF['Value'][0] == 0:
+      if resultAFS['OK'] and resultAFS['Value'][0] == 0:
         output = resultAFS['Value'][1]
         fields = output.split()
         quota = long(fields[1])
