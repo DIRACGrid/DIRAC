@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DownloadInputData.py,v 1.9 2009/07/08 08:59:17 acsmith Exp $
+# $Id: DownloadInputData.py,v 1.10 2009/07/29 08:47:39 paterson Exp $
 # File :   DownloadInputData.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: DownloadInputData.py,v 1.9 2009/07/08 08:59:17 acsmith Exp $"
+__RCSID__ = "$Id: DownloadInputData.py,v 1.10 2009/07/29 08:47:39 paterson Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -182,7 +182,7 @@ class DownloadInputData:
       self.log.verbose(msg)
       return S_OK(msg)
     else:
-      msg = 'Not enough disk space available for input data download (%s > %s bytes)' %((buffer+totalSize),availableBytes)
+      msg = 'Not enough disk space available for download %s (including 3GB buffer) > %s bytes' %((buffer+totalSize),availableBytes)
       self.log.warn(msg)
       return S_ERROR(msg)
 
