@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxStoreHandler.py,v 1.6 2009/07/16 11:21:06 rgracian Exp $
+# $Id: SandboxStoreHandler.py,v 1.7 2009/07/29 16:14:22 acasajus Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.6 2009/07/16 11:21:06 rgracian Exp $"
+__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.7 2009/07/29 16:14:22 acasajus Exp $"
 
 from types import *
 import os
@@ -16,6 +16,7 @@ import time
 import random
 import types
 import tempfile
+import threading
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
@@ -24,16 +25,12 @@ from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities import List
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 
 sandboxDB = False
-gSBDeletionPool = False
 
 def initializeSandboxStoreHandler( serviceInfo ):
   global sandboxDB, gSBDeletionPool
   random.seed()
-  gSBDeletionPool = ThreadPool( 1, 1 )
-  gSBDeletionPool.daemonize()
   sandboxDB = SandboxMetadataDB()
   return S_OK()
 
@@ -57,7 +54,7 @@ class SandboxStoreHandler( RequestHandler ):
     if SandboxStoreHandler.__purgeCount > 100:
       SandboxStoreHandler.__purgeCount = 0
     if SandboxStoreHandler.__purgeCount == 0:
-      self.purgeUnusedSandboxes()
+      threading.Thread( target = self.purgeUnusedSandboxes ).start()
 
   def __getSandboxPath( self, md5 ):
     """ Generate the sandbox path
@@ -77,6 +74,7 @@ class SandboxStoreHandler( RequestHandler ):
     """
     Receive a file as a sandbox
     """
+  
     if self.__maxUploadBytes and fileSize > self.__maxUploadBytes:
       fileHelper.markAsTransferred()
       return S_ERROR( "Sandbox is too big. Please upload it to a grid storage element" )
@@ -389,7 +387,7 @@ class SandboxStoreHandler( RequestHandler ):
     if not result[ 'OK' ]:
       return result
     sbId = result[ 'Value' ]
-    sandboxDB.accessedSandboxById( sbId )
+    #sandboxDB.accessedSandboxById( sbId )
     #If it's a local file
     hdPath = self.__sbToHDPath( fileID )
     if not os.path.isfile( hdPath ):
@@ -415,8 +413,7 @@ class SandboxStoreHandler( RequestHandler ):
     gLogger.info( "Got %s sandboxes to purge" % len( sbList ) )
     deletedFromSE = []
     for sbId, SEName, SEPFN in sbList:
-      #self.__purgeSandbox( sbId, SEName, SEPFN )
-      gSBDeletionPool.generateJobAndQueueIt( self.__purgeSandbox, args = ( sbId, SEName, SEPFN ) )
+      self.__purgeSandbox( sbId, SEName, SEPFN )
 
   def __purgeSandbox( self, sbId, SEName, SEPFN ):
     result = self.__deleteSandboxFromBackend( SEName, SEPFN )
