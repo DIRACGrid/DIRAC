@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.52 2009/07/13 10:27:31 atsareg Exp $
+# $Id: WMSAdministratorHandler.py,v 1.53 2009/07/29 07:34:44 rgracian Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.52 2009/07/13 10:27:31 atsareg Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.53 2009/07/29 07:34:44 rgracian Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -383,6 +383,9 @@ class WMSAdministratorHandler(RequestHandler):
         if not result['OK']:
           return S_ERROR('Failed to get pilot: '+result['Message'])
         pilots += result['Value']         
+    
+    if not pilots:
+      return S_ERROR( 'Failed to get pilot for Job %s' % jobID )
     
     return pilotDB.getPilotInfo(pilotID=pilots)
 
