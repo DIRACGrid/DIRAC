@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.58 2009/05/19 20:31:55 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.59 2009/07/30 09:18:26 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.58 2009/05/19 20:31:55 rgracian Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.59 2009/07/30 09:18:26 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -146,17 +146,25 @@ class Watchdog(Agent):
     result = self.getLoadAverage()
     msg += 'LoadAvg: %s ' % (result['Value'])
     heartBeatDict['LoadAverage'] = result['Value']
+    if not self.parameters.has_key('LoadAverage'):
+      self.parameters['LoadAverage']=[]
     self.parameters['LoadAverage'].append(result['Value'])
     result = self.getMemoryUsed()
     msg += 'MemUsed: %.1f kb ' % (result['Value'])
     heartBeatDict['MemoryUsed'] = result['Value']
+    if not self.parameters.has_key('MemoryUsed'):
+      self.parameters['MemoryUsed']=[]
     self.parameters['MemoryUsed'].append(result['Value'])
     result = self.getDiskSpace()
     msg += 'DiskSpace: %.1f MB ' % (result['Value'])
+    if not self.parameters.has_key('DiskSpace'):
+      self.parameters['DiskSpace']=[]
     self.parameters['DiskSpace'].append(result['Value'])
     heartBeatDict['AvailableDiskSpace'] = result['Value']
     result = self.__getCPU()
     msg += 'CPU: %s (h:m:s) ' % (result['Value'])
+    if not self.parameters.has_key('CPUConsumed'):
+      self.parameters['CPUConsumed']=[]
     self.parameters['CPUConsumed'].append(result['Value'])
     hmsCPU = result['Value']
     rawCPU = self.__convertCPUTime(hmsCPU)
@@ -507,8 +515,8 @@ class Watchdog(Agent):
     if not result['OK']:
       msg = 'Could not establish CPU consumed'
       self.log.warn(msg)
-      result = S_ERROR(msg)
-      return result
+#      result = S_ERROR(msg)
+#      return result
 
     initialCPU = result['Value']
 
@@ -520,8 +528,8 @@ class Watchdog(Agent):
     if not result['OK']:
       msg = 'Could not establish LoadAverage'
       self.log.warn(msg)
-      result = S_ERROR(msg)
-      return result
+#      result = S_ERROR(msg)
+#      return result
 
     self.initialValues['LoadAverage']=result['Value']
     self.parameters['LoadAverage'] = []
@@ -531,8 +539,8 @@ class Watchdog(Agent):
     if not result['OK']:
       msg = 'Could not establish MemoryUsed'
       self.log.warn(msg)
-      result = S_ERROR(msg)
-      return result
+#      result = S_ERROR(msg)
+#      return result
 
     self.initialValues['MemoryUsed']=result['Value']
     self.parameters['MemoryUsed'] = []
@@ -542,8 +550,8 @@ class Watchdog(Agent):
     if not result['OK']:
       msg = 'Could not establish DiskSpace'
       self.log.warn(msg)
-      result = S_ERROR(msg)
-      return result
+#      result = S_ERROR(msg)
+#      return result
 
     self.initialValues['DiskSpace']=result['Value']
     self.parameters['DiskSpace'] = []
@@ -553,8 +561,8 @@ class Watchdog(Agent):
     if not result['OK']:
       msg = 'Could not establish static system information'
       self.log.warn(msg)
-      result = S_ERROR(msg)
-      return result
+#      result = S_ERROR(msg)
+#      return result
 
     if os.environ.has_key('LSB_JOBID'):
       result['LocalJobID'] = os.environ['LSB_JOBID']
@@ -565,9 +573,7 @@ class Watchdog(Agent):
 
     self.__reportParameters(result,'NodeInformation',True)
     self.__reportParameters(self.initialValues,'InitialValues')
-
-    result = S_OK()
-    return result
+    return S_OK()
 
   def __timeLeft(self):
     """
