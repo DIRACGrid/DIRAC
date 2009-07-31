@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: PBSTimeLeft.py,v 1.4 2009/04/18 17:35:10 rgracian Exp $
+# $Id: PBSTimeLeft.py,v 1.5 2009/07/31 05:11:58 rgracian Exp $
 ########################################################################
 
 """ The PBS TimeLeft utility interrogates the PBS batch system for the
@@ -9,7 +9,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-__RCSID__ = "$Id: PBSTimeLeft.py,v 1.4 2009/04/18 17:35:10 rgracian Exp $"
+__RCSID__ = "$Id: PBSTimeLeft.py,v 1.5 2009/07/31 05:11:58 rgracian Exp $"
 
 import os, string, re, time
 
@@ -48,6 +48,7 @@ class PBSTimeLeft:
     cpuLimit = None
     wallClock = None
     wallClockLimit = None
+    queue = None
 
     lines = result['Value'].split('\n')
     for line in lines:
@@ -58,24 +59,44 @@ class PBSTimeLeft:
           cpu = (float(cpuList[0])*60+float(cpuList[1]))*60+float(cpuList[2])
         else:
           self.log.warn('Problem parsing "%s" for CPU consumed' %line)
-      if re.search('.*resources_used.walltime.*',line):
+      elif re.search('.*resources_used.walltime.*',line):
         if len(info)>=3:
           wcList = info[2].split(':')
           wallClock = (float(wcList[0])*60+float(wcList[1]))*60+float(wcList[2])
         else:
           self.log.warn('Problem parsing "%s" for elapsed wall clock time' %line)
-      if re.search('.*Resource_List.cput.*',line):
+      elif re.search('.*Resource_List.cput.*',line):
         if len(info)>=3:
           cpuList = info[2].split(':')
           cpuLimit = (float(cpuList[0])*60+float(cpuList[1]))*60+float(cpuList[2])
         else:
           self.log.warn('Problem parsing "%s" for CPU limit' %line)
-      if re.search('.*Resource_List.walltime.*',line):
+      elif re.search('.*Resource_List.walltime.*',line):
         if len(info)>=3:
           wcList = info[2].split(':')
           wallClockLimit = (float(wcList[0])*60+float(wcList[1]))*60+float(wcList[2])
         else:
           self.log.warn('Problem parsing "%s" for wall clock limit' %line)
+      elif re.search('.*queue = .*', line):
+        if len(info) >= 3:
+          queue = info[2]
+        else:
+          self.log.warn( 'Problem parsing "%s" for queue name' % line )
+
+    if cpuLimit == None and queue != None:
+      # In Some site the cpu limit of the Queue is not returned, try to recover it
+      cmd = 'qstat -q'
+      result = self.__runCommand(cmd)
+      if result['OK']:
+        lines = result['Value'].split('\n')
+        for line in lines:
+          info = line.split()
+          if info and info[0] == queue and len(info) >= 3:
+            cpuList = info[2].split(':')
+            cpuLimit = (float(cpuList[0])*60+float(cpuList[1]))*60+float(cpuList[2])
+          
+          
+        
 
     consumed = {'CPU':cpu,'CPULimit':cpuLimit,'WallClock':wallClock,'WallClockLimit':wallClockLimit}
     self.log.debug(consumed)
