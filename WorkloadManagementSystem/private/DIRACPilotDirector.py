@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.10 2009/07/16 11:32:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.11 2009/07/31 20:06:45 ffeldhau Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,9 +13,9 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.10 2009/07/16 11:32:58 rgracian Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.11 2009/07/31 20:06:45 ffeldhau Exp $"
 
-import os, sys, tempfile, shutil
+import os, sys, tempfile, shutil, time
 
 from DIRAC.WorkloadManagementSystem.private.PilotDirector import PilotDirector
 from DIRAC.Resources.Computing.ComputingElementFactory    import ComputingElementFactory
@@ -28,6 +28,9 @@ ERROR_JDL        = 'Could not create Pilot script'
 ERROR_SCRIPT     = 'Could not copy Pilot script'
 
 COMPUTING_ELEMENTS = ['InProcess']
+WAITING_TO_RUNNING_RATIO = 1.2
+MAX_WAITING_JOBS = 100
+MAX_NUMBER_JOBS = 10000
 
 class DIRACPilotDirector(PilotDirector):
   """
@@ -49,6 +52,10 @@ class DIRACPilotDirector(PilotDirector):
 
     self.__failingCECache  = DictCache()
     self.__ticketsCECache  = DictCache()
+    
+    self.waitingToRunningRatio = WAITING_TO_RUNNING_RATIO
+    self.maxWaitingJobs = MAX_WAITING_JOBS
+    self.maxNumberJobs = MAX_NUMBER_JOBS
 
     PilotDirector.__init__( self, submitPool )
 
@@ -59,6 +66,8 @@ class DIRACPilotDirector(PilotDirector):
 
     PilotDirector.configure( self, csSection, submitPool )
     self.reloadConfiguration( csSection, submitPool )
+    
+    self.sharedArea           = gConfig.getValue('/LocalSite/SharedArea')
 
     self.__failingCECache.purgeExpired()
     self.__ticketsCECache.purgeExpired()
@@ -71,6 +80,23 @@ class DIRACPilotDirector(PilotDirector):
           pass
     if self.computingElements:
       self.log.info( ' ComputingElements:', ', '.join(self.computingElements) )
+
+    # FIXME: this is to start testing
+    ceFactory = ComputingElementFactory(self.computingElements[0])
+    ceName = self.computingElements[0]
+    ceInstance = ceFactory.getCE()
+    if not ceInstance['OK']:
+      self.log.warn(ceInstance['Message'])
+      try:
+        os.chdir( baseDir )
+        shutil.rmtree( workingDirectory )
+      except:
+        pass
+      return ceInstance
+
+    self.computingElement = ceInstance['Value']
+
+    self.log.debug(self.computingElement.getDynamicInfo())
 
     if self.siteName:
       self.log.info( ' SiteName:', self.siteName )
@@ -87,7 +113,7 @@ class DIRACPilotDirector(PilotDirector):
 
 
   def _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
-                     ceMask, submitPrivatePilot, privateTQ, proxy ):
+                     ceMask, submitPrivatePilot, privateTQ, proxy, pilotsPerJob ):
     """
       This method does the actual pilot submission to the DIRAC CE
       The logic is as follows:
@@ -97,7 +123,9 @@ class DIRACPilotDirector(PilotDirector):
     """
     taskQueueID = taskQueueDict['TaskQueueID']
     ownerDN = taskQueueDict['OwnerDN']
-
+    
+    submittedPilots = 0
+    
     if not self.computingElements:
       # Since we can exclude CEs from the list, it may become empty
       return S_ERROR( ERROR_CE )
@@ -110,11 +138,18 @@ class DIRACPilotDirector(PilotDirector):
     # set the Site Name
     if self.siteName:
       pilotOptions.append( "-n '%s'" % self.siteName)
+      
+    if self.sharedArea:
+      pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % self.sharedArea )
+      
+    #pilotOptions.append( "-o '/DIRAC/Configuration/Servers=dips://volhcb04.cern.ch:9135/Configuration/Server'" )
+     
+    self.log.info( "pilotOptions: ", ' '.join(pilotOptions))
 
     try:
       pilotScript = self._writePilotScript( workingDirectory, pilotOptions )
-      shutil.copy( self.pilot, os.path.join( workingDirectory, os.path.basename(self.pilot) ) )
-      shutil.copy( self.install, os.path.join( workingDirectory, os.path.basename(self.install) ) )
+#      shutil.copy( self.pilot, os.path.join( workingDirectory, os.path.basename(self.pilot) ) )
+#      shutil.copy( self.install, os.path.join( workingDirectory, os.path.basename(self.install) ) )
     except:
       self.log.exception( ERROR_SCRIPT )
       try:
@@ -123,30 +158,29 @@ class DIRACPilotDirector(PilotDirector):
       except:
         pass
       return S_ERROR( ERROR_SCRIPT )
-
-    # FIXME: this is to start testing
-    ceFactory = ComputingElementFactory("InProcess")
-    ceName = "InProcess"
-    ceInstance = ceFactory.getCE()
-    if not ceInstance['OK']:
-      self.log.warn(ceInstance['Message'])
-      try:
-        os.chdir( baseDir )
-        shutil.rmtree( workingDirectory )
-      except:
-        pass
-      return ceInstance
-
-    computingElement = ceInstance['Value']
-    submission = computingElement.submitJob(pilotScript,'',proxy.dumpAllToString()['Value'],'')
+  
+#    time.sleep(120)
+    self.log.info("Pilots to submit: ", pilotsToSubmit)
+    for pilots in range(int(pilotsToSubmit)):
+      ret = self._submitPilot()
+      if not ret['OK']:
+        self.log.error('Connot determine if pilot should be submitted: ', ret['Message'])
+      submitPilot = ret['Value']
+      self.log.info("Submit Pilots: ", submitPilot)
+      if submitPilot == False:
+        break
+      submission = self.computingElement.submitJob(pilotScript,'',proxy.dumpAllToString()['Value'],'')
+      if not submission['OK']:
+        self.log.error('Pilot submission failed: ', submission['Message'])
+      submittedPilots += 1
+    
     try:
       os.chdir( baseDir )
       shutil.rmtree( workingDirectory )
     except:
       pass
-    return S_OK(1)
-
-    return submission
+    
+    return S_OK(submittedPilots)
 
   def _writePilotScript( self, workingDirectory, pilotOptions ):
     """
@@ -154,15 +188,13 @@ class DIRACPilotDirector(PilotDirector):
      For the moment it will do like Grid Pilots, a full DIRAC installation
     """
 
-    pilot = os.path.basename( self.pilot )
-    install = os.path.basename(self.install)
     localPilot = """#!/usr/bin/env python
 #
 import os, tempfile, sys, shutil
 try:
   pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix= 'DIRAC_' )
-  shutil.move( "%s",  pilotWorkingDirectory )
-  shutil.move( "%s", pilotWorkingDirectory )
+  shutil.copy( "%s",  pilotWorkingDirectory )
+  shutil.copy( "%s", pilotWorkingDirectory )
   os.chdir( pilotWorkingDirectory )
 except Exception, x:
   print >> sys.stderr, x
@@ -174,7 +206,7 @@ os.system( cmd )
 
 shutil.rmtree( pilotWorkingDirectory )
 
-""" % ( pilot, install, pilot, ' '.join( pilotOptions ) )
+""" % ( os.path.basename(self.pilot), os.path.basename(self.install), os.path.basename(self.pilot), ' '.join( pilotOptions ) )
 
     pilotScript = os.path.join( workingDirectory, 'local-pilot' )
     fd = open( pilotScript, 'w' )
@@ -196,3 +228,38 @@ shutil.rmtree( pilotWorkingDirectory )
                                    limited = True,
                                    requiredTimeLeft = requiredTimeLeft,
                                    requiredVOMSAttribute = vomsAttr )    
+
+  def _submitPilot(self):
+    # first check status of the CE and determine how many pilots may be submitted
+    submitPilot = False
+        
+    ret = self.computingElement.getDynamicInfo()
+      
+    if not ret['OK']:
+      self.log.error('Failed to retrieve status information of the CE', ret['Message'])
+    
+    result = ret['Value']
+    
+    try:
+      waitingJobs = int(result['WaitingJobs'])
+      runningJobs = int(result['RunningJobs'])
+    except:
+      self.log.exception("getDynamicInfo didn't return integer values for WaitingJobs and/or RunningJobs")
+      return S_ERROR("getDynamicInfo didn't return integer values for WaitingJobs and/or RunningJobs")
+    
+    if runningJobs == 0:
+      if waitingJobs < self.maxWaitingJobs:
+        submitPilot = True
+    else:
+      waitingToRunningRatio = float(waitingJobs) / float(runningJobs)
+      # as jobs are in waiting state when they're submitted, we can submit a pilot if there is only 
+      # one waiting job
+      if waitingToRunningRatio < self.waitingToRunningRatio or waitingJobs == 1 :
+        submitPilot = True
+    
+    totalNumberJobs = runningJobs + waitingJobs
+      
+    if (totalNumberJobs + 1) > self.maxNumberJobs:
+      submitPilot = False
+    
+    return S_OK(submitPilot)
