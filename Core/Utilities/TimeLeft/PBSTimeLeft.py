@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: PBSTimeLeft.py,v 1.5 2009/07/31 05:11:58 rgracian Exp $
+# $Id: PBSTimeLeft.py,v 1.6 2009/07/31 06:34:54 rgracian Exp $
 ########################################################################
 
 """ The PBS TimeLeft utility interrogates the PBS batch system for the
@@ -9,7 +9,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-__RCSID__ = "$Id: PBSTimeLeft.py,v 1.5 2009/07/31 05:11:58 rgracian Exp $"
+__RCSID__ = "$Id: PBSTimeLeft.py,v 1.6 2009/07/31 06:34:54 rgracian Exp $"
 
 import os, string, re, time
 
@@ -89,6 +89,7 @@ class PBSTimeLeft:
       result = self.__runCommand(cmd)
       if result['OK']:
         lines = result['Value'].split('\n')
+        print lines
         for line in lines:
           info = line.split()
           if info and info[0] == queue and len(info) >= 3:
