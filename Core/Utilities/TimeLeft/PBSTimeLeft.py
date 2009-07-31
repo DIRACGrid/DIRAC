@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: PBSTimeLeft.py,v 1.7 2009/07/31 07:18:03 rgracian Exp $
+# $Id: PBSTimeLeft.py,v 1.8 2009/07/31 08:02:55 rgracian Exp $
 ########################################################################
 
 """ The PBS TimeLeft utility interrogates the PBS batch system for the
@@ -9,7 +9,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-__RCSID__ = "$Id: PBSTimeLeft.py,v 1.7 2009/07/31 07:18:03 rgracian Exp $"
+__RCSID__ = "$Id: PBSTimeLeft.py,v 1.8 2009/07/31 08:02:55 rgracian Exp $"
 
 import os, string, re, time
 
@@ -90,7 +90,7 @@ class PBSTimeLeft:
     else:
       self.log.info('Could not determine some parameters, this is the stdout from the batch system call\n%s' %(result['Value']))
       retVal = S_ERROR('Could not determine some parameters')
-      retVal[Value] = consumed
+      retVal['Value'] = consumed
       return retVal
 
   #############################################################################
