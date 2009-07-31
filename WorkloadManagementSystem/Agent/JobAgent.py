@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.86 2009/07/31 07:19:12 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.87 2009/07/31 08:18:18 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.86 2009/07/31 07:19:12 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.87 2009/07/31 08:18:18 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -252,7 +252,7 @@ class JobAgent(Agent):
         self.timeLeftError = result['Message']
     scaledCPUTime = self.timeLeftUtil.getScaledCPU()['Value']
 
-    self.__setJobParam(jobID,'ScaledCPUTime',str(scaledCPUTime-self.scaledCPUtime))
+    self.__setJobParam(jobID,'ScaledCPUTime',str(scaledCPUTime-self.scaledCPUTime))
     self.scaledCPUTime = scaledCPUTime
 
     return S_OK('Job Agent cycle complete')
