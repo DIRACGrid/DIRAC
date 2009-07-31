@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.85 2009/06/17 15:26:21 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.86 2009/07/31 07:19:12 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.85 2009/06/17 15:26:21 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.86 2009/07/31 07:19:12 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -78,6 +78,7 @@ class JobAgent(Agent):
     self.timeLeftUtil = TimeLeft()
     self.timeLeft = gConfig.getValue('/Resources/Computing/CEDefaults/MaxCPUTime',0.0)
     self.timeLeftError = ''
+    self.scaledCPUTime = 0.0
     return result
 
   #############################################################################
@@ -245,14 +246,14 @@ class JobAgent(Agent):
 
     result = self.timeLeftUtil.getTimeLeft(0.0)
     if result['OK']:
-      newTimeLeft = result['Value']
-      scaledCPUTime = self.timeLeft - newTimeLeft
-      self.timeLeft = newTimeLeft
+      self.timeLeft = result['Value']
     else:
-      scaledCPUTime = 0.0
       if result['Message'] != 'Currrent batch system is not supported':
         self.timeLeftError = result['Message']
-    self.__setJobParam(jobID,'ScaledCPUTime',str(scaledCPUTime))
+    scaledCPUTime = self.timeLeftUtil.getScaledCPU()['Value']
+
+    self.__setJobParam(jobID,'ScaledCPUTime',str(scaledCPUTime-self.scaledCPUtime))
+    self.scaledCPUTime = scaledCPUTime
 
     return S_OK('Job Agent cycle complete')
 
