@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TimeLeft.py,v 1.17 2009/07/16 11:32:58 rgracian Exp $
+# $Id: TimeLeft.py,v 1.18 2009/07/31 07:18:22 rgracian Exp $
 ########################################################################
 
 """ The TimeLeft utility allows to calculate the amount of CPU time
@@ -16,7 +16,7 @@
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR, rootPath
 import DIRAC
-__RCSID__ = "$Id: TimeLeft.py,v 1.17 2009/07/16 11:32:58 rgracian Exp $"
+__RCSID__ = "$Id: TimeLeft.py,v 1.18 2009/07/31 07:18:22 rgracian Exp $"
 
 import os,re
 
@@ -34,6 +34,32 @@ class TimeLeft:
     if not self.scaleFactor:
       self.log.warn( '/LocalSite/CPUScalingFactor not defined for site %s' % DIRAC.siteName() )
     self.cpuMargin = gConfig.getValue('/LocalSite/CPUMargin',10) #percent
+
+  def getScaledCPU(self):
+    """Returns the current CPU Time spend (accoriding to batch system) scaled according 
+       to /LocalSite/CPUScalingFactor
+    """
+    #Quit if no scale factor available
+    if not self.scaleFactor:
+      return S_OK(0.0)
+
+    #Work out which type of batch system to query and attempt to instantiate plugin
+    result = self.__checkCurrentBatchSystem()
+    if not result['OK']:
+      return S_OK(0.0)
+    name = result['Value']
+
+    batchInstance = self.__getBatchSystemPlugin(name)
+    if not batchInstance['OK']:
+      return S_OK(0.0)
+
+    batchSystem = batchInstance['Value']
+    resourceDict = batchSystem.getResourceUsage()
+    
+    if 'Value' in resourceDict and resourceDict['Value']['CPU']:
+      return S_OK( resourceDict['Value']['CPU'] * self.scaleFactor )
+    
+    return S_OK(0.0)
 
   #############################################################################
   def getTimeLeft(self,cpuConsumed):
