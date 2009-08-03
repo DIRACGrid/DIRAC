@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.11 2009/07/31 20:06:45 ffeldhau Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.12 2009/08/03 12:51:20 ffeldhau Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.11 2009/07/31 20:06:45 ffeldhau Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.12 2009/08/03 12:51:20 ffeldhau Exp $"
 
 import os, sys, tempfile, shutil, time
 
@@ -21,14 +21,14 @@ from DIRAC.WorkloadManagementSystem.private.PilotDirector import PilotDirector
 from DIRAC.Resources.Computing.ComputingElementFactory    import ComputingElementFactory
 from DIRAC.Core.Security import CS
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient      import gProxyManager
-from DIRAC import S_OK, S_ERROR, DictCache, gConfig
+from DIRAC import S_OK, S_ERROR, DictCache, gConfig, rootPath
 
 ERROR_CE         = 'No CE available'
 ERROR_JDL        = 'Could not create Pilot script'
 ERROR_SCRIPT     = 'Could not copy Pilot script'
 
 COMPUTING_ELEMENTS = ['InProcess']
-WAITING_TO_RUNNING_RATIO = 1.2
+WAITING_TO_RUNNING_RATIO = 0.2
 MAX_WAITING_JOBS = 100
 MAX_NUMBER_JOBS = 10000
 
@@ -53,9 +53,9 @@ class DIRACPilotDirector(PilotDirector):
     self.__failingCECache  = DictCache()
     self.__ticketsCECache  = DictCache()
     
-    self.waitingToRunningRatio = WAITING_TO_RUNNING_RATIO
-    self.maxWaitingJobs = MAX_WAITING_JOBS
-    self.maxNumberJobs = MAX_NUMBER_JOBS
+    self.waitingToRunningRatio = gConfig.getValue('LocalSite/waitingToRunningRatio', WAITING_TO_RUNNING_RATIO)
+    self.maxWaitingJobs = gConfig.getValue('LocalSite/maxWaitingJobs', MAX_WAITING_JOBS)
+    self.maxNumberJobs = gConfig.getValue('LocalSite/maxNumberJobs', MAX_NUMBER_JOBS)
 
     PilotDirector.__init__( self, submitPool )
 
@@ -195,7 +195,16 @@ try:
   pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix= 'DIRAC_' )
   shutil.copy( "%s",  pilotWorkingDirectory )
   shutil.copy( "%s", pilotWorkingDirectory )
+  os.makedirs(os.path.join(pilotWorkingDirectory,'etc','grid-security'))
+  shutil.copytree( "vomsdir", os.path.join(pilotWorkingDirectory,'etc','grid-security','vomsdir'))
+  shutil.copytree( "certificates", os.path.join(pilotWorkingDirectory,'etc','grid-security','certificates'))
   os.chdir( pilotWorkingDirectory )
+  sys.path.append(''.join([pilotWorkingDirectory,"/Linux_x86_64_glibc-2.3.4/bin/"]))
+  os.environ["PATH"] = ''.join([pilotWorkingDirectory,"/Linux_x86_64_glibc-2.3.4/bin/:",os.environ["PATH"]])
+  os.environ["LD_LIBRARY_PATH"]=''.join([pilotWorkingDirectory,"/Linux_x86_64_glibc-2.3.4/lib"])
+  os.environ["X509_CERT_DIR"]="/opt/shared/certificates"
+  os.environ["X509_VOMS_DIR"]="/opt/shared/vomsdir"
+  print os.environ
 except Exception, x:
   print >> sys.stderr, x
   sys.exit(-1)
@@ -204,7 +213,7 @@ print 'Executing:', cmd
 sys.stdout.flush()
 os.system( cmd )
 
-shutil.rmtree( pilotWorkingDirectory )
+#shutil.rmtree( pilotWorkingDirectory )
 
 """ % ( os.path.basename(self.pilot), os.path.basename(self.install), os.path.basename(self.pilot), ' '.join( pilotOptions ) )
 
