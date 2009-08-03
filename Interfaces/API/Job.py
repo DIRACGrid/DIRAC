@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.62 2009/06/04 12:46:43 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.63 2009/08/03 08:21:51 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,7 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.62 2009/06/04 12:46:43 paterson Exp $"
+__RCSID__ = "$Id: Job.py,v 1.63 2009/08/03 08:21:51 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
@@ -375,7 +375,8 @@ class Job:
       try:
         timeInSecs=int(timeInSecs)
       except Exception,x:
-        raise TypeError,'Expected Integer for CPU time'
+        if not re.search('{{',timeInSecs):
+          raise TypeError,'Expected Integer for CPU time'
 
     description = 'CPU time in secs'
     self._addParameter(self.workflow,'MaxCPUTime','JDLReqt',timeInSecs,description)
