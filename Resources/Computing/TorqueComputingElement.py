@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TorqueComputingElement.py,v 1.10 2009/08/03 12:52:38 ffeldhau Exp $
+# $Id: TorqueComputingElement.py,v 1.11 2009/08/03 13:04:36 ffeldhau Exp $
 # File :   TorqueComputingElement.py
 # Author : Stuart Paterson, Paul Szczypka
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: TorqueComputingElement.py,v 1.10 2009/08/03 12:52:38 ffeldhau Exp $"
+__RCSID__ = "$Id: TorqueComputingElement.py,v 1.11 2009/08/03 13:04:36 ffeldhau Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -33,7 +33,7 @@ class TorqueComputingElement(ComputingElement):
     """
     ComputingElement.__init__(self,CE_NAME)
     self.submittedJobs = 0
-    self.queue = QUEUE
+    self.queue = gConfig.getValue('/LocalSite/Queue', QUEUE)
     self.pilot = DIRAC_PILOT
     self.install = DIRAC_INSTALL
     self.hostname = socket.gethostname()
