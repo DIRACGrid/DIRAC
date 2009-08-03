@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/ReplicaContainers.py,v 1.2 2009/07/29 22:00:24 acsmith Exp $
-__RCSID__ = "$Id: ReplicaContainers.py,v 1.2 2009/07/29 22:00:24 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/ReplicaContainers.py,v 1.3 2009/08/03 15:28:40 acsmith Exp $
+__RCSID__ = "$Id: ReplicaContainers.py,v 1.3 2009/08/03 15:28:40 acsmith Exp $"
 
 """ This module contains three classes associated to Replicas.
 
@@ -7,11 +7,12 @@ __RCSID__ = "$Id: ReplicaContainers.py,v 1.2 2009/07/29 22:00:24 acsmith Exp $"
     The CatalogReplica class inherits the Replica class.
     The PhysicalReplica class inherits the Replica class and adds the 'size','checksum','online' and 'migrated' members.
 
-    In this context Replica refers to any copy of a file. This can be the either the first or an additional copy.
+    In this context Replica refers to any copy of a file. This can be the first or an additional copy.
 """
 
 import types
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.CFG import CFG   
 
 class Replica:
 
@@ -59,9 +60,16 @@ class Replica:
     """
     return S_OK("%s:%s:%s" % (self.se,self.pfn,self.status))
 
+  def toCFG(self):
+    oCFG = CFG()
+    oCFG.createNewSection(self.se)
+    oCFG.setOption('%s/Status' % (self.se), self.status)
+    oCFG.setOption('%s/PFN' % (self.se), self.pfn)
+    return S_OK(str(oCFG))
+
 class CatalogReplica(Replica):
 
-  def __init__(self,pfn='',storageElement='',status=''):
+  def __init__(self,pfn='',storageElement='',status='U'):
     Replica.__init__(self,pfn,storageElement,status)
 
 class PhysicalReplica(Replica):
