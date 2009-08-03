@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TorqueComputingElement.py,v 1.9 2009/07/31 20:14:53 ffeldhau Exp $
+# $Id: TorqueComputingElement.py,v 1.10 2009/08/03 12:52:38 ffeldhau Exp $
 # File :   TorqueComputingElement.py
 # Author : Stuart Paterson, Paul Szczypka
 ########################################################################
@@ -7,12 +7,13 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: TorqueComputingElement.py,v 1.9 2009/07/31 20:14:53 ffeldhau Exp $"
+__RCSID__ = "$Id: TorqueComputingElement.py,v 1.10 2009/08/03 12:52:38 ffeldhau Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
 from DIRAC                                               import S_OK,S_ERROR
 from DIRAC                                               import systemCall, rootPath
+from DIRAC                                               import gConfig
 from DIRAC.Core.Security.Misc                            import getProxyInfo
 
 import os,sys, time, re, socket
@@ -81,9 +82,6 @@ class TorqueComputingElement(ComputingElement):
     fopen.write('fopen.close()\n')
     fopen.write('os.chmod("%s",0600)\n' %proxyLocation)
     fopen.write('os.environ["X509_USER_PROXY"]="%s"\n' %proxyLocation)
-    # temporary fix for CAs
-    fopen.write('os.environ["X509_CERT_DIR"]="%s/certificates"\n' %self.sharedArea)
-    fopen.write('os.environ["X509_VOMS_DIR"]="%s/vomsdir"\n' %self.sharedArea)
     fopen.write('print "submitting wrapper"\n')
     fopen.write('os.system("./%s")\n' %executableFileBaseName)
     fopen.write('os.remove("%s")' % executableFileBaseName)
