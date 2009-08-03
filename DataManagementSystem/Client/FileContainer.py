@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/FileContainer.py,v 1.3 2009/08/03 14:24:10 acsmith Exp $
-__RCSID__ = "$Id: FileContainer.py,v 1.3 2009/08/03 14:24:10 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/FileContainer.py,v 1.4 2009/08/03 15:28:01 acsmith Exp $
+__RCSID__ = "$Id: FileContainer.py,v 1.4 2009/08/03 15:28:01 acsmith Exp $"
 
 """ This module contains classes associated to Files.
 
@@ -10,6 +10,7 @@ import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Client.ReplicaManager import CatalogFile
 from DIRAC.DataManagementSystem.Client.ReplicaContainers import CatalogReplica
+from DIRAC.Core.Utilities.CFG import CFG
 
 class File:
 
@@ -149,3 +150,21 @@ class File:
     """ Get short description string of file attributes
     """
     return S_OK("%s:%s:%d:%s:%s" % (self.lfn,self.status,self.size,self.guid,self.checksum))
+
+  def toCFG(self):
+    """ Get the full description of the file in CFG format
+    """
+    oCFG = CFG()
+    strippedLFN = self.lfn.replace('/','&&')
+    oCFG.createNewSection(strippedLFN)
+    oCFG.setOption('%s/Status' % (strippedLFN), self.status)    
+    oCFG.setOption('%s/Size' % (strippedLFN), self.size)    
+    oCFG.setOption('%s/GUID' % (strippedLFN), self.guid)    
+    oCFG.setOption('%s/Checksum' % (strippedLFN), self.checksum)
+    #TODO: still have to include the CFG from the replica objects 
+    if self.catalogReplicas:
+      oCFG.createNewSection('%s/CatalogReplicas' % strippedLFN)
+      for replica in self.catalogReplicas:
+        pass
+        #  rCFG.mergeWith(CFG().loadFromBuffer(replica.toCFG()['Value']))
+    return S_OK(str(oCFG))
