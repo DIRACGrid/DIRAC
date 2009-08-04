@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StageMonitor.py,v 1.1 2009/06/19 21:37:22 acsmith Exp $
-__RCSID__ = "$Id: StageMonitor.py,v 1.1 2009/06/19 21:37:22 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StageMonitor.py,v 1.2 2009/08/04 14:49:56 acsmith Exp $
+__RCSID__ = "$Id: StageMonitor.py,v 1.2 2009/08/04 14:49:56 acsmith Exp $"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
@@ -31,7 +31,7 @@ class StageMonitor(Agent):
     return S_OK()
 
   def execute(self):
-    res = setupShifterProxyInEnv('DataManager','%s/%s' % (rootPath,time.time()))
+    res = setupShifterProxyInEnv('DataManager','%s/runit/%s/proxy' % (rootPath,AGENT_NAME))
     if not res['OK']:
       gLogger.fatal("StageMonitor.execute: Failed to setup data manager proxy.", res['Message'])
       return res

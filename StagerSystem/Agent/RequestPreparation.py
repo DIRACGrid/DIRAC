@@ -1,6 +1,6 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/RequestPreparation.py,v 1.4 2009/06/19 14:41:10 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/RequestPreparation.py,v 1.5 2009/08/04 14:47:54 acsmith Exp $
 
-__RCSID__ = "$Id: RequestPreparation.py,v 1.4 2009/06/19 14:41:10 acsmith Exp $"
+__RCSID__ = "$Id: RequestPreparation.py,v 1.5 2009/08/04 14:47:54 acsmith Exp $"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
@@ -32,6 +32,10 @@ class RequestPreparation(Agent):
     return S_OK()
 
   def execute(self):
+    res = setupShifterProxyInEnv('DataManager','%s/runit/%s/proxy' % (rootPath,AGENT_NAME))
+    if not res['OK']:
+      gLogger.fatal("StageRequest.execute: Failed to setup data manager proxy.", res['Message'])
+      return res
     res = self.prepareNewReplicas()
     return res
 
