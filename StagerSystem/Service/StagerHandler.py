@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.17 2009/06/19 21:27:27 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.18 2009/08/04 14:57:27 acsmith Exp $
 ########################################################################
 
 """
     StagerHandler is the implementation of the StagerDB in the DISET framework
 """
 
-__RCSID__ = "$Id: StagerHandler.py,v 1.17 2009/06/19 21:27:27 acsmith Exp $"
+__RCSID__ = "$Id: StagerHandler.py,v 1.18 2009/08/04 14:57:27 acsmith Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -95,23 +95,6 @@ class StagerHandler(RequestHandler):
       gLogger.exception(errMsg,'',x)
       return S_ERROR(errMsg)
 
-  types_getReplicasWithStatus = [StringType]
-  def export_getReplicasWithStatus(self,status):
-    """
-        This method allows to retrieve replicas with the supplied status
-    """
-    try:
-      res = stagerDB.getReplicasWithStatus(status)
-      if res['OK']:
-        gLogger.info('StagerHandler.getReplicasWithStatus: Successfully got replicas with %s status' % status)
-      else:
-        gLogger.error('StagerHandler.getReplicasWithStatus: Failed to get replicas with %s status' % status,res['Message'])
-      return res
-    except Exception,x:
-      errMsg = 'StagerHandler.getReplicasWithStatus: Exception when getting replicas with %s status' % status
-      gLogger.exception(errMsg,'',x)
-      return S_ERROR(errMsg)
-
   ####################################################################
   #
   # The state transition of the Replicas from New->Waiting
@@ -138,6 +121,23 @@ class StagerHandler(RequestHandler):
   #
   # The state transition of the Replicas from Waiting->StageSubmitted
   #
+
+  types_getWaitingReplicas = []
+  def export_getWaitingReplicas(self):
+    """ 
+        This method obtains the replicas for which all replicas in the task are Waiting
+    """
+    try:
+      res = stagerDB.getWaitingReplicas()
+      if res['OK']:
+        gLogger.info('StagerHandler.getWaitingReplicas: Successfully obtained Waiting replicas')
+      else:
+        gLogger.error('StagerHandler.getWaitingReplicas: Failed to obtain Waiting replicas',res['Message'])
+      return res
+    except Exception,x:
+      errMsg = 'StagerHandler.getWaitingReplicas: Exception when obtaining Waiting replicas.'
+      gLogger.exception(errMsg,'',x)
+      return S_ERROR(errMsg)
 
   types_getSubmittedStagePins = []
   def export_getSubmittedStagePins(self):
@@ -172,7 +172,6 @@ class StagerHandler(RequestHandler):
       errMsg = 'StagerHandler.insertStageRequest: Exception when inserting stage request.'
       gLogger.exception(errMsg,'',x)
       return S_ERROR(errMsg)
-
 
   ####################################################################
   #
@@ -215,6 +214,62 @@ class StagerHandler(RequestHandler):
 
   ####################################################################
   #
+  # The methods for finalization of tasks
+  #
+
+  types_updateStageCompletingTasks = []
+  def export_updateStageCompletingTasks(self):
+    """
+        This method checks whether the file for Tasks in 'StageCompleting' status are all Staged and updates the Task status to Staged
+    """ 
+    try:
+      res = stagerDB.updateStageCompletingTasks()
+      if res['OK']:
+        gLogger.info('StagerHandler.updateStageCompletingTasks: Successfully updated %s StageCompleting tasks.' % len(res['Value']))
+      else:
+        gLogger.error('StagerHandler.updateStageCompletingTasks: Failed to update StageCompleting tasks.',res['Message'])
+      return res
+    except Exception,x:
+      errMsg = 'StagerHandler.updateStageCompletingTasks: Exception when updating StageCompleting tasks.'
+      gLogger.exception(errMsg,'',x)
+      return S_ERROR(errMsg) 
+  
+  types_removeTasks = [ListType]
+  def export_removeTasks(self,taskIDs):
+    """
+        This method removes the entries from TaskReplicas and Tasks with the supplied task IDs
+    """
+    try:
+      res = stagerDB.removeTasks(taskIDs)
+      if res['OK']:
+        gLogger.info('StagerHandler.removeTasks: Successfully removed Tasks')
+      else:
+        gLogger.error('StagerHandler.removeTasks: Failed to remove Tasks',res['Message'])
+      return res
+    except Exception,x:
+      errMsg = 'StagerHandler.removeTasks: Exception when removing Tasks.'
+      gLogger.exception(errMsg,'',x)
+      return S_ERROR(errMsg)
+
+  types_removeUnlinkedReplicas = []
+  def export_removeUnlinkedReplicas(self):
+    """
+        This method removes Replicas which have no associated Tasks
+    """
+    try:
+      res = stagerDB.removeUnlinkedReplicas()
+      if res['OK']:
+        gLogger.info('StagerHandler.removeUnlinkedReplicas: Successfully removed unlinked Replicas')
+      else:
+        gLogger.error('StagerHandler.removeUnlinkedReplicas: Failed to remove unlinked Replicas',res['Message'])
+      return res
+    except Exception,x:
+      errMsg = 'StagerHandler.removeUnlinkedReplicas: Exception when removing unlinked Replicas.'        
+      gLogger.exception(errMsg,'',x)
+      return S_ERROR(errMsg)
+
+  ####################################################################
+  #
   # The state transition of the Replicas from *->Failed
   #
 
@@ -234,6 +289,46 @@ class StagerHandler(RequestHandler):
       errMsg = 'StagerHandler.updateReplicaFailure: Exception when updating replica failure information'
       gLogger.exception(errMsg,'',x)
       return S_ERROR(errMsg)
+
+  ####################################################################
+  #
+  # General methods for obtaining Tasks, Replicas with supplied state
+  #
+
+  types_getTasksWithStatus = [StringType]
+  def export_getTasksWithStatus(self,status):
+    """
+        This method allows to retrieve Tasks with the supplied status
+    """    
+    try:
+      res = stagerDB.getTasksWithStatus(status)
+      if res['OK']:
+        gLogger.info('StagerHandler.getTasksWithStatus: Successfully got tasks with %s status' % status)
+      else:
+        gLogger.error('StagerHandler.getTasksWithStatus: Failed to get tasks with %s status' % status,res['Message'])
+      return res
+    except Exception,x:
+      errMsg = 'StagerHandler.getTasksWithStatus: Exception when getting tasks with %s status' % status
+      gLogger.exception(errMsg,'',x)
+      return S_ERROR(errMsg)
+
+  types_getReplicasWithStatus = [StringType]
+  def export_getReplicasWithStatus(self,status):
+    """
+        This method allows to retrieve replicas with the supplied status
+    """
+    try:
+      res = stagerDB.getReplicasWithStatus(status)
+      if res['OK']:
+        gLogger.info('StagerHandler.getReplicasWithStatus: Successfully got replicas with %s status' % status)
+      else:
+        gLogger.error('StagerHandler.getReplicasWithStatus: Failed to get replicas with %s status' % status,res['Message'])
+      return res
+    except Exception,x:
+      errMsg = 'StagerHandler.getReplicasWithStatus: Exception when getting replicas with %s status' % status
+      gLogger.exception(errMsg,'',x)
+      return S_ERROR(errMsg)
+
 
   ##################################################################
   #
