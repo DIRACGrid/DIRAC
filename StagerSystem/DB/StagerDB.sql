@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.sql,v 1.7 2009/06/19 21:29:50 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.sql,v 1.8 2009/08/04 14:59:59 acsmith Exp $
 ########################################################################
    
 -------------------------------------------------------------
@@ -49,6 +49,15 @@ FOR EACH ROW
 BEGIN
   IF NEW.Status = 'Failed' THEN
     UPDATE Tasks SET Status='Failed' WHERE TaskID IN (SELECT TaskID from TaskReplicas WHERE ReplicaID=NEW.ReplicaID);
+  END IF;
+  IF NEW.Status = 'Waiting' THEN
+    UPDATE Tasks SET Status = 'Waiting' WHERE Status = 'New' AND TaskID IN (SELECT TaskID from TaskReplicas WHERE ReplicaID=NEW.ReplicaID);
+  END IF;
+  IF NEW.Status = 'StageSubmitted' THEN
+    UPDATE Tasks SET Status = 'StageSubmitted' WHERE Status = 'Waiting' AND TaskID IN (SELECT TaskID from TaskReplicas WHERE ReplicaID=NEW.ReplicaID);
+  END IF;
+  IF NEW.Status = 'Staged' THEN
+    UPDATE Tasks SET Status = 'StageCompleting' WHERE Status = 'StageSubmitted' AND TaskID IN (SELECT TaskID from TaskReplicas WHERE ReplicaID=NEW.ReplicaID); 
   END IF;
 END;//
 delimiter ;
