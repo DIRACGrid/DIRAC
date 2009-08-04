@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.20 2009/06/19 21:28:33 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.21 2009/08/04 14:56:35 acsmith Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -13,7 +13,7 @@
     The Pins table keeps the pinning request ID along with when it was issued and for how long for each of the replicas.
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.20 2009/06/19 21:28:33 acsmith Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.21 2009/08/04 14:56:35 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import intListToString,stringListToString
@@ -126,6 +126,17 @@ class StagerDB(DB):
       replicas[replicaID] = (lfn,storageElement,fileSize,pfn)
     return S_OK(replicas)
  
+  def getTasksWithStatus(self,status):
+    """ This method retrieves the TaskID from the Tasks table with the supplied Status. """
+    req = "SELECT TaskID,Source,CallBackMethod,SourceTaskID from Tasks WHERE Status = '%s';" % status
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    taskIDs = {}
+    for taskID,source,callback,sourceTask in res['Value']:
+      taskIDs[taskID] = (source,callback,sourceTask)
+    return S_OK(taskIDs)
+ 
   ####################################################################
   # 
   # The state transition of the Replicas from *->Failed
@@ -159,6 +170,44 @@ class StagerDB(DB):
   # The state transition of the Replicas from Waiting->StageSubmitted
   #
 
+  def getSubmittedStagePins(self):
+    req = "SELECT StorageElement,COUNT(*),SUM(FileSize) from Replicas WHERE Status NOT IN ('New','Waiting','Failed') GROUP BY StorageElement;"
+    res = self._query(req)
+    if not res['OK']:
+      gLogger.error('StagerDB.getSubmittedStagePins: Failed to obtain submitted requests.',res['Message'])
+      return res
+    storageRequests = {}
+    for storageElement,replicas,totalSize in res['Value']:
+      storageRequests[storageElement] = {'Replicas':int(replicas),'TotalSize':int(totalSize)}
+    return S_OK(storageRequests)
+
+  def getWaitingReplicas(self):
+    req = "SELECT TR.TaskID, R.Status, COUNT(*) from TaskReplicas as TR, Replicas as R where TR.ReplicaID=R.ReplicaID GROUP BY TR.TaskID,R.Status;"
+    res = self._query(req)
+    if not res['OK']:
+      gLogger.error('StagerDB.getWaitingReplicas: Failed to get eligible TaskReplicas',res['Message'])
+      return res
+    badTasks = []
+    goodTasks = []
+    for taskID,status,count in res['Value']:
+      if taskID in badTasks:
+        continue
+      elif status in ('New','Failed'):
+        badTasks.append(taskID)
+      elif status == 'Waiting':
+        goodTasks.append(taskID)
+    replicas = {}
+    if not goodTasks:
+      return S_OK(replicas)
+    req = "SELECT R.ReplicaID,R.LFN,R.StorageElement,R.FileSize,R.PFN from Replicas as R, TaskReplicas as TR WHERE R.Status = 'Waiting' AND TR.TaskID in (%s) AND TR.ReplicaID=R.ReplicaID;" % intListToString(goodTasks)
+    res = self._query(req)
+    if not res['OK']:
+      gLogger.error('StagerDB.getWaitingReplicas: Failed to get Waiting replicas',res['Message'])
+      return res
+    for replicaID,lfn,storageElement,fileSize,pfn in res['Value']:
+      replicas[replicaID] = (lfn,storageElement,fileSize,pfn)
+    return S_OK(replicas)
+
   def insertStageRequest(self,requestDict):
     req = "INSERT INTO StageRequests (ReplicaID,RequestID,StageRequestSubmitTime) VALUES "
     for requestID,replicaIDs in requestDict.items():
@@ -172,17 +221,6 @@ class StagerDB(DB):
       return res
     gLogger.info("StagerDB.insertStageRequest: Successfully added %s StageRequests with RequestID %s." % (res['Value'],requestID))
     return S_OK()
-
-  def getSubmittedStagePins(self):
-    req = "SELECT StorageElement,COUNT(*),SUM(FileSize) from Replicas WHERE Status NOT IN ('New','Waiting','Failed') GROUP BY StorageElement;"
-    res = self._query(req)
-    if not res['OK']:
-      gLogger.error('StagerDB.getSubmittedStagePins: Failed to obtain submitted requests.',res['Message'])
-      return res
-    storageRequests = {}
-    for storageElement,replicas,totalSize in res['Value']:
-      storageRequests[storageElement] = {'Replicas':int(replicas),'TotalSize':int(totalSize)}
-    return S_OK(storageRequests)
 
   ####################################################################
   #
@@ -206,6 +244,59 @@ class StagerDB(DB):
     if not res['OK']:
       gLogger.error("StagerDB.setStageComplete: Failed to set StageRequest completed.", res['Message'])
       return res
+    return res
+
+  ####################################################################
+  #
+  # This code handles the finalization of stage tasks
+  #
+
+  def updateStageCompletingTasks(self):
+    """ This will select all the Tasks in StageCompleting status and check whether all the associated files are Staged. """
+    req = "SELECT TR.TaskID,COUNT(if(R.Status NOT IN ('Staged'),1,NULL)) FROM Tasks AS T, TaskReplicas AS TR, Replicas AS R WHERE T.Status='StageCompleting' AND T.TaskID=TR.TaskID AND TR.ReplicaID=R.ReplicaID GROUP BY TR.TaskID;"
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    taskIDs = []
+    for taskID,count in res['Value']:
+      if int(count) == 0:
+        taskIDs.append(taskID)
+    if not taskIDs:
+      return S_OK(taskIDs)
+    req = "UPDATE Tasks SET Status = 'Staged' WHERE TaskID IN (%s);" % intListToString(taskIDs)
+    res = self._update(req)
+    if not res['OK']:
+      return res
+    return S_OK(taskIDs)
+
+  def removeTasks(self,taskIDs):
+    """ This will delete the entries from the TaskReplicas for the provided taskIDs. """
+    req = "DELETE FROM TaskReplicas WHERE TaskID IN (%s);" % intListToString(taskIDs)
+    res = self._update(req)
+    if not res['OK']:
+      return res
+    req = "DELETE FROM Tasks WHERE TaskID in (%s);" % intListToString(taskIDs)
+    res = self._update(req)
+    return res
+
+  def removeUnlinkedReplicas(self):
+    """ This will remove from the Replicas tables where there are no associated links. """
+    #TODO: If there are entries in the Pins tables these need to be released
+    req = "SELECT ReplicaID from Replicas WHERE Links = 0;"
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    replicaIDs = []
+    for tuple in res['Value']:
+      replicaIDs.append(tuple[0])
+    if not replicaIDs:
+      return S_OK()
+    req = "DELETE FROM StageRequests WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
+    res = self._update(req)
+    if not res['OK']:
+      return res
+    req = "DELETE FROM Replicas WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
+    res = self._update(req)
     return res
 
   ####################################################################
