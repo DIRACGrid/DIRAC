@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StageRequest.py,v 1.4 2009/06/19 20:51:28 acsmith Exp $
-__RCSID__ = "$Id: StageRequest.py,v 1.4 2009/06/19 20:51:28 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StageRequest.py,v 1.5 2009/08/04 14:44:04 acsmith Exp $
+__RCSID__ = "$Id: StageRequest.py,v 1.5 2009/08/04 14:44:04 acsmith Exp $"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
@@ -31,7 +31,7 @@ class StageRequest(Agent):
     return S_OK()
 
   def execute(self):
-    res = setupShifterProxyInEnv('DataManager','%s/%s' % (rootPath,time.time()))
+    res = setupShifterProxyInEnv('DataManager','%s/runit/%s/proxy' % (rootPath,AGENT_NAME))
     if not res['OK']:
       gLogger.fatal("StageRequest.execute: Failed to setup data manager proxy.", res['Message'])
       return res
@@ -125,7 +125,7 @@ class StageRequest(Agent):
   def __getWaitingReplicas(self):
     """ This obtains the Waiting replicas from the Replicas table and for each LFN the requested storage element """
     # First obtain the Waiting replicas from the Replicas table
-    res = self.stagerClient.getReplicasWithStatus('Waiting')
+    res = self.stagerClient.getWaitingReplicas()
     if not res['OK']:
       gLogger.error("StageRequest.__getWaitingReplicas: Failed to get replicas with Waiting status.", res['Message'])
       return res
