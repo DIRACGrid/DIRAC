@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.18 2009/08/04 14:57:27 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.19 2009/08/05 14:28:43 acsmith Exp $
 ########################################################################
 
 """
     StagerHandler is the implementation of the StagerDB in the DISET framework
 """
 
-__RCSID__ = "$Id: StagerHandler.py,v 1.18 2009/08/04 14:57:27 acsmith Exp $"
+__RCSID__ = "$Id: StagerHandler.py,v 1.19 2009/08/05 14:28:43 acsmith Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -22,6 +22,26 @@ def initializeStagerHandler(serviceInfo):
   return S_OK()
 
 class StagerHandler(RequestHandler):
+
+  ######################################################################
+  #
+  #  Example call back methods
+  #
+
+  types_updateTaskStatus = []
+  def export_updateTaskStatus(self,sourceID,status, successful=[],failed=[]):
+    """ An example to show the usage of the callbacks. """
+    gLogger.info("StagerHandler.updateTaskStatus: Received callback information for ID %s" % sourceID)
+    gLogger.info("StagerHandler.updateTaskStatus: Status = '%s'" % status)
+    if successful:
+      gLogger.info("StagerHandler.updateTaskStatus: %s files successfully staged" % len(successful))
+      for lfn,time in successful:
+        gLogger.info("StagerHandler.updateTaskStatus: %s %s" % (lfn.ljust(100),time.ljust(10)))
+    if failed:
+      gLogger.info("StagerHandler.updateTaskStatus: %s files failed to stage" % len(successful))
+      for lfn,time in failed:
+        gLogger.info("StagerHandler.updateTaskStatus: %s %s" % (lfn.ljust(100),time.ljust(10)))
+    return S_OK()
 
   ######################################################################
   #
