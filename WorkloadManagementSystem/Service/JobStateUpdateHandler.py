@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobStateUpdateHandler.py,v 1.39 2009/08/05 15:06:33 acsmith Exp $
+# $Id: JobStateUpdateHandler.py,v 1.40 2009/08/05 15:24:33 acsmith Exp $
 ########################################################################
 
 """ JobStateUpdateHandler is the implementation of the Job State updating
@@ -11,7 +11,7 @@
 
 """
 
-__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.39 2009/08/05 15:06:33 acsmith Exp $"
+__RCSID__ = "$Id: JobStateUpdateHandler.py,v 1.40 2009/08/05 15:24:33 acsmith Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -34,6 +34,20 @@ def initializeJobStateUpdateHandler( serviceInfo ):
   return S_OK()
 
 class JobStateUpdateHandler( RequestHandler ):
+
+  ###########################################################################
+  types_updateJobFromStager = [StringType,StringType]
+  def export_updateJobFromStager(self,jobID,status):
+    """ Simple call back method to be used by the stager. """
+    if status == 'Done':
+      jobStatus = 'Checking'
+      minorStatus = 'JobScheduling'
+    elif status == 'Failed':
+      jobStatus = 'Failed'
+      minorStatus = 'Staging input files failed'
+    else:
+      return S_ERROR("updateJobFromStager: %s status not known." % status)
+    return self.__setJobStatus(int(jobID), jobStatus, minorStatus, 'StagerSystem')
 
   ###########################################################################
   types_setJobStatus = [IntType,StringType,StringType,StringType]
