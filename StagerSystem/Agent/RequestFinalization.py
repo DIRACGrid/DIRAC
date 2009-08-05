@@ -1,6 +1,6 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/RequestFinalization.py,v 1.1 2009/08/04 14:55:21 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/RequestFinalization.py,v 1.2 2009/08/05 14:28:16 acsmith Exp $
 
-__RCSID__ = "$Id: RequestFinalization.py,v 1.1 2009/08/04 14:55:21 acsmith Exp $"
+__RCSID__ = "$Id: RequestFinalization.py,v 1.2 2009/08/05 14:28:16 acsmith Exp $"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
@@ -42,9 +42,8 @@ class RequestFinalization(Agent):
     gLogger.info("RequestFinalization.clearFailedTasks: Obtained %s tasks in the 'Failed' status." % len(failedTasks))
     for taskID,(source,callback,sourceTask) in failedTasks.items():
       if (callback and sourceTask):
-        res = self.__performCallback(callback,sourceTask)
+        res = self.__performCallback('Failed',callback,sourceTask)
         if not res['OK']:
-          gLogger.error("RequestFinalization.clearFailedTasks: Failed to perform callback for task.", res['Message'])
           failedTasks.pop(taskID)
     if not failedTasks:
       gLogger.info("RequestFinalization.clearFailedTasks: No tasks to remove.")
@@ -73,9 +72,8 @@ class RequestFinalization(Agent):
     gLogger.info("RequestFinalization.clearStagedTasks: Obtained %s tasks in the 'Staged' status." % len(stagedTasks))
     for taskID,(source,callback,sourceTask) in stagedTasks.items():
       if (callback and sourceTask):
-        res = self.__performCallback(callback,sourceTask)
+        res = self.__performCallback('Done',callback,sourceTask)
         if not res['OK']:
-          gLogger.error("RequestFinalization.clearStagedTasks: Failed to perform callback for task.", res['Message'])
           stagedTasks.pop(taskID)
     if not stagedTasks:
       gLogger.info("RequestFinalization.clearStagedTasks: No tasks to remove.")
@@ -97,5 +95,16 @@ class RequestFinalization(Agent):
       gLogger.info("RequestFinalization.removeUnlinkedReplicas: Successfully removed unlinked Replicas.")
     return res
 
-  def __performCallback(self):
-    return S_OK()
+  def __performCallback(self, status, callback, sourceTask):
+    method,service = callback.split('@')
+    gLogger.debug("RequestFinalization.__performCallback: Attempting to perform call back for %s with %s status" % (sourceTask,status))
+    client = RPCClient(service)
+    gLogger.debug("RequestFinalization.__performCallback: Created RPCClient to %s" % service)
+    execString = "res = client.%s(%s,'%s')" % (method,sourceTask,status)     
+    gLogger.debug("RequestFinalization.__performCallback: Attempting to invoke %s service method" % method)
+    exec(execString)
+    if not res['OK']:
+      gLogger.error("RequestFinalization.__performCallback: Failed to perform callback",res['Message'])
+    else:
+      gLogger.info("RequestFinalization.__performCallback: Successfully issued callback to %s for %s with %s status" % (callback,sourceTask, status))
+    return res
