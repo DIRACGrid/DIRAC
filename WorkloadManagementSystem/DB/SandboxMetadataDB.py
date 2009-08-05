@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxMetadataDB.py,v 1.7 2009/06/29 15:28:49 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxMetadataDB.py,v 1.8 2009/08/05 15:32:40 acasajus Exp $
 ########################################################################
 """ SandboxMetadataDB class is a front-end to the metadata for sandboxes
 """
 
-__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.7 2009/06/29 15:28:49 acasajus Exp $"
+__RCSID__ = "$Id: SandboxMetadataDB.py,v 1.8 2009/08/05 15:32:40 acasajus Exp $"
 
 import time
 import types
@@ -155,7 +155,7 @@ class SandboxMetadataDB(DB):
 
   def __accessedSandboxByCond( self, condDict ):
     sqlCond = [ "%s=%s" % ( key, condDict[ key ] ) for key in condDict ]
-    return self._update( "UPDATE `sb_SandBoxes` SET LastAccessTime=UTC_TIMESTAMP() WHERE %s" % " AND ".join( condDict ) )
+    return self._update( "UPDATE `sb_SandBoxes` SET LastAccessTime=UTC_TIMESTAMP() WHERE %s" % " AND ".join( sqlCond ) )
 
   def assignSandboxesToEntities( self, entitiesToSandboxList, requesterName, requesterGroup, ownerName = "", ownerGroup = "" ):
     """
@@ -214,6 +214,7 @@ class SandboxMetadataDB(DB):
     else:
       return S_ERROR( "Not authorized to access sandbox" )
     for i in range( len( entitiesList ) ):
+    
       entitiesList[i] = self._escapeString( entitiesList[ i ] )[ 'Value' ]
     if len( entitiesList ) == 1:
       sqlCond.append( "e.EntityId = %s" % entitiesList[0] )
