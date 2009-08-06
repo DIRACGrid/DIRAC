@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.21 2009/08/04 14:56:35 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.22 2009/08/06 15:26:25 acsmith Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -13,7 +13,7 @@
     The Pins table keeps the pinning request ID along with when it was issued and for how long for each of the replicas.
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.21 2009/08/04 14:56:35 acsmith Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.22 2009/08/06 15:26:25 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import intListToString,stringListToString
@@ -245,6 +245,22 @@ class StagerDB(DB):
       gLogger.error("StagerDB.setStageComplete: Failed to set StageRequest completed.", res['Message'])
       return res
     return res
+
+  ####################################################################
+  #
+  # The state transition of the Replicas from Staged->Pinned
+  #
+
+  def getStagedReplicas(self):
+    req = "SELECT R.ReplicaID, R.LFN, R.StorageElement, R.FileSize, R.PFN, SR.RequestID FROM Replicas AS R, StageRequests AS SR WHERE R.Status = 'Staged' AND R.ReplicaID=SR.ReplicaID;"
+    res = self._query(req)
+    if not res['OK']:
+      gLogger.error('StagerDB.getStagedReplicas: Failed to get replicas for Staged status',res['Message'])
+      return res
+    replicas = {}
+    for replicaID,lfn,storageElement,fileSize,pfn,requestID in res['Value']:
+      replicas[replicaID] = (lfn,storageElement,fileSize,pfn,requestID)  
+    return S_OK(replicas)
 
   ####################################################################
   #

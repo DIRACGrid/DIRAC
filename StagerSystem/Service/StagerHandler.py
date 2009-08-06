@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.19 2009/08/05 14:28:43 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.20 2009/08/06 15:25:53 acsmith Exp $
 ########################################################################
 
 """
     StagerHandler is the implementation of the StagerDB in the DISET framework
 """
 
-__RCSID__ = "$Id: StagerHandler.py,v 1.19 2009/08/05 14:28:43 acsmith Exp $"
+__RCSID__ = "$Id: StagerHandler.py,v 1.20 2009/08/06 15:25:53 acsmith Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -232,6 +232,28 @@ class StagerHandler(RequestHandler):
       gLogger.exception(errMsg,'',x)
       return S_ERROR(errMsg)
 
+  ####################################################################
+  #
+  # The state transition of the Replicas from Staged->Pinned
+  #
+
+  types_getStagedReplicas = []
+  def export_getStagedReplicas(self):
+    """
+        This method obtains the replicas and SRM request information which are in the Staged status
+    """
+    try:
+      res = stagerDB.getStagedReplicas()
+      if res['OK']:
+        gLogger.info('StagerHandler.getStagedReplicas: Successfully obtained Staged replicas')
+      else:
+        gLogger.error('StagerHandler.getStagedReplicas: Failed to obtain Staged replicas',res['Message'])
+      return res
+    except Exception,x:
+      errMsg = 'StagerHandler.getStagedReplicas: Exception when obtaining Staged replicas.'
+      gLogger.exception(errMsg,'',x)
+      return S_ERROR(errMsg)
+  
   ####################################################################
   #
   # The methods for finalization of tasks
