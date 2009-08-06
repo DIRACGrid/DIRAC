@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxStoreHandler.py,v 1.7 2009/07/29 16:14:22 acasajus Exp $
+# $Id: SandboxStoreHandler.py,v 1.8 2009/08/06 12:21:47 acasajus Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.7 2009/07/29 16:14:22 acasajus Exp $"
+__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.8 2009/08/06 12:21:47 acasajus Exp $"
 
 from types import *
 import os
@@ -387,7 +387,7 @@ class SandboxStoreHandler( RequestHandler ):
     if not result[ 'OK' ]:
       return result
     sbId = result[ 'Value' ]
-    #sandboxDB.accessedSandboxById( sbId )
+    sandboxDB.accessedSandboxById( sbId )
     #If it's a local file
     hdPath = self.__sbToHDPath( fileID )
     if not os.path.isfile( hdPath ):
