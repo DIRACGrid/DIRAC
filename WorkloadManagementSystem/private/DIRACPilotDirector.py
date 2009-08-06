@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.12 2009/08/03 12:51:20 ffeldhau Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.13 2009/08/06 21:07:21 ffeldhau Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.12 2009/08/03 12:51:20 ffeldhau Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.13 2009/08/06 21:07:21 ffeldhau Exp $"
 
 import os, sys, tempfile, shutil, time
 
@@ -41,6 +41,8 @@ class DIRACPilotDirector(PilotDirector):
      Define some defaults and call parent __init__
     """
     self.gridMiddleware    = 'DIRAC'
+    
+    PilotDirector.__init__( self, submitPool )
 
     self.computingElements = COMPUTING_ELEMENTS
     # To run a DIRAC Pilot Director we require Site Name to be properly defined in the 
@@ -53,11 +55,15 @@ class DIRACPilotDirector(PilotDirector):
     self.__failingCECache  = DictCache()
     self.__ticketsCECache  = DictCache()
     
-    self.waitingToRunningRatio = gConfig.getValue('LocalSite/waitingToRunningRatio', WAITING_TO_RUNNING_RATIO)
-    self.maxWaitingJobs = gConfig.getValue('LocalSite/maxWaitingJobs', MAX_WAITING_JOBS)
-    self.maxNumberJobs = gConfig.getValue('LocalSite/maxNumberJobs', MAX_NUMBER_JOBS)
-
-    PilotDirector.__init__( self, submitPool )
+    self.sharedArea = gConfig.getValue('LocalSite/SharedArea')
+    if not self.sharedArea:
+      self.log.error(' Con not run DIRAC Director without Shared Area')
+      sys.exit()
+      
+    self.waitingToRunningRatio = gConfig.getValue('LocalSite/WaitingToRunningRatio', WAITING_TO_RUNNING_RATIO)
+    self.maxWaitingJobs = gConfig.getValue('LocalSite/MaxWaitingJobs', MAX_WAITING_JOBS)
+    self.maxNumberJobs = gConfig.getValue('LocalSite/MaxNumberJobs', MAX_NUMBER_JOBS)
+    self.httpProxy = gConfig.getValue('LocalSite/HttpProxy', '')
 
   def configure(self, csSection, submitPool ):
     """
@@ -66,8 +72,6 @@ class DIRACPilotDirector(PilotDirector):
 
     PilotDirector.configure( self, csSection, submitPool )
     self.reloadConfiguration( csSection, submitPool )
-    
-    self.sharedArea           = gConfig.getValue('/LocalSite/SharedArea')
 
     self.__failingCECache.purgeExpired()
     self.__ticketsCECache.purgeExpired()
@@ -202,8 +206,9 @@ try:
   sys.path.append(''.join([pilotWorkingDirectory,"/Linux_x86_64_glibc-2.3.4/bin/"]))
   os.environ["PATH"] = ''.join([pilotWorkingDirectory,"/Linux_x86_64_glibc-2.3.4/bin/:",os.environ["PATH"]])
   os.environ["LD_LIBRARY_PATH"]=''.join([pilotWorkingDirectory,"/Linux_x86_64_glibc-2.3.4/lib"])
-  os.environ["X509_CERT_DIR"]="/opt/shared/certificates"
-  os.environ["X509_VOMS_DIR"]="/opt/shared/vomsdir"
+  os.environ["X509_CERT_DIR"]="%s/certificates"
+  os.environ["X509_VOMS_DIR"]="%s/vomsdir"
+  os.environ["HTTP_PROXY"]="%s"
   print os.environ
 except Exception, x:
   print >> sys.stderr, x
@@ -213,9 +218,10 @@ print 'Executing:', cmd
 sys.stdout.flush()
 os.system( cmd )
 
-#shutil.rmtree( pilotWorkingDirectory )
+shutil.rmtree( pilotWorkingDirectory )
 
-""" % ( os.path.basename(self.pilot), os.path.basename(self.install), os.path.basename(self.pilot), ' '.join( pilotOptions ) )
+""" % ( os.path.basename(self.pilot), os.path.basename(self.install), self.sharedArea, \
+        self.sharedArea, self.httpProxy, os.path.basename(self.pilot), ' '.join( pilotOptions ) )
 
     pilotScript = os.path.join( workingDirectory, 'local-pilot' )
     fd = open( pilotScript, 'w' )
