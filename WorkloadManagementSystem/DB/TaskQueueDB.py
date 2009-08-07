@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.95 2009/08/07 14:33:46 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.96 2009/08/07 14:37:56 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.95 2009/08/07 14:33:46 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.96 2009/08/07 14:37:56 acasajus Exp $"
 
 import types
 import random
@@ -997,8 +997,7 @@ class TaskQueueDB(DB):
         prio = ( share / totalPrio ) * tqDict[ tqId ]
       else:
         prio = TQ_MIN_SHARE
-      if prio < TQ_MIN_SHARE:
-        prio = TQ_MIN_SHARE
+      prio = max( prio, TQ_MIN_SHARE )
       if prio not in prioDict:
         prioDict[ prio ] = []
       prioDict[ prio ].append( tqId )
