@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.22 2009/02/20 09:23:47 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.23 2009/08/07 14:45:22 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.22 2009/02/20 09:23:47 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.23 2009/08/07 14:45:22 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -36,6 +36,8 @@ def initializeProxyManagerHandler( serviceInfo ):
   return S_OK()
 
 class ProxyManagerHandler( RequestHandler ):
+
+  __maxExtraLifeFactor = 1.5
 
   types_requestDelegationUpload = [ ( types.IntType, types.LongType ), ( types.StringType, types.BooleanType ) ]
   def export_requestDelegationUpload( self, requestedUploadTime, userGroup ):
@@ -139,7 +141,12 @@ class ProxyManagerHandler( RequestHandler ):
     retVal = gProxyDB.getProxy( userDN, userGroup, requiredLifeTime = requiredLifetime )
     if not retVal[ 'OK' ]:
       return retVal
-    chain = retVal[ 'Value' ]
+    chain, secsLeft = retVal[ 'Value' ]
+    #If possible we return a proxy 1.5 longer than requested
+    extraLifeFactor = float( secsLeft ) / float( requiredLifetime )
+    extraLifeFactor = min( extraLifeFactor, self.__maxExtraLifeFactor )
+    if extraLifeFactor > 1.0:
+      requiredLifetime *= extraLifeFactor
     retVal = chain.generateChainFromRequestString( requestPem,
                                                    lifetime = requiredLifetime,
                                                    requireLimited = forceLimited )
@@ -176,7 +183,12 @@ class ProxyManagerHandler( RequestHandler ):
                                     requestedVOMSAttr = vomsAttribute )
     if not retVal[ 'OK' ]:
       return retVal
-    chain = retVal[ 'Value' ]
+    chain, secsLeft = retVal[ 'Value' ]
+    #If possible we return a proxy 1.5 longer than requested
+    extraLifeFactor = float( secsLeft ) / float( requiredLifetime )
+    extraLifeFactor = min( extraLifeFactor, self.__maxExtraLifeFactor )
+    if extraLifeFactor > 1.0:
+      requiredLifetime *= extraLifeFactor
     retVal = chain.generateChainFromRequestString( requestPem,
                                                    lifetime = requiredLifetime,
                                                    requireLimited = forceLimited )
