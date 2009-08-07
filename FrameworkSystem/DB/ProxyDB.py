@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.41 2009/07/16 06:25:01 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.42 2009/08/07 14:45:49 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.41 2009/07/16 06:25:01 rgracian Exp $"
+__RCSID__ = "$Id: ProxyDB.py,v 1.42 2009/08/07 14:45:49 acasajus Exp $"
 
 import time
 import random
@@ -444,7 +444,7 @@ class ProxyDB(DB):
     if not chain.isValidProxy()['Value']:
       self.deleteProxy( userDN, userGroup )
       return S_ERROR( "%s@%s has no proxy registered" % ( userDN, userGroup ) )
-    return S_OK( chain )
+    return S_OK( ( chain, timeLeft ) )
 
   def __getVOMSAttribute( self, userGroup, requiredVOMSAttribute = False ):
     if requiredVOMSAttribute:
@@ -474,17 +474,17 @@ class ProxyDB(DB):
         retVal = chain.getRemainingSecs()
         if retVal[ 'OK' ]:
           remainingSecs = retVal[ 'Value' ]
-          # FIXME: gProxyManager request 1.5 longer time than needed.
-          # when adding VOMS extension the resulting proxy is, for jobs, too short, 
-          # so we never make use of the cache
-          if requiredLifeTime and requiredLifeTime / 1.5 <= vomsTime and requiredLifeTime / 1.5 <= remainingSecs:
-            return S_OK( chain )
+          if requiredLifeTime and requiredLifeTime  <= vomsTime and requiredLifeTime <= remainingSecs:
+            return S_OK( ( chain, min( vomsTime, remainingSecs ) ) )
 
     retVal = self.getProxy( userDN, userGroup, requiredLifeTime )
     if not retVal[ 'OK' ]:
       return retVal
-    chain = retVal[ 'Value' ]
-
+    chain, secsLeft = retVal[ 'Value' ]
+    
+    if requiredLifeTime and requiredLifeTime > secsLeft: 
+      return S_ERROR( "Stored proxy is not long lived enough" )
+    
     vomsMgr = VOMS()
 
     retVal = vomsMgr.getVOMSAttributes( chain )
@@ -494,15 +494,23 @@ class ProxyDB(DB):
         if attrs[0] != vomsAttr:
           return S_ERROR( "Stored proxy has already a different VOMS attribute %s than requested %s" %( vomsAttr, attrs[0] ) )
         else:
-          self.__storeVOMSProxy( userDN, userGroup, vomsAttr, chain )
-          return S_OK( chain )
+          result = self.__storeVOMSProxy( userDN, userGroup, vomsAttr, chain )
+          if not result[ 'OK' ]:
+            return result
+          secsLeft = result[ 'Value' ]
+          if requiredLifeTime and requiredLifeTime <= secsLeft: 
+            return S_OK( ( chain, secsLeft ) )
+          return S_ERROR( "Stored proxy has already a different VOMS attribute and is not long lived enough" )
 
     retVal = vomsMgr.setVOMSAttributes( chain , vomsAttr )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Cannot append voms extension: %s" % retVal[ 'Message' ] )
     chain = retVal[ 'Value' ]
-    self.__storeVOMSProxy( userDN, userGroup, vomsAttr, chain )
-    return S_OK( chain )
+    result = self.__storeVOMSProxy( userDN, userGroup, vomsAttr, chain )
+    if not result[ 'OK' ]:
+      return result
+    secsLeft = result[ 'Value' ]
+    return S_OK( ( chain, secsLeft ) )
 
   def __storeVOMSProxy( self, userDN, userGroup, vomsAttr, chain ):
     retVal = self._getConnection()
@@ -530,7 +538,10 @@ class ProxyDB(DB):
     cmd = "INSERT INTO `ProxyDB_VOMSProxies` ( UserDN, UserGroup, VOMSAttr, Pem, ExpirationTime ) VALUES "
     cmd += "( '%s', '%s', '%s', '%s', TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % ( userDN, userGroup,
                                                                                          vomsAttr, pemData, secsLeft )
-    return self._update( cmd, conn = connObj )
+    result = self._update( cmd, conn = connObj )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( secsLeft )
 
   def getRemainingTime( self, userDN, userGroup ):
     """
