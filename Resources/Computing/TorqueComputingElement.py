@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TorqueComputingElement.py,v 1.11 2009/08/03 13:04:36 ffeldhau Exp $
+# $Id: TorqueComputingElement.py,v 1.12 2009/08/07 15:46:18 ffeldhau Exp $
 # File :   TorqueComputingElement.py
 # Author : Stuart Paterson, Paul Szczypka
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: TorqueComputingElement.py,v 1.11 2009/08/03 13:04:36 ffeldhau Exp $"
+__RCSID__ = "$Id: TorqueComputingElement.py,v 1.12 2009/08/07 15:46:18 ffeldhau Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -34,6 +34,7 @@ class TorqueComputingElement(ComputingElement):
     ComputingElement.__init__(self,CE_NAME)
     self.submittedJobs = 0
     self.queue = gConfig.getValue('/LocalSite/Queue', QUEUE)
+    self.log.info("Using queue: ", self.queue)
     self.pilot = DIRAC_PILOT
     self.install = DIRAC_INSTALL
     self.hostname = socket.gethostname()
@@ -138,7 +139,7 @@ class TorqueComputingElement(ComputingElement):
     
     self.log.debug("stdout", stdout)
     
-    matched = re.search("batch\D+(\d+)\D+(\d+)\W+(\w+)\W+(\w+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\W+(\w+)", stdout)
+    matched = re.search(self.queue + "\D+(\d+)\D+(\d+)\W+(\w+)\W+(\w+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\W+(\w+)", stdout)
     
     result['WaitingJobs'] = matched.group(5)
     result['RunningJobs'] = matched.group(6)
