@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.23 2009/08/07 12:21:58 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.24 2009/08/07 12:47:14 acsmith Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -13,7 +13,7 @@
     The Pins table keeps the pinning request ID along with when it was issued and for how long for each of the replicas.
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.23 2009/08/07 12:21:58 acsmith Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.24 2009/08/07 12:47:14 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import intListToString,stringListToString
@@ -269,7 +269,6 @@ class StagerDB(DB):
         replicaString = "(%s,%s,UTC_TIMESTAMP(),DATE_ADD(UTC_TIMESTAMP(),INTERVAL %s SECOND))," % (replicaID,requestID,pinLifeTime)
         req = "%s %s" % (req,replicaString)
     req = req.rstrip(',')
-    print req
     res = self._update(req)
     if not res['OK']:
       gLogger.error('StagerDB.insertPinRequest: Failed to insert to Pins table.',res['Message'])
@@ -374,147 +373,3 @@ class StagerDB(DB):
       replicaInfo[lfn] = {'StorageElement':storageElement,'PFN':pfn,'FileSize':fileSize,'Status':status,'Reason':reason}
     resDict = {'TaskInfo':taskInfo,'ReplicaInfo':replicaInfo}
     return S_OK(resDict)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  ###########################################################
-  #
-  # These are not used
-  #
-
-  def getFileSRMReqInfo(self,status):
-    """ This methods retrieves the FileID, StorageElement, PFN, SRMRequestID from the Files and StageRequests table for the supplied status
-    """
-    req = "SELECT f.FileID,f.StorageElement, f.PFN, sr.SRMRequestID FROM Files AS f, StageRequests AS sr WHERE f.Status='%s' AND f.FileID=sr.FileID;" % status
-    res = self._query(req)
-    if not res['OK']:
-      gLogger.error('StagerDB.getFileSRMReqInfo: Failed to get files information for %s status files.' % status ,res['Message'])
-      return res
-    files = {}
-    for fileID,storageElement,pfn,srmReqID in res['Value']:
-      files[fileID] = (storageElement,pfn,srmReqID)
-    return S_OK(files)
-
-  def insertPins(self,fileIDs,requestID,pinLifeTime):
-    """ This method inserts the FileIDs, SRMRequestID, PinCreationTime and PinExpiryTime into the Pins table
-    """
-    successful = []
-    for fileID in fileIDs:
-      req = "INSERT INTO Pins (FileID,SRMRequestID,PinCreationTime,PinExpiryTime) VALUES (%s,%s,UTC_TIMESTAMP(),DATE_ADD(UTC_TIMESTAMP(),INTERVAL %s SECOND));" % (fileID,requestID,pinLifeTime)
-      res = self._update(req)
-      if not res['OK']:
-        gLogger.error('StagerDB.insertPins: Failed to insert to Pins table',res['Message'])
-      else:
-        successful.append(fileID)
-    return S_OK(successful)
-
-  ###########################################################################
-  #
-  # Manipulate the tasks table to get FileID<->TaskID mappings
-  #
-
-  def getFileIDsForTasks(self,taskIDs):
-    """ This obtains the files assocaited to a list of tasks."""
-    req = "SELECT TaskID,FileID FROM Tasks WHERE TaskID IN (%s);" % intListToString(taskIDs)
-    res = self._query(req)
-    if not res['OK']:
-      gLogger.error('StagerDB.getFileIDsForTasks: Failed to get FileIDs associated to tasks.', res['Message'])
-      return res
-    taskFiles = {}
-    for taskID,fileID in res['Value']:
-      if not taskFiles.has_key(taskID):
-        taskFiles[taskID] = []
-      taskFiles[taskID].append(fileID)
-    return S_OK(taskFiles)
-
-  def getTasksForFileIDs(self,fileIDs):
-    """ This obtains the tasks associated to a list of fileIDs."""
-    req = "SELECT TaskID,FileID FROM Tasks WHERE FileID IN (%s);" % intListToString(fileIDs)
-    res = self._query(req)
-    if not res['OK']:
-      gLogger.error('StagerDB.getTasksForFileIDs: Failed to get TaskIDs associated to files.', res['Message'])
-      return res
-    taskIDs = {}
-    for taskID,fileID in res['Value']:
-      if not taskIDs.has_key(fileID):
-        taskIDs[fileID] = []
-      taskIDs[fileID].append(taskID)
-    return S_OK(taskIDs)
-
-  ###########################################################################
-  #
-  # Update the status field in any of the four tables: Tasks, Files, StageRequests, Pins
-  #
-  
-  def updateTasksStatus(self,fileIDs,newStatus,oldStatus=False):
-   """ Update the supplied FileIDs in the Tasks table to the supplied status
-   """
-   return self.__updateStatus(fileIDs,newStatus,'Tasks',oldStatus)
-
-  def updateFilesStatus(self,fileIDs,newStatus,oldStatus=False):
-   """ Update the supplied FileIDs in the Files table to the supplied status
-   """
-   return self.__updateStatus(fileIDs,newStatus,'Files',oldStatus)
-
-  def updateStageRequestsStatus(self,fileIDs,newStatus,oldStatus=False):
-   """ Update the supplied FileIDs in the StageRequests table to the supplied status
-   """
-   return self.__updateStatus(fileIDs,newStatus,'StageRequests',oldStatus)
-
-  def updatePinsStatus(self,fileIDs,newStatus,oldStatus=False):
-    """ Update the supplied FileIDs in the Pins table to the supplied status
-    """ 
-    return self.__updateStatus(fileIDs,newStatus,'Pins',oldStatus)
-
-  def updateStatus(self,fileIDs,newStatus,table,oldStatus=False):
-    """ A simple wrapper for __updateStatus()
-    """
-    return self.__updateStatus(fileIDs,newStatus,table,oldStatus)
-
-  def __updateStatus(self,fileIDs,newStatus,table,oldStatus=False):
-    """ This method updates the Status field in the supplied table for the supplied fileIDs
-    """
-    if oldStatus:
-      req = "UPDATE %s SET Status = '%s' WHERE Status = '%s' AND FileID IN (%s);" % (table,newStatus,oldStatus,intListToString(fileIDs))
-    else:
-      req = "UPDATE %s SET Status = '%s' WHERE FileID IN (%s);" % (table,newStatus,intListToString(fileIDs))
-    res = self._update(req)
-    if not res['OK']:
-      gLogger.error('StagerDB.__updateFilesStatus: Failed to update files status from %s to %s' % (oldStatus,newStatus),res['Message'])
-    return res
-
-  ########################################################################################
-  #
-  # 
-  #
-  
-  def getStageRequestsFilesForState(self,requestIDs,status):
-    return self.__getFilesForRequestID(requestIDs,status,'StageRequests')
-  
-  def getPinRequestsFilesForState(self,requestIDs,status):
-    return self.__getFilesForRequestID(requestIDs,status,'Pins')
-
-  def __getFilesForRequestID(self,requestIDs,status,table):
-    """ This allows the retrieval of the FileIDs associated to the supplied requestIDs from the supplied table
-    """
-    req = "SELECT FileID,SRMRequestID from %s WHERE SRMRequestID IN (%s) AND Status = '%s';" % (table,intListToString(requestIDs),status)
-    res = self._query(req)
-    if not res['OK']:
-      gLogger.error('StagerDB.getFilesForRequestID: Failed to get files for %s status from %s.' % (status,table),res['Message'])
-      return res
-    files = {}
-    for fileID,srmReqID in res['Value']:
-      files[fileID] = srmReqID
-    return S_OK(files)
