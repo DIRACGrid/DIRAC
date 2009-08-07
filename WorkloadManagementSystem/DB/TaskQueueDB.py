@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.94 2009/08/07 14:29:39 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.95 2009/08/07 14:33:46 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.94 2009/08/07 14:29:39 acasajus Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.95 2009/08/07 14:33:46 acasajus Exp $"
 
 import types
 import random
@@ -960,7 +960,7 @@ class TaskQueueDB(DB):
       self.__setPrioritiesForEntity( userDN, userGroup, entitiesShares[ userDN ], connObj = connObj )
     return S_OK()
 
-  def __setPrioritiesForEntity_Adri( self, userDN, userGroup, share, connObj = False ):
+  def __setPrioritiesForEntity( self, userDN, userGroup, share, connObj = False, consolidationFunc = "AVG" ):
     """
     Set the priority for a userDN/userGroup combo given a splitted share
     """
@@ -970,59 +970,19 @@ class TaskQueueDB(DB):
     if Properties.JOB_SHARING not in CS.getPropertiesForGroup( userGroup ):
       tqCond.append( "t.OwnerDN='%s'" % userDN )
     tqCond.append( "t.TQId = j.TQId" )
-    selectSQL = "SELECT j.TQId, SUM( j.RealPriority ) FROM `tq_TaskQueues` t, `tq_Jobs` j WHERE "
+    if consolidationFunc == 'AVG':
+      selectSQL = "SELECT j.TQId, SUM( j.RealPriority )/COUNT(j.RealPriority) FROM `tq_TaskQueues` t, `tq_Jobs` j WHERE "
+    elif consolidationFunc == 'SUM':
+      selectSQL = "SELECT j.TQId, SUM( j.RealPriority ) FROM `tq_TaskQueues` t, `tq_Jobs` j WHERE "
+    else:
+      return S_ERROR( "Unknown consolidation func %s for setting priorities" % consolidationFunc )
     selectSQL += " AND ".join( tqCond )
     selectSQL += " GROUP BY t.TQId"
     result = self._query( selectSQL, conn = connObj )
     if not result[ 'OK' ]:
       return result
+
     tqDict = dict( result[ 'Value' ] )
-    if len( tqDict ) == 0:
-      return S_OK()
-    #Calculate Sum of priorities
-    totalPrio = 0
-    for k in tqDict:
-      if tqDict[k] > 0.1 or not allowBgTQs:
-        totalPrio += tqDict[ k ]
-    #Group by priorities
-    prioDict = {}
-    for tqId in tqDict:
-      if tqDict[ tqId ] > 0.1 or not allowBgTQs:
-        prio = ( share / totalPrio ) * tqDict[ tqId ]
-      else:
-        prio = TQ_MIN_SHARE
-      if prio < TQ_MIN_SHARE:
-        prio = TQ_MIN_SHARE
-      if prio not in prioDict:
-        prioDict[ prio ] = []
-      prioDict[ prio ].append( tqId )
-    #Execute updates
-    for prio in prioDict:
-      tqList = ", ".join( [ str( tqId ) for tqId in prioDict[ prio ] ] )
-      updateSQL = "UPDATE `tq_TaskQueues` SET Priority=%.4f WHERE TQId in ( %s )" % ( prio, tqList )
-      self._update( updateSQL, conn = connObj )
-    return S_OK()
-
-  def __setPrioritiesForEntity( self, userDN, userGroup, share, connObj = False ):
-    """
-    Set the priority for a userDN/userGroup combo given a splitted share
-    """
-    self.log.info( "Setting priorities to %s@%s TQs" % ( userDN, userGroup ) )
-    tqCond = [ "t.OwnerGroup='%s'" % userGroup ]
-    allowBgTQs = gConfig.getValue( "/Security/Groups/%s/AllowBackgroundTQs" % userGroup, False )
-    if Properties.JOB_SHARING not in CS.getPropertiesForGroup( userGroup ):
-      tqCond.append( "t.OwnerDN='%s'" % userDN )
-    tqCond.append( "t.TQId = j.TQId" )
-    selectSQL = "SELECT j.TQId, SUM( j.RealPriority ),count(j.RealPriority) FROM `tq_TaskQueues` t, `tq_Jobs` j WHERE "
-    selectSQL += " AND ".join( tqCond )
-    selectSQL += " GROUP BY t.TQId"
-    result = self._query( selectSQL, conn = connObj )
-    if not result[ 'OK' ]:
-      return result
-
-    tqDict = {}
-    for row in  result[ 'Value' ] :
-      tqDict[row[0]] = float(row[1])/float(row[2])
     if len( tqDict ) == 0:
       return S_OK()
     #Calculate Sum of priorities
