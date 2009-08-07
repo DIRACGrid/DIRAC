@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/PlottingClient.py,v 1.1 2009/02/22 23:58:23 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/PlottingClient.py,v 1.2 2009/08/07 13:04:22 atsareg Exp $
 
 """ PlottingClient is a client of the Plotting Service
 """
 
-__RCSID__   = "$Id: PlottingClient.py,v 1.1 2009/02/22 23:58:23 atsareg Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: PlottingClient.py,v 1.2 2009/08/07 13:04:22 atsareg Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 
 import re
 import types, tempfile
@@ -52,10 +52,15 @@ class PlottingClient:
     destFile.close()
     return S_OK()  
   
-  def getPieChat(self,data,metadata,fname=False):
+  def getPlot(self,data,plotMetadata={},fname=False,**kw):
     
     client = self.__getRPCClient()
-    result = client.generatePieChat(data,metadata)
+    plotMetadata.update(kw)
+    subplotMetadata = plotMetadata.get('metadata',[])
+    result = client.generatePlot(data,plotMetadata,subplotMetadata)
+    
+    print result
+    
     if not result['OK']:
       return result
     
@@ -66,4 +71,5 @@ class PlottingClient:
       result = self.getPlotToMemory(plotName)
       
     return result    
+     
      
