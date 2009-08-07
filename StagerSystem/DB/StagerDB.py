@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.24 2009/08/07 12:47:14 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.25 2009/08/07 13:19:33 acsmith Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -13,7 +13,7 @@
     The Pins table keeps the pinning request ID along with when it was issued and for how long for each of the replicas.
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.24 2009/08/07 12:47:14 acsmith Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.25 2009/08/07 13:19:33 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import intListToString,stringListToString
@@ -298,6 +298,12 @@ class StagerDB(DB):
     if not res['OK']:
       return res
     return S_OK(taskIDs)
+
+  def setTasksDone(self,taskIDs):
+    """ This will update the status for a list of taskIDs to Done. """
+    req = "UPDATE Tasks SET Status = 'Done', CompleteTime = UTC_TIMESTAMP() WHERE TaskID IN (%s);" % intListToString(taskIDs)
+    res = self._update(req)
+    return res
 
   def removeTasks(self,taskIDs):
     """ This will delete the entries from the TaskReplicas for the provided taskIDs. """

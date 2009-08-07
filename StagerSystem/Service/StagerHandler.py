@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.21 2009/08/07 12:20:54 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.22 2009/08/07 13:19:07 acsmith Exp $
 ########################################################################
 
 """
     StagerHandler is the implementation of the StagerDB in the DISET framework
 """
 
-__RCSID__ = "$Id: StagerHandler.py,v 1.21 2009/08/07 12:20:54 acsmith Exp $"
+__RCSID__ = "$Id: StagerHandler.py,v 1.22 2009/08/07 13:19:07 acsmith Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -292,6 +292,23 @@ class StagerHandler(RequestHandler):
       errMsg = 'StagerHandler.updateStageCompletingTasks: Exception when updating StageCompleting tasks.'
       gLogger.exception(errMsg,'',x)
       return S_ERROR(errMsg) 
+
+  types_setTasksDone = [ListType]
+  def export_setTasksDone(self,taskIDs):
+    """
+        This method sets the status in the Tasks table to Done for the list of supplied task IDs.
+    """ 
+    try:
+      res = stagerDB.setTasksDone(taskIDs)
+      if res['OK']:
+        gLogger.info('StagerHandler.setTasksDone: Successfully set status of tasks to Done')
+      else:
+        gLogger.error('StagerHandler.setTasksDone: Failed to set status of tasks to Done',res['Message'])
+      return res
+    except Exception,x:
+      errMsg = 'StagerHandler.setTasksDone: Exception when updating status of tasks.'
+      gLogger.exception(errMsg,'',x)
+      return S_ERROR(errMsg)
   
   types_removeTasks = [ListType]
   def export_removeTasks(self,taskIDs):
