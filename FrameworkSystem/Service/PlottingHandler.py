@@ -1,35 +1,27 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/PlottingHandler.py,v 1.2 2009/06/29 06:45:02 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/PlottingHandler.py,v 1.3 2009/08/07 13:06:32 atsareg Exp $
 
-""" Plotting Services generates graphs according to the client specifications
+""" Plotting Service generates graphs according to the client specifications
     and data
 """
 
-__RCSID__ = "$Id: PlottingHandler.py,v 1.2 2009/06/29 06:45:02 rgracian Exp $"
+__RCSID__ = "$Id: PlottingHandler.py,v 1.3 2009/08/07 13:06:32 atsareg Exp $"
 
-import types
+from types import *
 import os
 import md5
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities.Graphs.PieGraph import PieGraph
-from PlotCache import gPlotCache
-import tempfile
-
-palette1 = [ '#75CFC7','#E5B78E','#CDB7EB','#AEC894','#982400','#006966',
-             '#006700','#555000','#5B932D','#9B67F7','#00A397','#CA6D00']
-palette2 = [ '#73C6BC','#DCAF8A','#C2B0E1','#A9BF8E','#800000','#00514A',
-             '#004F00','#433B00','#528220','#825CE2','#009182','#B85D00']  
+from DIRAC.FrameworkSystem.Service.PlotCache import gPlotCache
+from DIRAC.Core.Utilities.Graphs import graph
+import tempfile 
 
 def initializePlottingHandler( serviceInfo ):
 
   #Get data location
   plottingSection = PathFinder.getServiceSection( "Framework/Plotting" )
-  dataPath = gConfig.getValue( "%s/DataLocation" % plottingSection, "data/graphs" )
-  
-  print "AT >>>>", dataPath, rootPath
-  
+  dataPath = gConfig.getValue( "%s/DataLocation" % plottingSection, "data/graphs" )  
   dataPath = dataPath.strip()
   if "/" != dataPath[0]:
     dataPath = os.path.realpath( "%s/%s" % ( rootPath, dataPath ) )
@@ -39,7 +31,7 @@ def initializePlottingHandler( serviceInfo ):
   except:
     pass
   try:
-    testFile = "%s/acc.jarl.test" % dataPath
+    testFile = "%s/plot__.test" % dataPath
     fd = file( testFile, "w" )
     fd.close()
     os.unlink( testFile )
@@ -52,34 +44,22 @@ def initializePlottingHandler( serviceInfo ):
   return S_OK()
 
 class PlottingHandler( RequestHandler ):
-
-
-  def getPieChat(self,data,metadata,fname):
-  
-    pieString = '' 
-    tmpfile = open(fname,'w')
-    pie = DiracPieGraph()
-    pie.hex_colors = palette2
-    pie.bottom_text = 'Bottom text'
-    coords = pie.run( data, tmpfile, metadata, shadow=False )
-    tmpfile.close()
-    return S_OK({'plot':fname})  
     
-  def __calculatePlotHash(self,data,metadata):
+  def __calculatePlotHash(self,data,metadata,subplotMetadata):
     m = md5.new()
-    m.update(repr({'Data':data,'Metadata':metadata}))
+    m.update(repr({'Data':data,'PlotMetadata':metadata,'SubplotMetadata':subplotMetadata}))
     return m.hexdigest()  
     
-  types_generatePieChat = [ types.DictType, types.DictType ]
-  def export_generatePieChat( self, data, metadata ):
-    """
+  types_generatePlot = [ [DictType,ListType], DictType, [DictType,ListType] ]
+  def export_generatePlot( self, data, plotMetadata, subplotMetadata ):
+    """ Create a plot according to the client specification and return its name
     """
 
-    plotHash = self.__calculatePlotHash(data,metadata)
-    result = gPlotCache.getPlot(plotHash,data,metadata,self.getPieChat)
+    plotHash = self.__calculatePlotHash(data,plotMetadata,subplotMetadata)
+    result = gPlotCache.getPlot(plotHash,data,plotMetadata,subplotMetadata)
     if not result['OK']:
       return result
-    return S_OK(plotHash)  
+    return S_OK(result['Value']['plot'])    
 
   def transfer_toClient( self, fileId, token, fileHelper ):
     """
