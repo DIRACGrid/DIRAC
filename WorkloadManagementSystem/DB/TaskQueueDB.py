@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.93 2009/07/17 16:41:42 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.94 2009/08/07 14:29:39 acasajus Exp $
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.93 2009/07/17 16:41:42 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDB.py,v 1.94 2009/08/07 14:29:39 acasajus Exp $"
 
 import types
 import random
@@ -20,6 +20,7 @@ _HOUR = 3600
 _DAY = 86400
 maxCPUSegments = [ 6*_MIN, 30*_MIN, 1*_HOUR, 6*_HOUR, 12*_HOUR, 1*_DAY, 2*_DAY, 3*_DAY, 4*_DAY ]
 DEFAULT_GROUP_SHARE = 1000
+TQ_MIN_SHARE = 0.001
 
 class TaskQueueDB(DB):
 
@@ -989,7 +990,9 @@ class TaskQueueDB(DB):
       if tqDict[ tqId ] > 0.1 or not allowBgTQs:
         prio = ( share / totalPrio ) * tqDict[ tqId ]
       else:
-        prio = 0.001
+        prio = TQ_MIN_SHARE
+      if prio < TQ_MIN_SHARE:
+        prio = TQ_MIN_SHARE
       if prio not in prioDict:
         prioDict[ prio ] = []
       prioDict[ prio ].append( tqId )
@@ -1033,7 +1036,9 @@ class TaskQueueDB(DB):
       if tqDict[ tqId ] > 0.1 or not allowBgTQs:
         prio = ( share / totalPrio ) * tqDict[ tqId ]
       else:
-        prio = 0.001
+        prio = TQ_MIN_SHARE
+      if prio < TQ_MIN_SHARE:
+        prio = TQ_MIN_SHARE
       if prio not in prioDict:
         prioDict[ prio ] = []
       prioDict[ prio ].append( tqId )
