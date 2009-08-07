@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.36 2009/03/12 11:26:08 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.37 2009/08/07 14:46:07 acasajus Exp $
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.36 2009/03/12 11:26:08 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerClient.py,v 1.37 2009/08/07 14:46:07 acasajus Exp $"
 
 import os
 import datetime
@@ -191,10 +191,10 @@ class ProxyManagerClient:
       rpcClient = RPCClient( "Framework/ProxyManager",timeout=120 )
     if token:
       retVal = rpcClient.getProxy( userDN, userGroup, req.dumpRequest()['Value'],
-                                   long( requiredTimeLeft * 1.5 ), token )
+                                   long( requiredTimeLeft ), token )
     else:
       retVal = rpcClient.getProxy( userDN, userGroup, req.dumpRequest()['Value'],
-                                   long( requiredTimeLeft * 1.5 ) )
+                                   long( requiredTimeLeft ) )
     if not retVal[ 'OK' ]:
       return retVal
     chain = X509Chain( keyObj = req.getPKey() )
@@ -236,11 +236,11 @@ class ProxyManagerClient:
       rpcClient = RPCClient( "Framework/ProxyManager", timeout=120 )
     if token:
       retVal = rpcClient.getVOMSProxyWithToken( userDN, userGroup, req.dumpRequest()['Value'],
-                                                long( requiredTimeLeft * 1.5 ), token, requiredVOMSAttribute )
+                                                long( requiredTimeLeft ), token, requiredVOMSAttribute )
 
     else:
       retVal = rpcClient.getVOMSProxy( userDN, userGroup, req.dumpRequest()['Value'],
-                                       long( requiredTimeLeft * 1.5 ), requiredVOMSAttribute )
+                                       long( requiredTimeLeft ), requiredVOMSAttribute )
     if not retVal[ 'OK' ]:
       return retVal
     chain = X509Chain( keyObj = req.getPKey() )
