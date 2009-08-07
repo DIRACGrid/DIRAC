@@ -1,33 +1,26 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/RequestFinalization.py,v 1.2 2009/08/05 14:28:16 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/RequestFinalization.py,v 1.3 2009/08/07 13:21:49 acsmith Exp $
 
-__RCSID__ = "$Id: RequestFinalization.py,v 1.2 2009/08/05 14:28:16 acsmith Exp $"
+__RCSID__ = "$Id: RequestFinalization.py,v 1.3 2009/08/07 13:21:49 acsmith Exp $"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
-from DIRAC.Core.Base.Agent import Agent
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
  
 import time,os,sys,re
 from types import *
 
 AGENT_NAME = 'Stager/RequestFinalization'
 
-class RequestFinalization(Agent):
-
-  def __init__(self):
-    """ Standard constructor
-    """
-    Agent.__init__(self,AGENT_NAME)
+class RequestFinalization(AgentModule):
 
   def initialize(self):
-    result = Agent.initialize(self)
     self.stagerClient = RPCClient('dips://volhcb08.cern.ch:9149/Stager/Stager')
     return S_OK()
 
   def execute(self):
     res = self.clearFailedTasks()
-    res = self.clearStagedTasks()
+    res = self.callbackStagedTasks()
     res = self.removeUnlinkedReplicas()
     return res
 
@@ -56,43 +49,31 @@ class RequestFinalization(Agent):
     gLogger.info("RequestFinalization.clearFailedTasks: ...removed.") 
     return S_OK()
 
-  def clearStagedTasks(self):
+  def callbackStagedTasks(self):
     """ This updates the status of the Tasks to Done then issues the call back message
     """
     res = self.stagerClient.updateStageCompletingTasks()
     if not res['OK']:
-      gLogger.fatal("RequestFinalization.clearStagedTasks: Failed to update StageCompleting Tasks from StagerDB.", res['Message'])
+      gLogger.fatal("RequestFinalization.callbackStagedTasks: Failed to update StageCompleting Tasks from StagerDB.", res['Message'])
       return res
-    gLogger.info("RequestFinalization.clearStagedTasks: Updated %s Tasks from StageCompleting to Staged." % len(res['Value']))
+    gLogger.info("RequestFinalization.callbackStagedTasks: Updated %s Tasks from StageCompleting to Staged." % len(res['Value']))
     res = self.stagerClient.getTasksWithStatus('Staged')
     if not res['OK']:
-      gLogger.fatal("RequestFinalization.clearStagedTasks: Failed to get Staged Tasks from StagerDB.", res['Message'])
+      gLogger.fatal("RequestFinalization.callbackStagedTasks: Failed to get Staged Tasks from StagerDB.", res['Message'])
       return res
     stagedTasks = res['Value']
-    gLogger.info("RequestFinalization.clearStagedTasks: Obtained %s tasks in the 'Staged' status." % len(stagedTasks))
+    gLogger.info("RequestFinalization.callbackStagedTasks: Obtained %s tasks in the 'Staged' status." % len(stagedTasks))
     for taskID,(source,callback,sourceTask) in stagedTasks.items():
       if (callback and sourceTask):
         res = self.__performCallback('Done',callback,sourceTask)
         if not res['OK']:
           stagedTasks.pop(taskID)
     if not stagedTasks:
-      gLogger.info("RequestFinalization.clearStagedTasks: No tasks to remove.")
+      gLogger.info("RequestFinalization.callbackStagedTasks: No tasks to update to Done.")
       return S_OK()
-    gLogger.info("RequestFinalization.clearStagedTasks: Removing %s tasks..." % len(stagedTasks))
-    res = self.stagerClient.removeTasks(stagedTasks.keys())
+    res = self.stagerClient.setTasksDone(stagedTasks.keys())
     if not res['OK']:
-      gLogger.error("RequestFinalization.clearStagedTasks: Failed to remove tasks.",res['Message'])
-      return res
-    gLogger.info("RequestFinalization.clearStagedTasks: ...removed.")
-    return S_OK()
-
-  def removeUnlinkedReplicas(self):
-    gLogger.info("RequestFinalization.removeUnlinkedReplicas: Attempting to cleanup unlinked Replicas.")
-    res = self.stagerClient.removeUnlinkedReplicas()
-    if not res['OK']:
-      gLogger.error("RequestFinalization.removeUnlinkedReplicas: Failed to cleanup unlinked Replicas.",res['Message'])
-    else:
-      gLogger.info("RequestFinalization.removeUnlinkedReplicas: Successfully removed unlinked Replicas.")
+      gLogger.fatal("RequestFinalization.callbackStagedTasks: Failed to set status of Tasks to Done.", res['Message'])
     return res
 
   def __performCallback(self, status, callback, sourceTask):
@@ -108,3 +89,26 @@ class RequestFinalization(Agent):
     else:
       gLogger.info("RequestFinalization.__performCallback: Successfully issued callback to %s for %s with %s status" % (callback,sourceTask, status))
     return res
+
+  def removeUnlinkedReplicas(self):
+    gLogger.info("RequestFinalization.removeUnlinkedReplicas: Attempting to cleanup unlinked Replicas.")
+    res = self.stagerClient.removeUnlinkedReplicas()
+    if not res['OK']:
+      gLogger.error("RequestFinalization.removeUnlinkedReplicas: Failed to cleanup unlinked Replicas.",res['Message'])
+    else:
+      gLogger.info("RequestFinalization.removeUnlinkedReplicas: Successfully removed unlinked Replicas.")
+    return res
+
+  def clearReleasedTasks(self):
+    # TODO: issue release of the pins assoicated to this task
+    res = self.stagerClient.getTasksWithStatus('Released')
+    if not res['OK']:
+      gLogger.fatal("RequestFinalization.clearReleasedTasks: Failed to get Released Tasks from StagerDB.", res['Message'])
+      return res
+    gLogger.info("RequestFinalization.clearReleasedTasks: Removing %s tasks..." % len(stagedTasks))
+    res = self.stagerClient.removeTasks(stagedTasks.keys())
+    if not res['OK']:
+      gLogger.error("RequestFinalization.clearReleasedTasks: Failed to remove tasks.",res['Message'])
+      return res
+    gLogger.info("RequestFinalization.clearReleasedTasks: ...removed.")
+    return S_OK()
