@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/PlotCache.py,v 1.1 2009/02/22 23:57:01 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/PlotCache.py,v 1.2 2009/08/07 13:20:07 atsareg Exp $
 
 """ Cache for the Plotting service plots
 """
 
-__RCSID__ = "$Id: PlotCache.py,v 1.1 2009/02/22 23:57:01 atsareg Exp $"
+__RCSID__ = "$Id: PlotCache.py,v 1.2 2009/08/07 13:20:07 atsareg Exp $"
 
 import os
 import os.path
@@ -14,7 +14,7 @@ import threading
 from DIRAC import S_OK, S_ERROR, gLogger, rootPath
 from DIRAC.Core.Utilities import DictCache
 from DIRAC.Core.Utilities import Time
-
+from DIRAC.Core.Utilities.Graphs import graph
 
 class PlotCache:
 
@@ -48,21 +48,23 @@ class PlotCache:
     except:
       pass
 
-  def getPlot( self, plotHash, plotData, plotMetadata, plotFunc ):
+  def getPlot( self, plotHash, plotData, plotMetadata, subplotMetadata ):
     """
     Get plot from the cache if exists, else generate it
     """
+    
     plotDict = self.__graphCache.get( plotHash )
     if plotDict == False:
-      basePlotFileName = "%s/%s" % ( self.plotsLocation, plotHash )
-      retVal = plotFunc( plotData, plotMetadata, basePlotFileName )
+      basePlotFileName = "%s/%s.png" % ( self.plotsLocation, plotHash )
+      if subplotMetadata: 
+        retVal = graph( plotData, basePlotFileName, plotMetadata, metadata=subplotMetadata  )
+      else:
+        retVal = graph( plotData, basePlotFileName, plotMetadata )  
       if not retVal[ 'OK' ]:
         return retVal
       plotDict = retVal[ 'Value' ]
       if plotDict[ 'plot' ]:
-        plotDict[ 'plot' ] = "%s.png" % plotHash
-      #if plotDict[ 'thumbnail' ]:
-      #  plotDict[ 'thumbnail' ] = "%s.thb.png" % plotHash
+        plotDict[ 'plot' ] = os.path.basename(basePlotFileName)
       self.__graphCache.add( plotHash, self.__graphLifeTime, plotDict )
     return S_OK( plotDict )
     
