@@ -1,12 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StageRequest.py,v 1.5 2009/08/04 14:44:04 acsmith Exp $
-__RCSID__ = "$Id: StageRequest.py,v 1.5 2009/08/04 14:44:04 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StageRequest.py,v 1.6 2009/08/07 13:16:32 acsmith Exp $
+__RCSID__ = "$Id: StageRequest.py,v 1.6 2009/08/07 13:16:32 acsmith Exp $"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
-from DIRAC.Core.Base.Agent import Agent
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
 
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient import DataIntegrityClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
@@ -16,15 +15,9 @@ from types import *
 
 AGENT_NAME = 'Stager/StageRequest'
 
-class StageRequest(Agent):
-
-  def __init__(self):
-    """ Standard constructor
-    """
-    Agent.__init__(self,AGENT_NAME)
+class StageRequest(AgentModule):
 
   def initialize(self):
-    result = Agent.initialize(self)
     self.replicaManager = ReplicaManager()
     self.stagerClient = RPCClient('dips://volhcb08.cern.ch:9149/Stager/Stager')
     self.dataIntegrityClient = DataIntegrityClient()
