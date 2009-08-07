@@ -1,14 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/PinRequest.py,v 1.1 2009/08/07 12:23:36 acsmith Exp $
-__RCSID__ = "$Id: PinRequest.py,v 1.1 2009/08/07 12:23:36 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/PinRequest.py,v 1.2 2009/08/07 13:15:02 acsmith Exp $
+__RCSID__ = "$Id: PinRequest.py,v 1.2 2009/08/07 13:15:02 acsmith Exp $"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
 
-from DIRAC.DataManagementSystem.Client.DataIntegrityClient import DataIntegrityClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 
 import time,os,sys,re
@@ -21,7 +19,6 @@ class PinRequest(AgentModule):
   def initialize(self):
     self.replicaManager = ReplicaManager()
     self.stagerClient = RPCClient('dips://volhcb08.cern.ch:9149/Stager/Stager')
-    self.dataIntegrityClient = DataIntegrityClient()
     self.pinLifeTime = 60*60*24*7 # 7 days
     return S_OK()
 
