@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.20 2009/08/06 15:25:53 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.21 2009/08/07 12:20:54 acsmith Exp $
 ########################################################################
 
 """
     StagerHandler is the implementation of the StagerDB in the DISET framework
 """
 
-__RCSID__ = "$Id: StagerHandler.py,v 1.20 2009/08/06 15:25:53 acsmith Exp $"
+__RCSID__ = "$Id: StagerHandler.py,v 1.21 2009/08/07 12:20:54 acsmith Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -253,7 +253,24 @@ class StagerHandler(RequestHandler):
       errMsg = 'StagerHandler.getStagedReplicas: Exception when obtaining Staged replicas.'
       gLogger.exception(errMsg,'',x)
       return S_ERROR(errMsg)
-  
+
+  types_insertPinRequest = [DictType,IntType]
+  def export_insertPinRequest(self,requestReplicas,pinLifeTime):
+    """
+        This method inserts pins for the supplied replicaIDs with the supplied lifetime
+    """
+    try:
+      res = stagerDB.insertPinRequest(requestReplicas,pinLifeTime)
+      if res['OK']:
+        gLogger.info('StagerHandler.insertPinRequest: Successfully inserted pin information')
+      else:
+        gLogger.error('StagerHandler.insertPinRequest: Failed to insert pin information',res['Message'])
+      return res
+    except Exception,x:
+      errMsg = 'StagerHandler.insertPinRequest: Exception when inserting pin information'
+      gLogger.exception(errMsg,'',x)
+      return S_ERROR(errMsg)
+
   ####################################################################
   #
   # The methods for finalization of tasks
@@ -368,28 +385,5 @@ class StagerHandler(RequestHandler):
       return res
     except Exception,x:
       errMsg = 'StagerHandler.getReplicasWithStatus: Exception when getting replicas with %s status' % status
-      gLogger.exception(errMsg,'',x)
-      return S_ERROR(errMsg)
-
-
-  ##################################################################
-  #
-  # Still to be tested
-  #
-
-  types_insertPins = [ListType,IntType,IntType]
-  def export_insertPins(self,fileIDs,requestID,pinLifeTime):
-    """
-        This method inserts pins for the supplied files
-    """
-    try:
-      res = stagerDB.insertPins(fileIDs,requestID,pinLifeTime)
-      if res['OK']:
-        gLogger.info('StagerHandler.insertPins: Successfully inserted pins information')
-      else:
-        gLogger.error('StagerHandler.insertPins: Failed to insert pin information',res['Message'])
-      return res
-    except Exception,x:
-      errMsg = 'StagerHandler.insertPins: Exception when inserting pin information'
       gLogger.exception(errMsg,'',x)
       return S_ERROR(errMsg)
