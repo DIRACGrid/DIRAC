@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.22 2009/08/06 15:26:25 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/DB/StagerDB.py,v 1.23 2009/08/07 12:21:58 acsmith Exp $
 ########################################################################
 
 """ StagerDB is a front end to the Stager Database.
@@ -13,7 +13,7 @@
     The Pins table keeps the pinning request ID along with when it was issued and for how long for each of the replicas.
 """
 
-__RCSID__ = "$Id: StagerDB.py,v 1.22 2009/08/06 15:26:25 acsmith Exp $"
+__RCSID__ = "$Id: StagerDB.py,v 1.23 2009/08/07 12:21:58 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import intListToString,stringListToString
@@ -212,7 +212,7 @@ class StagerDB(DB):
     req = "INSERT INTO StageRequests (ReplicaID,RequestID,StageRequestSubmitTime) VALUES "
     for requestID,replicaIDs in requestDict.items():
       for replicaID in replicaIDs:
-        replicaString = "(%s,%s,NOW())," % (replicaID,requestID)
+        replicaString = "(%s,%s,UTC_TIMESTAMP())," % (replicaID,requestID)
         req = "%s %s" % (req,replicaString)
     req = req.rstrip(',')
     res = self._update(req)
@@ -239,7 +239,7 @@ class StagerDB(DB):
     return S_OK(replicas)
 
   def setStageComplete(self,replicaIDs):
-    req = "UPDATE StageRequests SET StageStatus='Staged',StageRequestCompletedTime = NOW() WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
+    req = "UPDATE StageRequests SET StageStatus='Staged',StageRequestCompletedTime = UTC_TIMESTAMP() WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
     res = self._update(req)
     if not res['OK']:
       gLogger.error("StagerDB.setStageComplete: Failed to set StageRequest completed.", res['Message'])
@@ -261,6 +261,21 @@ class StagerDB(DB):
     for replicaID,lfn,storageElement,fileSize,pfn,requestID in res['Value']:
       replicas[replicaID] = (lfn,storageElement,fileSize,pfn,requestID)  
     return S_OK(replicas)
+
+  def insertPinRequest(self,requestDict,pinLifeTime):
+    req = "INSERT INTO Pins (ReplicaID,RequestID,PinCreationTime,PinExpiryTime) VALUES "
+    for requestID,replicaIDs in requestDict.items():
+      for replicaID in replicaIDs:
+        replicaString = "(%s,%s,UTC_TIMESTAMP(),DATE_ADD(UTC_TIMESTAMP(),INTERVAL %s SECOND))," % (replicaID,requestID,pinLifeTime)
+        req = "%s %s" % (req,replicaString)
+    req = req.rstrip(',')
+    print req
+    res = self._update(req)
+    if not res['OK']:
+      gLogger.error('StagerDB.insertPinRequest: Failed to insert to Pins table.',res['Message'])
+      return res
+    gLogger.info("StagerDB.insertPinRequest: Successfully added %s Pins with RequestID %s." % (res['Value'],requestID))
+    return S_OK()
 
   ####################################################################
   #
@@ -397,7 +412,7 @@ class StagerDB(DB):
     """
     successful = []
     for fileID in fileIDs:
-      req = "INSERT INTO Pins (FileID,SRMRequestID,PinCreationTime,PinExpiryTime) VALUES (%s,%s,NOW(),DATE_ADD(NOW(),INTERVAL %s SECOND));" % (fileID,requestID,pinLifeTime)
+      req = "INSERT INTO Pins (FileID,SRMRequestID,PinCreationTime,PinExpiryTime) VALUES (%s,%s,UTC_TIMESTAMP(),DATE_ADD(UTC_TIMESTAMP(),INTERVAL %s SECOND));" % (fileID,requestID,pinLifeTime)
       res = self._update(req)
       if not res['OK']:
         gLogger.error('StagerDB.insertPins: Failed to insert to Pins table',res['Message'])
