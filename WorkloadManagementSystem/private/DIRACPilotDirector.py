@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.13 2009/08/06 21:07:21 ffeldhau Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.14 2009/08/08 11:59:49 ffeldhau Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.13 2009/08/06 21:07:21 ffeldhau Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.14 2009/08/08 11:59:49 ffeldhau Exp $"
 
 import os, sys, tempfile, shutil, time
 
@@ -220,13 +220,12 @@ os.system( cmd )
 
 shutil.rmtree( pilotWorkingDirectory )
 
-""" % ( os.path.basename(self.pilot), os.path.basename(self.install), self.sharedArea, \
+""" % ( self.sharedArea + os.path.basename(self.pilot), self.sharedArea + os.path.basename(self.install), self.sharedArea, \
         self.sharedArea, self.httpProxy, os.path.basename(self.pilot), ' '.join( pilotOptions ) )
 
-    pilotScript = os.path.join( workingDirectory, 'local-pilot' )
-    fd = open( pilotScript, 'w' )
-    fd.write( localPilot )
-    fd.close()
+    pilotScript = tempfile.mkstemp( suffix = 'pilotwrapper', prefix = 'DIRAC_', dir=workingDirectory)
+    pilotScript.write( localPilot )
+    pilotScript.close()
 
     return pilotScript
 
