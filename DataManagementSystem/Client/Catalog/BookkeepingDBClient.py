@@ -1,13 +1,14 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/BookkeepingDBClient.py,v 1.19 2009/06/21 05:18:10 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/BookkeepingDBClient.py,v 1.20 2009/08/08 10:57:43 acsmith Exp $
 
 """ Client for BookkeepingDB file catalog
 """
 
-__RCSID__ = "$Id: BookkeepingDBClient.py,v 1.19 2009/06/21 05:18:10 rgracian Exp $"
+__RCSID__ = "$Id: BookkeepingDBClient.py,v 1.20 2009/08/08 10:57:43 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.DataManagementSystem.Client.Catalog.FileCatalogueBase import FileCatalogueBase
 import types, os
 
@@ -17,6 +18,7 @@ class BookkeepingDBClient(FileCatalogueBase):
   def __init__(self, url=False):
     """ Constructor of the Bookkeeping catalogue client
     """
+    self.splitSize = 1000
     self.name = 'BookkeepingDB'
     self.valid = True
     try:
@@ -53,7 +55,7 @@ class BookkeepingDBClient(FileCatalogueBase):
     res = self.__checkArgumentFormat(path)
     if not res['OK']:
       return res
-    lfns = res['Value'].keys()  
+    lfns = res['Value'].keys()
     res = self.__exists(lfns)
     if not res['OK']:
       return res
@@ -176,75 +178,69 @@ class BookkeepingDBClient(FileCatalogueBase):
 
   def __setHasReplicaFlag(self,lfns):
     server = RPCClient(self.url,timeout=120)
-    res = server.addFiles(lfns)
     successful = {}
     failed = {}
-    if not res['OK']:
-      for lfn in lfns:
-        failed[lfn] = res['Message']
-      resDict = {'Successful':{},'Failed':failed}
-      return S_OK(resDict)
-    else:
-      for lfn in lfns:
-        if res['Value'].has_key(lfn):
-          failed[lfn] = res['Value'][lfn]
-        else:
-          successful[lfn] = True
-      resDict = {'Successful':successful,'Failed':failed}
-      result = S_OK(resDict)
-      result['rpcStub'] = res['rpcStub']
-      return result
+    for lfnList in breakListIntoChunks(lfns,self.splitSize):
+      res = server.addFiles(lfnList)
+      if not res['OK']:
+        for lfn in lfnList:
+          failed[lfn] = res['Message']
+      else:
+        for lfn in lfnList:
+          if res['Value'].has_key(lfn):
+            failed[lfn] = res['Value'][lfn]
+          else:
+            successful[lfn] = True
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
 
   def __unsetHasReplicaFlag(self,lfns):
     server = RPCClient(self.url,timeout=120)
-    res = server.removeFiles(lfns)
     successful = {}
     failed = {}
-    if not res['OK']:
-      for lfn in lfns:
-        failed[lfn] = res['Message']
-      resDict = {'Successful':{},'Failed':failed}
-      return S_OK(resDict)
-    else:
-      for lfn in lfns:
-        if res['Value'].has_key(lfn):
-          failed[lfn] = res['Value'][lfn]
-        else:
-          successful[lfn] = True
-      resDict = {'Successful':successful,'Failed':failed}
-      return S_OK(resDict)
+    for lfnList in breakListIntoChunks(lfns,self.splitSize):
+      res = server.removeFiles(lfnList)
+      if not res['OK']:
+        for lfn in lfnList:
+          failed[lfn] = res['Message']
+      else:
+        for lfn in lfnList:
+          if res['Value'].has_key(lfn):
+            failed[lfn] = res['Value'][lfn]
+          else:
+            successful[lfn] = True
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
 
   def __exists(self,lfns):
     server = RPCClient(self.url,timeout=120)
-    res = server.exists(lfns)
     successful = {}
     failed = {}
-    if not res['OK']:
-      for lfn in lfns:
-        failed[lfn] = res['Message']
-        resDict = {'Successful':{},'Failed':failed}
-      return S_OK(resDict)
-    else:
-      for lfn,exists in res['Value'].items():
-        successful[lfn] = exists
-      resDict = {'Successful':successful,'Failed':{}}
-      return S_OK(resDict)
+    for lfnList in breakListIntoChunks(lfns,self.splitSize):
+      res = server.exists(lfnList)
+      if not res['OK']:
+        for lfn in lfnList:
+          failed[lfn] = res['Message']
+      else:
+        for lfn,exists in res['Value'].items():
+          successful[lfn] = exists
+    resDict = {'Successful':successful,'Failed':{}}
+    return S_OK(resDict)
 
   def __getFileMetadata(self,lfns):
     server = RPCClient(self.url,timeout=120)
-    res = server.getFileMetadata(lfns)
     successful = {}
     failed = {}
-    if not res['OK']:
-      for lfn in lfns:
-        failed[lfn] = res['Message']
-        resDict = {'Successful':{},'Failed':failed}
-      return S_OK(resDict)
-    else:
-      for lfn,result in res['Value'].items():
-        if result in types.StringTypes:
-          failed[lfn] = result
-        else:
-          successful[lfn] = result
-      resDict = {'Successful':successful,'Failed':failed}
-      return S_OK(resDict)
+    for lfnList in breakListIntoChunks(lfns,self.splitSize):
+      res = server.getFileMetadata(lfnList)
+      if not res['OK']:
+        for lfn in lfnList:
+          failed[lfn] = res['Message']
+      else:
+        for lfn,result in res['Value'].items():
+          if result in types.StringTypes:
+            failed[lfn] = result
+          else:
+            successful[lfn] = result
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
