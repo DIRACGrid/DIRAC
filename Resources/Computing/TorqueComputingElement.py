@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TorqueComputingElement.py,v 1.13 2009/08/08 12:01:43 ffeldhau Exp $
+# $Id: TorqueComputingElement.py,v 1.14 2009/08/08 16:27:01 ffeldhau Exp $
 # File :   TorqueComputingElement.py
 # Author : Stuart Paterson, Paul Szczypka
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: TorqueComputingElement.py,v 1.13 2009/08/08 12:01:43 ffeldhau Exp $"
+__RCSID__ = "$Id: TorqueComputingElement.py,v 1.14 2009/08/08 16:27:01 ffeldhau Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -117,6 +117,7 @@ class TorqueComputingElement(ComputingElement):
     if not result['OK'] or result['Value'][0]:
       self.log.warn('===========>Torque CE result NOT OK')
       self.log.debug(result)
+      return result
     else:
       self.log.debug('Torque CE result OK')
 
