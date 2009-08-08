@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.59 2009/07/30 09:18:26 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.60 2009/08/08 16:57:23 roma Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.59 2009/07/30 09:18:26 paterson Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.60 2009/08/08 16:57:23 roma Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -334,7 +334,7 @@ class Watchdog(Agent):
         self.log.warn(result['Message'])
         return result
     else:
-      report += 'CPUConsumed: NA, '
+      report += 'CPULimit: NA, '
 
     if self.testTimeLeft:
       self.__timeLeft()
