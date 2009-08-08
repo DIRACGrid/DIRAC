@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TorqueComputingElement.py,v 1.12 2009/08/07 15:46:18 ffeldhau Exp $
+# $Id: TorqueComputingElement.py,v 1.13 2009/08/08 12:01:43 ffeldhau Exp $
 # File :   TorqueComputingElement.py
 # Author : Stuart Paterson, Paul Szczypka
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: TorqueComputingElement.py,v 1.12 2009/08/07 15:46:18 ffeldhau Exp $"
+__RCSID__ = "$Id: TorqueComputingElement.py,v 1.13 2009/08/08 12:01:43 ffeldhau Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -70,8 +70,8 @@ class TorqueComputingElement(ComputingElement):
     executableFileBaseName=os.path.basename(executableFile)
     fopen = open('run%s.py' %executableFileBaseName,'w')
     fopen.write('#!/usr/bin/env python\n')
-    fopen.write('#PBS -W stagein=%s@%s:%s\n' % (os.path.basename(self.pilot), self.hostname, self.pilot ) )
-    fopen.write('#PBS -W stagein=%s@%s:%s\n' % (os.path.basename(self.install), self.hostname, self.install ) )
+#    fopen.write('#PBS -W stagein=%s@%s:%s\n' % (os.path.basename(self.pilot), self.hostname, self.pilot ) )
+#    fopen.write('#PBS -W stagein=%s@%s:%s\n' % (os.path.basename(self.install), self.hostname, self.install ) )
     fopen.write('import os\n')
     fopen.write('fopen = open("%s","w")\n' %executableFileBaseName)
     fopen.write('fopen.write("""%s""")\n' %contents)
