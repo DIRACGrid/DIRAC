@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.63 2009/07/16 11:32:56 rgracian Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.63 2009/07/16 11:32:56 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.64 2009/08/10 13:38:37 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.64 2009/08/10 13:38:37 acasajus Exp $"
 
 import sys
 import types
@@ -112,6 +112,8 @@ class BaseClient:
     if self.KW_DELEGATED_DN in self.kwargs:
       if self.KW_DELEGATED_GROUP in self.kwargs:
         self.__extraCredentials = self.kwargs[ self.KW_DELEGATED_GROUP ]
+      else:
+        self.__extraCredentials = CS.getDefaultUserGroup()
       self.__extraCredentials = ( self.kwargs[ self.KW_DELEGATED_DN ], self.__extraCredentials )
     return S_OK()
 
@@ -215,10 +217,20 @@ and this is thread %s
 
   def _getBaseStub( self ):
     newKwargs = dict( self.kwargs )
-    if 'group' in self.__idDict and not self.KW_DELEGATED_GROUP in newKwargs:
-      newKwargs[ self.KW_DELEGATED_GROUP ] = self.__idDict[ 'group' ]
+    #Set DN
     if 'DN' in self.__idDict and not self.KW_DELEGATED_DN in newKwargs:
       newKwargs[ self.KW_DELEGATED_DN ] = self.__idDict[ 'DN' ]
+    #Discover group
+    if not self.KW_DELEGATED_GROUP in newKwargs:
+      if 'group' in self.__idDict:
+        newKwargs[ self.KW_DELEGATED_GROUP ] = self.__idDict[ 'group' ]
+      else:
+        if self.KW_DELEGATED_DN in newKwargs:
+          if CS.getUsernameForDN( newKwargs[ self.KW_DELEGATED_DN ] )[ 'OK' ]:
+            newKwargs[ self.KW_DELEGATED_GROUP ] = CS.getDefaultUserGroup()
+          if CS.getHostnameForDN( newKwargs[ self.KW_DELEGATED_DN ] )[ 'OK' ]:
+            newKwargs[ self.KW_DELEGATED_GROUP ] = self.VAL_EXTRA_CREDENTIALS_HOST
+        
     if 'useCertificates' in newKwargs:
       del( newKwargs[ 'useCertificates' ] )
     return ( self.serviceName, newKwargs )
