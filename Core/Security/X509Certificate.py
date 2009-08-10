@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Certificate.py,v 1.11 2008/10/21 10:25:49 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Certificate.py,v 1.12 2009/08/10 19:20:06 acasajus Exp $
 ########################################################################
 """ X509Certificate is a class for managing X509 certificates alone
 """
-__RCSID__ = "$Id: X509Certificate.py,v 1.11 2008/10/21 10:25:49 acasajus Exp $"
+__RCSID__ = "$Id: X509Certificate.py,v 1.12 2009/08/10 19:20:06 acasajus Exp $"
 
 import GSI
 from DIRAC import S_OK, S_ERROR
@@ -197,3 +197,19 @@ class X509Certificate:
     notAfter = self.__certObj.get_not_after()
     remaining = notAfter - Time.dateTime()
     return S_OK( max( 0, remaining.days * 86400 + remaining.seconds ) )
+    
+  def getExtensions( self ):
+    """
+    Get a decoded list of extensions
+    """
+    if not self.__valid:
+      return S_ERROR( "No certificate loaded" )
+    extList = []
+    for ext in self.__certObj.get_extensions():
+      sn = ext.get_sn()
+      try:
+        value = ext.get_value()
+      except:
+        value = "Cannot decode value"
+      extList.append( ( sn, value ) )
+    return S_OK( sorted( extList ) )
