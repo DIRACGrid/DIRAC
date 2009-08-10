@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.31 2008/12/02 15:22:00 acasajus Exp $
-__RCSID__ = "$Id: SocketInfo.py,v 1.31 2008/12/02 15:22:00 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/SocketInfo.py,v 1.32 2009/08/10 14:59:02 acasajus Exp $
+__RCSID__ = "$Id: SocketInfo.py,v 1.32 2009/08/10 14:59:02 acasajus Exp $"
 
 import time
 import copy
@@ -168,22 +168,13 @@ class SocketInfo:
 
   def __generateContextWithProxyString( self ):
     proxyString = self.infoDict[ 'proxyString' ]
-    chain = X509Chain()
-    retVal = chain.loadChainFromString( proxyString )
-    if not retVal[ 'OK' ]:
-      DIRAC.abort( 10, "proxy string is invalid. Cert chain can't be loaded" )
-    retVal = chain.loadKeyFromString( proxyString )
-    if not retVal[ 'OK' ]:
-      DIRAC.abort( 10, "proxy string is invalid. key can't be loaded" )
-    cert = chain.getCertInChain(-1)['Value']
-    subj = cert.getSubjectDN()['Value']
-    self.setLocalCredentialsLocation( ( subj, subj ) )
-    gLogger.debug( "Using string proxy with id %s" % subj )
+    self.setLocalCredentialsLocation( ( proxyString, proxyString ) )
+    gLogger.debug( "Using string proxy" )
     retVal = self.__createContext()
     if not retVal[ 'OK' ]:
       return retVal
-    self.sslContext.use_certificate_chain( chain.getCertList()['Value'] )
-    self.sslContext.use_privatekey( chain.getPKeyObj()['Value'] )
+    self.sslContext.use_certificate_chain_string( proxyString )
+    self.sslContext.use_privatekey_string( proxyString )
     return S_OK()
 
   def __generateServerContext( self ):
