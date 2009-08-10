@@ -108,6 +108,7 @@ def getProxyStepsInfo( chain ):
     stepInfo[ 'not before' ] = cert.getNotBeforeDate()['Value']
     stepInfo[ 'not after' ] = cert.getNotAfterDate()['Value']
     stepInfo[ 'lifetime' ] = cert.getRemainingSecs()['Value']
+    stepInfo[ 'extensions' ] = cert.getExtensions()[ 'Value' ]
     dG = cert.getDIRACGroup( ignoreDefault = True )['Value']
     if dG:
       stepInfo[ 'group' ] = dG
@@ -121,7 +122,8 @@ def formatProxyStepsInfoAsString( infoList ):
   for i in range( len( infoList ) ):
     contentsList.append( " + Step %s" % i )
     stepInfo = infoList[i]
-    for key in ( 'subject', 'issuer', 'serial', 'not after', 'not before', 'group', 'VOMS ext', 'lifetime' ):
+    for key in ( 'subject', 'issuer', 'serial', 'not after', 'not before', 
+                 'group', 'VOMS ext', 'lifetime', 'extensions' ):
       if key in stepInfo:
         value = stepInfo[ key ]
         if key == 'serial':
@@ -133,5 +135,7 @@ def formatProxyStepsInfoAsString( infoList ):
           mins = int( secs / 60 )
           secs -= mins * 60
           value = "%02d:%02d:%02d" % ( hours, mins, secs )
+        if key == "extensions":
+          value = "\n   %s" % "\n   ".join( [ "%s = %s" % ( extName.strip().rjust(20), extValue.strip() ) for extName, extValue in value ] )
         contentsList.append( "  %s : %s" % ( key.ljust(10).capitalize(), value ) )
   return "\n".join( contentsList )
