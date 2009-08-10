@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TorqueComputingElement.py,v 1.14 2009/08/08 16:27:01 ffeldhau Exp $
+# $Id: TorqueComputingElement.py,v 1.15 2009/08/10 08:04:43 ffeldhau Exp $
 # File :   TorqueComputingElement.py
 # Author : Stuart Paterson, Paul Szczypka
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: TorqueComputingElement.py,v 1.14 2009/08/08 16:27:01 ffeldhau Exp $"
+__RCSID__ = "$Id: TorqueComputingElement.py,v 1.15 2009/08/10 08:04:43 ffeldhau Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -48,8 +48,8 @@ class TorqueComputingElement(ComputingElement):
     result = self.writeProxyToFile(proxy)
     if not result['OK']:
       return result
-
     proxyLocation = result['Value']
+    
     self.log.info("Executable file path: %s" %executableFile)
     if not os.access(executableFile, 5):
       os.chmod(executableFile,0755)
@@ -65,13 +65,13 @@ class TorqueComputingElement(ComputingElement):
     fopen = open(proxyLocation,'r')
     proxyString = fopen.read()
     fopen.close()
+    
+    os.remove(proxyLocation)
 
     # create and write the executable file run###.py
     executableFileBaseName=os.path.basename(executableFile)
     fopen = open('run%s.py' %executableFileBaseName,'w')
     fopen.write('#!/usr/bin/env python\n')
-#    fopen.write('#PBS -W stagein=%s@%s:%s\n' % (os.path.basename(self.pilot), self.hostname, self.pilot ) )
-#    fopen.write('#PBS -W stagein=%s@%s:%s\n' % (os.path.basename(self.install), self.hostname, self.install ) )
     fopen.write('import os\n')
     fopen.write('fopen = open("%s","w")\n' %executableFileBaseName)
     fopen.write('fopen.write("""%s""")\n' %contents)
@@ -141,6 +141,9 @@ class TorqueComputingElement(ComputingElement):
     self.log.debug("stdout", stdout)
     
     matched = re.search(self.queue + "\D+(\d+)\D+(\d+)\W+(\w+)\W+(\w+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\W+(\w+)", stdout)
+    
+    if matched.groups < 6:
+      return S_ERROR("Error retrieving information from qstat:" + stdout + stderr)
     
     result['WaitingJobs'] = matched.group(5)
     result['RunningJobs'] = matched.group(6)
