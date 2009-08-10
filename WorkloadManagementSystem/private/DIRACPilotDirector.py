@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.14 2009/08/08 11:59:49 ffeldhau Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.15 2009/08/10 08:04:06 ffeldhau Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.14 2009/08/08 11:59:49 ffeldhau Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.15 2009/08/10 08:04:06 ffeldhau Exp $"
 
 import os, sys, tempfile, shutil, time
 
@@ -28,8 +28,8 @@ ERROR_JDL        = 'Could not create Pilot script'
 ERROR_SCRIPT     = 'Could not copy Pilot script'
 
 COMPUTING_ELEMENTS = ['InProcess']
-WAITING_TO_RUNNING_RATIO = 0.2
-MAX_WAITING_JOBS = 100
+WAITING_TO_RUNNING_RATIO = 0.5
+MAX_WAITING_JOBS = 50
 MAX_NUMBER_JOBS = 10000
 
 class DIRACPilotDirector(PilotDirector):
@@ -176,6 +176,7 @@ class DIRACPilotDirector(PilotDirector):
       submission = self.computingElement.submitJob(pilotScript,'',proxy.dumpAllToString()['Value'],'')
       if not submission['OK']:
         self.log.error('Pilot submission failed: ', submission['Message'])
+        break
       submittedPilots += 1
     
     try:
@@ -191,6 +192,15 @@ class DIRACPilotDirector(PilotDirector):
      Prepare the script to execute the pilot
      For the moment it will do like Grid Pilots, a full DIRAC installation
     """
+
+    pilot = '/'.join([self.sharedArea, os.path.basename(self.pilot)])
+    install = '/'.join([self.sharedArea, os.path.basename(self.install)])
+    if not os.path.exists(pilot):
+      self.log.info("dirac-pilot file not found in shared area => copying it there")
+      shutil.copy(self.pilot,pilot)
+    if not os.path.exists(install):
+      self.log.info("dirac-install file not found in shared area => copying it there")
+      shutil.copy(self.install,install)
 
     localPilot = """#!/usr/bin/env python
 #
@@ -220,14 +230,15 @@ os.system( cmd )
 
 shutil.rmtree( pilotWorkingDirectory )
 
-""" % ( self.sharedArea + os.path.basename(self.pilot), self.sharedArea + os.path.basename(self.install), self.sharedArea, \
-        self.sharedArea, self.httpProxy, os.path.basename(self.pilot), ' '.join( pilotOptions ) )
+""" % ( pilot, install , self.sharedArea, self.sharedArea, \
+        self.httpProxy, os.path.basename(self.pilot), ' '.join( pilotOptions ) )
 
-    pilotScript = tempfile.mkstemp( suffix = 'pilotwrapper', prefix = 'DIRAC_', dir=workingDirectory)
-    pilotScript.write( localPilot )
-    pilotScript.close()
+    fd, name = tempfile.mkstemp( suffix = '_pilotwrapper', prefix = 'DIRAC_', dir=workingDirectory)
+    pilotWrapper = os.fdopen(fd, 'w')
+    pilotWrapper.write( localPilot )
+    pilotWrapper.close()
 
-    return pilotScript
+    return name
 
   def _getPilotProxyFromDIRACGroup( self, ownerDN, ownerGroup, requiredTimeLeft ):
     """
