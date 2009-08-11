@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.15 2009/08/10 08:04:06 ffeldhau Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.16 2009/08/11 12:44:22 ffeldhau Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.15 2009/08/10 08:04:06 ffeldhau Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.16 2009/08/11 12:44:22 ffeldhau Exp $"
 
 import os, sys, tempfile, shutil, time
 
@@ -54,6 +54,8 @@ class DIRACPilotDirector(PilotDirector):
 
     self.__failingCECache  = DictCache()
     self.__ticketsCECache  = DictCache()
+    
+    self.clientPlatform = gConfig.getValue('LocalSite/ClientPlatform', '')
     
     self.sharedArea = gConfig.getValue('LocalSite/SharedArea')
     if not self.sharedArea:
@@ -143,6 +145,9 @@ class DIRACPilotDirector(PilotDirector):
     if self.siteName:
       pilotOptions.append( "-n '%s'" % self.siteName)
       
+    if self.clientPlatform:
+      pilotOptions.append( "-p '%s'" % self.pilotOptions)
+      
     if self.sharedArea:
       pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % self.sharedArea )
       
@@ -169,6 +174,7 @@ class DIRACPilotDirector(PilotDirector):
       ret = self._submitPilot()
       if not ret['OK']:
         self.log.error('Connot determine if pilot should be submitted: ', ret['Message'])
+        break
       submitPilot = ret['Value']
       self.log.info("Submit Pilots: ", submitPilot)
       if submitPilot == False:
@@ -192,7 +198,7 @@ class DIRACPilotDirector(PilotDirector):
      Prepare the script to execute the pilot
      For the moment it will do like Grid Pilots, a full DIRAC installation
     """
-
+    
     pilot = '/'.join([self.sharedArea, os.path.basename(self.pilot)])
     install = '/'.join([self.sharedArea, os.path.basename(self.install)])
     if not os.path.exists(pilot):
@@ -207,37 +213,36 @@ class DIRACPilotDirector(PilotDirector):
 import os, tempfile, sys, shutil
 try:
   pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix= 'DIRAC_' )
-  shutil.copy( "%s",  pilotWorkingDirectory )
-  shutil.copy( "%s", pilotWorkingDirectory )
-  os.makedirs(os.path.join(pilotWorkingDirectory,'etc','grid-security'))
-  shutil.copytree( "vomsdir", os.path.join(pilotWorkingDirectory,'etc','grid-security','vomsdir'))
-  shutil.copytree( "certificates", os.path.join(pilotWorkingDirectory,'etc','grid-security','certificates'))
+  shutil.copy( "%(pilotPath)s",  pilotWorkingDirectory )
+  shutil.copy( "%(installPath)s", pilotWorkingDirectory )
   os.chdir( pilotWorkingDirectory )
-  sys.path.append(''.join([pilotWorkingDirectory,"/Linux_x86_64_glibc-2.3.4/bin/"]))
-  os.environ["PATH"] = ''.join([pilotWorkingDirectory,"/Linux_x86_64_glibc-2.3.4/bin/:",os.environ["PATH"]])
-  os.environ["LD_LIBRARY_PATH"]=''.join([pilotWorkingDirectory,"/Linux_x86_64_glibc-2.3.4/lib"])
-  os.environ["X509_CERT_DIR"]="%s/certificates"
-  os.environ["X509_VOMS_DIR"]="%s/vomsdir"
-  os.environ["HTTP_PROXY"]="%s"
+  os.environ["X509_CERT_DIR"]="%(sharedArea)s/certificates"
+  os.environ["X509_VOMS_DIR"]="%(sharedArea)s/vomsdir"
+  os.environ["LD_LIBRARY_PATH"]=""
+  os.environ["HTTP_PROXY"]="%(proxy)s"
   print os.environ
 except Exception, x:
   print >> sys.stderr, x
   sys.exit(-1)
-cmd = "python %s %s"
+cmd = "python %(pilotScript)s %(pilotOptions)s"
 print 'Executing:', cmd
 sys.stdout.flush()
 os.system( cmd )
 
 shutil.rmtree( pilotWorkingDirectory )
 
-""" % ( pilot, install , self.sharedArea, self.sharedArea, \
-        self.httpProxy, os.path.basename(self.pilot), ' '.join( pilotOptions ) )
+""" % { 'pilotPath': os.path.join(self.sharedArea, os.path.basename(self.pilot)), \
+        'installPath': os.path.join(self.sharedArea, os.path.basename(self.install)), \
+        'sharedArea': self.sharedArea, \
+        'proxy': self.httpProxy, \
+        'pilotScript': os.path.basename(self.pilot), \
+        'pilotOptions': ' '.join( pilotOptions ) }
 
     fd, name = tempfile.mkstemp( suffix = '_pilotwrapper', prefix = 'DIRAC_', dir=workingDirectory)
     pilotWrapper = os.fdopen(fd, 'w')
     pilotWrapper.write( localPilot )
     pilotWrapper.close()
-
+    
     return name
 
   def _getPilotProxyFromDIRACGroup( self, ownerDN, ownerGroup, requiredTimeLeft ):
