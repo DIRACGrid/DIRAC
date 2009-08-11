@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.60 2009/08/08 16:57:23 roma Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.61 2009/08/11 06:22:45 paterson Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.60 2009/08/08 16:57:23 roma Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.61 2009/08/11 06:22:45 paterson Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -53,12 +53,19 @@ class Watchdog(Agent):
     self.peekRetry = 5
     self.processMonitor = ProcessMonitor()
     self.checkError = ''
+    self.initialized = False
 
 
   #############################################################################
   def initialize(self,loops=0):
     """ Watchdog initialization.
     """
+    if self.initialized:
+      self.log.info('Watchdog already initialized')
+      return S_OK()
+    else:
+      self.initialized = True
+
     self.maxcount = loops
     result = Agent.initialize(self)
     if os.path.exists(self.controlDir+'/stop_agent'):
