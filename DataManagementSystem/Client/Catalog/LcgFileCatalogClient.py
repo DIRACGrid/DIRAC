@@ -1224,6 +1224,8 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return res
     nbfiles = res['Value'].nlink
     res = self.__openDirectory(path)
+    if not res['OK']:
+      return res
     oDirectory = res['Value']
     subDirs = {}
     links = {}
@@ -1271,6 +1273,8 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return res
     nbfiles = res['Value'].nlink
     res = self.__openDirectory(path)
+    if not res['OK']:
+      return res
     oDirectory = res['Value']
     pathDict = {'SubDirs':[],'ClosedDirs':[],'Files':0,'TotalSize':0,'SiteUsage':{}}
     for i in  range(nbfiles):
