@@ -1,7 +1,7 @@
 """  StorageUsageAgent takes the LFC as the primary source of information to determine storage usage.
 """
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/StorageUsageAgent.py,v 1.15 2009/08/11 14:56:34 acsmith Exp $
-__RCSID__ = "$Id: StorageUsageAgent.py,v 1.15 2009/08/11 14:56:34 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/StorageUsageAgent.py,v 1.16 2009/08/11 20:03:03 acsmith Exp $
+__RCSID__ = "$Id: StorageUsageAgent.py,v 1.16 2009/08/11 20:03:03 acsmith Exp $"
 
 from DIRAC  import gLogger, gMonitor, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -43,7 +43,6 @@ class StorageUsageAgent(AgentModule):
         gMonitor.registerActivity("%s-files" % se, "%s files" % se,"StorageUsage/%s files" % site,"Files",gMonitor.OP_MEAN, bucketLength = 600)
         gMonitor.addMark("%s-files" % se, files )
 
-    
     baseDir = self.am_getOption('BaseDirectory','/lhcb')
     ignoreDirectories = self.am_getOption('Ignore',[])
     oNamespaceBrowser = NamespaceBrowser(baseDir)
@@ -57,10 +56,8 @@ class StorageUsageAgent(AgentModule):
       res = self.catalog.getCatalogDirectorySize(currentDir)
       if not res['OK']:
         gLogger.error("execute: Completely failed to get usage.", "%s %s" % (currentDir,res['Message']))
-        subDirs = [currentDir]
       elif res['Value']['Failed'].has_key(currentDir):
         gLogger.error("execute: Failed to get usage.", "%s %s" % (currentDir,res['Value']['Failed'][currentDir]))
-        subDirs = [currentDir]
       else:
         directoryMetadata = res['Value']['Successful'][currentDir]
         subDirs = directoryMetadata['SubDirs']
@@ -93,10 +90,10 @@ class StorageUsageAgent(AgentModule):
               else:
                 gLogger.info("execute: %s %s %s" % (storageElement.ljust(40),str(usageDict['Files']).rjust(20),str(usageDict['Size']).rjust(20)))
 
-      # If there are no subdirs
-      if (len(subDirs) ==  0) and (len(closedDirs) == 0) and (numberOfFiles == 0):
-        if not currentDir == baseDir:
-          self.removeEmptyDir(currentDir)
+        # If there are no subdirs
+        if (len(subDirs) ==  0) and (len(closedDirs) == 0) and (numberOfFiles == 0):
+          if not currentDir == baseDir:
+            self.removeEmptyDir(currentDir)
 
       chosenDirs = []
       for subDir in subDirs:
