@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TorqueComputingElement.py,v 1.16 2009/08/11 12:46:41 ffeldhau Exp $
+# $Id: TorqueComputingElement.py,v 1.17 2009/08/11 12:59:20 ffeldhau Exp $
 # File :   TorqueComputingElement.py
 # Author : Stuart Paterson, Paul Szczypka
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: TorqueComputingElement.py,v 1.16 2009/08/11 12:46:41 ffeldhau Exp $"
+__RCSID__ = "$Id: TorqueComputingElement.py,v 1.17 2009/08/11 12:59:20 ffeldhau Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -40,9 +40,9 @@ class TorqueComputingElement(ComputingElement):
     self.hostname = socket.gethostname()
     self.sharedArea = gConfig.getValue('/LocalSite/SharedArea')
     self.batchOutput = gConfig.getValue('/LocalSite/BatchOutput', \
-                                         os.path.join(rootPath, 'data', 'job$PBS_O_JOBID.out'))
+                                         os.path.join(rootPath, 'data' ))
     self.batchError = gConfig.getValue('/LocalSite/BatchError', \
-                                         os.path.join(rootPath, 'data', 'job$PBS_O_JOBID.err'))
+                                         os.path.join(rootPath, 'data' ))
 
   #############################################################################
   def submitJob(self,executableFile,jdl,proxy,localID):
