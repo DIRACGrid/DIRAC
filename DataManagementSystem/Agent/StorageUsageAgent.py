@@ -1,7 +1,7 @@
 """  StorageUsageAgent takes the LFC as the primary source of information to determine storage usage.
 """
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/StorageUsageAgent.py,v 1.14 2009/08/11 14:43:07 acsmith Exp $
-__RCSID__ = "$Id: StorageUsageAgent.py,v 1.14 2009/08/11 14:43:07 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/StorageUsageAgent.py,v 1.15 2009/08/11 14:56:34 acsmith Exp $
+__RCSID__ = "$Id: StorageUsageAgent.py,v 1.15 2009/08/11 14:56:34 acsmith Exp $"
 
 from DIRAC  import gLogger, gMonitor, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -95,7 +95,8 @@ class StorageUsageAgent(AgentModule):
 
       # If there are no subdirs
       if (len(subDirs) ==  0) and (len(closedDirs) == 0) and (numberOfFiles == 0):
-        self.removeEmptyDir(currentDir)
+        if not currentDir == baseDir:
+          self.removeEmptyDir(currentDir)
 
       chosenDirs = []
       for subDir in subDirs:
