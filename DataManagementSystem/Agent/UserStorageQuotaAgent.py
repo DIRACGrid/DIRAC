@@ -1,7 +1,7 @@
 """  UserStorageQuotaAgent obtains the usage by each user from the StorageUsageDB and compares with a quota present in the CS.
 """
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/UserStorageQuotaAgent.py,v 1.6 2009/08/11 18:17:14 acsmith Exp $
-__RCSID__ = "$Id: UserStorageQuotaAgent.py,v 1.6 2009/08/11 18:17:14 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/UserStorageQuotaAgent.py,v 1.7 2009/08/11 18:40:31 acsmith Exp $
+__RCSID__ = "$Id: UserStorageQuotaAgent.py,v 1.7 2009/08/11 18:40:31 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -54,7 +54,7 @@ class UserStorageQuotaAgent(AgentModule):
         gLogger.info("%s is at %d%s of quota %d GB (%.1f GB)." % (userName,(usageGB*100)/userQuota,'%',userQuota,usageGB))
         self.sendBlockedMail(userName,userMail,userQuota,usageGB)
         gLogger.info("!!!!!!!!!!!!!!!!!!!!!!!!REMEMBER TO MODIFY THE ACLs and STATUS HERE!!!!!!!!!!!!!!!!!")
-      elif (1.1*userQuota) < usageGB:
+      elif (1.0*userQuota) < usageGB:
         gLogger.info("%s is at %d%s of quota %d GB (%.1f GB)." % (userName,(usageGB*100)/userQuota,'%',userQuota,usageGB))
         self.sendSecondWarningMail(userName,userMail,userQuota,usageGB)
       elif (0.9*userQuota) < usageGB:
