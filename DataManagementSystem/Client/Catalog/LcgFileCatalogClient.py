@@ -1272,11 +1272,14 @@ class LcgFileCatalogClient(FileCatalogueBase):
     nbfiles = res['Value'].nlink
     res = self.__openDirectory(path)
     oDirectory = res['Value']
-    pathDict = {'SubDirs':[],'Files':0,'TotalSize':0,'SiteUsage':{}}
+    pathDict = {'SubDirs':[],'ClosedDirs':[],'Files':0,'TotalSize':0,'SiteUsage':{}}
     for i in  range(nbfiles):
       entry,fileInfo = lfc.lfc_readdirxr(oDirectory,"")
       if S_ISDIR(entry.filemode):
         subDir = '%s/%s' % (path,entry.d_name)
+        permissions = S_IMODE(entry.filemode)
+        if (not permissions & S_IWUSR) and (not permissions & S_IWGRP) and (not permissions & S_IWOTH):
+          pathDict['ClosedDirs'].append(subDir)
         pathDict['SubDirs'].append(subDir)
       else:
         fileSize = entry.filesize
