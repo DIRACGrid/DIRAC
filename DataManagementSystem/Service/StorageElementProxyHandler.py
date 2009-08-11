@@ -30,6 +30,13 @@ def initializeStorageElementProxyHandler(serviceInfo):
 
 class StorageElementProxyHandler(RequestHandler):
 
+  types_getParameters = [StringType]
+  def export_getParameters(self,se):
+    """ Get the storage element parameters
+    """
+    se = StorageElement(se)
+    return se.getParameters()
+
   types_callProxyMethod = [StringType,StringType,ListType,DictType]
   def export_callProxyMethod(self, se, name, args, kargs):
     """ A generic method to call methods of the Storage Element.
