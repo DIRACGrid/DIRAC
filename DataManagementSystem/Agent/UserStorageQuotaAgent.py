@@ -1,7 +1,7 @@
 """  UserStorageQuotaAgent obtains the usage by each user from the StorageUsageDB and compares with a quota present in the CS.
 """
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/UserStorageQuotaAgent.py,v 1.7 2009/08/11 18:40:31 acsmith Exp $
-__RCSID__ = "$Id: UserStorageQuotaAgent.py,v 1.7 2009/08/11 18:40:31 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/UserStorageQuotaAgent.py,v 1.8 2009/08/11 19:48:21 acsmith Exp $
+__RCSID__ = "$Id: UserStorageQuotaAgent.py,v 1.8 2009/08/11 19:48:21 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -22,7 +22,6 @@ class UserStorageQuotaAgent(AgentModule):
     self.am_setModuleParam("shifterProxy", "DataManager")
     self.am_setModuleParam("shifterProxyLocation","%s/runit/%s/proxy" % (rootPath,AGENT_NAME))
     self.defaultQuota = self.am_getOption('DefaultQuota',1000) # Default is 1TB
-    self.defaultQuota = 76
     gLogger.info("initialize: Default quota found to be %d GB" % self.defaultQuota)
     return S_OK()
 
@@ -69,7 +68,7 @@ class UserStorageQuotaAgent(AgentModule):
     msgbody += "Please reduce you usage by removing some files. If you have reduced your usage in the last 24 hours please ignore this message."
     fromAddress = 'LHCb Data Manager <lhcb-datamanagement@cern.ch>'
     subject = 'Grid storage use near quota (%s)' % userName 
-    toAddress = 'a.smith@cern.ch' # userMail
+    toAddress = userMail
     NotificationClient().sendMail(toAddress, subject, msgbody, fromAddress)
 
   def sendSecondWarningMail(self,userName,userMail,quota,usage):
@@ -79,7 +78,7 @@ class UserStorageQuotaAgent(AgentModule):
     msgbody += "Please reduce you usage by removing some files. If you have reduced your usage in the last 24 hours please ignore this message."
     fromAddress = 'LHCb Data Manager <lhcb-datamanagement@cern.ch>'
     subject = 'Grid storage use over quota (%s)' % userName
-    toAddress = 'a.smith@cern.ch' # userMail
+    toAddress =  userMail
     NotificationClient().sendMail(toAddress, subject, msgbody, fromAddress)
 
   def sendBlockedMail(self,userName,userMail,quota,usage):
@@ -89,5 +88,5 @@ class UserStorageQuotaAgent(AgentModule):
     msgbody += "Your account has now been blocked and you will not be able to save more output without creating space. If you have reduced your usage in the last 24 hours please ignore this message."
     fromAddress = 'LHCb Data Manager <lhcb-datamanagement@cern.ch>'
     subject = 'Grid storage use blocked (%s)' % userName
-    toAddress = 'a.smith@cern.ch' # userMail
+    toAddress = userMail
     NotificationClient().sendMail(toAddress, subject, msgbody, fromAddress) 
