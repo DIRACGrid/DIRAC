@@ -1,7 +1,7 @@
 """  StorageUsageAgent takes the LFC as the primary source of information to determine storage usage.
 """
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/StorageUsageAgent.py,v 1.13 2009/08/11 14:27:46 acsmith Exp $
-__RCSID__ = "$Id: StorageUsageAgent.py,v 1.13 2009/08/11 14:27:46 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/StorageUsageAgent.py,v 1.14 2009/08/11 14:43:07 acsmith Exp $
+__RCSID__ = "$Id: StorageUsageAgent.py,v 1.14 2009/08/11 14:43:07 acsmith Exp $"
 
 from DIRAC  import gLogger, gMonitor, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -95,18 +95,7 @@ class StorageUsageAgent(AgentModule):
 
       # If there are no subdirs
       if (len(subDirs) ==  0) and (len(closedDirs) == 0) and (numberOfFiles == 0):
-        gLogger.info("execute: Attempting to remove empty directory from Storage Usage database")
-        res = self.StorageUsageDB.publishEmptyDirectory(currentDir)
-        if not res['OK']:
-          gLogger.error("execute: Failed to remove empty directory from Storage Usage database.",res['Message'])
-        else:
-          res = self.catalog.removeCatalogDirectory(currentDir)
-          if not res['OK']:
-            gLogger.error("execute: Failed to remove empty directory from File Catalog.",res['Message'])
-          elif res['Value']['Failed'].has_key(currentDir):
-            gLogger.error("execute: Failed to remove empty directory from File Catalog.",res['Value']['Failed'][currentDir])
-          else:
-            gLogger.info("execute: Successfully removed empty directory from File Catalog.")
+        self.removeEmptyDir(currentDir)
 
       chosenDirs = []
       for subDir in subDirs:
@@ -116,6 +105,21 @@ class StorageUsageAgent(AgentModule):
       gLogger.info("execute: There are %s active directories to be searched." % oNamespaceBrowser.getNumberActiveDirs())
 
     gLogger.info("execute: Finished recursive directory search.")
+    return S_OK()
+
+  def removeEmptyDir(self,directory):
+    gLogger.info("removeEmptyDir: Attempting to remove empty directory from Storage Usage database")
+    res = self.StorageUsageDB.publishEmptyDirectory(directory)
+    if not res['OK']:
+      gLogger.error("removeEmptyDir: Failed to remove empty directory from Storage Usage database.",res['Message'])
+    else:
+      res = self.catalog.removeCatalogDirectory(directory)
+      if not res['OK']:
+        gLogger.error("removeEmptyDir: Failed to remove empty directory from File Catalog.",res['Message'])
+      elif res['Value']['Failed'].has_key(directory):
+        gLogger.error("removeEmptyDir: Failed to remove empty directory from File Catalog.",res['Value']['Failed'][directory])
+      else:
+        gLogger.info("removeEmptyDir: Successfully removed empty directory from File Catalog.")
     return S_OK()
 
 
