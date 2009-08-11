@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.15 2009/07/16 11:32:58 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/AgentModule.py,v 1.16 2009/08/11 08:28:36 rgracian Exp $
 ########################################################################
 """ Base class for all agent modules
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: AgentModule.py,v 1.15 2009/07/16 11:32:58 rgracian Exp $"
+__RCSID__ = "$Id: AgentModule.py,v 1.16 2009/08/11 08:28:36 rgracian Exp $"
 
 import os
 import threading
@@ -201,6 +201,7 @@ class AgentModule:
       result = setupShifterProxyInEnv( self.__moduleProperties[ 'shifterProxy' ],
                                        self.__moduleProperties[ 'shifterProxyLocation' ] )
       if not result[ 'OK' ]:
+        self.log.error( result['Message'] )
         return result
     self.log.info( "-"*40 )
     self.log.info( "Starting cycle for module %s" % self.__moduleProperties[ 'fullName' ] )
