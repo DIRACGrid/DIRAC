@@ -91,3 +91,19 @@ class StorageUsageHandler(RequestHandler):
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
 
+  types_getUserStorageUsage = []
+  def export_getUserStorageUsage(self):
+    """ Retieve a summary of the user usage
+    """
+    try:
+      gLogger.info("StorageUsageHandler.getUserStorageUsage: Attempting to get user usage summary.")
+      res = storageUsageDB.getUserStorageUsage()
+      if res['OK']:
+        gLogger.info("StorageUsageHandler.getUserStorageUsage: Successfully obtained usage.")
+      else:
+        gLogger.error("StorageUsageHandler.getUserStorageUsage: Failed obtain usage.")
+      return res
+    except Exception, x:
+      errStr = "StorageUsageHandler.getUserStorageUsage: Exception while obtaining usage."
+      gLogger.exception(errStr,lException=x)
+      return S_ERROR(errStr)
