@@ -1,7 +1,7 @@
 """  StorageUsageAgent takes the LFC as the primary source of information to determine storage usage.
 """
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/StorageUsageAgent.py,v 1.17 2009/08/11 20:23:23 acsmith Exp $
-__RCSID__ = "$Id: StorageUsageAgent.py,v 1.17 2009/08/11 20:23:23 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/StorageUsageAgent.py,v 1.18 2009/08/11 20:25:24 acsmith Exp $
+__RCSID__ = "$Id: StorageUsageAgent.py,v 1.18 2009/08/11 20:25:24 acsmith Exp $"
 
 from DIRAC  import gLogger, gMonitor, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -11,9 +11,6 @@ from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.DataManagementSystem.Agent.NamespaceBrowser import NamespaceBrowser
 from DIRAC.DataManagementSystem.Client.ReplicaManager import CatalogDirectory
 from DIRAC.Core.Utilities.List import sortList
-
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.DataManagement.DB.StorageUsageDB import StorageUsageDB
 
 import time,os
 from types import *
@@ -25,8 +22,10 @@ class StorageUsageAgent(AgentModule):
   def initialize(self):
     self.catalog = CatalogDirectory() # FileCatalog(['LcgFileCatalogCombined'])
     if self.am_getOption('DirectDB',False):
+      from DIRAC.DataManagement.DB.StorageUsageDB import StorageUsageDB
       self.StorageUsageDB = StorageUsageDB()
     else:
+      from DIRAC.Core.DISET.RPCClient import RPCClient
       self.StorageUsageDB = RPCClient('DataManagement/StorageUsage')
     self.am_setModuleParam("shifterProxy", "DataManager")
     self.am_setModuleParam("shifterProxyLocation","%s/runit/%s/proxy" % (rootPath,AGENT_NAME))
