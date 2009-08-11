@@ -1,7 +1,7 @@
 """  UserStorageQuotaAgent obtains the usage by each user from the StorageUsageDB and compares with a quota present in the CS.
 """
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/UserStorageQuotaAgent.py,v 1.8 2009/08/11 19:48:21 acsmith Exp $
-__RCSID__ = "$Id: UserStorageQuotaAgent.py,v 1.8 2009/08/11 19:48:21 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/UserStorageQuotaAgent.py,v 1.9 2009/08/11 20:26:53 acsmith Exp $
+__RCSID__ = "$Id: UserStorageQuotaAgent.py,v 1.9 2009/08/11 20:26:53 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -18,7 +18,12 @@ AGENT_NAME = 'DataManagement/UserStorageQuotaAgent'
 class UserStorageQuotaAgent(AgentModule):
 
   def initialize(self):
-    self.StorageUsageDB = RPCClient('DataManagement/StorageUsage')
+    if self.am_getOption('DirectDB',False):
+      from DIRAC.DataManagement.DB.StorageUsageDB import StorageUsageDB
+      self.StorageUsageDB = StorageUsageDB()
+    else:
+      from DIRAC.Core.DISET.RPCClient import RPCClient
+      self.StorageUsageDB = RPCClient('DataManagement/StorageUsage')
     self.am_setModuleParam("shifterProxy", "DataManager")
     self.am_setModuleParam("shifterProxyLocation","%s/runit/%s/proxy" % (rootPath,AGENT_NAME))
     self.defaultQuota = self.am_getOption('DefaultQuota',1000) # Default is 1TB
