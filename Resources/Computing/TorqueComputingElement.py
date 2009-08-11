@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TorqueComputingElement.py,v 1.15 2009/08/10 08:04:43 ffeldhau Exp $
+# $Id: TorqueComputingElement.py,v 1.16 2009/08/11 12:46:41 ffeldhau Exp $
 # File :   TorqueComputingElement.py
 # Author : Stuart Paterson, Paul Szczypka
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: TorqueComputingElement.py,v 1.15 2009/08/10 08:04:43 ffeldhau Exp $"
+__RCSID__ = "$Id: TorqueComputingElement.py,v 1.16 2009/08/11 12:46:41 ffeldhau Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -39,6 +39,10 @@ class TorqueComputingElement(ComputingElement):
     self.install = DIRAC_INSTALL
     self.hostname = socket.gethostname()
     self.sharedArea = gConfig.getValue('/LocalSite/SharedArea')
+    self.batchOutput = gConfig.getValue('/LocalSite/BatchOutput', \
+                                         os.path.join(rootPath, 'data', 'job$PBS_O_JOBID.out'))
+    self.batchError = gConfig.getValue('/LocalSite/BatchError', \
+                                         os.path.join(rootPath, 'data', 'job$PBS_O_JOBID.err'))
 
   #############################################################################
   def submitJob(self,executableFile,jdl,proxy,localID):
@@ -110,7 +114,7 @@ class TorqueComputingElement(ComputingElement):
     os.chmod('run%s.py' %executableFileBaseName,0755)
 #    time.sleep(120)
     # submit run###.py to the torque batch system keeping the local env
-    cmd = "qsub -q %s %s" %(self.queue, os.path.abspath('run%s.py' % executableFileBaseName ))
+    cmd = "qsub -o %s -e %s -q %s %s" %(self.batchOutput, self.batchError, self.queue, os.path.abspath('run%s.py' % executableFileBaseName ))
     self.log.verbose('CE submission command: %s' %(cmd))
 
     result = shellCall(0,cmd, callbackFunction = self.sendOutput)
