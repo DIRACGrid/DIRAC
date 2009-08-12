@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.23 2009/06/25 15:12:15 acasajus Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.23 2009/06/25 15:12:15 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.24 2009/08/12 13:59:09 acasajus Exp $
+__RCSID__ = "$Id: FileHelper.py,v 1.24 2009/08/12 13:59:09 acasajus Exp $"
 
 import os
 import md5
@@ -68,6 +68,11 @@ class FileHelper:
 
   def receiveData( self, maxBufferSize = 0 ):
     retVal = self.oTransport.receiveData( maxBufferSize = maxBufferSize )
+    if 'AbortTransfer' in retVal and retVal[ 'AbortTransfer' ]:
+      self.oTransport.sendData( S_OK() )
+      self.__finishedTransmission()
+      self.bReceivedEOF = True
+      return S_OK( '' )
     if not retVal[ 'OK' ]:
       return retVal
     stBuffer = retVal[ 'Value' ]
@@ -92,6 +97,13 @@ class FileHelper:
         abortTrans = S_OK()
         abortTrans[ 'AbortTransfer' ] = True
         self.oTransport.sendData( abortTrans )
+      else:
+        abortTrans = S_OK( ( False, "" ) )
+        abortTrans[ 'AbortTransfer' ] = True
+        retVal = self.oTransport.sendData( abortTrans )
+        if not retVal[ 'OK' ]:
+          return retVal
+        self.oTransport.receiveData()
     self.__finishedTransmission()
 
   def __finishedTransmission( self ):
@@ -268,6 +280,9 @@ class FileHelper:
     elif type( uFile ) == types.IntType:
       oFile = os.fdopen( uFile, "wb" )
       closeAfter = True
+    elif "write" in dir( uFile ):
+      oFile = uFile
+      closeAfter = False
     else:
       return S_ERROR( "%s is not a valid file." % uFile )
     result = S_OK( oFile )
