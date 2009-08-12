@@ -229,11 +229,10 @@ class StorageUsageDB(DB):
     if fileType:
       req = "%s AND D.DirectoryPath LIKE '%s/%s/%s'" % (req,'%',fileType,'%')
     if production:
-      req = "%s AND D.DirectoryPath LIKE '%s/%s/%s'" % ( req,'%',("%8.f" % int(production)).replace(' ','0'),'%')
+      req = "%s AND D.DirectoryPath LIKE '%s/%s/%s'" % (req,'%',("%8.f" % int(production)).replace(' ','0'),'%')
     if sites:
       req = "%s AND DU.StorageElement IN (%s)" % (req,stringListToString(sites))
     req = "%s AND DU.DirectoryID=D.DirectoryID GROUP BY DU.StorageElement;" % req
-    print req
     err = "StorageUsageDB.getStorageSummary: Failed to get storage summary."
     res = self._query(req)
     if not res['OK']:
