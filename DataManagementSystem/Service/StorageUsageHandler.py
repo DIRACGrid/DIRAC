@@ -1,11 +1,11 @@
 """ StorageUsageHandler is the implementation of the Storage Usage service in the DISET framework
 """
+from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.StorageUsageDB import StorageUsageDB
-import time,os
+
 # This is a global instance of the DataIntegrityDB class
 storageUsageDB = False
 
@@ -74,13 +74,18 @@ class StorageUsageHandler(RequestHandler):
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
 
+  ##################################################################
+  #
+  # These are the methods for monitoring the usage
+  #
+
   types_getStorageSummary = []
-  def export_getStorageSummary(self):
+  def export_getStorageSummary(self,directory='',filetype='',production='',sites=[]):
     """ Retieve a summary for the storage usage
     """
     try:
       gLogger.info("StorageUsageHandler.getStorageSummary: Attempting to get usage summary.")
-      res = storageUsageDB.getStorageSummary()
+      res = storageUsageDB.getStorageSummary(directory,filetype,production,sites)
       if res['OK']:
         gLogger.info("StorageUsageHandler.getStorageSummary: Successfully obtained usage.")
       else:
@@ -92,12 +97,12 @@ class StorageUsageHandler(RequestHandler):
       return S_ERROR(errStr)
 
   types_getUserStorageUsage = []
-  def export_getUserStorageUsage(self):
+  def export_getUserStorageUsage(self,userName=''):
     """ Retieve a summary of the user usage
     """
     try:
       gLogger.info("StorageUsageHandler.getUserStorageUsage: Attempting to get user usage summary.")
-      res = storageUsageDB.getUserStorageUsage()
+      res = storageUsageDB.getUserStorageUsage(userName)
       if res['OK']:
         gLogger.info("StorageUsageHandler.getUserStorageUsage: Successfully obtained usage.")
       else:
@@ -107,3 +112,4 @@ class StorageUsageHandler(RequestHandler):
       errStr = "StorageUsageHandler.getUserStorageUsage: Exception while obtaining usage."
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
+
