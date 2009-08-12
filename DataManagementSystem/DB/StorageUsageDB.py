@@ -242,6 +242,26 @@ class StorageUsageDB(DB):
       usageDict[storageElement] = {'Size':int(size), 'Files':int(files)}
     return S_OK(usageDict)
 
+  def getStorageDirectorySummary(self,dir='',fileType='',production='',sites=[]):
+    """ Gets the directories grouped by storage element
+    """
+    req = "SELECT D.DirectoryPath,SUM(DU.StorageElementSize),SUM(DU.StorageElementFiles) FROM DirectoryUsage AS DU, Directory AS D WHERE D.DirectoryPath LIKE '%s%s'" % (dir,'%')
+    if fileType:
+      req = "%s AND D.DirectoryPath LIKE '%s/%s/%s'" % (req,'%',fileType,'%')
+    if production:
+      req = "%s AND D.DirectoryPath LIKE '%s/%s/%s'" % (req,'%',("%8.f" % int(production)).replace(' ','0'),'%')
+    if sites:
+      req = "%s AND DU.StorageElement IN (%s)" % (req,stringListToString(sites))
+    req = "%s AND DU.DirectoryID=D.DirectoryID GROUP BY D.DirectoryPath ORDER BY SUM(DU.StorageElementSize) DESC;" % req
+    err = "StorageUsageDB.getStorageDirectorySummary: Failed to get storage summary."
+    res = self._query(req)
+    if not res['OK']:
+      return S_ERROR("%s %s" % (err, res['Message']))
+    dirUsage = []
+    for path,size,files in res['Value']:
+      dirUsage.append((path,long(size),int(files)))
+    return S_OK(dirUsage)
+
   def getUserStorageUsage(self,username=''):
     """ Retrieves the storage usage for each of the known users
     """
