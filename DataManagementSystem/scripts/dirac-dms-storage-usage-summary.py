@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-storage-usage-summary.py,v 1.1 2009/08/12 14:37:09 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-storage-usage-summary.py,v 1.2 2009/08/12 14:39:36 acsmith Exp $
 ########################################################################
-__RCSID__   = "$Id: dirac-dms-storage-usage-summary.py,v 1.1 2009/08/12 14:37:09 acsmith Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-dms-storage-usage-summary.py,v 1.2 2009/08/12 14:39:36 acsmith Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 import DIRAC
 from DIRAC.Core.Base import Script
 unit = 'GB'
@@ -42,7 +42,8 @@ res = rpc.getStorageSummary(dir)
 if not res['Value']:
   print 'No usage found'
   DIRAC.exit(2)
-print '%s %s %s' % ('SE'.ljust(20),('Size (%s)' % unit).ljust(20),'Files'.ljust(20))
+print '%s %s %s' % ('DIRAC SE'.ljust(20),('Size (%s)' % unit).ljust(20),'Files'.ljust(20))
+print '-'*50
 for se in sortList(res['Value'].keys()):
   dict = res['Value'][se]
   files = dict['Files']
