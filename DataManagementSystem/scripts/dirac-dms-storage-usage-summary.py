@@ -1,15 +1,21 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-storage-usage-summary.py,v 1.2 2009/08/12 14:39:36 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-storage-usage-summary.py,v 1.3 2009/08/12 15:38:21 acsmith Exp $
 ########################################################################
-__RCSID__   = "$Id: dirac-dms-storage-usage-summary.py,v 1.2 2009/08/12 14:39:36 acsmith Exp $"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__   = "$Id: dirac-dms-storage-usage-summary.py,v 1.3 2009/08/12 15:38:21 acsmith Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 import DIRAC
 from DIRAC.Core.Base import Script
 unit = 'GB'
 dir = ''
+fileType = ''
+prod = ''
+sites = []
 Script.registerSwitch( "u:", "unit=","   Unit to use [%s] (MB,GB,TB,PB)" % unit)
 Script.registerSwitch( "d:", "dir=", "   Dir to search [ALL]")
+Script.registerSwitch( "t:", "type=", "   File type to search [ALL]")
+Script.registerSwitch( "p:", "prod=", "   Production ID to search [ALL]")
+Script.registerSwitch( "s:", "sites=", "  Sites to consider [ALL]")
 Script.parseCommandLine( ignoreErrors = False )
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -28,6 +34,12 @@ for switch in Script.getUnprocessedSwitches():
     unit = switch[1]
   if switch[0].lower() == "d" or switch[0].lower() == "dir":
     dir = switch[1]
+  if switch[0].lower() == "t" or switch[0].lower() == "type":
+    fileType = switch[1]
+  if switch[0].lower() == "p" or switch[0].lower() == "prod":
+    prod = switch[1]
+  if switch[0].lower() == "s" or switch[0].lower() == "sites":
+    sites = switch[1].replace(',',' ').split()
 
 scaleDict = { 'MB' : 1000*1000.0,
               'GB' : 1000*1000*1000.0,
@@ -38,7 +50,7 @@ if not unit in scaleDict.keys():
 scaleFactor = scaleDict[unit]  
              
 rpc = RPCClient('dips://volhcb08.cern.ch:9151/DataManagement/StorageUsage')
-res = rpc.getStorageSummary(dir)
+res = rpc.getStorageSummary(dir,fileType,prod,sites)
 if not res['Value']:
   print 'No usage found'
   DIRAC.exit(2)
