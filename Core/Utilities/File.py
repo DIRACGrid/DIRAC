@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.24 2008/08/01 16:22:16 acsmith Exp $
-__RCSID__ = "$Id: File.py,v 1.24 2008/08/01 16:22:16 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.25 2009/08/12 16:05:22 acasajus Exp $
+__RCSID__ = "$Id: File.py,v 1.25 2009/08/12 16:05:22 acasajus Exp $"
 
 """
    Collection of DIRAC useful file related modules
@@ -95,6 +95,67 @@ def getGlobbedTotalSize( files ):
           size = 0
         totalSize += size
   return totalSize
+
+def getGlobbedFiles( files ):
+  """
+  Get list of files or a single file.
+  Globs the parameter to allow regular expressions
+  """
+  globbedFiles = []
+  if type( files ) in ( types.ListType, types.TupleType ):
+    for entry in files:
+      globbedFiles += getGlobbedFiles( entry )
+  else:
+    for path in glob.glob( files ):
+      if os.path.isdir( path ):
+        for content in os.listdir( path ):
+          globbedFiles += getGlobbedFiles( os.path.join( path, content ) )
+      if os.path.isfile( path ):
+        globbedFiles.append( path )
+  return globbedFiles
+
+def getCommonPath( files ):
+  """
+  Get the common path for all files in the file list
+  """
+  
+  def properSplit( dirPath ):
+    nDrive, nPath = os.path.splitdrive( dirPath )
+    return  [ nDrive ] + [ d for d in nPath.split( os.sep ) if d.strip() ]
+  
+  if not files:
+    return ""
+  commonPath = properSplit( files[0] )
+  for file in files:
+    if os.path.isdir( file ):
+      dirPath = file
+    else:
+      dirPath = os.path.dirname( file )
+    nPath = properSplit( dirPath )
+    tPath = []
+    for i in range( min( len( commonPath ), len( nPath ) ) ):
+      if commonPath[ i ] != nPath[ i ]:
+        break
+      tPath .append( commonPath[ i ] )
+    if not tPath:
+      return ""
+    commonPath = tPath
+  return tPath[0] + os.sep + os.path.join( *tPath[1:] )
+
+def getMD5ForFiles( fileList ):
+  """
+  Calculate md5 for the content of all the files
+  """
+  fileList.sort()
+  hash = md5.md5()
+  for filePath in fileList:
+    fd  = open( filePath, "rb" )
+    buf = fd.read( 4096 )
+    while buf:
+      hash.update( buf )
+      buf = fd.read( 4096 )
+    fd.close()
+  return hash.hexdigest()
 
 def stringAdler(string):
   """ Calculate adler32 of the supplied string
