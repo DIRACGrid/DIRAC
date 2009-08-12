@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.69 2009/07/10 10:09:19 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.70 2009/08/12 15:22:52 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-"""DIRAC Production Management Class (Under Development)
+"""DIRAC Production Management Class
 
    The DIRAC Production class allows to submit jobs using the
    Production Management System.
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.69 2009/07/10 10:09:19 atsareg Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.70 2009/08/12 15:22:52 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -839,6 +839,20 @@ class DiracProduction:
     return self.diracAPI.getJobInputData(jobID)
 
   #############################################################################
+  def getProdJobOutputData(self,jobID):
+    """ For a single jobID / list of jobIDs retrieve the output data LFN list.
+    """
+    result = self.diracAPI.getJobJDL(jobID)
+    if not result['OK']:
+      return result
+    if not result['Value'].has_key('ProductionOutputData'):
+      return S_ERROR('Could not obtain ProductionOutputData from job JDL')
+    lfns = result['Value']['ProductionOutputData']
+    if type(lfns)==type(' '):
+      lfns = [lfns]
+    return S_OK(lfns)
+
+  #############################################################################
   def getWMSProdJobID(self,jobID,printOutput=False):
     """This method takes the DIRAC WMS JobID and returns the Production JobID information.
     """
@@ -1144,7 +1158,7 @@ class DiracProduction:
         result = prodClient.setJobStatus(long(prodID),long(jobNumber),self.createdStatus)
         if not result['OK']:
           self.log.warn(result)
-          
+
       result = self._getOutputLFNs(updatedJob,prodID,jobNumber,inputData) #prodJob._toXML()
       if result['OK']:
         newProdJob = Job(updatedJob)
@@ -1251,7 +1265,7 @@ class DiracProduction:
       print >> jfile , xmlString
       jfile.close()
     except IOError,x:
-      self.log.error('Error creating description file %s: %s' % (jfilename,str(x)))   
+      self.log.error('Error creating description file %s: %s' % (jfilename,str(x)))
       return None
     self.toCleanUp.append(tmpdir)
     return jfilename
