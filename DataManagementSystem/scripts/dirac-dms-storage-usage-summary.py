@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-storage-usage-summary.py,v 1.3 2009/08/12 15:38:21 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-storage-usage-summary.py,v 1.4 2009/08/12 15:43:40 acsmith Exp $
 ########################################################################
-__RCSID__   = "$Id: dirac-dms-storage-usage-summary.py,v 1.3 2009/08/12 15:38:21 acsmith Exp $"
-__VERSION__ = "$Revision: 1.3 $"
+__RCSID__   = "$Id: dirac-dms-storage-usage-summary.py,v 1.4 2009/08/12 15:43:40 acsmith Exp $"
+__VERSION__ = "$Revision: 1.4 $"
 import DIRAC
 from DIRAC.Core.Base import Script
 unit = 'GB'
@@ -11,11 +11,11 @@ dir = ''
 fileType = ''
 prod = ''
 sites = []
-Script.registerSwitch( "u:", "unit=","   Unit to use [%s] (MB,GB,TB,PB)" % unit)
-Script.registerSwitch( "d:", "dir=", "   Dir to search [ALL]")
-Script.registerSwitch( "t:", "type=", "   File type to search [ALL]")
-Script.registerSwitch( "p:", "prod=", "   Production ID to search [ALL]")
-Script.registerSwitch( "s:", "sites=", "  Sites to consider [ALL]")
+Script.registerSwitch( "u:", "Unit=","   Unit to use [%s] (MB,GB,TB,PB)" % unit)
+Script.registerSwitch( "d:", "Dir=", "   Dir to search [ALL]")
+Script.registerSwitch( "t:", "Type=", "   File type to search [ALL]")
+Script.registerSwitch( "p:", "Prod=", "   Production ID to search [ALL]")
+Script.registerSwitch( "s:", "Sites=", "  Sites to consider [ALL]")
 Script.parseCommandLine( ignoreErrors = False )
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -47,7 +47,7 @@ scaleDict = { 'MB' : 1000*1000.0,
               'PB' : 1000*1000*1000*1000*1000.0}
 if not unit in scaleDict.keys():
   usage()
-scaleFactor = scaleDict[unit]  
+scaleFactor = scaleDict[unit]
              
 rpc = RPCClient('dips://volhcb08.cern.ch:9151/DataManagement/StorageUsage')
 res = rpc.getStorageSummary(dir,fileType,prod,sites)
