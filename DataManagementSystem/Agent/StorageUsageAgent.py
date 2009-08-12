@@ -1,7 +1,7 @@
 """  StorageUsageAgent takes the LFC as the primary source of information to determine storage usage.
 """
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/StorageUsageAgent.py,v 1.18 2009/08/11 20:25:24 acsmith Exp $
-__RCSID__ = "$Id: StorageUsageAgent.py,v 1.18 2009/08/11 20:25:24 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/StorageUsageAgent.py,v 1.19 2009/08/12 19:39:14 acsmith Exp $
+__RCSID__ = "$Id: StorageUsageAgent.py,v 1.19 2009/08/12 19:39:14 acsmith Exp $"
 
 from DIRAC  import gLogger, gMonitor, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -57,6 +57,7 @@ class StorageUsageAgent(AgentModule):
       currentDir = oNamespaceBrowser.getActiveDir()
       gLogger.info("execute: Getting usage for %s." % currentDir)
       numberOfFiles = 0
+      subDirs = []
       res = self.catalog.getCatalogDirectorySize(currentDir)
       if not res['OK']:
         gLogger.error("execute: Completely failed to get usage.", "%s %s" % (currentDir,res['Message']))
