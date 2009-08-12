@@ -6,7 +6,7 @@ from types import *
 
 from DIRAC import gConfig,gLogger,S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities.List import intListToString
+from DIRAC.Core.Utilities.List import intListToString,stringListToString
 
 #############################################################################
 
@@ -219,13 +219,21 @@ class StorageUsageDB(DB):
 
   #############################################################################
   #
-  # Methods for retreiving storage usage (still to be developed)
+  # Methods for retreiving storage usage
   #
 
-  def getStorageSummary(self):
+  def getStorageSummary(self,dir='',fileType='',production='',sites=[]):
     """ Retrieves the storage summary for all of the known directories
     """
-    req = "SELECT StorageElement,SUM(StorageElementSize),SUM(StorageElementFiles) FROM DirectoryUsage GROUP BY StorageElement;"
+    req = "SELECT DU.StorageElement,SUM(DU.StorageElementSize),SUM(DU.StorageElementFiles) FROM DirectoryUsage AS DU, Directory AS D WHERE D.DirectoryPath LIKE '%s%s'" % (dir,'%')
+    if fileType:
+      req = "%s AND D.DirectoryPath LIKE '%s/%s/%s'" % (req,'%',fileType,'%')
+    if production:
+      req = "%s AND D.DirectoryPath LIKE '%s/%s/%s'" % ( req,'%',("%8.f" % int(production)).replace(' ','0'),'%')
+    if sites:
+      req = "%s AND DU.StorageElement IN (%s)" % (req,stringListToString(sites))
+    req = "%s AND DU.DirectoryID=D.DirectoryID GROUP BY DU.StorageElement;" % req
+    print req
     err = "StorageUsageDB.getStorageSummary: Failed to get storage summary."
     res = self._query(req)
     if not res['OK']:
@@ -235,11 +243,13 @@ class StorageUsageDB(DB):
       usageDict[storageElement] = {'Size':int(size), 'Files':int(files)}
     return S_OK(usageDict)
 
-  def getUserStorageUsage(self):
+  def getUserStorageUsage(self,username=''):
     """ Retrieves the storage usage for each of the known users
     """
-    req = "SELECT d.DirectoryID,d.DirectoryPath,SUM(du.StorageElementSize) FROM Directory AS d, DirectoryUsage AS du\
- WHERE d.DirectoryPath LIKE '/lhcb/user/%' AND d.DirectoryID = du.DirectoryID GROUP BY d.DirectoryID;"
+    if username:
+      req = "SELECT d.DirectoryID,d.DirectoryPath,SUM(du.StorageElementSize) FROM Directory AS d, DirectoryUsage AS du  WHERE d.DirectoryPath LIKE '/lhcb/user/%s/%s/%s' AND d.DirectoryID = du.DirectoryID GROUP BY d.DirectoryID;" % (username[0],username,'%')
+    else:
+      req = "SELECT d.DirectoryID,d.DirectoryPath,SUM(du.StorageElementSize) FROM Directory AS d, DirectoryUsage AS du  WHERE d.DirectoryPath LIKE '/lhcb/user/%' AND d.DirectoryID = du.DirectoryID GROUP BY d.DirectoryID;"
     err = "StorageUsageDB.__getUserStorageUsage: Failed to obtain user storage usage."
     res = self._query(req)
     if not res['OK']:
@@ -253,7 +263,7 @@ class StorageUsageDB(DB):
         userDict[userName] += int(directorySize)
       return S_OK(userDict)
 
-  def __getLFNDirSiteDict(self,dirs,sites):
+  def __getLFNSiteDict(self,dir):
     """ Performs sql query to get site usage for provided directories and sites
     """
     pass
