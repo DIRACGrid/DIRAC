@@ -96,6 +96,23 @@ class StorageUsageHandler(RequestHandler):
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
 
+  types_getStorageDirectorySummary = []
+  def export_getStorageDirectorySummary(self,directory='',filetype='',production='',sites=[]):
+    """ Retieve a directory summary for the storage usage
+    """
+    try:
+      gLogger.info("StorageUsageHandler.getStorageDirectorySummary: Attempting to get usage summary.")
+      res = storageUsageDB.getStorageDirectorySummary(directory,filetype,production,sites)
+      if res['OK']:
+        gLogger.info("StorageUsageHandler.getStorageDirectorySummary: Successfully obtained usage.")
+      else:
+        gLogger.error("StorageUsageHandler.getStorageDirectorySummary: Failed obtain usage.")
+      return res
+    except Exception, x:
+      errStr = "StorageUsageHandler.getStorageDirectorySummary: Exception while obtaining usage."
+      gLogger.exception(errStr,lException=x)
+      return S_ERROR(errStr)
+
   types_getUserStorageUsage = []
   def export_getUserStorageUsage(self,userName=''):
     """ Retieve a summary of the user usage
