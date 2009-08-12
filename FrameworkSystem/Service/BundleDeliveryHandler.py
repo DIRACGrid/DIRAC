@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/BundleDeliveryHandler.py,v 1.1 2009/08/12 14:44:31 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/BundleDeliveryHandler.py,v 1.2 2009/08/12 16:15:44 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: BundleDeliveryHandler.py,v 1.1 2009/08/12 14:44:31 acasajus Exp $"
+__RCSID__ = "$Id: BundleDeliveryHandler.py,v 1.2 2009/08/12 16:15:44 acasajus Exp $"
 
 import types
 import os
@@ -72,7 +72,7 @@ class BundleManager:
       commonPath = File.getCommonPath( filesToBundle )
       commonEnd = len( commonPath )
       gLogger.info( "Bundle will have %s files with common path %s" % ( len( filesToBundle ), commonPath ) )
-      tarBuffer = tarfile.open( None, "w:gz", buffer )
+      tarBuffer = tarfile.open( 'dummy', "w:gz", buffer )
       for filePath in filesToBundle:
         tarBuffer.add( filePath, filePath[ commonEnd: ] )
       tarBuffer.close()
