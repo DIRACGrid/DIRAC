@@ -24,7 +24,7 @@ def getShifterProxy( type, file = False ):
   userDN = result[ 'Value' ][0]
   userGroup = gConfig.getValue( '%s/Group' % shifterSection, 'lhcb_prod' )
   gLogger.info( "Getting proxy for shifter %s@%s (%s)" % ( userName, userGroup, userDN ) )
-  result = gProxyManager.downloadVOMSProxy( userDN, userGroup )
+  result = gProxyManager.downloadVOMSProxy( userDN, userGroup, requiredTimeLeft = 4*43200 )
   if not result[ 'OK' ]:
     return result
   chain = result[ 'Value' ]
