@@ -1,7 +1,7 @@
 """  UserStorageUsageAgent simply inherits the StorageUsage agent and loops over the /lhcb/user directory
 """
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/UserStorageUsageAgent.py,v 1.2 2009/08/11 20:23:35 acsmith Exp $
-__RCSID__ = "$Id: UserStorageUsageAgent.py,v 1.2 2009/08/11 20:23:35 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/UserStorageUsageAgent.py,v 1.3 2009/08/13 16:01:21 acsmith Exp $
+__RCSID__ = "$Id: UserStorageUsageAgent.py,v 1.3 2009/08/13 16:01:21 acsmith Exp $"
 
 from DIRAC  import gLogger, gMonitor, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -33,5 +33,19 @@ class UserStorageUsageAgent(StorageUsageAgent):
     return S_OK()
 
   def removeEmptyDir(self,directory):
-    gLogger.info("removeEmptyDir: Not removing user owned empty directory.")
+    gLogger.info("removeEmptyDir: Attempting to remove empty directory from Storage Usage database")
+    res = self.StorageUsageDB.publishEmptyDirectory(directory)
+    if not res['OK']:
+      gLogger.error("removeEmptyDir: Failed to remove empty directory from Storage Usage database.",res['Message'])
+    else:
+      if len(directory.split('/')) > 5:
+        res = self.catalog.removeCatalogDirectory(directory)
+        if not res['OK']:
+          gLogger.error("removeEmptyDir: Failed to remove empty directory from File Catalog.",res['Message'])
+        elif res['Value']['Failed'].has_key(directory):   
+          gLogger.error("removeEmptyDir: Failed to remove empty directory from File Catalog.",res['Value']['Failed'][directory])
+        else:
+          gLogger.info("removeEmptyDir: Successfully removed empty directory from File Catalog.")
+      else:
+        gLogger.info("removeEmptyDir: Not removing user base directory.")
     return S_OK()
