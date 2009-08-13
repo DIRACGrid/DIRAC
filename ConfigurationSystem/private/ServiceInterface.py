@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.16 2009/08/13 12:33:02 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.16 2009/08/13 12:33:02 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.17 2009/08/13 15:02:41 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.17 2009/08/13 15:02:41 acasajus Exp $"
 
 import sys
 import os
@@ -126,7 +126,7 @@ class ServiceInterface( threading.Thread ):
     gLogger.info( "Checking versions\nremote: %s\nlocal:  %s" % (  sRemoteVersion, sLocalVersion ) )
     if sRemoteVersion != sLocalVersion:
       if not gConfigurationData.mergingEnabled():
-        return S_ERROR( "Local and remote versions differ (%s vs %s). Cannot commit" % ( sLocalVersion, sRemoteVersion ) )
+        return S_ERROR( "Local and remote versions differ (%s vs %s). Cannot commit." % ( sLocalVersion, sRemoteVersion ) )
       else:
         gLogger.info( "AutoMerging new data!" )
         if updateVersionOption:
@@ -216,7 +216,7 @@ class ServiceInterface( threading.Thread ):
     gLogger.info( "Loaded client original version %s" % prevRemoteConfData.getVersion() )
     return S_OK( prevRemoteConfData.getRemoteCFG() )
   
-  def __checkConflictsInModifications( self, realModList, reqModList, parentSection = "" ):
+  def _checkConflictsInModifications( self, realModList, reqModList, parentSection = "" ):
     realModifiedSections = dict( [ ( modAc[1], modAc[3] ) for modAc in realModList if modAc[0].find( 'Sec' ) == len( modAc[0] ) - 3 ] )
     reqOptionsModificationList = dict( [ ( modAc[1], modAc[3] ) for modAc in reqModList if modAc[0].find( 'Opt' ) == len( modAc[0] ) - 3 ] )
     optionModRequests = 0
@@ -231,7 +231,7 @@ class ServiceInterface( threading.Thread ):
           return S_ERROR( "Section %s/%s cannot be deleted. It has been modified." % ( parentSection, objectName ) )
       elif action == "modSec":
         if objectName in realModifiedSections:
-          result = self.__checkConflictsInModifications( realModifiedSections[ objectName ], 
+          result = self._checkConflictsInModifications( realModifiedSections[ objectName ], 
                                                          modAc[3], "%s/%s" % ( parentSection, objectName ) )
           if not result[ 'OK' ]:
             return result
@@ -255,7 +255,7 @@ class ServiceInterface( threading.Thread ):
     # prevCli -> curSrv VS prevCli -> curCli
     prevCliToCurCliModList = prevCliCFG.getModifications( curCliCFG )
     prevCliToCurSrvModList = prevCliCFG.getModifications( curSrvCFG )
-    result = self.__checkConflictsInModifications( prevCliToCurSrvModList, 
+    result = self._checkConflictsInModifications( prevCliToCurSrvModList, 
                                                    prevCliToCurCliModList )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot AutoMerge: %s" % result[ 'Message' ] )
