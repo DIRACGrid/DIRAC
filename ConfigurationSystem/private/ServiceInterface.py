@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.15 2009/07/01 16:45:16 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.15 2009/07/01 16:45:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ServiceInterface.py,v 1.16 2009/08/13 12:33:02 acasajus Exp $
+__RCSID__ = "$Id: ServiceInterface.py,v 1.16 2009/08/13 12:33:02 acasajus Exp $"
 
 import sys
 import os
@@ -125,16 +125,19 @@ class ServiceInterface( threading.Thread ):
     sLocalVersion = gConfigurationData.getVersion()
     gLogger.info( "Checking versions\nremote: %s\nlocal:  %s" % (  sRemoteVersion, sLocalVersion ) )
     if sRemoteVersion != sLocalVersion:
-      gLogger.info( "AutoMerging new data!" )
-      if updateVersionOption:
-        return S_ERROR( "Cannot AutoMerge! version was overwritten" )
-      result = self.__mergeIndependentUpdates( oRemoteConfData )
-      if not result[ 'OK' ]:
-        gLogger.warn( "Could not AutoMerge!", result[ 'Message' ] )
-        return S_ERROR( "AutoMerge failed: %s" % result[ 'Message' ] )
-      requestedRemoteCFG = result[ 'Value' ]
-      gLogger.info( "AutoMerge successful!" )
-      oRemoteConfData.setRemoteCFG( requestedRemoteCFG )
+      if not gConfigurationData.mergingEnabled():
+        return S_ERROR( "Local and remote versions differ (%s vs %s). Cannot commit" % ( sLocalVersion, sRemoteVersion ) )
+      else:
+        gLogger.info( "AutoMerging new data!" )
+        if updateVersionOption:
+          return S_ERROR( "Cannot AutoMerge! version was overwritten" )
+        result = self.__mergeIndependentUpdates( oRemoteConfData )
+        if not result[ 'OK' ]:
+          gLogger.warn( "Could not AutoMerge!", result[ 'Message' ] )
+          return S_ERROR( "AutoMerge failed: %s" % result[ 'Message' ] )
+        requestedRemoteCFG = result[ 'Value' ]
+        gLogger.info( "AutoMerge successful!" )
+        oRemoteConfData.setRemoteCFG( requestedRemoteCFG )
     #Test that configuration names are the same
     sRemoteName = oRemoteConfData.getName()
     sLocalName = gConfigurationData.getName()

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.22 2009/06/30 19:32:49 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.22 2009/06/30 19:32:49 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.23 2009/08/13 12:33:01 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.23 2009/08/13 12:33:01 acasajus Exp $"
 
 import os.path
 import zlib
@@ -231,6 +231,14 @@ class ConfigurationData:
                                         self.mergedCFG ) )
     except:
       return 600
+    
+  def mergingEnabled( self ):
+    try:
+      val = self.extractOptionFromCFG( "%s/EnableAutoMerge" % self.configurationPath,
+                                        self.mergedCFG )
+      return val.lower() in ( "yes", "true", "y" )
+    except:
+      return False
 
   def getAutoPublish( self ):
     value = self.extractOptionFromCFG( "%s/AutoPublish" % self.configurationPath,
