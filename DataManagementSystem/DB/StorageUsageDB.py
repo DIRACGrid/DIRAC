@@ -269,7 +269,7 @@ class StorageUsageDB(DB):
       req = "SELECT d.DirectoryID,d.DirectoryPath,SUM(du.StorageElementSize) FROM Directory AS d, DirectoryUsage AS du  WHERE d.DirectoryPath LIKE '/lhcb/user/%s/%s/%s' AND d.DirectoryID = du.DirectoryID GROUP BY d.DirectoryID;" % (username[0],username,'%')
     else:
       req = "SELECT d.DirectoryID,d.DirectoryPath,SUM(du.StorageElementSize) FROM Directory AS d, DirectoryUsage AS du  WHERE d.DirectoryPath LIKE '/lhcb/user/%' AND d.DirectoryID = du.DirectoryID GROUP BY d.DirectoryID;"
-    err = "StorageUsageDB.__getUserStorageUsage: Failed to obtain user storage usage."
+    err = "StorageUsageDB.getUserStorageUsage: Failed to obtain user storage usage."
     res = self._query(req)
     if not res['OK']:
       return S_ERROR("%s %s" % (err, res['Message']))
@@ -282,22 +282,15 @@ class StorageUsageDB(DB):
         userDict[userName] += int(directorySize)
       return S_OK(userDict)
 
-  def __getLFNSiteDict(self,dir):
-    """ Performs sql query to get site usage for provided directories and sites
+  def getStorageElementSelection(self):
+    """ Retireve the possible selections available through the web-monitor
     """
-    pass
-
-  def __getSites(self,types,prodids,lumis):
-    """ Performs the SQL queries to get the sites for the supplied options
-    """
-    pass
-
-  def __getDirsForOptions(self,types,prodids,lumis):
-    """ Performs the SQL queries to get directories from Parameters table
-    """
-    pass
-
-  def __getOptions(self,types,prodids,lumis):
-    """ Performs the SQL queries to get all the available parameters
-    """
-    pass
+    err = "StorageUsageDB.: Failed to obtain distinct storage elements."
+    req = "SELECT DISTINCT StorageElement FROM DirectoryUsage ORDER BY StorageElement;"
+    res = self._query(req)
+    if not res['OK']:
+      return S_ERROR("%s %s" % (err, res['Message']))
+    storageElements = []
+    for tuple in res['Value']:
+      storageElements.append(tuple[0])
+    return S_OK(storageElements)
