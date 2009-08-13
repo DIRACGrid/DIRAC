@@ -113,6 +113,71 @@ class StorageUsageHandler(RequestHandler):
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
 
+  types_getStorageDirectorySummaryWeb = []
+  def export_getStorageDirectorySummaryWeb(self, selectDict, sortList, startItem, maxItems):
+    """ Get the summary of the directory storage summary
+    """
+    resultDict = {}
+
+    # Sorting instructions. Only one for the moment.
+    if sortList:
+      orderAttribute = sortList[0][0]+":"+sortList[0][1]
+    else:
+      orderAttribute = None
+
+    directory = ''
+    if selectDict.has_key('Directory'):
+      directory = selectDict['Directory']
+    filetype = ''
+    if selectDict.has_key('FileType'):
+      filetype = selectDict['FileType']
+    production = ''
+    if selectDict.has_key('Production'):
+      production = selectDict['Production']   
+    ses = []
+    if selectDict.has_key('SEs'):
+      ses = selectDict['SEs']
+
+    res = storageUsageDB.getStorageDirectorySummary(directory,filetype,production,ses)
+    if not res['OK']:
+      gLogger.error("StorageUsageHandler.getStorageDirectorySummaryWeb: Failed to obtain directory summary.",res['Message'])
+      return res
+    dirList = res['Value']
+
+    nDirs = len(dirList)
+    resultDict['TotalRecords'] = nDirs
+    if nDirs == 0:
+      return S_OK(resultDict)
+    iniDir = startItem
+    lastDir = iniDir + maxItems
+    if iniDir >= nDirs:
+      return S_ERROR('Item number out of range')
+    if lastDir > nDirs:
+      lastDir = nDirs
+
+    # prepare the standard structure now
+    resultDict['ParameterNames'] = ['Directory Path','Size','Files']
+    resultDict['Records'] = dirList[iniDir:lastDir]
+    resultDict['Extras'] = {}
+    return S_OK(resultDict)
+
+  types_getStorageElementSelection = []
+  def export_getStorageElementSelection(self):
+    """ Retrieve the possible selections 
+    """
+    try:
+      gLogger.info("StorageUsageHandler.getStorageElementSelection: Attempting to get the SE selections.")
+      res = storageUsageDB.getStorageElementSelection()
+      if res['OK']:
+        gLogger.info("StorageUsageHandler.getStorageElementSelection: Successfully obtained SE selections.")
+      else:
+        gLogger.error("StorageUsageHandler.getStorageElementSelection: Failed obtain selections.")
+      return res
+    except Exception, x:
+      errStr = "StorageUsageHandler.getStorageElementSelection: Exception while obtaining usage."
+      gLogger.exception(errStr,lException=x)
+      return S_ERROR(errStr)        
+
   types_getUserStorageUsage = []
   def export_getUserStorageUsage(self,userName=''):
     """ Retieve a summary of the user usage
@@ -129,4 +194,3 @@ class StorageUsageHandler(RequestHandler):
       errStr = "StorageUsageHandler.getUserStorageUsage: Exception while obtaining usage."
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
-
