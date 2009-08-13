@@ -24,33 +24,33 @@ class LcgFileCatalogCombinedClient:
       configPath = '/Resources/FileCatalogs/LcgFileCatalogCombined/LcgGfalInfosys'
       infosys = gConfig.getValue(configPath)
 
+    self.valid = False
     if not master_host:
       configPath = '/Resources/FileCatalogs/LcgFileCatalogCombined/MasterHost'
       master_host = gConfig.getValue(configPath)
-    # Create the master LFC client first
-    self.lfc = LcgFileCatalogClient(infosys,master_host)
+    if master_host:
+      # Create the master LFC client first
+      self.lfc = LcgFileCatalogClient(infosys,master_host)
+      if self.lfc.isOK():
+        self.valid = True
 
-    self.valid = False
-    if self.lfc.isOK():
-      self.valid = True
+      if not mirrors:
+        configPath = '/Resources/FileCatalogs/LcgFileCatalogCombined/ReadOnlyHosts'
+        mirrors = gConfig.getValue(configPath,[])
+      # Create the mirror LFC instances
+      self.mirrors = []
+      for mirror in mirrors:
+        lfc = LcgFileCatalogClient(infosys,mirror)
+        self.mirrors.append(lfc)
+      random.shuffle(self.mirrors)
+      self.nmirrors = len(self.mirrors)
 
-    if not mirrors:
-      configPath = '/Resources/FileCatalogs/LcgFileCatalogCombined/ReadOnlyHosts'
-      mirrors = gConfig.getValue(configPath,[])
-    # Create the mirror LFC instances
-    self.mirrors = []
-    for mirror in mirrors:
-      lfc = LcgFileCatalogClient(infosys,mirror)
-      self.mirrors.append(lfc)
-    random.shuffle(self.mirrors)
-    self.nmirrors = len(self.mirrors)
-
-    # Keep the environment for the master instance
-    self.master_host = self.lfc.host
-    os.environ['LFC_HOST'] = self.master_host
-    os.environ['LCG_GFAL_INFOSYS'] = infosys
-    self.name = 'LFC'
-    self.timeout = 3000
+      # Keep the environment for the master instance
+      self.master_host = self.lfc.host
+      os.environ['LFC_HOST'] = self.master_host
+      os.environ['LCG_GFAL_INFOSYS'] = infosys
+      self.name = 'LFC'
+      self.timeout = 3000
 
   def isOK(self):
     return self.valid
