@@ -227,7 +227,7 @@ class StorageUsageDB(DB):
     """
     req = "SELECT DU.StorageElement,SUM(DU.StorageElementSize),SUM(DU.StorageElementFiles) FROM DirectoryUsage AS DU, Directory AS D WHERE D.DirectoryPath LIKE '%s%s'" % (dir,'%')
     if fileType:
-      req = "%s AND D.DirectoryPath LIKE '%s/%s/%s'" % (req,'%',fileType,'%')
+      req = "%s AND D.DirectoryPath LIKE '%s/%s%s'" % (req,'%',fileType,'%')
     if production:
       req = "%s AND D.DirectoryPath LIKE '%s/%s/%s'" % (req,'%',("%8.f" % int(production)).replace(' ','0'),'%')
     if sites:
@@ -247,7 +247,7 @@ class StorageUsageDB(DB):
     """
     req = "SELECT D.DirectoryPath,SUM(DU.StorageElementSize),SUM(DU.StorageElementFiles) FROM DirectoryUsage AS DU, Directory AS D WHERE D.DirectoryPath LIKE '%s%s'" % (dir,'%')
     if fileType:
-      req = "%s AND D.DirectoryPath LIKE '%s/%s/%s'" % (req,'%',fileType,'%')
+      req = "%s AND D.DirectoryPath LIKE '%s/%s%s'" % (req,'%',fileType,'%')
     if production:
       req = "%s AND D.DirectoryPath LIKE '%s/%s/%s'" % (req,'%',("%8.f" % int(production)).replace(' ','0'),'%')
     if sites:
