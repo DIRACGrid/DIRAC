@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.7 2009/07/01 16:45:35 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.7 2009/07/01 16:45:35 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.8 2009/08/13 15:46:45 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.8 2009/08/13 15:46:45 acasajus Exp $"
 
 import types
 import copy
@@ -743,10 +743,6 @@ class CFG:
       elif action == "modOpt":
         if key not in self.listOptions():
           return S_ERROR( "Option %s/%s does not exist" % ( parentSection, key ) )
-        value = modAction[2]
-        comment = modAction[3].strip()
-        self.setOption( key , value, comment )
-        #-------
         comment = modAction[4].strip()
         self.setOption( key , value, comment )
         if iPos >= len( self.__orderedList ) or key != self.__orderedList[ iPos ]:
