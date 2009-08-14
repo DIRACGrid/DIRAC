@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.23 2009/08/13 12:33:01 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.23 2009/08/13 12:33:01 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.24 2009/08/14 15:55:47 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.24 2009/08/14 15:55:47 acasajus Exp $"
 
 import os.path
 import zlib
@@ -301,6 +301,11 @@ class ConfigurationData:
       return True
     return False
 
+  def skipCACheck( self ):
+    value = self.extractOptionFromCFG( "/DIRAC/Security/SkipCAChecks" )
+    if value and value.lower() in ( "y", "yes", "true" ):
+      return True
+    return False
 
   def dumpLocalCFGToFile( self, fileName ):
     try:
