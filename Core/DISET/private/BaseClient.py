@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.64 2009/08/10 13:38:37 acasajus Exp $
-__RCSID__ = "$Id: BaseClient.py,v 1.64 2009/08/10 13:38:37 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/BaseClient.py,v 1.65 2009/08/14 10:17:06 acasajus Exp $
+__RCSID__ = "$Id: BaseClient.py,v 1.65 2009/08/14 10:17:06 acasajus Exp $"
 
 import sys
 import types
@@ -88,10 +88,11 @@ class BaseClient:
     else:
       self.useCertificates = gConfig._useServerCertificate()
       self.kwargs[ self.KW_USE_CERTIFICATES ] = self.useCertificates
-    if self.useCertificates:
-      self.kwargs[ self.KW_SKIP_CA_CHECK ] = False
-    else:
-      self.kwargs[ self.KW_SKIP_CA_CHECK ] = CS.skipCACheck()
+    if self.KW_SKIP_CA_CHECK not in self.kwargs:
+      if self.useCertificates:
+        self.kwargs[ self.KW_SKIP_CA_CHECK ] = False
+      else:
+        self.kwargs[ self.KW_SKIP_CA_CHECK ] = CS.skipCACheck()
     if self.KW_PROXY_CHAIN in self.kwargs:
       try:
          self.kwargs[ self.KW_PROXY_STRING ] = self.kwargs[ self.KW_PROXY_CHAIN ].dumpAllToString()[ 'Value' ]
