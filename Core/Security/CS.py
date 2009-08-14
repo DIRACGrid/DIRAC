@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/CS.py,v 1.14 2009/06/10 11:18:15 acasajus Exp $
-__RCSID__ = "$Id: CS.py,v 1.14 2009/06/10 11:18:15 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/CS.py,v 1.15 2009/08/14 15:56:40 acasajus Exp $
+__RCSID__ = "$Id: CS.py,v 1.15 2009/08/14 15:56:40 acasajus Exp $"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
@@ -101,3 +101,6 @@ def getGroupsWithVOMSAttribute( vomsAttr ):
 
 def skipCACheck():
   return gConfig.getValue( "/DIRAC/Security/SkipCAChecks", "false" ).lower() in ( "y", "yes", "true" )
+
+def useServerCertificate():
+  return gConfig.getValue( "/DIRAC/Security/UseServerCertificate", "false" ).lower() in ( "y", "yes", "true" )
