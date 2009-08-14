@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.30 2009/06/17 11:05:38 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.30 2009/06/17 11:05:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.31 2009/08/14 15:56:02 acasajus Exp $
+__RCSID__ = "$Id: Refresher.py,v 1.31 2009/08/14 15:56:02 acasajus Exp $"
 
 import threading
 import time
@@ -75,7 +75,9 @@ class Refresher( threading.Thread ):
     from DIRAC.Core.DISET.RPCClient import RPCClient
     sMasterServer = gConfigurationData.getMasterServer()
     if sMasterServer:
-      oClient = RPCClient( sMasterServer, timeout = self.timeout, useCertificates = gConfigurationData.useServerCertificate() )
+      oClient = RPCClient( sMasterServer, timeout = self.timeout, 
+                           useCertificates = gConfigurationData.useServerCertificate(),
+                           skipCACheck = gConfigurationData.skipCACheck() )
       dRetVal = self.__updateFromRemoteLocation( oClient )
       if not dRetVal[ 'OK' ]:
         gLogger.error( "Can't update from master server", dRetVal[ 'Message' ] )
@@ -106,8 +108,9 @@ class Refresher( threading.Thread ):
 
     for sServer in lRandomListOfServers:
         from DIRAC.Core.DISET.RPCClient import RPCClient
-        #oClient = RPCClient( sServer, timeout = self.timeout, useCertificates = gConfigurationData.useServerCertificate() )
-        oClient = RPCClient( sServer, useCertificates = gConfigurationData.useServerCertificate() )
+        oClient = RPCClient( sServer, 
+                           useCertificates = gConfigurationData.useServerCertificate(),
+                           skipCACheck = gConfigurationData.skipCACheck() )
         dRetVal = self.__updateFromRemoteLocation( oClient )
         if dRetVal[ 'OK' ]:
           return dRetVal
