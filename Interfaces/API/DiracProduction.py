@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.70 2009/08/12 15:22:52 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.71 2009/08/14 12:19:04 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.70 2009/08/12 15:22:52 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.71 2009/08/14 12:19:04 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -62,7 +62,7 @@ class DiracProduction:
                         'TransformationName':'Name','Type':'Type'}
     self.prodAdj = 22
     self.proxy = None
-    self.commands = {'start':['Active','Manual'],'stop':['Stopped','Manual'],'automatic':['Active','Automatic'],'manual':['Active','Manual'],'completed':['Completed','Manual'],'cleaning':['Cleaning','Manual'],'flush':['Flush','Automatic'],'deleted':['Deleted','Manual'],'archived':['Archived','Manual']}
+    self.commands = {'start':['Active','Manual'],'stop':['Stopped','Manual'],'automatic':['Active','Automatic'],'manual':['Active','Manual'],'completed':['Completed','Manual'],'cleaning':['Cleaning','Manual'],'flush':['Flush','Automatic'],'deleted':['Deleted','Manual'],'archived':['Archived','Manual'],'valinputs':['ValidatingInputs','Manual'],'valoutputs':['ValidatingOutputs','Manual']}
 
   #############################################################################
   def getAllProductions(self,printOutput=False):
