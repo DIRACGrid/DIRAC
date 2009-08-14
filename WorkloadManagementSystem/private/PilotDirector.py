@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/PilotDirector.py,v 1.5 2009/07/09 06:04:03 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/PilotDirector.py,v 1.6 2009/08/14 10:14:47 rgracian Exp $
 # File :   PilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -15,7 +15,7 @@
   This means that DIRAC direct submission to Grid CE's (CREAM, ...) will be handled by DIRAC Pilot
   Director making use of a DIRAC CREAM Computing Element class
 """
-__RCSID__ = "$Id: PilotDirector.py,v 1.5 2009/07/09 06:04:03 rgracian Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.6 2009/08/14 10:14:47 rgracian Exp $"
 
 
 import os, time, tempfile, shutil, re, random
@@ -265,7 +265,7 @@ class PilotDirector:
 
       pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
 
-      pilotsToSubmit = pilotsToSubmit / self.maxJobsInFillMode
+      pilotsToSubmit = ( pilotsToSubmit - 1 ) / self.maxJobsInFillMode + 1
     # Use Filling mode
     pilotOptions.append( '-M %s' % self.maxJobsInFillMode )
 

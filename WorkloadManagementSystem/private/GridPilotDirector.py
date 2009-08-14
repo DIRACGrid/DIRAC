@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.10 2009/07/22 18:28:26 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.11 2009/08/14 10:14:47 rgracian Exp $
 # File :   GridPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -12,7 +12,7 @@
   underlying resources.
 
 """
-__RCSID__ = "$Id: GridPilotDirector.py,v 1.10 2009/07/22 18:28:26 rgracian Exp $"
+__RCSID__ = "$Id: GridPilotDirector.py,v 1.11 2009/08/14 10:14:47 rgracian Exp $"
 
 
 GRIDENV                = ''
@@ -191,7 +191,7 @@ class GridPilotDirector(PilotDirector):
       for pilotReference, resourceBroker in submitRet:
         pilotReference = [pilotReference]
         submittedPilots += len(pilotReference)
-        pilotAgentsDB.addPilotTQReference(pilotReference, taskQueueID, ownerDN,
+        pilotAgentsDB.addPilotTQReference(pilotReference[0], taskQueueID, ownerDN,
                       vomsGroup, broker=resourceBroker, gridType=self.gridMiddleware,
                       requirements=pilotRequirements )
 
