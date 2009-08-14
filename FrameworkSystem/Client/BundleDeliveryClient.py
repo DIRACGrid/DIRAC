@@ -6,7 +6,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.Utilities import File
-from DIRAC.Core.Security import Locations
+from DIRAC.Core.Security import Locations, CS
 
 class BundleDeliveryClient:
 
@@ -18,12 +18,14 @@ class BundleDeliveryClient:
   def __getRPCClient(self):
     if self.rpcClient:
       return self.rpcClient
-    return RPCClient( "Framework/BundleDelivery", skipCACheck = True )
+    return RPCClient( "Framework/BundleDelivery", 
+                      skipCACheck = CS.skipCACheck() )
   
   def __getTransferClient(self):
     if self.transferClient:
       return self.transferClient
-    return TransferClient( "Framework/BundleDelivery", skipCACheck = True )
+    return TransferClient( "Framework/BundleDelivery", 
+                           skipCACheck = CS.skipCACheck() )
 
   def __getHash( self, bundleID, dirToSyncTo ):
     if not os.path.isdir( dirToSyncTo ):
