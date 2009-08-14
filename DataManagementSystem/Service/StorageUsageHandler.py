@@ -155,10 +155,16 @@ class StorageUsageHandler(RequestHandler):
     if lastDir > nDirs:
       lastDir = nDirs
 
+    # prepare the extras count
+    res = storageUsageDB.getStorageSummary(directory,filetype,production,ses)
+    if not res['OK']:
+      gLogger.error("StorageUsageHandler.getStorageDirectorySummaryWeb: Failed to obtain usage summary.",res['Message'])
+      return res
+    resultDict['Extras'] = res['Value']
+
     # prepare the standard structure now
     resultDict['ParameterNames'] = ['Directory Path','Size','Files']
     resultDict['Records'] = dirList[iniDir:lastDir]
-    resultDict['Extras'] = {}
     return S_OK(resultDict)
 
   types_getStorageElementSelection = []
