@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.8 2009/08/13 15:46:45 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.8 2009/08/13 15:46:45 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.9 2009/08/14 14:50:44 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.9 2009/08/14 14:50:44 acasajus Exp $"
 
 import types
 import copy
@@ -628,8 +628,8 @@ class CFG:
     #Options
     oldOptions = self.listOptions( True )
     newOptions = newerCfg.listOptions( True )
-    for iPos in range( len( newOptions ) ):
-      newOption = newOptions[ iPos ]
+    for newOption in newOptions:
+      iPos = newerCfg.__orderedList.index( newOption )
       newOptPath = "%s/%s" % ( parentPath, newOption )
       if newOptPath in ignoreMask:
         continue
@@ -639,7 +639,7 @@ class CFG:
                           newerCfg.getComment( newOption ) ) )
       else:
         modified = False
-        if iPos != oldOptions.index( newOption ):
+        if iPos != self.__orderedList.index( newOption ):
           modified = True
         elif newerCfg[ newOption ] != self[ newOption ]:
           modified = True
@@ -658,8 +658,8 @@ class CFG:
     #Sections
     oldSections = self.listSections( True )
     newSections = newerCfg.listSections( True )
-    for iPos in range( len( newSections ) ):
-      newSection = newSections[ iPos ]
+    for newSection in newSections:
+      iPos = newerCfg.__orderedList.index( newSection )
       newSecPath = "%s/%s" % ( parentPath, newSection )
       if newSecPath in ignoreMask:
         continue
@@ -669,7 +669,7 @@ class CFG:
                           newerCfg.getComment( newSection ) ) )
       else:
         modified = False
-        if iPos != oldSections.index( newSection ):
+        if iPos != self.__orderedList.index( newSection ):
           modified = True
         elif newerCfg.getComment( newSection ) != self.getComment( newSection ):
           modified = True
@@ -727,7 +727,7 @@ class CFG:
           if not result[ 'OK' ]:
             return result
         if iPos >= len( self.__orderedList ) or key != self.__orderedList[ iPos ]:
-          prevPos = self.__orderedList.find( key )
+          prevPos = self.__orderedList.index( key )
           del( self.__orderedList[ prevPos ] )
           self.__orderedList.insert( iPos, key )
       elif action == "addOpt":
@@ -746,7 +746,7 @@ class CFG:
         comment = modAction[4].strip()
         self.setOption( key , value, comment )
         if iPos >= len( self.__orderedList ) or key != self.__orderedList[ iPos ]:
-          prevPos = self.__orderedList.find( key )
+          prevPos = self.__orderedList.index( key )
           del( self.__orderedList[ prevPos ] )
           self.__orderedList.insert( iPos, key )
       elif action == "delOpt":
