@@ -1,21 +1,28 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-production-change-status.py,v 1.2 2009/02/11 10:56:06 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-production-change-status.py,v 1.3 2009/08/14 12:18:49 paterson Exp $
 # File :   dirac-production-change-status
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-production-change-status.py,v 1.2 2009/02/11 10:56:06 paterson Exp $"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__   = "$Id: dirac-production-change-status.py,v 1.3 2009/08/14 12:18:49 paterson Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 
 import string
 
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.Interfaces.API.DiracProduction                    import DiracProduction
 
+Script.registerSwitch( "f", "Force", "Optional: specify this flag to disable checks" )
 Script.parseCommandLine( ignoreErrors = True )
+
 args = Script.getPositionalArgs()
 
+disableChecks=False
+for switch in Script.getUnprocessedSwitches():
+  if switch[0].lower() in ('f','force'):
+    disableChecks=True
+
+from DIRAC.Interfaces.API.DiracProduction                    import DiracProduction
 diracProd = DiracProduction()
 
 def usage():
@@ -27,6 +34,7 @@ def usage():
     print '%s:' %n
     for i,j in v.items():
       print '     %s = %s' %(i,j)
+  print '\nOptional flag: -f --Force to disable checks'
 
   DIRAC.exit(2)
 
@@ -39,7 +47,7 @@ command = args[0]
 
 for prodID in args[1:]:
 
-  result = diracProd.production(prodID,command,printOutput=True,disableCheck=False)
+  result = diracProd.production(prodID,command,printOutput=True,disableCheck=disableChecks)
   if result.has_key('Message'):
     errorList.append( (prodID, result['Message']) )
     exitCode = 2
