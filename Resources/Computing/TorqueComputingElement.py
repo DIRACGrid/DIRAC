@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TorqueComputingElement.py,v 1.17 2009/08/11 12:59:20 ffeldhau Exp $
+# $Id: TorqueComputingElement.py,v 1.18 2009/08/15 23:26:47 ffeldhau Exp $
 # File :   TorqueComputingElement.py
 # Author : Stuart Paterson, Paul Szczypka
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: TorqueComputingElement.py,v 1.17 2009/08/11 12:59:20 ffeldhau Exp $"
+__RCSID__ = "$Id: TorqueComputingElement.py,v 1.18 2009/08/15 23:26:47 ffeldhau Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -43,6 +43,8 @@ class TorqueComputingElement(ComputingElement):
                                          os.path.join(rootPath, 'data' ))
     self.batchError = gConfig.getValue('/LocalSite/BatchError', \
                                          os.path.join(rootPath, 'data' ))
+    
+    self.hostname = socket.gethostname()
 
   #############################################################################
   def submitJob(self,executableFile,jdl,proxy,localID):
@@ -58,48 +60,6 @@ class TorqueComputingElement(ComputingElement):
     if not os.access(executableFile, 5):
       os.chmod(executableFile,0755)
 
-    # The little script which sets the dirac-python version explicitly poses some problems.
-    # specifically with newline characters which need to be stripped
-    # hence the strip
-    fopen = open(executableFile,'r')
-    contents = fopen.read()
-    fopen.close()
-
-    # Get the proxy of the user who submitted the job:
-    fopen = open(proxyLocation,'r')
-    proxyString = fopen.read()
-    fopen.close()
-    
-    os.remove(proxyLocation)
-
-    # create and write the executable file run###.py
-    executableFileBaseName=os.path.basename(executableFile)
-    fopen = open('run%s.py' %executableFileBaseName,'w')
-    fopen.write('#!/usr/bin/env python\n')
-    fopen.write('import os\n')
-    fopen.write('fopen = open("%s","w")\n' %executableFileBaseName)
-    fopen.write('fopen.write("""%s""")\n' %contents)
-    fopen.write("fopen.close()\n")
-    fopen.write('os.chmod("%s",0755)\n'%executableFileBaseName)
-    fopen.write('fopen = open("%s","w")\n' %proxyLocation)
-#    fopen.write('fopen.write("""%s""")\n' %proxy)
-    fopen.write('fopen.write("""%s""")\n' %proxyString)
-    fopen.write('fopen.close()\n')
-    fopen.write('os.chmod("%s",0600)\n' %proxyLocation)
-    fopen.write('os.environ["X509_USER_PROXY"]="%s"\n' %proxyLocation)
-    fopen.write('print "submitting wrapper"\n')
-    fopen.write('os.system("./%s")\n' %executableFileBaseName)
-    fopen.write('os.remove("%s")' % executableFileBaseName)
-    fopen.close()
-    
-    fopen = open('run%s.py' %executableFileBaseName,'r')
-    executableFileContent = fopen.read()
-    fopen.close()
-    
-    self.log.debug("Executable File contents:\n", executableFileContent)
-    
-    #time.sleep(120)
-
     #Perform any other actions from the site admin
     if self.ceParameters.has_key('AdminCommands'):
       commands = self.ceParameters['AdminCommands'].split(';')
@@ -110,11 +70,15 @@ class TorqueComputingElement(ComputingElement):
           self.log.error('Error during "%s":' %command,result)
           return S_ERROR('Error executing %s CE AdminCommands' %CE_NAME)
 
-    # change the permissions of run###.py to 0755
-    os.chmod('run%s.py' %executableFileBaseName,0755)
-#    time.sleep(120)
     # submit run###.py to the torque batch system keeping the local env
-    cmd = "qsub -o %s -e %s -q %s %s" %(self.batchOutput, self.batchError, self.queue, os.path.abspath('run%s.py' % executableFileBaseName ))
+    cmd = "qsub -W stagein=%(proxy)s -v %(variable_list)s -o %(output)s -e %(error)s -q %(queue)s %(executable)s" % \
+      {'proxy': proxyLocation + '@' + self.hostname + ':' + '/tmp/' + os.path.basename(proxyLocation), \
+       'variable_list': 'X509_USER_PROXY=/tmp/' + os.path.basename(proxyLocation) ,
+       'output': self.batchOutput, \
+       'error': self.batchError, \
+       'queue': self.queue, \
+       'executable': os.path.abspath( executableFile ) }
+    
     self.log.verbose('CE submission command: %s' %(cmd))
 
     result = shellCall(0,cmd, callbackFunction = self.sendOutput)
