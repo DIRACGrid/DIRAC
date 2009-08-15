@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.80 2009/08/03 14:21:25 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.81 2009/08/15 19:44:26 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -69,15 +69,15 @@ class CatalogBase:
     elif type(lfn) == types.DictType:
       lfns = lfn.copy()
     else:
-      errStr = "ReplicaManager.__executeFileCatalogFunction: Supplied lfns must be string or list of strings or a dictionary." 
+      errStr = "ReplicaManager._executeFileCatalogFunction: Supplied lfns must be string or list of strings or a dictionary." 
       gLogger.error(errStr)
       return S_ERROR(errStr)
     # Check we have some lfns
     if not lfns:
-      errMessage = "ReplicaManager.__executeFileCatalogFunction: No lfns supplied."
+      errMessage = "ReplicaManager._executeFileCatalogFunction: No lfns supplied."
       gLogger.error(errMessage)
       return S_ERROR(errMessage)
-    gLogger.debug("ReplicaManager.__executeFileCatalogFunction: Attempting to perform '%s' operation with %s lfns." % (method,len(lfns)))
+    gLogger.debug("ReplicaManager._executeFileCatalogFunction: Attempting to perform '%s' operation with %s lfns." % (method,len(lfns)))
     # Check we can instantiate the file catalog correctly
     fileCatalog = FileCatalog(catalogs)
     # Generate the execution string 
@@ -95,12 +95,12 @@ class CatalogBase:
     try:
       exec(execString)
     except AttributeError,errMessage:
-      exceptStr = "ReplicaManager.__executeFileCatalogFunction: Exception while perfoming %s." % method
+      exceptStr = "ReplicaManager._executeFileCatalogFunction: Exception while perfoming %s." % method
       gLogger.exception(exceptStr,str(errMessage))
       return S_ERROR(exceptStr)
     # Return the output
     if not res['OK']:
-      errStr = "ReplicaManager.__executeFileCatalogFunction: Completely failed to perform %s." % method
+      errStr = "ReplicaManager._executeFileCatalogFunction: Completely failed to perform %s." % method
       gLogger.error(errStr,res['Message'])
     return res
 
@@ -361,9 +361,9 @@ class PhysicalReplica:
         'storageElementName' is the Storage Element
     """
     if singleFile:
-      return self.__executeSingleStorageElementFunction(storageElementName,physicalFile,'exists')
+      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'exists')
     else:
-      return self.__executeStorageElementFunction(storageElementName,physicalFile,'exists')
+      return self._executeStorageElementFunction(storageElementName,physicalFile,'exists')
 
   def getPhysicalFileIsFile(self,physicalFile,storageElementName,singleFile=False):
     """ Determine the physical paths are files
@@ -372,9 +372,9 @@ class PhysicalReplica:
         'storageElementName' is the Storage Element
     """
     if singleFile:
-      return self.__executeSingleStorageElementFunction(storageElementName,physicalFile,'isFile')
+      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'isFile')
     else:
-      return self.__executeStorageElementFunction(storageElementName,physicalFile,'isFile')  
+      return self._executeStorageElementFunction(storageElementName,physicalFile,'isFile')  
 
   def getPhysicalFileSize(self,physicalFile,storageElementName,singleFile=False):
     """ Obtain the size of the physical files
@@ -383,9 +383,9 @@ class PhysicalReplica:
         'storageElementName' is the Storage Element
     """
     if singleFile:
-      return self.__executeSingleStorageElementFunction(storageElementName,physicalFile,'getFileSize')
+      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'getFileSize')
     else:
-      return self.__executeStorageElementFunction(storageElementName,physicalFile,'getFileSize')
+      return self._executeStorageElementFunction(storageElementName,physicalFile,'getFileSize')
 
   def getPhysicalFileAccessUrl(self,physicalFile,storageElementName,singleFile=False):
     """ Obtain the access url for a physical file
@@ -394,9 +394,9 @@ class PhysicalReplica:
         'storageElementName' is the Storage Element
     """
     if singleFile:
-      return self.__executeSingleStorageElementFunction(storageElementName,physicalFile,'getAccessUrl')
+      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'getAccessUrl')
     else:
-      return self.__executeStorageElementFunction(storageElementName,physicalFile,'getAccessUrl')
+      return self._executeStorageElementFunction(storageElementName,physicalFile,'getAccessUrl')
 
   def getPhysicalFileMetadata(self,physicalFile,storageElementName,singleFile=False):
     """ Obtain the metadata for physical files
@@ -405,9 +405,9 @@ class PhysicalReplica:
         'storageElementName' is the Storage Element to check
     """
     if singleFile:
-      return self.__executeSingleStorageElementFunction(storageElementName,physicalFile,'getFileMetadata')
+      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'getFileMetadata')
     else:
-      return self.__executeStorageElementFunction(storageElementName,physicalFile,'getFileMetadata')
+      return self._executeStorageElementFunction(storageElementName,physicalFile,'getFileMetadata')
 
   def removePhysicalFile(self,physicalFile,storageElementName,singleFile=False):
     """ Remove physical files
@@ -416,9 +416,9 @@ class PhysicalReplica:
        'storageElementName' is the Storage Element
     """
     if singleFile:
-      return self.__executeSingleStorageElementFunction(storageElementName,physicalFile,'removeFile')
+      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'removeFile')
     else:
-      return self.__executeStorageElementFunction(storageElementName,physicalFile,'removeFile')
+      return self._executeStorageElementFunction(storageElementName,physicalFile,'removeFile')
 
   def prestagePhysicalFile(self,physicalFile,storageElementName,singleFile=False):
     """ Prestage physical files 
@@ -427,9 +427,9 @@ class PhysicalReplica:
         'storageElementName' is the Storage Element
     """
     if singleFile:
-      return self.__executeSingleStorageElementFunction(storageElementName,physicalFile,'prestageFile')
+      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'prestageFile')
     else:
-      return self.__executeStorageElementFunction(storageElementName,physicalFile,'prestageFile')
+      return self._executeStorageElementFunction(storageElementName,physicalFile,'prestageFile')
 
   def getPrestagePhysicalFileStatus(self,physicalFile,storageElementName,singleFile=False):
     """ Obtain the status of a pre-stage request
@@ -438,9 +438,9 @@ class PhysicalReplica:
         'storageElementName' is the Storage Element
     """
     if singleFile:
-      return self.__executeSingleStorageElementFunction(storageElementName,physicalFile,'prestageFileStatus')
+      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'prestageFileStatus')
     else:
-      return self.__executeStorageElementFunction(storageElementName,physicalFile,'prestageFileStatus')
+      return self._executeStorageElementFunction(storageElementName,physicalFile,'prestageFileStatus')
 
   def pinPhysicalFile(self,physicalFile,storageElementName,lifetime=60*60*24,singleFile=False):
     """ Pin physical files with a given lifetime
@@ -449,9 +449,9 @@ class PhysicalReplica:
         'storageElementName' is the Storage Element
     """
     if singleFile:
-      return self.__executeSingleStorageElementFunction(storageElementName,physicalFile,'pinFile')
+      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'pinFile')
     else:
-      return self.__executeStorageElementFunction(storageElementName,physicalFile,'pinFile')
+      return self._executeStorageElementFunction(storageElementName,physicalFile,'pinFile')
 
   def releasePhysicalFile(self,physicalFile,storageElementName,singleFile=False):
     """ Release the pin on physical files
@@ -460,9 +460,9 @@ class PhysicalReplica:
         'storageElementName' is the Storage Element
     """
     if singleFile:
-      return self.__executeSingleStorageElementFunction(storageElementName,physicalFile,'releaseFile')
+      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'releaseFile')
     else:
-      return self.__executeStorageElementFunction(storageElementName,physicalFile,'releaseFile')
+      return self._executeStorageElementFunction(storageElementName,physicalFile,'releaseFile')
 
   def getPhysicalFile(self,physicalFile,storageElementName,localPath=False,singleFile=False):
     """ Get a local copy of a physical file
@@ -471,9 +471,9 @@ class PhysicalReplica:
         'storageElementName' is the Storage Element
     """    
     if singleFile:
-      return self.__executeSingleStorageElementFunction(storageElementName,physicalFile,'getFile',argsDict={'localPath':localPath})
+      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'getFile',argsDict={'localPath':localPath})
     else:
-      return self.__executeStorageElementFunction(storageElementName,physicalFile,'getFile',argsDict={'localPath':localPath})
+      return self._executeStorageElementFunction(storageElementName,physicalFile,'getFile',argsDict={'localPath':localPath})
 
   def putPhysicalFile(self,physicalFile,storageElementName,singleFile=False):
     """ Put a local file to the storage element
@@ -482,9 +482,9 @@ class PhysicalReplica:
         'storageElementName' is the StorageElement
     """
     if singleFile:
-      return self.__executeSingleStorageElementFunction(storageElementName,physicalFile,'putFile')
+      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'putFile')
     else:
-      return self.__executeStorageElementFunction(storageElementName,physicalFile,'putFile')
+      return self._executeStorageElementFunction(storageElementName,physicalFile,'putFile')
 
   def replicatePhysicalFile(self,physicalFile,size,storageElementName,singleFile=False):
     """ Replicate a physical file to a storage element
@@ -493,12 +493,12 @@ class PhysicalReplica:
         'storageElementName' is the target StorageElement
     """
     if singleFile:
-      return self.__executeSingleStorageElementFunction(storageElementName,physicalFile,'replicateFile',argsDict={sourceSize:size})
+      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'replicateFile',argsDict={sourceSize:size})
     else:
-      return self.__executeStorageElementFunction(storageElementName,physicalFile,'replicateFile',argsDict={sourceSize:size})
+      return self._executeStorageElementFunction(storageElementName,physicalFile,'replicateFile',argsDict={sourceSize:size})
 
-  def __executeSingleStorageElementFunction(self,storageElementName,pfn,method,argsDict={}):
-    res = self.__executeStorageElementFunction(storageElementName,pfn,method,argsDict)
+  def _executeSingleStorageElementFunction(self,storageElementName,pfn,method,argsDict={}):
+    res = self._executeStorageElementFunction(storageElementName,pfn,method,argsDict)
     if type(pfn) == types.ListType:
       pfn = pfn[0]
     elif type(pfn) == types.DictType:   
@@ -511,7 +511,7 @@ class PhysicalReplica:
     else:
       return S_OK(res['Value']['Successful'][pfn])
   
-  def __executeStorageElementFunction(self,storageElementName,pfn,method,argsDict={}):
+  def _executeStorageElementFunction(self,storageElementName,pfn,method,argsDict={}):
     """ A simple wrapper around the storage element functionality
     """
     # First check the supplied pfn(s) are the correct format.
@@ -524,20 +524,20 @@ class PhysicalReplica:
     elif type(pfn) == types.DictType:
       pfns = pfn.copy()
     else:
-      errStr = "ReplicaManager.__executeStorageElementFunction: Supplied pfns must be string or list of strings or a dictionary." 
+      errStr = "ReplicaManager._executeStorageElementFunction: Supplied pfns must be string or list of strings or a dictionary." 
       gLogger.error(errStr)
       return S_ERROR(errStr)
     # Check we have some pfns
     if not pfns:
-      errMessage = "ReplicaManager.__executeStorageElementFunction: No pfns supplied."
+      errMessage = "ReplicaManager._executeStorageElementFunction: No pfns supplied."
       gLogger.error(errMessage)
       return S_ERROR(errMessage)
-    gLogger.debug("ReplicaManager.__executeStorageElementFunction: Attempting to perform '%s' operation with %s pfns." % (method,len(pfns)))
+    gLogger.debug("ReplicaManager._executeStorageElementFunction: Attempting to perform '%s' operation with %s pfns." % (method,len(pfns)))
     # Check we can instantiate the storage element correctly
     storageElement = StorageElement(storageElementName)
     res = storageElement.isValid(method)
     if not res['OK']:
-      errStr = "ReplicaManager.__executeStorageElementFunction: Failed to instantiate Storage Element"
+      errStr = "ReplicaManager._executeStorageElementFunction: Failed to instantiate Storage Element"
       gLogger.error(errStr, "for performing %s at %s." % (method,storageElementName))
       return res
     # Generate the execution string 
@@ -555,12 +555,12 @@ class PhysicalReplica:
     try:
       exec(execString)
     except AttributeError,errMessage:
-      exceptStr = "ReplicaManager.__executeStorageElementFunction: Exception while perfoming %s." % method
+      exceptStr = "ReplicaManager._executeStorageElementFunction: Exception while perfoming %s." % method
       gLogger.exception(exceptStr,str(errMessage))
       return S_ERROR(exceptStr)
     # Return the output
     if not res['OK']:
-      errStr = "ReplicaManager.__executeStorageElementFunction: Completely failed to perform %s." % method
+      errStr = "ReplicaManager._executeStorageElementFunction: Completely failed to perform %s." % method
       gLogger.error(errStr,'%s : %s' % (storageElementName,res['Message']))
     return res
 
@@ -1820,7 +1820,7 @@ class ReplicaManager(CatalogInterface,PhysicalReplica):
   def __executeReplicaStorageElementOperation(self,storageElementName,lfn,method,argsDict={}):
     """ A simple wrapper that allows replica querying then perform the StorageElement operation
     """
-    res = self.__executeFileCatalogFunction(lfn,'getReplicas')
+    res = self._executeFileCatalogFunction(lfn,'getReplicas')
     if not res['OK']:
       errStr = "ReplicaManager.__executeReplicaStorageElementOperation: Completely failed to get replicas for LFNs."
       gLogger.error(errStr,res['Message']) 
@@ -1837,7 +1837,7 @@ class ReplicaManager(CatalogInterface,PhysicalReplica):
         errStr = "ReplicaManager.__executeReplicaStorageElementOperation: File does not have replica at supplied Storage Element."
         gLogger.error(errStr, "%s %s" % (lfn,storageElementName))
         failed[lfn] = errStr
-    res = self.__executeStorageElementFunction(storageElementName,pfnDict.keys(),method,argsDict)
+    res = self._executeStorageElementFunction(storageElementName,pfnDict.keys(),method,argsDict)
     if not res['OK']:
       gLogger.error("ReplicaManager.__executeReplicaStorageElementOperation: Failed to execute %s StorageElement operation." % method,res['Message'])
       return res
@@ -1881,7 +1881,7 @@ class ReplicaManager(CatalogInterface,PhysicalReplica):
         'storageElementName' is the storage element where the file should be removed from
         'physicalFile' is the physical files
     """
-    return self.__executeStorageElementFunction(storageElementName,physicalFile,'retransferOnlineFile')
+    return self._executeStorageElementFunction(storageElementName,physicalFile,'retransferOnlineFile')
 
   def getReplicas(self,lfn):
     return self.getCatalogReplicas(lfn)
