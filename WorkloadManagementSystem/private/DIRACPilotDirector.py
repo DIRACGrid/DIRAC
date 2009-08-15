@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.16 2009/08/11 12:44:22 ffeldhau Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.17 2009/08/15 23:25:35 ffeldhau Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,9 +13,9 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.16 2009/08/11 12:44:22 ffeldhau Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.17 2009/08/15 23:25:35 ffeldhau Exp $"
 
-import os, sys, tempfile, shutil, time
+import os, sys, tempfile, shutil, time, urllib
 
 from DIRAC.WorkloadManagementSystem.private.PilotDirector import PilotDirector
 from DIRAC.Resources.Computing.ComputingElementFactory    import ComputingElementFactory
@@ -58,14 +58,14 @@ class DIRACPilotDirector(PilotDirector):
     self.clientPlatform = gConfig.getValue('LocalSite/ClientPlatform', '')
     
     self.sharedArea = gConfig.getValue('LocalSite/SharedArea')
-    if not self.sharedArea:
-      self.log.error(' Con not run DIRAC Director without Shared Area')
-      sys.exit()
       
     self.waitingToRunningRatio = gConfig.getValue('LocalSite/WaitingToRunningRatio', WAITING_TO_RUNNING_RATIO)
     self.maxWaitingJobs = gConfig.getValue('LocalSite/MaxWaitingJobs', MAX_WAITING_JOBS)
     self.maxNumberJobs = gConfig.getValue('LocalSite/MaxNumberJobs', MAX_NUMBER_JOBS)
     self.httpProxy = gConfig.getValue('LocalSite/HttpProxy', '')
+    
+    self.installURL = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/scripts/dirac-install'
+    self.pilotURL = 'http://isscvs.cern.ch/cgi-bin/cvsweb.cgi/~checkout~/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot?rev=HEAD;content-type=text%2Fplain;cvsroot=dirac'
 
   def configure(self, csSection, submitPool ):
     """
@@ -157,8 +157,6 @@ class DIRACPilotDirector(PilotDirector):
 
     try:
       pilotScript = self._writePilotScript( workingDirectory, pilotOptions )
-#      shutil.copy( self.pilot, os.path.join( workingDirectory, os.path.basename(self.pilot) ) )
-#      shutil.copy( self.install, os.path.join( workingDirectory, os.path.basename(self.install) ) )
     except:
       self.log.exception( ERROR_SCRIPT )
       try:
@@ -168,7 +166,6 @@ class DIRACPilotDirector(PilotDirector):
         pass
       return S_ERROR( ERROR_SCRIPT )
   
-#    time.sleep(120)
     self.log.info("Pilots to submit: ", pilotsToSubmit)
     for pilots in range(int(pilotsToSubmit)):
       ret = self._submitPilot()
@@ -198,26 +195,17 @@ class DIRACPilotDirector(PilotDirector):
      Prepare the script to execute the pilot
      For the moment it will do like Grid Pilots, a full DIRAC installation
     """
-    
-    pilot = '/'.join([self.sharedArea, os.path.basename(self.pilot)])
-    install = '/'.join([self.sharedArea, os.path.basename(self.install)])
-    if not os.path.exists(pilot):
-      self.log.info("dirac-pilot file not found in shared area => copying it there")
-      shutil.copy(self.pilot,pilot)
-    if not os.path.exists(install):
-      self.log.info("dirac-install file not found in shared area => copying it there")
-      shutil.copy(self.install,install)
 
     localPilot = """#!/usr/bin/env python
 #
-import os, tempfile, sys, shutil
+import os, tempfile, sys, shutil, urllib
 try:
   pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix= 'DIRAC_' )
-  shutil.copy( "%(pilotPath)s",  pilotWorkingDirectory )
-  shutil.copy( "%(installPath)s", pilotWorkingDirectory )
   os.chdir( pilotWorkingDirectory )
-  os.environ["X509_CERT_DIR"]="%(sharedArea)s/certificates"
-  os.environ["X509_VOMS_DIR"]="%(sharedArea)s/vomsdir"
+  urllib.urlretrieve("%(pilotURL)s", 'dirac-pilot')
+  os.chmod("dirac-pilot",0700)
+  urllib.urlretrieve("%(installURL)s", 'dirac-install')
+  os.chmod("dirac-install",0700)
   os.environ["LD_LIBRARY_PATH"]=""
   os.environ["HTTP_PROXY"]="%(proxy)s"
   print os.environ
@@ -229,16 +217,16 @@ print 'Executing:', cmd
 sys.stdout.flush()
 os.system( cmd )
 
-shutil.rmtree( pilotWorkingDirectory )
+#shutil.rmtree( pilotWorkingDirectory )
 
-""" % { 'pilotPath': os.path.join(self.sharedArea, os.path.basename(self.pilot)), \
-        'installPath': os.path.join(self.sharedArea, os.path.basename(self.install)), \
+""" % { 'pilotURL': self.pilotURL, \
+        'installURL': self.installURL, \
         'sharedArea': self.sharedArea, \
         'proxy': self.httpProxy, \
         'pilotScript': os.path.basename(self.pilot), \
         'pilotOptions': ' '.join( pilotOptions ) }
 
-    fd, name = tempfile.mkstemp( suffix = '_pilotwrapper', prefix = 'DIRAC_', dir=workingDirectory)
+    fd, name = tempfile.mkstemp( suffix = '_pilotwrapper.py', prefix = 'DIRAC_', dir=workingDirectory)
     pilotWrapper = os.fdopen(fd, 'w')
     pilotWrapper.write( localPilot )
     pilotWrapper.close()
