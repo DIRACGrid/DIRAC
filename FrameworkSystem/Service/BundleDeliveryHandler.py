@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/BundleDeliveryHandler.py,v 1.2 2009/08/12 16:15:44 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/BundleDeliveryHandler.py,v 1.3 2009/08/16 06:58:17 rgracian Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: BundleDeliveryHandler.py,v 1.2 2009/08/12 16:15:44 acasajus Exp $"
+__RCSID__ = "$Id: BundleDeliveryHandler.py,v 1.3 2009/08/16 06:58:17 rgracian Exp $"
 
 import types
 import os
@@ -34,7 +34,7 @@ class BundleManager:
       for bId in dB:
         dirsToBundle[ bId ] =  List.fromChar( dB[ bId ] )
     if gConfig.getValue( "%s/BundleCAs" % self.__csPath, True ):
-      dirsToBundle[ 'CAs' ] = [ "%s/*.0" % Locations.getCAsLocation() ]
+      dirsToBundle[ 'CAs' ] = [ "%s/*.0" % Locations.getCAsLocation(), "%s/*.signing_policy" % Locations.getCAsLocation() ]
     if gConfig.getValue( "%s/BundleCRLs" % self.__csPath, True ):
       dirsToBundle[ 'CRLs' ] = [ "%s/*.r0" % Locations.getCAsLocation() ]
     return dirsToBundle
