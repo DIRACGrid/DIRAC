@@ -74,7 +74,21 @@ class BundleDeliveryClient:
     return S_OK( True )
   
   def syncCAs( self ):
-    return self.syncDir( "CAs", Locations.getCAsLocation() )
+    X509_CERT_DIR = False
+    if 'X509_CERT_DIR' in os.environ:
+      X509_CERT_DIR = os.environ['X509_CERT_DIR']
+      del os.environ['X509_CERT_DIR']
+    result = self.syncDir( "CAs", Locations.getCAsLocation() )
+    if X509_CERT_DIR:
+      os.environ['X509_CERT_DIR'] = X509_CERT_DIR
+    return result
   
   def syncCRLs( self ):
-    return self.syncDir( "CRLs", Locations.getCAsLocation() )
+    X509_CERT_DIR = False
+    if 'X509_CERT_DIR' in os.environ:
+      X509_CERT_DIR = os.environ['X509_CERT_DIR']
+      del os.environ['X509_CERT_DIR']
+    result = self.syncDir( "CRLs", Locations.getCAsLocation() )
+    if X509_CERT_DIR:
+      os.environ['X509_CERT_DIR'] = X509_CERT_DIR
+    return result
