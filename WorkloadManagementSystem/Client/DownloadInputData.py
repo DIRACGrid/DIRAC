@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DownloadInputData.py,v 1.10 2009/07/29 08:47:39 paterson Exp $
+# $Id: DownloadInputData.py,v 1.11 2009/08/17 15:15:43 paterson Exp $
 # File :   DownloadInputData.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: DownloadInputData.py,v 1.10 2009/07/29 08:47:39 paterson Exp $"
+__RCSID__ = "$Id: DownloadInputData.py,v 1.11 2009/08/17 15:15:43 paterson Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -17,7 +17,7 @@ from DIRAC.DataManagementSystem.Client.StorageElement               import Stora
 from DIRAC.Core.Utilities.Os                                        import getDiskSpace
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 
-import os,sys,re,string
+import os,sys,re,string,tempfile
 
 COMPONENT_NAME = 'DownloadInputData'
 
@@ -34,6 +34,7 @@ class DownloadInputData:
     self.fileCatalogResult = argumentsDict['FileCatalog']
     self.jobID = None
     self.rm = ReplicaManager()
+    self.counter=1
 
   #############################################################################
   def execute(self,dataToResolve=None):
@@ -192,13 +193,19 @@ class DownloadInputData:
         This is used as a last resort to attempt to retrieve the file.  The Replica
         Manager will perform an LFC lookup to refresh the stored result.
     """
-    self.log.verbose('Attempting to ReplicaManager.getFile for %s' %(lfn))
+    start = os.getcwd()
+    downloadDir = tempfile.mkdtemp(prefix='InputData_%s' %(self.counter), dir=start)
+    self.counter+=1
+    os.chdir(downloadDir)
+    self.log.verbose('Attempting to ReplicaManager.getFile for %s in %s' %(lfn,downloadDir))
     result = self.rm.getFile(lfn)
+    os.chdir(start)
     fileName = os.path.basename(pfn)
     self.log.verbose(result)
-    if os.path.exists('%s/%s' %(os.getcwd(),fileName)):
+    localFile = '%s/%s' %(downloadDir,fileName)
+    if os.path.exists(localFile):
       self.log.verbose('File %s exists in current directory' %(fileName))
-      fileDict = {'turl':'Downloaded','protocol':'Downloaded','se':se,'pfn':pfn,'guid':guid}
+      fileDict = {'turl':'Downloaded','protocol':'Downloaded','se':se,'pfn':pfn,'guid':guid,'path':localFile}
       return S_OK(fileDict)
     else:
       self.log.warn('File does not exist in local directory after download')
@@ -211,7 +218,7 @@ class DownloadInputData:
     fileName = os.path.basename(pfn)
     if os.path.exists('%s/%s' %(os.getcwd(),fileName)):
       self.log.verbose('File already %s exists in current directory' %(fileName))
-      fileDict = {'turl':'LocalData','protocol':'LocalData','se':se,'pfn':pfn,'guid':guid}
+      fileDict = {'turl':'LocalData','protocol':'LocalData','se':se,'pfn':pfn,'guid':guid,'path':'%s/%s' %(os.getcwd(),fileName)}
       return S_OK(fileDict)
 
     storageElement = StorageElement(se)
@@ -219,15 +226,21 @@ class DownloadInputData:
     if not res['OK']:
       return S_ERROR('Failed to instantiate StorageElement for: %s' %(se))
 
+    start = os.getcwd()
+    downloadDir = tempfile.mkdtemp(prefix='InputData_%s' %(self.counter), dir=start)
+    self.counter+=1
+    os.chdir(downloadDir)
     result = storageElement.getFile(pfn,size)
+    os.chdir(start)
     if not result['OK']:
       self.log.warn('Problem getting PFN %s with size %s bytes:\n%s' %(pfn,size,result))
       return result
 
     self.log.verbose(result)
-    if os.path.exists('%s/%s' %(os.getcwd(),fileName)):
+    localFile = '%s/%s' %(downloadDir,fileName)
+    if os.path.exists(localFile):
       self.log.verbose('File %s exists in current directory' %(fileName))
-      fileDict = {'turl':'Downloaded','protocol':'Downloaded','se':se,'pfn':pfn,'guid':guid}
+      fileDict = {'turl':'Downloaded','protocol':'Downloaded','se':se,'pfn':pfn,'guid':guid,'path':localFile}
       return S_OK(fileDict)
     else:
       self.log.warn('File does not exist in local directory after download')
