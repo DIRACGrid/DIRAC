@@ -165,9 +165,8 @@ class VOMS( BaseSecurity ):
     cmdArgs.append( '-valid "%s:%s"' % ( hours, mins ) )
     if 'DIRAC_VOMSES' in os.environ:
       vomsesDir = os.environ[ 'DIRAC_VOMSES' ]
-      vomsesPath = os.path.join( vomsesDir, "%s-voms.cern.ch" % vo )
-      if os.path.exists( vomsesPath ):
-        cmdArgs.append( '-vomses "%s"' % vomsesPath )
+      if os.path.exists( vomsesDir ):
+        cmdArgs.append( '-vomses "%s"' % vomsesDir )
 
     cmd = 'voms-proxy-init %s' % " ".join( cmdArgs )
     result = shellCall( self._secCmdTimeout, cmd )
