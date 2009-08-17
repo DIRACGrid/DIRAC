@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: PoolXMLSlice.py,v 1.3 2009/06/03 12:52:11 paterson Exp $
+# $Id: PoolXMLSlice.py,v 1.4 2009/08/17 15:16:11 paterson Exp $
 # File :   PoolXMLSlice.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
     value pairs.
 """
 
-__RCSID__ = "$Id: PoolXMLSlice.py,v 1.3 2009/06/03 12:52:11 paterson Exp $"
+__RCSID__ = "$Id: PoolXMLSlice.py,v 1.4 2009/08/17 15:16:11 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
@@ -41,10 +41,11 @@ class PoolXMLSlice:
       self.log.verbose('Creating POOL XML slice')
 
       for lfn,mdata in dataDict.items():
-        local = os.path.basename(mdata['pfn'])
         #lfn,pfn,size,se,guid tuple taken by POOL XML Catalogue
-        if os.path.exists(local):
-          poolXMLCat.addFile((lfn,os.path.abspath(local),0,mdata['se'],mdata['guid'],mdata['pfntype']))
+        if mdata.has_key('path'):
+          poolXMLCat.addFile((lfn,mdata['path'],0,mdata['se'],mdata['guid'],mdata['pfntype']))
+        elif os.path.exists(os.path.basename(mdata['pfn'])):
+          poolXMLCat.addFile((lfn,os.path.abspath(os.path.basename(mdata['pfn'])),0,mdata['se'],mdata['guid'],mdata['pfntype']))
         else:
           poolXMLCat.addFile((lfn,mdata['turl'],0,mdata['se'],mdata['guid'],mdata['pfntype']))
 
