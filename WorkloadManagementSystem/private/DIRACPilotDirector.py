@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.17 2009/08/15 23:25:35 ffeldhau Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.18 2009/08/18 19:50:00 ffeldhau Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.17 2009/08/15 23:25:35 ffeldhau Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.18 2009/08/18 19:50:00 ffeldhau Exp $"
 
 import os, sys, tempfile, shutil, time, urllib
 
@@ -57,7 +57,7 @@ class DIRACPilotDirector(PilotDirector):
     
     self.clientPlatform = gConfig.getValue('LocalSite/ClientPlatform', '')
     
-    self.sharedArea = gConfig.getValue('LocalSite/SharedArea')
+    self.sharedArea = gConfig.getValue('LocalSite/SharedArea')  
       
     self.waitingToRunningRatio = gConfig.getValue('LocalSite/WaitingToRunningRatio', WAITING_TO_RUNNING_RATIO)
     self.maxWaitingJobs = gConfig.getValue('LocalSite/MaxWaitingJobs', MAX_WAITING_JOBS)
@@ -146,7 +146,7 @@ class DIRACPilotDirector(PilotDirector):
       pilotOptions.append( "-n '%s'" % self.siteName)
       
     if self.clientPlatform:
-      pilotOptions.append( "-p '%s'" % self.pilotOptions)
+      pilotOptions.append( "-p '%s'" % self.clientPlatform)
       
     if self.sharedArea:
       pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % self.sharedArea )
