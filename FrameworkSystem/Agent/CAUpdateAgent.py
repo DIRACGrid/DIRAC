@@ -1,10 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Agent/CAUpdateAgent.py,v 1.1 2009/08/12 15:03:05 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Agent/CAUpdateAgent.py,v 1.2 2009/08/18 14:22:14 acasajus Exp $
 ########################################################################
 
 """  Proxy Renewal agent is the key element of the Proxy Repository
      which maintains the user proxies alive
 """
+
+__RCSID__ = "$Id: CAUpdateAgent.py,v 1.2 2009/08/18 14:22:14 acasajus Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
