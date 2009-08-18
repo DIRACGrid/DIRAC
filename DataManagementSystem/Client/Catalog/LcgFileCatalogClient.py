@@ -1027,6 +1027,8 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if value != 0:
       return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
     replicas = {}
+    if not replicaObjects:
+      return S_ERROR('File has zero replicas')
     for replica in replicaObjects:
       status = replica.status
       if (status != 'P') or allStatus:
