@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/MySQL.py,v 1.19 2009/08/17 14:02:37 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/MySQL.py,v 1.20 2009/08/18 11:08:14 rgracian Exp $
 ########################################################################
 """ DIRAC Basic MySQL Class
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -75,7 +75,7 @@
 
 """
 
-__RCSID__ = "$Id: MySQL.py,v 1.19 2009/08/17 14:02:37 rgracian Exp $"
+__RCSID__ = "$Id: MySQL.py,v 1.20 2009/08/18 11:08:14 rgracian Exp $"
 
 
 from DIRAC                                  import gLogger
@@ -99,7 +99,7 @@ class MySQL:
   """
   Basic multithreaded DIRAC MySQL Client Class
   """
-  self.__initialized = False
+  __initialized = False
 
   def __init__( self, hostName, userName, passwd, dbName, maxQueueSize=3 ):
     """
