@@ -20,28 +20,38 @@ class DataIntegrityDB(DB):
   def insertProblematic(self,source,fileMetadata):
     """ Insert the supplied file metadata into the problematics table
     """
-    prognosis = fileMetadata['Prognosis']
-    lfn = fileMetadata['LFN']
-    pfn = fileMetadata['PFN']
-    storageElement = fileMetadata['StorageElement']
-    res = self.__problematicExists(prognosis, lfn, pfn, storageElement)
-    if not res['OK']:
-      return res
-    if res['Value']:
-      # Entry already exists for this problematic
-      return S_OK()
-    req = self.__buildInsertReq(source,fileMetadata)
-    res = self._update(req)
-    return res
+    failed = {}
+    successful = {}
+    for lfn,metadata in fileMetadata.items():
+      prognosis = metadata['Prognosis']
+      pfn = metadata['PFN']
+      storageElement = metadata['SE']
+      res = self.__problematicExists(prognosis, lfn, pfn, storageElement)
+      print res
+      if not res['OK']:
+        failed[lfn] = res['Message']
+      elif res['Value']:
+        successful[lfn] = 'Already exists'
+      else:
+        metadata['LFN'] = lfn
+        req = self.__buildInsertReq(source,metadata)
+        res = self._update(req)
+        if res['OK']:
+          successful[lfn] = True
+        else:
+          failed[lfn] = res['Message']
+    resDict = {'Successful':successful,'Failed':failed}
+    print resDict
+    return S_OK(resDict)
 
   def __problematicExists(self,prognosis,lfn,pfn,storageElement):
     """  Determine whether the file already exists in the problematics table.
     """
-    req = "SELECT FileID FROM Problematics WHERE Prognosis ='%s' AND LFN = '%s' AND PFN = '%s' AND StorageElement = '%s';" % (prognosis,lfn,pfn,storageElement)
-    err = "DataIntegrityDB.__problematicExists: Failed to determine whether problematic exists."
+    req = "SELECT FileID FROM Problematics WHERE Prognosis ='%s' AND LFN = '%s' AND PFN = '%s' AND SE = '%s';" % (prognosis,lfn,pfn,storageElement)
+    print req
     res = self._query(req)
     if not res['OK']:
-      return S_ERROR(err,res['Message'])
+      return res
     if res['Value']:
       return S_OK(True)
     else:
