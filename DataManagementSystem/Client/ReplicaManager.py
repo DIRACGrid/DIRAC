@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.82 2009/08/19 15:51:12 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.83 2009/08/19 18:26:04 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -1191,8 +1191,12 @@ class ReplicaManager(CatalogInterface,PhysicalReplica):
       errStr = "ReplicaManager.removeFile: Completely failed to get replicas for lfns."
       gLogger.error(errStr,res['Message'])
       return res
-    failed = res['Value']['Failed']
     lfnDict = res['Value']['Successful']
+    failed = res['Value']['Failed']
+    for lfn,reason in failed.items():
+      if reason == 'File has zero replicas':
+        lfnDict[lfn] = {}
+        failed.pop(lfn)
     res = self.__removeFile(lfnDict)
     if not res['OK']:
       errStr = "ReplicaManager.removeFile: Completely failed to remove files."
