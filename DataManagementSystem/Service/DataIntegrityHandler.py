@@ -121,4 +121,4 @@ class DataIntegrityHandler(RequestHandler):
     except Exception, x:
       errStr = "DataIntegrityHandler.insertProblematic: Exception while inserting problematic."
       gLogger.exception(errStr,lException=x)
-      return S_ERROR(errorStr)
+      return S_ERROR(errStr)
