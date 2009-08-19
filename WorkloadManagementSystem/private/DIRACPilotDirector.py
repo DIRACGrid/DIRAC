@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.18 2009/08/18 19:50:00 ffeldhau Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.19 2009/08/19 14:36:19 ffeldhau Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,9 +13,9 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.18 2009/08/18 19:50:00 ffeldhau Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.19 2009/08/19 14:36:19 ffeldhau Exp $"
 
-import os, sys, tempfile, shutil, time, urllib
+import os, sys, tempfile, shutil, time, base64, bz2
 
 from DIRAC.WorkloadManagementSystem.private.PilotDirector import PilotDirector
 from DIRAC.Resources.Computing.ComputingElementFactory    import ComputingElementFactory
@@ -156,7 +156,7 @@ class DIRACPilotDirector(PilotDirector):
     self.log.info( "pilotOptions: ", ' '.join(pilotOptions))
 
     try:
-      pilotScript = self._writePilotScript( workingDirectory, pilotOptions )
+      pilotScript = self._writePilotScript( workingDirectory, pilotOptions, proxy )
     except:
       self.log.exception( ERROR_SCRIPT )
       try:
@@ -176,7 +176,7 @@ class DIRACPilotDirector(PilotDirector):
       self.log.info("Submit Pilots: ", submitPilot)
       if submitPilot == False:
         break
-      submission = self.computingElement.submitJob(pilotScript,'',proxy.dumpAllToString()['Value'],'')
+      submission = self.computingElement.submitJob(pilotScript, '', '', '')
       if not submission['OK']:
         self.log.error('Pilot submission failed: ', submission['Message'])
         break
@@ -184,29 +184,39 @@ class DIRACPilotDirector(PilotDirector):
     
     try:
       os.chdir( baseDir )
-      shutil.rmtree( workingDirectory )
+      #shutil.rmtree( workingDirectory )
     except:
       pass
     
     return S_OK(submittedPilots)
 
-  def _writePilotScript( self, workingDirectory, pilotOptions ):
+  def _writePilotScript( self, workingDirectory, pilotOptions, proxy ):
     """
      Prepare the script to execute the pilot
      For the moment it will do like Grid Pilots, a full DIRAC installation
     """
-
+    try:
+      compressedAndEncodedProxy = base64.b64encode( bz2.compress( proxy.dumpAllToString()['Value'] ) )
+      compressedAndEncodedPilot = base64.b64encode( bz2.compress( open( self.pilot, "rb" ).read(), 9 ) )
+      compressedAndEncodedInstall = base64.b64encode( bz2.compress( open( self.install, "rb" ).read(), 9 ) )
+    except:
+      self.log.exception('Exception during file compression of proxy, dirac-pilot or dirac-install')
+      return S_ERROR('Exception during file compression of proxy, dirac-pilot or dirac-install')
+    
     localPilot = """#!/usr/bin/env python
 #
-import os, tempfile, sys, shutil, urllib
+import os, tempfile, sys, shutil, base64, bz2
 try:
   pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix= 'DIRAC_' )
   os.chdir( pilotWorkingDirectory )
-  urllib.urlretrieve("%(pilotURL)s", 'dirac-pilot')
+  open( 'proxy', "w" ).write(bz2.decompress( base64.b64decode( "%(compressedAndEncodedProxy)s" ) ) )
+  open( 'dirac-pilot', "w" ).write(bz2.decompress( base64.b64decode( "%(compressedAndEncodedPilot)s" ) ) )
+  open( 'dirac-install', "w" ).write(bz2.decompress( base64.b64decode( "%(compressedAndEncodedInstall)s" ) ) )
+  os.chmod("proxy",0600)
   os.chmod("dirac-pilot",0700)
-  urllib.urlretrieve("%(installURL)s", 'dirac-install')
   os.chmod("dirac-install",0700)
   os.environ["LD_LIBRARY_PATH"]=""
+  os.environ["X509_USER_PROXY"]=os.path.join(pilotWorkingDirectory, 'proxy')
   os.environ["HTTP_PROXY"]="%(proxy)s"
   print os.environ
 except Exception, x:
@@ -219,9 +229,9 @@ os.system( cmd )
 
 #shutil.rmtree( pilotWorkingDirectory )
 
-""" % { 'pilotURL': self.pilotURL, \
-        'installURL': self.installURL, \
-        'sharedArea': self.sharedArea, \
+""" % { 'compressedAndEncodedProxy': compressedAndEncodedProxy,
+        'compressedAndEncodedPilot': compressedAndEncodedPilot,
+        'compressedAndEncodedInstall': compressedAndEncodedInstall,
         'proxy': self.httpProxy, \
         'pilotScript': os.path.basename(self.pilot), \
         'pilotOptions': ' '.join( pilotOptions ) }
