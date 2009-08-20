@@ -1,6 +1,6 @@
 """ This is the Data Integrity Client which allows the simple reporting of problematic file and replicas to the IntegrityDB and their status correctly updated in the FileCatalog.""" 
 
-__RCSID__ = "$Id: DataIntegrityClient.py,v 1.4 2009/08/20 13:37:34 acsmith Exp $"
+__RCSID__ = "$Id: DataIntegrityClient.py,v 1.5 2009/08/20 15:15:19 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -43,7 +43,11 @@ class DataIntegrityClient:
     catalogMetadata.update(res['Value'])
     # Get the replicas for the files found to exist in the catalog
     res = self.__getCatalogReplicas(catalogMetadata.keys())
-    return res
+    if not res['OK']:
+      return res
+    replicas = res['Value']
+    resDict = {'CatalogMetadata':catalogMetadata,'CatalogReplicas':replicas}
+    return S_OK(resDict)
 
   def __checkCatalogForBKNoReplicas(self,lfns):
     gLogger.info('Checking the catalog existence of %s files' % len(lfns))
@@ -74,10 +78,13 @@ class DataIntegrityClient:
     badBKGUID = []
     allMetadata = res['Value']
     gLogger.info("Obtained at total of %s files" % len(allMetadata.keys()))
+    totalSize = 0
     for lfn,bkMetadata in allMetadata.items():
       if (bkMetadata['FileType'] != 'LOG'):
         if (bkMetadata['GotReplica'] == 'Yes'):
           yesReplicaFiles.append(lfn)
+          if bkMetadata['FilesSize']:
+            totalSize+= long(bkMetadata['FilesSize'])
         elif (bkMetadata['GotReplica'] == 'No'):
           noReplicaFiles.append(lfn)
         else:
@@ -92,7 +99,7 @@ class DataIntegrityClient:
       self.__reportProblematicFiles(badBKFileSize,'BKSizeBad')
     if badBKGUID:
       self.__reportProblematicFiles(badBKGUID,'BKGUIDBad')
-    gLogger.info("%s files marked with replicas" % len(yesReplicaFiles))
+    gLogger.info("%s files marked with replicas with total size %s bytes" % (len(yesReplicaFiles),totalSize))
     gLogger.info("%s files marked without replicas" % len(noReplicaFiles))
     resDict = {'BKMetadata':allMetadata,'GotReplicaYes':yesReplicaFiles,'GotReplicaNo':noReplicaFiles}
     return S_OK(resDict)
