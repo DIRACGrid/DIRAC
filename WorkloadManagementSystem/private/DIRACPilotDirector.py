@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.21 2009/08/24 14:46:53 ffeldhau Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.22 2009/08/24 15:24:49 ffeldhau Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.21 2009/08/24 14:46:53 ffeldhau Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.22 2009/08/24 15:24:49 ffeldhau Exp $"
 
 import os, sys, tempfile, shutil, time, base64, bz2
 
@@ -196,9 +196,9 @@ class DIRACPilotDirector(PilotDirector):
      For the moment it will do like Grid Pilots, a full DIRAC installation
     """
     try:
-      compressedAndEncodedProxy = base64.encode( bz2.compress( proxy.dumpAllToString()['Value'] ) )
-      compressedAndEncodedPilot = base64.encode( bz2.compress( open( self.pilot, "rb" ).read(), 9 ) )
-      compressedAndEncodedInstall = base64.encode( bz2.compress( open( self.install, "rb" ).read(), 9 ) )
+      compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) ).replace('\n','')
+      compressedAndEncodedPilot = base64.encodestring( bz2.compress( open( self.pilot, "rb" ).read(), 9 ) ).replace('\n','')
+      compressedAndEncodedInstall = base64.encodestring( bz2.compress( open( self.install, "rb" ).read(), 9 ) ).replace('\n','')
     except:
       self.log.exception('Exception during file compression of proxy, dirac-pilot or dirac-install')
       return S_ERROR('Exception during file compression of proxy, dirac-pilot or dirac-install')
@@ -209,9 +209,9 @@ import os, tempfile, sys, shutil, base64, bz2
 try:
   pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix= 'DIRAC_' )
   os.chdir( pilotWorkingDirectory )
-  open( 'proxy', "w" ).write(bz2.decompress( base64.decode( "%(compressedAndEncodedProxy)s" ) ) )
-  open( 'dirac-pilot', "w" ).write(bz2.decompress( base64.decode( "%(compressedAndEncodedPilot)s" ) ) )
-  open( 'dirac-install', "w" ).write(bz2.decompress( base64.decode( "%(compressedAndEncodedInstall)s" ) ) )
+  open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedProxy)s" ) ) )
+  open( 'dirac-pilot', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedPilot)s" ) ) )
+  open( 'dirac-install', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedInstall)s" ) ) )
   os.chmod("proxy",0600)
   os.chmod("dirac-pilot",0700)
   os.chmod("dirac-install",0700)
