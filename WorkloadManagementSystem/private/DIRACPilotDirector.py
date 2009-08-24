@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.19 2009/08/19 14:36:19 ffeldhau Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.20 2009/08/24 14:34:13 ffeldhau Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.19 2009/08/19 14:36:19 ffeldhau Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.20 2009/08/24 14:34:13 ffeldhau Exp $"
 
 import os, sys, tempfile, shutil, time, base64, bz2
 
@@ -223,15 +223,15 @@ except Exception, x:
   print >> sys.stderr, x
   sys.exit(-1)
 cmd = "python %(pilotScript)s %(pilotOptions)s"
-print 'Executing:', cmd
+print 'Executing: ', cmd
 sys.stdout.flush()
 os.system( cmd )
 
-#shutil.rmtree( pilotWorkingDirectory )
+shutil.rmtree( pilotWorkingDirectory )
 
-""" % { 'compressedAndEncodedProxy': compressedAndEncodedProxy,
-        'compressedAndEncodedPilot': compressedAndEncodedPilot,
-        'compressedAndEncodedInstall': compressedAndEncodedInstall,
+""" % { 'compressedAndEncodedProxy': compressedAndEncodedProxy, \
+        'compressedAndEncodedPilot': compressedAndEncodedPilot, \
+        'compressedAndEncodedInstall': compressedAndEncodedInstall, \
         'proxy': self.httpProxy, \
         'pilotScript': os.path.basename(self.pilot), \
         'pilotOptions': ' '.join( pilotOptions ) }
