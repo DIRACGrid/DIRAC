@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TorqueComputingElement.py,v 1.19 2009/08/24 14:33:15 ffeldhau Exp $
+# $Id: TorqueComputingElement.py,v 1.20 2009/08/24 14:47:19 ffeldhau Exp $
 # File :   TorqueComputingElement.py
 # Author : Stuart Paterson, Paul Szczypka
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: TorqueComputingElement.py,v 1.19 2009/08/24 14:33:15 ffeldhau Exp $"
+__RCSID__ = "$Id: TorqueComputingElement.py,v 1.20 2009/08/24 14:47:19 ffeldhau Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -72,8 +72,8 @@ class TorqueComputingElement(ComputingElement):
     if proxy:
       self.log.verbose('Setting up proxy for payload')
       
-      compressedAndEncodedProxy = base64.b64encode( bz2.compress( proxy ) )
-      compressedAndEncodedExecutable = base64.b64encode( bz2.compress( open( executableFile, "rb" ).read(), 9 ) )
+      compressedAndEncodedProxy = base64.encode( bz2.compress( proxy ) )
+      compressedAndEncodedExecutable = base64.encode( bz2.compress( open( executableFile, "rb" ).read(), 9 ) )
       
       wrapperContent = """#!/usr/bin/env python
 # Wrapper script for executable and proxy
@@ -81,8 +81,8 @@ import os, tempfile, sys, base64, bz2
 try:
   workingDirectory = tempfile.mkdtemp( suffix = '_wrapper', prefix= 'TORQUE_' )
   os.chdir( workingDirectory )
-  open( 'proxy', "w" ).write(bz2.decompress( base64.b64decode( "%(compressedAndEncodedProxy)s" ) ) )
-  open( '%(executable)s', "w" ).write(bz2.decompress( base64.b64decode( "%(compressedAndEncodedExecutable)s" ) ) )
+  open( 'proxy', "w" ).write(bz2.decompress( base64.decode( "%(compressedAndEncodedProxy)s" ) ) )
+  open( '%(executable)s', "w" ).write(bz2.decompress( base64.decode( "%(compressedAndEncodedExecutable)s" ) ) )
   os.chmod('proxy',0600)
   os.chmod('%(executable)s',0700)
   os.environ["X509_USER_PROXY"]=os.path.join(workingDirectory, 'proxy')
