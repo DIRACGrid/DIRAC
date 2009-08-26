@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.12 2009/04/20 11:01:37 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.13 2009/08/26 08:04:16 rgracian Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.12 2009/04/20 11:01:37 rgracian Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.13 2009/08/26 08:04:16 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -212,18 +212,20 @@ class ComputingElement:
       intCPUTimeLeft = int( cpuTimeLeft )
     except:
       return S_ERROR('Wrong type for setCPUTimeLeft argument')
-    
+
     self.classAd.insertAttributeInt('CPUTime', intCPUTimeLeft)
-    
+
     return S_OK(intCPUTimeLeft)
-    
+
 
   #############################################################################
-  def available(self):
+  def available(self, requirements):
     """This method returns True if CE is available and false if not.  The CE
        instance polls for waiting and running jobs and compares to the limits
        in the CE parameters.
     """
+    # FIXME: need to take into account the possible requirements from the pilots,
+    #        so far the cputime
     result = self.getDynamicInfo()
     if not result['OK']:
       self.log.warn('Could not obtain CE dynamic information')
