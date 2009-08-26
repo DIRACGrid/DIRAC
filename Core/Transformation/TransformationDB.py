@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.88 2009/06/19 08:05:07 atsareg Exp $
+# $Id: TransformationDB.py,v 1.89 2009/08/26 07:17:46 rgracian Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -83,29 +83,29 @@ class TransformationDB(DB):
     """
     return self.dbname
 
-  def addTransformation(self, name, description, longDescription, authorDN, 
+  def addTransformation(self, name, description, longDescription, authorDN,
                         authorGroup, type_, plugin, agentType,fileMask,bkQuery={},
                         transformationGroup='',addFiles=True):
     """ Add new transformation definition including its input streams
     """
-    
+
     # Add the Bookkeeping query if given
     bkQueryID = 0
     if bkQuery:
       result = self.addBookkeepingQuery(bkQuery)
       if not result['OK']:
         return result
-      bkQueryID = result['Value'] 
-      
-    tGroup = 'General'  
+      bkQueryID = result['Value']
+
+    tGroup = 'General'
     if transformationGroup:
-      tGroup =  transformationGroup 
-    
+      tGroup =  transformationGroup
+
     self.lock.acquire()
     req = "INSERT INTO Transformations (TransformationName,Description,LongDescription,"
     req += "CreationDate,AuthorDN,AuthorGroup,Type,Plugin,AgentType,FileMask,Status,BkQueryID,TransformationGroup) "
     req += "VALUES ('%s','%s','%s',UTC_TIMESTAMP(),'%s','%s','%s','%s','%s','%s','New',%d,'%s');" % \
-                             (name, description, longDescription,authorDN, authorGroup, type_, 
+                             (name, description, longDescription,authorDN, authorGroup, type_,
                               plugin, agentType,fileMask,bkQueryID,tGroup)
     result = self._getConnection()
     if result['OK']:
@@ -218,14 +218,14 @@ class TransformationDB(DB):
     req = "UPDATE Transformations SET AgentType='%s' WHERE TransformationID=%s;" % (status,transID)
     res = self._update(req)
     return res
-    
+
   def setTransformationQuery(self,transName,queryID):
     """ Set the bookkeeping query ID of the transformation specified by transID
     """
     transID = self.getTransformationID(transName)
     req = "UPDATE Transformations SET FileMask='', BkQueryID=%d WHERE TransformationID=%s;" % (int(queryID),transID)
     res = self._update(req)
-    return res  
+    return res
 
   def setTransformationPlugin(self,transName,status):
     """ Set the Plugin the transformation specified by transID
@@ -329,7 +329,7 @@ class TransformationDB(DB):
         if type(item) not in [IntType,LongType]:
           rList.append(str(item))
         else:
-          rList.append(item)   
+          rList.append(item)
       resultList.append(rList)
 
     resultDict['Records'] = resultList
@@ -736,6 +736,7 @@ class TransformationDB(DB):
     req = """CREATE TABLE T_%s(
 FileID INTEGER NOT NULL,
 Status VARCHAR(32) DEFAULT "Unused",
+INDEX (Status),
 ErrorCount INT(4) NOT NULL DEFAULT 0,
 JobID VARCHAR(32),
 TargetSE VARCHAR(32) DEFAULT "Unknown",
@@ -778,20 +779,20 @@ PRIMARY KEY (FileID)
   def addLFNsToTransformation(self,lfnList,transName):
     """ Add a list of LFNs to the transformation specified by transname without filtering
     """
-    
+
     if not lfnList:
       return S_ERROR('Zero length LFN list')
-      
+
     transID = self.getTransformationID(transName)
-    
+
     # get file IDs
     lfnString = ','.join(["'"+x+"'" for x in lfnList])
-    req = "SELECT FileID,LFN FROM DataFiles WHERE LFN IN ( %s )" % lfnString    
+    req = "SELECT FileID,LFN FROM DataFiles WHERE LFN IN ( %s )" % lfnString
     result = self._query(req)
     if not result['OK']:
       return result
-      
-    fileIDs = [ (x[0],x[1]) for x in result['Value'] ]    
+
+    fileIDs = [ (x[0],x[1]) for x in result['Value'] ]
     successful = {}
     failed = {}
     for fileID,lfn in fileIDs:
@@ -802,10 +803,10 @@ PRIMARY KEY (FileID)
         else:
           successful[lfn] = "Present"
       else:
-        failed[lfn] = result['Message']      
-        
+        failed[lfn] = result['Message']
+
     resDict = {'Successful':successful,'Failed':failed}
-    return S_OK(resDict)    
+    return S_OK(resDict)
 
   def __addFileToTransformation(self,fileID,resultFilter):
     """Add file to transformations
@@ -1007,10 +1008,10 @@ PRIMARY KEY (FileID)
     """  Add a new file to the TransformationDB together with its first replica.
     """
     gLogger.info("TransformationDB.addFile: Attempting to add %s files." % len(fileTuples))
-    
+
     if not fileTuples:
       return S_ERROR('Zero file list')
-    
+
     successful = {}
     failed = {}
     dataLog = RPCClient('DataManagement/DataLogging',timeout=120)
@@ -1261,47 +1262,47 @@ PRIMARY KEY (FileID)
           successful[lfn] = True
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
-    
+
   def addBookkeepingQuery(self,queryDict):
     """ Add a new Bookkeeping query specification
     """
-    
+
     queryFields = ['SimulationConditions','DataTakingConditions','ProcessingPass','FileType','EventType',
                    'ConfigName','ConfigVersion','ProductionID','DataQualityFlag']
 
-    parameters = []   
+    parameters = []
     values = []
     qvalues = []
     for field in queryFields:
-      if field in queryDict.keys(): 
+      if field in queryDict.keys():
         parameters.append(field)
         if field == 'ProductionID' or field == 'EventType':
           values.append(str(queryDict[field]))
           qvalues.append(str(queryDict[field]))
         else:
-          values.append("'"+queryDict[field]+"'") 
-          qvalues.append(queryDict[field]) 
+          values.append("'"+queryDict[field]+"'")
+          qvalues.append(queryDict[field])
       else:
         if field == 'ProductionID' or field == 'EventType':
           qvalues.append(0)
         else:
-          qvalues.append('All')     
-           
+          qvalues.append('All')
+
     # Check for the already existing queries first
     selections = []
     for i in range(len(queryFields)):
       selections.append(queryFields[i]+"='"+str(qvalues[i])+"'")
     selectionString = ' AND '.join(selections)
-    req = "SELECT BkQueryID FROM BkQueries WHERE %s" % selectionString      
+    req = "SELECT BkQueryID FROM BkQueries WHERE %s" % selectionString
     result = self._query(req)
     if not result['OK']:
       return result
     if result['Value']:
       bkQueryID = result['Value'][0][0]
-      return S_OK(bkQueryID)          
-          
-    req = "INSERT INTO BkQueries (%s) VALUES (%s)" % (','.join(parameters),','.join(values))   
-    
+      return S_OK(bkQueryID)
+
+    req = "INSERT INTO BkQueries (%s) VALUES (%s)" % (','.join(parameters),','.join(values))
+
     self.lock.acquire()
     result = self._getConnection()
     if result['OK']:
@@ -1317,63 +1318,63 @@ PRIMARY KEY (FileID)
     self.lock.release()
     if not res['OK']:
       return res
-    queryID = int(res['Value'][0][0])   
-    
+    queryID = int(res['Value'][0][0])
+
     return S_OK(queryID)
-        
+
   def getBookkeepingQueryForTransformation(self,transName):
     """
     """
-    
+
     transID = self.getTransformationID(transName)
     req = "SELECT BkQueryID FROM Transformations WHERE TransformationID=%s" % (transID)
     result = self._query(req)
     if not result['OK']:
       return result
-      
+
     if not result['Value']:
-      return S_ERROR('Transformation %s not found' % transID)  
+      return S_ERROR('Transformation %s not found' % transID)
 
     bkQueryID = result['Value'][0][0]
     return self.getBookkeepingQuery(bkQueryID)
-    
+
   def getBookkeepingQuery(self,bkQueryID=0):
-    """ Get the bookkeeping query parameters, if bkQueyID is 0 then get all the queries 
-    """    
- 
+    """ Get the bookkeeping query parameters, if bkQueyID is 0 then get all the queries
+    """
+
     queryFields = ['SimulationConditions','DataTakingConditions','ProcessingPass',
                    'FileType','EventType','ConfigName','ConfigVersion','ProductionID','DataQualityFlag']
-    
+
     fieldsString = ','.join(queryFields)
-    
+
     if bkQueryID:
-      req = "SELECT BkQueryID,%s FROM BkQueries WHERE BkQueryID=%d" % (fieldsString,int(bkQueryID)) 
+      req = "SELECT BkQueryID,%s FROM BkQueries WHERE BkQueryID=%d" % (fieldsString,int(bkQueryID))
     else:
-      req = "SELECT BkQueryID,%s FROM BkQueries" % (fieldsString,)   
+      req = "SELECT BkQueryID,%s FROM BkQueries" % (fieldsString,)
     result = self._query(req)
     if not result['OK']:
       return result
-      
+
     if not result['Value']:
-      return S_ERROR('BkQuery %d not found' % int(bkQueryID))  
-      
-    resultDict = {}  
-    for row in result['Value']:  
-      bkDict = {}  
+      return S_ERROR('BkQuery %d not found' % int(bkQueryID))
+
+    resultDict = {}
+    for row in result['Value']:
+      bkDict = {}
       for parameter,value in zip(['BkQueryID']+queryFields,row):
-        bkDict[parameter] = value 
+        bkDict[parameter] = value
       resultDict[bkDict['BkQueryID']] = bkDict
-      
-    if bkQueryID:   
-      return S_OK(bkDict) 
+
+    if bkQueryID:
+      return S_OK(bkDict)
     else:
-      return S_OK(resultDict)    
-  
+      return S_OK(resultDict)
+
   def deleteBookkeepingQuery(self,bkQueryID):
     """ Delete the specified query from the database
     """
-    
+
     req = 'DELETE FROM BkQueries WHERE BkQueryID=%d' % int(bkQueryID)
     result = self._update(req)
     return result
-    
+

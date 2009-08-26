@@ -1,4 +1,4 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.14 2009/06/15 15:01:04 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.15 2009/08/26 07:17:46 rgracian Exp $
 -- ------------------------------------------------------------------------------
 --
 --  Schema definition for the TransformationDB database -
@@ -118,7 +118,8 @@ CREATE TABLE TransformationLog (
     Message VARCHAR(255) NOT NULL,
     Author VARCHAR(255) NOT NULL DEFAULT "Unknown",
     MessageDate DATETIME NOT NULL,
-    INDEX (TransformationID)
+    INDEX (TransformationID),
+    INDEX (MessageDate)
 );
 
 -- ------------------------------------------------------------------------------
@@ -128,6 +129,7 @@ CREATE TABLE DataFiles (
    FileID INTEGER NOT NULL AUTO_INCREMENT,
    LFN VARCHAR(255) UNIQUE,
    Status varchar(32) DEFAULT 'AprioriGood',
+   INDEX (Status),
    PRIMARY KEY (FileID, LFN)
 );
 
@@ -139,6 +141,7 @@ CREATE TABLE Replicas (
   PFN VARCHAR(255),
   SE VARCHAR(32),
   Status VARCHAR(32) DEFAULT 'AprioriGood',
+  INDEX (Status),
   PRIMARY KEY (FileID, SE)
 );
 
@@ -158,13 +161,22 @@ DROP TABLE IF EXISTS BkQueries;
 CREATE TABLE BkQueries (
   BkQueryID int(11) NOT NULL auto_increment,
   SimulationConditions varchar(128) NOT NULL default 'All',
+  INDEX (SimulationConditions),
   DataTakingConditions varchar(128) NOT NULL default 'All',
+  INDEX (DataTakingConditions),
   ProcessingPass varchar(128) NOT NULL default 'All',
+  INDEX (ProcessingPass),
   FileType varchar(32) NOT NULL default 'All',
+  INDEX (FileType),
   EventType int(11) NOT NULL default '0',
+  INDEX (EventType),
   ConfigName varchar(64) NOT NULL default 'All',
+  INDEX (ConfigName),
   ConfigVersion varchar(64) NOT NULL default 'All',
+  INDEX (ConfigVersion),
   ProductionID int(11) NOT NULL default '0',
+  INDEX (ProductionID),
   DataQualityFlag varchar(32) NOT NULL default 'OK',
+  INDEX (DataQualityFlag),
   PRIMARY KEY  (`BkQueryID`)
 ) ENGINE=MyISAM
