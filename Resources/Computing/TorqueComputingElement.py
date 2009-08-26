@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TorqueComputingElement.py,v 1.21 2009/08/24 15:24:24 ffeldhau Exp $
+# $Id: TorqueComputingElement.py,v 1.22 2009/08/26 16:35:02 rgracian Exp $
 # File :   TorqueComputingElement.py
 # Author : Stuart Paterson, Paul Szczypka
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: TorqueComputingElement.py,v 1.21 2009/08/24 15:24:24 ffeldhau Exp $"
+__RCSID__ = "$Id: TorqueComputingElement.py,v 1.22 2009/08/26 16:35:02 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -25,13 +25,13 @@ DIRAC_INSTALL = os.path.join( rootPath, 'scripts', 'dirac-install' )
 CE_NAME = 'Torque'
 QUEUE = 'batch'
 
-class TorqueComputingElement(ComputingElement):
+class TorqueComputingElement( ComputingElement ):
 
   #############################################################################
-  def __init__(self):
+  def __init__( self, ceUniqueID ):
     """ Standard constructor.
     """
-    ComputingElement.__init__(self,CE_NAME)
+    ComputingElement.__init__( self, ceUniqueID )
     self.submittedJobs = 0
     self.queue = gConfig.getValue('/LocalSite/Queue', QUEUE)
     self.log.info("Using queue: ", self.queue)
@@ -44,7 +44,6 @@ class TorqueComputingElement(ComputingElement):
     self.batchError = gConfig.getValue('/LocalSite/BatchError', \
                                          os.path.join(rootPath, 'data' ))
     
-    self.hostname = socket.gethostname()
 
   #############################################################################
   def submitJob(self,executableFile,jdl,proxy,localID):

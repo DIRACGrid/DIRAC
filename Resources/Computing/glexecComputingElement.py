@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.21 2009/05/01 11:04:32 rgracian Exp $
+# $Id: glexecComputingElement.py,v 1.22 2009/08/26 16:35:02 rgracian Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.21 2009/05/01 11:04:32 rgracian Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.22 2009/08/26 16:35:02 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -21,15 +21,13 @@ import DIRAC
 
 import os,sys,string
 
-CE_NAME = 'glexec'
-
 class glexecComputingElement(ComputingElement):
 
   #############################################################################
-  def __init__(self):
+  def __init__(self, ceUniqueID):
     """ Standard constructor.
     """
-    ComputingElement.__init__(self,CE_NAME)
+    ComputingElement.__init__(self,ceUniqueID)
     self.minProxyTime = gConfig.getValue( '/Security/MinProxyLifeTime', 10800 ) #secs
     self.defaultProxyTime = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400 ) #secs
     self.proxyCheckPeriod = gConfig.getValue('/Security/ProxyCheckingPeriod',3600) #secs
