@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.23 2009/08/07 14:45:22 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.24 2009/08/26 08:58:19 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.23 2009/08/07 14:45:22 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.24 2009/08/26 08:58:19 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -143,10 +143,7 @@ class ProxyManagerHandler( RequestHandler ):
       return retVal
     chain, secsLeft = retVal[ 'Value' ]
     #If possible we return a proxy 1.5 longer than requested
-    extraLifeFactor = float( secsLeft ) / float( requiredLifetime )
-    extraLifeFactor = min( extraLifeFactor, self.__maxExtraLifeFactor )
-    if extraLifeFactor > 1.0:
-      requiredLifetime *= extraLifeFactor
+    requiredLifetime = min( secsLeft, requiredLifetime * self.__maxExtraLifeFactor )
     retVal = chain.generateChainFromRequestString( requestPem,
                                                    lifetime = requiredLifetime,
                                                    requireLimited = forceLimited )
@@ -185,10 +182,7 @@ class ProxyManagerHandler( RequestHandler ):
       return retVal
     chain, secsLeft = retVal[ 'Value' ]
     #If possible we return a proxy 1.5 longer than requested
-    extraLifeFactor = float( secsLeft ) / float( requiredLifetime )
-    extraLifeFactor = min( extraLifeFactor, self.__maxExtraLifeFactor )
-    if extraLifeFactor > 1.0:
-      requiredLifetime *= extraLifeFactor
+    requiredLifetime = min( secsLeft, requiredLifetime * self.__maxExtraLifeFactor )
     retVal = chain.generateChainFromRequestString( requestPem,
                                                    lifetime = requiredLifetime,
                                                    requireLimited = forceLimited )
