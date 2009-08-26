@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.22 2009/08/24 15:24:49 ffeldhau Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.23 2009/08/26 08:58:24 rgracian Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.22 2009/08/24 15:24:49 ffeldhau Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.23 2009/08/26 08:58:24 rgracian Exp $"
 
 import os, sys, tempfile, shutil, time, base64, bz2
 
@@ -41,12 +41,14 @@ class DIRACPilotDirector(PilotDirector):
      Define some defaults and call parent __init__
     """
     self.gridMiddleware    = 'DIRAC'
-    
+
     PilotDirector.__init__( self, submitPool )
 
-    self.computingElements = COMPUTING_ELEMENTS
-    # To run a DIRAC Pilot Director we require Site Name to be properly defined in the 
-    # local configuration file
+    self.computingElements = {}
+    for CE in COMPUTING_ELEMENTS:
+      self.computingElement = CE
+      self.addComputingelement( )
+
     self.siteName          = gConfig.getValue('/LocalSite/Site','')
     if not self.siteName:
       self.log.error( 'Can not run a Director if Site Name is not defined' )
@@ -54,16 +56,16 @@ class DIRACPilotDirector(PilotDirector):
 
     self.__failingCECache  = DictCache()
     self.__ticketsCECache  = DictCache()
-    
+
     self.clientPlatform = gConfig.getValue('LocalSite/ClientPlatform', '')
-    
-    self.sharedArea = gConfig.getValue('LocalSite/SharedArea')  
-      
+
+    self.sharedArea = gConfig.getValue('LocalSite/SharedArea')
+
     self.waitingToRunningRatio = gConfig.getValue('LocalSite/WaitingToRunningRatio', WAITING_TO_RUNNING_RATIO)
     self.maxWaitingJobs = gConfig.getValue('LocalSite/MaxWaitingJobs', MAX_WAITING_JOBS)
     self.maxNumberJobs = gConfig.getValue('LocalSite/MaxNumberJobs', MAX_NUMBER_JOBS)
     self.httpProxy = gConfig.getValue('LocalSite/HttpProxy', '')
-    
+
     self.installURL = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/scripts/dirac-install'
     self.pilotURL = 'http://isscvs.cern.ch/cgi-bin/cvsweb.cgi/~checkout~/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot?rev=HEAD;content-type=text%2Fplain;cvsroot=dirac'
 
@@ -87,7 +89,9 @@ class DIRACPilotDirector(PilotDirector):
     if self.computingElements:
       self.log.info( ' ComputingElements:', ', '.join(self.computingElements) )
 
+
     # FIXME: this is to start testing
+    self.computingElement = self.computingElements[0]
     ceFactory = ComputingElementFactory(self.computingElements[0])
     ceName = self.computingElements[0]
     ceInstance = ceFactory.getCE()
@@ -104,8 +108,7 @@ class DIRACPilotDirector(PilotDirector):
 
     self.log.debug(self.computingElement.getDynamicInfo())
 
-    if self.siteName:
-      self.log.info( ' SiteName:', self.siteName )
+    self.log.info( ' SiteName:', self.siteName )
 
 
   def configureFromSection( self, mySection ):
@@ -114,8 +117,23 @@ class DIRACPilotDirector(PilotDirector):
     """
     PilotDirector.configureFromSection( self, mySection )
 
-    self.computingElements    = gConfig.getValue( mySection+'/ComputingElements'      , self.computingElements )
+    self.computingElement     = gConfig.getValue( mySection+'/ComputingElement '      , self.computingElement )
+    self.addComputingElement()
     self.siteName             = gConfig.getValue( mySection+'/SiteName'               , self.siteName )
+
+
+  def addComputingElement(self):
+    """
+      Check if a CE object for the current CE is available,
+      instantiate one if necessary
+    """
+    if self.computingElement not in self.computingElements:
+      ceFactory = ComputingElementFactory( self.computingElement )
+      ceInstance = ceFactory.getCE()
+      if not ceInstance['OK']:
+        self.log.error('Can not create CE object:', ceInstance['Message'])
+        return
+      self.computingElements[self.computingElement] = ceInstance
 
 
   def _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
@@ -124,17 +142,39 @@ class DIRACPilotDirector(PilotDirector):
       This method does the actual pilot submission to the DIRAC CE
       The logic is as follows:
       - If there are no available CE it return error
+      - If there is no queue available in the CE's, it returns error
       - It creates a temp directory
-      - Prepare a PilotScript
+      - It prepare a PilotScript
     """
     taskQueueID = taskQueueDict['TaskQueueID']
     ownerDN = taskQueueDict['OwnerDN']
-    
+
     submittedPilots = 0
-    
-    if not self.computingElements:
+
+    if self.computingElement not in self.computingElements:
       # Since we can exclude CEs from the list, it may become empty
       return S_ERROR( ERROR_CE )
+
+    pilotRequirements = []
+    pilotRequirements.append( ( 'CPUTime', taskQueueDict['CPUTime'] ) )
+    # do we need to care about anything else?
+    pilotRequirementsString = str( pilotRequirements )
+
+    # Check that there are available queues for the Jobs:
+    if self.enableListMatch:
+      availableQueues = []
+      now = Time.dateTime()
+      cachedAvailableQueues = self.listMatchCache.get( pilotRequirementsString )
+      if cachedAvailableQueues == False:
+        availableQueues = self._listQueues( pilotRequirements )
+        if availableQueues != False:
+          self.listMatchCache.add( pilotRequirementsString, self.listMatchDelay, availableQueues )
+          self.log.verbose( 'Available Queues for TaskQueue ',  "%s: " % ( taskQueueID, str(availableQueues) ) )
+      else:
+        availableQueues = cachedAvailableQueues
+
+    if not availableQueues:
+      return S_ERROR( ERROR_CE + ' TQ: %d' % taskQueueID )
 
     baseDir = os.getcwd()
     workingDirectory = tempfile.mkdtemp( prefix= 'TQ_%s_' % taskQueueID, dir = workDir )
@@ -142,17 +182,16 @@ class DIRACPilotDirector(PilotDirector):
     os.chdir( workingDirectory )
 
     # set the Site Name
-    if self.siteName:
-      pilotOptions.append( "-n '%s'" % self.siteName)
-      
+    pilotOptions.append( "-n '%s'" % self.siteName)
+
     if self.clientPlatform:
       pilotOptions.append( "-p '%s'" % self.clientPlatform)
-      
+
     if self.sharedArea:
       pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % self.sharedArea )
-      
+
     #pilotOptions.append( "-o '/DIRAC/Configuration/Servers=dips://volhcb04.cern.ch:9135/Configuration/Server'" )
-     
+
     self.log.info( "pilotOptions: ", ' '.join(pilotOptions))
 
     try:
@@ -165,7 +204,7 @@ class DIRACPilotDirector(PilotDirector):
       except:
         pass
       return S_ERROR( ERROR_SCRIPT )
-  
+
     self.log.info("Pilots to submit: ", pilotsToSubmit)
     for pilots in range(int(pilotsToSubmit)):
       ret = self._submitPilot()
@@ -176,24 +215,42 @@ class DIRACPilotDirector(PilotDirector):
       self.log.info("Submit Pilots: ", submitPilot)
       if submitPilot == False:
         break
-      submission = self.computingElement.submitJob(pilotScript, '', '', '')
+      computingElement = self.computingElements[self.computingElement]
+      submission = computingElement.submitJob(pilotScript, '', '', '')
       if not submission['OK']:
         self.log.error('Pilot submission failed: ', submission['Message'])
         break
       submittedPilots += 1
-    
+
     try:
       os.chdir( baseDir )
       #shutil.rmtree( workingDirectory )
     except:
       pass
-    
+
     return S_OK(submittedPilots)
+
+  def _listQueues( self, pilotRequirements ):
+    """
+     For each defined CE return the list of Queues with available, running and waiting slots,
+     matching the requirements of the pilots.
+     Currently only CPU time is considered
+    """
+    availableQueues = []
+    computingElement = self.computingElements[self.computingElement]
+    result = computingElement.available( pilotRequirements )
+    if not result['OK']:
+      self.log.error( 'Can not determine available queues', result['Message'] )
+      return False
+    return result['Value']
+
 
   def _writePilotScript( self, workingDirectory, pilotOptions, proxy ):
     """
      Prepare the script to execute the pilot
      For the moment it will do like Grid Pilots, a full DIRAC installation
+
+     It assumes that the pilot script will have access to the submit working directory
     """
     try:
       compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) ).replace('\n','')
@@ -202,11 +259,12 @@ class DIRACPilotDirector(PilotDirector):
     except:
       self.log.exception('Exception during file compression of proxy, dirac-pilot or dirac-install')
       return S_ERROR('Exception during file compression of proxy, dirac-pilot or dirac-install')
-    
+
     localPilot = """#!/usr/bin/env python
 #
 import os, tempfile, sys, shutil, base64, bz2
 try:
+  os.chdir( %s )
   pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix= 'DIRAC_' )
   os.chdir( pilotWorkingDirectory )
   open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedProxy)s" ) ) )
@@ -240,7 +298,7 @@ shutil.rmtree( pilotWorkingDirectory )
     pilotWrapper = os.fdopen(fd, 'w')
     pilotWrapper.write( localPilot )
     pilotWrapper.close()
-    
+
     return name
 
   def _getPilotProxyFromDIRACGroup( self, ownerDN, ownerGroup, requiredTimeLeft ):
@@ -255,39 +313,39 @@ shutil.rmtree( pilotWorkingDirectory )
                                    ownerGroup,
                                    limited = True,
                                    requiredTimeLeft = requiredTimeLeft,
-                                   requiredVOMSAttribute = vomsAttr )    
+                                   requiredVOMSAttribute = vomsAttr )
 
   def _submitPilot(self):
     # first check status of the CE and determine how many pilots may be submitted
     submitPilot = False
-        
+
     ret = self.computingElement.getDynamicInfo()
-      
+
     if not ret['OK']:
       self.log.error('Failed to retrieve status information of the CE', ret['Message'])
-    
+
     result = ret['Value']
-    
+
     try:
       waitingJobs = int(result['WaitingJobs'])
       runningJobs = int(result['RunningJobs'])
     except:
       self.log.exception("getDynamicInfo didn't return integer values for WaitingJobs and/or RunningJobs")
       return S_ERROR("getDynamicInfo didn't return integer values for WaitingJobs and/or RunningJobs")
-    
+
     if runningJobs == 0:
       if waitingJobs < self.maxWaitingJobs:
         submitPilot = True
     else:
       waitingToRunningRatio = float(waitingJobs) / float(runningJobs)
-      # as jobs are in waiting state when they're submitted, we can submit a pilot if there is only 
+      # as jobs are in waiting state when they're submitted, we can submit a pilot if there is only
       # one waiting job
       if waitingToRunningRatio < self.waitingToRunningRatio or waitingJobs == 1 :
         submitPilot = True
-    
+
     totalNumberJobs = runningJobs + waitingJobs
-      
+
     if (totalNumberJobs + 1) > self.maxNumberJobs:
       submitPilot = False
-    
+
     return S_OK(submitPilot)
