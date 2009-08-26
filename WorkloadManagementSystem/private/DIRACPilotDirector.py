@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.24 2009/08/26 15:04:46 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.25 2009/08/26 17:02:37 rgracian Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.24 2009/08/26 15:04:46 rgracian Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.25 2009/08/26 17:02:37 rgracian Exp $"
 
 import os, sys, tempfile, shutil, time, base64, bz2
 
@@ -44,10 +44,10 @@ class DIRACPilotDirector(PilotDirector):
 
     PilotDirector.__init__( self, submitPool )
 
-    self.computingElements = {}
-    for CE in COMPUTING_ELEMENTS:
-      self.computingElement = CE
-      self.addComputingElement( )
+    self.computingElementList = COMPUTING_ELEMENTS
+    self.computingElementDict = {}
+    for CE in self.computingElementList:
+      self.addComputingElement( CE )
 
     self.siteName          = gConfig.getValue('/LocalSite/Site','')
     if not self.siteName:
@@ -83,17 +83,20 @@ class DIRACPilotDirector(PilotDirector):
     self.__ticketsCECache.purgeExpired()
 
     for ce in self.__failingCECache.getKeys():
-      if ce in self.computingElements:
+      if ce in self.computingElementDict.keys():
         try:
-          del self.computingElements[ce]
+          del self.computingElementDict[ce]
         except:
           pass
-    if self.computingElements:
-      self.log.info( ' ComputingElements:', ', '.join(self.computingElements) )
-
+    if self.computingElementDict:
+      self.log.info( ' ComputingElements:', ', '.join(self.computingElementDict.keys()) )
+    else:
+      return
 
     # FIXME: this is to start testing
-    ceName, computingElement = self.computingElements.items()[0]
+    ceName, computingElement = self.computingElementDict.items()[0]
+
+    self.computingElement = computingElement
 
     self.log.debug( computingElement.getDynamicInfo() )
 
@@ -106,23 +109,25 @@ class DIRACPilotDirector(PilotDirector):
     """
     PilotDirector.configureFromSection( self, mySection )
 
-    self.computingElement     = gConfig.getValue( mySection+'/ComputingElement '      , self.computingElement )
-    self.addComputingElement()
+    self.computingElementList = gConfig.getValue( mySection+'/ComputingElements'      , self.computingElementList )
+    for CE in self.computingElementList:
+      self.addComputingElement( CE )
+
     self.siteName             = gConfig.getValue( mySection+'/SiteName'               , self.siteName )
 
 
-  def addComputingElement(self):
+  def addComputingElement(self, CE):
     """
       Check if a CE object for the current CE is available,
       instantiate one if necessary
     """
-    if self.computingElement not in self.computingElements:
-      ceFactory = ComputingElementFactory( self.computingElement )
+    if CE not in self.computingElementDict:
+      ceFactory = ComputingElementFactory( CE )
       ceInstance = ceFactory.getCE()
       if not ceInstance['OK']:
         self.log.error('Can not create CE object:', ceInstance['Message'])
         return
-      self.computingElements[self.computingElement] = ceInstance['Value']
+      self.computingElementDict[CE] = ceInstance['Value']
 
 
   def _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
@@ -140,9 +145,9 @@ class DIRACPilotDirector(PilotDirector):
 
     submittedPilots = 0
 
-    if self.computingElement not in self.computingElements:
-      # Since we can exclude CEs from the list, it may become empty
-      return S_ERROR( ERROR_CE )
+    # if self.computingElement not in self.computingElementDict:
+    #  # Since we can exclude CEs from the list, it may become empty
+    #  return S_ERROR( ERROR_CE )
 
     pilotRequirements = []
     pilotRequirements.append( ( 'CPUTime', taskQueueDict['CPUTime'] ) )
@@ -207,8 +212,7 @@ class DIRACPilotDirector(PilotDirector):
       self.log.info("Submit Pilots: ", submitPilot)
       if submitPilot == False:
         break
-      computingElement = self.computingElements[self.computingElement]
-      submission = computingElement.submitJob(pilotScript, '', '', '')
+      submission = self.computingElement.submitJob(pilotScript, '', '', '')
       if not submission['OK']:
         self.log.error('Pilot submission failed: ', submission['Message'])
         break
@@ -229,8 +233,7 @@ class DIRACPilotDirector(PilotDirector):
      Currently only CPU time is considered
     """
     availableQueues = []
-    computingElement = self.computingElements[self.computingElement]
-    result = computingElement.available( pilotRequirements )
+    result = self.computingElement.available( pilotRequirements )
     if not result['OK']:
       self.log.error( 'Can not determine available queues', result['Message'] )
       return False
@@ -252,7 +255,8 @@ class DIRACPilotDirector(PilotDirector):
       self.log.exception('Exception during file compression of proxy, dirac-pilot or dirac-install')
       return S_ERROR('Exception during file compression of proxy, dirac-pilot or dirac-install')
 
-    localPilot = """#!/usr/bin/env python
+    localPilot = """#!/bin/bash
+/usr/bin/env python << EOF
 #
 import os, tempfile, sys, shutil, base64, bz2
 try:
@@ -264,7 +268,8 @@ try:
   os.chmod("proxy",0600)
   os.chmod("dirac-pilot",0700)
   os.chmod("dirac-install",0700)
-  os.environ["LD_LIBRARY_PATH"]=""
+  if "LD_LIBRARY_PATH" not in os.environ:
+    os.environ["LD_LIBRARY_PATH"]=""
   os.environ["X509_USER_PROXY"]=os.path.join(pilotWorkingDirectory, 'proxy')
   os.environ["HTTP_PROXY"]="%(proxy)s"
   print os.environ
@@ -278,6 +283,7 @@ os.system( cmd )
 
 shutil.rmtree( pilotWorkingDirectory )
 
+EOF
 """ % { 'compressedAndEncodedProxy': compressedAndEncodedProxy, \
         'compressedAndEncodedPilot': compressedAndEncodedPilot, \
         'compressedAndEncodedInstall': compressedAndEncodedInstall, \
@@ -310,8 +316,7 @@ shutil.rmtree( pilotWorkingDirectory )
     # first check status of the CE and determine how many pilots may be submitted
     submitPilot = False
 
-    computingElement = self.computingElements[ self.computingElement ]
-    ret = computingElement.getDynamicInfo()
+    ret = self.computingElement.getDynamicInfo()
 
     if not ret['OK']:
       self.log.error('Failed to retrieve status information of the CE', ret['Message'])
