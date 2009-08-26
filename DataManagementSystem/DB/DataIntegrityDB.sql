@@ -1,6 +1,6 @@
--------------------------------------------------------------
+-- -----------------------------------------------------------
 -- Integrity database  definition
--------------------------------------------------------------
+-- -----------------------------------------------------------
 
 DROP DATABASE IF EXISTS DataIntegrityDB;
 
@@ -14,7 +14,7 @@ GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON DataIntegrity
 GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON DataIntegrityDB.* TO 'Dirac'@'%' IDENTIFIED BY 'must_be_set';
 #FLUSH PRIVILEGES;
 
--------------------------------------------------------------
+-- -----------------------------------------------------------
 
 use DataIntegrityDB;
 

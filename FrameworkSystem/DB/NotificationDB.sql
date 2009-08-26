@@ -1,17 +1,17 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.sql,v 1.1 2009/06/13 23:21:11 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.sql,v 1.2 2009/08/26 09:39:52 rgracian Exp $
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 --
 --  Schema definition for the NotificationDB database - containing the alarms
 --  data
----
---------------------------------------------------------------------------------
+-- -
+-- ------------------------------------------------------------------------------
 
 DROP DATABASE IF EXISTS NotificationDB;
 
 CREATE DATABASE NotificationDB;
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 -- Database owner definition
 
 USE mysql;
@@ -26,10 +26,10 @@ GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON NotificationD
 
 FLUSH PRIVILEGES;
 
-------------------------------------------------------------------------------- 
+-- ----------------------------------------------------------------------------- 
 USE NotificationDB;
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS Alarms;
 CREATE TABLE Alarms (
     AlarmID INTEGER NOT NULL AUTO_INCREMENT,

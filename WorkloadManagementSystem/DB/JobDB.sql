@@ -1,17 +1,17 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.21 2009/03/20 20:01:54 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.sql,v 1.22 2009/08/26 09:39:53 rgracian Exp $
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 --
 --  Schema definition for the JobDB database - the main database of the DIRAC
 --  Workload Management System
----
---------------------------------------------------------------------------------
+-- -
+-- ------------------------------------------------------------------------------
 
 DROP DATABASE IF EXISTS JobDB;
 
 CREATE DATABASE JobDB;
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 -- Database owner definition
 
 USE mysql;
@@ -26,10 +26,10 @@ GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobDB.* TO Di
 
 FLUSH PRIVILEGES;
 
--------------------------------------------------------------------------------
+-- -----------------------------------------------------------------------------
 USE JobDB;
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS Jobs;
 CREATE TABLE Jobs (
     JobID INTEGER NOT NULL AUTO_INCREMENT,
@@ -80,7 +80,7 @@ CREATE TABLE Jobs (
     PRIMARY KEY (JobID)
 ) ENGINE = InnoDB;
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS JobJDLs;
 CREATE TABLE JobJDLs (
     JobID INTEGER NOT NULL AUTO_INCREMENT,
@@ -90,21 +90,21 @@ CREATE TABLE JobJDLs (
     PRIMARY KEY (JobID)
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS SubJobs;
 CREATE TABLE SubJobs (
     JobID INTEGER NOT NULL,
     SubJobID INTEGER NOT NULL
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS PrecursorJobs;
 CREATE TABLE PrecursorJobs (
     JobID INTEGER NOT NULL,
     PreJobID INTEGER NOT NULL
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS InputData;
 CREATE TABLE InputData (
     JobID INTEGER NOT NULL,
@@ -113,7 +113,7 @@ CREATE TABLE InputData (
     PRIMARY KEY(JobID, LFN)
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS JobParameters;
 CREATE TABLE JobParameters (
     JobID INTEGER NOT NULL,
@@ -122,7 +122,7 @@ CREATE TABLE JobParameters (
     PRIMARY KEY(JobID, Name)
 ) ENGINE = InnoDB;
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS OptimizerParameters;
 CREATE TABLE OptimizerParameters (
     JobID INTEGER NOT NULL,
@@ -131,7 +131,7 @@ CREATE TABLE OptimizerParameters (
     PRIMARY KEY(JobID, Name)
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS AtticJobParameters;
 CREATE TABLE AtticJobParameters (
     JobID INTEGER NOT NULL,
@@ -141,7 +141,7 @@ CREATE TABLE AtticJobParameters (
     PRIMARY KEY(JobID, Name, RescheduleCycle)
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TaskQueues;
 CREATE TABLE TaskQueues (
     TaskQueueID INTEGER NOT NULL AUTO_INCREMENT,
@@ -151,7 +151,7 @@ CREATE TABLE TaskQueues (
     PRIMARY KEY (TaskQueueID)
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TaskQueue;
 CREATE TABLE TaskQueue (
     TaskQueueID INTEGER NOT NULL,
@@ -160,7 +160,7 @@ CREATE TABLE TaskQueue (
     PRIMARY KEY (JobID, TaskQueueID)
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS SiteMask;
 CREATE TABLE SiteMask (
     Site   VARCHAR(64) NOT NULL,
@@ -180,7 +180,7 @@ CREATE TABLE SiteMaskLogging (
     Comment BLOB NOT NULL
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS HeartBeatLoggingInfo;
 CREATE TABLE HeartBeatLoggingInfo (
     JobID INTEGER NOT NULL,
@@ -190,7 +190,7 @@ CREATE TABLE HeartBeatLoggingInfo (
     INDEX (JobID)
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS JobCommands;
 CREATE TABLE JobCommands (
     JobID INTEGER NOT NULL,

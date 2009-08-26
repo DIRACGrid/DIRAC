@@ -1,7 +1,7 @@
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP DATABASE IF EXISTS FileCatalog;
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 CREATE DATABASE FileCatalog;
 
 use mysql;
@@ -13,7 +13,7 @@ GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalog.*
 
 FLUSH PRIVILEGES;
 
--------------------------------------------------------------------------------
+-- -----------------------------------------------------------------------------
 USE FileCatalog;
 
 drop table if exists FC_Directories;
@@ -32,14 +32,14 @@ CREATE TABLE FC_Directories (
     MinACL INTEGER(12),
     PRIMARY KEY (DirID)
 );
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 
 drop table if exists FC_Subdirectories;
 CREATE TABLE FC_Subdirectories (
     DirID INTEGER NOT NULL,
     SubDirID INTEGER NOT NULL
 );
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 
 drop table if exists FC_DirMeta;
 CREATE TABLE FC_DirMeta (
@@ -48,7 +48,7 @@ CREATE TABLE FC_DirMeta (
     MetaValue VARCHAR(31) NOT NULL default 'Noname',
     PRIMARY KEY (DirID,MetaKey)
 );
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 
 drop table if exists FC_Groups;
 CREATE TABLE FC_Groups (
@@ -56,7 +56,7 @@ CREATE TABLE FC_Groups (
     GroupName VARCHAR(127) NOT NULL default 'Noname',
     PRIMARY KEY (GID)
 );
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 
 drop table if exists FC_Users;
 CREATE TABLE FC_Users (
@@ -65,7 +65,7 @@ CREATE TABLE FC_Users (
     NickName VARCHAR(127) NOT NULL default 'Noname',
     PRIMARY KEY (UID)
 );
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 
 drop table if exists FC_StorageElements;
 CREATE TABLE FC_StorageElements (
@@ -73,7 +73,7 @@ CREATE TABLE FC_StorageElements (
     SEName VARCHAR(127) NOT NULL default 'Noname',
     AliasName VARCHAR(127) NOT NULL default 'Noname'
 );
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 
 drop table if exists FC_SE_Access;
 CREATE TABLE FC_SE_Access (
@@ -85,7 +85,7 @@ CREATE TABLE FC_SE_Access (
     AccessUser VARCHAR(127) NOT NULL default 'Noname',
     AccessPassword VARCHAR(127) NOT NULL default ''
 );
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 
 drop table if exists FC_GUID_to_LFN;
 CREATE TABLE FC_GUID_to_LFN (
@@ -93,7 +93,7 @@ CREATE TABLE FC_GUID_to_LFN (
     LFN VARCHAR(255),
     PRIMARY KEY (GUID)
 );
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 
 drop table if exists FC_Replicas;
 CREATE TABLE FC_Replicas (

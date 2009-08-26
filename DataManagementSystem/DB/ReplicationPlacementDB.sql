@@ -1,10 +1,10 @@
 --  Schema definition for the ReplicationPlacementDB database - containing DataManagement specific Transformations
 --  It simply uses the TransformationDB table definitions.
----
---------------------------------------------------------------------------------
+-- -
+-- ------------------------------------------------------------------------------
 DROP DATABASE IF EXISTS ReplicationPlacementDB;
 CREATE DATABASE ReplicationPlacementDB;
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 
 -- Database owner definition
 USE mysql;
@@ -15,8 +15,8 @@ GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON ReplicationPl
 GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON ReplicationPlacementDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
 FLUSH PRIVILEGES;
 
--------------------------------------------------------------------------------
+-- -----------------------------------------------------------------------------
 USE ReplicationPlacementDB;
--------------------------------------------------------------------------------
+-- -----------------------------------------------------------------------------
 
 SOURCE DIRAC/Core/Transformation/TransformationDB.sql

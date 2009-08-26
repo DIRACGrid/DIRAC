@@ -1,17 +1,17 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.19 2009/06/15 18:35:49 rgracian Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.20 2009/08/26 09:39:53 rgracian Exp $
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 --
 --  Schema definition for the PilotAgentsDB database - containing the job status
 --  history ( logging ) information
----
---------------------------------------------------------------------------------
+-- -
+-- ------------------------------------------------------------------------------
 
 DROP DATABASE IF EXISTS PilotAgentsDB;
 
 CREATE DATABASE PilotAgentsDB;
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 -- Database owner definition
 
 USE mysql;
@@ -26,10 +26,10 @@ GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON PilotAgentsDB
 
 FLUSH PRIVILEGES;
 
--------------------------------------------------------------------------------
+-- -----------------------------------------------------------------------------
 USE PilotAgentsDB;
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS PilotAgents;
 CREATE TABLE PilotAgents (
     PilotID INTEGER NOT NULL AUTO_INCREMENT,

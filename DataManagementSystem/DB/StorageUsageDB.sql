@@ -9,7 +9,7 @@ use mysql;
 GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON StorageUsageDB.* TO 'Dirac'@'localhost' IDENTIFIED BY 'must_be_set';
 GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON StorageUsageDB.* TO 'Dirac'@'%' IDENTIFIED BY 'must_be_set';
 
--------------------------------------------------------------
+-- -----------------------------------------------------------
 
 use StorageUsageDB;
 

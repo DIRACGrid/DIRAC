@@ -1,10 +1,10 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.sql,v 1.6 2009/03/10 22:39:28 atsareg Exp $
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.sql,v 1.7 2009/08/26 09:39:53 rgracian Exp $
 
 -- ------------------------------------------------------------------------------
 --
 --  Schema definition for the SandboxDB database - containing the job status
 --  history ( logging ) information
----
+-- -
 -- ------------------------------------------------------------------------------
 
 DROP DATABASE IF EXISTS SandboxDB;

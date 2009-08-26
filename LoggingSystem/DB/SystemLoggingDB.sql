@@ -1,18 +1,18 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.sql,v 1.10 2009/02/25 16:05:56 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingDB.sql,v 1.10 2009/02/25 16:05:56 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.sql,v 1.11 2009/08/26 09:39:53 rgracian Exp $
+__RCSID__ = "$Id: SystemLoggingDB.sql,v 1.11 2009/08/26 09:39:53 rgracian Exp $"
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 --
 --  Schema definition for the SystemLoggingDB database - containing log messages
 --  from DIRAC services and processes
----
---------------------------------------------------------------------------------
+-- -
+-- ------------------------------------------------------------------------------
 
 DROP DATABASE IF EXISTS SystemLoggingDB;
 
 CREATE DATABASE SystemLoggingDB;
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 -- Database owner definition
 
 USE mysql;
@@ -27,10 +27,10 @@ GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON SystemLogging
 
 FLUSH PRIVILEGES;
 
--------------------------------------------------------------------------------
+-- -----------------------------------------------------------------------------
 USE SystemLoggingDB;
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS MessageRepository;
 CREATE TABLE MessageRepository (
     MessageID INTEGER NOT NULL AUTO_INCREMENT,
@@ -58,7 +58,7 @@ CREATE TABLE MessageRepository (
     INDEX (SiteID)
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS UserDNs;
 CREATE TABLE UserDNs (
     UserDNID INTEGER NOT NULL AUTO_INCREMENT,
@@ -67,7 +67,7 @@ CREATE TABLE UserDNs (
     PRIMARY KEY ( UserDNID )
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS ClientIPs;
 CREATE TABLE ClientIPs (
     ClientIPNumberID INTEGER NOT NULL AUTO_INCREMENT,
@@ -76,7 +76,7 @@ CREATE TABLE ClientIPs (
     PRIMARY KEY ( ClientIPNumberID )
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS FixedTextMessages;
 CREATE TABLE FixedTextMessages (
     FixedTextID INTEGER NOT NULL AUTO_INCREMENT,
@@ -85,7 +85,7 @@ CREATE TABLE FixedTextMessages (
     PRIMARY KEY ( FixedTextID )
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS Systems;
 CREATE TABLE Systems (
     SystemID INTEGER NOT NULL AUTO_INCREMENT,
@@ -93,7 +93,7 @@ CREATE TABLE Systems (
     PRIMARY KEY ( SystemID )
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS SubSystems;
 CREATE TABLE SubSystems (
     SubSystemID INTEGER NOT NULL AUTO_INCREMENT,
@@ -101,7 +101,7 @@ CREATE TABLE SubSystems (
     PRIMARY KEY ( SubSystemID )
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 
 DROP TABLE IF EXISTS Sites;
 CREATE TABLE Sites (
@@ -110,7 +110,7 @@ CREATE TABLE Sites (
     PRIMARY KEY ( SiteID )
 );
 
---------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 
 DROP TABLE IF EXISTS AgentPersistentData;
 CREATE TABLE AgentPersistentData (
