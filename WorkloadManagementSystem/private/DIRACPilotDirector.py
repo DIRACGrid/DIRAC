@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.23 2009/08/26 08:58:24 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.24 2009/08/26 15:04:46 rgracian Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.23 2009/08/26 08:58:24 rgracian Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.24 2009/08/26 15:04:46 rgracian Exp $"
 
 import os, sys, tempfile, shutil, time, base64, bz2
 
@@ -47,7 +47,7 @@ class DIRACPilotDirector(PilotDirector):
     self.computingElements = {}
     for CE in COMPUTING_ELEMENTS:
       self.computingElement = CE
-      self.addComputingelement( )
+      self.addComputingElement( )
 
     self.siteName          = gConfig.getValue('/LocalSite/Site','')
     if not self.siteName:
@@ -59,7 +59,9 @@ class DIRACPilotDirector(PilotDirector):
 
     self.clientPlatform = gConfig.getValue('LocalSite/ClientPlatform', '')
 
-    self.sharedArea = gConfig.getValue('LocalSite/SharedArea')
+    self.sharedArea = gConfig.getValue('LocalSite/SharedArea', '' )
+    
+    self.cpuScalingFactor = gConfig.getValue('LocalSite/CPUScalingFactor', 0.0 )
 
     self.waitingToRunningRatio = gConfig.getValue('LocalSite/WaitingToRunningRatio', WAITING_TO_RUNNING_RATIO)
     self.maxWaitingJobs = gConfig.getValue('LocalSite/MaxWaitingJobs', MAX_WAITING_JOBS)
@@ -83,7 +85,7 @@ class DIRACPilotDirector(PilotDirector):
     for ce in self.__failingCECache.getKeys():
       if ce in self.computingElements:
         try:
-          self.computingElements.remove( ce )
+          del self.computingElements[ce]
         except:
           pass
     if self.computingElements:
@@ -91,22 +93,9 @@ class DIRACPilotDirector(PilotDirector):
 
 
     # FIXME: this is to start testing
-    self.computingElement = self.computingElements[0]
-    ceFactory = ComputingElementFactory(self.computingElements[0])
-    ceName = self.computingElements[0]
-    ceInstance = ceFactory.getCE()
-    if not ceInstance['OK']:
-      self.log.warn(ceInstance['Message'])
-      try:
-        os.chdir( baseDir )
-        shutil.rmtree( workingDirectory )
-      except:
-        pass
-      return ceInstance
+    ceName, computingElement = self.computingElements.items()[0]
 
-    self.computingElement = ceInstance['Value']
-
-    self.log.debug(self.computingElement.getDynamicInfo())
+    self.log.debug( computingElement.getDynamicInfo() )
 
     self.log.info( ' SiteName:', self.siteName )
 
@@ -133,7 +122,7 @@ class DIRACPilotDirector(PilotDirector):
       if not ceInstance['OK']:
         self.log.error('Can not create CE object:', ceInstance['Message'])
         return
-      self.computingElements[self.computingElement] = ceInstance
+      self.computingElements[self.computingElement] = ceInstance['Value']
 
 
   def _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
@@ -163,13 +152,13 @@ class DIRACPilotDirector(PilotDirector):
     # Check that there are available queues for the Jobs:
     if self.enableListMatch:
       availableQueues = []
-      now = Time.dateTime()
+      # now = Time.dateTime()
       cachedAvailableQueues = self.listMatchCache.get( pilotRequirementsString )
       if cachedAvailableQueues == False:
         availableQueues = self._listQueues( pilotRequirements )
         if availableQueues != False:
           self.listMatchCache.add( pilotRequirementsString, self.listMatchDelay, availableQueues )
-          self.log.verbose( 'Available Queues for TaskQueue ',  "%s: " % ( taskQueueID, str(availableQueues) ) )
+          self.log.verbose( 'Available Queues for TaskQueue ',  "%s: %s" % ( taskQueueID, str(availableQueues) ) )
       else:
         availableQueues = cachedAvailableQueues
 
@@ -189,6 +178,9 @@ class DIRACPilotDirector(PilotDirector):
 
     if self.sharedArea:
       pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % self.sharedArea )
+      
+    if self.cpuScalingFactor:
+      pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % self.cpuScalingFactor )
 
     #pilotOptions.append( "-o '/DIRAC/Configuration/Servers=dips://volhcb04.cern.ch:9135/Configuration/Server'" )
 
@@ -264,7 +256,6 @@ class DIRACPilotDirector(PilotDirector):
 #
 import os, tempfile, sys, shutil, base64, bz2
 try:
-  os.chdir( %s )
   pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix= 'DIRAC_' )
   os.chdir( pilotWorkingDirectory )
   open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedProxy)s" ) ) )
@@ -319,7 +310,8 @@ shutil.rmtree( pilotWorkingDirectory )
     # first check status of the CE and determine how many pilots may be submitted
     submitPilot = False
 
-    ret = self.computingElement.getDynamicInfo()
+    computingElement = self.computingElements[ self.computingElement ]
+    ret = computingElement.getDynamicInfo()
 
     if not ret['OK']:
       self.log.error('Failed to retrieve status information of the CE', ret['Message'])
