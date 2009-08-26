@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.14 2009/08/26 14:32:44 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.15 2009/08/26 15:59:07 rgracian Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.14 2009/08/26 14:32:44 rgracian Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.15 2009/08/26 15:59:07 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -241,7 +241,7 @@ class ComputingElement:
     maxTotalJobs = self.__getParameters('MaxTotalJobs')
     if not maxTotalJobs['OK']:
       self.log.warn('MaxTotalJobs is not specified')
-      maxTotalJobs = 0
+      maxTotalJobs = 1
     else:
       maxTotalJobs = int(maxTotalJobs['Value'])
 
