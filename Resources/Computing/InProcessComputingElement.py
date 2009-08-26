@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InProcessComputingElement.py,v 1.18 2009/05/29 08:08:21 rgracian Exp $
+# $Id: InProcessComputingElement.py,v 1.19 2009/08/26 14:57:40 rgracian Exp $
 # File :   InProcessComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: InProcessComputingElement.py,v 1.18 2009/05/29 08:08:21 rgracian Exp $"
+__RCSID__ = "$Id: InProcessComputingElement.py,v 1.19 2009/08/26 14:57:40 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -18,15 +18,13 @@ from DIRAC                                               import gConfig,S_OK,S_E
 
 import os,sys
 
-CE_NAME = 'InProcess'
-
-class InProcessComputingElement(ComputingElement):
+class InProcessComputingElement( ComputingElement ):
 
   #############################################################################
-  def __init__(self):
+  def __init__( self, ceUniqueID ):
     """ Standard constructor.
     """
-    ComputingElement.__init__(self,CE_NAME)
+    ComputingElement.__init__( self, ceUniqueID )
     self.minProxyTime = gConfig.getValue( '/Security/MinProxyLifeTime', 10800 ) #secs
     self.defaultProxyTime = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400 ) #secs
     self.proxyCheckPeriod = gConfig.getValue('/Security/ProxyCheckingPeriod',3600) #secs
@@ -45,15 +43,18 @@ class InProcessComputingElement(ComputingElement):
 
     print 'pilotProxy', pilotProxy
 
-    self.log.verbose('Setting up proxy for payload')
-    result = self.writeProxyToFile(proxy)
-    if not result['OK']:
-      return result
-
-    payloadProxy = result['Value']
-    # pilotProxy = os.environ['X509_USER_PROXY']
     payloadEnv = dict( os.environ )
-    payloadEnv[ 'X509_USER_PROXY' ] = payloadProxy
+    payloadProxy = ''
+    if proxy:
+      self.log.verbose('Setting up proxy for payload')
+      result = self.writeProxyToFile(proxy)
+      if not result['OK']:
+        return result
+
+      payloadProxy = result['Value']
+      # pilotProxy = os.environ['X509_USER_PROXY']
+      payloadEnv[ 'X509_USER_PROXY' ] = payloadProxy
+
     self.log.verbose('Starting process for monitoring payload proxy')
     gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod,self.monitorProxy,taskArgs=(pilotProxy,payloadProxy),executions=0,elapsedTime=0)
     
