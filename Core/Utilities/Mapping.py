@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: Mapping.py,v 1.16 2009/04/18 18:26:57 rgracian Exp $
+# $Id: Mapping.py,v 1.17 2009/08/27 07:50:50 paterson Exp $
 ########################################################################
 
 """ All of the data collection and handling procedures for the SiteMappingHandler
@@ -80,8 +80,10 @@ class Mapping:
             # The worst that happens is that you end up with a site on the map that should have been removed.
             #   In that case, just restart the agent.
 
-            if site not in self.siteData:
+            if site not in self.siteData and len(coord)==2:
               self.siteData[site] = {'Coord' : (float(coord[0]), float(coord[1])), 'Cat' : cat, 'Mask' : 'Unknown'}
+            else:
+              self.log.error('Problem showing %s site %s with coordinates: %s (there has to be two of these ;)' %(cat,site,coord))
 
     ##############################
     elif section == 'SiteMask':
