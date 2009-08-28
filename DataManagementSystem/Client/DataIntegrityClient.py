@@ -1,6 +1,6 @@
 """ This is the Data Integrity Client which allows the simple reporting of problematic file and replicas to the IntegrityDB and their status correctly updated in the FileCatalog.""" 
 
-__RCSID__ = "$Id: DataIntegrityClient.py,v 1.5 2009/08/20 15:15:19 acsmith Exp $"
+__RCSID__ = "$Id: DataIntegrityClient.py,v 1.6 2009/08/28 15:38:39 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -37,10 +37,11 @@ class DataIntegrityClient:
       return res
     catalogMetadata = res['Value']
     # Try and get the metadata for files that shouldn't exist in the catalog
-    res = self.__checkCatalogForBKNoReplicas(noReplicaFiles)
-    if not res['OK']:
-      return res    
-    catalogMetadata.update(res['Value'])
+    if noReplicaFiles:
+      res = self.__checkCatalogForBKNoReplicas(noReplicaFiles)
+      if not res['OK']:
+        return res    
+      catalogMetadata.update(res['Value'])
     # Get the replicas for the files found to exist in the catalog
     res = self.__getCatalogReplicas(catalogMetadata.keys())
     if not res['OK']:
@@ -119,10 +120,12 @@ class DataIntegrityClient:
       return res
     replicas = res['Value']['Replicas']
     catalogMetadata = res['Value']['Metadata']
+    resDict = {'CatalogMetadata':catalogMetadata,'CatalogReplicas':replicas}
+    if not catalogMetadata:
+      return S_ERROR('No files found in directory')
     res = self.__checkBKFiles(replicas,catalogMetadata)
     if not res['OK']:
       return res       
-    resDict = {'CatalogMetadata':catalogMetadata,'CatalogReplicas':replicas}
     return S_OK(resDict)
 
   def catalogFileToBK(self,lfns):
@@ -247,7 +250,8 @@ class DataIntegrityClient:
       gLogger.info('%s %s' % (site.ljust(20), str(files).rjust(20)))
 
     physicalFileMetadata = {}
-    for se,pfns in sePfns.items():
+    for se in sortList(sePfns.keys()):
+      pfns = sePfns[se]
       pfnDict = {}
       for pfn in pfns:
         pfnDict[pfn] = pfnLfns[pfn]
