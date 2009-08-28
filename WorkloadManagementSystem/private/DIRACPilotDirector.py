@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.25 2009/08/26 17:02:37 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.26 2009/08/28 16:59:11 rgracian Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.25 2009/08/26 17:02:37 rgracian Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.26 2009/08/28 16:59:11 rgracian Exp $"
 
 import os, sys, tempfile, shutil, time, base64, bz2
 
@@ -46,8 +46,7 @@ class DIRACPilotDirector(PilotDirector):
 
     self.computingElementList = COMPUTING_ELEMENTS
     self.computingElementDict = {}
-    for CE in self.computingElementList:
-      self.addComputingElement( CE )
+    self.addComputingElement( self.computingElementList )
 
     self.siteName          = gConfig.getValue('/LocalSite/Site','')
     if not self.siteName:
@@ -60,7 +59,7 @@ class DIRACPilotDirector(PilotDirector):
     self.clientPlatform = gConfig.getValue('LocalSite/ClientPlatform', '')
 
     self.sharedArea = gConfig.getValue('LocalSite/SharedArea', '' )
-    
+
     self.cpuScalingFactor = gConfig.getValue('LocalSite/CPUScalingFactor', 0.0 )
 
     self.waitingToRunningRatio = gConfig.getValue('LocalSite/WaitingToRunningRatio', WAITING_TO_RUNNING_RATIO)
@@ -94,11 +93,11 @@ class DIRACPilotDirector(PilotDirector):
       return
 
     # FIXME: this is to start testing
-    ceName, computingElement = self.computingElementDict.items()[0]
+    ceName, computingElementDict = self.computingElementDict.items()[0]
 
-    self.computingElement = computingElement
+    self.computingElement = computingElementDict['CE']
 
-    self.log.debug( computingElement.getDynamicInfo() )
+    self.log.debug( self.computingElement.getDynamicInfo() )
 
     self.log.info( ' SiteName:', self.siteName )
 
@@ -110,24 +109,26 @@ class DIRACPilotDirector(PilotDirector):
     PilotDirector.configureFromSection( self, mySection )
 
     self.computingElementList = gConfig.getValue( mySection+'/ComputingElements'      , self.computingElementList )
-    for CE in self.computingElementList:
-      self.addComputingElement( CE )
+    self.addComputingElement( self.computingElementList )
 
     self.siteName             = gConfig.getValue( mySection+'/SiteName'               , self.siteName )
 
 
-  def addComputingElement(self, CE):
+  def addComputingElement(self, ceList):
     """
       Check if a CE object for the current CE is available,
       instantiate one if necessary
     """
-    if CE not in self.computingElementDict:
-      ceFactory = ComputingElementFactory( CE )
-      ceInstance = ceFactory.getCE()
-      if not ceInstance['OK']:
-        self.log.error('Can not create CE object:', ceInstance['Message'])
-        return
-      self.computingElementDict[CE] = ceInstance['Value']
+    for CE in ceList:
+      if CE not in self.computingElementDict:
+        ceFactory = ComputingElementFactory( CE )
+        ceInstance = ceFactory.getCE()
+        if not ceInstance['OK']:
+          self.log.error('Can not create CE object:', ceInstance['Message'])
+          return
+        self.computingElementDict[CE] = ceInstance['Value'].ceConfigDict
+        # add the 'CE' instance at the end to avoid being overwritten
+        self.computingElementDict[CE]['CE'] = ceInstance['Value']
 
 
   def _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
@@ -183,7 +184,7 @@ class DIRACPilotDirector(PilotDirector):
 
     if self.sharedArea:
       pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % self.sharedArea )
-      
+
     if self.cpuScalingFactor:
       pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % self.cpuScalingFactor )
 

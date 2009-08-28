@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.15 2009/08/26 15:59:07 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.16 2009/08/28 16:59:10 rgracian Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.15 2009/08/26 15:59:07 rgracian Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.16 2009/08/28 16:59:10 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -24,10 +24,12 @@ class ComputingElement:
   def __init__(self, ceName):
     """ Standard constructor
     """
-    self.log  = gLogger
+    self.log  = gLogger.getSubLogger( ceName )
     self.name = ceName
     #self.log.setLevel('debug') #temporary for debugging
     self.classAd = ClassAd('[]')
+    self.ceRequirementDict = {}
+    self.ceConfigDict = getCEConfigDict( ceName )
     self.ceParameters = {}
     self.percentageRatio = 0.3
     self.__getCEParameters('CEDefaults') #can be overwritten by other sections
@@ -56,6 +58,7 @@ class ComputingElement:
 
     requirements = ''
     reqsDict = result['Value']
+    self.ceRequirementDict.update( reqsDict )
     for option,value in reqsDict.items():
       if type(value) == type(' '):
         jdlInt = self.__getInt(value)
@@ -80,6 +83,9 @@ class ComputingElement:
       self.classAd.set_expression('Requirements',requirements)
     else:
       self.classAd.set_expression('Requirements','True')
+
+    print self.ceRequirementDict
+    print self.classAd.asJDL()
 
     return S_OK('Added requirements')
 
@@ -127,6 +133,7 @@ class ComputingElement:
     localSite = options['Value']
     self.log.debug('Local site parameters are: %s' %(localSite))
 
+    self.ceRequirementDict.update( localSite )
     for option,value in localSite.items():
       if option == 'Architecture':
         self.classAd.insertAttributeString('LHCbPlatform',value)
@@ -149,6 +156,9 @@ class ComputingElement:
       else:
         self.log.warn('Type of option %s = %s not determined' %(option,value))
 
+    print self.ceRequirementDict
+    print self.classAd.asJDL()
+
     return S_OK()
 
   #############################################################################
@@ -164,6 +174,7 @@ class ComputingElement:
       return S_ERROR('Empty CS section %s' %(section))
 
     ceOptions = options['Value']
+    self.ceRequirementDict.update( ceOptions )
     self.ceParameters = ceOptions
     for option,value in ceOptions.items():
       if type(value) == type(' '):
@@ -179,6 +190,9 @@ class ComputingElement:
         self.classAd.insertAttributeInt(option, value)
       else:
         self.log.warn('Type of option %s = %s not determined' %(option,value))
+
+    print self.ceRequirementDict
+    print self.classAd.asJDL()
 
     return S_OK()
 
@@ -324,5 +338,42 @@ class ComputingElement:
     name = 'getDynamicInfo()'
     self.log.error('ComputingElement: %s should be implemented in a subclass' %(name))
     return S_ERROR('ComputingElement: %s should be implemented in a subclass' %(name))
+
+
+def getCEConfigDict( ceName ):
+  """Look into LocalSite for configuration Parameters for this CE
+  """
+  ceConfigDict = {}
+  result = gConfig.getOptionsDict( '/LocalSite/%s' % ceName )
+  if result['OK']:
+    ceConfigDict= result['Value']
+  return ceConfigDict
+
+def getResourceDict( ceName = None ):
+  """Look into LocalSite for Resource Requirements
+  """
+  from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import maxCPUSegments
+  ret = gConfig.getOptionsDict( '/LocalSite/ResourceDict' )
+  if not ret['OK']:
+    resourceDict = {}
+  else:
+    # FIXME: es mejor copiar el diccionario?
+    resourceDict = dict(ret['Value'])
+
+  # if a CE Name is given, check the corresponding section
+  if ceName:
+    ret = gConfig.getOptionsDict( '/LocalSite/ResourceDict/%s', ceName )
+    if ret['OK']:
+      resourceDict.update( dict(ret['Value']) )
+
+  # now add some defaults
+  resourceDict['Setup'] = gConfig.getValue('/DIRAC/Setup','None')
+  if not 'CPUTime' in resourceDict:
+    resourceDict['CPUTime'] = maxCPUSegments[-1]
+  if not 'PilotType' in resourceDict:
+    # FIXME: this is a test, we need the list of available types
+    resourceDict['PilotType'] = 'private'
+
+  return resourceDict
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

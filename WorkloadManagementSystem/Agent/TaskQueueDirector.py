@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.59 2009/07/09 06:04:03 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/TaskQueueDirector.py,v 1.60 2009/08/28 16:59:11 rgracian Exp $
 # File :   TaskQueueDirector.py
 # Author : Stuart Paterson, Ricardo Graciani
 ########################################################################
@@ -126,7 +126,7 @@
         SoftwareTag
 
 """
-__RCSID__ = "$Id: TaskQueueDirector.py,v 1.59 2009/07/09 06:04:03 rgracian Exp $"
+__RCSID__ = "$Id: TaskQueueDirector.py,v 1.60 2009/08/28 16:59:11 rgracian Exp $"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 
@@ -134,6 +134,7 @@ from DIRAC.WorkloadManagementSystem.private.gLitePilotDirector   import gLitePil
 from DIRAC.WorkloadManagementSystem.private.LCGPilotDirector     import LCGPilotDirector
 from DIRAC.WorkloadManagementSystem.private.DIRACPilotDirector   import DIRACPilotDirector
 
+from DIRAC.Resources.Computing.ComputingElement import getResourceDict
 
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, taskQueueDB
 
@@ -187,7 +188,7 @@ class TaskQueueDirector(AgentModule):
 
     self.__checkSubmitPools()
 
-    self.__checkDirectorDict()
+    self.directorDict = getResourceDict()
     print self.directorDict
 
     result = taskQueueDB.getMatchingTaskQueues( self.directorDict )
@@ -363,26 +364,6 @@ class TaskQueueDirector(AgentModule):
         # del self.pools[pool]
         del pool
 
-  def __checkDirectorDict(self):
-    """
-     Retrieve and update Resource Dict for Local Installation
-    """
-    from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import maxCPUSegments
-    ret = gConfig.getOptionsDict('/LocalSite/ResourceDict')
-    if not ret['OK']:
-      self.directorDict = {}
-    else:
-      # FIXME: es mejor copiar el diccionario?
-      self.directorDict = dict(ret['Value'])
-
-    # now add some defaults
-    self.directorDict['Setup'] = gConfig.getValue('/DIRAC/Setup','None')
-    if not 'CPUTime' in self.directorDict:
-      self.directorDict['CPUTime'] = maxCPUSegments[-1]
-    if not 'PilotType' in self.directorDict:
-      # FIXME: this is a test, we need the list of available types
-      self.directorDict['PilotType'] = 'private'
-
   def __createDirector(self,submitPool):
     """
      Instantiate a new PilotDirector for the given SubmitPool
@@ -473,7 +454,7 @@ class TaskQueueDirector(AgentModule):
         submittedPilots = submitResult['Value']
         self.callBackLock.acquire()
         self.submittedPilots += submittedPilots
-        self.callBackLock.release()        
+        self.callBackLock.release()
     else:
       submittedPilots = submitResult['Value']
       self.callBackLock.acquire()

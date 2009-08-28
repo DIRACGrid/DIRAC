@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TorqueComputingElement.py,v 1.22 2009/08/26 16:35:02 rgracian Exp $
+# $Id: TorqueComputingElement.py,v 1.23 2009/08/28 16:59:10 rgracian Exp $
 # File :   TorqueComputingElement.py
 # Author : Stuart Paterson, Paul Szczypka
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: TorqueComputingElement.py,v 1.22 2009/08/26 16:35:02 rgracian Exp $"
+__RCSID__ = "$Id: TorqueComputingElement.py,v 1.23 2009/08/28 16:59:10 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -33,7 +33,9 @@ class TorqueComputingElement( ComputingElement ):
     """
     ComputingElement.__init__( self, ceUniqueID )
     self.submittedJobs = 0
-    self.queue = gConfig.getValue('/LocalSite/Queue', QUEUE)
+
+    self.queue = gConfig.getValue( '/LocalSite/%s/Queue' % ceUniqueID, QUEUE )
+    self.execQueue = gConfig.getValue( '/LocalSite/%s/ExecQueue' % ceUniqueID, self.queue )
     self.log.info("Using queue: ", self.queue)
     self.pilot = DIRAC_PILOT
     self.install = DIRAC_INSTALL
@@ -43,17 +45,17 @@ class TorqueComputingElement( ComputingElement ):
                                          os.path.join(rootPath, 'data' ))
     self.batchError = gConfig.getValue('/LocalSite/BatchError', \
                                          os.path.join(rootPath, 'data' ))
-    
+
 
   #############################################################################
   def submitJob(self,executableFile,jdl,proxy,localID):
     """ Method to submit job, should be overridden in sub-class.
     """
-    
+
     self.log.info("Executable file path: %s" %executableFile)
     if not os.access(executableFile, 5):
       os.chmod(executableFile,0755)
-      
+
     #Perform any other actions from the site admin
     if self.ceParameters.has_key('AdminCommands'):
       commands = self.ceParameters['AdminCommands'].split(';')
@@ -63,17 +65,17 @@ class TorqueComputingElement( ComputingElement ):
         if not result['OK'] or result['Value'][0]:
           self.log.error('Error during "%s":' %command,result)
           return S_ERROR('Error executing %s CE AdminCommands' %CE_NAME)
-    
+
     # if no proxy is supplied, the executable can be submitted directly
     # otherwise a wrapper script is needed to get the proxy to the execution node
-    # The wrapper script makes debugging more complicated and thus it is 
+    # The wrapper script makes debugging more complicated and thus it is
     # recommended to transfer a proxy inside the executable if possible.
     if proxy:
       self.log.verbose('Setting up proxy for payload')
-      
+
       compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy ) ).replace('\n','')
       compressedAndEncodedExecutable = base64.encodestring( bz2.compress( open( executableFile, "rb" ).read(), 9 ) ).replace('\n','')
-      
+
       wrapperContent = """#!/usr/bin/env python
 # Wrapper script for executable and proxy
 import os, tempfile, sys, base64, bz2
@@ -98,14 +100,14 @@ shutil.rmtree( workingDirectory )
 """ % { 'compressedAndEncodedProxy': compressedAndEncodedProxy, \
         'compressedAndEncodedExecutable': compressedAndEncodedExecutable, \
         'executable': os.path.basename(executableFile) }
-      
+
       fd, name = tempfile.mkstemp( suffix = '_wrapper.py', prefix = 'TORQUE_', dir=os.getcwd())
       wrapper = os.fdopen(fd, 'w')
       wrapper.write( wrapperContent )
       wrapper.close()
-      
+
       submitFile = name
-        
+
     else: # no proxy
       submitFile = executableFile
 
@@ -115,7 +117,7 @@ shutil.rmtree( workingDirectory )
        'error': self.batchError, \
        'queue': self.queue, \
        'executable': os.path.abspath( submitFile ) }
-    
+
     self.log.verbose('CE submission command: %s' %(cmd))
 
     result = shellCall(0,cmd, callbackFunction = self.sendOutput)
@@ -135,21 +137,32 @@ shutil.rmtree( workingDirectory )
     """
     result = {}
     result['SubmittedJobs'] = self.submittedJobs
-    
-    cmd = ["qstat", "-Q" , self.queue ]
-    
-    ret = systemCall( 120, cmd )
-    
+
+    cmd = ["qstat", "-Q" , self.execQueue ]
+
+    ret = systemCall( 10, cmd )
+
+    if not ret['OK']:
+      self.log.error( 'Timeout', ret['Message'])
+      return ret
+
+    status = ret['Value'][0]
     stdout = ret['Value'][1]
     stderr = ret['Value'][2]
-    
-    self.log.debug("stdout", stdout)
-    
+
+    self.log.debug("status:", status)
+    self.log.debug("stdout:", stdout)
+    self.log.debug("stderr:", stderr)
+
+    if status:
+      self.log.error( 'Failed qstat execution:', stderr )
+      return S_ERROR( stderr )
+
     matched = re.search(self.queue + "\D+(\d+)\D+(\d+)\W+(\w+)\W+(\w+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\W+(\w+)", stdout)
-    
+
     if matched.groups < 6:
       return S_ERROR("Error retrieving information from qstat:" + stdout + stderr)
-    
+
     result['WaitingJobs'] = matched.group(5)
     result['RunningJobs'] = matched.group(6)
     self.log.verbose('Waiting Jobs: ', matched.group(5))
