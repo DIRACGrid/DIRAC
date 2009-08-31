@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.87 2009/07/31 08:18:18 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobAgent.py,v 1.88 2009/08/31 13:16:20 rgracian Exp $
 # File :   JobAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
      status that is used for matching.
 """
 
-__RCSID__ = "$Id: JobAgent.py,v 1.87 2009/07/31 08:18:18 rgracian Exp $"
+__RCSID__ = "$Id: JobAgent.py,v 1.88 2009/08/31 13:16:20 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
@@ -105,12 +105,12 @@ class JobAgent(Agent):
 
     self.log.verbose('Job Agent execution loop')
     available = self.computingElement.available()
-    if not available['OK']:
+    if not available['OK'] or not available['Value']:
       self.log.info('Resource is not available')
       self.log.info(available['Message'])
       return self.__finish('CE Not Available')
 
-    self.log.info(available['Value'])
+    self.log.info(available['Message'])
 
     ceJDL = self.computingElement.getJDL()
     resourceJDL = ceJDL['Value']
