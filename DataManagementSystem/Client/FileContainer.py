@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/FileContainer.py,v 1.4 2009/08/03 15:28:01 acsmith Exp $
-__RCSID__ = "$Id: FileContainer.py,v 1.4 2009/08/03 15:28:01 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/FileContainer.py,v 1.5 2009/08/31 23:21:53 acsmith Exp $
+__RCSID__ = "$Id: FileContainer.py,v 1.5 2009/08/31 23:21:53 acsmith Exp $"
 
 """ This module contains classes associated to Files.
 
@@ -126,6 +126,15 @@ class File:
     self.setGUID(metadata['GUID'])
     self.setSize(metadata['Size']) 
     self.setStatus(metadata['Status'])
+    return S_OK()
+
+  def hasCatalogReplicas(self):
+    if self.catalogReplicas:
+      return S_OK(True)
+    return S_OK(False)
+
+  def clearCatalogReplicas(self):
+    self.catalogReplicas = []
     return S_OK()
 
   def getReplicas(self):
