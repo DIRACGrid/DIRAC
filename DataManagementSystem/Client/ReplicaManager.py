@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.83 2009/08/19 18:26:04 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.84 2009/08/31 10:35:37 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -260,15 +260,15 @@ class CatalogDirectory(CatalogBase):
     else:
       return self._executeFileCatalogFunction(lfn,'getDirectoryReplicas',catalogs=catalogs)
 
-  def getCatalogListDirectory(self,lfn,singleFile=False,catalogs=[]):
+  def getCatalogListDirectory(self,lfn,verbose=False,singleFile=False,catalogs=[]):
     """ Get the contents of a directory in the FileCatalog
       
         'lfn' is the directories to check (can be a single directory or list of directories)
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction(lfn,'listDirectory',catalogs=catalogs)
+      return self._executeSingleFileCatalogFunction(lfn,'listDirectory',argsDict={'verbose':verbose},catalogs=catalogs)
     else:
-      return self._executeFileCatalogFunction(lfn,'listDirectory',catalogs=catalogs)
+      return self._executeFileCatalogFunction(lfn,'listDirectory',argsDict={'verbose':verbose},catalogs=catalogs)
 
   def getCatalogDirectorySize(self,lfn,singleFile=False,catalogs=[]):
     """ Get the size a directory in the FileCatalog
