@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.21 2009/06/29 16:04:27 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationClient.py,v 1.21 2009/06/29 16:04:27 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.22 2009/08/31 15:39:16 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationClient.py,v 1.22 2009/08/31 15:39:16 acasajus Exp $"
 
 import types
 from DIRAC.Core.Utilities import List
@@ -17,6 +17,9 @@ class ConfigurationClient:
 
   def loadFile( self, fileName ):
     return gConfigurationData.loadFile( fileName )
+
+  def loadCFG( self, cfg ):
+    return gConfigurationData.mergeWithLocal( cfg )
 
   def dumpLocalCFGToFile( self, fileName ):
     return gConfigurationData.dumpLocalCFGToFile( fileName )

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.24 2009/08/14 15:55:47 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.24 2009/08/14 15:55:47 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.25 2009/08/31 15:39:16 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationData.py,v 1.25 2009/08/31 15:39:16 acasajus Exp $"
 
 import os.path
 import zlib
@@ -54,17 +54,23 @@ class ConfigurationData:
     self.compressedConfigurationData = zlib.compress( str( self.remoteCFG ), 9 )
 
   def loadFile( self, fileName ):
-    self.lock()
     try:
       fileCFG = CFG()
       fileCFG.loadFromFile( fileName )
-      self.localCFG = self.localCFG.mergeWith( fileCFG )
-      self.unlock()
-      gLogger.debug( "Configuration file loaded", "'%s'" % fileName )
     except IOError, e:
-      self.unlock()
-      gLogger.warn( "Can't load a cfg file", "'%s'" % fileName )
+      self.localCFG = self.localCFG.mergeWith( fileCFG )
       return S_ERROR( "Can't load a cfg file '%s'" % fileName )
+    return self.mergeWithLocal( fileCFG)
+  
+  def mergeWithLocal( self, extraCFG ):
+    self.lock()
+    try:
+      self.localCFG = self.localCFG.mergeWith( extraCFG )
+      self.unlock()
+      gLogger.debug( "CFG merged" )
+    except Exception, e:
+      self.unlock()
+      return S_ERROR( "Cannot merge with new cfg: %s" % str(e) )
     self.sync()
     return S_OK()
 
