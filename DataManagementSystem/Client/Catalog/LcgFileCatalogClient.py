@@ -386,7 +386,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def listDirectory(self,lfn):
+  def listDirectory(self,lfn,verbose=False):
     """ Returns the result of __getDirectoryContents for multiple supplied paths
     """
     res = self.__checkArgumentFormat(lfn)
@@ -397,7 +397,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     failed = {}
     successful = {}
     for path in lfns.keys():
-      res = self.__getDirectoryContents(path)
+      res = self.__getDirectoryContents(path,verbose)
       if res['OK']:
         successful[path] = res['Value']
       else:
@@ -1033,7 +1033,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       status = replica.status
       if (status != 'P') or allStatus:
         se = replica.host
-        pfn = replica.sfn.strip()  
+        pfn = replica.sfn#.strip()  
         replicas[se] = pfn
     return S_OK(replicas)
 
@@ -1210,7 +1210,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     else:
       return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
 
-  def __getDirectoryContents(self,path):
+  def __getDirectoryContents(self,path,verbose=False):
     """ Returns a dictionary containing all of the contents of a directory.
         This includes the metadata associated to files (replicas, size, guid, status) and the subdirectories found.
     """
@@ -1236,11 +1236,23 @@ class LcgFileCatalogClient(FileCatalogueBase):
       entry,fileInfo = lfc.lfc_readdirxr(oDirectory,"")
       pathMetadata = {}
       pathMetadata['Permissions'] = S_IMODE(entry.filemode)
+      subPath = '%s/%s' % (path,entry.d_name)
+      if verbose:
+        statRes = self.__getPathStat(subPath)
+        if res['OK']:
+          oPath = statRes['Value']
+          pathMetadata['Size'] = oPath.filesize
+          pathMetadata['CheckSumType'] = oPath.csumtype
+          pathMetadata['CheckSumValue'] = oPath.csumvalue
+          pathMetadata['GUID'] = oPath.guid
+          pathMetadata['Status'] = oPath.status
+          pathMetadata['CreationTime'] = time.ctime(oPath.ctime)
+          pathMetadata['ModificationTime'] = time.ctime(oPath.mtime)
+          pathMetadata['NumberOfLinks'] = oPath.nlink
+          pathMetadata['LastAccess'] = oPath.atime
       if S_ISDIR(entry.filemode):
-        subDir = '%s/%s' % (path,entry.d_name)
-        subDirs[subDir] = pathMetadata
+        subDirs[subPath] = pathMetadata
       else:
-        subPath = '%s/%s' % (path,entry.d_name)
         replicaDict = {}
         if fileInfo:
           for replica in fileInfo:
