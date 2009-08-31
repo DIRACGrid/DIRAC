@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.18 2009/08/31 16:20:59 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.19 2009/08/31 16:35:31 rgracian Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.18 2009/08/31 16:20:59 rgracian Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.19 2009/08/31 16:35:31 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -201,9 +201,6 @@ class ComputingElement:
       else:
         self.log.warn('Type of option %s = %s not determined' %(option,value))
 
-    print self.ceRequirementDict
-    print self.classAd.asJDL()
-
     return S_OK()
 
   #############################################################################
@@ -235,9 +232,6 @@ class ComputingElement:
         self.classAd.insertAttributeInt(option, value)
       else:
         self.log.warn('Type of option %s = %s not determined' %(option,value))
-
-    print self.ceRequirementDict
-    print self.classAd.asJDL()
 
     return S_OK()
 
