@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.26 2009/08/28 16:59:11 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.27 2009/08/31 13:06:22 rgracian Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,12 +13,13 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.26 2009/08/28 16:59:11 rgracian Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.27 2009/08/31 13:06:22 rgracian Exp $"
 
 import os, sys, tempfile, shutil, time, base64, bz2
 
 from DIRAC.WorkloadManagementSystem.private.PilotDirector import PilotDirector
 from DIRAC.Resources.Computing.ComputingElementFactory    import ComputingElementFactory
+from DIRAC.Resources.Computing.ComputingElement import getResourceDict
 from DIRAC.Core.Security import CS
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient      import gProxyManager
 from DIRAC import S_OK, S_ERROR, DictCache, gConfig, rootPath
@@ -55,20 +56,6 @@ class DIRACPilotDirector(PilotDirector):
 
     self.__failingCECache  = DictCache()
     self.__ticketsCECache  = DictCache()
-
-    self.clientPlatform = gConfig.getValue('LocalSite/ClientPlatform', '')
-
-    self.sharedArea = gConfig.getValue('LocalSite/SharedArea', '' )
-
-    self.cpuScalingFactor = gConfig.getValue('LocalSite/CPUScalingFactor', 0.0 )
-
-    self.waitingToRunningRatio = gConfig.getValue('LocalSite/WaitingToRunningRatio', WAITING_TO_RUNNING_RATIO)
-    self.maxWaitingJobs = gConfig.getValue('LocalSite/MaxWaitingJobs', MAX_WAITING_JOBS)
-    self.maxNumberJobs = gConfig.getValue('LocalSite/MaxNumberJobs', MAX_NUMBER_JOBS)
-    self.httpProxy = gConfig.getValue('LocalSite/HttpProxy', '')
-
-    self.installURL = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/scripts/dirac-install'
-    self.pilotURL = 'http://isscvs.cern.ch/cgi-bin/cvsweb.cgi/~checkout~/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot?rev=HEAD;content-type=text%2Fplain;cvsroot=dirac'
 
   def configure(self, csSection, submitPool ):
     """
@@ -141,6 +128,8 @@ class DIRACPilotDirector(PilotDirector):
       - It creates a temp directory
       - It prepare a PilotScript
     """
+    computingElement = self.computingElement
+
     taskQueueID = taskQueueDict['TaskQueueID']
     ownerDN = taskQueueDict['OwnerDN']
 
@@ -179,21 +168,31 @@ class DIRACPilotDirector(PilotDirector):
     # set the Site Name
     pilotOptions.append( "-n '%s'" % self.siteName)
 
-    if self.clientPlatform:
-      pilotOptions.append( "-p '%s'" % self.clientPlatform)
+    # add possible requirements from Site and CE
+    ceName = computingElement.name
+    for req, val in getResourceDict( ceName ).items():
+      pilotOptions.append( "-o '/AgentJobRequirements/%s=%s'" % ( req, val ) )
 
-    if self.sharedArea:
-      pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % self.sharedArea )
 
-    if self.cpuScalingFactor:
-      pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % self.cpuScalingFactor )
+    ceConfigDict = self.computingElementDict[computingElement.name]
 
-    #pilotOptions.append( "-o '/DIRAC/Configuration/Servers=dips://volhcb04.cern.ch:9135/Configuration/Server'" )
+    if 'ClientPlatform' in ceConfigDict:
+      pilotOptions.append( "-p '%s'" % ceConfigDict['ClientPlatform'])
+
+    if 'SharedArea' in ceConfigDict:
+      pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % ceConfigDict['SharedArea'] )
+
+    if 'CPUScalingFactor' in ceConfigDict:
+      pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % ceConfigDict['CPUScalingFactor'] )
 
     self.log.info( "pilotOptions: ", ' '.join(pilotOptions))
 
+    httpProxy = ''
+    if 'HttpProxy' in ceConfigDict:
+      httpProxy = ceConfigDict['HttpProxy']
+
     try:
-      pilotScript = self._writePilotScript( workingDirectory, pilotOptions, proxy )
+      pilotScript = self._writePilotScript( workingDirectory, pilotOptions, proxy, httpProxy )
     except:
       self.log.exception( ERROR_SCRIPT )
       try:
@@ -204,20 +203,25 @@ class DIRACPilotDirector(PilotDirector):
       return S_ERROR( ERROR_SCRIPT )
 
     self.log.info("Pilots to submit: ", pilotsToSubmit)
-    for pilots in range(int(pilotsToSubmit)):
-      ret = self._submitPilot()
+    while submittedPilots < pilotsToSubmit:
+      # Find out how many pilots can be submitted
+      ret = computingElement.available( )
       if not ret['OK']:
-        self.log.error('Connot determine if pilot should be submitted: ', ret['Message'])
+        self.log.error('Can not determine if pilot should be submitted: ', ret['Message'])
         break
-      submitPilot = ret['Value']
-      self.log.info("Submit Pilots: ", submitPilot)
-      if submitPilot == False:
+      maxPilotsToSubmit = ret['Value']
+      self.log.info("Submit Pilots: ", maxPilotsToSubmit)
+      if not maxPilotsToSubmit:
         break
-      submission = self.computingElement.submitJob(pilotScript, '', '', '')
-      if not submission['OK']:
-        self.log.error('Pilot submission failed: ', submission['Message'])
-        break
-      submittedPilots += 1
+      # submit the pilots and then check again
+      for i in range( min(maxPilotsToSubmit,pilotsToSubmit-submittedPilots) ):
+        submission = computingElement.submitJob(pilotScript, '', '', '')
+        if not submission['OK']:
+          self.log.error('Pilot submission failed: ', submission['Message'])
+          break
+        submittedPilots += 1
+        # let the batch system some time to digest the submitted job
+        time.sleep(1)
 
     try:
       os.chdir( baseDir )
@@ -241,7 +245,7 @@ class DIRACPilotDirector(PilotDirector):
     return result['Value']
 
 
-  def _writePilotScript( self, workingDirectory, pilotOptions, proxy ):
+  def _writePilotScript( self, workingDirectory, pilotOptions, proxy, httpProxy ):
     """
      Prepare the script to execute the pilot
      For the moment it will do like Grid Pilots, a full DIRAC installation
@@ -272,7 +276,8 @@ try:
   if "LD_LIBRARY_PATH" not in os.environ:
     os.environ["LD_LIBRARY_PATH"]=""
   os.environ["X509_USER_PROXY"]=os.path.join(pilotWorkingDirectory, 'proxy')
-  os.environ["HTTP_PROXY"]="%(proxy)s"
+  if "%(httpProxy)s":
+    os.environ["HTTP_PROXY"]="%(httpProxy)s"
   print os.environ
 except Exception, x:
   print >> sys.stderr, x
@@ -288,7 +293,7 @@ EOF
 """ % { 'compressedAndEncodedProxy': compressedAndEncodedProxy, \
         'compressedAndEncodedPilot': compressedAndEncodedPilot, \
         'compressedAndEncodedInstall': compressedAndEncodedInstall, \
-        'proxy': self.httpProxy, \
+        'httpProxy': httpProxy, \
         'pilotScript': os.path.basename(self.pilot), \
         'pilotOptions': ' '.join( pilotOptions ) }
 
@@ -312,38 +317,3 @@ EOF
                                    limited = True,
                                    requiredTimeLeft = requiredTimeLeft,
                                    requiredVOMSAttribute = vomsAttr )
-
-  def _submitPilot(self):
-    # first check status of the CE and determine how many pilots may be submitted
-    submitPilot = False
-
-    ret = self.computingElement.getDynamicInfo()
-
-    if not ret['OK']:
-      self.log.error('Failed to retrieve status information of the CE', ret['Message'])
-
-    result = ret['Value']
-
-    try:
-      waitingJobs = int(result['WaitingJobs'])
-      runningJobs = int(result['RunningJobs'])
-    except:
-      self.log.exception("getDynamicInfo didn't return integer values for WaitingJobs and/or RunningJobs")
-      return S_ERROR("getDynamicInfo didn't return integer values for WaitingJobs and/or RunningJobs")
-
-    if runningJobs == 0:
-      if waitingJobs < self.maxWaitingJobs:
-        submitPilot = True
-    else:
-      waitingToRunningRatio = float(waitingJobs) / float(runningJobs)
-      # as jobs are in waiting state when they're submitted, we can submit a pilot if there is only
-      # one waiting job
-      if waitingToRunningRatio < self.waitingToRunningRatio or waitingJobs == 1 :
-        submitPilot = True
-
-    totalNumberJobs = runningJobs + waitingJobs
-
-    if (totalNumberJobs + 1) > self.maxNumberJobs:
-      submitPilot = False
-
-    return S_OK(submitPilot)
