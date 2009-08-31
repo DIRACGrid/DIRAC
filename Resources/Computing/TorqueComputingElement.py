@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TorqueComputingElement.py,v 1.23 2009/08/28 16:59:10 rgracian Exp $
+# $Id: TorqueComputingElement.py,v 1.24 2009/08/31 13:09:13 rgracian Exp $
 # File :   TorqueComputingElement.py
 # Author : Stuart Paterson, Paul Szczypka
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: TorqueComputingElement.py,v 1.23 2009/08/28 16:59:10 rgracian Exp $"
+__RCSID__ = "$Id: TorqueComputingElement.py,v 1.24 2009/08/31 13:09:13 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -19,13 +19,14 @@ from DIRAC.Core.Security.Misc                            import getProxyInfo
 import os,sys, time, re, socket
 import string, shutil, bz2, base64, tempfile
 
-DIRAC_PILOT   = os.path.join( rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot' )
-DIRAC_INSTALL = os.path.join( rootPath, 'scripts', 'dirac-install' )
-
 CE_NAME = 'Torque'
-QUEUE = 'batch'
+
+UsedParameters      = [ 'ExecQueue', 'SharedArea', 'BatchOutput', 'BatchError' ]
+MandatoryParameters = [ 'Queue' ]
 
 class TorqueComputingElement( ComputingElement ):
+
+  mandatoryParameters = MandatoryParameters
 
   #############################################################################
   def __init__( self, ceUniqueID ):
@@ -34,17 +35,32 @@ class TorqueComputingElement( ComputingElement ):
     ComputingElement.__init__( self, ceUniqueID )
     self.submittedJobs = 0
 
-    self.queue = gConfig.getValue( '/LocalSite/%s/Queue' % ceUniqueID, QUEUE )
-    self.execQueue = gConfig.getValue( '/LocalSite/%s/ExecQueue' % ceUniqueID, self.queue )
+    self.queue = self.ceConfigDict['Queue']
+    self.execQueue = self.ceConfigDict['ExecQueue']
     self.log.info("Using queue: ", self.queue)
-    self.pilot = DIRAC_PILOT
-    self.install = DIRAC_INSTALL
     self.hostname = socket.gethostname()
-    self.sharedArea = gConfig.getValue('/LocalSite/SharedArea')
-    self.batchOutput = gConfig.getValue('/LocalSite/BatchOutput', \
-                                         os.path.join(rootPath, 'data' ))
-    self.batchError = gConfig.getValue('/LocalSite/BatchError', \
-                                         os.path.join(rootPath, 'data' ))
+    self.sharedArea = self.ceConfigDict['SharedArea']
+    self.batchOutput = self.ceConfigDict['BatchOutput']
+    self.batchError = self.ceConfigDict['BatchError']
+
+  #############################################################################
+  def _addCEConfigDefaults( self ):
+    """Method to make sure all necessary Configuration Parameters are defined
+    """
+    # First assure that any global parameters are loaded
+    ComputingElement._addCEConfigDefaults( self )
+    # Now Torque specific ones
+    if 'ExecQueue' not in self.ceConfigDict:
+      self.ceConfigDict['ExecQueue'] = self.ceConfigDict['Queue']
+
+    if 'SharedArea' not in self.ceConfigDict:
+      self.ceConfigDict['SharedArea'] = ''
+
+    if 'BatchOutput' not in self.ceConfigDict:
+      self.ceConfigDict['BatchOutput'] = os.path.join(rootPath, 'data' )
+
+    if 'BatchError' not in self.ceConfigDict:
+      self.ceConfigDict['BatchError'] = os.path.join(rootPath, 'data' )
 
 
   #############################################################################
@@ -112,7 +128,7 @@ shutil.rmtree( workingDirectory )
       submitFile = executableFile
 
     # submit submitFile to the batch system
-    cmd = "qsub -o %(output)s -e %(error)s -q %(queue)s %(executable)s" % \
+    cmd = "qsub -o %(output)s -e %(error)s -q %(queue)s -N DIRACPilot %(executable)s" % \
       {'output': self.batchOutput, \
        'error': self.batchError, \
        'queue': self.queue, \
@@ -135,7 +151,7 @@ shutil.rmtree( workingDirectory )
   def getDynamicInfo(self):
     """ Method to return information on running and pending jobs.
     """
-    result = {}
+    result = S_OK()
     result['SubmittedJobs'] = self.submittedJobs
 
     cmd = ["qstat", "-Q" , self.execQueue ]
@@ -163,10 +179,18 @@ shutil.rmtree( workingDirectory )
     if matched.groups < 6:
       return S_ERROR("Error retrieving information from qstat:" + stdout + stderr)
 
-    result['WaitingJobs'] = matched.group(5)
-    result['RunningJobs'] = matched.group(6)
-    self.log.verbose('Waiting Jobs: ', matched.group(5))
-    self.log.verbose('Running Jobs: ', matched.group(6))
-    return S_OK(result)
+    try:
+      waitingJobs = int(matched.group(5))
+      runningJobs = int(matched.group(6))
+    except:
+      return S_ERROR("Error retrieving information from qstat:" + stdout + stderr)
+
+    result['WaitingJobs'] = waitingJobs
+    result['RunningJobs'] = runningJobs
+
+    self.log.verbose('Waiting Jobs: ', waitingJobs )
+    self.log.verbose('Running Jobs: ', runningJobs )
+
+    return result
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

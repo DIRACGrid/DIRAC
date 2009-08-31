@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: glexecComputingElement.py,v 1.22 2009/08/26 16:35:02 rgracian Exp $
+# $Id: glexecComputingElement.py,v 1.23 2009/08/31 13:11:12 rgracian Exp $
 # File :   glexecComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     defaults to the standard InProcess Computing Element behaviour.
 """
 
-__RCSID__ = "$Id: glexecComputingElement.py,v 1.22 2009/08/26 16:35:02 rgracian Exp $"
+__RCSID__ = "$Id: glexecComputingElement.py,v 1.23 2009/08/31 13:11:12 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -21,7 +21,11 @@ import DIRAC
 
 import os,sys,string
 
-class glexecComputingElement(ComputingElement):
+MandatoryParameters = [ ]
+
+class glexecComputingElement( ComputingElement ):
+
+  mandatoryParameters = MandatoryParameters
 
   #############################################################################
   def __init__(self, ceUniqueID):
@@ -32,6 +36,14 @@ class glexecComputingElement(ComputingElement):
     self.defaultProxyTime = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400 ) #secs
     self.proxyCheckPeriod = gConfig.getValue('/Security/ProxyCheckingPeriod',3600) #secs
     self.submittedJobs = 0
+
+  #############################################################################
+  def _addCEConfigDefaults( self ):
+    """Method to make sure all necessary Configuration Parameters are defined
+    """
+    # First assure that any global parameters are loaded
+    ComputingElement._addCEConfigDefaults( self )
+    # Now glexec specific ones
 
   #############################################################################
   def submitJob(self,executableFile,jdl,proxy,localID):
@@ -291,11 +303,11 @@ class glexecComputingElement(ComputingElement):
   def getDynamicInfo(self):
     """ Method to return information on running and pending jobs.
     """
-    result = {}
+    result = S_OK()
     result['SubmittedJobs'] = 0
     result['RunningJobs'] = 0
     result['WaitingJobs'] = 0
-    return S_OK(result)
+    return result
 
   #############################################################################
   def monitorProxy(self,glexecLocation,pilotProxy,payloadProxy):

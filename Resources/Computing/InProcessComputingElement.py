@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InProcessComputingElement.py,v 1.20 2009/08/26 16:36:56 rgracian Exp $
+# $Id: InProcessComputingElement.py,v 1.21 2009/08/31 13:12:46 rgracian Exp $
 # File :   InProcessComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """ The simplest Computing Element instance that submits jobs locally.
 """
 
-__RCSID__ = "$Id: InProcessComputingElement.py,v 1.20 2009/08/26 16:36:56 rgracian Exp $"
+__RCSID__ = "$Id: InProcessComputingElement.py,v 1.21 2009/08/31 13:12:46 rgracian Exp $"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -18,7 +18,11 @@ from DIRAC                                               import gConfig,S_OK,S_E
 
 import os,sys
 
+MandatoryParameters = [ ]
+
 class InProcessComputingElement( ComputingElement ):
+
+  mandatoryParameters = MandatoryParameters
 
   #############################################################################
   def __init__( self, ceUniqueID ):
@@ -29,6 +33,14 @@ class InProcessComputingElement( ComputingElement ):
     self.defaultProxyTime = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400 ) #secs
     self.proxyCheckPeriod = gConfig.getValue('/Security/ProxyCheckingPeriod',3600) #secs
     self.submittedJobs = 0
+
+  #############################################################################
+  def _addCEConfigDefaults( self ):
+    """Method to make sure all necessary Configuration Parameters are defined
+    """
+    # First assure that any global parameters are loaded
+    ComputingElement._addCEConfigDefaults( self )
+    # Now InProcess specific ones
 
   #############################################################################
   def submitJob(self,executableFile,jdl,proxy,localID):
@@ -57,13 +69,12 @@ class InProcessComputingElement( ComputingElement ):
 
     self.log.verbose('Starting process for monitoring payload proxy')
     gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod,self.monitorProxy,taskArgs=(pilotProxy,payloadProxy),executions=0,elapsedTime=0)
-    
+
     if not os.access(executableFile, 5):
       os.chmod(executableFile,0755)
     cmd = os.path.abspath(executableFile)
     self.log.verbose('CE submission command: %s' %(cmd))
     result = systemCall(0,cmd,callbackFunction = self.sendOutput,env=payloadEnv)
-    
     if payloadProxy:
       os.unlink(payloadProxy)
 
@@ -89,11 +100,11 @@ class InProcessComputingElement( ComputingElement ):
   def getDynamicInfo(self):
     """ Method to return information on running and pending jobs.
     """
-    result = {}
+    result = S_OK()
     result['SubmittedJobs'] = 0
     result['RunningJobs'] = 0
     result['WaitingJobs'] = 0
-    return S_OK(result)
+    return result
 
   #############################################################################
   def monitorProxy(self,pilotProxy,payloadProxy):
