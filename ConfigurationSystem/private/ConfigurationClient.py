@@ -1,7 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.22 2009/08/31 15:39:16 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationClient.py,v 1.22 2009/08/31 15:39:16 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.23 2009/08/31 16:10:55 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationClient.py,v 1.23 2009/08/31 16:10:55 acasajus Exp $"
 
 import types
+import os
+import DIRAC
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
@@ -12,6 +14,7 @@ from DIRAC.LoggingSystem.Client.Logger import gLogger
 class ConfigurationClient:
 
   def __init__( self, fileToLoadList = [] ):
+    self.diracConfigFilePath = os.path.join( DIRAC.rootPath, "etc", "dirac.cfg" )
     for fileName in fileToLoadList:
       gConfigurationData.loadFile( fileName )
 
