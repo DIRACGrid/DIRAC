@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.16 2009/08/28 16:59:10 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.17 2009/08/31 13:08:00 rgracian Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.16 2009/08/28 16:59:10 rgracian Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.17 2009/08/31 13:08:00 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -17,6 +17,12 @@ from DIRAC.Core.Security.Misc                       import getProxyInfoAsString
 from DIRAC                                          import S_OK, S_ERROR, gLogger
 
 import os, re, string
+
+UsedParameters = [ 'WaitingToRunningRatio', 'MaxWaitingJobs', 'MaxNumberJobs' ]
+
+WAITING_TO_RUNNING_RATIO = 0.5
+MAX_WAITING_JOBS = 1
+MAX_TOTAL_JOBS = 1
 
 class ComputingElement:
 
@@ -29,22 +35,64 @@ class ComputingElement:
     #self.log.setLevel('debug') #temporary for debugging
     self.classAd = ClassAd('[]')
     self.ceRequirementDict = {}
-    self.ceConfigDict = getCEConfigDict( ceName )
     self.ceParameters = {}
+
     self.percentageRatio = 0.3
+
     self.__getCEParameters('CEDefaults') #can be overwritten by other sections
     result = self.__getCEParameters(ceName)
     if not result['OK']:
       self.log.warn(result['Message'])
-      return S_ERROR('Failed to add CE parameters')
     result = self.__getSiteParameters()
     if not result['OK']:
       self.log.warn(result['Message'])
-      return S_ERROR('Failed to add site parameters')
     result = self.__getResourceRequirements()
     if not result['OK']:
       self.log.warn(result['Message'])
-      return S_ERROR('Failed to add resource requirements')
+
+    self.ceConfigDict = getCEConfigDict( ceName )
+    for par in self.mandatoryParameters:
+      if par not in self.ceConfigDict:
+        import DIRAC
+        self.log.fatal( 'Missing Mandatory Parameter in Configuration:', par )
+        DIRAC.abort( -1, 'Can not Instantiate CE:', ceName )
+    self._addCEConfigDefaults()
+
+  #############################################################################
+  def _addCEConfigDefaults( self ):
+    """Method to make sure all necessary Configuration Parameters are defined
+    """
+    try:
+      try:
+        self.ceConfigDict['WaitingToRunningRatio'] = float(self.ceParameters['WaitingToRunningRatio'])
+      except:
+        pass
+      self.ceConfigDict['WaitingToRunningRatio'] = float(self.ceConfigDict['WaitingToRunningRatio'])
+    except:
+      # if it does not exist or it can not be converted, take the default
+      self.ceConfigDict['WaitingToRunningRatio'] = WAITING_TO_RUNNING_RATIO
+
+    try:
+      try:
+        self.ceConfigDict['MaxWaitingJobs'] = int(self.ceParameters['MaxWaitingJobs'])
+      except:
+        pass
+      self.ceConfigDict['MaxWaitingJobs'] = int(self.ceConfigDict['MaxWaitingJobs'])
+    except:
+      # if it does not exist or it can not be converted, take the default
+      self.ceConfigDict['MaxWaitingJobs'] = MAX_WAITING_JOBS
+
+    try:
+      try:
+        self.ceConfigDict['MaxTotalJobs'] = int(self.ceParameters['MaxTotalJobs'])
+      except:
+        pass
+      self.ceConfigDict['MaxTotalJobs'] = int(self.ceConfigDict['MaxTotalJobs'])
+    except:
+      # if it does not exist or it can not be converted, take the default
+      self.ceConfigDict['MaxTotalJobs'] = MAX_TOTAL_JOBS
+
+
 
   #############################################################################
   def __getResourceRequirements(self):
@@ -201,14 +249,18 @@ class ComputingElement:
     """Returns CE parameter, e.g. MaxTotalJobs
     """
     if type(param)==type(' '):
-      if param in self.ceParameters.keys():
+      if param in self.ceConfigDict:
+        return S_OK(self.ceConfigDict[param])
+      elif param in self.ceParameters.keys():
         return S_OK(self.ceParameters[param])
       else:
         return S_ERROR('Parameter %s not found' %(param))
     elif type(param)==type([]):
       result = {}
       for p in param:
-        if param in self.ceParameters.keys():
+        if param in self.ceConfigDict:
+          result[param] = self.ceConfigDict[param]
+        elif param in self.ceParameters.keys():
           result[param] = self.ceParameters[param]
       if len(result.keys()) == len(p):
         return S_OK(result)
@@ -244,48 +296,53 @@ class ComputingElement:
     if not result['OK']:
       self.log.warn('Could not obtain CE dynamic information')
       self.log.warn(result['Message'])
-      runningJobs = 0
-      waitingJobs = 0
-      submittedJobs = 0
+      return result
     else:
-      runningJobs = result['Value']['RunningJobs']
-      waitingJobs = result['Value']['WaitingJobs']
-      submittedJobs = result['Value']['SubmittedJobs']
+      runningJobs = result['RunningJobs']
+      waitingJobs = result['WaitingJobs']
+      submittedJobs = result['SubmittedJobs']
 
-    maxTotalJobs = self.__getParameters('MaxTotalJobs')
-    if not maxTotalJobs['OK']:
-      self.log.warn('MaxTotalJobs is not specified')
-      maxTotalJobs = 1
+    maxTotalJobs = self.__getParameters('MaxTotalJobs')['Value']
+    waitingToRunningRatio = self.__getParameters('WaitingToRunningRatio')['Value']
+    # if there are no Running job we can submit to get at most 'MaxWaitingJobs'
+    # if there are Running jobs we can increase this to get a ratio W / R 'WaitingToRunningRatio'
+    maxWaitingJobs = max( self.__getParameters('MaxWaitingJobs')['Value'],
+                          runningJobs * waitingToRunningRatio )
+
+    self.log.verbose('Max Number of Jobs:', maxTotalJobs )
+    self.log.verbose('Max W/R Ratio:', waitingToRunningRatio )
+    self.log.verbose('Max Waiting Jobs:', maxWaitingJobs )
+
+    # Determine how many more jobs can be submitted
+    message = '%sCE: SubmittedJobs=%s' %(self.name,submittedJobs)
+    message += ', WaitingJobs=%s, RunningJobs=%s' %(waitingJobs,runningJobs)
+    totalJobs = runningJobs + waitingJobs
+
+    message +=', MaxTotalJobs=%s' %(maxTotalJobs)
+
+    if totalJobs >= maxTotalJobs:
+      self.log.info( 'Max Number of Jobs reached:', maxTotalJobs )
+      result['Value'] = 0
+      message = 'There are %s waiting jobs and total jobs %s > %s max total jobs' % (waitingJobs,totalJobs,maxTotalJobs)
     else:
-      maxTotalJobs = int(maxTotalJobs['Value'])
+      additionalJobs = 0
+      if waitingJobs < maxWaitingJobs:
+        additionalJobs = maxWaitingJobs - waitingJobs
+        if totalJobs + additionalJobs >= maxTotalJobs:
+          additionalJobs = maxTotalJobs - totalJobs
 
-    totalCPU = self.__getParameters('TotalCPUs')
-    if not totalCPU['OK']:
-      self.log.warn('TotalCPUs not specified, setting default of 1')
-      totalCPU = 1
-    else:
-      totalCPU = int(totalCPU['Value'])
+      result['Value'] = additionalJobs
 
-    message=''
-    if not waitingJobs and not runningJobs:
-      message = '%sCE: SubmittedJobs=%s' %(self.name,submittedJobs)
-      totalJobs = int(submittedJobs)
-    else:
-      message = '%sCE: WaitingJobs=%s, RunningJobs=%s' %(self.name,waitingJobs,runningJobs)
-      totalJobs = int(runningJobs) + int(waitingJobs)
-
-    if totalCPU:
-      message +=', TotalCPU=%s' %(totalCPU)
-    if maxTotalJobs:
-      message +=', MaxTotalJobs=%s' %(maxTotalJobs)
-
-    pendingJobRatio = (float(waitingJobs)/float(totalCPU)<float(self.percentageRatio))
-    resourceAvailable = (waitingJobs == 0 or pendingJobRatio) and totalJobs < maxTotalJobs
-    if resourceAvailable:
-      return S_OK(message)
-    else:
-      message = 'There are %s waiting jobs, %.2f ratio and total jobs %s < %s max total jobs' % (waitingJobs,pendingJobRatio,totalJobs,maxTotalJobs)
-      return S_ERROR(message)
+    # totalCPU = self.__getParameters('TotalCPUs')
+    # if not totalCPU['OK']:
+    #   self.log.warn('TotalCPUs not specified, setting default of 1')
+    #   totalCPU = 1
+    # else:
+    #   totalCPU = int(totalCPU['Value'])
+    # if totalCPU:
+    #  message +=', TotalCPU=%s' %(totalCPU)
+    result['Message'] = message
+    return result
 
   #############################################################################
   def writeProxyToFile(self,proxy):
@@ -362,7 +419,7 @@ def getResourceDict( ceName = None ):
 
   # if a CE Name is given, check the corresponding section
   if ceName:
-    ret = gConfig.getOptionsDict( '/LocalSite/ResourceDict/%s', ceName )
+    ret = gConfig.getOptionsDict( '/LocalSite/%s/ResourceDict' % ceName )
     if ret['OK']:
       resourceDict.update( dict(ret['Value']) )
 
