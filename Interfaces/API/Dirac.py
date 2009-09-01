@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.105 2009/07/23 15:21:54 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.106 2009/09/01 15:36:38 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.105 2009/07/23 15:21:54 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.106 2009/09/01 15:36:38 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -1139,7 +1139,7 @@ class Dirac:
     return result
 
   #############################################################################
-  def getFile(self,lfn,destinationDir='',printOutput=False):
+  def getFile(self,lfn,destDir='',printOutput=False):
     """Retrieve a single file or list of files from Grid storage to the current directory. lfn is the
        desired logical file name for the file, fullPath is the local path to the file and diracSE is the
        Storage Element name for the upload.  The fileGuid is optional, if not specified a GUID will be
@@ -1168,7 +1168,7 @@ class Dirac:
       return self.__errorReport('Expected single string or list of strings for LFN(s)')
 
     rm = ReplicaManager()
-    result = rm.getFile(lfn,destinationDir=destinationDir)
+    result = rm.getFile(lfn,destinationDir=destDir)
     if not result['OK']:
       return self.__errorReport('Problem during getFile call',result['Message'])
 
@@ -1381,7 +1381,7 @@ class Dirac:
     return result
 
   #############################################################################
-  def removeReplica(self,lfn,storageElement):
+  def removeReplica(self,lfn,storageElement,printOutput=False):
     """Remove replica of LFN from specified Grid Storage Element and
        file catalogues.
 
