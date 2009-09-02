@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: InputDataByProtocol.py,v 1.13 2009/04/18 18:26:56 rgracian Exp $
+# $Id: InputDataByProtocol.py,v 1.14 2009/09/02 12:38:20 acsmith Exp $
 # File :   InputDataByProtocol.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: InputDataByProtocol.py,v 1.13 2009/04/18 18:26:56 rgracian Exp $"
+__RCSID__ = "$Id: InputDataByProtocol.py,v 1.14 2009/09/02 12:38:20 acsmith Exp $"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
@@ -151,7 +151,7 @@ class InputDataByProtocol:
     #Can now start to obtain TURLs for files grouped by localSE
     #for requested input data
     for se,pfnList in seFilesDict.items():
-      result = self.rm.getPhysicalFileAccessUrl(pfnList,se)
+      result = self.rm.getStorageFileAccessUrl(pfnList,se)
       self.log.debug(result)
       if not result['OK']:
         self.log.warn(result['Message'])
