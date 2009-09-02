@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StageRequest.py,v 1.7 2009/08/07 15:46:08 acsmith Exp $
-__RCSID__ = "$Id: StageRequest.py,v 1.7 2009/08/07 15:46:08 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StageRequest.py,v 1.8 2009/09/02 12:49:22 acsmith Exp $
+__RCSID__ = "$Id: StageRequest.py,v 1.8 2009/09/02 12:49:22 acsmith Exp $"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
@@ -95,7 +95,7 @@ class StageRequest(AgentModule):
     stageRequestMetadata = {}
     if pfnRepIDs:
       gLogger.info("StageRequest.__issuePrestageRequests: Submitting %s stage requests for %s." % (len(pfnRepIDs),storageElement))
-      res = self.replicaManager.prestagePhysicalFile(pfnRepIDs.keys(),storageElement)
+      res = self.replicaManager.prestageStorageFile(pfnRepIDs.keys(),storageElement)
       if not res['OK']:
         gLogger.error("StageRequest.__issuePrestageRequests: Completely failed to sumbmit stage requests for replicas.",res['Message'])
       else:
@@ -136,7 +136,7 @@ class StageRequest(AgentModule):
     # Check the integrity of the files to ensure they are available
     terminalReplicaIDs = {}
     gLogger.info("StageRequest.__checkIntegrity: Checking the integrity of %s replicas at %s." % (len(pfnRepIDs),storageElement))
-    res = self.replicaManager.getPhysicalFileMetadata(pfnRepIDs.keys(),storageElement)
+    res = self.replicaManager.getStorageFileMetadata(pfnRepIDs.keys(),storageElement)
     if not res['OK']:
       gLogger.error("StageRequest.__checkIntegrity: Completely failed to obtain metadata for replicas.",res['Message'])
       return res
