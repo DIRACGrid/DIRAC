@@ -102,7 +102,7 @@ class RAWIntegrityAgent(Agent):
       sePfns[se].append(pfn)
     pfnMetadata = {'Successful':{},'Failed':{}}
     for se,pfnList in sePfns.items():
-      res = self.ReplicaManager.getPhysicalFileMetadata(pfnList,se)
+      res = self.ReplicaManager.getStorageFileMetadata(pfnList,se)
       if not res['OK']:
         errStr = "RAWIntegrityAgent.execute: Failed to obtain physical file metadata."
         gLogger.error(errStr,res['Message'])
@@ -240,7 +240,7 @@ class RAWIntegrityAgent(Agent):
         size = activeFiles[lfn]['Size']
         se = activeFiles[lfn]['SE']
         guid = activeFiles[lfn]['GUID']
-        res = self.ReplicaManager.removePhysicalFile(pfn,se)
+        res = self.ReplicaManager.removeStorageFile(pfn,se)
         if not res['OK']:
           self.DataLog.addFileRecord(lfn,'RemoveReplicaFailed',se,'','RAWIntegrityAgent')
           gLogger.error("RAWIntegrityAgent.execute: Completely failed to remove pfn from the storage element.", res['Message'])
