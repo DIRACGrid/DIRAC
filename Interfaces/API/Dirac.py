@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.106 2009/09/01 15:36:38 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.107 2009/09/02 12:36:01 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.106 2009/09/01 15:36:38 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.107 2009/09/02 12:36:01 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -1300,7 +1300,7 @@ class Dirac:
       return self.__errorReport('Expected single string for PFN')
 
     rm = ReplicaManager()
-    result = rm.getPhysicalFileAccessUrl([pfn],storageElement)
+    result = rm.getStorageFileAccessUrl([pfn],storageElement)
     if not result['OK']:
       return self.__errorReport('Problem during getAccessURL call',result['Message'])
     if not printOutput:
@@ -1343,9 +1343,9 @@ class Dirac:
       return self.__errorReport('Expected single string or list of strings for PFN(s)')
 
     rm = ReplicaManager()
-    result = rm.getPhysicalFileMetadata(pfn,storageElement)
+    result = rm.getStorageFileMetadata(pfn,storageElement)
     if not result['OK']:
-      return self.__errorReport('Problem during getPhysicalFileMetadata call',result['Message'])
+      return self.__errorReport('Problem during getStorageFileMetadata call',result['Message'])
     if not printOutput:
       return result
 
