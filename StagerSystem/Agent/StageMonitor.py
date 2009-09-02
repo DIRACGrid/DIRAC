@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StageMonitor.py,v 1.3 2009/08/07 13:18:16 acsmith Exp $
-__RCSID__ = "$Id: StageMonitor.py,v 1.3 2009/08/07 13:18:16 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StageMonitor.py,v 1.4 2009/09/02 12:48:22 acsmith Exp $
+__RCSID__ = "$Id: StageMonitor.py,v 1.4 2009/09/02 12:48:22 acsmith Exp $"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
@@ -58,7 +58,7 @@ class StageMonitor(AgentModule):
       pfnRepIDs[pfn] = replicaID
       pfnReqIDs[pfn] = replicaIDs[replicaID]['RequestID']
     gLogger.info("StageMonitor.__monitorStorageElementStageRequests: Monitoring %s stage requests for %s." % (len(pfnRepIDs),storageElement))
-    res = self.replicaManager.getPrestagePhysicalFileStatus(pfnReqIDs,storageElement)
+    res = self.replicaManager.getPrestageStorageFileStatus(pfnReqIDs,storageElement)
     if not res['OK']:
       gLogger.error("StageMonitor.__monitorStorageElementStageRequests: Completely failed to monitor stage requests for replicas.",res['Message'])
       return
