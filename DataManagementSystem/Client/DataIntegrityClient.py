@@ -1,6 +1,6 @@
 """ This is the Data Integrity Client which allows the simple reporting of problematic file and replicas to the IntegrityDB and their status correctly updated in the FileCatalog.""" 
 
-__RCSID__ = "$Id: DataIntegrityClient.py,v 1.7 2009/09/02 10:25:52 acsmith Exp $"
+__RCSID__ = "$Id: DataIntegrityClient.py,v 1.8 2009/09/02 12:55:07 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -291,7 +291,7 @@ class DataIntegrityClient:
     """
     gLogger.info('Checking the integrity of %s physical files at %s' % (len(pfnLfns),se))
     rm = ReplicaManager()
-    res = rm.getPhysicalFileMetadata(pfnLfns.keys(),se)
+    res = rm.getStorageFileMetadata(pfnLfns.keys(),se)
     if not res['OK']:
       gLoger.error('Failed to get metadata for pfns.', res['Message'])
       return res
@@ -405,7 +405,7 @@ class DataIntegrityClient:
     if res['Value']['Failed']:
       return S_ERROR('Failed to obtain directory PFN from LFNs')
     storageDirectories = res['Value']['Successful'].values()
-    res = rm.getPhysicalFileExists(storageDirectories,storageElement)
+    res = rm.getStorageFileExists(storageDirectories,storageElement)
     if not res['OK']:
       gLogger.error("Failed to obtain existance of directories",res['Message'])
       return res
