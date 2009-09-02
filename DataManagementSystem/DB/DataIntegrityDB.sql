@@ -30,7 +30,7 @@ CREATE TABLE Problematics(
   Status VARCHAR(32) DEFAULT 'New',
   Retries INTEGER DEFAULT 0,
   InsertDate DATETIME NOT NULL,
-  CompleteDate DATETIME,
+  LastUpdate DATETIME NOT NULL,
   Source VARCHAR(127) NOT NULL DEFAULT 'Unknown',
   PRIMARY KEY(FileID),
   INDEX (Prognosis,Status)
