@@ -25,9 +25,8 @@ class DataIntegrityDB(DB):
     for lfn,metadata in fileMetadata.items():
       prognosis = metadata['Prognosis']
       pfn = metadata['PFN']
-      storageElement = metadata['SE']
+      storageElement = metadata['SE']   
       res = self.__problematicExists(prognosis, lfn, pfn, storageElement)
-      print res
       if not res['OK']:
         failed[lfn] = res['Message']
       elif res['Value']:
@@ -41,14 +40,12 @@ class DataIntegrityDB(DB):
         else:
           failed[lfn] = res['Message']
     resDict = {'Successful':successful,'Failed':failed}
-    print resDict
     return S_OK(resDict)
 
   def __problematicExists(self,prognosis,lfn,pfn,storageElement):
     """  Determine whether the file already exists in the problematics table.
     """
     req = "SELECT FileID FROM Problematics WHERE Prognosis ='%s' AND LFN = '%s' AND PFN = '%s' AND SE = '%s';" % (prognosis,lfn,pfn,storageElement)
-    print req
     res = self._query(req)
     if not res['OK']:
       return res
@@ -58,8 +55,8 @@ class DataIntegrityDB(DB):
       return S_OK(False)
 
   def __buildInsertReq(self,source,fileMetadata):
-    fields = "(Source,InsertDate"
-    values = "('%s',NOW()" % source
+    fields = "(Source,InsertDate,LastUpdate"
+    values = "('%s',UTC_TIMESTAMP(),UTC_TIMESTAMP()" % source
     for attrName,attrVal in fileMetadata.items():
       fields = "%s,%s" % (fields,attrName)
       values = "%s,'%s'" % (values,attrVal)
@@ -69,35 +66,18 @@ class DataIntegrityDB(DB):
     return req
 
 #############################################################################
-  def setProblematicStatus(self,fileID,status):
-    req = "UPDATE Problematics SET Status= '%s' WHERE FileID = %s;" % (status,fileID)
-    res = self._update(req)
-    return res
-
-  def incrementProblematicRetry(self,fileID):
-    req = "UPDATE Problematics SET Retries=Retries+1 WHERE FileID = %s;" % (status,fileID)
-    res = self._update(req)
-    return res
-
-#############################################################################
   def getProblematicsSummary(self):
     """ Get a summary of the current problematics table
     """
-    req = "SELECT DISTINCT Prognosis from Problematics;"
+    req = "SELECT Prognosis,Status,COUNT(*) FROM Problematics GROUP BY Prognosis,Status;"
     res = self._query(req)
     if not res['OK']:
       return res
-    if not res['Value'][0]:
-      return S_OK()
     resDict = {}
-    for prognosis in res['Value'][0]:
-      resDict[prognosis] = {}
-      req = "SELECT Status,COUNT(Status) FROM Problematics where Prognosis = '%s' GROUP BY Status;" % prognosis
-      res = self._query(req)
-      if not res['OK']:
-        return res
-      for status,count in res['Value']:
-        resDict[prognosis][status] = int(count)
+    for prognosis,status,count in res['Value']:
+      if not resDict.has_key(prognosis):
+        resDict[prognosis] = {}
+      resDict[prognosis][status] = int(count)
     return S_OK(resDict)
 
 #############################################################################
@@ -116,14 +96,45 @@ class DataIntegrityDB(DB):
     return S_OK(prognosisList)
 
 #############################################################################
+  def getProblematic(self):
+    """ Get the next file to resolve
+    """
+    req = "SELECT FileID,LFN,PFN,Size,SE,GUID,Prognosis FROM Problematics ORDER BY LastUpdate ASC LIMIT 1;"
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    if not res['Value'][0]:
+      return S_OK()
+    fileid,lfn,pfn,size,se,guid,prognosis = res['Value'][0]
+    problematicDict = {'FileID':fileid,'LFN':lfn,'PFN':pfn,'Size':size,'SE':se,'GUID':guid,'Prognosis':prognosis} 
+    return S_OK(problematicDict)
+
   def getPrognosisProblematics(self,prognosis):
     """ Get all the active files with the given problematic
     """
-    req = "SELECT FileID,LFN,PFN,StorageElement from Problematics WHERE Prognosis = '%s' AND Status = 'New' ORDER BY Retries;" % prognosis
+    req = "SELECT FileID,LFN,PFN,Size,SE,GUID,Prognosis FROM Problematics WHERE Prognosis = '%s' ORDER BY Retries,LastUpdate;" % prognosis
     res = self._query(req)
     if not res['OK']:
       return res
     problematics = []
-    for fileID,lfn,pfn,storageElement in res['Value']:
-      problematics.append((fileID,lfn,pfn,storageElement))
+    for fileid,lfn,pfn,size,se,guid,prognosis in res['Value']:
+      problematics.append({'FileID':fileid,'LFN':lfn,'PFN':pfn,'Size':size,'SE':se,'GUID':guid,'Prognosis':prognosis})
     return S_OK(problematics)
+
+  def incrementProblematicRetry(self,fileID):
+    req = "UPDATE Problematics SET Retries=Retries+1, LastUpdate=UTC_TIMESTAMP() WHERE FileID = %s;" % (fileID)
+    res = self._update(req)
+    return res
+
+  def removeProblematic(self,fileID):
+    req = "DELETE FROM Problematics WHERE FileID = %d" % fileID
+    res = self._update(req)
+    return res
+
+  def setProblematicStatus(self,fileID,status):
+    req = "UPDATE Problematics SET Status= '%s', LastUpdate=UTC_TIMESTAMP() WHERE FileID = %s;" % (status,fileID)
+    res = self._update(req)
+    return res
+
+
+
