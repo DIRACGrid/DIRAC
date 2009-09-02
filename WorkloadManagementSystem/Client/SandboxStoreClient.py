@@ -133,7 +133,7 @@ class SandboxStoreClient:
       return S_ERROR( "Cannot create temporal file: %s" % str(e) )
 
     rm = ReplicaManager()
-    result = rm.getPhysicalFile( SEPFN, SEName, tmpSBDir, singleFile = True )
+    result = rm.getStorageFile( SEPFN, SEName, tmpSBDir, singleFile = True )
     if not result[ 'OK' ]:
       return result
     sbFileName = os.path.basename( SEPFN )
