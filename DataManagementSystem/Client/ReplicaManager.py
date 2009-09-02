@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.85 2009/09/02 10:28:09 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.86 2009/09/02 20:50:11 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -209,15 +209,15 @@ class CatalogReplica(CatalogBase):
     else:
       return self._executeFileCatalogFunction(lfn,'addReplica',catalogs=catalogs)
 
-  #def removeCatalogReplica(self,lfn,singleFile=False,catalogs=[]):
-  #  """ Remove a replica from the FileCatalog
-  # 
-  #       'lfn' is the file to be removed
-  #  """
-  #  if singleFile:
-  #    return self._executeSingleFileCatalogFunction(lfn,'removeReplica',catalogs=catalogs)
-  #  else:
-  #    return self._executeFileCatalogFunction(lfn,'removeReplica',catalogs=catalogs)
+  def removeCatalogReplica(self,lfn,singleFile=False,catalogs=[]):
+    """ Remove a replica from the FileCatalog
+   
+         'lfn' is the file to be removed
+    """
+    if singleFile:
+      return self._executeSingleFileCatalogFunction(lfn,'removeReplica',catalogs=catalogs)
+    else:
+      return self._executeFileCatalogFunction(lfn,'removeReplica',catalogs=catalogs)
 
   def setCatalogReplicaStatus(self,lfn,singleFile=False,catalogs=[]):
     """ Change the status for a replica in the FileCatalog
@@ -490,7 +490,7 @@ class StorageFile(StorageBase):
   # These are the storage element wrapper functions available for physical files
   #
   
-  def getPhysicalFileExists(self,physicalFile,storageElementName,singleFile=False):
+  def getStorageFileExists(self,physicalFile,storageElementName,singleFile=False):
     """ Determine the existance of the physical files
         
         'physicalFile' is the pfn(s) to be checked
@@ -501,7 +501,7 @@ class StorageFile(StorageBase):
     else:
       return self._executeStorageElementFunction(storageElementName,physicalFile,'exists')
 
-  def getPhysicalFileIsFile(self,physicalFile,storageElementName,singleFile=False):
+  def getStorageFileIsFile(self,physicalFile,storageElementName,singleFile=False):
     """ Determine the physical paths are files
 
         'physicalFile' is the pfn(s) to be checked
@@ -512,7 +512,7 @@ class StorageFile(StorageBase):
     else:
       return self._executeStorageElementFunction(storageElementName,physicalFile,'isFile')  
 
-  def getPhysicalFileSize(self,physicalFile,storageElementName,singleFile=False):
+  def getStorageFileSize(self,physicalFile,storageElementName,singleFile=False):
     """ Obtain the size of the physical files
    
         'physicalFile' is the pfn(s) size to be obtained
@@ -523,7 +523,7 @@ class StorageFile(StorageBase):
     else:
       return self._executeStorageElementFunction(storageElementName,physicalFile,'getFileSize')
 
-  def getPhysicalFileAccessUrl(self,physicalFile,storageElementName,singleFile=False):
+  def getStorageFileAccessUrl(self,physicalFile,storageElementName,singleFile=False):
     """ Obtain the access url for a physical file
 
         'physicalFile' is the pfn(s) to access
@@ -534,7 +534,7 @@ class StorageFile(StorageBase):
     else:
       return self._executeStorageElementFunction(storageElementName,physicalFile,'getAccessUrl')
 
-  def getPhysicalFileMetadata(self,physicalFile,storageElementName,singleFile=False):
+  def getStorageFileMetadata(self,physicalFile,storageElementName,singleFile=False):
     """ Obtain the metadata for physical files
       
         'physicalFile' is the pfn(s) to be checked
@@ -545,7 +545,7 @@ class StorageFile(StorageBase):
     else:
       return self._executeStorageElementFunction(storageElementName,physicalFile,'getFileMetadata')
 
-  def removePhysicalFile(self,physicalFile,storageElementName,singleFile=False):
+  def removeStorageFile(self,physicalFile,storageElementName,singleFile=False):
     """ Remove physical files
    
        'physicalFile' is the pfn(s) to be removed
@@ -556,7 +556,7 @@ class StorageFile(StorageBase):
     else:
       return self._executeStorageElementFunction(storageElementName,physicalFile,'removeFile')
 
-  def prestagePhysicalFile(self,physicalFile,storageElementName,singleFile=False):
+  def prestageStorageFile(self,physicalFile,storageElementName,singleFile=False):
     """ Prestage physical files 
   
         'physicalFile' is the pfn(s) to be pre-staged
@@ -567,7 +567,7 @@ class StorageFile(StorageBase):
     else:
       return self._executeStorageElementFunction(storageElementName,physicalFile,'prestageFile')
 
-  def getPrestagePhysicalFileStatus(self,physicalFile,storageElementName,singleFile=False):
+  def getPrestageStorageFileStatus(self,physicalFile,storageElementName,singleFile=False):
     """ Obtain the status of a pre-stage request
           
         'physicalFile' is the pfn(s) to obtain the status
@@ -578,7 +578,7 @@ class StorageFile(StorageBase):
     else:
       return self._executeStorageElementFunction(storageElementName,physicalFile,'prestageFileStatus')
 
-  def pinPhysicalFile(self,physicalFile,storageElementName,lifetime=60*60*24,singleFile=False):
+  def pinStorageFile(self,physicalFile,storageElementName,lifetime=60*60*24,singleFile=False):
     """ Pin physical files with a given lifetime
     
         'physicalFile' is the pfn(s) to pin
@@ -589,7 +589,7 @@ class StorageFile(StorageBase):
     else:
       return self._executeStorageElementFunction(storageElementName,physicalFile,'pinFile')
 
-  def releasePhysicalFile(self,physicalFile,storageElementName,singleFile=False):
+  def releaseStorageFile(self,physicalFile,storageElementName,singleFile=False):
     """ Release the pin on physical files
       
         'physicalFile' is the pfn(s) to release
@@ -600,7 +600,7 @@ class StorageFile(StorageBase):
     else:
       return self._executeStorageElementFunction(storageElementName,physicalFile,'releaseFile')
 
-  def getPhysicalFile(self,physicalFile,storageElementName,localPath=False,singleFile=False):
+  def getStorageFile(self,physicalFile,storageElementName,localPath=False,singleFile=False):
     """ Get a local copy of a physical file
   
         'physicalFile' is the pfn(s) to get
@@ -611,7 +611,7 @@ class StorageFile(StorageBase):
     else:
       return self._executeStorageElementFunction(storageElementName,physicalFile,'getFile',argsDict={'localPath':localPath})
 
-  def putPhysicalFile(self,physicalFile,storageElementName,singleFile=False):
+  def putStorageFile(self,physicalFile,storageElementName,singleFile=False):
     """ Put a local file to the storage element
 
         'physicalFile' is the pfn(s) dict to put
@@ -622,7 +622,7 @@ class StorageFile(StorageBase):
     else:
       return self._executeStorageElementFunction(storageElementName,physicalFile,'putFile')
 
-  def replicatePhysicalFile(self,physicalFile,size,storageElementName,singleFile=False):
+  def replicateStorageFile(self,physicalFile,size,storageElementName,singleFile=False):
     """ Replicate a physical file to a storage element
 
         'physicalFile' is the pfn(s) dict to replicate
@@ -1465,12 +1465,9 @@ class ReplicaManager(CatalogInterface,StorageInterface):
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
+  """
   def removeCatalogReplica(self,storageElementName,lfn):
-    """ Remove replica from the file catalog
-
-       'lfn' are the file to be removed
-       'storageElementName' is the storage where the file is to be removed
-    """
+    # Remove replica from the file catalog 'lfn' are the file to be removed 'storageElementName' is the storage where the file is to be removed
     if type(lfn) == types.ListType:
       lfns = lfn
     elif type(lfn) == types.StringType:
@@ -1502,6 +1499,7 @@ class ReplicaManager(CatalogInterface,StorageInterface):
     successful.update(res['Value']['Successful'])
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
+  """
 
   def removeCatalogPhysicalFileNames(self,replicaTuple):
     """ Remove replicas from the file catalog specified by replica tuple
