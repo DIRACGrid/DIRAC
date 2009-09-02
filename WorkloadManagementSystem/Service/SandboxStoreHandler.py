@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxStoreHandler.py,v 1.8 2009/08/06 12:21:47 acasajus Exp $
+# $Id: SandboxStoreHandler.py,v 1.9 2009/09/02 12:39:25 acsmith Exp $
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.8 2009/08/06 12:21:47 acasajus Exp $"
+__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.9 2009/09/02 12:39:25 acsmith Exp $"
 
 from types import *
 import os
@@ -474,7 +474,7 @@ class SandboxStoreHandler( RequestHandler ):
       gLogger.info( "Deleting external Sandbox" )
       try:
         rm = ReplicaManager()
-        return rm.removePhysicalFile( SEPFN, SEName )
+        return rm.removeStorageFile( SEPFN, SEName )
       except Exception, e:
         gLogger.exception( "RM raised an exception while trying to delete a remote sandbox" )
         return S_ERROR( "RM raised an exception while trying to delete a remote sandbox" )
