@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.9 2009/08/14 14:50:44 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.9 2009/08/14 14:50:44 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.10 2009/09/02 13:26:38 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.10 2009/09/02 13:26:38 acasajus Exp $"
 
 import types
 import copy
@@ -173,7 +173,7 @@ class CFG:
     return False
 
   @gCFGSynchro
-  def listOptions( self, ordered = False ):
+  def listOptions( self, ordered = True ):
     """
     List options
 
@@ -187,7 +187,7 @@ class CFG:
       return [ sKey for sKey in self.__dataDict.keys() if type( self.__dataDict[ sKey ] ) == types.StringType ]
 
   @gCFGSynchro
-  def listSections( self, ordered = False ):
+  def listSections( self, ordered = True ):
     """
     List subsections
 
