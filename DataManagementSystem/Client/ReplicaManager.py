@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.84 2009/08/31 10:35:37 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.85 2009/09/02 10:28:09 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -39,6 +39,7 @@ class CatalogBase:
             res['Value']['Successful'] an S_OK() is returned with the value.
             res['Value']['Failed'] an S_ERROR() is returned with the error message.
     """
+    pass
 
   def _executeSingleFileCatalogFunction(self,lfn,method,argsDict={},catalogs=[]):
     res = self._executeFileCatalogFunction(lfn,method,argsDict,catalogs=catalogs)
@@ -155,6 +156,16 @@ class CatalogFile(CatalogBase):
       return self._executeSingleFileCatalogFunction(lfn,'getReplicas',argsDict={'allStatus':allStatus},catalogs=catalogs)
     else:
       return self._executeFileCatalogFunction(lfn,'getReplicas',argsDict={'allStatus':allStatus},catalogs=catalogs)
+
+  def getCatalogLFNForPFN(self,pfn,singleFile=False,catalogs=[]):
+    """ Get the LFNs registered with the supplied PFNs from the FileCatalog
+      
+        'pfn' is the files to obtain (can be a single pfn or list of pfns)
+    """
+    if singleFile:
+      return self._executeSingleFileCatalogFunction(pfn,'getLFNForPFN',catalogs=catalogs)
+    else:
+      return self._executeFileCatalogFunction(pfn,'getLFNForPFN',catalogs=catalogs)
 
   def addCatalogFile(self,lfn,singleFile=False,catalogs=[]):
     """ Add a new file to the FileCatalog
@@ -347,11 +358,136 @@ class CatalogInterface(CatalogFile,CatalogReplica,CatalogDirectory,CatalogLink):
   """
   pass
 
-class PhysicalReplica:
+class StorageBase:
+
+  def __init__(self):
+    """ This class stores the two wrapper functions for interacting with the StorageElement:
+      
+        _executeStorageElementFunction(storageElementName,pfn,method,argsDict={})
+          Is a wrapper around the available StorageElement() functions.
+          The 'storageElementName', 'pfn' and 'method' arguments must be provided:
+            'storageElementName' is the DIRAC SE name to be accessed e.g. CERN-DST.
+            'pfn' contains a single pfn string or a list or dictionary containing the required files.
+            'method' is the name of the StorageElement() method to be invoked.
+          'argsDict' contains aditional arguments that are requred for the method.
+
+        _executeSingleStorageElementFunction(storageElementName,pfn,method,argsDict={})
+          Is a wrapper around _executeStorageElementFunction().  
+          It parses the output of _executeStorageElementFunction() for the first pfn provided as input.
+          If this pfn is found in:
+            res['Value']['Successful'] an S_OK() is returned with the value.
+            res['Value']['Failed'] an S_ERROR() is returned with the error message.
+    """
+    pass
+
+  def _executeSingleStorageElementFunction(self,storageElementName,pfn,method,argsDict={}):
+    res = self._executeStorageElementFunction(storageElementName,pfn,method,argsDict)
+    if type(pfn) == types.ListType:
+      pfn = pfn[0]
+    elif type(pfn) == types.DictType:   
+      pfn = pfn.keys()[0]
+    if not res['OK']:
+      return res
+    elif res['Value']['Failed'].has_key(pfn):
+      errorMessage = res['Value']['Failed'][pfn]
+      return S_ERROR(errorMessage)
+    else:
+      return S_OK(res['Value']['Successful'][pfn])
+  
+  def _executeStorageElementFunction(self,storageElementName,pfn,method,argsDict={}):
+    """ A simple wrapper around the storage element functionality
+    """
+    # First check the supplied pfn(s) are the correct format.
+    if type(pfn) in types.StringTypes:
+      pfns = {pfn:False}
+    elif type(pfn) == types.ListType:
+      pfns = {}
+      for url in pfn:
+        pfns[url] = False
+    elif type(pfn) == types.DictType:
+      pfns = pfn.copy()
+    else:
+      errStr = "ReplicaManager._executeStorageElementFunction: Supplied pfns must be string or list of strings or a dictionary." 
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    # Check we have some pfns
+    if not pfns:
+      errMessage = "ReplicaManager._executeStorageElementFunction: No pfns supplied."
+      gLogger.error(errMessage)
+      return S_ERROR(errMessage)
+    gLogger.debug("ReplicaManager._executeStorageElementFunction: Attempting to perform '%s' operation with %s pfns." % (method,len(pfns)))
+    # Check we can instantiate the storage element correctly
+    storageElement = StorageElement(storageElementName)
+    res = storageElement.isValid(method)
+    if not res['OK']:
+      errStr = "ReplicaManager._executeStorageElementFunction: Failed to instantiate Storage Element"
+      gLogger.error(errStr, "for performing %s at %s." % (method,storageElementName))
+      return res
+    # Generate the execution string 
+    if argsDict:
+      execString = "res = storageElement.%s(pfns" % method
+      for argument,value in argsDict.items():
+        if type(value) == types.StringType:  
+          execString = "%s, %s='%s'" % (execString,argument,value)
+        else:
+          execString = "%s, %s=%s" % (execString,argument,value)
+      execString = "%s)" % execString
+    else:
+      execString = "res = storageElement.%s(pfns)" % method
+    # Execute the execute string
+    try:
+      exec(execString)
+    except AttributeError,errMessage:
+      exceptStr = "ReplicaManager._executeStorageElementFunction: Exception while perfoming %s." % method
+      gLogger.exception(exceptStr,str(errMessage))
+      return S_ERROR(exceptStr)
+    # Return the output
+    if not res['OK']:
+      errStr = "ReplicaManager._executeStorageElementFunction: Completely failed to perform %s." % method
+      gLogger.error(errStr,'%s : %s' % (storageElementName,res['Message']))
+    return res
+
+  def getPfnForLfn(self,lfns,storageElementName):
+    storageElement = StorageElement(storageElementName)
+    res = storageElement.isValid('getPfnForLfn')
+    if not res['OK']:
+      errStr = "ReplicaManager.getPfnForLfn: Failed to instantiate Storage Element"
+      gLogger.error(errStr, "for performing getPfnForLfn at %s." % (method,storageElementName))
+      return res
+    successful = {}
+    failed = {}
+    for lfn in lfns:
+      res = storageElement.getPfnForLfn(lfn)
+      if res['OK']:
+        successful[lfn] = res['Value']
+      else:
+        failed[lfn] = res['Message']
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict) 
+
+  def getPfnForProtocol(self,pfns,storageElementName,protocol='SRM2',withPort=True):
+    storageElement = StorageElement(storageElementName)   
+    res = storageElement.isValid('getPfnForProtocol')
+    if not res['OK']:
+      errStr = "ReplicaManager.getPfnForLfn: Failed to instantiate Storage Element"
+      gLogger.error(errStr, "for performing getPfnForProtocol at %s." % (method,storageElementName))
+      return res
+    successful = {}
+    failed = {}
+    for pfn in pfns:
+      res = storageElement.getPfnForProtocol(pfn,protocol,withPort=withPort)
+      if res['OK']:
+        successful[pfn] = res['Value']
+      else:
+        failed[pfn] = res['Message']
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
+
+class StorageFile(StorageBase):
 
   ##########################################################################
   #
-  # These are the storage element wrapper functions available for PhysicalReplicas
+  # These are the storage element wrapper functions available for physical files
   #
   
   def getPhysicalFileExists(self,physicalFile,storageElementName,singleFile=False):
@@ -497,74 +633,96 @@ class PhysicalReplica:
     else:
       return self._executeStorageElementFunction(storageElementName,physicalFile,'replicateFile',argsDict={sourceSize:size})
 
-  def _executeSingleStorageElementFunction(self,storageElementName,pfn,method,argsDict={}):
-    res = self._executeStorageElementFunction(storageElementName,pfn,method,argsDict)
-    if type(pfn) == types.ListType:
-      pfn = pfn[0]
-    elif type(pfn) == types.DictType:   
-      pfn = pfn.keys()[0]
-    if not res['OK']:
-      return res
-    elif res['Value']['Failed'].has_key(pfn):
-      errorMessage = res['Value']['Failed'][pfn]
-      return S_ERROR(errorMessage)
-    else:
-      return S_OK(res['Value']['Successful'][pfn])
-  
-  def _executeStorageElementFunction(self,storageElementName,pfn,method,argsDict={}):
-    """ A simple wrapper around the storage element functionality
-    """
-    # First check the supplied pfn(s) are the correct format.
-    if type(pfn) in types.StringTypes:
-      pfns = {pfn:False}
-    elif type(pfn) == types.ListType:
-      pfns = {}
-      for url in pfn:
-        pfns[url] = False
-    elif type(pfn) == types.DictType:
-      pfns = pfn.copy()
-    else:
-      errStr = "ReplicaManager._executeStorageElementFunction: Supplied pfns must be string or list of strings or a dictionary." 
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    # Check we have some pfns
-    if not pfns:
-      errMessage = "ReplicaManager._executeStorageElementFunction: No pfns supplied."
-      gLogger.error(errMessage)
-      return S_ERROR(errMessage)
-    gLogger.debug("ReplicaManager._executeStorageElementFunction: Attempting to perform '%s' operation with %s pfns." % (method,len(pfns)))
-    # Check we can instantiate the storage element correctly
-    storageElement = StorageElement(storageElementName)
-    res = storageElement.isValid(method)
-    if not res['OK']:
-      errStr = "ReplicaManager._executeStorageElementFunction: Failed to instantiate Storage Element"
-      gLogger.error(errStr, "for performing %s at %s." % (method,storageElementName))
-      return res
-    # Generate the execution string 
-    if argsDict:
-      execString = "res = storageElement.%s(pfns" % method
-      for argument,value in argsDict.items():
-        if type(value) == types.StringType:  
-          execString = "%s, %s='%s'" % (execString,argument,value)
-        else:
-          execString = "%s, %s=%s" % (execString,argument,value)
-      execString = "%s)" % execString
-    else:
-      execString = "res = storageElement.%s(pfns)" % method
-    # Execute the execute string
-    try:
-      exec(execString)
-    except AttributeError,errMessage:
-      exceptStr = "ReplicaManager._executeStorageElementFunction: Exception while perfoming %s." % method
-      gLogger.exception(exceptStr,str(errMessage))
-      return S_ERROR(exceptStr)
-    # Return the output
-    if not res['OK']:
-      errStr = "ReplicaManager._executeStorageElementFunction: Completely failed to perform %s." % method
-      gLogger.error(errStr,'%s : %s' % (storageElementName,res['Message']))
-    return res
+class StorageDirectory(StorageBase):
 
-class ReplicaManager(CatalogInterface,PhysicalReplica):
+  ##########################################################################
+  #
+  # These are the storage element wrapper functions available for directories
+  #
+
+  def getStorageDirectoryIsDirectory(self,storageDirectory,storageElementName,singleDirectory=False):
+    """ Determine the storage paths are directories
+
+        'storageDirectory' is the pfn(s) to be checked
+        'storageElementName' is the Storage Element
+    """
+    if singleDirectory:
+      return self._executeSingleStorageElementFunction(storageElementName,storageDirectory,'isDirectory')
+    else:
+      return self._executeStorageElementFunction(storageElementName,storageDirectory,'isDirectory')
+
+  def getStorageDirectoryMetadata(self,storageDirectory,storageElementName,singleDirectory=False):
+    """ Obtain the metadata for storage directories
+
+        'storageDirectory' is the pfn(s) to be checked
+        'storageElementName' is the Storage Element to check
+    """
+    if singleDirectory:
+      return self._executeSingleStorageElementFunction(storageElementName,storageDirectory,'getDirectoryMetadata')
+    else:
+      return self._executeStorageElementFunction(storageElementName,storageDirectory,'getDirectoryMetadata')
+
+  def getStorageDirectorySize(self,storageDirectory,storageElementName,singleDirectory=False):
+    """ Obtain the size of the storage directories
+
+        'storageDirectory' is the pfn(s) size to be obtained
+        'storageElementName' is the Storage Element
+    """
+    if singleDirectory:
+      return self._executeSingleStorageElementFunction(storageElementName,storageDirectory,'getDirectorySize')
+    else:
+      return self._executeStorageElementFunction(storageElementName,storageDirectory,'getDirectorySize')
+
+  def getStorageListDirectory(self,storageDirectory,storageElementName,singleDirectory=False):
+    """  List the contents of a directory in the Storage Element
+     
+        'storageDirectory' is the pfn(s) directory to be obtained
+        'storageElementName' is the Storage Element   
+    """
+    if singleDirectory:
+      return self._executeSingleStorageElementFunction(storageElementName,storageDirectory,'listDirectory')
+    else:
+      return self._executeStorageElementFunction(storageElementName,storageDirectory,'listDirectory')
+
+  def getStorageDirectory(self,storageDirectory,storageElementName,localPath=False,singleDirectory=False):
+    """  Get locally the contents of a directory from the Storage Element
+
+        'storageDirectory' is the pfn(s) directory to be obtained 
+        'storageElementName' is the Storage Element
+    """
+    if singleDirectory:
+      return self._executeSingleStorageElementFunction(storageElementName,storageDirectory,'getDirectory',argsDict={'localPath':localPath})
+    else:
+      return self._executeStorageElementFunction(storageElementName,storageDirectory,'getDirectory',argsDict={'localPath':localPath})
+
+  def putStorageDirectory(self,storageDirectory,storageElementName,singleDirectory=False):
+    """ Put a local directory to the storage element
+  
+        'storageDirectory' is the pfn(s) directory to be put 
+        'storageElementName' is the Storage Element
+    """
+    if singleDirectory:
+      return self._executeSingleStorageElementFunction(storageElementName,storageDirectory,'putDirectory')
+    else:
+      return self._executeStorageElementFunction(storageElementName,storageDirectory,'putDirectory')
+
+  def removeStorageDirectory(self,storageDirectory,storageElementName,recursive=False,singleDirectory=False):
+    """ Revove a directory from the storage element
+    
+        'storageDirectory' is the pfn(s) directory to be removed
+        'storageElementName' is the Storage Element
+    """
+    if singleDirectory:
+      return self._executeSingleStorageElementFunction(storageElementName,storageDirectory,'removeDirectory',argsDict={'recursive':recursive})
+    else:
+      return self._executeStorageElementFunction(storageElementName,storageDirectory,'removeDirectory',argsDict={'recursive':recursive})
+
+class StorageInterface(StorageFile,StorageDirectory):
+  """ Dummy class to expose all the methods of the StorageInterface
+  """
+  pass
+
+class ReplicaManager(CatalogInterface,StorageInterface):
 
   def __init__( self ):
     """ Constructor function.
