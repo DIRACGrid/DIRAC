@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/TransferAgent.py,v 1.27 2009/03/12 08:55:16 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/TransferAgent.py,v 1.28 2009/09/02 12:31:16 acsmith Exp $
 
 """  TransferAgent takes transfer requests from the RequestDB and replicates them
 """
 
-__RCSID__ = "$Id: TransferAgent.py,v 1.27 2009/03/12 08:55:16 acsmith Exp $"
+__RCSID__ = "$Id: TransferAgent.py,v 1.28 2009/09/02 12:31:16 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Base.Agent import Agent
@@ -306,7 +306,7 @@ class TransferAgent(Agent,RequestAgentMixIn):
               pfn = str(subRequestFile['PFN'])
               got = False
               if sourceSE and pfn:
-                res = self.ReplicaManager.getPhysicalFile(pfn,sourceSE)
+                res = self.ReplicaManager.getStorageFile(pfn,sourceSE)
                 if res['Value']['Successful'].has_key(pfn):
                   got = True
               else:
