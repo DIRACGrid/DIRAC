@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/PinRequest.py,v 1.2 2009/08/07 13:15:02 acsmith Exp $
-__RCSID__ = "$Id: PinRequest.py,v 1.2 2009/08/07 13:15:02 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/PinRequest.py,v 1.3 2009/09/02 12:47:40 acsmith Exp $
+__RCSID__ = "$Id: PinRequest.py,v 1.3 2009/09/02 12:47:40 acsmith Exp $"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
@@ -75,7 +75,7 @@ class PinRequest(AgentModule):
     if replicas:
       gLogger.info("PinRequest.submitPinRequests: Submitting %s pin requests for request %s at %s." % (len(replicas),requestID,storageElement))
       pfnsToPin = dict.fromkeys(replicas,requestID)
-      res = self.replicaManager.pinPhysicalFile(pfnsToPin,storageElement,lifetime=self.pinLifeTime)
+      res = self.replicaManager.pinStorageFile(pfnsToPin,storageElement,lifetime=self.pinLifeTime)
       if not res['OK']:
         gLogger.error("PinRequest.submitPinRequests: Completely failed to sumbmit pin requests for replicas.",res['Message'])
       else:
