@@ -1,3 +1,9 @@
+########################################################################
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Service/DataIntegrityHandler.py,v 1.5 2009/09/02 20:48:52 acsmith Exp $
+########################################################################
+__RCSID__   = "$Id: DataIntegrityHandler.py,v 1.5 2009/09/02 20:48:52 acsmith Exp $"
+__VERSION__ = "$Revision: 1.5 $"
+
 """ DataIntegrityHandler is the implementation of the Data Integrity service in the DISET framework
 """
 
@@ -17,6 +23,40 @@ def initializeDataIntegrityHandler(serviceInfo):
 
 class DataIntegrityHandler(RequestHandler):
 
+  types_removeProblematic = [[IntType,LongType]]
+  def export_removeProblematic(self,fileID):
+    """ Remove the file with the supplied FileID from the database
+    """
+    try:
+      gLogger.info("DataIntegrityHandler.removeProblematic: Attempting to remove problematic.")
+      res = integrityDB.removeProblematic(fileID)
+      if res['OK']:
+        gLogger.info("DataIntegrityHandler.removeProblematic: Successfully removed problematic.")
+      else:
+        gLogger.error("DataIntegrityHandler.removeProblematic: Failed to remove problematic.", res['Message'])
+      return res
+    except Exception, x:
+      errStr = "DataIntegrityHandler.removeProblematic: Exception while removing problematic."
+      gLogger.exception(errStr,lException=x)
+      return S_ERROR(errStr)
+
+  types_getProblematic = []
+  def export_getProblematic(self):
+    """ Get the next problematic to resolve from the IntegrityDB
+    """ 
+    try:
+      gLogger.info("DataIntegrityHandler.getProblematic: Attempting to get file to resolve.")
+      res = integrityDB.getProblematic()
+      if res['OK']:
+        gLogger.info("DataIntegrityHandler.getProblematic: Found problematic file to resolve.")
+      else:
+        gLogger.error("DataIntegrityHandler.getProblematic: Failed to get problematic file to resolve.", res['Message'])
+      return res
+    except Exception, x:
+      errStr = "DataIntegrityHandler.getProblematic: Exception while getting problematic file."
+      gLogger.exception(errStr,lException=x)
+      return S_ERROR(errStr)
+
   types_getPrognosisProblematics = [StringType]
   def export_getPrognosisProblematics(self,prognosis):
     """ Get problematic files from the problematics table of the IntegrityDB
@@ -32,7 +72,7 @@ class DataIntegrityHandler(RequestHandler):
     except Exception, x:
       errStr = "DataIntegrityHandler.getPrognosisProblematics: Exception while getting prognosis files."
       gLogger.exception(errStr,lException=x)
-      return S_ERROR(errorStr)
+      return S_ERROR(errStr)
 
   types_setProblematicStatus = [IntType,StringType]
   def export_setProblematicStatus(self,fileID,status):
@@ -49,7 +89,7 @@ class DataIntegrityHandler(RequestHandler):
     except Exception, x:
       errStr = "DataIntegrityHandler.setProblematicStatus: Exception while setting file status."
       gLogger.exception(errStr,lException=x)
-      return S_ERROR(errorStr)
+      return S_ERROR(errStr)
 
   types_getProblematicsSummary = []
   def export_getProblematicsSummary(self):
@@ -69,7 +109,7 @@ class DataIntegrityHandler(RequestHandler):
     except Exception, x:
       errStr = "DataIntegrityHandler.getProblematicsSummary: Exception while getting summary."
       gLogger.exception(errStr,lException=x)
-      return S_ERROR(errorStr)
+      return S_ERROR(errStr)
 
   types_getDistinctPrognosis = []
   def export_getDistinctPrognosis(self):
@@ -87,9 +127,9 @@ class DataIntegrityHandler(RequestHandler):
     except Exception, x:
       errStr = "DataIntegrityHandler.getDistinctPrognosis: Exception while getting summary."
       gLogger.exception(errStr,lException=x)
-      return S_ERROR(errorStr)
+      return S_ERROR(errStr)
 
-  types_incrementProblematicRetry = [IntType]
+  types_incrementProblematicRetry = [[IntType,LongType]]
   def export_incrementProblematicRetry(self,fileID):
     """ Update the retry count for supplied file ID.
     """
@@ -104,7 +144,7 @@ class DataIntegrityHandler(RequestHandler):
     except Exception, x:
       errStr = "DataIntegrityHandler.incrementProblematicRetry: Exception while incrementing retries."
       gLogger.exception(errStr,lException=x)
-      return S_ERROR(errorStr)
+      return S_ERROR(errStr)
 
   types_insertProblematic = [StringType,DictType]
   def export_insertProblematic(self,source,fileMetadata):
