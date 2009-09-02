@@ -114,7 +114,7 @@ class LFCvsSEAgent(Agent):
 
                   for storageElementName,physicalFiles in sePfnDict.items():
                     gLogger.info("LFCvsSEAgent.execute: Attempting to get metadata for files on %s." % storageElementName)
-                    res = self.ReplicaManager.getPhysicalFileMetadata(physicalFiles, storageElementName)
+                    res = self.ReplicaManager.getStorageFileMetadata(physicalFiles, storageElementName)
                     if not res['OK']:
                       gLogger.error("LFCvsSEAgent.execute: Completely failed to get physical file metadata.",res['Message'])
                     else:
