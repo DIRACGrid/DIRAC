@@ -288,6 +288,24 @@ class LcgFileCatalogClient(FileCatalogueBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
+  def getLFNForPFN(self,pfn):
+    res = self.__checkArgumentFormat(pfn)
+    if not res['OK']:
+      return res
+    pfns = res['Value']
+    created = self.__openSession()
+    failed = {}
+    successful = {}
+    for pfn in pfns:
+      res = self.__getLFNForPFN(pfn)
+      if not res['OK']:
+        failed[pfn] = res['Message']
+      else:
+        successful[pfn] = res['Value']
+    if created: self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
   ####################################################################
   #
   # The following a read methods for directories
@@ -895,7 +913,15 @@ class LcgFileCatalogClient(FileCatalogueBase):
       exceptStr = "LcgFileCatalogClient.__executeOperation: Exception while perfoming %s." % method
       gLogger.exception(exceptStr,'',errMessage)
       return S_ERROR("%s%s" % (exceptStr,errMessage))
-  
+
+  def __getLFNForPFN(self,pfn):
+    fstat = lfc.lfc_filestatg()
+    value = lfc.lfc_statr(pfn,fstat)
+    if value != 0:
+      return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
+    fstat.guid
+    return self.__getLfnForGUID(fstat.guid)
+
   def __existsLfn(self,lfn):
     """ Check whether the supplied LFN exists
     """
@@ -1410,7 +1436,6 @@ class LcgFileCatalogClient(FileCatalogueBase):
       gLogger.error("LcgFileCatalogClient.__removeFilesFromDataset: Failed to remove link %s." % link, error)
       totalError = "%s %s : %s" % (totalError,link,error)
     return S_ERROR(totalError)
-
 
   ####################################################################
   #
