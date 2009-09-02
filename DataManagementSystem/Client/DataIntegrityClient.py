@@ -1,6 +1,6 @@
 """ This is the Data Integrity Client which allows the simple reporting of problematic file and replicas to the IntegrityDB and their status correctly updated in the FileCatalog.""" 
 
-__RCSID__ = "$Id: DataIntegrityClient.py,v 1.6 2009/08/28 15:38:39 acsmith Exp $"
+__RCSID__ = "$Id: DataIntegrityClient.py,v 1.7 2009/09/02 10:25:52 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -25,6 +25,9 @@ class DataIntegrityClient:
   def productionToCatalog(self,productionID):
     """  This obtains the file information from the BK and checks these files are present in the LFC.
     """
+    gLogger.info("-" * 40)
+    gLogger.info("Performing the BK->LFC check")
+    gLogger.info("-" * 40)
     res = self.__getProductionFiles(productionID)
     if not res['OK']:
       return res
@@ -113,6 +116,9 @@ class DataIntegrityClient:
   def catalogDirectoryToBK(self,lfnDir):
     """ This obtains the replica and metadata information from the catalog for the supplied directory and checks against the BK.
     """
+    gLogger.info("-" * 40)
+    gLogger.info("Performing the LFC->BK check") 
+    gLogger.info("-" * 40)
     if type(lfnDir) in types.StringTypes:
       lfnDir = [lfnDir]
     res = self.__getCatalogDirectoryContents(lfnDir)
@@ -131,6 +137,9 @@ class DataIntegrityClient:
   def catalogFileToBK(self,lfns):
     """ This obtains the replica and metadata information from the catalog and checks against the storage elements.
     """
+    gLogger.info("-" * 40)
+    gLogger.info("Performing the LFC->BK check")
+    gLogger.info("-" * 40)
     if type(lfns) in types.StringTypes:
       lfns = [lfns]
     res = self.__getCatalogMetadata(lfns)
@@ -196,6 +205,9 @@ class DataIntegrityClient:
   def catalogDirectoryToSE(self,lfnDir):
     """ This obtains the replica and metadata information from the catalog for the supplied directory and checks against the storage elements.
     """ 
+    gLogger.info("-" * 40)
+    gLogger.info("Performing the LFC->SE check")
+    gLogger.info("-" * 40)
     if type(lfnDir) in types.StringTypes:
       lfnDir = [lfnDir]
     res = self.__getCatalogDirectoryContents(lfnDir)
@@ -212,6 +224,9 @@ class DataIntegrityClient:
   def catalogFileToSE(self,lfns):
     """ This obtains the replica and metadata information from the catalog and checks against the storage elements.
     """
+    gLogger.info("-" * 40)    
+    gLogger.info("Performing the LFC->SE check")    
+    gLogger.info("-" * 40)    
     if type(lfns) in types.StringTypes:
       lfns = [lfns]
     res = self.__getCatalogMetadata(lfns)
@@ -231,6 +246,9 @@ class DataIntegrityClient:
   def checkPhysicalFiles(self,replicas,catalogMetadata):
     """ This obtains takes the supplied replica and metadata information obtained from the catalog and checks against the storage elements.
     """   
+    gLogger.info("-" * 40)    
+    gLogger.info("Performing the LFC->SE check")    
+    gLogger.info("-" * 40)    
     return self.__checkPhysicalFiles(replicas,catalogMetadata)
 
   def __checkPhysicalFiles(self,replicas,catalogMetadata):
@@ -301,6 +319,134 @@ class DataIntegrityClient:
     return S_OK(pfnMetadataDict)
 
   ##########################################################################
+  # 
+  # This section contains the specific methods for SE->LFC checks
+  #
+  
+  def storageDirectoryToCatalog(self,lfnDir,storageElement):
+    """ This obtains the file found on the storage element in the supplied directories and determines whether they exist in the catalog and checks their metadata elements
+    """
+    gLogger.info("-" * 40)    
+    gLogger.info("Performing the SE->LFC check at %s" % storageElement)    
+    gLogger.info("-" * 40)     
+    if type(lfnDir) in types.StringTypes:
+      lfnDir = [lfnDir]
+    res = self.__getStorageDirectoryContents(lfnDir,storageElement)
+    if not res['OK']:
+      return res
+    storageFileMetadata = res['Value']
+    return self.__checkCatalogForSEFiles(storageFileMetadata,storageElement)
+
+  def __checkCatalogForSEFiles(self,storageMetadata,storageElement):
+    gLogger.info('Checking %s storage files exist in the catalog' % len(storageMetadata))
+    rm = ReplicaManager()
+    # First get all the PFNs as they should be registered in the catalog
+    res = rm.getPfnForProtocol(storageMetadata.keys(),storageElement,withPort=False)
+    if not res['OK']:
+      gLogger.error("Failed to get registered PFNs for physical files",res['Message'])
+      return res
+    for pfn, error in res['Value']['Failed']:
+      gLogger.error('Failed to obtain registered PFN for physical file','%s %s' % (pfn,error))
+    if res['Value']['Failed']:
+      return S_ERROR('Failed to obtain registered PFNs from physical file')
+    for original,registered in res['Value']['Successful'].items():
+      storageMetadata[registered] = storageMetadata.pop(original)
+    # Determine whether these PFNs are registered and if so obtain the LFN
+    res = rm.getCatalogLFNForPFN(storageMetadata.keys())
+    if not res['OK']:
+      gLogger.error("Failed to get registered LFNs for PFNs",res['Message'])
+      return res
+    failedPfns = res['Value']['Failed']
+    notRegisteredPfns = []
+    for pfn,error in failedPfns.items():
+      if re.search('No such file or directory',error):
+        notRegisteredPfns.append(('',pfn,storageElement,'PFNNotRegistered'))
+        failedPfns.pop(pfn)
+    if notRegisteredPfns:
+      self.__reportProblematicReplicas(notRegisteredPfns,storageElement,'PFNNotRegistered')
+    if failedPfns:
+      return S_ERROR('Failed to obtain LFNs for PFNs')
+    pfnLfns = res['Value']['Successful']
+    for pfn,lfn in pfnLfns.items():
+      storageMetadata[lfn] = storageMetadata.pop(pfn)
+      storageMetadata[lfn]['PFN'] = pfn
+    # For the LFNs found to be registered obtain the file metadata from the catalog and verify against the storage metadata 
+    res = self.__getCatalogMetadata(storageMetadata.keys())
+    if not res['OK']:
+      return res
+    catalogMetadata = res['Value']
+    sizeMismatch = []
+    for lfn,lfnCatalogMetadata in catalogMetadata.items():
+      lfnStorageMetadata = storageMetadata[lfn]
+      if lfnStorageMetadata['Size'] != lfnCatalogMetadata['Size']:
+        sizeMismatch.append((lfn,lfnPfns[lfn],storageElement,'CatalogPFNSizeMismatch'))
+    if sizeMismatch:
+     self.__reportProblematicReplicas(sizeMismatch,storageElement,'CatalogPFNSizeMismatch')
+    gLogger.info('Checking storage files exist in the catalog complete')
+    resDict = {'CatalogMetadata':catalogMetadata,'StorageMetadata':storageMetadata}
+    return S_OK(resDict)
+
+  def getStorageDirectoryContents(self,lfnDir,storageElement):
+    """ This obtains takes the supplied lfn directories and recursively obtains the files in the supplied storage element
+    """
+    return self.__getStorageDirectoryContents(lfnDir,storageElement)
+
+  def __getStorageDirectoryContents(self,lfnDir,storageElement):
+    """ Obtinas the contents of the supplied directory on the storage
+    """
+    gLogger.info('Obtaining the contents for %s directories at %s' % (len(lfnDir),storageElement))
+    rm = ReplicaManager()
+    res = rm.getPfnForLfn(lfnDir,storageElement)
+    if not res['OK']:
+      gLogger.error("Failed to get PFNs for directories",res['Message'])
+      return res
+    for directory, error in res['Value']['Failed']:
+      gLogger.error('Failed to obtain directory PFN from LFNs','%s %s' % (directory,error))
+    if res['Value']['Failed']:
+      return S_ERROR('Failed to obtain directory PFN from LFNs')
+    storageDirectories = res['Value']['Successful'].values()
+    res = rm.getPhysicalFileExists(storageDirectories,storageElement)
+    if not res['OK']:
+      gLogger.error("Failed to obtain existance of directories",res['Message'])
+      return res
+    for directory, error in res['Value']['Failed']:
+       gLogger.error('Failed to determine existance of directory','%s %s' % (directory,error))
+    if res['Value']['Failed']:
+      return S_ERROR('Failed to determine existance of directory')
+    directoryExists = res['Value']['Successful']
+    activeDirs = []
+    for directory in sortList(directoryExists.keys()):
+      exists = directoryExists[directory]
+      if exists:
+        activeDirs.append(directory)
+    allFiles = {}
+    while len(activeDirs) > 0:
+      currentDir = activeDirs[0]
+      res = rm.getStorageListDirectory(currentDir,storageElement)
+      activeDirs.remove(currentDir)
+      if not res['OK']:
+        gLogger.error('Failed to get directory contents',res['Message'])
+        return res
+      elif res['Value']['Failed'].has_key(currentDir):
+        gLogger.error('Failed to get directory contents','%s %s' % (currentDir,res['Value']['Failed'][currentDir]))
+      else:
+        dirContents = res['Value']['Successful'][currentDir]
+        activeDirs.extend(dirContents['SubDirs'])
+        allFiles.update(dirContents['Files'])
+    zeroSizeFiles = []
+    for pfn in sortList(allFiles.keys()):
+      if os.path.basename(pfn) == 'dirac_directory':
+        allFiles.pop(pfn)
+      else: 
+        metadata = allFiles[pfn] 
+        if metadata['Size'] == 0:
+          zeroSizeFiles.append(('',pfn),storageElementName,'PFNZeroSize')
+    if zeroSizeFiles:  
+      self.__reportProblematicReplicas(zeroSizeFiles,se,'PFNZeroSize')
+    gLogger.info('Obtained at total of %s files for directories at %s' % (len(allFiles),storageElement))
+    return S_OK(allFiles)
+
+  ##########################################################################
   #
   # This section contains the specific methods for obtaining replica and metadata information from the catalog
   #
@@ -308,7 +454,7 @@ class DataIntegrityClient:
   def __getCatalogDirectoryContents(self,lfnDir):
     """ Obtain the contents of the supplied directory 
     """
-    gLogger.info('Obtaining the contents for %s directories' % len(lfnDir))
+    gLogger.info('Obtaining the catalog contents for %s directories' % len(lfnDir))
     rm = ReplicaManager()
     activeDirs = lfnDir
     allFiles = {}
