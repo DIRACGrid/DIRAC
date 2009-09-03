@@ -1,11 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataIntegrityDB.py,v 1.7 2009/09/02 20:46:39 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataIntegrityDB.py,v 1.8 2009/09/03 16:30:25 acsmith Exp $
 ########################################################################
-__RCSID__   = "$Id: DataIntegrityDB.py,v 1.7 2009/09/02 20:46:39 acsmith Exp $"
-__VERSION__ = "$Revision: 1.7 $"
+__RCSID__   = "$Id: DataIntegrityDB.py,v 1.8 2009/09/03 16:30:25 acsmith Exp $"
+__VERSION__ = "$Revision: 1.8 $"
 
-""" DataIntegrityDB class is a front-end to the Data Integrity Database.
-"""
+""" DataIntegrityDB class is a front-end to the Data Integrity Database. """
 
 import re, os, sys
 import time, datetime
@@ -105,7 +104,7 @@ class DataIntegrityDB(DB):
   def getProblematic(self):
     """ Get the next file to resolve
     """
-    req = "SELECT FileID,LFN,PFN,Size,SE,GUID,Prognosis FROM Problematics ORDER BY LastUpdate ASC LIMIT 1;"
+    req = "SELECT FileID,LFN,PFN,Size,SE,GUID,Prognosis FROM Problematics WHERE Status='New' ORDER BY LastUpdate ASC LIMIT 1;"
     res = self._query(req)
     if not res['OK']:
       return res
@@ -118,7 +117,7 @@ class DataIntegrityDB(DB):
   def getPrognosisProblematics(self,prognosis):
     """ Get all the active files with the given problematic
     """
-    req = "SELECT FileID,LFN,PFN,Size,SE,GUID,Prognosis FROM Problematics WHERE Prognosis = '%s' ORDER BY Retries,LastUpdate;" % prognosis
+    req = "SELECT FileID,LFN,PFN,Size,SE,GUID,Prognosis FROM Problematics WHERE Prognosis = '%s' AND Status = 'New' ORDER BY Retries,LastUpdate;" % prognosis
     res = self._query(req)
     if not res['OK']:
       return res
