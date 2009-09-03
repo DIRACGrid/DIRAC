@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.28 2009/04/18 18:27:00 rgracian Exp $
-__RCSID__ = "$Id: SystemLoggingDB.py,v 1.28 2009/04/18 18:27:00 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.29 2009/09/03 15:59:54 vfernand Exp $
+__RCSID__ = "$Id: SystemLoggingDB.py,v 1.29 2009/09/03 15:59:54 vfernand Exp $"
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 
@@ -21,6 +21,11 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import Time, dateTime, hour, date, week, day, fromString, toString
 from DIRAC.LoggingSystem.private.LogLevels import LogLevels
 
+DEBUG = 1
+
+if DEBUG:
+  debugFile = open( "SystemLoggingDB.debug.log", "w" )
+
 ###########################################################
 class SystemLoggingDB(DB):
 
@@ -29,6 +34,22 @@ class SystemLoggingDB(DB):
     """
     DB.__init__( self, 'SystemLoggingDB', 'Logging/SystemLoggingDB',
                  maxQueueSize)
+
+  def _query( self, cmd, conn=False ):
+    start = time.time()
+    ret = DB._query( self, cmd, conn )
+    if DEBUG:
+      print >> debugFile, time.time() - start, cmd.replace('\n','')
+      debugFile.flush()
+    return ret
+
+  def _update( self, cmd, conn=False ):
+    start = time.time()
+    ret = DB._update( self, cmd, conn )
+    if DEBUG:
+      print >> debugFile, time.time() - start, cmd.replace('\n','')
+      debugFile.flush()
+    return ret
 
   def __buildCondition(self, condDict, older=None, newer=None ):
     """ build SQL condition statement from provided condDict
@@ -122,25 +143,43 @@ class SystemLoggingDB(DB):
     conjunction = ' NATURAL JOIN '
 
     gLogger.debug( '__buildTableList:', 'showFieldList = %s' % showFieldList )
-
     if len(showFieldList):
       for field in showFieldList:
         if not idPattern.search( field ) and ( field in tableDictKeys ):
           tableList.append( tableDict[field] )
 
-      if re.search( 'MessageTime', ','.join( showFieldList) ):
-        tableList.append('MessageRepository')
+      #if re.search( 'MessageTime', ','.join( showFieldList) ):
+      #  tableList.append('MessageRepository')
       tableList = self.__uniq(tableList)
-
-      if len( tableList ) == 1:
-        tableString = tableList[0]
-      else:
-        if tableList.count('MessageRepository'):
-          tableList.remove('MessageRepository')
+      
+      tableString = ''
+      try:
+        tableList.pop( tableList.index( 'MessageRepository') )
         tableString = 'MessageRepository'
-
-        tableString = '%s%s%s' % ( tableString, conjunction,
-                                   conjunction.join( tableList ) )
+      except:
+        pass
+      
+      if tableList.count('Sites') and tableList.count('MessageRepository') and not \
+        tableList.count('ClientIPs'): 
+        tableList.append('ClientIPs')     
+      if tableList.count('MessageRepository') and tableList.count('SubSystems') \
+        and not tableList.count('FixedTextMessages') and not tableList.count('Systems'):
+        tableList.append('FixedTextMessages')       
+        tableList.append('Systems')
+      if tableList.count('MessageRepository') and tableList.count('Systems') \
+        and not tableList.count('FixedTextMessages'):
+        tableList.append('FixedTextMessages')                  
+      if tableList.count('FixedTextMessages') and tableList.count('SubSystems') \
+        and not tableList.count('Systems'):
+        tableList.append('Systems')      
+      if tableList.count('MessageRepository') or ( tableList.count('FixedTextMessages') \
+        + tableList.count('ClientIPs') + tableList.count('UserDNs') > 1 ) :
+        tableString = 'MessageRepository'
+      
+      if tableString and len(tableList):
+        tableString = '%s%s' % ( tableString, conjunction ) 
+      tableString = '%s%s' % ( tableString, 
+                                 conjunction.join( tableList ) )
 
     else:
       tableString = conjunction.join( self.__uniq( tableDict.values() ) )
@@ -197,7 +236,9 @@ class SystemLoggingDB(DB):
     
     cmd = 'SELECT %s FROM %s %s %s %s' % ( ','.join(showFieldList ),
                                     tableList, condition, grouping, ordering )
-
+    
+    gLogger.debug( "Query------->",cmd )
+    
     return self._query(cmd)
 
   def __DBCommit( self, tableName, outFields, inFields, inValues ):
@@ -205,6 +246,20 @@ class SystemLoggingDB(DB):
          satellite Table if they do not exist and returns
          the unique KEY associated to the given set of values
     """
+    
+    #tableDict = { 'MessageRepository':'MessageTime',
+    #              'MessageRepository':'VariableText',
+    #              'MessageRepository':'LogLevel',
+    #              'FixedTextMessages':'FixedTextString',
+    #              'FixedTextMessages':'ReviewedMessage',
+    #              'Systems':'SystemName', 
+    #              'SubSystems':'SubSystemName',
+    #              'UserDNs':'OwnerDN', 
+    #              'UserDNs':'OwnerGroup',
+    #              'ClientIPs':'ClientIPNumberString',
+    #              'ClientIPs':'ClientFQDN', 
+    #              'Sites':'SiteName'}
+    
     cmd = "SHOW COLUMNS FROM " + tableName + " WHERE Field in ( '" \
           +  "', '".join( inFields ) + "' )"
     result = self._query( cmd )
@@ -237,7 +292,7 @@ class SystemLoggingDB(DB):
         for i in range(len(inFields)):
           gLogger.error( 'Could not insert the data into %s table' % tableName, '%s = %s' % ( inFields[i], inValues[i] ) )
         return S_ERROR( 'Could not insert the data into %s table' % tableName )
-
+      
     return S_OK( int( result['Value'][0][0] ) )
       
   def _insertMessageIntoSystemLoggingDB( self, message, site, nodeFQDN, 
@@ -260,50 +315,30 @@ class SystemLoggingDB(DB):
       return result
     messageList.append( result['Value'] )
     fieldsList.extend( outFields )
-      
-    inValues = [ remoteAddress, nodeFQDN ]
-    inFields = [ 'ClientIPNumberString', 'ClientFQDN' ]
-    outFields = [ 'ClientIPNumberID' ]
-    result = self.__DBCommit( 'ClientIPs', outFields, inFields, inValues )
-    if not result['OK']:
-      return result
-    messageList.append( result['Value'] )
-    fieldsList.extend( outFields )
 
     if not site:
       site = 'Unknown'
-    inFields = [ 'SiteName' ]
+    inFields = [ 'SiteName']
     inValues = [ site ]
     outFields = [ 'SiteID' ]
     result = self.__DBCommit( 'Sites', outFields, inFields, inValues )
     if not result['OK']:
       return result
+    siteIDKey = result['Value']
+    
+    inFields = [ 'ClientIPNumberString' , 'ClientFQDN', 'SiteID' ]
+    inValues = [ remoteAddress, nodeFQDN, siteIDKey ]
+    outFields = [ 'ClientIPNumberID' ]
+    result = self.__DBCommit( 'ClientIPs', outFields, inFields, inValues )
+    if not result['OK']:
+      return result
     messageList.append(result['Value'])
     fieldsList.extend( outFields )
+
 
     messageList.append( message.getLevel() )
     fieldsList.append( 'LogLevel' )
-    
-    inFields = [ 'FixedTextString' ]
-    inValues = [ message.getFixedMessage() ]
-    outFields = [ 'FixedTextID' ]
-    result = self.__DBCommit( 'FixedTextMessages', outFields, inFields,
-                              inValues)
-    if not result['OK']:
-      return result
-    messageList.append( result['Value'] )
-    fieldsList.extend( outFields )
 
-    if not messageName:
-      messageName = 'Unknown'
-    inFields = [ 'SystemName' ]
-    inValues = [ messageName ]
-    outFields = [ 'SystemID' ]
-    result = self.__DBCommit( 'Systems', outFields, inFields, inValues)
-    if not result['OK']:
-      return result
-    messageList.append(result['Value'])
-    fieldsList.extend( outFields )
 
     if not messageSubSystemName:
       messageSubSystemName = 'Unknown'
@@ -313,7 +348,27 @@ class SystemLoggingDB(DB):
     result = self.__DBCommit( 'SubSystems', outFields, inFields, inValues )
     if not result['OK']:
       return result
-    messageList.append(result['Value'])
+    subSystemsKey = result['Value']
+    
+    if not messageName:
+      messageName = 'Unknown'
+    inFields = [ 'SystemName', 'SubSystemID' ]
+    inValues = [ messageName, subSystemsKey ]
+    outFields = [ 'SystemID'  ]
+    result = self.__DBCommit( 'Systems', outFields, inFields, inValues)
+    if not result['OK']:
+      return result
+    SystemIDKey = result['Value']  
+
+    
+    inFields = [ 'FixedTextString' , 'SystemID' ]
+    inValues = [ message.getFixedMessage(), SystemIDKey ]
+    outFields = [ 'FixedTextID' ]
+    result = self.__DBCommit( 'FixedTextMessages', outFields, inFields,
+                              inValues)
+    if not result['OK']:
+      return result
+    messageList.append( result['Value'] )
     fieldsList.extend( outFields )
 
     return self._insert( 'MessageRepository', fieldsList, messageList )
