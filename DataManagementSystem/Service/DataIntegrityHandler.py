@@ -1,11 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Service/DataIntegrityHandler.py,v 1.5 2009/09/02 20:48:52 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Service/DataIntegrityHandler.py,v 1.6 2009/09/03 16:32:16 acsmith Exp $
 ########################################################################
-__RCSID__   = "$Id: DataIntegrityHandler.py,v 1.5 2009/09/02 20:48:52 acsmith Exp $"
-__VERSION__ = "$Revision: 1.5 $"
+__RCSID__   = "$Id: DataIntegrityHandler.py,v 1.6 2009/09/03 16:32:16 acsmith Exp $"
+__VERSION__ = "$Revision: 1.6 $"
 
-""" DataIntegrityHandler is the implementation of the Data Integrity service in the DISET framework
-"""
+""" DataIntegrityHandler is the implementation of the Data Integrity service in the DISET framework """
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -74,7 +73,7 @@ class DataIntegrityHandler(RequestHandler):
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
 
-  types_setProblematicStatus = [IntType,StringType]
+  types_setProblematicStatus = [[IntType,LongType],StringType]
   def export_setProblematicStatus(self,fileID,status):
     """ Update the status of the problematics with the provided fileID
     """
@@ -102,7 +101,7 @@ class DataIntegrityHandler(RequestHandler):
         for prognosis,statusDict in res['Value'].items():
           gLogger.info("DataIntegrityHandler.getProblematicsSummary: %s." % prognosis)
           for status,count in statusDict.items():
-            gLogger.info("DataIntegrityHandler.getProblematicsSummary: \t%s %s." % (status.ljust(10),count.ljust(10)))
+            gLogger.info("DataIntegrityHandler.getProblematicsSummary: \t%s %s." % (status.ljust(10),str(count).ljust(10)))
       else:
         gLogger.error("DataIntegrityHandler.getProblematicsSummary: Failed to get summary.", res['Message'])
       return res
