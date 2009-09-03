@@ -1,41 +1,27 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/SystemLoggingDBCleaner.py,v 1.5 2008/02/18 16:28:01 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingDBCleaner.py,v 1.5 2008/02/18 16:28:01 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/SystemLoggingDBCleaner.py,v 1.6 2009/09/03 15:41:19 vfernand Exp $
+__RCSID__ = "$Id: SystemLoggingDBCleaner.py,v 1.6 2009/09/03 15:41:19 vfernand Exp $"
 """  SystemLoggingDBCleaner erases records whose messageTime column 
      contains a time older than 'RemoveDate' days, where 'RemoveDate' 
      is an entry in the Configuration Service section of the agent.
 """
 
-from DIRAC.Core.Base.Agent import Agent
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC  import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.LoggingSystem.DB.SystemLoggingDB import SystemLoggingDB
 from DIRAC.Core.Utilities import dateTime, toString, day
 
-AGENT_NAME = 'Logging/SystemLoggingDBCleaner'
 
-class SystemLoggingDBCleaner(Agent):
+class SystemLoggingDBCleaner(AgentModule):
 
-  def __init__(self):
-    """ Standard constructor
-    """
-    Agent.__init__(self,AGENT_NAME)
 
   def initialize(self):
-    from DIRAC.ConfigurationSystem.Client.PathFinder import getAgentSection
-
-    result = Agent.initialize(self)
-    if not result['OK']:
-      self.log.error('Agent could not initialize')
-      return result
-    
+     
     self.SystemLoggingDB = SystemLoggingDB()
+ 
+    self.period = int( self.am_getOption( "RemoveDate", '30' ) ) * day
     
-    self.section = getAgentSection( AGENT_NAME )
-
-    self.period = int( gConfig.getValue( "%s/RemoveDate" % \
-                                         self.section, '30' ) ) * day
-    
-    return result
+    return S_OK()	
 
   def execute(self):
     """ The main agent execution method

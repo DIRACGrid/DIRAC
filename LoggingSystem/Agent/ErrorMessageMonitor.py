@@ -1,12 +1,12 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/ErrorMessageMonitor.py,v 1.4 2009/02/25 16:05:56 mseco Exp $
-__RCSID__ = "$Id: ErrorMessageMonitor.py,v 1.4 2009/02/25 16:05:56 mseco Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/ErrorMessageMonitor.py,v 1.5 2009/09/03 15:41:19 vfernand Exp $
+__RCSID__ = "$Id: ErrorMessageMonitor.py,v 1.5 2009/09/03 15:41:19 vfernand Exp $"
 """  ErrorMessageMonitor gets new errors that have been injected into the
      SystemLoggingDB and reports them by mail to the person(s) in charge
      of checking that they conform with DIRAC style. Reviewer option
      contains the list of users to be notified.
 """
 
-from DIRAC.Core.Base.Agent import Agent
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC  import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.LoggingSystem.DB.SystemLoggingDB import SystemLoggingDB
@@ -15,21 +15,11 @@ from DIRAC.Core.Utilities import List
 
 AGENT_NAME = 'Logging/ErrorMessageMonitor'
 
-class ErrorMessageMonitor(Agent):
 
-  def __init__(self):
-    """ Standard constructor
-    """
-    Agent.__init__(self,AGENT_NAME)
+class ErrorMessageMonitor(AgentModule):
 
   def initialize(self):
-    from DIRAC.ConfigurationSystem.Client.PathFinder import getAgentSection
-
-    result = Agent.initialize(self)
-    if not result['OK']:
-      self.log.error('Agent could not initialize')
-      return result
-
+ 
     self.SystemLoggingDB = SystemLoggingDB()
 
     self.section=getAgentSection( AGENT_NAME )
