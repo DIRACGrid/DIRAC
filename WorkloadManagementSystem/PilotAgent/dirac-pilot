@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.57 2009/06/12 06:34:19 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.58 2009/09/04 16:24:34 acasajus Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.57 2009/06/12 06:34:19 rgracian Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.58 2009/09/04 16:24:34 acasajus Exp $"
 try:
   import os
   import sys
@@ -34,6 +34,7 @@ try:
   jobCPUReqt    = 900  # s
   diracGroup    = None
   ownerDN       = None
+  vo            = lhcb
 
   MAX_CYCLES    = 5
   maxCycles     = 1
@@ -93,6 +94,7 @@ def parse_options():
    -G --Group=<group>          DIRAC group to be setup
    -O --OwnerDN=<ownerDN>      Pilot OwnerDN (for private pilots)
    -U --Upload                 Upload compiled distribution to lhcbweb (if -b)
+   -V --VO=                    Virtual Organization (default = lhcb)
 
   from DIRAC framework:
 
@@ -101,11 +103,11 @@ def parse_options():
     -c --cert=<cert>           Use server certificate <cert> to connect to Core Services
 
   """
-  shortOptions = 'bde:g:hi:n:p:r:tu:v:o:s:CM:N:D:P:ST:G:O:U'
+  shortOptions = 'bde:g:hi:n:p:r:tu:v:o:s:CM:N:D:P:ST:G:O:UV:'
   longOptions  = ['build', 'debug', 'external=', 'grid=','help', 'python=', 'name=',
                   'platform=', 'repository', 'test', 'url=', 'version=',
                   'cvs', 'MaxCycles=', 'Name=', 'disk=', 'path=', 'server', 'CPUTime=', 'Group=',
-                  'OwnerDN=','Upload',
+                  'OwnerDN=','Upload', 'VO='
                   'option=', 'section=', 'cert=']
   try:
     ( optionVals, extraOptions ) = getopt.getopt( sys.argv[1:], shortOptions, longOptions )
@@ -180,6 +182,8 @@ def parse_options():
       ownerDN = v
     elif o in ('-U', '--Upload'):
       installOpts.append('-U')
+    elif v in ('-V', '--VO' ):
+      vo = v
     elif o == '-S' or o == '--server':
       installOpts.append('-S')
       installOpts.append(v)
@@ -239,6 +243,9 @@ if diracGroup:
 
 if ownerDN:
   installOpts+= ' -o /AgentJobRequirements/OwnerDN="%s"' % ownerDN
+  
+if vo:
+  installOpts+= ' -V "%s"' % vo
 
 
 cmd = '%s %s' % ( installScript,  installOpts )
