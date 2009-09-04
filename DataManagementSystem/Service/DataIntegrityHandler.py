@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Service/DataIntegrityHandler.py,v 1.6 2009/09/03 16:32:16 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Service/DataIntegrityHandler.py,v 1.7 2009/09/04 17:16:21 acsmith Exp $
 ########################################################################
-__RCSID__   = "$Id: DataIntegrityHandler.py,v 1.6 2009/09/03 16:32:16 acsmith Exp $"
-__VERSION__ = "$Revision: 1.6 $"
+__RCSID__   = "$Id: DataIntegrityHandler.py,v 1.7 2009/09/04 17:16:21 acsmith Exp $"
+__VERSION__ = "$Revision: 1.7 $"
 
-""" DataIntegrityHandler is the implementation of the Data Integrity service in the DISET framework """
+""" DataIntegrityHandler is the implementation of the Data Integrity service in the DISET framework"""
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -161,3 +161,21 @@ class DataIntegrityHandler(RequestHandler):
       errStr = "DataIntegrityHandler.insertProblematic: Exception while inserting problematic."
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
+
+  types_changeProblematicPrognosis = []
+  def export_changeProblematicPrognosis(self,fileID,newPrognosis):
+    """ Change the prognosis for the supplied file """
+    try:
+      gLogger.info("DataIntegrityHandler.changeProblematicPrognosis: Attempting to change problematic prognosis.")
+      res = integrityDB.changeProblematicPrognosis(fileID,newPrognosis)
+      if res['OK']:
+        gLogger.info("DataIntegrityHandler.changeProblematicPrognosis: Successful.")
+      else:
+        gLogger.error("DataIntegrityHandler.changeProblematicPrognosis: Failed to update.", res['Message'])
+      return res
+    except Exception, x:
+      errStr = "DataIntegrityHandler.changeProblematicPrognosis: Exception while changing prognosis."
+      gLogger.exception(errStr,lException=x)
+      return S_ERROR(errStr)
+
+
