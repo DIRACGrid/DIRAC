@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.23 2009/08/31 16:10:55 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationClient.py,v 1.23 2009/08/31 16:10:55 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationClient.py,v 1.24 2009/09/04 16:57:28 acasajus Exp $
+__RCSID__ = "$Id: ConfigurationClient.py,v 1.24 2009/09/04 16:57:28 acasajus Exp $"
 
 import types
 import os
@@ -33,8 +33,13 @@ class ConfigurationClient:
   def dumpCFGAsLocalCache( self, fileName = None ):
     cfg = gConfigurationData.mergedCFG.clone()
     try:
-      cfg[ 'DIRAC' ][ 'Configuration' ].deleteKey( 'Servers' )
-      cfg[ 'DIRAC' ][ 'Configuration' ].deleteKey( 'MasterServer' )
+      if cfg.isSection( 'DIRAC' ):
+        diracSec = cfg[ 'DIRAC' ]
+        if diracSec.isSection( 'Configuration' ):
+          confSec = diracSec[ 'Configuration' ]
+          for opt in ( 'Servers', 'MasterServer' ):
+            if confSec.isOption( opt ):
+              confSec.deleteKey( opt )
       strData = str( cfg )
       if fileName:
         fd = open( fileName, "w" )
