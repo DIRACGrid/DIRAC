@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/PilotDirector.py,v 1.6 2009/08/14 10:14:47 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/PilotDirector.py,v 1.7 2009/09/04 16:31:00 acasajus Exp $
 # File :   PilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -15,7 +15,7 @@
   This means that DIRAC direct submission to Grid CE's (CREAM, ...) will be handled by DIRAC Pilot
   Director making use of a DIRAC CREAM Computing Element class
 """
-__RCSID__ = "$Id: PilotDirector.py,v 1.6 2009/08/14 10:14:47 rgracian Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.7 2009/09/04 16:31:00 acasajus Exp $"
 
 
 import os, time, tempfile, shutil, re, random
@@ -233,7 +233,7 @@ class PilotDirector:
 
   def _getPilotOptions( self, taskQueueDict, pilotsToSubmit ):
 
-    pilotOptions = []
+    pilotOptions = [ "-V '%s'" % gConfig.getValue( "/DIRAC/VirtualOrganization", "lhcb" ) ]
     privateIfGenericTQ = self.privatePilotFraction > random.random()
     privateTQ = ( 'PilotTypes' in taskQueueDict and 'private' in [ t.lower() for t in taskQueueDict['PilotTypes'] ] )
     forceGeneric = 'ForceGeneric' in taskQueueDict
