@@ -1,10 +1,5 @@
-########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataIntegrityDB.py,v 1.8 2009/09/03 16:30:25 acsmith Exp $
-########################################################################
-__RCSID__   = "$Id: DataIntegrityDB.py,v 1.8 2009/09/03 16:30:25 acsmith Exp $"
-__VERSION__ = "$Revision: 1.8 $"
-
-""" DataIntegrityDB class is a front-end to the Data Integrity Database. """
+""" DataIntegrityDB class is a front-end to the Data Integrity Database.
+"""
 
 import re, os, sys
 import time, datetime
@@ -141,5 +136,7 @@ class DataIntegrityDB(DB):
     res = self._update(req)
     return res
 
-
-
+  def changeProblematicPrognosis(self,fileID,newPrognosis):
+    req = "UPDATE Problematics SET Prognosis = '%s', LastUpdate=UTC_TIMESTAMP() WHERE FileID = %s;" % (newPrognosis,fileID)
+    res = self._update(req)
+    return res    
