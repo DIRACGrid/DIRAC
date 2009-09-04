@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.58 2009/09/04 16:24:34 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.59 2009/09/04 16:38:35 acasajus Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.58 2009/09/04 16:24:34 acasajus Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.59 2009/09/04 16:38:35 acasajus Exp $"
 try:
   import os
   import sys
@@ -34,7 +34,6 @@ try:
   jobCPUReqt    = 900  # s
   diracGroup    = None
   ownerDN       = None
-  vo            = lhcb
 
   MAX_CYCLES    = 5
   maxCycles     = 1
@@ -182,8 +181,9 @@ def parse_options():
       ownerDN = v
     elif o in ('-U', '--Upload'):
       installOpts.append('-U')
-    elif v in ('-V', '--VO' ):
-      vo = v
+    elif o in ('-V', '--VO' ):
+      installOpts.append('-V')
+      installOpts.append("'%s'" % v )
     elif o == '-S' or o == '--server':
       installOpts.append('-S')
       installOpts.append(v)
@@ -244,9 +244,6 @@ if diracGroup:
 if ownerDN:
   installOpts+= ' -o /AgentJobRequirements/OwnerDN="%s"' % ownerDN
   
-if vo:
-  installOpts+= ' -V "%s"' % vo
-
 
 cmd = '%s %s' % ( installScript,  installOpts )
 
