@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.117 2009/08/11 06:22:19 paterson Exp $
+# $Id: JobWrapper.py,v 1.118 2009/09/07 15:41:56 paterson Exp $
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.117 2009/08/11 06:22:19 paterson Exp $"
+__RCSID__ = "$Id: JobWrapper.py,v 1.118 2009/09/07 15:41:56 paterson Exp $"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
@@ -305,6 +305,9 @@ class JobWrapper:
     watchdog.calibrate()
     # do not kill SAM jobs by CPU time
     if self.jobArgs.has_key('JobType') and self.jobArgs['JobType'] == 'SAM':
+      watchdog.testCPUConsumed = False
+
+    if self.jobArgs.has_key('DisableCPUCheck'):
       watchdog.testCPUConsumed = False
 
     if exeThread.isAlive():
