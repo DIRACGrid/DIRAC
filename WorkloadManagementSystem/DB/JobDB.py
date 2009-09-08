@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.162 2009/07/13 10:17:39 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.163 2009/09/08 08:57:52 paterson Exp $
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.162 2009/07/13 10:17:39 atsareg Exp $"
+__RCSID__ = "$Id: JobDB.py,v 1.163 2009/09/08 08:57:52 paterson Exp $"
 
 import re, os, sys, string, types
 import time, datetime, operator
@@ -906,7 +906,7 @@ class JobDB(DB):
       result = S_ERROR('JobDB.setJobParameter: operation failed.')
 
     return result
-    
+
 #############################################################################
   def setJobParameter(self,jobID,key,value):
     """ Set a parameter specified by name,value pair for the job JobID
@@ -926,12 +926,12 @@ class JobDB(DB):
     if not result['OK']:
       result = S_ERROR('JobDB.setJobParameter: operation failed.')
 
-    return result    
+    return result
 
 #############################################################################
   def setJobParameters_old(self,jobID,parameters):
     """ Set parameters specified by a list of name/value pairs for the job JobID
-    """ 
+    """
 
     ret = self._escapeString(jobID)
     if not ret['OK']:
@@ -966,11 +966,11 @@ class JobDB(DB):
       return S_ERROR('JobDB.setJobParameters: operation failed.')
 
     return result
-    
+
 #############################################################################
   def setJobParameters(self,jobID,parameters):
     """ Set parameters specified by a list of name/value pairs for the job JobID
-    """ 
+    """
 
     if not parameters:
       return S_OK()
@@ -993,7 +993,7 @@ class JobDB(DB):
     if not result['OK']:
       return S_ERROR('JobDB.setJobParameters: operation failed.')
 
-    return result    
+    return result
 
  #############################################################################
   def setJobOptParameter(self,jobID,name,value):
@@ -1444,7 +1444,7 @@ class JobDB(DB):
        Remove job from the Job DB and clean up all the job related data
        in various tables
     """
-    
+
     #ret = self._escapeString(jobID)
     #if not ret['OK']:
     #  return ret
@@ -1453,7 +1453,7 @@ class JobDB(DB):
     if type(jobIDs) != type([]):
       jobIDList = [jobIDs]
     else:
-      jobIDList = jobIDs  
+      jobIDList = jobIDs
 
     # If this is a master job delete the children first
     failedSubjobList = []
@@ -1480,7 +1480,7 @@ class JobDB(DB):
                    'HeartBeatLoggingInfo'
                    ):
 
-      cmd = 'DELETE FROM %s WHERE JobID in (%s)' % ( table, jobIDString )      
+      cmd = 'DELETE FROM %s WHERE JobID in (%s)' % ( table, jobIDString )
       result = self._update( cmd )
       if not result['OK']:
         failedTablesList.append(table)
@@ -1885,8 +1885,8 @@ class JobDB(DB):
           count = result['Value'][0][0]
         else:
           return S_ERROR('Failed to get Site data from the JobDB')
-        siteDict[site][status] = count
-        totalDict[status] += count
+        siteDict[site][status.replace('"','')] = count
+        totalDict[status.replace('"','')] += count
 
     siteDict['Total'] = totalDict
     return S_OK(siteDict)
@@ -2236,16 +2236,16 @@ class JobDB(DB):
     if not ret['OK']:
       return ret
     command = ret['Value']
-    
+
     if arguments:
       ret = self._escapeString(arguments)
       if not ret['OK']:
         return ret
       arguments = ret['Value']
     else:
-      arguments = "''"  
+      arguments = "''"
 
-    req = "INSERT INTO JobCommands (JobID,Command,Arguments,ReceptionTime) "    
+    req = "INSERT INTO JobCommands (JobID,Command,Arguments,ReceptionTime) "
     req += "VALUES (%s,%s,%s,UTC_TIMESTAMP())" % (jobID,command, arguments)
     result = self._update(req)
     return result
