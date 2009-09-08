@@ -1,10 +1,11 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Service/DataIntegrityHandler.py,v 1.7 2009/09/04 17:16:21 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Service/DataIntegrityHandler.py,v 1.8 2009/09/08 19:23:19 acsmith Exp $
 ########################################################################
-__RCSID__   = "$Id: DataIntegrityHandler.py,v 1.7 2009/09/04 17:16:21 acsmith Exp $"
-__VERSION__ = "$Revision: 1.7 $"
+__RCSID__   = "$Id: DataIntegrityHandler.py,v 1.8 2009/09/08 19:23:19 acsmith Exp $"
+__VERSION__ = "$Revision: 1.8 $"
 
-""" DataIntegrityHandler is the implementation of the Data Integrity service in the DISET framework"""
+""" DataIntegrityHandler is the implementation of the Data Integrity service in the DISET framework
+"""
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -177,5 +178,22 @@ class DataIntegrityHandler(RequestHandler):
       errStr = "DataIntegrityHandler.changeProblematicPrognosis: Exception while changing prognosis."
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
+
+  types_getProductionProblematics = [[IntType,LongType]]
+  def export_getProductionProblematics(self,prodID):
+    """ Get the problematics for a given production """
+    try:
+      gLogger.info("DataIntegrityHandler.getProductionProblematics: Attempting to get problematics for production.")
+      res = integrityDB.getProductionProblematics(prodID)
+      if res['OK']:
+        gLogger.info("DataIntegrityHandler.getProductionProblematics: Successful.")
+      else:
+        gLogger.error("DataIntegrityHandler.getProductionProblematics: Failed.", res['Message'])
+      return res
+    except Exception, x:
+      errStr = "DataIntegrityHandler.getProductionProblematics: Exception while getting problematics."
+      gLogger.exception(errStr,lException=x)
+      return S_ERROR(errStr)
+ 
 
 
