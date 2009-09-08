@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphData.py,v 1.6 2009/06/07 22:52:32 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphData.py,v 1.7 2009/09/08 14:18:18 atsareg Exp $
 ########################################################################
 
 """ GraphData encapsulates input data for the DIRAC Graphs plots
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: GraphData.py,v 1.6 2009/06/07 22:52:32 atsareg Exp $"
+__RCSID__ = "$Id: GraphData.py,v 1.7 2009/09/08 14:18:18 atsareg Exp $"
 
 import types, datetime, numpy, time
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import convert_to_datetime, to_timestamp
@@ -119,13 +119,14 @@ class GraphData:
           sum - by the sum of values of the subplot
     """
      
-    if self.plotdata:
-      if self.key_type == "string":
+    if self.plotdata:      
+      if self.key_type == "string":        
         if sort_type in ['max_value','sum']:
-          self.labels = self.plotdata.sortKeys('weight')  
+          self.labels = self.plotdata.sortKeys('weight')            
         else:
-          self.labels = self.plotdata.sortKeys()   
-        self.label_values = [ self.plotdata[l] for l in self.labels]     
+          self.labels = self.plotdata.sortKeys()            
+        self.label_values = [ self.plotdata.parsed_data[l] for l in self.labels]     
+       
     else:
       if sort_type == 'max_value':
         pairs = zip(self.subplots.keys(),self.subplots.values())
@@ -177,7 +178,7 @@ class GraphData:
          self.all_num_keys.append(next)
          next += 1
     elif self.key_type == "time":
-      self.all_num_keys = [ date2num( datetime.datetime.utcfromtimestamp(to_timestamp(key)) ) for key in self.all_keys ]
+      self.all_num_keys = [ date2num( datetime.datetime.fromtimestamp(to_timestamp(key)) ) for key in self.all_keys ]
     elif self.key_type == "numeric":
       self.all_num_keys = [ float(key) for key in self.all_keys ]    
       
@@ -198,14 +199,18 @@ class GraphData:
         
     self.sortLabels()       
       
-  def getLabels(self):
+  def getLabels(self,use_plotdata=False):
     """ Get the graph labels together with the numeric values used for the label 
         sorting
     """
         
     labels = []  
     if self.plotdata:
-      labels = [('NoLabels',0.)]
+      if self.key_type != 'string':
+        labels = [('NoLabels',0.)]
+      else:
+        labels = zip(self.labels,self.label_values)
+         
     elif self.truncated:
       tlabels = self.labels[:self.truncated]
       tvalues = self.label_values[:self.truncated]
@@ -232,7 +237,7 @@ class GraphData:
     else: 
       return len(self.labels)
     
-  def getPlotNumData(self,label=None):
+  def getPlotNumData(self,label=None,zip=True):
   
     if self.plotdata:
       return zip(self.plotdata.getNumKeys(),self.plotdata.getValues())
@@ -247,7 +252,10 @@ class GraphData:
       for label in self.subplots:
         arrays.append(numpy.array([ x[1] for x in self.subplots[label].getPlotDataForNumKeys(self.all_num_keys)]))
       sum_array = sum(arrays)
-      return zip(self.all_num_keys,list(sum_array))
+      if zip:
+        return zip(self.all_num_keys,list(sum_array))
+      else:
+        return sum_array
       
   def truncateLabels(self,limit=10):
   
@@ -268,7 +276,55 @@ class GraphData:
         for key in self.all_keys:
           if self.subplots[label].parsed_data.has_key(key):
             other_data[key] += self.subplots[label].parsed_data[key]
-    self.otherPlot = PlotData(other_data)           
+    self.otherPlot = PlotData(other_data)         
+    
+  def getStats(self):
+    """ Get statistics of the graph data
+    """    
+    
+    numData = self.getPlotNumData(zip=False)
+    if not len(numData):
+      return 0,0,0,0
+    min_value = numData.min()
+    max_value = numData.max()
+    average = float(numData.sum())/len(numData)
+    current = numData[-1]
+    return min_value,max_value,average,current  
+  
+  def getStatString(self,unit=None):
+    """  Get a string summarizing the graph data statistics
+    """
+    min_value,max_value,average,current = self.getStats()
+    tmpList = []
+    unitString = str(unit)
+    if max_value:
+      try:
+        s = "Max: " + pretty_float(max_value) + " " + unitString
+        tmpList.append(s.strip())
+      except Exception, e:
+        pass
+    if min_value:
+      try:
+        s = "Min: " + pretty_float(min_value) + " " + unitString
+        tmpList.append(s.strip())
+      except Exception, e:
+        pass  
+    if average:
+      try:
+        s = "Average: " + pretty_float(average) + " " + unitString
+        tmpList.append(s.strip())
+      except Exception, e:
+        pass     
+    if current:
+      try:
+        s = "Current: " + pretty_float(current) + " " + unitString
+        tmpList.append(s.strip())
+      except Exception, e:
+        pass  
+ 
+    resultString = ', '.join(tmpList)
+    return resultString
+    
       
 class PlotData:
   """ PlotData class is a container for a one dimensional plot data
@@ -319,7 +375,7 @@ class PlotData:
          self.num_keys.append(next)
          next += 1
     elif self.key_type == "time":
-      self.num_keys = [ date2num( datetime.datetime.utcfromtimestamp(to_timestamp(key)) ) for key in self.keys ]
+      self.num_keys = [ date2num( datetime.datetime.fromtimestamp(to_timestamp(key)) ) for key in self.keys ]
     elif self.key_type == "numeric":
       self.num_keys = [ float(key) for key in self.keys ] 
        
@@ -335,12 +391,13 @@ class PlotData:
     """ Sort keys according to the specified method :
         alpha - sort in alphabetic order
         weight - sort in the order of values
-    """
+    """    
+    
     if self.sorted_keys:
       return self.sorted_keys
     if sort_type=='weight':
       pairs = zip(self.parsed_data.keys(),self.parsed_data.values())
-      pairs.sort(key=lambda x: x[1])
+      pairs.sort(key=lambda x: x[1],reverse=True)     
       self.sorted_keys = [ x[0] for x in pairs ]
     elif sort_type=='alpha':  
       self.sorted_keys=self.keys

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.9 2009/06/08 23:48:42 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.10 2009/09/08 14:18:18 atsareg Exp $
 ########################################################################
 
 """ Graph is a class providing layouts for the complete plot images including
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: Graph.py,v 1.9 2009/06/08 23:48:42 atsareg Exp $"
+__RCSID__ = "$Id: Graph.py,v 1.10 2009/09/08 14:18:18 atsareg Exp $"
 
 import types, datetime
 from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -31,7 +31,7 @@ class Graph(object):
     prefs = self.prefs
   
     # Get the main Figure object
-    self.figure = Figure()
+    #self.figure = Figure()
     figure = self.figure
     self.canvas = FigureCanvasAgg(figure) 
     canvas = self.canvas
@@ -138,6 +138,29 @@ class Graph(object):
         plot_axes.append(figure.add_axes(plot_rect))
     
     return legend_ax, plot_axes
+  
+  def makeTextGraph(self, text='Empty image'):
+    """ Make an empty text image
+    """
+    
+    self.figure = Figure()
+    figure = self.figure
+    self.canvas = FigureCanvasAgg(figure) 
+    canvas = self.canvas
+    
+    prefs = self.prefs
+    dpi = prefs['dpi']
+    width = float(prefs['width'])
+    height = float(prefs['height'])
+    width_inch = width/dpi
+    height_inch = height/dpi
+    figure.set_size_inches( width_inch, height_inch )
+    figure.set_dpi( dpi )
+    figure.set_facecolor('white')
+    
+    text_size = prefs.get('text_size',12)
+    figure.text( .5, .5, text, horizontalalignment='center',
+                 size=pixelToPoint(text_size,dpi) )
 
   def makeGraph(self, data, *args, **kw):
   
@@ -150,6 +173,10 @@ class Graph(object):
     if DEBUG:
       print "makeGraph time 1",time.time()-start
       start = time.time()
+      
+    if prefs.has_key('text_image'):
+      self.makeTextGraph(str(prefs['text_image']))
+      return 
     
     metadata = prefs.get('metadata',{})
     plot_grid = prefs['plot_grid']
@@ -178,7 +205,7 @@ class Graph(object):
     for i in range(nPlots):
       plot_prefs.append(evalPrefs(prefs,metadata[i]))        
       gdata = GraphData(data[i])      
-      if plot_prefs[i].has_key('sort_labels'):
+      if plot_prefs[i].has_key('sort_labels'):      
         gdata.sortLabels(plot_prefs[i]['sort_labels'])      
       if plot_prefs[i].has_key('limit_labels'):
         gdata.truncateLabels(plot_prefs[i]['limit_labels'])
@@ -193,12 +220,24 @@ class Graph(object):
           plot_prefs[i]['plot_title'] = plot_title+' '+time_title
       graphData.append(gdata)     
     
+    if not graphData[0].subplots and graphData[0].key_type != 'string':
+      prefs['legend'] = False
+      
     legend = Legend(graphData[0],None,prefs)
+    self.figure = Figure()
+    # Make Water Mark
+    image = prefs.get('watermark',None)  
+    self.drawWaterMark(image)  
+    
     legend_ax, plot_axes = self.layoutFigure(legend)
      
     if DEBUG:  
       print "makeGraph time layout",time.time()-start
       start = time.time()  
+      
+    # Make Water Mark
+    #image = prefs.get('watermark',None)  
+    #self.drawWaterMark(image)  
       
     # Make plots    
     for i in range(nPlots):
@@ -212,24 +251,64 @@ class Graph(object):
       ax = plot_axes[i]  
       plot = eval("%s.%s(graphData[i],ax,plot_prefs[i])" % (plot_type,plot_type) )
       plot.draw()
-      if i == 0:
-        legendData = plot.getLegendData()
     
     if DEBUG:  
       print "makeGraph time plots",time.time()-start
-      start = time.time()  
+      start = time.time()   
       
     # Make legend
     if legend_ax:
       legend.setAxes(legend_ax)
-      legend.draw()  
+      legend.draw()   
       
     if DEBUG:  
       print "makeGraph time legend",time.time()-start
       start = time.time()  
     #return S_OK()  
+    
+  def drawWaterMark(self,imagePath=None):
+    """ Make the DIRAC water mark
+    """                          
+    
+    prefs = self.prefs
+    
+    try:
+      import Image as PILImage, ImageEnhance as PILImageEnhance
+    except ImportError:
+      return
+    
+    if not imagePath:
+      if prefs.has_key('watermark'):
+        imagePath = os.path.expandvars( os.path.expanduser( prefs['watermark'] ))
+    
+    if not imagePath: return
+    
+    try:
+      i = PILImage.open( imagePath )
+      enh = PILImageEnhance.Contrast( i )
+      i = enh.enhance( .1 )
+      img_size = i.size
+      resize = 1.0
+      if prefs['width'] < img_size[0]:
+          resize = prefs['width'] / float(img_size[0])
+      if prefs['height'] < img_size[1]:
+          resize = min(resize, prefs['height'] / float(img_size[1]))
+      box = (0.5-img_size[0]/float(prefs['width'])*resize/2., 
+             0.5-img_size[1]/float(prefs['height'])*resize/2., 
+             img_size[0]/float(prefs['width'])*resize, 
+             img_size[1]/float(prefs['height'])*resize)
+      #print box
+      ax_wm = self.figure.add_axes( box )
+      im = ax_wm.imshow( i, origin='lower', aspect='equal', zorder = -10 )
+      ax_wm.axis('off')
+      ax_wm.set_frame_on( False )
+      ax_wm.set_clip_on( False )
+    except Exception, e:
+      print e 
       
   def writeGraph(self,fname,format):
+    """ Write out the resulting graph to a file with fname in a given format
+    """
 
     start = time.time()
     self.canvas.draw()

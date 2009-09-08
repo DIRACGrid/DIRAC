@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/QualityMapGraph.py,v 1.3 2009/06/07 23:25:41 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/QualityMapGraph.py,v 1.4 2009/09/08 14:18:18 atsareg Exp $
 ########################################################################
 
 """ QualityGraph represents a Quality Map of entities as a special color schema 
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: QualityMapGraph.py,v 1.3 2009/06/07 23:25:41 atsareg Exp $"
+__RCSID__ = "$Id: QualityMapGraph.py,v 1.4 2009/09/08 14:18:18 atsareg Exp $"
 
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
@@ -19,8 +19,8 @@ from matplotlib.mlab import linspace
 import matplotlib.cm as cm
 from matplotlib.colorbar import make_axes, ColorbarBase
 
-cdict = {'red': ((0.0, 0.8, 0.8),
-                 (0.5, 1.0, 1.0),
+cdict = {'red': ((0.0, 1., 1.0),
+                 (0.5, .0, .0),
                  (1.0, 0.0, 0.0)),
          'green': ((0.0, 0.1, 0.1),
                    (0.5, 0.9, 0.9),
@@ -28,6 +28,17 @@ cdict = {'red': ((0.0, 0.8, 0.8),
          'blue': ((0.0, 0.1, 0.1),
                   (0.5, 0.5, 0.5),
                  (1.0, 0.0, 0.0))}
+
+# color blind
+#cdict = {'red': ((0.0, .5, 0.5),
+#                 (0.5, .56, 0.56),
+#                 (1.0, 0.63, 0.63)),
+#         'green': ((0.0, 0., 0.),
+#                   (0.5, 0.5, 0.5),
+#                   (1.0, 1., 1.)),
+#         'blue': ((0.0, 0., 0.),
+#                  (0.5, 0.315, 0.315),
+#                 (1.0, 0.63, 0.63))}
 
 class QualityMapGraph( PlotBase ):
 
@@ -56,6 +67,7 @@ class QualityMapGraph( PlotBase ):
       #self.cmap = cm.RdYlGn
       self.norms = normalize(0,100)
       mapper = cm.ScalarMappable(cmap=self.cmap, norm=self.norms)
+      mapper = cm.ScalarMappable(cmap=cm.RdYlGn, norm=self.norms)
       def get_alpha(*args, **kw):
           return 1.0
       mapper.get_alpha = get_alpha
@@ -117,8 +129,8 @@ class QualityMapGraph( PlotBase ):
       setp(self.ax.get_xticklines(),markersize=0. )
       setp(self.ax.get_yticklines(),markersize=0. )  
       
-      cax,kw = make_axes(self.ax,orientation='vertical',fraction=0.05)
-      cb = ColorbarBase(cax,cmap=self.cmap, norm=self.norms)
+      cax,kw = make_axes(self.ax,orientation='vertical',fraction=0.07)
+      cb = ColorbarBase(cax,cmap=cm.RdYlGn, norm=self.norms)
       cb.draw_all()
       #cb = self.ax.colorbar( self.mapper, format="%d%%", 
       #  orientation='horizontal', fraction=0.04, pad=0.1, aspect=40  )

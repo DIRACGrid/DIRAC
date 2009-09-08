@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PlotBase.py,v 1.7 2009/06/08 23:57:08 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PlotBase.py,v 1.8 2009/09/08 14:18:18 atsareg Exp $
 ########################################################################
 
 """ PlotBase is a base class for various Graphs plots
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: PlotBase.py,v 1.7 2009/06/08 23:57:08 atsareg Exp $"
+__RCSID__ = "$Id: PlotBase.py,v 1.8 2009/09/08 14:18:18 atsareg Exp $"
 
 import types, random
 from DIRAC.Core.Utilities.Graphs.Palette import Palette
@@ -177,3 +177,4 @@ class PlotBase:
       self.ax.title.set_family( prefs['font_family'] )
       self.ax.title.set_fontname( prefs['font'] )
                                               
+     

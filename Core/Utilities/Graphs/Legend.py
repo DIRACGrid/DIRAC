@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Legend.py,v 1.4 2009/06/08 23:48:42 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Legend.py,v 1.5 2009/09/08 14:18:18 atsareg Exp $
 ########################################################################
 
 """ Legend encapsulates a graphical plot legend drawing tool
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: Legend.py,v 1.4 2009/06/08 23:48:42 atsareg Exp $"
+__RCSID__ = "$Id: Legend.py,v 1.5 2009/09/08 14:18:18 atsareg Exp $"
 
 from matplotlib.patches import Rectangle
 from matplotlib.text import Text
@@ -32,7 +32,7 @@ class Legend:
       self.labels = data.getLabels()    
     else:
       self.labels = data  
-    self.labels.reverse()  
+    #self.labels.reverse()  
     self.ax = axes
     self.canvas = None
     if self.ax:
@@ -40,6 +40,11 @@ class Legend:
       self.ax.set_axis_off()
     self.prefs = evalPrefs(*aw,**kw)
     self.palette = Palette()
+    
+    percent_flag = self.prefs.get('legend_unit','')
+    if percent_flag == "%":
+      sum_value = sum(data.label_values)
+      self.labels = [(l,'%.2f'%(v/sum_value*100.)) for l,v in self.labels ]
     self.__get_column_width()
     
   def dumpPrefs(self):
@@ -83,14 +88,19 @@ class Legend:
   
     max_length = 0
     max_column_text = ''
+    flag = self.prefs.get('legend_numbers',True)
     for label,num in self.labels:
+      if not flag: num = None
       if num is not None:
         column_length = len(str(label)+str(num)) + 1
       else:
         column_length = len(str(label)) + 1  
       if column_length > max_length:
         max_length = column_length
-        max_column_text = '%s  %s' % (str(label),str(num))
+        if flag:
+          max_column_text = '%s  %s' % (str(label),str(num))
+        else:
+          max_column_text = '%s   ' % str(label)  
                
     figure = Figure()   
     canvas = FigureCanvasAgg(figure) 
@@ -127,9 +137,18 @@ class Legend:
     legend_offset = (ax_xsize - nColumns*self.column_width)/2 
     
     nc = 0
-    self.labels.reverse()
+    #self.labels.reverse()
+    
     for label,num in self.labels:
-      num = "%.1f" % num
+      num_flag = self.prefs.get('legend_numbers',True)
+      percent_flag = self.prefs.get('legend_unit','')
+      if num_flag:
+        if percent_flag == "%":
+          num += "%"
+        else:  
+          num = "%.1f" % num
+      else:
+        num = None  
       color = self.palette.getColor(label)
       row = nc%nRows 
       column = nc/nRows          

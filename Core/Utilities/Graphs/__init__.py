@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/__init__.py,v 1.10 2009/06/08 23:57:08 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/__init__.py,v 1.11 2009/09/08 14:18:18 atsareg Exp $
 ########################################################################
 
 """ DIRAC Graphs package provides tools for creation of various plots to provide
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: __init__.py,v 1.10 2009/06/08 23:57:08 atsareg Exp $"
+__RCSID__ = "$Id: __init__.py,v 1.11 2009/09/08 14:18:18 atsareg Exp $"
 
 from DIRAC.Core.Utilities.Graphs.Graph import Graph
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import evalPrefs
@@ -118,7 +118,7 @@ graph_thumbnail_prefs = {
   'dpi':100,
   'text_padding':1,
   'figure_padding':2,
-  'plot_title_size':8,
+  'plot_title':'NoTitle',
   'plot_padding':0,
   'frame':'On',
   'font' : 'Lucida Grande',
@@ -176,4 +176,12 @@ def pieGraph(data,file,*args,**kw):
   
 def qualityGraph(data,file,*args,**kw):  
   
-  graph(data,file,plot_type='QualityMapGraph',*args,**kw)  
+  prefs = {'plot_axis_grid':False}
+  graph(data,file,prefs,plot_type='QualityMapGraph',*args,**kw)  
+  
+def textGraph(text,file,*args,**kw):
+  
+  prefs = {'text_image':text}
+  graph({},file,prefs,*args,**kw)  
+  
+    

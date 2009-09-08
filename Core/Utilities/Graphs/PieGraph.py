@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PieGraph.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PieGraph.py,v 1.4 2009/09/08 14:18:18 atsareg Exp $
 ########################################################################
 
 """ PieGraph represents a pie graph
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: PieGraph.py,v 1.3 2009/06/07 20:01:21 atsareg Exp $"
+__RCSID__ = "$Id: PieGraph.py,v 1.4 2009/09/08 14:18:18 atsareg Exp $"
 
 import numpy, math, time
 from matplotlib.patches import Wedge, Shadow
@@ -32,7 +32,8 @@ class PieGraph( PlotBase ):
             ):
                
         start = time.time()       
-        labels = self.pdata.getLabels()
+        labels = self.pdata.getLabels(use_plotdata=True)
+        #labels.reverse()
         values = [l[1] for l in labels]    
         x = numpy.array(values, numpy.float64)
         self.legendData = labels
@@ -40,14 +41,14 @@ class PieGraph( PlotBase ):
         sx = float(numpy.sum(x))
         if sx>1: x = numpy.divide(x,sx)
             
-        labels = [l[0] for l in labels] 
+        labels = [l[0] for l in labels]         
         if explode is None: explode = [0]*len(x)
         assert(len(x)==len(labels))
         assert(len(x)==len(explode))
         plot_axis_labels = self.prefs.get('plot_axis_labels',True)
 
         center = 0,0
-        radius = 1
+        radius = 1.1
         theta1 = 0
         i = 0   
         texts = []
@@ -63,7 +64,8 @@ class PieGraph( PlotBase ):
             color = self.palette.getColor(label)
             w = Wedge((x,y), radius, 360.*theta1, 360.*theta2,
                       facecolor=color,
-                      lw = pixelToPoint(0.5,self.dpi) )
+                      lw = pixelToPoint(0.5,self.dpi),
+                      edgecolor='#999999' )
             slices.append(w)
             self.ax.add_patch(w)
             w.set_label(label)
@@ -159,7 +161,7 @@ class PieGraph( PlotBase ):
       else:
         return ""
 
-    nLabels = self.pdata.getNumberOfLabels()
+    nLabels = self.pdata.getNumberOfLabels()   
     explode = [0.]*nLabels
     explode[0] = 0.1
     self.wedges, text_labels, percent = self.pie( explode=explode, autopct=my_display )

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphUtilities.py,v 1.5 2009/06/07 22:52:32 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphUtilities.py,v 1.6 2009/09/08 14:18:18 atsareg Exp $
 ########################################################################
 
 """ GraphUtilities is a a collection of utility functions and classes used
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: GraphUtilities.py,v 1.5 2009/06/07 22:52:32 atsareg Exp $"
+__RCSID__ = "$Id: GraphUtilities.py,v 1.6 2009/09/08 14:18:18 atsareg Exp $"
 
 import types, time, datetime, calendar, math, pytz, numpy, os
 from matplotlib.ticker import ScalarFormatter
@@ -47,7 +47,7 @@ def convert_to_datetime( string ):
     else:
       results = eval(str(string),{'__builtins__':None,'time':time,'math':math},{})
     if type(results) == types.FloatType or type(results) == types.IntType:
-      results = datetime.datetime.utcfromtimestamp( int(results) )
+      results = datetime.datetime.fromtimestamp( int(results) )
     elif type(results) == datetime.datetime:
       pass
     else:
@@ -58,7 +58,7 @@ def convert_to_datetime( string ):
         try:
             t = time.strptime(string, dateformat)
             timestamp = calendar.timegm(t) #-time.timezone
-            results = datetime.datetime.utcfromtimestamp(timestamp)
+            results = datetime.datetime.fromtimestamp(timestamp)
             break
         except:
             pass
@@ -66,8 +66,8 @@ def convert_to_datetime( string ):
         try:
             string = string.split('.', 1)[0]
             t = time.strptime(string, dateformat)
-            timestamp = calendar.timegm(t) #-time.timezone
-            results = datetime.datetime.utcfromtimestamp(timestamp)
+            timestamp = time.mktime(t) #-time.timezone
+            results = datetime.datetime.fromtimestamp(timestamp)
         except:
             raise
             raise ValueError("Unable to create time from string!\nExpecting " \
@@ -84,7 +84,8 @@ def to_timestamp( val ):
       pass  
   
     val = convert_to_datetime( val )
-    return calendar.timegm( val.timetuple() )
+    #return calendar.timegm( val.timetuple() )
+    return time.mktime( val.timetuple() )
     
     
 # If the graph has more than `hour_switch` minutes, we print
