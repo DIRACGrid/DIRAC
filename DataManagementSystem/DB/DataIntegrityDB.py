@@ -1,5 +1,9 @@
-""" DataIntegrityDB class is a front-end to the Data Integrity Database.
-"""
+########################################################################
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataIntegrityDB.py,v 1.10 2009/09/08 19:22:10 acsmith Exp $
+########################################################################
+__RCSID__   = "$Id: DataIntegrityDB.py,v 1.10 2009/09/08 19:22:10 acsmith Exp $"
+__VERSION__ = "$Revision: 1.10 $"
+""" DataIntegrityDB class is a front-end to the Data Integrity Database. """
 
 import re, os, sys
 import time, datetime
@@ -121,6 +125,16 @@ class DataIntegrityDB(DB):
       problematics.append({'FileID':fileid,'LFN':lfn,'PFN':pfn,'Size':size,'SE':se,'GUID':guid,'Prognosis':prognosis})
     return S_OK(problematics)
 
+  def getProductionProblematics(self,prodID):
+    req = "SELECT LFN,FileID FROM Problematics WHERE LFN LIKE '%s/%s/%s';" % ('%',('%8.f' % prodID).replace(' ','0'),'%')
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    problematics = {}
+    for lfn,fileID in res['Value']:
+      problematics[lfn] = fileID
+    return S_OK(problematics)
+
   def incrementProblematicRetry(self,fileID):
     req = "UPDATE Problematics SET Retries=Retries+1, LastUpdate=UTC_TIMESTAMP() WHERE FileID = %s;" % (fileID)
     res = self._update(req)
@@ -140,3 +154,5 @@ class DataIntegrityDB(DB):
     req = "UPDATE Problematics SET Prognosis = '%s', LastUpdate=UTC_TIMESTAMP() WHERE FileID = %s;" % (newPrognosis,fileID)
     res = self._update(req)
     return res    
+
+    
