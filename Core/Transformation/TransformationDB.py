@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.89 2009/08/26 07:17:46 rgracian Exp $
+# $Id: TransformationDB.py,v 1.90 2009/09/08 12:26:33 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -38,6 +38,18 @@ class TransformationDB(DB):
     self.dbname = dbname
     self.filters = self.__getFilters()
     self.catalog = None
+
+  def getTransformationWithStatus(self, status):
+    """ Gets a list of the transformations with the supplied status
+    """
+    req = "SELECT TransformationID FROM Transformations WHERE Status = '%s';" % status
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    transIDs = []  
+    for tuple in res['Value']:
+      transIDs.append(tuple[0])
+    return S_OK(transIDs)
 
   def getTransformationID(self, name):
     """ Method returns ID of transformation with the name=<name>

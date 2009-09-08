@@ -106,6 +106,10 @@ class TransformationHandler(RequestHandler):
   def export_getTransformationLFNs(self,transName,status='Unused'):
     return self.database.getTransformationLFNs(transName,status)
 
+  types_getTransformationWithStatus = [StringType]
+  def export_getTransformationWithStatus(self,status):
+    return self.database.getTransformationWithStatus(status)
+
   ############################################################################
 
   types_getTransformationStats = [[LongType, IntType, StringType]]
