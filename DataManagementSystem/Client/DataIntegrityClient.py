@@ -1,6 +1,6 @@
 """ This is the Data Integrity Client which allows the simple reporting of problematic file and replicas to the IntegrityDB and their status correctly updated in the FileCatalog.""" 
 
-__RCSID__ = "$Id: DataIntegrityClient.py,v 1.11 2009/09/04 17:13:00 acsmith Exp $"
+__RCSID__ = "$Id: DataIntegrityClient.py,v 1.12 2009/09/08 19:24:58 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -43,12 +43,6 @@ class DataIntegrityClient:
     integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
     return integrityDB.getPrognosisProblematics(prognosis)
 
-  def setProblematicStatus(self,fileID,status):
-    """ Updates the status of a problematic in the integrityDB
-    """
-    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
-    return integrityDB.setProblematicStatus(fileID,status)
-
   def getProblematicsSummary(self):
     """ Obtains a count of the number of problematics for each prognosis found
     """
@@ -61,6 +55,12 @@ class DataIntegrityClient:
     integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
     return integrityDB.getDistinctPrognosis()
 
+  def getProductionProblematics(self,prodID):
+    """ Obtains the problematics for a given production
+    """
+    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
+    return integrityDB.getProductionProblematics(prodID)
+
   def incrementProblematicRetry(self,fileID):
     """ Increments the retry count for the supplied file ID
     """
@@ -72,6 +72,12 @@ class DataIntegrityClient:
     """
     integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
     return integrityDB.changeProblematicPrognosis(fileID,newPrognosis)
+
+  def setProblematicStatus(self,fileID,status):
+    """ Updates the status of a problematic in the integrityDB
+    """
+    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
+    return integrityDB.setProblematicStatus(fileID,status)
 
   ##########################################################################
   #
