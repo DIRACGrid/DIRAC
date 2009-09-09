@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.11 2008/10/08 12:33:22 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.12 2009/09/09 15:12:26 acsmith Exp $
 
 """
   This is the client implementation for the RequestDB using the DISET framework.
 """
 
-__RCSID__ = "$Id: RequestClient.py,v 1.11 2008/10/08 12:33:22 rgracian Exp $"
+__RCSID__ = "$Id: RequestClient.py,v 1.12 2009/09/09 15:12:26 acsmith Exp $"
 
 from types import *
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -37,43 +37,60 @@ class RequestClient:
   # These are the methods operating on existing requests and have fixed URLs
   #
 
-  def updateRequest(self,requestName,requestString,url):
+  def updateRequest(self,requestName,requestString,url=''):
     """ Update the request at the supplied url
     """
     try:
-      gLogger.info("RequestDBClient.updateRequest: Attempting to update %s at %s." % (requestName,url))
+      if not url:
+        url = self.central
+      gLogger.verbose("RequestDBClient.updateRequest: Attempting to update %s at %s." % (requestName,url))
       requestRPCClient = RPCClient(url,timeout=120)
-      res = requestRPCClient.updateRequest(requestName,requestString)
-      return res
+      return requestRPCClient.updateRequest(requestName,requestString)
     except Exception,x:
       errStr = "Request.updateRequest: Exception while updating request."
       gLogger.exception(errStr,requestName,lException=x)
       return S_ERROR(errStr)
 
-  def deleteRequest(self,requestName,url):
+  def deleteRequest(self,requestName,url=''):
     """ Delete the request at the supplied url
     """
     try:
-      gLogger.info("RequestDBClient.deleteRequest: Attempting to delete %s at %s." % (requestName,url))
+      if not url:
+        url = self.central
+      gLogger.verbose("RequestDBClient.deleteRequest: Attempting to delete %s at %s." % (requestName,url))
       requestRPCClient = RPCClient(url,timeout=120)
-      res = requestRPCClient.deleteRequest(requestName)
-      return res
+      return requestRPCClient.deleteRequest(requestName)
     except Exception,x:
       errStr = "Request.deleteRequest: Exception while deleting request."
       gLogger.exception(errStr,requestName,lException=x)
       return S_ERROR(errStr)
 
-  def setRequestStatus(self,requestName,requestStatus,url):
+  def setRequestStatus(self,requestName,requestStatus,url=''):
     """ Set the status of a request
     """
     try:
-      gLogger.info("RequestDBClient.setRequestStatus: Attempting to set %s to %s." % (requestName,requestStatus))
+      if not url:
+        url = self.central
+      gLogger.verbose("RequestDBClient.setRequestStatus: Attempting to set %s to %s." % (requestName,requestStatus))
       requestRPCClient = RPCClient(url,timeout=120)
-      res = requestRPCClient.setRequestStatus(requestName,requestStatus)
-      return res
+      return requestRPCClient.setRequestStatus(requestName,requestStatus)
     except Exception,x:
       errStr = "Request.setRequestStatus: Exception while setting request status."
       gLogger.exception(errStr,requestName,lException=x)
+      return S_ERROR(errStr)
+
+  def getRequestForJobs(self, jobID, url=''):
+    """ Get the request names for the supplied jobIDs
+    """
+    try:
+      if not url:
+        url = self.central
+      gLogger.verbose("RequestDBClient.getRequestForJobs: Attempting to get request names for %s jobs." % len(jobID))
+      requestRPCClient = RPCClient(self.central,timeout=120)
+      return requestRPCClient.getRequestForJobs(jobID) 
+    except Exception,x:
+      errStr = "Request.getRequestForJobs: Exception while getting request names."
+      gLogger.exception(errStr,'',lException=x)
       return S_ERROR(errStr)
 
   ##############################################################################
