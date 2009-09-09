@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.90 2009/09/08 12:26:33 acsmith Exp $
+# $Id: TransformationDB.py,v 1.91 2009/09/09 11:44:19 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -701,6 +701,11 @@ class TransformationDB(DB):
     else:
       return S_ERROR("No Transformation with the id '%s' in the TransformationDB" % transID)
 
+  def _deleteTransformationFiles(self, transID):
+    """ Remove the files associated to a transformation
+    """  
+    req = "DROP TABLE IF EXISTS T_%d;" % transID
+    return self._update(req)
 
 ####################################################################################
 #
