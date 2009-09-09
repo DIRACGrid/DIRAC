@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/SiteSEMapping.py,v 1.2 2008/08/25 08:49:44 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/SiteSEMapping.py,v 1.3 2009/09/09 14:58:08 acasajus Exp $
 # File :   SiteSEMapping.py
 ########################################################################
 
@@ -10,7 +10,7 @@
      Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
 """
 
-__RCSID__ = "$Id: SiteSEMapping.py,v 1.2 2008/08/25 08:49:44 atsareg Exp $"
+__RCSID__ = "$Id: SiteSEMapping.py,v 1.3 2009/09/09 14:58:08 acasajus Exp $"
 
 import string,re
 
@@ -79,12 +79,9 @@ def getSESiteMapping(gridName=''):
       for candidate in sites['Value']:
         siteSEs = gConfig.getValue('/Resources/Sites/%s/%s/SE' %(grid,candidate),[])
         for se in siteSEs:
-          if seSiteMapping.has_key(se):
-            current = seSiteMapping[se]
-            current.append(candidate)
-            seSiteMapping[se]=current
-          else:
-            seSiteMapping[se]=candidate
+          if se not in seSiteMapping:
+            seSiteMapping[se] = []
+          seSiteMapping[se].append(candidate)
 
   return S_OK(seSiteMapping)
 
