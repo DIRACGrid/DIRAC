@@ -110,6 +110,10 @@ class TransformationHandler(RequestHandler):
   def export_getTransformationWithStatus(self,status):
     return self.database.getTransformationWithStatus(status)
 
+  types_getTransformationLastUpdate = [[LongType,IntType]]
+  def export_getTransformationLastUpdate(self,transID):
+    return self.database.getTransformationLastUpdate(transID)
+
   ############################################################################
 
   types_getTransformationStats = [[LongType, IntType, StringType]]

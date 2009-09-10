@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.91 2009/09/09 11:44:19 acsmith Exp $
+# $Id: TransformationDB.py,v 1.92 2009/09/10 11:45:04 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -706,6 +706,17 @@ class TransformationDB(DB):
     """  
     req = "DROP TABLE IF EXISTS T_%d;" % transID
     return self._update(req)
+
+  def getTransformationLastUpdate(self,transName):
+    """ Get the last update from the TransformationLog table for the production """
+    transID = self.getTransformationID(transName)
+    req = "SELECT MessageDate FROM TransformationLog WHERE TransformationID=%d ORDER BY MessageDate DESC LIMIT 1;" % transID 
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      return S_ERROR("Transformation not known")
+    return S_OK(res['Value'][0][0])
 
 ####################################################################################
 #
