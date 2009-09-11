@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.72 2009/08/27 09:33:30 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.73 2009/09/11 11:33:42 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.72 2009/08/27 09:33:30 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.73 2009/09/11 11:33:42 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -110,6 +110,9 @@ class DiracProduction:
     result = prodClient.getProductionInfo(int(productionID))
     if not result['OK']:
       return result
+
+    if not result['Value'].has_key('Value'):
+      return S_ERROR('Production %s not found' %productionID)
 
     #to fix TODO
     if printOutput:
@@ -1347,5 +1350,19 @@ class DiracProduction:
       return S_OK(response)
     else:
       return S_ERROR(response)
+
+  #############################################################################
+  def checkJobsUpdateStatusUnused(self,productionID):
+    return S_OK()
+
+  def checkProductionRequestsReadyForValidating(self,prodID):
+    return S_OK()
+
+  def checkAncestorsProcessedOnce(self,blah):
+    print 'must break list into chunks from script'
+    return S_OK()
+
+  def checkDescendentsProcessedOnce(self,blah):
+    return S_OK()
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
