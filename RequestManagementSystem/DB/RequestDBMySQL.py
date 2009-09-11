@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.35 2009/05/08 14:35:51 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.36 2009/09/11 09:41:06 acsmith Exp $
 
 """ RequestDBMySQL is the MySQL plug in for the request DB
 """
 
-__RCSID__ = "$Id: RequestDBMySQL.py,v 1.35 2009/05/08 14:35:51 acsmith Exp $"
+__RCSID__ = "$Id: RequestDBMySQL.py,v 1.36 2009/09/11 09:41:06 acsmith Exp $"
 
 from DIRAC.Core.Base.DB import DB
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
@@ -383,15 +383,16 @@ class RequestDBMySQL(DB):
           subRequestIDs = []
           for reqID in res['Value']:
             subRequestIDs.append(reqID[0])
-          idString = intListToString(subRequestIDs)
-          req = "DELETE FROM Files WHERE SubRequestID IN (%s);" % idString
-          res = self._update(req)
-          if not res['OK']:
-            failed = True
-          req = "DELETE FROM Datasets WHERE SubRequestID IN (%s);" % idString
-          res = self._update(req)
-          if not res['OK']:
-            failed = True
+          if subRequestIDs:
+            idString = intListToString(subRequestIDs)
+            req = "DELETE FROM Files WHERE SubRequestID IN (%s);" % idString
+            res = self._update(req)
+            if not res['OK']:
+              failed = True
+            req = "DELETE FROM Datasets WHERE SubRequestID IN (%s);" % idString
+            res = self._update(req)
+            if not res['OK']:
+              failed = True
           req = "DELETE FROM SubRequests WHERE RequestID = %s;" % requestID
           res = self._update(req)
           if not res['OK']:
