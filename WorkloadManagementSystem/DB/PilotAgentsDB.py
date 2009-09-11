@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.53 2009/04/23 07:32:52 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.54 2009/09/11 20:43:42 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.53 2009/04/23 07:32:52 rgracian Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.54 2009/09/11 20:43:42 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -983,6 +983,24 @@ class PilotAgentsDB(DB):
     finalDict['Extras'] = siteSumDict
 
     return S_OK(finalDict)
+
+##########################################################################################
+  def getPilotMonitorSelectors(self):
+    """ Get distinct values for the Pilot Monitor page selectors
+    """  
+
+    paramNames = ['OwnerDN','OwnerGroup','GridType','Broker',
+                  'Status','DestinationSite','GridSite']
+    
+    resultDict = {}
+    for param in paramNames:
+      result = self.getDistinctAttributeValues('PilotAgents',param)
+      if result['OK']:
+        resultDict[param] = result['Value']
+      else:
+        resultDict = []
+          
+    return S_OK(resultDict)
 
 ##########################################################################################
   def getPilotMonitorWeb(self,selectDict,sortList,startItem,maxItems):
