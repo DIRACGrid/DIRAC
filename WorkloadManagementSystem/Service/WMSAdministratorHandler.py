@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.53 2009/07/29 07:34:44 rgracian Exp $
+# $Id: WMSAdministratorHandler.py,v 1.54 2009/09/11 20:44:38 atsareg Exp $
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.53 2009/07/29 07:34:44 rgracian Exp $"
+__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.54 2009/09/11 20:44:38 atsareg Exp $"
 
 import os, sys, string, uu, shutil
 from types import *
@@ -288,6 +288,15 @@ class WMSAdministratorHandler(RequestHandler):
     """
 
     result = pilotDB.getPilotMonitorWeb(selectDict, sortList, startItem, maxItems)
+    return result
+
+  ##############################################################################
+  types_getPilotMonitorSelectors = []
+  def export_getPilotMonitorSelectors(self):
+    """ Get all the distinct selector values for the Pilot Monitor web portal page
+    """
+
+    result = pilotDB.getPilotMonitorSelectors()
     return result
 
   ##############################################################################
