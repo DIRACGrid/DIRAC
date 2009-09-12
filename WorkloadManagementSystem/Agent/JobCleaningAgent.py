@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobCleaningAgent.py,v 1.10 2009/06/29 16:24:33 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobCleaningAgent.py,v 1.11 2009/09/12 06:23:14 atsareg Exp $
 # File :   JobCleaningAgent.py
 # Author : A.T.
 ########################################################################
@@ -7,7 +7,7 @@
 """  The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
 """
 
-__RCSID__ = "$Id: JobCleaningAgent.py,v 1.10 2009/06/29 16:24:33 acasajus Exp $"
+__RCSID__ = "$Id: JobCleaningAgent.py,v 1.11 2009/09/12 06:23:14 atsareg Exp $"
 
 from DIRAC.Core.Base.Agent                            import Agent
 from DIRAC.WorkloadManagementSystem.DB.JobDB          import JobDB
@@ -22,6 +22,7 @@ REMOVE_STATUS_DELAY = {'Deleted':0,
                        'Done':14,
                        'Killed':7,
                        'Failed':14 }
+PRODUCTION_TYPES = ['DataReconstruction','DataStripping','MCSimulation','Merge','production']
 
 class JobCleaningAgent(Agent):
 
@@ -62,7 +63,6 @@ class JobCleaningAgent(Agent):
   def removeJobsByStatus(self,status,delay):
     """ Remove deleted jobs
     """
-
     if delay:
       gLogger.verbose("Removing jobs with %s status and older than %s" % (status,delay) )
     else:
@@ -73,6 +73,19 @@ class JobCleaningAgent(Agent):
       return result
 
     jobList = result['Value']
+
+    if status != "Deleted":
+      # get job types to skip production jobs
+      result = self.jobDB.getAttributesForJobList(jobList,['JobType'])
+      if not result['OK']:
+        return S_ERROR('Failed to get job types')
+      attDict = result['Value']
+      newJobList = []
+      for j in jobList:
+        if not attDict[int(j)]['JobType'] in PRODUCTION_TYPES:
+          newJobList.append(j)
+      jobList = newJobList
+
     count = 0
     error_count = 0
     result = SandboxStoreClient( useCertificates = True ).unassignJobs( jobList )
