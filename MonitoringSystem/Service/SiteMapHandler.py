@@ -1,21 +1,22 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/SiteMapHandler.py,v 1.1 2009/09/10 15:30:34 acasajus Exp $
-__RCSID__ = "$Id: SiteMapHandler.py,v 1.1 2009/09/10 15:30:34 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/SiteMapHandler.py,v 1.2 2009/09/14 14:12:47 acasajus Exp $
+__RCSID__ = "$Id: SiteMapHandler.py,v 1.2 2009/09/14 14:12:47 acasajus Exp $"
 import types
 import os
+import threading
+import time
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.SiteCEMapping import getCESiteMapping
 from DIRAC.Core.Utilities.SiteSEMapping import getSESiteMapping
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
 gSiteData = False
 
 def initializeSiteMapHandler( serviceInfo ):
   global gSiteData
   gSiteData = SiteMapData()
-  gThreadScheduler.addPeriodicTask( 300, gSiteData.refresh )
+  gSiteData.autoUpdate()
   return S_OK()
 
 class SiteMapHandler( RequestHandler ):
@@ -35,38 +36,54 @@ class SiteMapHandler( RequestHandler ):
     return S_OK( gSiteData.getSitesData() )
     
     
-class SiteMapData:
+class SiteMapData( threading.Thread ):
   
   def __init__( self, csSection = False ):
+    threading.Thread.__init__( self )
     if csSection:
       self.csSection = csSection
     else:
       self.csSection = PathFinder.getServiceSection( "Monitoring/SiteMap" )
+    self.refreshPeriod = self._getCSValue( "RefreshPeriod", 300 )
     self.gridsToMap = []
-    self.allSites = {}
     self.sitesData = {}
     self.refresh()
+    self.setDaemon( 1 )
     
-  def getSiteMaskStatus( self ):
-    return self.siteMaskStatus
+  def autoUpdate( self ):
+    self.start()
   
   def getSitesData( self ):
     return self.sitesData
+  
+  def run( self ):
+    while True:
+      time.sleep( self.refreshPeriod )
+      gLogger.info( "Refreshing data..." )
+      start = time.time()
+      self.refresh()
+      gLogger.info( "Refresh done. Took %d secs" % int( time.time() - start ) )
     
   def refresh(self):
-    self._updateSiteList()
-    self._updateSiteMask()
-    self._updateJobSummary()
-    self._updatePilotSummary()
-    self._updateDataStorage()
+    self.gridsToMap = self._getCSValue( "GridsToMap", [ "LCG" ] )
+    self.refreshPeriod = self._getCSValue( "RefreshPeriod", 300 )
+    sitesData = {}
+    for func in ( self._updateSiteList, self._updateSiteMask, self._updateJobSummary,
+                  self._updatePilotSummary, self._updateDataStorage ):
+      start = time.time()      
+      result = func( sitesData )
+      gLogger.info( "Function %s took %.2f secs" % ( func.__name__, time.time() - start ) )
+      if not result[ 'OK' ]:
+        gLogger.error( "Error while executing %s" % func.__name__, result[ 'Message' ] )
+    #We save the data
+    self.sitesData = sitesData
     
   def _getCSValue( self, option, defVal = None ):
     return gConfig.getValue( "%s/%s" % ( self.csSection, option ), defVal )
     
-  def _updateSiteList( self ):
-    self.allSites = {}
+  def _updateSiteList( self, sitesData ):
+    allSites = {}
     ceSection = "/Resources/Sites"
-    self.gridsToMap = self._getCSValue( "GridsToMap", [ "LCG" ] )
     for grid in self.gridsToMap:
       gridSection = "%s/%s" % ( ceSection, grid )
       result = gConfig.getSections( gridSection )
@@ -89,40 +106,42 @@ class SiteMapData:
         siteData = { 'longlat' : coords,
                      'name' : name,
                      'tier' : tier }
-        self.allSites[ site ] = siteData
-        self.sitesData[ site ] = dict( siteData )
+        allSites[ site ] = siteData
+        if sitesData:
+          sitesData[ site ] = dict( siteData )
+    return S_OK( allSites )
         
-  def _updateSiteMask( self ):
+  def _updateSiteMask( self, sitesData ):
     result = RPCClient( "WorkloadManagement/WMSAdministrator" ).getSiteMask()
     if not result[ 'OK' ]:
       gLogger.error( "Cannot get the site mask", result['Message'] )
       return result
-    self.siteMask = result[ 'Value' ]
-    self.siteMaskStatus = dict( self.allSites )
-    for site in self.siteMaskStatus:
-      if site in self.siteMask:
-        self.siteMaskStatus[ site ][ 'siteMaskStatus' ] = 'Allowed'
+    siteMask = result[ 'Value' ]
+    siteMaskStatus = dict( sitesData )
+    for site in siteMaskStatus:
+      if site in siteMask:
+        siteMaskStatus[ site ][ 'siteMaskStatus' ] = 'Allowed'
       else:
-        self.siteMaskStatus[ site ][ 'siteMaskStatus' ] = 'Banned'
-      self.sitesData[ site ][ 'siteMaskStatus' ] = self.siteMaskStatus[ site ][ 'siteMaskStatus' ]
-    return self.siteMaskStatus
+        siteMaskStatus[ site ][ 'siteMaskStatus' ] = 'Banned'
+      sitesData[ site ][ 'siteMaskStatus' ] = siteMaskStatus[ site ][ 'siteMaskStatus' ]
+    return S_OK( siteMaskStatus )
         
-  def _updateJobSummary( self ):
+  def _updateJobSummary( self, sitesData ):
     result = RPCClient( 'WorkloadManagement/JobMonitoring' ).getSiteSummary()
     if not result[ 'OK' ]:
       gLogger.error( "Cannot get the site job summary", result['Message'] )
       return result
     summaryData = result[ 'Value' ]
-    self.jobSummary = {}
-    for site in self.allSites:
+    jobSummary = {}
+    for site in sitesData:
       if site in summaryData:
-        self.jobSummary[ site ] = summaryData[ site ]
-    for site in self.sitesData:
-      if site in self.jobSummary:
-        self.sitesData[ site ][ 'jobSummary' ] = self.jobSummary[ site ]
-    return S_OK( self.jobSummary )
+        jobSummary[ site ] = summaryData[ site ]
+    for site in sitesData:
+      if site in jobSummary:
+        sitesData[ site ][ 'jobSummary' ] = jobSummary[ site ]
+    return S_OK( jobSummary )
         
-  def _updatePilotSummary( self ):
+  def _updatePilotSummary( self, sitesData ):
     result = RPCClient( "WorkloadManagement/WMSAdministrator" ).getPilotSummary()
     if not result[ 'OK' ]:
       gLogger.error( "Cannot get the pilot summary", result['Message'] )
@@ -132,24 +151,24 @@ class SiteMapData:
     if not result['OK']:
       return S_ERROR( 'Could not get CE site mapping' )
     ceMapping = result[ 'Value' ]
-    self.pilotSummary = {}
+    pilotSummary = {}
     for ce in summaryData:
       if ce not in ceMapping:
         continue
       ceData = summaryData[ ce ]
       siteName = ceMapping[ ce ]
-      if siteName not in self.pilotSummary:
-        self.pilotSummary[ siteName ] = {}
+      if siteName not in pilotSummary:
+        pilotSummary[ siteName ] = {}
       for status in ceData:
-        if status not in self.pilotSummary[ siteName ]:
-          self.pilotSummary[ siteName ][ status ] = 0
-        self.pilotSummary[ siteName ][ status ] += ceData[ status ]
-    for site in self.sitesData:
-      if site in self.pilotSummary:
-        self.sitesData[ site ][ 'pilotSummary' ] = self.pilotSummary[ site ]
-    return S_OK( self.pilotSummary )
+        if status not in pilotSummary[ siteName ]:
+          pilotSummary[ siteName ][ status ] = 0
+        pilotSummary[ siteName ][ status ] += ceData[ status ]
+    for site in sitesData:
+      if site in pilotSummary:
+        sitesData[ site ][ 'pilotSummary' ] = pilotSummary[ site ]
+    return S_OK( pilotSummary )
     
-  def _updateDataStorage( self ):
+  def _updateDataStorage( self, sitesData ):
     result = RPCClient('DataManagement/StorageUsage' ).getStorageSummary()
     if not result[ 'OK' ]:
       gLogger.error( "Cannot get the data storage summary", result['Message'] )
@@ -159,7 +178,7 @@ class SiteMapData:
     if not result['OK']:
       return S_ERROR( 'Could not get SE site mapping' )
     seMapping = result[ 'Value' ]
-    self.storageUsage = {}
+    storageUsage = {}
     for element in storageSummary:
       if element not in seMapping:
         continue
@@ -171,26 +190,26 @@ class SiteMapData:
             break
         if not valid:
           continue
-        if siteName not in self.storageUsage:
-          self.storageUsage[ siteName ] = {}
+        if siteName not in storageUsage:
+          storageUsage[ siteName ] = {}
         if element.find( "_" ) != -1:
           splitter = "_"
         else:
           splitter = "-"
         storageElements = element.split( splitter )[1:]
-        if siteName not in self.storageUsage:
-          self.storageUsage[ siteName ] = {}
+        if siteName not in storageUsage:
+          storageUsage[ siteName ] = {}
         for storageType in storageElements:
           storageType = storageType.upper()
           for attKey in storageSummary[ element ]:
-            siteData = self.storageUsage[ siteName ]
+            siteData = storageUsage[ siteName ]
             if attKey not in siteData:
               siteData[ attKey ] = {}
             attData = siteData[ attKey ]
             if storageType not in attData:
               attData[ storageType ] = 0
             attData[ storageType ] += storageSummary[ element ][ attKey ]
-    for site in self.sitesData:
-      if site in self.storageUsage:
-        self.sitesData[ site ][ 'storageSummary' ] = self.storageUsage[ site ]
-    return S_OK( self.storageUsage )
+    for site in sitesData:
+      if site in storageUsage:
+        sitesData[ site ][ 'storageSummary' ] = storageUsage[ site ]
+    return S_OK( storageUsage )
