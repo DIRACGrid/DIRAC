@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/SiteMapHandler.py,v 1.3 2009/09/14 14:47:50 acasajus Exp $
-__RCSID__ = "$Id: SiteMapHandler.py,v 1.3 2009/09/14 14:47:50 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/SiteMapHandler.py,v 1.4 2009/09/14 15:27:48 acasajus Exp $
+__RCSID__ = "$Id: SiteMapHandler.py,v 1.4 2009/09/14 15:27:48 acasajus Exp $"
 import types
 import os
 import threading
@@ -69,8 +69,7 @@ class SiteMapData( threading.Thread ):
     self.refreshPeriod = self._getCSValue( "RefreshPeriod", 300 )
     sitesData = {}
     for func in ( self._updateSiteList, self._updateSiteMask, self._updateJobSummary,
-                  self._updatePilotSummary, self._updateDataStorage, self._separateSites ):
-#    for func in ( self._updateSiteList, self._separateSites ):
+                  self._updatePilotSummary, self._updateDataStorage ):
       start = time.time()      
       result = func( sitesData )
       gLogger.info( "Function %s took %.2f secs" % ( func.__name__, time.time() - start ) )
@@ -221,19 +220,39 @@ class SiteMapData( threading.Thread ):
     return S_OK( sitesData )
   
   def _separateSites( self, siteData ):
-    nearSites = {}
-    siteList = siteData.keys()
-    siteList.sort()
-    for iS in range( len( siteList ) ):
-      site = siteList[ iS ]
-      for jS in range( iS + 1, len( siteList ) ):
-        nSite = siteList[ jS ]
-        ll1 = siteData[ site ][ 'longlat' ]
-        ll2 = siteData[ nSite ][ 'longlat' ]
-        v = ( ll2[0] - ll1[0], ll2[1] - ll1[1] )
-        dist = abs( v[0] + v[1] )
-        if dist < 0.3:
-          print site, nSite, dist
-          if site not in nearSites:
-            nearSites[ site ] = []
-          nearSites[ site ].append( nSite )
+    allOK = False
+    while not allOK:
+      allOK = True
+      nearSites = {}
+      siteList = siteData.keys()
+      siteList.sort()
+      nearPos = []
+      minDist = 0.3
+      while siteList:
+        site = siteList.pop( 0 )
+        for jS in range( len( siteList ) ):
+          nSite = siteList[ jS ]
+          ll1 = siteData[ site ][ 'longlat' ]
+          ll2 = siteData[ nSite ][ 'longlat' ]
+          v = [ ll2[0] - ll1[0], ll2[1] - ll1[1] ]
+          dist = abs( v[0] ) + abs( v[1] )
+          if dist < minDist:
+            allOK = False
+            if dist:
+              v[0] *= ( minDist / dist )
+              v[1] *= ( minDist / dist )
+            else:
+              v[1] = minDist
+            nearPos.append( jS )
+            if site not in nearSites:
+              nearSites[ site ] = []
+            nearSites[ site ].append( ( nSite, v ) )
+        while nearPos:
+          del( siteList[ nearPos.pop() ] )
+      for site in nearSites:
+        for subSite, vectDict in nearSites[ site ]:
+          ll = siteData[ subSite ][ 'longlat' ]
+          ll[0] += vectDict[0]
+          ll[1] += vectDict[1]      
+          siteData[ subSite ][ 'longlat' ] = ll
+    return S_OK( siteData )
