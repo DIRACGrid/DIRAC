@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.86 2009/09/02 20:50:11 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.87 2009/09/14 16:12:27 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -463,7 +463,25 @@ class StorageBase:
       else:
         failed[lfn] = res['Message']
     resDict = {'Successful':successful,'Failed':failed}
-    return S_OK(resDict) 
+    return S_OK(resDict)
+
+  def getLfnForPfn(self,pfns,storageElementName):
+    storageElement = StorageElement(storageElementName)
+    res = storageElement.isValid('getPfnPath')
+    if not res['OK']:
+      errStr = "ReplicaManager.getLfnForPfn: Failed to instantiate Storage Element"
+      gLogger.error(errStr, "for performing getPfnPath at %s." % (method,storageElementName))
+      return res
+    successful = {}
+    failed = {}
+    for pfn in pfns:
+      res = storageElement.getPfnPath(pfn)
+      if res['OK']:
+        successful[pfn] = res['Value']
+      else:
+        failed[pfn] = res['Message']
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
 
   def getPfnForProtocol(self,pfns,storageElementName,protocol='SRM2',withPort=True):
     storageElement = StorageElement(storageElementName)   
@@ -1412,7 +1430,7 @@ class ReplicaManager(CatalogInterface,StorageInterface):
       gLogger.error(errStr)
       return S_ERROR(errStr)
     gLogger.verbose("ReplicaManager.removeReplica: Attempting to remove catalogue entry for %s lfns at %s." % (len(lfns),storageElementName))
-    res = self.fileCatalogue.getReplicas(lfns)
+    res = self.fileCatalogue.getReplicas(lfns,True)
     if not res['OK']:
       errStr = "ReplicaManager.removeReplica: Completely failed to get replicas for lfns."
       gLogger.error(errStr,res['Message'])
@@ -1465,8 +1483,7 @@ class ReplicaManager(CatalogInterface,StorageInterface):
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
-  """
-  def removeCatalogReplica(self,storageElementName,lfn):
+  def removeReplicaFromCatalog(self,storageElementName,lfn):
     # Remove replica from the file catalog 'lfn' are the file to be removed 'storageElementName' is the storage where the file is to be removed
     if type(lfn) == types.ListType:
       lfns = lfn
@@ -1499,7 +1516,6 @@ class ReplicaManager(CatalogInterface,StorageInterface):
     successful.update(res['Value']['Successful'])
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
-  """
 
   def removeCatalogPhysicalFileNames(self,replicaTuple):
     """ Remove replicas from the file catalog specified by replica tuple
