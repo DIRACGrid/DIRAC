@@ -12,6 +12,28 @@ class TransformationDBClient(FileCatalogueBase):
   def setServer(self,url):
     self.server = url
 
+  #####################################################################
+  #
+  # These are the transformation management methods
+  #
+  
+  def getAllTransformations(self):
+    server = RPCClient(self.server,timeout=120)
+    return server.getAllTransformations()
+
+  def getBookkeepingQuery(self,bkQueryID):
+    server = RPCClient(self.server,timeout=120)
+    return server.getBookkeepingQuery(bkQueryID)
+
+  def addLFNsToTransformation(self,lfns,transID):
+    server = RPCClient(self.server,timeout=120)
+    return server.addLFNsToTransformation(lfns,transID)
+
+  #####################################################################
+  #
+  # These are the file catalog interface methods
+  #
+
   def isOK(self):
     return self.valid
 
