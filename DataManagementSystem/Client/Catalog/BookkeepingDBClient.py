@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/BookkeepingDBClient.py,v 1.21 2009/08/13 13:06:00 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/Catalog/BookkeepingDBClient.py,v 1.22 2009/09/14 16:12:53 acsmith Exp $
 
 """ Client for BookkeepingDB file catalog
 """
 
-__RCSID__ = "$Id: BookkeepingDBClient.py,v 1.21 2009/08/13 13:06:00 acsmith Exp $"
+__RCSID__ = "$Id: BookkeepingDBClient.py,v 1.22 2009/09/14 16:12:53 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -155,6 +155,21 @@ class BookkeepingDBClient(FileCatalogueBase):
       return res
     lfns = res['Value'].keys()
     return self.__getFileMetadata(lfns)
+
+  def getFileSize(self,path):
+    res = self.__checkArgumentFormat(path)
+    if not res['OK']:
+      return res
+    lfns = res['Value'].keys()
+    res = self.__getFileMetadata(lfns)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    successful = {}
+    for lfn,metadata in res['Value']['Successful'].items():
+      successful[lfn] = metadata['FileSize']
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
 
   ################################################################
   #
