@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/SiteMapHandler.py,v 1.2 2009/09/14 14:12:47 acasajus Exp $
-__RCSID__ = "$Id: SiteMapHandler.py,v 1.2 2009/09/14 14:12:47 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/SiteMapHandler.py,v 1.3 2009/09/14 14:47:50 acasajus Exp $
+__RCSID__ = "$Id: SiteMapHandler.py,v 1.3 2009/09/14 14:47:50 acasajus Exp $"
 import types
 import os
 import threading
@@ -69,20 +69,23 @@ class SiteMapData( threading.Thread ):
     self.refreshPeriod = self._getCSValue( "RefreshPeriod", 300 )
     sitesData = {}
     for func in ( self._updateSiteList, self._updateSiteMask, self._updateJobSummary,
-                  self._updatePilotSummary, self._updateDataStorage ):
+                  self._updatePilotSummary, self._updateDataStorage, self._separateSites ):
+#    for func in ( self._updateSiteList, self._separateSites ):
       start = time.time()      
       result = func( sitesData )
       gLogger.info( "Function %s took %.2f secs" % ( func.__name__, time.time() - start ) )
       if not result[ 'OK' ]:
         gLogger.error( "Error while executing %s" % func.__name__, result[ 'Message' ] )
+      else:
+        sitesData = result[ 'Value' ]
     #We save the data
     self.sitesData = sitesData
+    gLogger.info( "There are %s sites" % len( self.sitesData ) )
     
   def _getCSValue( self, option, defVal = None ):
     return gConfig.getValue( "%s/%s" % ( self.csSection, option ), defVal )
     
   def _updateSiteList( self, sitesData ):
-    allSites = {}
     ceSection = "/Resources/Sites"
     for grid in self.gridsToMap:
       gridSection = "%s/%s" % ( ceSection, grid )
@@ -92,7 +95,12 @@ class SiteMapData( threading.Thread ):
         continue
       for site in result[ 'Value' ]:
         coords = gConfig.getValue( "%s/%s/Coordinates" % ( gridSection, site ), "" )
-        coords = coords.split( ":" )
+        try:
+          coords = [ float( "%.4f" % float( c.strip() ) ) for c in coords.split( ":" ) if c.strip() ]
+        except Exception, e:
+          print e
+          gLogger.warn( "Site %s has coordinates incorrectly defined: %s" % ( site, coords ) )
+          continue
         if not coords or len( coords ) != 2:
           gLogger.warn( "Site %s has coordinates incorrectly defined: %s" % ( site, coords ) )
           continue
@@ -106,10 +114,8 @@ class SiteMapData( threading.Thread ):
         siteData = { 'longlat' : coords,
                      'name' : name,
                      'tier' : tier }
-        allSites[ site ] = siteData
-        if sitesData:
-          sitesData[ site ] = dict( siteData )
-    return S_OK( allSites )
+        sitesData[ site ] = siteData
+    return S_OK( sitesData )
         
   def _updateSiteMask( self, sitesData ):
     result = RPCClient( "WorkloadManagement/WMSAdministrator" ).getSiteMask()
@@ -124,7 +130,7 @@ class SiteMapData( threading.Thread ):
       else:
         siteMaskStatus[ site ][ 'siteMaskStatus' ] = 'Banned'
       sitesData[ site ][ 'siteMaskStatus' ] = siteMaskStatus[ site ][ 'siteMaskStatus' ]
-    return S_OK( siteMaskStatus )
+    return S_OK( sitesData )
         
   def _updateJobSummary( self, sitesData ):
     result = RPCClient( 'WorkloadManagement/JobMonitoring' ).getSiteSummary()
@@ -139,7 +145,7 @@ class SiteMapData( threading.Thread ):
     for site in sitesData:
       if site in jobSummary:
         sitesData[ site ][ 'jobSummary' ] = jobSummary[ site ]
-    return S_OK( jobSummary )
+    return S_OK( sitesData )
         
   def _updatePilotSummary( self, sitesData ):
     result = RPCClient( "WorkloadManagement/WMSAdministrator" ).getPilotSummary()
@@ -166,7 +172,7 @@ class SiteMapData( threading.Thread ):
     for site in sitesData:
       if site in pilotSummary:
         sitesData[ site ][ 'pilotSummary' ] = pilotSummary[ site ]
-    return S_OK( pilotSummary )
+    return S_OK( sitesData )
     
   def _updateDataStorage( self, sitesData ):
     result = RPCClient('DataManagement/StorageUsage' ).getStorageSummary()
@@ -212,4 +218,22 @@ class SiteMapData( threading.Thread ):
     for site in sitesData:
       if site in storageUsage:
         sitesData[ site ][ 'storageSummary' ] = storageUsage[ site ]
-    return S_OK( storageUsage )
+    return S_OK( sitesData )
+  
+  def _separateSites( self, siteData ):
+    nearSites = {}
+    siteList = siteData.keys()
+    siteList.sort()
+    for iS in range( len( siteList ) ):
+      site = siteList[ iS ]
+      for jS in range( iS + 1, len( siteList ) ):
+        nSite = siteList[ jS ]
+        ll1 = siteData[ site ][ 'longlat' ]
+        ll2 = siteData[ nSite ][ 'longlat' ]
+        v = ( ll2[0] - ll1[0], ll2[1] - ll1[1] )
+        dist = abs( v[0] + v[1] )
+        if dist < 0.3:
+          print site, nSite, dist
+          if site not in nearSites:
+            nearSites[ site ] = []
+          nearSites[ site ].append( nSite )
