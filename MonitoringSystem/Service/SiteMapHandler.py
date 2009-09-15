@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/SiteMapHandler.py,v 1.5 2009/09/15 14:14:25 acasajus Exp $
-__RCSID__ = "$Id: SiteMapHandler.py,v 1.5 2009/09/15 14:14:25 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/SiteMapHandler.py,v 1.6 2009/09/15 17:18:32 acasajus Exp $
+__RCSID__ = "$Id: SiteMapHandler.py,v 1.6 2009/09/15 17:18:32 acasajus Exp $"
 import types
 import os
 import threading
@@ -70,8 +70,8 @@ class SiteMapData( threading.Thread ):
     self.refreshPeriod = self._getCSValue( "RefreshPeriod", 300 )
     self.rampingPeriod = self._getCSValue( "RampingPeriod", 3600 )
     sitesData = {}
-    for func in ( self._updateSiteList, self._updateSiteMask, self._updateJobSummary, self._updateRampingSites ):
-                  #self._updatePilotSummary, self._updateDataStorage ):
+    for func in ( self._updateSiteList, self._updateSiteMask, self._updateJobSummary, self._updateRampingSites,
+                  self._updatePilotSummary, self._updateDataStorage ):
       start = time.time()      
       result = func( sitesData )
       gLogger.info( "Function %s took %.2f secs" % ( func.__name__, time.time() - start ) )
