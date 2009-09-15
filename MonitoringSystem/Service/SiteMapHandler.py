@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/SiteMapHandler.py,v 1.4 2009/09/14 15:27:48 acasajus Exp $
-__RCSID__ = "$Id: SiteMapHandler.py,v 1.4 2009/09/14 15:27:48 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/SiteMapHandler.py,v 1.5 2009/09/15 14:14:25 acasajus Exp $
+__RCSID__ = "$Id: SiteMapHandler.py,v 1.5 2009/09/15 14:14:25 acasajus Exp $"
 import types
 import os
 import threading
@@ -46,6 +46,7 @@ class SiteMapData( threading.Thread ):
       self.csSection = PathFinder.getServiceSection( "Monitoring/SiteMap" )
     self.refreshPeriod = self._getCSValue( "RefreshPeriod", 300 )
     self.gridsToMap = []
+    self.history = []
     self.sitesData = {}
     self.refresh()
     self.setDaemon( 1 )
@@ -67,9 +68,10 @@ class SiteMapData( threading.Thread ):
   def refresh(self):
     self.gridsToMap = self._getCSValue( "GridsToMap", [ "LCG" ] )
     self.refreshPeriod = self._getCSValue( "RefreshPeriod", 300 )
+    self.rampingPeriod = self._getCSValue( "RampingPeriod", 3600 )
     sitesData = {}
-    for func in ( self._updateSiteList, self._updateSiteMask, self._updateJobSummary,
-                  self._updatePilotSummary, self._updateDataStorage ):
+    for func in ( self._updateSiteList, self._updateSiteMask, self._updateJobSummary, self._updateRampingSites ):
+                  #self._updatePilotSummary, self._updateDataStorage ):
       start = time.time()      
       result = func( sitesData )
       gLogger.info( "Function %s took %.2f secs" % ( func.__name__, time.time() - start ) )
@@ -80,6 +82,8 @@ class SiteMapData( threading.Thread ):
     #We save the data
     self.sitesData = sitesData
     gLogger.info( "There are %s sites" % len( self.sitesData ) )
+
+    
     
   def _getCSValue( self, option, defVal = None ):
     return gConfig.getValue( "%s/%s" % ( self.csSection, option ), defVal )
@@ -218,7 +222,43 @@ class SiteMapData( threading.Thread ):
       if site in storageUsage:
         sitesData[ site ][ 'storageSummary' ] = storageUsage[ site ]
     return S_OK( sitesData )
-  
+
+  def _updateRampingSites( self, sitesData ):
+    now = time.time()
+    self.history.append( ( now, sitesData ) )
+    oldTime, oldSitesData = self.history[0]
+    sitesData = self.__calculateRampingSites( sitesData, oldSitesData )
+    while now - oldTime > self.rampingPeriod:
+      self.history.pop(0)
+      oldTime = self.history[0][0]
+    return S_OK( sitesData )
+      
+  def __calculateRampingSites( self, sitesData, oldSitesData ):
+    for site in sitesData:
+      if site not in oldSitesData:
+        continue
+      if 'jobSummary' not in sitesData[  site ]:
+        continue
+      if 'jobSummary' not in oldSitesData[ site ]:
+        continue
+      jS = sitesData[ site ][ 'jobSummary' ]
+      oldJS = oldSitesData[ site ][ 'jobSummary' ]
+      ramps = {}
+      for status in jS:
+        if status in oldJS:
+          v = jS[ status ]
+          oldV = oldJS[ status ]
+          if not oldV:
+            if v:
+              ramps[ status ] = 100
+            else:
+              ramps[ status ] = 0
+          else:
+            ramps[ status ] = int( ( ( v - oldV ) * 100.0 ) / oldV )
+      sitesData[ site ][ 'jobSummaryRamp' ] = ramps
+            
+    return sitesData
+      
   def _separateSites( self, siteData ):
     allOK = False
     while not allOK:
