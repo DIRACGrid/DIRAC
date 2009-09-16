@@ -1,21 +1,21 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.88 2009/09/16 15:06:45 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.89 2009/09/16 19:15:16 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
+import DIRAC
 
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
-from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.File import makeGuid,fileAdler
-from DIRAC.Core.Utilities.File import getSize
-from DIRAC.Core.Security.Misc import getProxyInfo,formatProxyInfoAsString
-from DIRAC.Core.Security.CS import getDNForUsername
-
-from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+from DIRAC                                               import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC.AccountingSystem.Client.Types.DataOperation   import DataOperation
+from DIRAC.AccountingSystem.Client.DataStoreClient       import gDataStoreClient
+from DIRAC.Core.Security.Misc                            import getProxyInfo,formatProxyInfoAsString
+from DIRAC.Core.Security.CS                              import getDNForUsername
+from DIRAC.Core.Utilities.File                           import makeGuid,fileAdler,getSize
+from DIRAC.Core.Utilities.List                           import sortList,randomize
+from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite,isSameSiteSE,getSEsForCountry
+from DIRAC.DataManagementSystem.Client.StorageElement    import StorageElement
+from DIRAC.DataManagementSystem.Client.FileCatalog       import FileCatalog
 
 class CatalogBase:
 
@@ -740,7 +740,155 @@ class StorageInterface(StorageFile,StorageDirectory):
   """
   pass
 
-class ReplicaManager(CatalogInterface,StorageInterface):
+class CatalogToStorage(CatalogInterface,StorageInterface):
+
+  ##########################################################################
+  #
+  # These are the wrapper functions for doing simple replica->SE operations
+  #
+
+  def getReplicaIsFile(self,lfn,storageElementName,singleFile=False):
+    """ Determine whether the supplied lfns are files at the supplied StorageElement
+
+        'lfn' is the file(s) to check
+        'storageElementName' is the target Storage Element
+    """
+    if singleFile:
+      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'isFile')
+    else:
+      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'isFile')
+
+  def getReplicaSize(self,lfn,storageElementName,singleFile=False):
+    """ Obtain the file size for the lfns at the supplied StorageElement
+  
+        'lfn' is the file(s) for which to get the size
+        'storageElementName' is the target Storage Element
+    """
+    if singleFile:
+      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'getFileSize')
+    else:
+      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'getFileSize')
+
+  def getReplicaAccessUrl(self,lfn,storageElementName,singleFile=False):
+    """ Obtain the access url for lfns at the supplied StorageElement
+        
+        'lfn' is the file(s) for which to obtain access URLs
+        'storageElementName' is the target Storage Element
+    """
+    if singleFile:
+      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'getAccessUrl')
+    else:
+      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'getAccessUrl')
+
+  def getReplicaMetadata(self,lfn,storageElementName,singleFile=False):
+    """ Obtain the file metadata for lfns at the supplied StorageElement
+
+        'lfn' is the file(s) for which to get metadata
+        'storageElementName' is the target Storage Element
+    """
+    if singleFile:
+      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'getFileMetadata')
+    else:
+      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'getFileMetadata')
+
+  def prestageReplica(self,lfn,storageElementName,singleFile=False):
+    """ Issue prestage requests for the lfns at the supplied StorageElement
+
+        'lfn' is the file(s) for which to issue prestage requests
+        'storageElementName' is the target Storage Element
+    """
+    if singleFile:
+      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'prestageFile')
+    else:
+      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'prestageFile')
+
+  def getPrestageReplicaStatus(self,lfn,storageElementName,singleFile=False):
+    """ This functionality is not supported.
+    """
+    return S_ERROR("This functionality is not supported. Please use getReplicaMetadata and check the 'Cached' element.")
+
+  def pinReplica(self,lfn,storageElementName,lifetime=60*60*24,singleFile=False):
+    """ Issue a pin for the lfns at the supplied StorageElement
+        
+        'lfn' is the file(s) for which to issue pins
+        'storageElementName' is the target Storage Element
+        'lifetime' is the pin lifetime (default 1 day)
+    """
+    if singleFile:
+      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'pinFile',{'lifetime':lifetime})
+    else:
+      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'pinFile',{'lifetime':lifetime})
+
+  def releaseReplica(self,lfn,storageElementName,singleFile=False):
+    """ Release pins for the lfns at the supplied StorageElement
+    
+        'lfn' is the file(s) for which to release pins
+        'storageElementName' is the target Storage Element
+    """
+    if singleFile:
+      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'releaseFile')
+    else:
+      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'releaseFile')
+  
+  def getReplica(self,lfn,storageElementName,localPath=False,singleFile=False):
+    """ Get the lfns to the local disk from the supplied StorageElement
+
+        'lfn' is the file(s) for which to release pins
+        'storageElementName' is the target Storage Element
+        'localPath' is the local target path (default '.')
+    """
+    if singleFile:
+      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'getFile',{'localPath':localPath})
+    else:
+      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'getFile',{'localPath':localPath})
+
+  def __executeSingleReplicaStorageElementOperation(self,storageElementName,lfn,method,argsDict={}):
+    res = self.__executeReplicaStorageElementOperation(storageElementName,lfn,method,argsDict)
+    if type(lfn) == types.ListType:
+      lfn = lfn[0]
+    elif type(lfn) == types.DictType:
+      lfn = lfn.keys()[0]   
+    if not res['OK']:
+      return res
+    elif res['Value']['Failed'].has_key(lfn):
+      errorMessage = res['Value']['Failed'][lfn]
+      return S_ERROR(errorMessage)
+    else:
+      return S_OK(res['Value']['Successful'][lfn])
+
+  def __executeReplicaStorageElementOperation(self,storageElementName,lfn,method,argsDict={}):
+    """ A simple wrapper that allows replica querying then perform the StorageElement operation
+    """
+    res = self._executeFileCatalogFunction(lfn,'getReplicas')
+    if not res['OK']:
+      errStr = "ReplicaManager.__executeReplicaStorageElementOperation: Completely failed to get replicas for LFNs."
+      gLogger.error(errStr,res['Message']) 
+      return res
+    failed = res['Value']['Failed']
+    for lfn,reason in res['Value']['Failed'].items():
+      gLogger.error("ReplicaManager.__executeReplicaStorageElementOperation: Failed to get replicas for file.", "%s %s" % (lfn,reason))
+    lfnReplicas = res['Value']['Successful']
+    pfnDict = {}
+    for lfn,replicas in lfnReplicas.items():
+      if replicas.has_key(storageElementName):
+        pfnDict[replicas[storageElementName]] = lfn
+      else:
+        errStr = "ReplicaManager.__executeReplicaStorageElementOperation: File does not have replica at supplied Storage Element."
+        gLogger.error(errStr, "%s %s" % (lfn,storageElementName))
+        failed[lfn] = errStr
+    res = self._executeStorageElementFunction(storageElementName,pfnDict.keys(),method,argsDict)
+    if not res['OK']:
+      gLogger.error("ReplicaManager.__executeReplicaStorageElementOperation: Failed to execute %s StorageElement operation." % method,res['Message'])
+      return res
+    successful = {}
+    for pfn,pfnRes in res['Value']['Successful'].items():
+      successful[pfnDict[pfn]] = pfnRes
+    for pfn, errorMessage in res['Value']['Failed'].items():
+      failed[pfnDict[pfn]] = errorMessage
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
+
+class ReplicaManager(CatalogToStorage):
 
   def __init__( self ):
     """ Constructor function.
@@ -819,6 +967,219 @@ class ReplicaManager(CatalogInterface,StorageInterface):
   # These are the data transfer methods
   #
 
+  def getFile(self,lfn,destinationDir=''):
+    """ Get a local copy of a LFN from Storage Elements.
+
+        'lfn' is the logical file name for the desired file
+    """
+    if type(lfn) == types.ListType:
+      lfns = lfn
+    elif type(lfn) == types.StringType:
+      lfns = [lfn]
+    else:
+      errStr = "ReplicaManager.getFile: Supplied lfn must be string or list of strings."
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
+    gLogger.verbose("ReplicaManager.getFile: Attempting to get %s files." % len(lfns))
+    res = self.getActiveReplicas(lfns)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    lfnReplicas = res['Value']['Successful']
+    res = self.getCatalogFileMetadata(lfnReplicas.keys())
+    if not res['OK']:
+      return res
+    failed.update(res['Value']['Failed'])
+    fileMetadata = res['Value']['Successful']
+    successful = {}
+    for lfn in fileMetadata.keys():
+      res = self.__getFile(lfn,lfnReplicas[lfn],fileMetadata[lfn],destinationDir)
+      if not res['OK']:
+        failed[lfn] = res['Message']
+      else:
+        successful[lfn] = res['Value']
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
+
+  def __getFile(self,lfn,replicas,metadata,destinationDir):
+    # Determine the best replicas
+    res = self._getSEProximity(replicas.keys())
+    if not res['OK']:
+      return res['Message']
+    for storageElementName in res['Value']:
+      physicalFile = replicas[storageElementName]
+      res = self.getStorageFile(physicalFile,storageElementName,localPath=os.path.realpath(destinationDir),singleFile=True)
+      if not res['OK']:   
+        gLogger.error("Failed to get %s from %s" % (lfn,storageElementName),res['Message'])
+      else:
+        if not destinationDir:
+          destinationDir = '.'
+        localFile = os.path.realpath("%s/%s" % (destinationDir,os.path.basename(lfn)))
+        localAdler = fileAdler(localFile)
+        if (metadata['Size'] != res['Value']):
+          gLogger.error("Size of downloaded file (%d) does not match catalog (%d)" % (res['Value'],metadata['Size']))
+        elif (metadata['CheckSumValue']) and (metadata['CheckSumValue'] != localAdler): 
+          gLogger.error("Checksum of downloaded file (%s) does not match catalog (%s)" % (localAdler,metadata['CheckSumValue']))
+        else:
+          return S_OK(localFile)
+    gLogger.error("ReplicaManager.getFile: Failed to get local copy from any replicas.",lfn)
+    return S_ERROR("ReplicaManager.getFile: Failed to get local copy from any replicas.")
+
+  def _getSEProximity(self,ses):
+    localSEs = getSEsForSite(DIRAC.siteName())['Value']
+    res = getSEsForCountry(DIRAC.siteName().split('.')[-1])
+    if not res['OK']:
+      return res
+    countrySEs = res['Value']
+    sortedSEs = []
+    for se in randomize(ses):
+      if se in localSEs:
+        sortedSEs.append(se)
+    for se in randomize(ses):
+      if (se in countrySEs) and (not se in sortedSEs):
+        sortedSEs.append(se)
+    for se in randomize(ses):
+      if not se in sortedSEs:
+        sortedSEs.append(se)
+    return S_OK(sortedSEs)
+
+  def putAndRegister(self,lfn,file,diracSE,guid=None,path=None,checksum=None,catalog=None):
+    """ Put a local file to a Storage Element and register in the File Catalogues
+
+        'lfn' is the file LFN
+        'file' is the full path to the local file
+        'diracSE' is the Storage Element to which to put the file
+        'guid' is the guid with which the file is to be registered (if not provided will be generated)
+        'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
+    """
+    res = self.__verifyOperationPermission(lfn)
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      errStr = "ReplicaManager.putAndRegister: Write access not permitted for this credential."
+      gLogger.error(errStr,lfn) 
+      return S_ERROR(errStr)
+    # Instantiate the desired file catalog
+    if catalog:
+      self.fileCatalogue = FileCatalog(catalog)
+    else:
+      self.fileCatalogue = FileCatalog()
+    # Check that the local file exists
+    if not os.path.exists(file):
+      errStr = "ReplicaManager.putAndRegister: Supplied file does not exist."
+      gLogger.error(errStr, file)
+      return S_ERROR(errStr)
+    # If the path is not provided then use the LFN path
+    if not path:
+      path = os.path.dirname(lfn)
+    # Obtain the size of the local file
+    size = getSize(file)
+    if size == 0:
+      errStr = "ReplicaManager.putAndRegister: Supplied file is zero size."
+      gLogger.error(errStr,file)
+      return S_ERROR(errStr)
+    # If the GUID is not given, generate it here
+    if not guid:
+      guid = makeGuid(file)
+    if not checksum:
+      gLogger.info("ReplicaManager.putAndRegister: Checksum information not provided. Calculating adler32.") 
+      checksum = fileAdler(file)
+      gLogger.info("ReplicaManager.putAndRegister: Checksum calculated to be %s." % checksum)
+    res = self.fileCatalogue.exists({lfn:guid})
+    if not res['OK']:
+      errStr = "ReplicaManager.putAndRegister: Completey failed to determine existence of destination LFN."
+      gLogger.error(errStr,lfn)
+      return res
+    if not res['Value']['Successful'].has_key(lfn):
+      errStr = "ReplicaManager.putAndRegister: Failed to determine existence of destination LFN."
+      gLogger.error(errStr,lfn)
+      return S_ERROR(errStr)
+    if res['Value']['Successful'][lfn]:
+      if res['Value']['Successful'][lfn] == lfn:
+        errStr = "ReplicaManager.putAndRegister: The supplied LFN already exists in the File Catalog."
+        gLogger.error(errStr,lfn)
+      else:
+        errStr = "ReplicaManager.putAndRegister: This file GUID already exists for another file. Please remove it and try again."
+        gLogger.error(errStr,res['Value']['Successful'][lfn])
+      return S_ERROR("%s %s" % (errStr,res['Value']['Successful'][lfn]))
+    # If the local file name is not the same as the LFN filename then use the LFN file name
+    alternativeFile = None
+    lfnFileName = os.path.basename(lfn)
+    localFileName = os.path.basename(file)
+    if not lfnFileName == localFileName:
+      alternativeFile = lfnFileName
+
+    ##########################################################
+    #  Instantiate the destination storage element here.
+    storageElement = StorageElement(diracSE)
+    res = storageElement.isValid()
+    if not res['OK']:
+      errStr = "ReplicaManager.putAndRegister: The storage element is not currently valid."
+      gLogger.error(errStr,"%s %s" % (diracSE,res['Message']))
+      return S_ERROR(errStr)
+    destinationSE = storageElement.getStorageElementName()['Value']
+    res = storageElement.getPfnForLfn(lfn)
+    if not res['OK']:
+      errStr = "ReplicaManager.putAndRegister: Failed to generate destination PFN."
+      gLogger.error(errStr,res['Message'])
+      return S_ERROR(errStr)
+    destPfn = res['Value']
+    fileDict = {destPfn:file}
+
+    successful = {}
+    failed = {}
+    ##########################################################
+    #  Perform the put here.
+    oDataOperation = self.__initialiseAccountingObject('putAndRegister',diracSE,1)
+    oDataOperation.setStartTime()
+    oDataOperation.setValueByKey('TransferSize',size)
+    startTime = time.time()
+    res = storageElement.putFile(fileDict,True)
+    putTime = time.time() - startTime
+    oDataOperation.setValueByKey('TransferTime',putTime)
+    if not res['OK']:
+      errStr = "ReplicaManager.putAndRegister: Failed to put file to Storage Element."
+      oDataOperation.setValueByKey('TransferOK',0)
+      oDataOperation.setValueByKey('FinalStatus','Failed')
+      oDataOperation.setEndTime()
+      gDataStoreClient.addRegister(oDataOperation)
+      startTime = time.time()
+      gDataStoreClient.commit()
+      gLogger.info('ReplicaManger.putAndRegister: Sending accounting took %.1f seconds' % (time.time()-startTime))
+      gLogger.error(errStr,"%s: %s" % (file,res['Message']))
+      return S_ERROR("%s %s" % (errStr,res['Message']))
+    successful[lfn] = {'put': putTime}
+
+    ###########################################################
+    # Perform the registration here
+    oDataOperation.setValueByKey('RegistrationTotal',1)
+    fileTuple = (lfn,destPfn,size,destinationSE,guid,checksum)
+    registerDict = {'LFN':lfn,'PFN':destPfn,'Size':size,'TargetSE':destinationSE,'GUID':guid,'Addler':checksum}
+    startTime = time.time()
+    res = self.registerFile(fileTuple)
+    registerTime = time.time() - startTime
+    oDataOperation.setValueByKey('RegistrationTime',registerTime)
+    if not res['OK']:
+      errStr = "ReplicaManager.putAndRegister: Completely failed to register file."
+      gLogger.error(errStr,res['Message'])
+      failed[lfn] = {'register':registerDict}
+      oDataOperation.setValueByKey('FinalStatus','Failed')
+    elif res['Value']['Failed'].has_key(lfn):
+      errStr = "ReplicaManager.putAndRegister: Failed to register file."
+      gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
+      oDataOperation.setValueByKey('FinalStatus','Failed')
+      failed[lfn] = {'register':registerDict}
+    else:
+      successful[lfn]['register'] = registerTime
+      oDataOperation.setValueByKey('RegistrationOK',1)
+    oDataOperation.setEndTime()
+    gDataStoreClient.addRegister(oDataOperation)
+    startTime = time.time()
+    gDataStoreClient.commit()
+    gLogger.info('ReplicaManger.putAndRegister: Sending accounting took %.1f seconds' % (time.time()-startTime))
+    resDict = {'Successful': successful,'Failed':failed}
+    return S_OK(resDict)
+
   def putDirectory(self,storagePath,localDirectory,diracSE):
     """ Put a local file to a Storage Element
 
@@ -859,74 +1220,6 @@ class ReplicaManager(CatalogInterface,StorageInterface):
     else:
       gLogger.info("ReplicaManager.put: Put directory to storage in %s seconds." % putTime)
     return res
-
-  def getFile(self,lfn,destinationDir=''):
-    """ Get a local copy of a LFN from Storage Elements.
-
-        'lfn' is the logical file name for the desired file
-    """
-    if type(lfn) == types.ListType:
-      lfns = lfn
-    elif type(lfn) == types.StringType:
-      lfns = [lfn]
-    else:
-      errStr = "ReplicaManager.getFile: Supplied lfn must be string or list of strings."
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
-    gLogger.verbose("ReplicaManager.getFile: Attempting to get %s files." % len(lfns))
-    res = self.getReplicas(lfns)
-    if not res['OK']:
-      return res
-    failed = res['Value']['Failed']
-    lfnReplicas = res['Value']['Successful']
-    res = self.getFileSize(lfnReplicas.keys())
-    if not res['OK']:
-      return res
-    failed.update(res['Value']['Failed'])
-    fileSizes = res['Value']['Successful']
-    ###########################################################
-    # Determine the best replicas
-    replicaPreference = {}
-    for lfn,size in fileSizes.items():
-      replicas = []
-      for diracSE,pfn in lfnReplicas[lfn].items():
-        storageElement = StorageElement(diracSE)
-        res = storageElement.isValid()
-        if not res['OK']:
-          errStr = "ReplicaManager.getFile: The storage element is not currently valid."
-          gLogger.error(errStr,"%s %s" % (diracSE,res['Message']))
-        else:
-          local = storageElement.isLocalSE()['Value']
-          fileTuple = (diracSE,pfn)
-          if local:
-            replicas.insert(0,fileTuple)
-          else:
-            replicas.append(fileTuple)
-      if not replicas:
-        errStr = "ReplicaManager.getFile: Failed to find any valid StorageElements."
-        gLogger.error(errStr,lfn)
-        failed[lfn] = errStr
-      else:
-        replicaPreference[lfn] = replicas
-    ###########################################################
-    # Get a local copy depending on replica preference
-    successful = {}
-    for lfn,replicas in replicaPreference.items():
-      gotFile = False
-      for diracSE,pfn in replicas:
-        if not gotFile:
-          storageElement = StorageElement(diracSE)
-          res = storageElement.getFile(pfn,localPath=destinationDir,singleFile=True)
-          if res['OK']:
-            gotFile = True
-            successful[lfn] = os.path.basename(lfn)
-      if not gotFile:
-        # If we get here then we failed to get any replicas
-        errStr = "ReplicaManager.getFile: Failed to get local copy from any replicas."
-        gLogger.error(errStr,lfn)
-        failed[lfn] = errStr
-    resDict = {'Successful':successful,'Failed':failed}
-    return S_OK(resDict)
 
   def replicateAndRegister(self,lfn,destSE,sourceSE='',destPath='',localCache=''):
     """ Replicate a LFN to a destination SE and register the replica.
@@ -1697,143 +1990,6 @@ class ReplicaManager(CatalogInterface,StorageInterface):
     resDict = {'Successful': successful,'Failed':failed}
     return S_OK(resDict)
 
-  def putAndRegister(self,lfn,file,diracSE,guid=None,path=None,checksum=None,catalog=None):
-    """ Put a local file to a Storage Element and register in the File Catalogues
-
-        'lfn' is the file LFN
-        'file' is the full path to the local file
-        'diracSE' is the Storage Element to which to put the file
-        'guid' is the guid with which the file is to be registered (if not provided will be generated)
-        'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
-    """
-    res = self.__verifyOperationPermission(lfn)
-    if not res['OK']:
-      return res
-    if not res['Value']:
-      errStr = "ReplicaManager.putAndRegister: Write access not permitted for this credential."
-      gLogger.error(errStr,lfn) 
-      return S_ERROR(errStr)
-    # Instantiate the desired file catalog
-    if catalog:
-      self.fileCatalogue = FileCatalog(catalog)
-    else:
-      self.fileCatalogue = FileCatalog()
-    # Check that the local file exists
-    if not os.path.exists(file):
-      errStr = "ReplicaManager.putAndRegister: Supplied file does not exist."
-      gLogger.error(errStr, file)
-      return S_ERROR(errStr)
-    # If the path is not provided then use the LFN path
-    if not path:
-      path = os.path.dirname(lfn)
-    # Obtain the size of the local file
-    size = getSize(file)
-    if size == 0:
-      errStr = "ReplicaManager.putAndRegister: Supplied file is zero size."
-      gLogger.error(errStr,file)
-      return S_ERROR(errStr)
-    # If the GUID is not given, generate it here
-    if not guid:
-      guid = makeGuid(file)
-    if not checksum:
-      gLogger.info("ReplicaManager.putAndRegister: Checksum information not provided. Calculating adler32.") 
-      checksum = fileAdler(file)
-      gLogger.info("ReplicaManager.putAndRegister: Checksum calculated to be %s." % checksum)
-    res = self.fileCatalogue.exists({lfn:guid})
-    if not res['OK']:
-      errStr = "ReplicaManager.putAndRegister: Completey failed to determine existence of destination LFN."
-      gLogger.error(errStr,lfn)
-      return res
-    if not res['Value']['Successful'].has_key(lfn):
-      errStr = "ReplicaManager.putAndRegister: Failed to determine existence of destination LFN."
-      gLogger.error(errStr,lfn)
-      return S_ERROR(errStr)
-    if res['Value']['Successful'][lfn]:
-      if res['Value']['Successful'][lfn] == lfn:
-        errStr = "ReplicaManager.putAndRegister: The supplied LFN already exists in the File Catalog."
-        gLogger.error(errStr,lfn)
-      else:
-        errStr = "ReplicaManager.putAndRegister: This file GUID already exists for another file. Please remove it and try again."
-        gLogger.error(errStr,res['Value']['Successful'][lfn])
-      return S_ERROR("%s %s" % (errStr,res['Value']['Successful'][lfn]))
-    # If the local file name is not the same as the LFN filename then use the LFN file name
-    alternativeFile = None
-    lfnFileName = os.path.basename(lfn)
-    localFileName = os.path.basename(file)
-    if not lfnFileName == localFileName:
-      alternativeFile = lfnFileName
-
-    ##########################################################
-    #  Instantiate the destination storage element here.
-    storageElement = StorageElement(diracSE)
-    res = storageElement.isValid()
-    if not res['OK']:
-      errStr = "ReplicaManager.putAndRegister: The storage element is not currently valid."
-      gLogger.error(errStr,"%s %s" % (diracSE,res['Message']))
-      return S_ERROR(errStr)
-    destinationSE = storageElement.getStorageElementName()['Value']
-    res = storageElement.getPfnForLfn(lfn)
-    if not res['OK']:
-      errStr = "ReplicaManager.putAndRegister: Failed to generate destination PFN."
-      gLogger.error(errStr,res['Message'])
-      return S_ERROR(errStr)
-    destPfn = res['Value']
-    fileDict = {destPfn:file}
-
-    successful = {}
-    failed = {}
-    ##########################################################
-    #  Perform the put here.
-    oDataOperation = self.__initialiseAccountingObject('putAndRegister',diracSE,1)
-    oDataOperation.setStartTime()
-    oDataOperation.setValueByKey('TransferSize',size)
-    startTime = time.time()
-    res = storageElement.putFile(fileDict,True)
-    putTime = time.time() - startTime
-    oDataOperation.setValueByKey('TransferTime',putTime)
-    if not res['OK']:
-      errStr = "ReplicaManager.putAndRegister: Failed to put file to Storage Element."
-      oDataOperation.setValueByKey('TransferOK',0)
-      oDataOperation.setValueByKey('FinalStatus','Failed')
-      oDataOperation.setEndTime()
-      gDataStoreClient.addRegister(oDataOperation)
-      startTime = time.time()
-      gDataStoreClient.commit()
-      gLogger.info('ReplicaManger.putAndRegister: Sending accounting took %.1f seconds' % (time.time()-startTime))
-      gLogger.error(errStr,"%s: %s" % (file,res['Message']))
-      return S_ERROR("%s %s" % (errStr,res['Message']))
-    successful[lfn] = {'put': putTime}
-
-    ###########################################################
-    # Perform the registration here
-    oDataOperation.setValueByKey('RegistrationTotal',1)
-    fileTuple = (lfn,destPfn,size,destinationSE,guid,checksum)
-    registerDict = {'LFN':lfn,'PFN':destPfn,'Size':size,'TargetSE':destinationSE,'GUID':guid,'Addler':checksum}
-    startTime = time.time()
-    res = self.registerFile(fileTuple)
-    registerTime = time.time() - startTime
-    oDataOperation.setValueByKey('RegistrationTime',registerTime)
-    if not res['OK']:
-      errStr = "ReplicaManager.putAndRegister: Completely failed to register file."
-      gLogger.error(errStr,res['Message'])
-      failed[lfn] = {'register':registerDict}
-      oDataOperation.setValueByKey('FinalStatus','Failed')
-    elif res['Value']['Failed'].has_key(lfn):
-      errStr = "ReplicaManager.putAndRegister: Failed to register file."
-      gLogger.error(errStr,"%s %s" % (lfn,res['Value']['Failed'][lfn]))
-      oDataOperation.setValueByKey('FinalStatus','Failed')
-      failed[lfn] = {'register':registerDict}
-    else:
-      successful[lfn]['register'] = registerTime
-      oDataOperation.setValueByKey('RegistrationOK',1)
-    oDataOperation.setEndTime()
-    gDataStoreClient.addRegister(oDataOperation)
-    startTime = time.time()
-    gDataStoreClient.commit()
-    gLogger.info('ReplicaManger.putAndRegister: Sending accounting took %.1f seconds' % (time.time()-startTime))
-    resDict = {'Successful': successful,'Failed':failed}
-    return S_OK(resDict)
-
   #def removeReplica(self,lfn,storageElementName,singleFile=False):
   #def putReplica(self,lfn,storageElementName,singleFile=False):
   #def replicateReplica(self,lfn,size,storageElementName,singleFile=False):
@@ -1872,154 +2028,6 @@ class ReplicaManager(CatalogInterface,StorageInterface):
     if (res['Value'].has_key("WriteAccess")) and (res['Value']['WriteAccess'] != 'Active'):
       seStatus['Write'] = False
     return S_OK(seStatus)
-
-  ##########################################################################
-  #
-  # These are the wrapper functions for doing simple replica->SE operations
-  # (Operations requiring write access to a catalog are not performed this way)
-  #
-
-  def getReplicaIsFile(self,lfn,storageElementName,singleFile=False):
-    """ Determine whether the supplied lfns are files at the supplied StorageElement
-
-        'lfn' is the file(s) to check
-        'storageElementName' is the target Storage Element
-    """
-    if singleFile:
-      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'isFile')
-    else:
-      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'isFile')
-
-  def getReplicaSize(self,lfn,storageElementName,singleFile=False):
-    """ Obtain the file size for the lfns at the supplied StorageElement
-  
-        'lfn' is the file(s) for which to get the size
-        'storageElementName' is the target Storage Element
-    """
-    if singleFile:
-      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'getFileSize')
-    else:
-      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'getFileSize')
-
-  def getReplicaAccessUrl(self,lfn,storageElementName,singleFile=False):
-    """ Obtain the access url for lfns at the supplied StorageElement
-        
-        'lfn' is the file(s) for which to obtain access URLs
-        'storageElementName' is the target Storage Element
-    """
-    if singleFile:
-      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'getAccessUrl')
-    else:
-      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'getAccessUrl')
-
-  def getReplicaMetadata(self,lfn,storageElementName,singleFile=False):
-    """ Obtain the file metadata for lfns at the supplied StorageElement
-
-        'lfn' is the file(s) for which to get metadata
-        'storageElementName' is the target Storage Element
-    """
-    if singleFile:
-      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'getFileMetadata')
-    else:
-      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'getFileMetadata')
-
-  def prestageReplica(self,lfn,storageElementName,singleFile=False):
-    """ Issue prestage requests for the lfns at the supplied StorageElement
-
-        'lfn' is the file(s) for which to issue prestage requests
-        'storageElementName' is the target Storage Element
-    """
-    if singleFile:
-      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'prestageFile')
-    else:
-      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'prestageFile')
-
-  def getPrestageReplicaStatus(self,lfn,storageElementName,singleFile=False):
-    """ This functionality is not supported.
-    """
-    return S_ERROR("This functionality is not supported. Please use getReplicaMetadata and check the 'Cached' element.")
-
-  def pinReplica(self,lfn,storageElementName,lifetime=60*60*24,singleFile=False):
-    """ Issue a pin for the lfns at the supplied StorageElement
-        
-        'lfn' is the file(s) for which to issue pins
-        'storageElementName' is the target Storage Element
-        'lifetime' is the pin lifetime (default 1 day)
-    """
-    if singleFile:
-      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'pinFile',{'lifetime':lifetime})
-    else:
-      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'pinFile',{'lifetime':lifetime})
-
-  def releaseReplica(self,lfn,storageElementName,singleFile=False):
-    """ Release pins for the lfns at the supplied StorageElement
-    
-        'lfn' is the file(s) for which to release pins
-        'storageElementName' is the target Storage Element
-    """
-    if singleFile:
-      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'releaseFile')
-    else:
-      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'releaseFile')
-  
-  def getReplica(self,lfn,storageElementName,localPath=False,singleFile=False):
-    """ Get the lfns to the local disk from the supplied StorageElement
-
-        'lfn' is the file(s) for which to release pins
-        'storageElementName' is the target Storage Element
-        'localPath' is the local target path (default '.')
-    """
-    if singleFile:
-      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'getFile',{'localPath':localPath})
-    else:
-      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'getFile',{'localPath':localPath})
-
-  def __executeSingleReplicaStorageElementOperation(self,storageElementName,lfn,method,argsDict={}):
-    res = self.__executeReplicaStorageElementOperation(storageElementName,lfn,method,argsDict)
-    if type(lfn) == types.ListType:
-      lfn = lfn[0]
-    elif type(lfn) == types.DictType:
-      lfn = lfn.keys()[0]   
-    if not res['OK']:
-      return res
-    elif res['Value']['Failed'].has_key(lfn):
-      errorMessage = res['Value']['Failed'][lfn]
-      return S_ERROR(errorMessage)
-    else:
-      return S_OK(res['Value']['Successful'][lfn])
-
-  def __executeReplicaStorageElementOperation(self,storageElementName,lfn,method,argsDict={}):
-    """ A simple wrapper that allows replica querying then perform the StorageElement operation
-    """
-    res = self._executeFileCatalogFunction(lfn,'getReplicas')
-    if not res['OK']:
-      errStr = "ReplicaManager.__executeReplicaStorageElementOperation: Completely failed to get replicas for LFNs."
-      gLogger.error(errStr,res['Message']) 
-      return res
-    failed = res['Value']['Failed']
-    for lfn,reason in res['Value']['Failed'].items():
-      gLogger.error("ReplicaManager.__executeReplicaStorageElementOperation: Failed to get replicas for file.", "%s %s" % (lfn,reason))
-    lfnReplicas = res['Value']['Successful']
-    pfnDict = {}
-    for lfn,replicas in lfnReplicas.items():
-      if replicas.has_key(storageElementName):
-        pfnDict[replicas[storageElementName]] = lfn
-      else:
-        errStr = "ReplicaManager.__executeReplicaStorageElementOperation: File does not have replica at supplied Storage Element."
-        gLogger.error(errStr, "%s %s" % (lfn,storageElementName))
-        failed[lfn] = errStr
-    res = self._executeStorageElementFunction(storageElementName,pfnDict.keys(),method,argsDict)
-    if not res['OK']:
-      gLogger.error("ReplicaManager.__executeReplicaStorageElementOperation: Failed to execute %s StorageElement operation." % method,res['Message'])
-      return res
-    else:
-      successful = {}
-      for pfn,pfnRes in res['Value']['Successful'].items():
-        successful[pfnDict[pfn]] = pfnRes
-      for pfn, errorMessage in res['Value']['Failed'].items():
-        failed[pfnDict[pfn]] = errorMessage
-      resDict = {'Successful':successful,'Failed':failed}
-      return S_OK(resDict)
 
   def __initialiseAccountingObject(self,operation,se,files):
     import DIRAC
