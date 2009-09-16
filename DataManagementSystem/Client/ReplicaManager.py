@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.87 2009/09/14 16:12:27 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.88 2009/09/16 15:06:45 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -1837,6 +1837,41 @@ class ReplicaManager(CatalogInterface,StorageInterface):
   #def removeReplica(self,lfn,storageElementName,singleFile=False):
   #def putReplica(self,lfn,storageElementName,singleFile=False):
   #def replicateReplica(self,lfn,size,storageElementName,singleFile=False):
+
+  def getActiveReplicas(self,lfns):
+    """ Get all the replicas for the SEs which are in Active status for reading.
+    """
+    res = self.getCatalogReplicas(lfns)
+    if not res['OK']: 
+      return res
+    failed = res['Value']['Failed']
+    seReadStatus = {}
+    lfnReplicas = {}
+    for lfn,replicas in res['Value']['Successful'].items():
+      for se in replicas.keys():
+        if not seReadStatus.has_key(se):
+          res = self.__SEActive(se)
+          if res['OK']:
+            seReadStatus[se] = res['Value']['Read']
+          else:
+            seReadStatus[se] = False
+        if not seReadStatus[se]:
+          replicas.pop(se)
+      lfnReplicas[lfn] = replicas
+    resDict = {'Successful':lfnReplicas,'Failed':failed}
+    return S_OK(resDict)
+
+  def __SEActive(self,se):
+    storageCFGBase = "/Resources/StorageElements"
+    res = gConfig.getOptionsDict("%s/%s" % (storageCFGBase,se))
+    if not res['OK']:
+      return S_ERROR("SE not known")
+    seStatus = {'Read':True,'Write':True}  
+    if (res['Value'].has_key("ReadAccess")) and (res['Value']['ReadAccess'] != 'Active'):
+      seStatus['Read'] = False
+    if (res['Value'].has_key("WriteAccess")) and (res['Value']['WriteAccess'] != 'Active'):
+      seStatus['Write'] = False
+    return S_OK(seStatus)
 
   ##########################################################################
   #
