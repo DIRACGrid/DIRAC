@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.107 2009/09/02 12:36:01 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.108 2009/09/16 15:19:36 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.107 2009/09/02 12:36:01 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.108 2009/09/16 15:19:36 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -945,6 +945,56 @@ class Dirac:
        Example usage:
 
        >>> print dirac.getReplicas('/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst')
+       {'OK': True, 'Value': {'Successful': {'/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst':
+       {'CERN-RDST':
+       'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst'}},
+       'Failed': {}}}
+
+       @param lfns: Logical File Name(s) to query
+       @type lfns: LFN string or list []
+       @param printOutput: Optional flag to print result
+       @type printOutput: boolean
+       @return: S_OK,S_ERROR
+    """
+    if not self.fileCatalog:
+      return self.__errorReport('File catalog client was not successfully imported')
+
+    bulkQuery = False
+    if type(lfns)==type(" "):
+      lfns = lfns.replace('LFN:','')
+    elif type(lfns)==type([]):
+      bulkQuery = True
+      try:
+        lfns = [str(lfn.replace('LFN:','')) for lfn in lfns]
+      except Exception,x:
+        return self.__errorReport(str(x),'Expected strings for LFNs')
+    else:
+      return self.__errorReport('Expected single string or list of strings for LFN(s)')
+
+    start = time.time()
+    repsResult = self.fileCatalog.getActiveReplicas(lfns)
+    timing = time.time() - start
+    self.log.info('Replica Lookup Time: %.2f seconds ' % (timing) )
+    self.log.verbose(repsResult)
+    if not repsResult['OK']:
+      self.log.warn(repsResult['Message'])
+      return repsResult
+
+    if printOutput:
+      print self.pPrint.pformat(repsResult['Value'])
+
+    return repsResult
+
+  #############################################################################
+  def getAllReplicas(self,lfns,printOutput=False):
+    """Only differs from getReplicas method in the sense that replicas on banned SEs
+       will be included in the result.
+
+       Obtain replica information from file catalogue client. Input LFN(s) can be string or list.
+
+       Example usage:
+
+       >>> print dirac.getAllReplicas('/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst')
        {'OK': True, 'Value': {'Successful': {'/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst':
        {'CERN-RDST':
        'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst'}},
