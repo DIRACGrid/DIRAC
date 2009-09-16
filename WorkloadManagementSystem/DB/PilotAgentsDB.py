@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.54 2009/09/11 20:43:42 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.55 2009/09/16 10:26:17 atsareg Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,13 +23,14 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.54 2009/09/11 20:43:42 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.55 2009/09/16 10:26:17 atsareg Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from  DIRAC.Core.Security.CS import getUsernameForDN, getDNForUsername
 from types import *
 import threading, datetime, time
 
@@ -999,6 +1000,14 @@ class PilotAgentsDB(DB):
         resultDict[param] = result['Value']
       else:
         resultDict = []
+
+      if param == "OwnerDN":
+        userList = []
+        for dn in result['Value']:
+          resultUser =  getUsernameForDN(dn)
+          if resultUser['OK']:
+            userList.append(resultUser['Value'])
+        resultDict["Owner"] = userList
           
     return S_OK(resultDict)
 
@@ -1012,6 +1021,27 @@ class PilotAgentsDB(DB):
     if selectDict.has_key('LastUpdateTime'):
       last_update = selectDict['LastUpdateTime']
       del selectDict['LastUpdateTime']
+    if selectDict.has_key('Owner'):
+      userList = selectDict['Owner']
+      if type(userList) != type([]):
+        userList = [userList]
+      dnList = []
+      for uName in userList:
+        uList = getDNForUsername(uName)['Value']
+        dnList += uList
+      selectDict['OwnerDN'] = dnList
+      del selectDict['Owner']
+    startDate = selectDict.get('FromDate',None)
+    if startDate:
+      del selectDict['FromDate']
+    # For backward compatibility
+    if startDate is None:
+      startDate = selectDict.get('LastUpdateTime',None)
+      if startDate:
+        del selectDict['LastUpdateTime']
+    endDate = selectDict.get('ToDate',None)
+    if endDate:
+      del selectDict['ToDate']    
 
     # Sorting instructions. Only one for the moment.
     if sortList:
@@ -1020,7 +1050,7 @@ class PilotAgentsDB(DB):
       orderAttribute = None
 
     # Select pilots for the summary
-    result = self.selectPilots(selectDict, orderAttribute=orderAttribute, newer=last_update)
+    result = self.selectPilots(selectDict, orderAttribute=orderAttribute, newer=startDate, older=endDate, timeStamp='LastUpdateTime' )
     if not result['OK']:
       return S_ERROR('Failed to select pilots: '+result['Message'])
 
