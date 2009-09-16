@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.89 2009/09/16 19:15:16 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.90 2009/09/16 19:17:57 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -1002,6 +1002,9 @@ class ReplicaManager(CatalogToStorage):
     return S_OK(resDict)
 
   def __getFile(self,lfn,replicas,metadata,destinationDir):
+    if not replicas:
+      gLogger.error("No accessible replicas found")
+      return S_ERROR("No accessible replicas found")
     # Determine the best replicas
     res = self._getSEProximity(replicas.keys())
     if not res['OK']:
