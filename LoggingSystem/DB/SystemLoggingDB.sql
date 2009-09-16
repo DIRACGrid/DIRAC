@@ -1,9 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.sql,v 1.11 2009/08/26 09:39:53 rgracian Exp $
-__RCSID__ = "$Id: SystemLoggingDB.sql,v 1.11 2009/08/26 09:39:53 rgracian Exp $"
+
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.sql,v 1.12 2009/09/16 16:01:12 vfernand Exp $
+__RCSID__ = "$Id: SystemLoggingDB.sql,v 1.12 2009/09/16 16:01:12 vfernand Exp $"
 
 -- ------------------------------------------------------------------------------
 --
---  Schema definition for the SystemLoggingDB database - containing log messages
+--  Schema definition for the SystemLoggingDB_n database - containing log messages
 --  from DIRAC services and processes
 -- -
 -- ------------------------------------------------------------------------------
@@ -27,95 +28,100 @@ GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON SystemLogging
 
 FLUSH PRIVILEGES;
 
--- -----------------------------------------------------------------------------
-USE SystemLoggingDB;
+-- -----------------------------------------------------
+-- Table `SystemLoggingDB_n`.`UserDNs`
+-- -----------------------------------------------------
+CREATE  TABLE IF NOT EXISTS `UserDNs` (
+  `UserDNID` INT NOT NULL AUTO_INCREMENT ,
+  `OwnerDN` VARCHAR(255) NOT NULL DEFAULT 'unknown' ,
+  `OwnerGroup` VARCHAR(128) NOT NULL DEFAULT 'nogroup' ,
+  PRIMARY KEY (`UserDNID`) ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS MessageRepository;
-CREATE TABLE MessageRepository (
-    MessageID INTEGER NOT NULL AUTO_INCREMENT,
-    MessageTime DATETIME NOT NULL,
-    VariableText VARCHAR(255) NOT NULL,
-    UserDNID INTEGER NOT NULL,
-    ClientIPNumberID INTEGER NOT NULL,
-    SiteID INTEGER NOT NULL,
-    LogLevel VARCHAR(6) NOT NULL,
-    FixedTextID INTEGER NOT NULL,
-    SystemID INTEGER NOT NULL,
-    SubSystemID INTEGER NOT NULL,
-    FOREIGN KEY ( UserDNID ) REFERENCES UserDNs( UserDNID ),
-    FOREIGN KEY ( ClientIPNumberID ) REFERENCES ClientIPs( ClientIPNumberID ),
-    FOREIGN KEY ( FixedTextID ) REFERENCES FixedTextMessages( FixedTextID ),
-    FOREIGN KEY ( SystemID ) REFERENCES System( SystemID ),
-    FOREIGN KEY ( SubSystemID ) REFERENCES SubSystem( SubSystemID ),
-    FOREIGN KEY ( SiteID ) REFERENCES Site( SiteID ),
-    PRIMARY KEY ( MessageID ),
-    INDEX (SystemID),
-    INDEX (SubSystemID),
-    INDEX (FixedTextID),
-    INDEX (UserDNID),
-    INDEX (ClientIPNumberID),
-    INDEX (SiteID)
-);
 
--- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS UserDNs;
-CREATE TABLE UserDNs (
-    UserDNID INTEGER NOT NULL AUTO_INCREMENT,
-    OwnerDN VARCHAR(255) NOT NULL DEFAULT 'unknown',
-    OwnerGroup VARCHAR(128) NOT NULL DEFAULT 'nogroup',
-    PRIMARY KEY ( UserDNID )
-);
+-- -----------------------------------------------------
+-- Table `Sites`
+-- -----------------------------------------------------
+CREATE  TABLE IF NOT EXISTS `Sites` (
+  `SiteID` INT NOT NULL AUTO_INCREMENT ,
+  `SiteName` VARCHAR(64) NOT NULL DEFAULT 'Unknown' ,
+  PRIMARY KEY (`SiteID`) ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS ClientIPs;
-CREATE TABLE ClientIPs (
-    ClientIPNumberID INTEGER NOT NULL AUTO_INCREMENT,
-    ClientIPNumberString VARCHAR(15) NOT NULL DEFAULT '0.0.0.0',
-    ClientFQDN VARCHAR(128) NOT NULL DEFAULT 'unknown',
-    PRIMARY KEY ( ClientIPNumberID )
-);
 
--- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS FixedTextMessages;
-CREATE TABLE FixedTextMessages (
-    FixedTextID INTEGER NOT NULL AUTO_INCREMENT,
-    FixedTextString VARCHAR(255) NOT NULL DEFAULT 'Unknown',
-    ReviewedMessage BOOLEAN NOT NULL DEFAULT FALSE,
-    PRIMARY KEY ( FixedTextID )
-);
+-- -----------------------------------------------------
+-- Table `ClientIPs`
+-- -----------------------------------------------------
+CREATE  TABLE IF NOT EXISTS `ClientIPs` (
+  `ClientIPNumberID` INT NOT NULL AUTO_INCREMENT ,
+  `ClientIPNumberString` VARCHAR(15) NOT NULL DEFAULT '0.0.0.0' ,
+  `ClientFQDN` VARCHAR(128) NOT NULL DEFAULT 'unknown' ,
+  `SiteID` INT NOT NULL ,
+  PRIMARY KEY (`ClientIPNumberID`, `SiteID`) ,
+  INDEX `SiteID` (`SiteID` ASC) ,
+    FOREIGN KEY (`SiteID` ) REFERENCES Sites(SiteID) ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS Systems;
-CREATE TABLE Systems (
-    SystemID INTEGER NOT NULL AUTO_INCREMENT,
-    SystemName VARCHAR(128) NOT NULL DEFAULT 'Unknown',
-    PRIMARY KEY ( SystemID )
-);
 
--- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS SubSystems;
-CREATE TABLE SubSystems (
-    SubSystemID INTEGER NOT NULL AUTO_INCREMENT,
-    SubSystemName VARCHAR(128) NOT NULL DEFAULT 'Unknown',
-    PRIMARY KEY ( SubSystemID )
-);
+-- -----------------------------------------------------
+-- Table `SubSystems`
+-- -----------------------------------------------------
+CREATE  TABLE IF NOT EXISTS `SubSystems` (
+  `SubSystemID` INT NOT NULL AUTO_INCREMENT ,
+  `SubSystemName` VARCHAR(128) NOT NULL DEFAULT 'Unknown' ,
+  PRIMARY KEY (`SubSystemID`) ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------------------------
 
-DROP TABLE IF EXISTS Sites;
-CREATE TABLE Sites (
-    SiteID INTEGER NOT NULL AUTO_INCREMENT,
-    SiteName VARCHAR(64) NOT NULL DEFAULT 'Unknown',
-    PRIMARY KEY ( SiteID )
-);
+-- -----------------------------------------------------
+-- Table `Systems`
+-- -----------------------------------------------------
+CREATE  TABLE IF NOT EXISTS `Systems` (
+  `SystemID` INT NOT NULL AUTO_INCREMENT ,
+  `SystemName` VARCHAR(128) NOT NULL DEFAULT 'Unknown' ,
+  `SubSystemID` INT NOT NULL ,
+  PRIMARY KEY (`SystemID`, `SubSystemID`) ,
+  INDEX `SubSystemID` (`SubSystemID` ASC) ,
+    FOREIGN KEY (`SubSystemID`) REFERENCES SubSystems(SubSystemID)) 
+    ENGINE=InnoDB;
 
--- ------------------------------------------------------------------------------
 
-DROP TABLE IF EXISTS AgentPersistentData;
-CREATE TABLE AgentPersistentData (
-  AgentID INTEGER NOT NULL AUTO_INCREMENT,
-  AgentName VARCHAR(64) NOT NULL DEFAULT 'unkwown',
-  AgentData VARCHAR(512),
-  PRIMARY KEY ( AgentID )
-);
+-- -----------------------------------------------------
+-- Table `FixedTextMessages`
+-- -----------------------------------------------------
+CREATE  TABLE IF NOT EXISTS `FixedTextMessages` (
+  `FixedTextID` INT NOT NULL AUTO_INCREMENT ,
+  `FixedTextString` VARCHAR(255) NOT NULL DEFAULT 'Unknown' ,
+  `ReviewedMessage` TINYINT(1) NOT NULL DEFAULT FALSE ,
+  `SystemID` INT NOT NULL ,
+  PRIMARY KEY (`FixedTextID`, `SystemID`) ,
+  INDEX `SystemID` (`SystemID` ASC) ,
+    FOREIGN KEY (`SystemID` ) REFERENCES Systems(`SystemID`) ) ENGINE=InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `MessageRepository`
+-- -----------------------------------------------------
+CREATE  TABLE IF NOT EXISTS `MessageRepository` (
+  `MessageID` INT NOT NULL AUTO_INCREMENT ,
+  `MessageTime` DATETIME NOT NULL ,
+  `VariableText` VARCHAR(255) NOT NULL ,
+  `UserDNID` INT NOT NULL ,
+  `ClientIPNumberID` INT NOT NULL ,
+  `LogLevel` VARCHAR(6) NOT NULL ,
+  `FixedTextID` INT NOT NULL ,
+  PRIMARY KEY (`MessageID`) ,
+  INDEX `TimeStampsIDX` (`MessageTime` ASC) ,
+  INDEX `FixTextIDX` (`FixedTextID` ASC) ,
+  INDEX `UserIDX` (`UserDNID` ASC) ,
+  INDEX `IPsIDX` (`ClientIPNumberID` ASC) ,
+    FOREIGN KEY (`UserDNID` ) REFERENCES UserDNs(`UserDNID` ) ,
+    FOREIGN KEY (`ClientIPNumberID` ) REFERENCES ClientIPs(`ClientIPNumberID` ), 
+    FOREIGN KEY (`FixedTextID` ) REFERENCES FixedTextMessages (`FixedTextID` ) )
+    ENGINE=InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `AgentPersistentData`
+-- -----------------------------------------------------
+CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
+  `AgentID` INT NOT NULL AUTO_INCREMENT ,
+  `AgentName` VARCHAR(64) NOT NULL DEFAULT 'unkwown' ,
+  `AgentData` VARCHAR(512) NULL DEFAULT NULL ,
+  PRIMARY KEY (`AgentID`) ) ENGINE=InnoDB;
