@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/SiteSEMapping.py,v 1.3 2009/09/09 14:58:08 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/SiteSEMapping.py,v 1.4 2009/09/16 17:33:57 acsmith Exp $
 # File :   SiteSEMapping.py
 ########################################################################
 
@@ -10,7 +10,7 @@
      Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
 """
 
-__RCSID__ = "$Id: SiteSEMapping.py,v 1.3 2009/09/09 14:58:08 acasajus Exp $"
+__RCSID__ = "$Id: SiteSEMapping.py,v 1.4 2009/09/16 17:33:57 acsmith Exp $"
 
 import string,re
 
@@ -146,4 +146,21 @@ def isSameSiteSE(se1,se2):
 
   return S_OK(False)
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+#############################################################################
+def getSEsForCountry(country):
+  """ Determines the associated SEs from the country code
+  """
+  mappedCountries = [country]
+  while True:
+    mappedCountry = gConfig.getValue('/Resources/Countries/%s/AssignedTo' % country, country)
+    if mappedCountry == country:
+      break
+    elif mappedCountry in mappedCountries:
+      return S_ERROR('Circular mapping detected for %s' % country)
+    else:
+      country = mappedCountry
+      mappedCountries.append(mappedCountry)
+  res = gConfig.getOptionsDict('/Resources/Countries/%s/AssociatedSEs' % country)
+  if not res['OK']:
+    return S_ERROR('Failed to obtain AssociatedSEs for %s' % country)
+  return S_OK(res['Value'].values())
