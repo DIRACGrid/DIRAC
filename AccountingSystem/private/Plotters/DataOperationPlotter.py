@@ -161,3 +161,28 @@ class DataOperationPlotter(BaseReporter):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ] }
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
+
+  def _reportDataTransfered( self, reportRequest ):
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'TransferSize'
+                                   ]
+                   )
+    retVal = self._getSummaryData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
+                                selectFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
+                                {} )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict = retVal[ 'Value' ]
+    for key in dataDict:
+      dataDict[ key ] = int( dataDict[ key ] )
+    return S_OK( { 'data' : dataDict  } )
+
+  def _plotDataTransfered( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Total data transfered by %s' % reportRequest[ 'grouping' ],
+                 'ylabel' : 'bytes'
+                }
+    return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )
+
