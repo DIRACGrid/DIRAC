@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElementFactory.py,v 1.4 2009/08/28 16:59:10 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElementFactory.py,v 1.5 2009/09/17 20:49:26 ffeldhau Exp $
 # File :   ComputingElementFactory.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement, getCEConfigDict
 from DIRAC                                               import S_OK, S_ERROR, gLogger, gConfig
 
-__RCSID__ = "$Id: ComputingElementFactory.py,v 1.4 2009/08/28 16:59:10 rgracian Exp $"
+__RCSID__ = "$Id: ComputingElementFactory.py,v 1.5 2009/09/17 20:49:26 ffeldhau Exp $"
 
 import sys,types
 
@@ -29,12 +29,14 @@ class ComputingElementFactory:
     """This method returns the CE instance corresponding to the supplied
        CEUniqueID.  If no corresponding CE is available, this is indicated.
     """
+    self.ceType = self.ceUniqueID
+    ceConfigDict = getCEConfigDict( self.ceUniqueID )
+    self.log.info('CEConfigDict',ceConfigDict)
+    if 'CEType' in ceConfigDict:
+      self.ceType = ceConfigDict['CEType']
+    subClassName = "%sComputingElement" % (self.ceType)
+
     try:
-      self.ceType = self.ceUniqueID
-      ceConfigDict = getCEConfigDict( self.ceUniqueID )
-      if 'CEType' in ceConfigDict:
-        self.ceType = ceConfigDict['CEType']
-      subClassName = "%sComputingElement" % (self.ceType)
       ceSubClass = __import__('DIRAC.Resources.Computing.%s' % subClassName,globals(),locals(),[subClassName])
     except Exception, x:
       msg = 'ComputingElementFactory could not import DIRAC.Resources.Computing.%s' % ( subClassName )
