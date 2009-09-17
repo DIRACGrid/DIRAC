@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.27 2009/08/31 13:06:22 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.28 2009/09/17 20:39:34 ffeldhau Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.27 2009/08/31 13:06:22 rgracian Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.28 2009/09/17 20:39:34 ffeldhau Exp $"
 
 import os, sys, tempfile, shutil, time, base64, bz2
 
@@ -28,7 +28,8 @@ ERROR_CE         = 'No CE available'
 ERROR_JDL        = 'Could not create Pilot script'
 ERROR_SCRIPT     = 'Could not copy Pilot script'
 
-COMPUTING_ELEMENTS = ['InProcess']
+#COMPUTING_ELEMENTS = ['InProcess']
+COMPUTING_ELEMENTS = []
 WAITING_TO_RUNNING_RATIO = 0.5
 MAX_WAITING_JOBS = 50
 MAX_NUMBER_JOBS = 10000
@@ -128,7 +129,6 @@ class DIRACPilotDirector(PilotDirector):
       - It creates a temp directory
       - It prepare a PilotScript
     """
-    computingElement = self.computingElement
 
     taskQueueID = taskQueueDict['TaskQueueID']
     ownerDN = taskQueueDict['OwnerDN']
@@ -168,60 +168,66 @@ class DIRACPilotDirector(PilotDirector):
     # set the Site Name
     pilotOptions.append( "-n '%s'" % self.siteName)
 
-    # add possible requirements from Site and CE
-    ceName = computingElement.name
-    for req, val in getResourceDict( ceName ).items():
-      pilotOptions.append( "-o '/AgentJobRequirements/%s=%s'" % ( req, val ) )
+    # submit pilots for every CE available
+    
+    for CE in self.computingElementDict.keys():
+      ceName = CE
+      computingElement = self.computingElementDict[CE]['CE']
+      
+      # add possible requirements from Site and CE
+      for req, val in getResourceDict( ceName ).items():
+        pilotOptions.append( "-o '/AgentJobRequirements/%s=%s'" % ( req, val ) )
+        
+        ceConfigDict = self.computingElementDict[CE]
 
+      if 'ClientPlatform' in ceConfigDict:
+        pilotOptions.append( "-p '%s'" % ceConfigDict['ClientPlatform'])
+  
+      if 'SharedArea' in ceConfigDict:
+        pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % ceConfigDict['SharedArea'] )
+  
+      if 'CPUScalingFactor' in ceConfigDict:
+        pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % ceConfigDict['CPUScalingFactor'] )
 
-    ceConfigDict = self.computingElementDict[computingElement.name]
+        self.log.info( "pilotOptions: ", ' '.join(pilotOptions))
 
-    if 'ClientPlatform' in ceConfigDict:
-      pilotOptions.append( "-p '%s'" % ceConfigDict['ClientPlatform'])
-
-    if 'SharedArea' in ceConfigDict:
-      pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % ceConfigDict['SharedArea'] )
-
-    if 'CPUScalingFactor' in ceConfigDict:
-      pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % ceConfigDict['CPUScalingFactor'] )
-
-    self.log.info( "pilotOptions: ", ' '.join(pilotOptions))
-
-    httpProxy = ''
-    if 'HttpProxy' in ceConfigDict:
-      httpProxy = ceConfigDict['HttpProxy']
-
-    try:
-      pilotScript = self._writePilotScript( workingDirectory, pilotOptions, proxy, httpProxy )
-    except:
-      self.log.exception( ERROR_SCRIPT )
+      httpProxy = ''
+      if 'HttpProxy' in ceConfigDict:
+        httpProxy = ceConfigDict['HttpProxy']
+  
       try:
-        os.chdir( baseDir )
-        shutil.rmtree( workingDirectory )
+        pilotScript = self._writePilotScript( workingDirectory, pilotOptions, proxy, httpProxy )
       except:
-        pass
-      return S_ERROR( ERROR_SCRIPT )
-
-    self.log.info("Pilots to submit: ", pilotsToSubmit)
-    while submittedPilots < pilotsToSubmit:
-      # Find out how many pilots can be submitted
-      ret = computingElement.available( )
-      if not ret['OK']:
-        self.log.error('Can not determine if pilot should be submitted: ', ret['Message'])
-        break
-      maxPilotsToSubmit = ret['Value']
-      self.log.info("Submit Pilots: ", maxPilotsToSubmit)
-      if not maxPilotsToSubmit:
-        break
-      # submit the pilots and then check again
-      for i in range( min(maxPilotsToSubmit,pilotsToSubmit-submittedPilots) ):
-        submission = computingElement.submitJob(pilotScript, '', '', '')
-        if not submission['OK']:
-          self.log.error('Pilot submission failed: ', submission['Message'])
+        self.log.exception( ERROR_SCRIPT )
+        try:
+          os.chdir( baseDir )
+          shutil.rmtree( workingDirectory )
+        except:
+          pass
+        return S_ERROR( ERROR_SCRIPT )
+  
+      self.log.info("Pilots to submit: ", pilotsToSubmit)
+      while submittedPilots < pilotsToSubmit:
+        # Find out how many pilots can be submitted
+        ret = computingElement.available( )
+        if not ret['OK']:
+          self.log.error('Can not determine if pilot should be submitted: ', ret['Message'])
           break
-        submittedPilots += 1
-        # let the batch system some time to digest the submitted job
-        time.sleep(1)
+        maxPilotsToSubmit = ret['Value']
+        self.log.info("Submit Pilots: ", maxPilotsToSubmit)
+        if not maxPilotsToSubmit:
+          break
+        # submit the pilots and then check again
+        for i in range( min(maxPilotsToSubmit,pilotsToSubmit-submittedPilots) ):
+          submission = computingElement.submitJob(pilotScript, '', '', '')
+          if not submission['OK']:
+            self.log.error('Pilot submission failed: ', submission['Message'])
+            break
+          submittedPilots += 1
+          # let the batch system some time to digest the submitted job
+          time.sleep(1)
+          
+      #next CE
 
     try:
       os.chdir( baseDir )
