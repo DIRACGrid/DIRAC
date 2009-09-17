@@ -262,6 +262,24 @@ class StorageUsageDB(DB):
       dirUsage.append((path,long(size),int(files)))
     return S_OK(dirUsage)
 
+  def getStorageDirectories(self,dir='',fileType='',production='',sites=[]):
+    """ Gets the storage directories found for the supplied selections
+    """
+    req = "SELECT DirectoryPath FROM Directory WHERE DirectoryPath LIKE '%s%s'" % (dir,'%')
+    if fileType:
+      req = "%s AND DirectoryPath LIKE '%s/%s%s'" % (req,'%',fileType,'%')
+    if production:
+      req = "%s AND DirectoryPath LIKE '%s/%s/%s'" % (req,'%',("%8.f" % int(production)).replace(' ','0'),'%')
+    req = "%s ORDER BY DirectoryPath DESC;" % req
+    err = "StorageUsageDB.getStorageDirectories: Failed to get storage directories."
+    res = self._query(req)
+    if not res['OK']:
+      return S_ERROR("%s %s" % (err, res['Message']))
+    dirs = []
+    for dir in res['Value']:
+      dirs.append(dir[0])
+    return S_OK(dirs)
+
   def getUserStorageUsage(self,username=''):
     """ Retrieves the storage usage for each of the known users
     """
