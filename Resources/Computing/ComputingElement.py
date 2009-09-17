@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.19 2009/08/31 16:35:31 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.20 2009/09/17 20:53:08 ffeldhau Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.19 2009/08/31 16:35:31 rgracian Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.20 2009/09/17 20:53:08 ffeldhau Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -207,7 +207,7 @@ class ComputingElement:
   def __getCEParameters(self,ceName):
     """Adds CE specific parameters to the resource ClassAd.
     """
-    section = '/Resources/Computing/%s' % (ceName)
+    section = '/LocalSite/%s' %(ceName)
     options = gConfig.getOptionsDict(section)
     if not options['OK']:
       self.log.warn(options['Message'])
