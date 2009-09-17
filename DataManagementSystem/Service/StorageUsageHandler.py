@@ -113,6 +113,23 @@ class StorageUsageHandler(RequestHandler):
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
 
+  types_getStorageDirectories = []
+  def export_getStorageDirectories(self,directory='',filetype='',production='',sites=[]):
+    """ Retieve the directories for the supplied selection
+    """
+    try:
+      gLogger.info("StorageUsageHandler.getStorageDirectories: Attempting to get directories.")
+      res = storageUsageDB.getStorageDirectories(directory,filetype,production,sites)
+      if res['OK']:
+        gLogger.info("StorageUsageHandler.getStorageDirectories: Successfully obtained directories.")
+      else:
+        gLogger.error("StorageUsageHandler.getStorageDirectories: Failed obtain directories.")
+      return res   
+    except Exception, x:
+      errStr = "StorageUsageHandler.getStorageDirectories: Exception while obtaining directories."
+      gLogger.exception(errStr,lException=x)
+      return S_ERROR(errStr)
+
   types_getStorageDirectorySummaryWeb = []
   def export_getStorageDirectorySummaryWeb(self, selectDict, sortList, startItem, maxItems):
     """ Get the summary of the directory storage summary
@@ -166,7 +183,7 @@ class StorageUsageHandler(RequestHandler):
     resultDict['ParameterNames'] = ['Directory Path','Size','Files']
     resultDict['Records'] = dirList[iniDir:lastDir]
     return S_OK(resultDict)
-
+  
   types_getStorageElementSelection = []
   def export_getStorageElementSelection(self):
     """ Retrieve the possible selections 
@@ -183,7 +200,7 @@ class StorageUsageHandler(RequestHandler):
       errStr = "StorageUsageHandler.getStorageElementSelection: Exception while obtaining usage."
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)        
-
+ 
   types_getUserStorageUsage = []
   def export_getUserStorageUsage(self,userName=''):
     """ Retieve a summary of the user usage
@@ -200,3 +217,4 @@ class StorageUsageHandler(RequestHandler):
       errStr = "StorageUsageHandler.getUserStorageUsage: Exception while obtaining usage."
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
+
