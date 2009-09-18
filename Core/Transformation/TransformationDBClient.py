@@ -14,20 +14,129 @@ class TransformationDBClient(FileCatalogueBase):
 
   #####################################################################
   #
-  # These are the transformation management methods
+  # These are transformation management methods
   #
   
   def getAllTransformations(self):
     server = RPCClient(self.server,timeout=120)
     return server.getAllTransformations()
 
-  def getBookkeepingQuery(self,bkQueryID):
+  def getTransformationWithStatus(self,status):
     server = RPCClient(self.server,timeout=120)
-    return server.getBookkeepingQuery(bkQueryID)
+    return server.getTransformationWithStatus(status)
+
+  def removeTransformation(self,transID):
+    server = RPCClient(self.server,timeout=120)
+    return server.removeTransformation(transID)
+
+  def setTransformationStatus(self,transID,status):
+    server = RPCClient(self.server,timeout=120)
+    return server.setTransformationStatus(transID,status)
+
+  def setTransformationAgentType(self,transID,type):
+    server = RPCClient(self.server,timeout=120)
+    return server.setTransformationAgentType(transID,type)
+
+  def setTransformationType(self,transID,type):
+    server = RPCClient(self.server,timeout=120)    
+    return server.setTransformationType(transID,type)
+
+  def setTransformationPlugin(self,transID,plugin):
+    server = RPCClient(self.server,timeout=120)
+    return server.setTransformationPlugin(transID,plugin)
+
+  def setTransformationMask(self,transID,mask):
+    server = RPCClient(self.server,timeout=120)
+    return server.setTransformationMask(transID,mask)
+  
+  def updateTransformation(self,transID):
+    server = RPCClient(self.server,timeout=120)
+    return server.updateTransformation(transID)
+
+  def addTransformationParameter(self,transID,paramname,paramvalue):
+    server = RPCClient(self.server,timeout=120)
+    return server.addTransformationParameter(transID,paramname,paramvalue)
+
+  def changeTransformationName(self,transID,name):
+    server = RPCClient(self.server,timeout=120)
+    return server.changeTransformationName(transID,name)
+
+  def getTransformation(self,transID):
+    server = RPCClient(self.server,timeout=120)
+    return server.getTransformation(transID)
+
+  def getTransformationLastUpdate(self,transID):
+    server = RPCClient(self.server,timeout=120)
+    return server.getTransformationLastUpdate(transID)
+
+  def getTransformationStats(self,transID):
+    server = RPCClient(self.server,timeout=120)
+    return server.getTransformationStats(transID)
+
+  def getTransformationLogging(self,transID):
+    server = RPCClient(self.server,timeout=120)
+    return server.getTransformationLogging(transID)
+
+  def getInputData(self,transID,status):
+    server = RPCClient(self.server,timeout=120)
+    return server.getInputData(transID,status)
+
+  def getTransformationLFNs(self,transID,status='Unused'):
+    server = RPCClient(self.server,timeout=120)
+    return server.getTransformationLFNs(transID,status)
+
+  def getFilesForTransformation(self,transID,orderByJobs=False):
+    server = RPCClient(self.server,timeout=120)
+    return server.getFilesForTransformation(transID,orderByJobs)
 
   def addLFNsToTransformation(self,lfns,transID):
     server = RPCClient(self.server,timeout=120)
     return server.addLFNsToTransformation(lfns,transID)
+
+  def setFileStatusForTransformation(self,transID,status,lfns):
+    server = RPCClient(self.server,timeout=120)
+    return server.setFileStatusForTransformation(transID,status,lfns)
+
+  def setFileSEForTransformation(self,transID,se,lfns):
+    server = RPCClient(self.server,timeout=120)
+    return server.setFileSEForTransformation(transID,se,lfns)
+
+  def resetFileStatusForTransformation(self,transID,lfns):
+    server = RPCClient(self.server,timeout=120)
+    return server.resetFileStatusForTransformation(transID,lfns)  
+
+  def setFileJobID(self,transID,jobID,lfns):
+    server = RPCClient(self.server,timeout=120)
+    return server.setFileJobID(transID,jobID,lfns)
+
+  def getFileSummary(self,transID,lfns):
+    server = RPCClient(self.server,timeout=120)
+    return server.getFileSummary(lfns,transID)
+  
+  #####################################################################
+  #
+  # These are the bk query manipulation methods
+  #
+
+  def addBookkeepingQuery(self,queryDict):
+    server = RPCClient(self.server,timeout=120)
+    return server.addBookkeepingQuery(queryDict)
+
+  def getBookkeepingQuery(self,bkQueryID):
+    server = RPCClient(self.server,timeout=120)
+    return server.getBookkeepingQuery(bkQueryID)
+
+  def setTransformationQuery(self,transID,queryID):
+    server = RPCClient(self.server,timeout=120)
+    return server.setTransformationQuery(transID,queryID)
+
+  def getBookkeepingQueryForTransformation(self,transID):
+    server = RPCClient(self.server,timeout=120)
+    return server.getBookkeepingQueryForTransformation(transID)
+
+  def deleteBookkeepingQuery(self,bkQueryID):
+    server = RPCClient(self.server,timeout=120)
+    return server.deleteBookkeepingQuery(bkQueryID)
 
   #####################################################################
   #
