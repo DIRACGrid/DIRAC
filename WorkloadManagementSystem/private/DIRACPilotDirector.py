@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.28 2009/09/17 20:39:34 ffeldhau Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.29 2009/09/18 14:53:52 acasajus Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.28 2009/09/17 20:39:34 ffeldhau Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.29 2009/09/18 14:53:52 acasajus Exp $"
 
 import os, sys, tempfile, shutil, time, base64, bz2
 
@@ -317,9 +317,13 @@ EOF
     #Assign VOMS attribute
     vomsAttr = CS.getVOMSAttributeForGroup( ownerGroup )
     if not vomsAttr:
-      return S_ERROR( "No voms attribute assigned to group %s" % ownerGroup )
-    return gProxyManager.downloadVOMSProxy( ownerDN,
-                                   ownerGroup,
-                                   limited = True,
-                                   requiredTimeLeft = requiredTimeLeft,
-                                   requiredVOMSAttribute = vomsAttr )
+      self.log.info( "Downloading a proxy without VOMS extensions" )
+      return gProxyManager.downloadProxy( ownerDN, ownerGroup, limited = True,
+                                          requiredTimeLeft = requiredTimeLeft )
+    else:
+      self.log.info( "Downloading a proxy with '%s' VOMS extension" % vomsAttr )
+      return gProxyManager.downloadVOMSProxy( ownerDN,
+                                     ownerGroup,
+                                     limited = True,
+                                     requiredTimeLeft = requiredTimeLeft,
+                                     requiredVOMSAttribute = vomsAttr )
