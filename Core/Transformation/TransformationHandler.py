@@ -97,6 +97,21 @@ class TransformationHandler(RequestHandler):
       res = self.database.updateTransformationLogging(transformationName,message,authorDN)
     return res
 
+  types_addTransformationParameters = []
+  def export_addTransformationParameters(self,transNameOrID,parameterDict):
+    authorDN = self._clientTransport.peerCredentials['DN']
+    failed = []
+    for paramName,paramValue in parameterDict.items():
+      result = self.database.addTransformationParameter(transNameOrID,paramName,paramValue)
+      if result['OK']:
+        message = 'Added parameter %s' % paramName
+        result = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
+      else:
+        failed.append(paramName)
+    if failed:
+      return S_ERROR("Failed to add parameters %s" % str(failed))
+    return S_OK()
+
   types_getTransformationLFNs = [[LongType, IntType, StringType]]
   def export_getTransformationLFNs(self,transName,status='Unused'):
     return self.database.getTransformationLFNs(transName,status)
