@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.92 2009/09/10 11:45:04 acsmith Exp $
+# $Id: TransformationDB.py,v 1.93 2009/09/18 15:32:59 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -682,29 +682,48 @@ class TransformationDB(DB):
       req = "UPDATE T_%s SET JobID='%s' WHERE FileID IN (%s);" % (transID,jobID,intListToString(fileIDs))
       return self._update(req)
 
-
   def deleteTransformation(self, transName):
     """ Remove the transformation specified by name or id
     """
     transID = self.getTransformationID(transName)
-    if self.transformationExists(transID) > 0:
-      req = "DELETE FROM Transformations WHERE TransformationID=%s;" % transID
-      res = self._update(req)
-      if not res['OK']:
-        return res
-      req = "DROP TABLE IF EXISTS T_%s;" % transID
-      res = self._update(req)
-      if not res['OK']:
-        return res
-      self.filters = self.__getFilters()
+    if not self.transformationExists(transID) > 0:
+      gLogger.warn("The transformation '%s' did not exist so could not delete" % transName)
       return S_OK()
-    else:
-      return S_ERROR("No Transformation with the id '%s' in the TransformationDB" % transID)
+    res = self._deleteTransformationFiles(transID)
+    if not res['OK']:
+      return res
+    res = self._deleteTransformationParameters(transID)
+    if not res['OK']:
+      return res
+    res = self._deleteTransformationLog(transID)
+    if not res['OK']:
+      return res
+    res = self._deleteTransformation(transID)
+    if not res['OK']:
+      return res
+    self.filters = self.__getFilters()
+    return S_OK()
 
   def _deleteTransformationFiles(self, transID):
     """ Remove the files associated to a transformation
     """  
     req = "DROP TABLE IF EXISTS T_%d;" % transID
+    return self._update(req)
+
+  def _deleteTransformationParameters(self, transID):
+    """ Remove the parameters associated to a transformation
+    """
+    req = "DELETE FROM TransformationParameters WHERE TransformationID=%s;" % transID
+    return self._update(req)
+
+  def _deleteTransformationLog(self,transID):
+    """ Remove the entries in the transformation log for a transformation
+    """
+    req = "DELETE FROM TransformationLog WHERE TransformationID=%s;" % transID
+    return self._update(req)
+
+  def _deleteTransformation(self,transID):
+    req = "DELETE FROM Transformations WHERE TransformationID=%s;" % transID
     return self._update(req)
 
   def getTransformationLastUpdate(self,transName):
@@ -957,7 +976,6 @@ PRIMARY KEY (FileID)
   def updateTransformation(self,transName):
     """ Update the transformation w.r.t files registered already
     """
-
     transID = self.getTransformationID(transName)
     result = self.__addExistingFiles(transID)
     return result
