@@ -1,5 +1,9 @@
-""" Base class for the TransformationDBClient for access file catalog tables
+""" Class that contains client access to the transformation DB handler.
 """
+########################################################################
+# $Id: TransformationDBClient.py,v 1.10 2009/09/18 13:58:25 acsmith Exp $
+########################################################################
+
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Client.Catalog.FileCatalogueBase import FileCatalogueBase
 from DIRAC.Core.Utilities.List import breakListIntoChunks
