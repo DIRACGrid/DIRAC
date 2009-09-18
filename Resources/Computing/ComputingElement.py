@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.20 2009/09/17 20:53:08 ffeldhau Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.21 2009/09/18 08:58:09 rgracian Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.20 2009/09/17 20:53:08 ffeldhau Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.21 2009/09/18 08:58:09 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -297,8 +297,8 @@ class ComputingElement:
     waitingToRunningRatio = self.__getParameters('WaitingToRunningRatio')['Value']
     # if there are no Running job we can submit to get at most 'MaxWaitingJobs'
     # if there are Running jobs we can increase this to get a ratio W / R 'WaitingToRunningRatio'
-    maxWaitingJobs = max( self.__getParameters('MaxWaitingJobs')['Value'],
-                          runningJobs * waitingToRunningRatio )
+    maxWaitingJobs = int( max( self.__getParameters('MaxWaitingJobs')['Value'],
+                               runningJobs * waitingToRunningRatio ) )
 
     self.log.verbose('Max Number of Jobs:', maxTotalJobs )
     self.log.verbose('Max W/R Ratio:', waitingToRunningRatio )
