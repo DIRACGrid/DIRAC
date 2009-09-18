@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.59 2009/09/04 16:38:35 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot,v 1.60 2009/09/18 15:07:25 acasajus Exp $
 # File :   dirac-pilot
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
  Job Agent to execute pending workload on WMS.
  It requires dirac-install script to be sitting in the same directory.
 """
-__RCSID__ = "$Id: dirac-pilot,v 1.59 2009/09/04 16:38:35 acasajus Exp $"
+__RCSID__ = "$Id: dirac-pilot,v 1.60 2009/09/18 15:07:25 acasajus Exp $"
 try:
   import os
   import sys
@@ -28,6 +28,7 @@ try:
   debugFlag = False
   localFlag = False
   testFlag  = False
+  testVOMSOK = False
   defaultSite = 'LCG.CERN.ch'
   localPlatform = False
   minDiskSpace  = 2560 # MB
@@ -416,10 +417,11 @@ os.environ['PATH'] = '%s:%s' % (myBin,os.getenv('PATH'))
 # Preamble
 dirac.logINFO( 'Starting %s' % __RCSID__ )
 ret = os.system('dirac-proxy-info')
-ret = os.system('dirac-proxy-info | grep -q fqan')
-if ret != 0:
-  os.system('dirac-proxy-info 2>&1 | mail -s "dirac-pilot: missing voms certs at %s" dirac.alarms@gmail.com' % LCG_SITE_CE )
-  sys.exit(-1)
+if testVOMSOK:
+  ret = os.system('dirac-proxy-info | grep -q fqan')
+  if ret != 0:
+    os.system('dirac-proxy-info 2>&1 | mail -s "dirac-pilot: missing voms certs at %s" dirac.alarms@gmail.com' % LCG_SITE_CE )
+    sys.exit(-1)
 os.environ['CMTCONFIG'] = dirac.lhcb_platform
 dirac.logINFO( 'Setting CMTCONFIG=%s' % dirac.lhcb_platform )
 
