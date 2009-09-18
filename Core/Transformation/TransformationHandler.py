@@ -15,6 +15,18 @@ class TransformationHandler(RequestHandler):
     res = self.database.getName()
     return res
 
+  types_publishTransformation = [ StringType, StringType, StringType, StringType, IntType, BooleanType, DictType, StringType, StringType, StringType ]
+  def export_publishTransformation( self,transName,description,longDescription,fileMask='',groupsize=0,update=False,bkQuery = {},plugin='',transGroup='',transType=''):
+    """ Publish new transformation in the TransformationDB
+    """
+    authorDN = self._clientTransport.peerCredentials['DN']
+    authorGroup = self._clientTransport.peerCredentials['group']
+    res = self.database.addTransformation(transName,description,longDescription,authorDN,authorGroup,transType,plugin,'TransformationAgent',fileMask,bkQuery,transGroup)
+    if res['OK']:
+      message = 'Transformation created'
+      res = self.database.updateTransformationLogging(transName,message,authorDN)
+    return res
+
   types_removeTransformation = [[LongType, IntType, StringType]]
   def export_removeTransformation(self,transNameOrID):
     return self.database.deleteTransformation(transNameOrID)
