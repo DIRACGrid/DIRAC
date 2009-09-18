@@ -17,12 +17,7 @@ class TransformationHandler(RequestHandler):
 
   types_removeTransformation = [[LongType, IntType, StringType]]
   def export_removeTransformation(self,transNameOrID):
-    result = self.database.removeTransformation(transNameOrID)
-    if result['OK']:
-      authorDN = self._clientTransport.peerCredentials['DN']
-      message = 'Removed'
-      result = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
-    return result
+    return self.database.deleteTransformation(transNameOrID)
 
   types_setTransformationStatus = [[LongType, IntType, StringType],StringType]
   def export_setTransformationStatus(self,transNameOrID,status):
