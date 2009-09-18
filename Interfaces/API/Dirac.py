@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.108 2009/09/16 15:19:36 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.109 2009/09/18 10:08:50 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.108 2009/09/16 15:19:36 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.109 2009/09/18 10:08:50 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -972,7 +972,8 @@ class Dirac:
       return self.__errorReport('Expected single string or list of strings for LFN(s)')
 
     start = time.time()
-    repsResult = self.fileCatalog.getActiveReplicas(lfns)
+    rm = ReplicaManager()
+    repsResult = rm.getActiveReplicas(lfns)
     timing = time.time() - start
     self.log.info('Replica Lookup Time: %.2f seconds ' % (timing) )
     self.log.verbose(repsResult)
