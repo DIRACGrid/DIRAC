@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.93 2009/09/18 15:32:59 acsmith Exp $
+# $Id: TransformationDB.py,v 1.94 2009/09/18 16:48:46 acsmith Exp $
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -9,7 +9,7 @@
     databases
 """
 
-__RCSID__ = "$Id: "
+__RCSID__ = "$Id: TransformationDB.py,v 1.94 2009/09/18 16:48:46 acsmith Exp $"
 
 import re,time,types
 
@@ -277,7 +277,7 @@ class TransformationDB(DB):
 
   def getTransformation(self,transName):
     """Get Transformation definition
-       Get the parameters of Transformation idendified by production ID
+       Get the parameters of Transformation idendified by TransformationID
     """
     transID = self.getTransformationID(transName)
     if transID > 0:
@@ -315,8 +315,7 @@ class TransformationDB(DB):
     return S_ERROR('Transformation with id =%d not found'%transID)
 
   def getTransformations(self,transList):
-    """ Get Transformation attributes for Transformations identified by production ID
-        in the given list
+    """ Get Transformation attributes for Transformations identified by transformation ID in the given list
     """
 
     transString = ','.join([str(x) for x in transList])
@@ -387,8 +386,7 @@ class TransformationDB(DB):
     return S_OK(translist)
 
   def setTransformationMask(self,transName,fileMask):
-    """ Modify the input stream definition for the given transformation
-        identified by production
+    """ Modify the input stream definition for the given transformation identified by transformation
     """
     transID = self.getTransformationID(transName)
     req = "UPDATE Transformations SET FileMask='%s' WHERE TransformationID=%s" % (fileMask,transID)
@@ -531,7 +529,7 @@ class TransformationDB(DB):
     resultDict = {}
     fileIDs = self.__getFileIDsForLfns(lfns)
     if not fileIDs:
-      return S_ERROR('Files not found in the Production Database')
+      return S_ERROR('Files not found in the Transformation Database')
 
     failedDict = {}
     for lfn in lfns:
@@ -626,7 +624,7 @@ class TransformationDB(DB):
     successful = {}
     failed = {}
     for lfn in result['Value']['Failed'].keys():
-      failed[lfn] = 'File not found in the Production Database'
+      failed[lfn] = 'File not found in the Transformation Database'
     lfnDict = result['Value']['Successful']
     fileIDs = []
     for lfn in lfnDict.keys():
@@ -727,7 +725,7 @@ class TransformationDB(DB):
     return self._update(req)
 
   def getTransformationLastUpdate(self,transName):
-    """ Get the last update from the TransformationLog table for the production """
+    """ Get the last update from the TransformationLog table for the transformation """
     transID = self.getTransformationID(transName)
     req = "SELECT MessageDate FROM TransformationLog WHERE TransformationID=%d ORDER BY MessageDate DESC LIMIT 1;" % transID 
     res = self._query(req)
