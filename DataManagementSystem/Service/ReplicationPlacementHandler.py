@@ -38,13 +38,3 @@ class ReplicationPlacementHandler(TransformationHandler):
       errStr = "ReplicationPlacementHandler.publishTransformation: Exception while adding transformation."
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
-
-  types_addTransformationParameters = []
-  def export_addTransformationParameters(self,transNameOrID,parameterDict):
-    authorDN = self._clientTransport.peerCredentials['DN']
-    for paramName,paramValue in parameterDict.items():
-      result = self.database.addTransformationParameter(transNameOrID,paramName,paramValue)
-      if result['OK']:
-        message = 'Added parameter %s' % paramName
-        result = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
-    return result
