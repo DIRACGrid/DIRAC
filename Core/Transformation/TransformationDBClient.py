@@ -1,7 +1,7 @@
 """ Class that contains client access to the transformation DB handler.
 """
 ########################################################################
-# $Id: TransformationDBClient.py,v 1.10 2009/09/18 13:58:25 acsmith Exp $
+# $Id: TransformationDBClient.py,v 1.11 2009/09/18 17:21:05 acsmith Exp $
 ########################################################################
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
@@ -20,6 +20,10 @@ class TransformationDBClient(FileCatalogueBase):
   #
   # These are transformation management methods
   #
+
+  def publishTransformation(self,transName,description,longDescription,fileMask='',groupsize=0,update=False,bkQuery = {},plugin='',transGroup='',transType=''):
+    server = RPCClient(self.server,timeout=120)
+    return server.publishTransformation(transName,description,longDescription,fileMask,groupsize,update,bkQuery,plugin,transGroup,transType)
   
   def getAllTransformations(self):
     server = RPCClient(self.server,timeout=120)
@@ -60,6 +64,10 @@ class TransformationDBClient(FileCatalogueBase):
   def addTransformationParameter(self,transID,paramname,paramvalue):
     server = RPCClient(self.server,timeout=120)
     return server.addTransformationParameter(transID,paramname,paramvalue)
+
+  def addTransformationParameters(self,transID,paramDict):
+    server = RPCClient(self.server,timeout=120)
+    return server.addTransformationParameters(transID,paramDict)
 
   def changeTransformationName(self,transID,name):
     server = RPCClient(self.server,timeout=120)
