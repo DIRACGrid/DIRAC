@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/WMSHistory.py,v 1.7 2009/09/18 10:24:32 acasajus Exp $
-__RCSID__ = "$Id: WMSHistory.py,v 1.7 2009/09/18 10:24:32 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/WMSHistory.py,v 1.8 2009/09/21 16:52:57 acasajus Exp $
+__RCSID__ = "$Id: WMSHistory.py,v 1.8 2009/09/21 16:52:57 acasajus Exp $"
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 
@@ -20,7 +20,8 @@ class WMSHistory( BaseAccountingType ):
                                         ( 'Reschedules', "INT" ),
                                       ]
     self.bucketsLength = [ ( 86400*2, 900 ), #<2d = 15m
-                           ( 432000, 3600 ), #<5d = 1h
+                           ( 86400*8, 3600 ), #<8d = 1h
+                           ( 86400*35, 3600 ), #<35d = 6h
                            ( 15552000, 86400 ), #>5d <6m = 1d
                            ( 31104000, 604800 ), #>6m = 1w
                          ]
