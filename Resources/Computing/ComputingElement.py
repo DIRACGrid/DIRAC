@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.22 2009/09/23 08:42:46 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.23 2009/09/23 17:54:17 atsareg Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.22 2009/09/23 08:42:46 rgracian Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.23 2009/09/23 17:54:17 atsareg Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -40,8 +40,8 @@ class ComputingElement:
     self.percentageRatio = 0.3
 
     self.__getCEParameters('/Resources/Computing/CEDefaults') #can be overwritten by other sections
-    self.__getCEParameters('/Resources/Computing/%s' % ceName )
-    result = self.__getCEParameters('/LocalSite/%s' % ceName )
+    result = self.__getCEParameters('/Resources/Computing/%s' % ceName )
+    #result = self.__getCEParameters('/LocalSite/%s' % ceName )
     if not result['OK']:
       self.log.warn(result['Message'])
     result = self.__getSiteParameters()
