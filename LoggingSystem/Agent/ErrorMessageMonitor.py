@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/ErrorMessageMonitor.py,v 1.5 2009/09/03 15:41:19 vfernand Exp $
-__RCSID__ = "$Id: ErrorMessageMonitor.py,v 1.5 2009/09/03 15:41:19 vfernand Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/ErrorMessageMonitor.py,v 1.6 2009/09/23 14:59:52 vfernand Exp $
+__RCSID__ = "$Id: ErrorMessageMonitor.py,v 1.6 2009/09/23 14:59:52 vfernand Exp $"
 """  ErrorMessageMonitor gets new errors that have been injected into the
      SystemLoggingDB and reports them by mail to the person(s) in charge
      of checking that they conform with DIRAC style. Reviewer option
@@ -7,7 +7,7 @@ __RCSID__ = "$Id: ErrorMessageMonitor.py,v 1.5 2009/09/03 15:41:19 vfernand Exp 
 """
 
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC  import S_OK, S_ERROR, gConfig
+from DIRAC  import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.LoggingSystem.DB.SystemLoggingDB import SystemLoggingDB
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
@@ -22,11 +22,10 @@ class ErrorMessageMonitor(AgentModule):
  
     self.SystemLoggingDB = SystemLoggingDB()
 
-    self.section=getAgentSection( AGENT_NAME )
-
     self.notification=NotificationClient()
+        
+    userString = self.am_getOption("Reviewer", 'mseco')
     
-    userString = gConfig.getValue( self.section+"/Reviewer", 'mseco' )
     self.log.debug("Users to be notified",": "+userString)
    
     userList = List.fromChar( userString, ",")
