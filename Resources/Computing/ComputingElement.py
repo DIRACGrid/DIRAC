@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.21 2009/09/18 08:58:09 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.22 2009/09/23 08:42:46 rgracian Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.21 2009/09/18 08:58:09 rgracian Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.22 2009/09/23 08:42:46 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -39,8 +39,9 @@ class ComputingElement:
 
     self.percentageRatio = 0.3
 
-    self.__getCEParameters('CEDefaults') #can be overwritten by other sections
-    result = self.__getCEParameters(ceName)
+    self.__getCEParameters('/Resources/Computing/CEDefaults') #can be overwritten by other sections
+    self.__getCEParameters('/Resources/Computing/%s' % ceName )
+    result = self.__getCEParameters('/LocalSite/%s' % ceName )
     if not result['OK']:
       self.log.warn(result['Message'])
     result = self.__getSiteParameters()
@@ -204,10 +205,10 @@ class ComputingElement:
     return S_OK()
 
   #############################################################################
-  def __getCEParameters(self,ceName):
+  def __getCEParameters(self,cfgName):
     """Adds CE specific parameters to the resource ClassAd.
     """
-    section = '/LocalSite/%s' %(ceName)
+    section = cfgName
     options = gConfig.getOptionsDict(section)
     if not options['OK']:
       self.log.warn(options['Message'])
