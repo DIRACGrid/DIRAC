@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.38 2009/09/16 15:15:04 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.39 2009/09/23 10:23:57 atsareg Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,14 +10,14 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.38 2009/09/16 15:15:04 paterson Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.39 2009/09/23 10:23:57 atsareg Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSitesForSE
 from DIRAC.Core.Utilities.Shifter                          import setupShifterProxyInEnv
 from DIRAC                                                 import gConfig, S_OK, S_ERROR
-
+from DIRAC.DataManagementSystem.Client.ReplicaManager      import ReplicaManager
 import os, re, time, string
 
 class InputDataAgent(OptimizerModule):
@@ -43,6 +43,7 @@ class InputDataAgent(OptimizerModule):
       self.log.fatal(msg,str(x))
       return S_ERROR(msg+str(x))
 
+    self.rm = ReplicaManager()
     self.SEToSiteMapping = {}
     self.lastCScheck = 0
     self.cacheLength = 600
@@ -83,7 +84,7 @@ class InputDataAgent(OptimizerModule):
     """
     lfns = [string.replace(fname,'LFN:','') for fname in inputData]
     start = time.time()
-    replicas = self.fileCatalog.getActiveReplicas(lfns)
+    replicas = self.rm.getActiveReplicas(lfns)
     timing = time.time() - start
     self.log.info('LFC Replicas Lookup Time: %.2f seconds ' % (timing) )
     if not replicas['OK']:
