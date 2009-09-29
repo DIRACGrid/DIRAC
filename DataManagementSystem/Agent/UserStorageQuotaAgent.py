@@ -1,7 +1,7 @@
 """  UserStorageQuotaAgent obtains the usage by each user from the StorageUsageDB and compares with a quota present in the CS.
 """
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/UserStorageQuotaAgent.py,v 1.10 2009/09/29 13:01:15 acsmith Exp $
-__RCSID__ = "$Id: UserStorageQuotaAgent.py,v 1.10 2009/09/29 13:01:15 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/UserStorageQuotaAgent.py,v 1.11 2009/09/29 13:19:50 acsmith Exp $
+__RCSID__ = "$Id: UserStorageQuotaAgent.py,v 1.11 2009/09/29 13:19:50 acsmith Exp $"
 
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -26,7 +26,7 @@ class UserStorageQuotaAgent(AgentModule):
       self.StorageUsageDB = RPCClient('DataManagement/StorageUsage')
     self.am_setModuleParam("shifterProxy", "DataManager")
     self.am_setModuleParam("shifterProxyLocation","%s/runit/%s/proxy" % (rootPath,AGENT_NAME))
-    self.defaultQuota = gConfig.getValue('/Security/DefaultQuota',1000) # Default is 1TB
+    self.defaultQuota = gConfig.getValue('/Security/DefaultStorageQuota',1000) # Default is 1TB
     gLogger.info("initialize: Default quota found to be %d GB" % self.defaultQuota)
     return S_OK()
 
