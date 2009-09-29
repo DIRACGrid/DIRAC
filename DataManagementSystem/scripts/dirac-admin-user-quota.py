@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-admin-user-quota.py,v 1.1 2009/09/29 13:54:07 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-admin-user-quota.py,v 1.2 2009/09/29 13:57:44 acsmith Exp $
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-user-quota.py,v 1.1 2009/09/29 13:54:07 acsmith Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-admin-user-quota.py,v 1.2 2009/09/29 13:57:44 acsmith Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 import DIRAC
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
@@ -31,7 +31,7 @@ if not users:
   users = res['Value']
 
 gLogger.info("-"*30)
-gLogger.info("%s|%s" % ('Username'.ljust(15),'Quota (MB)'.rjust(15)))
+gLogger.info("%s|%s" % ('Username'.ljust(15),'Quota (GB)'.rjust(15)))
 gLogger.info("-"*30)
 for user in sortList(users):
   quota = gConfig.getValue('/Security/Users/%s/Quota' % user,0)
