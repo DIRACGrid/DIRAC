@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/PilotDirector.py,v 1.7 2009/09/04 16:31:00 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/PilotDirector.py,v 1.8 2009/09/29 13:09:44 rgracian Exp $
 # File :   PilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -15,7 +15,7 @@
   This means that DIRAC direct submission to Grid CE's (CREAM, ...) will be handled by DIRAC Pilot
   Director making use of a DIRAC CREAM Computing Element class
 """
-__RCSID__ = "$Id: PilotDirector.py,v 1.7 2009/09/04 16:31:00 acasajus Exp $"
+__RCSID__ = "$Id: PilotDirector.py,v 1.8 2009/09/29 13:09:44 rgracian Exp $"
 
 
 import os, time, tempfile, shutil, re, random
@@ -88,6 +88,7 @@ class PilotDirector:
       self.log = gLogger.getSubLogger( '%sPilotDirector/%s' % (self.gridMiddleware, submitPool ) )
 
     self.pilot              = DIRAC_PILOT
+    self.extraPilotOptions  = []
     self.diracVersion       = DIRAC_VERSION
     self.install            = DIRAC_INSTALL
     self.maxJobsInFillMode  = MAX_JOBS_IN_FILLMODE
@@ -124,6 +125,8 @@ class PilotDirector:
     self.log.info( ' Install script: ', self.install )
     self.log.info( ' Pilot script:   ', self.pilot )
     self.log.info( ' DIRAC Version:  ', self.diracVersion )
+    if self.extraPilotOptions:
+      self.log.info( ' Exta Options:   ', ' '.join( self.extraPilotOptions ) )
     self.log.info( ' ListMatch:      ', self.enableListMatch )
     self.log.info( ' Private %:      ', self.privatePilotFraction * 100 )
     if self.enableListMatch:
@@ -148,8 +151,9 @@ class PilotDirector:
     """
     self.pilot                = gConfig.getValue( mySection+'/PilotScript'          , self.pilot )
     self.diracVersion         = gConfig.getValue( mySection+'/DIRACVersion'         , self.diracVersion )
+    self.extraPilotOptions    = gConfig.getValue( mySection+'/ExtraPilotOptions'    , self.extraPilotOptions )
     self.install              = gConfig.getValue( mySection+'/InstallScript'        , self.install )
-    self.maxJobsInFillMode    = gConfig.getValue( mySection+'/MaxJobsInFillMode'        , self.maxJobsInFillMode )
+    self.maxJobsInFillMode    = gConfig.getValue( mySection+'/MaxJobsInFillMode'    , self.maxJobsInFillMode )
 
     self.enableListMatch      = gConfig.getValue( mySection+'/EnableListMatch'      , self.enableListMatch )
     self.listMatchDelay       = gConfig.getValue( mySection+'/ListMatchDelay'       , self.listMatchDelay )
@@ -275,6 +279,9 @@ class PilotDirector:
     pilotOptions.append( '-T %s' % taskQueueDict['CPUTime'] )
     # Setup.
     pilotOptions.append( '-o /DIRAC/Setup=%s' % taskQueueDict['Setup'] )
+    
+    if self.extraPilotOptions:
+      pilotOptions.extend( self.extraPilotOptions )
 
     return S_OK( (pilotOptions, pilotsToSubmit, ownerDN, ownerGroup, submitPrivatePilot, privateTQ) )
 
