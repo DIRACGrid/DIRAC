@@ -1,38 +1,43 @@
 #!/usr/bin/env python
-from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine()
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-remove-files.py,v 1.2 2009/08/31 16:22:56 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-remove-files.py,v 1.3 2009/09/29 15:27:45 acsmith Exp $
 ########################################################################
-__RCSID__   = "$Id: dirac-dms-remove-files.py,v 1.2 2009/08/31 16:22:56 acsmith Exp $"
-__VERSION__ = "$ $"
+__RCSID__   = "$Id: dirac-dms-remove-files.py,v 1.3 2009/09/29 15:27:45 acsmith Exp $"
+__VERSION__ = "$Revision: 1.3 $"
+import sys,os
+import DIRAC
+from DIRAC import gLogger
+from DIRAC.Core.Base import Script
+Script.parseCommandLine()
+args = Script.getPositionalArgs()
+lfns = []
+for inputFileName in args:
+  if os.path.exists(inputFileName):
+    inputFile = open(inputFileName,'r')
+    string = inputFile.read()
+    inputFile.close()
+    lfns.extend(string.splitlines())
+  else:
+    lfns.append(inputFileName)
 
 from DIRAC.Core.Utilities.List import sortList,breakListIntoChunks
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 rm = ReplicaManager()
-import os,sys
 
-if len(sys.argv) < 2:
-  print 'Usage: ./dirac-dms-remove-replicas.py <LFN | fileContainingLFNs>'
-  sys.exit()
-else:
-  inputFileName = sys.argv[1]
-
-if os.path.exists(inputFileName):
-  inputFile = open(inputFileName,'r')
-  string = inputFile.read()
-  lfns = string.splitlines()
-  inputFile.close()
-else:
-  lfns = [inputFileName]
-
+errorReasons = {}
+successfullyRemoved = 0
 for lfnList in breakListIntoChunks(lfns,100):
   res = rm.removeFile(lfnList)
   if not res['OK']:
-    print res['Message']
-    sys.exit()
-  for lfn in sortList(res['Value']['Successful'].keys()):
-    print 'Successfully removed %s' % (lfn)
-  for lfn in sortList(res['Value']['Failed'].keys()):
-    message = res['Value']['Failed'][lfn]
-    print 'Failed to remove %s: %s' % (lfn,message)
+    gLogger.error("Failed to remove data",res['Message'])
+    DIRAC.exit(-2)
+  for lfn,reason in res['Value']['Failed'].items():
+    if not reason in errorReasons.keys():
+      errorReasons[reason] = []
+    errorReasons[reason].append(lfn)
+  successfullyRemoved+=len(res['Value']['Successful'].keys())
+
+for reason,lfns in errorReasons.keys():
+  gLogger.info("Failed to remove %d files with error: %s" % (len(lfns),reason))
+gLogger.info("Successfully removed %d files" % successfullyRemoved)
+DIRAC.exit(0)
