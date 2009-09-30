@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.55 2009/09/16 10:26:17 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.py,v 1.56 2009/09/30 10:47:19 paterson Exp $
 ########################################################################
 """ PilotAgentsDB class is a front-end to the Pilot Agent Database.
     This database keeps track of all the submitted grid pilot jobs.
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: PilotAgentsDB.py,v 1.55 2009/09/16 10:26:17 atsareg Exp $"
+__RCSID__ = "$Id: PilotAgentsDB.py,v 1.56 2009/09/30 10:47:19 paterson Exp $"
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -638,9 +638,9 @@ class PilotAgentsDB(DB):
       req = "SELECT DestinationSite,count(DestinationSite) FROM PilotAgents " + \
             "WHERE Status='%s' " % st
       if startdate:
-        req = req + " AND SubmissionDate >= '%s'" % startdate
+        req = req + " AND SubmissionTime >= '%s'" % startdate
       if enddate:
-        req = req + " AND SubmissionDate <= '%s'" % enddate
+        req = req + " AND SubmissionTime <= '%s'" % enddate
 
       req = req + " GROUP BY DestinationSite"
       result = self._query(req)
@@ -988,11 +988,11 @@ class PilotAgentsDB(DB):
 ##########################################################################################
   def getPilotMonitorSelectors(self):
     """ Get distinct values for the Pilot Monitor page selectors
-    """  
+    """
 
     paramNames = ['OwnerDN','OwnerGroup','GridType','Broker',
                   'Status','DestinationSite','GridSite']
-    
+
     resultDict = {}
     for param in paramNames:
       result = self.getDistinctAttributeValues('PilotAgents',param)
@@ -1008,7 +1008,7 @@ class PilotAgentsDB(DB):
           if resultUser['OK']:
             userList.append(resultUser['Value'])
         resultDict["Owner"] = userList
-          
+
     return S_OK(resultDict)
 
 ##########################################################################################
@@ -1041,7 +1041,7 @@ class PilotAgentsDB(DB):
         del selectDict['LastUpdateTime']
     endDate = selectDict.get('ToDate',None)
     if endDate:
-      del selectDict['ToDate']    
+      del selectDict['ToDate']
 
     # Sorting instructions. Only one for the moment.
     if sortList:
