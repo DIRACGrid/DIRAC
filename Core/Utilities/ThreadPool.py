@@ -1,8 +1,8 @@
 #################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.12 2009/02/18 14:20:24 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.13 2009/10/01 12:26:51 acasajus Exp $
 #################################################################
 
-__RCSID__ = "$Id: ThreadPool.py,v 1.12 2009/02/18 14:20:24 acasajus Exp $"
+__RCSID__ = "$Id: ThreadPool.py,v 1.13 2009/10/01 12:26:51 acasajus Exp $"
 
 import time
 import sys
@@ -58,7 +58,7 @@ class ThreadedJob:
     self.__jobKwArgs = kwargs or {}
     self.__tjID = sTJId
     self.__resultCallback = oCallback
-    self.__exceptionCallback = oExceptionCallback or self.__showException
+    self.__exceptionCallback = oExceptionCallback
     self.__done = False
     self.__exceptionRaised = False
 
@@ -88,8 +88,12 @@ class ThreadedJob:
     try:
       self.__jobResult = self.__jobFunction( *self.__jobArgs, **self.__jobKwArgs)
     except:
-      self.__exceptionRaised = True
-      self.__jobException = sys.exc_info()
+      if not self.__exceptionCallback:
+        if gLogger:
+          gLogger.exception( "Exception in thread" )
+      else:
+        self.__exceptionRaised = True
+        self.__jobException = sys.exc_info()
 
 class ThreadPool( threading.Thread ):
 
