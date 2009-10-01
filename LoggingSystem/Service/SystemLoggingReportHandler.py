@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.16 2009/04/18 18:26:59 rgracian Exp $
-__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.16 2009/04/18 18:26:59 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.17 2009/10/01 21:25:31 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.17 2009/10/01 21:25:31 mseco Exp $"
 """
 SystemLoggingReportHandler allows a remote system to access the contest
 of the SystemLoggingDB
@@ -30,7 +30,7 @@ def initializeSystemLoggingReportHandler( serviceInfo ):
 
 
 class SystemLoggingReportHandler( RequestHandler ):
-  
+
   types_getMessages=[]
 
   def __getMessages( self, selectionDict = {}, sortList = [], 
@@ -38,7 +38,7 @@ class SystemLoggingReportHandler( RequestHandler ):
     """
     """
     from re import search
-    
+
     if selectionDict.has_key('convertDates'):
       convertDatesToStrings = selectionDict['convertDates']
       del selectionDict['convertDates']
@@ -55,9 +55,6 @@ class SystemLoggingReportHandler( RequestHandler ):
       del selectionDict['count']
     else:
       countMessages = True
-
-    if not ( selectionDict.has_key( 'LogLevel' ) and selectionDict['LogLevel'] ):
-      selectionDict['LogLevel'] = [ 'ERROR', 'EXCEPT', 'FATAL' ]
 
     if selectionDict.has_key( 'beginDate' ):
       beginDate = selectionDict['beginDate']
@@ -79,21 +76,27 @@ class SystemLoggingReportHandler( RequestHandler ):
         groupField = selectionDict.keys()[0]
       del selectionDict['groupField']
     elif countMessages:
-      if selectionDict.has_key('FixedTextString'):
-        groupField = 'FixedTextString'
-      else:
+      if selectionDict:
         groupField = selectionDict.keys()[0]
+      elif sortList:
+        groupField = sortList[0][0]
+      else:
+        groupField = 'FixedTextString'       
     else:
       groupField = None
       
     if selectionDict:
       fieldList = selectionDict.keys()
       fieldList.append( dateField )
+      if not ( selectionDict.has_key( 'LogLevel' ) and 
+               selectionDict['LogLevel'] ):
+        selectionDict['LogLevel'] = [ 'ERROR', 'EXCEPT', 'FATAL' ]
     else:
       fieldList = [ dateField, 'LogLevel', 'FixedTextString',
                     'VariableText', 'SystemName', 'SubSystemName',
                     'OwnerDN', 'OwnerGroup', 'ClientIPNumberString',
                     'SiteName' ]
+      selectionDict['LogLevel'] = [ 'ERROR', 'EXCEPT', 'FATAL' ]
 
     result = LogDB._queryDB( showFieldList = fieldList, condDict = selectionDict, 
                              older = endDate, newer = beginDate, 
