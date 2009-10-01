@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.63 2009/08/03 08:21:51 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.64 2009/10/01 12:21:42 paterson Exp $
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -30,7 +30,10 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-__RCSID__ = "$Id: Job.py,v 1.63 2009/08/03 08:21:51 paterson Exp $"
+from DIRAC.Core.Base import Script
+Script.parseCommandLine()
+
+__RCSID__ = "$Id: Job.py,v 1.64 2009/10/01 12:21:42 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 
