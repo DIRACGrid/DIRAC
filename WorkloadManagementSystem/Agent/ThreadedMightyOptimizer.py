@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/ThreadedMightyOptimizer.py,v 1.1 2009/10/01 16:55:42 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/ThreadedMightyOptimizer.py,v 1.2 2009/10/01 18:15:35 acasajus Exp $
 
 
 """  SuperOptimizer
  One optimizer to rule them all, one optimizer to find them, one optimizer to bring them all, and in the darkness bind them.
 """
 
-__RCSID__ = "$Id: ThreadedMightyOptimizer.py,v 1.1 2009/10/01 16:55:42 acasajus Exp $"
+__RCSID__ = "$Id: ThreadedMightyOptimizer.py,v 1.2 2009/10/01 18:15:35 acasajus Exp $"
 
 import time
 import os
@@ -49,6 +49,9 @@ class ThreadedMightyOptimizer(AgentModule):
     if not result[ 'OK' ]:
       return result
     jobsList = result[ 'Value' ]
+    for i in range( len( jobsList ) ):
+      jobsList[i] = int( jobsList[i] )
+    jobsList.sort()
     self.log.info( "Got %s jobs for this iteration" % len( jobsList ) )
     if not jobsList: return S_OK()
     #Check jobs that are already being optimized
@@ -79,9 +82,9 @@ class ThreadedMightyOptimizer(AgentModule):
         gLogger.error( "There was a problem optimizing job", "JID %s: %s" % ( jobId, result[ 'Message' ] ) )
     return S_OK()
   
-  def __dispatchJob( self, jobId, jobAttrs, jobDef ):
+  def __dispatchJob( self, jobId, jobAttrs, jobDef, keepOptimizing = True ):
     optimizerName = self.__getNextOptimizerName( jobAttrs )
-    if not optimizerName or optimizerName not in self.am_getOption( "ValidOptimizers", self.__defaultValidOptimizers ):
+    if not keepOptimizing or not optimizerName or optimizerName not in self.am_getOption( "ValidOptimizers", self.__defaultValidOptimizers ):
       del( self._jobsBeingOptimized[ jobId ] )
       return S_OK()
     if optimizerName not in self._threadedOptimizers:
@@ -203,7 +206,7 @@ class ThreadedOptimizer( threading.Thread ):
       if nextOptimizer:
         jobAttrs[ 'Status' ] = 'Checking'
         jobAttrs[ 'MinorStatus' ] = nextOptimizer
-      self.dispatchFunction( jobId, jobAttrs, jobDef )
+      self.dispatchFunction( jobId, jobAttrs, jobDef, nextOptimizer )
 
 
 
