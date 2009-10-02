@@ -1,6 +1,6 @@
 """ This is the Data Integrity Client which allows the simple reporting of problematic file and replicas to the IntegrityDB and their status correctly updated in the FileCatalog.""" 
 
-__RCSID__ = "$Id: DataIntegrityClient.py,v 1.13 2009/09/14 16:14:45 acsmith Exp $"
+__RCSID__ = "$Id: DataIntegrityClient.py,v 1.14 2009/10/02 09:46:36 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -149,13 +149,13 @@ class DataIntegrityClient:
       if (bkMetadata['FileType'] != 'LOG'):
         if (bkMetadata['GotReplica'] == 'Yes'):
           yesReplicaFiles.append(lfn)
-          if bkMetadata['FilesSize']:
-            totalSize+= long(bkMetadata['FilesSize'])
+          if bkMetadata['FileSize']:
+            totalSize+= long(bkMetadata['FileSize'])
         elif (bkMetadata['GotReplica'] == 'No'):
           noReplicaFiles.append(lfn)
         else:
           badReplicaFiles.append(lfn)
-        if not bkMetadata['FilesSize']:
+        if not bkMetadata['FileSize']:
           badBKFileSize.append(lfn)
         if not bkMetadata['GUID']:
           badBKGUID.append(lfn)
@@ -247,7 +247,7 @@ class DataIntegrityClient:
       if (gotReplica != 'yes') and (replicas.has_key(lfn)):
         noBKReplicaFiles.append(lfn)
     if missingBKFiles:
-      self.__reportProblematicFiles(missingBKFiles,'LFNMissingBK')
+      self.__reportProblematicFiles(missingBKFiles,'LFNBKMissing')
     if sizeMismatchFiles:
       self.__reportProblematicFiles(sizeMismatchFiles,'BKCatalogSizeMismatch')
     if guidMismatchFiles:
@@ -355,7 +355,7 @@ class DataIntegrityClient:
     rm = ReplicaManager()
     res = rm.getStorageFileMetadata(pfnLfns.keys(),se)
     if not res['OK']:
-      gLoger.error('Failed to get metadata for pfns.', res['Message'])
+      gLogger.error('Failed to get metadata for pfns.', res['Message'])
       return res
     pfnMetadataDict = res['Value']['Successful']
     # If the replicas are completely missing
@@ -1051,17 +1051,20 @@ class DataIntegrityClient:
     if not res['OK']:
       return self.__returnProblematicError(fileID,res)
     # If the file exists in the catalog
-    if res['Value']:
-      gLogger.info("BKReplicaNo file (%d) found to exist in the catalog" % fileID)
-      # and has available replicas
-      res = rm.getCatalogReplicas(lfn,singleFile=True)
-      if res['OK'] and res['Value']:
-        gLogger.info("BKReplicaNo file (%d) found to have replicas" % fileID)
-        res = rm.addCatalogFile(lfn,singleFile=True,catalogs=['BookkeepingDB'])
-        if not res['OK']:
-          return self.__returnProblematicError(fileID,res)
-      else:
-        gLogger.info("BKReplicaNo file (%d) found to have no replicas" % fileID)  
+    if not res['Value']:
+      return self.__updateCompletedFiles('BKReplicaNo',fileID)
+    gLogger.info("BKReplicaNo file (%d) found to exist in the catalog" % fileID)
+    # and has available replicas
+    res = rm.getCatalogReplicas(lfn,singleFile=True)
+    if not res['OK']:
+      return self.__returnProblematicError(fileID,res)
+    if not res['Value']:
+      gLogger.info("BKReplicaNo file (%d) found to have no replicas" % fileID)
+      return self.changeProblematicPrognosis(fileID,'LFNZeroReplicas')
+    gLogger.info("BKReplicaNo file (%d) found to have replicas" % fileID)
+    res = rm.addCatalogFile(lfn,singleFile=True,catalogs=['BookkeepingDB'])
+    if not res['OK']:
+      return self.__returnProblematicError(fileID,res)
     return self.__updateCompletedFiles('BKReplicaNo',fileID)
    
   def resolvePFNZeroSize(self,problematicDict):
