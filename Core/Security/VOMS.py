@@ -5,6 +5,7 @@ import DIRAC.Core.Security.File as File
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities import List
 import os
 
 class VOMS( BaseSecurity ):
@@ -23,30 +24,45 @@ class VOMS( BaseSecurity ):
     if not result["OK"]:
       return S_ERROR( 'Failed to extract info from proxy: %s' % result[ 'Message' ] )
 
-    voms_info_output = result["Value"]
-    voms_info_output = voms_info_output.split("\n")
+    vomsInfoOutput = List.fromChar( result["Value"], "\n" )
+
+    #Get a list of known VOMS attributes
+    validVOMSAttrs = []
+    result = gConfig.getOptions( "/Security/VOMSMapping" )
+    if result[ 'OK' ]:
+      for group in result[ 'Value' ]:
+        vA = gConfig.getValue( "/Security/VOMSMapping/%s" % group, "" )
+        if vA and vA not in validVOMSAttrs:
+          validVOMSAttrs.append( vA )
+    result = gConfig.getOptions( "/Security/Groups" )
+    if result[ 'OK' ]:
+      for group in result[ 'Value' ]:
+        vA = gConfig.getValue( "/Security/Groups/%s/VOMSRole" % group, "" )
+        if vA and vA not in validVOMSAttrs:
+          validVOMSAttrs.append( vA )
 
     # Parse output of voms-proxy-info command
     attributes = []
     voName = ''
     nickName = ''
-    for i in voms_info_output:
-      j = i.split(":")
-      if j[0].strip() == "VO":
-        voName = j[1].strip()
-      elif j[0].strip()=="attribute":
+    for line in vomsInfoOutput:
+      fields = List.fromChar( line, ":" )
+      key = fields[0]
+      value = " ".join( fields[1:] )
+      if key == "VO":
+        voName = value
+      elif key == "attribute":
         # Cut off unsupported Capability selection part
-        j[1] = j[1].replace("/Capability=NULL","")
-        if j[1].find('Role=NULL') != -1 or j[1].find('Role') == -1:
-          attributes.append('NoRole')
+        if value.find( "nickname" ) == 0:
+          nickName = "=".join( List.fromChar( value, "=" )[ 1: ] )
         else:
-          attributes.append(j[1].strip())
-        if j[1].find('nickname') != -1:
-          nickName = j[1].strip().split()[2]
+          value = value.replace( "/Capability=NULL" , "" )
+          value = value.replace( "/Role=NULL" , "" )
+          if value and value not in attributes and value in validVOMSAttrs:
+            attributes.append( value )
 
     # Sorting and joining attributes
     if switch == "db":
-      attributes.sort()
       returnValue = ":".join(attributes)
     elif switch == "option":
       if len(attributes)>1:
