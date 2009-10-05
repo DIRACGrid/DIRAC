@@ -1,6 +1,6 @@
 
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.sql,v 1.12 2009/09/16 16:01:12 vfernand Exp $
-__RCSID__ = "$Id: SystemLoggingDB.sql,v 1.12 2009/09/16 16:01:12 vfernand Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.sql,v 1.13 2009/10/05 09:41:55 vfernand Exp $
+__RCSID__ = "$Id: SystemLoggingDB.sql,v 1.13 2009/10/05 09:41:55 vfernand Exp $"
 
 -- ------------------------------------------------------------------------------
 --
@@ -57,7 +57,7 @@ CREATE  TABLE IF NOT EXISTS `ClientIPs` (
   `SiteID` INT NOT NULL ,
   PRIMARY KEY (`ClientIPNumberID`, `SiteID`) ,
   INDEX `SiteID` (`SiteID` ASC) ,
-    FOREIGN KEY (`SiteID` ) REFERENCES Sites(SiteID) ) ENGINE=InnoDB;
+    FOREIGN KEY (`SiteID` ) REFERENCES Sites(SiteID) ON UPDATE CASCADE ON DELETE CASCADE ) ENGINE=InnoDB;
 
 
 -- -----------------------------------------------------
@@ -78,7 +78,7 @@ CREATE  TABLE IF NOT EXISTS `Systems` (
   `SubSystemID` INT NOT NULL ,
   PRIMARY KEY (`SystemID`, `SubSystemID`) ,
   INDEX `SubSystemID` (`SubSystemID` ASC) ,
-    FOREIGN KEY (`SubSystemID`) REFERENCES SubSystems(SubSystemID)) 
+    FOREIGN KEY (`SubSystemID`) REFERENCES SubSystems(SubSystemID) ON UPDATE CASCADE ON DELETE CASCADE) 
     ENGINE=InnoDB;
 
 
@@ -92,7 +92,7 @@ CREATE  TABLE IF NOT EXISTS `FixedTextMessages` (
   `SystemID` INT NOT NULL ,
   PRIMARY KEY (`FixedTextID`, `SystemID`) ,
   INDEX `SystemID` (`SystemID` ASC) ,
-    FOREIGN KEY (`SystemID` ) REFERENCES Systems(`SystemID`) ) ENGINE=InnoDB;
+    FOREIGN KEY (`SystemID` ) REFERENCES Systems(`SystemID`) ON UPDATE CASCADE ON DELETE CASCADE) ENGINE=InnoDB;
 
 
 -- -----------------------------------------------------
@@ -111,14 +111,14 @@ CREATE  TABLE IF NOT EXISTS `MessageRepository` (
   INDEX `FixTextIDX` (`FixedTextID` ASC) ,
   INDEX `UserIDX` (`UserDNID` ASC) ,
   INDEX `IPsIDX` (`ClientIPNumberID` ASC) ,
-    FOREIGN KEY (`UserDNID` ) REFERENCES UserDNs(`UserDNID` ) ,
-    FOREIGN KEY (`ClientIPNumberID` ) REFERENCES ClientIPs(`ClientIPNumberID` ), 
-    FOREIGN KEY (`FixedTextID` ) REFERENCES FixedTextMessages (`FixedTextID` ) )
+    FOREIGN KEY (`UserDNID` ) REFERENCES UserDNs(`UserDNID` ) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (`ClientIPNumberID` ) REFERENCES ClientIPs(`ClientIPNumberID` ) ON UPDATE CASCADE ON DELETE CASCADE, 
+    FOREIGN KEY (`FixedTextID` ) REFERENCES FixedTextMessages (`FixedTextID` ) ON UPDATE CASCADE ON DELETE CASCADE )
     ENGINE=InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `AgentPersistentData`
+-- Table `AgentPersistentData`ON UPDATE CASCADE ON DELETE CASCADE
 -- -----------------------------------------------------
 CREATE  TABLE IF NOT EXISTS `AgentPersistentData` (
   `AgentID` INT NOT NULL AUTO_INCREMENT ,
