@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.109 2009/09/18 10:08:50 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.110 2009/10/05 08:46:49 rgracian Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.109 2009/09/18 10:08:50 paterson Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.110 2009/10/05 08:46:49 rgracian Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -1999,7 +1999,7 @@ class Dirac:
     obtainedFiles = []
     for outputFile in outputData:
       self.log.info('Attempting to retrieve %s' %outputFile)
-      result = self.getFile(outputFile,destinationDir=destinationDir)
+      result = self.getFile(outputFile,destDir=destinationDir)
       if not result['OK']:
         self.log.error('Failed to download %s' %outputFile)
         return result
