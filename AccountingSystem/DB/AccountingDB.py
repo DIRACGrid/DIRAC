@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.18 2009/07/28 10:46:43 rgracian Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.18 2009/07/28 10:46:43 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.19 2009/10/05 10:54:10 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.19 2009/10/05 10:54:10 acasajus Exp $"
 
 import datetime, time
 import types
@@ -24,6 +24,7 @@ class AccountingDB(DB):
     self.__deadLockRetries = 2
     self.dbCatalog = {}
     self.dbBucketsLength = {}
+    self.__keysCache = {}
     maxParallelInsertions = self.getCSOption( "ParallelRecordInsertions", maxQueueSize )
     self.__threadPool = ThreadPool( 1, 10 )
     self.__threadPool.daemonize()
@@ -446,25 +447,42 @@ class AccountingDB(DB):
     """
       Adds a key value to a key table if not existant
     """
-    keyTable = self.__getTableName( "key", typeName, keyName )
+    #Cast to string just in case
     if type( keyValue ) != types.StringType:
       keyValue = str( keyValue )
-    if len(keyValue) > 64:
+    #No more than 64 chars for keys
+    if len( keyValue ) > 64:
       keyValue = keyValue[:64]
+    
+    #Look into the cache
+    if typeName not in self.__keysCache:
+      self.__keysCache[ typeName ] = {}
+    typeCache = self.__keysCache[ typeName ]
+    if keyName not in typeCache:
+      typeCache[ keyName ] = {}
+    keyCache = typeCache[ keyName ]
+    if keyValue in keyCache:
+      return S_OK( keyCache[ keyValue ] )
+    #Retrieve key
+    keyTable = self.__getTableName( "key", typeName, keyName )
     retVal = self.__getIdForKeyValue( typeName, keyName, keyValue )
     if retVal[ 'OK' ]:
+      keyCache[ keyValue ] = retVal[ 'Value' ]
       return retVal
-    else:
-      retVal = self._getConnection()
-      if not retVal[ 'OK' ]:
-        return retVal
-      connection = retVal[ 'Value' ]
-      self.log.info( "Value %s for key %s didn't exist, inserting" % ( keyValue, keyName ) )
-      retVal = self._insert( keyTable, [ 'id', 'value' ], [ 0, keyValue ], connection )
-      if not retVal[ 'OK' ] and retVal[ 'Message' ].find( "Duplicate key" ) == -1:
-        return retVal
-      return self.__getIdForKeyValue( typeName, keyName, keyValue, connection )
-    return S_OK( keyId )
+    #Key is not in there
+    retVal = self._getConnection()
+    if not retVal[ 'OK' ]:
+      return retVal
+    connection = retVal[ 'Value' ]
+    self.log.info( "Value %s for key %s didn't exist, inserting" % ( keyValue, keyName ) )
+    retVal = self._insert( keyTable, [ 'id', 'value' ], [ 0, keyValue ], connection )
+    if not retVal[ 'OK' ] and retVal[ 'Message' ].find( "Duplicate key" ) == -1:
+      return retVal
+    result = self.__getIdForKeyValue( typeName, keyName, keyValue, connection )
+    if not result[ 'OK' ]:
+      return result
+    keyCache[ keyValue ] = retVal[ 'Value' ]
+    return retVal
 
   def calculateBucketLengthForTime( self, typeName, now, when ):
     """
