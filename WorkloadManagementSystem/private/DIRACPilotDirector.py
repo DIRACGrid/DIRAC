@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.30 2009/10/06 16:05:10 ffeldhau Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.31 2009/10/06 16:07:43 ffeldhau Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.30 2009/10/06 16:05:10 ffeldhau Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.31 2009/10/06 16:07:43 ffeldhau Exp $"
 
 import os, sys, tempfile, shutil, time, base64, bz2
 
@@ -305,7 +305,7 @@ print 'Executing: ', cmd
 sys.stdout.flush()
 os.system( cmd )
 
-#shutil.rmtree( pilotWorkingDirectory )
+shutil.rmtree( pilotWorkingDirectory )
 
 EOF
 """ % { 'compressedAndEncodedProxy': compressedAndEncodedProxy, \
