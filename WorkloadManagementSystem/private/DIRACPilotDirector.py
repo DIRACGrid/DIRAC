@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.29 2009/09/18 14:53:52 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/DIRACPilotDirector.py,v 1.30 2009/10/06 16:05:10 ffeldhau Exp $
 # File :   DIRACPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -13,7 +13,7 @@
 
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.29 2009/09/18 14:53:52 acasajus Exp $"
+__RCSID__ = "$Id: DIRACPilotDirector.py,v 1.30 2009/10/06 16:05:10 ffeldhau Exp $"
 
 import os, sys, tempfile, shutil, time, base64, bz2
 
@@ -222,7 +222,13 @@ class DIRACPilotDirector(PilotDirector):
           submission = computingElement.submitJob(pilotScript, '', '', '')
           if not submission['OK']:
             self.log.error('Pilot submission failed: ', submission['Message'])
-            break
+            # cleanup
+            try:
+              os.chdir( baseDir )
+              shutil.rmtree( workingDirectory )
+            except:
+              pass
+            return S_ERROR('Pilot submission failed after ' + str(submittedPilots) + ' pilots submitted successful')
           submittedPilots += 1
           # let the batch system some time to digest the submitted job
           time.sleep(1)
@@ -231,7 +237,7 @@ class DIRACPilotDirector(PilotDirector):
 
     try:
       os.chdir( baseDir )
-      #shutil.rmtree( workingDirectory )
+      shutil.rmtree( workingDirectory )
     except:
       pass
 
@@ -284,7 +290,13 @@ try:
   os.environ["X509_USER_PROXY"]=os.path.join(pilotWorkingDirectory, 'proxy')
   if "%(httpProxy)s":
     os.environ["HTTP_PROXY"]="%(httpProxy)s"
-  print os.environ
+  os.environ["X509_CERT_DIR"]=os.path.join(pilotWorkingDirectory, 'etc/grid-security/certificates')
+  # TODO: structure the output
+  print '==========================================================='
+  print 'Environment of execution host'
+  for key in os.environ.keys():
+    print key + '=' + os.environ[key]
+  print '==========================================================='
 except Exception, x:
   print >> sys.stderr, x
   sys.exit(-1)
@@ -293,7 +305,7 @@ print 'Executing: ', cmd
 sys.stdout.flush()
 os.system( cmd )
 
-shutil.rmtree( pilotWorkingDirectory )
+#shutil.rmtree( pilotWorkingDirectory )
 
 EOF
 """ % { 'compressedAndEncodedProxy': compressedAndEncodedProxy, \
