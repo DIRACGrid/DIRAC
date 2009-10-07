@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.110 2009/10/05 08:46:49 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.111 2009/10/07 09:05:16 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.110 2009/10/05 08:46:49 rgracian Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.111 2009/10/07 09:05:16 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -96,6 +96,26 @@ class Dirac:
   #############################################################################
   # Repository specific methods
   #############################################################################
+  def getRepositoryJobs(self,printOutput=False):
+    """ Retireve all the jobs in the repository
+    """
+    
+       Example Usage:
+       
+       >>> print dirac.monitorRepository()
+       {'OK': True, 'Value': ''}
+       
+       @return: S_OK,S_ERROR
+    """
+    if not self.jobRepo:
+      gLogger.warn("No repository is initialised")
+      return S_OK()
+    jobs = self.jobRepo.readRepository()['Value']
+    jobIDs = jobs.keys()
+    if printOutput:
+      print self.pPrint.pformat(jobIDs)
+    return S_OK(jobIDs)
+  
   def monitorRepository(self,printOutput=False):
     """Monitor the jobs present in the repository
 
