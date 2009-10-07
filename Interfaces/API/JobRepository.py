@@ -1,11 +1,11 @@
 """ This is the Job Repository which stores and manipulates DIRAC job metadata in CFG format """
 
-__RCSID__ = "$Id: JobRepository.py,v 1.8 2009/10/07 09:59:12 acsmith Exp $"
+__RCSID__ = "$Id: JobRepository.py,v 1.9 2009/10/07 12:46:18 acsmith Exp $"
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
 
-import os, time
+import os, time, tempfile, shutil
 
 class JobRepository:
 
@@ -58,9 +58,19 @@ class JobRepository:
     return S_OK()
  
   def _writeRepository(self,path):
+    handle,tmpName = tempfile.mkstemp()
+    written = self.repo.writeToFile(tmpName)
+    if not written:
+      return written
     if os.path.exists(path):
       gLogger.debug("Replacing %s" % path)
-    return self.repo.writeToFile(path)
+    try:
+      shutil.move(tmpName, path)
+      return True
+    except Exception,x:
+      gLogger.error("Failed to overwrite repository.", x)
+      gLogger.info("If your repository is corrupted a backup can be found %s" % tmpName)
+      return False
 
   def appendToRepository(self, repoLocation):
     if not os.path.exists(repoLocation):
