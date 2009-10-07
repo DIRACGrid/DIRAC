@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.112 2009/10/07 09:08:55 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.113 2009/10/07 09:58:44 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.112 2009/10/07 09:08:55 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.113 2009/10/07 09:58:44 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -1863,11 +1863,13 @@ class Dirac:
       return minorStatusDict
 
     result = {}
+    repoDict = {}
     for job,vals in statusDict['Value'].items():
       result[job]=vals
       if self.jobRepo:
-        if self.jobRepo.existsJob(job)['Value']:
-          self.jobRepo.updateJob(job, {'State':vals['Status']})
+        repoDict[job] = {'State':vals['Status']}
+    if self.jobRepo:
+      self.jobRepo.updateJobs(repoDict)
     for job,vals in siteDict['Value'].items():
       result[job].update(vals)
     for job,vals in minorStatusDict['Value'].items():
