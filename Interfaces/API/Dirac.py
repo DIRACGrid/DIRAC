@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.111 2009/10/07 09:05:16 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.112 2009/10/07 09:08:55 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.111 2009/10/07 09:05:16 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.112 2009/10/07 09:08:55 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -98,7 +98,6 @@ class Dirac:
   #############################################################################
   def getRepositoryJobs(self,printOutput=False):
     """ Retireve all the jobs in the repository
-    """
     
        Example Usage:
        
