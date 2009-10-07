@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/UserProfileManagerHandler.py,v 1.2 2008/11/19 10:19:33 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/UserProfileManagerHandler.py,v 1.3 2009/10/07 14:25:06 acasajus Exp $
 ########################################################################
 
-""" WebProfileManager manages web user profiles
+""" ProfileManager manages web user profiles
     in the DISET framework
 """
 
-__RCSID__ = "$Id: UserProfileManagerHandler.py,v 1.2 2008/11/19 10:19:33 acasajus Exp $"
+__RCSID__ = "$Id: UserProfileManagerHandler.py,v 1.3 2009/10/07 14:25:06 acasajus Exp $"
 
 import types
 import os
@@ -27,32 +27,68 @@ def initializeUserProfileManagerHandler( serviceInfo ):
 
 class UserProfileManagerHandler( RequestHandler ):
 
-  types_retrieveWebProfileData = [ types.StringType, types.StringType ]
-  def export_retrieveWebProfileData( self, action, dataKey ):
+  types_retrieveProfileVar = [ types.StringType, types.StringType ]
+  def export_retrieveProfileVar( self, action, varName ):
     """ Get profile data for web
     """
     credDict = self.getRemoteCredentials()
     userName = credDict[ 'username' ]
     userGroup = credDict[ 'group' ]
-    return gUPDB.retrieveWebData( userName, userGroup, action, dataKey )
+    return gUPDB.retrieveVar( userName, userGroup, action, varName )
 
-  types_storeWebProfileData = [ types.StringType, types.StringType, types.StringType ]
-  def export_storeWebProfileData( self, action, dataKey, data ):
+  types_retrieveProfileAllVars = [ types.StringType ]
+  def export_retrieveProfileAllVars( self, action ):
+    """ Get profile data for web
+    """
+    credDict = self.getRemoteCredentials()
+    userName = credDict[ 'username' ]
+    userGroup = credDict[ 'group' ]
+    return gUPDB.retrieveAllVars( userName, userGroup, action )
+
+  types_storeProfileVar = [ types.StringType, types.StringType, types.StringType ]
+  def export_storeProfileVar( self, action, varName, data ):
     """ Set profile data for web
     """
     credDict = self.getRemoteCredentials()
     userName = credDict[ 'username' ]
     userGroup = credDict[ 'group' ]
-    return gUPDB.storeWebData( userName, userGroup, action, dataKey, data )
+    return gUPDB.storeVar( userName, userGroup, action, varName, data )
 
-  types_deleteWebProfileData = [ types.StringType, types.StringType ]
-  def export_deleteWebProfileData( self, action, dataKey ):
+  types_deleteProfileVar = [ types.StringType, types.StringType ]
+  def export_deleteProfileVar( self, action, varName ):
     """ Set profile data for web
     """
     credDict = self.getRemoteCredentials()
     userName = credDict[ 'username' ]
     userGroup = credDict[ 'group' ]
-    return gUPDB.deleteWebData( userName, userGroup, action, dataKey )
+    return gUPDB.deleteVar( userName, userGroup, action, varName )
+  
+  types_storeHashTag = [ types.StringType ]
+  def export_storeHashTag( self, tagName ):
+    """ Set hash tag
+    """
+    credDict = self.getRemoteCredentials()
+    userName = credDict[ 'username' ]
+    userGroup = credDict[ 'group' ]
+    return gUPDB.storeHashTag( userName, userGroup, tagName )
+  
+  types_retrieveHashTag = [ types.StringType ]
+  def export_retrieveHashTag( self, hashTag ):
+    """ Get hash tag
+    """
+    credDict = self.getRemoteCredentials()
+    userName = credDict[ 'username' ]
+    userGroup = credDict[ 'group' ]
+    return gUPDB.retrieveHashTag( userName, userGroup, hashTag )
+
+  types_retrieveAllHashTag = []
+  def export_retrieveAllHashTags( self ):
+    """ Get all hash tags
+    """
+    credDict = self.getRemoteCredentials()
+    userName = credDict[ 'username' ]
+    userGroup = credDict[ 'group' ]
+    return gUPDB.retrieveAllHashTags( userName, userGroup )
 
   types_deleteProfiles = [ types.ListType ]
   def export_deleteProfiles( self, userList ):

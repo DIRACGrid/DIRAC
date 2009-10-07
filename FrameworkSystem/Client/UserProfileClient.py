@@ -7,9 +7,9 @@ from DIRAC.Core.Utilities import DEncode, Time
 
 class UserProfileClient:
 
-  def __init__( self, action, rpcClient = False ):
+  def __init__( self, profile, rpcClient = False ):
     self.rpcClient = rpcClient
-    self.action = action
+    self.profile = profile
 
   def __getRPCClient(self):
     if self.rpcClient:
@@ -45,16 +45,16 @@ class UserProfileClient:
       return S_ERROR( "Stored data does not match typeRE: %s vs %s" % ( typeDesc, typeRE ) )
     return S_OK()
 
-  def storeWebData( self, dataKey, data ):
+  def storeVar( self, varName, data ):
     try:
       stub = DEncode.encode( data )
     except Exception, e:
       return S_ERROR( "Cannot encode data:%s" % str(e) )
-    return self.__getRPCClient().storeWebProfileData( self.action, dataKey, stub )
+    return self.__getRPCClient().storeProfileVar( self.profile, varName, stub )
 
-  def retrieveWebData( self, dataKey, dataTypeRE = False ):
+  def retrieveVar( self, varName, dataTypeRE = False ):
     rpcClient = self.__getRPCClient()
-    result = rpcClient.retrieveWebProfileData( self.action, dataKey )
+    result = rpcClient.retrieveProfileVar( self.profile, varName )
     if not result[ 'OK' ]:
       return result
     try:
@@ -66,9 +66,33 @@ class UserProfileClient:
       if not result[ 'OK' ]:
         return result
     return S_OK( dataObj )
-
-  def deleteWebData( self, dataKey ):
-    return self.__getRPCClient().deleteWebProfileData( self.action, dataKey )
+  
+  def retrieveAllVars( self ):
+    rpcClient = self.__getRPCClient()
+    result = rpcClient.retrieveProfileAllVars( self.profile )
+    if not result[ 'OK' ]:
+      return result
+    try:
+      encodedData = result[ 'Value' ]
+      dataObj = {}
+      for k in encodedData:
+        v, lenData = DEncode.decode( encodedData[k] )
+        dataObj[ k ] = v
+    except Exception, e:
+      return S_ERROR( "Cannot decode data: %s" % str(e) )
+    return S_OK( dataObj )
+  
+  def deleteVar( self, varName ):
+    return self.__getRPCClient().deleteProfileData( self.profile, varName )
 
   def deleteProfiles( self, userList ):
     return self.__getRPCClient().deleteProfiles( userList )
+  
+  def storeHashTag( self, tagName ):
+    return self.__getRPCClient().storeHashTag( tagName )
+
+  def retrieveHashTag( self, hashTag ):
+    return self.__getRPCClient().retrieveHashTag( hashTag )
+  
+  def retrieveAllHashTags( self ):
+    return self.__getRPCClient().retrieveAllHashTags()
