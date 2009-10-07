@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.113 2009/10/07 09:58:44 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.114 2009/10/07 12:45:27 acsmith Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.113 2009/10/07 09:58:44 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.114 2009/10/07 12:45:27 acsmith Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -1784,8 +1784,10 @@ class Dirac:
     result = self.client.rescheduleJob(jobID)
     if result['OK']:
       if self.jobRepo:
+        repoDict = {}
         for jobID in result['Value']:
-          self.jobRepo.updateJob(jobID, {'State':'Submitted'})
+          repoDict[jobID] = {'State':'Submitted'}
+        self.jobRepo.updateJobs(repoDict)
     return result
 
   def kill(self,jobID):
