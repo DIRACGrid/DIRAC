@@ -1,6 +1,6 @@
 """ This is the Data Integrity Client which allows the simple reporting of problematic file and replicas to the IntegrityDB and their status correctly updated in the FileCatalog.""" 
 
-__RCSID__ = "$Id: DataIntegrityClient.py,v 1.14 2009/10/02 09:46:36 acsmith Exp $"
+__RCSID__ = "$Id: DataIntegrityClient.py,v 1.15 2009/10/08 11:39:21 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -501,6 +501,7 @@ class DataIntegrityClient:
         return res
       elif res['Value']['Failed'].has_key(currentDir):
         gLogger.error('Failed to get directory contents','%s %s' % (currentDir,res['Value']['Failed'][currentDir]))
+        return S_ERROR(res['Value']['Failed'][currentDir])
       else:
         dirContents = res['Value']['Successful'][currentDir]
         activeDirs.extend(dirContents['SubDirs'])
