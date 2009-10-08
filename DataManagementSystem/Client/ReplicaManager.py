@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.90 2009/09/16 19:17:57 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.91 2009/10/08 11:42:13 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -452,7 +452,7 @@ class StorageBase:
     res = storageElement.isValid('getPfnForLfn')
     if not res['OK']:
       errStr = "ReplicaManager.getPfnForLfn: Failed to instantiate Storage Element"
-      gLogger.error(errStr, "for performing getPfnForLfn at %s." % (method,storageElementName))
+      gLogger.error(errStr, "for performing getPfnForLfn at %s." % (storageElementName))
       return res
     successful = {}
     failed = {}
@@ -470,7 +470,7 @@ class StorageBase:
     res = storageElement.isValid('getPfnPath')
     if not res['OK']:
       errStr = "ReplicaManager.getLfnForPfn: Failed to instantiate Storage Element"
-      gLogger.error(errStr, "for performing getPfnPath at %s." % (method,storageElementName))
+      gLogger.error(errStr, "for performing getPfnPath at %s." % (storageElementName))
       return res
     successful = {}
     failed = {}
@@ -962,6 +962,111 @@ class ReplicaManager(CatalogToStorage):
     else:
       return S_OK(False)
 
+  ##########################################################################
+  #
+  # These are the bulk removal methods
+  #
+
+  def cleanLogicalDirectory(self,lfnDir):
+    """ Clean the logical directory from the catalog and storage
+    """ 
+    if type(lfnDir) in types.StringTypes:
+      lfnDir = [lfnDir]
+    successful = {}
+    failed = {}
+    for dir in lfnDir:
+      res = self.__cleanDirectory(dir)
+      if not res['OK']:
+        gLogger.error("Failed to clean directory.","%s %s" % (dir,res['Message']))
+        failed[dir] = res['Message']
+      else:
+        gLogger.info("Successfully removed directory.", dir)
+        successful[dir] = res['Value']
+    resDict = {'Successful':successful,'Failed':failed}
+    return S_OK(resDict)
+
+  def __cleanDirectory(self,dir):
+    res = self.__verifyOperationPermission(dir)   
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      errStr = "ReplicaManager.__cleanDirectory: Write access not permitted for this credential."   
+      gLogger.error(errStr,dir)
+      return S_ERROR(errStr)
+    res = self.__getCatalogDirectoryContents([dir])
+    if not res['OK']:
+      return res
+    filesFound = res['Value']
+    if filesFound:
+      gLogger.info("Attempting to remove %d files from the catalog and storage" % len(filesFound))
+      res = self.removeFile(filesFound)
+      if not res['OK']:
+        return res
+      for lfn,reason in res['Value']['Failed'].items():
+        gLogger.error("Failed to remove file found in the catalog","%s %s" % (lfn,reason))
+      if res['Value']['Failed']:
+        return S_ERROR("Failed to remove all files found in the catalog")
+    storageElements = gConfig.getValue('Resources/StorageElementGroups/Tier1_MC_M-DST',[])
+    # Have to add some additional storage elements because:
+    # 1: CNAF has to use two different SE types
+    # 2: CNAF has to use different namespace for different rentention
+    storageElements.extend(['CNAF_MC-DST','CNAF-RAW'])
+    failed = False
+    for storageElement in sortList(storageElements):
+      res = self.__removeStorageDirectory(dir,storageElement)
+      if not res['OK']:
+        failed = True
+    if failed:
+      return S_ERROR("Failed to clean storage directory at all SEs")
+    return S_OK()
+ 
+  def __removeStorageDirectory(self,directory,storageElement):
+    gLogger.info('Removing the contents of %s at %s' % (directory,storageElement))
+    res = self.getPfnForLfn([directory],storageElement)
+    if not res['OK']:
+      gLogger.error("Failed to get PFN for directory",res['Message'])
+      return res
+    for directory, error in res['Value']['Failed'].items():
+      gLogger.error('Failed to obtain directory PFN from LFN','%s %s' % (directory,error))
+    if res['Value']['Failed']:
+      return S_ERROR('Failed to obtain directory PFN from LFNs')
+    storageDirectory = res['Value']['Successful'].values()[0]
+    res = self.getStorageFileExists(storageDirectory,storageElement,singleFile=True)
+    if not res['OK']:
+      gLogger.error("Failed to obtain existance of directory",res['Message'])
+      return res
+    exists = res['Value']
+    if not exists:
+      gLogger.info("The directory %s does not exist at %s " % (directory,storageElement))
+      return S_OK()
+    res = self.removeStorageDirectory(storageDirectory,storageElement,recursive=True,singleDirectory=True)
+    if not res['OK']:
+      gLogger.error("Failed to remove storage directory",res['Message'])
+      return res
+    gLogger.info("Successfully removed %d files from %s at %s" % (res['Value']['FilesRemoved'],directory,storageElement))
+    return S_OK()
+
+  def __getCatalogDirectoryContents(self,directories):
+    gLogger.info('Obtaining the catalog contents for %d directories:' % len(directories))
+    for directory in directories:
+      gLogger.info(directory)
+    activeDirs = directories
+    allFiles = {}
+    while len(activeDirs) > 0:
+      currentDir = activeDirs[0]
+      res = self.getCatalogListDirectory(currentDir,singleFile=True)
+      activeDirs.remove(currentDir)
+      if not res['OK'] and res['Message'].endswith('The supplied path does not exist'):
+        gLogger.info("The supplied directory %s does not exist" % currentDir)
+      elif not res['OK']:
+        gLogger.error('Failed to get directory contents','%s %s' % (currentDir,res['Message']))
+      else:
+        dirContents = res['Value']
+        activeDirs.extend(dirContents['SubDirs'])
+        allFiles.update(dirContents['Files'])
+    gLogger.info("Found %d files" % len(allFiles))
+    return S_OK(allFiles.keys())
+    
   ##########################################################################
   #
   # These are the data transfer methods
@@ -1658,7 +1763,7 @@ class ReplicaManager(CatalogToStorage):
         successful[lfn] = True
       else:
         existingFiles.append(lfn)
-    res = self.fileCatalogue.getReplicas(existingFiles)
+    res = self.fileCatalogue.getReplicas(existingFiles,True)
     if not res['OK']:
       errStr = "ReplicaManager.removeFile: Completely failed to get replicas for lfns."
       gLogger.error(errStr,res['Message'])
@@ -1849,7 +1954,9 @@ class ReplicaManager(CatalogToStorage):
       return S_ERROR(errStr)
     for lfn in res['Value']['Successful'].keys():
       infoStr = "ReplicaManager.__removeCatalogReplica: Successfully removed replica."
-      gLogger.info(infoStr,lfn)
+      gLogger.debug(infoStr,lfn)
+    if res['Value']['Successful']:
+      gLogger.info("ReplicaManager.__removeCatalogReplica: Removed %d replicas" % len(res['Value']['Successful']))
     for lfn,error in res['Value']['Failed'].items():
       errStr = "ReplicaManager.__removeCatalogReplica: Failed to remove replica."
       gLogger.error(errStr,"%s %s" % (lfn,error))
