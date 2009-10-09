@@ -97,14 +97,15 @@ class RAWIntegrityHandler(RequestHandler):
     resultDict['ParameterNames'] = ['lfn','pfn','size','storageelement','guid','checksum','startTime','endTime','status']
     records = []
     statusCountDict = {}
+    for lfn,pfn,size,se,guid,checksum,submit,complete,status in fileList:
+      if not statusCountDict.has_key(status):
+        statusCountDict[status] = 0
+      statusCountDict[status] += 1 
     for tuple in summaryFileList:
       lfn,pfn,size,se,guid,checksum,submit,complete,status = tuple
       startTime = str(submit)
       endTime = str(complete)
       records.append((lfn,pfn,size,se,guid,checksum,startTime,endTime,status))
-      if not statusCountDict.has_key(status):
-        statusCountDict[status] = 0
-      statusCountDict[status] += 1
     resultDict['Records'] = records
     resultDict['Extras'] = statusCountDict
     return S_OK(resultDict)
