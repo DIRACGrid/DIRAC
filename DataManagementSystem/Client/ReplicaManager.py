@@ -1,9 +1,10 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.91 2009/10/08 11:42:13 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.92 2009/10/12 14:53:14 acsmith Exp $"
 
-import re, time, commands, random,os
+import re, time, commands, random, os, fnmatch
 import types
+from datetime import datetime,timedelta
 import DIRAC
 
 from DIRAC                                               import S_OK, S_ERROR, gLogger, gConfig
@@ -1066,7 +1067,47 @@ class ReplicaManager(CatalogToStorage):
         allFiles.update(dirContents['Files'])
     gLogger.info("Found %d files" % len(allFiles))
     return S_OK(allFiles.keys())
+
+  def getFilesFromDirectory(self,directory,days=0,wildcard='*'):
+    if type(directory) in types.StringTypes:
+      directories = [directory]
+    else:
+      directories = directory 
+    gLogger.info("Obtaining the files older than %d days in %d directories:" % (days,len(directories)))
+    for directory in directories:
+      gLogger.info(directory)
+    activeDirs = directories
+    allFiles = []
+    while len(activeDirs) > 0:
+      currentDir = activeDirs[0]
+      res = self.getCatalogListDirectory(currentDir,True,singleFile=True)
+      activeDirs.remove(currentDir)
+      if not res['OK']:
+        gLogger.error("Error retrieving directory contents", "%s %s" % (currentDir, res['Message']))
+      else:
+        dirContents = res['Value']
+        subdirs = dirContents['SubDirs']
+        for subdir,metadata in subdirs.items():
+          if (not days) or self.__isOlderThan(metadata['CreationTime'],days):
+            activeDirs.append(subdir)
+        for filename,fileInfo in dirContents['Files'].items():
+          metadata = fileInfo['MetaData']
+          if (not days) or self.__isOlderThan(metadata['CreationTime'],days):
+            if fnmatch.fnmatch(filename,wildcard):
+              allFiles.append(filename)
+        files = dirContents['Files'].keys()
+        gLogger.info("%s: %d files, %d sub-directories" % (currentDir,len(files),len(subdirs)))
+    return S_OK(allFiles)
     
+  def __isOlderThan(self,stringTime,days):
+    timeDelta = timedelta(days=days)
+    st = time.strptime(stringTime, "%a %b %d %H:%M:%S %Y")
+    cTimeStruct = datetime(st[0],st[1],st[2],st[3],st[4],st[5],st[6],None)
+    maxCTime = datetime.utcnow() -  timeDelta
+    if cTimeStruct < maxCTime:
+      return True
+    return False
+
   ##########################################################################
   #
   # These are the data transfer methods
@@ -1818,7 +1859,7 @@ class ReplicaManager(CatalogToStorage):
 
   def removeReplica(self,storageElementName,lfn):
     """ Remove replica at the supplied Storage Element from Storage Element then file catalogue
-
+      
        'storageElementName' is the storage where the file is to be removed
        'lfn' is the file to be removed
     """
@@ -1829,7 +1870,7 @@ class ReplicaManager(CatalogToStorage):
     else:
       errStr = "ReplicaManager.removeReplica: Supplied lfns must be string or list of strings."
       gLogger.error(errStr)
-      return S_ERROR(errStr)
+      return S_ERROR(errStr)   
     gLogger.verbose("ReplicaManager.removeReplica: Attempting to remove catalogue entry for %s lfns at %s." % (len(lfns),storageElementName))
     res = self.fileCatalogue.getReplicas(lfns,True)
     if not res['OK']:
@@ -1843,6 +1884,10 @@ class ReplicaManager(CatalogToStorage):
       if not repDict.has_key(storageElementName):
         # The file doesn't exist at the storage element so don't have to remove it
         successful[lfn] = True
+      elif len(repDict.keys()) == 1:  
+        # The file has only a single replica so don't remove
+        gLogger.error("The replica you are trying to remove is the only one.","%s @ %s" % (lfn,storageElementName))
+        failed[lfn] = "Failed to remove sole replica"
       else:
         sePfn = repDict[storageElementName]
         replicaTuple = (lfn,sePfn)
