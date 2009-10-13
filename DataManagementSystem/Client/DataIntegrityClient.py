@@ -1,6 +1,6 @@
 """ This is the Data Integrity Client which allows the simple reporting of problematic file and replicas to the IntegrityDB and their status correctly updated in the FileCatalog.""" 
 
-__RCSID__ = "$Id: DataIntegrityClient.py,v 1.15 2009/10/08 11:39:21 acsmith Exp $"
+__RCSID__ = "$Id: DataIntegrityClient.py,v 1.16 2009/10/13 13:21:55 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -305,21 +305,23 @@ class DataIntegrityClient:
     resDict = {'CatalogMetadata':catalogMetadata,'CatalogReplicas':replicas}
     return S_OK(resDict)
 
-  def checkPhysicalFiles(self,replicas,catalogMetadata):
+  def checkPhysicalFiles(self,replicas,catalogMetadata,ses=[]):
     """ This obtains takes the supplied replica and metadata information obtained from the catalog and checks against the storage elements.
     """   
     gLogger.info("-" * 40)    
     gLogger.info("Performing the LFC->SE check")    
-    gLogger.info("-" * 40)    
-    return self.__checkPhysicalFiles(replicas,catalogMetadata)
+    gLogger.info("-" * 40)
+    return self.__checkPhysicalFiles(replicas,catalogMetadata,ses=ses)
 
-  def __checkPhysicalFiles(self,replicas,catalogMetadata):
+  def __checkPhysicalFiles(self,replicas,catalogMetadata,ses=[]):
     """ This obtains the physical file metadata and checks the metadata against the catalog entries
     """
     sePfns = {}
     pfnLfns = {}
     for lfn,replicaDict in replicas.items():
       for se,pfn in replicaDict.items():
+        if (ses) and (se not in ses):
+          continue
         if not sePfns.has_key(se):
           sePfns[se] = []
         sePfns[se].append(pfn)
