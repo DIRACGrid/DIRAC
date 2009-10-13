@@ -248,7 +248,20 @@ class TransformationHandler(RequestHandler):
     result = self.database.deleteBookkeepingQuery(id_)
     if not result['OK']:
       gLogger.error(result['Message'])
-    return result   
+    return result  
+  
+  types_getTransformationStatusCounters = []
+  def export_getTransformationStatusCounters( self ):
+    result = self.database.getCounters('Transformations',['Status'],{})
+    if not result['OK']:
+      gLogger.error(result['Message'])
+      
+    resultDict = {}
+    for attrDict,count in result['Value']:
+      status = attrDict['Status']
+      resultDict[status] = count
+        
+    return S_OK(resultDict)
 
   ####################################################################
   #
