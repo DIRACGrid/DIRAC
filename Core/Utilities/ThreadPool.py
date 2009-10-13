@@ -1,8 +1,8 @@
 #################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.14 2009/10/13 16:04:02 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.15 2009/10/13 16:26:06 acasajus Exp $
 #################################################################
 
-__RCSID__ = "$Id: ThreadPool.py,v 1.14 2009/10/13 16:04:02 acasajus Exp $"
+__RCSID__ = "$Id: ThreadPool.py,v 1.15 2009/10/13 16:26:06 acasajus Exp $"
 
 import time
 import sys
@@ -159,10 +159,12 @@ class ThreadPool( threading.Thread ):
       self.__spawnWorkingThread()
 
   def __killExceedingWorkingThreads( self ):
-    while len( self.__workingThreadsList ) > self.__maxThreads:
+    threadsToKill = 0
+    threadsToKill += len( self.__workingThreadsList ) - self.__maxThreads
+    threadsToKill += self.__countWaitingThreads() - self.__minThreads    
+    for i in range ( max( threadsToKill, 0 ) ):
       self.__killWorkingThread()
-    while self.__countWaitingThreads() > self.__minThreads:
-      self.__killWorkingThread()
+
 
   def queueJob( self, oTJob, blocking = True ):
     if not isinstance( oTJob, ThreadedJob ):
