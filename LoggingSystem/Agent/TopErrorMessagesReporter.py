@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/TopErrorMessagesReporter.py,v 1.2 2009/09/03 15:41:19 vfernand Exp $
-__RCSID__ = "$Id: TopErrorMessagesReporter.py,v 1.2 2009/09/03 15:41:19 vfernand Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/TopErrorMessagesReporter.py,v 1.3 2009/10/13 16:34:36 mseco Exp $
+__RCSID__ = "$Id: TopErrorMessagesReporter.py,v 1.3 2009/10/13 16:34:36 mseco Exp $"
 """  TopErrorMessagesReporter produces a list with the most common errors 
    injected in the SystemLoggingDB and sends a notification to a mailing 
    list and specific users. 
@@ -23,9 +23,9 @@ class TopErrorMessagesReporter( AgentModule ):
 
     self.notification = NotificationClient()
 
-    mailList = self.am_getOption( "/MailList", [] )
+    mailList = self.am_getOption( "MailList", [] )
 
-    userString = self.am_getOption( "/Reviewer", 'mseco' )
+    userString = self.am_getOption( "Reviewer", 'mseco' )
     userList = List.fromChar( userString, "," )
     self.log.debug( "Users to be notified", ": " + userString )
     for user in userList:
@@ -43,11 +43,11 @@ class TopErrorMessagesReporter( AgentModule ):
     
     self.log.info("List of mails to be notified", ','.join(mailList))
     self._mailAddress = mailList
-    self._threshold = int( self.am_getOption( '/Threshold', 10 ) )
+    self._threshold = int( self.am_getOption( 'Threshold', 10 ) )
     
-    self.__days = self.am_getOption( '/QueryPeriod',7 )
+    self.__days = self.am_getOption( 'QueryPeriod',7 )
     self._period=int( self.__days ) * day
-    self._limit = int ( self.am_getOption( '/NumberOfErrors', 10 ) )
+    self._limit = int ( self.am_getOption( 'NumberOfErrors', 10 ) )
     
     string = "The %i most common errors in the SystemLoggingDB" %  self._limit
     self._subject = string + " for the last %s days" % self.__days

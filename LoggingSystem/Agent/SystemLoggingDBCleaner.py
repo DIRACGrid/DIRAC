@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/SystemLoggingDBCleaner.py,v 1.6 2009/09/03 15:41:19 vfernand Exp $
-__RCSID__ = "$Id: SystemLoggingDBCleaner.py,v 1.6 2009/09/03 15:41:19 vfernand Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/SystemLoggingDBCleaner.py,v 1.7 2009/10/13 16:34:36 mseco Exp $
+__RCSID__ = "$Id: SystemLoggingDBCleaner.py,v 1.7 2009/10/13 16:34:36 mseco Exp $"
 """  SystemLoggingDBCleaner erases records whose messageTime column 
      contains a time older than 'RemoveDate' days, where 'RemoveDate' 
      is an entry in the Configuration Service section of the agent.
@@ -30,7 +30,7 @@ class SystemLoggingDBCleaner(AgentModule):
     limitDate = limitDate[:limitDate.find('.')]
 
     commonString = 'FROM MessageRepository WHERE messageTime <'
-    cmd = "SELECT count(*) %s '%s'" % (commonString, limitDate)
+    cmd = "SELECT count(*) %s '%s'" % ( commonString, limitDate )
     result = self.SystemLoggingDB._query( cmd )
     if not result['OK']: 
       return result
@@ -40,11 +40,11 @@ class SystemLoggingDBCleaner(AgentModule):
       self.log.info('No records to erase')
       return S_OK('No records to erase')
     else:
-      cmd = "DELETE LOW_PRIORITY %s '%s'" % (commonString, limitDate)
+      cmd = "DELETE LOW_PRIORITY %s '%s'" % ( commonString, limitDate )
       result =  self.SystemLoggingDB._update( cmd )
       if not result['OK']:
         self.log.error( 'Could not erase the requested records',
-                        'those older than %s' % limitDate)
+                        'those older than %s' % limitDate )
         return result
       else:
         self.log.info('%s records have been erased' % recordsToErase )

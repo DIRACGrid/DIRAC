@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/ErrorMessageMonitor.py,v 1.6 2009/09/23 14:59:52 vfernand Exp $
-__RCSID__ = "$Id: ErrorMessageMonitor.py,v 1.6 2009/09/23 14:59:52 vfernand Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/ErrorMessageMonitor.py,v 1.7 2009/10/13 16:34:36 mseco Exp $
+__RCSID__ = "$Id: ErrorMessageMonitor.py,v 1.7 2009/10/13 16:34:36 mseco Exp $"
 """  ErrorMessageMonitor gets new errors that have been injected into the
      SystemLoggingDB and reports them by mail to the person(s) in charge
      of checking that they conform with DIRAC style. Reviewer option
@@ -24,27 +24,27 @@ class ErrorMessageMonitor(AgentModule):
 
     self.notification=NotificationClient()
         
-    userString = self.am_getOption("Reviewer", 'mseco')
+    userString = self.am_getOption( "Reviewer", 'mseco' )
     
-    self.log.debug("Users to be notified",": "+userString)
+    self.log.debug( "Users to be notified", ": " + userString )
    
     userList = List.fromChar( userString, ",")
     
     mailList = []
     for user in userList:
-      retval=gConfig.getOption("/Security/Users/"+user+"/email")
+      retval = gConfig.getOption( "/Security/Users/" + user + "/email" )
       if not retval['OK']:
-        self.log.warn("Could not get user's mail",retval['Message'])
+        self.log.warn( "Could not get user's mail", retval['Message'] )
       else:
-        mailList.append(retval['Value'])
+        mailList.append( retval['Value'] )
 
-    self.log.info("List of mails to be notified", ','.join(mailList))
+    self.log.info( "List of mails to be notified", ','.join( mailList ) )
    
     if not len(mailList):
-      errString="There are no valid users in the list"
-      varString="["+','.join(userList)+"]"
-      self.log.error(errString,varString)
-      return S_ERROR(errString+varString)
+      errString = "There are no valid users in the list"
+      varString = "[" + ','.join( userList ) + "]"
+      self.log.error( errString, varString )
+      return S_ERROR( errString + varString )
     
     self._mailAddress = mailList
     self._subject = 'New error messages were entered in the SystemLoggingDB'
