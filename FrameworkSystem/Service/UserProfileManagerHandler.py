@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/UserProfileManagerHandler.py,v 1.3 2009/10/07 14:25:06 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/UserProfileManagerHandler.py,v 1.4 2009/10/13 13:01:12 acasajus Exp $
 ########################################################################
 
 """ ProfileManager manages web user profiles
     in the DISET framework
 """
 
-__RCSID__ = "$Id: UserProfileManagerHandler.py,v 1.3 2009/10/07 14:25:06 acasajus Exp $"
+__RCSID__ = "$Id: UserProfileManagerHandler.py,v 1.4 2009/10/13 13:01:12 acasajus Exp $"
 
 import types
 import os
@@ -81,13 +81,14 @@ class UserProfileManagerHandler( RequestHandler ):
     userGroup = credDict[ 'group' ]
     return gUPDB.retrieveHashTag( userName, userGroup, hashTag )
 
-  types_retrieveAllHashTag = []
+  types_retrieveAllHashTags = []
   def export_retrieveAllHashTags( self ):
     """ Get all hash tags
     """
     credDict = self.getRemoteCredentials()
     userName = credDict[ 'username' ]
     userGroup = credDict[ 'group' ]
+    print "ASDASDASD"
     return gUPDB.retrieveAllHashTags( userName, userGroup )
 
   types_deleteProfiles = [ types.ListType ]

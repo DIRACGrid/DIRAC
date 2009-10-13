@@ -7,14 +7,15 @@ from DIRAC.Core.Utilities import DEncode, Time
 
 class UserProfileClient:
 
-  def __init__( self, profile, rpcClient = False ):
-    self.rpcClient = rpcClient
+  def __init__( self, profile, rpcClientFunctor = False ):
+    if rpcClientFunctor:
+      self.rpcClientFunctor = rpcClientFunctor
+    else:
+      self.rpcClientFunctor = RPCClient
     self.profile = profile
 
   def __getRPCClient(self):
-    if self.rpcClient:
-      return self.rpcClient
-    return RPCClient( "Framework/UserProfileManager" )
+    return self.rpcClientFunctor( "Framework/UserProfileManager" )
 
   def __generateTypeDest( self, dataObj ):
     cType = type( dataObj )

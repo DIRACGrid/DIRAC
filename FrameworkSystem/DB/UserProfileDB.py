@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/UserProfileDB.py,v 1.3 2009/10/07 14:25:06 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/UserProfileDB.py,v 1.4 2009/10/13 13:01:13 acasajus Exp $
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: UserProfileDB.py,v 1.3 2009/10/07 14:25:06 acasajus Exp $"
+__RCSID__ = "$Id: UserProfileDB.py,v 1.4 2009/10/13 13:01:13 acasajus Exp $"
 
 import time
 import md5
@@ -204,7 +204,7 @@ class UserProfileDB(DB):
     if not result[ 'OK' ]:
       return result
     hashTag = result[ 'Value' ]
-    selectSQL = "SELECT HashTag FROM `up_HashTags` WHERE UserId = %s AND HashTag = %s" % ( userId, hashTag )
+    selectSQL = "SELECT TagName FROM `up_HashTags` WHERE UserId = %s AND HashTag = %s" % ( userId, hashTag )
     result = self._query( selectSQL, conn = connObj )
     if not result[ 'OK' ]:
       return result
@@ -213,14 +213,10 @@ class UserProfileDB(DB):
       return S_OK( data[0][0] )
     return S_ERROR( "No data for combo userId %s hashTag %s" % ( userId, hashTag ) )
 
-  def retrieveAllHashTagsByUserId( self, userId, tagName, connObj = False ):
+  def retrieveAllHashTagsByUserId( self, userId, connObj = False ):
     """
     Get a data entry for a profile
     """
-    result = self._escapeString( tagName )
-    if not result[ 'OK' ]:
-      return result
-    tagName = result[ 'Value' ]
     selectSQL = "SELECT HashTag, TagName FROM `up_HashTags` WHERE UserId = %s" % ( userId )
     result = self._query( selectSQL, conn = connObj )
     if not result[ 'OK' ]:
