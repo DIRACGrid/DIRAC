@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/ThreadedMightyOptimizer.py,v 1.2 2009/10/01 18:15:35 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/ThreadedMightyOptimizer.py,v 1.3 2009/10/13 12:41:52 acasajus Exp $
 
 
 """  SuperOptimizer
  One optimizer to rule them all, one optimizer to find them, one optimizer to bring them all, and in the darkness bind them.
 """
 
-__RCSID__ = "$Id: ThreadedMightyOptimizer.py,v 1.2 2009/10/01 18:15:35 acasajus Exp $"
+__RCSID__ = "$Id: ThreadedMightyOptimizer.py,v 1.3 2009/10/13 12:41:52 acasajus Exp $"
 
 import time
 import os
@@ -47,6 +47,7 @@ class ThreadedMightyOptimizer(AgentModule):
     #Get jobs from DB
     result = self.jobDB.selectJobs(  { 'Status': self.__jobStates  } )
     if not result[ 'OK' ]:
+      gLogger.error( "Cannot retrieve jobs in states %s" % self.__jobStates )
       return result
     jobsList = result[ 'Value' ]
     for i in range( len( jobsList ) ):
@@ -61,16 +62,19 @@ class ThreadedMightyOptimizer(AgentModule):
       if now - self._jobsBeingOptimized[ jobId ] < self.__maxOptimizationTime:
         jobsStillOptimizing[ jobId ] = self._jobsBeingOptimized[ jobId ]
     self._jobsBeingOptimized = jobsStillOptimizing
-    filteredJobList = []
+    newJobsList = []
     for jobId in jobsList:
       if jobId not in self._jobsBeingOptimized:
-        filteredJobList.append( jobId )
+        newJobsList.append( jobId )
         self._jobsBeingOptimized[ jobId ] = now
       else:
         gLogger.info( "Skipping job %s. it's already being optimized" % jobId )
+    if not newJobsList:
+      return S_OK()
     #Get attrs of jobs to be optimized
-    result = self.jobDB.getAttributesForJobList( filteredJobList )
+    result = self.jobDB.getAttributesForJobList( newJobsList )
     if not result[ 'OK' ]:
+      gLogger.error( "Cannot retrieve attributes for %s jobs %s" % len( newJobsList ) )
       return result
     jobsToProcess =  result[ 'Value' ]
     for jobId in jobsToProcess:
@@ -83,20 +87,32 @@ class ThreadedMightyOptimizer(AgentModule):
     return S_OK()
   
   def __dispatchJob( self, jobId, jobAttrs, jobDef, keepOptimizing = True ):
+    returnValue = S_OK()
+    if keepOptimizing:
+      result = self.__sendJobToOptimizer(jobId, jobAttrs, jobDef )
+      if result[ 'OK' ] and result[ 'Value' ]:
+        return S_OK()
+      if not result[ 'OK' ]:
+        returnValue = result
+    print "ADL: Deleting job %s" % jobId
+    del( self._jobsBeingOptimized[ jobId ] )
+    return returnValue
+    
+  def __sendJobToOptimizer( self, jobId, jobAttrs, jobDef ):
     optimizerName = self.__getNextOptimizerName( jobAttrs )
-    if not keepOptimizing or not optimizerName or optimizerName not in self.am_getOption( "ValidOptimizers", self.__defaultValidOptimizers ):
-      del( self._jobsBeingOptimized[ jobId ] )
-      return S_OK()
+    if not optimizerName:
+      return S_OK( False )
+    if optimizerName not in self.am_getOption( "ValidOptimizers", self.__defaultValidOptimizers ):
+      return S_OK( False )
     if optimizerName not in self._threadedOptimizers:
       to = ThreadedOptimizer( optimizerName, self.am_getModuleParam( 'fullName' ), 
                               self.__dispatchJob )
       result = to.initialize( self.jobDB, self.jobLoggingDB )
       if not result[ 'OK' ]:
-        del( self._jobsBeingOptimized[ jobId ] )
-        return result
+        return S_OK( False )
       self._threadedOptimizers[ optimizerName ] = to
     self._threadedOptimizers[ optimizerName ].optimizeJob( jobId, jobAttrs, jobDef )
-    return S_OK()
+    return S_OK( True )
     
   def __getNextOptimizerName( self, jobAttrs ):
     if jobAttrs[ 'Status' ] == 'Received':
