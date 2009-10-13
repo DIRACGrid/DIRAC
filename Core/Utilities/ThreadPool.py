@@ -1,8 +1,8 @@
 #################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.13 2009/10/01 12:26:51 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.14 2009/10/13 16:04:02 acasajus Exp $
 #################################################################
 
-__RCSID__ = "$Id: ThreadPool.py,v 1.13 2009/10/01 12:26:51 acasajus Exp $"
+__RCSID__ = "$Id: ThreadPool.py,v 1.14 2009/10/13 16:04:02 acasajus Exp $"
 
 import time
 import sys
@@ -97,7 +97,7 @@ class ThreadedJob:
 
 class ThreadPool( threading.Thread ):
 
-  def __init__( self, iMinThreads, iMaxThreads = 0, iMaxQueuedRequests = 0 ):
+  def __init__( self, iMinThreads, iMaxThreads = 0, iMaxQueuedRequests = 0, strictLimits = True ):
     threading.Thread.__init__( self )
     if iMinThreads < 1:
       self.__minThreads = 1
@@ -107,6 +107,7 @@ class ThreadPool( threading.Thread ):
       self.__maxThreads = self.__minThreads
     else:
       self.__maxThreads = iMaxThreads
+    self.__strictLimits = strictLimits
     self.__pendingQueue = Queue.Queue( iMaxQueuedRequests )
     self.__resultsQueue = Queue.Queue( iMaxQueuedRequests + iMaxThreads )
     self.__workingThreadsList = []
@@ -125,8 +126,16 @@ class ThreadPool( threading.Thread ):
     self.__workingThreadsList.append( WorkingThread( self.__pendingQueue, self.__resultsQueue ) )
 
   def __killWorkingThread( self ):
-    self.__workingThreadsList[0].kill()
-    del( self.__workingThreadsList[0] )
+    if self.__strictLimits:
+      for i in range( len( self.__workingThreadsList ) ):
+        wT = self.__workingThreadsList[i]
+        if not wT.isWorking():
+          wT.kill()
+          del( self.__workingThreadsList[i] )
+          break
+    else:
+      self.__workingThreadsList[0].kill()
+      del( self.__workingThreadsList[0] )
 
   def __countWaitingThreads(self ):
     iWaitingThreads = 0
