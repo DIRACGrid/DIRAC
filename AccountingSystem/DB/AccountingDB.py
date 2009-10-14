@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.20 2009/10/05 13:04:42 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.20 2009/10/05 13:04:42 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.21 2009/10/14 09:56:21 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.21 2009/10/14 09:56:21 acasajus Exp $"
 
 import datetime, time
 import types
@@ -481,8 +481,8 @@ class AccountingDB(DB):
     result = self.__getIdForKeyValue( typeName, keyName, keyValue, connection )
     if not result[ 'OK' ]:
       return result
-    keyCache[ keyValue ] = retVal[ 'Value' ]
-    return retVal
+    keyCache[ keyValue ] = result[ 'Value' ]
+    return result
 
   def calculateBucketLengthForTime( self, typeName, now, when ):
     """
