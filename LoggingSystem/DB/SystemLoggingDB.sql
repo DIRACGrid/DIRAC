@@ -1,6 +1,6 @@
 
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.sql,v 1.13 2009/10/05 09:41:55 vfernand Exp $
-__RCSID__ = "$Id: SystemLoggingDB.sql,v 1.13 2009/10/05 09:41:55 vfernand Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.sql,v 1.14 2009/10/14 07:40:33 rgracian Exp $
+__RCSID__ = "$Id: SystemLoggingDB.sql,v 1.14 2009/10/14 07:40:33 rgracian Exp $"
 
 -- ------------------------------------------------------------------------------
 --
@@ -17,7 +17,6 @@ CREATE DATABASE SystemLoggingDB;
 -- Database owner definition
 
 USE mysql;
-DELETE FROM user WHERE user='Dirac';
 
 --
 -- Must set passwords for database user by replacing "must_be_set".
@@ -28,8 +27,10 @@ GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON SystemLogging
 
 FLUSH PRIVILEGES;
 
+USE SystemLoggingDB;
+
 -- -----------------------------------------------------
--- Table `SystemLoggingDB_n`.`UserDNs`
+-- Table `UserDNs`
 -- -----------------------------------------------------
 CREATE  TABLE IF NOT EXISTS `UserDNs` (
   `UserDNID` INT NOT NULL AUTO_INCREMENT ,
