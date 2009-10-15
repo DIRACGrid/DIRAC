@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.75 2009/09/15 13:36:22 paterson Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.76 2009/10/15 11:40:41 paterson Exp $
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.75 2009/09/15 13:36:22 paterson Exp $"
+__RCSID__ = "$Id: DiracProduction.py,v 1.76 2009/10/15 11:40:41 paterson Exp $"
 
 import string, re, os, time, shutil, types, copy
 import pprint
@@ -490,7 +490,8 @@ class DiracProduction:
         result = self.getProductionProgress(productionID)
         if not result['OK']:
           return result
-        createdJobs = result['Value']['Created']
+        if result['Value'].has_key('Created'):
+          createdJobs = result['Value']['Created']
         result['Totals'] = {'Submitted':int(submittedJobs),'Done':int(doneJobs)}
       result['Value'] = summary
       return result
