@@ -179,13 +179,25 @@ class VOMS( BaseSecurity ):
     else:
       cmdArgs.append( '-voms "%s"' % vo )  
     cmdArgs.append( '-valid "%s:%s"' % ( hours, mins ) )
+    tmp = None
     if 'DIRAC_VOMSES' in os.environ:
-      vomsesDir = os.environ[ 'DIRAC_VOMSES' ]
-      if os.path.exists( vomsesDir ):
+      diracVomses = os.environ[ 'DIRAC_VOMSES' ]
+      if os.path.exists( diracVomses ):
+        # Copy the vomses files into a local directory
+        import tempfile
+        tmpDir = tempfile.mkdtemp()
+        import shutil
+        vomsesDir = os.path.join(tmpDir,'vomses')
+        shutil.copytree(diracVomses,vomsesDir)
+        vomses = os.listdir(vomsesDir)
+        # set authorisation to 644
+        for v in vomses:
+          os.chmod(os.path.join(vomsesDir,v),6*64+4*8+4)
         cmdArgs.append( '-vomses "%s"' % vomsesDir )
 
     cmd = 'voms-proxy-init %s' % " ".join( cmdArgs )
     result = shellCall( self._secCmdTimeout, cmd )
+    if tmpDir: shutil.rmtree(tmpDir)
 
     File.deleteMultiProxy( proxyDict )
 
