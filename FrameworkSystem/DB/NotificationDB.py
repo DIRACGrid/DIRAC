@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.4 2009/10/19 17:49:40 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.5 2009/10/19 18:03:53 acasajus Exp $
 ########################################################################
 """ NotificationDB class is a front-end to the Notifications database
 """
 
-__RCSID__ = "$Id: NotificationDB.py,v 1.4 2009/10/19 17:49:40 acasajus Exp $"
+__RCSID__ = "$Id: NotificationDB.py,v 1.5 2009/10/19 18:03:53 acasajus Exp $"
 
 import time
 import types
@@ -522,7 +522,7 @@ class NotificationDB(DB):
     if not result[ 'OK' ]:
       return result
     user = result[ 'Value' ]
-    updateSQL = "UPDATE `ntf_Notifications` SET Read=1 WHERE User=%s" % user
+    updateSQL = "UPDATE `ntf_Notifications` SET Seen=1 WHERE User=%s" % user
     escapedIDs = []
     if msgIds:
       for id in msgIds:
