@@ -147,3 +147,25 @@ class PilotPlotter(BaseReporter):
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "jobs/pilot" }
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
+  
+  def _reportTotalNumberOfPilots( self, reportRequest ):
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'entriesInBucket'
+                                   ]
+                   )
+    retVal = self._getSummaryData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
+                                selectFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
+                                {} )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict = retVal[ 'Value' ]
+    return S_OK( { 'data' : dataDict  } )
+
+  def _plotTotalNumberOfPilots( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Total Number of Pilots by %s' % reportRequest[ 'grouping' ],
+                 'ylabel' : 'Pilots'
+                }
+    return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )
