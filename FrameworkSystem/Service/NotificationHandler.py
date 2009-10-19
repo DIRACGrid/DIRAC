@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationHandler.py,v 1.4 2009/06/14 22:35:47 atsareg Exp $
+# $Id: NotificationHandler.py,v 1.5 2009/10/19 18:04:01 acasajus Exp $
 ########################################################################
 
 """ The Notification service provides a toolkit to contact people via email
@@ -17,7 +17,7 @@
     subscribing to them. 
 """
 
-__RCSID__ = "$Id: NotificationHandler.py,v 1.4 2009/06/14 22:35:47 atsareg Exp $"
+__RCSID__ = "$Id: NotificationHandler.py,v 1.5 2009/10/19 18:04:01 acasajus Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -25,13 +25,14 @@ from DIRAC.Core.Utilities.Mail import Mail
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.DB.NotificationDB import NotificationDB
+from DIRAC.Core.Security import Properties
 
-notificationDB = None
+gNotDB = None
 
 def initializeNotificationHandler( serviceInfo ):
 
-  global notificationDB
-  notificationDB = NotificationDB()
+  global gNotDB
+  gNotDB = NotificationDB()
   return S_OK()
 
 class NotificationHandler( RequestHandler ):
@@ -97,83 +98,100 @@ class NotificationHandler( RequestHandler ):
     return result
   
   ###########################################################################
-  types_setAlarm = [StringType,StringType,StringType,StringType]
-  def export_setAlarm(self,name,body,group,alarmType,view='Any',comment='',source=''):
+  # ALARMS
+  ###########################################################################
+  
+  types_newAlarm = [ DictType ]
+  def export_newAlarm( self, alarmDefinition ):
     """ Set a new alarm in the Notification database
     """
+    credDict = self.getRemoteCredentials()
+    if 'username' not in credDict:
+      return S_ERROR( "OOps. You don't have a username! This shouldn't happen :P" )
+    alarmDefinition[ 'author' ] = credDict[ 'username' ]
+    return gNotDB.newAlarm( alarmDefinition )
     
-    result = notificationDB.setAlarm(name,body,group,alarmType,
-                                     author=self.clientDN,
-                                     view=view,
-                                     comment=comment,
-                                     source=source)   
-    return result
-  
-  ###########################################################################
-  types_updateAlarm = [IntType,StringType,StringType,StringType]
-  def export_updateAlarm(self,alarmID,status,action,comment):
+  types_updateAlarm = [ DictType ]
+  def export_updateAlarm( self, updateDefinition ):
     """ update an existing alarm in the Notification database
     """
-    
-    result = notificationDB.updateAlarm(alarmID,status,action,comment,
-                                        author=self.clientDN)   
-    return result
+    credDict = self.getRemoteCredentials()
+    if 'username' not in credDict:
+      return S_ERROR( "OOps. You don't have a username! This shouldn't happen :P" )
+    updateDefinition[ 'author' ] = credDict[ 'username' ]
+    return gNotDB.updateAlarm( updateDefinition )
   
-  ###########################################################################
-  types_closeAlarm = [StringType,StringType,StringType]
-  def export_closeAlarm(self,name,body,group):
-    """ Set a new alarm in the Notification database
-    """
-    
-    result = notificationDB.updateAlarm(status='Closed',author=self.clientDN)   
-    return result
+  types_getAlarms = [DictType, ListType, IntType, IntType]
+  def export_getAlarms( self, selectDict, sortList, startItem, maxItems ):
+    """ Select existing alarms suitable for the Web monitoring
+    """       
+    return gNotDB.getAlarms( selectDict, sortList, startItem, maxItems ) 
    
   ###########################################################################
-  types_getAlarmsWeb = [DictType, ListType, IntType, IntType]
-  def export_getAlarmsWeb(self,selectDict, sortList, startItem, maxItems):
-    """ Select existing alarms suitable for the Web monitoring
-    """ 
-    
-    order = ''
-    if sortList:
-      order = sortList[0]
-      
-    startID = selectDict.get('StartID',0)
-    if startID:
-      del selectDict['StartID']
-    startTime = selectDict.get('FromDate','')
-    if startTime:
-      del selectDict['FromDate']
-    endTime = selectDict.get('ToDate',0)
-    if endTime:
-      del selectDict['ToDate']
-      
-    result = notificationDB.selectAlarms(selectDict,order,startID,startTime,endTime) 
-    if not result['OK']:
-      return result
-    parameters = result['Value']['ParameterNames']
-    
-    records = result['Value']['Records']
-    nRecs = len(records)
-    if startItem > nRecs:
-      return S_ERROR('Start item is higher than the number of alarms')
-    lastRecord = startItem+maxItems
-    if lastRecord > nRecs:
-      lastRecord = nRecs
-
-    records = records[startItem:lastRecord]
-    resultDict = result['Value']
-    resultDict['Records'] = records
-
-    return S_OK(resultDict)     
-          
+  # MANANGE ASSIGNEE GROUPS
   ###########################################################################
-  types_getAlarms = [IntType, StringType, StringType]
-  def export_getAlarms(self,startID,startTime,group):
-    """ Get alarms for the alarm notifier
+  
+  types_setAssigneeGroup = [ StringType, ListType ]
+  def export_setAssigneeGroup( self, groupName, userList ):
+    """ Create a group of users to be used as an assignee for an alarm
     """
-    
-    result = notificationDB.getAlarms(startID=startID,startTime=startTime,group=group)
-    return result
-    
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+    return gNotDB.setAssigneeGroup( groupName, userList ) 
+  
+  types_getUsersInAssigneeGroup = [ StringType ]
+  def export_getUsersInAssigneeGroup( self, groupName ):
+    """ Get users in assignee group
+    """       
+    return gNotDB.getUserAsignees( groupName )
+  
+  types_deleteAssigneeGroup = [ StringType ]
+  def export_deleteAssigneeGroup( self, groupName ):
+    """ Delete an assignee group
+    """
+    return gNotDB.deleteAssigneeGroup( groupName )
+  
+  types_getAssigneeGroups = []
+  def export_getAssigneeGroups( self ):
+    """ Get all assignee groups and the users that belong to them
+    """
+    return gNotDB.getAssigneeGroups()
+  
+  ###########################################################################
+  # MANAGE NOTIFICATIONS
+  ###########################################################################
+  
+  types_addNotificationForUser = [ StringType, StringType ]
+  def export_addNotificationForUser( self, user, message, lifetime = 604800, deferToMail = True ):
+    """ Create a group of users to be used as an assignee for an alarm
+    """
+    try:
+      lifetime = int( lifetime )
+    except:
+      return S_ERROR( "Message lifetime has to be a non decimal number" )
+    return gNotDB.addNotificationForUser( user, message, lifetime, deferToMail ) 
+  
+  types_removeNotificationsForUser = [ StringType ]
+  def export_removeNotificationsForUser( self, user ):
+    """ Get users in assignee group
+    """       
+    credDict = self.getRemoteCredentials()
+    if Properties.SERVICE_ADMINISTRATOR not in credDict[ 'properties' ]:
+      user = credDict[ 'username' ]
+    return gNotDB.removeNotificationsForUser( user )
+  
+  types_markNotificationsAsRead = [ StringType, ListType ]
+  def export_markNotificationsAsRead( self, user, notIds ):
+    """ Delete an assignee group
+    """
+    credDict = self.getRemoteCredentials()
+    if Properties.SERVICE_ADMINISTRATOR not in credDict[ 'properties' ]:
+      user = credDict[ 'username' ]
+    return gNotDB.markNotificationsAsRead( user, notIds )
+  
+  types_getNotifications = [ DictType, ListType, IntType, IntType ]
+  def export_getNotifications( self, selectDict, sortList, startItem, maxItems ):
+    """ Get all assignee groups and the users that belong to them
+    """
+    credDict = self.getRemoteCredentials()
+    if Properties.SERVICE_ADMINISTRATOR not in credDict[ 'properties' ]:
+      selectDict[ 'user' ] = [ credDict[ 'username' ] ]
+    return gNotDB.getNotifications( selectDict, sortList, startItem, maxItems )
