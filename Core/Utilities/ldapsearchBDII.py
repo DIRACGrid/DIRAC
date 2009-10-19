@@ -158,7 +158,7 @@ Each ceState is dictionary which contains attributes of ce.
 For example result['Value'][0]['GlueCEStateStatus']
 '''
   from DIRAC import S_OK, S_ERROR
-  filt = '(&(GlueCEUniqueID=%s*)(GlueCEAccessControlBaseRule=VO:%s))'%(ce,vo)
+  filt = '(&(GlueCEUniqueID=%s*)(GlueCEAccessControlBaseRule=*%s))'%(ce,vo)
 
   result = ldapsearchBDII( filt, attr, host )
 
@@ -183,7 +183,7 @@ For example result['Value'][0]['GlueCEStateRunningJobs']
 '''
   from DIRAC import S_OK, S_ERROR
 
-  filt = '(&(GlueCEUniqueID=%s*)(GlueCEAccessControlBaseRule=VO:%s))'%(ce,vo)
+  filt = '(&(GlueCEUniqueID=%s*)(GlueCEAccessControlBaseRule=*%s))'%(ce,vo)
   result = ldapsearchBDII( filt, attr, host )
 
   if not result['OK']:
@@ -191,7 +191,7 @@ For example result['Value'][0]['GlueCEStateRunningJobs']
 
   ces = result['Value']
 
-  filt = '(&(objectClass=GlueVOView)(GlueCEAccessControlBaseRule=VO:%s))'%vo
+  filt = '(&(objectClass=GlueVOView)(GlueCEAccessControlBaseRule=*%s))'%vo
   views = []
 
   for ce in ces:
