@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/gLitePilotDirector.py,v 1.3 2009/05/28 05:29:50 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/gLitePilotDirector.py,v 1.4 2009/10/19 10:06:57 rgracian Exp $
 # File :   gLitePilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
    - basic configuration for gLite
    - submit and monitor methods for gLite MiddleWare.
 """
-__RCSID__ = "$Id: gLitePilotDirector.py,v 1.3 2009/05/28 05:29:50 rgracian Exp $"
+__RCSID__ = "$Id: gLitePilotDirector.py,v 1.4 2009/10/19 10:06:57 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.private.GridPilotDirector  import GridPilotDirector
 from DIRAC import S_OK, S_ERROR, gConfig, List
@@ -96,7 +96,7 @@ ErrorStorage = "%s/pilotError";
 OutputStorage = "%s/pilotOutput";
 # ListenerPort = 44000;
 ListenerStorage = "%s/Storage";
-VirtualOrganisation = "lhcb";
+# VirtualOrganisation = "lhcb";
 RetryCount = 0;
 ShallowRetryCount = 0;
 WMProxyEndPoints = { %s };
