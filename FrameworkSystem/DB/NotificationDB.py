@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.3 2009/10/16 16:25:51 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.4 2009/10/19 17:49:40 acasajus Exp $
 ########################################################################
 """ NotificationDB class is a front-end to the Notifications database
 """
 
-__RCSID__ = "$Id: NotificationDB.py,v 1.3 2009/10/16 16:25:51 acasajus Exp $"
+__RCSID__ = "$Id: NotificationDB.py,v 1.4 2009/10/19 17:49:40 acasajus Exp $"
 
 import time
 import types
@@ -22,10 +22,10 @@ class NotificationDB(DB):
     result = self.__initializeDB()
     if not result[ 'OK' ]:
       self.log.fatal( "Cannot initialize DB!", result[ 'Message' ] )
-    self.__alarmQueryFields = [ 'alarmid', 'creator', 'creationtime', 'modtime', 'subject', 
+    self.__alarmQueryFields = [ 'alarmid', 'author', 'creationtime', 'modtime', 'subject', 
                                 'status', 'type', 'body', 'assignee' ]
     self.__notificationQueryFields = ( 'id', 'user', 'seen', 'message' )
-    self.__newAlarmMandatoryFields = [ 'creator', 'subject', 'status', 'type', 'body', 'assignee' ]
+    self.__newAlarmMandatoryFields = [ 'author', 'subject', 'status', 'type', 'body', 'assignee' ]
     self.__updateAlarmMandatoryFields = [ 'id', 'author' ]
     self.__updateAlarmAtLeastOneField = [ 'comment', 'modifications' ]
     self.__updateAlarmModificableFields = [ 'status', 'type', 'assignee' ]
@@ -41,7 +41,7 @@ class NotificationDB(DB):
     tablesToCreate = {}
     if 'ntf_Alarms' not in tablesInDB:
       tablesToCreate[ 'ntf_Alarms' ] = { 'Fields' : { 'AlarmId' : 'INTEGER UNSIGNED AUTO_INCREMENT NOT NULL',
-                                                         'Creator' : 'VARCHAR(64) NOT NULL',
+                                                         'Author' : 'VARCHAR(64) NOT NULL',
                                                          'CreationTime' : 'DATETIME NOT NULL',
                                                          'ModTime' : 'DATETIME NOT NULL',
                                                          'Subject' : 'VARCHAR(255) NOT NULL',
@@ -109,7 +109,7 @@ class NotificationDB(DB):
       if not result[ 'OK' ]:
         return result
       if not result[ 'Value' ]:
-        return S_ERROR( "%s is not a known assignee" % alarmDef[ 'assignee' ] )
+        return S_ERROR( "%s is not a known assignee" % value )
       return result
     return S_OK()
 
@@ -125,9 +125,9 @@ class NotificationDB(DB):
         return result
       if field == 'assignee':
         followers = result[ 'Value' ]
-    creator = alarmDef[ 'creator' ]
-    if creator not in followers:
-      followers.append( creator )
+    author = alarmDef[ 'author' ]
+    if author not in followers:
+      followers.append( author )
       
     sqlFieldsName = []
     sqlFieldsValue = []
@@ -256,20 +256,29 @@ class NotificationDB(DB):
     print subscribers
     return S_OK()
 
-  def getAlarms( self, condDict = {}, modifiedAfter = False, sortList = False, start = 0, limit = 0 ):
+  def getAlarms( self, condDict = {}, sortList = False, start = 0, limit = 0, modifiedAfter = False ):
     
     condSQL = []
     for field in self.__alarmQueryFields:
       if field in condDict:
         fieldValues = []
-        for value in condDict[ field ]:
+        rawValue = condDict[ field ]
+        if field == 'assignee':
+          expandedValue = []
+          for user in rawValue:
+            result = self.getAssigneeGroupsForUser( user )
+            if not result[ 'OK' ]:
+              return result
+            for ag in result[ 'Value' ]:
+              if ag not in expandedValue:
+                expandedValue.append( ag )
+          rawValue = expandedValue
+        for value in rawValue:
           result = self._escapeString( value )
           if not result[ 'OK' ]:
             return result
           fieldValues.append( result[ 'Value' ] )
         condSQL.append( "%s in ( %s )" % ( field, ",".join( fieldValues ) ) )
-    
-    print condSQL
     
     selSQL = "SELECT %s FROM `ntf_Alarms`" % ",".join( self.__alarmQueryFields )
     if modifiedAfter:
@@ -449,6 +458,16 @@ class NotificationDB(DB):
       agDict[ ag ].append( user )
     return S_OK( agDict )
   
+  def getAssigneeGroupsForUser( self, user ):
+    result = self._escapeString( user )
+    if not result[ 'OK' ]:
+      return result
+    user = result[ 'Value' ]
+    result = self._query( "SELECT AssigneeGroup from `ntf_AssigneeGroups` WHERE User=%s" % user )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( [ row[0] for row in result[ 'Value' ] ] )
+  
 ###
 # Notifications
 ###
@@ -536,8 +555,6 @@ class NotificationDB(DB):
       selSQL += " ORDER BY Id DESC"
     if limit:
       selSQL += " LIMIT %d,%d" % ( start, limit )
-
-    print selSQL
 
     result = self._query( selSQL )
     if not result['OK']:
