@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.6 2009/10/20 15:55:47 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.7 2009/10/20 16:05:21 acasajus Exp $
 ########################################################################
 """ NotificationDB class is a front-end to the Notifications database
 """
 
-__RCSID__ = "$Id: NotificationDB.py,v 1.6 2009/10/20 15:55:47 acasajus Exp $"
+__RCSID__ = "$Id: NotificationDB.py,v 1.7 2009/10/20 16:05:21 acasajus Exp $"
 
 import time
 import types
@@ -333,7 +333,7 @@ class NotificationDB(DB):
 # Followers management
 ###    
 
-  def modifyFollowerForAlarm( self, alarmId, user, mail, notification, sms, overwrite = True ):
+  def modifyFollowerForAlarm( self, alarmId, user, notification, mail, sms, overwrite = True ):
     rawUser = user
     if rawUser not in CS.getAllUsers():
       return S_OK()
@@ -342,7 +342,7 @@ class NotificationDB(DB):
       return result
     user = result[ 'Value' ]
     subscriber = mail or notification or sms
-    selSQL = "SELECT Mail, Notification, SMS FROM `ntf_AlarmFollowers` WHERE AlarmId=%d AND User=%s" % ( alarmId, user )
+    selSQL = "SELECT Notification, Mail, SMS FROM `ntf_AlarmFollowers` WHERE AlarmId=%d AND User=%s" % ( alarmId, user )
     result = self._query( selSQL )
     if not result[ 'OK' ]:
       return result
@@ -350,12 +350,12 @@ class NotificationDB(DB):
       if not subscriber:
         return S_OK()
       sqlValues = [ "%d" % alarmId, user ]
-      for v in ( mail, notification, sms ):
+      for v in ( notification, mail, sms ):
         if v:
           sqlValues.append( "1" )
         else:
           sqlValues.append( "0" )
-      inSQL = "INSERT INTO `ntf_AlarmFollowers` ( AlarmId, User, Mail, Notification, SMS ) VALUES (%s)" % ",".join( sqlValues )
+      inSQL = "INSERT INTO `ntf_AlarmFollowers` ( AlarmId, User, Notification, Mail, SMS ) VALUES (%s)" % ",".join( sqlValues )
       return self._update( inSQL )
     sqlCond = "AlarmId=%d AND User=%s" % ( alarmId, user )
     #Need to delete
