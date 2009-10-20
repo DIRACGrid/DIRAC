@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationHandler.py,v 1.6 2009/10/20 15:55:57 acasajus Exp $
+# $Id: NotificationHandler.py,v 1.7 2009/10/20 16:11:17 acasajus Exp $
 ########################################################################
 
 """ The Notification service provides a toolkit to contact people via email
@@ -17,7 +17,7 @@
     subscribing to them. 
 """
 
-__RCSID__ = "$Id: NotificationHandler.py,v 1.6 2009/10/20 15:55:57 acasajus Exp $"
+__RCSID__ = "$Id: NotificationHandler.py,v 1.7 2009/10/20 16:11:17 acasajus Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -125,16 +125,11 @@ class NotificationHandler( RequestHandler ):
   def export_getAlarmInfo( self, alarmId ):
     """ Get the extended info of an alarm
     """
-    result = gNotDB.getAlarms( { 'alarmId' : alarmId } )
+    result = gNotDB.getAlarmInfo( alarmId )
     if not result[ 'OK' ]:
       return result
-    alarmInfo = {}
-    data = result[ 'Value' ]
-    if len( data[ 'Records' ] ) == 0:
-      return S_OK( {} )
-    for i in range( len( data[ 'ParameterNames' ] ) ):
-      alarmInfo[ data[ 'ParameterNames' ][i] ] = data[ 'Records' ][0][i]
-    result = gNotDB.getExtendedInfoForAlarm( alarmId )
+    alarmInfo = result[ 'Value' ]
+    result = gNotDB.getAlarmLog( alarmId )
     if not result[ 'OK' ]:
       return result
     return S_OK( { 'info' : alarmInfo, 'log' : result[ 'Value' ] } )

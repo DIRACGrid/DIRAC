@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.7 2009/10/20 16:05:21 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.8 2009/10/20 16:11:17 acasajus Exp $
 ########################################################################
 """ NotificationDB class is a front-end to the Notifications database
 """
 
-__RCSID__ = "$Id: NotificationDB.py,v 1.7 2009/10/20 16:05:21 acasajus Exp $"
+__RCSID__ = "$Id: NotificationDB.py,v 1.8 2009/10/20 16:11:17 acasajus Exp $"
 
 import time
 import types
@@ -304,8 +304,19 @@ class NotificationDB(DB):
     resultDict['Records'] = [ list(v) for v in result['Value'] ]
     return S_OK( resultDict )
   
+  def getAlarmInfo( self, alarmId ):
+    result = self.getAlarms( { 'alarmId' : alarmId } )
+    if not result[ 'OK' ]:
+      return result
+    alarmInfo = {}
+    data = result[ 'Value' ]
+    if len( data[ 'Records' ] ) == 0:
+      return S_OK( {} )
+    for i in range( len( data[ 'ParameterNames' ] ) ):
+      alarmInfo[ data[ 'ParameterNames' ][i] ] = data[ 'Records' ][0][i]
+    return S_OK( alarmInfo )
   
-  def getExtendedInfoForAlarm( self, alarmId ):
+  def getAlarmLog( self, alarmId ):
     try:
       alarmId = int( alarmId )
     except:
