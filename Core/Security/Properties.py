@@ -30,3 +30,5 @@ PRODUCTION_MANAGEMENT = "ProductionManagement"
 PPG_AUTHORITY = "PPGAuthority"
 #Allow Bookkeeping Management
 BOOKKEEPING_MANAGEMENT = "BookkeepingManagement"
+#Allow to set notifications and manage alarms
+ALARMS_MANAGEMENT = "AlarmsManagement"
