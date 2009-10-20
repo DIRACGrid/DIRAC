@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationHandler.py,v 1.5 2009/10/19 18:04:01 acasajus Exp $
+# $Id: NotificationHandler.py,v 1.6 2009/10/20 15:55:57 acasajus Exp $
 ########################################################################
 
 """ The Notification service provides a toolkit to contact people via email
@@ -17,7 +17,7 @@
     subscribing to them. 
 """
 
-__RCSID__ = "$Id: NotificationHandler.py,v 1.5 2009/10/19 18:04:01 acasajus Exp $"
+__RCSID__ = "$Id: NotificationHandler.py,v 1.6 2009/10/20 15:55:57 acasajus Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -121,6 +121,24 @@ class NotificationHandler( RequestHandler ):
     updateDefinition[ 'author' ] = credDict[ 'username' ]
     return gNotDB.updateAlarm( updateDefinition )
   
+  types_getAlarmInfo = [ ( IntType, LongType ) ]
+  def export_getAlarmInfo( self, alarmId ):
+    """ Get the extended info of an alarm
+    """
+    result = gNotDB.getAlarms( { 'alarmId' : alarmId } )
+    if not result[ 'OK' ]:
+      return result
+    alarmInfo = {}
+    data = result[ 'Value' ]
+    if len( data[ 'Records' ] ) == 0:
+      return S_OK( {} )
+    for i in range( len( data[ 'ParameterNames' ] ) ):
+      alarmInfo[ data[ 'ParameterNames' ][i] ] = data[ 'Records' ][0][i]
+    result = gNotDB.getExtendedInfoForAlarm( alarmId )
+    if not result[ 'OK' ]:
+      return result
+    return S_OK( { 'info' : alarmInfo, 'log' : result[ 'Value' ] } )
+  
   types_getAlarms = [DictType, ListType, IntType, IntType]
   def export_getAlarms( self, selectDict, sortList, startItem, maxItems ):
     """ Select existing alarms suitable for the Web monitoring
@@ -153,7 +171,16 @@ class NotificationHandler( RequestHandler ):
   def export_getAssigneeGroups( self ):
     """ Get all assignee groups and the users that belong to them
     """
-    return gNotDB.getAssigneeGroups()
+    return gNotDB.getAssigneeGroups()  
+  
+  types_getAssigneeGroupsForUser = [ StringType ]
+  def export_getAssigneeGroupsForUser( self, user ):
+    """ Get all assignee groups and the users that belong to them
+    """
+    credDict = self.getRemoteCredentials()
+    if Properties.ALARMS_MANAGEMENT not in credDict[ 'properties' ]:
+      user = credDict[ 'username' ]
+    return gNotDB.getAssigneeGroupsForUser( user )
   
   ###########################################################################
   # MANAGE NOTIFICATIONS
@@ -174,7 +201,7 @@ class NotificationHandler( RequestHandler ):
     """ Get users in assignee group
     """       
     credDict = self.getRemoteCredentials()
-    if Properties.SERVICE_ADMINISTRATOR not in credDict[ 'properties' ]:
+    if Properties.ALARMS_MANAGEMENT not in credDict[ 'properties' ]:
       user = credDict[ 'username' ]
     return gNotDB.removeNotificationsForUser( user )
   
@@ -183,7 +210,7 @@ class NotificationHandler( RequestHandler ):
     """ Delete an assignee group
     """
     credDict = self.getRemoteCredentials()
-    if Properties.SERVICE_ADMINISTRATOR not in credDict[ 'properties' ]:
+    if Properties.ALARMS_MANAGEMENT not in credDict[ 'properties' ]:
       user = credDict[ 'username' ]
     return gNotDB.markNotificationsAsRead( user, notIds )
   
@@ -192,6 +219,6 @@ class NotificationHandler( RequestHandler ):
     """ Get all assignee groups and the users that belong to them
     """
     credDict = self.getRemoteCredentials()
-    if Properties.SERVICE_ADMINISTRATOR not in credDict[ 'properties' ]:
+    if Properties.ALARMS_MANAGEMENT not in credDict[ 'properties' ]:
       selectDict[ 'user' ] = [ credDict[ 'username' ] ]
     return gNotDB.getNotifications( selectDict, sortList, startItem, maxItems )
