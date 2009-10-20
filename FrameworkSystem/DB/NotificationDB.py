@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.5 2009/10/19 18:03:53 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.6 2009/10/20 15:55:47 acasajus Exp $
 ########################################################################
 """ NotificationDB class is a front-end to the Notifications database
 """
 
-__RCSID__ = "$Id: NotificationDB.py,v 1.5 2009/10/19 18:03:53 acasajus Exp $"
+__RCSID__ = "$Id: NotificationDB.py,v 1.6 2009/10/20 15:55:47 acasajus Exp $"
 
 import time
 import types
@@ -24,6 +24,7 @@ class NotificationDB(DB):
       self.log.fatal( "Cannot initialize DB!", result[ 'Message' ] )
     self.__alarmQueryFields = [ 'alarmid', 'author', 'creationtime', 'modtime', 'subject', 
                                 'status', 'type', 'body', 'assignee' ]
+    self.__alarmLogFields = [ 'timestamp', 'author', 'comment', 'modifications' ]
     self.__notificationQueryFields = ( 'id', 'user', 'seen', 'message' )
     self.__newAlarmMandatoryFields = [ 'author', 'subject', 'status', 'type', 'body', 'assignee' ]
     self.__updateAlarmMandatoryFields = [ 'id', 'author' ]
@@ -252,6 +253,10 @@ class NotificationDB(DB):
     if not result[ 'OK' ]:
       return result
     subscribers = result[ 'Value' ]
+    needLongText = False
+    if subscribers[ 'mail' ]:
+      needLongText = True
+    print needLongText
     #TODO: HERE
     print subscribers
     return S_OK()
@@ -297,6 +302,31 @@ class NotificationDB(DB):
     resultDict = {}
     resultDict['ParameterNames'] = self.__alarmQueryFields
     resultDict['Records'] = [ list(v) for v in result['Value'] ]
+    return S_OK( resultDict )
+  
+  
+  def getExtendedInfoForAlarm( self, alarmId ):
+    try:
+      alarmId = int( alarmId )
+    except:
+      return S_ERROR( "Alarm id must be a non decimal number" )
+    sqlSel = "SELECT %s FROM `ntf_AlarmLog` WHERE AlarmId=%d ORDER BY Timestamp ASC" % ( ",".join( self.__alarmLogFields ),
+                                                                  alarmId )
+    result = self._query( sqlSel )
+    if not result[ 'OK' ]:
+      return result
+    decodedRows = []
+    for row in result[ 'Value' ]:
+      decodedRows.append( list( row ) )
+      if not row[3]:
+        decodedRows.append( list( row ) )
+        continue
+      dec = DEncode.decode( row[ 3 ] )
+      decodedRows[-1][3] = dec[0]
+    
+    resultDict = {}
+    resultDict['ParameterNames'] = self.__alarmLogFields
+    resultDict['Records'] = decodedRows
     return S_OK( resultDict )
 
 ###
@@ -459,6 +489,8 @@ class NotificationDB(DB):
     return S_OK( agDict )
   
   def getAssigneeGroupsForUser( self, user ):
+    if user not in CS.getAllUsers():
+      return S_ERROR( "%s is an unknown user" % user )
     result = self._escapeString( user )
     if not result[ 'OK' ]:
       return result
