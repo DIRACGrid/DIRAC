@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.18 2009/05/04 19:07:37 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobPathAgent.py,v 1.19 2009/10/20 14:39:58 paterson Exp $
 # File :   JobPathAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,7 +12,7 @@
       path through the optimizers.
 
 """
-__RCSID__ = "$Id: JobPathAgent.py,v 1.18 2009/05/04 19:07:37 atsareg Exp $"
+__RCSID__ = "$Id: JobPathAgent.py,v 1.19 2009/10/20 14:39:58 paterson Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
@@ -94,19 +94,19 @@ class JobPathAgent(OptimizerModule):
         self.log.verbose('Adding extra VO specific optimizers to path: %s' %(extraPath))
     else:
       self.log.verbose('No VO specific plugin module specified')
+      #Should only rely on an input data setting in absence of VO plugin
+      result = self.jobDB.getInputData(job)
+      if not result['OK']:
+        self.log.error('Failed to get input data from JobDB', job  )
+        self.log.warn(result['Message'])
+        return result
 
-    result = self.jobDB.getInputData(job)
-    if not result['OK']:
-      self.log.error('Failed to get input data from JobDB', job  )
-      self.log.warn(result['Message'])
-      return result
-
-    if result['Value']:
-      # if the returned tuple is not empty it will evaluate true
-      self.log.info('Job %s has an input data requirement' % (job))
-      path.extend( self.inputData )
-    else:
-      self.log.info('Job %s has no input data requirement' % (job))
+      if result['Value']:
+        # if the returned tuple is not empty it will evaluate true
+        self.log.info('Job %s has an input data requirement' % (job))
+        path.extend( self.inputData )
+      else:
+        self.log.info('Job %s has no input data requirement' % (job))
 
     path.extend( self.endPath )
     self.log.info('Constructed path for job %s is: %s' %(job,path))
