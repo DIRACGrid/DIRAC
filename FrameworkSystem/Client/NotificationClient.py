@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationClient.py,v 1.2 2009/04/18 18:26:59 rgracian Exp $
+# $Id: NotificationClient.py,v 1.3 2009/10/20 15:56:10 acasajus Exp $
 ########################################################################
 
 """ DIRAC Notification Client class encapsulates the methods exposed
@@ -16,10 +16,17 @@ import os
 class NotificationClient:
 
   #############################################################################
-  def __init__(self):
+  def __init__( self, rpcFunctor = False ):
     """ Notification Client constructor
     """
     self.log = gLogger.getSubLogger('NotificationClient')
+    if rpcFunctor:
+      self.__rpcFunctor = rpcFunctor
+    else:
+      self.__rpcFunctor = RPCClient
+      
+  def __getRPCClient( self ):
+    return self.__rpcFunctor( "Framework/Notification" )
 
   #############################################################################
   def sendMail(self,address,subject,body,fromAddress=None,localAttempt=True):
@@ -70,4 +77,75 @@ class NotificationClient:
 
     return result
 
+  ###########################################################################
+  # ALARMS
+  ###########################################################################
+  
+  def newAlarm( self, subject, status, type, assignee, body ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.newAlarm( { 'subject' : subject, 'status' : status, 
+                                 'type' : type, 'assignee' : assignee, 
+                                 'body' : body } )
+    
+  def updateAlarm( self, id, comment = False, modDict = {} ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.updateAlarm( { 'id' : id, 'comment' : comment, 
+                                 'modifications' : modDict } )
+    
+  def getAlarms( self, selectDict, sortList, startItem, maxItems ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.getAlarms( selectDict, sortList, startItem, maxItems )
+  
+  def getAlarmInfo( self, alarmId ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.getAlarmInfo( alarmId )
+  
+  ###########################################################################
+  # MANANGE ASSIGNEE GROUPS
+  ###########################################################################
+  
+  def setAssigneeGroup( self, groupName, userList ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.setAssigneeGroup( groupName, userList )
+  
+  def getUsersInAssigneeGroup( self, groupName ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.getUsersInAssigneeGroup( groupName )
+  
+  def deleteAssigneeGroup( self, groupName ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.deleteAssigneeGroup( groupName )
+  
+  def getAssigneeGroups( self):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.getAssigneeGroups()
+    
+  def getAssigneeGroupsForUser( self, user):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.getAssigneeGroupsForUser( user )
+  
+  ###########################################################################
+  # MANAGE NOTIFICATIONS
+  ###########################################################################
+  
+  def addNotificationForUser( self, user, message, lifetime = 604800, deferToMail = True ):
+    rpcClient = self.__getRPCClient()
+    try:
+      lifetime = int( lifetime )
+    except:
+      return S_ERROR( "Message lifetime has to be a non decimal number" )
+    return rpcClient.addNotificationForUser( user, message, lifetime, deferToMail ) 
+  
+  def removeNotificationsForUser( self, user ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.removeNotificationsForUser( user )
+  
+  def markNotificationsAsRead( self, user, notIds = [] ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.markNotificationsAsRead( user, notIds )
+  
+  def getNotifications( self, selectDict, sortList, startItem, maxItems ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.getNotifications( selectDict, sortList, startItem, maxItems )
+  
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
