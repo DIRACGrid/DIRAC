@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.9 2009/10/20 18:04:49 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.10 2009/10/20 18:24:31 acasajus Exp $
 ########################################################################
 """ NotificationDB class is a front-end to the Notifications database
 """
 
-__RCSID__ = "$Id: NotificationDB.py,v 1.9 2009/10/20 18:04:49 acasajus Exp $"
+__RCSID__ = "$Id: NotificationDB.py,v 1.10 2009/10/20 18:24:31 acasajus Exp $"
 
 import time
 import types
@@ -266,9 +266,10 @@ class NotificationDB(DB):
       return result
     alarmLog = result[ 'Value' ]
     if subscribers[ 'notification' ]:
-      msg = self.__generateAlarmLogMessage( alarmLog, True )
-      if not msg:
-        msg = self.__generateAlarmInfoMessage( alarmInfo )
+      msg = self.__generateAlarmInfoMessage( alarmInfo )
+      logMsg = self.__generateAlarmLogMessage( alarmLog, True )
+      if logMsg:
+        msg = "%s\n\n%s\nLast modification:\n%s" % ( msg, "*"*30, logMsg )
       for user in subscribers[ 'notification' ]:
         self.addNotificationForUser( user, msg, 86400, deferToMail = True )
     if subscribers[ 'mail' ]:
