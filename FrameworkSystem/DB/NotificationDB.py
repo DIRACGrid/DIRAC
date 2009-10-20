@@ -1,15 +1,16 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.8 2009/10/20 16:11:17 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.9 2009/10/20 18:04:49 acasajus Exp $
 ########################################################################
 """ NotificationDB class is a front-end to the Notifications database
 """
 
-__RCSID__ = "$Id: NotificationDB.py,v 1.8 2009/10/20 16:11:17 acasajus Exp $"
+__RCSID__ = "$Id: NotificationDB.py,v 1.9 2009/10/20 18:04:49 acasajus Exp $"
 
 import time
 import types
 import threading
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.Mail import Mail
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DEncode
@@ -256,10 +257,94 @@ class NotificationDB(DB):
     needLongText = False
     if subscribers[ 'mail' ]:
       needLongText = True
-    print needLongText
-    #TODO: HERE
-    print subscribers
+    result = self.getAlarmInfo( alarmId )
+    if not result[ 'OK' ]:
+      return result
+    alarmInfo = result[ 'Value' ]
+    result = self.getAlarmLog( alarmId )
+    if not result[ 'OK' ]:
+      return result
+    alarmLog = result[ 'Value' ]
+    if subscribers[ 'notification' ]:
+      msg = self.__generateAlarmLogMessage( alarmLog, True )
+      if not msg:
+        msg = self.__generateAlarmInfoMessage( alarmInfo )
+      for user in subscribers[ 'notification' ]:
+        self.addNotificationForUser( user, msg, 86400, deferToMail = True )
+    if subscribers[ 'mail' ]:
+      msg = self.__generateAlarmInfoMessage( alarmInfo )
+      logMsg = self.__generateAlarmLogMessage( alarmLog )
+      if logMsg:
+        msg = "%s\n\n%s\nAlarm Log:\n%s" % ( msg, "*"*30, logMsg )
+        subject = "Update on alarm %s" % alarmId
+      else:
+        subject = "New alarm %s" % alarmId
+      for user in subscribers[ 'mail' ]:
+        self.__sendMailToUser( user, subject, msg )
+    if subscribers[ 'sms' ]:
+      #TODO
+      pass
     return S_OK()
+  
+  def __generateAlarmLogMessage( self, alarmLog, showOnlyLast = False ):
+    if len( alarmLog[ 'Records' ] ) == 0:
+      return ""
+    records = alarmLog[ 'Records' ]
+    if showOnlyLast:
+      logToShow = [-1]
+    else:
+      logToShow = range( len( records ) -1, -1, -1 )
+    finalMessage = []
+    for id in logToShow:
+      rec = records[ id ]
+      data = {}
+      for i in range( len( alarmLog[ 'ParameterNames' ] ) ):
+        if rec[i]:
+          data[ alarmLog[ 'ParameterNames' ][i] ] = rec[i]
+      #[ 'timestamp', 'author', 'comment', 'modifications' ]
+      msg = [ " Entry by : %s" % data[ 'author' ] ]
+      msg.append( " On       : %s" % data[ 'timestamp' ].strftime( "%Y/%m/%d %H:%M:%S" ) )
+      if 'modifications' in data:
+        mods = data[ 'modifications' ]
+        keys = mods.keys()
+        keys.sort()
+        msg.append( " Modificaitons:" )
+        for key in keys:
+          msg.append( "   %s -> %s" % ( key, mods[ key ] ) )
+      if 'comment' in data:
+        msg.append( " Comment:\n\n%s" % data[ 'comment' ] )
+      finalMessage.append( "\n".join( msg ) )
+    return "\n\n===============\n".join( finalMessage )
+    
+  def __generateAlarmInfoMessage( self, alarmInfo ):
+    #[ 'alarmid', 'author', 'creationtime', 'modtime', 'subject', 'status', 'type', 'body', 'assignee' ]
+    msg =  " Alarm %6d\n" % alarmInfo[ 'alarmid' ]
+    msg += "   Author            : %s\n" % alarmInfo[ 'author' ]
+    msg += "   Subject           : %s\n" % alarmInfo[ 'subject' ]
+    msg += "   Status            : %s\n" % alarmInfo[ 'status' ]
+    msg += "   Type              : %s\n" % alarmInfo[ 'type' ]
+    msg += "   Assignee          : %s\n" % alarmInfo[ 'assignee' ]
+    msg += "   Creation date     : %s UTC\n" % alarmInfo[ 'creationtime' ].strftime( "%Y/%m/%d %H:%M:%S" )
+    msg += "   Last modificaiton : %s UTC\n" % alarmInfo[ 'modtime' ].strftime( "%Y/%m/%d %H:%M:%S" )
+    msg += "   Body:\n\n%s" % alarmInfo[ 'body' ] 
+    return msg
+    
+  def __sendMailToUser( self, user, subject, message ):
+    address = gConfig.getValue( "/Security/Users/%s/email" % user, "" )
+    if not address:
+      self.log.error( "User does not have an email registered ", user )
+      return S_ERROR( "User % does not have an email registered" % user )
+    self.log.info( "Sending mail (%s) to user %s at %s" % ( subject, user, address ) )
+    m = Mail()
+    m._subject = "[DIRAC] %s" % subject
+    m._message = message
+    m._mailAddress = address
+    result = m._send()
+    if not result['OK']:
+      gLogger.warn('Could not send mail with the following message:\n%s' %result['Message'])
+
+    return result
+
 
   def getAlarms( self, condDict = {}, sortList = False, start = 0, limit = 0, modifiedAfter = False ):
     
@@ -518,6 +603,7 @@ class NotificationDB(DB):
   def addNotificationForUser( self, user, message, lifetime = 0, deferToMail = 1 ):
     if user not in CS.getAllUsers():
       return S_ERROR( "%s is an unknown user" % user )
+    self.log.info( "Adding a notification for user %s (msg is %s chars)" % ( user, len( message ) ) )
     result = self._escapeString( user )
     if not result[ 'OK' ]:
       return result
@@ -534,8 +620,9 @@ class NotificationDB(DB):
     if lifetime:
       sqlFields.append( "Expiration" )
       sqlValues.append( "TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() )" % int( lifetime ) )
-    result = self._update( "INSERT INTO `ntf_Notifications` (%s) VALUES (%s) " % ( ",".join(sqlFields), 
-                                                                                   ",".join(sqlValues) ) )
+    sqlInsert = "INSERT INTO `ntf_Notifications` (%s) VALUES (%s) " % ( ",".join(sqlFields), 
+                                                                        ",".join(sqlValues) )
+    result = self._update( sqlInsert )
     if not result[ 'OK' ]:
       return result
     return S_OK( result[ 'lastRowId' ] )
@@ -608,10 +695,28 @@ class NotificationDB(DB):
     resultDict['Records'] = [ list(v) for v in result['Value'] ]
     return S_OK( resultDict )
     
-            
-       
-      
-    
+  def purgeExpiredNotifications( self ):
+    self.log.info( "Purging expired notifications" )
+    delConds = [ 'Seen=1', '( DeferToMail=0 AND TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), Expiration ) < 0 )' ]
+    delSQL = "DELETE FROM `ntf_Notifications` WHERE %s" % " OR ".join( delConds )
+    result = self._update( delSQL )
+    if not result[ 'OK' ]:
+      return result
+    self.log.info( "Purged %s notifications" % result[ 'Value' ] )
+    deferCond = [ 'Seen=0', 'DeferToMail=1', 'TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), Expiration ) < 0' ]
+    selSQL = "SELECT Id, User, Message FROM `ntf_Notifications` WHERE %s" % " AND ".join( deferCond )
+    result = self._query( selSQL )
+    if not result[ 'OK' ]:
+      return result
+    messages = result[ 'Value' ]
+    if not messages:
+      return S_OK()
+    ids = []
+    for msg in messages:
+      self.__sendMailToUser(msg[1], 'Notification defered to mail', msg[2])
+      ids.append( str( msg[0] ) )
+    self.log.info( "Defered %s notifications" % len( ids ) )
+    return self._update( "DELTE FROM `ntf_Notifications` WHERE Id in (%s)" % ",".join( ids ) )
     
     
     

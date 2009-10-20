@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationHandler.py,v 1.7 2009/10/20 16:11:17 acasajus Exp $
+# $Id: NotificationHandler.py,v 1.8 2009/10/20 18:04:43 acasajus Exp $
 ########################################################################
 
 """ The Notification service provides a toolkit to contact people via email
@@ -17,11 +17,12 @@
     subscribing to them. 
 """
 
-__RCSID__ = "$Id: NotificationHandler.py,v 1.7 2009/10/20 16:11:17 acasajus Exp $"
+__RCSID__ = "$Id: NotificationHandler.py,v 1.8 2009/10/20 18:04:43 acasajus Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.Mail import Mail
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.DB.NotificationDB import NotificationDB
@@ -33,6 +34,7 @@ def initializeNotificationHandler( serviceInfo ):
 
   global gNotDB
   gNotDB = NotificationDB()
+  gThreadScheduler.addPeriodicTask( 3600, gNotDB.purgeExpiredNotifications() )
   return S_OK()
 
 class NotificationHandler( RequestHandler ):
