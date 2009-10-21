@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-proxy-upload.py,v 1.3 2009/01/12 15:44:15 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-proxy-upload.py,v 1.4 2009/10/21 09:43:32 rgracian Exp $
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ###########################################################from DIRAC.Core.Base import Script#############
-__RCSID__   = "$Id: dirac-proxy-upload.py,v 1.3 2009/01/12 15:44:15 acasajus Exp $"
-__VERSION__ = "$Revision: 1.3 $"
+__RCSID__   = "$Id: dirac-proxy-upload.py,v 1.4 2009/10/21 09:43:32 rgracian Exp $"
+__VERSION__ = "$Revision: 1.4 $"
 
 import sys
+from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyUpload import CLIParams, uploadProxy
 
