@@ -2,11 +2,12 @@
     It offers a simple interface to add files, get files and modify their status.
 """
 
-__RCSID__ = "$Id: MigrationMonitoringDB.py,v 1.1 2009/10/21 13:17:31 acsmith Exp $"
+__RCSID__ = "$Id: MigrationMonitoringDB.py,v 1.2 2009/10/21 14:16:54 acsmith Exp $"
 
-from DIRAC                    import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Base.DB       import DB
-from types                    import ListType
+from DIRAC                        import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Base.DB           import DB
+from DIRAC.Core.Utilities.List    import stringListToString
+from types                        import ListType
 
 class MigrationMonitoringDB(DB):
 
@@ -15,7 +16,7 @@ class MigrationMonitoringDB(DB):
 
   #################################################################
   #
-  # The methods for adding data files from the database
+  # The methods for adding/removing files to/from the database
   #
 
   def addFiles(self,fileList):
@@ -32,6 +33,34 @@ class MigrationMonitoringDB(DB):
     else:
       gLogger.info("addFile: Successfully added files.")
     return res
+
+  def removeFiles(self,lfns):
+    """ Remove files from the database
+    """
+    gLogger.info("removeFiles: Attempting to remove %d files from the database." % len(lfns))
+    req = "DELETE FROM Files WHERE LFN IN (%s);" % stringListToString(lfns)
+    res = self._update(req)
+    if not res['OK']:
+      gLogger.error("removeFiles: Failed remove files from database.",res['Message'])
+    else:
+      gLogger.info("removeFiles: Successfully removed files.")
+    return res
+
+  def removeReplicas(self,replicaList):
+    """ Remove replicas from the database
+    """
+    gLogger.info("removeReplicas: Attempting to remove %d replicas from the database." % len(replicaList))
+    successful = {}
+    failed = {}
+    for lfn,pfn,se in replicaList:
+      req = "DELETE FROM Files WHERE SE='%s' AND LFN = '%s';" % (se,lfn)
+      res = self._update(req)
+      if not res['OK']:
+        failed[lfn] = res['Message']
+      else:
+        successful = True
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
 
   #################################################################
   #

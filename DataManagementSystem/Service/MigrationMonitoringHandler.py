@@ -1,6 +1,6 @@
 """ Simple DISET service interface to the Migration Monitoring DB
 """
-__RCSID__ = "$Id: MigrationMonitoringHandler.py,v 1.1 2009/10/21 13:17:51 acsmith Exp $"
+__RCSID__ = "$Id: MigrationMonitoringHandler.py,v 1.2 2009/10/21 14:18:13 acsmith Exp $"
 
 from DIRAC                                               import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler                     import RequestHandler
@@ -31,6 +31,32 @@ class MigrationMonitoringHandler(RequestHandler):
       return res
     except Exception,x:
       errStr = "addFiles: Exception while adding files to database."
+      gLogger.exception(errStr,lException=x)
+      return S_ERROR(errStr)
+
+  types_removeFiles = [[ListType,TupleType]]
+  def export_removeFiles(self,lfns):
+    """ Remove a list of LFNs from the Migration Monitoring DB
+    """
+    try:
+      gLogger.info("removeFiles: Attempting to remove %d files from the database." % len(lfns))
+      res = database.removeFiles(lfns)
+      return res
+    except Exception,x:
+      errStr = "removeFiles: Exception while removing files from database."
+      gLogger.exception(errStr,lException=x)
+      return S_ERROR(errStr)
+
+  types_removeReplicas = [[ListType,TupleType]]
+  def export_removeReplicas(self,replicaList):
+    """ Remove a list of replicas (lfn,pfn,se) from the Migration Monitoring DB
+    """
+    try:
+      gLogger.info("removeReplicas: Attempting to remove %d replicas from the database." % len(replicaList))
+      res = database.removeReplicas(replicaList)
+      return res
+    except Exception,x:
+      errStr = "removeReplicas: Exception while removing replicas from database."
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
 
