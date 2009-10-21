@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataLoggingDB.py,v 1.10 2009/01/27 17:50:56 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataLoggingDB.py,v 1.11 2009/10/21 12:15:01 acsmith Exp $
 ########################################################################
 """ DataLoggingDB class is a front-end to the Data Logging Database.
     The following methods are provided
@@ -8,15 +8,13 @@
     getFileLoggingInfo()
 """
 
-__RCSID__ = "$Id: DataLoggingDB.py,v 1.10 2009/01/27 17:50:56 acsmith Exp $"
+__RCSID__ = "$Id: DataLoggingDB.py,v 1.11 2009/10/21 12:15:01 acsmith Exp $"
 
-import re, os, sys
-import time, datetime
+import re, os, sys, time, datetime
 from types import *
 
-from DIRAC              import gLogger,S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.Core.Base.DB import DB
+from DIRAC                                      import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Base.DB                         import DB
 MAGIC_EPOC_NUMBER = 1270000000
 
 #############################################################################
@@ -30,6 +28,16 @@ class DataLoggingDB(DB):
     self.gLogger = gLogger
 
 #############################################################################
+
+  def addFileRecords(self,fileTuples):
+    """ Simple wrapper around multiple insertion of file records
+    """
+    for lfn,status,minor,date,source in fileTuples:
+      res = self.addFileRecord([lfn], status, minor, date, source)
+      if not res['OK']:
+        return res
+    return S_OK()
+
   def addFileRecord(self,lfns,status,minor='Unknown',date='',source='Unknown'):
     """ Add a new entry to the DataLoggingDB table. Optionaly the time stamp of the status can
         be provided in a form of a string in a format '%Y-%m-%d %H:%M:%S' or
