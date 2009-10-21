@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DataLoggingHandler.py,v 1.4 2008/11/08 14:18:34 acsmith Exp $
+# $Id: DataLoggingHandler.py,v 1.5 2009/10/21 12:10:48 acsmith Exp $
 ########################################################################
 
 """ DataLoggingHandler is the implementation of the Data Logging
@@ -8,19 +8,21 @@
     The following methods are available in the Service interface
 
     addFileRecord()
+    addFileRecords()
     getFileLoggingInfo()
 
 """
 
-__RCSID__ = "$Id: DataLoggingHandler.py,v 1.4 2008/11/08 14:18:34 acsmith Exp $"
-
+__RCSID__ = "$Id: DataLoggingHandler.py,v 1.5 2009/10/21 12:10:48 acsmith Exp $"
+from DIRAC                                          import gLogger, gConfig, rootPath, S_OK, S_ERROR
+from DIRAC.Core.DISET.RequestHandler                import RequestHandler
+from DIRAC.DataManagementSystem.DB.DataLoggingDB    import DataLoggingDB
 from types import *
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
-from DIRAC.DataManagementSystem.DB.DataLoggingDB import DataLoggingDB
-from DIRAC.Core.Utilities.Graph import Graph
-from DIRAC.ConfigurationSystem.Client import PathFinder
 import time,os
+
+from DIRAC.Core.Utilities.Graph                     import Graph
+from DIRAC.ConfigurationSystem.Client               import PathFinder
+
 # This is a global instance of the DataLoggingDB class
 logDB = False
 dataPath = False
@@ -66,6 +68,13 @@ class DataLoggingHandler( RequestHandler ):
     else:
       lfns = lfn
     result = logDB.addFileRecord(lfns,status,minor,date,source)
+    return result
+
+  types_addFileRecord = [[ListType,TupleType]]
+  def export_addFileRecords(self,fileTuples):
+    """ Add a group of logging records
+    """
+    result = logDB.addFileRecords(fileTuples)
     return result
 
   ###########################################################################
