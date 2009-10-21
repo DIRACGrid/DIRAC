@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/ThreadedMightyOptimizer.py,v 1.3 2009/10/13 12:41:52 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/ThreadedMightyOptimizer.py,v 1.4 2009/10/21 10:50:38 acasajus Exp $
 
 
 """  SuperOptimizer
  One optimizer to rule them all, one optimizer to find them, one optimizer to bring them all, and in the darkness bind them.
 """
 
-__RCSID__ = "$Id: ThreadedMightyOptimizer.py,v 1.3 2009/10/13 12:41:52 acasajus Exp $"
+__RCSID__ = "$Id: ThreadedMightyOptimizer.py,v 1.4 2009/10/21 10:50:38 acasajus Exp $"
 
 import time
 import os
@@ -25,7 +25,6 @@ gOptimizerLoadSync = ThreadSafe.Synchronizer()
 class ThreadedMightyOptimizer(AgentModule):
 
   __jobStates = [ 'Received', 'Checking' ]
-  __maxOptimizationTime = 600
   __defaultValidOptimizers = [ 'WorkloadManagement/JobPath', 
                                'WorkloadManagement/JobSanity', 
                                'WorkloadManagement/JobScheduling', 
@@ -37,9 +36,9 @@ class ThreadedMightyOptimizer(AgentModule):
     """
     self.jobDB = JobDB()
     self.jobLoggingDB = JobLoggingDB()
+    self._optimizingJobs = JobsInTheWorks()
     self._optimizers = {}
     self._threadedOptimizers = {}
-    self._jobsBeingOptimized = {}
     self.am_setOption( "PollingTime", 30 )
     return S_OK()
 
@@ -56,19 +55,7 @@ class ThreadedMightyOptimizer(AgentModule):
     self.log.info( "Got %s jobs for this iteration" % len( jobsList ) )
     if not jobsList: return S_OK()
     #Check jobs that are already being optimized
-    jobsStillOptimizing = {}
-    now = time.time()
-    for jobId in self._jobsBeingOptimized:
-      if now - self._jobsBeingOptimized[ jobId ] < self.__maxOptimizationTime:
-        jobsStillOptimizing[ jobId ] = self._jobsBeingOptimized[ jobId ]
-    self._jobsBeingOptimized = jobsStillOptimizing
-    newJobsList = []
-    for jobId in jobsList:
-      if jobId not in self._jobsBeingOptimized:
-        newJobsList.append( jobId )
-        self._jobsBeingOptimized[ jobId ] = now
-      else:
-        gLogger.info( "Skipping job %s. it's already being optimized" % jobId )
+    newJobsList = self._optimizingJobs.addJobs( jobsList )
     if not newJobsList:
       return S_OK()
     #Get attrs of jobs to be optimized
@@ -78,7 +65,6 @@ class ThreadedMightyOptimizer(AgentModule):
       return result
     jobsToProcess =  result[ 'Value' ]
     for jobId in jobsToProcess:
-      self._jobsBeingOptimized[ jobId ] = time.time()
       self.log.info( "== Processing job %s == " % jobId  )
       jobAttrs = jobsToProcess[ jobId ]
       result = self.__dispatchJob( jobId, jobAttrs, False )
@@ -95,7 +81,7 @@ class ThreadedMightyOptimizer(AgentModule):
       if not result[ 'OK' ]:
         returnValue = result
     print "ADL: Deleting job %s" % jobId
-    del( self._jobsBeingOptimized[ jobId ] )
+    self._optimizingJobs.deleteJob( jobId )
     return returnValue
     
   def __sendJobToOptimizer( self, jobId, jobAttrs, jobDef ):
@@ -127,8 +113,47 @@ class ThreadedMightyOptimizer(AgentModule):
     if len( optList ) > 2:
       optList[1] = "/".join( optList[1:] )
     return "/".join( optList )
-  
 
+gOptimizingJobs = ThreadSafe.Synchronizer()
+
+class JobsInTheWorks:
+  
+  def __init__( self, maxTime = 0):
+    self.__jobs = {}
+    self.__maxTime = maxTime
+    
+  @gOptimizingJobs
+  def addJobs( self, jobsList ):
+    now = time.time()
+    self.__purgeExpiredJobs()
+    addedJobs = []
+    for job in jobsList:
+      if job not in self.__jobs:
+        self.__jobs[ job ] = now
+        addedJobs.append( job )
+    return addedJobs
+  
+  def __purgeExpiredJobs( self ):
+    if not self.__maxTime:
+      return 
+    stillOnIt = {}
+    now = time.time()
+    for job in self.__jobs:
+      if now - self.__jobs[ job ] < self.__maxTime: 
+        stillOnIt[ job ] = self.__jobs[ job ]
+    self.__jobs = stillOnIt
+  
+  @gOptimizingJobs  
+  def deleteJob( self, job ):
+    try:
+      if job in self.__jobs:
+        del( self.__jobs[ job ] )
+    except:
+      print "="*20
+      print "EXcePTION", e
+      print "THIS SHOULDN'T HAPPEN"
+      print "="*20
+      
   
 class ThreadedOptimizer( threading.Thread ):
   
