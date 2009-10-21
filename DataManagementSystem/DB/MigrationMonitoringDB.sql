@@ -31,5 +31,6 @@ CREATE TABLE Files(
    FileChecksum VARCHAR(255) NOT NULL,
    SubmitTime DATETIME NOT NULL,
    LastUpdate DATETIME,
-   INDEX (Status,SE),
+   PRIMARY KEY(FileID),
+   INDEX (Status,SE)
 );
