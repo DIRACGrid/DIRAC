@@ -1,5 +1,5 @@
 -- -----------------------------------------------------------
--- RAW Integrity DB definition
+-- Migration Monitoring DB definition
 -- -----------------------------------------------------------
 
 DROP DATABASE IF EXISTS MigrationMonitoringDB;
@@ -22,7 +22,7 @@ use MigrationMonitoringDB;
 DROP TABLE IF EXISTS Files;
 CREATE TABLE Files(
    FileID INTEGER NOT NULL AUTO_INCREMENT,
-   Status ENUM( 'Migrating', 'Migrated', 'Failed', 'ChecksumFail', 'ChecksumMatch'),
+   Status VARCHAR(32) NOT NULL DEFAULT 'Migrating',
    SE VARCHAR(32) NOT NULL,
    LFN VARCHAR(255) NOT NULL,
    PFN VARCHAR(255) NOT NULL,
