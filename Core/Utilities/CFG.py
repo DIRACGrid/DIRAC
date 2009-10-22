@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.10 2009/09/02 13:26:38 acasajus Exp $
-__RCSID__ = "$Id: CFG.py,v 1.10 2009/09/02 13:26:38 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/CFG.py,v 1.11 2009/10/22 10:41:02 acasajus Exp $
+__RCSID__ = "$Id: CFG.py,v 1.11 2009/10/22 10:41:02 acasajus Exp $"
 
 import types
 import copy
@@ -10,10 +10,62 @@ try:
 except:
   zipEnabled = False
 
-from DIRAC.Core.Utilities import S_OK, S_ERROR
-from DIRAC.Core.Utilities import List, ThreadSafe
+try:
+  from DIRAC.Core.Utilities import S_OK, S_ERROR
+  from DIRAC.Core.Utilities.List import List, ThreadSafe
+  
+  gCFGSynchro = ThreadSafe.Synchronizer( recursive = True )
+except:
+  #We're out of python, define required utilities
+  import threading
+  from types import StringTypes
+  
+  def S_ERROR( messageString = '' ):
+    return { 'OK' : False, 'Message' : str( messageString )  }
+    
+  def S_OK( value = ''  ):
+    return { 'OK' : True, 'Value' : value }
+  
+  class ListDummy:
+    def fromChar( self, inputString, sepChar = "," ):
+      if not ( type( inputString ) in StringTypes and
+               type( sepChar ) in StringTypes and
+               sepChar ): # to prevent getting an empty String as argument
+        return None
+    
+      return [ fieldString.strip() for fieldString in inputString.split( sepChar ) if len( fieldString.strip() ) > 0 ]
+  
+  List=ListDummy()
 
-gCFGSynchro = ThreadSafe.Synchronizer( recursive = True )
+  class Synchronizer:
+    """ Class enapsulating a lock
+    allowing it to be used as a synchronizing
+    decorator making the call thread-safe"""
+  
+    def __init__( self, lockName = "", recursive = False ):
+      self.lockName = lockName
+      if recursive:
+        self.lock = threading.RLock()
+      else:
+        self.lock = threading.Lock()
+  
+    def __call__( self, funcToCall ):
+      def lockedFunc( *args, **kwargs ):
+        try:
+          if self.lockName:
+            print "LOCKING", self.lockName
+          self.lock.acquire()
+          return funcToCall(*args, **kwargs)
+        finally:
+          if self.lockName:
+            print "UNLOCKING", self.lockName
+          self.lock.release()
+      return lockedFunc
+    
+  gCFGSynchro = Synchronizer( recursive = True )
+  #END OF OUT OF DIRAC
+  
+#START OF CFG MODULE
 
 class CFG:
 
