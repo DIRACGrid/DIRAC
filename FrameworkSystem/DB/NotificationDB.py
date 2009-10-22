@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.10 2009/10/20 18:24:31 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.11 2009/10/22 14:28:42 acasajus Exp $
 ########################################################################
 """ NotificationDB class is a front-end to the Notifications database
 """
 
-__RCSID__ = "$Id: NotificationDB.py,v 1.10 2009/10/20 18:24:31 acasajus Exp $"
+__RCSID__ = "$Id: NotificationDB.py,v 1.11 2009/10/22 14:28:42 acasajus Exp $"
 
 import time
 import types
@@ -26,7 +26,7 @@ class NotificationDB(DB):
     self.__alarmQueryFields = [ 'alarmid', 'author', 'creationtime', 'modtime', 'subject', 
                                 'status', 'type', 'body', 'assignee' ]
     self.__alarmLogFields = [ 'timestamp', 'author', 'comment', 'modifications' ]
-    self.__notificationQueryFields = ( 'id', 'user', 'seen', 'message' )
+    self.__notificationQueryFields = ( 'id', 'user', 'seen', 'message', 'timestamp' )
     self.__newAlarmMandatoryFields = [ 'author', 'subject', 'status', 'type', 'body', 'assignee' ]
     self.__updateAlarmMandatoryFields = [ 'id', 'author' ]
     self.__updateAlarmAtLeastOneField = [ 'comment', 'modifications' ]
@@ -89,6 +89,7 @@ class NotificationDB(DB):
                                                                  'Message'  : 'BLOB NOT NULL',
                                                                  'Seen' : 'TINYINT(1) NOT NULL DEFAULT 0',
                                                                  'Expiration' : 'DATETIME',
+                                                                 'Timestamp' : 'DATETIME',
                                                                  'DeferToMail' : 'TINYINT(1) NOT NULL DEFAULT 1',
                                                         },
                                                     'PrimaryKey' : 'Id',
@@ -613,8 +614,8 @@ class NotificationDB(DB):
     if not result[ 'OK' ]:
       return result
     message = result[ 'Value' ]
-    sqlFields = [ 'User', 'Message' ]
-    sqlValues = [ user, message ]
+    sqlFields = [ 'User', 'Message', 'Timestamp' ]
+    sqlValues = [ user, message, 'UTC_TIMESTAMP()' ]
     if not deferToMail:
       sqlFields.append( "DeferToMail" )
       sqlValues.append( "0" )
