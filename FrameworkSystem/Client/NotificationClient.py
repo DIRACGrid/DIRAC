@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationClient.py,v 1.3 2009/10/20 15:56:10 acasajus Exp $
+# $Id: NotificationClient.py,v 1.4 2009/10/22 17:35:11 acasajus Exp $
 ########################################################################
 
 """ DIRAC Notification Client class encapsulates the methods exposed
@@ -136,13 +136,17 @@ class NotificationClient:
       return S_ERROR( "Message lifetime has to be a non decimal number" )
     return rpcClient.addNotificationForUser( user, message, lifetime, deferToMail ) 
   
-  def removeNotificationsForUser( self, user ):
+  def removeNotificationsForUser( self, user, notIds ):
     rpcClient = self.__getRPCClient()
-    return rpcClient.removeNotificationsForUser( user )
+    return rpcClient.removeNotificationsForUser( user, notIds )
   
   def markNotificationsAsRead( self, user, notIds = [] ):
     rpcClient = self.__getRPCClient()
     return rpcClient.markNotificationsAsRead( user, notIds )
+  
+  def markNotificationsAsNotRead( self, user, notIds = [] ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.markNotificationsAsNotRead( user, notIds )
   
   def getNotifications( self, selectDict, sortList, startItem, maxItems ):
     rpcClient = self.__getRPCClient()

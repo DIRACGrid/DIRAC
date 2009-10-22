@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.11 2009/10/22 14:28:42 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.12 2009/10/22 17:35:11 acasajus Exp $
 ########################################################################
 """ NotificationDB class is a front-end to the Notifications database
 """
 
-__RCSID__ = "$Id: NotificationDB.py,v 1.11 2009/10/22 14:28:42 acasajus Exp $"
+__RCSID__ = "$Id: NotificationDB.py,v 1.12 2009/10/22 17:35:11 acasajus Exp $"
 
 import time
 import types
@@ -647,14 +647,18 @@ class NotificationDB(DB):
       delSQL = "%s AND Id in ( %s ) " % ( delSQL, ",".join( escapedIDs ) ) 
     return self._update( delSQL )
   
-  def markNotificationsAsRead( self, user, msgIds = False ):
+  def markNotificationsSeen( self, user, seen = True, msgIds = False ):
     if user not in CS.getAllUsers():
       return S_ERROR( "%s is an unknown user" % user )
     result = self._escapeString( user )
     if not result[ 'OK' ]:
       return result
     user = result[ 'Value' ]
-    updateSQL = "UPDATE `ntf_Notifications` SET Seen=1 WHERE User=%s" % user
+    if seen:
+      seen = 1
+    else:
+      seen = 0
+    updateSQL = "UPDATE `ntf_Notifications` SET Seen=%d WHERE User=%s" % ( seen, user )
     escapedIDs = []
     if msgIds:
       for id in msgIds:
@@ -662,7 +666,7 @@ class NotificationDB(DB):
         if not result[ 'OK' ]:
           return result
         escapedIDs.append( result[ 'Value' ] )
-      updateSQL = "%s AND Id in ( %s ) " % ( delSQL, ",".join( escapedIDs ) ) 
+      updateSQL = "%s AND Id in ( %s ) " % ( updateSQL, ",".join( escapedIDs ) ) 
     return self._update( updateSQL )
   
   def getNotifications( self, condDict = {}, sortList = False, start = 0, limit = 0 ):
@@ -699,8 +703,8 @@ class NotificationDB(DB):
     
   def purgeExpiredNotifications( self ):
     self.log.info( "Purging expired notifications" )
-    delConds = [ 'Seen=1', '( DeferToMail=0 AND TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), Expiration ) < 0 )' ]
-    delSQL = "DELETE FROM `ntf_Notifications` WHERE %s" % " OR ".join( delConds )
+    delConds = [ '(Seen=1 OR DeferToMail=0)' 'TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), Expiration ) < 0 )' ]
+    delSQL = "DELETE FROM `ntf_Notifications` WHERE %s" % " AND ".join( delConds )
     result = self._update( delSQL )
     if not result[ 'OK' ]:
       return result

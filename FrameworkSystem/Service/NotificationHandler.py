@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationHandler.py,v 1.8 2009/10/20 18:04:43 acasajus Exp $
+# $Id: NotificationHandler.py,v 1.9 2009/10/22 17:35:11 acasajus Exp $
 ########################################################################
 
 """ The Notification service provides a toolkit to contact people via email
@@ -17,7 +17,7 @@
     subscribing to them. 
 """
 
-__RCSID__ = "$Id: NotificationHandler.py,v 1.8 2009/10/20 18:04:43 acasajus Exp $"
+__RCSID__ = "$Id: NotificationHandler.py,v 1.9 2009/10/22 17:35:11 acasajus Exp $"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -193,14 +193,14 @@ class NotificationHandler( RequestHandler ):
       return S_ERROR( "Message lifetime has to be a non decimal number" )
     return gNotDB.addNotificationForUser( user, message, lifetime, deferToMail ) 
   
-  types_removeNotificationsForUser = [ StringType ]
-  def export_removeNotificationsForUser( self, user ):
+  types_removeNotificationsForUser = [ StringType, ListType ]
+  def export_removeNotificationsForUser( self, user, notIds ):
     """ Get users in assignee group
     """       
     credDict = self.getRemoteCredentials()
     if Properties.ALARMS_MANAGEMENT not in credDict[ 'properties' ]:
       user = credDict[ 'username' ]
-    return gNotDB.removeNotificationsForUser( user )
+    return gNotDB.removeNotificationsForUser( user, notIds )
   
   types_markNotificationsAsRead = [ StringType, ListType ]
   def export_markNotificationsAsRead( self, user, notIds ):
@@ -209,7 +209,16 @@ class NotificationHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
     if Properties.ALARMS_MANAGEMENT not in credDict[ 'properties' ]:
       user = credDict[ 'username' ]
-    return gNotDB.markNotificationsAsRead( user, notIds )
+    return gNotDB.markNotificationsSeen( user, True, notIds )
+  
+  types_markNotificationsAsNotRead = [ StringType, ListType ]
+  def export_markNotificationsAsNotRead( self, user, notIds ):
+    """ Delete an assignee group
+    """
+    credDict = self.getRemoteCredentials()
+    if Properties.ALARMS_MANAGEMENT not in credDict[ 'properties' ]:
+      user = credDict[ 'username' ]
+    return gNotDB.markNotificationsSeen( user, False, notIds )
   
   types_getNotifications = [ DictType, ListType, IntType, IntType ]
   def export_getNotifications( self, selectDict, sortList, startItem, maxItems ):
