@@ -34,7 +34,7 @@ class VOMS( BaseSecurity ):
         vA = gConfig.getValue( "/Security/VOMSMapping/%s" % group, "" )
         if vA and vA not in validVOMSAttrs:
           validVOMSAttrs.append( vA )
-    result = gConfig.getOptions( "/Security/Groups" )
+    result = gConfig.getSections( "/Security/Groups" )
     if result[ 'OK' ]:
       for group in result[ 'Value' ]:
         vA = gConfig.getValue( "/Security/Groups/%s/VOMSRole" % group, "" )
