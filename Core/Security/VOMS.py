@@ -179,7 +179,7 @@ class VOMS( BaseSecurity ):
     else:
       cmdArgs.append( '-voms "%s"' % vo )  
     cmdArgs.append( '-valid "%s:%s"' % ( hours, mins ) )
-    tmp = None
+    tmpDir = False
     if 'DIRAC_VOMSES' in os.environ:
       diracVomses = os.environ[ 'DIRAC_VOMSES' ]
       if os.path.exists( diracVomses ):
