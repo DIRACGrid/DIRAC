@@ -1319,7 +1319,7 @@ class SRM2Storage(StorageBase):
   def __gfal_lsdir_wrapper(self,urls):
     """ This is a hack because the structures returned by the different SEs are different
     """
-    step = 500
+    step = 200
     gfalDict = {}
     gfalDict['defaultsetype'] = 'srmv2'
     gfalDict['no_bdii_check'] = 1
