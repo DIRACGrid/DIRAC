@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/gLitePilotDirector.py,v 1.4 2009/10/19 10:06:57 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/gLitePilotDirector.py,v 1.5 2009/10/23 16:42:26 rgracian Exp $
 # File :   gLitePilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
    - basic configuration for gLite
    - submit and monitor methods for gLite MiddleWare.
 """
-__RCSID__ = "$Id: gLitePilotDirector.py,v 1.4 2009/10/19 10:06:57 rgracian Exp $"
+__RCSID__ = "$Id: gLitePilotDirector.py,v 1.5 2009/10/23 16:42:26 rgracian Exp $"
 
 from DIRAC.WorkloadManagementSystem.private.GridPilotDirector  import GridPilotDirector
 from DIRAC import S_OK, S_ERROR, gConfig, List
@@ -91,7 +91,6 @@ MyProxyServer = "no-myproxy.cern.ch";
 AllowsGenericPilot = Member( "VO-lhcb-pilot" , other.GlueHostApplicationSoftwareRunTimeEnvironment );
 Requirements = pilotRequirements && %s;
 WmsClient = [
-Requirements = other.GlueCEStateStatus == "Production";
 ErrorStorage = "%s/pilotError";
 OutputStorage = "%s/pilotOutput";
 # ListenerPort = 44000;
@@ -103,6 +102,12 @@ WMProxyEndPoints = { %s };
 LBEndPoints = { %s };
 MyProxyServer = "no-myproxy.cern.ch";
 EnableServiceDiscovery = false;
+JdlDefaultAttributes =  [
+    requirements  =  ( other.GlueCEStateStatus == "Production" || other.GlueCEStateStatus == "Special" );
+    AllowZippedISB  =  true;
+    SignificantAttributes  =  {"Requirements", "Rank", "FuzzyRank"};
+    PerusalFileEnable  =  false;
+    ];
 ];
 """ % ( extraReq, workingDirectory, workingDirectory, workingDirectory, ', '.join(RBs), ', '.join(LBs) )
 
