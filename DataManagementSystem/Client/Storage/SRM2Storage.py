@@ -1331,7 +1331,7 @@ class SRM2Storage(StorageBase):
       allResults = []
       gfalDict['surls'] = [url]       
       gfalDict['nbfiles'] =  1
-      gfalDict['timeout'] = self.fileTimeout
+      gfalDict['timeout'] = self.long_timeout
       allObtained = False
       iteration = 0
       while not allObtained:
