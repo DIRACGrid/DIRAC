@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.12 2009/08/14 10:27:41 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.13 2009/10/23 16:45:33 rgracian Exp $
 # File :   GridPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -12,7 +12,7 @@
   underlying resources.
 
 """
-__RCSID__ = "$Id: GridPilotDirector.py,v 1.12 2009/08/14 10:27:41 rgracian Exp $"
+__RCSID__ = "$Id: GridPilotDirector.py,v 1.13 2009/10/23 16:45:33 rgracian Exp $"
 
 
 GRIDENV                = ''
@@ -320,7 +320,7 @@ class GridPilotDirector(PilotDirector):
     availableCEs = []
     # Parse std.out
     for line in List.fromChar(stdout,'\n'):
-      if re.search('jobmanager',line):
+      if re.search('/jobmanager-',line) or re.search('/cream-',line):
         # TODO: the line has to be stripped from extra info
         availableCEs.append(line)
 
