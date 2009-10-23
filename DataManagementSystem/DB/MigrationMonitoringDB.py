@@ -2,11 +2,11 @@
     It offers a simple interface to add files, get files and modify their status.
 """
 
-__RCSID__ = "$Id: MigrationMonitoringDB.py,v 1.2 2009/10/21 14:16:54 acsmith Exp $"
+__RCSID__ = "$Id: MigrationMonitoringDB.py,v 1.3 2009/10/23 08:12:12 acsmith Exp $"
 
 from DIRAC                        import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB           import DB
-from DIRAC.Core.Utilities.List    import stringListToString
+from DIRAC.Core.Utilities.List    import stringListToString,intListToString
 from types                        import ListType
 
 class MigrationMonitoringDB(DB):
@@ -75,6 +75,7 @@ class MigrationMonitoringDB(DB):
     if not res['OK']:
       gLogger.error("getFiles: Failed to get files from database.",res['Message'])
       return res
+    fileDict = {}
     for id,lfn,pfn,se,size,checksum,submitTime in res['Value']:
       fileDict[id] = {'LFN':lfn,'PFN':pfn,'SE':se,'Size':size,'Checksum':checksum,'SubmitTime':submitTime}
     gLogger.info("getActiveFiles: Obtained %d files awaiting migration from database." % len(fileDict.keys()))
