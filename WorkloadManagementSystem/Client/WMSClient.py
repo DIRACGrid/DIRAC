@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.27 2009/10/19 15:29:02 atsareg Exp $
+# $Id: WMSClient.py,v 1.28 2009/10/23 12:12:29 msapunov Exp $
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the
@@ -18,11 +18,14 @@ import os
 
 class WMSClient:
 
-  def __init__(self,useCertificates=False):
+  def __init__(self, jobManagerClient=False, sbRPCClient = False, sbTransferClient = False, useCertificates=False):
     """ WMS Client constructor
     """
     gProxyManager.uploadProxy()
     self.useCertificates = useCertificates
+    self.jobManagerClient = jobManagerClient
+    self.sbRPCClient = sbRPCClient
+    self.sbTransferClient = sbTransferClient
 
 ###############################################################################
 
@@ -47,7 +50,7 @@ class WMSClient:
        The function returns the list of Input Sandbox files.
        The total volume of the input sandbox is evaluated
     """
-    sandboxClient = SandboxStoreClient(useCertificates=self.useCertificates)
+    sandboxClient = SandboxStoreClient(useCertificates=self.useCertificates,rpcClient = self.sbRPCClient, transferClient = self.sbTransferClient )
     inputSandbox = self.__getInputSandboxEntries( classAdJob )
 
     realFiles = []
@@ -107,7 +110,11 @@ class WMSClient:
   def newSubmitJob(self,jdl):
     """ Submit one job specified by its JDL to WMS
     """
-    jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=self.useCertificates,timeout=120)
+    
+    if not self.jobManagerClient:
+      jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=self.useCertificates,timeout=120)
+    else:
+      jobManager = self.jobManagerClient
     if os.path.exists(jdl):
       fic = open (jdl, "r")
       jdlString = fic.read()
