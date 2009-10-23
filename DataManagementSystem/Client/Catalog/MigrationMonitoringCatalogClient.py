@@ -1,6 +1,6 @@
 """ Client plug-in for the Migration Monitoring DB.
 """
-__RCSID__ = "$Id: MigrationMonitoringCatalogClient.py,v 1.1 2009/10/23 07:39:24 acsmith Exp $"
+__RCSID__ = "$Id: MigrationMonitoringCatalogClient.py,v 1.2 2009/10/23 08:10:20 acsmith Exp $"
 
 import DIRAC
 from DIRAC                                                         import S_OK, S_ERROR, gLogger, gConfig
@@ -92,6 +92,8 @@ class MigrationMonitoringCatalogClient(FileCatalogueBase):
       se = str(info['SE'])
       replicaTuples.append((lfn,pfn,0,se,'',''))
     server = RPCClient(self.url,timeout=120)
+    failed = {}
+    successful = {}  
     res = server.addFiles(replicaTuples)
     if not res['OK']:
       for lfn in fileInfo.keys():
