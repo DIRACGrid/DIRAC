@@ -910,13 +910,15 @@ class SRM2Storage(StorageBase):
         gLogger.error(errStr, url)
         failed[url] = errStr
 
-    resDict = self.__gfalls_wrapper(directories,1)['Value']
+    resDict = self.__gfal_lsdir_wrapper(directories)['Value']
+    #resDict = self.__gfalls_wrapper(directories,1)['Value']
     failed.update(resDict['Failed'])
     listOfResults = resDict['AllResults']
     successful = {}
     for urlDict in listOfResults:
       if urlDict.has_key('surl') and urlDict['surl']:
         pathSURL = self.getUrl(urlDict['surl'])['Value']
+        pathSURL = urlDict['surl']
         if urlDict['status'] == 0:
           successful[pathSURL] = {}
           gLogger.debug("SRM2Storage.listDirectory: Successfully listed directory %s" % pathSURL)
@@ -1313,6 +1315,49 @@ class SRM2Storage(StorageBase):
 # These methods wrap the gfal functionality with the accounting. All these are based on __gfal_operation_wrapper()
 #
 #######################################################################
+
+  def __gfal_lsdir_wrapper(self,urls):
+    """ This is a hack because the structures returned by the different SEs are different
+    """
+    step = 500
+    gfalDict = {}
+    gfalDict['defaultsetype'] = 'srmv2'
+    gfalDict['no_bdii_check'] = 1
+    gfalDict['srmv2_lslevels'] = 1
+    gfalDict['srmv2_lscount'] = step
+    failed = {}
+    successful = []
+    for url in urls:
+      allResults = []
+      gfalDict['surls'] = [url]       
+      gfalDict['nbfiles'] =  1
+      gfalDict['timeout'] = self.fileTimeout
+      allObtained = False
+      iteration = 0
+      while not allObtained:
+        gfalDict['srmv2_lsoffset'] = iteration*step
+        iteration+=1
+        res = self.__gfal_operation_wrapper('gfal_ls',gfalDict)
+        gDataStoreClient.addRegister(res['AccountingOperation'])
+        if not res['OK']:
+          failed[url] = res['Message']
+        else:
+          results = res['Value']
+          tempStep = step
+          if len(results) == 1:
+            for result in results:
+              if result.has_key('subpaths'):
+                results = result['subpaths']
+                tempStep = step-1
+          allResults.extend(results)
+          if len(results) < tempStep:
+            allObtained = True
+      successful.append({'surl':url,'status':0,'subpaths':allResults})
+    gDataStoreClient.commit()
+    resDict = {}
+    resDict['AllResults'] = successful
+    resDict['Failed'] = failed
+    return S_OK(resDict)
 
   def __gfalls_wrapper(self,urls,depth):
     """ This is a function that can be reused everywhere to perform the gfal_ls
