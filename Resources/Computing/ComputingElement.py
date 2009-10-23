@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.25 2009/10/23 07:46:57 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.26 2009/10/23 11:27:48 rgracian Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.25 2009/10/23 07:46:57 rgracian Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.26 2009/10/23 11:27:48 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -175,7 +175,7 @@ class ComputingElement:
     if not options['OK']:
       self.log.warn(options['Message'])
       return S_ERROR(options['Message'])
-    if not result['Value']:
+    if not options['Value']:
       self.log.warn('Could not obtain %s section from CS' %(section))
       return S_ERROR('Could not obtain %s section from CS' %(section))
 
