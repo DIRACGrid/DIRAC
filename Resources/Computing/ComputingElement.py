@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.24 2009/10/01 11:15:16 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElement.py,v 1.25 2009/10/23 07:46:57 rgracian Exp $
 # File :   ComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resource JDL for subsequent use during the matching process.
 """
 
-__RCSID__ = "$Id: ComputingElement.py,v 1.24 2009/10/01 11:15:16 rgracian Exp $"
+__RCSID__ = "$Id: ComputingElement.py,v 1.25 2009/10/23 07:46:57 rgracian Exp $"
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
@@ -157,15 +157,17 @@ class ComputingElement:
     """Adds site specific parameters to the resource ClassAd.
     """
     osSection = '/Resources/Computing/OSCompatibility'
+    platforms = {}
     result = gConfig.getOptionsDict(osSection)
     if not result['OK']:
       self.log.warn(result['Message'])
-      return S_ERROR(result['Message'])
-    if not result['Value']:
-      self.log.warn('Could not obtain %s section from CS' %(osSection))
-      return S_ERROR('Could not obtain %s section from CS' %(osSection))
-
-    platforms = result['Value']
+      # return S_ERROR(result['Message'])
+    else:
+      if not result['Value']:
+        self.log.warn('Could not obtain %s section from CS' %(osSection))
+        # return S_ERROR('Could not obtain %s section from CS' %(osSection))
+      else:
+        platforms = result['Value']
     self.log.debug('Platforms are %s' %(platforms))
 
     section = '/LocalSite'
