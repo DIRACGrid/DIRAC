@@ -1,18 +1,18 @@
 """ Client for the Migration Monitoring DB that inherits the Migration Monitoring DB catalog plug-in.
 """
-__RCSID__ = "$Id: MigrationMonitoringClient.py,v 1.1 2009/10/21 14:27:57 acsmith Exp $"
+__RCSID__ = "$Id: MigrationMonitoringClient.py,v 1.2 2009/10/23 08:03:44 acsmith Exp $"
 
 import DIRAC
 from DIRAC                                                               import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.DISET.RPCClient                                          import RPCClient
 from DIRAC.ConfigurationSystem.Client                                    import PathFinder
-from DIRAC.DataManagementSystem.Client.Catalog.MigrationMonitoringClient import MigrationMonitoringClient
+from DIRAC.DataManagementSystem.Client.Catalog.MigrationMonitoringCatalogClient import MigrationMonitoringCatalogClient
 import types
 
-class MigrationMonitoringClient(MigrationMonitoringClient):
+class MigrationMonitoringClient(MigrationMonitoringCatalogClient):
 
   def __init__(self):
-    MigrationMonitoringClient.__init__()
+    MigrationMonitoringCatalogClient.__init__(self)
 
   def getFiles(self,se,status):
     """ Get a list of files in the Migration Monitoring DB
@@ -26,7 +26,7 @@ class MigrationMonitoringClient(MigrationMonitoringClient):
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
 
-  def export_setFilesStatus(self,fileIDs,status):
+  def setFilesStatus(self,fileIDs,status):
     """ Update the file statuses in the migration monitoring DB
     """
     try:
