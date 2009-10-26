@@ -1119,7 +1119,6 @@ class SRM2Storage(StorageBase):
     if not res['OK']:
       return res
     urls = res['Value']
-
     gLogger.debug("SRM2Storage.__removeDirectory: Attempting to remove %s directories." % len(urls))
     resDict = self.__gfalremovedir_wrapper(urls)['Value']
     failed = resDict['Failed']
@@ -1349,6 +1348,8 @@ class SRM2Storage(StorageBase):
               if result.has_key('subpaths'):
                 results = result['subpaths']
                 tempStep = step-1
+              elif re.search(result['surl'],url):
+                results = []
           allResults.extend(results)
           if len(results) < tempStep:
             allObtained = True
