@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.92 2009/10/12 14:53:14 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.93 2009/10/26 14:31:09 acsmith Exp $"
 
 import re, time, commands, random, os, fnmatch
 import types
@@ -987,7 +987,7 @@ class ReplicaManager(CatalogToStorage):
     return S_OK(resDict)
 
   def __cleanDirectory(self,dir):
-    res = self.__verifyOperationPermission(dir)   
+    res = self.__verifyOperationPermission(dir)
     if not res['OK']:
       return res
     if not res['Value']:
@@ -1154,7 +1154,7 @@ class ReplicaManager(CatalogToStorage):
     # Determine the best replicas
     res = self._getSEProximity(replicas.keys())
     if not res['OK']:
-      return res['Message']
+      return res
     for storageElementName in res['Value']:
       physicalFile = replicas[storageElementName]
       res = self.getStorageFile(physicalFile,storageElementName,localPath=os.path.realpath(destinationDir),singleFile=True)
@@ -1175,11 +1175,13 @@ class ReplicaManager(CatalogToStorage):
     return S_ERROR("ReplicaManager.getFile: Failed to get local copy from any replicas.")
 
   def _getSEProximity(self,ses):
-    localSEs = getSEsForSite(DIRAC.siteName())['Value']
-    res = getSEsForCountry(DIRAC.siteName().split('.')[-1])
-    if not res['OK']:
-      return res
-    countrySEs = res['Value']
+    siteName = DIRAC.siteName()
+    localSEs = getSEsForSite(siteName)['Value']
+    countrySEs = []
+    countryCode = siteName.split('.')[-1]
+    res = getSEsForCountry(countryCode)
+    if res['OK']:
+      countrySEs = res['Value']
     sortedSEs = []
     for se in randomize(ses):
       if se in localSEs:
