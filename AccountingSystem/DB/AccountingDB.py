@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.21 2009/10/14 09:56:21 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.21 2009/10/14 09:56:21 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.22 2009/10/27 11:25:32 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.22 2009/10/27 11:25:32 acasajus Exp $"
 
 import datetime, time
 import types
@@ -1028,9 +1028,9 @@ class AccountingDB(DB):
       return retVal
     connObj = retVal[ 'Value' ]
     rawTableName = self.__getTableName( "type", typeName )
-    retVal = self.__startTransaction( connObj )
-    if not retVal[ 'OK' ]:
-      return retVal
+    #retVal = self.__startTransaction( connObj )
+    #if not retVal[ 'OK' ]:
+    #  return retVal
     self.log.info( "Deleting buckets for %s" % typeName )
     retVal = self._update( "DELETE FROM `%s`" % self.__getTableName( "bucket", typeName ),
                            conn = connObj )
@@ -1118,7 +1118,7 @@ class AccountingDB(DB):
       retVal = self._query( sqlQuery, conn = connObj )
       if not retVal[ 'OK' ]:
         self.log.error( "Can't retrieve data for rebucketing", retVal[ 'Message' ] )
-        self.__rollbackTransaction( connObj )
+        #self.__rollbackTransaction( connObj )
         return retVal
       rawData = retVal[ 'Value' ]
       self.log.info( "Retrieved %s records" % len( rawData ) )
@@ -1128,9 +1128,10 @@ class AccountingDB(DB):
         values = entry[2:]
         retVal = self.__splitInBuckets( typeName, startT, endT, values, connObj = connObj )
         if not retVal[ 'OK' ]:
-          self.__rollbackTransaction( connObj )
+          #self.__rollbackTransaction( connObj )
           return retVal
-    return self.__commitTransaction( connObj )
+    #return self.__commitTransaction( connObj )
+    return S_OK()
 
 
   def __startTransaction( self, connObj ):
