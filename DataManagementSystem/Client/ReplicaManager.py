@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.94 2009/10/28 22:47:00 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.95 2009/10/28 22:59:44 acsmith Exp $"
 
 import re, time, commands, random, os, fnmatch
 import types
@@ -13,7 +13,7 @@ from DIRAC.AccountingSystem.Client.DataStoreClient       import gDataStoreClient
 from DIRAC.Core.Security.Misc                            import getProxyInfo,formatProxyInfoAsString
 from DIRAC.Core.Security.CS                              import getDNForUsername
 from DIRAC.Core.Utilities.File                           import makeGuid,getSize
-from DIRAC.Core.Utilities.Adler                          import fileAdler
+from DIRAC.Core.Utilities.Adler                          import fileAdler,compareAdler
 from DIRAC.Core.Utilities.List                           import sortList,randomize
 from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite,isSameSiteSE,getSEsForCountry
 from DIRAC.DataManagementSystem.Client.StorageElement    import StorageElement
@@ -1168,7 +1168,7 @@ class ReplicaManager(CatalogToStorage):
         localAdler = fileAdler(localFile)
         if (metadata['Size'] != res['Value']):
           gLogger.error("Size of downloaded file (%d) does not match catalog (%d)" % (res['Value'],metadata['Size']))
-        elif (metadata['CheckSumValue']) and (metadata['CheckSumValue'] != localAdler): 
+        elif (metadata['CheckSumValue']) and (not compareAdler(metadata['CheckSumValue'],localAdler)): 
           gLogger.error("Checksum of downloaded file (%s) does not match catalog (%s)" % (localAdler,metadata['CheckSumValue']))
         else:
           return S_OK(localFile)
