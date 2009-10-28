@@ -1264,6 +1264,9 @@ class SRM2Storage(StorageBase):
   def __parse_file_metadata(self,urlDict):
     statDict = self.__parse_stat(urlDict['stat'])
     if statDict['File']:
+      statDict['Checksum'] = ''
+      if urlDict.has_key('checksum') and (urlDict['checksum'] != '0x'):
+        statDict['Checksum'] = urlDict['checksum']
       if urlDict.has_key('locality'):
         urlLocality = urlDict['locality']
         if re.search('ONLINE',urlLocality):
