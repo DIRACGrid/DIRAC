@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.93 2009/10/26 14:31:09 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.94 2009/10/28 22:47:00 acsmith Exp $"
 
 import re, time, commands, random, os, fnmatch
 import types
@@ -12,7 +12,8 @@ from DIRAC.AccountingSystem.Client.Types.DataOperation   import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient       import gDataStoreClient
 from DIRAC.Core.Security.Misc                            import getProxyInfo,formatProxyInfoAsString
 from DIRAC.Core.Security.CS                              import getDNForUsername
-from DIRAC.Core.Utilities.File                           import makeGuid,fileAdler,getSize
+from DIRAC.Core.Utilities.File                           import makeGuid,getSize
+from DIRAC.Core.Utilities.Adler                          import fileAdler
 from DIRAC.Core.Utilities.List                           import sortList,randomize
 from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite,isSameSiteSE,getSEsForCountry
 from DIRAC.DataManagementSystem.Client.StorageElement    import StorageElement

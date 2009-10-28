@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-utils-file-adler.py,v 1.1 2009/10/28 18:37:28 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-utils-file-adler.py,v 1.2 2009/10/28 22:45:24 acsmith Exp $
 ########################################################################
-__RCSID__   = "$Id: dirac-utils-file-adler.py,v 1.1 2009/10/28 18:37:28 acsmith Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-utils-file-adler.py,v 1.2 2009/10/28 22:45:24 acsmith Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 import DIRAC
 from DIRAC                          import gLogger
-from DIRAC.Core.Utilities.File      import fileAdler
+from DIRAC.Core.Utilities.Adler     import fileAdler
 from DIRAC.Core.Base                import Script
 
 Script.parseCommandLine( ignoreErrors = False )
