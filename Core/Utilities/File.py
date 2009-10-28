@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.25 2009/08/12 16:05:22 acasajus Exp $
-__RCSID__ = "$Id: File.py,v 1.25 2009/08/12 16:05:22 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.26 2009/10/28 20:43:48 acsmith Exp $
+__RCSID__ = "$Id: File.py,v 1.26 2009/10/28 20:43:48 acsmith Exp $"
 
 """
    Collection of DIRAC useful file related modules
@@ -184,7 +184,7 @@ def fileAdler(fileName):
     mbString = inputFile.read(remainder)
     myAdler = adler32(mbString,myAdler)
     inputFile.close()
-    return hex(myAdler)[-8:]
+    return hex(myAdler & 0xffffffff)[-9:-1].lower().replace('x','0')
   except Exception,x:
     return False
 
