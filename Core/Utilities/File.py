@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.27 2009/10/28 22:43:41 acsmith Exp $
-__RCSID__ = "$Id: File.py,v 1.27 2009/10/28 22:43:41 acsmith Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.28 2009/10/28 22:48:14 acsmith Exp $
+__RCSID__ = "$Id: File.py,v 1.28 2009/10/28 22:48:14 acsmith Exp $"
 
 """
    Collection of DIRAC useful file related modules
@@ -11,7 +11,6 @@ import md5
 import random
 import glob
 import types
-from zlib import adler32
 
 def makeGuid( fileName=None ):
   """
@@ -156,37 +155,6 @@ def getMD5ForFiles( fileList ):
       buf = fd.read( 4096 )
     fd.close()
   return hash.hexdigest()
-
-def stringAdler(string):
-  """ Calculate adler32 of the supplied string
-  """
-  try:
-    intAdler = adler32(string)
-    return hex(intAdler)[-8:]
-  except Exception,x:
-    return False
-
-def fileAdler(fileName):
-  """ Calculate alder32 of the supplied file
-  """
-  try:
-    inputFile = open(fileName)
-    inputFileSize = os.stat(fileName)[6]
-    increment = 1024*1024
-    fullBlocks = inputFileSize/increment
-    remainder = inputFileSize%increment
-
-    mbString = inputFile.read(increment)
-    myAdler = adler32(mbString)
-    for i in range(fullBlocks-1):
-      mbString = inputFile.read(increment)
-      myAdler = adler32(mbString,myAdler)
-    mbString = inputFile.read(remainder)
-    myAdler = adler32(mbString,myAdler)
-    inputFile.close()
-    return hex(myAdler & 0xffffffff).replace('L','')[-8:].lower().replace('x','0')
-  except Exception,x:
-    return False
 
 if __name__=="__main__":
   import sys
