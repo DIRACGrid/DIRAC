@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/RemovalAgent.py,v 1.22 2009/09/02 12:32:44 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/RemovalAgent.py,v 1.23 2009/10/30 14:33:51 acsmith Exp $
 
 """  RemovalAgent takes removal requests from the RequestDB and replicates them
 """
@@ -97,6 +97,7 @@ class RemovalAgent(Agent,RequestAgentMixIn):
     if result['OK']:
       currentOrder = result['Value']
     else:
+      gLogger.error('Can not get the request execution order')
       return S_OK('Can not get the request execution order')
 
     oRequest = RequestContainer(request=requestString)
