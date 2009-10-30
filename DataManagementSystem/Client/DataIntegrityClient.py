@@ -1,6 +1,6 @@
 """ This is the Data Integrity Client which allows the simple reporting of problematic file and replicas to the IntegrityDB and their status correctly updated in the FileCatalog.""" 
 
-__RCSID__ = "$Id: DataIntegrityClient.py,v 1.16 2009/10/13 13:21:55 acsmith Exp $"
+__RCSID__ = "$Id: DataIntegrityClient.py,v 1.17 2009/10/30 09:08:36 acsmith Exp $"
 
 import re, time, commands, random,os
 import types
@@ -838,7 +838,7 @@ class DataIntegrityClient:
         return self.__returnProblematicError(fileID,res)
       if len(res['Value']) <= 1:
         gLogger.info("CatalogPFNSizeMismatch replica (%d) has no other replicas." % fileID)
-        return self.__returnProblematicError(fileID,res)
+        return S_ERROR("Not removing catalog file mismatch since the only replica")
       else:
         gLogger.info("CatalogPFNSizeMismatch replica (%d) has other replicas. Removing..." % fileID)
         res = rm.removeReplica(se,lfn)
