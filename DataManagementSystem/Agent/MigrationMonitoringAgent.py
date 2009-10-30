@@ -1,7 +1,7 @@
 """  MigrationMonitoringAgent monitors the migration status of newly uploaded files to ensure they are migrated correctly and timely.
 """
 
-__RCSID__ = "$Id: MigrationMonitoringAgent.py,v 1.2 2009/10/30 12:35:04 acsmith Exp $"
+__RCSID__ = "$Id: MigrationMonitoringAgent.py,v 1.3 2009/10/30 12:40:12 acsmith Exp $"
 
 from DIRAC                                                  import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath,siteName
 from DIRAC.Core.Base.AgentModule                            import AgentModule
@@ -120,9 +120,9 @@ class MigrationMonitoringAgent(AgentModule):
       migratedFileIDs = {}
       for pfn,checksum in migrated.items():
         migratedFileIDs[pfnIDs[pfn]] = checksum
-      res = self.MigrationMonitoringDB.setFilesStatus(migratedFileIDs.keys(),'Migrated')
-      if not res['OK']:
-        gLogger.error("[%s] MigratingToMigrated: Failed to update migrated files." % se, res['Message'])
+      #res = self.MigrationMonitoringDB.setFilesStatus(migratedFileIDs.keys(),'Migrated')
+      #if not res['OK']:
+      #  gLogger.error("[%s] MigratingToMigrated: Failed to update migrated files." % se, res['Message'])
       # Check the checksums of the migrated files
       res = self.__validateChecksums(se, migratedFileIDs, migratingFiles)
       if not res['OK']:
