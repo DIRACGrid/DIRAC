@@ -1,6 +1,6 @@
 """ Client plug-in for the Migration Monitoring DB.
 """
-__RCSID__ = "$Id: MigrationMonitoringCatalogClient.py,v 1.2 2009/10/23 08:10:20 acsmith Exp $"
+__RCSID__ = "$Id: MigrationMonitoringCatalogClient.py,v 1.3 2009/10/30 12:43:17 acsmith Exp $"
 
 import DIRAC
 from DIRAC                                                         import S_OK, S_ERROR, gLogger, gConfig
@@ -13,7 +13,7 @@ class MigrationMonitoringCatalogClient(FileCatalogueBase):
 
   def __init__(self):
     try:
-      self.url = PathFinder.getServiceURL('DataManagement/MigrationMonitoring')
+      self.url = PathFinder.getServiceURL('DataManagement/MigrationMonitor')
       self.valid = True
     except Exception,x:
       errStr = "MigrationMonitoringClient.__init__: Exception while generating server url."
