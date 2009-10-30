@@ -1,15 +1,18 @@
 """  MigrationMonitoringAgent monitors the migration status of newly uploaded files to ensure they are migrated correctly and timely.
 """
 
-__RCSID__ = "$Id: MigrationMonitoringAgent.py,v 1.1 2009/10/21 13:17:15 acsmith Exp $"
+__RCSID__ = "$Id: MigrationMonitoringAgent.py,v 1.2 2009/10/30 12:35:04 acsmith Exp $"
 
-from DIRAC                                               import gLogger, gConfig, gMonitor, S_OK, S_ERROR
-from DIRAC.AccountingSystem.Client.Types.DataOperation   import DataOperation
-from DIRAC.AccountingSystem.Client.DataStoreClient       import gDataStoreClient
-from DIRAC.Core.Base.AgentModule                         import AgentModule
-from DIRAC.DataManagementSystem.Client.ReplicaManager    import ReplicaManager
-from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
-import time,os
+from DIRAC                                                  import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath,siteName
+from DIRAC.Core.Base.AgentModule                            import AgentModule
+from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataIntegrityClient  import DataIntegrityClient
+from DIRAC.DataManagementSystem.Client.DataLoggingClient    import DataLoggingClient
+from DIRAC.AccountingSystem.Client.Types.DataOperation      import DataOperation
+from DIRAC.AccountingSystem.Client.DataStoreClient          import gDataStoreClient
+from DIRAC.Core.Utilities.List                              import sortList
+from DIRAC.Core.Utilities.Adler                             import compareAdler
+import time,os,datetime
 from types import *
 
 AGENT_NAME = 'DataManagement/MigrationMonitoringAgent'
@@ -19,17 +22,18 @@ class MigrationMonitoringAgent(AgentModule):
   def initialize(self):
     self.ReplicaManager = ReplicaManager()
     self.DataLog = DataLoggingClient()
+    self.DataIntegrityClient = DataIntegrityClient()
     if self.am_getOption('DirectDB',False):
       from DIRAC.DataManagementSystem.DB.MigrationMonitoringDB import MigrationMonitoringDB
       self.MigrationMonitoringDB = MigrationMonitoringDB()
     else:
-      from DIRAC.DataManagementSystem.Client.MigrationMonitoring import MigrationMonitoringClient
-      self.MigrationMonitoringClient = MigrationMonitoringClient()
+      from DIRAC.DataManagementSystem.Client.MigrationMonitoringClient import MigrationMonitoringClient
+      self.MigrationMonitoringDB = MigrationMonitoringClient()
 
     self.am_setModuleParam("shifterProxy", "DataManager")
     self.am_setModuleParam("shifterProxyLocation","%s/runit/%s/proxy" % (rootPath,AGENT_NAME))
     self.userName = 'acsmith'
-    self.storageElements = self.am_getOption('StorageElements',[])
+    self.storageElements = self.am_getOption('StorageElements',['CERN-RAW'])
     self.lastMonitors = {}
 
     gMonitor.registerActivity("Iteration","Agent Loops/min","MigrationMonitoringAgent", "Loops", gMonitor.OP_SUM)
@@ -59,6 +63,7 @@ class MigrationMonitoringAgent(AgentModule):
     for se in self.storageElements:
       gMonitor.addMark("Iteration%s" % se,1)
       self.MigratingToMigrated(se)
+    return S_OK()
 
   #########################################################################################################
   #
@@ -69,12 +74,15 @@ class MigrationMonitoringAgent(AgentModule):
     """ Obtain the active files from the migration monitoring db and check their status
     """
     # First get the migrating files from the database
-    gLogger.info("[%s] MigratingToMigrated: Attempting to find obtain 'Migrating' files." % se)
+    gLogger.info("[%s] MigratingToMigrated: Attempting to obtain 'Migrating' files." % se)
     res = self.__getFiles(se,'Migrating')
     if not res['OK']:
       gLogger.error("[%s] MigratingToMigrated: Failed to get 'Migrating' files." % se, res['Message'])
       return res
     pfnIDs = res['Value']['PFNIDs']
+    if not pfnIDs:
+      gLogger.info("[%s] MigratingToMigrated: Found no 'Migrating' files." % se)
+      return S_OK()
     migratingFiles = res['Value']['MigratingFiles']
     gLogger.info("[%s] MigratingToMigrated: Found %d 'Migrating' files." % (se, len(pfnIDs)))
     gMonitor.addMark("MigratingFiles%s" % se,len(pfnIDs))
@@ -89,7 +97,6 @@ class MigrationMonitoringAgent(AgentModule):
     self.lastMonitors[se] = datetime.datetime.utcnow()
     terminal = res['Value']['Terminal']
     migrated = res['Value']['Migrated']
-
 
     # Update the problematic files in the integrity DB and update the MigrationMonitoringDB
     gLogger.info("[%s] MigratingToMigrated: Found %d terminally failed files." % (se,len(terminal)))
@@ -126,7 +133,7 @@ class MigrationMonitoringAgent(AgentModule):
         matchingFiles = res['Value']['MatchingFiles']
         mismatchingFiles = res['Value']['MismatchFiles']
       # Create and send the accounting messages
-      res = self.__updateMigrationAccounting(se,migratedFileIDs.keys(),migratingFiles,mismatchingFiles,assumedEndTime,previousMonitorTime)
+      res = self.__updateMigrationAccounting(se,migratingFiles,matchingFiles,mismatchingFiles,assumedEndTime,previousMonitorTime)
       if not res['OK']:
         gLogger.error("[%s] MigratingToMigrated: Failed to send accounting for migrated files." % se,res['Message'])
     return S_OK()
@@ -164,9 +171,9 @@ class MigrationMonitoringAgent(AgentModule):
     """ Obtain the checksums in the catalog if not present and check against the checksum from the storage
     """
     lfnFileID = {}
+    checksumToObtain = []
     for fileID in migratedFileIDs.keys():
-      sizesToObtain = []
-      if not migratingFiles[fileID]['FileChecksum']:
+      if not migratingFiles[fileID]['Checksum']:
         lfn = migratingFiles[fileID]['LFN']
         checksumToObtain.append(lfn)
         lfnFileID[lfn] = fileID
@@ -178,45 +185,51 @@ class MigrationMonitoringAgent(AgentModule):
       for lfn,error in res['Value']['Failed'].items():
         gLogger.error("[%s] __validateChecksums: Failed to get file checksum" % se,"%s %s" % (lfn,error))
       for lfn,metadata in res['Value']['Successful'].items():
-        migratingFiles[lfnFileID[lfn]]['FileChecksum'] = metadata['Checksum']
+        migratingFiles[lfnFileID[lfn]]['Checksum'] = metadata['Checksum']
     mismatchFiles = []
+    matchFiles = []
     checksumMismatches = []
     fileRecords = []
-    for fileID,checksum in migratedFileIDs.items():
-      seChecksum = checksum.lower().lstrip('0').lstrip('x')
-      catalogChecksum = migratingFiles[fileID]['FileChecksum'].lower().lstrip('0').lstrip('x')
+    for fileID,seChecksum in migratedFileIDs.items():
       lfn = migratingFiles[fileID]['LFN']
-      if seChecksum != catalogChecksum:
-        gLogger.error("[%s] __validateChecksums: Storage and catalog checksum mismatch" % se,"%s %s %s" % (migratingFiles[fileID]['PFN'],seChecksum,catalogChecksum))
+      catalogChecksum = migratingFiles[fileID]['Checksum']
+      if not seChecksum:
+        gLogger.error("[%s] __validateChecksums: Storage checksum not available" % se, migratingFiles[fileID]['PFN'])
+      elif not compareAdler(seChecksum,catalogChecksum):
+        gLogger.error("[%s] __validateChecksums: Storage and catalog checksum mismatch" % se,"%s '%s' '%s'" % (migratingFiles[fileID]['PFN'],seChecksum,catalogChecksum))
         mismatchFiles.append(fileID)
-        migratedFileIDs.pop(fileID)
         pfn = migratingFiles[fileID]['PFN']
         se = migratingFiles[fileID]['SE']
         checksumMismatches.append((lfn,pfn,se,'CatalogPFNChecksumMismatch'))
         fileRecords.append((lfn,'Checksum match','%s@%s' % (seChecksum,se),'','MigrationMonitoringAgent'))
       else:
         fileRecords.append((lfn,'Checksum mismatch','%s@%s' % (seChecksum,se),'','MigrationMonitoringAgent'))
+        matchFiles.append(fileID)
     # Add the data logging records
     self.DataLog.addFileRecords(fileRecords)
-    # Update the (mis)matching checksums (in the integrityDB and) in the migration monitoring db
-    self.__reportProblematicReplicas(checksumMismatches)
-    res = self.MigrationMonitoringDB.setFilesStatus(mismatchFiles,'ChecksumFail')
-    if not res['OK']:
-      gLogger.error("[%s] __validateChecksums: Failed to update checksum mismatching files." % se, res['Message'])
-    res = self.MigrationMonitoringDB.setFilesStatus(migratedFileIDs.keys(),'ChecksumMatch')
-    if not res['OK']:
-      gLogger.error("[%s] __validateChecksums: Failed to update checksum mismatching files." % se, res['Message'])
-    resDict = {'MatchingFiles':migratedFileIDs.keys(),'MismatchFiles':mismatchFiles}
+    if checksumMismatches:
+      # Update the (mis)matching checksums (in the integrityDB and) in the migration monitoring db
+      self.__reportProblematicReplicas(checksumMismatches)
+      res = self.MigrationMonitoringDB.setFilesStatus(mismatchFiles,'ChecksumFail')
+      if not res['OK']:
+        gLogger.error("[%s] __validateChecksums: Failed to update checksum mismatching files." % se, res['Message'])
+    if matchFiles:
+      res = self.MigrationMonitoringDB.setFilesStatus(matchFiles,'ChecksumMatch')
+      if not res['OK']:
+        gLogger.error("[%s] __validateChecksums: Failed to update checksum mismatching files." % se, res['Message'])
+    resDict = {'MatchingFiles':matchFiles,'MismatchFiles':mismatchFiles}
     return S_OK(resDict)
 
-  def __updateMigrationAccounting(self,se,migratedFiles,migratingFiles,mismatchingFiles,assumedEndTime,previousMonitorTime):
+
+  def __updateMigrationAccounting(self,se,migratingFiles,matchingFiles,mismatchingFiles,assumedEndTime,previousMonitorTime):
     """ Create accounting messages for the overall throughput observed and the total migration time for the files
     """
-    gMonitor.addMark("MigratedFiles%s" % se,len(migratedFiles))
-    gMonitor.addMark("TotalMigratedFiles%s" % se,len(migratedFiles))
+    allMigrated = matchingFiles+mismatchingFiles
+    gMonitor.addMark("MigratedFiles%s" % se,len(allMigrated))
+    gMonitor.addMark("TotalMigratedFiles%s" % se,len(allMigrated))
     lfnFileID = {}
-    for fileID in migratedFiles:
-      sizesToObtain = []
+    sizesToObtain = []
+    for fileID in allMigrated:
       if not migratingFiles[fileID]['Size']:
         lfn = migratingFiles[fileID]['LFN']
         sizesToObtain.append(lfn)
@@ -232,11 +245,10 @@ class MigrationMonitoringAgent(AgentModule):
       for lfn,size in res['Value']['Successful'].items():
         migratingFiles[lfnFileID[lfn]]['Size'] = size
     totalSize = 0
-    for fileID in migratedFiles:
+    for fileID in allMigrated:
       size = migratingFiles[fileID]['Size']
       totalSize += size
-      st = time.strptime(migratingFiles[fileID]['SubmitTime'], "%a %b %d %H:%M:%S %Y")
-      submitTime = datetime(st[0],st[1],st[2],st[3],st[4],st[5],st[6],None)
+      submitTime = migratingFiles[fileID]['SubmitTime']
       timeDiff = submitTime-assumedEndTime
       migrationTime = (timeDiff.days * 86400) + (timeDiff.seconds) + (timeDiff.microseconds/1000000.0)
       gMonitor.addMark("MigrationTime%s" % se,migrationTime)
@@ -250,10 +262,12 @@ class MigrationMonitoringAgent(AgentModule):
     gMonitor.addMark("TotalMigratedSize%s" % se,totalSize)
     gMonitor.addMark("ChecksumMismatches%s" % se,len(mismatchingFiles))
     gMonitor.addMark("TotalChecksumMismatches%s" % se,len(mismatchingFiles))
-    gMonitor.addMark("ChecksumMatches%s" % se,(len(migratedFiles)-len(mismatchingFiles)))
-    gMonitor.addMark("TotalChecksumMatches%s" % se,(len(migratedFiles)-len(mismatchingFiles)))
-    gLogger.info('[%s] __updateMigrationAccounting: Attempting to send accounting message...' % se)
-    return gDataStoreClient.commit()
+    gMonitor.addMark("ChecksumMatches%s" % se,len(matchingFiles))
+    gMonitor.addMark("TotalChecksumMatches%s" % se,len(matchingFiles))
+    if allMigrated:
+      gLogger.info('[%s] __updateMigrationAccounting: Attempting to send accounting message...' % se)
+      return gDataStoreClient.commit()
+    return S_OK()
 
   #########################################################################################################
   #
@@ -266,8 +280,7 @@ class MigrationMonitoringAgent(AgentModule):
     if not res['OK']:
       return res
     files = res['Value']
-    gMonitor.addMark("%Files" % status,len(files.keys()))
-    pfnDict = {}
+    pfnIDs= {}
     if len(files.keys()) > 0:
       for fileID,metadataDict in files.items():
         pfn = metadataDict['PFN']
@@ -281,7 +294,7 @@ class MigrationMonitoringAgent(AgentModule):
         gLogger.info(lfn)
       else:
         gLogger.info(pfn)
-    res = self.setReplicaProblematic(replicaTuples,sourceComponent='MigrationMonitoringAgent')
+    res = self.DataIntegrityClient.setReplicaProblematic(replicaTuples,sourceComponent='MigrationMonitoringAgent')
     if not res['OK']:
       gLogger.info('__reportProblematicReplicas: Failed to update integrity DB with replicas',res['Message'])
     else:
@@ -302,7 +315,7 @@ class MigrationMonitoringAgent(AgentModule):
     transferTime = (timeDiff.days * 86400) + (timeDiff.seconds) + (timeDiff.microseconds/1000000.0)
     accountingDict['TransferTime'] = transferTime
     accountingDict['FinalStatus'] = 'Successful'
-    accountingDict['Source'] = DIRAC.siteName()
+    accountingDict['Source'] = siteName()
     accountingDict['Destination'] = se
     oDataOperation = DataOperation()
     oDataOperation.setEndTime(endTime)
