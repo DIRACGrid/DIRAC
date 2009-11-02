@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.114 2009/10/07 12:45:27 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.115 2009/11/02 12:35:17 paterson Exp $
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.114 2009/10/07 12:45:27 acsmith Exp $"
+__RCSID__ = "$Id: Dirac.py,v 1.115 2009/11/02 12:35:17 paterson Exp $"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint
@@ -58,7 +58,7 @@ COMPONENT_NAME='DiracAPI'
 class Dirac:
 
   #############################################################################
-  def __init__(self, WithRepo=False, RepoLocation=''):
+  def __init__(self, WithRepo=False, RepoLocation='', jobManagerClient=False, sbRPCClient=False, sbTransferClient=False, useCertificates=False):
     """Internal initialization of the DIRAC API.
     """
     self.log = gLogger.getSubLogger(COMPONENT_NAME)
@@ -77,8 +77,8 @@ class Dirac:
     self.scratchDir = gConfig.getValue(self.section+'/LocalSite/ScratchDir','/tmp')
     self.outputSandboxClient = SandboxClient('Output')
     self.inputSandboxClient = SandboxClient('Input')
-    self.sandboxClient = SandboxStoreClient()
-    self.client = WMSClient()
+    self.sandboxClient = SandboxStoreClient(useCertificates,sbRPCClient,sbTransferClient)
+    self.client = WMSClient(jobManagerClient, sbRPCClient, sbTransferClient, useCertificates)
     self.pPrint = pprint.PrettyPrinter()
     self.defaultFileCatalog = gConfig.getValue(self.section+'/FileCatalog','LcgFileCatalogCombined')
     try:
@@ -98,12 +98,12 @@ class Dirac:
   #############################################################################
   def getRepositoryJobs(self,printOutput=False):
     """ Retireve all the jobs in the repository
-    
+
        Example Usage:
-       
+
        >>> print dirac.monitorRepository()
        {'OK': True, 'Value': ''}
-       
+
        @return: S_OK,S_ERROR
     """
     if not self.jobRepo:
@@ -114,7 +114,7 @@ class Dirac:
     if printOutput:
       print self.pPrint.pformat(jobIDs)
     return S_OK(jobIDs)
-  
+
   def monitorRepository(self,printOutput=False):
     """Monitor the jobs present in the repository
 
