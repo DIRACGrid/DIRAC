@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/DB.py,v 1.7 2009/02/19 09:55:00 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/DB.py,v 1.8 2009/11/02 12:47:03 acsmith Exp $
 ########################################################################
 
 """ BaseDB is the base class for multiple DIRAC databases. It uniforms the
     way how the database objects are constructed
 """
 
-__RCSID__ = "$Id: DB.py,v 1.7 2009/02/19 09:55:00 acasajus Exp $"
+__RCSID__ = "$Id: DB.py,v 1.8 2009/11/02 12:47:03 acsmith Exp $"
 
 import sys, types
 from DIRAC                           import gLogger, S_OK, S_ERROR
@@ -126,7 +126,7 @@ class DB(MySQL):
 
     cond = self.buildCondition( condDict, older, newer, timeStamp)
     attrNames = ','.join(map(lambda x: str(x),attrList ))
-    cmd = 'SELECT %s,COUNT(*) FROM %s %s GROUP BY %s ' % (attrNames,table,cond,attrNames)
+    cmd = 'SELECT %s,COUNT(*) FROM %s %s GROUP BY %s ORDER BY %s' % (attrNames,table,cond,attrNames,attrNames)
     result = self._query( cmd )
     if not result['OK']:
       return result
