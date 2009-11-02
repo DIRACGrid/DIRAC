@@ -1,6 +1,6 @@
 """ Client plug-in for the Migration Monitoring DB.
 """
-__RCSID__ = "$Id: MigrationMonitoringCatalogClient.py,v 1.4 2009/11/02 13:51:49 acsmith Exp $"
+__RCSID__ = "$Id: MigrationMonitoringCatalogClient.py,v 1.5 2009/11/02 14:29:25 acsmith Exp $"
 
 import DIRAC
 from DIRAC                                                         import S_OK, S_ERROR, gLogger, gConfig
@@ -53,7 +53,7 @@ class MigrationMonitoringCatalogClient(FileCatalogueBase):
       checksum = str(info['Checksum'])
       fileTuples.append((lfn,pfn,size,se,guid,checksum))
     server = RPCClient(self.url,timeout=120)
-    res = server.addFiles(fileTuples)
+    res = server.addMigratingReplicas(fileTuples)
     if not res['OK']:
       for lfn in fileInfo.keys():
         failed[lfn] = res['Message']
@@ -71,7 +71,7 @@ class MigrationMonitoringCatalogClient(FileCatalogueBase):
     failed = {}
     successful = {}
     server = RPCClient(self.url,timeout=120)
-    res = server.removeFiles(lfns)
+    res = server.removeMigratingFiles(lfns)
     if not res['OK']:
       for lfn in lfns:
         failed[lfn] = res['Message']
@@ -93,8 +93,8 @@ class MigrationMonitoringCatalogClient(FileCatalogueBase):
       replicaTuples.append((lfn,pfn,0,se,'',''))
     server = RPCClient(self.url,timeout=120)
     failed = {}
-    successful = {}  
-    res = server.addFiles(replicaTuples)
+    successful = {}
+    res = server.addMigratingReplicas(replicaTuples)
     if not res['OK']:
       for lfn in fileInfo.keys():
         failed[lfn] = res['Message']
@@ -115,7 +115,7 @@ class MigrationMonitoringCatalogClient(FileCatalogueBase):
       se = str(info['SE'])
       replicaTuples.append((lfn,pfn,se))
     server = RPCClient(self.url,timeout=120)
-    return server.removeReplicas(replicaTuples)
+    return server.removeMigratingReplicas(replicaTuples)
 
   def __checkArgumentFormat(self,path):
     if type(path) in types.StringTypes:
