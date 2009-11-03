@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.22 2009/10/27 11:25:32 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.22 2009/10/27 11:25:32 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.23 2009/11/03 08:33:43 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.23 2009/11/03 08:33:43 acasajus Exp $"
 
 import datetime, time
 import types
@@ -969,9 +969,9 @@ class AccountingDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
     connObj = retVal[ 'Value' ]
-    retVal = self.__startTransaction( connObj )
-    if not retVal[ 'OK' ]:
-      return retVal
+    #retVal = self.__startTransaction( connObj )
+    #if not retVal[ 'OK' ]:
+    #  return retVal
     for bPos in range( len( self.dbBucketsLength[ typeName ] ) - 1 ):
       secondsLimit = self.dbBucketsLength[ typeName ][ bPos ][0]
       bucketLength = self.dbBucketsLength[ typeName ][ bPos ][1]
@@ -981,14 +981,14 @@ class AccountingDB(DB):
       #Retrieve the data
       retVal = self.__selectForCompactBuckets( typeName, timeLimit, bucketLength, nextBucketLength, connObj )
       if not retVal[ 'OK' ]:
-        self.__rollbackTransaction( connObj )
+        #self.__rollbackTransaction( connObj )
         return retVal
       bucketsData = retVal[ 'Value' ]
       if len( bucketsData ) == 0:
         continue
       retVal = self.__deleteForCompactBuckets( typeName, timeLimit, bucketLength, connObj )
       if not retVal[ 'OK' ]:
-        self.__rollbackTransaction( connObj )
+        #self.__rollbackTransaction( connObj )
         return retVal
       self.log.info( "Compacting %s records %s seconds size for %s" % ( len( bucketsData ), bucketLength, typeName ) )
       #Add data
@@ -998,9 +998,10 @@ class AccountingDB(DB):
         valuesList = record[:-2]
         retVal = self.__splitInBuckets( typeName, startTime, endTime, valuesList, connObj )
         if not retVal[ 'OK' ]:
-          self.__rollbackTransaction( connObj )
+          #self.__rollbackTransaction( connObj )
           self.log.error( "Error while compacting data for record in %s: %s" % ( typeName, retVal[ 'Value' ] ) )
-    return self.__commitTransaction( connObj )
+    #return self.__commitTransaction( connObj )
+    return S_OK()
 
   def __deleteRecordsOlderThanDataTimespan( self, typeName ):
     """
