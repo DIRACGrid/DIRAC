@@ -1,8 +1,8 @@
 #################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.16 2009/11/02 20:08:41 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.17 2009/11/03 08:15:17 acasajus Exp $
 #################################################################
 
-__RCSID__ = "$Id: ThreadPool.py,v 1.16 2009/11/02 20:08:41 acasajus Exp $"
+__RCSID__ = "$Id: ThreadPool.py,v 1.17 2009/11/03 08:15:17 acasajus Exp $"
 
 import time
 import sys
@@ -13,9 +13,7 @@ try:
 except:
   gLogger = False
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
 
-gThreadLifeCycle = Synchronizer()
 
 class WorkingThread( threading.Thread ):
 
@@ -140,7 +138,6 @@ class ThreadPool( threading.Thread ):
       self.__workingThreadsList[0].kill()
       del( self.__workingThreadsList[0] )
 
-  @gThreadLifeCycle
   def __countWaitingThreads(self ):
     iWaitingThreads = 0
     for oWT in self.__workingThreadsList:
@@ -148,7 +145,6 @@ class ThreadPool( threading.Thread ):
         iWaitingThreads += 1
     return iWaitingThreads
 
-  @gThreadLifeCycle
   def __countWorkingThreads(self ):
     iWorkingThreads = 0
     for oWT in self.__workingThreadsList:
@@ -156,7 +152,6 @@ class ThreadPool( threading.Thread ):
         iWorkingThreads += 1
     return iWorkingThreads
 
-  @gThreadLifeCycle
   def __spawnNeededWorkingThreads( self ):
     while len( self.__workingThreadsList ) < self.__minThreads:
       self.__spawnWorkingThread()
@@ -164,7 +159,6 @@ class ThreadPool( threading.Thread ):
           len( self.__workingThreadsList ) < self.__maxThreads:
       self.__spawnWorkingThread()
 
-  @gThreadLifeCycle
   def __killExceedingWorkingThreads( self ):
     threadsToKill = 0
     threadsToKill += len( self.__workingThreadsList ) - self.__maxThreads
