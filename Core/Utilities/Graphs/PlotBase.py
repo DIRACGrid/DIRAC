@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PlotBase.py,v 1.8 2009/09/08 14:18:18 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PlotBase.py,v 1.9 2009/11/03 15:56:47 atsareg Exp $
 ########################################################################
 
 """ PlotBase is a base class for various Graphs plots
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: PlotBase.py,v 1.8 2009/09/08 14:18:18 atsareg Exp $"
+__RCSID__ = "$Id: PlotBase.py,v 1.9 2009/11/03 15:56:47 atsareg Exp $"
 
 import types, random
 from DIRAC.Core.Utilities.Graphs.Palette import Palette
@@ -60,39 +60,65 @@ class PlotBase:
     
     xlabel = prefs.get('xlabel','') 
     ylabel = prefs.get('ylabel','') 
+    xticks_flag = prefs.get('xticks',True)
+    yticks_flag = prefs.get('yticks',True)
+    
     text_size = prefs['text_size']
-    text_size_point = pixelToPoint(text_size,dpi)
+    text_padding = prefs['text_padding']
+    
+    label_text_size = prefs.get('label_text_size',text_size)
+    label_text_size_point = pixelToPoint(label_text_size,dpi)
+    tick_text_size = prefs.get('tick_text_size',text_size)
+    tick_text_size_point = pixelToPoint(tick_text_size,dpi)
+    
+    ytick_length = prefs.get('ytick_length',7*tick_text_size)
+    
     plot_title = prefs.get('plot_title','')
     if not plot_title or plot_title == 'NoTitle':
       plot_title_size = 0
       plot_title_padding = 0
     else:
-      plot_title_size = prefs['plot_title_size']
-      plot_title_padding = prefs['text_padding']  
+      plot_title_size = prefs.get('plot_title_size',text_size)
+      plot_title_padding = prefs.get('plot_text_padding',text_padding)  
     plot_title_size_point = pixelToPoint(plot_title_size,dpi)
-    figure_padding = prefs['figure_padding']
-    plot_left_padding = prefs['plot_padding']
-    plot_bottom_padding = prefs.get('plot_bottom_padding',plot_left_padding)
+
+    plot_padding = prefs['plot_padding']
+    plot_left_padding = prefs.get('plot_left_padding',plot_padding)
+    plot_right_padding = prefs.get('plot_right_padding',0)
+    plot_bottom_padding = prefs.get('plot_bottom_padding',plot_padding)
+    plot_top_padding = prefs.get('plot_top_padding',0)
     frame_flag = prefs['frame']
     
     # Create plot axes, and set properties
-    
     left,bottom,width,height = self.ax_contain.get_window_extent().bounds
     l,b,f_width,f_height = self.figure.get_window_extent().bounds
         
-    ax_plot_rect = (float(plot_left_padding+left)/f_width,
-                    float(plot_bottom_padding+bottom)/f_height,
-                    float(width-plot_left_padding)/f_width,
-                    float(height-plot_bottom_padding-plot_title_size-2*plot_title_padding)/f_height)
+    # Space needed for labels and ticks
+    x_label_space = 0    
+    if xticks_flag:
+      x_label_space += tick_text_size*1.5
+    if xlabel:
+      x_label_space += label_text_size*1.5
+    y_label_space = 0
+    if yticks_flag:
+      y_label_space += ytick_length
+    if ylabel:
+      y_label_space += label_text_size*1.5  
+        
+    ax_plot_rect = (float(plot_left_padding+left+y_label_space)/f_width,
+                    float(plot_bottom_padding+bottom+x_label_space)/f_height,
+                    float(width-plot_left_padding-plot_right_padding-y_label_space)/f_width,
+                    float(height-plot_bottom_padding-plot_top_padding-x_label_space- \
+                          plot_title_size-2*plot_title_padding)/f_height)
     ax = Axes(self.figure,ax_plot_rect)                
     if prefs['square_axis']:
       l,b,a_width,a_height = ax.get_window_extent().bounds
       delta = abs(a_height-a_width)
-      if a_height>a_width:
+      if a_height > a_width:
         a_height = a_width
         ax_plot_rect = (float(plot_left_padding+left)/f_width,
                         float(plot_bottom_padding+bottom+delta/2.)/f_height,
-                        float(width-plot_left_padding)/f_width,
+                        float(width-plot_left_padding-plot_right_padding)/f_width,
                         float(height-plot_bottom_padding-plot_title_size-2*plot_title_padding-delta)/f_height)
       else:
         a_width = a_height
@@ -110,26 +136,34 @@ class PlotBase:
 
     if frame_flag.lower() == 'off':
       self.ax.set_axis_off()
+      self.log_xaxis = False
+      self.log_yaxis = False
     else:  
       # If requested, make x/y axis logarithmic
       if prefs.get('log_xaxis','False').find('r') >= 0:
-          ax.semilogx()
-          self.log_xaxis = True
+        ax.semilogx()
+        self.log_xaxis = True
       else:
-          self.log_xaxis = False
+        self.log_xaxis = False
       if prefs.get('log_yaxis','False').find('r') >= 0:
-          ax.semilogy()
-          self.log_yaxis = True
+        ax.semilogy()
+        self.log_yaxis = True
       else:
-          self.log_yaxis = False
+        self.log_yaxis = False
 
-      setp( ax.get_xticklabels(), family=prefs['font_family'] )
-      setp( ax.get_xticklabels(), fontname=prefs['font'] )
-      setp( ax.get_xticklabels(), size=text_size_point)
+      if xticks_flag:
+        setp( ax.get_xticklabels(), family=prefs['font_family'] )
+        setp( ax.get_xticklabels(), fontname=prefs['font'] )
+        setp( ax.get_xticklabels(), size=tick_text_size_point)
+      else:
+        setp( ax.get_xticklabels(), size=0)  
 
-      setp( ax.get_yticklabels(), family=prefs['font_family'] )
-      setp( ax.get_yticklabels(), fontname=prefs['font'] )
-      setp( ax.get_yticklabels(), size=text_size_point )
+      if yticks_flag: 
+        setp( ax.get_yticklabels(), family=prefs['font_family'] )
+        setp( ax.get_yticklabels(), fontname=prefs['font'] )
+        setp( ax.get_yticklabels(), size=tick_text_size_point )
+      else:  
+        setp( ax.get_yticklabels(), size=0 )
 
       setp( ax.get_xticklines(),  markeredgewidth=pixelToPoint(0.5,dpi) )
       setp( ax.get_xticklines(),  markersize=pixelToPoint(text_size/2.,dpi) )
@@ -137,12 +171,17 @@ class PlotBase:
       setp( ax.get_yticklines(),  markersize=pixelToPoint(text_size/2.,dpi) )
       setp( ax.get_xticklines(),  zorder=4.0 )
 
-      setp( ax.patch, linewidth=pixelToPoint(.1,dpi) )
-      setp( ax.axesFrame, linewidth=pixelToPoint(1.0,dpi) )
+      line_width = prefs.get('line_width',1.0)
+      frame_line_width  = prefs.get('frame_line_width',line_width)
+      grid_line_width  = prefs.get('grid_line_width',0.1)
+      plot_line_width = prefs.get('plot_line_width',0.1)
+
+      setp( ax.patch, linewidth=pixelToPoint(plot_line_width,dpi) )
+      setp( ax.axesFrame, linewidth=pixelToPoint(frame_line_width,dpi) )
       #setp( ax.axvline(), linewidth=pixelToPoint(1.0,dpi) ) 
       axis_grid_flag = prefs.get('plot_axis_grid',True)
       if axis_grid_flag:  
-        ax.grid( True, color='#555555', linewidth=pixelToPoint(0.1,dpi) )
+        ax.grid( True, color='#555555', linewidth=pixelToPoint(grid_line_width,dpi) )
       
       plot_axis_flag = prefs.get('plot_axis',True)
       if plot_axis_flag:
@@ -151,13 +190,13 @@ class PlotBase:
           t = ax.set_xlabel( xlabel )
           t.set_family(prefs['font_family'])
           t.set_fontname(prefs['font'])
-          t.set_size(prefs['text_size'])
+          t.set_size(label_text_size)
   
         if ylabel:
           t = ax.set_ylabel( ylabel )
           t.set_family(prefs['font_family'])
           t.set_fontname(prefs['font'])
-          t.set_size(prefs['text_size']) 
+          t.set_size(label_text_size) 
       else:
         self.ax.set_axis_off()    
         

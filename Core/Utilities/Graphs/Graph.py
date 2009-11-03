@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.10 2009/09/08 14:18:18 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.11 2009/11/03 15:56:47 atsareg Exp $
 ########################################################################
 
 """ Graph is a class providing layouts for the complete plot images including
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: Graph.py,v 1.10 2009/09/08 14:18:18 atsareg Exp $"
+__RCSID__ = "$Id: Graph.py,v 1.11 2009/11/03 15:56:47 atsareg Exp $"
 
 import types, datetime
 from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -43,17 +43,25 @@ class Graph(object):
     height_inch = height/dpi
     figure.set_size_inches( width_inch, height_inch )
     figure.set_dpi( dpi )
-    figure.set_facecolor('white')
+    figure.set_facecolor(prefs.get('background_color','white'))
+    
     figure_padding = float(prefs['figure_padding'])
+    figure_left_padding = float(prefs.get('figure_left_padding',figure_padding))
+    figure_right_padding = float(prefs.get('figure_right_padding',figure_padding))
+    figure_top_padding = float(prefs.get('figure_top_padding',figure_padding))
+    figure_bottom_padding = float(prefs.get('figure_bottom_padding',figure_padding))
+    
+    text_size = prefs.get('text_size',8)
+    text_padding = prefs.get('text_padding',5)
     
     #######################################
     # Make the graph title
     
-    title = prefs['title']
+    title = prefs.get('title','')
     subtitle = ''
     if title:
-      title_size = prefs['title_size']
-      title_padding = float(prefs['title_padding'])
+      title_size = prefs.get('title_size',1.5*text_size)
+      title_padding = float(prefs.get('title_padding',1.5*text_padding))
       figure.text(0.5,1.-(title_size+figure_padding)/height,title,
                   ha='center',va='bottom',size=pixelToPoint(title_size,dpi) )
        
@@ -61,8 +69,8 @@ class Graph(object):
       if subtitle:            
         sublines = subtitle.split('\n')
         nsublines = len(sublines)
-        subtitle_size = prefs['subtitle_size']
-        subtitle_padding = float(prefs['subtitle_padding']) 
+        subtitle_size = prefs.get('subtitle_size',1.2*text_size)
+        subtitle_padding = float(prefs.get('subtitle_padding',1.2*text_padding)) 
         top_offset = subtitle_size+subtitle_padding+title_size+figure_padding  
         for subline in sublines:
           figure.text(0.5,1.-(top_offset)/height,
@@ -72,14 +80,14 @@ class Graph(object):
 
     ########################################
     # Evaluate the plot area dimensions
-    graph_width = width - 2.*figure_padding
-    graph_height = height - 2.*figure_padding 
+    graph_width = width - figure_left_padding - figure_right_padding
+    graph_height = height - figure_top_padding - figure_bottom_padding
     if title:
       graph_height = graph_height - title_padding - title_size
     if subtitle:
       graph_height = graph_height - nsublines*(subtitle_size + subtitle_padding)     
-    graph_left = figure_padding
-    graph_bottom = figure_padding      
+    graph_left = figure_left_padding
+    graph_bottom = figure_bottom_padding      
                 
     #########################################
     # Make the plot time stamp if requested
@@ -100,17 +108,18 @@ class Graph(object):
       legend_position = prefs['legend_position']
       #legend_width = float(prefs['legend_width']) 
       #legend_height = float(prefs['legend_height']) 
-      legend_width,legend_height = legend.getLegendSize()
+      legend_width,legend_height,legend_max_height = legend.getLegendSize()
       legend_padding = float(prefs['legend_padding']) 
       if legend_position in ['right','left']:
         # One column in case of vertical legend
         legend_width = column_width+legend_padding
+        legend_height = min(graph_height,legend_max_height)
         bottom = (height-title_size-title_padding-legend_height)/2./height
         if legend_position == 'right':
           left = 1. - (figure_padding+legend_width)/width
         else:
-          left = figure_padding/height  
-          graph_left = graph_left - legend_width  
+          left = figure_padding/width  
+          graph_left = graph_left + legend_width  
         graph_width = graph_width - legend_width - legend_padding  
       elif legend_position == 'bottom':
         bottom = figure_padding/height
@@ -118,7 +127,7 @@ class Graph(object):
         graph_height = graph_height  - legend_height - legend_padding
         graph_bottom = graph_bottom + legend_height + legend_padding
         
-      legend_rect = (left,bottom,legend_width/width,legend_height/height)
+      legend_rect = (left,bottom,legend_width/width,legend_height/height)      
       legend_ax = figure.add_axes(legend_rect)
     
     ###########################################
@@ -178,8 +187,9 @@ class Graph(object):
       self.makeTextGraph(str(prefs['text_image']))
       return 
     
+    # Evaluate the number of plots and their requested layout
     metadata = prefs.get('metadata',{})
-    plot_grid = prefs['plot_grid']
+    plot_grid = prefs.get('plot_grid','1:1')
     nx = int(plot_grid.split(':')[0])
     ny = int(plot_grid.split(':')[1]) 
     nPlots = nx*ny
@@ -220,11 +230,13 @@ class Graph(object):
           plot_prefs[i]['plot_title'] = plot_title+' '+time_title
       graphData.append(gdata)     
     
+    # Do not make legend for the plot with non-string keys
     if not graphData[0].subplots and graphData[0].key_type != 'string':
       prefs['legend'] = False
       
     legend = Legend(graphData[0],None,prefs)
     self.figure = Figure()
+    
     # Make Water Mark
     image = prefs.get('watermark',None)  
     self.drawWaterMark(image)  
@@ -234,10 +246,6 @@ class Graph(object):
     if DEBUG:  
       print "makeGraph time layout",time.time()-start
       start = time.time()  
-      
-    # Make Water Mark
-    #image = prefs.get('watermark',None)  
-    #self.drawWaterMark(image)  
       
     # Make plots    
     for i in range(nPlots):
@@ -267,7 +275,7 @@ class Graph(object):
     #return S_OK()  
     
   def drawWaterMark(self,imagePath=None):
-    """ Make the DIRAC water mark
+    """ Make the figure water mark
     """                          
     
     prefs = self.prefs
