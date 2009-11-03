@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.23 2009/11/03 08:33:43 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.23 2009/11/03 08:33:43 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.24 2009/11/03 09:44:01 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.24 2009/11/03 09:44:01 acasajus Exp $"
 
 import datetime, time
 import types
@@ -1032,7 +1032,7 @@ class AccountingDB(DB):
     #retVal = self.__startTransaction( connObj )
     #if not retVal[ 'OK' ]:
     #  return retVal
-    self.log.info( "Deleting buckets for %s" % typeName )
+    self.log.info( "[REBUCKET] Deleting buckets for %s" % typeName )
     retVal = self._update( "DELETE FROM `%s`" % self.__getTableName( "bucket", typeName ),
                            conn = connObj )
     if not retVal[ 'OK' ]:
@@ -1111,18 +1111,19 @@ class AccountingDB(DB):
                                                        rawTableName,
                                                        " AND NOT ".join( dateInclusiveConditions ) )
     sqlQueries.append( sqlQuery )
-    self.log.info( "Retrieving data for rebuilding buckets for type %s..." % ( typeName ) )
+    self.log.info( "[REBUCKET] Retrieving data for rebuilding buckets for type %s..." % ( typeName ) )
     queryNum = 0
     for sqlQuery in sqlQueries:
-      self.log.info( "Executing query #%s..." % queryNum )
+      self.log.info( "[REBUCKET] Executing query #%s..." % queryNum )
       queryNum += 1
       retVal = self._query( sqlQuery, conn = connObj )
       if not retVal[ 'OK' ]:
-        self.log.error( "Can't retrieve data for rebucketing", retVal[ 'Message' ] )
+        self.log.error( "[REBUCKET] Can't retrieve data for rebucketing", retVal[ 'Message' ] )
         #self.__rollbackTransaction( connObj )
         return retVal
       rawData = retVal[ 'Value' ]
-      self.log.info( "Retrieved %s records" % len( rawData ) )
+      self.log.info( "[REBUCKET] Retrieved %s records" % len( rawData ) )
+      rebucketedRecords = 0
       for entry in rawData:
         startT = entry[0]
         endT = entry[1]
@@ -1131,6 +1132,9 @@ class AccountingDB(DB):
         if not retVal[ 'OK' ]:
           #self.__rollbackTransaction( connObj )
           return retVal
+        rebucketedRecords += 1
+        if rebucketedRecords % 1000 == 0:
+          self.log.info( "[REBUCKET] Rebucketed %s records..." % rebucketedRecords )
     #return self.__commitTransaction( connObj )
     return S_OK()
 
