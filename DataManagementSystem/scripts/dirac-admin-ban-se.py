@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-admin-ban-se.py,v 1.1 2009/09/16 13:08:37 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-admin-ban-se.py,v 1.2 2009/11/03 14:49:15 acsmith Exp $
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-ban-se.py,v 1.1 2009/09/16 13:08:37 acsmith Exp $"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__   = "$Id: dirac-admin-ban-se.py,v 1.2 2009/11/03 14:49:15 acsmith Exp $"
+__VERSION__ = "$Revision: 1.2 $"
 import DIRAC
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Base                                   import Script
 
 read = True
 write = True
@@ -30,9 +30,21 @@ def usage():
 
 from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
 from DIRAC.FrameworkSystem.Client.NotificationClient  import NotificationClient
+from DIRAC.Core.Security.Misc                         import getProxyInfo
 from DIRAC                                            import gConfig,gLogger
 from DIRAC.Core.Utilities.List                        import intListToString
 csAPI = CSAPI()
+
+res = getProxyInfo()
+if not res['OK']:
+  gLogger.error("Failed to get proxy information",res['Message'])
+  DIRAC.exit(2)
+userName = res['Value']['username']
+group = res['Value']['group']
+if group != 'diracAdmin':
+  gLogger.error("You must be diracAdmin to execute this script")
+  gLogger.info("Please issue 'lhcb-proxy-init -g diracAdmin'")
+  DIRAC.exit(2)
 
 if not type(ses) == type([]):
   usage()
@@ -89,5 +101,5 @@ if write:
   for se in writeBanned:
     body = "%s\n%s" % (body,se)
 
-res = NotificationClient().sendMail(address,subject,body,'lhcb-datamanagement@cern.ch')
+NotificationClient().sendMail(address,subject,body,'%s@cern.ch' % username)
 DIRAC.exit(0)
