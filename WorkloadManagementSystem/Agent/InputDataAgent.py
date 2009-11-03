@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.39 2009/09/23 10:23:57 atsareg Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/InputDataAgent.py,v 1.40 2009/11/03 14:21:07 acsmith Exp $
 # File :   InputDataAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 """
 
-__RCSID__ = "$Id: InputDataAgent.py,v 1.39 2009/09/23 10:23:57 atsareg Exp $"
+__RCSID__ = "$Id: InputDataAgent.py,v 1.40 2009/11/03 14:21:07 acsmith Exp $"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
@@ -103,7 +103,7 @@ class InputDataAgent(OptimizerModule):
     if catalogResult.has_key('Successful'):
       for lfn,reps in catalogResult['Successful'].items():
         if not reps:
-          badLFNs.append('LFN:%s Problem: Null replica value' %(lfn))
+          badLFNs.append('LFN:%s Problem: No replicas available' %(lfn))
           badLFNCount+=1
 
     if badLFNCount:
