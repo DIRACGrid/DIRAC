@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.62 2009/11/03 14:41:41 rgracian Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/Watchdog.py,v 1.63 2009/11/03 15:10:09 rgracian Exp $
 # File  : Watchdog.py
 # Author: Stuart Paterson
 ########################################################################
@@ -18,7 +18,7 @@
           - CPU normalization for correct comparison with job limit
 """
 
-__RCSID__ = "$Id: Watchdog.py,v 1.62 2009/11/03 14:41:41 rgracian Exp $"
+__RCSID__ = "$Id: Watchdog.py,v 1.63 2009/11/03 15:10:09 rgracian Exp $"
 
 from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
@@ -101,11 +101,11 @@ class Watchdog(Agent):
     # the self.checkingTime and self.pollingTime are in seconds,
     # thus they need to be multiplied by a large enough factor
     self.grossTimeLeftLimit = 10 * self.checkingTime
-    self.fineTimeLeftLimit  = gConfig.getValue(self.section+'/TimeLeftLimit', 15 * self.pollingTime )
+    self.fineTimeLeftLimit  = gConfig.getValue(self.section+'/TimeLeftLimit', 60 * self.pollingTime )
 
     self.timeLeftUtil = TimeLeft()
     self.timeLeft = 0
-    self.litleTimeLeft = False
+    self.littleTimeLeft = False
     return result
 
   #############################################################################
@@ -119,14 +119,19 @@ class Watchdog(Agent):
       self.__finish()
       return S_OK()
 
-    if self.litleTimeLeft and self.__timeLeft() == -1:
-      self.checkError = 'Job has reached the CPU limit of the queue'
-      self.log.error( self.checkError, self.timeLeft )
-      self.checkError = 'Job has reached the CPU limit of the queue'
-      self.__killRunningThread()
-      self.__getUsageSummary()
-      self.__finish()
-      return S_OK()
+    if self.littleTimeLeft:
+      # if we have gone over enough iterations query again
+      if self.littleTimeLeftCount == 0 and self.__timeLeft() == -1:
+        self.checkError = 'Job has reached the CPU limit of the queue'
+        self.log.error( self.checkError, self.timeLeft )
+        self.checkError = 'Job has reached the CPU limit of the queue'
+        self.__killRunningThread()
+        self.__getUsageSummary()
+        self.__finish()
+        return S_OK()
+      else:
+        self.littleTimeLeftCount -= self.littleTimeLeftCount - 1
+
 
     #Note: need to poll regularly to see if the thread is alive
     #      but only perform checks with a certain frequency
@@ -587,7 +592,7 @@ class Watchdog(Agent):
     """
       return Normalized CPU time left in the batch system
       0 if not available
-      update self.timeLeft and self.litleTimeLeft
+      update self.timeLeft and self.littleTimeLeft
     """
     # Get CPU time left in the batch system
     result = self.timeLeftUtil.getTimeLeft(0.0)
@@ -600,10 +605,12 @@ class Watchdog(Agent):
       timeLeft = result['Value']
 
     self.timeLeft = timeLeft
-    if not self.litleTimeLeft:
+    if not self.littleTimeLeft:
       if timeLeft and timeLeft < self.grossTimeLeftLimit:
         self.log.info( 'TimeLeft bellow %s, now checking with higher frequency' % timeLeft)
-        self.litleTimeLeft = True
+        self.littleTimeLeft = True
+        # TODO: better configurable way of doing this to be coded
+        self.littleTimeLeftCount = 15
     else:
       if self.timeLeft and self.timeLeft < self.fineTimeLeftLimit:
         timeLeft = -1
