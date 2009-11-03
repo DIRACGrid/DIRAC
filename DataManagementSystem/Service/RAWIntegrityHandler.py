@@ -5,11 +5,11 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.RAWIntegrityDB import RAWIntegrityDB
 
-rawIntegrityDB = False
+database = False
 
 def initializeRAWIntegrityHandler(serviceInfo):
-  global rawIntegrityDB
-  rawIntegrityDB = RAWIntegrityDB()
+  global database
+  database = RAWIntegrityDB()
   return S_OK()
 
 class RAWIntegrityHandler(RequestHandler):
@@ -20,7 +20,7 @@ class RAWIntegrityHandler(RequestHandler):
     """
     try:
       gLogger.info("RAWIntegrityHandler.addFile: Attempting to add %s to the database." % lfn)
-      res = rawIntegrityDB.addFile(lfn,pfn,size,se,guid,checksum)
+      res = database.addFile(lfn,pfn,size,se,guid,checksum)
       return res
     except Exception,x:
       errStr = "RAWIntegrityHandler.addFile: Exception while adding file to database."
@@ -33,7 +33,7 @@ class RAWIntegrityHandler(RequestHandler):
     """
     try:
       gLogger.info("Attempting to get global statistics.")
-      res = rawIntegrityDB.getGlobalStatistics()
+      res = database.getGlobalStatistics()
       if not res['OK']:
         gLogger.error("getGlobalStatistics: Failed to get global statistics",res['Message'])
       else:
@@ -50,7 +50,7 @@ class RAWIntegrityHandler(RequestHandler):
     """
     try:
       gLogger.info("Attempting to get selections.")
-      res = rawIntegrityDB.getFileSelections()
+      res = database.getFileSelections()
       if not res['OK']:
         gLogger.error("getFileSelections: Failed to get file selections",res['Message'])
       else:
@@ -77,7 +77,7 @@ class RAWIntegrityHandler(RequestHandler):
       orderAttribute = sortList[0][0]+":"+sortList[0][1]
     else:
       orderAttribute = None
-    res = rawIntegrityDB.selectFiles(selectDict, orderAttribute=orderAttribute,newer=startDate, older=endDate )
+    res = database.selectFiles(selectDict, orderAttribute=orderAttribute,newer=startDate, older=endDate )
     if not res['OK']:
       return S_ERROR('Failed to select jobs: '+res['Message'])
     # Get the files and the counters correctly
@@ -100,7 +100,7 @@ class RAWIntegrityHandler(RequestHandler):
     for lfn,pfn,size,se,guid,checksum,submit,complete,status in fileList:
       if not statusCountDict.has_key(status):
         statusCountDict[status] = 0
-      statusCountDict[status] += 1 
+      statusCountDict[status] += 1
     for tuple in summaryFileList:
       lfn,pfn,size,se,guid,checksum,submit,complete,status = tuple
       startTime = str(submit)
