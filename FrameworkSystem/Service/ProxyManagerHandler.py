@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.24 2009/08/26 08:58:19 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.25 2009/11/03 13:35:23 acasajus Exp $
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.24 2009/08/26 08:58:19 acasajus Exp $"
+__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.25 2009/11/03 13:35:23 acasajus Exp $"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -24,7 +24,7 @@ def initializeProxyManagerHandler( serviceInfo ):
 
   serviceCS = serviceInfo [ 'serviceSectionPath' ]
   requireVoms = gConfig.getValue( "%s/requireVOMS" % serviceCS, "yes" ).lower() in ( "yes", "y", "1" )
-  useMyProxy = gConfig.getValue( "%s/UseMyProxy" % serviceCS, "yes" ).lower() in ( "yes", "y", "1" )
+  useMyProxy = gConfig.getValue( "%s/UseMyProxy" % serviceCS, "no" ).lower() in ( "yes", "y", "1" )
   try:
     gProxyDB = ProxyDB( requireVoms = requireVoms,
                         useMyProxy = useMyProxy )
