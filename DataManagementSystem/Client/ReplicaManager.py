@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.95 2009/10/28 22:59:44 acsmith Exp $"
+__RCSID__ = "$Id: ReplicaManager.py,v 1.96 2009/11/03 10:30:53 acsmith Exp $"
 
 import re, time, commands, random, os, fnmatch
 import types
@@ -490,7 +490,7 @@ class StorageBase:
     res = storageElement.isValid('getPfnForProtocol')
     if not res['OK']:
       errStr = "ReplicaManager.getPfnForLfn: Failed to instantiate Storage Element"
-      gLogger.error(errStr, "for performing getPfnForProtocol at %s." % (method,storageElementName))
+      gLogger.error(errStr, "for performing getPfnForProtocol at %s." % (storageElementName))
       return res
     successful = {}
     failed = {}
