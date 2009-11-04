@@ -1,8 +1,8 @@
 #################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.17 2009/11/03 08:15:17 acasajus Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.18 2009/11/04 10:43:01 acasajus Exp $
 #################################################################
 
-__RCSID__ = "$Id: ThreadPool.py,v 1.17 2009/11/03 08:15:17 acasajus Exp $"
+__RCSID__ = "$Id: ThreadPool.py,v 1.18 2009/11/04 10:43:01 acasajus Exp $"
 
 import time
 import sys
@@ -123,6 +123,9 @@ class ThreadPool( threading.Thread ):
   def numWorkingThreads( self ):
     return self.__countWorkingThreads()
 
+  def numWaitingThreads( self ):
+    return self.__countWaitingThreads()
+
   def __spawnWorkingThread( self ):
     self.__workingThreadsList.append( WorkingThread( self.__pendingQueue, self.__resultsQueue ) )
 
@@ -160,9 +163,10 @@ class ThreadPool( threading.Thread ):
       self.__spawnWorkingThread()
 
   def __killExceedingWorkingThreads( self ):
-    threadsToKill = 0
-    threadsToKill += len( self.__workingThreadsList ) - self.__maxThreads
-    threadsToKill += self.__countWaitingThreads() - self.__minThreads    
+    threadsToKill = len( self.__workingThreadsList ) - self.__maxThreads
+    for i in range ( max( threadsToKill, 0 ) ):
+      self.__killWorkingThread()
+    threadsToKill = self.__countWaitingThreads() - self.__minThreads    
     for i in range ( max( threadsToKill, 0 ) ):
       self.__killWorkingThread()
 
