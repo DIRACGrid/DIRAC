@@ -1,6 +1,7 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.20 2009/07/15 07:49:11 rgracian Exp $
-__RCSID__ = "$Id: Dispatcher.py,v 1.20 2009/07/15 07:49:11 rgracian Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Dispatcher.py,v 1.21 2009/11/04 19:09:14 acasajus Exp $
+__RCSID__ = "$Id: Dispatcher.py,v 1.21 2009/11/04 19:09:14 acasajus Exp $"
 
+import os
 import DIRAC
 from DIRAC.LoggingSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.private.LockManager import LockManager
@@ -10,6 +11,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 class Dispatcher:
 
@@ -70,16 +72,33 @@ class Dispatcher:
         threadLimit = serviceCfg.getMaxThreadsPerFunction( exportedMethodName )
         funcLockManager.createNewLock( exportedMethodName, threadLimit )
 
+  def __autoDiscoverHandlerLocation( self, serviceName ):
+    fields = [ field.strip() for field in serviceName.split( "/" ) if field.strip() ]
+    if len( fields ) != 2:
+      gLogger.error( "Oops. Invalid service name!", serviceName )
+      return False
+    gLogger.debug( "Trying to auto discover handler" )
+    rootModulesToLook = [ "%sDIRAC" % ext for ext in gConfig.getValue( "/DIRAC/Extensions", [] ) ] + [ 'DIRAC' ]
+    for rootModule in rootModulesToLook:
+      gLogger.debug( "Trying to find handler in %s root module" % rootModule )
+      filePath = os.path.join( rootModule, "%sSystem" % fields[0], "Service", "%sHandler.py" % fields[1] )
+      absPath = os.path.join ( DIRAC.rootPath, filePath )
+      if os.path.isfile( absPath ):
+        gLogger.debug( "Auto discovered handler %s" % filePath )
+        return filePath
+      gLogger.debug( "%s is not a valid file" % filePath )
+    return False
 
   def __registerHandler( self, serviceName ):
     """
     Load a given handler for a service
     """
     serviceCfg = self.servicesDict[ serviceName ][ 'cfg' ]
-
     handlerLocation = serviceCfg.getHandlerLocation()
     if not handlerLocation:
-      return S_ERROR( "handlerLocation is not defined in %s" % serviceCfg.getSectionPath() )
+      handlerLocation = self.__autoDiscoverHandlerLocation( serviceName )
+      if not handlerLocation:
+        return S_ERROR( "HandlerLocation is not defined in %s and autodiscover failed" % serviceCfg.getSectionPath() )
     gLogger.debug( "Found a handler", handlerLocation )
     if handlerLocation.find( "Handler.py" ) != len( handlerLocation ) - 10:
       return S_ERROR( "File %s does not have a valid handler name" % handlerLocation )
