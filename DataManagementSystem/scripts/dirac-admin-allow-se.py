@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-admin-allow-se.py,v 1.2 2009/11/03 14:51:05 acsmith Exp $
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-admin-allow-se.py,v 1.3 2009/11/04 09:59:14 acsmith Exp $
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-allow-se.py,v 1.2 2009/11/03 14:51:05 acsmith Exp $"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__   = "$Id: dirac-admin-allow-se.py,v 1.3 2009/11/04 09:59:14 acsmith Exp $"
+__VERSION__ = "$Revision: 1.3 $"
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -101,5 +101,5 @@ if write:
   for se in writeAllowed:
     body = "%s\n%s" % (body,se)
 
-NotificationClient().sendMail(address,subject,body,'%s@cern.ch' % username)
+NotificationClient().sendMail(address,subject,body,'%s@cern.ch' % userName)
 DIRAC.exit(0)
