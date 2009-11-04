@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.24 2009/11/03 09:44:01 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.24 2009/11/03 09:44:01 acasajus Exp $"
+# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.25 2009/11/04 09:31:06 acasajus Exp $
+__RCSID__ = "$Id: AccountingDB.py,v 1.25 2009/11/04 09:31:06 acasajus Exp $"
 
 import datetime, time
 import types
@@ -46,6 +46,11 @@ class AccountingDB(DB):
                                gMonitor.OP_ACUM )
     gMonitor.registerActivity( "insertiontime",
                                "Record insertion time",
+                               "Accounting",
+                               "seconds",
+                               gMonitor.OP_MEAN )
+    gMonitor.registerActivity( "querytime",
+                               "Records query time",
                                "Accounting",
                                "seconds",
                                gMonitor.OP_MEAN )
@@ -797,6 +802,7 @@ class AccountingDB(DB):
     """
     if typeName not in self.dbCatalog:
       return S_ERROR( "Type %s is not defined" % typeName )
+    startQueryEpoch = time.time()
     if len( selectFields ) < 2:
       return S_ERROR( "selectFields has to be a list containing a string and a list of fields" )
     retVal = self.__checkIncomingFieldsForQuery( typeName, selectFields, condDict, groupFields, orderFields, "bucket" )
@@ -805,7 +811,7 @@ class AccountingDB(DB):
     nowEpoch = Time.toEpoch( Time.dateTime () )
     bucketTimeLength = self.calculateBucketLengthForTime( typeName, nowEpoch , startTime )
     startTime = startTime - startTime % bucketTimeLength
-    return self.__queryType( typeName,
+    result = self.__queryType( typeName,
                              startTime,
                              endTime,
                              selectFields,
@@ -813,6 +819,8 @@ class AccountingDB(DB):
                              groupFields,
                              orderFields,
                              "bucket" )
+    gMonitor.addMark( "querytime", Time.toEpoch() - startQueryEpoch )
+    return result
 
   def __queryType( self, typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields, tableType, connObj = False ):
     """
