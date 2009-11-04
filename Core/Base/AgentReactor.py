@@ -35,7 +35,7 @@ class AgentReactor:
       return S_ERROR( "Can't load %s: Invalid agent name" % ( fullName ) )
     gLogger.info( "Loading %s" % fullName )
     system, agentName = modList
-    rootModulesToLook = gConfig.getValue( "/LocalSite/Extensions", [] ) + [ 'DIRAC' ]
+    rootModulesToLook = [ "%sDIRAC" % ext for ext in gConfig.getValue( "/DIRAC/Extensions", [] ) ] + [ 'DIRAC' ]
     moduleLoaded = False
     for rootModule in rootModulesToLook:
       if moduleLoaded:
