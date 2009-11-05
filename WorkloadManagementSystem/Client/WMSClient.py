@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSClient.py,v 1.28 2009/10/23 12:12:29 msapunov Exp $
+# $Id$
 ########################################################################
 
 """ DIRAC Workload Management System Client class encapsulates all the

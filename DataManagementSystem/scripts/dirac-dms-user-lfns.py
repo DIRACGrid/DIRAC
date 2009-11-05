@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-user-lfns.py,v 1.1 2009/08/31 16:04:07 acsmith Exp $
+# $HeadURL$
 ########################################################################
-__RCSID__   = "$Id: dirac-dms-user-lfns.py,v 1.1 2009/08/31 16:04:07 acsmith Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
 import DIRAC
 from DIRAC.Core.Base import Script

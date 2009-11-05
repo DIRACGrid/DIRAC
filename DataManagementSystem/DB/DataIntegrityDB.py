@@ -1,7 +1,7 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataIntegrityDB.py,v 1.10 2009/09/08 19:22:10 acsmith Exp $
+# $HeadURL$
 ########################################################################
-__RCSID__   = "$Id: DataIntegrityDB.py,v 1.10 2009/09/08 19:22:10 acsmith Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.10 $"
 """ DataIntegrityDB class is a front-end to the Data Integrity Database. """
 

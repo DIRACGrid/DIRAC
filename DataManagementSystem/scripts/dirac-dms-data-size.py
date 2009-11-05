@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-data-size.py,v 1.1 2009/11/03 10:25:51 acsmith Exp $
+# $HeadURL$
 ########################################################################
-__RCSID__   = "$Id: dirac-dms-data-size.py,v 1.1 2009/11/03 10:25:51 acsmith Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
 import sys,os
 import DIRAC

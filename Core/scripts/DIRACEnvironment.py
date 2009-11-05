@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /local/reps/dirac/DIRAC3/scripts/DIRACEnvironment.py,v 1.3 2008/03/18 18:40:51 rgracian Exp $
+# $HeadURL$
 # File :   DIRACEnvironment.py
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id: DIRACEnvironment.py,v 1.3 2008/03/18 18:40:51 rgracian Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.3 $"
 """
    Magic file to be imported by all python scripts to properly discover and 

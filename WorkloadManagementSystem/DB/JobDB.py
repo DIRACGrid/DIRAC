@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobDB.py,v 1.163 2009/09/08 08:57:52 paterson Exp $
+# $HeadURL$
 ########################################################################
 
 """ DIRAC JobDB class is a front-end to the main WMS database containing
@@ -47,7 +47,7 @@
     getCounters()
 """
 
-__RCSID__ = "$Id: JobDB.py,v 1.163 2009/09/08 08:57:52 paterson Exp $"
+__RCSID__ = "$Id$"
 
 import re, os, sys, string, types
 import time, datetime, operator

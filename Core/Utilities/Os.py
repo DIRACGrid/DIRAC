@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Os.py,v 1.10 2009/07/29 08:20:33 paterson Exp $
-__RCSID__ = "$Id: Os.py,v 1.10 2009/07/29 08:20:33 paterson Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """
    Collection of DIRAC useful os related modules
    by default on Error they return None

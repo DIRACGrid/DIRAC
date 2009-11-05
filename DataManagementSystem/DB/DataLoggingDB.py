@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/DB/DataLoggingDB.py,v 1.11 2009/10/21 12:15:01 acsmith Exp $
+# $HeadURL$
 ########################################################################
 """ DataLoggingDB class is a front-end to the Data Logging Database.
     The following methods are provided
@@ -8,7 +8,7 @@
     getFileLoggingInfo()
 """
 
-__RCSID__ = "$Id: DataLoggingDB.py,v 1.11 2009/10/21 12:15:01 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 import re, os, sys, time, datetime
 from types import *

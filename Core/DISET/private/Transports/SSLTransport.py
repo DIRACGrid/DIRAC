@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSLTransport.py,v 1.33 2009/07/10 18:07:57 mseco Exp $
-__RCSID__ = "$Id: SSLTransport.py,v 1.33 2009/07/10 18:07:57 mseco Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import os
 import types

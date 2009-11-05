@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationClient.py,v 1.4 2009/10/22 17:35:11 acasajus Exp $
+# $Id$
 ########################################################################
 
 """ DIRAC Notification Client class encapsulates the methods exposed

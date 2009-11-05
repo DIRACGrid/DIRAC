@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Agent/RequestAgentMixIn.py,v 1.3 2008/08/28 08:29:43 atsareg Exp $
+# $HeadURL$
 
 """ RequestAgentMixIn class is providing common functions to all the request
     execution agents
 """
 
-__RCSID__ = "$Id: RequestAgentMixIn.py,v 1.3 2008/08/28 08:29:43 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC import gLogger, S_OK, S_ERROR

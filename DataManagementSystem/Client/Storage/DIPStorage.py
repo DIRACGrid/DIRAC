@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DIPStorage.py,v 1.10 2009/02/06 13:39:11 acsmith Exp $
+# $Id$
 ########################################################################
 
 """ DIPStorage class is the client of the DIRAC Storage Element.
@@ -15,7 +15,7 @@
 
 """
 
-__RCSID__ = "$Id: DIPStorage.py,v 1.10 2009/02/06 13:39:11 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.DataManagementSystem.Client.Storage.StorageBase import StorageBase
 from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse

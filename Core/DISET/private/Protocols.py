@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Protocols.py,v 1.8 2008/06/05 10:20:16 acasajus Exp $
-__RCSID__ = "$Id: Protocols.py,v 1.8 2008/06/05 10:20:16 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.private.Transports import PlainTransport, SSLTransport
 

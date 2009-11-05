@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StageMonitor.py,v 1.4 2009/09/02 12:48:22 acsmith Exp $
-__RCSID__ = "$Id: StageMonitor.py,v 1.4 2009/09/02 12:48:22 acsmith Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 

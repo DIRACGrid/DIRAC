@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Service/ConfigurationHandler.py,v 1.6 2007/11/07 16:08:37 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationHandler.py,v 1.6 2007/11/07 16:08:37 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 import types
 from DIRAC.ConfigurationSystem.private.ServiceInterface import ServiceInterface
 from DIRAC.Core.DISET.RequestHandler import RequestHandler

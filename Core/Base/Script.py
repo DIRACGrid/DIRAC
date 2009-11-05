@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Script.py,v 1.15 2009/09/02 13:26:08 acasajus Exp $
-__RCSID__ = "$Id: Script.py,v 1.15 2009/09/02 13:26:08 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import sys
 import os.path

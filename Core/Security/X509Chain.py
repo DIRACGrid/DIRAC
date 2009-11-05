@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Chain.py,v 1.35 2009/03/22 08:37:48 acasajus Exp $
+# $HeadURL$
 ########################################################################
 """ X509Chain is a class for managing X509 chains with their Pkeys
 """
-__RCSID__ = "$Id: X509Chain.py,v 1.35 2009/03/22 08:37:48 acasajus Exp $"
+__RCSID__ = "$Id$"
 
 import types
 import os

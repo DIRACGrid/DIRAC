@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ldLibraryPath.py,v 1.3 2008/09/29 14:24:20 rgracian Exp $
+# $HeadURL$
 # File :   ldLibraryPath
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id: ldLibraryPath.py,v 1.3 2008/09/29 14:24:20 rgracian Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.3 $"
 """
   Utilities to handle issues with LD_LIBRARY_PATH

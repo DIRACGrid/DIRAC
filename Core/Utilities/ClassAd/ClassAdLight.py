@@ -1,12 +1,12 @@
 ########################################################################
-# $Id: ClassAdLight.py,v 1.6 2008/08/19 05:46:22 rgracian Exp $
+# $Id$
 ########################################################################
 
 """ ClassAd Class - a light purely Python representation of the
     Condor ClassAd library.
 """
 
-__RCSID__ = "$Id: ClassAdLight.py,v 1.6 2008/08/19 05:46:22 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 import string
 

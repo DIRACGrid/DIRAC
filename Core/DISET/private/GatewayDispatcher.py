@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/GatewayDispatcher.py,v 1.11 2009/06/25 16:22:08 acasajus Exp $
-__RCSID__ = "$Id: GatewayDispatcher.py,v 1.11 2009/06/25 16:22:08 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import cStringIO
 import DIRAC

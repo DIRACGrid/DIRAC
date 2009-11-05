@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/Pilot.py,v 1.1 2008/07/17 17:43:15 acasajus Exp $
-__RCSID__ = "$Id: Pilot.py,v 1.1 2008/07/17 17:43:15 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 from DIRAC                                                  import gConfig

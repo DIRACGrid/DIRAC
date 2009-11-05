@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/PathFinder.py,v 1.6 2009/06/17 11:05:38 acasajus Exp $
-__RCSID__ = "$Id: PathFinder.py,v 1.6 2009/06/17 11:05:38 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List

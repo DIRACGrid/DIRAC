@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/scripts/dirac-monitoring-get-components-status.py,v 1.2 2009/03/04 19:20:38 acasajus Exp $
+# $HeadURL$
 ########################################################################
-__RCSID__   = "$Id: dirac-monitoring-get-components-status.py,v 1.2 2009/03/04 19:20:38 acasajus Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.2 $"
 import sys
 from DIRACEnvironment import DIRAC

@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: NotificationHandler.py,v 1.9 2009/10/22 17:35:11 acasajus Exp $
+# $Id$
 ########################################################################
 
 """ The Notification service provides a toolkit to contact people via email
@@ -17,7 +17,7 @@
     subscribing to them. 
 """
 
-__RCSID__ = "$Id: NotificationHandler.py,v 1.9 2009/10/22 17:35:11 acasajus Exp $"
+__RCSID__ = "$Id$"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler

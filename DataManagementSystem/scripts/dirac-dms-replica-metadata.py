@@ -2,9 +2,9 @@
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-replica-metadata.py,v 1.1 2009/06/09 12:58:36 acsmith Exp $
+# $HeadURL$
 ########################################################################
-__RCSID__   = "$Id: dirac-dms-replica-metadata.py,v 1.1 2009/06/09 12:58:36 acsmith Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$ $"
 
 from DIRAC import gLogger

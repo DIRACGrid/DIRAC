@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/RPCClient.py,v 1.7 2008/08/01 13:04:41 acasajus Exp $
-__RCSID__ = "$Id: RPCClient.py,v 1.7 2008/08/01 13:04:41 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.private.InnerRPCClient import InnerRPCClient
 

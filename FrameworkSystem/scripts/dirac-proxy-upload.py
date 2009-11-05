@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-proxy-upload.py,v 1.4 2009/10/21 09:43:32 rgracian Exp $
+# $HeadURL$
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ###########################################################from DIRAC.Core.Base import Script#############
-__RCSID__   = "$Id: dirac-proxy-upload.py,v 1.4 2009/10/21 09:43:32 rgracian Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.4 $"
 
 import sys

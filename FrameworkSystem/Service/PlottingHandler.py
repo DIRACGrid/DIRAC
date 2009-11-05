@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/PlottingHandler.py,v 1.3 2009/08/07 13:06:32 atsareg Exp $
+# $HeadURL$
 
 """ Plotting Service generates graphs according to the client specifications
     and data
 """
 
-__RCSID__ = "$Id: PlottingHandler.py,v 1.3 2009/08/07 13:06:32 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 from types import *
 import os

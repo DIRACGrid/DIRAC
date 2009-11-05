@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphUtilities.py,v 1.6 2009/09/08 14:18:18 atsareg Exp $
+# $HeadURL$
 ########################################################################
 
 """ GraphUtilities is a a collection of utility functions and classes used
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: GraphUtilities.py,v 1.6 2009/09/08 14:18:18 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 import types, time, datetime, calendar, math, pytz, numpy, os
 from matplotlib.ticker import ScalarFormatter

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/ErrorMessageMonitor.py,v 1.7 2009/10/13 16:34:36 mseco Exp $
-__RCSID__ = "$Id: ErrorMessageMonitor.py,v 1.7 2009/10/13 16:34:36 mseco Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """  ErrorMessageMonitor gets new errors that have been injected into the
      SystemLoggingDB and reports them by mail to the person(s) in charge
      of checking that they conform with DIRAC style. Reviewer option

@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/DB/RequestDBMySQL.py,v 1.36 2009/09/11 09:41:06 acsmith Exp $
+# $HeadURL$
 
 """ RequestDBMySQL is the MySQL plug in for the request DB
 """
 
-__RCSID__ = "$Id: RequestDBMySQL.py,v 1.36 2009/09/11 09:41:06 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.DB import DB
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR

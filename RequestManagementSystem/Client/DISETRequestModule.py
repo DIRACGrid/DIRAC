@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/DISETRequestModule.py,v 1.3 2008/10/08 12:33:22 rgracian Exp $
+# $HeadURL$
 
 """ DISET Request Module is used together with the Workflow based request
     to encapsulate generic DISET service calls
 """
 
-__RCSID__ = "$Id: DISETRequestModule.py,v 1.3 2008/10/08 12:33:22 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient      import RPCClient
 from DIRAC                           import gConfig, gLogger, S_OK, S_ERROR

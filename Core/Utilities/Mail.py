@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Mail.py,v 1.3 2008/08/26 17:40:30 paterson Exp $
-__RCSID__ = "$Id: Mail.py,v 1.3 2008/08/26 17:40:30 paterson Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """
     Extremely simple utility class to send mails
 """

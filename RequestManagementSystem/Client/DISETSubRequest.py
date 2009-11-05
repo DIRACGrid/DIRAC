@@ -1,11 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/DISETSubRequest.py,v 1.7 2008/08/25 08:35:47 atsareg Exp $
+# $HeadURL$
 """
    DISETSubRequest Class encapsulates a request definition to accomplish a DISET
    RPC call
 
 """
 
-__RCSID__ = "$Id: DISETSubRequest.py,v 1.7 2008/08/25 08:35:47 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 import commands
 from DIRAC.Core.Utilities import DEncode

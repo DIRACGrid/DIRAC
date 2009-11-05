@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/SandboxCleaningAgent.py,v 1.1 2008/12/14 20:10:52 atsareg Exp $
+# $HeadURL$
 # File : SandboxCleaningAgent.py
 # Author : A.T.
 ########################################################################
@@ -8,7 +8,7 @@
      database partitions 
 """
 
-__RCSID__ = "$Id: SandboxCleaningAgent.py,v 1.1 2008/12/14 20:10:52 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Agent                         import Agent
 from DIRAC.WorkloadManagementSystem.DB.SandboxDB   import SandboxDB

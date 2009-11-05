@@ -1,7 +1,7 @@
 """  UserStorageUsageAgent simply inherits the StorageUsage agent and loops over the /lhcb/user directory
 """
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/UserStorageUsageAgent.py,v 1.3 2009/08/13 16:01:21 acsmith Exp $
-__RCSID__ = "$Id: UserStorageUsageAgent.py,v 1.3 2009/08/13 16:01:21 acsmith Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 from DIRAC  import gLogger, gMonitor, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Base.AgentModule import AgentModule

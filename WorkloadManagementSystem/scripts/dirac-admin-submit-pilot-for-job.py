@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/scripts/dirac-admin-submit-pilot-for-job.py,v 1.2 2008/12/18 18:23:40 rgracian Exp $
+# $HeadURL$
 # File :   dirac-admin-submit-pilot-for-job
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-submit-pilot-for-job.py,v 1.2 2008/12/18 18:23:40 rgracian Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.2 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script

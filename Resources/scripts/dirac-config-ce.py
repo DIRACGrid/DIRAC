@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/scripts/dirac-config-ce.py,v 1.1 2009/08/31 16:46:31 rgracian Exp $
+# $HeadURL$
 # File :   dirac-config-ce
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id: dirac-config-ce.py,v 1.1 2009/08/31 16:46:31 rgracian Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script

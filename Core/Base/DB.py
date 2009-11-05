@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/DB.py,v 1.8 2009/11/02 12:47:03 acsmith Exp $
+# $HeadURL$
 ########################################################################
 
 """ BaseDB is the base class for multiple DIRAC databases. It uniforms the
     way how the database objects are constructed
 """
 
-__RCSID__ = "$Id: DB.py,v 1.8 2009/11/02 12:47:03 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 import sys, types
 from DIRAC                           import gLogger, S_OK, S_ERROR

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Tests.py,v 1.2 2007/03/12 09:58:22 rgracian Exp $
-__RCSID__ = "$Id: Tests.py,v 1.2 2007/03/12 09:58:22 rgracian Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 '''
    DIRAC Utility module to run tests
 '''

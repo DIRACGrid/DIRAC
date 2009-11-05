@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/scripts/dirac-admin-show-task-queues.py,v 1.2 2009/03/09 13:49:49 acasajus Exp $
+# $HeadURL$
 # File :   dirac-admin-submit-pilot-for-job
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-show-task-queues.py,v 1.2 2009/03/09 13:49:49 acasajus Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.2 $"
 import sys
 from DIRACEnvironment import DIRAC

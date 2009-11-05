@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-admin-get-proxy.py,v 1.3 2008/07/25 13:12:03 acasajus Exp $
+# $HeadURL$
 # File :   dirac-admin-get-proxy
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-get-proxy.py,v 1.3 2008/07/25 13:12:03 acasajus Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.3 $"
 import os
 from DIRACEnvironment import DIRAC

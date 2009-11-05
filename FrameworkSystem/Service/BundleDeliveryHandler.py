@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/BundleDeliveryHandler.py,v 1.3 2009/08/16 06:58:17 rgracian Exp $
+# $HeadURL$
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: BundleDeliveryHandler.py,v 1.3 2009/08/16 06:58:17 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 import types
 import os

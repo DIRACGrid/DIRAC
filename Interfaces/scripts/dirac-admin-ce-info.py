@@ -1,10 +1,10 @@
 #! /usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-admin-ce-info.py,v 1.2 2009/04/18 18:26:59 rgracian Exp $
+# $HeadURL$
 # File :   dirac-admin-site-info
 # Author : Vladimir Romanovsky
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-ce-info.py,v 1.2 2009/04/18 18:26:59 rgracian Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.2 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script

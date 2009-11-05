@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/dirac-agent.py,v 1.2 2008/12/02 10:17:47 acasajus Exp $
+# $HeadURL$
 # File :   dirac-agent
 # Author : Adria Casajus, Andrei Tsaregorodtsev, Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-agent.py,v 1.2 2008/12/02 10:17:47 acasajus Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.2 $"
 
 """  This is a script to launch DIRAC agents

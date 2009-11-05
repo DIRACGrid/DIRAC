@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogFactory.py,v 1.3 2009/04/18 18:26:58 rgracian Exp $
+# $HeadURL$
 # File :   WatchdogFactory.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 
 from DIRAC                                               import S_OK, S_ERROR, gLogger
 
-__RCSID__ = "$Id: WatchdogFactory.py,v 1.3 2009/04/18 18:26:58 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 import re,sys,types,platform
 

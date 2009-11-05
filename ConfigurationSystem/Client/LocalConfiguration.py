@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/LocalConfiguration.py,v 1.29 2008/11/17 11:30:59 acasajus Exp $
-__RCSID__ = "$Id: LocalConfiguration.py,v 1.29 2008/11/17 11:30:59 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import sys
 import os

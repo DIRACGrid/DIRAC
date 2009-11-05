@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestClient.py,v 1.12 2009/09/09 15:12:26 acsmith Exp $
+# $HeadURL$
 
 """
   This is the client implementation for the RequestDB using the DISET framework.
 """
 
-__RCSID__ = "$Id: RequestClient.py,v 1.12 2009/09/09 15:12:26 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 from types import *
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR

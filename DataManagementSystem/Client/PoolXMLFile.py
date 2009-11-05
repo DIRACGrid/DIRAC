@@ -1,11 +1,11 @@
 ########################################################################
-# $Id: PoolXMLFile.py,v 1.4 2009/05/04 07:23:52 rgracian Exp $
+# $Id$
 ########################################################################
 """ The POOL XML File module provides a means to extract the GUID of a file or list
     of files by searching for an appropriate POOL XML Catalog in the specified directory.
 """
 
-__RCSID__ = "$Id: PoolXMLFile.py,v 1.4 2009/05/04 07:23:52 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 import os,glob,re,tarfile,string
 

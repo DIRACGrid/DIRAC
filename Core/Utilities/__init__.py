@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/__init__.py,v 1.7 2008/07/01 15:04:01 acasajus Exp $
-__RCSID__ = "$Id: __init__.py,v 1.7 2008/07/01 15:04:01 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """
    DIRAC.Core.Utils package
 """

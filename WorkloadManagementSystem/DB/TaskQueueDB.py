@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/TaskQueueDB.py,v 1.96 2009/08/07 14:37:56 acasajus Exp $
+# $HeadURL$
 ########################################################################
 """ TaskQueueDB class is a front-end to the task queues db
 """
 
-__RCSID__ = "$Id: TaskQueueDB.py,v 1.96 2009/08/07 14:37:56 acasajus Exp $"
+__RCSID__ = "$Id$"
 
 import types
 import random

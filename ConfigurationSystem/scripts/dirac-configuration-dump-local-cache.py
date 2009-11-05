@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/scripts/dirac-configuration-dump-local-cache.py,v 1.1 2008/11/13 17:13:47 acasajus Exp $
+# $HeadURL$
 # File :   dirac-configuration-cli
 # Author : Adria Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-configuration-dump-local-cache.py,v 1.1 2008/11/13 17:13:47 acasajus Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
 
 import sys

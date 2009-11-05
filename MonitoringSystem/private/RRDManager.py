@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/RRDManager.py,v 1.36 2009/02/23 20:03:20 acasajus Exp $
-__RCSID__ = "$Id: RRDManager.py,v 1.36 2009/02/23 20:03:20 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 import os
 import os.path
 import md5

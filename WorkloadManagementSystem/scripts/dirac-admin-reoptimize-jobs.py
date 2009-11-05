@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/scripts/dirac-admin-reoptimize-jobs.py,v 1.1 2009/01/28 13:42:58 acasajus Exp $
+# $HeadURL$
 # File :   dirac-admin-submit-pilot-for-job
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-reoptimize-jobs.py,v 1.1 2009/01/28 13:42:58 acasajus Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
 import sys
 from DIRACEnvironment import DIRAC

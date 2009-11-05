@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/Shortcuts.py,v 1.1 2008/03/19 11:00:01 acasajus Exp $
-__RCSID__ = "$Id: Shortcuts.py,v 1.1 2008/03/19 11:00:01 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingHandler.py,v 1.8 2008/09/18 18:23:24 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingHandler.py,v 1.8 2008/09/18 18:23:24 mseco Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """
 SystemLoggingHandler is the implementation of the Logging service
     in the DISET framework

@@ -1,5 +1,5 @@
  # $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Client/LoggerClient.py,v 1.8 2009/04/02 13:35:47 mseco Exp $
-__RCSID__ = "$Id: LoggerClient.py,v 1.8 2009/04/02 13:35:47 mseco Exp $"
+__RCSID__ = "$Id$"
 """ This file contains the methods for accessing the Messages Stored in the LoggingDB;
     getMessagesByDate()
     getMessagesBySite()

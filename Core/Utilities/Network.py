@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Network.py,v 1.6 2009/07/01 10:12:55 rgracian Exp $
-__RCSID__ = "$Id: Network.py,v 1.6 2009/07/01 10:12:55 rgracian Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """
    Collection of DIRAC useful network related modules
    by default on Error they return None

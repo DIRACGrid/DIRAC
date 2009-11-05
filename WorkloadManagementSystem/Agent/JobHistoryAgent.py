@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobHistoryAgent.py,v 1.14 2009/10/13 12:45:27 acasajus Exp $
+# $HeadURL$
 
 
 """  JobHistoryAgent sends periodically numbers of jobs in various states for various

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/PilotMonitor.py,v 1.15 2009/04/18 18:26:57 rgracian Exp $
+# $HeadURL$
 # File :   PilotMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      of the AgentMonitor instance for all Grids.
 """
 
-__RCSID__ = "$Id: PilotMonitor.py,v 1.15 2009/04/18 18:26:57 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Agent    import Agent
 from DIRAC                    import S_OK, S_ERROR, gConfig, gLogger

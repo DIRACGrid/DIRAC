@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ColorGenerator.py,v 1.2 2008/02/20 08:21:34 acasajus Exp $
-__RCSID__ = "$Id: ColorGenerator.py,v 1.2 2008/02/20 08:21:34 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 class ColorGenerator:
 

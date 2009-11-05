@@ -1,7 +1,7 @@
 """
 This is a service which represents a DISET proxy to the LCG File Catalog
 """
-__RCSID__ = "$Id: LcgFileCatalogProxyHandler.py,v 1.9 2009/05/08 15:23:33 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler

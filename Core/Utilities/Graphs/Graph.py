@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Graph.py,v 1.11 2009/11/03 15:56:47 atsareg Exp $
+# $HeadURL$
 ########################################################################
 
 """ Graph is a class providing layouts for the complete plot images including
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: Graph.py,v 1.11 2009/11/03 15:56:47 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 import types, datetime
 from matplotlib.backends.backend_agg import FigureCanvasAgg

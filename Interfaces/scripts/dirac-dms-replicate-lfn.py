@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-dms-replicate-lfn.py,v 1.1 2008/10/16 09:28:33 paterson Exp $
+# $HeadURL$
 # File :   dirac-dms-replicate-lfn
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-dms-replicate-lfn.py,v 1.1 2008/10/16 09:28:33 paterson Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script

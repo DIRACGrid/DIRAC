@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/UserProfileManagerHandler.py,v 1.4 2009/10/13 13:01:12 acasajus Exp $
+# $HeadURL$
 ########################################################################
 
 """ ProfileManager manages web user profiles
     in the DISET framework
 """
 
-__RCSID__ = "$Id: UserProfileManagerHandler.py,v 1.4 2009/10/13 13:01:12 acasajus Exp $"
+__RCSID__ = "$Id$"
 
 import types
 import os

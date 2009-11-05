@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/SiteSEMapping.py,v 1.4 2009/09/16 17:33:57 acsmith Exp $
+# $HeadURL$
 # File :   SiteSEMapping.py
 ########################################################################
 
@@ -10,7 +10,7 @@
      Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
 """
 
-__RCSID__ = "$Id: SiteSEMapping.py,v 1.4 2009/09/16 17:33:57 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 import string,re
 

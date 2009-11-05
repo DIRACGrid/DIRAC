@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/SandboxDB.py,v 1.21 2008/12/15 09:57:56 atsareg Exp $
+# $HeadURL$
 ########################################################################
 """ SandboxDB class is a simple storage using MySQL as a container for
     relatively small sandbox files. The file size is limited to 16MB.
@@ -10,7 +10,7 @@
     getWMSTimeStamps()
 """
 
-__RCSID__ = "$Id: SandboxDB.py,v 1.21 2008/12/15 09:57:56 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 import re, os, sys, threading
 import time, datetime

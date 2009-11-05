@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/ConfigurationData.py,v 1.25 2009/08/31 15:39:16 acasajus Exp $
-__RCSID__ = "$Id: ConfigurationData.py,v 1.25 2009/08/31 15:39:16 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import os.path
 import zlib

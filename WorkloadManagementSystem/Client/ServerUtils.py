@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Client/ServerUtils.py,v 1.2 2009/05/25 14:35:52 rgracian Exp $
+# $HeadURL$
 # File :   ServerUtils.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -7,7 +7,7 @@
   Provide uniform interface to backend for local and remote clients (ie Director Agents)
 """
 
-__RCSID__ = "$Id: ServerUtils.py,v 1.2 2009/05/25 14:35:52 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 def getDBOrClient( DB, serverName ):
   from DIRAC import gLogger

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/proxy-init.py,v 1.1 2009/07/23 16:54:47 atsareg Exp $
+# $HeadURL$
 # File :   proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
@@ -12,7 +12,7 @@
     - voms proxy extensions generation
 """
 
-__RCSID__   = "$Id: proxy-init.py,v 1.1 2009/07/23 16:54:47 atsareg Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
 
 import sys

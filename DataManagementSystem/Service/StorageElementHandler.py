@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: StorageElementHandler.py,v 1.14 2009/07/16 11:16:23 rgracian Exp $
+# $Id$
 ########################################################################
 
 """
@@ -23,7 +23,7 @@
 
 """
 
-__RCSID__ = "$Id: StorageElementHandler.py,v 1.14 2009/07/16 11:16:23 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 import os, shutil,re
 from stat import *

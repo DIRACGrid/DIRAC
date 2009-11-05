@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-admin-get-pilot-logging-info.py,v 1.1 2009/04/20 17:29:01 rgracian Exp $
+# $HeadURL$
 # File :   dirac-admin-get-pilot-logging-info.py
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-get-pilot-logging-info.py,v 1.1 2009/04/20 17:29:01 rgracian Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script

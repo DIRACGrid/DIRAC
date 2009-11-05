@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-admin-sync-users-from-file.py,v 1.3 2009/07/01 14:18:24 acasajus Exp $
+# $HeadURL$
 # File :   dirac-admin-sync-users-from-file
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-sync-users-from-file.py,v 1.3 2009/07/01 14:18:24 acasajus Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.3 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script

@@ -1,4 +1,4 @@
-# $Id: Utility.py,v 1.3 2008/06/15 13:55:39 atsareg Exp $
+# $Id$
 
 """
     Workflow Utility module contains a number of functions useful for various

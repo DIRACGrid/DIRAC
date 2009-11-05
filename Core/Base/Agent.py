@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Base/Agent.py,v 1.31 2009/07/16 11:32:58 rgracian Exp $
+# $HeadURL$
 ########################################################################
 """ Base class for all the Agents.
 
@@ -14,7 +14,7 @@
 
 """
 
-__RCSID__ = "$Id: Agent.py,v 1.31 2009/07/16 11:32:58 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 import os
 import threading

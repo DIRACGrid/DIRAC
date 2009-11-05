@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/SubSystemLogger.py,v 1.7 2009/02/17 16:45:23 acasajus Exp $
-__RCSID__ = "$Id: SubSystemLogger.py,v 1.7 2009/02/17 16:45:23 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 import types
 from DIRAC.LoggingSystem.private.LogLevels import LogLevels
 from DIRAC.LoggingSystem.private.Message import Message

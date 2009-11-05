@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: OnlineInputData.py,v 1.4 2009/10/02 08:45:31 rgracian Exp $
+# $Id$
 # File :   OnlineInputData.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -8,7 +8,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: OnlineInputData.py,v 1.4 2009/10/02 08:45:31 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager

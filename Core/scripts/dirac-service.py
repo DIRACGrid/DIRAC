@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/scripts/dirac-service.py,v 1.7 2008/10/17 13:08:16 rgracian Exp $
+# $HeadURL$
 # File :   dirac-service
 # Author : Adria Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-service.py,v 1.7 2008/10/17 13:08:16 rgracian Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.7 $"
 
 import sys

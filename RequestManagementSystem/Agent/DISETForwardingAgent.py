@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Agent/DISETForwardingAgent.py,v 1.9 2008/09/17 18:18:34 atsareg Exp $
+# $HeadURL$
 
 """  DISET Forwarding sends DISET requests to their intented destination
 """
 
-__RCSID__ = "$Id: DISETForwardingAgent.py,v 1.9 2008/09/17 18:18:34 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.Agent import Agent

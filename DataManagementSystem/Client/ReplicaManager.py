@@ -1,6 +1,6 @@
 """ This is the Replica Manager which links the functionalities of StorageElement and FileCatalog. """
 
-__RCSID__ = "$Id: ReplicaManager.py,v 1.96 2009/11/03 10:30:53 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 import re, time, commands, random, os, fnmatch
 import types

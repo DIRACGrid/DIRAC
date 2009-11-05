@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/DEncode.py,v 1.3 2008/10/16 14:49:53 acasajus Exp $
-__RCSID__ = "$Id: DEncode.py,v 1.3 2008/10/16 14:49:53 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 # Encoding and decoding for dirac
 #

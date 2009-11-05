@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/ReportsClient.py,v 1.8 2009/06/03 12:30:35 acasajus Exp $
-__RCSID__ = "$Id: ReportsClient.py,v 1.8 2009/06/03 12:30:35 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import tempfile
 import base64

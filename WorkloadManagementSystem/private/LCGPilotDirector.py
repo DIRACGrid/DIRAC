@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/LCGPilotDirector.py,v 1.2 2009/05/25 14:35:19 rgracian Exp $
+# $HeadURL$
 # File :   LCGPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
    - basic configuration for LCG
    - submit and monitor methods for LCG MiddleWare.
 """
-__RCSID__ = "$Id: LCGPilotDirector.py,v 1.2 2009/05/25 14:35:19 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.private.GridPilotDirector  import GridPilotDirector
 from DIRAC import S_OK, S_ERROR, List

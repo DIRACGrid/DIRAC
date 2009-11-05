@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-admin-add-user.py,v 1.1 2008/10/16 09:06:54 paterson Exp $
+# $HeadURL$
 # File :   dirac-admin-add-user
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-add-user.py,v 1.1 2008/10/16 09:06:54 paterson Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script

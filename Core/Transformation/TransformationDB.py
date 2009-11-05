@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransformationDB.py,v 1.94 2009/09/18 16:48:46 acsmith Exp $
+# $Id$
 ########################################################################
 """ DIRAC Transformation DB
 
@@ -9,7 +9,7 @@
     databases
 """
 
-__RCSID__ = "$Id: TransformationDB.py,v 1.94 2009/09/18 16:48:46 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 import re,time,types
 

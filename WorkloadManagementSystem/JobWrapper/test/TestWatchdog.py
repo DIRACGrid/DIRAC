@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/test/TestWatchdog.py,v 1.2 2007/12/10 15:24:57 paterson Exp $
+# $HeadURL$
 # File  : TestWatchdogMac.py
 # Author: Stuart Paterson
 ########################################################################

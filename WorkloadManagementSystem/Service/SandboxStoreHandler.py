@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxStoreHandler.py,v 1.9 2009/09/02 12:39:25 acsmith Exp $
+# $Id$
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxStoreHandler.py,v 1.9 2009/09/02 12:39:25 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 from types import *
 import os

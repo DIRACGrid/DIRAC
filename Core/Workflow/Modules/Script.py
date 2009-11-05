@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: Script.py,v 1.4 2009/06/03 11:27:59 paterson Exp $
+# $Id$
 # File :   Script.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
     or file to run (and is also a simple example of a workflow module).
 """
 
-__RCSID__ = "$Id: Script.py,v 1.4 2009/06/03 11:27:59 paterson Exp $"
+__RCSID__ = "$Id$"
 
 
 from DIRAC.Core.Utilities.Subprocess import shellCall

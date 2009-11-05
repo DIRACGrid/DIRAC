@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: MatcherHandler.py,v 1.38 2009/07/08 13:56:30 atsareg Exp $
+# $Id$
 ########################################################################
 """
 Matcher class. It matches Agent Site capabilities to job requirements.
@@ -7,7 +7,7 @@ It also provides an XMLRPC interface to the Matcher
 
 """
 
-__RCSID__ = "$Id: MatcherHandler.py,v 1.38 2009/07/08 13:56:30 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 import re, os, sys, time
 import string

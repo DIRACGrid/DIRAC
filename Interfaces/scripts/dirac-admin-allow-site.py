@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-admin-allow-site.py,v 1.2 2009/05/20 12:01:35 acsmith Exp $
+# $HeadURL$
 # File :   dirac-admin-allow-site
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-allow-site.py,v 1.2 2009/05/20 12:01:35 acsmith Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.2 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script

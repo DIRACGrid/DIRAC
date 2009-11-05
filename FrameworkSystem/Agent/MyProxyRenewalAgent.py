@@ -1,11 +1,11 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Agent/MyProxyRenewalAgent.py,v 1.6 2009/08/18 14:22:14 acasajus Exp $
+# $HeadURL$
 ########################################################################
 
 """  Proxy Renewal agent is the key element of the Proxy Repository
      which maintains the user proxies alive
 """
-__RCSID__ = "$Id: MyProxyRenewalAgent.py,v 1.6 2009/08/18 14:22:14 acasajus Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR

@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: WMSAdministratorHandler.py,v 1.54 2009/09/11 20:44:38 atsareg Exp $
+# $Id$
 ########################################################################
 """
 This is a DIRAC WMS administrator interface.
@@ -14,7 +14,7 @@ Access to the pilot data:
 
 """
 
-__RCSID__ = "$Id: WMSAdministratorHandler.py,v 1.54 2009/09/11 20:44:38 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 import os, sys, string, uu, shutil
 from types import *

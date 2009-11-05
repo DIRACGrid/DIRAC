@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/test/test_gCFG.py,v 1.6 2009/06/25 12:54:18 acasajus Exp $
-__RCSID__ = "$Id: test_gCFG.py,v 1.6 2009/06/25 12:54:18 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 from dirac import DIRAC
 from DIRAC.Core.Utilities.CFG import CFG

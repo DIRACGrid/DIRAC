@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/ServiceInterface.py,v 1.23 2009/02/26 12:02:57 acasajus Exp $
-__RCSID__ = "$Id: ServiceInterface.py,v 1.23 2009/02/26 12:02:57 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.private.RRDManager import RRDManager

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Adler.py,v 1.1 2009/10/28 22:42:40 acsmith Exp $
-__RCSID__ = "$Id: Adler.py,v 1.1 2009/10/28 22:42:40 acsmith Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 """
    Collection of DIRAC useful adler32 related tools

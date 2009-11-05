@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/MightyOptimizer.py,v 1.16 2009/04/20 15:17:42 acasajus Exp $
+# $HeadURL$
 
 
 """  SuperOptimizer
  One optimizer to rule them all, one optimizer to find them, one optimizer to bring them all, and in the darkness bind them.
 """
 
-__RCSID__ = "$Id: MightyOptimizer.py,v 1.16 2009/04/20 15:17:42 acasajus Exp $"
+__RCSID__ = "$Id$"
 
 import time
 import os

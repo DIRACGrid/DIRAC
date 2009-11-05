@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteStager.py,v 1.11 2009/07/10 04:52:26 rgracian Exp $
+# $HeadURL$
 # File :   SiteStager.py
 # Author : Stuart Paterson
 ########################################################################
@@ -8,7 +8,7 @@
      resetting of stage requests as necessary.
 """
 
-__RCSID__ = "$Id: SiteStager.py,v 1.11 2009/07/10 04:52:26 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement

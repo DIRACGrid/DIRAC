@@ -1,8 +1,8 @@
 #################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadPool.py,v 1.18 2009/11/04 10:43:01 acasajus Exp $
+# $HeadURL$
 #################################################################
 
-__RCSID__ = "$Id: ThreadPool.py,v 1.18 2009/11/04 10:43:01 acasajus Exp $"
+__RCSID__ = "$Id$"
 
 import time
 import sys

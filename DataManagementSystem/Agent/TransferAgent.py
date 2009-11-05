@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/TransferAgent.py,v 1.28 2009/09/02 12:31:16 acsmith Exp $
+# $HeadURL$
 
 """  TransferAgent takes transfer requests from the RequestDB and replicates them
 """
 
-__RCSID__ = "$Id: TransferAgent.py,v 1.28 2009/09/02 12:31:16 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Base.Agent import Agent

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/File.py,v 1.28 2009/10/28 22:48:14 acsmith Exp $
-__RCSID__ = "$Id: File.py,v 1.28 2009/10/28 22:48:14 acsmith Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 """
    Collection of DIRAC useful file related modules

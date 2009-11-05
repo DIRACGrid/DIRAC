@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/QualityMapGraph.py,v 1.4 2009/09/08 14:18:18 atsareg Exp $
+# $HeadURL$
 ########################################################################
 
 """ QualityGraph represents a Quality Map of entities as a special color schema 
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: QualityMapGraph.py,v 1.4 2009/09/08 14:18:18 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData

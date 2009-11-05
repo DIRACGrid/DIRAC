@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: PoolXMLCatalog.py,v 1.5 2009/06/03 12:51:34 paterson Exp $
+# $Id$
 ########################################################################
 """ POOL XML Catalog Class
     This class handles simple XML-based File Catalog following the
@@ -7,7 +7,7 @@
     although not complete and with several extensions
 """
 
-__RCSID__ = "$Id: PoolXMLCatalog.py,v 1.5 2009/06/03 12:51:34 paterson Exp $"
+__RCSID__ = "$Id$"
 
 import re, os, xml.dom.minidom, types
 from DIRAC import S_OK, S_ERROR

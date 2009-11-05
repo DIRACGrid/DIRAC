@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/MySQL.py,v 1.20 2009/08/18 11:08:14 rgracian Exp $
+# $HeadURL$
 ########################################################################
 """ DIRAC Basic MySQL Class
     It provides access to the basic MySQL methods in a multithread-safe mode
@@ -75,7 +75,7 @@
 
 """
 
-__RCSID__ = "$Id: MySQL.py,v 1.20 2009/08/18 11:08:14 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 
 from DIRAC                                  import gLogger

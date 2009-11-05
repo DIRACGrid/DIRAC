@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/SharesCorrector.py,v 1.4 2009/07/03 17:17:03 acasajus Exp $
+# $HeadURL$
 ########################################################################
 """ Pritority corrector for the group and ingroup shares
 """
 
-__RCSID__ = "$Id: SharesCorrector.py,v 1.4 2009/07/03 17:17:03 acasajus Exp $"
+__RCSID__ = "$Id$"
 
 import datetime
 import time as nativetime

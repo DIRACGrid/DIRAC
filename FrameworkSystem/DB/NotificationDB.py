@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/NotificationDB.py,v 1.12 2009/10/22 17:35:11 acasajus Exp $
+# $HeadURL$
 ########################################################################
 """ NotificationDB class is a front-end to the Notifications database
 """
 
-__RCSID__ = "$Id: NotificationDB.py,v 1.12 2009/10/22 17:35:11 acasajus Exp $"
+__RCSID__ = "$Id$"
 
 import time
 import types

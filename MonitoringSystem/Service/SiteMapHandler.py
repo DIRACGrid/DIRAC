@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/Service/SiteMapHandler.py,v 1.6 2009/09/15 17:18:32 acasajus Exp $
-__RCSID__ = "$Id: SiteMapHandler.py,v 1.6 2009/09/15 17:18:32 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 import types
 import os
 import threading

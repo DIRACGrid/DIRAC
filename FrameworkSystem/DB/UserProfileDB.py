@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/UserProfileDB.py,v 1.4 2009/10/13 13:01:13 acasajus Exp $
+# $HeadURL$
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: UserProfileDB.py,v 1.4 2009/10/13 13:01:13 acasajus Exp $"
+__RCSID__ = "$Id$"
 
 import time
 import md5

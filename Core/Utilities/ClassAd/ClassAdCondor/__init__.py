@@ -1,5 +1,5 @@
 ##############################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ClassAd/ClassAdCondor/__init__.py,v 1.5 2007/11/29 22:57:46 atsareg Exp $
+# $HeadURL$
 ##############################################################
 
 """This is a Python binding module for the Condor ClassAd

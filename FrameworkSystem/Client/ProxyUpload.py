@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyUpload.py,v 1.1 2009/01/12 15:44:14 acasajus Exp $
+# $HeadURL$
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ###########################################################from DIRAC.Core.Base import Script#############
-__RCSID__   = "$Id: ProxyUpload.py,v 1.1 2009/01/12 15:44:14 acasajus Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
 
 import sys

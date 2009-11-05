@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ThreadSafe.py,v 1.3 2008/05/26 18:38:12 acasajus Exp $
-__RCSID__ = "$Id: ThreadSafe.py,v 1.3 2008/05/26 18:38:12 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import threading
 

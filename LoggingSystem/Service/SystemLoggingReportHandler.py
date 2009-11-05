@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Service/SystemLoggingReportHandler.py,v 1.17 2009/10/01 21:25:31 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingReportHandler.py,v 1.17 2009/10/01 21:25:31 mseco Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """
 SystemLoggingReportHandler allows a remote system to access the contest
 of the SystemLoggingDB

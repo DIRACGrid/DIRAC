@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/PinRequest.py,v 1.3 2009/09/02 12:47:40 acsmith Exp $
-__RCSID__ = "$Id: PinRequest.py,v 1.3 2009/09/02 12:47:40 acsmith Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 

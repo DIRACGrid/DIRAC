@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/PlotBase.py,v 1.9 2009/11/03 15:56:47 atsareg Exp $
+# $HeadURL$
 ########################################################################
 
 """ PlotBase is a base class for various Graphs plots
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: PlotBase.py,v 1.9 2009/11/03 15:56:47 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 import types, random
 from DIRAC.Core.Utilities.Graphs.Palette import Palette

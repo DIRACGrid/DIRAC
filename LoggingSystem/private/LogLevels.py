@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/LogLevels.py,v 1.3 2008/01/16 16:23:56 acasajus Exp $
-__RCSID__ = "$Id: LogLevels.py,v 1.3 2008/01/16 16:23:56 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 class LogLevels:
 

@@ -1,6 +1,6 @@
 """ This is the Job Repository which stores and manipulates DIRAC job metadata in CFG format """
 
-__RCSID__ = "$Id: JobRepository.py,v 1.9 2009/10/07 12:46:18 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG

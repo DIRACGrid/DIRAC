@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/backends/RemoteBackend.py,v 1.15 2008/10/08 12:33:23 rgracian Exp $
-__RCSID__ = "$Id: RemoteBackend.py,v 1.15 2008/10/08 12:33:23 rgracian Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """This Backend sends the Log Messages to a Log Server
 It will only report to the server ERROR, EXCEPTION, FATAL
 and ALWAYS messages.

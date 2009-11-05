@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DownloadInputData.py,v 1.11 2009/08/17 15:15:43 paterson Exp $
+# $Id$
 # File :   DownloadInputData.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     defined in the CS for the VO.
 """
 
-__RCSID__ = "$Id: DownloadInputData.py,v 1.11 2009/08/17 15:15:43 paterson Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager

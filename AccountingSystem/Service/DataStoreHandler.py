@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/DataStoreHandler.py,v 1.14 2009/03/02 11:41:58 acasajus Exp $
-__RCSID__ = "$Id: DataStoreHandler.py,v 1.14 2009/03/02 11:41:58 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 import types
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB

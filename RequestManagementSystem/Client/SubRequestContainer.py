@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/SubRequestContainer.py,v 1.1 2009/11/03 10:27:16 acsmith Exp $
-__RCSID__ = "$Id: SubRequestContainer.py,v 1.1 2009/11/03 10:27:16 acsmith Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 """
 The SubRequestContainer is a container for DIRAC sub-requests

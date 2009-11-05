@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/List.py,v 1.14 2008/08/25 09:29:44 atsareg Exp $
-__RCSID__ = "$Id: List.py,v 1.14 2008/08/25 09:29:44 atsareg Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """
    Collection of DIRAC useful list related modules
    by default on Error they return None

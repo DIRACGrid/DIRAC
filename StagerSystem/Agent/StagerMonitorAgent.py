@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/StagerMonitorAgent.py,v 1.12 2009/04/18 18:26:57 rgracian Exp $
+# $HeadURL$
 # File :   StagerMonitorAgent.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
      of the SiteMonitor instances. The StagerMonitorAgent also manages the proxy environment.
 """
 
-__RCSID__ = "$Id: StagerMonitorAgent.py,v 1.12 2009/04/18 18:26:57 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Agent                                 import Agent
 from DIRAC.Core.DISET.RPCClient                            import RPCClient

@@ -1,4 +1,4 @@
-# $Id: WorkflowReader.py,v 1.15 2008/04/13 20:35:33 paterson Exp $
+# $Id$
 """
     This is a comment
 """

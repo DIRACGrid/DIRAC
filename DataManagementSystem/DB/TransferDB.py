@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TransferDB.py,v 1.38 2009/06/09 12:41:52 acsmith Exp $
+# $Id$
 ########################################################################
 
 """ RequestDB is a front end to the Request Database.
@@ -9,7 +9,7 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.List import randomize,stringListToString,intListToString
 import threading,types,string,time,datetime
 
-__RCSID__ = "$Id: TransferDB.py,v 1.38 2009/06/09 12:41:52 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 MAGIC_EPOC_NUMBER = 1270000000
 

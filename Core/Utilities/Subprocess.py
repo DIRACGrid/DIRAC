@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Subprocess.py,v 1.37 2009/05/29 14:26:49 acasajus Exp $
-__RCSID__ = "$Id: Subprocess.py,v 1.37 2009/05/29 14:26:49 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """
    DIRAC Wrapper to execute python and system commands with a wrapper, that might
    set a timeout.

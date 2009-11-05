@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/BarGraph.py,v 1.6 2009/09/08 14:18:18 atsareg Exp $
+# $HeadURL$
 ########################################################################
 
 """ BarGraph represents bar graphs with vertical bars both simple
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: BarGraph.py,v 1.6 2009/09/08 14:18:18 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData

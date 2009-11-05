@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/scripts/dirac-admin-get-CAs.py,v 1.1 2009/08/12 17:39:51 rgracian Exp $
+# $HeadURL$
 # File :   dirac-admin-get-CAs
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-get-CAs.py,v 1.1 2009/08/12 17:39:51 rgracian Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
 import os
 from DIRACEnvironment import DIRAC

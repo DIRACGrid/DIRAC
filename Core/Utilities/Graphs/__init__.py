@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/__init__.py,v 1.12 2009/11/03 15:56:48 atsareg Exp $
+# $HeadURL$
 ########################################################################
 
 """ DIRAC Graphs package provides tools for creation of various plots to provide
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: __init__.py,v 1.12 2009/11/03 15:56:48 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities.Graphs.Graph import Graph
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import evalPrefs

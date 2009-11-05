@@ -1,6 +1,6 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/RequestPreparation.py,v 1.7 2009/08/07 13:15:44 acsmith Exp $
+# $HeadURL$
 
-__RCSID__ = "$Id: RequestPreparation.py,v 1.7 2009/08/07 13:15:44 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 

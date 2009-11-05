@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/DB/AccountingDB.py,v 1.25 2009/11/04 09:31:06 acasajus Exp $
-__RCSID__ = "$Id: AccountingDB.py,v 1.25 2009/11/04 09:31:06 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import datetime, time
 import types

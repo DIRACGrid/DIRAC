@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/ProxyManagerHandler.py,v 1.25 2009/11/03 13:35:23 acasajus Exp $
+# $HeadURL$
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: ProxyManagerHandler.py,v 1.25 2009/11/03 13:35:23 acasajus Exp $"
+__RCSID__ = "$Id$"
 
 import types
 from DIRAC.Core.DISET.RequestHandler import RequestHandler

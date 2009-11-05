@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/LineGraph.py,v 1.5 2009/09/08 14:18:18 atsareg Exp $
+# $HeadURL$
 ########################################################################
 
 """ LineGraph represents line graphs both simple and stacked. It includes
@@ -9,7 +9,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: LineGraph.py,v 1.5 2009/09/08 14:18:18 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData

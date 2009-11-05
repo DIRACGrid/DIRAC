@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-admin-ban-site.py,v 1.2 2009/05/20 12:03:22 acsmith Exp $
+# $HeadURL$
 # File :   dirac-admin-ban-site
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-ban-site.py,v 1.2 2009/05/20 12:03:22 acsmith Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.2 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script

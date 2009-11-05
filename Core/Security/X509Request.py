@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Request.py,v 1.5 2008/06/25 10:59:40 acasajus Exp $
+# $HeadURL$
 ########################################################################
 """ X509Request is a class for managing X509 requests with their Pkeys
 """
-__RCSID__ = "$Id: X509Request.py,v 1.5 2008/06/25 10:59:40 acasajus Exp $"
+__RCSID__ = "$Id$"
 import GSI
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain

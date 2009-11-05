@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Job.py,v 1.64 2009/10/01 12:21:42 paterson Exp $
+# $HeadURL$
 # File :   Job.py
 # Author : Stuart Paterson
 ########################################################################
@@ -33,7 +33,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Job.py,v 1.64 2009/10/01 12:21:42 paterson Exp $"
+__RCSID__ = "$Id$"
 
 import string, re, os, time, shutil, types, copy
 

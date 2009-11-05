@@ -1,4 +1,4 @@
-# $Id: Parameter.py,v 1.33 2008/06/15 13:54:49 atsareg Exp $
+# $Id$
 """
     This module defines a classs for a generic Workflow Parameter. It also defines
     a ParameterCollection class as a list of parameters as well as an AttributeCollection

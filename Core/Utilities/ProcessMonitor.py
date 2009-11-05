@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: ProcessMonitor.py,v 1.5 2009/05/04 08:06:12 rgracian Exp $
+# $Id$
 # File :   ProcessMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -12,7 +12,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-__RCSID__ = "$Id: ProcessMonitor.py,v 1.5 2009/05/04 08:06:12 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 import os, string, re, sys, time, platform
 

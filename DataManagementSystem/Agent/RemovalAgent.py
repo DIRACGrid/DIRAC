@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Agent/RemovalAgent.py,v 1.23 2009/10/30 14:33:51 acsmith Exp $
+# $HeadURL$
 
 """  RemovalAgent takes removal requests from the RequestDB and replicates them
 """

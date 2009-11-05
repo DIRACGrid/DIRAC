@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: FileCatalogDB.py,v 1.2 2008/02/25 23:25:43 atsareg Exp $
+# $Id$
 ########################################################################
 """ DIRAC FileCatalog Database
 
@@ -17,7 +17,7 @@
     addPfn
 """
 
-__RCSID__ = "$Id: FileCatalogDB.py,v 1.2 2008/02/25 23:25:43 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 import re, os, sys
 import string, time, datetime

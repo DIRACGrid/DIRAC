@@ -1,6 +1,6 @@
 """ This is the Data Integrity Client which allows the simple reporting of problematic file and replicas to the IntegrityDB and their status correctly updated in the FileCatalog.""" 
 
-__RCSID__ = "$Id: DataIntegrityClient.py,v 1.17 2009/10/30 09:08:36 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 import re, time, commands, random,os
 import types

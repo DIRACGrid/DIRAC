@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Plotting.py,v 1.6 2008/10/14 15:57:33 acsmith Exp $
-__RCSID__ = "$Id: Plotting.py,v 1.6 2008/10/14 15:57:33 acsmith Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """
    A simple set of wrapper functions for creating plots (based on the examples
    from the graph tool).

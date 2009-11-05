@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/GridPilotDirector.py,v 1.13 2009/10/23 16:45:33 rgracian Exp $
+# $HeadURL$
 # File :   GridPilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -12,7 +12,7 @@
   underlying resources.
 
 """
-__RCSID__ = "$Id: GridPilotDirector.py,v 1.13 2009/10/23 16:45:33 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 
 GRIDENV                = ''

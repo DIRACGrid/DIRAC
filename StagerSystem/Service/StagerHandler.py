@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Service/StagerHandler.py,v 1.23 2009/10/30 19:37:46 acsmith Exp $
+# $HeadURL$
 ########################################################################
 
 """ StagerHandler is the implementation of the StagerDB in the DISET framework
     A.Smith (17/05/07)
 """
 
-__RCSID__ = "$Id: StagerHandler.py,v 1.23 2009/10/30 19:37:46 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/PilotDirector.py,v 1.8 2009/09/29 13:09:44 rgracian Exp $
+# $HeadURL$
 # File :   PilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -15,7 +15,7 @@
   This means that DIRAC direct submission to Grid CE's (CREAM, ...) will be handled by DIRAC Pilot
   Director making use of a DIRAC CREAM Computing Element class
 """
-__RCSID__ = "$Id: PilotDirector.py,v 1.8 2009/09/29 13:09:44 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 
 import os, time, tempfile, shutil, re, random

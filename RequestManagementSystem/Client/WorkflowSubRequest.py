@@ -1,11 +1,11 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/WorkflowSubRequest.py,v 1.1 2008/04/17 13:31:39 atsareg Exp $
+# $HeadURL$
 """
    WorkflowSubRequest Class encapsulates a request definition based on the Workflow
    framework.
 
 """
 
-__RCSID__ = "$Id: WorkflowSubRequest.py,v 1.1 2008/04/17 13:31:39 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Workflow.Utility import *
 import commands, datetime

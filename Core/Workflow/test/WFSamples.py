@@ -1,4 +1,4 @@
-# $Id: WFSamples.py,v 1.16 2008/04/09 16:15:04 gkuznets Exp $
+# $Id$
 """
     This is a comment
 """

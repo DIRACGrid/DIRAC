@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/TopErrorMessagesReporter.py,v 1.3 2009/10/13 16:34:36 mseco Exp $
-__RCSID__ = "$Id: TopErrorMessagesReporter.py,v 1.3 2009/10/13 16:34:36 mseco Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """  TopErrorMessagesReporter produces a list with the most common errors 
    injected in the SystemLoggingDB and sends a notification to a mailing 
    list and specific users. 

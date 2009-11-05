@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/Dirac.py,v 1.115 2009/11/02 12:35:17 paterson Exp $
+# $HeadURL$
 # File :   DIRAC.py
 # Author : Stuart Paterson
 ########################################################################
@@ -23,7 +23,7 @@
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
-__RCSID__ = "$Id: Dirac.py,v 1.115 2009/11/02 12:35:17 paterson Exp $"
+__RCSID__ = "$Id$"
 
 import re, os, sys, string, time, shutil, types, tempfile, glob,fnmatch
 import pprint

@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Palette.py,v 1.3 2009/06/04 09:54:17 atsareg Exp $
+# $HeadURL$
 ########################################################################
 
 """ Palette is a tool to generate colors for various Graphs plots and legends
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: Palette.py,v 1.3 2009/06/04 09:54:17 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 import md5
 

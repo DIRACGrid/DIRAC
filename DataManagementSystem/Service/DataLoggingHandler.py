@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: DataLoggingHandler.py,v 1.5 2009/10/21 12:10:48 acsmith Exp $
+# $Id$
 ########################################################################
 
 """ DataLoggingHandler is the implementation of the Data Logging
@@ -13,7 +13,7 @@
 
 """
 
-__RCSID__ = "$Id: DataLoggingHandler.py,v 1.5 2009/10/21 12:10:48 acsmith Exp $"
+__RCSID__ = "$Id$"
 from DIRAC                                          import gLogger, gConfig, rootPath, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler                import RequestHandler
 from DIRAC.DataManagementSystem.DB.DataLoggingDB    import DataLoggingDB

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-admin-allow-se.py,v 1.3 2009/11/04 09:59:14 acsmith Exp $
+# $HeadURL$
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-allow-se.py,v 1.3 2009/11/04 09:59:14 acsmith Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.3 $"
 import DIRAC
 from DIRAC.Core.Base import Script

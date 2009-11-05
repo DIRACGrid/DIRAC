@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/Activity.py,v 1.8 2008/07/16 16:03:39 acasajus Exp $
-__RCSID__ = "$Id: Activity.py,v 1.8 2008/07/16 16:03:39 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import types
 from string import Template

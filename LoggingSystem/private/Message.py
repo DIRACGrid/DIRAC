@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Message.py,v 1.11 2008/12/01 11:47:08 acasajus Exp $
-__RCSID__ = "$Id: Message.py,v 1.11 2008/12/01 11:47:08 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities import Time
 

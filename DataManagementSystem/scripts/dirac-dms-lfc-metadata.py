@@ -2,9 +2,9 @@
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-lfc-metadata.py,v 1.1 2009/02/11 12:08:23 acsmith Exp $
+# $HeadURL$
 ########################################################################
-__RCSID__   = "$Id: dirac-dms-lfc-metadata.py,v 1.1 2009/02/11 12:08:23 acsmith Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$ $"
 
 from DIRAC.Core.Utilities.List import sortList

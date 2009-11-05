@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/FileHelper.py,v 1.24 2009/08/12 13:59:09 acasajus Exp $
-__RCSID__ = "$Id: FileHelper.py,v 1.24 2009/08/12 13:59:09 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import os
 import md5

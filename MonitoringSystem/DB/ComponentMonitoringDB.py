@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/DB/ComponentMonitoringDB.py,v 1.13 2009/03/04 19:42:45 acasajus Exp $
+# $HeadURL$
 ########################################################################
 """ ComponentMonitoring class is a front-end to the Component monitoring Database
 """
 
-__RCSID__ = "$Id: ComponentMonitoringDB.py,v 1.13 2009/03/04 19:42:45 acasajus Exp $"
+__RCSID__ = "$Id$"
 
 import time
 import random

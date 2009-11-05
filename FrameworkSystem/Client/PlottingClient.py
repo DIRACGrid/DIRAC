@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/PlottingClient.py,v 1.2 2009/08/07 13:04:22 atsareg Exp $
+# $HeadURL$
 
 """ PlottingClient is a client of the Plotting Service
 """
 
-__RCSID__   = "$Id: PlottingClient.py,v 1.2 2009/08/07 13:04:22 atsareg Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.2 $"
 
 import re

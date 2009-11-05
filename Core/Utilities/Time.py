@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Time.py,v 1.6 2008/07/31 10:45:17 rgracian Exp $
-__RCSID__ = "$Id: Time.py,v 1.6 2008/07/31 10:45:17 rgracian Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """
 DIRAC Times module
 Support for basic Date and Time operations

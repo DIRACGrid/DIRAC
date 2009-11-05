@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Refresher.py,v 1.31 2009/08/14 15:56:02 acasajus Exp $
-__RCSID__ = "$Id: Refresher.py,v 1.31 2009/08/14 15:56:02 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import threading
 import time

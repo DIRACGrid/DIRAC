@@ -1,4 +1,4 @@
-# $Id: JobSamples.py,v 1.7 2008/04/08 11:33:17 gkuznets Exp $
+# $Id$
 """
     This is a comment
 """

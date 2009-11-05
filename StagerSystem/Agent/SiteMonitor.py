@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/StagerSystem/Agent/SiteMonitor.py,v 1.19 2009/07/16 11:32:58 rgracian Exp $
+# $HeadURL$
 # File :   SiteMonitor.py
 # Author : Stuart Paterson
 ########################################################################
@@ -7,7 +7,7 @@
 """  The SiteMonitor base-class monitors staging requests for a given site.
 """
 
-__RCSID__ = "$Id: SiteMonitor.py,v 1.19 2009/07/16 11:32:58 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient

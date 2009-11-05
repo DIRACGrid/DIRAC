@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Client/ProxyManagerClient.py,v 1.37 2009/08/07 14:46:07 acasajus Exp $
+# $HeadURL$
 ########################################################################
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-__RCSID__ = "$Id: ProxyManagerClient.py,v 1.37 2009/08/07 14:46:07 acasajus Exp $"
+__RCSID__ = "$Id$"
 
 import os
 import datetime

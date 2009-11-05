@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/OracleDB.py,v 1.14 2009/07/10 09:52:32 zmathe Exp $
+# $HeadURL$
 ########################################################################
 """ DIRAC Basic Oracle Class
     It provides access to the basic Oracle methods in a multithread-safe mode
@@ -50,7 +50,7 @@
 
 """
 
-__RCSID__ = "$Id: OracleDB.py,v 1.14 2009/07/10 09:52:32 zmathe Exp $"
+__RCSID__ = "$Id$"
 
 
 from DIRAC                                  import gLogger

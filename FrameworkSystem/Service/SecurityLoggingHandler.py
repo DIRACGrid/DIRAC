@@ -1,12 +1,12 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/SecurityLoggingHandler.py,v 1.1 2008/10/14 09:58:58 acasajus Exp $
+# $HeadURL$
 ########################################################################
 
 """ ProxyManager is the implementation of the ProxyManagement service
     in the DISET framework
 """
 
-__RCSID__ = "$Id: SecurityLoggingHandler.py,v 1.1 2008/10/14 09:58:58 acasajus Exp $"
+__RCSID__ = "$Id$"
 
 import types
 import os

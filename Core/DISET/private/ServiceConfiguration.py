@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/ServiceConfiguration.py,v 1.8 2009/04/28 13:45:51 acasajus Exp $
-__RCSID__ = "$Id: ServiceConfiguration.py,v 1.8 2009/04/28 13:45:51 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities import Network, List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData

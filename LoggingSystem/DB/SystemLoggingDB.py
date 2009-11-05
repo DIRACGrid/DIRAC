@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.py,v 1.29 2009/09/03 15:59:54 vfernand Exp $
-__RCSID__ = "$Id: SystemLoggingDB.py,v 1.29 2009/09/03 15:59:54 vfernand Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """ SystemLoggingDB class is a front-end to the Message Logging Database.
     The following methods are provided
 

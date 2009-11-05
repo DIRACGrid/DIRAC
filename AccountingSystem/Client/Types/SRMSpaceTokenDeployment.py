@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/SRMSpaceTokenDeployment.py,v 1.1 2008/09/16 13:52:06 acasajus Exp $
-__RCSID__ = "$Id: SRMSpaceTokenDeployment.py,v 1.1 2008/09/16 13:52:06 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 from DIRAC import gConfig

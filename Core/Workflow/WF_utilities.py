@@ -1,4 +1,4 @@
-# $Id: WF_utilities.py,v 1.1 2008/06/15 11:30:27 atsareg Exp $
+# $Id$
 
 """
     Workflow Utility module contains a number of functions useful for the

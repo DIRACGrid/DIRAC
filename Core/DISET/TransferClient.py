@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/TransferClient.py,v 1.18 2009/06/25 16:20:54 acasajus Exp $
-__RCSID__ = "$Id: TransferClient.py,v 1.18 2009/06/25 16:20:54 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import tarfile
 import threading

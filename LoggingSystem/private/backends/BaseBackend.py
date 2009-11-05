@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/backends/BaseBackend.py,v 1.9 2008/07/11 17:23:03 rgracian Exp $
-__RCSID__ = "$Id: BaseBackend.py,v 1.9 2008/07/11 17:23:03 rgracian Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """  This constitues the base class for the backends of the logger
 """
 

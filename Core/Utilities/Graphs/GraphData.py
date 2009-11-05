@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/GraphData.py,v 1.7 2009/09/08 14:18:18 atsareg Exp $
+# $HeadURL$
 ########################################################################
 
 """ GraphData encapsulates input data for the DIRAC Graphs plots
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: GraphData.py,v 1.7 2009/09/08 14:18:18 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 import types, datetime, numpy, time
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import convert_to_datetime, to_timestamp

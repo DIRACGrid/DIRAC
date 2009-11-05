@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-wms-get-normalized-queue-length.py,v 1.3 2009/04/10 06:44:08 rgracian Exp $
+# $HeadURL$
 # File :   dirac-wms-get-normalized-queue-length.py
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id: dirac-wms-get-normalized-queue-length.py,v 1.3 2009/04/10 06:44:08 rgracian Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.3 $"
 
 from DIRACEnvironment import DIRAC

@@ -1,7 +1,7 @@
 """ Client class to access the replication placement service
 """
 ########################################################################
-# $Id: ReplicationPlacementClient.py,v 1.1 2009/09/18 13:59:14 acsmith Exp $
+# $Id$
 ########################################################################
 
 from DIRAC.Core.Transformation.TransformationDBClient import TransformationDBClient

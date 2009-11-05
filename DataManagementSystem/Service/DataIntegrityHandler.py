@@ -1,7 +1,7 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Service/DataIntegrityHandler.py,v 1.8 2009/09/08 19:23:19 acsmith Exp $
+# $HeadURL$
 ########################################################################
-__RCSID__   = "$Id: DataIntegrityHandler.py,v 1.8 2009/09/08 19:23:19 acsmith Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.8 $"
 
 """ DataIntegrityHandler is the implementation of the Data Integrity service in the DISET framework

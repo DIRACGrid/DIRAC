@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Source.py,v 1.7 2008/05/01 01:01:35 rgracian Exp $
+# $HeadURL$
 # File :   Source.py
 # Author : Ricardo Graciani
 ########################################################################

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-wms-get-queue-normalization.py,v 1.1 2009/04/18 13:29:36 rgracian Exp $
+# $HeadURL$
 # File :   dirac-wms-get-queue-normalization.py
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id: dirac-wms-get-queue-normalization.py,v 1.1 2009/04/18 13:29:36 rgracian Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
 
 from DIRACEnvironment import DIRAC

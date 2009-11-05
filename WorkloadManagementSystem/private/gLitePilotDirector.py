@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/gLitePilotDirector.py,v 1.5 2009/10/23 16:42:26 rgracian Exp $
+# $HeadURL$
 # File :   gLitePilotDirector.py
 # Author : Ricardo Graciani
 ########################################################################
@@ -9,7 +9,7 @@
    - basic configuration for gLite
    - submit and monitor methods for gLite MiddleWare.
 """
-__RCSID__ = "$Id: gLitePilotDirector.py,v 1.5 2009/10/23 16:42:26 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.private.GridPilotDirector  import GridPilotDirector
 from DIRAC import S_OK, S_ERROR, gConfig, List

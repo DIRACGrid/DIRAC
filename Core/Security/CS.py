@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/CS.py,v 1.17 2009/10/15 13:55:56 acasajus Exp $
-__RCSID__ = "$Id: CS.py,v 1.17 2009/10/15 13:55:56 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List

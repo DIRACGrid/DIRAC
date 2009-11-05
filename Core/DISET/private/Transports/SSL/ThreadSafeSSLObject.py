@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/private/Transports/SSL/ThreadSafeSSLObject.py,v 1.3 2008/03/10 13:42:38 acasajus Exp $
-__RCSID__ = "$Id: ThreadSafeSSLObject.py,v 1.3 2008/03/10 13:42:38 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import GSI
 import threading

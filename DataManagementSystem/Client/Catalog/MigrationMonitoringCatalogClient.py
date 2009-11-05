@@ -1,6 +1,6 @@
 """ Client plug-in for the Migration Monitoring DB.
 """
-__RCSID__ = "$Id: MigrationMonitoringCatalogClient.py,v 1.5 2009/11/02 14:29:25 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC                                                         import S_OK, S_ERROR, gLogger, gConfig

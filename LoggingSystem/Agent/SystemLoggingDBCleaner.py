@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/Agent/SystemLoggingDBCleaner.py,v 1.7 2009/10/13 16:34:36 mseco Exp $
-__RCSID__ = "$Id: SystemLoggingDBCleaner.py,v 1.7 2009/10/13 16:34:36 mseco Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """  SystemLoggingDBCleaner erases records whose messageTime column 
      contains a time older than 'RemoveDate' days, where 'RemoveDate' 
      is an entry in the Configuration Service section of the agent.

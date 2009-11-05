@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/backends/FileBackend.py,v 1.3 2008/02/15 17:45:06 mseco Exp $
-__RCSID__ = "$Id: FileBackend.py,v 1.3 2008/02/15 17:45:06 mseco Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """  This backend writes the log messages to a file
 """
 from DIRAC.LoggingSystem.private.backends.BaseBackend import BaseBackend

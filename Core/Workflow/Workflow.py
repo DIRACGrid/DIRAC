@@ -1,4 +1,4 @@
-# $Id: Workflow.py,v 1.38 2009/06/03 14:25:14 paterson Exp $
+# $Id$
 """
     This is a comment
 """

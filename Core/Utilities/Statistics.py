@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Statistics.py,v 1.1 2008/11/10 20:39:00 acsmith Exp $
-__RCSID__ = "$Id: Statistics.py,v 1.1 2008/11/10 20:39:00 acsmith Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 """
    Collection of DIRAC useful statistics related modules

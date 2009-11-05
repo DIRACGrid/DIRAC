@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/AuthManager.py,v 1.33 2009/04/08 14:36:14 acasajus Exp $
-__RCSID__ = "$Id: AuthManager.py,v 1.33 2009/04/08 14:36:14 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR

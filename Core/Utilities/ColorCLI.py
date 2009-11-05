@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/ColorCLI.py,v 1.3 2007/05/22 18:24:43 acasajus Exp $
-__RCSID__ = "$Id: ColorCLI.py,v 1.3 2007/05/22 18:24:43 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import os
 import types

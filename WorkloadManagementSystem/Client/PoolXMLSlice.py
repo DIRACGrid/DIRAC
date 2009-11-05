@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: PoolXMLSlice.py,v 1.4 2009/08/17 15:16:11 paterson Exp $
+# $Id$
 # File :   PoolXMLSlice.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
     value pairs.
 """
 
-__RCSID__ = "$Id: PoolXMLSlice.py,v 1.4 2009/08/17 15:16:11 paterson Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger

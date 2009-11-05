@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Resources/Computing/ComputingElementFactory.py,v 1.5 2009/09/17 20:49:26 ffeldhau Exp $
+# $HeadURL$
 # File :   ComputingElementFactory.py
 # Author : Stuart Paterson
 ########################################################################
@@ -10,7 +10,7 @@
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement, getCEConfigDict
 from DIRAC                                               import S_OK, S_ERROR, gLogger, gConfig
 
-__RCSID__ = "$Id: ComputingElementFactory.py,v 1.5 2009/09/17 20:49:26 ffeldhau Exp $"
+__RCSID__ = "$Id$"
 
 import sys,types
 

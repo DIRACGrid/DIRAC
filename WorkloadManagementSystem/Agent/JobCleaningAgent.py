@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/JobCleaningAgent.py,v 1.11 2009/09/12 06:23:14 atsareg Exp $
+# $HeadURL$
 # File :   JobCleaningAgent.py
 # Author : A.T.
 ########################################################################
@@ -7,7 +7,7 @@
 """  The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
 """
 
-__RCSID__ = "$Id: JobCleaningAgent.py,v 1.11 2009/09/12 06:23:14 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Agent                            import Agent
 from DIRAC.WorkloadManagementSystem.DB.JobDB          import JobDB

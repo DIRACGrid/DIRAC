@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: PBSTimeLeft.py,v 1.8 2009/07/31 08:02:55 rgracian Exp $
+# $Id$
 ########################################################################
 
 """ The PBS TimeLeft utility interrogates the PBS batch system for the
@@ -9,7 +9,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-__RCSID__ = "$Id: PBSTimeLeft.py,v 1.8 2009/07/31 08:02:55 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 import os, string, re, time
 

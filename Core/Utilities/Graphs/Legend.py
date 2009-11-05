@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Utilities/Graphs/Legend.py,v 1.6 2009/11/03 15:56:47 atsareg Exp $
+# $HeadURL$
 ########################################################################
 
 """ Legend encapsulates a graphical plot legend drawing tool
@@ -8,7 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id: Legend.py,v 1.6 2009/11/03 15:56:47 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 from matplotlib.patches import Rectangle
 from matplotlib.text import Text

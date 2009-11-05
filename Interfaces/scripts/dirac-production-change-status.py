@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-production-change-status.py,v 1.3 2009/08/14 12:18:49 paterson Exp $
+# $HeadURL$
 # File :   dirac-production-change-status
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-production-change-status.py,v 1.3 2009/08/14 12:18:49 paterson Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.3 $"
 
 import string

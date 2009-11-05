@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/BaseAccountingType.py,v 1.20 2009/04/27 14:43:27 acasajus Exp $
-__RCSID__ = "$Id: BaseAccountingType.py,v 1.20 2009/04/27 14:43:27 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import types
 from DIRAC import S_OK, S_ERROR

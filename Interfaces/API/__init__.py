@@ -1,5 +1,5 @@
 ############################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/__init__.py,v 1.2 2008/05/07 11:23:38 paterson Exp $
+# $HeadURL$
 ############################################################
 
 """
@@ -22,4 +22,4 @@
 
 """
 
-__RCSID__ = "$Id: __init__.py,v 1.2 2008/05/07 11:23:38 paterson Exp $"
+__RCSID__ = "$Id$"

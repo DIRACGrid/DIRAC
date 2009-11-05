@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/private/correctors/WMSHistoryCorrector.py,v 1.3 2009/07/03 17:17:03 acasajus Exp $
+# $HeadURL$
 ########################################################################
 """ WMSHistory corrector for the group and ingroup shares
 """
 
-__RCSID__ = "$Id: WMSHistoryCorrector.py,v 1.3 2009/07/03 17:17:03 acasajus Exp $"
+__RCSID__ = "$Id$"
 
 import datetime
 import time as nativetime

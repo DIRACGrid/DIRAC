@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/Client/CSCLI.py,v 1.5 2009/03/09 21:22:45 atsareg Exp $
+# $HeadURL$
 # File :   CSCLI.py
 # Author : Adria Casajus
 ########################################################################
-__RCSID__   = "$Id: CSCLI.py,v 1.5 2009/03/09 21:22:45 atsareg Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.5 $"
 
 import cmd

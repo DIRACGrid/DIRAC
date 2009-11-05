@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestContainer.py,v 1.17 2009/04/22 20:05:35 rgracian Exp $
+# $HeadURL$
 
 """
 The Data Management Request contains all the necessary information for
@@ -11,7 +11,7 @@ from DIRAC.Core.Security.Misc import getProxyInfo
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.RequestManagementSystem.Client.DISETSubRequest import DISETSubRequest
 
-__RCSID__ = "$Id: RequestContainer.py,v 1.17 2009/04/22 20:05:35 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 class RequestContainer:
 

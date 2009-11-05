@@ -1,8 +1,8 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/StorageElement.py,v 1.34 2009/07/16 11:32:57 rgracian Exp $
+# $HeadURL$
 ########################################################################
 
-__RCSID__ = "$Id: StorageElement.py,v 1.34 2009/07/16 11:32:57 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 """ This is the StorageElement class.
 

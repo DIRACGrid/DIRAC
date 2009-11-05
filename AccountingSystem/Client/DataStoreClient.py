@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/DataStoreClient.py,v 1.14 2009/03/21 09:50:17 acasajus Exp $
-__RCSID__ = "$Id: DataStoreClient.py,v 1.14 2009/03/21 09:50:17 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import time
 import random

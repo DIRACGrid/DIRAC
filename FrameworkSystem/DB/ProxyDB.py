@@ -1,10 +1,10 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/DB/ProxyDB.py,v 1.42 2009/08/07 14:45:49 acasajus Exp $
+# $HeadURL$
 ########################################################################
 """ ProxyRepository class is a front-end to the proxy repository Database
 """
 
-__RCSID__ = "$Id: ProxyDB.py,v 1.42 2009/08/07 14:45:49 acasajus Exp $"
+__RCSID__ = "$Id$"
 
 import time
 import random

@@ -1,9 +1,9 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/FrameworkSystem/Service/PlotCache.py,v 1.2 2009/08/07 13:20:07 atsareg Exp $
+# $HeadURL$
 
 """ Cache for the Plotting service plots
 """
 
-__RCSID__ = "$Id: PlotCache.py,v 1.2 2009/08/07 13:20:07 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 import os
 import os.path

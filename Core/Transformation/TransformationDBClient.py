@@ -1,7 +1,7 @@
 """ Class that contains client access to the transformation DB handler.
 """
 ########################################################################
-# $Id: TransformationDBClient.py,v 1.11 2009/09/18 17:21:05 acsmith Exp $
+# $Id$
 ########################################################################
 
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR

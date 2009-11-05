@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/test/localJobRun.py,v 1.2 2007/12/09 17:28:31 paterson Exp $
+# $HeadURL$
 # File  : TestJob.py
 # Author: Stuart Paterson
 ########################################################################

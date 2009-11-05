@@ -1,9 +1,9 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Security/X509Certificate.py,v 1.12 2009/08/10 19:20:06 acasajus Exp $
+# $HeadURL$
 ########################################################################
 """ X509Certificate is a class for managing X509 certificates alone
 """
-__RCSID__ = "$Id: X509Certificate.py,v 1.12 2009/08/10 19:20:06 acasajus Exp $"
+__RCSID__ = "$Id$"
 
 import GSI
 from DIRAC import S_OK, S_ERROR

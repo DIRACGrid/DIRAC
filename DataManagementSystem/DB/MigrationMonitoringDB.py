@@ -2,7 +2,7 @@
     It offers a simple interface to add files, get files and modify their status.
 """
 
-__RCSID__ = "$Id: MigrationMonitoringDB.py,v 1.3 2009/10/23 08:12:12 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC                        import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB           import DB

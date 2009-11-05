@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-storage-usage-summary.py,v 1.6 2009/08/12 21:01:10 acsmith Exp $
+# $HeadURL$
 ########################################################################
-__RCSID__   = "$Id: dirac-dms-storage-usage-summary.py,v 1.6 2009/08/12 21:01:10 acsmith Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.6 $"
 import DIRAC
 from DIRAC.Core.Base import Script

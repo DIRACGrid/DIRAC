@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/JobPolicy.py,v 1.12 2009/03/04 11:58:49 acasajus Exp $
+# $HeadURL$
 ########################################################################
 
 """ JobPolicy encapsulates authorization rules for different groups
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: JobPolicy.py,v 1.12 2009/03/04 11:58:49 acasajus Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Security import Properties

@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/FileContainer.py,v 1.5 2009/08/31 23:21:53 acsmith Exp $
-__RCSID__ = "$Id: FileContainer.py,v 1.5 2009/08/31 23:21:53 acsmith Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 """ This module contains classes associated to Files.
 

@@ -1,10 +1,10 @@
 #! /usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-wms-jobs-select-output-search.py,v 1.3 2009/04/18 18:26:59 rgracian Exp $
+# $HeadURL$
 # File :   dirac-wms-jobs-select-output-search
 # Author : Vladimir Romanovsky
 ########################################################################
-__RCSID__   = "$Id: dirac-wms-jobs-select-output-search.py,v 1.3 2009/04/18 18:26:59 rgracian Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.3 $"
 import os, sys, popen2
 from DIRACEnvironment import DIRAC

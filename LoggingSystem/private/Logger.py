@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/private/Logger.py,v 1.34 2009/07/16 11:32:58 rgracian Exp $
-__RCSID__ = "$Id: Logger.py,v 1.34 2009/07/16 11:32:58 rgracian Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """
    DIRAC Logger client
 """

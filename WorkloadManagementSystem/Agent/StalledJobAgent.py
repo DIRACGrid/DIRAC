@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Agent/StalledJobAgent.py,v 1.4 2009/04/18 18:26:57 rgracian Exp $
+# $HeadURL$
 # File :   StalledJobAgent.py
 ########################################################################
 
@@ -8,7 +8,7 @@
      seconds will be assigned the "Stalled" state.
 """
 
-__RCSID__ = "$Id: StalledJobAgent.py,v 1.4 2009/04/18 18:26:57 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB

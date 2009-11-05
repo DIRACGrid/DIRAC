@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: FutureHandler.py,v 1.1 2008/01/13 01:22:22 atsareg Exp $
+# $Id$
 ########################################################################
 
 """ FutureHandler is the implementation of a future
@@ -7,7 +7,7 @@
 
 """
 
-__RCSID__ = "$Id: FutureHandler.py,v 1.1 2008/01/13 01:22:22 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler

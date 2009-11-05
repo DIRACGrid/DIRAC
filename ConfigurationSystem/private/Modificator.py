@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/ConfigurationSystem/private/Modificator.py,v 1.14 2009/06/25 12:54:16 acasajus Exp $
-__RCSID__ = "$Id: Modificator.py,v 1.14 2009/06/25 12:54:16 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import zlib
 import difflib

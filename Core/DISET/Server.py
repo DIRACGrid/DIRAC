@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/DISET/Server.py,v 1.39 2009/06/10 13:18:20 acasajus Exp $
-__RCSID__ = "$Id: Server.py,v 1.39 2009/06/10 13:18:20 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import socket
 import sys

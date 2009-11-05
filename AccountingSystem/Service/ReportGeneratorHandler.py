@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Service/ReportGeneratorHandler.py,v 1.27 2009/06/04 16:19:54 acasajus Exp $
-__RCSID__ = "$Id: ReportGeneratorHandler.py,v 1.27 2009/06/04 16:19:54 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 import types
 import os
 import base64

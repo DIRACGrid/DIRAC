@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/scripts/dirac-wms-job-get-output-data.py,v 1.1 2008/11/17 17:14:16 paterson Exp $
+# $HeadURL$
 # File :   dirac-production-job-get-output-data
 # Author : Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id: dirac-wms-job-get-output-data.py,v 1.1 2008/11/17 17:14:16 paterson Exp $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
 from DIRACEnvironment import DIRAC
 from DIRAC.Core.Base import Script

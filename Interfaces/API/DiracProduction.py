@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Interfaces/API/DiracProduction.py,v 1.76 2009/10/15 11:40:41 paterson Exp $
+# $HeadURL$
 # File :   DiracProduction.py
 # Author : Stuart Paterson
 ########################################################################
@@ -15,7 +15,7 @@ Script.parseCommandLine()
    Helper functions are to be documented with example usage.
 """
 
-__RCSID__ = "$Id: DiracProduction.py,v 1.76 2009/10/15 11:40:41 paterson Exp $"
+__RCSID__ = "$Id$"
 
 import string, re, os, time, shutil, types, copy
 import pprint

@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: SandboxHandler.py,v 1.15 2008/12/01 17:54:11 rgracian Exp $
+# $Id$
 ########################################################################
 
 """ SandboxHandler is the implementation of the Sandbox service
@@ -12,7 +12,7 @@
 
 """
 
-__RCSID__ = "$Id: SandboxHandler.py,v 1.15 2008/12/01 17:54:11 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler

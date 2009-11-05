@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/DataManagementSystem/Client/ReplicaContainers.py,v 1.3 2009/08/03 15:28:40 acsmith Exp $
-__RCSID__ = "$Id: ReplicaContainers.py,v 1.3 2009/08/03 15:28:40 acsmith Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 """ This module contains three classes associated to Replicas.
 

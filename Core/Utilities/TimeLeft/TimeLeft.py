@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: TimeLeft.py,v 1.18 2009/07/31 07:18:22 rgracian Exp $
+# $Id$
 ########################################################################
 
 """ The TimeLeft utility allows to calculate the amount of CPU time
@@ -16,7 +16,7 @@
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR, rootPath
 import DIRAC
-__RCSID__ = "$Id: TimeLeft.py,v 1.18 2009/07/31 07:18:22 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 import os,re
 

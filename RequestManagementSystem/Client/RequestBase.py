@@ -1,10 +1,10 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/RequestManagementSystem/Client/RequestBase.py,v 1.3 2008/04/07 07:44:20 atsareg Exp $
+# $HeadURL$
 
 """ Request base class. Defines the common general parameters that should be present in any
     request
 """
 
-__RCSID__ = "$Id: RequestBase.py,v 1.3 2008/04/07 07:44:20 atsareg Exp $"
+__RCSID__ = "$Id$"
 
 import commands, os, xml.dom.minidom
 import DIRAC.Core.Utilities.Time as Time

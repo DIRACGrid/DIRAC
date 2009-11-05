@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: JobWrapper.py,v 1.118 2009/09/07 15:41:56 paterson Exp $
+# $Id$
 # File :   JobWrapper.py
 # Author : Stuart Paterson
 ########################################################################
@@ -9,7 +9,7 @@
     and a Watchdog Agent that can monitor progress.
 """
 
-__RCSID__ = "$Id: JobWrapper.py,v 1.118 2009/09/07 15:41:56 paterson Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog

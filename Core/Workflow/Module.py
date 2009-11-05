@@ -1,4 +1,4 @@
-# $Id: Module.py,v 1.19 2008/04/28 14:31:10 atsareg Exp $
+# $Id$
 """
     This is a comment
 """

@@ -1,11 +1,11 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/Service/WMSUtilities.py,v 1.19 2009/04/26 06:14:24 rgracian Exp $
+# $HeadURL$
 ########################################################################
 
 """ A set of utilities used in the WMS services
 """
 
-__RCSID__ = "$Id: WMSUtilities.py,v 1.19 2009/04/26 06:14:24 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 from tempfile import mkdtemp
 import shutil, os

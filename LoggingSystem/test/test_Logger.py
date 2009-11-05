@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/test/test_Logger.py,v 1.3 2007/10/01 17:09:08 mseco Exp $
-__RCSID__ = "$Id: test_Logger.py,v 1.3 2007/10/01 17:09:08 mseco Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 """
 """
 from dirac import DIRAC

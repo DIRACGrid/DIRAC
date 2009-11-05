@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/JobLoggingDB.py,v 1.7 2008/07/25 12:41:54 rgracian Exp $
+# $HeadURL$
 ########################################################################
 """ JobLoggingDB class is a front-end to the Job Logging Database.
     The following methods are provided
@@ -9,7 +9,7 @@
     getWMSTimeStamps()    
 """    
 
-__RCSID__ = "$Id: JobLoggingDB.py,v 1.7 2008/07/25 12:41:54 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 import re, os, sys
 import time

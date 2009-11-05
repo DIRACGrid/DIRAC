@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/AccountingSystem/Client/Types/JobStep.py,v 1.3 2008/05/06 20:51:38 acasajus Exp $
-__RCSID__ = "$Id: JobStep.py,v 1.3 2008/05/06 20:51:38 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 

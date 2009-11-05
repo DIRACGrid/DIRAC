@@ -1,5 +1,5 @@
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/MonitoringSystem/private/PlotCache.py,v 1.4 2008/02/22 14:27:53 acasajus Exp $
-__RCSID__ = "$Id: PlotCache.py,v 1.4 2008/02/22 14:27:53 acasajus Exp $"
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import os
 import os.path

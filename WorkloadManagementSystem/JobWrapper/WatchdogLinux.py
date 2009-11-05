@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/JobWrapper/WatchdogLinux.py,v 1.10 2009/04/28 15:23:02 rgracian Exp $
+# $HeadURL$
 # Author: Stuart Paterson
 # eMail : Stuart.Paterson@cern.ch
 ########################################################################
@@ -11,7 +11,7 @@
      This is the Unix / Linux compatible Watchdog subclass.
 """
 
-__RCSID__ = "$Id: WatchdogLinux.py,v 1.10 2009/04/28 15:23:02 rgracian Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Agent                               import Agent
 from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog  import Watchdog
