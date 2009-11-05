@@ -115,7 +115,7 @@ class VOMS( BaseSecurity ):
     chain = proxyDict[ 'chain' ]
     proxyLocation = proxyDict[ 'file' ]
 
-    cmd = 'voms-proxy-info -file %s' % proxyLocation
+    cmd = 'voms-proxy-info -dont-verify-ac -file %s' % proxyLocation
     if option:
       cmd += ' -%s' % option
 
