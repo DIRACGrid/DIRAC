@@ -11,6 +11,7 @@ import stat
 
 moduleSuffix = "DIRAC"
 defaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH  
+excludeMask = [ "dirac-deploy.py" ]
 
 wrapperTemplate = """#!/usr/bin/env python
 #
@@ -74,9 +75,9 @@ rootPath = os.path.realpath( __file__ )
 for i in range( 4 ):
   rootPath = os.path.dirname( rootPath )
 
-scriptsPath = os.path.join( rootPath, "scripts" )
-if not os.path.isdir( scriptsPath ):
-  os.mkdir( scriptsPath )
+targetScriptsPath = os.path.join( rootPath, "scripts" )
+if not os.path.isdir( targetScriptsPath ):
+  os.mkdir( targetScriptsPath )
 
 for rootModule in os.listdir( rootPath ):
   modulePath = os.path.join( rootPath, rootModule )
@@ -90,13 +91,15 @@ for rootModule in os.listdir( rootPath ):
   for script in scripts:
     scriptPath = script[0]
     scriptName = script[1]
+    if scriptName in excludeMask:
+      continue
     scriptLen = len( scriptName )
     if scriptName.find( ".py" ) == scriptLen - 3 and scriptName.find( "dirac-" ) == 0:
-      fakeScriptPath = os.path.join( scriptsPath, scriptName[:-3] )
+      fakeScriptPath = os.path.join( targetScriptsPath, scriptName[:-3] )
       fd = open( fakeScriptPath, "w" )
       fd.write( wrapperTemplate.replace( '$SCRIPTLOCATION$', scriptPath ) )
       fd.close()
       os.chmod( fakeScriptPath, defaultPerms )
     else:
-      shutil.copy( os.path.join( rootPath, scriptPath ), scriptsPath )
-      os.chmod( os.path.join( scriptsPath, scriptName ), defaultPerms )
+      shutil.copy( os.path.join( rootPath, scriptPath ), targetScriptsPath )
+      os.chmod( os.path.join( targetScriptsPath, scriptName ), defaultPerms )
