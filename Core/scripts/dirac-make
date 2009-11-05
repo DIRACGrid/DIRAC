@@ -1,0 +1,116 @@
+#!/bin/bash
+#
+# $Header: /local/reps/dirac/DIRAC3/DIRAC/dirac-make,v 1.24 2009/10/05 06:13:08 rgracian Exp $
+#
+# preliminary version to prepare external package needed for DIRAC3
+#
+function canonicalize
+{
+  cd -P -- "$(dirname -- "$1")" &&
+  printf '%s\n' "$(pwd -P)/$(basename -- "$1")"
+}
+basedir=`canonicalize $0`
+basedir=`dirname $basedir`
+#
+DIRACdir=`canonicalize $basedir/..`
+DIRACscripts=$DIRACdir/scripts
+mkdir -p $DIRACscripts                                || exit 1
+#
+(
+cd $basedir
+#
+# Ensure other system scripts in root dir are picked up
+#
+removeFlag=
+if [ -d ../LHCbSystem -a ! -d LHCbSystem ] ; then
+  cp -r ../LHCbSystem LHCbSystem
+  removeFlag=1
+fi
+
+#
+# Move all scripts to the common scripts directory
+#
+for dir in `find . -type d -name scripts` ; do
+  find $dir -maxdepth 1 -type f -exec chmod +x {} \;  || exit 1
+  for file in `find $dir -maxdepth 1 -name "*.py" -type f | grep -v __init__`
+  do
+    dstfile=$DIRACscripts/`echo $file | sed 's:^.*/::g' | sed 's/\.[a-z]*$//g'`
+    orgfile=$file
+    cat > $dstfile <<EOF
+#!/usr/bin/env python
+#
+import os,sys,popen2
+#
+if 'DIRACROOT' in os.environ:
+  DiracRoot = os.environ['DIRACROOT']
+else:
+  DiracRoot = os.path.dirname(os.path.dirname( os.path.realpath( sys.argv[0] ) ))
+if 'DIRACPLAT' in os.environ:
+  DiracPlatform = os.environ['DIRACPLAT']
+else:
+  dirac_platform = os.path.join(DiracRoot,"scripts","platform.py")
+  if not os.path.exists( dirac_platform ):
+    print >> sys.stderr, "Missing file %s" % dirac_platform
+    sys.exit(-1)
+  p3 = popen2.Popen3( dirac_platform )
+  DiracPlatform = p3.fromchild.read().strip()
+  p3.wait()
+  if not DiracPlatform or DiracPlatform == "ERROR":
+    print >> sys.stderr, "Can not determine local platform"
+    sys.exit(-1)
+DiracPath        = '%s' % ( os.path.join(DiracRoot,DiracPlatform,'bin'), )
+DiracLibraryPath = '%s' % ( os.path.join(DiracRoot,DiracPlatform,'lib'), )
+DiracPythonPath  = '%s' % ( os.path.join(DiracRoot,'scripts'), )
+
+os.environ['PATH'] = '%s:%s' % ( DiracPath, os.environ['PATH'] )
+
+if 'LD_LIBRARY_PATH' not in os.environ:
+  os.environ['LD_LIBRARY_PATH'] = DiracLibraryPath
+else:
+  os.environ['LD_LIBRARY_PATH'] = '%s:%s' % ( DiracLibraryPath, os.environ['LD_LIBRARY_PATH'] )
+
+if 'PYTHONPATH' not in os.environ:
+  os.environ['PYTHONPATH'] = DiracPythonPath
+else:
+  os.environ['PYTHONPATH'] = '%s:%s' % ( DiracPythonPath, os.environ['PYTHONPATH'] )
+
+DiracScript = os.path.join( DiracRoot, 'DIRAC', '$orgfile' )
+
+if sys.argv[1:]:
+  args = ' "%s"' % '" "'.join( sys.argv[1:] )
+else:
+  args = ''
+sys.exit( os.system('python "%s"%s' % ( DiracScript, args )  ) / 256 )
+EOF
+    chmod 755 $dstfile
+    # cp --remove-destination -dp $file $DIRACscripts/`echo $file | sed 's:^.*/::g' | sed 's/\.[a-z]*$//g'`   || exit 1
+  done
+done
+#
+# Compile all python files .py -> .pyc
+#
+#python << EOF                                          || exit 1
+#from compileall import compile_dir
+#compile_dir( ".", force=1 )
+#EOF
+if [ -d ../LHCbSystem ] ; then
+  for file in ../LHCbSystem/Environments/*.sh ; do
+    cp -fPp $file $DIRACdir/scripts
+  done
+  for file in ../LHCbSystem/Environments/*.csh ; do
+    cp -fPp $file $DIRACdir/scripts
+    chmod -x $DIRACdir/scripts/`basename $file`
+  done
+elif [ -d LHCbSystem ] ; then
+  for file in LHCbSystem/Environments/*.sh ; do
+    cp -fPp $file $DIRACdir/scripts
+  done
+  for file in LHCbSystem/Environments/*.csh ; do
+    cp -fPp $file $DIRACdir/scripts
+    chmod -x $DIRACdir/scripts/`basename $file`
+  done
+fi
+if [ -d LHCbSystem -a ! -z "$removeFlag" ] ; then
+  rm -rf LHCbSystem
+fi
+)

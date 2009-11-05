@@ -1,0 +1,28 @@
+#!/bin/bash
+#
+#$Header$
+#
+# preliminary version to prepare external package needed for DIRAC3
+# 
+# __RCSID__='Id$'
+basedir=`readlink -f $0`
+basedir=`dirname $basedir`
+#
+DIRACdir=`readlink -f $basedir/..`
+DIRACscripts=$DIRACdir/scripts
+#
+(
+cd $basedir
+#
+# Remove all scripts from the common scripts directory
+#
+for dir in `find . -type d -name scripts` ; do
+  for script in `find $dir -maxdepth 1 -type f ` ; do
+    rm -f $DIRACscripts\`basename $script`    || exit 1
+  done
+done
+#
+# Remove all python .pyc files
+#
+find . -name "*.pyc" -exec rm -f {} \;        || exit 1
+)
