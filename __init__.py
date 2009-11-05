@@ -1,4 +1,4 @@
-# $Header$
+# $HeaderURL$
 """
    DIRAC - Distributed Infrastructure with Remote Agent Control
 
