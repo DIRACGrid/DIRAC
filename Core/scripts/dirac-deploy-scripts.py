@@ -29,7 +29,7 @@ else:
   if not os.path.exists( dirac_platform ):
     print >> sys.stderr, "Missing file %s" % dirac_platform
     sys.exit(-1)
-  p3 = popen2.Popen3( dirac_platform )
+  p3 = popen2.Popen3( "'%s'" % dirac_platform )
   DiracPlatform = p3.fromchild.read().strip()
   p3.wait()
   if not DiracPlatform or DiracPlatform == "ERROR":
