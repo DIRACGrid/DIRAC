@@ -12,7 +12,7 @@ import stat
 moduleSuffix = "DIRAC"
 defaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH  
 excludeMask = [ os.path.basename( __file__ ) ]
-print excludeMask
+simpleCopyMask = [ 'dirac-platform.py' ]
 
 wrapperTemplate = """#!/usr/bin/env python
 #
@@ -95,7 +95,7 @@ for rootModule in os.listdir( rootPath ):
     if scriptName in excludeMask:
       continue
     scriptLen = len( scriptName )
-    if scriptName.find( ".py" ) == scriptLen - 3 and scriptName.find( "dirac-" ) == 0:
+    if scriptName not in simpleCopyMask and scriptName.find( ".py" ) == scriptLen - 3 and scriptName.find( "dirac-" ) == 0:
       fakeScriptPath = os.path.join( targetScriptsPath, scriptName[:-3] )
       fd = open( fakeScriptPath, "w" )
       fd.write( wrapperTemplate.replace( '$SCRIPTLOCATION$', scriptPath ) )
