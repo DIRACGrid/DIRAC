@@ -25,7 +25,7 @@ else:
 if 'DIRACPLAT' in os.environ:
   DiracPlatform = os.environ['DIRACPLAT']
 else:
-  dirac_platform = os.path.join(DiracRoot,"scripts","platform.py")
+  dirac_platform = os.path.join(DiracRoot,"scripts","dirac-platform.py")
   if not os.path.exists( dirac_platform ):
     print >> sys.stderr, "Missing file %s" % dirac_platform
     sys.exit(-1)
