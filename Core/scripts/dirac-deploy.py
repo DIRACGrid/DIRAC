@@ -1,3 +1,4 @@
+#!/usr/bin/env python 
 # $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/WorkloadManagementSystem/Agent/JobCleaningAgent.py $
 """
 Deploy all scripts and extensions
