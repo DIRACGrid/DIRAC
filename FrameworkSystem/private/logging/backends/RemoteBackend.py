@@ -62,7 +62,7 @@ class RemoteBackend( BaseBackend, threading.Thread ):
       TransactionsLength = 100
 
     try:
-      oSock = RPCClient( "Logging/SystemLogging" )
+      oSock = RPCClient( "Framework/SystemLogging" )
     except Exception,v:
       return False
 
