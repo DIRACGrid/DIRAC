@@ -24,7 +24,7 @@ if len( positionalArgs ) == 0:
 serverName = positionalArgs[0]
 localCfg.setConfigurationForServer( serverName )
 localCfg.addMandatoryEntry( "Port" )
-localCfg.addMandatoryEntry( "HandlerPath" )
+#localCfg.addMandatoryEntry( "HandlerPath" )
 localCfg.addMandatoryEntry( "/DIRAC/Setup" )
 localCfg.addDefaultEntry( "/DIRAC/Security/UseServerCertificate", "yes" )
 resultDict = localCfg.loadUserData()
