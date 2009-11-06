@@ -3,7 +3,7 @@ __RCSID__ = "$Id$"
 
 import GSI
 import threading
-from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 class ThreadSafeSSLObject:
   cLock = threading.RLock()

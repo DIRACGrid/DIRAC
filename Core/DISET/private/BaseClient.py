@@ -6,7 +6,7 @@ import types
 import thread
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
-from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig

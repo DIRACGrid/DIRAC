@@ -1,6 +1,6 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
-from DIRAC.LoggingSystem.private.Logger import Logger
+from DIRAC.FrameworkSystem.private.logging.Logger import Logger
 
 gLogger = Logger()
 def getLogger():

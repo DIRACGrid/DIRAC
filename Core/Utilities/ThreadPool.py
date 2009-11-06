@@ -9,7 +9,7 @@ import sys
 import Queue
 import threading
 try:
-  from DIRAC.LoggingSystem.Client.Logger import gLogger
+  from DIRAC.FrameworkSystem.Client.Logger import gLogger
 except:
   gLogger = False
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR

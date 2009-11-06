@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 import sys
 import os.path
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
-from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
 
 localCfg = LocalConfiguration()

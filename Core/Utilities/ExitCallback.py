@@ -26,7 +26,7 @@ def execute( exitCode, frame ):
     try:
       callback( exitCode )
     except:
-      from DIRAC.LoggingSystem.Client.Logger import gLogger
+      from DIRAC.FrameworkSystem.Client.Logger import gLogger
       gLogger.exception( "Exception while calling callback" )
   os._exit( exitCode )
 

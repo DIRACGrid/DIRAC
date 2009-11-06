@@ -49,7 +49,7 @@ from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfigurati
 from DIRAC.Core.Base.Agent                               import createAgent
 from DIRAC.Core.Security.X509Chain                       import X509Chain
 from DIRAC.Core.Security                                 import Locations, CS
-from DIRAC.LoggingSystem.Client.LoggerClient             import LoggerClient
+from DIRAC.FrameworkSystem.Client.LoggerClient           import LoggerClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC                                               import gConfig, gLogger, S_OK, S_ERROR
 

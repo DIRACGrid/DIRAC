@@ -1,5 +1,5 @@
 import sys
-from DIRAC.LoggingSystem.private.backends.BaseBackend import BaseBackend
+from DIRAC.FrameworkSystem.private.logging.backends.BaseBackend import BaseBackend
 
 class StdErrBackend( BaseBackend ):
 

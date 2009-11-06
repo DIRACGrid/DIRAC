@@ -12,8 +12,8 @@ from types import *
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.Time import dateTime, toString, hour, second, minute
-from DIRAC.LoggingSystem.private.Message import tupleToMessage
-from DIRAC.LoggingSystem.DB.SystemLoggingDB import SystemLoggingDB
+from DIRAC.FrameworkSystem.private.logging.Message import tupleToMessage
+from DIRAC.FrameworkSystem.DB.SystemLoggingDB import SystemLoggingDB
 
 DIRAC.gLogger.initialize('fill_DB','/testSectionDebug')
 

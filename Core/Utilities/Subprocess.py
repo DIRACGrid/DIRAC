@@ -33,7 +33,7 @@ __RCSID__ = "$Id$"
 # from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 # from DIRAC import gLogger
-from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import DEncode
 
 import time

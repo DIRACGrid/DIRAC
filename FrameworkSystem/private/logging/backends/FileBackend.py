@@ -2,7 +2,7 @@
 __RCSID__ = "$Id$"
 """  This backend writes the log messages to a file
 """
-from DIRAC.LoggingSystem.private.backends.BaseBackend import BaseBackend
+from DIRAC.FrameworkSystem.private.logging.backends.BaseBackend import BaseBackend
 
 class FileBackend( BaseBackend ):
   def __init__( self, optionsDictionary ):

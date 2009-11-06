@@ -10,7 +10,7 @@ __VERSION__ = "$Revision: 1.7 $"
 import sys
 from DIRACEnvironment import DIRAC
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
-from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.Server import Server
 
 localCfg = LocalConfiguration()

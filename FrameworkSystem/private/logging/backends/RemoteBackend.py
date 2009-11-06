@@ -7,8 +7,8 @@ and ALWAYS messages.
 import threading
 import Queue
 from DIRAC.Core.Utilities import Time, Network
-from DIRAC.LoggingSystem.private.backends.BaseBackend import BaseBackend
-from DIRAC.LoggingSystem.private.LogLevels import LogLevels
+from DIRAC.FrameworkSystem.private.logging.backends.BaseBackend import BaseBackend
+from DIRAC.FrameworkSystem.private.logging.LogLevels import LogLevels
 
 class RemoteBackend( BaseBackend, threading.Thread ):
 

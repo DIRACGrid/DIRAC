@@ -1,7 +1,7 @@
 from DIRACEnvironment import DIRAC
 from DIRAC import gLogger
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.LoggingSystem.Client.LoggerClient import LoggerClient
+from DIRAC.FrameworkSystem.Client.LoggerClient import LoggerClient
 
 
 LClient = LoggerClient()

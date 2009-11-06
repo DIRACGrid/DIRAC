@@ -12,8 +12,8 @@ SystemLoggingHandler is the implementation of the Logging service
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.LoggingSystem.private.Message import tupleToMessage
-from DIRAC.LoggingSystem.DB.SystemLoggingDB import SystemLoggingDB
+from DIRAC.FrameworkSystem.private.logging.Message import tupleToMessage
+from DIRAC.FrameworkSystem.DB.SystemLoggingDB import SystemLoggingDB
 
 def initializeSystemLoggingHandler( serviceInfo ):
 

@@ -9,7 +9,7 @@ import cStringIO
 import tarfile
 import tempfile
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 gLogger = gLogger.getSubLogger( "FileTransmissionHelper" )
 

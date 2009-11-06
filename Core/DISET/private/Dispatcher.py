@@ -3,7 +3,7 @@ __RCSID__ = "$Id$"
 
 import os
 import DIRAC
-from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.private.LockManager import LockManager
 from DIRAC.Core.Utilities import List, Time
 from DIRAC.Core.DISET.AuthManager import AuthManager

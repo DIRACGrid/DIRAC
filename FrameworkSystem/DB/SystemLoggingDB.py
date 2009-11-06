@@ -19,7 +19,7 @@ from types                                     import *
 from DIRAC                                     import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import Time, dateTime, hour, date, week, day, fromString, toString
-from DIRAC.LoggingSystem.private.LogLevels import LogLevels
+from DIRAC.FrameworkSystem.private.logging.LogLevels import LogLevels
 
 DEBUG = 1
 
@@ -32,7 +32,7 @@ class SystemLoggingDB(DB):
   def __init__( self, maxQueueSize=10 ):
     """ Standard Constructor
     """
-    DB.__init__( self, 'SystemLoggingDB', 'Logging/SystemLoggingDB',
+    DB.__init__( self, 'SystemLoggingDB', 'Framework/SystemLoggingDB',
                  maxQueueSize)
 
   def _query( self, cmd, conn=False ):

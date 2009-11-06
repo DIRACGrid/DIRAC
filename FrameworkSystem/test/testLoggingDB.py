@@ -1,7 +1,7 @@
 """  This program tests that the Logging DB can be actually queried from DIRAC 
 """
 from dirac import DIRAC
-from DIRAC.LoggingSystem.DB.SystemLoggingDB import SystemLoggingDB
+from DIRAC.FrameworkSystem.DB.SystemLoggingDB import SystemLoggingDB
 
 DBpoint=SystemLoggingDB()
 

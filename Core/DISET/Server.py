@@ -17,7 +17,7 @@ from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import Network, Time
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
-from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Security import CS
 

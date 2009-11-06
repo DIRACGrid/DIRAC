@@ -69,7 +69,7 @@ from DIRAC.Core.Utilities import *
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 #Logger
-from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 #Configuration client
 from DIRAC.ConfigurationSystem.Client.Config import gConfig

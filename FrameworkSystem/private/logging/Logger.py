@@ -11,10 +11,10 @@ import os.path
 import re
 import inspect
 import Queue
-from DIRAC.LoggingSystem.private.LogLevels import LogLevels
-from DIRAC.LoggingSystem.private.Message import Message
+from DIRAC.FrameworkSystem.private.logging.LogLevels import LogLevels
+from DIRAC.FrameworkSystem.private.logging.Message import Message
 from DIRAC.Core.Utilities import Time, List
-from DIRAC.LoggingSystem.private.backends.BackendIndex import gBackendIndex
+from DIRAC.FrameworkSystem.private.logging.backends.BackendIndex import gBackendIndex
 from DIRAC.Core.Utilities import ExitCallback, ColorCLI
 import DIRAC
 
@@ -295,7 +295,7 @@ class Logger:
       self._backendsDict[ backend ].flush()
 
   def getSubLogger( self, subName, child = True ):
-    from DIRAC.LoggingSystem.private.SubSystemLogger import SubSystemLogger
+    from DIRAC.FrameworkSystem.private.logging.SubSystemLogger import SubSystemLogger
     if not subName in self._subLoggersDict.keys():
       self._subLoggersDict[ subName ] = SubSystemLogger( subName, self, child )
     return self._subLoggersDict[ subName ]

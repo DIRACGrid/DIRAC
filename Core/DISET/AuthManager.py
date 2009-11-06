@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 import types
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Security import CS
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities import List

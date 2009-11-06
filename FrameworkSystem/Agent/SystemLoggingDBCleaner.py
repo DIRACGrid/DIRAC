@@ -8,7 +8,7 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC  import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
-from DIRAC.LoggingSystem.DB.SystemLoggingDB import SystemLoggingDB
+from DIRAC.FrameworkSystem.DB.SystemLoggingDB import SystemLoggingDB
 from DIRAC.Core.Utilities import dateTime, toString, day
 
 

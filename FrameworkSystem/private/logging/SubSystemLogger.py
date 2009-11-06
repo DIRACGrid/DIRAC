@@ -1,9 +1,9 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 import types
-from DIRAC.LoggingSystem.private.LogLevels import LogLevels
-from DIRAC.LoggingSystem.private.Message import Message
-from DIRAC.LoggingSystem.Client.Logger import Logger
+from DIRAC.FrameworkSystem.private.logging.LogLevels import LogLevels
+from DIRAC.FrameworkSystem.private.logging.Message import Message
+from DIRAC.FrameworkSystem.Client.Logger import Logger
 
 class SubSystemLogger( Logger ):
 

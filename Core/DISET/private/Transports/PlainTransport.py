@@ -5,7 +5,7 @@ import socket
 import select
 import time
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
-from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 
 class PlainTransport( BaseTransport ):
