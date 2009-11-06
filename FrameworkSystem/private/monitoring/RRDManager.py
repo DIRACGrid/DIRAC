@@ -5,7 +5,7 @@ import os.path
 import md5
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
-from DIRAC.MonitoringSystem.private.ColorGenerator import ColorGenerator
+from DIRAC.FrameworkSystem.private.monitoring.ColorGenerator import ColorGenerator
 from DIRAC.Core.Utilities import Subprocess, Time
 
 class RRDManager:
@@ -20,7 +20,7 @@ class RRDManager:
     self.rrdLocation = rrdLocation
     self.graphLocation = graphLocation
     self.log = gLogger.getSubLogger( "RRDManager" )
-    self.rrdExec = gConfig.getValue( "%s/RRDExec" % getServiceSection( "Monitoring/Server" ), "rrdtool" )
+    self.rrdExec = gConfig.getValue( "%s/RRDExec" % getServiceSection( "Framework/Monitoring" ), "rrdtool" )
     for path in ( self.rrdLocation, self.graphLocation ):
       try:
         os.makedirs( path )

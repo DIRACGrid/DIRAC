@@ -19,7 +19,7 @@ class ComponentMonitoringDB(DB):
   def __init__(self, requireVoms = False,
                useMyProxy = False,
                maxQueueSize = 10 ):
-    DB.__init__(self,'ComponentMonitoringDB','Monitoring/ComponentMonitoringDB',maxQueueSize)
+    DB.__init__(self,'ComponentMonitoringDB','Framework/ComponentMonitoringDB',maxQueueSize)
     random.seed()
     retVal = self.__initializeDB()
     if not retVal[ 'OK' ]:

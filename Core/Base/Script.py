@@ -5,7 +5,7 @@ import sys
 import os.path
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 localCfg = LocalConfiguration()
 

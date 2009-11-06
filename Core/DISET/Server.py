@@ -18,7 +18,7 @@ from DIRAC.Core.Utilities import Network, Time
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Security import CS
 
 gTransportControlSync = Synchronizer()

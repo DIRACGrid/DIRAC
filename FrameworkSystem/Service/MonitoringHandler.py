@@ -5,13 +5,13 @@ import os
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import DEncode, Time
-from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.MonitoringSystem.private.ServiceInterface import gServiceInterface
+from DIRAC.FrameworkSystem.private.monitoring.ServiceInterface import gServiceInterface
 
 def initializeMonitoringHandler( serviceInfo ):
   #Check that the path is writable
-  monitoringSection = PathFinder.getServiceSection( "Monitoring/Server" )
+  monitoringSection = PathFinder.getServiceSection( "Framework/Monitoring" )
   #Get data location
   dataPath = gConfig.getValue( "%s/DataLocation" % monitoringSection, "data/monitoring" )
   dataPath = dataPath.strip()

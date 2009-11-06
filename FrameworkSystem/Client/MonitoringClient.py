@@ -8,7 +8,7 @@ import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities import Time, ExitCallback, Network, ThreadScheduler
-from DIRAC.MonitoringSystem.private.ServiceInterface import gServiceInterface
+from DIRAC.FrameworkSystem.private.monitoring.ServiceInterface import gServiceInterface
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class MonitoringFlusher:
@@ -276,7 +276,7 @@ class MonitoringClient:
       rpcClient = gServiceInterface
     else:
       self.logger.debug( "Creating RPC client" )
-      rpcClient = RPCClient( "Monitoring/Server", timeout = secsTimeout )
+      rpcClient = RPCClient( "Framework/Monitoring", timeout = secsTimeout )
     #Send registrations
     if not self.__sendRegistration( rpcClient ):
       return False
@@ -340,7 +340,7 @@ class MonitoringClient:
     self.flush( allData = True )
 
   def getComponentsStatus( self, condDict ):
-    rpcClient = RPCClient( "Monitoring/Server", timeout = 100 )
+    rpcClient = RPCClient( "Framework/Monitoring", timeout = 100 )
     return rpcClient.getComponentsStatus( condDict )
 
   def __filterComponent( self, component, condDict ):

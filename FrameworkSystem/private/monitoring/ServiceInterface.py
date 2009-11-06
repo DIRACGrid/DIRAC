@@ -2,7 +2,7 @@
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC import gLogger
-from DIRAC.MonitoringSystem.private.RRDManager import RRDManager
+from DIRAC.FrameworkSystem.private.monitoring.RRDManager import RRDManager
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, List
 
@@ -27,7 +27,7 @@ class ServiceInterface:
     """
     Creates a Monitoring catalog connector
     """
-    from DIRAC.MonitoringSystem.private.MonitoringCatalog import MonitoringCatalog
+    from DIRAC.FrameworkSystem.private.monitoring.MonitoringCatalog import MonitoringCatalog
     return MonitoringCatalog( self.dataPath )
 
   def serviceRunning( self ):
@@ -40,8 +40,8 @@ class ServiceInterface:
     """
     Initialize monitoring server
     """
-    from DIRAC.MonitoringSystem.private.PlotCache import PlotCache
-    from DIRAC.MonitoringSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
+    from DIRAC.FrameworkSystem.private.monitoring.PlotCache import PlotCache
+    from DIRAC.FrameworkSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
 
     self.dataPath = dataPath
     self.plotCache = PlotCache( RRDManager( self.rrdPath, self.plotsPath ) )

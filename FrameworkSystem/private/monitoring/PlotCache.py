@@ -9,8 +9,8 @@ import threading
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
-from DIRAC.MonitoringSystem.private.RRDManager import RRDManager
-from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
+from DIRAC.FrameworkSystem.private.monitoring.RRDManager import RRDManager
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 
 gSynchro = Synchronizer()

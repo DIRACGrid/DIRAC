@@ -9,7 +9,7 @@ import md5
 import time
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.MonitoringSystem.private.Activity import Activity
+from DIRAC.FrameworkSystem.private.monitoring.Activity import Activity
 from DIRAC.Core.Utilities import Time
 
 class MonitoringCatalog:

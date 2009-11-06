@@ -16,8 +16,8 @@ class SiteMapClient:
 
   def __getRPCClient( self ):
     if self.getRPCClient:
-      return self.getRPCClient( "Monitoring/SiteMap" )
-    return RPCClient( "Monitoring/SiteMap" )
+      return self.getRPCClient( "Framework/SiteMap" )
+    return RPCClient( "Framework/SiteMap" )
   
   ###########################################################################  
   def getSitesData( self ):

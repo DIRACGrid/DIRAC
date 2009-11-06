@@ -75,7 +75,7 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 #Monitoring client
-from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 # Some Defaults if not present in the configuration
 FQDN = getFQDN()

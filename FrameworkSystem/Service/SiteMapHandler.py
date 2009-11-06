@@ -43,7 +43,7 @@ class SiteMapData( threading.Thread ):
     if csSection:
       self.csSection = csSection
     else:
-      self.csSection = PathFinder.getServiceSection( "Monitoring/SiteMap" )
+      self.csSection = PathFinder.getServiceSection( "Framework/SiteMap" )
     self.refreshPeriod = self._getCSValue( "RefreshPeriod", 300 )
     self.gridsToMap = []
     self.history = []

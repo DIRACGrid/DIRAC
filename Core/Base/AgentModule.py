@@ -23,7 +23,7 @@ import time
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
+from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities import Time
 

@@ -8,9 +8,9 @@ from DIRAC.Core.DISET.private.LockManager import LockManager
 from DIRAC.Core.Utilities import List, Time
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
+from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
-from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 class Dispatcher:

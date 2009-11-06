@@ -26,7 +26,7 @@ from DIRAC  import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getAgentSection
 from DIRAC.Core.Utilities.Subprocess import pythonCall
-from DIRAC.MonitoringSystem.Client.MonitoringClient import gMonitor
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
 class Agent:
