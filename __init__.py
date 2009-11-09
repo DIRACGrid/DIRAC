@@ -42,17 +42,17 @@ buildVersion = "v%dr%d build %d" % ( majorVersion, minorVersion, patchLevel )
 # Check of python version
 
 __pythonMajorVersion = ["2",]
-__pythonMinorVersion = ["4","5"]
+__pythonMinorVersion = ["4","5","6"]
 
-if not ( __pythonMajorVersion.__contains__( platform.python_version_tuple()[0] ) and
-         __pythonMinorVersion.__contains__( platform.python_version_tuple()[1] ) ):
-  print "Python Version %s not supported by DIRAC" % platform.python_version()
-  print "Supported versions are: "
-  for major in __pythonMajorVersion:
-    for minor in __pythonMinorVersion:
-      print "%s.%s.x" % ( major, minor )
-
-  sys.exit(-1)
+#if not ( __pythonMajorVersion.__contains__( platform.python_version_tuple()[0] ) and
+#         __pythonMinorVersion.__contains__( platform.python_version_tuple()[1] ) ):
+#  print "Python Version %s not supported by DIRAC" % platform.python_version()
+#  print "Supported versions are: "
+#  for major in __pythonMajorVersion:
+#    for minor in __pythonMinorVersion:
+#      print "%s.%s.x" % ( major, minor )
+#
+#  sys.exit(-1)
 
 errorMail = "dirac.alarms@gmail.com"
 alarmMail = "dirac.alarms@gmail.com"
