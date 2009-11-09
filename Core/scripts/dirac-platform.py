@@ -5,6 +5,7 @@ __RCSID__ = "$Id: JobCleaningAgent.py 18064 2009-11-05 19:40:01Z acasajus $"
 
 import platform
 import sys
+import os
 
 ### Command line interface
 
