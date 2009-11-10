@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/WorkloadManagementSystem/Agent/JobCleaningAgent.py $
+# $HeadURL$
 """
 Compile the externals
 """
