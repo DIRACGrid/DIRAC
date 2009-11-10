@@ -17,10 +17,10 @@ svnPublicRoot = "http://svnweb.cern.ch/guest/dirac/Externals/%s"
 tarWebRoot = "http://svnweb.cern.ch/world/wsvn/dirac/Externals/%s/?op=dl&rev=0&isdir=1"
 
 compilationTypes = { 'client' : [ 'pythonRequirements', 
-                                  'Python-$PYTHONVERSION%', 
+                                  'Python-$PYTHONVERSION$', 
                                   'pyGSI', 'runit', 'ldap' ],
                      'server' : [ 'pythonRequirements', 
-                                  'Python-$PYTHONVERSION%', 
+                                  'Python-$PYTHONVERSION$', 
                                   'pyGSI', 'runit', 'ldap',
                                   'MySQL', 'MySQL-python',
                                   'Pylons', 'pyPlotTools',
