@@ -3,7 +3,7 @@
 """
 Deploy all scripts and extensions
 """
-__RCSID__ = "$Id: JobCleaningAgent.py 18064 2009-11-05 19:40:01Z acasajus $"
+__RCSID__ = "$Id$"
 
 import os
 import shutil
@@ -12,7 +12,7 @@ import stat
 moduleSuffix = "DIRAC"
 defaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH  
 excludeMask = [ os.path.basename( __file__ ) ]
-simpleCopyMask = [ 'dirac-platform.py' ]
+simpleCopyMask = [ 'dirac-platform.py', 'dirac-compile-externals.py' ]
 
 wrapperTemplate = """#!/usr/bin/env python
 #
