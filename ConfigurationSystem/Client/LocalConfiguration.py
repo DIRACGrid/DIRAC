@@ -31,7 +31,7 @@ class LocalConfiguration:
     self.loggingSection = "/DIRAC"
     self.initialized = False
     self.csDisabled = False
-    self.csDisabledServers = False
+    self.csDisabledServers = ""
 
   def __getAbsolutePath( self, optionPath ):
     if optionPath[0] == "/":
@@ -206,7 +206,9 @@ class LocalConfiguration:
     errorsList = self.__loadCFGFiles()
 
     if self.csDisabled:
-      self.csDisabledServers = gConfigurationData.extractOptionFromCFG( "/DIRAC/Configuration/Servers" )
+      newDisabledServers = gConfigurationData.extractOptionFromCFG( "/DIRAC/Configuration/Servers" )
+      if newDisabledServers:
+        self.csDisabledServers = newDisabledServers
       gConfigurationData.deleteLocalOption( "/DIRAC/Configuration/Servers" )
 
     if gConfigurationData.getServers():
@@ -247,6 +249,12 @@ class LocalConfiguration:
               errorsList.append( retVal[ 'Message' ] )
           else:
             self.unprocessedSwitches.append( ( optionName, optionValue ) )
+
+    if self.csDisabled:
+      newDisabledServers = gConfigurationData.extractOptionFromCFG( "/DIRAC/Configuration/Servers" )
+      if newDisabledServers and not newDisabledServers == self.csDisabledServers:
+        self.csDisabledServers = "%s, %s" %( self.csDisabledServers, newDisabledServers )
+      gConfigurationData.deleteLocalOption( "/DIRAC/Configuration/Servers" )
 
     if len( errorsList ) > 0:
       return S_ERROR( "\n%s" % "\n".join( errorsList ) )
