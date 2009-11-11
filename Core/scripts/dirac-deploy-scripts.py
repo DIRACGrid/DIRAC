@@ -37,7 +37,7 @@ else:
     sys.exit(-1)
 DiracPath        = '%s' % ( os.path.join(DiracRoot,DiracPlatform,'bin'), )
 DiracLibraryPath = '%s' % ( os.path.join(DiracRoot,DiracPlatform,'lib'), )
-DiracPythonPath  = '%s' % ( os.path.join(DiracRoot,'scripts'), )
+DiracPythonPath  = '%s' % ( DiracRoot, )
 
 os.environ['PATH'] = '%s:%s' % ( DiracPath, os.environ['PATH'] )
 
