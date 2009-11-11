@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from DIRACEnvironment                                        import DIRAC
+import DIRAC
 from DIRAC.Core.Base                                         import Script
 
 Script.registerSwitch( "h:", "host=", "BDII host" )

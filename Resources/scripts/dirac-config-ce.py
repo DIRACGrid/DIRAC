@@ -6,7 +6,7 @@
 ########################################################################
 __RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
-from DIRACEnvironment import DIRAC
+import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC import S_OK, gConfig, gLogger
 

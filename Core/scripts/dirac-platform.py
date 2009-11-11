@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/WorkloadManagementSystem/Agent/JobCleaningAgent.py $
+# $HeadURL$
 
-__RCSID__ = "$Id: JobCleaningAgent.py 18064 2009-11-05 19:40:01Z acasajus $"
+__RCSID__ = "$Id$"
 
 import platform
 import sys

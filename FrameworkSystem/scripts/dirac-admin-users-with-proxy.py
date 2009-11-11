@@ -7,7 +7,7 @@
 __RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.2 $"
 import os
-from DIRACEnvironment import DIRAC
+import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Core.Security import CS

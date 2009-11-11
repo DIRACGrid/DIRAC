@@ -12,7 +12,7 @@ __VERSION__ = "$Revision: 1.3 $"
     this script is the Job Wrapper.
 """
 
-from DIRACEnvironment import DIRAC
+import DIRAC
 from DIRAC.Core.Base import Script
 
 from DIRAC.Core.Workflow.Parameter import *

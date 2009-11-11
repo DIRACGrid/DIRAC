@@ -10,7 +10,7 @@ __VERSION__ = "$Revision: 1.3 $"
 """  This is a script to fix oversized LD_LIBRARY_PATH variables.
 """
 import sys,os,shutil,string,re
-from DIRACEnvironment import DIRAC
+import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.Os import uniquePath
 from DIRAC.Core.Utilities.Subprocess import shellCall

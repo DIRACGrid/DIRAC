@@ -19,7 +19,7 @@ import sys
 import os
 import getpass
 import imp
-from DIRACEnvironment import DIRAC
+import DIRAC
 from DIRAC.Core.Base import Script
 
 from DIRAC.FrameworkSystem.Client.ProxyGeneration import CLIParams, generateProxy

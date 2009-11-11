@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/WorkloadManagementSystem/Agent/JobCleaningAgent.py $
+# $HeadURL$
 """
   Main script to write dirac.cfg for a new DIRAC installation.
   To be used by VO specific scripts to configure new DIRAC installations
@@ -13,9 +13,9 @@
   Example: dirac-configure -d -S LHCb-Development -C 'dips://lhcbprod.pic.es:9135/Configuration/Server' -W 'dips://lhcbprod.pic.es:9135' --SkipCAChecks
 
 """
-__RCSID__ = "$Id: JobCleaningAgent.py 18064 2009-11-05 19:40:01Z acasajus $"
+__RCSID__ = "$Id$"
 
-# from DIRACEnvironment                                        import DIRAC
+import DIRAC
 import DIRAC
 from DIRAC.Core.Base                                         import Script
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration     import LocalConfiguration

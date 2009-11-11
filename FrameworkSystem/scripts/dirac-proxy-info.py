@@ -9,7 +9,7 @@ __VERSION__ = "$Revision: 1.10 $"
 
 import sys
 import os.path
-from DIRACEnvironment import DIRAC
+import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.NTP import getClockDeviation
 

@@ -11,7 +11,7 @@ __VERSION__ = "$Revision: 1.2 $"
 """
 
 import sys
-from DIRACEnvironment import DIRAC
+import DIRAC
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC import gLogger, gConfig
 from DIRAC.Core.Base.AgentReactor import AgentReactor

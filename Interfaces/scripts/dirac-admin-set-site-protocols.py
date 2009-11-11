@@ -6,7 +6,7 @@
 ########################################################################
 __RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
-from DIRACEnvironment import DIRAC
+import DIRAC
 from DIRAC.Core.Base import Script
 
 Script.registerSwitch( "", "Site=", "Site for which protocols are to be set (protocols are standard arguments)" )

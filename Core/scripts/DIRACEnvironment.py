@@ -1,9 +1,9 @@
 ########################################################################
-# $HeadURL$
-# File :   DIRACEnvironment.py
+import DIRAC
+import DIRAC
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id$"
+import DIRAC
 __VERSION__ = "$Revision: 1.3 $"
 """
    Magic file to be imported by all python scripts to properly discover and 

@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 
 import cmd
 import sys
-import DIRACEnvironment
+import DIRAC
 from DIRAC import gLogger
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities import ExitCallback, ColorCLI

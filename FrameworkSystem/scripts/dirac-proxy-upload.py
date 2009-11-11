@@ -8,7 +8,7 @@ __RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.4 $"
 
 import sys
-from DIRACEnvironment import DIRAC
+import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyUpload import CLIParams, uploadProxy
 
