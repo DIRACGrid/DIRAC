@@ -16,7 +16,6 @@
 __RCSID__ = "$Id$"
 
 import DIRAC
-import DIRAC
 from DIRAC.Core.Base                                         import Script
 
 import sys
@@ -67,6 +66,12 @@ def setSiteName( optionValue ):
   return DIRAC.S_OK()
 
 
+def setCEName( optionValue ):
+  global ceName
+  ceName = optionValue
+  return DIRAC.S_OK()
+
+
 def setServerCert( optionValue ):
   global useServerCert
   useServerCert = True
@@ -98,6 +103,7 @@ Script.disableCS()
 Script.registerSwitch( "S:", "Setup=",                "Set <setup> as DIRAC setup", setSetup )
 Script.registerSwitch( "C:", "ConfigurationServer=",  "Set <server> as DIRAC configuration server", setServer )
 Script.registerSwitch( "N:", "SiteName=",             "Set <sitename> as DIRAC Site Name", setSiteName )
+Script.registerSwitch( "n:", "CEName=",               "Determiner <sitename> from <cename>", setCEName )
 
 Script.registerSwitch( "W:", "gateway=",              "Configure <gateway> as DIRAC Gateway for the site", setGateway )
 
@@ -137,6 +143,7 @@ else:
   grids = gridSections['Value']
 
 for grid in grids:  
+  print grid
   siteSections = DIRAC.gConfig.getSections('/Resources/Sites/%s/' % grid)
   if not siteSections['OK']: 
     DIRAC.gLogger.error('Could not get %s site list' % grid)
@@ -144,27 +151,28 @@ for grid in grids:
   else:
     sites = siteSections['Value']
 
-  #siteName = False
-  #if ceName:
-  #  for site in sites:
-  #    siteCEs = DIRAC.gConfig.getValue('/Resources/Sites/%s/%s/CE' % (grid,site),[])
-  #    if ceName in siteCEs:
-  #      siteName = site
-  #      break
-  #  if siteName:
-  #    break    
-    
+  if not siteName:
+    if ceName:
+      for site in sites:
+        siteCEs = DIRAC.gConfig.getValue('/Resources/Sites/%s/%s/CE' % (grid,site),[])
+        if ceName in siteCEs:
+          siteName = site
+          break
   if siteName:
     DIRAC.gLogger.info(       'Setting /LocalSite/Site = %s' % siteName )
     Script.localCfg.addDefaultEntry( '/LocalSite/Site', siteName )
-    DIRAC.gLogger.info(       'Setting /LocalSite/GridCE = %s' % ceName )
-    Script.localCfg.addDefaultEntry( '/LocalSite/GridCE', ceName )
-
+    DIRAC.__siteName = False
+    if ceName:
+      DIRAC.gLogger.info(       'Setting /LocalSite/GridCE = %s' % ceName )
+      Script.localCfg.addDefaultEntry( '/LocalSite/GridCE', ceName )
     if not localSE:
-      localSE = DIRAC.gConfig.getValue( '/Resources/Sites/LCG/%s/SE' % DIRAC.siteName(), 'None' )
+      localSE = DIRAC.gConfig.getValue( '/Resources/Sites/%s/%s/SE' % ( grid, siteName ), 'None' )
       if not localSE == 'None':
         DIRAC.gLogger.info(       'Setting /LocalSite/LocalSE =', localSE )
         Script.localCfg.addDefaultEntry( '/LocalSite/LocalSE', localSE )
+
+    break    
+
 
 if gatewayServer:
   DIRAC.gLogger.debug(      '/DIRAC/GateWay/%s =' % DIRAC.siteName(), gatewayServer )
