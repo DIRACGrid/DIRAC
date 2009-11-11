@@ -18,12 +18,8 @@ __RCSID__ = "$Id$"
 import DIRAC
 import DIRAC
 from DIRAC.Core.Base                                         import Script
-from DIRAC.ConfigurationSystem.Client.LocalConfiguration     import LocalConfiguration
 
 import sys
-
-localCfg = LocalConfiguration()
-
 
 setup = None
 configurationServer = None
@@ -50,7 +46,7 @@ def setServer( optionValue ):
   global configurationServer
   configurationServer = optionValue
   DIRAC.gLogger.debug(      '/DIRAC/Configuration/Servers =', configurationServer )
-  localCfg.addDefaultEntry( '/DIRAC/Configuration/Servers',   configurationServer )
+  Script.localCfg.addDefaultEntry( '/DIRAC/Configuration/Servers',   configurationServer )
   return DIRAC.S_OK()
 
 
@@ -58,7 +54,7 @@ def setSetup( optionValue ):
   global setup
   setup = optionValue
   DIRAC.gLogger.debug(      '/DIRAC/Setup =', setup )
-  localCfg.addDefaultEntry( '/DIRAC/Setup',   setup )
+  Script.localCfg.addDefaultEntry( '/DIRAC/Setup',   setup )
   return DIRAC.S_OK()
 
 
@@ -66,7 +62,7 @@ def setSiteName( optionValue ):
   global siteName
   siteName = optionValue
   DIRAC.gLogger.debug(      '/LocalSite/Site =', siteName )
-  localCfg.addDefaultEntry( '/LocalSite/Site',   siteName )
+  Script.localCfg.addDefaultEntry( '/LocalSite/Site',   siteName )
   DIRAC.__siteName = False
   return DIRAC.S_OK()
 
@@ -86,7 +82,7 @@ def setSkipCAChecks( optionValue ):
 def setArchitecture( optionValue ):
   architecture = optionValue
   DIRAC.gLogger.debug(      '/LocalSite/Architecture =', architecture )
-  localCfg.addDefaultEntry( '/LocalSite/Architecture',   architecture )
+  Script.localCfg.addDefaultEntry( '/LocalSite/Architecture',   architecture )
   return DIRAC.S_OK()
 
 
@@ -94,10 +90,10 @@ def setLocalSE( optionValue ):
   global localSE
   localSE = optionValue
   DIRAC.gLogger.debug(      '/LocalSite/localSE =', localSE )
-  localCfg.addDefaultEntry( '/LocalSite/localSE',   localSE )
+  Script.localCfg.addDefaultEntry( '/LocalSite/localSE',   localSE )
   return DIRAC.S_OK()
 
-
+Script.disableCS()
 
 Script.registerSwitch( "S:", "Setup=",                "Set <setup> as DIRAC setup", setSetup )
 Script.registerSwitch( "C:", "ConfigurationServer=",  "Set <server> as DIRAC configuration server", setServer )
@@ -113,7 +109,6 @@ Script.registerSwitch("", "LocalSE=",                 "Configure LocalSite/Local
 
 Script.registerSwitch( "d",  "debug",   "Set debug flag", setDebug )
 
-
 Script.parseCommandLine( ignoreErrors = True )
 
 DIRAC.gLogger.info( 'Executing: %s ' % ( ' '.join(sys.argv) ) )
@@ -126,13 +121,13 @@ DIRAC.gLogger.info( 'Checking DIRAC installation at "%s"' % DIRAC.rootPath )
 
 if not useServerCert:
   DIRAC.gLogger.debug(      '/DIRAC/Security/UseServerCertificate =', 'no' )
-  localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate',   'no' )
+  Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate',   'no' )
 
 if skipCAChecks:
   DIRAC.gLogger.debug(      '/DIRAC/Security/SkipCAChecks =', 'yes' )
-  localCfg.addDefaultEntry( '/DIRAC/Security/SkipCAChecks',   'yes' )
+  Script.localCfg.addDefaultEntry( '/DIRAC/Security/SkipCAChecks',   'yes' )
 
-Script.parseCommandLine( ignoreErrors = False )
+Script.enableCS()
 
 gridSections = DIRAC.gConfig.getSections('/Resources/Sites/')
 if not gridSections['OK']:
@@ -149,31 +144,31 @@ for grid in grids:
   else:
     sites = siteSections['Value']
 
-  siteName = False
-  if ceName:
-    for site in sites:
-      siteCEs = DIRAC.gConfig.getValue('/Resources/Sites/%s/%s/CE' % (grid,site),[])
-      if ceName in siteCEs:
-        siteName = site
-        break
-    if siteName:
-      break    
+  #siteName = False
+  #if ceName:
+  #  for site in sites:
+  #    siteCEs = DIRAC.gConfig.getValue('/Resources/Sites/%s/%s/CE' % (grid,site),[])
+  #    if ceName in siteCEs:
+  #      siteName = site
+  #      break
+  #  if siteName:
+  #    break    
     
   if siteName:
     DIRAC.gLogger.info(       'Setting /LocalSite/Site = %s' % siteName )
-    localCfg.addDefaultEntry( '/LocalSite/Site', siteName )
+    Script.localCfg.addDefaultEntry( '/LocalSite/Site', siteName )
     DIRAC.gLogger.info(       'Setting /LocalSite/GridCE = %s' % ceName )
-    localCfg.addDefaultEntry( '/LocalSite/GridCE', ceName )
+    Script.localCfg.addDefaultEntry( '/LocalSite/GridCE', ceName )
 
     if not localSE:
       localSE = DIRAC.gConfig.getValue( '/Resources/Sites/LCG/%s/SE' % DIRAC.siteName(), 'None' )
       if not localSE == 'None':
         DIRAC.gLogger.info(       'Setting /LocalSite/LocalSE =', localSE )
-        localCfg.addDefaultEntry( '/LocalSite/LocalSE', localSE )
+        Script.localCfg.addDefaultEntry( '/LocalSite/LocalSE', localSE )
 
 if gatewayServer:
   DIRAC.gLogger.debug(      '/DIRAC/GateWay/%s =' % DIRAC.siteName(), gatewayServer )
-  localCfg.addDefaultEntry( '/DIRAC/GateWay/%s' % DIRAC.siteName(),   gatewayServer )
+  Script.localCfg.addDefaultEntry( '/DIRAC/GateWay/%s' % DIRAC.siteName(),   gatewayServer )
 
 
 
