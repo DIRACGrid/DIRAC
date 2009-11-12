@@ -25,7 +25,8 @@ def parseCommandLine( script = False, ignoreErrors = False, initializeMonitor = 
     if not scriptName:
       scriptName = os.path.basename( sys.argv[0] )
     scriptSection = localCfg.setConfigurationForScript( scriptName )
-  localCfg.addMandatoryEntry( "/DIRAC/Setup" )
+  if not ignoreErrors:
+    localCfg.addMandatoryEntry( "/DIRAC/Setup" )
   resultDict = localCfg.loadUserData()
   if not ignoreErrors and not resultDict[ 'OK' ]:
     gLogger.error( "There were errors when loading configuration", resultDict[ 'Message' ] )
