@@ -125,7 +125,7 @@ def getCertificateAndKeyLocation():
       keyfile = os.environ["HOME"]+'/.globus/userkey.pem'
 
   if not keyfile:
-     return False
+    return False
 
   return (certfile,keyfile)
 
