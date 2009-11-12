@@ -171,7 +171,7 @@ class ConfigurationData:
         self.dangerZoneEnd()
     self.sync()
 
-  def deleteOptionInCFG( self, path, value, cfg = False ):
+  def deleteOptionInCFG( self, path, cfg = False ):
     if not cfg:
       cfg = self.localCFG
     self.dangerZoneStart()
@@ -268,8 +268,7 @@ class ConfigurationData:
     self.sync()
 
   def deleteLocalOption( self, optionPath ):
-    self.deleteOptionInCFG( optionPath,
-                                        self.localCFG )
+    self.deleteOptionInCFG( optionPath, self.localCFG )
 
   def getMasterServer( self ):
     return self.extractOptionFromCFG( "%s/MasterServer" % self.configurationPath,
