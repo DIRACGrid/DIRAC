@@ -169,7 +169,9 @@ for prog in compilationTypes[ compType ]:
   print "== BUILDING %s == " % prog
   makePath = os.path.join( externalsDir, prog, "dirac-make" )
   os.chmod( makePath, executablePerms )
-  ret = os.system( "'%s' %s" % ( makePath, makeArgs ) )
+  instCmd = "'%s' '%s'" % ( makePath, makeArgs )
+  print " - Executing %s" % instCmd
+  ret = os.system( instCmd )
   if ret:
     print "Oops! Error while compiling %s" % prog
     sys.exit(1)
