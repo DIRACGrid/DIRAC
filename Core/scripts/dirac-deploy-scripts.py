@@ -10,9 +10,9 @@ import shutil
 import stat
 
 moduleSuffix = "DIRAC"
-defaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH  
-excludeMask = [ os.path.basename( __file__ ) ]
-simpleCopyMask = [ 'dirac-platform.py', 'dirac-compile-externals.py' ]
+defaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
+excludeMask = []  
+simpleCopyMask = [ os.path.basename( __file__ ), 'dirac-platform.py', 'dirac-compile-externals.py' ]
 
 wrapperTemplate = """#!/usr/bin/env python
 #
@@ -71,12 +71,26 @@ def lookForScriptsInPath( basePath, rootModule ):
     elif isScriptsDir and os.path.isfile( absEntry ):
       scriptFiles.append( ( os.path.join( rootModule, entry ), entry ) )
   return scriptFiles
+  
+def findDIRACRoot( path ):
+  dirContents = os.listdir( path )
+  if 'DIRAC' in dirContents and os.path.isdir( os.path.join( path, 'DIRAC' ) ):
+    return path
+  parentPath = os.path.dirname( path )
+  if parentPath == path or len( parentPath ) == 1:
+    return False
+  return findDIRACRoot( os.path.dirname( path ) )
 
-rootPath = os.path.realpath( __file__ )
-for i in range( 4 ):
-  rootPath = os.path.dirname( rootPath )
+
+rootPath = findDIRACRoot( os.path.dirname( os.path.realpath( __file__ ) ) )
+if not rootPath:
+  print "Error: Cannot find DIRAC root!"
+  sys.exit(1)
 
 targetScriptsPath = os.path.join( rootPath, "scripts" )
+
+print "Scripts will be deployed at %s" % targetScriptsPath
+
 if not os.path.isdir( targetScriptsPath ):
   os.mkdir( targetScriptsPath )
 
