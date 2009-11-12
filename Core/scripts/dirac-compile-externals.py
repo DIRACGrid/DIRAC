@@ -16,12 +16,13 @@ import stat
 svnPublicRoot = "http://svnweb.cern.ch/guest/dirac/Externals/%s"
 tarWebRoot = "http://svnweb.cern.ch/world/wsvn/dirac/Externals/%s/?op=dl&rev=0&isdir=1"
 
-compilationTypes = { 'client' : [ 'pythonRequirements', 
+compilationTypes = { 'client' : [ 'clientLibReqs', 
                                   'Python-$PYTHONVERSION$', 
                                   'pyGSI', 'runit', 'ldap' ],
-                     'server' : [ 'pythonRequirements', 
+                     'server' : [ 'clientLibReqs', 
                                   'Python-$PYTHONVERSION$', 
-                                  'pyGSI', 'runit', 'ldap',
+                                  'pyGSI', 'serverLibReqs', 
+                                  'runit', 'ldap',
                                   'MySQL', 'MySQL-python',
                                   'Pylons', 'pyPlotTools',
                                   'rrdtool' ]  }
@@ -87,13 +88,11 @@ cmdOpts = ( ( 'd:', 'destination=',   'Destination where to build the externals'
             ( 't:', 'type=',          'Type of compilation (default: client)' ),
             ( 'e:', 'externalsPath=', 'Path to the externals sources' ),
             ( 'h',  'help',           'Show this help' ),
-            ( 'u',  'directUse',      'Compile in <diracroot>/<platform>' )
           )
 
 compType = 'client'
 compDest = False
 compExtSource = False
-compAutoDest = False
 compVersionDict = { 'PYTHONVERSION' : '2.5' }
   
 optList, args = getopt.getopt( sys.argv[1:], 
@@ -111,15 +110,13 @@ for o, v in optList:
     compExtSource = v
   elif o in ( '-d', '--destination' ):
     compDest = v
-  elif o in ( '-u', '--directUse' ):
-    compAutoDest = True
 
 if compType not in compilationTypes:
   print "Invalid compilation type %s" % compType
   print " Valid ones are: %s" % ", ".join( compilationTypes )
   sys.exit(1)
 
-if compAutoDest:
+if not compDest:
   basePath = os.path.dirname( os.path.realpath( __file__ ) )
   diracRoot = findDIRACRoot( basePath )
   if not diracRoot:
