@@ -17,7 +17,7 @@ if __name__ == "__main__":
   cliParams.registerCLISwitches()
 
   Script.disableCS()
-  Script.parseCommandLine()
+  Script.parseCommandLine( ignoreErrors = True )
 
   retVal = generateProxy( cliParams )
   if not retVal[ 'OK' ]:
