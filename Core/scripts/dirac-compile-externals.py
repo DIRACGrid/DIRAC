@@ -51,14 +51,16 @@ def downloadExternalsTar( destPath, version = False ):
   fd, filePath = tempfile.mkstemp()
   data = remoteDesc.read( netReadSize )
   print "Downloading..."
+  sizeDown = 0
   while data:
     os.write( fd, data )
+    sizeDown += len( data )
     data = remoteDesc.read( netReadSize )
   ret = os.system( "cd '%s'; tar xzf '%s'" % ( destPath, filePath ) )
   os.unlink( filePath )
   if ret:
     return False
-  print "Downloaded"
+  print "Downloaded %s bytes" % sizeDown
   for entry in os.listdir( destPath ):
     if entry.find( version ) == 0:
       os.rename( os.path.join( destPath, entry ), os.path.join( destPath, "Externals" ) )
