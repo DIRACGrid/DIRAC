@@ -163,7 +163,7 @@ else:
   except:
     DIRAC.gLogger.exception( 'Could not import BundleDeliveryClient' )
     pass
-  DIRAC.gConfig.setOptionValue('/DIRAC/Security/SkipCAChecks', 'no')
+  Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks' )
 
 
 gridSections = DIRAC.gConfig.getSections('/Resources/Sites/')
