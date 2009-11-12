@@ -329,5 +329,5 @@ class LocalConfiguration:
       gLogger.info( "  -%s  --%s  :  %s" % optionTuple[:3] )
     DIRAC.exit( 0 )
 
-  def deleteOptionFromLocalCFG( self, optionPath ):
+  def deleteOption( self, optionPath ):
     gConfigurationData.deleteOptionInCFG( optionPath )
