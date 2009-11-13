@@ -362,13 +362,13 @@ class CFG:
     """
     levels = List.fromChar( opName, "/" )
     dataD = self.__dataDict
-    while len( levels ) > 1:
+    while len( levels ) > 0:
       try:
-        dataD = dataD[ levels[0] ]
+        dataD = dataD[ levels.pop( 0 ) ]
       except KeyError:
-        return None
+        return defaultValue
     try:
-      optionValue = self.__dataDict[ opName ]
+      optionValue = dataD
       if type( optionValue ) != types.StringType:
         optionValue = defaultValue
     except KeyError:
@@ -377,7 +377,7 @@ class CFG:
     #Return value if existing, defaultValue if not
     if optionValue == defaultValue:
       if defaultValue == None or type( defaultValue ) == types.TypeType:
-        return None
+        return defaultValue
       return optionValue
 
     #Value has been returned from the configuration
@@ -393,17 +393,17 @@ class CFG:
       try:
         return List.fromChar( optionValue, ',' )
       except Exception, v:
-        return None
+        return defaultValue
     elif defaultType == types.BooleanType:
       try:
         return optionValue.lower() in ( "y", "yes", "true", "1" )
       except Exception, v:
-        return None
+        return defaultValue
     else:
       try:
         return defaultType( optionValue )
       except:
-        return None
+        return defaultValue
 
   def getAsDict( self, path = "" ):
     """
