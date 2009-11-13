@@ -19,8 +19,8 @@ def getPlatformString():
     else:
       lib = '/lib'
     libs = []
-    for lib in os.listdir( lib ):
-      if lib.find( 'libc-' ) == 0 or lib.find( 'libc.so' ) == 0 : libs.append( os.path.join( '/lib' , lib ) )
+    for libFile in os.listdir( lib ):
+      if libFile.find( 'libc-' ) == 0 or libFile.find( 'libc.so' ) == 0 : libs.append( os.path.join( lib , libFile ) )
     libs.sort()
     platformTuple += ( '-'.join( platform.libc_ver( libs[-1] ) ), )
     # platformTuple += ( '-'.join(libc_ver('/lib/libc.so.6')),)
