@@ -12,20 +12,10 @@ import tarfile
 import getopt
 import sys
 import stat
+import imp
 
 svnPublicRoot = "http://svnweb.cern.ch/guest/dirac/Externals/%s"
 tarWebRoot = "http://svnweb.cern.ch/world/wsvn/dirac/Externals/%s/?op=dl&rev=0&isdir=1"
-
-compilationTypes = { 'client' : [ 'clientLibReqs', 
-                                  'Python-$PYTHONVERSION$', 
-                                  'pyGSI', 'runit', 'ldap' ],
-                     'server' : [ 'clientLibReqs', 
-                                  'Python-$PYTHONVERSION$', 
-                                  'pyGSI', 'serverLibReqs', 
-                                  'runit', 'ldap',
-                                  'MySQL', 'MySQL-python',
-                                  'Pylons','rrdtool',
-                                  'pyPlotTools' ]  }
 
 executablePerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 
@@ -67,15 +57,17 @@ def downloadExternalsTar( destPath, version = False ):
       break
   return True
   
-def downloadPlatformScript( destPath ):
-  print "Downloading dirac-platform file..."
-  platformFile = open( os.path.join( destPath, "dirac-platform.py" ) , "wb" )
-  remoteFile = urllib2.urlopen( "http://svnweb.cern.ch/world/wsvn/dirac/DIRAC/trunk/DIRAC/Core/scripts/dirac-platform.py" )
-  platformFile.write( remoteFile.read() )
-  platformFile.close()
+def downloadFileFromSVN( filePath, destPath, isExecutable = False ):
+  fileName = os.path.basename( filePath )
+  print " - Downloading %s" % fileName 
+  remoteFile = urllib2.urlopen( "http://svnweb.cern.ch/world/wsvn/dirac/DIRAC/trunk/%s?op=dl&rev=0" % filePath )
+  localPath = os.path.join( destPath, fileName )
+  localFile = open( localPath , "wb" )
+  localFile.write( remoteFile.read() )
+  localFile.close()
   remoteFile.close()
-  os.chmod( os.path.join( destPath, "dirac-platform.py" ) , executablePerms )
-  print "Downloaded"
+  if isExecutable:
+    os.chmod(localPath , executablePerms )
   
 def findDIRACRoot( path ):
   dirContents = os.listdir( path )
@@ -85,6 +77,25 @@ def findDIRACRoot( path ):
   if parentPath == path or len( parentPath ) == 1:
     return False
   return findDIRACRoot( os.path.dirname( path ) )
+  
+def resolvePackagesToBuild( compType, buildCFG, alreadyExplored = [] ):
+  explored = list( alreadyExplored )
+  packagesToBuild = []
+  if compType not in buildCFG.listSections():
+    return []
+  typeCFG = buildCFG[ compType ]
+  for type in typeCFG.getOption( 'require', [] ):
+    if type in explored:
+      continue
+    explored.append( type )
+    newPackages = resolvePackagesToBuild( type, buildCFG, explored )
+    for pkg in newPackages:
+      if pkg not in packagesToBuild:
+        packagesToBuild.append( pkg )
+  for pkg in typeCFG.getOption( 'buildOrder', [] ):
+    if pkg not in packagesToBuild:
+      packagesToBuild.append( pkg )
+  return packagesToBuild
   
 cmdOpts = ( ( 'd:', 'destination=',   'Destination where to build the externals' ),
             ( 't:', 'type=',          'Type of compilation (default: client)' ),
@@ -107,16 +118,11 @@ for o, v in optList:
       print "%s %s : %s" % ( cmdOpt[0].ljust(4), cmdOpt[1].ljust(15), cmdOpt[2] )
     sys.exit(1)
   elif o in ( '-t', '--type' ):
-    compType = v
+    compType = v.lower()
   elif o in ( '-e', '--externalsPath' ):
     compExtSource = v
   elif o in ( '-d', '--destination' ):
     compDest = v
-
-if compType not in compilationTypes:
-  print "Invalid compilation type %s" % compType
-  print " Valid ones are: %s" % ", ".join( compilationTypes )
-  sys.exit(1)
 
 if not compDest:
   basePath = os.path.dirname( os.path.realpath( __file__ ) )
@@ -142,10 +148,9 @@ if compDest:
     print "Error: %s already exists! Please make sure target dir does not exist" % compDest
     sys.exit(1)
     
-workDir = tempfile.mkdtemp( prefix = "ExtDIRAC" )
-print "Creating temporary work dir at %s" % workDir
-    
 if not compExtSource:
+  workDir = tempfile.mkdtemp( prefix = "ExtDIRAC" )
+  print "Creating temporary work dir at %s" % workDir
   downOK = False
   for fnc in ( downloadExternalsTar, downloadExternalsSVN ):
     if fnc( workDir ):
@@ -158,14 +163,31 @@ if not compExtSource:
 else:
   externalsDir = compExtSource
   
-downloadPlatformScript( externalsDir )
+downloadFileFromSVN( "DIRAC/Core/scripts/dirac-platform.py", externalsDir, True )
+downloadFileFromSVN( "DIRAC/Core/Utilities/CFG.py", externalsDir, False )
+
+#Load CFG
+cfgPath = os.path.join( externalsDir, "CFG.py" )
+cfgFD = open( cfgPath, "r" )
+CFG = imp.load_module( "CFG", cfgFD, cfgPath, ( "", "r", imp.PY_SOURCE ) )
+cfgFD.close()
+
+buildCFG = CFG.CFG().loadFromFile( os.path.join( externalsDir, "builds.cfg" ) )
+
+if compType not in buildCFG.listSections():
+  print "Invalid compilation type %s" % compType
+  print " Valid ones are: %s" % ", ".join( compilationTypes )
+  sys.exit(1)
+
+packagesToBuild = resolvePackagesToBuild( compType, buildCFG )
 
 if compDest:
   makeArgs = compDest
 else:
   makeArgs = ""
 
-for prog in compilationTypes[ compType ]:
+print "Building %s" % ", ".join ( packagesToBuild )
+for prog in packagesToBuild:
   for k in compVersionDict:
     prog = prog.replace( "$%s$" % k, compVersionDict[k] )
   print "== BUILDING %s == " % prog
