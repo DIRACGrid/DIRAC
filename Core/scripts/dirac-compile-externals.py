@@ -24,8 +24,8 @@ compilationTypes = { 'client' : [ 'clientLibReqs',
                                   'pyGSI', 'serverLibReqs', 
                                   'runit', 'ldap',
                                   'MySQL', 'MySQL-python',
-                                  'Pylons', 'pyPlotTools',
-                                  'rrdtool' ]  }
+                                  'Pylons','rrdtool',
+                                  'pyPlotTools' ]  }
 
 executablePerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 
