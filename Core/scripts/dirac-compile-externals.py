@@ -60,12 +60,20 @@ def downloadExternalsTar( destPath, version = False ):
 def downloadFileFromSVN( filePath, destPath, isExecutable = False ):
   fileName = os.path.basename( filePath )
   print " - Downloading %s" % fileName 
-  remoteFile = urllib2.urlopen( "http://svnweb.cern.ch/world/wsvn/dirac/DIRAC/trunk/%s?op=dl&rev=0" % filePath )
+  remoteLocation = "http://svnweb.cern.ch/world/wsvn/dirac/DIRAC/trunk/%s?op=dl&rev=0" % filePath
+  remoteFile = urllib2.urlopen( remoteLocation )
   localPath = os.path.join( destPath, fileName )
-  localFile = open( localPath , "wb" )
-  localFile.write( remoteFile.read() )
-  localFile.close()
+  remoteData = remoteFile.read()
   remoteFile.close()
+  if remoteData:
+      localFile = open( localPath , "wb" )
+      localFile.write( remoteData )
+      localFile.close()
+  else:
+      osCmd = "svn cat 'http://svnweb.cern.ch/guest/dirac/DIRAC/trunk/%s' %s" % ( filePath, localPath )
+      if os.system( osCmd ):
+          print "Error: Could not retrieve %s from the web nor via SVN. Aborting..." % fileName
+          sys.exit(1)
   if isExecutable:
     os.chmod(localPath , executablePerms )
   
