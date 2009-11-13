@@ -60,20 +60,28 @@ def downloadExternalsTar( destPath, version = False ):
 def downloadFileFromSVN( filePath, destPath, isExecutable = False ):
   fileName = os.path.basename( filePath )
   print " - Downloading %s" % fileName 
-  remoteLocation = "http://svnweb.cern.ch/world/wsvn/dirac/DIRAC/trunk/%s?op=dl&rev=0" % filePath
-  remoteFile = urllib2.urlopen( remoteLocation )
+  viewSVNLocation = "http://svnweb.cern.ch/world/wsvn/dirac/DIRAC/trunk/%s?op=dl&rev=0" % filePath
+  anonymousLocation = 'http://svnweb.cern.ch/guest/dirac/DIRAC/trunk/%s' % filePath
+  downOK = False
   localPath = os.path.join( destPath, fileName )
-  remoteData = remoteFile.read()
-  remoteFile.close()
-  if remoteData:
+  for remoteLocation in ( viewSVNLocation, anonymousLocation ):
+    try:
+      remoteFile = urllib2.urlopen( remoteLocation )
+    except urllib2.URLError:
+      continue
+    remoteData = remoteFile.read()
+    remoteFile.close()      
+    if remoteData:
       localFile = open( localPath , "wb" )
       localFile.write( remoteData )
       localFile.close()
-  else:
-      osCmd = "svn cat 'http://svnweb.cern.ch/guest/dirac/DIRAC/trunk/%s' %s" % ( filePath, localPath )
-      if os.system( osCmd ):
-          print "Error: Could not retrieve %s from the web nor via SVN. Aborting..." % fileName
-          sys.exit(1)
+      downOK = True
+      break
+  if not downOK:
+    osCmd = "svn cat 'http://svnweb.cern.ch/guest/dirac/DIRAC/trunk/%s' > %s" % ( filePath, localPath )
+    if os.system( osCmd ):
+      print "Error: Could not retrieve %s from the web nor via SVN. Aborting..." % fileName
+      sys.exit(1)
   if isExecutable:
     os.chmod(localPath , executablePerms )
   
