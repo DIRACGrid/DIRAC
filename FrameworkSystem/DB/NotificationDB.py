@@ -103,10 +103,10 @@ class NotificationDB(DB):
     name = name.lower()
     if name == 'status':
       if value not in self.__validAlarmStatus:
-        return S_ERROR( "Status %s is invalid" % alarmDef[ 'status' ] )
+        return S_ERROR( "Status %s is invalid. Valid ones are: %s" % ( value, self.__validAlarmStatus ) )
     elif name == 'type':
       if value not in self.__validAlarmTypes:
-        return S_ERROR( "Type %s is invalid" % alarmDef[ 'type' ] )
+        return S_ERROR( "Type %s is invalid. Valid ones are: %s" % ( value, self.__validAlarmTypes ) )
     elif name == 'assignee':
       result = self.getUserAsignees( value )
       if not result[ 'OK' ]:
