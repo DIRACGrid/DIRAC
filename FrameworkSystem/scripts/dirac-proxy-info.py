@@ -111,11 +111,10 @@ def invalidProxy( msg ):
   print "[INVALID] %s" % msg
   sys.exit(1)
 
-
 if params.checkValid:
   if infoDict[ 'secondsLeft' ] == 0:
     invalidProxy( "Proxy is expired" )
-  if not infoDict[ 'validGroup' ]:
+  if params.csEnabled and not infoDict[ 'validGroup' ]:
     invalidProxy( "Group %s is not valid" % infoDict[ 'group' ] )
   if 'hasVOMS' in infoDict and infoDict[ 'hasVOMS' ]:
     requiredVOMS = CS.getVOMSAttributeForGroup( infoDict[ 'group' ] )
