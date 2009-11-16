@@ -207,13 +207,17 @@ for prog in packagesToBuild:
   for k in compVersionDict:
     prog = prog.replace( "$%s$" % k, compVersionDict[k] )
   print "== BUILDING %s == " % prog
-  makePath = os.path.join( externalsDir, prog, "dirac-make" )
+  progDir = os.path.join( externalsDir, prog )
+  makePath = os.path.join( progDir, "dirac-make" )
+  buildOutPath = os.path.join( progDir, "build.out" )
+  buildErrPath = os.path.join( progDir, "build.err" )
   os.chmod( makePath, executablePerms )
   instCmd = "'%s' '%s'" % ( makePath, makeArgs )
   print " - Executing %s" % instCmd
-  ret = os.system( instCmd )
+  ret = os.system( "%s  > '%s' 2>'%s'" % ( instCmd, buildOutPath, buildErrPath ) )
   if ret:
     print "Oops! Error while compiling %s" % prog
+    print "Take a look at %s for more info" % buildErrPath
     sys.exit(1)
 
 
