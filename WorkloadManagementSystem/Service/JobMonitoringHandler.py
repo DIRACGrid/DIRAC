@@ -190,7 +190,8 @@ class JobMonitoringHandler( RequestHandler ):
 ##############################################################################
   types_getJobsStatus = [ ListType ]
   def export_getJobsStatus (self, jobIDs):
-
+    if not jobIDs:
+      return S_OK({})
     return jobDB.getAttributesForJobList( jobIDs, ['Status'] )
 
 ##############################################################################
