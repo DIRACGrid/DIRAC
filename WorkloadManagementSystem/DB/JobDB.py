@@ -260,7 +260,8 @@ class JobDB(DB):
         Returns an S_OK structure with a dictionary of dictionaries as its Value:
         ValueDict[jobID][attribute_name] = attribute_value
     """
-
+    if not jobIDList:
+      return S_OK({})
     if attrList:
       attrNames = string.join(map(lambda x: str(x),attrList ),',')
       attr_tmp_list = attrList
