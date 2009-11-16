@@ -230,11 +230,6 @@ class CSAPI:
         return self.addUser( username, properties )
       gLogger.error( "User %s is not registered" % username )
       return S_OK( False )
-    groups = self.listGroups()['Value']
-    for userGroup in properties[ 'Groups' ]:
-      if not userGroup in groups:
-        gLogger.error( "User %s group %s is not a valid group" % ( username, userGroup ) )
-        return S_OK( False )
     for prop in properties:
       if prop == "Groups":
         continue
@@ -243,27 +238,33 @@ class CSAPI:
         gLogger.info( "Setting %s property for user %s to %s" % ( prop, username, properties[ prop ] ) )
         self.__csMod.setOptionValue( "%s/Users/%s/%s" % ( self.__baseSecurity, username, prop ), properties[ prop ] )
         modifiedUser = True
-    groupsToBeDeletedFrom = []
-    groupsToBeAddedTo = []
-    for prevGroup in userData[ username ][ 'Groups' ]:
-      if prevGroup not in properties[ 'Groups' ]:
-        groupsToBeDeletedFrom.append( prevGroup )
-        modifiedUser = True
-    for newGroup in properties[ 'Groups' ]:
-      if newGroup not in userData[ username ][ 'Groups' ]:
-        groupsToBeAddedTo.append( newGroup )
-        modifiedUser = True
-    for group in groupsToBeDeletedFrom:
-      self.__removeUserFromGroup( group, username )
-      gLogger.info( "Removed user %s from group %s" % ( username, group ) )
-    for group in groupsToBeAddedTo:
-      self.__addUserToGroup( group, username )
-      gLogger.info( "Added user %s to group %s" % ( username, group ) )
-    if modifiedUser:
-      gLogger.info( "Modified user %s" % username )
-      self.__csModified = True
-    else:
-      gLogger.info( "Nothing to modify for user %s" % username )
+    if 'Groups' in properties:
+      groups = self.listGroups()['Value']
+      for userGroup in properties[ 'Groups' ]:
+        if not userGroup in groups:
+          gLogger.error( "User %s group %s is not a valid group" % ( username, userGroup ) )
+          return S_OK( False )
+      groupsToBeDeletedFrom = []
+      groupsToBeAddedTo = []
+      for prevGroup in userData[ username ][ 'Groups' ]:
+        if prevGroup not in properties[ 'Groups' ]:
+          groupsToBeDeletedFrom.append( prevGroup )
+          modifiedUser = True
+      for newGroup in properties[ 'Groups' ]:
+        if newGroup not in userData[ username ][ 'Groups' ]:
+          groupsToBeAddedTo.append( newGroup )
+          modifiedUser = True
+      for group in groupsToBeDeletedFrom:
+        self.__removeUserFromGroup( group, username )
+        gLogger.info( "Removed user %s from group %s" % ( username, group ) )
+      for group in groupsToBeAddedTo:
+        self.__addUserToGroup( group, username )
+        gLogger.info( "Added user %s to group %s" % ( username, group ) )
+      if modifiedUser:
+        gLogger.info( "Modified user %s" % username )
+        self.__csModified = True
+      else:
+        gLogger.info( "Nothing to modify for user %s" % username )
     return S_OK( True )
 
   def syncUsersWithCFG( self, usersCFG ):
