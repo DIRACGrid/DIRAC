@@ -11,7 +11,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
-from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
+from DIRAC.Resources.Storage.StorageElement                import StorageElement
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSEsForSite
 from DIRAC                                                 import S_OK, S_ERROR, gConfig, gLogger
 
