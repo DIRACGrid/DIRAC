@@ -7,16 +7,18 @@ parseCommandLine()
 __RCSID__   = "$Id$"
 __VERSION__ = "$ $"
 
-from DIRAC.Core.Utilities.List import sortList
-from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
-client = FileCatalog('LcgFileCatalogCombined')
+from DIRAC.Core.Utilities.List                          import sortList
+from DIRAC.DataManagementSystem.Client.ReplicaManager   import ReplicaManager
 import os,sys
 
-if not len(sys.argv) == 2:
-  print 'Usage: ./dirac-dms-lfc-metadata.py <lfn | fileContainingLfns>'
+if not len(sys.argv) >= 2:
+  print 'Usage: ./dirac-dms-catalog-metadata.py <lfn | fileContainingLfns> [Catalog]'
   sys.exit()
 else:
   inputFileName = sys.argv[1]
+  catalogs = []
+  if len(sys.argv) == 3:
+    catalogs = [sys.argv[2]]  
 
 if os.path.exists(inputFileName):
   inputFile = open(inputFileName,'r')
@@ -26,7 +28,8 @@ if os.path.exists(inputFileName):
 else:
   lfns = [inputFileName]
 
-res = client.getFileMetadata(lfns)
+rm = ReplicaManager()
+res = rm.getCatalogFileMetadata(lfns,catalogs=catalogs)
 if not res['OK']:
   print res['Message']
   sys.exit()
