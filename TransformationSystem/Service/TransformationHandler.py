@@ -3,7 +3,7 @@
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Transformation.TransformationDB import TransformationDB
+from DIRAC.TransformationSystem.DB.TransformationDB import TransformationDB
 
 class TransformationHandler(RequestHandler):
 
