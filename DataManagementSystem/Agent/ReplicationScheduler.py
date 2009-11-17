@@ -1,21 +1,17 @@
 """  Replication Scheduler assigns replication requests to channels
 """
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Base.Agent import Agent
-from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
-
-
-from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
-from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
-from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
-from DIRAC.DataManagementSystem.Client.Storage.StorageFactory import StorageFactory
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
-from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
+from DIRAC                                                  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Base.Agent                                  import Agent
+from DIRAC.ConfigurationSystem.Client.PathFinder            import getDatabaseSection
+from DIRAC.RequestManagementSystem.DB.RequestDBMySQL        import RequestDBMySQL
+from DIRAC.DataManagementSystem.DB.TransferDB               import TransferDB
+from DIRAC.RequestManagementSystem.Client.RequestContainer  import RequestContainer
+from DIRAC.Resources.Storage.StorageFactory                 import StorageFactory
+from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
+from DIRAC.Core.DISET.RPCClient                             import RPCClient
+from DIRAC.DataManagementSystem.Client.DataLoggingClient    import DataLoggingClient
+from DIRAC.Core.Utilities.Shifter                           import setupShifterProxyInEnv
 import types,re,random
-
 
 AGENT_NAME = 'DataManagement/ReplicationScheduler'
 
@@ -319,15 +315,12 @@ class ReplicationScheduler(Agent):
   def resolvePFNSURL(self,sourceSE,pfn):
     """ Creates the targetSURL for the storage and LFN supplied
     """
-    storageElement = StorageElement(sourceSE)
-    res = storageElement.isValid()
-    if res['OK']:
-      res = storageElement.getPfnForProtocol(pfn,['SRM2'])
+    res = self.rm.getPfnForProtocol([pfn],sourceSE)
+    if not res['OK']:
       return res
-    else:
-      errStr = "ReplicationScheduler._execute: Failed to get source PFN for %s." % sourceSE
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
+    if pfn in res['Value']['Failed'].keys():
+      return S_ERROR(res['Value']['Failed'][pfn])
+    return S_OK(res['Value']['Successful'][pfn])
 
 class StrategyHandler:
 

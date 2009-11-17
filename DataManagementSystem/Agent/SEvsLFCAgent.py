@@ -9,7 +9,7 @@ from DIRAC.RequestManagementSystem.Client.RequestClient             import Reque
 from DIRAC.RequestManagementSystem.Client.RequestContainer          import RequestContainer
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.DataManagementSystem.Agent.NamespaceBrowser              import NamespaceBrowser
-from DIRAC.DataManagementSystem.Client.StorageElement               import StorageElement
+from DIRAC.Resources.Storage.StorageElement                         import StorageElement
 
 import time,os
 from types import *

@@ -3,14 +3,15 @@ This is a service which represents a DISET proxy to the Storage Element componen
 
 This is used to get and put files from a remote storage.
 """
-from types import *
+from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
+from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Resources.Storage.StorageElement             import StorageElement
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient    import gProxyManager
+from DIRAC.Core.Utilities.Subprocess                    import pythonCall
+from DIRAC.Core.Utilities.Os                            import getDiskSpace, getDirectorySize
+from types                                              import *
 import os,shutil
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.Core.Utilities.Subprocess import pythonCall
-from DIRAC.Core.Utilities.Os import getDiskSpace, getDirectorySize
+
 base_path = ''
 
 def initializeStorageElementProxyHandler(serviceInfo):

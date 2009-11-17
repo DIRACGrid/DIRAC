@@ -16,7 +16,7 @@ from DIRAC.Core.Utilities.File                           import makeGuid,getSize
 from DIRAC.Core.Utilities.Adler                          import fileAdler,compareAdler
 from DIRAC.Core.Utilities.List                           import sortList,randomize
 from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite,isSameSiteSE,getSEsForCountry
-from DIRAC.DataManagementSystem.Client.StorageElement    import StorageElement
+from DIRAC.Resources.Storage.StorageElement              import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                 import FileCatalog
 
 class CatalogBase:
