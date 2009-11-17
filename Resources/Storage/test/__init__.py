@@ -1,3 +1,1 @@
-"""
-   DIRAC.DataManagementSystem.Client.Storage.test package
-"""
+""" DIRAC.Resources.Storage.test package """
