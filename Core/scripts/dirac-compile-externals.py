@@ -57,7 +57,7 @@ def downloadExternalsTar( destPath, version = False ):
       break
   return True
   
-def downloadFileFromSVN( filePath, destPath, isExecutable = False ):
+def downloadFileFromSVN( filePath, destPath, isExecutable = False, filterLines = [] ):
   fileName = os.path.basename( filePath )
   print " - Downloading %s" % fileName 
   viewSVNLocation = "http://svnweb.cern.ch/world/wsvn/dirac/DIRAC/trunk/%s?op=dl&rev=0" % filePath
@@ -82,6 +82,20 @@ def downloadFileFromSVN( filePath, destPath, isExecutable = False ):
     if os.system( osCmd ):
       print "Error: Could not retrieve %s from the web nor via SVN. Aborting..." % fileName
       sys.exit(1)
+  if filterLines:
+    fd = open( localPath, "rb" )
+    fileContents = fd.readlines()
+    fd.close()
+    fd = open( localPath, "wb" )
+    for line in fileContents:
+      isFiltered = False
+      for filter in filterLines:
+        if line.find( filter ) > -1:
+          isFiltered = True
+          break
+      if not isFiltered:
+        fd.write( line )
+    fd.close()
   if isExecutable:
     os.chmod(localPath , executablePerms )
   
@@ -180,7 +194,7 @@ else:
   externalsDir = compExtSource
   
 downloadFileFromSVN( "DIRAC/Core/scripts/dirac-platform.py", externalsDir, True )
-downloadFileFromSVN( "DIRAC/Core/Utilities/CFG.py", externalsDir, False )
+downloadFileFromSVN( "DIRAC/Core/Utilities/CFG.py", externalsDir, False, [ '@gCFGSynchro' ] )
 
 #Load CFG
 cfgPath = os.path.join( externalsDir, "CFG.py" )
