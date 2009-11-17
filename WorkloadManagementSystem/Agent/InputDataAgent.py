@@ -36,14 +36,12 @@ class InputDataAgent(OptimizerModule):
     self.am_setModuleParam( "shifterProxy", "ProductionManager" )
 
     try:
-      from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
-      self.fileCatalog = LcgFileCatalogCombinedClient()
+      self.rm = ReplicaManager()
     except Exception,x:
-      msg = 'Failed to create LcgFileCatalogClient with exception:'
+      msg = 'Failed to create ReplicaManager with exception:'
       self.log.fatal(msg,str(x))
       return S_ERROR(msg+str(x))
 
-    self.rm = ReplicaManager()
     self.SEToSiteMapping = {}
     self.lastCScheck = 0
     self.cacheLength = 600
@@ -127,7 +125,7 @@ class InputDataAgent(OptimizerModule):
     if self.checkFileMetadata:
       guids = True
       start = time.time()
-      guidDict = self.fileCatalog.getFileMetadata(lfns)
+      guidDict = self.rm.getCatalogFileMetadata(lfns)
       timing = time.time() - start
       self.log.info('LFC Metadata Lookup Time: %.2f seconds ' % (timing) )
 
