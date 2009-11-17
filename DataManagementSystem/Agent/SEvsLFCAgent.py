@@ -1,16 +1,15 @@
 """  SEvsLFCAgent takes data integrity checks from the RequestDB and verifies the integrity of the supplied directory.
 """
-from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
-from DIRAC.Core.Base.Agent import Agent
-from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
-from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
-from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.DataManagementSystem.Agent.NamespaceBrowser import NamespaceBrowser
-from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
-from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
+from DIRAC                                                          import gLogger, gConfig, gMonitor, S_OK, S_ERROR
+from DIRAC.Core.Base.Agent                                          import Agent
+from DIRAC.Core.Utilities.Pfn                                       import pfnparse, pfnunparse
+from DIRAC.Core.DISET.RPCClient                                     import RPCClient
+from DIRAC.Core.Utilities.Shifter                                   import setupShifterProxyInEnv
+from DIRAC.RequestManagementSystem.Client.RequestClient             import RequestClient
+from DIRAC.RequestManagementSystem.Client.RequestContainer          import RequestContainer
+from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
+from DIRAC.DataManagementSystem.Agent.NamespaceBrowser              import NamespaceBrowser
+from DIRAC.DataManagementSystem.Client.StorageElement               import StorageElement
 
 import time,os
 from types import *
@@ -28,7 +27,6 @@ class SEvsLFCAgent(Agent):
     result = Agent.initialize(self)
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
-    self.lfc = FileCatalog(['LcgFileCatalogCombined'])
 
     self.useProxies = gConfig.getValue(self.section+'/UseProxies','True').lower() in ( "y", "yes", "true" )
     self.proxyLocation = gConfig.getValue( self.section+'/ProxyLocation', '' )
@@ -143,7 +141,7 @@ class SEvsLFCAgent(Agent):
                           lfnPfnDict[lfn] = pfn
                           pfnSize[pfn] = pfnDict['Size']
 
-                      res = self.lfc.getFileMetadata(selectedLfns)
+                      res = self.ReplicaManager.getCatalogFileMetadata(selectedLfns)
                       if not res['OK']:
                         subDirs = [currentDir]
                       else:
@@ -184,7 +182,7 @@ class SEvsLFCAgent(Agent):
                             else:
                               gLogger.error("Shit, fuck, bugger. Add the failover.")
 
-                        res = self.lfc.getReplicas(selectedLfns)
+                        res = self.ReplicaManager.getCatalogReplicas(selectedLfns)
                         if not res['OK']:
                           subDirs = [currentDir]
                         else:
