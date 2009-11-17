@@ -4,7 +4,7 @@
 # $Id$
 ########################################################################
 
-from DIRAC.Core.Transformation.TransformationDBClient import TransformationDBClient
+from DIRAC.TransformationSystem.Client.TransformationDBClient import TransformationDBClient
 
 class ReplicationPlacementClient(TransformationDBClient):
 
