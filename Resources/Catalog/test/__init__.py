@@ -1,3 +1,1 @@
-"""
-   DIRAC.DataManagementSystem.Client.Catalog.test package
-"""
+""" DIRAC.Resources.Catalog.test package """

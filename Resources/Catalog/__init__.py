@@ -1,3 +1,1 @@
-"""
-   DIRAC.DataManagementSystem.Client.Catalog package
-"""
+""" DIRAC.Resources.Catalog package """
