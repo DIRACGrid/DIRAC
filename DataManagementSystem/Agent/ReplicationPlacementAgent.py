@@ -1,18 +1,16 @@
 """  ReplicationPlacementAgent determines the replications to be performed based on operations defined in the operations database
 """
 
-from DIRAC  import gLogger,gMonitor, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Base.Agent import Agent
-from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
-from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
-from DIRAC.DataManagementSystem.Client.Catalog.PlacementDBClient import PlacementDBClient
-from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
-from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
-from DIRAC.Core.Utilities.List import sortList
+from DIRAC                                                  import gLogger,gMonitor, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Base.Agent                                  import Agent
+from DIRAC.RequestManagementSystem.Client.RequestClient     import RequestClient
+from DIRAC.RequestManagementSystem.Client.RequestContainer  import RequestContainer
+from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataLoggingClient    import DataLoggingClient
+from DIRAC.ConfigurationSystem.Client                       import PathFinder
+from DIRAC.Core.DISET.RPCClient                             import RPCClient
+from DIRAC.Core.Utilities.Shifter                           import setupShifterProxyInEnv
+from DIRAC.Core.Utilities.List                              import sortList
 
 import time
 from types import *
@@ -220,8 +218,8 @@ class ReplicationPlacementAgent(Agent):
 
     lfns = datadict.keys()
     start = time.time()
-    fc = FileCatalog()   
-    result = fc.getReplicas(lfns,self.shifterDN)
+    rm = ReplicaManager()   
+    result = rm.getActiveReplicas(lfns)
     delta = time.time() - start
     gLogger.verbose('LFC results for %d files obtained in %.2f seconds' % (len(lfns),delta))
     lfc_datadict = {}
