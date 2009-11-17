@@ -11,7 +11,7 @@
 
 __RCSID__ = "$Id$"
 
-import re,time,types
+import re,time,types,string
 
 from DIRAC                                                             import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                                import DB
@@ -402,6 +402,38 @@ class TransformationDB(DB):
     res = self._update(req)
     return res
 
+  def getTransformationLFNStatus(self,transName,lfnList):
+    """ Get dictionary of supplied LFNs with status for a given transformation.
+    """
+    transID = self.getTransformationID(transName)
+    if not type(lfnList)==types.ListType:
+      lfnList = [lfnList]
+    lfnList = string.join(lfnList,'","')
+    req = 'select DataFiles.LFN,T_%s.Status from T_%s,DataFiles where T_%s.FileID=DataFiles.FileID and DataFiles.LFN in ("%s")' %(transName,transName,transName,lfnList)
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    lfnStatusDict = {}
+    for lfn,status in result['Value']:
+      lfnStatusDict[lfn]=status
+    return S_OK(lfnStatusDict)
+  
+  def getTransformationLFNsJobs(self,transName,fileStatus):
+    """ Select files with given status for a transformation and return dictionary
+        of LFNs and JobIDs. 
+    """
+    transID = self.getTransformationID(transName)
+    req = 'select DataFiles.LFN,T_%s.JobID from T_%s,DataFiles where T_%s.FileID=DataFiles.FileID and DataFiles.Status in ("%s")' %(transName,transName,transName,fileStatus)
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    jobLFNDict = {}
+    for lfn,job in result['Value']:
+      if not job: job=0
+      jobLFNDict[lfn]=job
+      
+    return S_OK(jobLFNDict)
+      
   def getTransformationLFNs(self,transName,status='Unused'):
     """  Get input LFNs for the given transformation, only files
         with a given status which is defined for the file replicas.
