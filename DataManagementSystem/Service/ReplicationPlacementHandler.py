@@ -5,7 +5,7 @@ from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gMonitor, gConfig, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.ReplicationPlacementDB import ReplicationPlacementDB
-from DIRAC.Core.Transformation.TransformationHandler import TransformationHandler
+from DIRAC.TransformationSystem.Service.TransformationHandler import TransformationHandler
 
 # This is a global instance of the ReplicationPlacementDB class
 placementDB = False
