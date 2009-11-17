@@ -1,11 +1,11 @@
 """ DISET request handler base class for the DatasetDB.
 """
-from types import *
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.DataManagementSystem.DB.DatasetDB import DatasetDB
-from DIRAC.DataManagementSystem.Client.Dataset import Dataset
-from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
+from DIRAC                                                  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.DISET.RequestHandler                        import RequestHandler
+from DIRAC.DataManagementSystem.DB.DatasetDB                import DatasetDB
+from DIRAC.DataManagementSystem.Client.Dataset              import Dataset
+from DIRAC.Resources.Catalog.FileCatalog                    import FileCatalog
+from types                                                  import *
 
 # This is a global instance of the DataLoggingDB class
 datasetDB = False
