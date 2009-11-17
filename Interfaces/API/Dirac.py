@@ -81,14 +81,6 @@ class Dirac:
     self.client = WMSClient(jobManagerClient, sbRPCClient, sbTransferClient, useCertificates)
     self.pPrint = pprint.PrettyPrinter()
     self.defaultFileCatalog = gConfig.getValue(self.section+'/FileCatalog','LcgFileCatalogCombined')
-    try:
-      from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
-      self.fileCatalog=FileCatalog()
-    except Exception,x:
-      msg = 'Failed to create FileCatalog with exception:'
-      self.log.verbose(msg)
-      self.log.debug(str(x))
-      self.fileCatalog=False
 
   def version(self):
     return S_OK(DIRAC.buildVersion)
@@ -944,9 +936,8 @@ class Dirac:
     """ Under development.
         Obtain listing of the specified directory.
     """
-    if not self.fileCatalog:
-      return self.__errorReport('File catalog client was not successfully imported')
-    listing = self.fileCatalog.listDirectory(directory)
+    rm = ReplicaManager()
+    listing = rm.listCatalogDirectory(directory)
     if re.search('\/$',directory):
       directory = directory[:-1]
 
@@ -975,9 +966,6 @@ class Dirac:
        @type printOutput: boolean
        @return: S_OK,S_ERROR
     """
-    if not self.fileCatalog:
-      return self.__errorReport('File catalog client was not successfully imported')
-
     bulkQuery = False
     if type(lfns)==type(" "):
       lfns = lfns.replace('LFN:','')
@@ -1026,9 +1014,6 @@ class Dirac:
        @type printOutput: boolean
        @return: S_OK,S_ERROR
     """
-    if not self.fileCatalog:
-      return self.__errorReport('File catalog client was not successfully imported')
-
     bulkQuery = False
     if type(lfns)==type(" "):
       lfns = lfns.replace('LFN:','')
@@ -1041,8 +1026,9 @@ class Dirac:
     else:
       return self.__errorReport('Expected single string or list of strings for LFN(s)')
 
+    rm = ReplicaManager()
     start = time.time()
-    repsResult = self.fileCatalog.getReplicas(lfns)
+    repsResult = rm.getCatalogReplicas(lfns)
     timing = time.time() - start
     self.log.info('Replica Lookup Time: %.2f seconds ' % (timing) )
     self.log.verbose(repsResult)
@@ -1135,9 +1121,6 @@ class Dirac:
        @type printOutput: boolean
        @return: S_OK,S_ERROR
     """
-    if not self.fileCatalog:
-      return self.__errorReport('File catalog client was not successfully imported')
-
     if type(lfns)==type(" "):
       lfns = lfns.replace('LFN:','')
     elif type(lfns)==type([]):
@@ -1149,8 +1132,9 @@ class Dirac:
     else:
       return self.__errorReport('Expected single string or list of strings for LFN(s)')
 
+    rm = ReplicaManager()
     start = time.time()
-    repsResult = self.fileCatalog.getFileMetadata(lfns)
+    repsResult = rm.getCatalogFileMetadata(lfns)
     timing = time.time() - start
     self.log.info('Metadata Lookup Time: %.2f seconds ' % (timing) )
     self.log.verbose(repsResult)
