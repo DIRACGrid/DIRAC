@@ -8,8 +8,8 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
-from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
 from DIRAC.DataManagementSystem.Client.Storage.StorageFactory import StorageFactory
+from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Client.StorageElement import StorageElement
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
@@ -32,11 +32,7 @@ class ReplicationScheduler(Agent):
     self.TransferDB = TransferDB()
     self.DataLog = DataLoggingClient()
     self.factory = StorageFactory()
-    try:
-      self.lfc = FileCatalog()
-    except Exception,x:
-      print "Failed to create FileCatalog()"
-      print str(x)
+    self.rm = ReplicaManager()
     return result
 
   def execute(self):
@@ -170,7 +166,7 @@ class ReplicationScheduler(Agent):
 
       gLogger.info("ReplicationScheduler._execute: Obtaining replica information for sub-request files.")
       lfns = filesDict.keys()
-      res = self.lfc.getReplicas(lfns)
+      res = self.rm.getCatalogReplicas(lfns)
       if not res['OK']:
         errStr = "ReplicationScheduler._execute: Failed to get replica infomation."
         gLogger.error(errStr,res['Message'])
@@ -189,7 +185,7 @@ class ReplicationScheduler(Agent):
 
       gLogger.info("ReplicationScheduler._execute: Obtaining file sizes for sub-request files.")
       lfns = replicas.keys()
-      res = self.lfc.getFileMetadata(lfns)
+      res = self.rm.getCatalogFileMetadata(lfns)
       if not res['OK']:
         errStr = "ReplicationScheduler._execute: Failed to get file size information."
         gLogger.error(errStr,res['Message'])
