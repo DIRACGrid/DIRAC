@@ -3,11 +3,11 @@ This is a service which represents a DISET proxy to the LCG File Catalog
 """
 __RCSID__ = "$Id$"
 
+from DIRAC                                          import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.DISET.RequestHandler                import RequestHandler
+from DIRAC.Resources.Catalog.FileCatalog            import FileCatalog
+from DIRAC.Core.Utilities.Shifter                   import setupShifterProxyInEnv
 from types import *
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
-from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 
 base_path = ''
 
