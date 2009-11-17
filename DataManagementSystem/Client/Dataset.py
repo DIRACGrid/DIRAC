@@ -1,7 +1,6 @@
-""" Dataset class allows the creation and management of datasets.
-"""
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
+""" Dataset class allows the creation and management of datasets. """
+from DIRAC                                      import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Resources.Catalog.FileCatalog        import FileCatalog
 import types,re
 
 class Dataset:
