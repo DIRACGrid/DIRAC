@@ -1,9 +1,9 @@
-""" This is the LHCb Online storage """
+""" This is the Proxy storage element client """
 
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.DataManagementSystem.Client.Storage.StorageBase import StorageBase
-from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Resources.Storage.StorageBase                import StorageBase
+from DIRAC.ConfigurationSystem.Client                   import PathFinder
+from DIRAC.Core.DISET.RPCClient                         import RPCClient
 import types
  
 ISOK = True

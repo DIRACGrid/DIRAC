@@ -17,13 +17,13 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.DataManagementSystem.Client.Storage.StorageBase import StorageBase
-from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
-from DIRAC.Core.DISET.TransferClient import TransferClient
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.Subprocess import systemCall
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.File import getSize
+from DIRAC                                          import gLogger, S_OK, S_ERROR
+from DIRAC.Resources.Storage.StorageBase            import StorageBase
+from DIRAC.Core.Utilities.Pfn                       import pfnparse,pfnunparse
+from DIRAC.Core.DISET.TransferClient                import TransferClient
+from DIRAC.Core.DISET.RPCClient                     import RPCClient
+from DIRAC.Core.Utilities.Subprocess                import systemCall
+from DIRAC.Core.Utilities.File                      import getSize
 import re,os,types
 
 class DIPStorage(StorageBase):

@@ -1,11 +1,11 @@
 """ This is the LHCb Online storage """
 
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.DataManagementSystem.Client.Storage.StorageBase import StorageBase
-from DIRAC.Core.Utilities.Subprocess import pythonCall
-from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
-from DIRAC.Core.Utilities.File import getSize
-from stat import *
+from DIRAC                                      import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Resources.Storage.StorageBase        import StorageBase
+from DIRAC.Core.Utilities.Subprocess            import pythonCall
+from DIRAC.Core.Utilities.Pfn                   import pfnparse,pfnunparse
+from DIRAC.Core.Utilities.File                  import getSize
+from stat                                       import *
 import types,re,os,xmlrpclib
 
 ISOK = True

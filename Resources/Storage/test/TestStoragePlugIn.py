@@ -1,10 +1,10 @@
 #! /usr/bin/env python
-from DIRAC.Core.Base.Script import parseCommandLine
+from DIRAC.Core.Base.Script                     import parseCommandLine
 parseCommandLine()
-from DIRAC.DataManagementSystem.Client.Storage.StorageFactory import StorageFactory
-from DIRAC.Core.Utilities.File import getSize
+from DIRAC.Resources.Storage.StorageFactory     import StorageFactory
+from DIRAC.Core.Utilities.File                  import getSize
+from types                                      import *
 import unittest,time,os,shutil,sys
-from types import *
 
 if len(sys.argv) < 3:
   print 'Usage: TestStoragePlugIn.py StorageElement protocol'

@@ -12,8 +12,8 @@
                       By providing an optional list of protocols it is possible to limit the created stubs.
 """
 
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities.List import sortList
+from DIRAC                          import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities.List      import sortList
 
 class StorageFactory:
 
@@ -274,7 +274,7 @@ class StorageFactory:
     try:
       # This inforces the convention that the plug in must be named after the protocol
       moduleName = "%sStorage" % (protocolName)
-      storageModule = __import__('DIRAC.DataManagementSystem.Client.Storage.%s' % moduleName,globals(),locals(),[moduleName])
+      storageModule = __import__('DIRAC.Resources.Storage.%s' % moduleName,globals(),locals(),[moduleName])
     except Exception, x:
       errStr = "StorageFactory._generateStorageObject: Failed to import %s: %s" % (storageName, x)
       gLogger.exception(errStr)

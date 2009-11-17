@@ -1,5 +1,5 @@
 import unittest,types,time
-from DIRAC.DataManagementSystem.Client.Storage.StorageFactory import StorageFactory
+from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 
 class StorageFactoryTestCase(unittest.TestCase):
   """ Base class for the StorageFactory test cases

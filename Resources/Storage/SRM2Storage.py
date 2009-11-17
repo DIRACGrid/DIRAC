@@ -1,14 +1,13 @@
 """ This is the SRM2 StorageClass """
 
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.DataManagementSystem.Client.Storage.StorageBase import StorageBase
-from DIRAC.Core.Utilities.Subprocess import pythonCall
-from DIRAC.Core.Utilities.Pfn import pfnparse,pfnunparse
-from DIRAC.Core.Utilities.List import breakListIntoChunks
-from DIRAC.Core.Utilities.File import getSize
-
-from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Storage.Storage.StorageBase                  import StorageBase
+from DIRAC.Core.Utilities.Subprocess                    import pythonCall
+from DIRAC.Core.Utilities.Pfn                           import pfnparse,pfnunparse
+from DIRAC.Core.Utilities.List                          import breakListIntoChunks
+from DIRAC.Core.Utilities.File                          import getSize
+from DIRAC.AccountingSystem.Client.Types.DataOperation  import DataOperation
+from DIRAC.AccountingSystem.Client.DataStoreClient      import gDataStoreClient
 
 
 from stat import *
