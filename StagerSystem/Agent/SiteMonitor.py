@@ -12,7 +12,7 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.DataManagementSystem.Client.StorageElement      import StorageElement
-from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
+from DIRAC.DataManagementSystem.Client.ReplicaManager      import ReplicaManager
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSEsForSite
 from DIRAC                                                 import S_OK, S_ERROR, gConfig, gLogger
 import os, sys, re, string, time
@@ -36,7 +36,7 @@ class SiteMonitor(Thread):
     self.stageRetryMax = gConfig.getValue(self.configSection+'/StageRetryMax',4) # e.g. after 4 * 6 hrs
     self.taskSelectLimit = gConfig.getValue(self.configSection+'/TaskSelectLimit',100) # e.g. after 24hrs
     self.stagerClient = StagerClient()
-    self.fc = FileCatalog()
+    self.rm = ReplicaManager()
     Thread.__init__(self)
     self.setDaemon( True )
 
@@ -178,7 +178,7 @@ class SiteMonitor(Thread):
         else:
           #########################################
           # If they were successfully updated then send the accounting information
-          res = self.fc.getFileSize(submissionTiming.keys())
+          res = self.rm.getCatalogFileSize(submissionTiming.keys())
           if not res['OK']:
             self.log.warn('Failed to get file sizes. Will assume file is of size 1 byte for all files.')
             fileSizes = {}
