@@ -423,7 +423,7 @@ class TransformationDB(DB):
         of LFNs and JobIDs. 
     """
     transID = self.getTransformationID(transName)
-    req = 'select DataFiles.LFN,T_%s.JobID from T_%s,DataFiles where T_%s.FileID=DataFiles.FileID and DataFiles.Status in ("%s")' %(transName,transName,transName,fileStatus)
+    req = 'select DataFiles.LFN,T_%s.JobID from T_%s,DataFiles where T_%s.FileID=DataFiles.FileID and T_%s.Status in ("%s")' %(transName,transName,transName,transName,fileStatus)
     result = self._query(req)
     if not result['OK']:
       return result
