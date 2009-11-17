@@ -13,12 +13,11 @@ __RCSID__ = "$Id$"
 
 import re,time,types
 
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.DB import DB
-from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogClient import LcgFileCatalogClient
-from DIRAC.DataManagementSystem.Client.Catalog.FileCatalogueBase import FileCatalogueBase
-from DIRAC.Core.Utilities.List import stringListToString, intListToString
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC                                                             import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Base.DB                                                import DB
+from DIRAC.DataManagementSystem.Client.ReplicaManager                  import ReplicaManager
+from DIRAC.Core.Utilities.List                                         import stringListToString, intListToString
+from DIRAC.Core.DISET.RPCClient                                        import RPCClient
 
 import threading
 from types import *
@@ -37,7 +36,7 @@ class TransformationDB(DB):
     self.lock = threading.Lock()
     self.dbname = dbname
     self.filters = self.__getFilters()
-    self.catalog = None
+    self.rm = None
 
   def getTransformationWithStatus(self, status):
     """ Gets a list of the transformations with the supplied status
@@ -922,12 +921,12 @@ PRIMARY KEY (FileID)
     """ Adds all the files stored in a given directory in the LFC catalog.
     """
     gLogger.info("TransformationDB.addDirectory: Attempting to populate %s." % path)
-    if self.catalog is None:
-      res = self.__getLFCClient()
+    if self.rm is None:
+      res = self.__getReplicaManager()
       if not res['OK']:
         return res
     start = time.time()
-    res = self.catalog.getDirectoryReplicas(path)
+    res = self.rm.getCatalogDirectoryReplicas(path)
     end = time.time()
     if not res['OK']:
       gLogger.error("TransformationDB.addDirectory: Failed to get replicas. %s" % res['Message'])
@@ -978,15 +977,14 @@ PRIMARY KEY (FileID)
     result = self.__addExistingFiles(transID)
     return result
 
-  def __getLFCClient(self):
-    """Gets the LFC client instance
+  def __getReplicaManager(self):
+    """Gets the RM client instance
     """
     try:
-      self.catalog = LcgFileCatalogClient()
-      self.catalog.setAuthorizationId('/O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Andrei Tsaregorodtsev')
+      self.rm = ReplicaManager()
       return S_OK()
     except Exception,x:
-      errStr = "TransformationDB.__getLFCClient: Failed to create LcgFileCatalogClient"
+      errStr = "TransformationDB.__getReplicaManager: Failed to create ReplicaManager"
       gLogger.exception(errStr, lException=x)
       return S_ERROR(errStr)
 
