@@ -13,7 +13,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
-from DIRAC.DataManagementSystem.Client.StorageElement               import StorageElement
+from DIRAC.Resources.Storage.StorageElement                         import StorageElement
 from DIRAC.Core.Utilities.Os                                        import getDiskSpace
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 
