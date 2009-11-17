@@ -306,16 +306,16 @@ class TransformationDBCLI(cmd.Cmd):
     # KGG checking if directory has / at the end, if yes we remove it
     directory=directory.rstrip('/')
 
-    if not self.lfc:
+    if not self.rm:
       try:
-        from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
-        self.lfc = LcgFileCatalogCombinedClient()
+        from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+        self.rm = ReplicaManager()
       except:
-        self.lfc = None
+        self.rm = None
 
-    if self.lfc:
+    if self.rm:
       start = time.time()
-      result = self.lfc.getDirectoryReplicas(directory)
+      result = self.rm.getCatalogDirectoryReplicas(directory)
       end = time.time()
       print "getPfnsInDir",directory,"operation time",(end-start)
 
