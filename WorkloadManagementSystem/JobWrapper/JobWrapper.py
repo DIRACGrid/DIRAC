@@ -112,14 +112,6 @@ class JobWrapper:
       self.log.verbose('==========================================================================')
     if not self.cleanUpFlag:
       self.log.verbose('CleanUp Flag is disabled by configuration')
-    self.log.verbose('Trying to import LFC File Catalog client')
-    try:
-      from DIRAC.DataManagementSystem.Client.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
-      self.fileCatalog = LcgFileCatalogCombinedClient()
-    except Exception,x:
-      msg = 'Failed to create LcgFileCatalogClient with exception:'
-      self.log.fatal(msg)
-      self.log.fatal(str(x))
     #Failure flag
     self.failedFlag = True
     #Set defaults for some global parameters to be defined for the accounting report
@@ -574,12 +566,11 @@ class JobWrapper:
 
   #############################################################################
   def __getReplicaMetadata(self,lfns):
-    """ Wrapper function to consult LFC for all necessary file metadata
-        and check the result.  To be revisited when file catalogue interface
-        is available and when all info can be returned from a single call.
+    """ Wrapper function to consult catalog for all necessary file metadata
+        and check the result.
     """
     start = time.time()
-    repsResult = self.fileCatalog.getReplicas(lfns)
+    repsResult = self.rm.getActiveReplicas(lfns)
     timing = time.time() - start
     self.log.info('Replica Lookup Time: %.2f seconds ' % (timing) )
     if not repsResult['OK']:
@@ -610,7 +601,7 @@ class JobWrapper:
 
     #Must retrieve GUIDs from LFC for files
     start = time.time()
-    guidDict = self.fileCatalog.getFileMetadata(lfns)
+    guidDict = self.rm.getCatalogFileMetadata(lfns)
     timing = time.time() - start
     self.log.info('GUID Lookup Time: %.2f seconds ' % (timing) )
     if not guidDict['OK']:
