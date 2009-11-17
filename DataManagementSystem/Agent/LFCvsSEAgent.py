@@ -1,15 +1,14 @@
 """  LFCvsSEAgent takes data integrity checks from the RequestDB and verifies the integrity of the supplied directory.
 """
-from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
-from DIRAC.Core.Base.Agent import Agent
-from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
-from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
-from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.DataManagementSystem.Agent.NamespaceBrowser import NamespaceBrowser
-from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
+from DIRAC                                                                  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
+from DIRAC.Core.Base.Agent                                                  import Agent
+from DIRAC.Core.Utilities.Pfn                                               import pfnparse, pfnunparse
+from DIRAC.Core.DISET.RPCClient                                             import RPCClient
+from DIRAC.Core.Utilities.Shifter                                           import setupShifterProxyInEnv
+from DIRAC.RequestManagementSystem.Client.RequestClient                     import RequestClient
+from DIRAC.RequestManagementSystem.Client.RequestContainer                  import RequestContainer
+from DIRAC.DataManagementSystem.Client.ReplicaManager                       import ReplicaManager
+from DIRAC.DataManagementSystem.Agent.NamespaceBrowser                      import NamespaceBrowser
 
 import time,os
 from types import *
@@ -27,7 +26,6 @@ class LFCvsSEAgent(Agent):
     result = Agent.initialize(self)
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
-    self.lfc = FileCatalog(['LcgFileCatalogCombined'])
 
     self.useProxies = gConfig.getValue(self.section+'/UseProxies','True').lower() in ( "y", "yes", "true" )
     self.proxyLocation = gConfig.getValue( self.section+'/ProxyLocation', '' )
@@ -88,7 +86,7 @@ class LFCvsSEAgent(Agent):
               while (oNamespaceBrowser.isActive()):
                 currentDir = oNamespaceBrowser.getActiveDir()
                 gLogger.info("LFCvsSEAgent.execute: Attempting to get contents of %s." % currentDir)
-                res = self.lfc.getDirectoryContents(currentDir)
+                res = self.ReplicaManager.getCatalogDirectoryContents(currentDir)
                 if not res['OK']:
                   subDirs = [currentDir]
                 elif res['Value']['Failed'].has_key(currentDir):
