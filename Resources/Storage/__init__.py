@@ -1,10 +1,3 @@
-############################################################
-# $HeadURL$
-############################################################
-
 """
-DIRAC.Resources.Storage package
-
+   DIRAC.DataManagementSystem.Client.Storage package
 """
-
-__RCSID__ = "$Id$"
