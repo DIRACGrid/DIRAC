@@ -102,7 +102,7 @@ class SSInspectorAgent(AgentModule):
 
   def _executeCheck(self):
     """ create istance of a PEP, 
-        instantiated popping a resource or site from list
+        instantiated popping a site from list
     """
     
     if len(self.SitesToBeChecked) > 0:
@@ -121,5 +121,4 @@ class SSInspectorAgent(AgentModule):
       reason = toBeChecked[4]
       
       newPEP = PEP(granularity = granularity, name = siteName, status = status, formerStatus = formerStatus, reason = reason)
-      #newPEP = PEP({'PolicyType':'Resource_PolType', 'Granularity':granularity}, name = siteName, status = status, formerStatus = formerStatus, reason = reason)
       newPEP.enforce()
