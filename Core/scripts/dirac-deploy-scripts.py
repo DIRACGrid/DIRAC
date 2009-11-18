@@ -16,7 +16,7 @@ simpleCopyMask = [ os.path.basename( __file__ ), 'dirac-platform.py', 'dirac-com
 
 wrapperTemplate = """#!/usr/bin/env python
 #
-import os,sys,popen2
+import os,sys
 #
 if 'DIRACROOT' in os.environ:
   DiracRoot = os.environ['DIRACROOT']
@@ -29,9 +29,16 @@ else:
   if not os.path.exists( dirac_platform ):
     print >> sys.stderr, "Missing file %s" % dirac_platform
     sys.exit(-1)
-  p3 = popen2.Popen3( "'%s'" % dirac_platform )
-  DiracPlatform = p3.fromchild.read().strip()
-  p3.wait()
+  try:
+    import subprocess
+    p = subprocess.Popen( "'%s'" % dirac_platform, shell = True, stdout=subprocess.PIPE, 
+                          stderr=subprocess.PIPE, close_fds = True )
+    DiracPlatform = p.stdout.read().strip()
+    p.wait()
+  except ImportError:
+    p3 = popen2.Popen3( "'%s'" % dirac_platform )
+    DiracPlatform = p3.fromchild.read().strip()
+    p3.wait()
   if not DiracPlatform or DiracPlatform == "ERROR":
     print >> sys.stderr, "Can not determine local platform"
     sys.exit(-1)
