@@ -42,7 +42,7 @@ buildVersion = "v%dr%d build %d" % ( majorVersion, minorVersion, patchLevel )
 # Check of python version
 
 __pythonMajorVersion = ["2",]
-__pythonMinorVersion = ["4","5"]
+__pythonMinorVersion = ["4","5","6"]
 
 if not ( __pythonMajorVersion.__contains__( platform.python_version_tuple()[0] ) and
          __pythonMinorVersion.__contains__( platform.python_version_tuple()[1] ) ):
