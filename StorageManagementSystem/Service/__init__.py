@@ -1,0 +1,3 @@
+"""
+   DIRAC.StorageManagementSystem.Service package
+"""
