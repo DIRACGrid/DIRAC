@@ -34,28 +34,28 @@ class PEPSuccess(PolicySystemTestCase):
               continue
             for newPolicyType in PolicyTypes:
               for newGranularity in ValidRes:
-                self.mock_pdp.takeDecision.return_value = {'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'XX'}
+                self.mock_pdp.takeDecision.return_value = {'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'testReason'}
                 pep = PEP(granularity, 'XX', status, oldStatus, 'XX', {'PolicyType':newPolicyType, 'Granularity':newGranularity})
                 res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
                 self.assertEqual(res, None)
-                self.mock_pdp.takeDecision.return_value = {'PolicyType':[policyType, newPolicyType], 'Action':False, 'Reason':'XX'}
+                self.mock_pdp.takeDecision.return_value = {'PolicyType':[policyType, newPolicyType], 'Action':False, 'Reason':'testReason'}
                 res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
                 self.assertEqual(res, None)
-            self.mock_pdp.takeDecision.return_value = {'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'XX'}
+            self.mock_pdp.takeDecision.return_value = {'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'testReason'}
             pep = PEP(granularity, 'XX', status, oldStatus, 'XX')
             res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
             self.assertEqual(res, None)
-            self.mock_pdp.takeDecision.return_value = {'PolicyType':[policyType, newPolicyType], 'Action':False, 'Reason':'XX'}
+            self.mock_pdp.takeDecision.return_value = {'PolicyType':[policyType, newPolicyType], 'Action':False, 'Reason':'testReason'}
             res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
             self.assertEqual(res, None)
-        self.mock_pdp.takeDecision.return_value = {'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'XX'}
+        self.mock_pdp.takeDecision.return_value = {'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'testReason'}
         pep = PEP()
         res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
         self.assertEqual(res, None)
         pep = PEP()
         res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
         self.assertEqual(res, None)
-        self.mock_pdp.takeDecision.return_value = {'PolicyType':[policyType, newPolicyType], 'Action':False, 'Reason':'XX'}
+        self.mock_pdp.takeDecision.return_value = {'PolicyType':[policyType, newPolicyType], 'Action':False, 'Reason':'testReason'}
         res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
         self.assertEqual(res, None)
 
@@ -112,7 +112,7 @@ class PDPSuccess(PolicySystemTestCase):
         for oldStatus in ValidStatus:
           if status == oldStatus:
             continue
-          self.mock_p.evaluate.return_value = {'SAT':True, 'Status':status, 'Reason':'XX'}
+          self.mock_p.evaluate.return_value = {'SAT':True, 'Status':status, 'Reason':'testReason'}
           pdp = PDP(granularity, 'XX', status, oldStatus, 'XX')
           res = pdp.takeDecision(policyIn = self.mock_p)
           self.assert_(res['Action'])
@@ -120,7 +120,7 @@ class PDPSuccess(PolicySystemTestCase):
           self.assert_(res['Action'])
           res = pdp.takeDecision(policyIn = self.mock_p, knownInfo={})
           self.assert_(res['Action'])
-          self.mock_p.evaluate.return_value = {'SAT':False, 'Reason':'XX'}
+          self.mock_p.evaluate.return_value = {'SAT':False, 'Reason':'testReason'}
           res = pdp.takeDecision(policyIn = self.mock_p)
           self.assertFalse(res['Action'])
           res = pdp.takeDecision(policyIn = self.mock_p, argsIn = ())

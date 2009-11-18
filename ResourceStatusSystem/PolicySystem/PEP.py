@@ -14,6 +14,7 @@
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+from DIRAC.ResourceStatusSystem.Policy import Configurations
 
 #class PEPBadInput(Exception):
 #  pass
@@ -168,10 +169,18 @@ class PEP:
           pass
     
     if 'Alarm_PolType' in self.__policyType:
-      # raise alarm
-      pass
-    
-    
+      # raise alarm, right now makes a simple notification
+      
+      if res['Action']:
+        from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+        nc = NotificationClient()
+        
+        notif = "ResourceStatusSystem notification: "
+        notif = notif + "%s %s is perceived as" %(self.__granularity, self.__name) 
+        notif = notif + " %s. Reason: %s." %(res['Status'], res['Reason'])
+        
+        nc.addNotificationForUser(Configurations.notified_users, notif)
+        
     if 'Collective_PolType' in self.__policyType:
       # do something
       pass
