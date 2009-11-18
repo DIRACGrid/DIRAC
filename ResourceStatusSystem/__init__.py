@@ -1,0 +1,4 @@
+"""
+DIRAC.ResourceStatusSystem package
+
+"""
