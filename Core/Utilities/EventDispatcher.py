@@ -68,7 +68,11 @@ class EventDispatcher:
       gEventSync.unlock()
     finalResult = S_OK()
     for functor in eventFunctors:
-      result = functor( eventName, params )
+      try:
+        result = functor( eventName, params )
+      except Exception, e:
+        gLogger.exception( "Listener %s for event %s raised an exception" % ( functor.__name__, eventName ) )
+        continue
       if type( result ) != types.DictType or 'OK' not in result:
         gLogger.error( "Listener %s for event %s did not return a S_OK/S_ERROR structure" % ( functor.__name__, eventName ) )
         continue
