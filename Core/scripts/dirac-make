@@ -74,7 +74,7 @@ if 'PYTHONPATH' not in os.environ:
 else:
   os.environ['PYTHONPATH'] = '%s:%s' % ( DiracPythonPath, os.environ['PYTHONPATH'] )
 
-DiracScript = os.path.join( DiracRoot, 'DIRAC', '$orgfile' )
+DiracScript = os.path.join( DiracRoot, '$orgfile' )
 
 if sys.argv[1:]:
   args = ' "%s"' % '" "'.join( sys.argv[1:] )
