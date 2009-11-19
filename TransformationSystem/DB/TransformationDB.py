@@ -643,7 +643,7 @@ class TransformationDB(DB):
       req = "UPDATE T_%s SET TargetSE='%s' WHERE FileID IN (%s);" % (transID,se,intListToString(fileIDs))
       return self._update(req)
 
-  def setFileStatusForTransformation(self,transName,status,lfns):
+  def setFileStatusForTransformation(self,transName,status,lfns,force=False):
     """ Set file status for the given transformation identified by transID
         for the given stream for files in the list of lfns
     """
@@ -661,6 +661,8 @@ class TransformationDB(DB):
     for lfn in lfnDict.keys():
       if lfnDict[lfn][transID]['FileStatus'] == "Processed" and status != "Processed":
         failed[lfn] = 'Can not change Processed status'
+      elif  lfnDict[lfn][transID]['ErrorCount'] >= MAX_ERROR_COUNT and status.lower()=='unused' and force:
+        fileIDs.append((lfnDict[lfn][transID]['FileID'],lfn))
       elif lfnDict[lfn][transID]['ErrorCount'] >= MAX_ERROR_COUNT and status.lower() == 'unused':
         failed[lfn] = 'Max number of resets reached'
         req = "UPDATE T_%s SET Status='MaxReset', LastUpdate=UTC_TIMESTAMP() WHERE FileID=%s;" % (transID,lfnDict[lfn][transID]['FileID'])
