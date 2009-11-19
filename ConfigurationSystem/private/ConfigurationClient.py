@@ -29,6 +29,9 @@ class ConfigurationClient:
 
   def dumpRemoteCFGToFile( self, fileName ):
     return gConfigurationData.dumpRemoteCFGToFile( fileName )
+  
+  def addListererToNewVersionEvent( self, functor ):
+    gRefresher.addListererToNewVersionEvent( functor )
 
   def dumpCFGAsLocalCache( self, fileName = None ):
     cfg = gConfigurationData.mergedCFG.clone()

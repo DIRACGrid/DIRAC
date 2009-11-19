@@ -9,6 +9,7 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC.ConfigurationSystem.Client.PathFinder import getGatewayURLs
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities.EventDispatcher import gEventDispatcher
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 class Refresher( threading.Thread ):
@@ -20,11 +21,16 @@ class Refresher( threading.Thread ):
     self.sURL = False
     self.bEnabled = True
     self.timeout = 60
+    self.__callbacks = { 'newVersion' : [] }
+    gEventDispatcher.registerEvent( "CSNewVersion" )
     random.seed()
     self.oTriggeredRefreshLock = threading.Lock()
 
   def disable( self ):
     self.bEnabled = False
+    
+  def addListererToNewVersionEvent( self, functor ):
+    gEventDispatcher.addListener( "CSNewVersion", functor )
 
   def __refreshInThread(self):
     retVal = self.__refresh()
@@ -129,6 +135,7 @@ class Refresher( threading.Thread ):
         gLogger.debug( "New version available", "Updating to version %s..." % dataDict[ 'newestVersion' ] )
         gConfigurationData.loadRemoteCFGFromCompressedMem( dataDict[ 'data' ] )
         gLogger.debug( "Updated to version %s" % gConfigurationData.getVersion() )
+        gEventDispatcher.triggerEvent( "CSNewVersion", dataDict[ 'newestVersion' ], threaded = True )
       return S_OK()
     return retVal
 
