@@ -9,24 +9,30 @@ class Synchronizer:
   decorator making the call thread-safe"""
 
   def __init__( self, lockName = "", recursive = False ):
-    self.lockName = lockName
+    self.__lockName = lockName
     if recursive:
-      self.lock = threading.RLock()
+      self.__lock = threading.RLock()
     else:
-      self.lock = threading.Lock()
+      self.__lock = threading.Lock()
 
   def __call__( self, funcToCall ):
     def lockedFunc( *args, **kwargs ):
       try:
-        if self.lockName:
-          print "LOCKING", self.lockName
-        self.lock.acquire()
+        if self.__lockName:
+          print "LOCKING", self.__lockName
+        self.__lock.acquire()
         return funcToCall(*args, **kwargs)
       finally:
-        if self.lockName:
-          print "UNLOCKING", self.lockName
-        self.lock.release()
+        if self.__lockName:
+          print "UNLOCKING", self.__lockName
+        self.__lock.release()
     return lockedFunc
+  
+  def lock(self):
+    return self.__lock.acquire()
+  
+  def unlock(self):
+    return self.__lock.release()
 
 
 class WORM:
