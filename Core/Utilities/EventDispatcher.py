@@ -84,5 +84,5 @@ class EventDispatcher:
       return finalResult
     return S_OK( len( eventFunctors ) )
         
-
+gEventDispatcher = EventDispatcher()
         
