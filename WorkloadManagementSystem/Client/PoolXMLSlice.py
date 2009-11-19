@@ -12,7 +12,7 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
+from DIRAC.Resources.Catalog.PoolXMLCatalog                         import PoolXMLCatalog
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 
 import os,sys,re

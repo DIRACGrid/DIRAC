@@ -9,7 +9,7 @@ __RCSID__ = "$Id$"
 
 import os,glob,re,tarfile,string
 
-from DIRAC.DataManagementSystem.Client.PoolXMLCatalog import PoolXMLCatalog
+from DIRAC.Resources.Catalog.PoolXMLCatalog           import PoolXMLCatalog
 from DIRAC.Core.Utilities.List                        import uniqueElements
 from DIRAC.Core.Utilities.File                        import makeGuid
 from DIRAC                                            import S_OK, S_ERROR, gLogger, gConfig

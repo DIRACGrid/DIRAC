@@ -12,8 +12,8 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
-from DIRAC.DataManagementSystem.Client.PoolXMLCatalog               import PoolXMLCatalog
-from DIRAC.DataManagementSystem.Client.PoolXMLFile                  import getGUID
+from DIRAC.Resources.Catalog.PoolXMLCatalog                         import PoolXMLCatalog
+from DIRAC.Resources.Catalog.PoolXMLFile                            import getGUID
 from DIRAC.RequestManagementSystem.Client.RequestContainer          import RequestContainer
 from DIRAC.RequestManagementSystem.Client.RequestClient             import RequestClient
 from DIRAC.RequestManagementSystem.Client.DISETSubRequest           import DISETSubRequest
