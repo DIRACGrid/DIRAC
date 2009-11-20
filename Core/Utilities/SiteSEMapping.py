@@ -54,7 +54,8 @@ def getSESiteMapping(gridName=''):
   """ Returns a dictionary of all SEs and their associated site(s), e.g.
       {'CERN-RAW':'LCG.CERN.ch','CERN-RDST':'LCG.CERN.ch',...]}
       Although normally one site exists for a given SE, it is possible over all
-      Grid types to have
+      Grid types to have multiple entries. 
+      If gridName is specified, result is restricted to that Grid type.
       Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
   """
   seSiteMapping = {}
@@ -86,9 +87,11 @@ def getSESiteMapping(gridName=''):
   return S_OK(seSiteMapping)
 
 #############################################################################
-def getSitesForSE(storageElement):
+def getSitesForSE(storageElement,gridName=''):
   """ Given a DIRAC SE name this method returns a list of corresponding sites.
+      Optionally restrict to Grid specified by name.
   """
+  
   finalSites = []
   gridTypes = gConfig.getSections('/Resources/Sites/',[])
   if not gridTypes['OK']:
@@ -96,6 +99,12 @@ def getSitesForSE(storageElement):
     return gridTypes
 
   gridTypes = gridTypes['Value']
+  if gridName:
+    if gridName in gridTypes:
+      gridTypes = [gridName]
+    else:
+      return S_ERROR('Grid type %s not in list: %s' %(gridName,string.join(gridTypes,', ')))
+  
   for grid in gridTypes:
     sites = gConfig.getSections('/Resources/Sites/%s' %grid,[])
     if not sites['OK']: #gConfig returns S_ERROR for empty sections until version
@@ -125,7 +134,6 @@ def getSEsForSite(siteName):
 def isSameSiteSE(se1,se2):
   """ Check if the 2 SEs are from the same site
   """
-
   if se1 == se2:
     return S_OK(True)
 
