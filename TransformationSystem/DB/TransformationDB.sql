@@ -1,61 +1,11 @@
 -- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.15 2009/08/26 07:17:46 rgracian Exp $
--- ------------------------------------------------------------------------------
---
---  Schema definition for the TransformationDB database -
---  a generic engine to define input data streams and support dynamic
---  data grouping per unit of execution,e.g. jobs or data transfer requests
---
---  This schema is supposed to be included b specific data processing databases,
---  ProductionDB or AutoTransferDB
---
--- ------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+--  Schema definition for the TransformationDB database a generic
+--  engine to define input data streams and support dynamic data 
+--  grouping per unit of execution.
 
+---------------------------------------------------------------------------------
 DROP TABLE IF EXISTS Transformations;
-
--- ------------------------------------------------------------------------------
--- This table store Transformation definitions
--- TransformationID - Transformation internal incremental ID
--- Name - name of the Transformation
--- Description - short description of the workflow to fit one line
--- LongDescription - description of the workflow in a free form
--- CreationTime - time stamp
--- AuthorDN - persone published Production
--- AuthorGroup - group used to publish
--- Type - type of the workflow.
---   SIMULATION - Montecarlo production, no input data required
---   PROCESSING - Processing production, input files required
---   REPLICATION - data replication production, no body required
--- Plugin - the plugin used to group files into jobs
---   NONE
---   BROADCAST
---   LOADBALANCE
--- AgentType - the agent that will process the transformation
---   Manual
---   Automatic
---   ReplicationPlacement ???
---   ProductionAgent ???
--- Status - information about current status of the production
---   New - newly created, equivalent to STOPED
---   Active - can submit
---   Flush - final stage, ignoring GroupSize
---   Stopped - stopped by manager
---   Error - Production with error, equivalent to STOPPED
---   Terminated - stopped, extension impossible
--- FileMask - filter mask
--- ----- Explanation about status field ------
--- We have execute three types of action for each transformation
--- 1 - Publish files in the Transformation table
--- 2 - Create jobs
--- 3 - Submit jobs
---      STATUS | Avalible actions
--- New           1
--- Stopped       1
--- Active        1 2 3
--- Flush           2 3
--- Error         x
--- Terminated    x
--- ------------------------------------------------------------------------------
-
 CREATE TABLE Transformations (
     TransformationID INTEGER NOT NULL AUTO_INCREMENT,
     TransformationName VARCHAR(255) NOT NULL,
@@ -69,15 +19,12 @@ CREATE TABLE Transformations (
     AgentType CHAR(16) DEFAULT 'Manual',
     Status  CHAR(16) DEFAULT 'New',
     FileMask VARCHAR(255),
-    BkQueryID INT NOT NULL default '0',
     TransformationGroup varchar(64) NOT NULL default 'General',
     PRIMARY KEY(TransformationID),
     INDEX(TransformationName)
 ) ENGINE=InnoDB;
 
--- --------------------------------------------------------------------------------
--- Once a transformation in entered in the the database a table is created to contain its associated files
---
+---------------------------------------------------------------------------------
 -- CREATE TABLE T_$TransformationID(
 --   FileID INTEGER NOT NULL,
 --   Status VARCHAR(32) DEFAULT "Unused",
@@ -85,18 +32,9 @@ CREATE TABLE Transformations (
 --   JobID VARCHAR(32),
 --   UsedSE VARCHAR(32) DEFAULT "Unknown",
 --   PRIMARY KEY (FileID,Status)
---
--- -----------------------------------------------------------------------------------
 
--- ------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationParameters;
--- ------------------------------------------------------------------------------
---
---  TransformationParameters table is a container for arbitrary parameters needed by specific
---  transformations
---
--- ------------------------------------------------------------------------------
-
 CREATE TABLE TransformationParameters (
     TransformationID INTEGER NOT NULL,
     ParameterName VARCHAR(32) NOT NULL,
@@ -104,15 +42,8 @@ CREATE TABLE TransformationParameters (
     PRIMARY KEY(TransformationID,ParameterName)
 );
 
--- ------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationLog;
--- ------------------------------------------------------------------------------
---
---  TransformationLog table keeps looging messages about status changes of the
---  transformations
---
--- ------------------------------------------------------------------------------
-
 CREATE TABLE TransformationLog (
     TransformationID INTEGER NOT NULL,
     Message VARCHAR(255) NOT NULL,
@@ -122,9 +53,31 @@ CREATE TABLE TransformationLog (
     INDEX (MessageDate)
 );
 
--- ------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+DROP TABLE IF EXISTS Jobs;
+CREATE TABLE Jobs (
+JobID INTEGER NOT NULL AUTO_INCREMENT,
+TransformationID INTEGER NOT NULL,
+WmsStatus char(16) DEFAULT 'Created',
+JobWmsID char(16) DEFAULT '',
+TargetSE char(32) DEFAULT 'Unknown',
+CreationTime DATETIME NOT NULL,
+LastUpdateTime DATETIME NOT NULL,
+PRIMARY KEY(TransformationID,JobID),
+INDEX(WmsStatus)
+);
+
+---------------------------------------------------------------------------------
+DROP TABLE IF EXISTS JobInputs;
+CREATE TABLE JobInputs (
+TransformationID INTEGER NOT NULL,
+JobID INTEGER NOT NULL,
+InputVector BLOB,
+PRIMARY KEY(TransformationID,JobID)
+);
+
+---------------------------------------------------------------------------------
 DROP TABLE IF EXISTS DataFiles;
--- ------------------------------------------------------------------------------
 CREATE TABLE DataFiles (
    FileID INTEGER NOT NULL AUTO_INCREMENT,
    LFN VARCHAR(255) UNIQUE,
@@ -133,9 +86,8 @@ CREATE TABLE DataFiles (
    PRIMARY KEY (FileID, LFN)
 );
 
--- ------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
 DROP TABLE IF EXISTS Replicas;
--- ------------------------------------------------------------------------------
 CREATE TABLE Replicas (
   FileID INTEGER NOT NULL,
   PFN VARCHAR(255),
@@ -145,38 +97,11 @@ CREATE TABLE Replicas (
   PRIMARY KEY (FileID, SE)
 );
 
--- ------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
 DROP TABLE IF EXISTS FileTransformations;
--- ------------------------------------------------------------------------------
 CREATE TABLE FileTransformations(
    FileID INTEGER NOT NULL,
    TransformationID INTEGER NOT NULL,
    TransformationType VARCHAR(32),
    PRIMARY KEY (FileID, TransformationID)
 );
-
--- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS BkQueries;
--- ------------------------------------------------------------------------------
-CREATE TABLE BkQueries (
-  BkQueryID int(11) NOT NULL auto_increment,
-  SimulationConditions varchar(128) NOT NULL default 'All',
-  INDEX (SimulationConditions),
-  DataTakingConditions varchar(128) NOT NULL default 'All',
-  INDEX (DataTakingConditions),
-  ProcessingPass varchar(128) NOT NULL default 'All',
-  INDEX (ProcessingPass),
-  FileType varchar(32) NOT NULL default 'All',
-  INDEX (FileType),
-  EventType int(11) NOT NULL default '0',
-  INDEX (EventType),
-  ConfigName varchar(64) NOT NULL default 'All',
-  INDEX (ConfigName),
-  ConfigVersion varchar(64) NOT NULL default 'All',
-  INDEX (ConfigVersion),
-  ProductionID int(11) NOT NULL default '0',
-  INDEX (ProductionID),
-  DataQualityFlag varchar(32) NOT NULL default 'OK',
-  INDEX (DataQualityFlag),
-  PRIMARY KEY  (`BkQueryID`)
-) ENGINE=MyISAM
