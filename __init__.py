@@ -35,10 +35,18 @@ import sys, os, platform
 
 majorVersion = 5
 minorVersion = 0
-patchLevel   = 0.1
+patchLevel   = 0
+preVersion   = 1
 
-version      = "v%sr%sp%s" % ( majorVersion, minorVersion, patchLevel )
-buildVersion = "v%dr%d build %d" % ( majorVersion, minorVersion, patchLevel )
+version      = "v%sr%s" % ( majorVersion, minorVersion )
+buildVersion = "v%dr%d" % ( majorVersion, minorVersion )
+if patchLevel:
+  version = "%sp%s" % ( version, patchLevel )
+  buildVersion = "%s build %s" % ( buildVersion, patchLevel )
+if preVersion:
+  version = "%s-pre%s" % ( version, preVersion )
+  buildVersion = "%s pre %s" % ( buildVersion, preVersion )
+  
 # Check of python version
 
 __pythonMajorVersion = ["2",]
