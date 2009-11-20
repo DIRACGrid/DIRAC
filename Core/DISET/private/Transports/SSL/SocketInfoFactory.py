@@ -98,6 +98,7 @@ class SocketInfoFactory:
     if not retVal[ 'OK' ]:
       return retVal
     if 'enableSessions' in kwargs and kwargs[ 'enableSessions' ]:
+      sessionId = hash( hostAddress )
       gSessionManager.set( sessionId, sslSocket.get_session() )
     return S_OK( socketInfo )
 
