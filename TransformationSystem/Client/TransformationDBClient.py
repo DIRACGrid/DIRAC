@@ -16,6 +16,15 @@ class TransformationDBClient(FileCatalogueBase):
   def setServer(self,url):
     self.server = url
 
+  ###########################################################################
+  #
+  # These methods are for adding new tasks to the transformation database
+  #
+
+  def addTaskForTransformation(self,transID,lfns=[],se='Unknown'):
+    server = RPCClient(self.server,timeout=120)
+    return addTaskForTransformation(transID,lfns,se)
+
   #####################################################################
   #
   # These are transformation management methods
