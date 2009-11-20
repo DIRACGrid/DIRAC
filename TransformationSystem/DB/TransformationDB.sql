@@ -37,6 +37,19 @@ CREATE TABLE Transformations (
 DROP TABLE IF EXISTS TransformationParameters;
 CREATE TABLE TransformationParameters (
     TransformationID INTEGER NOT NULL,
+    GroupSize INT NOT NULL DEFAULT 1,
+    Parent VARCHAR(255) DEFAULT '',
+    InheritedFrom INTEGER DEFAULT 0,
+    Body BLOB,
+    MaxNumberOfJobs INT NOT NULL DEFAULT 0,
+    EventsPerJob INT NOT NULL DEFAULT 0,
+    PRIMARY KEY(TransformationID)
+);
+
+---------------------------------------------------------------------------------
+DROP TABLE IF EXISTS AdditionalParameters;
+CREATE TABLE AdditionalParameters (
+    TransformationID INTEGER NOT NULL,
     ParameterName VARCHAR(32) NOT NULL,
     ParameterValue BLOB NOT NULL,
     PRIMARY KEY(TransformationID,ParameterName)
