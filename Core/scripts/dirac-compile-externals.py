@@ -130,9 +130,11 @@ def resolvePackagesToBuild( compType, buildCFG, alreadyExplored = [] ):
 cmdOpts = ( ( 'd:', 'destination=',   'Destination where to build the externals' ),
             ( 't:', 'type=',          'Type of compilation (default: client)' ),
             ( 'e:', 'externalsPath=', 'Path to the externals sources' ),
+            ( 'v:', 'version=',       'Version of the externals to compile (default will be trunk)' ),
             ( 'h',  'help',           'Show this help' ),
           )
 
+compExtVersion = False
 compType = 'client'
 compDest = False
 compExtSource = False
@@ -153,6 +155,8 @@ for o, v in optList:
     compExtSource = v
   elif o in ( '-d', '--destination' ):
     compDest = v
+  elif o in ( '-v', '--version' ):
+    compExtVersion = v  
 
 if not compDest:
   basePath = os.path.dirname( os.path.realpath( __file__ ) )
@@ -183,7 +187,7 @@ if not compExtSource:
   print "Creating temporary work dir at %s" % workDir
   downOK = False
   for fnc in ( downloadExternalsTar, downloadExternalsSVN ):
-    if fnc( workDir ):
+    if fnc( workDir, compExtVersion ):
       downOK = True
       break
   if not downOK:
@@ -216,10 +220,14 @@ if compDest:
 else:
   makeArgs = ""
 
-print "Building %s" % ", ".join ( packagesToBuild )
+#Substitution of versions 
+finalPackages = []
 for prog in packagesToBuild:
   for k in compVersionDict:
-    prog = prog.replace( "$%s$" % k, compVersionDict[k] )
+    finalPackages.append( prog.replace( "$%s$" % k, compVersionDict[k] ) )
+    
+print "Building %s" % ", ".join ( finalPackages )
+for prog in finalPackages:
   print "== BUILDING %s == " % prog
   progDir = os.path.join( externalsDir, prog )
   makePath = os.path.join( progDir, "dirac-make" )
