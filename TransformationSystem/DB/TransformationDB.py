@@ -38,6 +38,144 @@ class TransformationDB(DB):
     self.filters = self.__getFilters()
     self.rm = None
 
+  ###########################################################################
+  #
+  # These methods are for adding new tasks to the transformation database
+  #
+  
+  def addTaskForTransformation(self,transID,lfns=[],se='Unknown'):
+    """ Create a new task with the supplied files for a transformation.
+    """
+    # Get the connection to the database
+    res = self._getConnection()
+    if not res['OK']:
+      return S_ERROR('Failed to get connection to MySQL',result['Message'])
+    connection = res['Value']
+    # Be sure the all the supplied LFNs are known to the databse
+    if lfns:
+      fileIDs = self.__getFileIDsForLfns(lfns,connection)
+      if not fileIDs:
+        gLogger.error("All files not found in the transformation database")
+        return S_ERROR("All files not found in the transformation database")
+      allFound = True
+      for lfn in lfns:
+        if lfn not in fileIDs.values():
+          gLogger.error("Supplied file does not exist in the transformation database",lfn)
+          allFound = False
+      if not allFound:
+        return S_ERROR("Not all file found in the transformation database")
+    # Get the transformation ID if we have a transformation name
+    res  = self.__getTransformationID(transID,connection)
+    if not res['OK']:
+      gLogger.error("Failed to get ID for transformation",res['Message'])
+      return res
+    transID = res['Value']
+    # Insert the task into the jobs table and retrieve the taskID
+    self.lock.acquire()
+    req = "INSERT INTO Jobs (TransformationID, WmsStatus, JobWmsID, TargetSE, CreationTime, LastUpdateTime) VALUES\
+     (%s,'%s','%d','%s', UTC_TIMESTAMP(), UTC_TIMESTAMP());" % (transID,'Created', 0, se)
+    res = self._update(req,connection)
+    if not res['OK']:
+      self.lock.release()
+      gLogger.error("Failed to publish task for transformation", result['Message'])
+      return res
+    res = self._query("SELECT LAST_INSERT_ID();", connection)
+    self.lock.release()
+    if not res['OK']:
+      return res
+    taskID = int(res['Value'][0][0])
+    gLogger.verbose("Published task %d for transformation %d." % (taskID,transID))
+    # If we have input data then update their status, and taskID in the transformation table
+    if lfns:
+      res = self.insertTaskInputs(transID,taskID,lfns,connection)
+      if not res['OK']:
+        self.removeTransformationTask(transID,taskID,connection)
+        return res
+      res = self.insertFileTransformations(transID,fileIDs,connection)
+      if not res['OK']:
+        self.removeTransformationTask(transID,taskID,connection)
+        return res
+      res = self.assignTransformationFile(transID, taskID, se, fileIDs, connection)
+      if not res['OK']:
+        self.removeTransformationTask(transID,taskID,connection)
+        return res
+    return S_OK(taskID)
+
+  def removeTransformationTask(self,transID,taskID,connection=False):
+    req = "DELETE FROM WHERE JobInputs WHERE TransformationID=%d AND JobID=%d;" % (transID,taskID)
+    self._update(req,connection)
+    req = "DELETE FROM WHERE FileTransformations WHERE TransformationID=%d AND JobID=%d;" % (transID,taskID)
+    self._update(req,connection)
+    req = "UPDATE T_%d SET JobID=NULL, UsedSE='Unknown', Status='Unused' WHERE JobID=%d;" % (transID,taskID)
+    self._update(req,connection)
+    return S_OK()
+
+  def insertTaskInputs(self,transID,taskID,lfns,connection=False):      
+    vector= str.join(';',lfns)
+    fields = ['TransformationID','JobID','InputVector']
+    values = [transID,taskID,inputVector]
+    res = self._insert('JobInputs',fields,values,connection)
+    if not res['OK']:
+      gLogger.error("Failed to add input vector to task %d" % taskID)
+    return res
+
+  def insertFileTransformations(self,transID,fileIDs,connection=False):
+   req = "INSERT INTO FileTransformations (FileID,TransformationID) VALUES"
+   for fileID in fileIDs:
+     req = "%s (%d, %d)," % (req,fileID,transID)
+   req = req.rstrip(',')
+   res = self._update(req,connection)
+   if not res['OK']:
+     gLogger.error("Failed to insert rows to FileTransformations",res['Message'])   
+   return res
+ 
+  def assignTransformationFile(self,transID,taskID,se,fileIDs,connection=False):
+    """ Make necessary updates to the T_* table for the newly created task """
+    req = "UPDATE T_%d SET JobID='%d',UsedSE='%s',Status='Assigned',LastUpdate=UTC_TIMESTAMP()\
+     WHERE FileID IN (%s);" % (transID,taskID,se,intListToString(fileIDs.keys()))
+    res = self._update(req,connection)
+    if not res['OK']:
+      gLogger.error("Failed to assign file to task",res['Message'])
+    return res
+
+  def __getTransformationID(self,name,connection=False):
+    """ Method returns ID of transformation with the name=<name>
+        it checks type of the argument, and if it is string returns transformationID
+        if not we assume that transName is actually transID
+    """
+    try:
+      return S_OK(long(name))
+    except:
+      pass
+    if type(name) not in types.StringTypes:
+      return S_ERROR("Transformation should ID or name")
+    cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s';" % name
+    res = self._query(cmd,connection)
+    if not res['OK']:
+      gLogger.error("Failed to obtain transformation ID for transformation","%s:%s" % (name,res['Message']))
+      return res
+    elif not res['Value']:
+      gLogger.verbose("Transformation with name %s does not exists" % (name))
+      return S_ERROR("Transformation does not exist")
+    return S_OK(res['Value'][0][0])
+
+  def __getFileIDsForLfns(self,lfns,connection=False):
+    """ Get file IDs for the given list of lfns
+    """
+    fids = {}
+    req = "SELECT LFN,FileID FROM DataFiles WHERE LFN in (%s);" % stringListToString(lfns)
+    res = self._query(req,connection)
+    if not res['OK']:
+      return res
+    for lfn,fileID in res['Value']:
+      fids[fileID] = lfn
+    return fids
+  
+  ###########################################################################
+  #
+  # Still to consider
+  #
+
   def getTransformationWithStatus(self, status):
     """ Gets a list of the transformations with the supplied status
     """
@@ -50,26 +188,6 @@ class TransformationDB(DB):
       transIDs.append(tuple[0])
     return S_OK(transIDs)
 
-  def getTransformationID(self, name):
-    """ Method returns ID of transformation with the name=<name>
-        it checks type of the argument, and if it is string returns transformationID
-        if not we assume that prodName is actually prodID
-
-        Returns transformation ID if exists otherwise 0
-        WARNING!! returned value is long !!
-    """
-
-    if isinstance(name, str):
-      cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s';" % name
-      result = self._query(cmd)
-      if not result['OK']:
-        gLogger.error("Failed to check if Transformation with name %s exists %s" % (name, result['Message']))
-        return 0L # we do not terminate execution here but log error
-      elif result['Value'] == ():
-        gLogger.verbose("Transformation with name %s do not exists" % (name))
-        return 0L # we do not terminate execution here
-      return result['Value'][0][0]
-    return name # it is actually number
 
   def transformationExists(self, transID):
     """ Method returns TRUE if transformation with the ID=<id> exists
@@ -686,7 +804,6 @@ class TransformationDB(DB):
           successful[lfn] = 'Status updated to %s' % status
       else:
         successful[lfn] = 'Status not changed'
-
     return S_OK({"Successful":successful,"Failed":failed})
 
   def resetFileStatusForTransformation(self,transName,lfns):
@@ -702,8 +819,7 @@ class TransformationDB(DB):
       return self._update(req)
 
   def setFileJobID(self,transName,jobID,lfns):
-    """ Set file job ID for the given transformation identified by transID
-        for the given stream for files in the list of lfns
+    """ Set file job ID for the given transformation identified by transID for the given stream for files in the list of lfns
     """
     transID = self.getTransformationID(transName)
     fileIDs = self.__getFileIDsForLfns(lfns).keys()
@@ -912,17 +1028,6 @@ PRIMARY KEY (FileID)
             gLogger.verbose("TransformationDB.__addFileToTransformation: File %s already present in transformation %s." % (fileID,transID))
     return S_OK(addedTransforms)
 
-  def __getFileIDsForLfns(self,lfns):
-    """ Get file IDs for the given list of lfns
-    """
-    fids = {}
-    req = "SELECT LFN,FileID FROM DataFiles WHERE LFN in (%s);" % stringListToString(lfns)
-    res = self._query(req)
-    if not res['OK']:
-      return res
-    for lfn,fileID in res['Value']:
-      fids[fileID] = lfn
-    return fids
 
   def __filterFile(self,lfn,filters=None):
     """Pass the input file through a filter
