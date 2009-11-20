@@ -14,6 +14,20 @@ class TransformationHandler(RequestHandler):
   def export_getName(self):
     res = self.database.getName()
     return res
+  
+  ###########################################################################
+  #
+  # These methods are for adding new tasks to the transformation database
+  #
+
+  types_addTaskForTransformation = [[StringTypes]+[IntType,LongType]]
+  def export_addTaskForTransformation(self,transID,lfns=[],se='Unknown'):
+    return self.database.addTaskForTransformation(transID,lfns,se)
+  
+  ###########################################################################
+  #
+  # Still to consider
+  #
 
   types_publishTransformation = [ StringType, StringType, StringType, StringType, IntType, BooleanType, DictType, StringType, StringType, StringType ]
   def export_publishTransformation( self,transName,description,longDescription,fileMask='',groupsize=0,update=False,bkQuery = {},plugin='',transGroup='',transType=''):
