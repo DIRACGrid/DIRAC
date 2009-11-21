@@ -9,16 +9,14 @@ import random
 class TransformationPlugin:
 
   def __init__(self,plugin):
-    self.valid = True
     self.params = False
     self.data = False
-    supportedPlugins = ['Standard','Broadcast','BySize']
-    if not plugin in supportedPlugins:
-      self.valid = False
-    else:
-      self.plugin = plugin
+    self.plugin = plugin
 
   def isOK(self):
+    self.valid = True
+    if (not self.data) or (not self.params):
+      self.valid = False
     return self.valid
 
   def setInputData(self,data):
@@ -28,8 +26,13 @@ class TransformationPlugin:
     self.params = params
 
   def generateTask(self):
-    evalString = "self._%s()" % self.plugin
-    return eval(evalString)
+    try:
+      evalString = "self._%s()" % self.plugin
+      return eval(evalString)
+    except AttributeError,x:
+      return S_ERROR("Plugin not found")
+    except Exception,x:
+      return S_ERROR(x)
 
   def _Broadcast(self):
     """ This plug-in takes files found at the sourceSE and broadcasts to all targetSEs.
