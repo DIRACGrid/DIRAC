@@ -1,6 +1,9 @@
 """  TransformationPlugin is a class wrapping the supported transformation plugins
 """
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC                                                  import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.SiteSEMapping                     import getSitesForSE
+from DIRAC.Core.Utilities.List                              import breakListIntoChunks, sortList, uniqueElements
+from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
 import random
 
 class TransformationPlugin:
@@ -9,7 +12,7 @@ class TransformationPlugin:
     self.valid = True
     self.params = False
     self.data = False
-    supportedPlugins = ['LoadBalance','Automatic','Broadcast','MCBroadcast']
+    supportedPlugins = ['Standard','Broadcast','BySize']
     if not plugin in supportedPlugins:
       self.valid = False
     else:
@@ -28,111 +31,119 @@ class TransformationPlugin:
     evalString = "self._%s()" % self.plugin
     return eval(evalString)
 
-  def _MCBroadcast(self):
-    """ This plug-in takes files found at the sourceSE and broadcasts to a given number of targetSEs
-    """
-    if not self.params:
-      return S_ERROR("TransformationPlugin._MCBroadcast: The 'MCBroadcast' plugin requires additional parameters.")
-
-    destinations = int(self.params['Destinations'])
-
-    seFiles = {}
-    for lfn,se in self.data:
-      lfnTargetSEs = self.params['TargetSE'].split(',')
-      random.shuffle(lfnTargetSEs)
-      lfnSourceSEs = self.params['SourceSE'].split(',')
-      random.shuffle(lfnSourceSEs)
-      sourceSites = [se.split('_')[0].split('-')[0]]
-      if se in lfnSourceSEs:
-        # If the file is not at CERN then it should be
-        if not 'CERN' in sourceSites:
-          targets = ['CERN_MC_M-DST']
-          sourceSites.append('CERN')
-        # Otherwise make sure it is at another tape SE
-        else:
-          otherTape = se
-          while otherTape == se:
-            random.shuffle(lfnSourceSEs) 
-            otherTape = lfnSourceSEs[-1]
-          targets = [otherTape]
-          sourceSites.append(otherTape.split('_')[0].split('-')[0])
-        for targetSE in lfnTargetSEs:
-          possibleTargetSite = targetSE.split('_')[0].split('-')[0]
-          if not possibleTargetSite in sourceSites: 
-            if len(sourceSites) < destinations:
-              targets.append(targetSE)
-              sourceSites.append(possibleTargetSite)
-        strTargetSE = ','.join(targets)
-        if not seFiles.has_key(se):
-          seFiles[se] = {}
-        if not seFiles[se].has_key(strTargetSE):
-          seFiles[se][strTargetSE] = []
-        seFiles[se][strTargetSE].append(lfn)
-    return S_OK(seFiles)
-
   def _Broadcast(self):
     """ This plug-in takes files found at the sourceSE and broadcasts to all targetSEs.
     """
     if not self.params:
       return S_ERROR("TransformationPlugin._Broadcast: The 'Broadcast' plugin requires additional parameters.")
-
     sourceSEs = self.params['SourceSE'].split(',')
     targetSEs = self.params['TargetSE'].split(',')
 
-    seFiles = {}
-    for lfn,se in self.data:
-      if se in sourceSEs:
-        sourceSite = se.split('_')[0].split('-')[0]
-        targets = []
-        for targetSE in targetSEs:
-          if not targetSE.startswith(sourceSite):
-            targets.append(targetSE)
-        strTargetSE = ','.join(targets)
-        if not seFiles.has_key(se):
-          seFiles[se] = {}
-        if not seFiles[se].has_key(strTargetSE):
-          seFiles[se][strTargetSE] = []
-        seFiles[se][strTargetSE].append(lfn)
-    return S_OK(seFiles)
+    fileGroups = self.__getFileGroups(self.data)
+    targetSELfns = {}
+    for replicaSE,lfns in fileGroups.items():
+      ses = replicaSE.split(',')
+      sourceSites = self.__getSitesForSEs(ses)
+      atSource = False
+      for se in ses:
+        if se in sourceSEs:
+          atSource = True
+      if not atSource:
+        continue
+      targets = []
+      for targetSE in targetSEs:
+        site = self.__getSiteForSE(targetSE)['Value']
+        if not site in sourceSites:
+          targets.append(targetSE)
+          sourceSites.append(site)
+      strTargetSEs = str.join(',',targets)
+      if not targetSELfns.has_key(strTargetSEs):
+        targetSELfns[strTargetSEs] = []
+      targetSELfns[strTargetSEs].extend(lfns)
+    tasks = []
+    for ses,lfns in targetSELfns.items():
+      tasks.append((ses,lfns))
+    return S_OK(tasks)
 
-  def _LoadBalance(self):
-    """ This plug-in will load balances the input files across the selected target SEs.
-    """
+  def _Standard(self):
+    return self.__groupByReplicas()
+
+  def _BySize(self):
+    return self.__groupBySize()
+
+  def __groupByReplicas(self):
+    """ Generates a job based on the location of the input data """
     if not self.params:
-      return S_ERROR("TransformationPlugin._LoadBalance: The 'LoadBalance' plugin requires additional parameters.")
+      return S_ERROR("TransformationPlugin._Standard: The 'Standard' plug-in requires parameters.")
+    status = self.params['Status']
+    groupSize = self.params['GroupSize']
+    # Group files by SE
+    fileGroups = self.__getFileGroups(self.data)
+    # Create tasks based on the group size
+    tasks = []
+    for replicaSE,lfns in fileGroups.items():
+      tasksLfns = breakListIntoChunks(lfns,groupSize)
+      for taskLfns in tasksLfns:
+        if (status == 'Flush') or (len(taskLfns) > int(groupSize)):
+          tasks.append((replicaSE,taskLfns))
+    return S_OK(tasks)
+  
+  def __groupBySize(self):
+    """ Generate a task for a given amount of data """
+    if not self.params:
+      return S_ERROR("TransformationPlugin._BySize: The 'BySize' plug-in requires parameters.")
+    status = self.params['Status']
+    requestedSize = float(self.params['GroupSize'])*1000*1000*1000 # input size in GB converted to bytes
+    # Group files by SE
+    fileGroups = self.__getFileGroups(self.data)
+    # Get the file sizes
+    rm = ReplicaManager()
+    res = rm.getCatalogFileSize(self.data.keys())
+    if not res['OK']:
+      return S_ERROR("Failed to get sizes for files")
+    if res['Value']['Failed']:
+      return S_ERROR("Failed to get sizes for all files")
+    fileSizes = res['Value']['Successful']
+    tasks = []
+    for replicaSE,lfns in fileGroups.items():
+      taskLfns = []
+      taskSize = 0
+      for lfn in lfns:
+        taskSize += fileSizes[lfn]
+        taskLfns.append(lfn)
+        if taskSize > requestedSize:
+          tasks.append(replicaSE,taskLfns)
+          taskLfns = []
+          taskSize = 0
+      if (status == 'Flush') and taskLfns:
+        tasks.append((replicaSE,taskLfns))
+    return S_OK(tasks)
 
-    targetSEs = {}
-    totalRatio = 0
+  def __getFileGroups(self,fileReplicas):
+    fileGroups = {}
+    for lfn,replicas in fileReplicas.items():
+      replicaSEs = str.join(',',sortList(uniqueElements(replicas.keys())))
+      if not fileGroups.has_key(replicaSEs):
+        fileGroups[replicaSEs] = []
+      fileGroups[replicaSEs].append(lfn)
+    return fileGroups
+  
+  def __getSiteForSE(self,se):
+    """ Get site name for the given SE
+    """
+    result = getSitesForSE(se,gridName='LCG')
+    if not result['OK']:
+      return result
+    if result['Value']:
+      return S_OK(result['Value'][0])
+    return S_OK('')
 
-    ses = self.params['TargetSE'].split(',')
-    for targetSE in ses:
-      targetSEs[targetSE] = int(self.params[targetSE])
-      totalRatio += int(self.params[targetSE])
-
-    sourceSE = ''
-    if self.params.has_key('SourceSE'):
-      sourceSE = self.params['SourceSE']
-    seFiles = {}
-
-    selectedFiles = []
-    for lfn,se in self.data:
-      useFile = False
-      if not sourceSE:
-        useFile = True
-      elif sourceSE == se:
-        useFile = True
-      if useFile:
-        selectedFiles.append(lfn)
-
-    multiplier = int(len(selectedFiles)/float(totalRatio))
-    if multiplier > 0:
-      currIndex = 0
-      seFiles[sourceSE] = {}
-      for targetSE,load in targetSEs.items():
-        offset = (load*multiplier)
-        seFiles[sourceSE][targetSE] = selectedFiles[currIndex:currIndex+offset]
-        currIndex += offset
-    return S_OK(seFiles)
-
-  def _Automatic(self):
-    return S_ERROR()
+  def __getSitesForSEs(self, seList):
+    """ Get all the sites for the given SE list
+    """
+    sites = []
+    for se in seList:
+      result = getSitesForSE(se,gridName='LCG')
+      if result['OK']:
+        sites += result['Value']
+    return sites
