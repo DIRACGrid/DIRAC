@@ -1,3 +1,5 @@
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import httplib
 import socket
@@ -5,6 +7,7 @@ import time
 import GSI
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.DISET.private.SSLSocketFactory import gSSLSocketFactory
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 class HTTPDISETSocket:
 
@@ -95,7 +98,7 @@ class HTTPDISETConnection( httplib.HTTPConnection ):
     for res in socket.getaddrinfo(self.host, self.port, 0,
                                   socket.SOCK_STREAM):
         af, socktype, proto, canonname, addTuple = res
-        result = gSSLSocketFactory.createClientSocket( addTuple, useCertificates = True )
+        result = gSSLSocketFactory.createClientSocket( addTuple, useCertificates = gConfig._useServerCertificate() )
         if not result[ 'OK' ]:
           errorMsg = result[ 'Message' ]
           continue
