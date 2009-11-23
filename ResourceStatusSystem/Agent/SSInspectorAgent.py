@@ -55,7 +55,7 @@ class SSInspectorAgent(AgentModule):
 
 
   def execute(self):
-    """ The main RSInspectorAgent execution method
+    """ The main SSInspectorAgent execution method
     """
     
     try:
@@ -76,7 +76,8 @@ class SSInspectorAgent(AgentModule):
       return S_ERROR(errorStr)
       
   def _getSitesToCheck(self):
-    """ call rsDB.getSitesToCheck() and put result in list
+    """ 
+    Call :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getSitesToCheck` and put result in list
     """
     
     try:
@@ -101,8 +102,8 @@ class SSInspectorAgent(AgentModule):
 
 
   def _executeCheck(self):
-    """ create istance of a PEP, 
-        instantiated popping a site from list
+    """ 
+    Create istance of a PEP, instantiated popping a site from lists.
     """
     
     if len(self.SitesToBeChecked) > 0:
@@ -110,7 +111,6 @@ class SSInspectorAgent(AgentModule):
       self.lockObj.acquire()
       try:
         toBeChecked = self.SitesToBeChecked.pop()
-        self.SiteNamesInCheck.remove(toBeChecked[1])
       finally:
         self.lockObj.release()
       
@@ -122,3 +122,9 @@ class SSInspectorAgent(AgentModule):
       
       newPEP = PEP(granularity = granularity, name = siteName, status = status, formerStatus = formerStatus, reason = reason)
       newPEP.enforce()
+
+      self.lockObj.acquire()
+      try:
+        self.SiteNamesInCheck.remove(siteName)
+      finally:
+        self.lockObj.release()

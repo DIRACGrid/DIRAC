@@ -81,7 +81,8 @@ class RSInspectorAgent(AgentModule):
 #############################################################################
 
   def _getResourcesToCheck(self):
-    """ call rsDB.ResourcesToCheck() and put result in list
+    """ 
+    Call :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getSitesToCheck` and put result in a list
     """
 
     try:
@@ -107,8 +108,8 @@ class RSInspectorAgent(AgentModule):
 #############################################################################
 
   def _executeCheck(self):
-    """ create instance of a PEP, 
-        instantiated popping a resource from list
+    """ 
+    Create instance of a PEP, instantiated popping a resource from lists.
     """
     
     if len(self.ResToBeChecked) > 0:
@@ -116,7 +117,6 @@ class RSInspectorAgent(AgentModule):
       self.lockObj.acquire()
       try:
         toBeChecked = self.ResToBeChecked.pop()
-        self.ResNamesInCheck.remove(toBeChecked[1])
       finally:
         self.lockObj.release()
       
@@ -128,3 +128,9 @@ class RSInspectorAgent(AgentModule):
       
       newPEP = PEP(granularity = granularity, name = resourceName, status = status, formerStatus = formerStatus, reason = reason)
       newPEP.enforce()
+
+      self.lockObj.acquire()
+      try:
+        self.ResNamesInCheck.remove(resourceName)
+      finally:
+        self.lockObj.release()
