@@ -22,6 +22,9 @@ class AgentsTestCase(unittest.TestCase):
     from DIRAC.ResourceStatusSystem.Agent.SSInspectorAgent import SSInspectorAgent
     self.ssIAgent = SSInspectorAgent("", "")
 
+    from DIRAC.ResourceStatusSystem.Agent.SeSInspectorAgent import SeSInspectorAgent
+    self.sesIAgent = SeSInspectorAgent("", "")
+
         
 class RS2HistorySuccess(AgentsTestCase):
 
@@ -58,6 +61,17 @@ class SSInspectorSuccess(AgentsTestCase):
     res = self.ssIAgent.execute()
     self.assert_(res['OK'])
 
+class SeSInspectorSuccess(AgentsTestCase):
+
+  def test_initialize(self):
+    res = self.sesIAgent.initialize()
+    self.assert_(res['OK'])
+
+  def test_execute(self):
+    self.sesIAgent.initialize()
+    res = self.sesIAgent.execute()
+    self.assert_(res['OK'])
+
 
 
 
@@ -66,4 +80,5 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RS2HistorySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RSInspectorSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SSInspectorSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SeSInspectorSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
