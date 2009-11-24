@@ -108,7 +108,6 @@ def parseCFGFromSVN( svnPath ):
   viewSVNLocation = "http://svnweb.cern.ch/world/wsvn/dirac/%s?op=dl&rev=0" % ( svnPath )
   anonymousLocation = 'http://svnweb.cern.ch/guest/dirac/%s' % ( svnPath )
   for remoteLocation in ( anonymousLocation, viewSVNLocation ):
-    print remoteLocation
     try:
       remoteFile = urllib2.urlopen( remoteLocation )
     except urllib2.URLError:
@@ -116,7 +115,6 @@ def parseCFGFromSVN( svnPath ):
       continue
     remoteData = remoteFile.read()
     remoteFile.close()      
-    print remoteData
     if remoteData:
       return CFG.CFG().loadFromBuffer( remoteData )
   #Web cat failed. Try directly with svn
@@ -144,6 +142,7 @@ def tagSVNReleases( mainCFG, taggedReleases ):
       continue
     releaseSVNPath = svnSshRoot % ( cliParams.userName, "/tags/%s" % ( releaseVersion ) )
     if releaseVersion not in taggedReleases:
+      gLogger.info( "Creating global release dir %s" % releaseVersion )
       svnCmd = "svn --parents -m 'Release %s' mkdir '%s'" % ( releaseVersion, releaseSVNPath )
       exitStatus, stdData, errData = execAndGetOutput( svnCmd )
       if exitStatus:
@@ -158,10 +157,10 @@ def tagSVNReleases( mainCFG, taggedReleases ):
         version = "trunk"
       else:
         if p in cmtCompatiblePackages:
-          version = "tags/%s_%s" % ( p, version )
+          version = "tags/%s/%s_%s/%s" % ( p, p, version, p )
         else:
-          version = "tags/%s" % version
-      svnLinks.append( "%s http://svnweb.cern.ch/guest/dirac/%s/%s/%s" % ( p, p, version, p ) )
+          version = "tags/%s" % ( version )
+      svnLinks.append( "%s http://svnweb.cern.ch/guest/dirac/%s/%s" % ( p, p, version ) )
     tmpPath = tempfile.mkdtemp()
     fd = open( os.path.join( tmpPath, "extProp" ), "wb" )
     fd.write( "%s\n" % "\n".join( svnLinks ) )
@@ -170,6 +169,7 @@ def tagSVNReleases( mainCFG, taggedReleases ):
     svnCmds.append( "svn co -N '%s' '%s/svnco'" % ( releaseSVNPath, tmpPath ) )
     svnCmds.append( "svn propset svn:externals -F '%s/extProp' '%s/svnco'" % ( tmpPath, tmpPath ) )
     svnCmds.append( "svn ci -m 'Release %s svn:externals' '%s/svnco'" % ( releaseVersion, tmpPath ) )
+    gLogger.info( "Creating svn:externals in %s..." % releaseVersion )
     for cmd in svnCmds:
       exitStatus, stdData, errData = execAndGetOutput( cmd )
       if exitStatus:
