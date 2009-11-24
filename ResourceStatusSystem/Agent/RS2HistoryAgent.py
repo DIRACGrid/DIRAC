@@ -3,7 +3,7 @@
 """
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC import gLogger
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
