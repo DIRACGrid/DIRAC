@@ -214,8 +214,38 @@ def autoTarPackages( mainCFG, targetDir ):
         sys.exit(1)
   #Remove tmp dir
   os.system( "rm -rf '%s'" % tmpPath )
-      
-      
+
+def getAvailableExternals():
+  packagesURL = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/DIRAC.list"
+  try:
+    remoteFile = urllib2.urlopen( packagesURL )
+  except urllib2.URLError:
+    gLogger.exception()
+    return []
+  remoteData = remoteFile.read()
+  remoteFile.close()
+  versionRE = re.compile( "DIRAC-external-([a-zA-Z]*)-([a-zA-Z0-9]*(?:-pre[0-9]+)*)-(.*)\.tar\.gz" )
+  availableExternals = []
+  for line in remoteData.split( "\n" ):
+    print line
+    res = versionRE.search( line )
+    if res:
+      availableExternals.append( res.groups() )
+  return availableExternals
+
+def tarExternals( mainCFG, targetDir ):
+  global cliParams
+  
+  releasesCFG = mainCFG[ 'Releases' ]
+  tmpPath = tempfile.mkdtemp()
+  for releaseVersion in cliParams.releasesToBuild:
+    externalsVersion = releasesCFG[ releaseVersion ].getOption( "Extenals", "" )
+    if not externalsVersion:
+      gLogger.info( "Externals is not defined for release %s" % releaseVersion)
+      continue
+    
+
+
 mainCFG = parseCFGFromSVN( "/trunk/releases.cfg" )
 if 'Releases' not in mainCFG.listSections():
   gLogger.fatal( "releases.cfg file does not have a Releases section" )
@@ -224,4 +254,5 @@ releasesCFG = mainCFG[ 'Releases' ]
 taggedReleases = getSVNVersions()
 
 #tagSVNReleases( mainCFG, taggedReleases )
-autoTarPackages( mainCFG, "/tmp/adritest" )
+#autoTarPackages( mainCFG, "/tmp/adritest" )
+print getAvailableExternals()
