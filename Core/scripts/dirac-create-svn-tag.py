@@ -12,6 +12,7 @@ import sys, os, tempfile, shutil, getpass, subprocess
 
 svnProjects = 'DIRAC'
 svnVersions = ""
+svnUsername = ""
 
 svnSshRoot    = "svn+ssh://%s@svn.cern.ch/reps/dirac/%s"
 
@@ -25,10 +26,16 @@ def setProject( optionValue ):
   svnProjects = optionValue
   return S_OK()
 
+def setUsername( optionValue ):
+  global svnUsername
+  svnUsername = optionValue
+  return S_OK()
+
 Script.disableCS()
 
-Script.registerSwitch( "v:", "version=",                "versions to tag comma separated (mandatory)", setVersion )
-Script.registerSwitch( "p:", "project=",                "projects to tag comma separated (default = DIRAC)", setProject )
+Script.registerSwitch( "v:", "version=", "versions to tag comma separated (mandatory)", setVersion )
+Script.registerSwitch( "p:", "project=", "projects to tag comma separated (default = DIRAC)", setProject )
+Script.registerSwitch( "u:", "username=", "svn username to use", setUsername )
 
 Script.parseCommandLine( ignoreErrors = False )
 
@@ -76,9 +83,10 @@ def getSVNFileContents( projectName, filePath ):
 ##
 
 #Get username
-userName = raw_input( "SVN User Name[%s]: " % getpass.getuser() )
-if not userName:
-  userName = getpass.getuser()
+if not svnUsername:
+  svnUsername = raw_input( "SVN User Name[%s]: " % getpass.getuser() )
+  if not svnUsername:
+    svnUsername = getpass.getuser()
 
 #Start the magic!
 for svnProject in List.fromChar( svnProjects ):
@@ -91,7 +99,7 @@ for svnProject in List.fromChar( svnProjects ):
     gLogger.error( "versions.cfg file in project %s does not contain a Versions top section" % svnProject )
     continue
 
-  versionsRoot = svnSshRoot % ( userName, '%s/tags/%s' % ( svnProject, svnProject ) )
+  versionsRoot = svnSshRoot % ( svnUsername, '%s/tags/%s' % ( svnProject, svnProject ) )
   exitStatus, data = execAndGetOutput( "svn ls '%s'" % ( versionsRoot ) )
   if exitStatus:
     createdVersions = []
@@ -116,17 +124,17 @@ for svnProject in List.fromChar( svnProjects ):
     packageList = versionCFG.listOptions()
     gLogger.info( "Tagging packages: %s" % ", ".join( packageList ) )
     msg = '"Release %s"' % svnVersion
-    dest = svnSshRoot % ( userName, '%s/tags/%s/%s_%s/%s' % ( svnProject, svnProject, svnProject, svnVersion, svnProject ) )
+    dest = svnSshRoot % ( svnUsername, '%s/tags/%s/%s_%s/%s' % ( svnProject, svnProject, svnProject, svnVersion, svnProject ) )
     cmd = 'svn --parents -m %s mkdir %s' % ( msg, dest )
     source = []
     for extra in buildCFG.getOption( 'rootPackageFiles', ['__init__.py', 'versions.cfg'] ):
-      source.append( svnSshRoot % ( userName, '%s/trunk/%s/%s'  % ( svnProject, svnProject, extra ) ) )
+      source.append( svnSshRoot % ( svnUsername, '%s/trunk/%s/%s'  % ( svnProject, svnProject, extra ) ) )
     for pack in packageList:
       packVer = versionCFG.getOption(pack,'')
       if packVer in ['trunk', '', 'HEAD']:
-        source.append( svnSshRoot % ( userName, '%s/trunk/%s/%s'  % ( svnProject, svnProject, pack ) ) )
+        source.append( svnSshRoot % ( svnUsername, '%s/trunk/%s/%s'  % ( svnProject, svnProject, pack ) ) )
       else:
-        source.append( svnSshRoot % ( userName, '%s/tags/%s/%s/%s' % ( svnProject, svnProject, pack, packVer ) ) )
+        source.append( svnSshRoot % ( svnUsername, '%s/tags/%s/%s/%s' % ( svnProject, svnProject, pack, packVer ) ) )
     if not source:
       gLogger.error( 'No packages to be included' )
       exit( -1 )
