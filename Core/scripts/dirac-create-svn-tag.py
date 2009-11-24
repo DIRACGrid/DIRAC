@@ -40,13 +40,20 @@ def usage():
   
 if not svnVersions:
   usage()
+  
+def execAndGetOutput( cmd ):
+  p = subprocess.Popen( cmd, 
+                        shell = True, stdout=subprocess.PIPE, 
+                        stderr=subprocess.PIPE, close_fds = True )
+  stdData = p.stdout.read()
+  p.wait()
+  return ( p.returncode, stdData )
 
 def getSVNFileContents( projectName, filePath ):
   import urllib2, stat
   gLogger.info( "Reading %s/trunk/%s" % ( projectName, filePath ) ) 
   viewSVNLocation = "http://svnweb.cern.ch/world/wsvn/dirac/%s/trunk/%s?op=dl&rev=0" % ( projectName, filePath )
   anonymousLocation = 'http://svnweb.cern.ch/guest/dirac/%s/trunk/%s' % ( projectName, filePath )
-  downOK = False
   for remoteLocation in ( viewSVNLocation, anonymousLocation ):
     try:
       remoteFile = urllib2.urlopen( remoteLocation )
@@ -55,18 +62,18 @@ def getSVNFileContents( projectName, filePath ):
       continue
     remoteData = remoteFile.read()
     remoteFile.close()      
-    return remoteData
-  if not downOK:
-    p = subprocess.Popen( "svn cat 'http://svnweb.cern.ch/guest/dirac/%s/trunk/%s'" % ( projectName, filePath ), 
-                          shell = True, stdout=subprocess.PIPE, 
-                          stderr=subprocess.PIPE, close_fds = True )
-    remoteData = p.stdout.read().strip()
-    p.wait()
-    if not remoteData:
-      print "Error: Could not retrieve %s from the web nor via SVN. Aborting..." % fileName
-      sys.exit(1)
+    if remoteData:
+      return remoteData
+  #Web cat failed. Try directly with svn
+  exitStatus, remoteData = execAndGetOutput( "svn cat 'http://svnweb.cern.ch/guest/dirac/%s/trunk/%s'" % ( projectName, filePath ) )
+  if exitStatus:
+    print "Error: Could not retrieve %s from the web nor via SVN. Aborting..." % fileName
+    sys.exit(1)
   return remoteData
+
+##
 #End of helper functions
+##
 
 #Get username
 userName = raw_input( "SVN User Name[%s]: " % getpass.getuser() )
@@ -84,9 +91,22 @@ for svnProject in List.fromChar( svnProjects ):
     gLogger.error( "versions.cfg file in project %s does not contain a Versions top section" % svnProject )
     continue
 
+  versionsRoot = svnSshRoot % ( userName, '%s/tags/%s' % ( svnProject, svnProject ) )
+  exitStatus, data = execAndGetOutput( "svn ls '%s'" % ( versionsRoot ) )
+  if exitStatus:
+    createdVersions = []
+  else:
+    createdVersions = [ v.strip( "/" ) for v in data.split( "\n" ) if v.find( "/" ) > -1 ]
+  
+
   for svnVersion in List.fromChar( svnVersions ):
     
     gLogger.info( "Start tagging for project %s version %s " %  ( svnProject, svnVersion ) )
+    
+    if "%s_%s" % ( svnProject, svnVersion ) in createdVersions:
+      gLogger.error( "Version %s is already there for package %s :P" % ( svnVersion, svnProject ) )
+      continue
+    
     if not svnVersion in buildCFG[ 'Versions' ].listSections():
       gLogger.error( 'Version does not exist:', svnVersion )
       gLogger.error( 'Available versions:', ', '.join( buildCFG.listSections() ) )
