@@ -176,7 +176,46 @@ def tagSVNReleases( mainCFG, taggedReleases ):
         gLogger.error( "Error while generating release tag", "\n".join( [ stdData, errData ] ) )
         continue
   
-
+  
+def autoTarPackages( mainCFG, targetDir ):
+  global cliParams
+  
+  releasesCFG = mainCFG[ 'Releases' ]
+  tmpPath = tempfile.mkdtemp()
+  cmtCompatiblePackages = mainCFG.getOption( 'CMTCompatiblePackages', [] )
+  autoTarPackages = mainCFG.getOption( 'AutoTarPackages', [] )
+  for releaseVersion in cliParams.releasesToBuild:
+    releaseTMPPath = os.path.join( tmpPath, releaseVersion )
+    gLogger.info( "Taring %s release in %s" % ( releaseVersion, releaseTMPPath ) )
+    os.mkdir( releaseTMPPath )
+    for package in releasesCFG[ releaseVersion ].listOptions():
+      if package not in autoTarPackages:
+        continue
+      version = releasesCFG[ releaseVersion ].getOption( package, "" )
+      if version.strip().lower() in ( "trunk", "", "head" ):
+        svnVersion = "trunk"
+      else:
+        if package in cmtCompatiblePackages:
+          svnVersion = "tags/%s/%s_%s/%s" % ( package, package, version, package )
+        else:
+          svnVersion = "tags/%s" % ( version )
+      pkgSVNPath = "http://svnweb.cern.ch/guest/dirac/%s/%s" % ( package, svnVersion ) 
+      gLogger.info( " Getting %s" % pkgSVNPath )
+      svnCmd = "svn export '%s' '%s/%s'" % ( pkgSVNPath, releaseTMPPath, package )
+      exitStatus, stdData, errData = execAndGetOutput( svnCmd )
+      if exitStatus:
+        gLogger.error( "Error while generating release tag", "\n".join( [ stdData, errData ] ) )
+        continue
+      gLogger.info( "Taring %s..." % package )
+      tarfilePath = os.path.join( targetDir, "%s-%s.tar.gz" % ( package, version ) )
+      cmd = "cd '%s'; tar czf '%s' %s" % ( releaseTMPPath, tarfilePath, package )
+      if os.system( cmd ):
+        gLogger.error( "Could not tar %s into %s" % ( package, tarfilePath ) )
+        sys.exit(1)
+  #Remove tmp dir
+  os.system( "rm -rf '%s'" % tmpPath )
+      
+      
 mainCFG = parseCFGFromSVN( "/trunk/releases.cfg" )
 if 'Releases' not in mainCFG.listSections():
   gLogger.fatal( "releases.cfg file does not have a Releases section" )
@@ -184,4 +223,5 @@ if 'Releases' not in mainCFG.listSections():
 releasesCFG = mainCFG[ 'Releases' ]
 taggedReleases = getSVNVersions()
 
-tagSVNReleases( mainCFG, taggedReleases )
+#tagSVNReleases( mainCFG, taggedReleases )
+autoTarPackages( mainCFG, "/tmp/adritest" )
