@@ -1,135 +1,124 @@
 #!/usr/bin/env python
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/Core/scripts/dirac-deploy-scripts.py $
+# $HeadURL$
 """
 Tag a new release in SVN
 """
-__RCSID__ = "$Id: dirac-deploy-scripts.py 18378 2009-11-18 19:24:03Z acasajus $"
-import DIRAC
-from DIRAC.Core.Base                                         import Script
+__RCSID__ = "$Id$"
+from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Base      import Script
+from DIRAC.Core.Utilities import List, CFG
 
-import sys, os, tempfile, shutil, getpass
+import sys, os, tempfile, shutil, getpass, subprocess
 
-svnProject = 'DIRAC'
-svnVersion = False
+svnProjects = 'DIRAC'
+svnVersions = ""
 
 svnSshRoot    = "svn+ssh://%s@svn.cern.ch/reps/dirac/%s"
 
 def setVersion( optionValue ):
-  global svnVersion
-  svnVersion = optionValue
-  return DIRAC.S_OK()
+  global svnVersions
+  svnVersions = optionValue
+  return S_OK()
 
 def setProject( optionValue ):
-  global svnProject
-  svnProject = optionValue
-  return DIRAC.S_OK()
+  global svnProjects
+  svnProjects = optionValue
+  return S_OK()
 
 Script.disableCS()
 
-Script.registerSwitch( "v:", "version=",                "version to tag (mandatory)", setVersion )
-Script.registerSwitch( "p:", "project=",                "project to tag (default = DIRAC)", setProject )
+Script.registerSwitch( "v:", "version=",                "versions to tag comma separated (mandatory)", setVersion )
+Script.registerSwitch( "p:", "project=",                "projects to tag comma separated (default = DIRAC)", setProject )
 
 Script.parseCommandLine( ignoreErrors = False )
 
-DIRAC.gLogger.info( 'Executing: %s ' % ( ' '.join(sys.argv) ) )
+gLogger.info( 'Executing: %s ' % ( ' '.join(sys.argv) ) )
 
 def usage():
   Script.showHelp()
-  DIRAC.exit(2)
+  exit(2)
   
-if not svnVersion:
+if not svnVersions:
   usage()
 
-def downloadFileFromSVN( projectName, filePath, destPath, isExecutable = False, filterLines = [] ):
+def getSVNFileContents( projectName, filePath ):
   import urllib2, stat
-  executablePerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
-  fileName = os.path.basename( filePath )
-  print " - Downloading %s" % fileName 
+  gLogger.info( "Reading %s/trunk/%s" % ( projectName, filePath ) ) 
   viewSVNLocation = "http://svnweb.cern.ch/world/wsvn/dirac/%s/trunk/%s?op=dl&rev=0" % ( projectName, filePath )
   anonymousLocation = 'http://svnweb.cern.ch/guest/dirac/%s/trunk/%s' % ( projectName, filePath )
   downOK = False
-  localPath = os.path.join( destPath, fileName )
   for remoteLocation in ( viewSVNLocation, anonymousLocation ):
     try:
       remoteFile = urllib2.urlopen( remoteLocation )
     except urllib2.URLError:
-      DIRAC.gLogger.exception()
+      gLogger.exception()
       continue
     remoteData = remoteFile.read()
     remoteFile.close()      
-    if remoteData:
-      localFile = open( localPath , "wb" )
-      localFile.write( remoteData )
-      localFile.close()
-      downOK = True
-      break
+    return remoteData
   if not downOK:
-    osCmd = "svn cat 'http://svnweb.cern.ch/guest/dirac/%s/trunk/%s' > %s" % ( svnProject, filePath, localPath )
-    if os.system( osCmd ):
+    p = subprocess.Popen( "svn cat 'http://svnweb.cern.ch/guest/dirac/%s/trunk/%s'" % ( projectName, filePath ), 
+                          shell = True, stdout=subprocess.PIPE, 
+                          stderr=subprocess.PIPE, close_fds = True )
+    remoteData = p.stdout.read().strip()
+    p.wait()
+    if not remoteData:
       print "Error: Could not retrieve %s from the web nor via SVN. Aborting..." % fileName
       sys.exit(1)
-  if filterLines:
-    fd = open( localPath, "rb" )
-    fileContents = fd.readlines()
-    fd.close()
-    fd = open( localPath, "wb" )
-    for line in fileContents:
-      isFiltered = False
-      for filter in filterLines:
-        if line.find( filter ) > -1:
-          isFiltered = True
-          break
-      if not isFiltered:
-        fd.write( line )
-    fd.close()
-  if isExecutable:
-    os.chmod(localPath , executablePerms )
+  return remoteData
+#End of helper functions
 
-  return localPath
+#Get username
+userName = raw_input( "SVN User Name[%s]: " % getpass.getuser() )
+if not userName:
+  userName = getpass.getuser()
 
-tmpDir = tempfile.mkdtemp( )
-try:
-  versionsFile = downloadFileFromSVN( svnProject, "%s/versions.cfg" % svnProject, tmpDir, False )
+#Start the magic!
+for svnProject in List.fromChar( svnProjects ):
+    
+  versionsData = getSVNFileContents( svnProject, "%s/versions.cfg" % svnProject )
   
-  buildCFG = DIRAC.Core.Utilities.CFG.CFG().loadFromFile( versionsFile )
+  buildCFG = CFG.CFG().loadFromBuffer( versionsData )
+  
+  if 'Versions' not in buildCFG.listSections():
+    gLogger.error( "versions.cfg file in project %s does not contain a Versions top section" % svnProject )
+    continue
 
-  if not svnVersion in buildCFG.listSections():
-    DIRAC.gLogger.error( 'Version does not exist:', svnVersion )
-    DIRAC.gLogger.error( 'Available versions:', ', '.join( buildCFG.listSections() ) )
-    DIRAC.exit(-1)
+  for svnVersion in List.fromChar( svnVersions ):
+    
+    gLogger.info( "Start tagging for project %s version %s " %  ( svnProject, svnVersion ) )
+    if not svnVersion in buildCFG[ 'Versions' ].listSections():
+      gLogger.error( 'Version does not exist:', svnVersion )
+      gLogger.error( 'Available versions:', ', '.join( buildCFG.listSections() ) )
+      continue
+  
+    versionCFG = buildCFG[ 'Versions' ][svnVersion]
+    packageList = versionCFG.listOptions()
+    gLogger.info( "Tagging packages: %s" % ", ".join( packageList ) )
+    msg = '"Release %s"' % svnVersion
+    dest = svnSshRoot % ( userName, '%s/tags/%s/%s_%s/%s' % ( svnProject, svnProject, svnProject, svnVersion, svnProject ) )
+    cmd = 'svn --parents -m %s mkdir %s' % ( msg, dest )
+    source = []
+    for extra in buildCFG.getOption( 'rootPackageFiles', ['__init__.py', 'versions.cfg'] ):
+      source.append( svnSshRoot % ( userName, '%s/trunk/%s/%s'  % ( svnProject, svnProject, extra ) ) )
+    for pack in packageList:
+      packVer = versionCFG.getOption(pack,'')
+      if packVer in ['trunk', '', 'HEAD']:
+        source.append( svnSshRoot % ( userName, '%s/trunk/%s/%s'  % ( svnProject, svnProject, pack ) ) )
+      else:
+        source.append( svnSshRoot % ( userName, '%s/tags/%s/%s/%s' % ( svnProject, svnProject, pack, packVer ) ) )
+    if not source:
+      gLogger.error( 'No packages to be included' )
+      exit( -1 )
+    gLogger.info( 'Creating SVN Dir:', dest )
+    ret = os.system( cmd )
+    if ret:
+      exit( -1 )
+    gLogger.info( 'Copying packages: %s' % ", ".join( packageList ) )
+    cmd = 'svn -m %s copy %s %s' % ( msg, ' '.join( source ), dest )
+    ret = os.system( cmd )
+    if ret:
+      gLogger.error( 'Failed to create tag' )
 
-
-  userName = raw_input( "SVN User Name[%s]: " % getpass.getuser() )
-  if not userName:
-    userName = getpass.getuser()
-
-  packageList = buildCFG[svnVersion].listOptions()
-  print packageList
-  msg = '"Release %s"' % svnVersion
-  dest = svnSshRoot % ( userName, '%s/tags/%s/%s_%s/%s' % ( svnProject, svnProject, svnProject, svnVersion, svnProject ) )
-  cmd = 'svn --parents -m %s mkdir %s' % ( msg, dest )
-  source = []
-  for extra in ['__init__.py', 'versions.cfg']:
-    source.append( svnSshRoot % ( userName, '%s/trunk/%s/%s'  % ( svnProject, svnProject, extra ) ) )
-  for pack in packageList:
-    packVer = buildCFG[svnVersion].getOption(pack,'')
-    if packVer in ['trunk', '', 'HEAD']:
-      source.append( svnSshRoot % ( userName, '%s/trunk/%s/%s'  % ( svnProject, svnProject, pack ) ) )
-    else:
-      source.append( svnSshRoot % ( userName, '%s/tags/%s/%s/%s' % ( svnProject, svnProject, pack, packVer ) ) )
-  if not source:
-    DIRAC.gLogger.error( 'No packages to be included' )
-    DIRAC.exit( -1 )
-  DIRAC.gLogger.info( 'Creating SVN Dir:', dest )
-  ret = os.system( cmd )
-  if ret:
-    DIRAC.exit( -1 )
-  DIRAC.gLogger.info( 'Copying packages:', packageList )
-  cmd = 'svn -m %s copy %s %s' % ( msg, ' '.join( source ), dest )
-  ret = os.system( cmd )
-  if ret:
-    DIRAC.gLogger.error( 'Failed to create tag' )
-finally:
-  shutil.rmtree( tmpDir )
 
   
