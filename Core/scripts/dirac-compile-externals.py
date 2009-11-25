@@ -132,7 +132,7 @@ cmdOpts = ( ( 'd:', 'destination=',   'Destination where to build the externals'
             ( 'e:', 'externalsPath=', 'Path to the externals sources' ),
             ( 'v:', 'version=',       'Version of the externals to compile (default will be trunk)' ),
             ( 'h',  'help',           'Show this help' ),
-            ( 'p:', 'pythonVersion=', 'Python version to compile (25/24)' )
+            ( 'i:', 'pythonVersion=', 'Python version to compile (25/24)' )
           )
 
 compExtVersion = False
@@ -158,7 +158,7 @@ for o, v in optList:
     compDest = v
   elif o in ( '-v', '--version' ):
     compExtVersion = v  
-  elif o in ( '-p', '--pythonversion' ):
+  elif o in ( '-i', '--pythonversion' ):
     compVersionDict[ 'PYTHONVERSION' ] = ".".join( [ c for c in v ] )
 
 if not compDest:
