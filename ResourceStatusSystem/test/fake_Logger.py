@@ -2,6 +2,8 @@
     Every function can simply return S_OK() (or nothing)
 """
 
+from DIRAC import S_OK, S_ERROR
+
 class Logger:
   
   def __init__(self):

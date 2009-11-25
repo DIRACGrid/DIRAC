@@ -142,27 +142,34 @@ class PDP:
         elif self.__formerStatus == 'Probing':
           EVAL = Configurations.RBP
             
-    self.__policyType = EVAL['PolicyType']
 
-    if self.policy is not None:
-      res = self.policy.evaluate(self.args)
-    else:
-      res = self._evaluate(EVAL['Policies'])
+    for policyGroup in EVAL:
     
-    #policy results communication
-    if res['SAT']:
-      newstatus = res['Status']
-      reason = res['Reason']
-      decision = {'PolicyType': self.__policyType, 'Action': True, 'Status':'%s'%newstatus, 'Reason':'%s'%reason}
-      if res.has_key('Enddate'):
-        decision['Enddate'] = res['Enddate']
-      return decision
-    elif not res['SAT']:
-      reason = res['Reason']
-      decision = {'PolicyType': self.__policyType, 'Action': False, 'Reason':'%s'%reason}
-      if res.has_key('Enddate'):
-        decision['Enddate'] = res['Enddate']
-      return decision
+      self.__policyType = policyGroup['PolicyType']
+  
+      if self.policy is not None:
+        res = self.policy.evaluate(self.args)
+      else:
+        res = self._evaluate(policyGroup['Policies'])
+      
+      policyResults = []
+      
+      #policy results communication
+      if res['SAT']:
+        newstatus = res['Status']
+        reason = res['Reason']
+        decision = {'PolicyType': self.__policyType, 'Action': True, 'Status':'%s'%newstatus, 'Reason':'%s'%reason}
+        if res.has_key('Enddate'):
+          decision['Enddate'] = res['Enddate']
+        policyResults.append(decision)
+      elif not res['SAT']:
+        reason = res['Reason']
+        decision = {'PolicyType': self.__policyType, 'Action': False, 'Reason':'%s'%reason}
+        if res.has_key('Enddate'):
+          decision['Enddate'] = res['Enddate']
+        policyResults.append(decision)
+
+    return policyResults
 
 #############################################################################
     

@@ -12,7 +12,7 @@
 from datetime import datetime, timedelta
 
 from types import *
-from DIRAC.LoggingSystem.Client.Logger import gLogger
+from DIRAC import gLogger
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -509,24 +509,24 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
-  types_getSitesListByStatus = [StringType]
-  def export_getSitesListByStatus(self, status):
-    """ get present sites status list, by status
-    """
-    try:
-      gLogger.info("ResourceStatusHandler.getSitesListByStatus: Attempting to get sites list by status")
-      try:
-        res = rsDB.getSitesListByStatus(status)
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.getSitesListByStatus: got sites list")
-      return S_OK(res)
-    except Exception, x:
-      errorStr = where(self, self.export_getSitesListByStatus)
-      gLogger.exception(errorStr,lException=x)
-      return S_ERROR(errorStr)
+#  types_getSitesListByStatus = [StringType]
+#  def export_getSitesListByStatus(self, status):
+#    """ get present sites status list, by status
+#    """
+#    try:
+#      gLogger.info("ResourceStatusHandler.getSitesListByStatus: Attempting to get sites list by status")
+#      try:
+#        res = rsDB.getSitesListByStatus(status)
+#      except RSSDBException, x:
+#        gLogger.error(whoRaised(x))
+#      except RSSException, x:
+#        gLogger.error(whoRaised(x))
+#      gLogger.info("ResourceStatusHandler.getSitesListByStatus: got sites list")
+#      return S_OK(res)
+#    except Exception, x:
+#      errorStr = where(self, self.export_getSitesListByStatus)
+#      gLogger.exception(errorStr,lException=x)
+#      return S_ERROR(errorStr)
 
 #############################################################################
 
@@ -556,24 +556,24 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
-  types_getResourcesListByStatus = [StringType]
-  def export_getResourcesListByStatus(self, status):
-    """ get present resources list, by status
-    """
-    try:
-      gLogger.info("ResourceStatusHandler.getResourcesListByStatus: Attempting to get resources with status %s" % (status))
-      try:
-        res = rsDB.getResourcesListByStatus(status)
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.getResourcesListByStatus: got resources list at status %s" % (status))
-      return S_OK(res)
-    except Exception, x:
-      errorStr = where(self, self.export_getResourcesListByStatus)
-      gLogger.exception(errorStr,lException=x)
-      return S_ERROR(errorStr)
+#  types_getResourcesListByStatus = [StringType]
+#  def export_getResourcesListByStatus(self, status):
+#    """ get present resources list, by status
+#    """
+#    try:
+#      gLogger.info("ResourceStatusHandler.getResourcesListByStatus: Attempting to get resources with status %s" % (status))
+#      try:
+#        res = rsDB.getResourcesListByStatus(status)
+#      except RSSDBException, x:
+#        gLogger.error(whoRaised(x))
+#      except RSSException, x:
+#        gLogger.error(whoRaised(x))
+#      gLogger.info("ResourceStatusHandler.getResourcesListByStatus: got resources list at status %s" % (status))
+#      return S_OK(res)
+#    except Exception, x:
+#      errorStr = where(self, self.export_getResourcesListByStatus)
+#      gLogger.exception(errorStr,lException=x)
+#      return S_ERROR(errorStr)
 
 
 #############################################################################

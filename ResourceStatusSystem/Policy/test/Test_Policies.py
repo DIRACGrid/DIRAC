@@ -13,6 +13,7 @@ from DIRAC.ResourceStatusSystem.Policy.JobsEfficiency_Policy import JobsEfficien
 from DIRAC.ResourceStatusSystem.Policy.JobsEfficiency_Simple_Policy import JobsEfficiency_Simple_Policy
 from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
 from DIRAC.ResourceStatusSystem.Policy.GGUSTickets_Policy import GGUSTickets_Policy 
+from DIRAC.ResourceStatusSystem.Policy.OnServicePropagation_Policy import OnServicePropagation_Policy 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
@@ -36,11 +37,14 @@ class PoliciesTestCase(unittest.TestCase):
     self.JES_P = JobsEfficiency_Simple_Policy()
     self.SAMR_P = SAMResults_Policy()
     self.GGUS_P = GGUSTickets_Policy()
+    self.OSP_P = OnServicePropagation_Policy()
     self.mock_command = Mock()
     self.mock_commandPeriods = Mock()
     self.mock_commandStats = Mock()
     self.mock_commandEff = Mock()
     self.mock_commandCharge = Mock()
+    self.mock_propCommand = Mock()
+    self.mock_siteStatusCommand = Mock()
   
 #############################################################################
 
@@ -498,6 +502,44 @@ class GGUSTickets_Policy_Failure(PoliciesTestCase):
 
 #############################################################################
 
+class OnservicePropagation_PolicySuccess(PoliciesTestCase):
+  
+  def test_evaluate(self):
+    for status in ValidStatus:
+      args = ('XX', status)
+      for resCl_1 in [{'Active':0, 'Probing':0, 'Banned':2, 'Total':2}, \
+                      {'Active':2, 'Probing':2, 'Banned':0, 'Total':2}, \
+                      {'Active':0, 'Probing':0, 'Banned':0, 'Total':2}, \
+                      {'Active':1, 'Probing':1, 'Banned':0, 'Total':2}, \
+                      {'Active':1, 'Probing':0, 'Banned':1, 'Total':2}, \
+                      {'Active':0, 'Probing':1, 'Banned':1, 'Total':2} ] :
+        for resCl_2 in ValidStatus:
+          res = self.OSP_P.evaluate(args, knownInfo = {'ResourceStats':resCl_1, 'SiteStatus':resCl_2})
+          self.assert_(res.has_key('SAT'))
+          self.assert_(res.has_key('Status'))
+          self.assert_(res.has_key('Reason'))
+          
+          self.mock_propCommand.doCommand.return_value = resCl_1
+          self.mock_siteStatusCommand.doCommand.return_value = resCl_2
+          res = self.OSP_P.evaluate(args, self.mock_propCommand, self.mock_siteStatusCommand)
+          self.assert_(res.has_key('SAT'))
+          self.assert_(res.has_key('Status'))
+          self.assert_(res.has_key('Reason'))
+          
+        
+class OnservicePropagation_Policy_Failure(PoliciesTestCase):
+  
+  def test_commandFail(self):
+    self.mock_command.doCommand.sideEffect = RSSException
+    for status in ValidStatus:
+      self.failUnlessRaises(Exception, self.OSP_P.evaluate, ('XX', status), self.mock_command)
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.OSP_P.evaluate, None )
+  
+
+
+
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(PoliciesTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyInvokerSuccess))
@@ -519,4 +561,6 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResults_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_PolicySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Policy_Failure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnservicePropagation_PolicySuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnservicePropagation_Policy_Failure))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

@@ -59,8 +59,8 @@ class SeSInspectorAgent(AgentModule):
     """
     
     try:
-      sitesGetter = ThreadedJob(self._getServicesToCheck)
-      self.threadPool.queueJob(sitesGetter)
+      servicesGetter = ThreadedJob(self._getServicesToCheck)
+      self.threadPool.queueJob(servicesGetter)
       
       #for i in range(self.threadPoolDepth - 2):
       for i in range(self.maxNumberOfThreads - 1):
@@ -87,23 +87,23 @@ class SeSInspectorAgent(AgentModule):
     except RSSException, x:
       gLogger.error(whoRaised(x))
 
-    for siteTuple in res:
-      if siteTuple[0] in self.ServiceNamesInCheck:
+    for serviceTuple in res:
+      if serviceTuple[0] in self.ServiceNamesInCheck:
         break
-      siteL = ['Service']
-      for x in siteTuple:
-        siteL.append(x)
+      serviceL = ['Service']
+      for x in serviceTuple:
+        serviceL.append(x)
       self.lockObj.acquire()
       try:
-        self.ServiceNamesInCheck.insert(0, siteL[1])
-        self.ServicesToBeChecked.insert(0, siteL)
+        self.ServiceNamesInCheck.insert(0, serviceL[1])
+        self.ServicesToBeChecked.insert(0, serviceL)
       finally:
         self.lockObj.release()
 
 
   def _executeCheck(self):
     """ 
-    Create instance of a PEP, instantiated popping a site from lists.
+    Create instance of a PEP, instantiated popping a service from lists.
     """
     
     if len(self.ServicesToBeChecked) > 0:
@@ -115,16 +115,16 @@ class SeSInspectorAgent(AgentModule):
         self.lockObj.release()
       
       granularity = toBeChecked[0]
-      siteName = toBeChecked[1]
+      serviceName = toBeChecked[1]
       status = toBeChecked[2]
       formerStatus = toBeChecked[3]
       reason = toBeChecked[4]
       
-      newPEP = PEP(granularity = granularity, name = siteName, status = status, formerStatus = formerStatus, reason = reason)
+      newPEP = PEP(granularity = granularity, name = serviceName, status = status, formerStatus = formerStatus, reason = reason)
       newPEP.enforce()
 
       self.lockObj.acquire()
       try:
-        self.ServiceNamesInCheck.remove(siteName)
+        self.ServiceNamesInCheck.remove(serviceName)
       finally:
         self.lockObj.release()

@@ -11,11 +11,19 @@ class DT_Policy(PolicyBase):
   
   def evaluate(self, args, commandIn=None, knownInfo=None):
     """ evaluate policy on DT, using args (tuple). 
-        - args[0] should be a ValidRes
-        - args[1] should be the name of the ValidRes
-        - args[2] should be the present status
         
-        returns:
+        :params:
+          :attr:`args`: a tuple 
+            - `args[0]` should be a ValidRes
+            - `args[1]` should be the name of the ValidRes
+            - `args[2]` should be the present status
+          
+          :attr:`commandIn`: optional command object
+          
+          :attr:`knownInfo`: optional information dictionary
+        
+        
+        :returns:
             { 
               'SAT':True|False, 
               'Status':Active|Probing|Banned, 

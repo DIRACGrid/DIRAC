@@ -21,37 +21,54 @@ class ResourceStatusClient:
 
 #############################################################################
 
-  def getServiceStats(self, serviceType, siteName):
-    """ returns simple statistics of active, probing and banned nodes of services;
-            
-        input:
-          serviceType : string - a service type
-          siteName : string - a site name
+  def getServiceStats(self, siteName):
+    """ 
+    Returns simple statistics of active, probing and banned services of a site;
         
-        returns:
-          {
-            'Computing: {'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz} (optional)
-            'Storage: {'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz} (optional)
-          }
+    :params:
+      :attr:`siteName`: string - a site name
+    
+    :returns:
+      { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
     """
 
-    if serviceType.capitalize() not in ValidService:
-      raise InvalidService, where(self, self.evaluate)
+    res = self.rsS.getServiceStats(siteName)
+    if not res['OK']:
+      raise RSSException, where(self, self.getServiceStats) + " " + res['Message'] 
+    else:
+      return res['Value']
+
+#############################################################################
+
+  def getResourceStats(self, granularity, name):
+    """ 
+    Returns simple statistics of active, probing and banned resources of a site or a service;
+        
+    :params:
+      :attr:`granularity` string, should be in ['Site', 'Service']
+      
+      :attr:`name`: string, name of site or service
     
-    res = self.rsS.getServiceStats(serviceType, siteName)
-    if res['OK']:
+    :returns:
+      { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
+    """
+
+    res = self.rsS.getResourceStats(granularity, name)
+    if not res['OK']:
+      raise RSSException, where(self, self.getResourceStats) + " " + res['Message'] 
+    else:
       return res['Value']
 
 #############################################################################
 
   def getPeriods(self, granularity, name, status, hours):
-    """ Returns a list of periods of time where name was in status
-    
-        returns:
-          {
-            'Periods':[list of periods]
-          }
+    """ 
+    Returns a list of periods of time where name was in status
 
+    :returns:
+      {
+        'Periods':[list of periods]
+      }
     """
     #da migliorare!
     

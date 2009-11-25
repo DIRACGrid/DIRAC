@@ -10,7 +10,7 @@ from DIRAC.ResourceStatusSystem.Client.Command.Pilots_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.Jobs_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.SAMResults_Command import SAMResults_Command
 from DIRAC.ResourceStatusSystem.Client.Command.GGUSTickets_Command import GGUSTickets_Command
-from DIRAC.ResourceStatusSystem.Client.Command.Service_Command import ServiceStats_Command
+from DIRAC.ResourceStatusSystem.Client.Command.Propagation_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
@@ -35,6 +35,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.RSP_C = RSPeriods_Command()
     self.GGUS_C = GGUSTickets_Command()
     self.SeSt_C = ServiceStats_Command()
+    self.ReSt_C = ResourceStats_Command()
 
 class ClientsInvokerSuccess(ClientsCommandsTestCase):
 
@@ -306,15 +307,31 @@ class ServiceStats_CommandSuccess(ClientsCommandsTestCase):
   def test_doCommand(self):
 
     self.mock_client.getServiceStats.return_value = {}
-    for service in ValidService:
-      res = self.SeSt_C.doCommand((service, ''), clientIn = self.mock_client)
-      self.assertEqual(res, {})
+    res = self.SeSt_C.doCommand(('', ), clientIn = self.mock_client)
+    self.assertEqual(res, {})
       
 
 class ServiceStats_CommandFailure(ClientsCommandsTestCase):
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.SeSt_C.doCommand, None)
+     
+
+class ResourceStats_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+
+    self.mock_client.getResourceStats.return_value = {}
+    res = self.ReSt_C.doCommand(('Site', ''), clientIn = self.mock_client)
+    self.assertEqual(res, {})
+    res = self.ReSt_C.doCommand(('Service', ''), clientIn = self.mock_client)
+    self.assertEqual(res, {})
+      
+
+class ResourceStats_CommandFailure(ClientsCommandsTestCase):
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.ReSt_C.doCommand, None)
      
 
 
@@ -348,4 +365,6 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RSPeriods_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ServiceStats_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ServiceStats_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStats_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStats_CommandFailure))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

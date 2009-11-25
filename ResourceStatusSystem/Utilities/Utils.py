@@ -57,6 +57,7 @@ PolicyTypes = ['Resource_PolType', 'Alarm_PolType', 'Collective_PolType']
 ValidService = ['Computing', 'Storage']
 ValidSiteType = ['T0', 'T1', 'T2']
 ValidResourceType = ['CE', 'SE', 'CREAM CE']
+ValidServiceType = ['Computing', 'Storage']
 #ValidReasons = ['init', 'DT:OUTAGE', 'DT:AT_RISK', 'DT:None']
 
 #############################################################################

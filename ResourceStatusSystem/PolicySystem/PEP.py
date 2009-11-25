@@ -131,57 +131,59 @@ class PEP:
       rsDB = ResourceStatusDB()
     
     # policy decision
-    res = pdp.takeDecision(knownInfo=knownInfo)
+    resDecisions = pdp.takeDecision(knownInfo=knownInfo)
 
-    self.__policyType = res['PolicyType']
-
-    if 'Resource_PolType' in self.__policyType:
-    # Update the DB
-      if self.__granularity == 'Site':
-        if res['Action']:
-          rsDB.setSiteStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
-        else:
-          rsDB.setSiteReason(self.__name, res['Reason'], 'RS_SVC')
-        rsDB.setLastSiteCheckTime(self.__name)
-      elif self.__granularity == 'Resource':
-        if res['Action']:
-          rsDB.setResourceStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
-        else:
-          rsDB.setResourceReason(self.__name, res['Reason'], 'RS_SVC')
-        rsDB.setLastResourceCheckTime(self.__name)
-      elif self.__granularity == 'Service':
-        if res['Action']:
-          rsDB.setServiceStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
-        else:
-          rsDB.setServiceReason(self.__name, res['Reason'], 'RS_SVC')
-        rsDB.setLastServiceCheckTime(self.__name)
-  
-      if res.has_key('Enddate'):
-        rsDB.setDateEnd(self.__granularity, self.__name, res['Enddate'])
-
-      if res['Action']:
-        try:
-          if self.__futureGranularity != self.__granularity:
-            self.__name = rsDB.getGeneralName(self.__name, self.__granularity, self.__futureGranularity)
-          newPEP = PEP(granularity = self.__futureGranularity, name = self.__name, status = self.__status, formerStatus = self.__formerStatus, reason = self.__reason)
-          newPEP.enforce(pdpIn = pdp, rsDBIn = rsDB) 
-        except AttributeError:
-          pass
-    
-    if 'Alarm_PolType' in self.__policyType:
-      # raise alarm, right now makes a simple notification
+    for res in resDecisions:
       
-      if res['Action']:
-        from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
-        nc = NotificationClient()
+      self.__policyType = res['PolicyType']
+
+      if 'Resource_PolType' in self.__policyType:
+      # Update the DB
+        if self.__granularity == 'Site':
+          if res['Action']:
+            rsDB.setSiteStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
+          else:
+            rsDB.setSiteReason(self.__name, res['Reason'], 'RS_SVC')
+          rsDB.setLastSiteCheckTime(self.__name)
+        elif self.__granularity == 'Resource':
+          if res['Action']:
+            rsDB.setResourceStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
+          else:
+            rsDB.setResourceReason(self.__name, res['Reason'], 'RS_SVC')
+          rsDB.setLastResourceCheckTime(self.__name)
+        elif self.__granularity == 'Service':
+          if res['Action']:
+            rsDB.setServiceStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
+          else:
+            rsDB.setServiceReason(self.__name, res['Reason'], 'RS_SVC')
+          rsDB.setLastServiceCheckTime(self.__name)
+    
+        if res.has_key('Enddate'):
+          rsDB.setDateEnd(self.__granularity, self.__name, res['Enddate'])
+  
+        if res['Action']:
+          try:
+            if self.__futureGranularity != self.__granularity:
+              self.__name = rsDB.getGeneralName(self.__name, self.__granularity, self.__futureGranularity)
+            newPEP = PEP(granularity = self.__futureGranularity, name = self.__name, status = self.__status, formerStatus = self.__formerStatus, reason = self.__reason)
+            newPEP.enforce(pdpIn = pdp, rsDBIn = rsDB) 
+          except AttributeError:
+            pass
+      
+      if 'Alarm_PolType' in self.__policyType:
+        # raise alarm, right now makes a simple notification
         
-        notif = "ResourceStatusSystem notification: "
-        notif = notif + "%s %s is perceived as" %(self.__granularity, self.__name) 
-        notif = notif + " %s. Reason: %s." %(res['Status'], res['Reason'])
-        
-        nc.addNotificationForUser(Configurations.notified_users, notif)
-        
-    if 'Collective_PolType' in self.__policyType:
-      # do something
-      pass
+        if res['Action']:
+          from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+          nc = NotificationClient()
+          
+          notif = "ResourceStatusSystem notification: "
+          notif = notif + "%s %s is perceived as" %(self.__granularity, self.__name) 
+          notif = notif + " %s. Reason: %s." %(res['Status'], res['Reason'])
+          
+          nc.addNotificationForUser(Configurations.notified_users, notif)
+          
+      if 'Collective_PolType' in self.__policyType:
+        # do something
+        pass
     

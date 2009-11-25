@@ -16,31 +16,46 @@ class PolicySystemFullChain(FullChainTestCase):
   
   def test_PolicySystemFullChain(self):
 
-#    print "\n %%%%%% SITO %%%%%%%\n "
+    print "\n %%%%%% SITO %%%%%%%\n "
     
-#    for status in ValidStatus:
-#      for oldStatus in ValidStatus:
-#        if status == oldStatus:
-#          continue
-#        print "############################"
-#        print " "
-#        print 'nel test:', status, oldStatus
-#        pdp = PDP('Site', 'LCG.CERN.ch', status, oldStatus, 'XX')
-#        res = pdp.takeDecision()
-#        print res
-
-    print "\n %%%%%% RISORSA %%%%%%%\n "
-
     for status in ValidStatus:
       for oldStatus in ValidStatus:
         if status == oldStatus:
           continue
         print "############################"
         print " "
-        print status, oldStatus
-        pdp = PDP('Resource', 'gridba2.ba.infn.it', status, oldStatus, 'XXXXX')
+        print 'nel test:', status, oldStatus
+        pdp = PDP('Site', 'LCG.CERN.ch', status, oldStatus, 'XX')
         res = pdp.takeDecision()
         print res
+
+    print "\n %%%%%% SERVICE %%%%%%%\n "
+    
+    for status in ValidStatus:
+      for oldStatus in ValidStatus:
+        if status == oldStatus:
+          continue
+        print "############################"
+        print " "
+        print 'nel test:', status, oldStatus
+        pdp = PDP('Service', 'LCG.CERN.ch', status, oldStatus, 'XX')
+        res = pdp.takeDecision()
+        print res
+
+
+    
+    print "\n %%%%%% RISORSA %%%%%%%\n "
+
+#    for status in ValidStatus:
+#      for oldStatus in ValidStatus:
+#        if status == oldStatus:
+#          continue
+#        print "############################"
+#        print " "
+#        print status, oldStatus
+#        pdp = PDP('Resource', 'gridba2.ba.infn.it', status, oldStatus, 'XXXXX')
+#        res = pdp.takeDecision()
+#        print res
 
     for status in ValidStatus:
       for oldStatus in ValidStatus:

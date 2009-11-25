@@ -50,3 +50,5 @@ res = server.addOrModifyResource('srm.grid.sara.nl', 'SE', 'LCG.NIKHEF.nl', 'Act
 res = server.addOrModifyResource('srmlhcb.pic.es', 'SE', 'LCG.PIC.es', 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
 res = server.addOrModifyResource('srm-lhcb.gridpp.rl.ac.uk', 'SE', 'LCG.RAL.uk', 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
 
+
+#res = server.addOrModifyService('', '', '', 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))

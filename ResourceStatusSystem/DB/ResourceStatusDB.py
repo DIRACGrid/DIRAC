@@ -17,7 +17,7 @@ class RSSDBException(RSSException):
 
 #############################################################################
 
-class NotAllowedDate(RSSException):
+class NotAllowedDate(RSSDBException):
   pass
 
 #############################################################################
@@ -236,8 +236,6 @@ class ResourceStatusDB:
       sites_select = selectDict['ExpandSiteHistory']
       if type(sites_select) is not list:
         sites_select = [sites_select]
-
-    if selectDict.has_key('ExpandSiteHistory'):
       #calls getSitesHistory
       sitesHistory = self.getSitesHistory(paramsList = paramsList, siteName = sites_select)
       # sitesHistory is a list of tuples
@@ -431,7 +429,7 @@ class ResourceStatusDB:
     """ get present resources status list, for the web
     
         :params:
-          :attr:`selectDict`: {'ResourceName':['XX', ...], 'ExpandSiteHistory': ['XX', ...], 'Status':['XX', ...]}
+          :attr:`selectDict`: {'ResourceName':['XX', ...], 'ExpandResourceHistory': ['XX', ...], 'Status':['XX', ...]}
           
           :attr:`sortList`: [] (now only empty)
           
@@ -505,13 +503,8 @@ class ResourceStatusDB:
     if selectDict.has_key('ExpandResourceHistory'):
       paramsList = ['ResourceName', 'Status', 'Reason', 'DateEffective']
       resources_select = selectDict['ExpandResourceHistory']
-      if type(expand_resource_history) is not list:
-        expand_resource_history = [expand_resource_history]
-      del selectDict['ExpandResourceHistory']
-      
-    
-    
-    if selectDict.has_key('ExpandResourceHistory'):
+      if type(resources_select) is not list:
+        resources_select = [resources_select]
       #calls getSitesHistory
       resourcesHistory = self.getResourcesHistory(paramsList = paramsList, resourceName = resources_select)
       # resourcesHistory is a list of tuples
@@ -535,7 +528,7 @@ class ResourceStatusDB:
         record.append(resource[0]) #ResourceName
         record.append(resource[1]) #SiteName
         record.append(resource[2]) #ResourceType
-        country = (resource[0]).split('.').pop()
+        country = (resource[1]).split('.').pop()
         record.append(country) #Country
         record.append(resource[3]) #Status
         record.append(resource[4].isoformat(' ')) #DateEffective
@@ -746,24 +739,27 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def getGeneralName(self, resource, from_g, to_g):
+  def getGeneralName(self, name, from_g, to_g):
     """ 
-    get name of res, of granularity from_g, to the name of res with granularity to_g
+    Get name of res, of granularity `from_g`, to the name of res with granularity `to_g`
       
     For a Resource, get the Site name, or the Service name.
     For a Service name, get the Site name
     
     :params:
-      :attr:`res`: a string
-      :attr:`from_g`: a string
-      :attr:`to_g`: a string
+      :attr:`resource`: a string with a name
+      :attr:`from_g`: a string with a valid granularity (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
+      :attr:`to_g`: a string with a valid granularity (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
+      
+    :return:
+      a string with the resulting name
     """
 
     if from_g == 'Resource':
       if to_g == 'Site':
-        req = "SELECT SiteName FROM Resources WHERE ResourceName = '%s';" %(resource)
+        req = "SELECT SiteName FROM Resources WHERE ResourceName = '%s';" %(name)
       elif to_g == 'Service':
-        req = "SELECT SiteName, ResourceType FROM Resources WHERE ResourceName = '%s';" %(resource)
+        req = "SELECT SiteName, ResourceType FROM Resources WHERE ResourceName = '%s';" %(name)
         resQuery = self.db._query(req)
         if not resQuery['OK']:
           raise RSSDBException, where(self, self.getGeneralName)
@@ -777,7 +773,7 @@ class ResourceStatusDB:
         req = "SELECT ServiceName FROM Services WHERE SiteName = '%s' AND ServiceType = '%s';" %(siteName, serviceType)
     if from_g == 'Service':
       if to_g == 'Site':
-        req = "SELECT SiteName FROM Services WHERE ServiceName = '%s';" %(resource)
+        req = "SELECT SiteName FROM Services WHERE ServiceName = '%s';" %(name)
 
     resQuery = self.db._query(req)
     if not resQuery['OK']:

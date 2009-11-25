@@ -52,9 +52,15 @@ class ResourceStatusClientSuccess(ClientsTestCase):
   
   def test_getServiceStats(self):
     self.mockRSS.getServiceStats.return_value = {'OK':True, 'Value':[]}
-    for service in ValidService:
-      res = self.RSCli.getServiceStats(service, '')
-      self.assertEqual(res, [])
+    res = self.RSCli.getServiceStats('')
+    self.assertEqual(res, [])
+  
+  def test_getResourceStats(self):
+    self.mockRSS.getResourceStats.return_value = {'OK':True, 'Value':[]}
+    res = self.RSCli.getResourceStats('Site', '')
+    self.assertEqual(res, [])
+    res = self.RSCli.getResourceStats('Service', '')
+    self.assertEqual(res, [])
   
 class ResourceStatusClient_Failure(ClientsTestCase):
     

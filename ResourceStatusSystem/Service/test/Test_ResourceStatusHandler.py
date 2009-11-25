@@ -14,7 +14,7 @@ class ResourceStatusHandlerTestCase(unittest.TestCase):
   def setUp(self):
     sys.modules["DIRAC.Core.DISET.RequestHandler"] = DIRAC.ResourceStatusSystem.test.fake_RequestHandler
     sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
-    sys.modules["DIRAC.LoggingSystem.Client.Logger"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     from DIRAC.ResourceStatusSystem.Service.ResourceStatusHandler import ResourceStatusHandler, initializeResourceStatusHandler
     
     a = Mock()
@@ -83,9 +83,9 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     res = self.rsh.export_getSitesStatusWeb({}, [], 0, 500)
     self.assert_(res['OK'])
     
-  def test_export_getSitesListByStatus(self):
-    res = self.rsh.export_getSitesListByStatus('')
-    self.assert_(res['OK'])
+#  def test_export_getSitesListByStatus(self):
+#    res = self.rsh.export_getSitesListByStatus('')
+#    self.assert_(res['OK'])
     
   def test_export_getResourcesList(self):
     res = self.rsh.export_getResourcesList()
@@ -95,9 +95,9 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     res = self.rsh.export_getResourcesStatusWeb({}, [], 0, 500)
     self.assert_(res['OK'])
     
-  def test_export_getSitesListByStatus(self):
-    res = self.rsh.export_getResourcesListByStatus('')
-    self.assert_(res['OK'])
+#  def test_export_getSitesListByStatus(self):
+#    res = self.rsh.export_getResourcesListByStatus('')
+#    self.assert_(res['OK'])
     
   def test_export_getSitesHistory(self):
     res = self.rsh.export_getSitesHistory('')

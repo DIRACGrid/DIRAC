@@ -6,7 +6,7 @@
 import unittest
 from datetime import datetime, timedelta
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDBNew import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 
@@ -28,8 +28,10 @@ class ResourceStatusDBTestCase(unittest.TestCase):
 
 class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
 
-  #test site methods
-
+  ###########################
+  #####test site methods#####
+  ###########################
+  
   def test_getSitesList(self):
     res = self.rsDB.getSitesList()
     self.assertEqual(res, [])
@@ -65,6 +67,10 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     res = self.rsDB.getSitesStatusWeb({'SiteName':['XX', 'zz'], 'SiteType':['XX', 'zz'], 'Status':['XX', 'zz']}, [], 0, 500)
     self.assertEqual(res['Records'], [])
 
+  def test_getSitesToCheck(self):
+    res = self.rsDB.getSitesToCheck(1,2,3)
+    self.assertEqual(res, [])
+
   def test_getSitesHistory(self):
     res = self.rsDB.getSitesHistory()
     self.assertEqual(res, [])
@@ -77,7 +83,46 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     res = self.rsDB.getSiteTypeList('T1')
     self.assertEqual(res, [])
 
-  #test resource methods
+  def test__addSiteRow(self):
+    res = self.rsDB._addSiteRow('Ferrara', 'T2', 'test desc', 'Active', 'reasons', datetime.utcnow(), datetime.utcnow(), datetime.utcnow() + timedelta(minutes=10), 'Federico')
+    self.assertEqual(res, None)
+    
+  def test__addSiteHistoryRow(self):
+    res = self.rsDB._addSiteHistoryRow('Ferrara', 'Active', 'reasons', datetime.utcnow(), datetime.utcnow(), datetime.utcnow() + timedelta(minutes=10), 'Federico')
+    self.assertEqual(res, None)
+  
+  def test_setSiteStatus(self):
+    res = self.rsDB.setSiteStatus('CNAF', 'Active', 'reasons', 'Federico')
+    self.assertEqual(res, None)
+
+  def test_setSiteReason(self):
+    res = self.rsDB.setSiteReason('Active', 'reasons', 'Federico')
+    self.assertEqual(res, None)
+
+  def test_addOrModifySite(self):
+    for status in ValidStatus:
+      res = self.rsDB.addOrModifySite('CNAF', 'T1', 'test desc', status, 'ho delle ragioni', datetime.utcnow(), 'testOP', datetime.utcnow() + timedelta(minutes=10))
+      self.assertEqual(res, None)
+
+  def test_addSiteType(self):
+    res = self.rsDB.addSiteType('T1', 'test desc')
+    self.assertEqual(res, None)
+
+  def test_removeSite(self):
+    res = self.rsDB.removeSite('CNAF')
+    self.assertEqual(res, None)
+
+  def test_removeSiteRow(self):
+    res = self.rsDB.removeSiteRow('CNAF', datetime.utcnow())
+    self.assertEqual(res, None)
+
+  def test_removeSiteType(self):
+    res = self.rsDB.removeSiteType('T1')
+    self.assertEqual(res, None)
+
+  ###############################
+  #####test resource methods#####
+  ###############################
   
   def test_getResourceTypeList(self):
     res = self.rsDB.getResourceTypeList()
@@ -119,23 +164,203 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     res = self.rsDB.getResourcesStatusWeb({'ResourceName':['XX', 'zz'], 'SiteName':['XX', 'zz'], 'Status':['XX', 'zz'], 'ResourceType':['xx']}, [], 0, 500)
     self.assertEqual(res['Records'], [])
 
-#  def test_getResourcesListByStatus(self):
-#    res = self.rsDB.getResourcesList('Active')
-#    self.assertEqual(res, [])
-
   def test_getResourcesHistory(self):
     res = self.rsDB.getResourcesHistory()
     self.assertEqual(res, [])
     res = self.rsDB.getResourcesHistory('grid01.fe.infn.it')
     self.assertEqual(res, [])
 
-  def test_getSitesToCheck(self):
-    res = self.rsDB.getSitesToCheck(1,2,3)
-    self.assertEqual(res, [])
-
+  def test__addResourcesRow(self):
+    res = self.rsDB._addResourcesRow('CE01', 'CE', 'Ferrara', 'Active', 'reasons', datetime.utcnow(), datetime.utcnow(), datetime.utcnow() + timedelta(minutes=10), 'Federico')
+    self.assertEqual(res, None)
+    
+  def test__addResourcesHistoryRow(self):
+    res = self.rsDB._addResourcesHistoryRow('CE01', 'Ferrara', 'Active', 'reasons', datetime.utcnow(), datetime.utcnow(), datetime.utcnow() + timedelta(minutes=10), 'Federico')
+    self.assertEqual(res, None)
+    
   def test_getResourcesToCheck(self):
     res = self.rsDB.getResourcesToCheck(1,2,3)
     self.assertEqual(res, [])
+
+  def test_setResourceStatus(self):
+    res = self.rsDB.setResourceStatus('CE01', 'Active', 'reasons', 'Federico')
+    self.assertEqual(res, None)
+
+  def test_setResourceReason(self):
+    res = self.rsDB.setResourceReason('Active', 'reasons', 'Federico')
+    self.assertEqual(res, None)
+
+  def test_addOrModifyResource(self):
+    for status in ValidStatus:
+      res = self.rsDB.addOrModifyResource('CE01', 'T1', 'CNAF', status, 'test reason', datetime.utcnow(), 'testOP', datetime.utcnow() + timedelta(minutes=10))
+      self.assertEqual(res, None)
+
+  def test_addResourceType(self):
+    res = self.rsDB.addResourceType('CE', 'test desc')
+    self.assertEqual(res, None)
+
+  def test_removeResource(self):
+    res = self.rsDB.removeResource('XX')
+    self.assertEqual(res, None)
+
+  def test_removeResouceRow(self):
+    res = self.rsDB.removeResourceRow('CE01', 'CNAF', datetime.utcnow())
+    self.assertEqual(res, None)
+
+  def test_removeResouceType(self):
+    res = self.rsDB.removeResourceType('CE')
+    self.assertEqual(res, None)
+
+  def test_getResourceStats(self):
+    res = self.rsDB.getResourceStats('Service', 'XX')
+    self.assertEqual(res, None)
+    res = self.rsDB.getResourceStats('Site', 'XX')
+    self.assertEqual(res, None)
+
+  ##############################
+  #####test service methods#####
+  ##############################
+  
+  def test_getServicesList(self):
+    res = self.rsDB.getServicesList()
+    self.assertEqual(res, [])
+    res = self.rsDB.getServicesList(serviceName = 'CNAF')
+    self.assertEqual(res, [])
+    res = self.rsDB.getServicesList(serviceName = ['CNAF', 'Ferrara'])
+    self.assertEqual(res, [])
+    res = self.rsDB.getServicesList(paramsList = 'Status')
+    self.assertEqual(res, [])
+    res = self.rsDB.getServicesList(paramsList = ['ServiceName', 'Status'])
+    self.assertEqual(res, [])
+    res = self.rsDB.getServicesList(status = ['Active'])
+    self.assertEqual(res, [])
+    res = self.rsDB.getServicesList(serviceType = ['XXX'])
+    self.assertEqual(res, [])
+    res = self.rsDB.getServicesList(paramsList = ['ServiceName', 'Status'], status = ['Active'], serviceType = ['XXX'])
+    self.assertEqual(res, [])
+    
+
+  def test_getServicesStatusWeb(self):
+    res = self.rsDB.getServicesStatusWeb({}, [], 0, 500)
+    self.assertEqual(res['Records'], [])
+    res = self.rsDB.getServicesStatusWeb({'ExpandServiceHistory':'XX'}, [], 0, 500)
+    self.assertEqual(res['Records'], [])
+    res = self.rsDB.getServicesStatusWeb({'ServiceName':['XX', 'zz']}, [], 0, 500)
+    self.assertEqual(res['Records'], [])
+    res = self.rsDB.getServicesStatusWeb({'Status':['XX', 'zz']}, [], 0, 500)
+    self.assertEqual(res['Records'], [])
+    res = self.rsDB.getServicesStatusWeb({'ServiceType':['XX', 'zz']}, [], 0, 500)
+    self.assertEqual(res['Records'], [])
+    res = self.rsDB.getServicesStatusWeb({'ServiceName':['XX', 'zz'], 'Status':['XX', 'zz']}, [], 0, 500)
+    self.assertEqual(res['Records'], [])
+    res = self.rsDB.getServicesStatusWeb({'ServiceName':['XX', 'zz'], 'ServiceType':['XX', 'zz'], 'Status':['XX', 'zz']}, [], 0, 500)
+    self.assertEqual(res['Records'], [])
+
+  def test_getServicesToCheck(self):
+    res = self.rsDB.getServicesToCheck(1,2,3)
+    self.assertEqual(res, [])
+
+  def test_getServicesHistory(self):
+    res = self.rsDB.getServicesHistory()
+    self.assertEqual(res, [])
+    res = self.rsDB.getServicesHistory('LCG.Ferrara.it')
+    self.assertEqual(res, [])
+
+  def test_getServiceTypeList(self):
+    res = self.rsDB.getServiceTypeList()
+    self.assertEqual(res, [])
+    res = self.rsDB.getServiceTypeList('T1')
+    self.assertEqual(res, [])
+
+  def test__addServiceRow(self):
+    res = self.rsDB._addServiceRow('Computing@Ferrara', 'Computing', 'Ferrara', 'Active', 'reasons', datetime.utcnow(), datetime.utcnow(), datetime.utcnow() + timedelta(minutes=10), 'Federico')
+    self.assertEqual(res, None)
+    
+  def test__addServiceHistoryRow(self):
+    res = self.rsDB._addServiceHistoryRow('Computing@Ferrara', 'Ferrara', 'Active', 'reasons', datetime.utcnow(), datetime.utcnow(), datetime.utcnow() + timedelta(minutes=10), 'Federico')
+    self.assertEqual(res, None)
+  
+  def test_setServiceStatus(self):
+    res = self.rsDB.setServiceStatus('CNAF', 'Active', 'reasons', 'Federico')
+    self.assertEqual(res, None)
+
+  def test_setServiceReason(self):
+    res = self.rsDB.setServiceReason('Active', 'reasons', 'Federico')
+    self.assertEqual(res, None)
+
+  def test_addOrModifyService(self):
+    for status in ValidStatus:
+      res = self.rsDB.addOrModifyService('Computing@Ferrara', 'Computing', 'Ferrara', status, 'ho delle ragioni', datetime.utcnow(), 'testOP', datetime.utcnow() + timedelta(minutes=10))
+      self.assertEqual(res, None)
+
+  def test_addServiceType(self):
+    res = self.rsDB.addServiceType('T1', 'test desc')
+    self.assertEqual(res, None)
+
+
+  def test_removeService(self):
+    res = self.rsDB.removeService('CNAF')
+    self.assertEqual(res, None)
+
+  def test_removeServiceRow(self):
+    res = self.rsDB.removeServiceRow('CNAF', datetime.utcnow())
+    self.assertEqual(res, None)
+
+  def test_removeServiceType(self):
+    res = self.rsDB.removeServiceType('T1')
+    self.assertEqual(res, None)
+
+
+  
+  ##########################
+  ###test general methods###
+  ##########################
+
+  def test_removeStatus(self):
+    for status in ValidStatus:
+      res = self.rsDB.removeStatus(status)
+      self.assertEqual(res, None)
+  
+  def test_transact2History(self):
+    res = self.rsDB.transact2History('Site', 'CNAF', datetime.utcnow())
+    self.assertEqual(res, None)
+    res = self.rsDB.transact2History('Site', 1)
+    self.assertEqual(res, None)
+    res = self.rsDB.transact2History('Resource', 'CE01', 'CNAF', datetime.utcnow())
+    self.assertEqual(res, None)
+    res = self.rsDB.transact2History('Resource', 1)
+    self.assertEqual(res, None)
+
+  def test_setLastSiteCheckTime(self):
+    res = self.rsDB.setLastSiteCheckTime('CNAF')
+    self.assertEqual(res, None)
+
+  def test_setLastResourceCheckTime(self):
+    res = self.rsDB.setLastResourceCheckTime('CE01')
+    self.assertEqual(res, None)
+
+  def test_setDateEnd(self):
+    for siteOrRes in ValidRes:
+      res = self.rsDB.setDateEnd(siteOrRes, 'XX', datetime.utcnow())
+      self.assertEqual(res, None)
+
+  def test_addStatus(self):
+    for status in ValidStatus:
+      res = self.rsDB.addStatus(status, 'test desc')
+      self.assertEqual(res, None)
+
+  def test_unique(self):
+    self.mock_DB._query.return_value = {'OK': True, 'Value': ((1L,),)}
+    res = self.rsDB.unique('Sites', 1)
+    self.assert_(res)
+    self.mock_DB._query.return_value = {'OK': True, 'Value': ((2L,),)}
+    res = self.rsDB.unique('Sites', 1)
+    self.assertFalse(res)
+
+  def test_getStatusList(self):
+    res = self.rsDB.getStatusList()
+    self.assertEqual(res, [])
+
 
   def test_getEndings(self):
     res = self.rsDB.getEndings('Sites')
@@ -162,147 +387,9 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     self.assertEqual(res, [])
 
   def test_getServiceStats(self):
-    for service in ValidService:
-      res = self.rsDB.getServiceStats(service, 'XX')
-#      self.assertEqual(res, [])
-
-  #test add methods
-
-  def test_addOrModifySite(self):
-    for status in ValidStatus:
-      res = self.rsDB.addOrModifySite('CNAF', 'T1', 'test desc', status, 'ho delle ragioni', datetime.utcnow(), 'testOP', datetime.utcnow() + timedelta(minutes=10))
-      self.assertEqual(res, None)
-
-  def test_addOrModifyResource(self):
-    for status in ValidStatus:
-      res = self.rsDB.addOrModifyResource('CE01', 'T1', 'CNAF', status, 'test reason', datetime.utcnow(), 'testOP', datetime.utcnow() + timedelta(minutes=10))
-      self.assertEqual(res, None)
-
-  def test_addResourceType(self):
-    res = self.rsDB.addResourceType('CE', 'test desc')
+    res = self.rsDB.getServiceStats('XX')
     self.assertEqual(res, None)
 
-  def test_addSiteType(self):
-    res = self.rsDB.addSiteType('T1', 'test desc')
-    self.assertEqual(res, None)
-
-  def test_addStatus(self):
-    for status in ValidStatus:
-      res = self.rsDB.addStatus(status, 'test desc')
-      self.assertEqual(res, None)
-
-  #test remove methods
-
-  def test_removeSite(self):
-    res = self.rsDB.removeSite('CNAF')
-    self.assertEqual(res, None)
-
-  def test_removeSiteRow(self):
-    res = self.rsDB.removeSiteRow('CNAF', datetime.utcnow())
-    self.assertEqual(res, None)
-
-  def test_removeResource(self):
-    res = self.rsDB.removeResource('XX')
-    self.assertEqual(res, None)
-
-  def test_removeResouceRow(self):
-    res = self.rsDB.removeResourceRow('CE01', 'CNAF', datetime.utcnow())
-    self.assertEqual(res, None)
-
-  def test_removeResouceType(self):
-    res = self.rsDB.removeResourceType('CE')
-    self.assertEqual(res, None)
-
-  def test_removeSiteType(self):
-    res = self.rsDB.removeSiteType('T1')
-    self.assertEqual(res, None)
-
-  def test_removeStatus(self):
-    for status in ValidStatus:
-      res = self.rsDB.removeStatus(status)
-      self.assertEqual(res, None)
-
-  #test transact2history
-
-  def test_transact2History(self):
-    res = self.rsDB.transact2History('Site', 'CNAF', datetime.utcnow())
-    self.assertEqual(res, None)
-    res = self.rsDB.transact2History('Site', 1)
-    self.assertEqual(res, None)
-    res = self.rsDB.transact2History('Resource', 'CE01', 'CNAF', datetime.utcnow())
-    self.assertEqual(res, None)
-    res = self.rsDB.transact2History('Resource', 1)
-    self.assertEqual(res, None)
-
-  #test general methods
-
-  def test_setLastSiteCheckTime(self):
-    res = self.rsDB.setLastSiteCheckTime('CNAF')
-    self.assertEqual(res, None)
-
-  def test_setLastResourceCheckTime(self):
-    res = self.rsDB.setLastResourceCheckTime('CE01')
-    self.assertEqual(res, None)
-
-  def test_setDateEnd(self):
-    for siteOrRes in ValidRes:
-      res = self.rsDB.setDateEnd(siteOrRes, 'XX', datetime.utcnow())
-      self.assertEqual(res, None)
-
-  def test_setSiteStatus(self):
-    res = self.rsDB.setSiteStatus('CNAF', 'Active', 'reasons', 'Federico')
-    self.assertEqual(res, None)
-
-  def test_setResourceStatus(self):
-    res = self.rsDB.setResourceStatus('CE01', 'Active', 'reasons', 'Federico')
-    self.assertEqual(res, None)
-
-  def test_setSiteReason(self):
-    res = self.rsDB.setSiteReason('Active', 'reasons', 'Federico')
-    self.assertEqual(res, None)
-
-  def test_setResourceReason(self):
-    res = self.rsDB.setResourceReason('Active', 'reasons', 'Federico')
-    self.assertEqual(res, None)
-
-  def test_unique(self):
-    self.mock_DB._query.return_value = {'OK': True, 'Value': ((1L,),)}
-    res = self.rsDB.unique('Sites', 1)
-    self.assert_(res)
-    self.mock_DB._query.return_value = {'OK': True, 'Value': ((2L,),)}
-    res = self.rsDB.unique('Sites', 1)
-    self.assertFalse(res)
-
-  def test_getStatusList(self):
-    res = self.rsDB.getStatusList()
-    self.assertEqual(res, [])
-
-  #test private methods
-
-  def test__addSiteRow(self):
-    res = self.rsDB._addSiteRow('Ferrara', 'T2', 'test desc', 'Active', 'reasons', datetime.utcnow(), datetime.utcnow(), datetime.utcnow() + timedelta(minutes=10), 'Federico')
-    self.assertEqual(res, None)
-    
-  def test__addResourcesRow(self):
-    res = self.rsDB._addResourcesRow('CE01', 'CE', 'Ferrara', 'Active', 'reasons', datetime.utcnow(), datetime.utcnow(), datetime.utcnow() + timedelta(minutes=10), 'Federico')
-    self.assertEqual(res, None)
-    
-  def test__addSiteHistoryRow(self):
-    res = self.rsDB._addSiteHistoryRow('Ferrara', 'Active', 'reasons', datetime.utcnow(), datetime.utcnow(), datetime.utcnow() + timedelta(minutes=10), 'Federico')
-    self.assertEqual(res, None)
-    
-  def test__addResourcesHistoryRow(self):
-    res = self.rsDB._addResourcesHistoryRow('CE01', 'Ferrara', 'Active', 'reasons', datetime.utcnow(), datetime.utcnow(), datetime.utcnow() + timedelta(minutes=10), 'Federico')
-    self.assertEqual(res, None)
-    
-#  def test__getSiteByID(self):
-#    res = self.rsDB._getSiteByID(1)
-#    self.assertEqual(res, [])
-#  
-#  def test__getResourceByID(self):
-#    res = self.rsDB._getResourceByID(1)
-#    self.assertEqual(res, [])
-  
 
 class ResourceStatusDBFailure(ResourceStatusDBTestCase):
 
@@ -327,8 +414,6 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
     self.assertRaises(RSSDBException, self.rsDB.getSiteTypeList) 
     self.assertRaises(RSSDBException, self.rsDB.getResourceTypeList) 
     self.assertRaises(RSSDBException, self.rsDB.getStatusList)
-#    self.assertRaises(RSSDBException, self.rsDB.getSitesListByStatus, 'Banned') 
-#    self.assertRaises(RSSDBException, self.rsDB.getResourcesListByStatus, 'Banned')
     self.assertRaises(RSSDBException, self.rsDB.getSitesHistory) 
     self.assertRaises(RSSDBException, self.rsDB.getResourcesHistory)
     self.assertRaises(RSSDBException, self.rsDB.getSitesToCheck, 1,2,3) 
