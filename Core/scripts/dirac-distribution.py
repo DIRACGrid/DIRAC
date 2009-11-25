@@ -59,6 +59,10 @@ class Params:
     self.destination = optionValue
     return S_OK()
   
+  def setPythonVersion( self, optionValue ):
+    self.pythonVersion = optionValue
+    return S_OK()
+  
 cliParams = Params()
 
 Script.disableCS()
@@ -71,6 +75,7 @@ Script.registerSwitch( "t:", "buildType=", "External type to build (client/serve
 Script.registerSwitch( "e", "forceExternals", "Force externals compilation even if already compiled", cliParams.setExternalsBuildType )
 Script.registerSwitch( "E", "ignoreExternals", "Do not compile externals", cliParams.setIgnoreExternals )
 Script.registerSwitch( "d:", "destination", "Destination where to build the tar files", cliParams.setDestination )
+Script.registerSwitch( "i:", "pythonVersion", "Python version to use (24/25)", cliParams.setPythonVersion )
 
 Script.parseCommandLine( ignoreErrors = False )
 
