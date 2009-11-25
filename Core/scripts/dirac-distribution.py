@@ -245,6 +245,7 @@ def tarExternals( mainCFG, targetDir ):
       if not result[ 'OK' ]:
         gLogger.error( "Could not generate tarball for package %s" % package, result[ 'Error' ] )
         sys.exit(1)
+      os.system( "rm -rf '%s'" % compileTarget )
     
 mainCFG = Distribution.loadCFGFromRepository( "/trunk/releases.cfg" )
 if 'Releases' not in mainCFG.listSections():
