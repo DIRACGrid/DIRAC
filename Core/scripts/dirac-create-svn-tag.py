@@ -124,29 +124,31 @@ for svnProject in List.fromChar( svnProjects ):
     packageList = versionCFG.listOptions()
     gLogger.info( "Tagging packages: %s" % ", ".join( packageList ) )
     msg = '"Release %s"' % svnVersion
-    dest = svnSshRoot % ( svnUsername, '%s/tags/%s/%s_%s/%s' % ( svnProject, svnProject, svnProject, svnVersion, svnProject ) )
-    cmd = 'svn --parents -m %s mkdir %s' % ( msg, dest )
-    source = []
-    for extra in buildCFG.getOption( 'rootPackageFiles', ['__init__.py', 'versions.cfg'] ):
-      source.append( svnSshRoot % ( svnUsername, '%s/trunk/%s/%s'  % ( svnProject, svnProject, extra ) ) )
+    versionPath = svnSshRoot % ( svnUsername, '%s/tags/%s/%s_%s' % ( svnProject, svnProject, svnProject, svnVersion ) )
+    mkdirCmd = "svn --parents -m %s mkdir '%s'" % ( msg, versionPath )
+    cpCmds = []
+    for extra in buildCFG.getOption( 'packageExtraFiles', ['__init__.py', 'versions.cfg'] ):
+      source = svnSshRoot % ( svnUsername, '%s/trunk/%s/%s'  % ( svnProject, svnProject, extra ) )
+      cpCmds.append( "svn -m '%s' copy '%s' '%s/%s'" % ( msg, source, versionPath, extra ) )
     for pack in packageList:
       packVer = versionCFG.getOption(pack,'')
       if packVer in ['trunk', '', 'HEAD']:
-        source.append( svnSshRoot % ( svnUsername, '%s/trunk/%s/%s'  % ( svnProject, svnProject, pack ) ) )
+        source = svnSshRoot % ( svnUsername, '%s/trunk/%s/%s'  % ( svnProject, svnProject, pack ) )
       else:
-        source.append( svnSshRoot % ( svnUsername, '%s/tags/%s/%s/%s' % ( svnProject, svnProject, pack, packVer ) ) )
-    if not source:
+        source = svnSshRoot % ( svnUsername, '%s/tags/%s/%s/%s' % ( svnProject, svnProject, pack, packVer ) )
+      cpCmds.append( "svn -m '%s' copy '%s' '%s/%s'" % ( msg, source, versionPath, pack ) )
+    if not cpCmds:
       gLogger.error( 'No packages to be included' )
       exit( -1 )
-    gLogger.info( 'Creating SVN Dir:', dest )
-    ret = os.system( cmd )
+    gLogger.info( 'Creating SVN Dir:', versionPath )
+    ret = os.system( mkdirCmd )
     if ret:
       exit( -1 )
     gLogger.info( 'Copying packages: %s' % ", ".join( packageList ) )
-    cmd = 'svn -m %s copy %s %s' % ( msg, ' '.join( source ), dest )
-    ret = os.system( cmd )
-    if ret:
-      gLogger.error( 'Failed to create tag' )
+    for cpCmd in cpCmds:
+      ret = os.system( cpCmd )
+      if ret:
+        gLogger.error( 'Failed to create tag' )
 
 
   
