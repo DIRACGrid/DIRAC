@@ -132,7 +132,7 @@ cmdOpts = ( ( 'd:', 'destination=',   'Destination where to build the externals'
             ( 'e:', 'externalsPath=', 'Path to the externals sources' ),
             ( 'v:', 'version=',       'Version of the externals to compile (default will be trunk)' ),
             ( 'h',  'help',           'Show this help' ),
-            ( 'p:', 'pythonversion=', 'Python version to compile (25/24)' )
+            ( 'p:', 'pythonVersion=', 'Python version to compile (25/24)' )
           )
 
 compExtVersion = False
