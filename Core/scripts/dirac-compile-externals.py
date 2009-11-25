@@ -20,7 +20,7 @@ tarWebRoot = "http://svnweb.cern.ch/world/wsvn/dirac/Externals/%s/?op=dl&rev=0&i
 executablePerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 
 def downloadExternalsSVN( destPath, version = False ):
-  if version:
+  if version and not version.lower() in ( "trunk", "head" ):
     snapshotPath = "tags/%s" % version
   else:
     snapshotPath = "trunk"
@@ -31,7 +31,7 @@ def downloadExternalsSVN( destPath, version = False ):
   
 def downloadExternalsTar( destPath, version = False ):
   netReadSize = 1024*1024
-  if version:
+  if version and not version.lower() in ( "trunk", "head" ):
     snapshotPath = "tags/%s" % version
   else:
     snapshotPath = "trunk"
