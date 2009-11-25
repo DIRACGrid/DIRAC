@@ -19,6 +19,7 @@ class Params:
     self.externalsBuildType = [ 'client' ]
     self.forceExternals = False
     self.ignoreExternals = False
+    self.ignorePackages = False
     self.externalsPython = '25'
     self.svnRoot = "svn+ssh://svn.cern.ch/reps/dirac"
     self.destination = ""
@@ -64,6 +65,10 @@ class Params:
     self.pythonVersion = optionValue
     return S_OK()
   
+  def setIgnorePackages( self, optionValue ):
+    self.ignorePackages = True
+    return S_OK()
+  
 cliParams = Params()
 
 Script.disableCS()
@@ -77,6 +82,7 @@ Script.registerSwitch( "e", "forceExternals", "Force externals compilation even 
 Script.registerSwitch( "E", "ignoreExternals", "Do not compile externals", cliParams.setIgnoreExternals )
 Script.registerSwitch( "d:", "destination", "Destination where to build the tar files", cliParams.setDestination )
 Script.registerSwitch( "i:", "pythonVersion", "Python version to use (24/25)", cliParams.setPythonVersion )
+Script.registerSwitch( "P", "ignorePackages", "Do not make tars of python packages", cliParams.setIgnorePackages )
 
 Script.parseCommandLine( ignoreErrors = False )
 
@@ -226,11 +232,11 @@ def tarExternals( mainCFG, targetDir ):
       continue
     for externalType in cliParams.externalsBuildType:
       requestedExternals = ( externalType, externalsVersion, platform, 'python%s' % cliParams.externalsPython )
-      requestedExternalsString = "-".join( list( requestedExternals ) ) 
+      requestedExternalsString = "-".join( list( requestedExternals ) )
+      gLogger.info( "Trying to compile %s externals..." % requestedExternalsString ) 
       if not cliParams.forceExternals and requestedExternals in availableExternals:
         gLogger.info( "Externals %s is already compiled, skipping..." % ( requestedExternalsString ) )
         continue
-      gLogger.info( "Compiling externals..." )
       compileScript = os.path.join( os.path.dirname( __file__ ), "dirac-compile-externals.py" )
       compileTarget = os.path.join( targetDir, platform )
       compileCmd = "%s -d '%s' -t '%s' -v '%s' -i '%s'" % ( compileScript, compileTarget, 
@@ -263,15 +269,24 @@ else:
     pass
 gLogger.info( "Will generate tarballs in %s" % targetPath )
 
+doneSomeTars = False
+
 if not cliParams.ignoreSVNLinks:
   taggedReleases = Distribution.getRepositoryVersions()
   tagSVNReleases( mainCFG, taggedReleases )
+  doneSomeTars = True
   
 if not cliParams.ignoreExternals:
   tarExternals( mainCFG, targetPath )
-  
-autoTarPackages( mainCFG, targetPath )
+  doneSomeTars = True
 
-gLogger.info( "Everything seems ok" )
-gLogger.info( "Please upload the tarballs by executing:")
-gLogger.info( "( cd %s ; tar -cf - *.tar.gz *.md5 ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'" % targetPath )
+if not cliParams.ignorePackages:
+  autoTarPackages( mainCFG, targetPath )
+  doneSomeTars = True
+
+if not doneSomeTars:
+  gLogger.info( "No packages were tared" )
+else:
+  gLogger.info( "Everything seems ok" )
+  gLogger.info( "Please upload the tarballs by executing:")
+  gLogger.info( "( cd %s ; tar -cf - *.tar.gz *.md5 ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'" % targetPath )
