@@ -105,32 +105,9 @@ def siteName():
 #Callbacks
 ExitCallback.registerSignals()
 
-# Define the platform from executable path
-# DIRAC.platformTuple contains the real DIRAC platform for the current system
-#
-platformTuple = (platform.system(),platform.machine())
-if platformTuple[0] == 'Linux':
-  # get version of higher libc installed
-  if platform.machine().find('64') != -1:
-    lib = '/lib64'
-  else:
-    lib = '/lib'
-  libs = []
-  for libFile in os.listdir( lib ):
-    if libFile.find( 'libc-' ) == 0 or libFile.find( 'libc.so' ) == 0 : libs.append( os.path.join( lib , libFile ) )
-  libs.sort()
-  platformTuple += ( '-'.join(platform.libc_ver(libs[-1])),)
-  # platformTuple += ( '-'.join(libc_ver('/lib/libc.so.6')),)
-elif platformTuple[0] == 'Darwin':
-  platformTuple += ( '.'.join(platform.mac_ver()[0].split(".")[:2]),)
-elif platformTuple[0] == 'Windows':
-  platformTuple += ( platform.win32_ver()[0],)
-else:
-  platformTuple += ( platform.release(), )
-#
-# DIRAC.platform contains the "alias" used in the current installation
-#
-platform = os.path.basename(os.path.dirname(os.path.dirname(sys.executable)))
+#Set the platform
+from DIRAC.Core.Utilities.Platform import getPlatformString
+platform = getPlatformString()
 
 def exit( exitCode = 0 ):
   ExitCallback.execute( exitCode, [] )
