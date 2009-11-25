@@ -167,14 +167,12 @@ if not compDest:
   if not diracRoot:
     print "Error: Could not find DIRAC root"
     sys.exit(1)
-  import popen2
-  try:
-    p3 = popen2.Popen3( os.path.join( basePath, 'dirac-platform.py' ) )
-  except AttributeError:
-    print "Error: Cannot find dirac-platform.py!"
-    sys.exit(1)
-  platform = p3.fromchild.read().strip()
-  p3.wait()
+  platformPath = os.path.join( diracRoot, "DIRAC", "Core", "Utilities", "Platform.py" )
+  platFD = open( platformPath, "r" )
+  Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
+  platFD.close()
+  platform = Platform.getPlatformString()
+  print "Using platform %s" % platform
   if not platform or platform == "ERROR":
     print >> sys.stderr, "Can not determine local platform"
     sys.exit(-1)
