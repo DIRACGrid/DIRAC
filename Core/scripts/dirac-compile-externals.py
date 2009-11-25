@@ -213,7 +213,7 @@ buildCFG = CFG.CFG().loadFromFile( os.path.join( externalsDir, "builds.cfg" ) )
 
 if compType not in buildCFG.listSections():
   print "Invalid compilation type %s" % compType
-  print " Valid ones are: %s" % ", ".join( compilationTypes )
+  print " Valid ones are: %s" % ", ".join( buildCFG.listSections() )
   sys.exit(1)
 
 packagesToBuild = resolvePackagesToBuild( compType, buildCFG )
