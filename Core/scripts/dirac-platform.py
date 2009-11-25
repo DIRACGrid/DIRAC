@@ -6,7 +6,7 @@ __RCSID__ = "$Id$"
 try:
   from DIRAC.Core.Utilities.Platform import getPlatformString
 except:
-  import platform
+  import platform, os
   
   def getPlatformString():
     # Modified to return our desired platform string, R. Graciani
