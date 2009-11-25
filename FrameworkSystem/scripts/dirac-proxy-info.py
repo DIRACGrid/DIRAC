@@ -82,9 +82,7 @@ from DIRAC.Core.Security import CS, VOMS
 
 if params.checkClock:
   result = getClockDeviation()
-  if not result[ 'OK' ]:
-    print "Error: %s" % result[ 'Message' ]
-  else:
+  if result[ 'OK' ]:
     deviation = result[ 'Value' ]
     if deviation > 600:
       print "Error: Your host clock seems to be off by more than TEN MINUTES! Thats really bad."
