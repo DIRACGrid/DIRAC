@@ -36,6 +36,7 @@ else:
     DiracPlatform = p.stdout.read().strip()
     p.wait()
   except ImportError:
+    import popen2
     p3 = popen2.Popen3( "'%s'" % dirac_platform )
     DiracPlatform = p3.fromchild.read().strip()
     p3.wait()
