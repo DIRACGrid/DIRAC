@@ -16,7 +16,7 @@ class Params:
     self.forceSVNLinks = False
     self.ignoreSVNLinks = False
     self.debug = False
-    self.externalsBuildType = 'client'
+    self.externalsBuildType = [ 'client' ]
     self.forceExternals = False
     self.ignoreExternals = False
     self.externalsPython = '25'
@@ -45,7 +45,7 @@ class Params:
     return S_OK()
   
   def setExternalsBuildType( self, optionValue ):
-    self.externalsBuildType = optionValue
+    self.externalsBuildType = List.fromChar( optionValue )
     return S_OK()
   
   def setForceExternals( self, optionValue ):
@@ -224,26 +224,27 @@ def tarExternals( mainCFG, targetDir ):
     if not externalsVersion:
       gLogger.info( "Externals is not defined for release %s" % releaseVersion)
       continue
-    requestedExternals = ( cliParams.externalsBuildType, externalsVersion, platform, 'python%s' % cliParams.externalsPython )
-    requestedExternalsString = "-".join( list( requestedExternals ) ) 
-    if not cliParams.forceExternals and requestedExternals in availableExternals:
-      gLogger.info( "Externals %s is already compiled, skipping..." % ( requestedExternalsString ) )
-      continue
-    gLogger.info( "Compiling externals..." )
-    compileScript = os.path.join( os.path.dirname( __file__ ), "dirac-compile-externals.py" )
-    compileTarget = os.path.join( targetDir, platform )
-    compileCmd = "%s -d '%s' -t '%s' -v '%s' -i '%s'" % ( compileScript, compileTarget, 
-                                                          cliParams.externalsBuildType,
-                                                          externalsVersion, cliParams.externalsPython )
-    gLogger.debug( compileCmd )
-    if os.system( compileCmd ):
-      gLogger.error( "Error while compiling externals!" )
-      sys.exit(1)
-    tarfilePath = os.path.join( targetDir, "Externals-%s.tar.gz" % ( requestedExternalsString ) )
-    result = Distribution.createTarball( tarfilePath, compileTarget )
-    if not result[ 'OK' ]:
-      gLogger.error( "Could not generate tarball for package %s" % package, result[ 'Error' ] )
-      sys.exit(1)
+    for externalType in cliParams.externalsBuildType:
+      requestedExternals = ( cliParams.externalsBuildType, externalsVersion, platform, 'python%s' % cliParams.externalsPython )
+      requestedExternalsString = "-".join( list( requestedExternals ) ) 
+      if not cliParams.forceExternals and requestedExternals in availableExternals:
+        gLogger.info( "Externals %s is already compiled, skipping..." % ( requestedExternalsString ) )
+        continue
+      gLogger.info( "Compiling externals..." )
+      compileScript = os.path.join( os.path.dirname( __file__ ), "dirac-compile-externals.py" )
+      compileTarget = os.path.join( targetDir, platform )
+      compileCmd = "%s -d '%s' -t '%s' -v '%s' -i '%s'" % ( compileScript, compileTarget, 
+                                                            cliParams.externalsBuildType,
+                                                            externalsVersion, cliParams.externalsPython )
+      gLogger.debug( compileCmd )
+      if os.system( compileCmd ):
+        gLogger.error( "Error while compiling externals!" )
+        sys.exit(1)
+      tarfilePath = os.path.join( targetDir, "Externals-%s.tar.gz" % ( requestedExternalsString ) )
+      result = Distribution.createTarball( tarfilePath, compileTarget )
+      if not result[ 'OK' ]:
+        gLogger.error( "Could not generate tarball for package %s" % package, result[ 'Error' ] )
+        sys.exit(1)
     
 mainCFG = Distribution.loadCFGFromRepository( "/trunk/releases.cfg" )
 if 'Releases' not in mainCFG.listSections():
