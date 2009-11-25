@@ -1,0 +1,333 @@
+#!/usr/bin/env python
+# $HeadURL$
+"""
+Compile the externals
+"""
+__RCSID__ = "$Id$"
+
+import sys, os, getopt, tarfile, urllib2, urllib, imp, signal, subprocess
+
+try:
+  from hashlib import md5
+except:
+  from md5 import md5
+
+
+class Params:
+  
+  def __init__( self ):
+    self.packagesToInstall = [ 'DIRAC' ]
+    self.release = False
+    self.externalsType = 'client'
+    self.pythonVersion = '25'
+    self.platform = False
+    self.setup = False
+    self.targetPath = os.getcwd()
+    self.buildExternals = False
+    self.buildIfNotAvailable = False
+    self.tarBaseURL = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/tars'
+    self.csServers = []
+
+####
+# Start of helper functions
+####
+
+def logDEBUG( msg ):
+  print "[DEBUG] %s" % msg
+  
+def logERROR( msg ):
+  print "[ERROR] %s" % msg
+
+def logINFO( msg ):
+  print "[INFO]  %s" % msg
+
+#TODO: Helper functions for logging as DIRAC, subprocess
+
+def alarmTimeoutHandler():
+  raise Exception( 'Timeout' )
+
+def urlretrieveTimeout( url, fileName, timeout = 0 ):
+  """
+   Retrive remore url to local file, with timeout wrapper
+  """
+  # NOTE: Not thread-safe, since all threads will catch same alarm.
+  #       This is OK for dirac-install, since there are no threads.
+  logDEBUG( 'Retrieving remote file "%s"' % url )
+
+  if timeout:
+    signal.signal( signal.SIGALRM, alarmTimeoutHandler )
+    # set timeout alarm
+    signal.alarm(timeout)
+  try:
+    localname,headers = urllib.urlretrieve( url, fileName )
+  except Exception, x:
+    if x == 'TimeOut':
+      logERROR( 'Timeout after %s seconds on transfer request for "%s"' %  (str(timeout), url) )
+    if timeout:
+      signal.alarm(0)
+    raise x
+
+  if timeout:
+    signal.alarm(0)
+
+def downloadFileFromSVN( filePath, destPath, isExecutable = False, filterLines = [] ):
+  fileName = os.path.basename( filePath )
+  logINFO( " Downloading %s" % fileName ) 
+  viewSVNLocation = "http://svnweb.cern.ch/world/wsvn/dirac/%s?op=dl&rev=0" % filePath
+  anonymousLocation = 'http://svnweb.cern.ch/guest/dirac/%s' % filePath
+  downOK = False
+  localPath = os.path.join( destPath, fileName )
+  for remoteLocation in ( anonymousLocation, viewSVNLocation ):
+    try:
+      remoteFile = urllib2.urlopen( remoteLocation )
+    except urllib2.URLError:
+      continue
+    remoteData = remoteFile.read()
+    remoteFile.close()      
+    if remoteData:
+      localFile = open( localPath , "wb" )
+      localFile.write( remoteData )
+      localFile.close()
+      downOK = True
+      break
+  if not downOK:
+    osCmd = "svn cat 'http://svnweb.cern.ch/guest/dirac/DIRAC/trunk/%s' > %s" % ( filePath, localPath )
+    if os.system( osCmd ):
+      logERROR( "Could not retrieve %s from the web nor via SVN. Aborting..." % fileName )
+      sys.exit(1)
+  if filterLines:
+    fd = open( localPath, "rb" )
+    fileContents = fd.readlines()
+    fd.close()
+    fd = open( localPath, "wb" )
+    for line in fileContents:
+      isFiltered = False
+      for filter in filterLines:
+        if line.find( filter ) > -1:
+          isFiltered = True
+          break
+      if not isFiltered:
+        fd.write( line )
+    fd.close()
+  if isExecutable:
+    os.chmod(localPath , executablePerms )
+    
+def downloadAndExtractTarball( pkgVer, targetPath ):
+  tarName = "%s.tar.gz" % ( pkgVer )
+  tarPath = os.path.join( cliParams.targetPath, tarName )
+  md5Name = "%s.md5" % ( pkgVer )
+  md5Path = os.path.join( cliParams.targetPath, md5Name )
+  try:
+    urlretrieveTimeout( "%s/%s" % ( cliParams.tarBaseURL, tarName ), tarPath, 300 )
+  except Exception, e:
+    logERROR( "Cannot download %s: %s" % ( tarName, str(e) ) )
+    sys.exit(1)
+  try:
+    urlretrieveTimeout( "%s/%s" % ( cliParams.tarBaseURL, md5Name ), md5Path, 300 )
+  except Exception, e:  
+    logERROR( "Cannot download %s: %s" % ( md5Name, str(e) ) )
+    sys.exit(1)
+  #Read md5  
+  fd = open( os.path.join( cliParams.targetPath, md5Name ), "r" )
+  md5Expected = fd.read().strip()
+  fd.close()
+  #Calculate md5
+  md5Calculated = md5()
+  fd = open( os.path.join( cliParams.targetPath, tarName ), "r" )
+  buf = fd.read( 4096 )
+  while buf:
+    md5Calculated.update( buf )
+    buf = fd.read( 4096 )
+  fd.close()
+  #Check
+  if md5Expected != md5Calculated.hexdigest():
+    logERROR( "Oops... md5 for package %s failed!" % pkgVer )
+    sys.exit(1)
+  #Extract
+  tf = tarfile.open( os.path.join( cliParams.targetPath, tarName ), "r" )
+  for member in tf.getmembers():
+    tf.extract( member, cliParams.targetPath )
+  #Delete tar and md5
+  os.unlink( md5Path )
+  os.unlink( tarPath )
+    
+def execAndGetOutput( cmd ):
+  logDEBUG( cmd ) 
+  p = subprocess.Popen( cmd, 
+                        shell = True, stdout=subprocess.PIPE, 
+                        stderr=subprocess.PIPE, close_fds = True )
+  stdData = p.stdout.read()
+  errData = p.stderr.read()
+  p.wait()
+  return ( p.returncode, stdData, errData )
+    
+####
+# End of helper functions
+####
+
+
+
+cliParams = Params()
+
+cmdOpts = ( ( 'r:', 'release=',             'Release version to install' ),
+            ( 'e:', 'extraPackages=',       'Extra packages to install (comma separated)' ),
+            ( 't:', 'installType=',         'Installation type (client/server)' ),
+            ( 'i:', 'pythonVersion=',       'Python version to compile (25/24)' ),
+            ( 'p:', 'platform=',            'Platform to install' ),
+            ( 'S:', 'setup=',               'DIRAC Setup to use' ),
+            ( 'P:', 'installationPath=',    'Path where to install (default current working dir)' ),
+            ( 'b',  'build',                'Force local compilation' ),
+            ( 'B',  'buildIfNotAvailable',  'Build if not available' ),
+            ( 'C:', 'configurationServer=', 'Configuration servers to use' ),
+            ( 'h',  'help',                 'Show this help' ),
+          )
+  
+optList, args = getopt.getopt( sys.argv[1:], 
+                               "".join( [ opt[0] for opt in cmdOpts ] ),
+                               [ opt[1] for opt in cmdOpts ] )
+
+def usage():
+  print "Usage %s <opts>" % sys.argv[0]
+  for cmdOpt in cmdOpts:
+    print "%s %s : %s" % ( cmdOpt[0].ljust(4), cmdOpt[1].ljust(15), cmdOpt[2] )
+  sys.exit(1)
+  
+  
+for o, v in optList:
+  if o in ( '-h', '--help' ):
+    usage()
+  elif o in ( '-r', '--release' ):
+    cliParams.release = v
+  elif o in ( '-e', '--extraPackages' ):
+    cliParams.packagesToInstall += [ p.strip() for p in v.split(",") if p.strip() ]
+  elif o in ( '-t', '--installType' ):
+    cliParams.externalsType = v
+  elif o in ( '-y', '--pythonVersion' ):
+    cliParams.pythonVersion = v
+  elif o in ( '-p', '--platform' ):
+    cliParams.platform = v
+  elif o in ( '-S', '--setup' ):
+    cliParams.setup = v
+  elif o in ( '-C', '--configurationServer' ):
+    cliParams.csServers = [ p.strip() for p in v.split(",") if p.strip() ]
+  elif o in ( '-P', '--installationPath' ):
+    cliParams.targetPath = v
+    try:
+      os.makedirs( v )
+    except:
+      pass
+  elif o in ( '-b', '--build' ):
+    cliParams.buildExternals = True
+        
+if not cliParams.setup:
+  logERROR( ": Need to define a setup!" )
+  usage()
+
+if not cliParams.release:
+  logERROR( ": Need to define a release version to install!" )
+  usage()
+
+#Get the list of tarfiles
+tarListPath = os.path.join( cliParams.targetPath, "tars.list" )
+try:
+  urlretrieveTimeout( "%s/tars.list" % cliParams.tarBaseURL, tarListPath, 300 )
+except Exception, e:
+  logERROR( "Cannot download list of tars: %s" % ( str(e) ) )
+  sys.exit(1)
+fd = open( tarListPath, "r" )
+availableTars = [ line.strip() for line in fd.readlines() if line.strip() ]
+fd.close()
+os.unlink( tarListPath )
+
+#Load CFG  
+downloadFileFromSVN( "DIRAC/trunk/DIRAC/Core/Utilities/CFG.py", cliParams.targetPath, False, [ '@gCFGSynchro' ] )
+cfgPath = os.path.join( cliParams.targetPath , "CFG.py" )
+cfgFD = open( cfgPath, "r" )
+CFG = imp.load_module( "CFG", cfgFD, cfgPath, ( "", "r", imp.PY_SOURCE ) )
+cfgFD.close()
+
+#Load releases
+downloadFileFromSVN( "trunk/releases.cfg", cliParams.targetPath, False, [] )
+mainCFG = CFG.CFG().loadFromFile( os.path.join( cliParams.targetPath, "releases.cfg" ) )
+
+if 'Releases' not in mainCFG.listSections():
+  logERROR( " There's no Releases section in releases.cfg" )
+  sys.exit(1)
+
+if cliParams.release not in mainCFG[ 'Releases' ].listSections():
+  logERROR( " There's no release %s" % cliParams.release )
+  sys.exit(1)
+
+#Tar fest!
+releaseCFG = mainCFG[ 'Releases' ][ cliParams.release ]
+for package in cliParams.packagesToInstall:
+  if package not in releaseCFG.listOptions():
+    logERROR( " Package %s is not defined for the release" % package )
+    sys.exit(1)
+  packageVersion = releaseCFG.getOption( package, "trunk" )
+  packageTar = "%s-%s.tar.gz" % ( package, packageVersion )
+  if packageTar not in availableTars:
+    logERROR( "%s is not registered" % packageTar )
+    sys.exit(1)
+  logINFO( "Installing package %s version %s" % ( package, packageVersion ) )
+  downloadAndExtractTarball( "%s-%s" % ( package, packageVersion ), cliParams.targetPath )
+  
+#Deploy scripts :)
+os.system( os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-deploy-scripts.py" ) )
+
+#Do we have a platform defined?
+if not cliParams.platform:
+  exitCode, stdData, errData = execAndGetOutput( os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-platform.py" ) )
+  if exitCode:
+    logERROR( "Could not determine platform: %s" % ( errData ) )
+    sys.exit(1)
+  cliParams.platform = stdData.strip()
+
+logINFO( "Using platform: %s" % cliParams.platform )
+
+#Externals stuff
+extVersion = releaseCFG.getOption( 'Externals', "trunk" )
+extDesc    = "-".join( [ cliParams.externalsType, extVersion, 
+                          cliParams.platform, 'python%s' % cliParams.pythonVersion ] )
+
+logDEBUG( "Externals version is %s" % extDesc )
+extTar = "Externals-%s" % extDesc
+extAvailable = "%s.tar.gz" % ( extTar ) in availableTars
+  
+buildCmd = os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-compile-externals.py" )
+buildCmd = "%s -t '%s' -d '%s' -v '%s' -i '%s'" % ( buildCmd, cliParams.externalsType, 
+                                                    cliParams.targetPath, extVersion,
+                                                    cliParams.pythonVersion )  
+if cliParams.buildExternals:
+  if os.system( buildCmd ):
+    logERROR( "Could not compile binaries" )
+    sys.exit(1)
+else:
+  if extAvailable:
+    downloadAndExtractTarball( extTar, cliParams.targetPath )
+  else:
+    if cliParams.buildIfNotAvailable:
+      if os.system( buildCmd ):
+        logERROR( "Could not compile binaries" )
+        sys.exit(1)
+    else:
+      logERROR( "%s.tar.gz is not registered" % extTar )
+      sys.exit(1)
+    
+#Configure magic!
+logINFO( "Starting minimal configuration" )
+confCmd = os.path.join( cliParams.targetPath, "scripts", "dirac-configure" )
+confCmd = "%s -S '%s'" % ( confCmd, cliParams.setup )
+if cliParams.csServers:
+  confCmd = "%s -C '%s'" % ( confCmd, ",".join( cliParams.csServers ) )
+  
+if os.system( confCmd ):
+  logERROR( "Error while configuring DIRAC" )
+  sys.exit(1)
+  
+for file in ( "releases.cfg", "CFG.py", "CFG.pyc", "CFG.pyo" ):
+  filePath = os.path.join( cliParams.targetPath, file )
+  if os.path.isfile( filePath ):
+    os.unlink( filePath )
+logINFO( "DIRAC release %s successfully installed" % cliParams.release )
+sys.exit( 0 )
