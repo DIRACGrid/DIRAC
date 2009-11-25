@@ -3,9 +3,9 @@ __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base      import Script
-from DIRAC.Core.Utilities import List, CFG, File
+from DIRAC.Core.Utilities import List, File, Distribution, Platform, Subprocess
 
-import sys, os, re, urllib2, tempfile, getpass, subprocess
+import sys, os, re, urllib2, tempfile, getpass
 
 class Params:
   
@@ -49,7 +49,7 @@ class Params:
   
   def setForceExternals( self, optionValue ):
     self.forceExternals = True
-    return S_O
+    return S_OK()
   
   def setIgnoreExternals( self, optionValue ):
     self.ignoreExternals = True
@@ -72,7 +72,7 @@ Script.registerSwitch( "l", "forceSVNLinks", "Redo the svn links even if the rel
 Script.registerSwitch( "L", "ignoreSVNLinks", "Do not do the svn links for the release", cliParams.setIgnoreSVNLink )
 Script.registerSwitch( "D", "debug", "Debug mode", cliParams.setDebug )
 Script.registerSwitch( "t:", "buildType=", "External type to build (client/server)", cliParams.setExternalsBuildType )
-Script.registerSwitch( "e", "forceExternals", "Force externals compilation even if already compiled", cliParams.setExternalsBuildType )
+Script.registerSwitch( "e", "forceExternals", "Force externals compilation even if already compiled", cliParams.setForceExternals )
 Script.registerSwitch( "E", "ignoreExternals", "Do not compile externals", cliParams.setIgnoreExternals )
 Script.registerSwitch( "d:", "destination", "Destination where to build the tar files", cliParams.setDestination )
 Script.registerSwitch( "i:", "pythonVersion", "Python version to use (24/25)", cliParams.setPythonVersion )
@@ -90,68 +90,6 @@ if not cliParams.releasesToBuild:
 ##
 #Helper functions
 ##
-def execAndGetOutput( cmd ):
-  if cliParams.debug:
-    print "EXECUTING: %s" % cmd 
-  p = subprocess.Popen( cmd, 
-                        shell = True, stdout=subprocess.PIPE, 
-                        stderr=subprocess.PIPE, close_fds = True )
-  stdData = p.stdout.read()
-  errData = p.stderr.read()
-  p.wait()
-  return ( p.returncode, stdData, errData )
-
-def getSVNVersions( package = False, isCMTCompatible = False ):
-  if package:
-    webLocation = 'http://svnweb.cern.ch/guest/dirac/%s/tags/%s' % ( package, package )
-  else:
-    webLocation = 'http://svnweb.cern.ch/guest/dirac/tags'
-    package = "global release"
-  try:
-    remoteFile = urllib2.urlopen( webLocation )
-  except urllib2.URLError:
-    gLogger.exception()
-    sys.exit(2)
-  remoteData = remoteFile.read()
-  remoteFile.close()      
-  if not remoteData:
-    gLogger.error( "Could not retrieve versions for package %s" % package )
-    sys.exit(1)
-  versions = []
-  if isCMTCompatible and package:
-    rePackage = "%s_.*" % package
-  else:
-    rePackage = ".*"
-  versionRE = re.compile( "<li> *<a *href=.*> *(%s)/ *</a> *</li>" % rePackage )
-  for line in remoteData.split( "\n" ):
-    res = versionRE.search( line )
-    if res:
-      versions.append( res.groups()[0] )
-  return versions
-
-def parseCFGFromSVN( svnPath ):
-  import urllib2, stat
-  gLogger.info( "Reading %s" % ( svnPath ) ) 
-  if svnPath[0] == "/":
-    svnPath = svnPath[1:]
-  viewSVNLocation = "http://svnweb.cern.ch/world/wsvn/dirac/%s?op=dl&rev=0" % ( svnPath )
-  anonymousLocation = 'http://svnweb.cern.ch/guest/dirac/%s' % ( svnPath )
-  for remoteLocation in ( anonymousLocation, viewSVNLocation ):
-    try:
-      remoteFile = urllib2.urlopen( remoteLocation )
-    except urllib2.URLError:
-      gLogger.exception()
-      continue
-    remoteData = remoteFile.read()
-    remoteFile.close()      
-    if remoteData:
-      return CFG.CFG().loadFromBuffer( remoteData )
-  #Web cat failed. Try directly with svn
-  exitStatus, remoteData = execAndGetOutput( "svn cat 'http://svnweb.cern.ch/guest/dirac/%s'" % ( svnPath ) )
-  if exitStatus:
-    print "Error: Could not retrieve %s from the web nor via SVN. Aborting..." % svnPath
-    sys.exit(1)
-  return CFG.CFG().loadFromBuffer( remoteData )
 
 def tagSVNReleases( mainCFG, taggedReleases ):
   global cliParams
@@ -172,10 +110,14 @@ def tagSVNReleases( mainCFG, taggedReleases ):
     if releaseVersion not in taggedReleases:
       gLogger.info( "Creating global release dir %s" % releaseVersion )
       svnCmd = "svn --parents -m 'Release %s' mkdir '%s'" % ( releaseVersion, releaseSVNPath )
-      exitStatus, stdData, errData = execAndGetOutput( svnCmd )
+      result = Subprocess.shellCall( 300,  svnCmd )
+      if not result[ 'OK' ]:
+        gLogger.error( "Error while generating release tag", result[ 'Message' ] )
+        sys.exit(1)
+      exitStatus, stdData, errData = result[ 'Value' ]
       if exitStatus:
         gLogger.error( "Error while generating release tag", "\n".join( [ stdData, errData ] ) )
-        continue
+        sys.exit(1)
     svnLinks = []
     packages = releasesCFG[ releaseVersion ].listOptions()
     packages.sort()
@@ -202,10 +144,14 @@ def tagSVNReleases( mainCFG, taggedReleases ):
     svnCmds.append( "svn ci -m 'Release %s svn:externals' '%s/svnco'" % ( releaseVersion, tmpPath ) )
     gLogger.info( "Creating svn:externals in %s..." % releaseVersion )
     for cmd in svnCmds:
-      exitStatus, stdData, errData = execAndGetOutput( cmd )
+      result = Subprocess.shellCall( 900,  cmd )
+      if not result[ 'OK' ]:
+        gLogger.error( "Error while adding externals to tag", result[ 'Message' ] )
+        sys.exit(1)
+      exitStatus, stdData, errData = result[ 'Value' ]
       if exitStatus:
-        gLogger.error( "Error while generating release tag", "\n".join( [ stdData, errData ] ) )
-        continue
+        gLogger.error( "Error while adding externals to tag", "\n".join( [ stdData, errData ] ) )
+        sys.exit(1)
     os.system( "rm -rf '%s'" % tmpPath )
   
 def autoTarPackages( mainCFG, targetDir ):
@@ -233,10 +179,14 @@ def autoTarPackages( mainCFG, targetDir ):
       pkgSVNPath = "http://svnweb.cern.ch/guest/dirac/%s/%s" % ( package, svnVersion ) 
       gLogger.info( " Getting %s" % pkgSVNPath )
       svnCmd = "svn export '%s' '%s/%s'" % ( pkgSVNPath, releaseTMPPath, package )
-      exitStatus, stdData, errData = execAndGetOutput( svnCmd )
+      result = Subprocess.shellCall( 900,  svnCmd )
+      if not result[ 'OK' ]:
+        gLogger.error( "Error while retrieving %s package" % package, result[ 'Message' ] )
+        sys.exit(1)
+      exitStatus, stdData, errData = result[ 'Value' ]
       if exitStatus:
-        gLogger.error( "Error while generating release tag", "\n".join( [ stdData, errData ] ) )
-        continue
+        gLogger.error( "Error while retrieving %s package" % package, "\n".join( [ stdData, errData ] ) )
+        sys.exit(1)
       gLogger.info( "Taring %s..." % package )
       tarfilePath = os.path.join( targetDir, "%s-%s.tar.gz" % ( package, version ) )
       cmd = "cd '%s'; tar czf '%s' %s" % ( releaseTMPPath, tarfilePath, package )
@@ -268,20 +218,11 @@ def getAvailableExternals():
       availableExternals.append( res.groups() )
   return availableExternals
 
-def getPlatform():
-  platformFile = os.path.join( os.path.dirname( __file__ ), "dirac-platform.py" )
-  exitCode, stdData, errData = execAndGetOutput( platformFile )
-  platform = stdData.strip()
-  if exitCode or not platform:
-    gLogger.error( "Could not retrieve platform!" )
-    sys.exit( 1 )
-  return platform
-
 def tarExternals( mainCFG, targetDir ):
   global cliParams
   
   releasesCFG = mainCFG[ 'Releases' ]
-  platform = getPlatform()
+  platform = Platform.getPlatformString()
   availableExternals = getAvailableExternals()
   for releaseVersion in cliParams.releasesToBuild:
     externalsVersion = releasesCFG[ releaseVersion ].getOption( "Externals", "" )
@@ -296,7 +237,8 @@ def tarExternals( mainCFG, targetDir ):
     gLogger.info( "Compiling externals..." )
     compileScript = os.path.join( os.path.dirname( __file__ ), "dirac-compile-externals.py" )
     compileTarget = os.path.join( targetDir, platform )
-    compileCmd = "%s -d '%s' -t '%s' -v '%s' -i '%s'" % ( compileScript, compileTarget, cliParams.externalsBuildType,
+    compileCmd = "%s -d '%s' -t '%s' -v '%s' -i '%s'" % ( compileScript, compileTarget, 
+                                                          cliParams.externalsBuildType,
                                                           externalsVersion, cliParams.externalsPython )
     print compileCmd
     if os.system( compileCmd ):
@@ -316,7 +258,7 @@ def tarExternals( mainCFG, targetDir ):
     
 
 
-mainCFG = parseCFGFromSVN( "/trunk/releases.cfg" )
+mainCFG = Distribution.loadCFGFromRepository( "/trunk/releases.cfg" )
 if 'Releases' not in mainCFG.listSections():
   gLogger.fatal( "releases.cfg file does not have a Releases section" )
   exit(1)
@@ -333,7 +275,7 @@ else:
 gLogger.info( "Will generate tarballs in %s" % targetPath )
 
 if not cliParams.ignoreSVNLinks:
-  taggedReleases = getSVNVersions()
+  taggedReleases = Distribution.getRepositoryVersions()
   tagSVNReleases( mainCFG, taggedReleases )
   
 if not cliParams.ignoreExternals:
