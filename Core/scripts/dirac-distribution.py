@@ -225,7 +225,7 @@ def tarExternals( mainCFG, targetDir ):
       gLogger.info( "Externals is not defined for release %s" % releaseVersion)
       continue
     for externalType in cliParams.externalsBuildType:
-      requestedExternals = ( cliParams.externalsBuildType, externalsVersion, platform, 'python%s' % cliParams.externalsPython )
+      requestedExternals = ( externalType, externalsVersion, platform, 'python%s' % cliParams.externalsPython )
       requestedExternalsString = "-".join( list( requestedExternals ) ) 
       if not cliParams.forceExternals and requestedExternals in availableExternals:
         gLogger.info( "Externals %s is already compiled, skipping..." % ( requestedExternalsString ) )
@@ -234,7 +234,7 @@ def tarExternals( mainCFG, targetDir ):
       compileScript = os.path.join( os.path.dirname( __file__ ), "dirac-compile-externals.py" )
       compileTarget = os.path.join( targetDir, platform )
       compileCmd = "%s -d '%s' -t '%s' -v '%s' -i '%s'" % ( compileScript, compileTarget, 
-                                                            cliParams.externalsBuildType,
+                                                            externalType,
                                                             externalsVersion, cliParams.externalsPython )
       gLogger.debug( compileCmd )
       if os.system( compileCmd ):
