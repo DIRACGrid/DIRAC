@@ -277,11 +277,11 @@ os.system( os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dira
 
 #Do we have a platform defined?
 if not cliParams.platform:
-  exitCode, stdData, errData = execAndGetOutput( os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-platform.py" ) )
-  if exitCode:
-    logERROR( "Could not determine platform: %s" % ( errData ) )
-    sys.exit(1)
-  cliParams.platform = stdData.strip()
+  platformPath = os.path.join( cliParams.targetPath, "DIRAC", "Core", "Utilities", "Platform.py" )
+  platFD = open( platformPath, "r" )
+  Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
+  platFD.close()
+  cliParams.platform = Platform.getPlatformString()
 
 logINFO( "Using platform: %s" % cliParams.platform )
 
