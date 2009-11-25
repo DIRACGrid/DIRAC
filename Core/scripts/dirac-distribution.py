@@ -294,7 +294,7 @@ def tarExternals( mainCFG, targetDir ):
     gLogger.info( "Compiling externals..." )
     compileScript = os.path.join( os.path.dirname( __file__ ), "dirac-compile-externals.py" )
     compileTarget = os.path.join( targetDir, platform )
-    compileCmd = "%s -d '%s' -t '%s' -v '%s' -p '%s'" % ( compileScript, compileTarget, cliParams.externalsBuildType,
+    compileCmd = "%s -d '%s' -t '%s' -v '%s' -i '%s'" % ( compileScript, compileTarget, cliParams.externalsBuildType,
                                                           externalsVersion, cliParams.externalsPython )
     print compileCmd
     if os.system( compileCmd ):
