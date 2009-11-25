@@ -133,7 +133,6 @@ def tagSVNReleases( mainCFG, taggedReleases ):
         else:
           version = "tags/%s" % ( version )
       svnLinks.append( "%s http://svnweb.cern.ch/guest/dirac/%s/%s" % ( p, p, version ) )
-    print svnLinks
     tmpPath = tempfile.mkdtemp()
     fd = open( os.path.join( tmpPath, "extProp" ), "wb" )
     fd.write( "%s\n" % "\n".join( svnLinks ) )
@@ -158,12 +157,11 @@ def autoTarPackages( mainCFG, targetDir ):
   global cliParams
   
   releasesCFG = mainCFG[ 'Releases' ]
-  tmpPath = tempfile.mkdtemp()
   cmtCompatiblePackages = mainCFG.getOption( 'CMTCompatiblePackages', [] )
   autoTarPackages = mainCFG.getOption( 'AutoTarPackages', [] )
   for releaseVersion in cliParams.releasesToBuild:
-    releaseTMPPath = os.path.join( tmpPath, releaseVersion )
-    gLogger.info( "Getting %s release to tmp dir %s" % ( releaseVersion, releaseTMPPath ) )
+    releaseTMPPath = os.path.join( targetDir, releaseVersion )
+    gLogger.info( "Getting %s release to %s" % ( releaseVersion, targetDir ) )
     os.mkdir( releaseTMPPath )
     for package in releasesCFG[ releaseVersion ].listOptions():
       if package not in autoTarPackages:
@@ -176,9 +174,10 @@ def autoTarPackages( mainCFG, targetDir ):
           svnVersion = "tags/%s/%s_%s" % ( package, package, version )
         else:
           svnVersion = "tags/%s" % ( version )
-      pkgSVNPath = "http://svnweb.cern.ch/guest/dirac/%s/%s" % ( package, svnVersion ) 
+      pkgSVNPath = "http://svnweb.cern.ch/guest/dirac/%s/%s" % ( package, svnVersion )
+      pkgHDPath = os.path.join( releaseTMPPath, package ) 
       gLogger.info( " Getting %s" % pkgSVNPath )
-      svnCmd = "svn export '%s' '%s/%s'" % ( pkgSVNPath, releaseTMPPath, package )
+      svnCmd = "svn export '%s' '%s'" % ( pkgSVNPath, pkgHDPath )
       result = Subprocess.shellCall( 900,  svnCmd )
       if not result[ 'OK' ]:
         gLogger.error( "Error while retrieving %s package" % package, result[ 'Message' ] )
@@ -189,17 +188,12 @@ def autoTarPackages( mainCFG, targetDir ):
         sys.exit(1)
       gLogger.info( "Taring %s..." % package )
       tarfilePath = os.path.join( targetDir, "%s-%s.tar.gz" % ( package, version ) )
-      cmd = "cd '%s'; tar czf '%s' %s" % ( releaseTMPPath, tarfilePath, package )
-      if os.system( cmd ):
-        gLogger.error( "Could not tar %s into %s" % ( package, tarfilePath ) )
+      result = Distribution.createTarball( tarfilePath, pkgHDPath )
+      if not result[ 'OK' ]:
+        gLogger.error( "Could not generate tarball for package %s" % package, result[ 'Error' ] )
         sys.exit(1)
-      md5str = File.getMD5ForFiles( [ tarfilePath ] )
-      md5FilePath = os.path.join( targetDir, "%s-%s.md5" % ( package, version ) )
-      fd = open( md5FilePath, "w" )
-      fd.write( md5str )
-      fd.close()
-  #Remove tmp dir
-  os.system( "rm -rf '%s'" % tmpPath )
+      #Remove package dir
+      os.system( "rm -rf '%s'" % os.path.join( targetDir, package ) )
 
 def getAvailableExternals():
   packagesURL = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/tars/tars.list"
@@ -240,24 +234,16 @@ def tarExternals( mainCFG, targetDir ):
     compileCmd = "%s -d '%s' -t '%s' -v '%s' -i '%s'" % ( compileScript, compileTarget, 
                                                           cliParams.externalsBuildType,
                                                           externalsVersion, cliParams.externalsPython )
-    print compileCmd
+    gLogger.debug( compileCmd )
     if os.system( compileCmd ):
       gLogger.error( "Error while compiling externals!" )
       sys.exit(1)
     tarfilePath = os.path.join( targetDir, "Externals-%s.tar.gz" % ( requestedExternalsString ) )
-    cmd = "cd '%s'; tar czf '%s' %s" % ( targetDir, tarfilePath, platform )
-    if os.system( cmd ):
-      gLogger.error( "Could not tar %s into %s" % ( package, tarfilePath ) )
+    result = Distribution.createTarball( tarfilePath, compileTarget )
+    if not result[ 'OK' ]:
+      gLogger.error( "Could not generate tarball for package %s" % package, result[ 'Error' ] )
       sys.exit(1)
-    os.system( "rm -rf '%s'" % compileTarget )
-    md5str = File.getMD5ForFiles( [ tarfilePath ] )
-    md5FilePath = os.path.join( targetDir, "Externals-%s.md5" % ( requestedExternalsString ) )
-    fd = open( md5FilePath, "w" )
-    fd.write( md5str )
-    fd.close()
     
-
-
 mainCFG = Distribution.loadCFGFromRepository( "/trunk/releases.cfg" )
 if 'Releases' not in mainCFG.listSections():
   gLogger.fatal( "releases.cfg file does not have a Releases section" )

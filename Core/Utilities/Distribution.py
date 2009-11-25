@@ -1,10 +1,10 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-import urllib2, re
+import urllib2, re, tarfile, os
 
-from DIRAC import gLogger
-from DIRAC.Core.Utilities import CFG
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities import CFG, File
 
 def getRepositoryVersions( package = False, isCMTCompatible = False ):
   if package:
@@ -57,3 +57,21 @@ def loadCFGFromRepository( svnPath ):
     print "Error: Could not retrieve %s from the web nor via SVN. Aborting..." % svnPath
     sys.exit(1)
   return CFG.CFG().loadFromBuffer( remoteData )
+
+def createTarball( tarballPath, directoryToTar ):
+  tf = tarfile.open( tarballPath, "w:gz")
+  tf.add( directoryToTar, os.path.basename( directoryToTar ), recursive = True )
+  tf.close()
+  md5FilePath = False
+  for suffix in ( ".tar.gz", ".gz" ):
+    sLen = len( suffix )
+    if tarballPath[ len( tarballPath ) - sLen: ] == suffix:
+      md5FilePath = "%s.md5" % tarballPath[:-sLen]
+      break
+  if not md5FilePath:
+    return S_ERROR( "Could not generate md5 filename" )
+  md5str = File.getMD5ForFiles( [ tarballPath ] )
+  fd = open( md5FilePath, "w" )
+  fd.write( md5str )
+  fd.close()
+  return S_OK()
