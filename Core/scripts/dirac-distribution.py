@@ -158,9 +158,6 @@ def tagSVNReleases( mainCFG, taggedReleases ):
   
   releasesCFG = mainCFG[ 'Releases' ]
   cmtCompatiblePackages = mainCFG.getOption( 'CMTCompatiblePackages', [] )
-  
-  if not cliParams.userName:
-    cliParams.discoverUserName()
     
   autoTarPackages = mainCFG.getOption( 'AutoTarPackages', [] )
   
