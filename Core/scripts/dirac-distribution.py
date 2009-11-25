@@ -3,7 +3,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base      import Script
-from DIRAC.Core.Utilities import List, CFG
+from DIRAC.Core.Utilities import List, CFG, File
 
 import sys, os, re, urllib2, tempfile, getpass, subprocess
 
@@ -241,6 +241,11 @@ def autoTarPackages( mainCFG, targetDir ):
       if os.system( cmd ):
         gLogger.error( "Could not tar %s into %s" % ( package, tarfilePath ) )
         sys.exit(1)
+      md5str = File.getMD5ForFiles( [ tarfilePath ] )
+      md5FilePath = os.path.join( targetDir, "%s-%s.md5" % ( package, version ) )
+      fd = open( md5FilePath, "w" )
+      fd.write( md5str )
+      fd.close()
   #Remove tmp dir
   os.system( "rm -rf '%s'" % tmpPath )
 
@@ -301,6 +306,11 @@ def tarExternals( mainCFG, targetDir ):
       gLogger.error( "Could not tar %s into %s" % ( package, tarfilePath ) )
       sys.exit(1)
     os.system( "rm -rf '%s'" % compileTarget )
+    md5str = File.getMD5ForFiles( [ tarfilePath ] )
+    md5FilePath = os.path.join( targetDir, "Externals-%s.md5" % ( requestedExternalsString ) )
+    fd = open( md5FilePath, "w" )
+    fd.write( md5str )
+    fd.close()
     
 
 
@@ -314,6 +324,10 @@ if not cliParams.destination:
   targetPath = tempfile.mkdtemp()
 else:
   targetPath = cliParams.destination
+  try:
+    os.makedirs( targetPath )
+  except:
+    pass
 gLogger.info( "Will generate tarballs in %s" % targetPath )
 
 if not cliParams.ignoreSVNLinks:
@@ -327,4 +341,4 @@ autoTarPackages( mainCFG, targetPath )
 
 gLogger.info( "Everything seems ok" )
 gLogger.info( "Please upload the tarballs by executing:")
-gLogger.info( "( cd %s ; tar -cf - *.tar.gz ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'" % targetPath )
+gLogger.info( "( cd %s ; tar -cf - *.tar.gz *.md5 ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'" % targetPath )
