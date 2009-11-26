@@ -7,7 +7,7 @@
 # site/resource checking frequency
 #############################################################################
 
-notified_users = ['fstagni', 'mspapunov']
+notified_users = 'fstagni'
 
 #############################################################################
 # policies evaluated
