@@ -53,7 +53,6 @@ CREATE TABLE Sites(
   SiteName VARCHAR(32) NOT NULL,
   INDEX (SiteName),
   SiteType VARCHAR(8) NOT NULL,
-  Description BLOB,
   Status VARCHAR(8) NOT NULL,
   Index(Status),
   Reason VARCHAR(255) NOT NULL DEFAULT 'Unspecified',
@@ -147,8 +146,8 @@ DROP TABLE IF EXISTS ResourcesHistory;
 CREATE TABLE ResourcesHistory(
   ResourcesHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   ResourceName VARCHAR(32) NOT NULL,
-  SiteName VARCHAR(32) NOT NULL,
   ServiceName VARCHAR(32) NOT NULL,
+  SiteName VARCHAR(32) NOT NULL,
   Status VARCHAR(8) NOT NULL,
   Reason VARCHAR(255) NOT NULL,
   DateCreated DATETIME NOT NULL,
