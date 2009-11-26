@@ -12,8 +12,8 @@
 from datetime import datetime, timedelta
 
 from types import *
-from DIRAC import gLogger
 from DIRAC import S_OK, S_ERROR
+from DIRAC import gLogger, gConfig
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
@@ -30,8 +30,11 @@ def initializeResourceStatusHandler(serviceInfo):
 class ResourceStatusHandler(RequestHandler):
 
   def initialize(self):
+    #TODO
+    #Listerer -> Listener
+#    gConfig.addListererToNewVersionEvent( export_syncWithCS )
     pass
-
+    
 #############################################################################
 
 #############################################################################
@@ -152,14 +155,14 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
-  types_addOrModifySite = [StringType, StringType, StringType, StringType, StringType, Time._dateTimeType, StringType, Time._dateTimeType]
-  def export_addOrModifySite(self, siteName, siteType, description, status, reason, dateEffective, operatorCode, dateEnd):
+  types_addOrModifySite = [StringType, StringType, StringType, StringType, Time._dateTimeType, StringType, Time._dateTimeType]
+  def export_addOrModifySite(self, siteName, siteType, status, reason, dateEffective, operatorCode, dateEnd):
     """ add or modify a Site of the ResourceStatusDB
     """
     try:
       gLogger.info("ResourceStatusHandler.addOrModifySite: Attempting to add or modify site %s" % siteName)
       try:
-        rsDB.addOrModifySite(siteName, siteType, description, status, reason, dateEffective, operatorCode, dateEnd)
+        rsDB.addOrModifySite(siteName, siteType, status, reason, dateEffective, operatorCode, dateEnd)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -280,271 +283,6 @@ class ResourceStatusHandler(RequestHandler):
       return S_OK()
     except Exception, x:
       errorStr = where(self, self.export_removeSiteType)
-      gLogger.exception(errorStr,lException=x)
-      return S_ERROR(errorStr)
-
-#############################################################################
-
-#############################################################################
-# Resources functions
-#############################################################################
-
-#############################################################################
-
-
-  types_getResourcesStatusWeb = [DictType, ListType, IntType, IntType]
-  def export_getResourcesStatusWeb(self, selectDict, sortList, startItem, maxItems):
-    """ get present resources status list
-
-        Input:
-        selectDict: {'ResourceName':'name of a resource' --- present status
-        
-        'ExpandResourceHistory':'name of a resource' --- resource status history }
-        
-        sortList = [] (no sorting provided)
-        
-        startItem
-        
-        maxItems
-          
-        Output: { 'OK': XX, 'rpcStub': XX, 'getSitesStatusWeb', ({}, [], X, X)), 
-        
-        Value': { 'ParameterNames': ['ResourceName', 'SiteName', 'ServiceExposed', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'], 
-            
-        'Records': [[], [], ...]
-            
-        'TotalRecords': X, 
-           
-        'Extras': {} } }
-    """
-    try:
-      gLogger.info("ResourceStatusHandler.getResourcesStatusWeb: Attempting to get resources list")
-      try:
-        res = rsDB.getResourcesStatusWeb(selectDict, sortList, startItem, maxItems)
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.getResourcesStatusWeb: got resources list")
-      return S_OK(res)
-    except Exception, x:
-      errorStr = where(self, self.export_getResourcesStatusWeb)
-      gLogger.exception(errorStr,lException=x)
-      return S_ERROR(errorStr)
-
-
-#############################################################################
-
-  types_setResourceStatus = [StringType, StringType, StringType, StringType]
-  def export_setResourceStatus(self, resourceName, status, reason, operatorCode):
-    """ set Resource status to the ResourceStatusDB
-    """
-    try:
-      gLogger.info("ResourceStatusHandler.setResourceStatus: Attempting to modify resource %s status" % resourceName)
-      try:
-        rsDB.setResourceStatus(resourceName, status, reason, operatorCode)
-        return S_OK()
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.setResourceStatus: Set resource %s status." % (resourceName))
-      return S_OK()
-    except Exception, x:
-      errorStr = where(self, self.export_setResourceStatus)
-      gLogger.exception(errorStr,lException=x)
-      return S_ERROR(errorStr)
-
-#############################################################################
-
-  types_addOrModifyResource = [StringType, StringType, StringType, StringType, StringType, Time._dateTimeType, StringType, Time._dateTimeType]
-  def export_addOrModifyResource(self, resourceName, resourceType, siteName, status, reason, dateEffective, operatorCode, dateEnd=datetime(9999, 12, 31, 23, 59, 59)):
-    """ add or modify a Resource of the ResourceStatusDB
-    """
-    try:
-      gLogger.info("ResourceStatusHandler.addOrModifyResource: Attempting to add or modify resource %s %s" % (resourceName, siteName))
-      try:
-        rsDB.addOrModifyResource(resourceName, resourceType, siteName, status, reason, dateEffective, operatorCode, dateEnd)
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.addOrModifyResource: Added (or modified) resource %s of site %s" % (resourceName, siteName))
-      return S_OK()
-    except Exception, x:
-      errorStr = where(self, self.export_addOrModifyResource)
-      gLogger.exception(errorStr,lException=x)
-      return S_ERROR(errorStr)
-
-#############################################################################
-
-  types_removeResource = [StringType]
-  def export_removeResource(self, resourceName):
-    """ remove a Resource from those monitored
-    """
-    try:
-      gLogger.info("ResourceStatusHandler.Resource: Attempting to remove modify Resource %s" % resourceName)
-      try:
-        rsDB.removeSite(resourceName)
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.Resource: removed Resource %s." % (resourceName))
-      return S_OK()
-    except Exception, x:
-      errorStr = where(self, self.export_removeResource)
-      gLogger.exception(errorStr,lException=x)
-      return S_ERROR(errorStr)
-
-#############################################################################
-
-  types_addResourceType = [StringType, StringType]
-  def export_addResourceType(self, resourceType, description=''):
-    """
-    Add a resource type to the ResourceStatusDB. 
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.addResourceType`
-    
-    :Params:
-      :attr:`resourceType`: a string
-      :attr:`description`: an optional long string
-    """
-    try:
-      gLogger.info("ResourceStatusHandler.addResourceType: Attempting to add resource type %s" % (resourceType))
-      try:
-        rsDB.addResourceType(resourceType, description)
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.addResourceType: Added resource type %s" % (resourceType))
-      return S_OK()
-    except Exception, x:
-      errorStr = where(self, self.export_addResourceType)
-      gLogger.exception(errorStr,lException=x)
-      return S_ERROR(errorStr)
-
-#############################################################################
-
-  types_getResourceTypeList = []
-  def export_getResourceTypeList(self):
-    """
-    Get resource type list from the ResourceStatusDB.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getResourceTypeList`
-    """
-    try:
-      gLogger.info("ResourceStatusHandler.getResourceTypeList: Attempting to get ResourceType list")
-      try:
-        res = rsDB.getResourceTypeList()
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.getResourceTypeList: got ResourceType list")
-      return S_OK(res)
-    except Exception, x:
-      errorStr = where(self, self.export_getResourceTypeList)
-      gLogger.exception(errorStr,lException=x)
-      return S_ERROR(errorStr)
-
-#############################################################################
-
-  types_removeResourceType = [StringType]
-  def export_removeResourceType(self, resourceType):
-    """ remove a resource type to the ResourceStatusDB
-    """
-    try:
-      gLogger.info("ResourceStatusHandler.removeResourceType: Attempting to remove resource type %s" % (resourceType))
-      try:
-        rsDB.removeResourceType(resourceType)
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.removeResourceType: Removed resource type %s" % (resourceType))
-      return S_OK()
-    except Exception, x:
-      errorStr = where(self, self.export_removeResourceType)
-      gLogger.exception(errorStr,lException=x)
-      return S_ERROR(errorStr)
-
-#############################################################################
-
-
-  types_getResourcesList = []
-  def export_getResourcesList(self):
-    """ 
-    Get resources list from the ResourceStatusDB.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getResourcesList`
-    """
-    try:
-      gLogger.info("ResourceStatusHandler.getResourcesList: Attempting to get resources list")
-      try:
-        r = rsDB.getResourcesList(paramsList = ['ResourceName'])
-        res = []
-        for x in r:
-          res.append(x[0])
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.getResourcesList: got resources list")
-      return S_OK(res)
-    except Exception, x:
-      errorStr = where(self, self.export_getResourcesList)
-      gLogger.exception(errorStr,lException=x)
-      return S_ERROR(errorStr)
-
-#############################################################################
-
-  types_getResourcesHistory = [StringType]
-  def export_getResourcesHistory(self, resource):
-    """ get resources history
-    """
-    try:
-      gLogger.info("ResourceStatusHandler.getResourcesHistory: Attempting to get resource %s history" % (resource))
-      try:
-        res = rsDB.getResourcesHistory(resource)
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.getResourcesHistory: got resource %s history" % (resource))
-      return S_OK(res)
-    except Exception, x:
-      errorStr = where(self, self.export_getResourcesHistory)
-      gLogger.exception(errorStr,lException=x)
-      return S_ERROR(errorStr)
-
-#############################################################################
-
-  types_getResourceStats = [StringType]
-  def export_getResourceStats(self, granularity, name):
-    """ 
-    Returns simple statistics of active, probing and banned resources of a site or service;
-        
-    :params:
-      :attr:`granularity` string, should be in ['Site', 'Service']
-      
-      :attr:`name`: string, name of site or service
-    
-    :returns:
-      S_OK { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
-      or S_Error
-    """
-
-    try:
-      gLogger.info("ResourceStatusHandler.getResourceStats: Attempting to get resource stats for site %s" %(name))
-      try:
-        res = rsDB.getResourceStats(granularity, name)
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.getResourceStats: got resource stats")
-      return S_OK(res)
-    except Exception, x:
-      errorStr = where(self, self.export_getResourceStats)
       gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr)
 
@@ -839,6 +577,271 @@ class ResourceStatusHandler(RequestHandler):
 #############################################################################
 
 #############################################################################
+# Resources functions
+#############################################################################
+
+#############################################################################
+
+
+  types_getResourcesStatusWeb = [DictType, ListType, IntType, IntType]
+  def export_getResourcesStatusWeb(self, selectDict, sortList, startItem, maxItems):
+    """ get present resources status list
+
+        Input:
+        selectDict: {'ResourceName':'name of a resource' --- present status
+        
+        'ExpandResourceHistory':'name of a resource' --- resource status history }
+        
+        sortList = [] (no sorting provided)
+        
+        startItem
+        
+        maxItems
+          
+        Output: { 'OK': XX, 'rpcStub': XX, 'getSitesStatusWeb', ({}, [], X, X)), 
+        
+        Value': { 'ParameterNames': ['ResourceName', 'SiteName', 'ServiceExposed', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'], 
+            
+        'Records': [[], [], ...]
+            
+        'TotalRecords': X, 
+           
+        'Extras': {} } }
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getResourcesStatusWeb: Attempting to get resources list")
+      try:
+        res = rsDB.getResourcesStatusWeb(selectDict, sortList, startItem, maxItems)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getResourcesStatusWeb: got resources list")
+      return S_OK(res)
+    except Exception, x:
+      errorStr = where(self, self.export_getResourcesStatusWeb)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+
+#############################################################################
+
+  types_setResourceStatus = [StringType, StringType, StringType, StringType]
+  def export_setResourceStatus(self, resourceName, status, reason, operatorCode):
+    """ set Resource status to the ResourceStatusDB
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.setResourceStatus: Attempting to modify resource %s status" % resourceName)
+      try:
+        rsDB.setResourceStatus(resourceName, status, reason, operatorCode)
+        return S_OK()
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.setResourceStatus: Set resource %s status." % (resourceName))
+      return S_OK()
+    except Exception, x:
+      errorStr = where(self, self.export_setResourceStatus)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  types_addOrModifyResource = [StringType, StringType, StringType, StringType, StringType, StringType, Time._dateTimeType, StringType, Time._dateTimeType]
+  def export_addOrModifyResource(self, resourceName, resourceType, serviceName, siteName, status, reason, dateEffective, operatorCode, dateEnd=datetime(9999, 12, 31, 23, 59, 59)):
+    """ add or modify a Resource of the ResourceStatusDB
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.addOrModifyResource: Attempting to add or modify resource %s %s" % (resourceName, siteName))
+      try:
+        rsDB.addOrModifyResource(resourceName, resourceType, serviceName, siteName, status, reason, dateEffective, operatorCode, dateEnd)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.addOrModifyResource: Added (or modified) resource %s of site %s" % (resourceName, siteName))
+      return S_OK()
+    except Exception, x:
+      errorStr = where(self, self.export_addOrModifyResource)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  types_removeResource = [StringType]
+  def export_removeResource(self, resourceName):
+    """ remove a Resource from those monitored
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.Resource: Attempting to remove modify Resource %s" % resourceName)
+      try:
+        rsDB.removeSite(resourceName)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.Resource: removed Resource %s." % (resourceName))
+      return S_OK()
+    except Exception, x:
+      errorStr = where(self, self.export_removeResource)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  types_addResourceType = [StringType, StringType]
+  def export_addResourceType(self, resourceType, description=''):
+    """
+    Add a resource type to the ResourceStatusDB. 
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.addResourceType`
+    
+    :Params:
+      :attr:`resourceType`: a string
+      :attr:`description`: an optional long string
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.addResourceType: Attempting to add resource type %s" % (resourceType))
+      try:
+        rsDB.addResourceType(resourceType, description)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.addResourceType: Added resource type %s" % (resourceType))
+      return S_OK()
+    except Exception, x:
+      errorStr = where(self, self.export_addResourceType)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  types_getResourceTypeList = []
+  def export_getResourceTypeList(self):
+    """
+    Get resource type list from the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getResourceTypeList`
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getResourceTypeList: Attempting to get ResourceType list")
+      try:
+        res = rsDB.getResourceTypeList()
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getResourceTypeList: got ResourceType list")
+      return S_OK(res)
+    except Exception, x:
+      errorStr = where(self, self.export_getResourceTypeList)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  types_removeResourceType = [StringType]
+  def export_removeResourceType(self, resourceType):
+    """ remove a resource type to the ResourceStatusDB
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.removeResourceType: Attempting to remove resource type %s" % (resourceType))
+      try:
+        rsDB.removeResourceType(resourceType)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.removeResourceType: Removed resource type %s" % (resourceType))
+      return S_OK()
+    except Exception, x:
+      errorStr = where(self, self.export_removeResourceType)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+
+  types_getResourcesList = []
+  def export_getResourcesList(self):
+    """ 
+    Get resources list from the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getResourcesList`
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getResourcesList: Attempting to get resources list")
+      try:
+        r = rsDB.getResourcesList(paramsList = ['ResourceName'])
+        res = []
+        for x in r:
+          res.append(x[0])
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getResourcesList: got resources list")
+      return S_OK(res)
+    except Exception, x:
+      errorStr = where(self, self.export_getResourcesList)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  types_getResourcesHistory = [StringType]
+  def export_getResourcesHistory(self, resource):
+    """ get resources history
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getResourcesHistory: Attempting to get resource %s history" % (resource))
+      try:
+        res = rsDB.getResourcesHistory(resource)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getResourcesHistory: got resource %s history" % (resource))
+      return S_OK(res)
+    except Exception, x:
+      errorStr = where(self, self.export_getResourcesHistory)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  types_getResourceStats = [StringType]
+  def export_getResourceStats(self, granularity, name):
+    """ 
+    Returns simple statistics of active, probing and banned resources of a site or service;
+        
+    :params:
+      :attr:`granularity` string, should be in ['Site', 'Service']
+      
+      :attr:`name`: string, name of site or service
+    
+    :returns:
+      S_OK { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
+      or S_Error
+    """
+
+    try:
+      gLogger.info("ResourceStatusHandler.getResourceStats: Attempting to get resource stats for site %s" %(name))
+      try:
+        res = rsDB.getResourceStats(granularity, name)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getResourceStats: got resource stats")
+      return S_OK(res)
+    except Exception, x:
+      errorStr = where(self, self.export_getResourceStats)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+#############################################################################
 # Mixed functions
 #############################################################################
 
@@ -932,6 +935,29 @@ class ResourceStatusHandler(RequestHandler):
       return S_OK(res)
     except Exception, x:
       errorStr = where(self, self.export_getPeriods)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  #parameters are fakes
+  types_syncWithCS = [StringType, StringType]
+  def export_syncWithCS(self, p1, p2):
+    """ sync DB with CS
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.syncWithCS: Attempting to sync DB with CS")
+      try:
+        res = rsDB.syncWithCS()
+#        res = rsDB.getPeriods(granularity)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.syncWithCS: DB sync-ed")
+      return S_OK(res)
+    except Exception, x:
+      errorStr = where(self, self.export_syncWithCS)
       gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr)
 

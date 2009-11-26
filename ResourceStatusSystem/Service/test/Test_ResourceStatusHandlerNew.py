@@ -34,7 +34,7 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
 
   def test_export_addOrModifySite(self):
     for status in ValidStatus:
-      res = self.rsh.export_addOrModifySite('XX', 'XX', 'description', status, 'reason', 'dateEffective', 'OP', '')
+      res = self.rsh.export_addOrModifySite('XX', 'XX', status, 'reason', 'dateEffective', 'OP', '')
       self.assert_(res['OK'])
 
   def test_export_addSiteType(self):
@@ -65,55 +65,6 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     res = self.rsh.export_getSitesStatusWeb({}, [], 0, 500)
     self.assert_(res['OK'])
     
-
-#############################################################################
-# Resources functions
-#############################################################################
-  
-  def test_export_setResourceStatus(self):
-    for status in ValidStatus:
-      res = self.rsh.export_setResourceStatus('XX', status, 'reason', 'Op')
-      self.assert_(res['OK'])
-
-  def test_export_addOrModifyResource(self):
-    for status in ValidStatus:
-      res = self.rsh.export_addOrModifyResource('resourceName', 'resourceType', 'siteName', status, 'reason', 'dateEffective', 'operatorCode', 'dateEnd')
-      self.assert_(res['OK'])
-
-  def test_export_addResourceType(self):
-    res = self.rsh.export_addResourceType('')
-    self.assert_(res['OK'])
-
-  def test_export_removeResource(self):
-    res = self.rsh.export_removeResource('')
-    self.assert_(res['OK'])
-
-  def test_export_removeResourceType(self):
-    res = self.rsh.export_removeResourceType('')
-    self.assert_(res['OK'])
-
-  def test_export_getResourcesList(self):
-    res = self.rsh.export_getResourcesList()
-    self.assert_(res['OK'])
-    
-  def test_export_getResourcesStatusWeb(self):
-    res = self.rsh.export_getResourcesStatusWeb({}, [], 0, 500)
-    self.assert_(res['OK'])
-    
-  def test_export_getResourcesHistory(self):
-    res = self.rsh.export_getResourcesHistory('')
-    self.assert_(res['OK'])
-    
-  def test_export_getResourceTypeList(self):
-    res = self.rsh.export_getResourceTypeList()
-    self.assert_(res['OK'])
-        
-  def test_export_getresourceStats(self):
-    res = self.rsh.export_getResourceStats('Service', 'ZZ')
-    self.assert_(res['OK'])
-    res = self.rsh.export_getResourceStats('Site', 'ZZ')
-    self.assert_(res['OK'])
-
   
 #############################################################################
 # Services functions
@@ -162,6 +113,55 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     self.assert_(res['OK'])
     
   
+
+#############################################################################
+# Resources functions
+#############################################################################
+  
+  def test_export_setResourceStatus(self):
+    for status in ValidStatus:
+      res = self.rsh.export_setResourceStatus('XX', status, 'reason', 'Op')
+      self.assert_(res['OK'])
+
+  def test_export_addOrModifyResource(self):
+    for status in ValidStatus:
+      res = self.rsh.export_addOrModifyResource('resourceName', 'resourceType', 'serviceName', 'siteName', status, 'reason', 'dateEffective', 'operatorCode', 'dateEnd')
+      self.assert_(res['OK'])
+
+  def test_export_addResourceType(self):
+    res = self.rsh.export_addResourceType('')
+    self.assert_(res['OK'])
+
+  def test_export_removeResource(self):
+    res = self.rsh.export_removeResource('')
+    self.assert_(res['OK'])
+
+  def test_export_removeResourceType(self):
+    res = self.rsh.export_removeResourceType('')
+    self.assert_(res['OK'])
+
+  def test_export_getResourcesList(self):
+    res = self.rsh.export_getResourcesList()
+    self.assert_(res['OK'])
+    
+  def test_export_getResourcesStatusWeb(self):
+    res = self.rsh.export_getResourcesStatusWeb({}, [], 0, 500)
+    self.assert_(res['OK'])
+    
+  def test_export_getResourcesHistory(self):
+    res = self.rsh.export_getResourcesHistory('')
+    self.assert_(res['OK'])
+    
+  def test_export_getResourceTypeList(self):
+    res = self.rsh.export_getResourceTypeList()
+    self.assert_(res['OK'])
+        
+  def test_export_getresourceStats(self):
+    res = self.rsh.export_getResourceStats('Service', 'ZZ')
+    self.assert_(res['OK'])
+    res = self.rsh.export_getResourceStats('Site', 'ZZ')
+    self.assert_(res['OK'])
+
     
 
 #############################################################################
