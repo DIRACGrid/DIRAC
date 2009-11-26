@@ -4,6 +4,8 @@
 
 from DIRAC import S_OK, S_ERROR
 
+from DIRAC import gConfig
+
 class Logger:
   
   def __init__(self):

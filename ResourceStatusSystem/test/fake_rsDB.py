@@ -31,7 +31,7 @@ class ResourceStatusDB:
   def setSiteStatus(self, siteName, status, reason, operatorCode):
     pass    
 
-  def addOrModifySite(self, siteName, siteType, description, status, reason, dateEffective, operatorCode, dateEnd):
+  def addOrModifySite(self, siteName, siteType, status, reason, dateEffective, operatorCode, dateEnd):
     pass
   
   def addSiteType(self, siteType, description=''):
@@ -72,7 +72,7 @@ class ResourceStatusDB:
   def setResourceStatus(self, resourceName, status, reason, operatorCode):
     pass    
 
-  def addOrModifyResource(self, resourceName, resourceType, siteName, status, reason, dateEffective, operatorCode, dateEnd):
+  def addOrModifyResource(self, resourceName, resourceType, serviceName, siteName, status, reason, dateEffective, operatorCode, dateEnd):
     pass
   
   def addResourceType(self, resourceType, description=''):
