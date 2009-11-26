@@ -29,7 +29,7 @@ class Refresher( threading.Thread ):
   def disable( self ):
     self.bEnabled = False
     
-  def addListererToNewVersionEvent( self, functor ):
+  def addListenerToNewVersionEvent( self, functor ):
     gEventDispatcher.addListener( "CSNewVersion", functor )
 
   def __refreshInThread(self):
