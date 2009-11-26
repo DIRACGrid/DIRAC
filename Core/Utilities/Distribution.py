@@ -16,12 +16,12 @@ def getRepositoryVersions( package = False, isCMTCompatible = False ):
     remoteFile = urllib2.urlopen( webLocation )
   except urllib2.URLError:
     gLogger.exception()
-    sys.exit(2)
+    sys.exit( 2 )
   remoteData = remoteFile.read()
-  remoteFile.close()      
+  remoteFile.close()
   if not remoteData:
     gLogger.error( "Could not retrieve versions for package %s" % package )
-    sys.exit(1)
+    sys.exit( 1 )
   versions = []
   if isCMTCompatible and package:
     rePackage = "%s_.*" % package
@@ -36,7 +36,7 @@ def getRepositoryVersions( package = False, isCMTCompatible = False ):
 
 def loadCFGFromRepository( svnPath ):
   import urllib2, stat
-  gLogger.info( "Reading %s" % ( svnPath ) ) 
+  gLogger.info( "Reading %s" % ( svnPath ) )
   if svnPath[0] == "/":
     svnPath = svnPath[1:]
   viewSVNLocation = "http://svnweb.cern.ch/world/wsvn/dirac/%s?op=dl&rev=0" % ( svnPath )
@@ -48,18 +48,18 @@ def loadCFGFromRepository( svnPath ):
       gLogger.exception()
       continue
     remoteData = remoteFile.read()
-    remoteFile.close()      
+    remoteFile.close()
     if remoteData:
       return CFG.CFG().loadFromBuffer( remoteData )
   #Web cat failed. Try directly with svn
   exitStatus, remoteData = execAndGetOutput( "svn cat 'http://svnweb.cern.ch/guest/dirac/%s'" % ( svnPath ) )
   if exitStatus:
     print "Error: Could not retrieve %s from the web nor via SVN. Aborting..." % svnPath
-    sys.exit(1)
+    sys.exit( 1 )
   return CFG.CFG().loadFromBuffer( remoteData )
 
 def createTarball( tarballPath, directoryToTar ):
-  tf = tarfile.open( tarballPath, "w:gz")
+  tf = tarfile.open( tarballPath, "w:gz" )
   tf.add( directoryToTar, os.path.basename( directoryToTar ), recursive = True )
   tf.close()
   md5FilePath = False
@@ -75,3 +75,4 @@ def createTarball( tarballPath, directoryToTar ):
   fd.write( md5str )
   fd.close()
   return S_OK()
+
