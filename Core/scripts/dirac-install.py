@@ -25,15 +25,19 @@ class Params:
     self.targetPath = os.getcwd()
     self.buildExternals = False
     self.buildIfNotAvailable = False
+    self.debug = False
     self.tarBaseURL = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/tars'
     self.csServers = []
+
+cliParams = Params()
 
 ####
 # Start of helper functions
 ####
 
 def logDEBUG( msg ):
-  print "[DEBUG] %s" % msg
+  if cliParams.debug:
+    print "[DEBUG] %s" % msg
   
 def logERROR( msg ):
   print "[ERROR] %s" % msg
@@ -165,10 +169,6 @@ def execAndGetOutput( cmd ):
 # End of helper functions
 ####
 
-
-
-cliParams = Params()
-
 cmdOpts = ( ( 'r:', 'release=',             'Release version to install' ),
             ( 'e:', 'extraPackages=',       'Extra packages to install (comma separated)' ),
             ( 't:', 'installType=',         'Installation type (client/server)' ),
@@ -179,6 +179,7 @@ cmdOpts = ( ( 'r:', 'release=',             'Release version to install' ),
             ( 'b',  'build',                'Force local compilation' ),
             ( 'B',  'buildIfNotAvailable',  'Build if not available' ),
             ( 'C:', 'configurationServer=', 'Configuration servers to use' ),
+            ( 'd',  'debug',                'Show debug messages' ),
             ( 'h',  'help',                 'Show this help' ),
           )
   
@@ -189,7 +190,7 @@ optList, args = getopt.getopt( sys.argv[1:],
 def usage():
   print "Usage %s <opts>" % sys.argv[0]
   for cmdOpt in cmdOpts:
-    print "%s %s : %s" % ( cmdOpt[0].ljust(4), cmdOpt[1].ljust(15), cmdOpt[2] )
+    print " %s %s : %s" % ( cmdOpt[0].ljust(3), cmdOpt[1].ljust(20), cmdOpt[2] )
   sys.exit(1)
   
   
@@ -206,6 +207,8 @@ for o, v in optList:
     cliParams.pythonVersion = v
   elif o in ( '-p', '--platform' ):
     cliParams.platform = v
+  elif o in ( '-d', '--debug' ):
+    cliParams.debug = True
   elif o in ( '-S', '--setup' ):
     cliParams.setup = v
   elif o in ( '-C', '--configurationServer' ):
@@ -228,9 +231,11 @@ if not cliParams.release:
   usage()
 
 #Get the list of tarfiles
+tarsURL = "%s/tars.list" % cliParams.tarBaseURL
+logDEBUG( "Getting the tar list from %s" % tarsURL )
 tarListPath = os.path.join( cliParams.targetPath, "tars.list" )
 try:
-  urlretrieveTimeout( "%s/tars.list" % cliParams.tarBaseURL, tarListPath, 300 )
+  urlretrieveTimeout( tarsURL, tarListPath, 300 )
 except Exception, e:
   logERROR( "Cannot download list of tars: %s" % ( str(e) ) )
   sys.exit(1)
