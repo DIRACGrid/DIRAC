@@ -122,7 +122,9 @@ cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
             ( 'M:', 'MaxCycles=', 'Maximum Number of JobAgent cycles to run' ),
             ( 'N:', 'Name=', 'Use <CEName> to determine Site Name' ),
             ( 'P:', 'path=', 'Install under <path>' ),
-            ( 'S', 'server', 'Make a full server installation' ),
+            ( 'E', 'server', 'Make a full server installation' ),
+            ( 'S:', 'setup=' 'DIRAC Setup to use' ),
+            ( 'C:', 'configurationServer=', 'Configuration servers to use' ),
             ( 'T:', 'CPUTime', 'Requested CPU Time' ),
             ( 'G:', 'Group=', 'DIRAC Group to use' ),
             ( 'O:', 'OwnerDN', 'Pilot OwnerDN (for private pilots)' ),
@@ -183,6 +185,10 @@ for o, v in optList:
       cliParams.maxCycles = min( CliParams.MAX_CYCLES, int( v ) )
     except:
       pass
+  elif o in ( '-S', '--setup' ):
+    configureOptions.append( '-S "%s"' % v )
+  elif o in ( '-C', '--configurationServer' ):
+    configureOptions.append( '-C "%s"' % v )
   elif o in ( '-P', '--path' ):
     installOpts.append( '-P "%s"' % v )
     rootPath = v
@@ -199,7 +205,7 @@ for o, v in optList:
     configureOptions.append( '-V "%s"' % v )
   elif o in ( '-W', '--gateway' ):
     configureOptions.append( '-W "%s"' % v )
-  elif o == '-S' or o == '--server':
+  elif o == '-E' or o == '--server':
     installOpts.append( '-t "%s"' % v )
   elif o == '-o' or o == '--option':
     configureOptions.append( '-o "%s"' % v )
