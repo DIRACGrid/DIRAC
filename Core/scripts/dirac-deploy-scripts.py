@@ -8,10 +8,11 @@ __RCSID__ = "$Id$"
 import os
 import shutil
 import stat
+import re
 
 moduleSuffix = "DIRAC"
 defaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
-excludeMask = []
+excludeMask = [ '__init__.py' ]  
 simpleCopyMask = [ os.path.basename( __file__ ), 'dirac-compile-externals.py' ]
 
 wrapperTemplate = """#!/usr/bin/env python
@@ -83,7 +84,7 @@ if not rootPath:
   sys.exit(1)
 
 targetScriptsPath = os.path.join( rootPath, "scripts" )
-
+pythonScriptRE = re.compile( "(.*/)*([a-z]+-[a-zA-Z0-9-]+).py" )
 print "Scripts will be deployed at %s" % targetScriptsPath
 
 if not os.path.isdir( targetScriptsPath ):
@@ -104,7 +105,7 @@ for rootModule in os.listdir( rootPath ):
     if scriptName in excludeMask:
       continue
     scriptLen = len( scriptName )
-    if scriptName not in simpleCopyMask and scriptName.find( ".py" ) == scriptLen - 3 and (scriptName.find( "dirac-" ) == 0 or scriptName.find( "lhcb-" ) == 0):
+    if scriptName not in simpleCopyMask and pythonScriptRE.match( scriptName ):
       fakeScriptPath = os.path.join( targetScriptsPath, scriptName[:-3] )
       fd = open( fakeScriptPath, "w" )
       fd.write( wrapperTemplate.replace( '$SCRIPTLOCATION$', scriptPath ) )
@@ -112,4 +113,10 @@ for rootModule in os.listdir( rootPath ):
       os.chmod( fakeScriptPath, defaultPerms )
     else:
       shutil.copy( os.path.join( rootPath, scriptPath ), targetScriptsPath )
-      os.chmod( os.path.join( targetScriptsPath, scriptName ), defaultPerms )
+      copyPath = os.path.join( targetScriptsPath, scriptName )
+      os.chmod( copyPath, defaultPerms )
+      cLen = len( copyPath )
+      reFound = pythonScriptRE.match( copyPath )
+      if reFound:
+        destPath = "".join( list( reFound.groups() ) )
+        os.rename( copyPath, destPath )
