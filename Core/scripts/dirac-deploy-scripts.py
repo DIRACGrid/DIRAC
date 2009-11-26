@@ -1,4 +1,4 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 # $HeadURL$
 """
 Deploy all scripts and extensions
@@ -11,17 +11,14 @@ import stat
 
 moduleSuffix = "DIRAC"
 defaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
-excludeMask = []  
+excludeMask = []
 simpleCopyMask = [ os.path.basename( __file__ ), 'dirac-compile-externals.py' ]
 
 wrapperTemplate = """#!/usr/bin/env python
 #
 import os,sys,imp
 #
-if 'DIRACROOT' in os.environ:
-  DiracRoot = os.environ['DIRACROOT']
-else:
-  DiracRoot = os.path.dirname(os.path.dirname( os.path.realpath( sys.argv[0] ) ))
+DiracRoot = os.path.dirname(os.path.dirname( os.path.realpath( sys.argv[0] ) ))
 if 'DIRACPLAT' in os.environ:
   DiracPlatform = os.environ['DIRACPLAT']
 else:
@@ -69,7 +66,7 @@ def lookForScriptsInPath( basePath, rootModule ):
     elif isScriptsDir and os.path.isfile( absEntry ):
       scriptFiles.append( ( os.path.join( rootModule, entry ), entry ) )
   return scriptFiles
-  
+
 def findDIRACRoot( path ):
   dirContents = os.listdir( path )
   if 'DIRAC' in dirContents and os.path.isdir( os.path.join( path, 'DIRAC' ) ):
