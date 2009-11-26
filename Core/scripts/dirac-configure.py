@@ -116,8 +116,8 @@ except:
 
 Script.registerSwitch( "S:", "Setup=",                "Set <setup> as DIRAC setup", setSetup )
 Script.registerSwitch( "C:", "ConfigurationServer=",  "Set <server> as DIRAC configuration server", setServer )
-Script.registerSwitch( "N:", "SiteName=",             "Set <sitename> as DIRAC Site Name", setSiteName )
-Script.registerSwitch( "n:", "CEName=",               "Determiner <sitename> from <cename>", setCEName )
+Script.registerSwitch( "n:", "SiteName=",             "Set <sitename> as DIRAC Site Name", setSiteName )
+Script.registerSwitch( "N:", "CEName=",               "Determiner <sitename> from <cename>", setCEName )
 
 Script.registerSwitch( "W:", "gateway=",              "Configure <gateway> as DIRAC Gateway for the site", setGateway )
 
