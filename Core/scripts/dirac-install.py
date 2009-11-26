@@ -174,11 +174,9 @@ cmdOpts = ( ( 'r:', 'release=',             'Release version to install' ),
             ( 't:', 'installType=',         'Installation type (client/server)' ),
             ( 'i:', 'pythonVersion=',       'Python version to compile (25/24)' ),
             ( 'p:', 'platform=',            'Platform to install' ),
-            ( 'S:', 'setup=',               'DIRAC Setup to use' ),
             ( 'P:', 'installationPath=',    'Path where to install (default current working dir)' ),
             ( 'b',  'build',                'Force local compilation' ),
             ( 'B',  'buildIfNotAvailable',  'Build if not available' ),
-            ( 'C:', 'configurationServer=', 'Configuration servers to use' ),
             ( 'd',  'debug',                'Show debug messages' ),
             ( 'h',  'help',                 'Show this help' ),
           )
@@ -209,10 +207,6 @@ for o, v in optList:
     cliParams.platform = v
   elif o in ( '-d', '--debug' ):
     cliParams.debug = True
-  elif o in ( '-S', '--setup' ):
-    cliParams.setup = v
-  elif o in ( '-C', '--configurationServer' ):
-    cliParams.csServers = [ p.strip() for p in v.split(",") if p.strip() ]
   elif o in ( '-P', '--installationPath' ):
     cliParams.targetPath = v
     try:
@@ -318,18 +312,7 @@ else:
     else:
       logERROR( "%s.tar.gz is not registered" % extTar )
       sys.exit(1)
-    
-#Configure magic!
-logINFO( "Starting minimal configuration" )
-confCmd = os.path.join( cliParams.targetPath, "scripts", "dirac-configure" )
-confCmd = "%s -S '%s'" % ( confCmd, cliParams.setup )
-if cliParams.csServers:
-  confCmd = "%s -C '%s'" % ( confCmd, ",".join( cliParams.csServers ) )
-  
-if os.system( confCmd ):
-  logERROR( "Error while configuring DIRAC" )
-  sys.exit(1)
-  
+      
 for file in ( "releases.cfg", "CFG.py", "CFG.pyc", "CFG.pyo" ):
   filePath = os.path.join( cliParams.targetPath, file )
   if os.path.isfile( filePath ):
