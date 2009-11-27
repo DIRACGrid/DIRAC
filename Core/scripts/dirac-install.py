@@ -196,7 +196,12 @@ for o, v in optList:
   elif o in ( '-r', '--release' ):
     cliParams.release = v
   elif o in ( '-e', '--extraPackages' ):
-    cliParams.packagesToInstall += [ p.strip() for p in v.split(",") if p.strip() ]
+    for pkg in [ p.strip() for p in v.split(",") if p.strip() ]:
+      iPos = pkg.find( "DIRAC" )
+      if iPos == -1 or iPos != len( pkg ) - 5:
+        pkg = "%sDIRAC" % pkg
+    if pkg not in cliParams.packagesToInstall:
+      cliParams.packagesToInstall.append( pkg )
   elif o in ( '-t', '--installType' ):
     cliParams.externalsType = v
   elif o in ( '-y', '--pythonVersion' ):
