@@ -24,8 +24,8 @@ random.seed()
 
 import DIRAC
 # Some reasonable Defaults
-DIRAC_PILOT   = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot' )
-DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'scripts', 'dirac-install' )
+DIRAC_PILOT   = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
+DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
 DIRAC_VERSION = 'Production'
 DIRAC_VERSION = 'HEAD'
 
@@ -50,6 +50,7 @@ ERROR_TOKEN      = 'Invalid proxy token request'
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import jobDB
 from DIRAC.Core.Security.CS                                import getPropertiesForGroup
+from DIRAC.Core.Utilities                                  import List 
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig, DictCache
 
@@ -273,12 +274,18 @@ class PilotDirector:
     # Use Filling mode
     pilotOptions.append( '-M %s' % self.maxJobsInFillMode )
 
+    # Setup.
+    pilotOptions.append( '-S %s' % taskQueueDict['Setup'] )
+    # CS Servers
+    csServers = gConfig.getValue( "/DIRAC/Configuration/Servers", [] )
+    pilotOptions.append( '-C %s' % ",".join( csServers ) )
+    # DIRAC Extensions
+    csServers = gConfig.getValue( "/DIRAC/Extensions", [] )
+    pilotOptions.append( '-e %s' % ",".join( extensions ) )
     # Requested version of DIRAC
-    pilotOptions.append( '-v %s' % self.diracVersion )
+    pilotOptions.append( '-r %s' % self.diracVersion )
     # Requested CPU time
     pilotOptions.append( '-T %s' % taskQueueDict['CPUTime'] )
-    # Setup.
-    pilotOptions.append( '-o /DIRAC/Setup=%s' % taskQueueDict['Setup'] )
     
     if self.extraPilotOptions:
       pilotOptions.extend( self.extraPilotOptions )
