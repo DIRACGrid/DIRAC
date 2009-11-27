@@ -21,13 +21,11 @@ class Params:
     self.externalsType = 'client'
     self.pythonVersion = '25'
     self.platform = False
-    self.setup = False
     self.targetPath = os.getcwd()
     self.buildExternals = False
     self.buildIfNotAvailable = False
     self.debug = False
     self.tarBaseURL = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/tars'
-    self.csServers = []
 
 cliParams = Params()
 
@@ -215,10 +213,6 @@ for o, v in optList:
       pass
   elif o in ( '-b', '--build' ):
     cliParams.buildExternals = True
-        
-if not cliParams.setup:
-  logERROR( ": Need to define a setup!" )
-  usage()
 
 if not cliParams.release:
   logERROR( ": Need to define a release version to install!" )
