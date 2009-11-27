@@ -58,7 +58,8 @@ class CliParams:
     self.userDN = ""
     self.maxCycles = CliParams.MAX_CYCLES
     self.flavour = 'DIRAC'
-
+    self.gridVersion = '2009-08-13'
+    
 ###
 # Helper functions
 ###
@@ -193,10 +194,9 @@ for o, v in optList:
   elif o == '-e' or o == '--extraPackages':
     installOpts.append( '-e "%s"' % v )
   elif o == '-g' or o == '--grid':
-    #TODO
-    pass
+    cliParams.gridVersion = v
   elif o == '-i' or o == '--python':
-    installOpts.append( '-i "%s"' % v )
+    cliParams.pythonVersion = v
   elif o == '-n' or o == '--name':
     configureOpts.append( '-n "%s"' % v )
     cliParams.site = v
@@ -252,6 +252,11 @@ for o, v in optList:
   elif o == '-c' or o == '--cert':
     configureOpts.append( '--UseServerCertificate' )
 
+if cliParams.gridVersion:
+  installOpts.append( "-g '%s'" % cliParams.gridVersion )
+  
+if cliParams.pythonVersion:
+  installOpts.append( '-i "%s"' % cliParams.pythonVersion )
 ##
 # Attempt to determine the flavour
 ##
