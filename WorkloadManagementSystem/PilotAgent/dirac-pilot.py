@@ -10,7 +10,6 @@ __RCSID__ = "$Id$"
 import os
 import sys
 import getopt
-import popen2
 import urllib2
 import stat
 import socket
@@ -76,6 +75,20 @@ def logERROR( msg ):
 def logINFO( msg ):
   for line in msg.split( "\n" ):
     print "[INFO]  %s" % line
+    
+def executeAndGetOutput( cmd ):
+  try:
+    import subprocess
+    p = subprocess.Popen( "%s" % cmd, shell = True, stdout=subprocess.PIPE, 
+                          stderr=subprocess.PIPE, close_fds = True )
+    outData = p.stdout.read().strip()
+    p.wait()
+  except ImportError:
+    import popen2
+    p3 = popen2.Popen3( "%s" % cmd )
+    outData = p3.fromchild.read().strip()
+    p3.wait()
+  return outData
 
 # Version print
 
@@ -258,8 +271,7 @@ configureOpts.append( '-o /LocalSite/GridMiddleware=%s' % cliParams.flavour )
 # Try to get the CE name
 ###
 if pilotRef != 'Unknown':
-  ( child_stdout, child_stdin, child_stderr ) = popen2.popen3( 'edg-brokerinfo getCE || glite-brokerinfo getCE' )
-  CE = child_stdout.read().strip()
+  CE = executeAndGetOutput( 'edg-brokerinfo getCE || glite-brokerinfo getCE' )
   cliParams.ceName = CE.split( ':' )[0]
   child_stdout.close()
   child_stderr.close()
@@ -367,7 +379,19 @@ if cliParams.testVOMSOK:
 # Set the lhcb platform
 #
 
-#TODO: How to solve this?
+architectureScriptName = "dirac-architecture"
+architectureScript = ""
+for entry in os.listdir( rootPath ):
+  if entry.find( "DIRAC" ) == -1:
+    continue
+  candidate = os.path.join( entry, "scripts", architectureScriptName )
+  if os.path.isfile( candidate ):
+    architectureScript = candidate
+
+if architectureScript:
+  lhcbArchitecture = executeAndGetOutput( architectureScript ).strip()
+  os.environ['CMTCONFIG'] = lhcbArchitecture
+  dirac.logINFO( 'Setting CMTCONFIG=%s' % lhcbArchitecture )
 
 #
 # Get host and local user info
@@ -461,8 +485,8 @@ if pilotRef != 'Unknown':
   logINFO( 'CE = %s' % cliParams.ceName )
   logINFO( 'LCG_SITE_CE = %s' % cliParams.site )
 
-  ( child_stdout, child_stdin, child_stderr ) = popen2.popen3( 'dirac-wms-get-queue-normalization %s' % cliParams.ceName )
-  queueNormList = child_stdout.read().strip().split( ' ' )
+  queueNormList = executeAndGetOutput( 'dirac-wms-get-queue-normalization %s' % cliParams.ceName )
+  queueNormList = queueNormList.strip().split( ' ' )
   if len( queueNormList ) == 2:
     queueNorm = float( queueNormList[1] )
     logINFO( 'Queue Normalization = %s SI00' % queueNorm )
@@ -475,8 +499,8 @@ if pilotRef != 'Unknown':
   child_stdout.close()
   child_stderr.close()
 
-  ( child_stdout, child_stdin, child_stderr ) = popen2.popen3( 'dirac-wms-get-normalized-queue-length %s' % CE )
-  queueLength = child_stdout.read().strip().split( ' ' )
+  queueLength = executeAndGetOutput( 'dirac-wms-get-normalized-queue-length %s' % cliParams.ceName )
+  queueNormList = queueLength.strip().split( ' ' )
   if len( queueLength ) == 2:
     cliParams.jobCPUReq = float( queueLength[1] )
     logINFO( 'Normalized Queue Length = %s' % cliParams.jobCPUReq )
