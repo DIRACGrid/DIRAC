@@ -11,6 +11,8 @@ import os
 import sys
 import getopt
 import popen2
+import urllib2
+import stat
 
 #Check PYTHONPATH and LD_LIBARY_PATH
 try:
@@ -84,15 +86,33 @@ except:
   pilotScript = os.path.realpath( sys.argv[0] )
 
 pilotScriptName = os.path.basename( pilotScript )
-pilotRootPath = os.path.dirname( myFullName )
-installScriptName = 'dirac-install'
-installScript = os.path.join( rootPath, installScriptName )
+pilotRootPath = os.path.dirname( pilotScript )
 
 rootPath = os.getcwd()
 
+installScriptName = 'dirac-install.py'
+
+for dir in ( pilotRootPath, rootPath ):
+  installScript = os.path.join( dir, installScriptName )
+  if os.path.isfile( installScript ):
+    break
+    
 if not os.path.isfile( installScript ):
-  logERROR( "%s requires %s in the same directory (%s)" % ( pilotScriptName, installScriptName, pilotRootPath ) )
-  sys.exit( 1 )
+  logERROR( "%s requires %s to exist in one of: %s, %s" % ( pilotScriptName, installScriptName, 
+                                                            pilotRootPath, rootPath ) )
+  logINFO( "Trying to download it to %s..." % rootPath )
+  try:
+    remoteLocation = "http://svnweb.cern.ch/guest/dirac/DIRAC/trunk/DIRAC/Core/scripts/dirac-install.py"
+    remoteLocation = "http://svnweb.cern.ch/guest/dirac/DIRAC/trunk/DIRAC/Core/scripts/dirac-install.py"
+    remoteFD = urllib2.urlopen( remoteLocation )
+    installScript = os.path.join( rootPath, installScriptName )
+    localFD = open( installScript, "w" )
+    localFD.write( remoteFD.read() )
+    localFD.close()
+    remoteFD.close()
+  except Exception, e:
+    logERROR( "Could not download %s..: %s" % ( remoteLocation, str(e) ) )
+    sys.exit( 1 )
 
 os.chmod( installScript, stat.S_IRWXU )
 
@@ -123,7 +143,7 @@ cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
             ( 'N:', 'Name=', 'Use <CEName> to determine Site Name' ),
             ( 'P:', 'path=', 'Install under <path>' ),
             ( 'E', 'server', 'Make a full server installation' ),
-            ( 'S:', 'setup=' 'DIRAC Setup to use' ),
+            ( 'S:', 'setup=', 'DIRAC Setup to use' ),
             ( 'C:', 'configurationServer=', 'Configuration servers to use' ),
             ( 'T:', 'CPUTime', 'Requested CPU Time' ),
             ( 'G:', 'Group=', 'DIRAC Group to use' ),
@@ -135,8 +155,8 @@ cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
 
 cliParams = CliParams()
 
-installOptions = []
-configureOptions = []
+installOpts = []
+configureOpts = []
 
 optList, args = getopt.getopt( sys.argv[1:],
                                "".join( [ opt[0] for opt in cmdOpts ] ),
@@ -148,7 +168,7 @@ for o, v in optList:
       print "%s %s : %s" % ( cmdOpt[0].ljust( 4 ), cmdOpt[1].ljust( 20 ), cmdOpt[2] )
     sys.exit( 1 )
   elif o in ( '-b', '--build' ):
-    installOptions.append( '-b' )
+    installOpts.append( '-b' )
   elif o == '-d' or o == '--debug':
     cliParams.debug = True
     installOpts.append( '-d' )
@@ -160,7 +180,7 @@ for o, v in optList:
   elif o == '-i' or o == '--python':
     installOpts.append( '-i "%s"' % v )
   elif o == '-n' or o == '--name':
-    configureOptions.append( '-n "%s"' % v )
+    configureOpts.append( '-n "%s"' % v )
     cliParams.site = v
   elif o == '-p' or o == '--platform':
     installOpts.append( '-p "%s"' % v )
@@ -173,7 +193,7 @@ for o, v in optList:
     #TODO
     pass
   elif o == '-N' or o == '--Name':
-    installOpts.append( '-N "%s"' % v )
+    configureOpts.append( '-N "%s"' % v )
     cliParams.ceName = v
   elif o == '-D' or o == '--disk':
     try:
@@ -186,9 +206,9 @@ for o, v in optList:
     except:
       pass
   elif o in ( '-S', '--setup' ):
-    configureOptions.append( '-S "%s"' % v )
+    configureOpts.append( '-S "%s"' % v )
   elif o in ( '-C', '--configurationServer' ):
-    configureOptions.append( '-C "%s"' % v )
+    configureOpts.append( '-C "%s"' % v )
   elif o in ( '-P', '--path' ):
     installOpts.append( '-P "%s"' % v )
     rootPath = v
@@ -202,17 +222,17 @@ for o, v in optList:
     #TODO
     pass
   elif o in ( '-V', '--VO' ):
-    configureOptions.append( '-V "%s"' % v )
+    configureOpts.append( '-V "%s"' % v )
   elif o in ( '-W', '--gateway' ):
-    configureOptions.append( '-W "%s"' % v )
+    configureOpts.append( '-W "%s"' % v )
   elif o == '-E' or o == '--server':
-    installOpts.append( '-t "%s"' % v )
+    installOpts.append( '-t "server"' )
   elif o == '-o' or o == '--option':
-    configureOptions.append( '-o "%s"' % v )
+    configureOpts.append( '-o "%s"' % v )
   elif o == '-s' or o == '--section':
-    configureOptions.append( '-s "%s"' % v )
+    configureOpts.append( '-s "%s"' % v )
   elif o == '-c' or o == '--cert':
-    configureOptions.append( '--UseServerCertificate' )
+    configureOpts.append( '--UseServerCertificate' )
 
 ##
 # Attempt to determine the flavour
@@ -227,7 +247,7 @@ if os.environ.has_key( 'GLITE_WMS_JOBID' ):
   cliParams.flavour = 'gLite'
   pilotRef = os.environ['GLITE_WMS_JOBID']
 
-configureOptions.append( '-o /LocalSite/GridMiddleware=%s' % cliParams.flavour )
+configureOpts.append( '-o /LocalSite/GridMiddleware=%s' % cliParams.flavour )
 
 ###
 # Try to get the CE name
@@ -238,8 +258,8 @@ if pilotRef != 'Unknown':
   cliParams.ceName = CE.split( ':' )[0]
   child_stdout.close()
   child_stderr.close()
-  configureOptions.append( '-o /LocalSite/PilotReference=%s' % pilotRef )
-  configureOptions.append( '-N "%s"' % cliParams.ceName )
+  configureOpts.append( '-o /LocalSite/PilotReference=%s' % pilotRef )
+  configureOpts.append( '-N "%s"' % cliParams.ceName )
 else:
   cliParams.ceName = 'Local'
 
@@ -248,23 +268,23 @@ else:
 ###
 
 if cliParams.platform:
-  installOpts.append( '-p "%s"' % localPlatform )
+  installOpts.append( '-p "%s"' % cliParams.platform )
 
 ###
 # Set the group and the DN
 ###
 
 if cliParams.userGroup:
-  configureOptions.append( '-o /AgentJobRequirements/OwnerGroup="%s"' % cliParams.userGroup )
+  configureOpts.append( '-o /AgentJobRequirements/OwnerGroup="%s"' % cliParams.userGroup )
 
 if cliParams.userDN:
-  configureOptions.append( '-o /AgentJobRequirements/OwnerDN="%s"' % cliParams.userDN )
+  configureOpts.append( '-o /AgentJobRequirements/OwnerDN="%s"' % cliParams.userDN )
 
 ###
 # Do the installation
 ###
 
-installCmd = "%s %s" % ( installScriptPath, " ".join( installOpts ) )
+installCmd = "%s %s" % ( installScript, " ".join( installOpts ) )
 
 logDEBUG( "Installing with: %s" % installCmd )
 
@@ -283,9 +303,9 @@ sys.path.insert( 0, diracScriptsPath )
 # Configure DIRAC
 ###
 
-configureCmd = "%s %s" % ( os.path.join( diracScriptsPath, "dirac-configure" ), " ".join( configureOptions ) )
+configureCmd = "%s %s" % ( os.path.join( diracScriptsPath, "dirac-configure" ), " ".join( configureOpts ) )
 
-logDEBUG( "Configuring DIRAC with: %s" )
+logDEBUG( "Configuring DIRAC with: %s" % configureCmd)
 
 if os.system( configureCmd ):
   logERROR( "Could not configure DIRAC" )
@@ -309,6 +329,10 @@ if not cliParams.platform:
   PlatformModule = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
   platFD.close()
   cliParams.platform = PlatformModule.getPlatformString()
+
+if cliParams.testVOMSOK:
+  # Check voms-proxy-info before touching the original PATH and LD_LIBRARY_PATH
+  os.system( 'which voms-proxy-info && voms-proxy-info -all' )
 
 diracLibPath = os.path.join( rootPath, cliParams.platform, 'lib' )
 diracBinPath = os.path.join( rootPath, cliParams.platform, 'bin' )
