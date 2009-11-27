@@ -170,6 +170,9 @@ cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
             ( 'U', 'Upload', 'Upload compiled distribution (if built)' ),
             ( 'V:', 'VO=', 'Virtual Organization' ),
             ( 'W:', 'gateway=', 'Configure <gateway> as DIRAC Gateway during installation' ),
+            ( 's:', 'section=', 'Set base section for relative parsed options' ),
+            ( 'o:', 'option=', 'Option=value to add' ),
+            ( 'c', 'cert', 'Use server certificate instead of proxy' ),
           )
 
 cliParams = CliParams()
