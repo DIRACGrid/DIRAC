@@ -13,6 +13,8 @@ import getopt
 import popen2
 import urllib2
 import stat
+import socket
+import imp
 
 #Check PYTHONPATH and LD_LIBARY_PATH
 try:
@@ -64,13 +66,16 @@ class CliParams:
 
 def logDEBUG( msg ):
   if cliParams.debug:
-    print "[DEBUG] %s" % msg
+    for line in msg.split( "\n" ):
+      print "[DEBUG] %s" % line
 
 def logERROR( msg ):
-  print "[ERROR] %s" % msg
+  for line in msg.split( "\n" ):
+    print "[ERROR] %s" % line
 
 def logINFO( msg ):
-  print "[INFO]  %s" % msg
+  for line in msg.split( "\n" ):
+    print "[INFO]  %s" % line
 
 # Version print
 
@@ -96,9 +101,9 @@ for dir in ( pilotRootPath, rootPath ):
   installScript = os.path.join( dir, installScriptName )
   if os.path.isfile( installScript ):
     break
-    
+
 if not os.path.isfile( installScript ):
-  logERROR( "%s requires %s to exist in one of: %s, %s" % ( pilotScriptName, installScriptName, 
+  logERROR( "%s requires %s to exist in one of: %s, %s" % ( pilotScriptName, installScriptName,
                                                             pilotRootPath, rootPath ) )
   logINFO( "Trying to download it to %s..." % rootPath )
   try:
@@ -111,7 +116,7 @@ if not os.path.isfile( installScript ):
     localFD.close()
     remoteFD.close()
   except Exception, e:
-    logERROR( "Could not download %s..: %s" % ( remoteLocation, str(e) ) )
+    logERROR( "Could not download %s..: %s" % ( remoteLocation, str( e ) ) )
     sys.exit( 1 )
 
 os.chmod( installScript, stat.S_IRWXU )
@@ -305,7 +310,7 @@ sys.path.insert( 0, diracScriptsPath )
 
 configureCmd = "%s %s" % ( os.path.join( diracScriptsPath, "dirac-configure" ), " ".join( configureOpts ) )
 
-logDEBUG( "Configuring DIRAC with: %s" % configureCmd)
+logDEBUG( "Configuring DIRAC with: %s" % configureCmd )
 
 if os.system( configureCmd ):
   logERROR( "Could not configure DIRAC" )
@@ -315,11 +320,11 @@ if os.system( configureCmd ):
 # Dump the CS to cache in file
 ###
 
-cfgFile = os.path.join( rootPath, "etc", "dirac.cfg" ) 
+cfgFile = os.path.join( rootPath, "etc", "dirac.cfg" )
 cacheScript = os.path.join( diracScriptsPath, "dirac-configuration-dump-local-cache" )
 if os.system( "%s -f %s" % ( cacheScript, cfgFile ) ):
   logERROR( "Could not dump the CS to %s" % cfgFile )
-  
+
 ###
 # Set the LD_LIBRARY_PATH and PATH
 ###
@@ -336,10 +341,218 @@ if cliParams.testVOMSOK:
 
 diracLibPath = os.path.join( rootPath, cliParams.platform, 'lib' )
 diracBinPath = os.path.join( rootPath, cliParams.platform, 'bin' )
-os.environ['LD_LIBRARY_PATH_SAVE'] = os.environ['LD_LIBRARY_PATH']
+if 'LD_LIBRARY_PATH' in os.environ:
+  os.environ['LD_LIBRARY_PATH_SAVE'] = os.environ['LD_LIBRARY_PATH']
+else:
+  os.environ['LD_LIBRARY_PATH_SAVE'] = ""
 os.environ['LD_LIBRARY_PATH'] = "%s" % ( diracLibPath )
-os.environ['PATH'] = '%s:%s:%s' % (diracBinPath,diracScriptsPath,os.getenv('PATH'))
+os.environ['PATH'] = '%s:%s:%s' % ( diracBinPath, diracScriptsPath, os.getenv( 'PATH' ) )
 
 ###
 # End of initialisation
 ###
+
+#
+# Check proxy
+#
+
+ret = os.system( 'dirac-proxy-info' )
+if cliParams.testVOMSOK:
+  ret = os.system( 'dirac-proxy-info | grep -q fqan' )
+  if ret != 0:
+    os.system( 'dirac-proxy-info 2>&1 | mail -s "dirac-pilot: missing voms certs at %s" dirac.alarms@gmail.com' % cliParams.site )
+    sys.exit( -1 )
+
+#
+# Set the lhcb platform
+#
+
+#TODO: How to solve this?
+
+#
+# Get host and local user info
+#
+
+localUid = os.getuid()
+try:
+  import pwd
+  localUser = pwd.getpwuid( localUid )[0]
+except:
+  localUser = 'Unknown'
+
+logINFO( 'Uname      = %s' % " ".join( os.uname() ) )
+logINFO( 'Host Name  = %s' % socket.gethostname() )
+logINFO( 'Host FQDN  = %s' % socket.getfqdn() )
+logINFO( 'User Name  = %s' % localUser )
+logINFO( 'User Id    = %s' % localUid )
+logINFO( 'CurrentDir = %s' % rootPath )
+
+fileName = '/etc/redhat-release'
+if os.path.exists( fileName ):
+  f = open( fileName, 'r' )
+  logINFO( 'RedHat Release = %s' % f.read().strip() )
+  f.close()
+
+fileName = '/etc/lsb-release'
+if os.path.isfile( fileName ):
+  f = open( fileName, 'r' )
+  logINFO( 'Linux release:\n%s' % f.read().strip() )
+  f.close()
+
+fileName = '/proc/cpuinfo'
+if os.path.exists( fileName ):
+  f = open( fileName, 'r' )
+  cpu = f.readlines()
+  f.close()
+  nCPU = 0
+  for line in cpu:
+    if line.find( 'cpu MHz' ) == 0:
+      nCPU += 1
+      freq = line.split()[3]
+    elif line.find( 'model name' ) == 0:
+      CPUmodel = line.split( ': ' )[1].strip()
+  logINFO( 'CPU (model)    = %s' % CPUmodel )
+  logINFO( 'CPU (MHz)      = %s x %s' % ( nCPU, freq ) )
+
+fileName = '/proc/meminfo'
+if os.path.exists( fileName ):
+  f = open( fileName, 'r' )
+  mem = f.readlines()
+  f.close()
+  freeMem = 0
+  for line in mem:
+    if line.find( 'MemTotal:' ) == 0:
+      totalMem = int( line.split()[1] )
+    if line.find( 'MemFree:' ) == 0:
+      freeMem += int( line.split()[1] )
+    if line.find( 'Cached:' ) == 0:
+      freeMem += int( line.split()[1] )
+  logINFO( 'Memory (kB)    = %s' % totalMem )
+  logINFO( 'FreeMem. (kB)  = %s' % freeMem )
+
+#
+# Disk space check
+#
+
+fs = os.statvfs( rootPath )
+# bsize;    /* file system block size */
+# frsize;   /* fragment size */
+# blocks;   /* size of fs in f_frsize units */
+# bfree;    /* # free blocks */
+# bavail;   /* # free blocks for non-root */
+# files;    /* # inodes */
+# ffree;    /* # free inodes */
+# favail;   /* # free inodes for non-root */
+# flag;     /* mount flags */
+# namemax;  /* maximum filename length */
+diskSpace = fs[4] * fs[0] / 1024 / 1024
+logINFO( 'DiskSpace (MB) = %s' % diskSpace )
+
+if diskSpace < cliParams.minDiskSpace:
+  logERROR( '%s MB < %s MB, not enough local disk space available, exiting'
+                  % ( diskSpace, cliParams.minDiskSpace ) )
+  sys.exit( 1 )
+
+#
+# Get job CPU requirement and queue normalization
+#
+
+if pilotRef != 'Unknown':
+  logINFO( 'CE = %s' % cliParams.ceName )
+  logINFO( 'LCG_SITE_CE = %s' % cliParams.site )
+
+  ( child_stdout, child_stdin, child_stderr ) = popen2.popen3( 'dirac-wms-get-queue-normalization %s' % cliParams.ceName )
+  queueNormList = child_stdout.read().strip().split( ' ' )
+  if len( queueNormList ) == 2:
+    queueNorm = float( queueNormList[1] )
+    logINFO( 'Queue Normalization = %s SI00' % queueNorm )
+    if queueNorm:
+      # Update the local normalization factor: We are using seconds @ 500 SI00
+      # This is the ratio SpecInt published by the site over 500 (the reference used for Matching)
+      os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( cacheScript, cfgFile, queueNorm / 500. ) )
+  else:
+    logERROR( 'Fail to get Normalization of the Queue' )
+  child_stdout.close()
+  child_stderr.close()
+
+  ( child_stdout, child_stdin, child_stderr ) = popen2.popen3( 'dirac-wms-get-normalized-queue-length %s' % CE )
+  queueLength = child_stdout.read().strip().split( ' ' )
+  if len( queueLength ) == 2:
+    cliParams.jobCPUReq = float( queueLength[1] )
+    logINFO( 'Normalized Queue Length = %s' % cliParams.jobCPUReq )
+  else:
+    logERROR( 'Failed to get Normalized length of the Queue' )
+  child_stdout.close()
+  child_stderr.close()
+
+#
+# further local configuration
+#
+
+inProcessOpts = ['-s /Resources/Computing/CEDefaults' ]
+inProcessOpts .append( '-o WorkingDirectory=%s' % rootPath )
+inProcessOpts .append( '-o GridCE=%s' % cliParams.ceName )
+inProcessOpts .append( '-o LocalAccountString=%s' % localUser )
+inProcessOpts .append( '-o TotalCPUs=%s' % 1 )
+inProcessOpts .append( '-o MaxCPUTime=%s' % ( int( cliParams.jobCPUReq ) ) )
+inProcessOpts .append( '-o CPUTime=%s' % ( int( cliParams.jobCPUReq ) ) )
+inProcessOpts .append( '-o MaxRunningJobs=%s' % 1 )
+# To prevent a wayward agent picking up and failing many jobs.
+inProcessOpts .append( '-o MaxTotalJobs=%s' % 10 )
+
+
+jobAgentOpts = [ '-o MaxCycles=%s' % cliParams.maxCycles ]
+# jobAgentOpts.append( '-o CEUniqueID=%s' % JOB_AGENT_CE )
+# jobAgentOpts.append( '-o ControlDirectory=%s' % jobAgentControl )
+if cliParams.debug:
+  jobAgentOpts.append( '-o LogLevel=DEBUG' )
+
+if cliParams.userGroup:
+  logINFO( 'Setting DIRAC Group to "%s"' % cliParams.userGroup )
+  inProcessOpts .append( '-o OwnerGroup="%s"' % cliParams.userGroup )
+
+if cliParams.userDN:
+  logINFO( 'Setting Owner DN to "%s"' % cliParams.userDN )
+  inProcessOpts .append( '-o OwnerDN="%s"' % cliParams.userDN )
+
+# Find any .cfg file uploaded with the sandbox
+extraCFG = []
+for i in os.listdir( rootPath ):
+  cfg = os.path.join( rootPath, i )
+  if os.path.isfile( cfg ) and re.search( '.cfg&', cfg ):
+    extraCFG.append( cfg )
+
+#
+# Start the job agent
+#
+
+logINFO( 'Starting JobAgent' )
+
+os.environ['PYTHONUNBUFFERED'] = 'yes'
+
+jobAgent = 'dirac-agent WorkloadManagement/JobAgent %s %s %s' % ( " ".join( jobAgentOpts ), 
+                                                                  " ".join( inProcessOpts ),
+                                                                  " ".join( extraCFG ) ) 
+
+logINFO( "JobAgent execution command:\n%s" % jobAgent )
+
+if not cliParams.dryRun:
+  os.system( jobAgent )
+
+fs = os.statvfs( rootPath )
+# bsize;    /* file system block size */
+# frsize;   /* fragment size */
+# blocks;   /* size of fs in f_frsize units */
+# bfree;    /* # free blocks */
+# bavail;   /* # free blocks for non-root */
+# files;    /* # inodes */
+# ffree;    /* # free inodes */
+# favail;   /* # free inodes for non-root */
+# flag;     /* mount flags */
+# namemax;  /* maximum filename length */
+diskSpace = fs[4] * fs[0] / 1024 / 1024
+logINFO( 'DiskSpace (MB) = %s' % diskSpace )
+ret = os.system( 'dirac-proxy-info' )
+
+
+sys.exit( 0 )
