@@ -14,6 +14,7 @@ import urllib2
 import stat
 import socket
 import imp
+import re
 
 #Check PYTHONPATH and LD_LIBARY_PATH
 try:
