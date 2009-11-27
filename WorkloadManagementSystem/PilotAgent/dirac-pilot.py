@@ -563,9 +563,11 @@ logINFO( 'Starting JobAgent' )
 
 os.environ['PYTHONUNBUFFERED'] = 'yes'
 
-jobAgent = 'dirac-agent WorkloadManagement/JobAgent %s %s %s' % ( " ".join( jobAgentOpts ), 
-                                                                  " ".join( inProcessOpts ),
-                                                                  " ".join( extraCFG ) ) 
+diracAgentScript = os.path.join( rootPath, "scripts", "dirac-agent" )
+jobAgent = '%s WorkloadManagement/JobAgent %s %s %s' % ( diracAgentScript,
+                                                         " ".join( jobAgentOpts ),
+                                                         " ".join( inProcessOpts ),
+                                                         " ".join( extraCFG ) ) 
 
 logINFO( "JobAgent execution command:\n%s" % jobAgent )
 
