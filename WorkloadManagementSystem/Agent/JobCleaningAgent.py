@@ -9,7 +9,7 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.Agent                            import Agent
+from DIRAC.Core.Base.AgentModule                      import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB          import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB    import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.SandboxDB      import SandboxDB
@@ -24,25 +24,19 @@ REMOVE_STATUS_DELAY = {'Deleted':0,
                        'Failed':14 }
 PRODUCTION_TYPES = ['DataReconstruction','DataStripping','MCSimulation','Merge','production']
 
-class JobCleaningAgent(Agent):
-
-  #############################################################################
-  def __init__(self):
-    """ Standard constructor for Agent
-    """
-    Agent.__init__(self,AGENT_NAME)
+class JobCleaningAgent(AgentModule):
 
   #############################################################################
   def initialize(self):
     """Sets defaults
     """
-    result = Agent.initialize(self)
-    self.pollingTime = gConfig.getValue(self.section+'/PollingTime',120)
+
+    self.am_setOption( "PollingTime", 120.0 )
     self.jobDB = JobDB()
     self.taskQueueDB  = TaskQueueDB()
     self.sandboxDB = SandboxDB('SandboxDB')
 
-    return result
+    return S_OK()
 
   #############################################################################
   def execute(self):
