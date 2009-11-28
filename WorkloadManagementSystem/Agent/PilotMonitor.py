@@ -11,7 +11,7 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.Agent    import Agent
+from DIRAC.Core.Base.AgentModule    import AgentModule
 from DIRAC                    import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -21,29 +21,22 @@ import os, time
 
 AGENT_NAME = 'WorkloadManagement/PilotMonitor'
 
-class PilotMonitor(Agent):
-
-  #############################################################################
-  def __init__(self):
-    """ Standard constructor for Agent
-    """
-    Agent.__init__(self,AGENT_NAME)
+class PilotMonitor(AgentModule):
 
   #############################################################################
   def initialize(self):
     """Sets defaults
     """
-    result = Agent.initialize(self)
-    self.pollingTime = gConfig.getValue(self.section+'/PollingTime',120)
-    self.selectJobLimit = gConfig.getValue(self.section+'/JobSelectLimit',100)
-    self.maxWaitingTime = gConfig.getValue(self.section+'/MaxJobWaitingTime',5*60)
-    self.maxPilotAgents = gConfig.getValue(self.section+'/MaxPilotsPerJob',4)
-    self.clearPilotsDelay = gConfig.getValue(self.section+'/ClearPilotsDelay',30)
-    self.clearAbortedDelay = gConfig.getValue(self.section+'/ClearAbortedPilotsDelay',7)
+    self.am_setOption('PollingTime',120)
+    self.selectJobLimit = self.am_getOption('JobSelectLimit',100)
+    self.maxWaitingTime = self.am_getOption('MaxJobWaitingTime',5*60)
+    self.maxPilotAgents = self.am_getOption('MaxPilotsPerJob',4)
+    self.clearPilotsDelay = self.am_getOption('ClearPilotsDelay',30)
+    self.clearAbortedDelay = self.am_getOption('ClearAbortedPilotsDelay',7)
     
     self.pilotDB = PilotAgentsDB()
     self.jobDB = JobDB()
-    return result
+    return S_OK()
 
   #############################################################################
   def execute(self):
