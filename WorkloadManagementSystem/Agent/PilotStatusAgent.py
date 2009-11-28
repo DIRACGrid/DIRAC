@@ -8,7 +8,7 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.Agent import Agent
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, List
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.Core.Utilities import systemCall, List, Time
@@ -25,28 +25,22 @@ AGENT_NAME = 'WorkloadManagement/PilotStatusAgent'
 MAX_JOBS_QUERY = 10
 MAX_WAITING_STATE_LENGTH = 3
 
-class PilotStatusAgent(Agent):
+class PilotStatusAgent(AgentModule):
 
   queryStateList = ['Ready','Submitted','Running','Waiting','Scheduled']
   finalStateList = [ 'Done', 'Aborted', 'Cleared', 'Deleted' ]
   identityFieldsList = [ 'OwnerDN', 'OwnerGroup', 'GridType', 'Broker' ]
 
   #############################################################################
-  def __init__(self):
-    """ Standard constructor for Agent
-    """
-    Agent.__init__(self,AGENT_NAME)
-
-  #############################################################################
   def initialize(self):
     """Sets defaults
     """
-    result = Agent.initialize(self)
-    self.pollingTime = gConfig.getValue(self.section+'/PollingTime',120)
-    self.gridEnv     = gConfig.getValue(self.section+'/GridEnv','')
-    self.pilotStalledDays =  gConfig.getValue(self.section+'/PilotStalledDays',3)
+    
+    self.am_setOption('PollingTime',120)
+    self.am_setOption('GridEnv','')
+    self.am_setOption('PilotStalledDays',3)
     self.pilotDB = PilotAgentsDB()
-    return result
+    return S_OK()
 
   #############################################################################
   def execute(self):
@@ -54,7 +48,8 @@ class PilotStatusAgent(Agent):
     """
     parentIDList = [ '0' , '-1' ]
 
-    self.pilotStalledDays = gConfig.getValue( self.section+'/PilotStalledDays', self.pilotStalledDays )
+    self.pilotStalledDays = self.am_getOption('PilotStalledDays', 3 )
+    self.gridEnv = self.am_getOption('GridEnv')
     result = self.pilotDB._getConnection()
     if result['OK']:
       connection = result['Value']
