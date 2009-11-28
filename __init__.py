@@ -108,6 +108,7 @@ ExitCallback.registerSignals()
 #Set the platform
 from DIRAC.Core.Utilities.Platform import getPlatformString
 platform = getPlatformString()
+platformTuple = tuple(platform.split('_'))
 
 def exit( exitCode = 0 ):
   ExitCallback.execute( exitCode, [] )
