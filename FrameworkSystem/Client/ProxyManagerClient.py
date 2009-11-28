@@ -287,14 +287,17 @@ class ProxyManagerClient:
     groups = CS.getGroupsWithVOMSAttribute( vomsAttr )
     if not groups:
       return S_ERROR( "No group found that has %s as voms attrs" % vomsAttr )
-    userGroup = groups[0]
 
-    return self.downloadVOMSProxy( userDN,
-                                   userGroup,
-                                   limited = False,
-                                   requiredTimeLeft = requiredTimeLeft,
-                                   requiredVOMSAttribute = vomsAttr,
-                                   proxyToConnect = proxyToConnect )
+    for userGroup in groups:
+      result = self.downloadVOMSProxy( userDN,
+                                     userGroup,
+                                     limited = False,
+                                     requiredTimeLeft = requiredTimeLeft,
+                                     requiredVOMSAttribute = vomsAttr,
+                                     proxyToConnect = proxyToConnect )
+      if result['OK']:
+        return result
+    return result                                   
 
   def getPayloadProxyFromDIRACGroup( self, userDN, userGroup, token, requiredTimeLeft, proxyToConnect = False ):
     """
