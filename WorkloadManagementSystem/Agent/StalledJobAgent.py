@@ -12,40 +12,33 @@ __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.Core.Base.Agent                          import Agent
+from DIRAC.Core.Base.AgentModule                    import AgentModule
 from DIRAC.Core.Utilities.Time                      import fromString,toEpoch
 from DIRAC                                          import gConfig, S_OK, S_ERROR
 import time
 
 AGENT_NAME = 'WorkloadManagement/StalledJobAgent'
 
-class StalledJobAgent(Agent):
-
-  #############################################################################
-  def __init__(self,enableFlag=True):
-    """ Standard constructor for Agent
-    """
-    Agent.__init__(self,AGENT_NAME)
-    self.enable = enableFlag
+class StalledJobAgent(AgentModule):
 
   #############################################################################
   def initialize(self):
     """Sets default parameters
     """
-    result = Agent.initialize(self)
     self.jobDB = JobDB()
     self.logDB = JobLoggingDB()
-    self.pollingTime   = gConfig.getValue(self.section+'/PollingTime',60*60)
+    self.am_setOption('PollingTime',60*60)
+    self.enable = self.am_getOption('Enable',True)
     if not self.enable:
       self.log.info('Stalled Job Agent running in disabled mode')
-    return result
+    return S_OK()
 
   #############################################################################
   def execute(self):
     """ The main agent execution method
     """
     self.log.verbose( 'Waking up Stalled Job Agent' )
-    stalledTime   = gConfig.getValue(self.section+'/StalledTimeHours',2)
+    stalledTime   = self.am_getOption('StalledTimeHours',2)
     self.log.verbose('StalledTime = %s hours' %(stalledTime))
     try:
       stalledTime = int(stalledTime)*60*60
