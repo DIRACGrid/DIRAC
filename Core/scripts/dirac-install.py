@@ -5,7 +5,7 @@ Compile the externals
 """
 __RCSID__ = "$Id$"
 
-import sys, os, getopt, tarfile, urllib2, imp, signal, subprocess
+import sys, os, getopt, tarfile, urllib2, imp, signal
 
 try:
   from hashlib import md5
@@ -180,16 +180,6 @@ def downloadAndExtractTarball( pkgVer, targetPath, subDir = False, checkHash = T
   #Delete tar
   os.unlink( tarPath )
   return True
-
-def execAndGetOutput( cmd ):
-  logDEBUG( cmd )
-  p = subprocess.Popen( cmd,
-                        shell = True, stdout = subprocess.PIPE,
-                        stderr = subprocess.PIPE, close_fds = True )
-  stdData = p.stdout.read()
-  errData = p.stderr.read()
-  p.wait()
-  return ( p.returncode, stdData, errData )
 
 ####
 # End of helper functions
