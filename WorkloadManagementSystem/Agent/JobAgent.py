@@ -36,39 +36,42 @@ class JobAgent( AgentModule ):
     """
    # self.log.setLevel('debug') #temporary for debugging
     self.am_setOption( 'MaxCycles', loops )
-    
+
     ceUniqueID = self.am_getOption( 'CEUniqueID', 'InProcess' )
-    localCE = gConfig.getOption( '/LocalSite/LocalCE', '' )
+    localCE = gConfig.getValue( '/LocalSite/LocalCE', '' )
     if localCE:
-      self.log.info( 'Defining CE from local configuration = %s' % localCE['Value'] )
+      self.log.info( 'Defining CE from local configuration = %s' % localCE )
       ceUniqueID = localCE
 
-    ceFactory = ComputingElementFactory( ceUniqueID['Value'] )
-    self.ceName = ceUniqueID['Value']
+    ceFactory = ComputingElementFactory( ceUniqueID )
+    self.ceName = ceUniqueID
     ceInstance = ceFactory.getCE()
     if not ceInstance['OK']:
       self.log.warn( ceInstance['Message'] )
       return ceInstance
 
     self.computingElement = ceInstance['Value']
-    self.siteRoot = gConfig.getValue( 'LocalSite/Root', os.getcwd() )
-    self.siteName = gConfig.getValue( 'LocalSite/Site', 'Unknown' )
-    self.pilotReference = gConfig.getValue( 'LocalSite/PilotReference', 'Unknown' )
+    #Localsite options
+    self.siteRoot = gConfig.getValue( '/LocalSite/Root', os.getcwd() )
+    self.siteName = gConfig.getValue( '/LocalSite/Site', 'Unknown' )
+    self.pilotReference = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
+    self.defaultProxyLength = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400 * 5 )
+    #Agent options
     # This is the factor to convert raw CPU to Normalized units (based on the CPU Model)
-    self.cpuFactor = gConfig.getValue( 'LocalSite/CPUNormalizationFactor', 0.0 )
+    self.cpuFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', 0.0 )
     self.jobWrapperTemplate = os.path.join( self.siteRoot,
-                                            self.am_getOption( 'JobWrapperTemplate', 
+                                            self.am_getOption( 'JobWrapperTemplate',
                                                                '/DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py' ) )
     self.jobSubmissionDelay = self.am_getOption( 'SubmissionDelay', 10 )
-    self.defaultProxyLength = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400 * 5 )
     self.defaultLogLevel = self.am_getOption( 'DefaultLogLevel', 'info' )
     self.fillingMode = self.am_getOption( 'FillingModeFlag', False )
     self.jobCount = 0
+    #Timeleft
     self.timeLeftUtil = TimeLeft()
     self.timeLeft = gConfig.getValue( '/Resources/Computing/CEDefaults/MaxCPUTime', 0.0 )
     self.timeLeftError = ''
     self.scaledCPUTime = 0.0
-    return result
+    return S_OK()
 
   #############################################################################
   def execute( self ):
