@@ -94,9 +94,17 @@ class AgentReactor:
         continue
       agent = self.__agentModules[ agentName ][ 'instance' ]
       stopAgentFile = os.path.join( agent.am_getOption( 'ControlDirectory' ), 'stop_agent' )
-      if os.path.exists( stopAgentFile ):
-        gLogger.info( "Stopping agent module %s because of control file %s" % ( agentName, stopAgentFile ) )
+      
+      alive = agent.am_getModuleParam( 'Alive' )
+      if alive:
+        if os.path.isfile( stopAgentFile ):
+          gLogger.info( "Found control file %s for agent" % ( stopAgentFile, agentName ) )
+          alive = False
+          
+      if not alive:
+        gLogger.info( "Stopping agent module %s" % ( agentName ) )
         self.__scheduler.removeTask( self.__agentModules[ agentName ][ 'taskId' ] )
         del( self.__tasks[ self.__agentModules[ agentName ][ 'taskId' ] ] )
         self.__agentModules[ agentName ][ 'running' ] = False
-        os.unlink( stopAgentFile )
+        if os.path.isfile( stopAgentFile ):
+          os.unlink( stopAgentFile )
