@@ -107,7 +107,7 @@ class ThreadScheduler:
 
   def executeNextTask(self):
     if not self.__hood:
-      return False
+      return None
     timeToWait = self.__timeToNextTask()
     if timeToWait and timeToWait > 0:
       return timeToWait
