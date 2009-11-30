@@ -347,7 +347,7 @@ else:
 
 #LCG utils if required
 if cliParams.lcgVer:
-  tarBallName = "DIRAC-lcg-%s-%s-%s" % ( cliParams.lcgVer, cliParams.platform, cliParams.pythonVersion )
+  tarBallName = "DIRAC-lcg-%s-%s-python%s" % ( cliParams.lcgVer, cliParams.platform, cliParams.pythonVersion )
   if not downloadAndExtractTarball( tarBallName, cliParams.targetPath, "lcgBundles", False ):
     logERROR( "Check that there is a release for your platform: %s" % tarBallName )
                                          
