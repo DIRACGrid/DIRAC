@@ -63,7 +63,8 @@ class AgentReactor:
         return S_ERROR( "Can't load agent %s in root modules %s" % ( fullName, rootModulesToLook ) )
     self.__agentModules[ fullName ] = { 'instance' : agent,
                                         'class' : agentClass,
-                                        'module' : agentModule }
+                                        'module' : agentModule,
+                                        'running' : False }
     agentPeriod = agent.am_getPollingTime()
     result = self.__scheduler.addPeriodicTask( agentPeriod,
                                                agent.am_go,
@@ -71,9 +72,11 @@ class AgentReactor:
                                                elapsedTime = agentPeriod  )
     if not result[ 'OK' ]:
       return result
+    
     taskId = result[ 'Value' ]
     self.__tasks[ result[ 'Value' ] ] = fullName
     self.__agentModules[ fullName ][ 'taskId' ] = taskId
+    self.__agentModules[ fullName ][ 'running' ] = True
     return S_OK()
 
   def go(self):
@@ -87,12 +90,12 @@ class AgentReactor:
 
   def __checkControlDir( self ):
     for agentName in self.__agentModules:
+      if not self.__agentModules[ agentName ][ 'running' ]:
+        continue
       agent = self.__agentModules[ agentName ][ 'instance' ]
       stopAgentFile = os.path.join( agent.am_getOption( 'ControlDirectory' ), 'stop_agent' )
       if os.path.exists( stopAgentFile ):
         gLogger.info( "Stopping agent module %s because of control file %s" % ( agentName, stopAgentFile ) )
-        self.__scheduler.removeTask( self.__agentModules[ agentName ][ 'taskId ' ] )
-        del( self.__tasks[ self.__agentModules[ agentName ][ 'taskId ' ] ] )
-
-
-
+        self.__scheduler.removeTask( self.__agentModules[ agentName ][ 'taskId' ] )
+        del( self.__tasks[ self.__agentModules[ agentName ][ 'taskId' ] ] )
+        self.__agentModules[ agentName ][ 'running' ] = False
