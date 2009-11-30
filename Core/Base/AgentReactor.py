@@ -1,8 +1,9 @@
 
 import time
 import os
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig, rootPath
 from DIRAC.Core.Utilities import ThreadScheduler
+from DIRAC.Core.Base.AgentModule import AgentModule
 
 class AgentReactor:
 
@@ -40,8 +41,12 @@ class AgentReactor:
     for rootModule in rootModulesToLook:
       if moduleLoaded:
         break
+      gLogger.verbose( "Trying to load from root module %s" % rootModule )
+      moduleFile = os.path.join( rootPath, rootModule, "%sSystem" % system, "Agent", "%s.py" % agentName )
+      gLogger.verbose( "Looking for file %s" % moduleFile )
+      if not os.path.isfile( moduleFile ):
+        continue
       try:
-        gLogger.verbose( "Trying to load from root module %s" % rootModule )
         importString = '%s.%sSystem.Agent.%s' % ( rootModule, system, agentName )
         gLogger.debug( "Trying to load %s" % importString )
         agentModule = __import__( importString,
@@ -52,15 +57,18 @@ class AgentReactor:
           gLogger.error( "Invalid Agent module", "%s has to inherit from AgentModule" % fullName )
           continue
         agent = agentClass( fullName, self.__baseAgentName )
+        if not isinstance( agent, AgentModule ):
+          gLogger.error( "%s is not a subclass of AgentModule" % moduleFile )
+          continue
         result = agent.am_initialize()
         if not result[ 'OK' ]:
-          return S_ERROR( "Error while calling initialize method of %s: %s" %( fullName, result[ 'Message' ] ) )
+          return S_ERROR( "Error while calling initialize method of %s: %s" % ( fullName, result[ 'Message' ] ) )
         moduleLoaded = True
       except Exception, e:
         if not hideExceptions:
           gLogger.exception( "Can't load agent %s" % fullName )
     if not moduleLoaded:
-        return S_ERROR( "Can't load agent %s in root modules %s" % ( fullName, rootModulesToLook ) )
+        return S_ERROR( "Can't load agent %s in root modules %s" % ( fullName, ", ".join ( rootModulesToLook ) ) )
     self.__agentModules[ fullName ] = { 'instance' : agent,
                                         'class' : agentClass,
                                         'module' : agentModule,
@@ -69,17 +77,17 @@ class AgentReactor:
     result = self.__scheduler.addPeriodicTask( agentPeriod,
                                                agent.am_go,
                                                executions = agent.am_getMaxCycles(),
-                                               elapsedTime = agentPeriod  )
+                                               elapsedTime = agentPeriod )
     if not result[ 'OK' ]:
       return result
-    
+
     taskId = result[ 'Value' ]
     self.__tasks[ result[ 'Value' ] ] = fullName
     self.__agentModules[ fullName ][ 'taskId' ] = taskId
     self.__agentModules[ fullName ][ 'running' ] = True
     return S_OK()
 
-  def go(self):
+  def go( self ):
     while self.__alive:
       self.__checkControlDir()
       timeToNext = self.__scheduler.executeNextTask()
@@ -94,13 +102,13 @@ class AgentReactor:
         continue
       agent = self.__agentModules[ agentName ][ 'instance' ]
       stopAgentFile = os.path.join( agent.am_getOption( 'ControlDirectory' ), 'stop_agent' )
-      
+
       alive = agent.am_getModuleParam( 'Alive' )
       if alive:
         if os.path.isfile( stopAgentFile ):
           gLogger.info( "Found control file %s for agent" % ( stopAgentFile, agentName ) )
           alive = False
-          
+
       if not alive:
         gLogger.info( "Stopping agent module %s" % ( agentName ) )
         self.__scheduler.removeTask( self.__agentModules[ agentName ][ 'taskId' ] )
