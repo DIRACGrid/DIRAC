@@ -580,7 +580,7 @@ class JobAgent( AgentModule ):
     """
     self.log.info( 'JobAgent will stop with message "%s", execution complete.' % message )
     try:
-      fd = open( self.controlDir + '/stop_agent', 'w' )
+      fd = open( os.path.join( self.am_getOption( 'ControlDirectory' ), 'stop_agent' ), 'w' )
       fd.write( 'JobAgent Stopped at %s [UTC]' % ( time.asctime( time.gmtime() ) ) )
       fd.close()
     except:
