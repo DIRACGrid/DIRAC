@@ -63,6 +63,7 @@ class AgentModule:
     self.__moduleProperties[ 'executors' ] = [ ( self.execute, () ) ]
     self.__moduleProperties[ 'shifterProxy' ] = False
     self.__moduleProperties[ 'shifterProxyLocation' ] = False
+    self.__moduleProperties[ 'Alive' ] = True
 
     self.__initializeMonitor()
     self.__initialized = False
