@@ -6,8 +6,10 @@
      sites to the Monitoring system to create historical plots.
 """
 
+__RCSID__ = "$Id$"
+
 from DIRAC  import gLogger, gConfig, gMonitor,S_OK, S_ERROR
-from DIRAC.Core.Base.Agent import Agent
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.Core.Utilities import Time
 
@@ -18,17 +20,10 @@ MONITOR_SITES = ['LCG.CERN.ch','LCG.IN2P3.fr','LCG.RAL.uk','LCG.CNAF.it',
                  'LCG.GRIDKA.de','LCG.NIKHEF.nl','LCG.PIC.es','All sites']
 MONITOR_STATUS = ['Running','Stalled','Done','Failed']
 
-class JobHistoryAgent(Agent):
-
-  def __init__(self):
-    """ Standard constructor
-    """
-    Agent.__init__( self, AGENT_NAME, initializeMonitor = True )
+class JobHistoryAgent(AgentModule):
 
   def initialize(self):
-    result = Agent.initialize(self)
-    if not result[ 'OK' ]:
-      return result
+
     self.jobDB = JobDB()
 
     for status in MONITOR_STATUS:
