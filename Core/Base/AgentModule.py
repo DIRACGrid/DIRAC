@@ -208,7 +208,7 @@ class AgentModule:
     mD = self.am_getMaxCycles()
     if mD > 0:
       cD = self.__moduleProperties[ 'cyclesDone' ]
-      self.log.info( "Remaining %s of % cycles" % ( mD - cD, mD ) )
+      self.log.info( "Remaining %s of %s cycles" % ( mD - cD, mD ) )
     self.log.info( "-"*40 )
     elapsedTime = time.time()
     cpuStats = self.__startReportToMonitoring()
