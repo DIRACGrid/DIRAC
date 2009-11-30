@@ -84,13 +84,13 @@ def executeAndGetOutput( cmd ):
     p = subprocess.Popen( "%s" % cmd, shell = True, stdout=subprocess.PIPE, 
                           stderr=subprocess.PIPE, close_fds = True )
     outData = p.stdout.read().strip()
-    p.wait()
+    returnCode = p.wait()
   except ImportError:
     import popen2
     p3 = popen2.Popen3( "%s" % cmd )
     outData = p3.fromchild.read().strip()
-    p3.wait()
-  return outData
+    returnCode = p3.wait()
+  return ( returnCode, outData )
 
 # Version print
 
@@ -280,13 +280,15 @@ configureOpts.append( '-o /LocalSite/GridMiddleware=%s' % cliParams.flavour )
 ###
 # Try to get the CE name
 ###
+cliParams.ceName = 'Local'
 if pilotRef != 'Unknown':
-  CE = executeAndGetOutput( 'edg-brokerinfo getCE || glite-brokerinfo getCE' )
-  cliParams.ceName = CE.split( ':' )[0]
-  configureOpts.append( '-o /LocalSite/PilotReference=%s' % pilotRef )
-  configureOpts.append( '-N "%s"' % cliParams.ceName )
-else:
-  cliParams.ceName = 'Local'
+  retCode, CE = executeAndGetOutput( 'edg-brokerinfo getCE || glite-brokerinfo getCE' )
+  if not retCode:
+    cliParams.ceName = CE.split( ':' )[0]
+    configureOpts.append( '-o /LocalSite/PilotReference=%s' % pilotRef )
+    configureOpts.append( '-N "%s"' % cliParams.ceName )
+  else:
+    logERROR( "There was an error executing brokerinfo. Setting ceName to local " )
 
 ###
 # Set the platform if defined
@@ -389,18 +391,18 @@ if cliParams.testVOMSOK:
 
 architectureScriptName = "dirac-architecture"
 architectureScript = ""
-for entry in os.listdir( rootPath ):
-  if entry.find( "DIRAC" ) == -1:
-    continue
-  candidate = os.path.join( entry, "scripts", architectureScriptName )
-  if os.path.isfile( candidate ):
-    architectureScript = candidate
+candidate = os.path.join( rootPath, "scripts", architectureScriptName )
+if os.path.isfile( candidate ):
+  architectureScript = candidate
 
 if architectureScript:
-  lhcbArchitecture = executeAndGetOutput( architectureScript ).strip()
-  os.environ['CMTCONFIG'] = lhcbArchitecture
-  dirac.logINFO( 'Setting CMTCONFIG=%s' % lhcbArchitecture )
-  os.system( "%s -f %s -o '/LocalSite/Architecture=%s'" % ( cacheScript, lhcbArchitecture ) )
+  retCode, lhcbArchitecture = executeAndGetOutput( architectureScript ).strip()
+  if not retCode:
+    os.environ['CMTCONFIG'] = lhcbArchitecture
+    logINFO( 'Setting CMTCONFIG=%s' % lhcbArchitecture )
+    os.system( "%s -f %s -o '/LocalSite/Architecture=%s'" % ( cacheScript, lhcbArchitecture ) )
+  else:
+    logERROR( "There was an error calling %s" % architectureScript )
 #
 # Get host and local user info
 #
@@ -493,25 +495,31 @@ if pilotRef != 'Unknown':
   logINFO( 'CE = %s' % cliParams.ceName )
   logINFO( 'LCG_SITE_CE = %s' % cliParams.site )
 
-  queueNormList = executeAndGetOutput( 'dirac-wms-get-queue-normalization %s' % cliParams.ceName )
-  queueNormList = queueNormList.strip().split( ' ' )
-  if len( queueNormList ) == 2:
-    queueNorm = float( queueNormList[1] )
-    logINFO( 'Queue Normalization = %s SI00' % queueNorm )
-    if queueNorm:
-      # Update the local normalization factor: We are using seconds @ 500 SI00
-      # This is the ratio SpecInt published by the site over 500 (the reference used for Matching)
-      os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( cacheScript, cfgFile, queueNorm / 500. ) )
+  retCode, queueNormList = executeAndGetOutput( 'dirac-wms-get-queue-normalization %s' % cliParams.ceName )
+  if not retCode:
+    queueNormList = queueNormList.strip().split( ' ' )
+    if len( queueNormList ) == 2:
+      queueNorm = float( queueNormList[1] )
+      logINFO( 'Queue Normalization = %s SI00' % queueNorm )
+      if queueNorm:
+        # Update the local normalization factor: We are using seconds @ 500 SI00
+        # This is the ratio SpecInt published by the site over 500 (the reference used for Matching)
+        os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( cacheScript, cfgFile, queueNorm / 500. ) )
+    else:
+      logERROR( 'Fail to get Normalization of the Queue' )
   else:
-    logERROR( 'Fail to get Normalization of the Queue' )
+    logERROR( "There was an error calling dirac-wms-get-queue-normalization" )
 
-  queueLength = executeAndGetOutput( 'dirac-wms-get-normalized-queue-length %s' % cliParams.ceName )
-  queueNormList = queueLength.strip().split( ' ' )
-  if len( queueLength ) == 2:
-    cliParams.jobCPUReq = float( queueLength[1] )
-    logINFO( 'Normalized Queue Length = %s' % cliParams.jobCPUReq )
+  retCode, queueLength = executeAndGetOutput( 'dirac-wms-get-normalized-queue-length %s' % cliParams.ceName )
+  if not retCode:
+    queueLength = queueLength.strip().split( ' ' )
+    if len( queueLength ) == 2:
+      cliParams.jobCPUReq = float( queueLength[1] )
+      logINFO( 'Normalized Queue Length = %s' % cliParams.jobCPUReq )
+    else:
+      logERROR( 'Failed to get Normalized length of the Queue' )
   else:
-    logERROR( 'Failed to get Normalized length of the Queue' )
+    logERROR( "There was an error calling dirac-wms-get-normalized-queue-length" )
 
 #
 # further local configuration
