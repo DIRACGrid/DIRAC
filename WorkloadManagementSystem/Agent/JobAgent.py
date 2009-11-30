@@ -51,6 +51,7 @@ class JobAgent( AgentModule ):
       return ceInstance
 
     self.computingElement = ceInstance['Value']
+    self.diracRoot = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( __file__ ) ) ) )
     #Localsite options
     self.siteRoot = gConfig.getValue( '/LocalSite/Root', os.getcwd() )
     self.siteName = gConfig.getValue( '/LocalSite/Site', 'Unknown' )
@@ -59,9 +60,9 @@ class JobAgent( AgentModule ):
     #Agent options
     # This is the factor to convert raw CPU to Normalized units (based on the CPU Model)
     self.cpuFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', 0.0 )
-    self.jobWrapperTemplate = os.path.join( self.siteRoot,
+    self.jobWrapperTemplate = os.path.join( self.diracRoot,
                                             self.am_getOption( 'JobWrapperTemplate',
-                                                               '/DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py' ) )
+                                                               'DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py' ) )
     self.jobSubmissionDelay = self.am_getOption( 'SubmissionDelay', 10 )
     self.defaultLogLevel = self.am_getOption( 'DefaultLogLevel', 'info' )
     self.fillingMode = self.am_getOption( 'FillingModeFlag', False )
