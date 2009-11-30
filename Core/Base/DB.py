@@ -119,7 +119,7 @@ class DB(MySQL):
     return condition
 
 #########################################################################################
-  def getCounters(self, table, attrList, condDict, older=None, newer=None, timeStamp=None):
+  def getCounters(self, table, attrList, condDict, older=None, newer=None, timeStamp=None, connection=False):
     """ Count the number of records on each distinct combination of AttrList, selected
         with condition defined by condDict and time stamps
     """
@@ -127,7 +127,7 @@ class DB(MySQL):
     cond = self.buildCondition( condDict, older, newer, timeStamp)
     attrNames = ','.join(map(lambda x: str(x),attrList ))
     cmd = 'SELECT %s,COUNT(*) FROM %s %s GROUP BY %s ORDER BY %s' % (attrNames,table,cond,attrNames,attrNames)
-    result = self._query( cmd )
+    result = self._query( cmd , connection)
     if not result['OK']:
       return result
 
@@ -141,16 +141,15 @@ class DB(MySQL):
     return S_OK(resultList)
 
 #############################################################################
-  def getDistinctAttributeValues(self,table,attribute,condDict = {}, older = None, newer=None, timeStamp=None):
+  def getDistinctAttributeValues(self,table,attribute,condDict = {}, older = None, newer=None, timeStamp=None, connection=False):
     """ Get distinct values of a table attribute under specified conditions
     """
 
     cmd = 'SELECT  DISTINCT(%s) FROM %s ORDER BY %s' % (attribute,table,attribute)
     cond = self.buildCondition( condDict, older=older, newer=newer, timeStamp=timeStamp )
-    result = self._query( cmd + cond )
+    result = self._query( cmd + cond , connection)
     if not result['OK']:
       return result
-
     attr_list = [ x[0] for x in result['Value'] ]
     return S_OK(attr_list)
 
