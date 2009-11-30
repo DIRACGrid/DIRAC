@@ -22,7 +22,7 @@ from DIRAC.Core.Workflow.Workflow import *
 from DIRAC.Core.Workflow.WorkflowReader import *
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
-from DIRAC.ProductionManagementSystem.Client.FileReport import FileReport
+from DIRAC.TransformationSystem.Client.FileReport import FileReport
 from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 
