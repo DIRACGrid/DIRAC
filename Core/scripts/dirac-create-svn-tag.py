@@ -125,7 +125,7 @@ for svnProject in List.fromChar( svnProjects ):
     gLogger.info( "Tagging packages: %s" % ", ".join( packageList ) )
     msg = '"Release %s"' % svnVersion
     versionPath = svnSshRoot % ( svnUsername, '%s/tags/%s/%s_%s' % ( svnProject, svnProject, svnProject, svnVersion ) )
-    mkdirCmd = "svn --parents -m %s mkdir '%s'" % ( msg, versionPath )
+    mkdirCmd = "svn -m %s mkdir '%s'" % ( msg, versionPath )
     cpCmds = []
     for extra in buildCFG.getOption( 'packageExtraFiles', ['__init__.py', 'versions.cfg'] ):
       source = svnSshRoot % ( svnUsername, '%s/trunk/%s/%s'  % ( svnProject, svnProject, extra ) )
