@@ -207,7 +207,7 @@ class AgentModule:
     self.log.info( "Starting cycle for module %s" % self.__moduleProperties[ 'fullName' ] )
     mD = self.am_getMaxCycles()
     if mD > 0:
-      cD = self.self.__moduleProperties[ 'cyclesDone' ]
+      cD = self.__moduleProperties[ 'cyclesDone' ]
       self.log.info( "Remaining %s of % cycles" % ( mD - cD, mD ) )
     self.log.info( "-"*40 )
     elapsedTime = time.time()
