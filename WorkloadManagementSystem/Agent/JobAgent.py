@@ -38,14 +38,10 @@ class JobAgent( AgentModule ):
     self.am_setOption( 'MaxCycles', loops )
     
     ceUniqueID = self.am_getOption( 'CEUniqueID', 'InProcess' )
-    if not ceUniqueID['OK']:
-      self.log.warn( ceUniqueID['Message'] )
-      return ceUniqueID
     localCE = gConfig.getOption( '/LocalSite/LocalCE', '' )
-    if localCE['OK']:
-      if localCE['Value']:
-        self.log.info( 'Defining CE from local configuration = %s' % localCE['Value'] )
-        ceUniqueID = localCE
+    if localCE:
+      self.log.info( 'Defining CE from local configuration = %s' % localCE['Value'] )
+      ceUniqueID = localCE
 
     ceFactory = ComputingElementFactory( ceUniqueID['Value'] )
     self.ceName = ceUniqueID['Value']
