@@ -148,7 +148,6 @@ class Watchdog:
       #print self.parameters
       self.__getUsageSummary()
       self.log.info('Process to monitor has completed, Watchdog will exit.')
-      self.__finish()
       return S_OK()
 
     if self.littleTimeLeft:
@@ -159,7 +158,6 @@ class Watchdog:
         self.checkError = 'Job has reached the CPU limit of the queue'
         self.__killRunningThread()
         self.__getUsageSummary()
-        self.__finish()
         return S_OK()
       else:
         self.littleTimeLeftCount -= self.littleTimeLeftCount - 1
@@ -240,7 +238,6 @@ class Watchdog:
 
       self.__killRunningThread()
       self.__getUsageSummary()
-      self.__finish()
       return S_OK()
 
     recentStdOut = 'None'
@@ -320,7 +317,6 @@ class Watchdog:
         self.checkError = 'Received Kill signal'
         self.__killRunningThread()
         self.__getUsageSummary()
-        self.__finish()
       else:
         self.log.info('The following control signal was sent but not understood by the watchdog:')
         self.log.info(signalDict)
@@ -648,20 +644,6 @@ class Watchdog:
         timeLeft = -1
 
     return timeLeft
-
-  #############################################################################
-  def __finish(self):
-    """Force the Watchdog to complete gracefully.
-    """
-    self.log.info('Watchdog has completed monitoring of the task')
-    if not os.path.exists(self.controlDir):
-      try:
-        os.makedirs(self.controlDir)
-      except Exception,x:
-        self.log.error('Watchdog could not create control directory',self.controlDir)
-    fd = open(self.controlDir+'/stop_agent','w')
-    fd.write('Watchdog Agent Stopped at %s [UTC]' % (time.asctime(time.gmtime())))
-    fd.close()
 
   #############################################################################
   def __getUsageSummary(self):
