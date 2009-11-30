@@ -20,7 +20,6 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.ConfigurationSystem.Client.Config            import gConfig
 from DIRAC.Core.Utilities.Subprocess                    import shellCall
@@ -31,15 +30,13 @@ from DIRAC.Core.Utilities.TimeLeft.TimeLeft             import TimeLeft
 
 import os,thread,time,shutil
 
-AGENT_NAME = 'WorkloadManagement/Watchdog'
-
-class Watchdog(Agent):
+class Watchdog:
 
   #############################################################################
   def __init__(self, pid, exeThread, spObject, jobCPUtime, systemFlag='linux2.4'):
     """ Constructor, takes system flag as argument.
     """
-    Agent.__init__(self,AGENT_NAME)
+
     self.systemFlag = systemFlag
     self.exeThread = exeThread
     self.wrapperPID = pid
@@ -65,11 +62,16 @@ class Watchdog(Agent):
       return S_OK()
     else:
       self.initialized = True
+      
+    setup = gConfig.getValue('/DIRAC/Setup','')  
+    if not setup:
+      return S_ERROR('Can not get the DIRAC Setup value')
+    wms_instance = gConfig.getValue('/DIRAC/Setups/%s/WorkloadManagement' % setup,'') 
+    if not wms_setup:
+      return S_ERROR('Can not get the WorkloadManagement system instance')
+    self.section = '/Systems/WorkloadManagement/%s/JobWrapper' % wms_instance
 
     self.maxcount = loops
-    result = Agent.initialize(self)
-    if os.path.exists(self.controlDir+'/stop_agent'):
-      os.remove(self.controlDir+'/stop_agent')
     self.log.verbose('Watchdog initialization')
     self.log.info('Attempting to Initialize Watchdog for: %s' % (self.systemFlag))
     #Test control flags
@@ -107,6 +109,35 @@ class Watchdog(Agent):
     self.timeLeft = 0
     self.littleTimeLeft = False
     return result
+  
+  def run(self):
+    """ The main watchdog execution method
+    """
+
+    result = self.initialize()
+    if not result['OK']:
+      gLogger.always('Can not start wtchdog for the following reason')
+      gLogger.always(result['Message'])
+      return result
+
+    try:
+      while True:
+        gLogger.debug('Starting agent loop # %d' % self.count)
+        start_cycle_time = time.time()
+        result = self.execute()
+        exec_cycle_time = time.time() - start_cycle_time
+        if not result[ 'OK' ]:
+          gLogger.error( "Watchdog error during execution", result[ 'Message' ] )
+          break
+        elif result['Value'] == "Ended":
+          break
+        self.count += 1
+        if exec_cycle_time < self.pollingTime:
+          time.sleep( self.pollingTime - exec_cycle_time )
+      return S_OK()    
+    except Exception,x:
+      gLogger.exception()
+      return S_ERROR('Exception')
 
   #############################################################################
   def execute(self):
