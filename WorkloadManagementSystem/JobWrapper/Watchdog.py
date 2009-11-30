@@ -109,7 +109,7 @@ class Watchdog:
     self.timeLeftUtil = TimeLeft()
     self.timeLeft = 0
     self.littleTimeLeft = False
-    return result
+    return S_OK()
   
   def run(self):
     """ The main watchdog execution method
