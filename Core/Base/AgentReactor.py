@@ -99,3 +99,4 @@ class AgentReactor:
         self.__scheduler.removeTask( self.__agentModules[ agentName ][ 'taskId' ] )
         del( self.__tasks[ self.__agentModules[ agentName ][ 'taskId' ] ] )
         self.__agentModules[ agentName ][ 'running' ] = False
+        os.unlink( stopAgentFile )
