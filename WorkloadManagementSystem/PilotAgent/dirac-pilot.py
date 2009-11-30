@@ -94,7 +94,8 @@ def executeAndGetOutput( cmd ):
 
 # Version print
 
-logINFO( "Running %s" % __RCSID__ )
+logINFO( "Running %s" % " ".join( sys.argv ) )
+logINFO( "Version %s" % __RCSID__ )
 
 ###
 # Checking scripts are ok
@@ -282,8 +283,6 @@ configureOpts.append( '-o /LocalSite/GridMiddleware=%s' % cliParams.flavour )
 if pilotRef != 'Unknown':
   CE = executeAndGetOutput( 'edg-brokerinfo getCE || glite-brokerinfo getCE' )
   cliParams.ceName = CE.split( ':' )[0]
-  child.stdout.close()
-  child.stderr.close()
   configureOpts.append( '-o /LocalSite/PilotReference=%s' % pilotRef )
   configureOpts.append( '-N "%s"' % cliParams.ceName )
 else:
@@ -505,8 +504,6 @@ if pilotRef != 'Unknown':
       os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( cacheScript, cfgFile, queueNorm / 500. ) )
   else:
     logERROR( 'Fail to get Normalization of the Queue' )
-  child_stdout.close()
-  child_stderr.close()
 
   queueLength = executeAndGetOutput( 'dirac-wms-get-normalized-queue-length %s' % cliParams.ceName )
   queueNormList = queueLength.strip().split( ' ' )
@@ -515,8 +512,6 @@ if pilotRef != 'Unknown':
     logINFO( 'Normalized Queue Length = %s' % cliParams.jobCPUReq )
   else:
     logERROR( 'Failed to get Normalized length of the Queue' )
-  child_stdout.close()
-  child_stderr.close()
 
 #
 # further local configuration
