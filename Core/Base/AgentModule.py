@@ -30,7 +30,7 @@ from DIRAC.Core.Utilities import Time
 class AgentModule:
 
   def __init__( self, agentName, baseAgentName = False, properties = {} ):
-    if baseName and agentName == baseAgentName:
+    if baseAgentName and agentName == baseAgentName:
       self.log = gLogger
       standaloneModule = True
     else:
