@@ -77,7 +77,7 @@ class Job:
     self.stdout = 'std.out'
     self.stderr = 'std.err'
     self.logLevel = 'info'
-    self.executable = '$DIRACROOT/scripts/jobexec' # to be clarified
+    self.executable = '$DIRACROOT/scripts/dirac-jobexec' # to be clarified
     self.addToInputSandbox = []
     self.addToOutputSandbox = []
     self.addToInputData = []
