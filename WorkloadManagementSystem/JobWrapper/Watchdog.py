@@ -22,9 +22,10 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.ConfigurationSystem.Client.Config            import gConfig
+from DIRAC.ConfigurationSystem.Client.PathFinder        import getSystemInstance
 from DIRAC.Core.Utilities.Subprocess                    import shellCall
 from DIRAC.Core.Utilities.ProcessMonitor                import ProcessMonitor
-from DIRAC                                              import S_OK, S_ERROR
+from DIRAC                                              import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security                                import Properties
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft             import TimeLeft
 
@@ -36,7 +37,7 @@ class Watchdog:
   def __init__(self, pid, exeThread, spObject, jobCPUtime, systemFlag='linux2.4'):
     """ Constructor, takes system flag as argument.
     """
-
+    self.log = gLogger.getSubLogger( "Watchdog" )
     self.systemFlag = systemFlag
     self.exeThread = exeThread
     self.wrapperPID = pid
@@ -66,8 +67,8 @@ class Watchdog:
     setup = gConfig.getValue('/DIRAC/Setup','')  
     if not setup:
       return S_ERROR('Can not get the DIRAC Setup value')
-    wms_instance = gConfig.getValue('/DIRAC/Setups/%s/WorkloadManagement' % setup,'') 
-    if not wms_setup:
+    wms_instance = getSystemInstance( "WorkloadManagement" )
+    if not wms_instance:
       return S_ERROR('Can not get the WorkloadManagement system instance')
     self.section = '/Systems/WorkloadManagement/%s/JobWrapper' % wms_instance
 
