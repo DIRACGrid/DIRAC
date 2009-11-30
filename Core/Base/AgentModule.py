@@ -133,11 +133,11 @@ class AgentModule:
       raise Exception('Can not create %s at %s' % ( name, path ) )
 
   def am_getOption( self, optionName, defaultValue = False ):
-    if optionName and optionName[0] == "/":
-      return gConfig.getValue( optionName, defaultValue )
     if not defaultValue:
       if optionName in self.__configDefaults:
         defaultValue = self.__configDefaults[ optionName ]
+    if optionName and optionName[0] == "/":
+      return gConfig.getValue( optionName, defaultValue )
     return gConfig.getValue( "%s/%s" % ( self.__moduleProperties[ 'section' ], optionName ), defaultValue )
 
   def am_setOption( self, optionName, value ):
@@ -160,7 +160,7 @@ class AgentModule:
     return self.am_getOption( "Enabled" )
 
   def am_MonitoringEnabled(self):
-    return self.am_getOption( "MonitoringEnabled" )
+    return self.am_getOption( "MonitoringEnabled", 'true' )
 
   def __initializeMonitor( self ):
     """
