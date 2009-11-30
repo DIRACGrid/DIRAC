@@ -282,8 +282,8 @@ configureOpts.append( '-o /LocalSite/GridMiddleware=%s' % cliParams.flavour )
 if pilotRef != 'Unknown':
   CE = executeAndGetOutput( 'edg-brokerinfo getCE || glite-brokerinfo getCE' )
   cliParams.ceName = CE.split( ':' )[0]
-  child_stdout.close()
-  child_stderr.close()
+  child.stdout.close()
+  child.stderr.close()
   configureOpts.append( '-o /LocalSite/PilotReference=%s' % pilotRef )
   configureOpts.append( '-N "%s"' % cliParams.ceName )
 else:
