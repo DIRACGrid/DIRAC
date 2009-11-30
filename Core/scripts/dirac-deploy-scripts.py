@@ -13,7 +13,7 @@ import re
 moduleSuffix = "DIRAC"
 defaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 excludeMask = [ '__init__.py' ]  
-simpleCopyMask = [ os.path.basename( __file__ ), 'dirac-compile-externals.py' ]
+simpleCopyMask = [ os.path.basename( __file__ ), 'dirac-compile-externals.py', 'dirac-install.py' ]
 
 wrapperTemplate = """#!/usr/bin/env python
 #
