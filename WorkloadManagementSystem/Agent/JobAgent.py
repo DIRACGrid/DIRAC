@@ -315,7 +315,7 @@ class JobAgent( AgentModule ):
     self.__report( jobID, 'Matched', 'Installing Software' )
     softwareDist = jobParams['SoftwareDistModule']
     #HACK: Delete when svn repo is in production!
-    softwareDist.replace( "DIRAC.LHCbSystem.", "LHCbDIRAC.Core." )
+    softwareDist = softwareDist.replace( "DIRAC.LHCbSystem.", "LHCbDIRAC.Core." )
     #END OF HACK
     self.log.verbose( 'Found VO Software Distribution module: %s' % ( softwareDist ) )
     argumentsDict = {'Job':jobParams, 'CE':resourceParams}
