@@ -273,4 +273,4 @@ class SandboxStoreClient:
     if prefix:
       prefix="%s-" % prefix
     setup = gConfig.getValue( "/DIRAC/Setup", "Default" )
-    return gConfig.getValue( "/DIRAC/%s%s-UseOldSandboxes" % ( prefix, setup ), True )
+    return gConfig.getValue( "/DIRAC/%s%s-UseOldSandboxes" % ( prefix, setup ), Flase )
