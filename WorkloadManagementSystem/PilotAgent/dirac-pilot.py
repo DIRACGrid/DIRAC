@@ -60,7 +60,7 @@ class CliParams:
     self.maxCycles = CliParams.MAX_CYCLES
     self.flavour = 'DIRAC'
     self.gridVersion = '2009-08-13'
-    
+
 ###
 # Helper functions
 ###
@@ -77,12 +77,12 @@ def logERROR( msg ):
 def logINFO( msg ):
   for line in msg.split( "\n" ):
     print "[INFO]  %s" % line
-    
+
 def executeAndGetOutput( cmd ):
   try:
     import subprocess
-    p = subprocess.Popen( "%s" % cmd, shell = True, stdout=subprocess.PIPE, 
-                          stderr=subprocess.PIPE, close_fds = True )
+    p = subprocess.Popen( "%s" % cmd, shell = True, stdout = subprocess.PIPE,
+                          stderr = subprocess.PIPE, close_fds = True )
     outData = p.stdout.read().strip()
     returnCode = p.wait()
   except ImportError:
@@ -259,7 +259,7 @@ for o, v in optList:
 
 if cliParams.gridVersion:
   installOpts.append( "-g '%s'" % cliParams.gridVersion )
-  
+
 if cliParams.pythonVersion:
   installOpts.append( '-i "%s"' % cliParams.pythonVersion )
 ##
@@ -396,11 +396,12 @@ if os.path.isfile( candidate ):
   architectureScript = candidate
 
 if architectureScript:
-  retCode, lhcbArchitecture = executeAndGetOutput( architectureScript ).strip()
+  retCode, lhcbArchitecture = executeAndGetOutput( architectureScript )
   if not retCode:
+    lhcbArchitecture = lhcbArchitecture.strip()
     os.environ['CMTCONFIG'] = lhcbArchitecture
     logINFO( 'Setting CMTCONFIG=%s' % lhcbArchitecture )
-    os.system( "%s -f %s -o '/LocalSite/Architecture=%s'" % ( cacheScript, lhcbArchitecture ) )
+    os.system( "%s -f %s -o '/LocalSite/Architecture=%s'" % ( cacheScript, cfgFile, lhcbArchitecture ) )
   else:
     logERROR( "There was an error calling %s" % architectureScript )
 #
@@ -570,7 +571,7 @@ diracAgentScript = os.path.join( rootPath, "scripts", "dirac-agent" )
 jobAgent = '%s WorkloadManagement/JobAgent %s %s %s' % ( diracAgentScript,
                                                          " ".join( jobAgentOpts ),
                                                          " ".join( inProcessOpts ),
-                                                         " ".join( extraCFG ) ) 
+                                                         " ".join( extraCFG ) )
 
 logINFO( "JobAgent execution command:\n%s" % jobAgent )
 
