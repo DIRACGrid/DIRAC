@@ -400,7 +400,7 @@ if architectureScript:
   lhcbArchitecture = executeAndGetOutput( architectureScript ).strip()
   os.environ['CMTCONFIG'] = lhcbArchitecture
   dirac.logINFO( 'Setting CMTCONFIG=%s' % lhcbArchitecture )
-
+  os.system( "%s -f %s -o '/LocalSite/Architecture=%s'" % ( cacheScript, lhcbArchitecture ) )
 #
 # Get host and local user info
 #
