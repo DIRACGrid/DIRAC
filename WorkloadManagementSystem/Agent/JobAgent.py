@@ -315,6 +315,10 @@ class JobAgent( AgentModule ):
     softwareDist = jobParams['SoftwareDistModule']
     self.log.verbose( 'Found VO Software Distribution module: %s' % ( softwareDist ) )
     argumentsDict = {'Job':jobParams, 'CE':resourceParams}
+    #HACK: Delete when svn repo is in production!
+    if softwareDist.find( "DIRAC.LHCbSystem" ) == 0:
+      softwareDist = "LHCb%s" % softwareDist
+    #END OF HACK
     moduleFactory = ModuleFactory()
     moduleInstance = moduleFactory.getModule( softwareDist, argumentsDict )
     if not moduleInstance['OK']:
