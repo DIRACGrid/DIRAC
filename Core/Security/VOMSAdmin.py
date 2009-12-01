@@ -26,7 +26,7 @@ class VOMSAdmin:
       for info in entry:
         entryData[ info[0] ] = str( info[1] )
       data.append( entryData )
-    return S_OK( data )
+    return data
   
   def listMembers(self):
     try:
