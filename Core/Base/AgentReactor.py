@@ -14,6 +14,7 @@ class AgentReactor:
     self.__scheduler = ThreadScheduler.ThreadScheduler( enableReactorThread = False,
                                                         minPeriod = 30 )
     self.__alive = True
+    self.__running = False
 
   def loadAgentModules( self, modulesList, hideExceptions = False ):
     for module in modulesList:
@@ -87,14 +88,25 @@ class AgentReactor:
     self.__agentModules[ fullName ][ 'running' ] = True
     return S_OK()
 
+  def runNumCycles( self, numCycles = 1 ):
+    for agentName in self.__agentModules:
+      self.setAgentModuleMaxCycles( agentName, numCycles )
+    self.go()
+
   def go( self ):
-    while self.__alive:
-      self.__checkControlDir()
-      timeToNext = self.__scheduler.executeNextTask()
-      if timeToNext == None:
-        gLogger.info( "No more agent modules to execute. Exiting" )
-        break
-      time.sleep( min( max( timeToNext, 0.5 ), 5 ) )
+    if self.__running:
+      return
+    self.__running = True
+    try:
+      while self.__alive:
+        self.__checkControlDir()
+        timeToNext = self.__scheduler.executeNextTask()
+        if timeToNext == None:
+          gLogger.info( "No more agent modules to execute. Exiting" )
+          break
+        time.sleep( min( max( timeToNext, 0.5 ), 5 ) )
+    finally:
+      self.__running = False
       
   def setAgentModuleMaxCycles( self, agentName, maxCycles ):
     if not agentName in self.__agentModules:
