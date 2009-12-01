@@ -87,7 +87,7 @@ class ResourceStatusDB:
   def getResourceTypeList(self):
     return []
 
-  def getResourcesHistory(self, resName=None):
+  def getResourcesHistory(self, resourceName=None):
     return []
 
   def getResourcesToCheck(self, a, b, c):

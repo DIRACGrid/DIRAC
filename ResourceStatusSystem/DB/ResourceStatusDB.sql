@@ -26,18 +26,18 @@ CREATE TABLE SiteTypes(
   PRIMARY KEY(SiteType)
 ) Engine=InnoDB;
 
-DROP TABLE IF EXISTS ResourceTypes;
-CREATE TABLE ResourceTypes(
-  ResourceType VARCHAR(8) NOT NULL,
-  Description BLOB,
-  PRIMARY KEY(ResourceType)
-) Engine=InnoDB;
-
 DROP TABLE IF EXISTS ServiceTypes;
 CREATE TABLE ServiceTypes(
   ServiceType VARCHAR(16) NOT NULL,
   Description BLOB,
   PRIMARY KEY(ServiceType)
+) Engine=InnoDB;
+
+DROP TABLE IF EXISTS ResourceTypes;
+CREATE TABLE ResourceTypes(
+  ResourceType VARCHAR(8) NOT NULL,
+  Description BLOB,
+  PRIMARY KEY(ResourceType)
 ) Engine=InnoDB;
 
 DROP TABLE IF EXISTS Status;
@@ -50,7 +50,7 @@ CREATE TABLE Status(
 DROP TABLE IF EXISTS Sites;
 CREATE TABLE Sites(
   SiteID INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  SiteName VARCHAR(32) NOT NULL,
+  SiteName VARCHAR(64) NOT NULL,
   INDEX (SiteName),
   SiteType VARCHAR(8) NOT NULL,
   Status VARCHAR(8) NOT NULL,
@@ -69,11 +69,11 @@ CREATE TABLE Sites(
 DROP TABLE IF EXISTS Services;
 CREATE TABLE Services(
   ServiceID INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  ServiceName VARCHAR(32) NOT NULL,
+  ServiceName VARCHAR(64) NOT NULL,
   INDEX (ServiceName),
   ServiceType VARCHAR(32) NOT NULL,
   INDEX (ServiceType),
-  SiteName VARCHAR(32) NOT NULL,
+  SiteName VARCHAR(64) NOT NULL,
   INDEX (SiteName),
   Status VARCHAR(8) NOT NULL,
   Index(Status),
@@ -83,7 +83,6 @@ CREATE TABLE Services(
   DateEnd DATETIME,
   LastCheckTime DATETIME NOT NULL,
   OperatorCode VARCHAR(255),
-  FOREIGN KEY (SiteName) REFERENCES Sites(SiteName),
   FOREIGN KEY (ServiceType) REFERENCES ServiceTypes(ServiceType),
   FOREIGN KEY (Status) REFERENCES Status(Status),
   PRIMARY KEY(ServiceID)
@@ -92,11 +91,11 @@ CREATE TABLE Services(
 DROP TABLE IF EXISTS Resources;
 CREATE TABLE Resources(
   ResourceID INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  ResourceName VARCHAR(32) NOT NULL,
+  ResourceName VARCHAR(64) NOT NULL,
   INDEX (ResourceName),
   ResourceType VARCHAR(8) NOT NULL,
-  SiteName VARCHAR(32) NOT NULL,
-  ServiceName VARCHAR(32) NOT NULL,
+  ServiceName VARCHAR(64) NOT NULL,
+  SiteName VARCHAR(64) NOT NULL,
   INDEX (SiteName),
   Status VARCHAR(8) NOT NULL,
   INDEX (Status),
@@ -107,8 +106,6 @@ CREATE TABLE Resources(
   DateEnd DATETIME,
   OperatorCode VARCHAR(255) NOT NULL,
   LastCheckTime DATETIME NOT NULL,
-  FOREIGN KEY (SiteName) REFERENCES Sites(SiteName),
-  FOREIGN KEY (ServiceName) REFERENCES Services(ServiceName),
   FOREIGN KEY (ResourceType) REFERENCES ResourceTypes(ResourceType),
   FOREIGN KEY (Status) REFERENCES Status(Status),
   PRIMARY KEY (ResourceID)
@@ -118,7 +115,7 @@ CREATE TABLE Resources(
 DROP TABLE IF EXISTS SitesHistory;
 CREATE TABLE SitesHistory(
   SitesHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  SiteName VARCHAR(32) NOT NULL,
+  SiteName VARCHAR(64) NOT NULL,
   Status VARCHAR(8) NOT NULL,
   Reason VARCHAR(255) NOT NULL,
   DateCreated DATETIME NOT NULL,
@@ -131,8 +128,8 @@ CREATE TABLE SitesHistory(
 DROP TABLE IF EXISTS ServicesHistory;
 CREATE TABLE ServicesHistory(
   ServicesHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  ServiceName VARCHAR(32) NOT NULL,
-  SiteName VARCHAR(32) NOT NULL,
+  ServiceName VARCHAR(64) NOT NULL,
+  SiteName VARCHAR(64) NOT NULL,
   Status VARCHAR(8) NOT NULL,
   Reason VARCHAR(255) NOT NULL,
   DateCreated DATETIME NOT NULL,
@@ -145,9 +142,9 @@ CREATE TABLE ServicesHistory(
 DROP TABLE IF EXISTS ResourcesHistory;
 CREATE TABLE ResourcesHistory(
   ResourcesHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  ResourceName VARCHAR(32) NOT NULL,
-  ServiceName VARCHAR(32) NOT NULL,
-  SiteName VARCHAR(32) NOT NULL,
+  ResourceName VARCHAR(64) NOT NULL,
+  ServiceName VARCHAR(64) NOT NULL,
+  SiteName VARCHAR(64) NOT NULL,
   Status VARCHAR(8) NOT NULL,
   Reason VARCHAR(255) NOT NULL,
   DateCreated DATETIME NOT NULL,

@@ -17,7 +17,7 @@ class RSSDBException(RSSException):
 
 #############################################################################
 
-class NotAllowedDate(RSSDBException):
+class NotAllowedDate(RSSException):
   pass
 
 #############################################################################
@@ -67,6 +67,11 @@ class ResourceStatusDB:
     
 #############################################################################
 
+#############################################################################
+# Site functions
+#############################################################################
+
+#############################################################################
   def getSitesList(self, paramsList = None, siteName = None, status = None, siteType = None):
     """ 
     Get Present Sites list. 
@@ -126,10 +131,11 @@ class ResourceStatusDB:
     siteType = ','.join(['"'+x.strip()+'"' for x in siteType])
 
     #query
-    req = "SELECT %s FROM PresentSites " %(params)
-    req = req + "WHERE SiteName IN (%s) " %(siteName)
-    req = req + "AND Status in (%s)" % (status)
-    req = req + "AND SiteType in (%s)" % (siteType)
+    req = "SELECT %s FROM PresentSites WHERE" %(params)
+    if siteName != [] and siteName != None and siteName is not None and siteName != '':
+      req = req + " SiteName IN (%s) AND" %(siteName)
+    req = req + " Status in (%s) AND" % (status)
+    req = req + " SiteType in (%s)" % (siteType)
     
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -140,28 +146,6 @@ class ResourceStatusDB:
     siteList = [ x for x in resQuery['Value']]
     return siteList
 
-#############################################################################
-
-  def getSitesListByStatus(self, status):
-    """ 
-    Get present site status list. A status must be specified.
-    """
-
-    if status not in ValidStatus:
-      raise InvalidStatus, where(self, self.addOrModifySite)
-
-    req = "SELECT SiteName, Status, Reason, FormerStatus, DateEffective, "
-    req = req + "LastCheckTime FROM PresentSites WHERE Status = '%s'" % (status)
-
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getSitesList)
-    if not resQuery['Value']:
-      return []
-    sitesList = []
-    sitesList = [ x for x in resQuery['Value']]
-    return sitesList
-    
 #############################################################################
 
   def getSitesStatusWeb(self, selectDict, sortList, startItem, maxItems):
@@ -286,27 +270,13 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def _getSiteByID(self, ID):
-    """ get site by ID from sites table
-    """
-
-    req = "SELECT SiteName, Status, FormerStatus FROM Sites WHERE SiteID = %d" %(ID)
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self._getSiteByID)
-    if not resQuery['Value']:
-      return []
-    return resQuery['Value']
-  
-#############################################################################
-
   def getSitesHistory(self, paramsList = None, siteName = None):
-    """ get list of sites history (a site name can be specified)
+    """ 
+    Get list of sites history (a site name can be specified)
         
-        paramsList, siteName can be list.
-        
-        A list of parameters can be entered. If not, a custom list is used.
-        If siteName or ID are not given, fetches the complete list
+    :params:
+      :attr:`paramsList`: A list of parameters can be entered. If not, a custom list is used.
+      :attr:`siteName`: list of strings. If not given, fetches the complete list 
     """
     
         
@@ -334,6 +304,266 @@ class ResourceStatusDB:
     siteList = [ x for x in resQuery['Value']]
     return siteList
  
+#############################################################################
+
+  def setSiteStatus(self, siteName, status, reason, operatorCode):
+    """ 
+    Set a Site status, effective from now, with no ending
+        
+    :params:
+      :attr:`siteName`: string
+      :attr:`status`: string. Possibilities: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      :attr:`reason`: string
+      :attr:`operatorCode`: string. For the service itself: `RS_SVC`
+    """
+
+    req = "SELECT SiteType FROM Sites WHERE SiteName = '%s' AND DateEffective < UTC_TIMESTAMP();" %(siteName)
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.setSiteStatus) + resQuery['Message']
+    if not resQuery['Value']:
+      return None
+
+    siteType = resQuery['Value'][0][0]
+  
+    self.addOrModifySite(siteName, siteType, status, reason, datetime.utcnow(), operatorCode, datetime(9999, 12, 31, 23, 59, 59))
+    
+#############################################################################
+
+  def addOrModifySite(self, siteName, siteType, status, reason, dateEffective, operatorCode, dateEnd):
+    """ Add or modify a site to the Sites table.
+    """
+
+    dateCreated = datetime.utcnow()
+    if dateEffective < dateCreated:
+      dateEffective = dateCreated
+    if dateEnd < dateEffective:
+      raise NotAllowedDate, where(self, self.addOrModifySite)
+    if status not in ValidStatus:
+      raise InvalidStatus, where(self, self.addOrModifySite)
+
+
+    #check if the site is already there
+    query = "SELECT SiteName FROM Sites WHERE SiteName='%s'" % siteName
+    resQuery = self.db._query(query)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.addOrModifySite) + resQuery['Message']
+
+    if resQuery['Value']: 
+      if dateEffective <= (dateCreated + timedelta(minutes=2)):
+        #site modification, effective in less than 2 minutes
+        self.setDateEnd('Site', siteName, dateEffective)
+        self.transact2History('Site', siteName, dateEffective)
+      else:
+        self.setDateEnd('Site', siteName, dateEffective)
+    else:
+      if status in ('Active', 'Probing'):
+        oldStatus = 'Banned'
+      else:
+        oldStatus = 'Active'
+      self._addSiteHistoryRow(siteName, oldStatus, reason, dateCreated, dateEffective, datetime.utcnow().isoformat(' '), operatorCode)
+
+    #in any case add a row to present Sites table
+    self._addSiteRow(siteName, siteType, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
+#    siteRow = "Added %s --- %s " %(siteName, dateEffective)
+#    return siteRow
+
+#############################################################################
+
+  def _addSiteRow(self, siteName, siteType, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+    #add a new site row in Sites table
+
+    if not isinstance(dateCreated, basestring):
+      dateCreated = dateCreated.isoformat(' ')
+    if not isinstance(dateEffective, basestring):
+      dateEffective = dateEffective.isoformat(' ')
+    if not isinstance(dateEnd, basestring):
+      dateEnd = dateEnd.isoformat(' ')
+    if status not in ValidStatus:
+      raise InvalidStatus, where(self, self._addSiteRow)
+      
+
+    req = "INSERT INTO Sites (SiteName, SiteType, Status, Reason, "
+    req = req + "DateCreated, DateEffective, DateEnd, OperatorCode) "
+    req = req + "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (siteName, siteType, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
+
+    resUpdate = self.db._update(req)
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self._addSiteRow) + resUpdate['Message']
+
+#############################################################################
+
+  def _addSiteHistoryRow(self, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+    """ add an old site row in the history
+    """
+
+    if not isinstance(dateCreated, basestring):
+      dateCreated = dateCreated.isoformat(' ')
+    if not isinstance(dateEffective, basestring):
+      dateEffective = dateEffective.isoformat(' ')
+    if not isinstance(dateEnd, basestring):
+      dateEnd = dateEnd.isoformat(' ')
+
+    req = "INSERT INTO SitesHistory (SiteName, Status, Reason, DateCreated,"
+    req = req + " DateEffective, DateEnd, OperatorCode) "
+    req = req + "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
+
+    resUpdate = self.db._update(req)
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self._addSiteHistoryRow) + resUpdate['Message']
+
+
+#############################################################################
+
+  def removeSite(self, siteName):
+    """ 
+    Completely remove a site from the Sites and SitesHistory tables
+    
+    :params:
+      :attr:`siteName`: string
+    """
+    
+    self.removeResource(siteName = siteName)
+    self.removeService(siteName = siteName)
+    
+    req = "DELETE from Sites WHERE SiteName = '%s';" %siteName
+    resDel = self.db._update(req)
+    if not resDel['OK']:
+      raise RSSDBException, where(self, self.removeSite) + resDel['Message']
+    
+    req = "DELETE from SitesHistory WHERE SiteName = '%s';" %siteName
+    resDel = self.db._update(req)
+    if not resDel['OK']:
+      raise RSSDBException, where(self, self.removeSite) + resDel['Message']
+
+#############################################################################
+
+  def removeSiteRow(self, siteName, dateEffective):
+    """ 
+    Remove a site row from the Sites table
+    
+    :params:
+      :attr:`siteName`: string
+      
+      :attr:`dateEffective`: string or datetime
+    """
+    #if type(dateEffective) not in types.StringTypes:
+    if not isinstance(dateEffective, basestring):
+      dateEffective = dateEffective.isoformat(' ')
+
+    req = "DELETE from Sites WHERE SiteName = '%s' AND DateEffective = '%s';" % (siteName, dateEffective)
+    resDel = self.db._update(req)
+    if not resDel['OK']:
+      raise RSSDBException, where(self, self.removeSiteRow) + resDel['Message'] 
+
+#############################################################################
+
+
+  def addSiteType(self, siteType, description=''):
+    """ 
+    Add a site type (T0, T1, T2, ...)
+    
+    :params:
+      :attr:`serviceType`: string
+
+      :attr:`description`: string, optional
+    """
+
+    req = "INSERT INTO SiteTypes (SiteType, Description)"
+    req = req + "VALUES ('%s', '%s');" % (siteType, description)
+
+    resUpdate = self.db._update(req)
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self.addSiteType) + resUpdate['Message']
+
+
+#############################################################################
+
+  def getSitesToCheck(self, activeCheckFrequecy, probingCheckFrequecy, bannedCheckFrequecy):
+    """ 
+    Get sites to be checked
+    
+    :params:
+      :attr:`activeCheckFrequecy': integer. Frequency of active sites checking in minutes
+      
+      :attr:`probingCheckFrequecy': integer. Frequency of probing sites checking in minutes
+      
+      :attr:`bannedCheckFrequecy': integer. Frequency of banned sites checking in minutes
+    """
+    dateToCheckFromActive = (datetime.utcnow()-timedelta(minutes=activeCheckFrequecy)).isoformat(' ')
+    dateToCheckFromProbing = (datetime.utcnow()-timedelta(minutes=probingCheckFrequecy)).isoformat(' ')
+    dateToCheckFromBanned = (datetime.utcnow()-timedelta(minutes=bannedCheckFrequecy)).isoformat(' ')
+
+    req = "SELECT SiteName, Status, FormerStatus, Reason FROM PresentSites WHERE"
+    req = req + " (Status = 'Active' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( dateToCheckFromActive )
+    req = req + " (Status = 'Probing' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( dateToCheckFromProbing )
+    req = req + " (Status = 'Banned' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC');" %( dateToCheckFromBanned )
+
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.getSitesToCheck) + resQuery['Message']
+    if not resQuery['Value']:
+      return []
+    sitesList = []
+    sitesList = [ x for x in resQuery['Value']]
+    return sitesList
+
+#############################################################################
+
+  def setLastSiteCheckTime(self, siteName):
+    """ 
+    Set to utcnow() LastCheckTime of table Resources
+    
+    :params:
+      :attr:`siteName`: string
+    """
+    
+    req = "UPDATE Sites SET LastCheckTime = UTC_TIMESTAMP() WHERE "
+    req = req + "SiteName = '%s' AND DateEffective <= UTC_TIMESTAMP();" % (siteName)
+    resUpdate = self.db._update(req)
+    
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self.setLastSiteCheckTime) + resUpdate['Message']
+
+#############################################################################
+
+  def setSiteReason(self, siteName, reason, operatorCode):
+    """
+    Set new reason to resourceName
+        
+    :params:
+      :attr:`siteName`: string, service name
+      :attr:`reason`: string, reason
+      :attr:`operatorCode`: string, who's making this change (RS_SVC if it's the service itslef)
+    """
+    
+    req = "UPDATE Sites SET Reason = '%s', OperatorCode = '%s' WHERE SiteName = '%s';" %(reason, operatorCode, siteName)
+    resUpdate = self.db._update(req)
+    
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self.setSiteReason) + resUpdate['Message']
+
+#############################################################################
+
+  def removeSiteType(self, siteType):
+    """ 
+    Remove a site type from the SiteTypes table
+    
+    :params:
+      :attr:`siteType`: string, a site type
+    """
+
+    req = "DELETE from SiteTypes WHERE SiteType = '%s';" % (siteType)
+    resDel = self.db._update(req)
+    if not resDel['OK']:
+      raise RSSDBException, where(self, self.removeSiteType) + resDel['Message']
+
+#############################################################################
+
+#############################################################################
+# Resource functions
+#############################################################################
+
 #############################################################################
 
   def getResourcesList(self, paramsList = None, resourceName = None, siteName = None, status = None, resourceType = None):
@@ -407,12 +637,13 @@ class ResourceStatusDB:
         resourceType = [resourceType]
     resourceType = ','.join(['"'+x.strip()+'"' for x in resourceType])
 
-    req = "SELECT %s FROM PresentResources " %(params) 
-    req = req + "WHERE ResourceName IN (%s) " %(resourceName)
-    req = req + "AND SiteName IN (%s)" %siteName
-    req = req + "AND Status IN (%s)" %status
-    req = req + "AND ResourceType IN (%s)" %resourceType
-    
+    req = "SELECT %s FROM PresentResources WHERE" %(params) 
+    if resourceName != [] and resourceName != None and resourceName is not None and resourceName != '':
+      req = req + " ResourceName IN (%s) AND" %(resourceName)
+    if siteName != [] and siteName != None and siteName is not None and siteName != '':
+      req = req + " SiteName IN (%s) AND" %siteName
+    req = req + " Status IN (%s) AND" %status
+    req = req + " ResourceType IN (%s)" %resourceType
     
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -440,7 +671,7 @@ class ResourceStatusDB:
         :return: 
         { 
         
-          :attr:`ParameterNames`: ['ResourceName', 'SiteName', 'ServiceExposed', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason'], 
+          :attr:`ParameterNames`: ['ResourceName', 'ServiceName', 'SiteName', 'ResourceType', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason'], 
           
           :attr:'Records': [[], [], ...],
           
@@ -451,7 +682,7 @@ class ResourceStatusDB:
           }
     """
     
-    paramNames = ['ResourceName', 'SiteName', 'ResourceType', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
+    paramNames = ['ResourceName', 'ServiceName', 'SiteName', 'ResourceType', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
 
     resultDict = {}
     records = []
@@ -465,11 +696,11 @@ class ResourceStatusDB:
     
     # get everything
     if selectDict.keys() == []:
-      paramsList = ['ResourceName', 'SiteName', 'ResourceType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
+      paramsList = ['ResourceName', 'ServiceName', 'SiteName', 'ResourceType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
     
     #ResourceName
     if selectDict.has_key('ResourceName'):
-      paramsList = ['ResourceName', 'SiteName', 'ResourceType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']      
+      paramsList = ['ResourceName', 'ServiceName', 'SiteName', 'ResourceType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']      
       resources_select = selectDict['ResourceName']
       if type(resources_select) is not list:
         resources_select = [resources_select]
@@ -477,7 +708,7 @@ class ResourceStatusDB:
       
     #SiteName
     if selectDict.has_key('SiteName'):
-      paramsList = ['ResourceName', 'SiteName', 'ResourceType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']      
+      paramsList = ['ResourceName', 'ServiceName', 'SiteName', 'ResourceType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']      
       sites_select = selectDict['SiteName']
       if type(sites_select) is not list:
         sites_select = [sites_select]
@@ -485,7 +716,7 @@ class ResourceStatusDB:
       
     #Status
     if selectDict.has_key('Status'):
-      paramsList = ['ResourceName', 'SiteName', 'ResourceType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
+      paramsList = ['ResourceName', 'ServiceName', 'SiteName', 'ResourceType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
       status_select = selectDict['Status']
       if type(status_select) is not list:
         status_select = [status_select]
@@ -493,7 +724,7 @@ class ResourceStatusDB:
 
     #ResourceType
     if selectDict.has_key('ResourceType'):
-      paramsList = ['ResourceName', 'SiteName', 'ResourceType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']      
+      paramsList = ['ResourceName', 'ServiceName', 'SiteName', 'ResourceType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']      
       resourceType_select = selectDict['ResourceType']
       if type(resourceType_select) is not list:
         resourceType_select = [resourceType_select]
@@ -526,14 +757,15 @@ class ResourceStatusDB:
       for resource in resourcesList:
         record = []
         record.append(resource[0]) #ResourceName
-        record.append(resource[1]) #SiteName
-        record.append(resource[2]) #ResourceType
-        country = (resource[1]).split('.').pop()
+        record.append(resource[1]) #ServiceName
+        record.append(resource[2]) #SiteName
+        record.append(resource[3]) #ResourceType
+        country = (resource[2]).split('.').pop()
         record.append(country) #Country
-        record.append(resource[3]) #Status
-        record.append(resource[4].isoformat(' ')) #DateEffective
-        record.append(resource[5]) #FormerStatus
-        record.append(resource[6]) #Reason
+        record.append(resource[4]) #Status
+        record.append(resource[5].isoformat(' ')) #DateEffective
+        record.append(resource[6]) #FormerStatus
+        record.append(resource[7]) #Reason
         records.append(record)
       
       
@@ -554,48 +786,13 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def getResourcesListByStatus(self, status):
-    """ get list of present resource status. A status must be specified.
-    """
-
-    if status not in ValidStatus:
-      raise InvalidStatus, where(self, self.addOrModifySite)
-    
-    req = "SELECT ResourceName, SiteName, Status, FormerStatus, DateEffective, "
-    req = req + "LastCheckTime FROM PresentResources WHERE Status = '%s'" % (status)
-
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getResourcesListByStatus)
-    if not resQuery['Value']:
-      return []
-    resourcesList = []
-    resourcesList = [ x for x in resQuery['Value']]
-    return resourcesList
-
-#############################################################################
-
-  def _getResourceByID(self, ID):
-    """ get resource by ID from Resources table
-    """
-
-    req = "SELECT ResourceName, Status, FormerStatus FROM Resources WHERE ResourceID = %d" %(ID)
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self._getResourceByID)
-    if not resQuery['Value']:
-      return []
-    return resQuery['Value']
-    
-#############################################################################
-
   def getResourcesHistory(self, paramsList = None, resourceName = None):
-    """ get list of Resources history (a Resource name can be specified)
+    """ 
+    Get list of Resources history (a Resource name can be specified)
         
-        paramsList, resourceName can be list.
-        
-        A list of parameters can be entered. If not, a custom list is used.
-        If resourceName is given, fetches the complete list
+    :params:
+      :attr:`paramsList`: A list of parameters can be entered. If not, a custom list is used.
+      :attr:`resourceName`: list of strings. If not given, fetches the complete list 
     """
     
         
@@ -616,13 +813,842 @@ class ResourceStatusDB:
     
     resQuery = self.db._query(req)
     if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getResourcesList)+resQuery['Message']
+      raise RSSDBException, where(self, self.getResourcesHistory)+resQuery['Message']
     if not resQuery['Value']:
       return []
     ResourceList = []
     ResourceList = [ x for x in resQuery['Value']]
     return ResourceList
  
+#############################################################################
+
+  def setResourceStatus(self, resourceName, status, reason, operatorCode):
+    """ 
+    Set a Resource status, effective from now, with no ending
+    
+    :params:
+      :attr:`resourceName`: string
+      :attr:`status`: string. Possibilities: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      :attr:`reason`: string
+      :attr:`operatorCode`: string. For the service itself: `RS_SVC`
+    """
+
+    req = "SELECT ResourceType, ServiceName, SiteName FROM Resources WHERE ResourceName = '%s' AND DateEffective < UTC_TIMESTAMP();" %(resourceName)
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.setResourceStatus) + resQuery['Message']
+    if not resQuery['Value']:
+      return None
+
+    resourceType = resQuery['Value'][0][0]
+    serviceName = resQuery['Value'][0][1]
+    siteName = resQuery['Value'][0][2]
+
+    self.addOrModifyResource(resourceName, resourceType, serviceName, siteName, status, reason, datetime.utcnow(), operatorCode, datetime(9999, 12, 31, 23, 59, 59))
+    
+#############################################################################
+
+  def addOrModifyResource(self, resourceName, resourceType, serviceName, siteName, status, reason, dateEffective, operatorCode, dateEnd):
+    """ Add or modify a resource to the Resources table. 
+        If the dateEffective is not given, the resource status row is effective from now
+    """
+
+    dateCreated = datetime.utcnow()
+    if dateEffective < dateCreated:
+      dateEffective = dateCreated
+    if dateEnd < dateEffective:
+      raise NotAllowedDate, where(self, self.addOrModifyResource)
+    if status not in ValidStatus:
+      raise InvalidStatus, where(self, self.addOrModifySite)
+
+    #check if the resource is already there
+    query = "SELECT ResourceName FROM Resources WHERE ResourceName='%s'" % (resourceName)
+    resQuery = self.db._query(query)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.addOrModifyResource) + resQuery['Message']
+
+    if resQuery['Value']: 
+      #site modification, effective from now
+      if dateEffective <= (dateCreated + timedelta(minutes=2)):
+        self.setDateEnd('Resource', resourceName, dateEffective)
+        self.transact2History('Resource', resourceName, serviceName, siteName, dateEffective)
+      else:
+        self.setDateEnd('Resource', resourceName, dateEffective)
+    else:
+      if status in ('Active', 'Probing'):
+        oldStatus = 'Banned'
+      else:
+        oldStatus = 'Active'
+      self._addResourcesHistoryRow(resourceName, serviceName, siteName, oldStatus, reason, dateCreated, dateEffective, datetime.utcnow().isoformat(' '),  operatorCode)
+
+    #in any case add a row to present Sites table
+    self._addResourcesRow(resourceName, resourceType, serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
+#    resourceRow = "Added %s --- %s --- %s " %(resourceName, siteName, dateEffective)
+#    return resAddResourcesRow
+
+#############################################################################
+
+  def _addResourcesRow(self, resourceName, resourceType, serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+    """ add a new resource row in Resources table
+    """
+
+    if not isinstance(dateCreated, basestring):
+      dateCreated = dateCreated.isoformat(' ')
+    if not isinstance(dateEffective, basestring):
+      dateEffective = dateEffective.isoformat(' ')
+    if not isinstance(dateEnd, basestring):
+      dateEnd = dateEnd.isoformat(' ')
+    if status not in ValidStatus:
+      raise InvalidStatus, where(self, self._addResourcesRow)
+
+    
+    req = "INSERT INTO Resources (ResourceName, ResourceType, ServiceName, SiteName, Status, "
+    req = req + "Reason, DateCreated, DateEffective, DateEnd, OperatorCode) "
+    req = req + "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (resourceName, resourceType, serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
+
+    resUpdate = self.db._update(req)
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self._addResourcesRow) + resUpdate['Message']
+    
+
+#############################################################################
+
+  def _addResourcesHistoryRow(self, resourceName, serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+    """ add an old resource row in the history
+    """
+
+    if not isinstance(dateCreated, basestring):
+      dateCreated = dateCreated.isoformat(' ')
+    if not isinstance(dateEffective, basestring):
+      dateEffective = dateEffective.isoformat(' ')
+    if not isinstance(dateEnd, basestring):
+      dateEnd = dateEnd.isoformat(' ')
+
+
+    req = "INSERT INTO ResourcesHistory (ResourceName, ServiceName, SiteName, Status, Reason, DateCreated,"
+    req = req + " DateEffective, DateEnd, OperatorCode) "
+    req = req + "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (resourceName, serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
+
+    resUpdate = self.db._update(req)
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self._addResourcesHistoryRow) + resUpdate['Message']
+
+#############################################################################
+
+  def setLastResourceCheckTime(self, resourceName):
+    """ 
+    Set to utcnow() LastCheckTime of table Resources
+    
+        
+    :params:
+      :attr:`resourceName`: string
+    """
+    
+    req = "UPDATE Resources SET LastCheckTime = UTC_TIMESTAMP() WHERE "
+    req = req + "ResourceName = '%s' AND DateEffective <= UTC_TIMESTAMP();" % (resourceName)
+    resUpdate = self.db._update(req)
+    
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self.setLastResourceCheckTime) + resUpdate['Message']
+
+#############################################################################
+
+  def setResourceReason(self, resourceName, reason, operatorCode):
+    """ 
+    Set new reason to resourceName
+        
+    :params:
+      :attr:`resourceName`: string, service name
+      :attr:`reason`: string, reason
+      :attr:`operatorCode`: string, who's making this change (RS_SVC if it's the service itslef)
+    """
+    
+    req = "UPDATE Resources SET Reason = '%s', OperatorCode = '%s' WHERE ResourceName = '%s';" % (reason, operatorCode, resourceName)
+    resUpdate = self.db._update(req)
+    
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self.setResourceReason) + resUpdate['Message']
+
+#############################################################################
+
+  def addResourceType(self, resourceType, description=''):
+    """ 
+    Add a resource type (CE (different types also), SE, ...)
+        
+    :params:
+      :attr:`serviceType`: string
+      :attr:`description`: string, optional
+    """
+
+    req = "INSERT INTO ResourceTypes (ResourceType, Description)"
+    req = req + "VALUES ('%s', '%s');" % (resourceType, description)
+
+    resUpdate = self.db._update(req)
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self.addResourceType) + resUpdate['Message']
+
+#############################################################################
+
+  def removeResource(self, resourceName = None, serviceName = None, siteName = None):
+    """ 
+    Completely remove a resource from the Resources and ResourcesHistory tables
+    
+    :params:
+      :attr:`resourceName`: string
+    """
+
+    if serviceName == None and siteName == None:
+      req = "DELETE from Resources WHERE ResourceName = '%s';" % (resourceName)
+      resDel = self.db._update(req)
+      if not resDel['OK']:
+        raise RSSDBException, where(self, self.removeResource) + resDel['Message']
+  
+      req = "DELETE from ResourcesHistory WHERE ResourceName = '%s';" % (resourceName)
+      resDel = self.db._update(req)
+      if not resDel['OK']:
+        raise RSSDBException, where(self, self.removeResource) + resDel['Message']
+
+    else:
+      if serviceName == None:
+        req = "DELETE from Resources WHERE SiteName = '%s';" % (siteName)
+        resDel = self.db._update(req)
+        if not resDel['OK']:
+          raise RSSDBException, where(self, self.removeResource) + resDel['Message']
+    
+        req = "DELETE from ResourcesHistory WHERE SiteName = '%s';" % (siteName)
+        resDel = self.db._update(req)
+        if not resDel['OK']:
+          raise RSSDBException, where(self, self.removeResource) + resDel['Message']
+
+      else:
+        req = "DELETE from Resources WHERE ServiceName = '%s';" % (serviceName)
+        resDel = self.db._update(req)
+        if not resDel['OK']:
+          raise RSSDBException, where(self, self.removeResource) + resDel['Message']
+    
+        req = "DELETE from ResourcesHistory WHERE ServiceName = '%s';" % (serviceName)
+        resDel = self.db._update(req)
+        if not resDel['OK']:
+          raise RSSDBException, where(self, self.removeResource) + resDel['Message']
+
+#############################################################################
+
+  def removeResourceRow(self, resourceName, siteName, dateEffective):
+    """ 
+    Remove a Resource Status from the Resources table
+    
+    :params:
+      :attr:`resourceName`: string
+      
+      :attr:`siteName`: string
+      
+      :attr:`dateEffective`: string or datetime
+    """
+
+    if not isinstance(dateEffective, basestring):
+      dateEffective = dateEffective.isoformat(' ')
+
+    req = "DELETE from Resources WHERE ResourceName = '%s' AND SiteName = '%s' AND DateEffective = '%s';" % (resourceName, siteName, dateEffective)
+    resDel = self.db._update(req)
+    if not resDel['OK']:
+      raise RSSDBException, where(self, self.removeResourceRow) + resDel['Message']
+
+#############################################################################
+
+  def removeResourceType(self, resourceType):
+    """ 
+    Remove a Resource Type
+    
+    :params:
+      :attr:`resourceType`: string, a service type (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
+    """
+
+    req = "DELETE from ResourceTypes WHERE ResourceType = '%s';" % (resourceType)
+    resDel = self.db._update(req)
+    if not resDel['OK']:
+      raise RSSDBException, where(self, self.removeResourceType) + resDel['Message']
+
+#############################################################################
+
+  def getResourcesToCheck(self, activeCheckFrequecy, probingCheckFrequecy, bannedCheckFrequecy):
+    """    
+    Get resources to be checked
+    
+    :params:
+      :attr:`activeCheckFrequecy': integer. Frequency of active resources checking in minutes
+      
+      :attr:`probingCheckFrequecy': integer. Frequency of probing resources checking in minutes
+      
+      :attr:`bannedCheckFrequecy': integer. Frequency of banned resources checking in minutes
+    
+    standard parameters taken from :mod:`DIRAC.ResourceStatusSystem.Policy.Configurations`
+    """
+    
+    dateToCheckFromActive = (datetime.utcnow()-timedelta(minutes=activeCheckFrequecy)).isoformat(' ')
+    dateToCheckFromProbing = (datetime.utcnow()-timedelta(minutes=probingCheckFrequecy)).isoformat(' ')
+    dateToCheckFromBanned = (datetime.utcnow()-timedelta(minutes=bannedCheckFrequecy)).isoformat(' ')
+
+    req = "SELECT ResourceName, Status, FormerStatus, Reason FROM PresentResources WHERE"
+    req = req + " (Status = 'Active' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( dateToCheckFromActive )
+    req = req + " (Status = 'Probing' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( dateToCheckFromProbing )
+    req = req + " (Status = 'Banned' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC');" %( dateToCheckFromBanned )
+
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.getResourcesToCheck) + resQuery['Message']
+    if not resQuery['Value']:
+      return []
+    resourcesList = []
+    resourcesList = [ x for x in resQuery['Value']]
+    return resourcesList
+
+#############################################################################
+
+#############################################################################
+# Service functions
+#############################################################################
+
+#############################################################################
+  def getServicesList(self, paramsList = None, serviceName = None, status = None, serviceType = None):
+    """ 
+    Get Present Services list. 
+    
+    :params:
+      :attr:`paramsList`: a list of parameters can be entered. If not, a custom list is used. 
+      
+      :attr:`serviceName`: a string or a list representing the service name
+      
+      :attr:`status`: a string or a list representing the status
+      
+      :attr:`serviceType`: a string or a list representing the service type (T0, T1, T2)
+      
+    :return:
+      list of serviceName paramsList's values
+    """
+    
+    #query construction
+        
+    #paramsList
+    if (paramsList == None or paramsList == []):
+      params = 'ServiceName, Status, FormerStatus, DateEffective, LastCheckTime '
+    else:
+      if type(paramsList) is not list:
+        paramsList = [paramsList]
+      params = ','.join([x.strip()+' ' for x in paramsList])
+
+    #serviceName
+    if (serviceName == None or serviceName == []): 
+      r = "SELECT ServiceName FROM PresentServices"
+      resQuery = self.db._query(r)
+      if not resQuery['OK']:
+        raise RSSDBException, where(self, self.getServicesList)+resQuery['Message']
+      if not resQuery['Value']:
+        serviceName = []
+      serviceName = [ x[0] for x in resQuery['Value']]
+      serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName])
+    else:
+      if type(serviceName) is not list:
+        serviceName = [serviceName]
+      serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName])
+    
+    #status
+    if (status == None or status == []):
+      status = ValidStatus
+    else:
+      if type(status) is not list:
+        status = [status]
+    status = ','.join(['"'+x.strip()+'"' for x in status])
+
+    #serviceType
+    if (serviceType == None or serviceType == []):
+      serviceType = ValidServiceType
+    else:
+      if type(serviceType) is not list:
+        serviceType = [serviceType]
+    serviceType = ','.join(['"'+x.strip()+'"' for x in serviceType])
+
+    #query
+    req = "SELECT %s FROM PresentServices WHERE" %(params)
+    if serviceName != [] and serviceName != None and serviceName is not None and serviceName != '':
+      req = req + " ServiceName IN (%s) AND" %(serviceName)
+    req = req + " Status in (%s) AND" % (status)
+    req = req + " ServiceType in (%s)" % (serviceType)
+    
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.getServicesList)+resQuery['Message']
+    if not resQuery['Value']:
+      return []
+    serviceList = []
+    serviceList = [ x for x in resQuery['Value']]
+    return serviceList
+
+#############################################################################
+
+  def getServicesStatusWeb(self, selectDict, sortList, startItem, maxItems):
+    """ 
+    Get present services status list, for the web.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getServicesList`
+    and :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getServicesHistory`
+    
+    :params:
+      :attr:`selectDict`: { 'ServiceName':['XX', ...] , 'ExpandServiceHistory': ['XX', ...], 'Status': ['XX', ...]} 
+      
+      :attr:`sortList` 
+      
+      :attr:`startItem` 
+      
+      :attr:`maxItems`
+      
+    :return: { 
+      :attr:`ParameterNames`: ['ServiceName', 'ServiceType', 'Site', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason'], 
+      
+      :attr:'Records': [[], [], ...], 
+      
+      :attr:'TotalRecords': X,
+       
+      :attr:'Extras': {}
+      
+      }
+    """
+        
+    paramNames = ['ServiceName', 'ServiceType', 'Site', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
+
+    resultDict = {}
+    records = []
+
+    paramsList = []
+    services_select = []
+    status_select = []
+    serviceType_select = []
+    expand_service_history = ''
+    
+    #get everything
+    if selectDict.keys() == []:
+      paramsList = ['ServiceName', 'ServiceType', 'SiteName', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
+      
+    #specify ServiceName
+    if selectDict.has_key('ServiceName'):
+      paramsList = ['ServiceName', 'ServiceType', 'SiteName', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
+      services_select = selectDict['ServiceName']
+      if type(services_select) is not list:
+        services_select = [services_select]
+      del selectDict['ServiceName']
+      
+    #Status
+    if selectDict.has_key('Status'):
+      paramsList = ['ServiceName', 'ServiceType', 'SiteName', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
+      status_select = selectDict['Status']
+      if type(status_select) is not list:
+        status_select = [status_select]
+      del selectDict['Status']
+      
+    #ServiceType
+    if selectDict.has_key('ServiceType'):
+      paramsList = ['ServiceName', 'ServiceType', 'SiteName', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
+      serviceType_select = selectDict['ServiceType']
+      if type(serviceType_select) is not list:
+        serviceType_select = [serviceType_select]
+      del selectDict['ServiceType']
+      
+    #ExpandServiceHistory
+    if selectDict.has_key('ExpandServiceHistory'):
+      paramsList = ['ServiceName', 'Status', 'Reason', 'DateEffective']
+      services_select = selectDict['ExpandServiceHistory']
+      if type(services_select) is not list:
+        services_select = [services_select]
+      #calls getServicesHistory
+      servicesHistory = self.getServicesHistory(paramsList = paramsList, serviceName = services_select)
+      # servicesHistory is a list of tuples
+      for service in servicesHistory:
+        record = []
+        record.append(service[0]) #ServiceName
+        record.append(None) #ServiceType
+        record.append(None) #Site
+        record.append(None) #Country
+        record.append(service[1]) #Status
+        record.append(service[3].isoformat(' ')) #DateEffective
+        record.append(None) #FormerStatus
+        record.append(service[2]) #Reason
+        records.append(record)
+    
+    else:
+      #makes the right call to getServicesList
+      servicesList = self.getServicesList(paramsList = paramsList, serviceName = services_select, status = status_select, serviceType = serviceType_select)
+      for service in servicesList:
+        record = []
+        record.append(service[0]) #ServiceName
+        record.append(service[1]) #ServiceType
+        record.append(service[2]) #Site
+        country = (service[0]).split('.').pop()
+        record.append(country) #Country
+        record.append(service[3]) #Status
+        record.append(service[4].isoformat(' ')) #DateEffective
+        record.append(service[5]) #FormerStatus
+        record.append(service[6]) #Reason
+        records.append(record)
+
+
+    finalDict = {}
+    finalDict['TotalRecords'] = len(records)
+    finalDict['ParameterNames'] = paramNames
+
+    # Return all the records if maxItems == 0 or the specified number otherwise
+    if maxItems:
+      finalDict['Records'] = records[startItem:startItem+maxItems]
+    else:
+      finalDict['Records'] = records
+
+    finalDict['Extras'] = None
+
+    return finalDict
+
+
+#############################################################################
+
+  def getServicesHistory(self, paramsList = None, serviceName = None):
+    """ 
+    Get list of services history (a service name can be specified)
+        
+    :params:
+      :attr:`paramsList`: A list of parameters can be entered. If not, a custom list is used.
+      :attr:`serviceName`: list of strings. If not given, fetches the complete list 
+    """
+    
+        
+    if (paramsList == None or paramsList == []):
+      params = 'ServiceName, Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode '
+    else:
+      if type(paramsList) is not list:
+        paramsList = [paramsList]
+      params = ','.join([x.strip()+' ' for x in paramsList])
+
+    if (serviceName == None or serviceName == []): 
+      req = "SELECT %s FROM ServicesHistory ORDER BY ServiceName, ServicesHistoryID" %(params)
+    else:
+      if type(serviceName) is not list:
+        serviceName = [serviceName]
+      serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName])
+      req = "SELECT %s FROM ServicesHistory WHERE ServiceName IN (%s) ORDER BY ServicesHistoryID" % (params, serviceName)
+    
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.getServicesHistory)+resQuery['Message']
+    if not resQuery['Value']:
+      return []
+    serviceList = []
+    serviceList = [ x for x in resQuery['Value']]
+    return serviceList
+ 
+#############################################################################
+
+  def setServiceStatus(self, serviceName, status, reason, operatorCode):
+    """ 
+    Set a Service status, effective from now, with no ending
+        
+    :params:
+      :attr:`serviceName`: string
+      :attr:`status`: string. Possibilities: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      :attr:`reason`: string
+      :attr:`operatorCode`: string. For the service itself: `RS_SVC`
+    """
+
+    req = "SELECT ServiceType, SiteName FROM Services WHERE ServiceName = '%s' AND DateEffective < UTC_TIMESTAMP();" %(serviceName)
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.setServiceStatus) + resQuery['Message']
+    if not resQuery['Value']:
+      return None
+
+    serviceType = resQuery['Value'][0][0]
+    siteName = resQuery['Value'][0][1]
+  
+    self.addOrModifyService(serviceName, serviceType, siteName, status, reason, datetime.utcnow(), operatorCode, datetime(9999, 12, 31, 23, 59, 59))
+    
+#############################################################################
+
+  def addOrModifyService(self, serviceName, serviceType, siteName, status, reason, dateEffective, operatorCode, dateEnd):
+    """ Add or modify a service to the Services table.
+    """
+
+    dateCreated = datetime.utcnow()
+    if dateEffective < dateCreated:
+      dateEffective = dateCreated
+    if dateEnd < dateEffective:
+      raise NotAllowedDate, where(self, self.addOrModifyService)
+    if status not in ValidStatus:
+      raise InvalidStatus, where(self, self.addOrModifyService)
+
+    #check if the service is already there
+    query = "SELECT ServiceName FROM Services WHERE ServiceName='%s'" % serviceName
+    resQuery = self.db._query(query)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.addOrModifyService) + resQuery['Message']
+
+    if resQuery['Value']: 
+      if dateEffective <= (dateCreated + timedelta(minutes=2)):
+        #service modification, effective in less than 2 minutes
+        self.setDateEnd('Service', serviceName, dateEffective)
+        self.transact2History('Service', serviceName, siteName, dateEffective)
+      else:
+        self.setDateEnd('Service', serviceName, dateEffective)
+    else:
+      if status in ('Active', 'Probing'):
+        oldStatus = 'Banned'
+      else:
+        oldStatus = 'Active'
+      self._addServiceHistoryRow(serviceName, siteName, oldStatus, reason, dateCreated, dateEffective, datetime.utcnow().isoformat(' '), operatorCode)
+
+    #in any case add a row to present Services table
+    self._addServiceRow(serviceName, serviceType, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
+#    serviceRow = "Added %s --- %s " %(serviceName, dateEffective)
+#    return serviceRow
+
+#############################################################################
+
+  def _addServiceRow(self, serviceName, serviceType, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+    #add a new service row in Services table
+
+    if not isinstance(dateCreated, basestring):
+      dateCreated = dateCreated.isoformat(' ')
+    if not isinstance(dateEffective, basestring):
+      dateEffective = dateEffective.isoformat(' ')
+    if not isinstance(dateEnd, basestring):
+      dateEnd = dateEnd.isoformat(' ')
+    if status not in ValidStatus:
+      raise InvalidStatus, where(self, self._addServiceRow)
+      
+
+    req = "INSERT INTO Services (ServiceName, ServiceType, SiteName, Status, Reason, "
+    req = req + "DateCreated, DateEffective, DateEnd, OperatorCode) "
+    req = req + "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (serviceName, serviceType, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
+
+    resUpdate = self.db._update(req)
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self._addServiceRow) + resUpdate['Message']
+
+#############################################################################
+
+  def _addServiceHistoryRow(self, serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+    """ add an old service row in the history
+    """
+
+    if not isinstance(dateCreated, basestring):
+      dateCreated = dateCreated.isoformat(' ')
+    if not isinstance(dateEffective, basestring):
+      dateEffective = dateEffective.isoformat(' ')
+    if not isinstance(dateEnd, basestring):
+      dateEnd = dateEnd.isoformat(' ')
+
+    req = "INSERT INTO ServicesHistory (ServiceName, SiteName, Status, Reason, DateCreated,"
+    req = req + " DateEffective, DateEnd, OperatorCode) "
+    req = req + "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
+
+    resUpdate = self.db._update(req)
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self._addServiceHistoryRow) + resUpdate['Message']
+
+
+#############################################################################
+
+  def removeService(self, serviceName = None, siteName = None):
+    """ 
+    Completely remove a service from the Services and ServicesHistory tables
+        
+    :params:
+      :attr:`serviceName`: string
+    """
+    
+    if siteName == None: 
+
+      self.removeResource(serviceName = serviceName)
+      
+      req = "DELETE from Services WHERE ServiceName = '%s';" % (serviceName)
+      resDel = self.db._update(req)
+      if not resDel['OK']:
+        raise RSSDBException, where(self, self.removeService) + resDel['Message']
+  
+      req = "DELETE from ServicesHistory WHERE ServiceName = '%s';" % (serviceName)
+      resDel = self.db._update(req)
+      if not resDel['OK']:
+        raise RSSDBException, where(self, self.removeService) + resDel['Message']
+
+    else: 
+
+      self.removeResource(siteName = siteName)
+      
+      req = "DELETE from Services WHERE SiteName = '%s';" % (siteName)
+      resDel = self.db._update(req)
+      if not resDel['OK']:
+        raise RSSDBException, where(self, self.removeService) + resDel['Message']
+  
+      req = "DELETE from ServicesHistory WHERE SiteName = '%s';" % (siteName)
+      resDel = self.db._update(req)
+      if not resDel['OK']:
+        raise RSSDBException, where(self, self.removeService) + resDel['Message']
+
+
+#############################################################################
+
+  def removeServiceRow(self, serviceName, dateEffective):
+    """ 
+    Remove a service row from the Services table
+    
+    :params:
+      :attr:`serviceName`: string
+      
+      :attr:`dateEffective`: string or datetime
+    """
+    #if type(dateEffective) not in types.StringTypes:
+    if not isinstance(dateEffective, basestring):
+      dateEffective = dateEffective.isoformat(' ')
+
+    req = "DELETE from Services WHERE ServiceName = '%s' AND DateEffective = '%s';" % (serviceName, dateEffective)
+    resDel = self.db._update(req)
+    if not resDel['OK']:
+      raise RSSDBException, where(self, self.removeServiceRow) + resDel['Message']
+
+#############################################################################
+
+
+  def addServiceType(self, serviceType, description=''):
+    """ 
+    Add a service type (Computing, Storage, ...)
+    
+    :params:
+      :attr:`serviceType`: string
+      :attr:`description`: string, optional
+    """
+
+    req = "INSERT INTO ServiceTypes (ServiceType, Description)"
+    req = req + "VALUES ('%s', '%s');" % (serviceType, description)
+
+    resUpdate = self.db._update(req)
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self.addServiceType) + resUpdate['Message']
+
+
+#############################################################################
+
+  def getServicesToCheck(self, activeCheckFrequecy, probingCheckFrequecy, bannedCheckFrequecy):
+    """ 
+    Get services to be checked
+    
+    :params:
+      :attr:`activeCheckFrequecy': integer. Frequency of active services checking in minutes
+      
+      :attr:`probingCheckFrequecy': integer. Frequency of probing services checking in minutes
+      
+      :attr:`bannedCheckFrequecy': integer. Frequency of banned services checking in minutes
+        
+    standard parameters taken from :mod:`DIRAC.ResourceStatusSystem.Policy.Configurations`
+    """
+    dateToCheckFromActive = (datetime.utcnow()-timedelta(minutes=activeCheckFrequecy)).isoformat(' ')
+    dateToCheckFromProbing = (datetime.utcnow()-timedelta(minutes=probingCheckFrequecy)).isoformat(' ')
+    dateToCheckFromBanned = (datetime.utcnow()-timedelta(minutes=bannedCheckFrequecy)).isoformat(' ')
+
+    req = "SELECT ServiceName, Status, FormerStatus, Reason FROM PresentServices WHERE"
+    req = req + " (Status = 'Active' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( dateToCheckFromActive )
+    req = req + " (Status = 'Probing' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( dateToCheckFromProbing )
+    req = req + " (Status = 'Banned' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC');" %( dateToCheckFromBanned )
+
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.getServicesToCheck) + resQuery['Message']
+    if not resQuery['Value']:
+      return []
+    servicesList = []
+    servicesList = [ x for x in resQuery['Value']]
+    return servicesList
+
+#############################################################################
+
+  def setLastServiceCheckTime(self, serviceName):
+    """ 
+    Set to utcnow() LastCheckTime of table Resources
+    
+    :params:
+      :attr:`serviceName`: string
+    """
+    
+    req = "UPDATE Services SET LastCheckTime = UTC_TIMESTAMP() WHERE "
+    req = req + "ServiceName = '%s' AND DateEffective <= UTC_TIMESTAMP();" % (serviceName)
+    resUpdate = self.db._update(req)
+    
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self.setLastServiceCheckTime) + resUpdate['Message']
+
+#############################################################################
+
+  def setServiceReason(self, serviceName, reason, operatorCode):
+    """ 
+    Set new reason to serviceName
+    
+    :params:
+      :attr:`serviceName`: string, service name
+      :attr:`reason`: string, reason
+      :attr:`operatorCode`: string, who's making this change (RS_SVC if it's the service itslef)
+    """
+    
+    req = "UPDATE Services SET Reason = '%s', OperatorCode = '%s' WHERE ServiceName = '%s';" %(reason, operatorCode, serviceName)
+    resUpdate = self.db._update(req)
+    
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self.setServiceReason) + resUpdate['Message']
+
+#############################################################################
+
+  def removeServiceType(self, serviceType):
+    """ 
+    Remove a service type from the ServiceTypes table
+    
+    :params:
+      :attr:`serviceType`: string, a service type (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
+    
+    """
+
+    req = "DELETE from ServiceTypes WHERE ServiceType = '%s';" % (serviceType)
+    resDel = self.db._update(req)
+    if not resDel['OK']:
+      raise RSSDBException, where(self, self.removeServiceType) + resDel['Message']
+
+#############################################################################
+
+  def getResourceStats(self, granularity, name):
+    """ 
+    Returns simple statistics of active, probing and banned resources of a site or service;
+        
+    :params:
+      :attr:`siteName`: string - a site name
+    
+    :returns:
+      { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
+    """
+    
+    res = {'Active':0, 'Probing':0, 'Banned':0, 'Total':0}
+    
+    if granularity == 'Site': 
+      req = "SELECT Status, COUNT(*) FROM Resources WHERE SiteName = '%s' GROUP BY Status" %name
+    elif granularity == 'Service': 
+      req = "SELECT Status, COUNT(*) FROM Resources WHERE ServiceName = '%s' GROUP BY Status" %name
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.getResourceStats) + resQuery['Message']
+    else:
+      for x in resQuery['Value']:
+        res[x[0]] = int(x[1])
+        
+    res['Total'] = sum(res.values())
+    
+    return res
+
+
+#############################################################################
+
+#############################################################################
+# GENERAL functions
+#############################################################################
+
 #############################################################################
 
   def getSiteTypeList(self, siteType=None):
@@ -641,7 +1667,7 @@ class ResourceStatusDB:
 
     resQuery = self.db._query(req)
     if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getSiteTypeList)
+      raise RSSDBException, where(self, self.getSiteTypeList) + resQuery['Message']
     if not resQuery['Value']:
       return []
     typeList = []
@@ -666,7 +1692,7 @@ class ResourceStatusDB:
 
     resQuery = self.db._query(req)
     if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getResourceTypeList)
+      raise RSSDBException, where(self, self.getResourceTypeList) + resQuery['Message']
     if not resQuery['Value']:
       return []
     typeList = []
@@ -684,7 +1710,7 @@ class ResourceStatusDB:
 
     resQuery = self.db._query(req)
     if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getStatusList)
+      raise RSSDBException, where(self, self.getStatusList) + resQuery['Message']
     if not resQuery['Value']:
       return []
     typeList = []
@@ -693,51 +1719,31 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def getSitesToCheck(self, activeCheckFrequecy, probingCheckFrequecy, bannedCheckFrequecy):
-    """ get resources to be checked
+  def getServiceTypeList(self, serviceType=None):
+    """ 
+    Get list of service types
+    
+    :Params:
+      :attr:`serviceType`: string, service type.
     """
-    dateToCheckFromActive = (datetime.utcnow()-timedelta(minutes=activeCheckFrequecy)).isoformat(' ')
-    dateToCheckFromProbing = (datetime.utcnow()-timedelta(minutes=probingCheckFrequecy)).isoformat(' ')
-    dateToCheckFromBanned = (datetime.utcnow()-timedelta(minutes=bannedCheckFrequecy)).isoformat(' ')
 
-    req = "SELECT SiteName, Status, FormerStatus, Reason FROM PresentSites WHERE"
-    req = req + " (Status = 'Active' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( dateToCheckFromActive )
-    req = req + " (Status = 'Probing' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( dateToCheckFromProbing )
-    req = req + " (Status = 'Banned' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC');" %( dateToCheckFromBanned )
+    if serviceType == None:
+      req = "SELECT ServiceType FROM ServiceTypes"
+    else:
+      req = "SELECT ServiceType, Description FROM ServiceTypes "
+      req = req + "WHERE ServiceType = '%s'" % (serviceType)
 
     resQuery = self.db._query(req)
     if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getSitesToCheck)
+      raise RSSDBException, where(self, self.getServiceTypeList) + resQuery['Message']
     if not resQuery['Value']:
       return []
-    sitesList = []
-    sitesList = [ x for x in resQuery['Value']]
-    return sitesList
+    typeList = []
+    typeList = [ x[0] for x in resQuery['Value']]
+    return typeList
 
 #############################################################################
 
-  def getResourcesToCheck(self, activeCheckFrequecy, probingCheckFrequecy, bannedCheckFrequecy):
-    """ get resources to be checked
-    """
-    dateToCheckFromActive = (datetime.utcnow()-timedelta(minutes=activeCheckFrequecy)).isoformat(' ')
-    dateToCheckFromProbing = (datetime.utcnow()-timedelta(minutes=probingCheckFrequecy)).isoformat(' ')
-    dateToCheckFromBanned = (datetime.utcnow()-timedelta(minutes=bannedCheckFrequecy)).isoformat(' ')
-
-    req = "SELECT ResourceName, Status, FormerStatus, Reason FROM PresentResources WHERE"
-    req = req + " (Status = 'Active' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( dateToCheckFromActive )
-    req = req + " (Status = 'Probing' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( dateToCheckFromProbing )
-    req = req + " (Status = 'Banned' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC');" %( dateToCheckFromBanned )
-
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getResourcesToCheck)
-    if not resQuery['Value']:
-      return []
-    resourcesList = []
-    resourcesList = [ x for x in resQuery['Value']]
-    return resourcesList
-
-#############################################################################
 
   def getGeneralName(self, name, from_g, to_g):
     """ 
@@ -762,7 +1768,7 @@ class ResourceStatusDB:
         req = "SELECT SiteName, ResourceType FROM Resources WHERE ResourceName = '%s';" %(name)
         resQuery = self.db._query(req)
         if not resQuery['OK']:
-          raise RSSDBException, where(self, self.getGeneralName)
+          raise RSSDBException, where(self, self.getGeneralName) + resQuery['Message']
         if not resQuery['Value']:
           return []
         siteName = resQuery['Value'][0][0]
@@ -777,11 +1783,11 @@ class ResourceStatusDB:
 
     resQuery = self.db._query(req)
     if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getGeneralName)
+      raise RSSDBException, where(self, self.getGeneralName) + resQuery['Message']
     if not resQuery['Value']:
       return []
-    name = resQuery['Value'][0][0]
-    return name
+    newName = resQuery['Value'][0][0]
+    return newName
     
   
 #############################################################################
@@ -809,7 +1815,7 @@ class ResourceStatusDB:
         req = "SELECT %s, %s, %s FROM %s WHERE TIMESTAMP(DateEnd) < UTC_TIMESTAMP();" %(PKList[0], PKList[1], PKList[2], table)
       resQuery = self.db._query(req)
       if not resQuery['OK']:
-        raise RSSDBException, where(self, self.getEndings)
+        raise RSSDBException, where(self, self.getEndings) + resQuery['Message']
       else:
         list = []
         list = [ int(x[0]) for x in resQuery['Value']]
@@ -834,7 +1840,7 @@ class ResourceStatusDB:
     
     resQuery = self.db._query(req)
     if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getEndings)
+      raise RSSDBException, where(self, self.getPeriods) + resQuery['Message']
     else:
       if resQuery['Value'] == '':
         return None
@@ -848,10 +1854,12 @@ class ResourceStatusDB:
           req = "SELECT DateEffective, DateEnd FROM SitesHistory WHERE SiteName = '%s' AND Status = '%s';" %(name, status)
         elif granularity == 'Resource':
           req = "SELECT DateEffective, DateEnd FROM ResourcesHistory WHERE ResourceName = '%s' AND Status = '%s';" %(name, status)
+        elif granularity == 'Service':
+          req = "SELECT DateEffective, DateEnd FROM ServicesHistory WHERE ServiceName = '%s' AND Status = '%s';" %(name, status)
         
         resQuery = self.db._query(req)
         if not resQuery['OK']:
-          raise RSSDBException, where(self, self.getEndings)
+          raise RSSDBException, where(self, self.getPeriods) + resQuery['Message']
         else:
           for x in range(len(resQuery['Value'])):
             i = len(resQuery['Value']) - x
@@ -876,7 +1884,7 @@ class ResourceStatusDB:
     req = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'ResourceStatusDB' AND TABLE_NAME LIKE \"%History\"";
     resQuery = self.db._query(req)
     if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getTablesWithHistory)
+      raise RSSDBException, where(self, self.getTablesWithHistory) + resQuery['Message']
     else:
       HistoryTablesList = [ x[0] for x in resQuery['Value']]
       for x in HistoryTablesList:
@@ -885,94 +1893,36 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def getServiceStats(self, serviceType, siteName):
+  def getServiceStats(self, siteName):
     """ 
-    returns simple statistics of active, probing and banned nodes of services;
-            
-    :params:
-      siteName : string - a site name
-    
-    :return:
-      { 'Computing: {'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz} (optional)
+    Returns simple statistics of active, probing and banned services of a site;
         
-        'Storage: {'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz} (optional) }
+    :params:
+      :attr:`siteName`: string - a site name
+    
+    :returns:
+      { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
     """
     
-    req = "SELECT "
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getServiceStats)
-    else:
-      #TODO
-      pass
-#      serviceStats = [ x[0] for x in resQuery['Value']]
-#      for x in HistoryTablesList:
-#        tablesList.append(x[0:len(x)-7])
-#      return tablesList
-
-
-#############################################################################
-
-  def setSiteStatus(self, siteName, status, reason, operatorCode):
-    """ set a Site status, effective from now, with no ending
-    """
-
-    req = "SELECT SiteType, Description FROM Sites WHERE SiteName = '%s' AND DateEffective < UTC_TIMESTAMP();" %(siteName)
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.setSiteStatus)
-    if not resQuery['Value']:
-      return None
-
-    siteType = resQuery['Value'][0][0]
-    description = resQuery['Value'][0][1]
-  
-    self.addOrModifySite(siteName, siteType, description, status, reason, datetime.utcnow(), operatorCode, datetime(9999, 12, 31, 23, 59, 59))
+    res = {'Active':0, 'Probing':0, 'Banned':0, 'Total':0}
     
-#############################################################################
-
-  def addOrModifySite(self, siteName, siteType, description, status, reason, dateEffective, operatorCode, dateEnd):
-    """ Add or modify a site to the Sites table.
-    """
-
-    dateCreated = datetime.utcnow()
-    if dateEffective < dateCreated:
-      dateEffective = dateCreated
-    if dateEnd < dateEffective:
-      raise NotAllowedDate, where(self, self.addOrModifySite)
-    if status not in ValidStatus:
-      raise InvalidStatus, where(self, self.addOrModifySite)
-
-
-    #check if the site is already there
-    query = "SELECT SiteName FROM Sites WHERE SiteName='%s'" % siteName
-    resQuery = self.db._query(query)
+    req = "SELECT Status, COUNT(*) FROM Services WHERE SiteName = '%s' GROUP BY Status" %siteName
+    resQuery = self.db._query(req)
     if not resQuery['OK']:
-      raise RSSDBException, where(self, self.addOrModifySite)
-
-    if resQuery['Value']: 
-      if dateEffective <= (dateCreated + timedelta(minutes=2)):
-        #site modification, effective in less than 2 minutes
-        self.setDateEnd('Site', siteName, dateEffective)
-        self.transact2History('Site', siteName, dateEffective)
-      else:
-        self.setDateEnd('Site', siteName, dateEffective)
+      raise RSSDBException, where(self, self.getServiceStats) + resQuery['Message']
     else:
-      if status in ('Active', 'Probing'):
-        oldStatus = 'Banned'
-      else:
-        oldStatus = 'Active'
-      self._addSiteHistoryRow(siteName, oldStatus, reason, dateCreated, dateEffective, datetime.utcnow().isoformat(' '), operatorCode)
-
-    #in any case add a row to present Sites table
-    self._addSiteRow(siteName, siteType, description, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
-#    siteRow = "Added %s --- %s " %(siteName, dateEffective)
-#    return siteRow
+      for x in resQuery['Value']:
+        res[x[0]] = int(x[1])
+        
+    res['Total'] = sum(res.values())
+    
+    return res
 
 #############################################################################
+
 
   def transact2History(self, *args):
-    """ transact a row from a Sites or Resources table to history 
+    """ Transact a row from a Sites or Service or Resources table to history 
     """
     
     #get table (in args[0]) columns 
@@ -995,7 +1945,7 @@ class ResourceStatusDB:
         req = req + "WHERE (SiteName='%s' AND DateEffective < '%s');" % (args[1], args[2])
         resQuery = self.db._query(req)
         if not resQuery['OK']:
-          raise RSSDBException, where(self, self.transact2History)
+          raise RSSDBException, where(self, self.transact2History) + resQuery['Message']
         if not resQuery['Value']:
           return None
         oldStatus = resQuery['Value'][0][0]
@@ -1015,7 +1965,7 @@ class ResourceStatusDB:
         req = req + "WHERE (SiteID='%s');" % (args[1])
         resQuery = self.db._query(req)
         if not resQuery['OK']:
-          raise RSSDBException, where(self, self.transact2History)
+          raise RSSDBException, where(self, self.transact2History) + resQuery['Message']
         if not resQuery['Value']:
           return None
         siteName = resQuery['Value'][0][0]
@@ -1030,14 +1980,16 @@ class ResourceStatusDB:
         self._addSiteHistoryRow(siteName, oldStatus, oldReason, oldDateCreated, oldDateEffective, oldDateEnd, oldOperatorCode)
         self.removeSiteRow(siteName, oldDateEffective)
 
-    if args[0] in ('Resource', 'Resources'):
+
+    if args[0] in ('Service', 'Services'):
+      #get row to be put in history Services table
       if len(args) == 4:
         req = "SELECT Status, Reason, DateCreated, "
-        req = req + "DateEffective, DateEnd, OperatorCode from Resources "
-        req = req + "WHERE (ResourceName='%s' AND DateEffective < '%s' );" % (args[1], args[3])
+        req = req + "DateEffective, DateEnd, OperatorCode from Services "
+        req = req + "WHERE (ServiceName='%s' AND DateEffective < '%s');" % (args[1], args[2])
         resQuery = self.db._query(req)
         if not resQuery['OK']:
-          raise RSSDBException, where(self, self.transact2History)
+          raise RSSDBException, where(self, self.transact2History) + resQuery['Message']
         if not resQuery['Value']:
           return None
         oldStatus = resQuery['Value'][0][0]
@@ -1047,19 +1999,20 @@ class ResourceStatusDB:
         oldDateEnd = resQuery['Value'][0][4]
         oldOperatorCode = resQuery['Value'][0][5]
 
-        self._addResourcesHistoryRow(args[1], args[2], oldStatus, oldReason, oldDateCreated, oldDateEffective, oldDateEnd, oldOperatorCode)
-        self.removeResourceRow(args[1], args[2], oldDateEffective)
-        
+        #start "transaction" to history -- should be better to use a real transaction
+        self._addServiceHistoryRow(args[1], args[2], oldStatus, oldReason, oldDateCreated, oldDateEffective, oldDateEnd, oldOperatorCode)
+        self.removeServiceRow(args[1], oldDateEffective)
+
       elif len(args) == 2:
-        req = "SELECT ResourceName, SiteName, Status, Reason, DateCreated, "
-        req = req + "DateEffective, DateEnd, OperatorCode from Resources "
-        req = req + "WHERE (ResourceID='%s');" % (args[1])
+        req = "SELECT ServiceName, SiteName, Status, Reason, DateCreated, "
+        req = req + "DateEffective, DateEnd, OperatorCode from Services "
+        req = req + "WHERE (ServiceID='%s');" % (args[1])
         resQuery = self.db._query(req)
         if not resQuery['OK']:
-          raise RSSDBException, where(self, self.transact2History)
+          raise RSSDBException, where(self, self.transact2History) + resQuery['Message']
         if not resQuery['Value']:
           return None
-        resourceName = resQuery['Value'][0][0]
+        serviceName = resQuery['Value'][0][0]
         siteName = resQuery['Value'][0][1]
         oldStatus = resQuery['Value'][0][2]
         oldReason = resQuery['Value'][0][3]
@@ -1069,9 +2022,53 @@ class ResourceStatusDB:
         oldOperatorCode = resQuery['Value'][0][7]
 
         #start "transaction" to history -- should be better to use a real transaction
-        self._addResourcesHistoryRow(resourceName, siteName, oldStatus, oldReason, oldDateCreated, oldDateEffective, oldDateEnd, oldOperatorCode)
-        self.removeResourceRow(resourceName, siteName, oldDateEffective)
+        self._addServiceHistoryRow(serviceName, siteName, oldStatus, oldReason, oldDateCreated, oldDateEffective, oldDateEnd, oldOperatorCode)
+        self.removeServiceRow(serviceName, oldDateEffective)
+
         
+    if args[0] in ('Resource', 'Resources'):
+      if len(args) == 5:
+        req = "SELECT Status, Reason, DateCreated, "
+        req = req + "DateEffective, DateEnd, OperatorCode from Resources "
+        req = req + "WHERE (ResourceName='%s' AND DateEffective < '%s' );" % (args[1], args[4])
+        resQuery = self.db._query(req)
+        if not resQuery['OK']:
+          raise RSSDBException, where(self, self.transact2History) + resQuery['Message']
+        if not resQuery['Value']:
+          return None
+        oldStatus = resQuery['Value'][0][0]
+        oldReason = resQuery['Value'][0][1]
+        oldDateCreated = resQuery['Value'][0][2]
+        oldDateEffective = resQuery['Value'][0][3]
+        oldDateEnd = resQuery['Value'][0][4]
+        oldOperatorCode = resQuery['Value'][0][5]
+
+        self._addResourcesHistoryRow(args[1], args[2], args[3], oldStatus, oldReason, oldDateCreated, oldDateEffective, oldDateEnd, oldOperatorCode)
+        self.removeResourceRow(args[1], args[3], oldDateEffective)
+        
+      elif len(args) == 2:
+        req = "SELECT ResourceName, ServiceName, SiteName, Status, Reason, DateCreated, "
+        req = req + "DateEffective, DateEnd, OperatorCode from Resources "
+        req = req + "WHERE (ResourceID='%s');" % (args[1])
+        resQuery = self.db._query(req)
+        if not resQuery['OK']:
+          raise RSSDBException, where(self, self.transact2History) + resQuery['Message']
+        if not resQuery['Value']:
+          return None
+        resourceName = resQuery['Value'][0][0]
+        serviceName = resQuery['Value'][0][1]
+        siteName = resQuery['Value'][0][2]
+        oldStatus = resQuery['Value'][0][3]
+        oldReason = resQuery['Value'][0][4]
+        oldDateCreated = resQuery['Value'][0][5]
+        oldDateEffective = resQuery['Value'][0][6]
+        oldDateEnd = resQuery['Value'][0][7]
+        oldOperatorCode = resQuery['Value'][0][8]
+        
+        #start "transaction" to history -- should be better to use a real transaction
+        self._addResourcesHistoryRow(resourceName, serviceName, siteName, oldStatus, oldReason, oldDateCreated, oldDateEffective, oldDateEnd, oldOperatorCode)
+        self.removeResourceRow(resourceName, siteName, oldDateEffective)
+
 
 #############################################################################
 
@@ -1088,220 +2085,25 @@ class ResourceStatusDB:
       query = "UPDATE Sites SET DateEnd = '%s' WHERE SiteName = '%s' AND DateEffective < '%s'" % (args[2], args[1], args[2])
       resUpdate = self.db._update(query)
       if not resUpdate['OK']:
-        raise RSSDBException, where(self, self.setDateEnd)
+        raise RSSDBException, where(self, self.setDateEnd) + resUpdate['Message']
 
     elif siteOrRes == 'Resource':
       query = "UPDATE Resources SET DateEnd = '%s' WHERE ResourceName = '%s' AND DateEffective < '%s'" % (args[2], args[1], args[2])
       resUpdate = self.db._update(query)
       if not resUpdate['OK']:
-        raise RSSDBException, where(self, self.setDateEnd)
+        raise RSSDBException, where(self, self.setDateEnd) + resUpdate['Message']
+
+    elif siteOrRes == 'Service':
+      query = "UPDATE Services SET DateEnd = '%s' WHERE ServiceName = '%s' AND DateEffective < '%s'" % (args[2], args[1], args[2])
+      resUpdate = self.db._update(query)
+      if not resUpdate['OK']:
+        raise RSSDBException, where(self, self.setDateEnd) + resUpdate['Message']
 
 
 #############################################################################
 
-  def _addSiteRow(self, siteName, siteType, description, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
-    #add a new site row in Sites table
 
-    if not isinstance(dateCreated, basestring):
-      dateCreated = dateCreated.isoformat(' ')
-    if not isinstance(dateEffective, basestring):
-      dateEffective = dateEffective.isoformat(' ')
-    if not isinstance(dateEnd, basestring):
-      dateEnd = dateEnd.isoformat(' ')
-    if status not in ValidStatus:
-      raise InvalidStatus, where(self, self.addOrModifySite)
-      
-
-    req = "INSERT INTO Sites (SiteName, SiteType, Description, Status, Reason, "
-    req = req + "DateCreated, DateEffective, DateEnd, OperatorCode) "
-    req = req + "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (siteName, siteType, description, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
-
-    resUpdate = self.db._update(req)
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self._addSiteRow)
-
-#############################################################################
-
-  def _addSiteHistoryRow(self, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
-    """ add an old site row in the history
-    """
-
-    if not isinstance(dateCreated, basestring):
-      dateCreated = dateCreated.isoformat(' ')
-    if not isinstance(dateEffective, basestring):
-      dateEffective = dateEffective.isoformat(' ')
-    if not isinstance(dateEnd, basestring):
-      dateEnd = dateEnd.isoformat(' ')
-
-    req = "INSERT INTO SitesHistory (SiteName, Status, Reason, DateCreated,"
-    req = req + " DateEffective, DateEnd, OperatorCode) "
-    req = req + "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
-
-    resUpdate = self.db._update(req)
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self._addSiteHistoryRow)
-
-
-#############################################################################
-
-  def removeSite(self, siteName):
-    """ completely remove a site from the Sites table
-    """
-    req = "DELETE from Sites WHERE SiteName = '%s';" % (siteName)
-    resDel = self.db._update(req)
-    if not resDel['OK']:
-      raise RSSDBException, where(self, self.removeSite)
-
-#############################################################################
-
-  def removeSiteRow(self, siteName, dateEffective):
-    """ remove a site row from the Sites table
-    """
-    #if type(dateEffective) not in types.StringTypes:
-    if not isinstance(dateEffective, basestring):
-      dateEffective = dateEffective.isoformat(' ')
-
-    req = "DELETE from Sites WHERE SiteName = '%s' AND DateEffective = '%s';" % (siteName, dateEffective)
-    resDel = self.db._update(req)
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self.removeSiteRow)
-
-#############################################################################
-
-  def setResourceStatus(self, resourceName, status, reason, operatorCode):
-    """ set a Resource status, effective from now, with no ending
-    """
-
-    req = "SELECT ResourceType, SiteName FROM Resources WHERE ResourceName = '%s' AND DateEffective < UTC_TIMESTAMP();" %(resourceName)
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.setResourceStatus)
-    if not resQuery['Value']:
-      return None
-
-    resourceType = resQuery['Value'][0][0]
-    siteName = resQuery['Value'][0][1]
-
-    self.addOrModifyResource(resourceName, resourceType, siteName, status, reason, datetime.utcnow(), operatorCode, datetime(9999, 12, 31, 23, 59, 59))
-    
-#############################################################################
-
-  def addOrModifyResource(self, resourceName, resourceType, siteName, status, reason, dateEffective, operatorCode, dateEnd):
-    """ Add or modify a resource to the Resources table. 
-        If the dateEffective is not given, the resource status row is effective from now
-    """
-
-    dateCreated = datetime.utcnow()
-    if dateEffective < dateCreated:
-      dateEffective = dateCreated
-    if dateEnd < dateEffective:
-      raise NotAllowedDate, where(self, self.addOrModifyResource)
-    if status not in ValidStatus:
-      raise InvalidStatus, where(self, self.addOrModifySite)
-
-    #check if the resource is already there
-    query = "SELECT ResourceName FROM Resources WHERE ResourceName='%s'" % (resourceName)
-    resQuery = self.db._query(query)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.addOrModifyResource)
-
-    if resQuery['Value']: 
-      #site modification, effective from now
-      if dateEffective <= (dateCreated + timedelta(minutes=2)):
-        self.setDateEnd('Resource', resourceName, dateEffective)
-        self.transact2History('Resource', resourceName, siteName, dateEffective)
-      else:
-        self.setDateEnd('Resource', resourceName, dateEffective)
-    else:
-      if status in ('Active', 'Probing'):
-        oldStatus = 'Banned'
-      else:
-        oldStatus = 'Active'
-      self._addResourcesHistoryRow(resourceName, siteName, oldStatus, reason, dateCreated, dateEffective, datetime.utcnow().isoformat(' '),  operatorCode)
-
-    #in any case add a row to present Sites table
-    self._addResourcesRow(resourceName, resourceType, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
-#    resourceRow = "Added %s --- %s --- %s " %(resourceName, siteName, dateEffective)
-#    return resAddResourcesRow
-
-#############################################################################
-
-  def _addResourcesRow(self, resourceName, resourceType, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
-    """ add a new resource row in Resources table
-    """
-
-    if not isinstance(dateCreated, basestring):
-      dateCreated = dateCreated.isoformat(' ')
-    if not isinstance(dateEffective, basestring):
-      dateEffective = dateEffective.isoformat(' ')
-    if not isinstance(dateEnd, basestring):
-      dateEnd = dateEnd.isoformat(' ')
-    if status not in ValidStatus:
-      raise InvalidStatus, where(self, self.addOrModifySite)
-
-    
-    req = "INSERT INTO Resources (ResourceName, ResourceType, SiteName, Status, "
-    req = req + "Reason, DateCreated, DateEffective, DateEnd, OperatorCode) "
-    req = req + "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (resourceName, resourceType, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
-
-    resUpdate = self.db._update(req)
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self._addResourcesRow)
-    
-
-#############################################################################
-
-  def _addResourcesHistoryRow(self, resourceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
-    """ add an old resource row in the history
-    """
-
-    if not isinstance(dateCreated, basestring):
-      dateCreated = dateCreated.isoformat(' ')
-    if not isinstance(dateEffective, basestring):
-      dateEffective = dateEffective.isoformat(' ')
-    if not isinstance(dateEnd, basestring):
-      dateEnd = dateEnd.isoformat(' ')
-
-
-    req = "INSERT INTO ResourcesHistory (ResourceName, SiteName, Status, Reason, DateCreated,"
-    req = req + " DateEffective, DateEnd, OperatorCode) "
-    req = req + "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (resourceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
-
-    resUpdate = self.db._update(req)
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self._addResourcesHistoryRow)
-
-
-
-#############################################################################
-
-  def addSiteType(self, siteType, description=''):
-    """ Add a site type (T0, T1, T2, ...)
-    """
-
-    req = "INSERT INTO SiteTypes (SiteType, Description)"
-    req = req + "VALUES ('%s', '%s');" % (siteType, description)
-
-    resUpdate = self.db._update(req)
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self.addSiteType)
-
-
-#############################################################################
-
-  def addResourceType(self, resourceType, description=''):
-    """ Add a resource type (CE, SE, ...)
-    """
-
-    req = "INSERT INTO ResourceTypes (ResourceType, Description)"
-    req = req + "VALUES ('%s', '%s');" % (resourceType, description)
-
-    resUpdate = self.db._update(req)
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self.addResourceType)
-
-#############################################################################
-
+  #usata solo nell'handler
   def addStatus(self, status, description=''):
     """ Add a status
     """
@@ -1311,70 +2113,11 @@ class ResourceStatusDB:
 
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
-      raise RSSDBException, where(self, self.addStatus)
+      raise RSSDBException, where(self, self.addStatus) + resUpdate['Message']
 
 #############################################################################
 
-  def removeResource(self, resourceName):
-    """ completely remove a resource from the Resources table
-    """
-
-    req = "DELETE from Sites WHERE ResourceName = '%s';" % (resourceName)
-    resDel = self.db._update(req)
-    if not resDel['OK']:
-      raise RSSDBException, where(self, self.removeResource)
-
-#############################################################################
-
-  def removeResourceRow(self, resourceName, siteName, dateEffective):
-    """ remove a Resource Status from the Resources table
-    """
-
-    if not isinstance(dateEffective, basestring):
-      dateEffective = dateEffective.isoformat(' ')
-
-    req = "DELETE from Resources WHERE ResourceName = '%s' AND SiteName = '%s' AND DateEffective = '%s';" % (resourceName, siteName, dateEffective)
-    resDel = self.db._update(req)
-    if not resDel['OK']:
-      raise RSSDBException, where(self, self.removeResourceRow)
-
-#############################################################################
-
-  def removeResourceType(self, resourceType):
-    """ remove a Resource Type
-    """
-
-    req = "DELETE from ResourceTypes WHERE ResourceType = '%s';" % (resourceType)
-    resDel = self.db._update(req)
-    if not resDel['OK']:
-      raise RSSDBException, where(self, self.removeResourceType)
-
-#############################################################################
-
-  def removeSiteRow(self, siteName, dateEffective):
-    """ remove a site from the Sites table
-    """
-    if not isinstance(dateEffective, basestring):
-      dateEffective = dateEffective.isoformat(' ')
-
-    req = "DELETE from Sites WHERE SiteName = '%s' AND DateEffective = '%s';" % (siteName, dateEffective)
-    resDel = self.db._update(req)
-    if not resDel['OK']:
-      raise RSSDBException, where(self, self.removeSiteRow)
-
-#############################################################################
-
-  def removeSiteType(self, siteType):
-    """ remove a site type from the SiteTypes table
-    """
-
-    req = "DELETE from SiteTypes WHERE SiteType = '%s';" % (siteType)
-    resDel = self.db._update(req)
-    if not resDel['OK']:
-      raise RSSDBException, where(self, self.removeSiteType)
-
-#############################################################################
-
+  #usata solo nell'handler
   def removeStatus(self, status):
     """ remove a status from the Status table
     """
@@ -1382,73 +2125,12 @@ class ResourceStatusDB:
     req = "DELETE from Status WHERE Status = '%s';" % (status)
     resDel = self.db._update(req)
     if not resDel['OK']:
-      raise RSSDBException, where(self, self.removeStatus)
-
-#############################################################################
-
-#  def checkStatus(self, status):
-#    """ Internal check for Status 
-#    """
-#    
-#    status = status.capitalize()
-#    if status not in ('Active', 'Probing', 'Banned'):
-#      raise NotAllowedStatus("not allowed status")
-#    return status
-
-#############################################################################
-
-  def setLastSiteCheckTime(self, siteName):
-    """ set to utcnow() LastCheckTime of table Resources
-    """
-    
-    req = "UPDATE Sites SET LastCheckTime = UTC_TIMESTAMP() WHERE "
-    req = req + "SiteName = '%s' AND DateEffective <= UTC_TIMESTAMP();" % (siteName)
-    resUpdate = self.db._update(req)
-    
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self.setLastSiteCheckTime)
-
-#############################################################################
-
-  def setSiteReason(self, siteName, reason, operatorCode):
-    """ set new reason to resourceName
-    """
-    
-    req = "UPDATE Sites SET Reason = '%s', OperatorCode = '%s' WHERE SiteName = '%s';" %(reason, operatorCode, siteName)
-    resUpdate = self.db._update(req)
-    
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self.setSiteReason)
-
-#############################################################################
-
-  def setLastResourceCheckTime(self, resourceName):
-    """ set to utcnow() LastCheckTime of table Resources
-    """
-    
-    req = "UPDATE Resources SET LastCheckTime = UTC_TIMESTAMP() WHERE "
-    req = req + "ResourceName = '%s' AND DateEffective <= UTC_TIMESTAMP();" % (resourceName)
-    resUpdate = self.db._update(req)
-    
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self.setLastSiteCheckTime)
-
-#############################################################################
-
-  def setResourceReason(self, resourceName, reason, operatorCode):
-    """ set new reason to resourceName
-    """
-    
-    req = "UPDATE Resources SET Reason = '%s', OperatorCode = '%s' WHERE ResourceName = '%s';" % (reason, operatorCode, resourceName)
-    resUpdate = self.db._update(req)
-    
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self.setResourceReason)
+      raise RSSDBException, where(self, self.removeStatus) + resDel['Message']
 
 #############################################################################
 
   def unique(self, table, ID):
-    """ check if the site or resource corresping to the ID is unique in the table 
+    """ check if the site or resource corresponding to the ID is unique in the table 
     """
     
     if table == 'Sites':
@@ -1459,14 +2141,172 @@ class ResourceStatusDB:
       req = "SELECT COUNT(*) FROM Resources WHERE ResourceName = (SELECT ResourceName "
       req = req + " FROM Resources WHERE ResourceID = '%d');" % (ID)
 
+    elif table == 'Services':
+      req = "SELECT COUNT(*) FROM Services WHERE ServiceName = (SELECT ServiceName "
+      req = req + " FROM Services WHERE ServiceID = '%d');" % (ID)
+
     resQuery = self.db._query(req)
     if not resQuery['OK']:
-      raise RSSDBException, where(self, self.unique)
+      raise RSSDBException, where(self, self.unique) + resQuery['Message']
     else:
       n = int(resQuery['Value'][0][0])
       if n == 1 :
         return True
       else:
         return False
+      
+#############################################################################
+
+  def syncWithCS(self):
+    """ Syncronize DB content with CS content
+    """ 
+    
+    from DIRAC.Core.Utilities.SiteCEMapping import getSiteCEMapping
+    from DIRAC.Core.Utilities.SiteSEMapping import getSiteSEMapping
+    import time
+    
+    T0List = []
+    T1List = []
+    T2List = []
+    
+    CEList = []
+    SerCompList = []
+    SerStorList = []
+    SEList = []
+    SENodeList = []
+    seServiceSite = []
+    
+    sitesList = gConfig.getSections('Resources/Sites/LCG', True)
+    if sitesList['OK']:
+      sitesList = sitesList['Value']
+    else:
+      raise RSSException, where(self, self.syncWithCS) + sitesList['Message']
+    
+    for site in sitesList:
+      tier = gConfig.getValue("Resources/Sites/LCG/%s/MoUTierLevel" %site)
+      if tier == 0 or tier == '0':
+        T0List.append(site)
+      if tier == 1 or tier == '1':
+        T1List.append(site)
+      if tier == 2 or tier == '2' or tier == None or tier == 'None':
+        T2List.append(site)
+   
+    siteCE = getSiteCEMapping('LCG')['Value']
+    for i in siteCE.values():
+      CEList = CEList+i
+      
+    siteSE = getSiteSEMapping('LCG')['Value']
+    for i in siteSE.values():
+      for x in i:
+        SEList.append(x)
+        
+    for SE in SEList:
+      node = gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/Host" %SE)
+      if node not in SENodeList:
+        SENodeList.append(node)
+
+    sitesIn = self.getSitesList(paramsList = ['SiteName'])
+    sitesIn = [s[0] for s in sitesIn]
+    servicesIn = self.getServicesList(paramsList = ['ServiceName'])
+    servicesIn = [s[0] for s in servicesIn]
+    resourcesIn = self.getResourcesList(paramsList = ['ResourceName'])
+    resourcesIn = [s[0] for s in resourcesIn]
+
+    #remove sites no more in the CS  - separate because of "race conditions"
+    for site in sitesIn:
+      if site not in T0List + T1List + T2List:
+        self.removeResource(siteName = site)
+        time.sleep(0.3)
+    for site in sitesIn:
+      if site not in T0List + T1List + T2List:
+        self.removeService(siteName = site)
+        time.sleep(0.3)
+    for site in sitesIn:
+      if site not in T0List + T1List + T2List:
+        self.removeSite(site)
+        time.sleep(0.3)
+    
+    #add new T0 sites
+    for site in T0List:
+      if site not in sitesIn:
+        self.addOrModifySite(site, 'T0', 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+        sitesIn.append(site)
+
+    #add new T1 sites
+    for site in T1List:
+      if site not in sitesIn:
+        self.addOrModifySite(site, 'T1', 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+        sitesIn.append(site)
+    
+    #add new T2 sites
+    for site in T2List:
+      if site not in sitesIn:
+        self.addOrModifySite(site, 'T2', 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+        sitesIn.append(site)
+        
+    #create SerCompList 
+    for site in siteCE.keys():
+      for ce in siteCE[site]:
+        service = 'Computing@' + site
+        if service not in SerCompList:
+          SerCompList.append(service)
+
+    #create SerStorList 
+    for site in siteSE.keys():
+      for se in siteSE[site]:
+        service = 'Storage@' + site
+        if service not in SerStorList:
+          SerStorList.append(service)
+          
+    #remove Services no more in the CS  - separate because of "race conditions"
+    for ser in servicesIn:
+      if ser not in SerCompList + SerStorList:
+        self.removeResource(serviceName = ser)
+    for ser in servicesIn:
+      if ser not in SerCompList + SerStorList:
+        self.removeService(ser)
+
+#    #add new Computing services
+#    for ser in SerCompList:
+#      if ser not in servicesIn:
+#        self.addOrModifyService(ser, 'Computing', 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+
+    #remove CEs or SEs no more in the CS
+   
+    for res in resourcesIn:
+      if res not in CEList + SENodeList:
+        self.removeResource(res)
+        
+    #add new comp services and CEs - separate because of "race conditions"         
+    for site in siteCE.keys():
+      for ce in siteCE[site]:
+        service = 'Computing@' + site
+        if service not in servicesIn:
+          self.addOrModifyService(service, 'Computing', site, 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+          servicesIn.append(service)
+    for site in siteCE.keys():
+      for ce in siteCE[site]:
+        service = 'Computing@' + site
+        if ce not in resourcesIn:
+          self.addOrModifyResource(ce, 'CE', service, site, 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+          resourcesIn.append(ce)
+      
+    #add new storage services and SEs - separate because of "race conditions"
+    for site in siteSE.keys():
+      for se in siteSE[site]:
+        service = 'Storage@' + site
+        if service not in servicesIn:
+          self.addOrModifyService(service, 'Storage', site, 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+          servicesIn.append(service)
+    for site in siteSE.keys():
+      for se in siteSE[site]:
+        service = 'Storage@' + site
+        se = gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/Host" %se)
+        if se not in resourcesIn and se is not None:
+          sss = se+service+site
+          if sss not in seServiceSite:
+            self.addOrModifyResource(se, 'SE', service, site, 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+            seServiceSite.append(sss)
+          
       
 #############################################################################

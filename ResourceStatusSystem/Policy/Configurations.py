@@ -47,27 +47,27 @@ SBP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
 
 #when a resource, now active, was probing
 RAP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': ['DT_Policy', 'JobsEfficiencySimple_Policy', 'PilotsEfficiencySimple_Policy']}]
+        'Policies': ['DT_Policy', 'SAM_Policy', 'PilotsEfficiencySimple_Policy']}]
 
 #when a resource, now active, was banned
 RAB = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': ['DT_Policy', 'JobsEfficiencySimple_Policy', 'PilotsEfficiencySimple_Policy']}]
+        'Policies': ['DT_Policy', 'SAM_Policy', 'PilotsEfficiencySimple_Policy']}]
 
 #when a resource, now probing, was active
 RPA = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': ['DT_Policy', 'JobsEfficiencySimple_Policy', 'PilotsEfficiencySimple_Policy']}]
+        'Policies': ['DT_Policy', 'SAM_Policy', 'PilotsEfficiencySimple_Policy']}]
 
 #when a resource, now probing, was banned
 RPB = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': ['DT_Policy', 'JobsEfficiencySimple_Policy', 'PilotsEfficiencySimple_Policy']}]
+        'Policies': ['DT_Policy', 'SAM_Policy', 'PilotsEfficiencySimple_Policy']}]
 
 #when a resource, now banned, was active
 RBA = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': ['DT_Policy', 'JobsEfficiencySimple_Policy', 'PilotsEfficiencySimple_Policy']}]
+        'Policies': ['DT_Policy', 'SAM_Policy', 'PilotsEfficiencySimple_Policy']}]
 
 #when a resource, now banned, was probing
 RBP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': ['DT_Policy', 'JobsEfficiencySimple_Policy', 'PilotsEfficiencySimple_Policy']}]
+        'Policies': ['DT_Policy', 'SAM_Policy', 'PilotsEfficiencySimple_Policy']}]
 
 
 #when a service, now active, was probing
@@ -232,12 +232,12 @@ def policyInvocation(granularity = None, name = None, status = None, policy = No
       a = (granularity, name, status)
     res = _innerEval(p, a)
 
-  if pol == 'ServiceStats_Policy':
+  if pol == 'OnServicePropagation_Policy':
     p = policy
     a = args
     if policy is None:
-      from DIRAC.ResourceStatusSystem.Policy.ServiceStatus_Policy import ServiceStatus_Policy 
-      p = ServiceStatus_Policy()
+      from DIRAC.ResourceStatusSystem.Policy.OnServicePropagation_Policy import OnServicePropagation_Policy 
+      p = OnServicePropagation_Policy()
     if args is None:
       a = (name, status)
     res = _innerEval(p, a)

@@ -48,7 +48,7 @@ class OnServicePropagation_Policy(PolicyBase):
         
       clientsInvoker = ClientsInvoker()
       clientsInvoker.setCommand(command)
-      resourceStats = clientsInvoker.doCommand((args[0], ))
+      resourceStats = clientsInvoker.doCommand(('Service', args[0]))
       
     resourcesStatus = 'Active'
     
@@ -72,7 +72,7 @@ class OnServicePropagation_Policy(PolicyBase):
         from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
         rsDB = ResourceStatusDB()
         siteName = rsDB.getGeneralName(args[0], 'Service', 'Site')
-        siteStatus = rsDB.getSitesStatusWeb({'SiteName':siteName}, [], 0, 1)['Records'][4]
+        siteStatus = rsDB.getSitesStatusWeb({'SiteName':siteName}, [], 0, 1)['Records'][0][4]
     
     result = {}
     
