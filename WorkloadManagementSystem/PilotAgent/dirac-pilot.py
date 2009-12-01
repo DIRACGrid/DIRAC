@@ -363,10 +363,12 @@ if cliParams.testVOMSOK:
 
 diracLibPath = os.path.join( rootPath, cliParams.platform, 'lib' )
 diracBinPath = os.path.join( rootPath, cliParams.platform, 'bin' )
-if 'LD_LIBRARY_PATH' in os.environ:
-  os.environ['LD_LIBRARY_PATH_SAVE'] = os.environ['LD_LIBRARY_PATH']
-else:
-  os.environ['LD_LIBRARY_PATH_SAVE'] = ""
+for envVarName in ( 'LD_LIBRARY_PATH', 'PYTHONPATH' ):
+  if envVarName in os.environ:
+    os.environ[ '%s_SAVE' % envVarName ] = os.environ[ envVarName ]
+    del( os.environ[ envVarName ] )
+  else:
+    os.environ[ '%s_SAVE' % envVarName ] = ""
 os.environ['LD_LIBRARY_PATH'] = "%s" % ( diracLibPath )
 os.environ['PATH'] = '%s:%s:%s' % ( diracBinPath, diracScriptsPath, os.getenv( 'PATH' ) )
 
