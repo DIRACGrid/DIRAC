@@ -585,7 +585,7 @@ class JobAgent( AgentModule ):
     """Force the JobAgent to complete gracefully.
     """
     self.log.info( 'JobAgent will stop with message "%s", execution complete.' % message )
-    self.am_setModuleParam( 'Alive', False )
+    self.am_stopExecution()
     return S_ERROR( message )
 
   #############################################################################
