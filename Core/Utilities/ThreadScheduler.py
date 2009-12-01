@@ -155,9 +155,9 @@ class ThreadScheduler:
     if taskId not in self.__taskDict:
       return False
     if numExecutions:
-      task[ 'executions' ] = numExecutions
+      self.__taskDict[ taskId ][ 'executions' ] = numExecutions
     else:
-      del( task[ 'executions' ] )
+      del( self.__taskDict[ taskId ][ 'executions' ] )
 
   def __executeTask( self, taskId ):
     if taskId not in self.__taskDict:
