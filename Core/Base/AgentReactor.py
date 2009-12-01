@@ -90,7 +90,7 @@ class AgentReactor:
 
   def runNumCycles( self, numCycles = 1 ):
     for agentName in self.__agentModules:
-      self.setAgentModuleMaxCycles( agentName, numCycles )
+      self.setAgentModuleCyclesToExecute( agentName, numCycles )
     self.go()
 
   def go( self ):
@@ -108,9 +108,11 @@ class AgentReactor:
     finally:
       self.__running = False
       
-  def setAgentModuleMaxCycles( self, agentName, maxCycles ):
+  def setAgentModuleCyclesToExecute( self, agentName, maxCycles ):
     if not agentName in self.__agentModules:
       return S_ERROR( "%s has not been loaded" % agentName )
+    if maxCycles:
+      maxCycles += self.__agentModules[ agentName ][ 'instance' ].am_getCyclesDone()
     self.__agentModules[ agentName ][ 'instance' ].am_setOption( 'MaxCycles', maxCycles )
     self.__scheduler.setNumExecutionsForTask( self.__agentModules[ agentName ][ 'taskId' ],
                                               maxCycles )
