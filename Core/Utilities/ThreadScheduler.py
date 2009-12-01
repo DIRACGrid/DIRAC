@@ -149,6 +149,15 @@ class ThreadScheduler:
     if len( self.__hood ) == 0:
       return None
     return self.__hood[0][0]
+  
+  @gSchedulerLock
+  def setNumExecutionsForTask( self, taskId, numExecutions ):
+    if taskId not in self.__taskDict:
+      return False
+    if numExecutions:
+      task[ 'executions' ] = numExecutions
+    else:
+      del( task[ 'executions' ] )
 
   def __executeTask( self, taskId ):
     if taskId not in self.__taskDict:
