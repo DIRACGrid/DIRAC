@@ -14,7 +14,6 @@ import sys
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC import gLogger, gConfig
-from DIRAC.Core.Base.Agent import createAgent
 from DIRAC.Core.Base.AgentReactor import AgentReactor
 
 localCfg = LocalConfiguration()
