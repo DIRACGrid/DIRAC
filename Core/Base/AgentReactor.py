@@ -95,6 +95,13 @@ class AgentReactor:
         gLogger.info( "No more agent modules to execute. Exiting" )
         break
       time.sleep( min( max( timeToNext, 0.5 ), 5 ) )
+      
+  def getAgentModuleMaxCycles( self, agentName, maxCycles ):
+    if not agentName in self.__agentModules:
+      return S_ERROR( "%s has not been loaded" % agentName )
+    self.__agentModules[ agentName ][ 'instance' ].am_setOption( 'MaxCycles', maxCycles )
+    self.__scheduler.setNumExecutionsForTask( self.__agentModules[ agentName ][ 'taskId' ],
+                                              maxCycles )
 
   def __checkControlDir( self ):
     for agentName in self.__agentModules:
