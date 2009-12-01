@@ -96,7 +96,7 @@ class AgentReactor:
         break
       time.sleep( min( max( timeToNext, 0.5 ), 5 ) )
       
-  def getAgentModuleMaxCycles( self, agentName, maxCycles ):
+  def setAgentModuleMaxCycles( self, agentName, maxCycles ):
     if not agentName in self.__agentModules:
       return S_ERROR( "%s has not been loaded" % agentName )
     self.__agentModules[ agentName ][ 'instance' ].am_setOption( 'MaxCycles', maxCycles )
