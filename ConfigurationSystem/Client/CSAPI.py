@@ -14,7 +14,7 @@ class CSAPI:
     Initialization function
     """
     self.__csModified = False
-    self.__baseSecurity = "/Security"
+    self.__baseSecurity = "/Registry"
     self.__initialized = self.initialize()
 
   def initialize( self ):

@@ -966,7 +966,7 @@ class TaskQueueDB(DB):
     """
     self.log.info( "Setting priorities to %s@%s TQs" % ( userDN, userGroup ) )
     tqCond = [ "t.OwnerGroup='%s'" % userGroup ]
-    allowBgTQs = gConfig.getValue( "/Security/Groups/%s/AllowBackgroundTQs" % userGroup, False )
+    allowBgTQs = gConfig.getValue( "/Registry/Groups/%s/AllowBackgroundTQs" % userGroup, False )
     if Properties.JOB_SHARING not in CS.getPropertiesForGroup( userGroup ):
       tqCond.append( "t.OwnerDN='%s'" % userDN )
     tqCond.append( "t.TQId = j.TQId" )
@@ -1012,14 +1012,14 @@ class TaskQueueDB(DB):
     """
     Get all the shares as a DICT
     """
-    result = gConfig.getSections( "/Security/Groups" )
+    result = gConfig.getSections( "/Registry/Groups" )
     if result[ 'OK' ]:
       groups = result[ 'Value' ]
     else:
       groups = []
     shares = {}
     for group in groups:
-      shares[ group ] = gConfig.getValue( "/Security/Groups/%s/JobShare" % group, DEFAULT_GROUP_SHARE )
+      shares[ group ] = gConfig.getValue( "/Registry/Groups/%s/JobShare" % group, DEFAULT_GROUP_SHARE )
     return shares
 
   def propagateTQSharesIfChanged(self):

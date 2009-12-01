@@ -22,7 +22,7 @@ class SecurityLogClient:
       timestamp = Time.dateTime()
     msg = ( timestamp, success, sourceIP, sourcePort, sourceIdentity,
             destinationIP, destinationPort, destinationService, action )
-    if gConfig.getValue( "/Security/EnableSysLog", False ):
+    if gConfig.getValue( "/Registry/EnableSysLog", False ):
       strMsg = "Time=%s Accept=%s Source=%s:%s SourceID=%s Destination=%s:%s Service=%s Action=%s"
       syslog.syslog( strMsg % msg )
     while len( self.__messagesList ) > self.__maxMessagesWaiting:

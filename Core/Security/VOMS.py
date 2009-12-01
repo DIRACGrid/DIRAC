@@ -28,16 +28,16 @@ class VOMS( BaseSecurity ):
 
     #Get a list of known VOMS attributes
     validVOMSAttrs = []
-    result = gConfig.getOptions( "/Security/VOMSMapping" )
+    result = gConfig.getOptions( "/Registry/VOMSMapping" )
     if result[ 'OK' ]:
       for group in result[ 'Value' ]:
-        vA = gConfig.getValue( "/Security/VOMSMapping/%s" % group, "" )
+        vA = gConfig.getValue( "/Registry/VOMSMapping/%s" % group, "" )
         if vA and vA not in validVOMSAttrs:
           validVOMSAttrs.append( vA )
-    result = gConfig.getSections( "/Security/Groups" )
+    result = gConfig.getSections( "/Registry/Groups" )
     if result[ 'OK' ]:
       for group in result[ 'Value' ]:
-        vA = gConfig.getValue( "/Security/Groups/%s/VOMSRole" % group, "" )
+        vA = gConfig.getValue( "/Registry/Groups/%s/VOMSRole" % group, "" )
         if vA and vA not in validVOMSAttrs:
           validVOMSAttrs.append( vA )
 

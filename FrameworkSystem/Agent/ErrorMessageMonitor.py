@@ -32,7 +32,7 @@ class ErrorMessageMonitor(AgentModule):
     
     mailList = []
     for user in userList:
-      retval = gConfig.getOption( "/Security/Users/" + user + "/email" )
+      retval = gConfig.getOption( "/Registry/Users/" + user + "/email" )
       if not retval['OK']:
         self.log.warn( "Could not get user's mail", retval['Message'] )
       else:

@@ -24,7 +24,7 @@ if userGroup != 'diracAdmin':
   DIRAC.exit(-2)
 
 if not users:
-  res = gConfig.getSections('/Security/Users')
+  res = gConfig.getSections('/Registry/Users')
   if not res['OK']:
     gLogger.error("Failed to retrieve user list from CS",res['Message'])
     DIRAC.exit(2)
@@ -34,9 +34,9 @@ gLogger.info("-"*30)
 gLogger.info("%s|%s" % ('Username'.ljust(15),'Quota (GB)'.rjust(15)))
 gLogger.info("-"*30)
 for user in sortList(users):
-  quota = gConfig.getValue('/Security/Users/%s/Quota' % user,0)
+  quota = gConfig.getValue('/Registry/Users/%s/Quota' % user,0)
   if not quota:
-    quota = gConfig.getValue('/Security/DefaultStorageQuota')
+    quota = gConfig.getValue('/Registry/DefaultStorageQuota')
   gLogger.info("%s|%s" % (user.ljust(15),str(quota).rjust(15)))
 gLogger.info("-"*30)
 DIRAC.exit(0)

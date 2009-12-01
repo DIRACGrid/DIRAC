@@ -8,7 +8,7 @@ class VOMSAdmin:
   
   def __init__( self, url = False ):
     if not url:
-      url = gConfig.getValue( "/Security/VOMSAdminURL", "" )
+      url = gConfig.getValue( "/Registry/VOMSAdminURL", "" )
     if not url:
       raise Exception( "No URL defined for VOMSAdmin" )
     self.__soapClient = getSOAPClient( "%s?wsdl" % url )

@@ -332,7 +332,7 @@ class NotificationDB(DB):
     return msg
     
   def __sendMailToUser( self, user, subject, message ):
-    address = gConfig.getValue( "/Security/Users/%s/email" % user, "" )
+    address = gConfig.getValue( "/Registry/Users/%s/email" % user, "" )
     if not address:
       self.log.error( "User does not have an email registered ", user )
       return S_ERROR( "User % does not have an email registered" % user )
