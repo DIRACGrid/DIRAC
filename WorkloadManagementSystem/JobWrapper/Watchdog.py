@@ -149,7 +149,7 @@ class Watchdog:
       #print self.parameters
       self.__getUsageSummary()
       self.log.info( 'Process to monitor has completed, Watchdog will exit.' )
-      return S_OK()
+      return S_OK( "Ended" )
 
     if self.littleTimeLeft:
       # if we have gone over enough iterations query again
