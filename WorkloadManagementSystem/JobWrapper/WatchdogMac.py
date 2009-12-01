@@ -13,7 +13,6 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.Agent                              import Agent
 from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
 from DIRAC.Core.Utilities.Subprocess                    import shellCall
 from DIRAC                                              import S_OK, S_ERROR
