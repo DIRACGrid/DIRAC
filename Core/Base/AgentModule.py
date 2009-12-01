@@ -45,7 +45,7 @@ class AgentModule:
                                 'cyclesDone' : 0,
                                 'totalElapsedTime' : 0,
                                 'setup' : gConfig.getValue( "/DIRAC/Setup", "Unknown" ) }
-    self.__moduleProperties[ 'system' ], self.__moduleProperties[ 'agentName' ] = agentName.split("/")
+    self.__moduleProperties[ 'system' ], self.__moduleProperties[ 'agentName' ] = agentName.split( "/" )
     self.__configDefaults = {}
     self.__configDefaults[ 'MonitoringEnabled'] = True
     self.__configDefaults[ 'Enabled'] = self.am_getOption( "Status", "Active" ).lower() in ( 'active' )
@@ -53,10 +53,10 @@ class AgentModule:
     self.__configDefaults[ 'MaxCycles'] = self.am_getOption( "MaxCycles", 0 )
     self.__configDefaults[ 'ControlDirectory' ] = os.path.join( DIRAC.rootPath,
                                                             'control',
-                                                            os.path.join( *self.__moduleProperties[ 'fullName' ].split("/") ) )
+                                                            os.path.join( *self.__moduleProperties[ 'fullName' ].split( "/" ) ) )
     self.__configDefaults[ 'WorkDirectory' ] = os.path.join( DIRAC.rootPath,
                                                             'work',
-                                                            os.path.join( *self.__moduleProperties[ 'fullName' ].split("/") ) )
+                                                            os.path.join( *self.__moduleProperties[ 'fullName' ].split( "/" ) ) )
 
     for key in properties:
       self.__moduleProperties[ key ] = self.properties[ key ]
@@ -71,7 +71,7 @@ class AgentModule:
   def __getCodeInfo( self ):
     versionVar = "__RCSID__"
     try:
-      self.__agentModule =  __import__( self.__class__.__module__,
+      self.__agentModule = __import__( self.__class__.__module__,
                                        globals(),
                                        locals(),
                                        versionVar )
@@ -93,7 +93,7 @@ class AgentModule:
     if result == None:
       return S_ERROR( "Error while initializing %s module: initialize must return S_OK/S_ERROR" % agentName )
     if not result[ 'OK' ]:
-      return S_ERROR( "Error while initializing %s: %s"  % ( agentName, result[ 'Message' ] ) )
+      return S_ERROR( "Error while initializing %s: %s" % ( agentName, result[ 'Message' ] ) )
     self.__checkAgentDir( 'ControlDirectory' )
     self.__checkAgentDir( 'WorkDirectory' )
     if not self.__moduleProperties[ 'shifterProxyLocation' ]:
@@ -104,7 +104,7 @@ class AgentModule:
     if len( self.__moduleProperties[ 'executors' ] ) < 1:
       return S_ERROR( "At least one executor method has to be defined" )
     if not self.am_Enabled():
-      return S_ERROR( "Agent is disabled via the configuration")
+      return S_ERROR( "Agent is disabled via the configuration" )
     self.log.info( "="*40 )
     self.log.info( "Loaded agent module %s" % self.__moduleProperties[ 'fullName' ] )
     self.log.info( " Site: %s" % DIRAC.siteName() )
@@ -131,7 +131,7 @@ class AgentModule:
     except:
       pass
     if not os.path.isdir( path ):
-      raise Exception('Can not create %s at %s' % ( name, path ) )
+      raise Exception( 'Can not create %s at %s' % ( name, path ) )
 
   def am_getOption( self, optionName, defaultValue = False ):
     if not defaultValue:
@@ -150,21 +150,24 @@ class AgentModule:
   def am_setModuleParam( self, optionName, value ):
     self.__moduleProperties[ optionName ] = value
 
-  def am_getPollingTime(self):
+  def am_getPollingTime( self ):
     return self.am_getOption( "PollingTime" )
 
-  def am_getMaxCycles(self):
+  def am_getMaxCycles( self ):
     return self.am_getOption( "MaxCycles" )
-  
+
   def am_getCyclesDone( self ):
     return self.am_getModuleParam( 'cyclesDone' )
 
-  def am_Enabled(self):
+  def am_Enabled( self ):
     enabled = self.am_getOption( "Enabled" )
     return self.am_getOption( "Enabled" )
 
-  def am_MonitoringEnabled(self):
+  def am_MonitoringEnabled( self ):
     return self.am_getOption( "MonitoringEnabled", 'true' )
+
+  def am_stopExecution( self ):
+    self.am_setModuleParam( 'Alive', False )
 
   def __initializeMonitor( self ):
     """
@@ -177,8 +180,8 @@ class AgentModule:
     self.monitor.setComponentType( self.monitor.COMPONENT_AGENT )
     self.monitor.setComponentName( self.__moduleProperties[ 'fullName' ] )
     self.monitor.initialize()
-    self.monitor.registerActivity('CPU',"CPU Usage",'Framework',"CPU,%",self.monitor.OP_MEAN,600)
-    self.monitor.registerActivity('MEM',"Memory Usage",'Framework','Memory,MB',self.monitor.OP_MEAN,600)
+    self.monitor.registerActivity( 'CPU', "CPU Usage", 'Framework', "CPU,%", self.monitor.OP_MEAN, 600 )
+    self.monitor.registerActivity( 'MEM', "Memory Usage", 'Framework', 'Memory,MB', self.monitor.OP_MEAN, 600 )
     #Component monitor
     for field in ( 'version', 'DIRACVersion', 'description', 'platform' ):
       self.monitor.setComponentExtraParam( field, self.__codeProperties[ field ] )
@@ -197,7 +200,7 @@ class AgentModule:
       return result
     except Exception, e:
       self.log.exception( "Exception while calling %s method" % name )
-      return S_ERROR( "Exception while calling %s method: %s" % ( name, str(e) ) )
+      return S_ERROR( "Exception while calling %s method: %s" % ( name, str( e ) ) )
 
   def am_go( self ):
     #Set the shifter proxy if required
@@ -231,7 +234,7 @@ class AgentModule:
     averageElapsedTime = self.__moduleProperties[ 'totalElapsedTime' ] / self.__moduleProperties[ 'cyclesDone' ]
     self.log.info( " Average execution time: %.2f seconds" % ( averageElapsedTime ) )
     elapsedPollingRate = averageElapsedTime * 100 / self.am_getOption( 'PollingTime' )
-    self.log.info( " Polling time: %s seconds" % self.am_getOption( 'PollingTime' )  )
+    self.log.info( " Polling time: %s seconds" % self.am_getOption( 'PollingTime' ) )
     self.log.info( " Average execution/polling time: %.2f%%" % elapsedPollingRate )
     if cycleResult[ 'OK' ]:
       self.log.info( " Cycle was successful" )
@@ -242,7 +245,7 @@ class AgentModule:
     self.monitor.setComponentExtraParam( 'cycles', self.__moduleProperties[ 'cyclesDone' ] )
     return cycleResult
 
-  def __startReportToMonitoring(self):
+  def __startReportToMonitoring( self ):
     try:
       now = time.time()
       stats = os.times()
@@ -253,10 +256,10 @@ class AgentModule:
       wallClock = now - self.__monitorLastStatsUpdate
       self.__monitorLastStatsUpdate = now
       # Send Memory consumption mark
-      membytes = self.__VmB('VmRSS:')
+      membytes = self.__VmB( 'VmRSS:' )
       if membytes:
         mem = membytes / ( 1024. * 1024. )
-        gMonitor.addMark('MEM', mem )
+        gMonitor.addMark( 'MEM', mem )
       return( now, cpuTime )
     except:
       return False
@@ -269,10 +272,10 @@ class AgentModule:
     if percentage > 0:
       gMonitor.addMark( 'CPU', percentage )
 
-  def __VmB(self, VmKey):
+  def __VmB( self, VmKey ):
       '''Private.
       '''
-      __memScale = {'kB': 1024.0, 'mB': 1024.0*1024.0, 'KB': 1024.0, 'MB': 1024.0*1024.0}
+      __memScale = {'kB': 1024.0, 'mB': 1024.0 * 1024.0, 'KB': 1024.0, 'MB': 1024.0 * 1024.0}
       procFile = '/proc/%d/status' % os.getpid()
        # get pseudo file  /proc/<pid>/status
       try:
@@ -283,13 +286,13 @@ class AgentModule:
           return 0.0  # non-Linux?
        # get VmKey line e.g. 'VmRSS:  9999  kB\n ...'
       i = v.index( VmKey )
-      v = v[i:].split(None, 3)  # whitespace
-      if len(v) < 3:
+      v = v[i:].split( None, 3 )  # whitespace
+      if len( v ) < 3:
           return 0.0  # invalid format?
        # convert Vm value to bytes
-      return float(v[1]) * __memScale[v[2]]
+      return float( v[1] ) * __memScale[v[2]]
 
-  def __executeModuleCycle(self):
+  def __executeModuleCycle( self ):
     #Execute the beginExecution function
     result = self.am_secureCall( self.beginExecution, name = "beginExecution" )
     if not result[ 'OK' ]:
@@ -303,24 +306,24 @@ class AgentModule:
     else:
       exeThreads = [ threading.Thread( target = executor[0], args = executor[1] ) for executor in executors ]
       for thread in exeThreads:
-        thread.setDaemon(1)
+        thread.setDaemon( 1 )
         thread.start()
       for thread in exeThreads:
         thread.join()
     #Execute the endExecution function
     return  self.am_secureCall( self.endExecution, name = "endExecution" )
 
-  def initialize(self):
+  def initialize( self ):
     return S_OK()
 
-  def beginExecution(self):
+  def beginExecution( self ):
     return S_OK()
 
-  def endExecution(self):
+  def endExecution( self ):
     return S_OK()
 
-  def finalize(self):
+  def finalize( self ):
     return S_OK()
 
-  def execute(self):
+  def execute( self ):
     return S_ERROR( "Execute method has to be overwritten by agent module" )
