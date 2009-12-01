@@ -155,6 +155,9 @@ class AgentModule:
 
   def am_getMaxCycles(self):
     return self.am_getOption( "MaxCycles" )
+  
+  def am_getCyclesDone( self ):
+    return self.am_getModuleParam( 'CyclesDone' )
 
   def am_Enabled(self):
     enabled = self.am_getOption( "Enabled" )
