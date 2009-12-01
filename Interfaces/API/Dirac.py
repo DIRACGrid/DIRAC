@@ -46,7 +46,7 @@ from DIRAC.Core.Utilities.Time                           import toString
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks, sortList
 from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
-from DIRAC.Core.Base.Agent                               import createAgent
+from DIRAC.Core.Base.AgentReactor                        import AgentReactor
 from DIRAC.Core.Security.X509Chain                       import X509Chain
 from DIRAC.Core.Security                                 import Locations, CS
 from DIRAC.FrameworkSystem.Client.LoggerClient           import LoggerClient
@@ -450,8 +450,8 @@ class Dirac:
       self.log.error('There were errors when loading configuration', result['Message'])
       return S_ERROR('Could not start DIRAC Job Agent')
 
-    agent = createAgent(agentName)
-    result = agent.run_once()
+    agent = AgentReactor(agentName)
+    result = agent.runNumCycles(numCycles=1)
     if not result['OK']:
       self.log.error('Job Agent execution completed with errors',result['Message'])
 
