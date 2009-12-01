@@ -52,6 +52,7 @@ class Watchdog:
     self.processMonitor = ProcessMonitor()
     self.checkError = ''
     self.initialized = False
+    self.count = 0
 
 
   #############################################################################
