@@ -10,7 +10,7 @@ class VOMSService:
     self.__soapClients = {}
     for key, url in ( ( 'Admin', adminUrl ), ( 'Attributes', attributesUrl ) ):
       if not url:
-        url = gConfig.getValue( "/Registry/URLs/VOMS%s" % key, "" )
+        url = gConfig.getValue( "/Registry/VOMS/URLs/VOMS%s" % key, "" )
       if not url:
         raise Exception( "No URL defined for VOMS%s" % key )
       self.__soapClients[ key ] = getSOAPClient( "%s?wsdl" % url )
@@ -56,5 +56,15 @@ class VOMSService:
     try:
       result = self.__soapClients[ 'Admin' ].service.getVOName()
     except Exception, e:
-      return S_ERROR( "Error in function listUsersWithRole: %s" % str( e ) )
+      return S_ERROR( "Error in function getVOName: %s" % str( e ) )
     return S_OK( result )
+
+  def attGetUserNickname( self, DN, CA ):
+    user = self.__soapClients[ 'Attributes' ].factory.create( 'ns0:User' )
+    user.DN = DN
+    user.CA = CA
+    try:
+      result = self.__soapClients[ 'Attributes' ].service.listUserAttributes( user )
+    except Exception, e:
+      return S_ERROR( "Error in function getUserNickname: %s" % str( e ) )
+    return S_OK( result.listUserAttributesReturn[0].value )
