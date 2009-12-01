@@ -8,44 +8,43 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC  import gLogger, gConfig, gMonitor,S_OK, S_ERROR
+from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.Core.Utilities import Time
 
-import time,os
+import time, os
 
-AGENT_NAME = 'WorkloadManagement/JobHistoryAgent'
-MONITOR_SITES = ['LCG.CERN.ch','LCG.IN2P3.fr','LCG.RAL.uk','LCG.CNAF.it',
-                 'LCG.GRIDKA.de','LCG.NIKHEF.nl','LCG.PIC.es','All sites']
-MONITOR_STATUS = ['Running','Stalled','Done','Failed']
+MONITOR_SITES = ['LCG.CERN.ch', 'LCG.IN2P3.fr', 'LCG.RAL.uk', 'LCG.CNAF.it',
+                 'LCG.GRIDKA.de', 'LCG.NIKHEF.nl', 'LCG.PIC.es', 'All sites']
+MONITOR_STATUS = ['Running', 'Stalled', 'Done', 'Failed']
 
-class JobHistoryAgent(AgentModule):
+class JobHistoryAgent( AgentModule ):
 
-  def initialize(self):
+  def initialize( self ):
 
     self.jobDB = JobDB()
 
     for status in MONITOR_STATUS:
       for site in MONITOR_SITES:
-        gLogger.verbose("Registering activity %s-%s" % (status,site))
-        gLogger.verbose("Jobs in %s state at %s" % (status,site))
-        gMonitor.registerActivity("%s-%s" % (status,site),"Jobs in %s state at %s" % (status,site),
-                                  "JobHistoryAgent","Jobs/minute",gMonitor.OP_MEAN)
+        gLogger.verbose( "Registering activity %s-%s" % ( status, site ) )
+        gLogger.verbose( "Jobs in %s state at %s" % ( status, site ) )
+        gMonitor.registerActivity( "%s-%s" % ( status, site ), "Jobs in %s state at %s" % ( status, site ),
+                                  "JobHistoryAgent", "Jobs/minute", gMonitor.OP_MEAN )
 
     self.last_update = 0
     self.resultDB = None
     self.reportPeriod = 60
     return S_OK()
 
-  def execute(self):
+  def execute( self ):
     """ Main execution method
     """
     delta = time.time() - self.last_update
     if delta > self.reportPeriod:
-      result = self.jobDB.getCounters('Jobs',['Status','Site'],{},'')
+      result = self.jobDB.getCounters( 'Jobs', ['Status', 'Site'], {}, '' )
       if not result['OK']:
-        return S_ERROR('Failed to get data from the Job Database')
+        return S_ERROR( 'Failed to get data from the Job Database' )
       self.resultDB = result['Value']
       self.last_update = time.time()
 
@@ -59,13 +58,13 @@ class JobHistoryAgent(AgentModule):
       status = dict['Status']
       count = row[1]
       if site in MONITOR_SITES and status in MONITOR_STATUS:
-        gLogger.verbose("Adding mark %s-%s: " % (status,site)+str(count))
-        gMonitor.addMark("%s-%s" % (status,site),count)
+        gLogger.verbose( "Adding mark %s-%s: " % ( status, site ) + str( count ) )
+        gMonitor.addMark( "%s-%s" % ( status, site ), count )
       if status in totalDict:
         totalDict[status] += count
 
     for status in MONITOR_STATUS:
-      gLogger.verbose("Adding mark %s-All sites: " % status + str(totalDict[status]))
-      gMonitor.addMark("%s-All sites" % status,totalDict[status])
+      gLogger.verbose( "Adding mark %s-All sites: " % status + str( totalDict[status] ) )
+      gMonitor.addMark( "%s-All sites" % status, totalDict[status] )
 
     return S_OK()

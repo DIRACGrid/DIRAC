@@ -21,35 +21,34 @@ from DIRAC import gConfig, Source
 import os, sys, re, string, time
 from types import *
 
-AGENT_NAME = 'WorkloadManagement/PilotStatusAgent'
 MAX_JOBS_QUERY = 10
 MAX_WAITING_STATE_LENGTH = 3
 
-class PilotStatusAgent(AgentModule):
+class PilotStatusAgent( AgentModule ):
 
-  queryStateList = ['Ready','Submitted','Running','Waiting','Scheduled']
+  queryStateList = ['Ready', 'Submitted', 'Running', 'Waiting', 'Scheduled']
   finalStateList = [ 'Done', 'Aborted', 'Cleared', 'Deleted' ]
   identityFieldsList = [ 'OwnerDN', 'OwnerGroup', 'GridType', 'Broker' ]
 
   #############################################################################
-  def initialize(self):
+  def initialize( self ):
     """Sets defaults
     """
-    
-    self.am_setOption('PollingTime',120)
-    self.am_setOption('GridEnv','')
-    self.am_setOption('PilotStalledDays',3)
+
+    self.am_setOption( 'PollingTime', 120 )
+    self.am_setOption( 'GridEnv', '' )
+    self.am_setOption( 'PilotStalledDays', 3 )
     self.pilotDB = PilotAgentsDB()
     return S_OK()
 
   #############################################################################
-  def execute(self):
+  def execute( self ):
     """The PilotAgent execution method.
     """
     parentIDList = [ '0' , '-1' ]
 
-    self.pilotStalledDays = self.am_getOption('PilotStalledDays', 3 )
-    self.gridEnv = self.am_getOption('GridEnv')
+    self.pilotStalledDays = self.am_getOption( 'PilotStalledDays', 3 )
+    self.gridEnv = self.am_getOption( 'GridEnv' )
     result = self.pilotDB._getConnection()
     if result['OK']:
       connection = result['Value']
@@ -59,7 +58,7 @@ class PilotStatusAgent(AgentModule):
     result = self.pilotDB.getPilotGroups( self.identityFieldsList,
                                          {'Status': self.queryStateList } )
     if not result['OK']:
-      self.log.error('Fail to get identities Groups', result['Message'])
+      self.log.error( 'Fail to get identities Groups', result['Message'] )
       return result
     if not result['Value']:
       return S_OK()
@@ -81,15 +80,15 @@ class PilotStatusAgent(AgentModule):
                    'OwnerGroup':ownerGroup,
                    'GridType':gridType,
                    'Broker':broker}
-           
-      for condDict in [ condDict1, condDict2]:   
-        result = self.clearWaitingPilots(condDict)
-        if not result['OK']:
-          self.log.warn('Failed to clear Waiting Pilot Jobs')     
 
-        result = self.pilotDB.selectPilots(condDict)
+      for condDict in [ condDict1, condDict2]:
+        result = self.clearWaitingPilots( condDict )
         if not result['OK']:
-          self.log.warn('Failed to get the Pilot Agents')
+          self.log.warn( 'Failed to clear Waiting Pilot Jobs' )
+
+        result = self.pilotDB.selectPilots( condDict )
+        if not result['OK']:
+          self.log.warn( 'Failed to get the Pilot Agents' )
           return result
         if not result['Value']:
           continue
@@ -102,19 +101,19 @@ class PilotStatusAgent(AgentModule):
           continue
         proxy = ret['Value']
 
-        self.log.verbose("Getting status for %s pilots for owner %s and group %s" % ( len( refList ),
-                                                                                      ownerDN, ownerGroup))
+        self.log.verbose( "Getting status for %s pilots for owner %s and group %s" % ( len( refList ),
+                                                                                      ownerDN, ownerGroup ) )
 
         for start_index in range( 0, len( refList ), MAX_JOBS_QUERY ):
-          refsToQuery = refList[ start_index : start_index+MAX_JOBS_QUERY ]
+          refsToQuery = refList[ start_index : start_index + MAX_JOBS_QUERY ]
           self.log.verbose( 'Querying %d pilots of %s starting at %d' % ( len( refsToQuery ), len( refList ), start_index ) )
           result = self.getPilotStatus( proxy, gridType, refsToQuery )
           if not result['OK']:
-            if result['Message'] == 'Broker not Available': 
+            if result['Message'] == 'Broker not Available':
               self.log.error( 'Broker %s not Available' % broker )
               break
-            self.log.warn('Failed to get pilot status:')
-            self.log.warn('%s:%s @ %s' % ( ownerDN, ownerGroup, gridType ))
+            self.log.warn( 'Failed to get pilot status:' )
+            self.log.warn( '%s:%s @ %s' % ( ownerDN, ownerGroup, gridType ) )
             continue
 
           statusDict = result[ 'Value' ]
@@ -122,17 +121,17 @@ class PilotStatusAgent(AgentModule):
             pDict = statusDict[ pRef ]
             if pDict:
               if pDict['isParent']:
-                self.log.verbose('Clear parametric parent %s' % pRef)
-                result = self.clearParentJob(pRef,pDict,connection)
+                self.log.verbose( 'Clear parametric parent %s' % pRef )
+                result = self.clearParentJob( pRef, pDict, connection )
                 if not result['OK']:
-                  self.log.warn(result['Message'])
+                  self.log.warn( result['Message'] )
                 else:
-                  self.log.info('Parameteric parent removed: %s' % pRef)  
+                  self.log.info( 'Parameteric parent removed: %s' % pRef )
               if pDict[ 'FinalStatus' ]:
-                self.log.verbose('Marking Status for %s to %s' % (pRef,pDict['Status']) )
+                self.log.verbose( 'Marking Status for %s to %s' % ( pRef, pDict['Status'] ) )
                 pilotsToAccount[ pRef ] = pDict
               else:
-                self.log.verbose('Setting Status for %s to %s' % (pRef,pDict['Status']) )
+                self.log.verbose( 'Setting Status for %s to %s' % ( pRef, pDict['Status'] ) )
                 result = self.pilotDB.setPilotStatus( pRef,
                                                       pDict['Status'],
                                                       pDict['DestinationSite'],
@@ -151,73 +150,73 @@ class PilotStatusAgent(AgentModule):
     connection.close()
 
     return S_OK()
-    
-  def clearWaitingPilots(self,condDict):
+
+  def clearWaitingPilots( self, condDict ):
     """ Clear pilots in the faulty Waiting state
-    """   
-    
-    last_update = Time.dateTime() - MAX_WAITING_STATE_LENGTH*Time.hour
+    """
+
+    last_update = Time.dateTime() - MAX_WAITING_STATE_LENGTH * Time.hour
     clearDict = {}
     clearDict = {'Status':'Waiting',
                   'OwnerDN':condDict['OwnerDN'],
                   'OwnerGroup':condDict['OwnerGroup'],
                   'GridType':condDict['GridType'],
                   'Broker':condDict['Broker']}
-    result = self.pilotDB.selectPilots(clearDict,older=last_update)
+    result = self.pilotDB.selectPilots( clearDict, older = last_update )
     if not result['OK']:
-      self.log.warn('Failed to get the Pilot Agents fpr Waiting state')
+      self.log.warn( 'Failed to get the Pilot Agents fpr Waiting state' )
       return result
     if not result['Value']:
       return S_OK()
-    refList = result['Value']  
-    
+    refList = result['Value']
+
     for pilotRef in refList:
-      self.log.info('Setting Waiting pilot to Aborted: %s' % pilotRef)
-      result = self.pilotDB.setPilotStatus(pilotRef,'Stalled',statusReason='Exceeded max waiting time')
-      
-    return S_OK()              
-    
-  def clearParentJob(self,pRef,pDict,connection):
+      self.log.info( 'Setting Waiting pilot to Aborted: %s' % pilotRef )
+      result = self.pilotDB.setPilotStatus( pilotRef, 'Stalled', statusReason = 'Exceeded max waiting time' )
+
+    return S_OK()
+
+  def clearParentJob( self, pRef, pDict, connection ):
     """ Clear the parameteric parent job from the PilotAgentsDB
-    """  
-    
+    """
+
     childList = pDict['ChildRefs']
-    
+
     # Check that at least one child is in the database
     children_ok = False
     for child in childList:
-      result = self.pilotDB.getPilotInfo(child, conn=connection)
+      result = self.pilotDB.getPilotInfo( child, conn = connection )
       if result['OK']:
         if result['Value']:
           children_ok = True
-         
-    if children_ok:   
-      return self.pilotDB.deletePilot(pRef, conn=connection)
+
+    if children_ok:
+      return self.pilotDB.deletePilot( pRef, conn = connection )
     else:
-      self.log.verbose('Adding children for parent %s' % pRef) 
-      result = self.pilotDB.getPilotInfo(pRef)
+      self.log.verbose( 'Adding children for parent %s' % pRef )
+      result = self.pilotDB.getPilotInfo( pRef )
       parentInfo = result['Value'][pRef]
       tqID = parentInfo['TaskQueueID']
       ownerDN = parentInfo['OwnerDN']
       ownerGroup = parentInfo['OwnerGroup']
       broker = parentInfo['Broker']
       gridType = parentInfo['GridType']
-      result = self.pilotDB.addPilotTQReference(childList,tqID,ownerDN,ownerGroup,
-                                                broker=broker,gridType=gridType)
+      result = self.pilotDB.addPilotTQReference( childList, tqID, ownerDN, ownerGroup,
+                                                broker = broker, gridType = gridType )
       if not result['OK']:
         return result
-      children_added = True  
-      for chRef,chDict in pDict['ChildDicts'].items():
-        result = self.pilotDB.setPilotStatus(chRef,chDict['Status'],
-                                             destination=chDict['DestinationSite'],
-                                             conn = connection)  
+      children_added = True
+      for chRef, chDict in pDict['ChildDicts'].items():
+        result = self.pilotDB.setPilotStatus( chRef, chDict['Status'],
+                                             destination = chDict['DestinationSite'],
+                                             conn = connection )
         if not result['OK']:
-          children_added = False                                            
+          children_added = False
       if children_added :
-        result = self.pilotDB.deletePilot(pRef, conn=connection) 
+        result = self.pilotDB.deletePilot( pRef, conn = connection )
       else:
-        return S_ERROR('Failed to add children')     
-    return S_OK()                    
+        return S_ERROR( 'Failed to add children' )
+    return S_OK()
 
   def handleOldPilots( self, connection ):
     # select all pilots that have not been updated in the last N days and declared them 
@@ -226,9 +225,9 @@ class PilotStatusAgent(AgentModule):
     timeLimitToConsider = Time.toString( Time.dateTime() - Time.day * self.pilotStalledDays )
     # A.T. Below looks to be a bug 
     #result = self.pilotDB.selectPilots( {'Status':self.queryStateList} , older=None, timeStamp='LastUpdateTime' )
-    result = self.pilotDB.selectPilots( {'Status':self.queryStateList} , older=timeLimitToConsider, timeStamp='LastUpdateTime' )
+    result = self.pilotDB.selectPilots( {'Status':self.queryStateList} , older = timeLimitToConsider, timeStamp = 'LastUpdateTime' )
     if not result['OK']:
-      self.log.error('Failed to get the Pilot Agents')
+      self.log.error( 'Failed to get the Pilot Agents' )
       return result
     if not result['Value']:
       return S_OK()
@@ -236,13 +235,13 @@ class PilotStatusAgent(AgentModule):
     refList = result['Value']
     result = self.pilotDB.getPilotInfo( refList )
     if not result['OK']:
-      self.log.error('Failed to get Info for Pilot Agents')
+      self.log.error( 'Failed to get Info for Pilot Agents' )
       return result
 
     pilotsDict = result['Value']
 
     for pRef in pilotsDict:
-      statusDate = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime())
+      statusDate = time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() )
       deletedJobDict = pilotsDict[pRef]
       deletedJobDict['Status'] = 'Deleted'
       deletedJobDict['StatusDate'] = statusDate
@@ -254,7 +253,7 @@ class PilotStatusAgent(AgentModule):
     self.accountPilots( pilotsToAccount, connection )
 
     return S_OK()
-    
+
   def accountPilots( self, pilotsToAccount, connection ):
 
     if not pilotsToAccount:
@@ -275,7 +274,7 @@ class PilotStatusAgent(AgentModule):
 
     retVal = self.__addPilotsAccountingReport( dbData )
     if not retVal['OK']:
-      self.log.error( 'Fail to retrieve Info for pilots',retVal['Message'] )
+      self.log.error( 'Fail to retrieve Info for pilots', retVal['Message'] )
       return retVal
 
     self.log.info( "Sending accounting records..." )
@@ -283,10 +282,10 @@ class PilotStatusAgent(AgentModule):
     if not retVal[ 'OK' ]:
       self.log.error( "Can't send accounting repots", retVal[ 'Message' ] )
     else:
-      self.log.info( "Accounting sent for %s pilots" % len(pilotsToAccount) )
+      self.log.info( "Accounting sent for %s pilots" % len( pilotsToAccount ) )
       for pRef in pilotsToAccount:
         pDict = pilotsToAccount[pRef]
-        self.log.verbose('Setting Status for %s to %s' % (pRef,pDict['Status']) )
+        self.log.verbose( 'Setting Status for %s to %s' % ( pRef, pDict['Status'] ) )
         self.pilotDB.setPilotStatus( pRef,
                                      pDict['Status'],
                                      pDict['DestinationSite'],
@@ -296,7 +295,7 @@ class PilotStatusAgent(AgentModule):
     return retVal
 
   #############################################################################
-  def getPilotStatus(self, proxy, gridType, pilotRefList ):
+  def getPilotStatus( self, proxy, gridType, pilotRefList ):
     """ Get GRID job status information using the job's owner proxy and
         GRID job IDs. Returns for each JobID its status in the GRID WMS and
         its destination CE as a tuple of 2 elements
@@ -310,7 +309,7 @@ class PilotStatusAgent(AgentModule):
       return S_ERROR()
     cmd.extend( pilotRefList )
 
-    gridEnv = dict(os.environ)
+    gridEnv = dict( os.environ )
     if self.gridEnv:
       self.log.verbose( 'Sourcing GridEnv script:', self.gridEnv )
       ret = Source( 10, [self.gridEnv] )
@@ -325,10 +324,10 @@ class PilotStatusAgent(AgentModule):
       self.log.error( 'Failed to dump Proxy to file' )
       return ret
     gridEnv[ 'X509_USER_PROXY' ] = ret['Value']
-    self.log.verbose( 'Executing', ' '.join(cmd) )
+    self.log.verbose( 'Executing', ' '.join( cmd ) )
     start = time.time()
-    ret =  systemCall( 120, cmd, env = gridEnv )
-    self.log.info( '%s Job Status Execution Time for %d jobs:' % (gridType,len(pilotRefList)), time.time()-start )
+    ret = systemCall( 120, cmd, env = gridEnv )
+    self.log.info( '%s Job Status Execution Time for %d jobs:' % ( gridType, len( pilotRefList ) ), time.time() - start )
 
     if not ret['OK']:
       self.log.error( 'Failed to execute %s Job Status' % gridType, ret['Message'] )
@@ -340,7 +339,7 @@ class PilotStatusAgent(AgentModule):
       resultDict = {}
       status = 'Deleted'
       destination = 'Unknown'
-      statusDate = time.strftime('%Y-%m-%d %H:%M:%S',time.gmtime())
+      statusDate = time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() )
       deletedJobDict = { 'Status': status,
              'DestinationSite': destination,
              'StatusDate': statusDate,
@@ -350,14 +349,14 @@ class PilotStatusAgent(AgentModule):
              'FinalStatus' : status in self.finalStateList,
              'ChildRefs' : [] }
       # Glite returns this error for Deleted jobs to std.err
-      for job in List.fromChar(stderr,'\nUnable to retrieve the status for:')[1:]:
-        pRef = List.fromChar(job,'\n' )[0].strip()
+      for job in List.fromChar( stderr, '\nUnable to retrieve the status for:' )[1:]:
+        pRef = List.fromChar( job, '\n' )[0].strip()
         resultDict[pRef] = deletedJobDict
         self.pilotDB.setPilotStatus( pRef, "Deleted" )
         deleted += 1
       # EDG returns a similar error for Deleted jobs to std.out
-      for job in List.fromChar(stdout,'\nUnable to retrieve the status for:')[1:]:
-        pRef = List.fromChar(job,'\n' )[0].strip()
+      for job in List.fromChar( stdout, '\nUnable to retrieve the status for:' )[1:]:
+        pRef = List.fromChar( job, '\n' )[0].strip()
         if re.search( "No such file or directory: no matching jobs found", job ):
           resultDict[pRef] = deletedJobDict
           self.pilotDB.setPilotStatus( pRef, "Deleted" )
@@ -366,52 +365,52 @@ class PilotStatusAgent(AgentModule):
           # the Broker is not accesible
           return S_ERROR( 'Broker not Available' )
       if not deleted:
-        self.log.error( 'Error executing %s Job Status:' % gridType, str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
+        self.log.error( 'Error executing %s Job Status:' % gridType, str( ret['Value'][0] ) + '\n'.join( ret['Value'][1:3] ) )
         return S_ERROR()
       return S_OK( resultDict )
 
     stdout = ret['Value'][1]
-    stderr = ret['Value'][2]   
+    stderr = ret['Value'][2]
     resultDict = {}
-    for job in List.fromChar(stdout,'\nStatus info for the Job :')[1:]:
-      pRef = List.fromChar(job,'\n' )[0].strip()
-      resultDict[pRef] = self.__parseJobStatus( job, gridType )      
+    for job in List.fromChar( stdout, '\nStatus info for the Job :' )[1:]:
+      pRef = List.fromChar( job, '\n' )[0].strip()
+      resultDict[pRef] = self.__parseJobStatus( job, gridType )
 
-    return S_OK(resultDict)
+    return S_OK( resultDict )
 
   def __parseJobStatus( self, job, gridType ):
 
-    statusRE      = 'Current Status:\s*(\w*)'
+    statusRE = 'Current Status:\s*(\w*)'
     destinationRE = 'Destination:\s*([\w\.-]*)'
-    statusDateRE  = 'reached on:\s*....(.*)'
+    statusDateRE = 'reached on:\s*....(.*)'
 
-    status      = None
+    status = None
     destination = 'Unknown'
-    statusDate  = None
+    statusDate = None
     try:
-      status      = re.search(statusRE,      job).group(1)
-      if re.search(destinationRE, job):
-        destination = re.search(destinationRE, job).group(1)
-      if gridType == 'LCG' and re.search(statusDateRE, job):
-        statusDate = re.search(statusDateRE, job).group(1)
-        statusDate = time.strftime('%Y-%m-%d %H:%M:%S',time.strptime(statusDate,'%b %d %H:%M:%S %Y'))
+      status = re.search( statusRE, job ).group( 1 )
+      if re.search( destinationRE, job ):
+        destination = re.search( destinationRE, job ).group( 1 )
+      if gridType == 'LCG' and re.search( statusDateRE, job ):
+        statusDate = re.search( statusDateRE, job ).group( 1 )
+        statusDate = time.strftime( '%Y-%m-%d %H:%M:%S', time.strptime( statusDate, '%b %d %H:%M:%S %Y' ) )
     except Exception, x:
       self.log.error( 'Error parsing %s Job Status output:\n' % gridType, job )
-      
-    isParent = False    
-    if re.search('Nodes information',job):
+
+    isParent = False
+    if re.search( 'Nodes information', job ):
       isParent = True
-    isChild = False    
-    if re.search('Parent Job',job):
-      isChild = True   
-    
+    isChild = False
+    if re.search( 'Parent Job', job ):
+      isChild = True
+
     childRefs = []
     childDicts = {}
     if isParent:
-      for subjob in List.fromChar(job,' Status info for the Job :')[1:]:
-        chRef = List.fromChar(subjob,'\n' )[0].strip()
-        childDict = self.__parseJobStatus( subjob, gridType )  
-        childRefs.append(chRef)
+      for subjob in List.fromChar( job, ' Status info for the Job :' )[1:]:
+        chRef = List.fromChar( subjob, '\n' )[0].strip()
+        childDict = self.__parseJobStatus( subjob, gridType )
+        childRefs.append( chRef )
         childDicts[chRef] = childDict
 
     return { 'Status': status,
@@ -425,14 +424,14 @@ class PilotStatusAgent(AgentModule):
              'ChildDicts' : childDicts }
 
   def __getSiteFromCE( self, ce ):
-    siteSections = gConfig.getSections('/Resources/Sites/LCG/')
+    siteSections = gConfig.getSections( '/Resources/Sites/LCG/' )
     if not siteSections['OK']:
-      self.log.error('Could not get LCG site list')
+      self.log.error( 'Could not get LCG site list' )
       return "unknown"
 
     sites = siteSections['Value']
     for site in sites:
-      lcgCEs = gConfig.getValue('/Resources/Sites/LCG/%s/CE' % site,[])
+      lcgCEs = gConfig.getValue( '/Resources/Sites/LCG/%s/CE' % site, [] )
       if ce in lcgCEs:
         return site
 
