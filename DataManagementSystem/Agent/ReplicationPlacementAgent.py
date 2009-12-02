@@ -41,6 +41,8 @@ class ReplicationPlacementAgent(AgentModule):
 
     self.am_setModuleParam('shifter','DataManager')
     self.am_setModuleParam('shifterProxyLocation',self.proxyLocation)
+    
+    return S_OK()
 
   def execute(self):
     gMonitor.addMark('Iteration',1)

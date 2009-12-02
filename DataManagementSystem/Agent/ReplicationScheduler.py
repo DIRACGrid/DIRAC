@@ -1,7 +1,11 @@
+########################################################################
+# $HeadURL$
+########################################################################
+
 """  Replication Scheduler assigns replication requests to channels
 """
 from DIRAC                                                  import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Base.Agent                                  import Agent
+from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.ConfigurationSystem.Client.PathFinder            import getDatabaseSection
 from DIRAC.RequestManagementSystem.DB.RequestDBMySQL        import RequestDBMySQL
 from DIRAC.DataManagementSystem.DB.TransferDB               import TransferDB
@@ -11,19 +15,18 @@ from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManage
 from DIRAC.Core.DISET.RPCClient                             import RPCClient
 from DIRAC.DataManagementSystem.Client.DataLoggingClient    import DataLoggingClient
 from DIRAC.Core.Utilities.Shifter                           import setupShifterProxyInEnv
+from DIRAC.ConfigurationSystem.Client                       import PathFinder
 import types,re,random
+
+__RCSID__ = "$Id$"
 
 AGENT_NAME = 'DataManagement/ReplicationScheduler'
 
-class ReplicationScheduler(Agent):
-
-  def __init__(self):
-    """ Standard constructor
-    """
-    Agent.__init__(self,AGENT_NAME)
+class ReplicationScheduler(AgentModule):
 
   def initialize(self):
-    result = Agent.initialize(self)
+
+    self.section = PathFinder.getAgentSection( AGENT_NAME )
     self.RequestDB = RequestDBMySQL()
     self.TransferDB = TransferDB()
     self.DataLog = DataLoggingClient()
@@ -31,17 +34,21 @@ class ReplicationScheduler(Agent):
     self.rm = ReplicaManager()
     return result
 
+    self.proxyLocation = self.am_getOption('ProxyLocation', '' )
+    if not self.proxyLocation:
+      self.proxyLocation = False
+
+    self.am_setModuleParam('shifter','DataManager')
+    self.am_setModuleParam('shifterProxyLocation',self.proxyLocation)
+    
+    return S_OK()
+
   def execute(self):
     """ The main agent execution method
     """
 
-    result = setupShifterProxyInEnv( "DataManager")
-    if not result[ 'OK' ]:
-      self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
-      return result
-
     # This allows dynamic changing of the throughput timescale
-    self.throughputTimescale = gConfig.getValue(self.section+'/ThroughputTimescale',3600)
+    self.throughputTimescale = self.am_getOption('ThroughputTimescale',3600)
     self.throughputTimescale = 60*60*1
     print 'ThroughputTimescale:',self.throughputTimescale
     ######################################################################################
