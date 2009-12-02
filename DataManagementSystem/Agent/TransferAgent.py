@@ -6,7 +6,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
-from DIRAC.Core.Base.Agent import Agent
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
@@ -21,17 +21,14 @@ from DIRAC.RequestManagementSystem.Agent.RequestAgentMixIn import RequestAgentMi
 import time,os
 from types import *
 
+__RCSID__ = "$Id$"
+
 AGENT_NAME = 'DataManagement/TransferAgent'
 
-class TransferAgent(Agent,RequestAgentMixIn):
-
-  def __init__(self):
-    """ Standard constructor
-    """
-    Agent.__init__(self,AGENT_NAME)
+class TransferAgent(AgentModule,RequestAgentMixIn):
 
   def initialize(self):
-    result = Agent.initialize(self)
+
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
     self.DataLog = DataLoggingClient()
@@ -57,24 +54,22 @@ class TransferAgent(Agent,RequestAgentMixIn):
     gMonitor.registerActivity("Replica registration failed","Failed replica registrations","TransferAgent", "Failed/min", gMonitor.OP_SUM )
     gMonitor.registerActivity("File registration failed","Failed file registrations","TransferAgent", "Failed/min", gMonitor.OP_SUM )
 
-    self.maxNumberOfThreads = gConfig.getValue(self.section+'/NumberOfThreads',1)
-    self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',1)
+    self.maxNumberOfThreads = self.am_getOption('NumberOfThreads',1)
+    self.threadPoolDepth = self.am_getOption('ThreadPoolDepth',1)
     self.threadPool = ThreadPool(1,self.maxNumberOfThreads)
 
-    self.useProxies = gConfig.getValue(self.section+'/UseProxies','True').lower() in ( "y", "yes", "true" )
-    self.proxyLocation = gConfig.getValue( self.section+'/ProxyLocation', '' )
+    self.useProxies = self.am_getOption('UseProxies','True').lower() in ( "y", "yes", "true" )
+    self.proxyLocation = self.am_getOption('ProxyLocation', '' )
     if not self.proxyLocation:
       self.proxyLocation = False
 
-    return result
+    if self.useProxies:
+      self.am_setModuleParam('shifter','DataManager')
+      self.am_setModuleParam('shifterProxyLocation',self.proxyLocation)
+
+    return S_OK()
 
   def execute(self):
-
-    if self.useProxies:
-      result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
-      if not result[ 'OK' ]:
-        self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
-        return result
 
     for i in range(self.threadPoolDepth):
       requestExecutor = ThreadedJob(self.executeRequest)
