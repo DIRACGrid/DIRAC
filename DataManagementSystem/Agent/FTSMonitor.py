@@ -1,7 +1,7 @@
 """  FTS Monitor takes FTS Requests from the TransferDB and monitors them
 """
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Base.Agent import Agent
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.DataManagementSystem.Client.FTSRequest import FTSRequest
@@ -14,26 +14,21 @@ import os,time,re
 from types import *
 
 
-AGENT_NAME = 'DataManagement/FTSMonitor'
+AGENT_NAME = 'DataManagement/FTSMonitorAgent'
 
-class FTSMonitor(Agent):
-
-  def __init__(self):
-    """ Standard constructor
-    """
-    Agent.__init__(self,AGENT_NAME)
+class FTSMonitorAgent(AgentModule):
 
   def initialize(self):
-    result = Agent.initialize(self)
+
     self.TransferDB = TransferDB()
     self.DataLog = DataLoggingClient()
 
-    self.useProxies = gConfig.getValue(self.section+'/UseProxies','True').lower() in ( "y", "yes", "true" )
-    self.proxyLocation = gConfig.getValue( self.section+'/ProxyLocation', '' )
+    self.useProxies = self.am_getOption('UseProxies','True').lower() in ( "y", "yes", "true" )
+    self.proxyLocation = self.am_getOption('ProxyLocation', '' )
     if not self.proxyLocation:
       self.proxyLocation = False
 
-    return result
+    return S_OK()
 
   def execute(self):
 
