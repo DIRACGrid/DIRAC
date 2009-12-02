@@ -1,25 +1,26 @@
+########################################################################
+# $Id$
+########################################################################
+
 """  Zuzia picks out the requests that she finds then tries to put them in the central server.
 """
 
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
-from DIRAC.Core.Base.Agent import Agent
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
 import time,os,re
 from types import *
 
+__RCSID__ = "$Id$"
+
 AGENT_NAME = 'RequestManagement/ZuziaAgent'
 
-class ZuziaAgent(Agent):
-
-  def __init__(self):
-    """ Standard constructor
-    """
-    Agent.__init__(self,AGENT_NAME)
+class ZuziaAgent(AgentModule):
 
   def initialize(self):
-    result = Agent.initialize(self)
+
     self.RequestDBClient = RequestClient()
 
     gMonitor.registerActivity("Iteration",          "Agent Loops",                  "ZuziaAgent",      "Loops/min",      gMonitor.OP_SUM)
