@@ -259,6 +259,11 @@ if 'Releases' not in mainCFG.listSections():
   exit(1)
 releasesCFG = mainCFG[ 'Releases' ]
 
+for release in cliParams.releasesToBuild:
+  if release not in releasesCFG.listSections():
+    gLogger.error( "Release %s is not defined in the releases.cfg" % release )
+    sys.exit(1)
+  
 if not cliParams.destination:
   targetPath = tempfile.mkdtemp()
 else:
@@ -287,6 +292,10 @@ if not cliParams.ignorePackages:
 if not doneSomeTars:
   gLogger.info( "No packages were tared" )
 else:
+  for release in cliParams.releasesToBuild:
+    if not mainCFG.writeToFile( os.path.join( targetPath, "releases-%s.cfg" % release ) ):
+      gLogger.error( "Could not write releases.cfg file to %s" % targetPath )
+      sys.exit(1)
   gLogger.info( "Everything seems ok" )
   gLogger.info( "Please upload the tarballs by executing:")
-  gLogger.info( "( cd %s ; tar -cf - *.tar.gz *.md5 ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'" % targetPath )
+  gLogger.info( "( cd %s ; tar -cf - *.tar.gz *.md5 *.cfg ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'" % targetPath )
