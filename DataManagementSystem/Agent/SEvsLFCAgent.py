@@ -1,7 +1,11 @@
+########################################################################
+# $HeadURL$
+########################################################################
+
 """  SEvsLFCAgent takes data integrity checks from the RequestDB and verifies the integrity of the supplied directory.
 """
 from DIRAC                                                          import gLogger, gConfig, gMonitor, S_OK, S_ERROR
-from DIRAC.Core.Base.Agent                                          import Agent
+from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.Core.Utilities.Pfn                                       import pfnparse, pfnunparse
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.Core.Utilities.Shifter                                   import setupShifterProxyInEnv
@@ -14,35 +18,31 @@ from DIRAC.Resources.Storage.StorageElement                         import Stora
 import time,os
 from types import *
 
+__RCSID__ = "$Id$"
+
 AGENT_NAME = 'DataManagement/SEvsLFCAgent'
 
-class SEvsLFCAgent(Agent):
-
-  def __init__(self):
-    """ Standard constructor
-    """
-    Agent.__init__(self,AGENT_NAME)
+class SEvsLFCAgent(AgentModule):
 
   def initialize(self):
-    result = Agent.initialize(self)
+
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
 
-    self.useProxies = gConfig.getValue(self.section+'/UseProxies','True').lower() in ( "y", "yes", "true" )
-    self.proxyLocation = gConfig.getValue( self.section+'/ProxyLocation', '' )
+    self.useProxies = self.am_getOption('UseProxies','True').lower() in ( "y", "yes", "true" )
+    self.proxyLocation = self.am_getOption('ProxyLocation', '' )
     if not self.proxyLocation:
       self.proxyLocation = False
 
-    return result
+    if self.useProxies:
+      self.am_setModuleParam('shifter','DataManager')
+      self.am_setModuleParam('shifterProxyLocation',self.proxyLocation)
+
+    return S_OK()
 
   def execute(self):
 
     IntegrityDB = RPCClient('DataManagement/DataIntegrity')
-    if self.useProxies:
-      result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
-      if not result[ 'OK' ]:
-        self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
-      return result
 
     res = self.RequestDBClient.getRequest('integrity')
     if not res['OK']:
