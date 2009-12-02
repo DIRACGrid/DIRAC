@@ -1,3 +1,7 @@
+########################################################################
+# $HeadURL:  $
+########################################################################
+
 """  TransformationAgent determines the processes transformations found in the transformation database.
 """
 
@@ -12,13 +16,15 @@ from DIRAC.Core.Utilities.List                              import sortList
 import time
 from types import *
 
+__RCSID__ = "$Id:  $"
+
 AGENT_NAME = 'TransformationSystem/TransformationAgent'
 
 class TransformationAgent(AgentModule):
 
   def initialize(self):
-    result = Agent.initialize(self)
-    self.checkCatalog = gConfig.getValue(self.section+'/CheckCatalog','yes')
+
+    self.checkCatalog = self.am_getOption('CheckCatalog','yes')
     self.transDB = '...'
     self.name = ''
     return result
