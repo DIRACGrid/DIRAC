@@ -6,7 +6,7 @@
 """
 
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
-from DIRAC.Core.Base.Agent import Agent
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
@@ -25,7 +25,7 @@ __RCSID__ = "$Id$"
 
 AGENT_NAME = 'DataManagement/RegistrationAgent'
 
-class RegistrationAgent(Agent,RequestAgentMixIn):
+class RegistrationAgent(AgentModule,RequestAgentMixIn):
 
   def __init__(self):
     """ Standard constructor
@@ -42,20 +42,18 @@ class RegistrationAgent(Agent,RequestAgentMixIn):
     self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',1)
     self.threadPool = ThreadPool(1,self.maxNumberOfThreads)
 
-    self.useProxies = gConfig.getValue(self.section+'/UseProxies','True').lower() in ( "y", "yes", "true" )
-    self.proxyLocation = gConfig.getValue( self.section+'/ProxyLocation', '' )
+    self.useProxies = self.am_getOption('UseProxies','True').lower() in ( "y", "yes", "true" )
+    self.proxyLocation = self.am_getOption('ProxyLocation', '' )
     if not self.proxyLocation:
       self.proxyLocation = False
 
-    return result
+    if self.useProxies:
+      self.am_setModuleParam('shifter','DataManager')
+      self.am_setModuleParam('shifterProxyLocation',self.proxyLocation)
+
+    return S_OK()
 
   def execute(self):
-
-    if self.useProxies:
-      result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
-      if not result[ 'OK' ]:
-        self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
-        return result
 
     for i in range(self.threadPoolDepth):
       requestExecutor = ThreadedJob(self.executeRequest)

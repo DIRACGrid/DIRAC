@@ -39,12 +39,6 @@ class LFCvsSEAgent(AgentModule):
   
   def execute(self):
 
-    if self.useProxies:
-      result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
-      if not result[ 'OK' ]:
-        self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
-        return result
-
     res = self.RequestDBClient.getRequest('integrity')
     if not res['OK']:
       gLogger.info("LFCvsSEAgent.execute: Failed to get request from database.")
