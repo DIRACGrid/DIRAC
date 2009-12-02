@@ -36,13 +36,19 @@ cliParams = Params()
 
 def logDEBUG( msg ):
   if cliParams.debug:
-    print "[DEBUG] %s" % msg
+    for line in msg.split( "\n" ):
+      print "[DEBUG] %s" % line
+    sys.stdout.flush()
 
 def logERROR( msg ):
-  print "[ERROR] %s" % msg
+  for line in msg.split( "\n" ):
+    print "[ERROR] %s" % line
+  sys.stdout.flush()
 
 def logINFO( msg ):
-  print "[INFO]  %s" % msg
+  for line in msg.split( "\n" ):
+    print "[INFO]  %s" % line
+  sys.stdout.flush()
 
 #TODO: Helper functions for logging as DIRAC, subprocess
 
