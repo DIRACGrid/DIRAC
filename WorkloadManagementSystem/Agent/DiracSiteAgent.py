@@ -4,7 +4,7 @@
 from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft              import TimeLeft
-from DIRAC.Core.Base.Agent                               import Agent
+from DIRAC.Core.Base.AgentModule                         import AgentModule
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Core.Security.Locations                       import getProxyLocation
 from DIRAC.Resources.Computing.ComputingElementFactory   import ComputingElementFactory
@@ -19,21 +19,13 @@ import os, sys, re, string, time, urllib
 
 AGENT_NAME = 'WorkloadManagement/DiracSiteAgent'
     
-class DiracSiteAgent(Agent):
-
-  #############################################################################
-  def __init__(self):
-    """ Standard constructor for Agent
-    """
-    Agent.__init__(self,AGENT_NAME)
-    #self.log.setLevel('verb')
+class DiracSiteAgent(AgentModule):
 
   #############################################################################
   def initialize(self,loops=0):
     """Sets default parameters and creates CE instance
     """
     self.maxcount = loops
-    result = Agent.initialize(self)
     
     self.logLevel = gConfig.getValue('DIRAC/LogLevel','INFO')
     self.siteRoot = gConfig.getValue('LocalSite/Root',os.getcwd())
@@ -94,7 +86,7 @@ class DiracSiteAgent(Agent):
     self.log.debug('=============================')
     
     #create CE
-    ceUniqueID = gConfig.getOption(self.section+'/CEUniqueID','Torque')
+    ceUniqueID = self.am_getOption('CEUniqueID','Torque')
     if not ceUniqueID['OK']:
       self.log.warn(ceUniqueID['Message'])
       return ceUniqueID
