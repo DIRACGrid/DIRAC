@@ -1,5 +1,5 @@
 ########################################################################
-# $Header: /tmp/libdirac/tmp.FKduyw2449/dirac/DIRAC3/DIRAC/StorageManagementSystem/Agent/SENamespaceCatalogCheck.py,v 1.1 2009/11/03 10:24:20 acsmith Exp $
+# $HeadURL: /tmp/libdirac/tmp.FKduyw2449/dirac/DIRAC3/DIRAC/StorageManagementSystem/Agent/SENamespaceCatalogCheck.py,v 1.1 2009/11/03 10:24:20 acsmith Exp $
 ########################################################################
 __RCSID__   = "$Id: SENamespaceCatalogCheck.py,v 1.1 2009/11/03 10:24:20 acsmith Exp $"
 __VERSION__ = "$Revision: 1.1 $"
@@ -14,9 +14,9 @@ from datetime                                                  import datetime,t
 import re, os, urllib2
 
 
-AGENT_NAME = 'DataManagement/SENamespaceCatalogCheck'
+AGENT_NAME = 'DataManagement/SENamespaceCatalogCheckAgent'
 
-class SENamespaceCatalogCheck(AgentModule):
+class SENamespaceCatalogCheckAgent(AgentModule):
 
   #############################################################################
   def initialize(self):
