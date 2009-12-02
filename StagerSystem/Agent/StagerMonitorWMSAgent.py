@@ -22,7 +22,7 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.Agent                                 import Agent
+from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
 from DIRAC.Core.Utilities.Shifter                          import setupShifterProxyInEnv
@@ -30,39 +30,37 @@ from DIRAC                                                 import S_OK, S_ERROR,
 
 import os, sys, re, string, time
 
-AGENT_NAME = 'Stager/StagerMonitorWMS'
+AGENT_NAME = 'Stager/StagerMonitorWMSAgent'
 
-class StagerMonitorWMSAgent(Agent):
-
-  #############################################################################
-  def __init__(self):
-    """ Standard constructor for Agent
-    """
-    Agent.__init__(self,AGENT_NAME)
+class StagerMonitorWMSAgent(AgentModule):
 
   #############################################################################
   def initialize(self):
     """Sets defaults
     """
-    result = Agent.initialize(self)
-    self.pollingTime = gConfig.getValue(self.section+'/PollingTime',60)
-    self.system = gConfig.getValue(self.section+'/SystemID','WorkloadManagement')
-    self.stagingStatus = gConfig.getValue(self.section+'/StagingStatus','Staging')
-    self.updateStatus = gConfig.getValue(self.section+'/UpdateStatus','ToUpdate')
-    self.jobSelectLimit = gConfig.getValue(self.section+'/JobSelectLimit',5000)
+
+    self.pollingTime = self.am_getOption('PollingTime',60)
+    self.system = self.am_getOption('SystemID','WorkloadManagement')
+    self.stagingStatus = self.am_getOption('StagingStatus','Staging')
+    self.updateStatus = self.am_getOption('UpdateStatus','ToUpdate')
+    self.jobSelectLimit = self.am_getOption('JobSelectLimit',5000)
     self.monStatusDict = {self.updateStatus:'Staged','New':'Pending','Submitted':'Pending','Staged':'Staged','Successful':'Staged','Failed':'Failed'}
     self.stagerClient = None #Initialized after proxy
-    return result
+    
+    self.proxyLocation = self.am_getOption('ProxyLocation', '' )
+    if not self.proxyLocation:
+      self.proxyLocation = False
+
+    self.am_setModuleParam('shifter','ProductionManager')
+    self.am_setModuleParam('shifterProxyLocation',self.proxyLocation)
+    
+    return S_OK()
 
   #############################################################################
   def execute(self):
     """The StagerMonitorWMS execution method.
     """
-    self.pollingTime = gConfig.getValue(self.section+'/PollingTime',60)
-
-    result = setupShifterProxyInEnv( "ProductionManager" )
-    if not result[ 'OK' ]:
-      return S_ERROR( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
+    self.pollingTime = self.am_getOption('PollingTime',60)
 
     self.stagerClient = StagerClient()
 
