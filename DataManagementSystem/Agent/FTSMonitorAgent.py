@@ -28,12 +28,13 @@ class FTSMonitorAgent(AgentModule):
     if not self.proxyLocation:
       self.proxyLocation = False
 
+    if self.useProxies:
+      self.am_setModuleParam('shifter','DataManager')
+      self.am_setModuleParam('shifterProxyLocation',self.proxyLocation)
+
     return S_OK()
 
   def execute(self):
-
-    if self.useProxies:
-      self.am_setModuleParam('shifter','DataManager')
 
     #########################################################################
     #  Get the details for all active FTS requests
