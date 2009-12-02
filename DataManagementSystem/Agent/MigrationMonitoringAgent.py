@@ -1,3 +1,7 @@
+########################################################################
+# $HeadURL$
+########################################################################
+
 """  MigrationMonitoringAgent monitors the migration status of newly uploaded files to ensure they are migrated correctly and timely.
 """
 
@@ -14,6 +18,8 @@ from DIRAC.Core.Utilities.List                              import sortList
 from DIRAC.Core.Utilities.Adler                             import compareAdler
 import time,os,datetime
 from types import *
+
+__RCSID__ = "$Id$"
 
 AGENT_NAME = 'DataManagement/MigrationMonitoringAgent'
 
