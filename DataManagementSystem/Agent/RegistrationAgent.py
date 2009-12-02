@@ -27,13 +27,8 @@ AGENT_NAME = 'DataManagement/RegistrationAgent'
 
 class RegistrationAgent(AgentModule,RequestAgentMixIn):
 
-  def __init__(self):
-    """ Standard constructor
-    """
-    Agent.__init__(self,AGENT_NAME)
-
   def initialize(self):
-    result = Agent.initialize(self)
+
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
     self.DataLog = DataLoggingClient()

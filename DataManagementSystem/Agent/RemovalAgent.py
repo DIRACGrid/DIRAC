@@ -1,4 +1,6 @@
+########################################################################
 # $HeadURL$
+########################################################################
 
 """  RemovalAgent takes removal requests from the RequestDB and replicates them
 """
@@ -17,17 +19,14 @@ from DIRAC.RequestManagementSystem.Agent.RequestAgentMixIn import RequestAgentMi
 import time,os,re
 from types import *
 
+__RCSID__ = "$Id$"
+
 AGENT_NAME = 'DataManagement/RemovalAgent'
 
 class RemovalAgent(Agent,RequestAgentMixIn):
 
-  def __init__(self):
-    """ Standard constructor
-    """
-    Agent.__init__(self,AGENT_NAME)
-
   def initialize(self):
-    result = Agent.initialize(self)
+
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
 
@@ -52,20 +51,18 @@ class RemovalAgent(Agent,RequestAgentMixIn):
     self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',0)
     self.threadPool = ThreadPool(1,self.maxNumberOfThreads)
 
-    self.useProxies = gConfig.getValue(self.section+'/UseProxies','True').lower() in ( "y", "yes", "true" )
-    self.proxyLocation = gConfig.getValue( self.section+'/ProxyLocation', '' )
+    self.useProxies = self.am_getOption('UseProxies','True').lower() in ( "y", "yes", "true" )
+    self.proxyLocation = self.am_getOption('ProxyLocation', '' )
     if not self.proxyLocation:
       self.proxyLocation = False
 
-    return result
+    if self.useProxies:
+      self.am_setModuleParam('shifter','DataManager')
+      self.am_setModuleParam('shifterProxyLocation',self.proxyLocation)
+
+    return S_OK()
 
   def execute(self):
-
-    if self.useProxies:
-      result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
-      if not result[ 'OK' ]:
-        self.log.error( "Can't get shifter's proxy:", "%s" % result[ 'Message' ] )
-        return result
 
     for i in range(self.threadPoolDepth):
       requestExecutor = ThreadedJob(self.executeRequest)
