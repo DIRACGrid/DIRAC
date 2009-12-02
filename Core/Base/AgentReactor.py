@@ -124,7 +124,7 @@ class AgentReactor:
       agent = self.__agentModules[ agentName ][ 'instance' ]
       stopAgentFile = os.path.join( agent.am_getOption( 'ControlDirectory' ), 'stop_agent' )
 
-      alive = agent.am_getModuleParam( 'Alive' )
+      alive = agent.am_getModuleParam( 'alive' )
       if alive:
         if os.path.isfile( stopAgentFile ):
           gLogger.info( "Found control file %s for agent" % ( stopAgentFile, agentName ) )

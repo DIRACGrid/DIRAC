@@ -63,7 +63,7 @@ class AgentModule:
     self.__moduleProperties[ 'executors' ] = [ ( self.execute, () ) ]
     self.__moduleProperties[ 'shifterProxy' ] = False
     self.__moduleProperties[ 'shifterProxyLocation' ] = False
-    self.__moduleProperties[ 'Alive' ] = True
+    self.__moduleProperties[ 'alive' ] = True
 
     self.__initializeMonitor()
     self.__initialized = False
@@ -167,7 +167,7 @@ class AgentModule:
     return self.am_getOption( "MonitoringEnabled", 'true' )
 
   def am_stopExecution( self ):
-    self.am_setModuleParam( 'Alive', False )
+    self.am_setModuleParam( 'alive', False )
 
   def __initializeMonitor( self ):
     """
