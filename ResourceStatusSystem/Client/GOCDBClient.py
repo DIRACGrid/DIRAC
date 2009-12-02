@@ -88,11 +88,16 @@ class GOCDBClient:
 
     try:
       doc = minidom.parseString(dt)
-    except minidom.DOMException, errorMsg:
-      exceptStr = where(self, self._xmlParsing)
-      gLogger.exception(exceptStr,'',errorMsg)
-      #return S_ERROR("%s%s" % (exceptStr,errorMsg))
-    
+#    except TypeError, errorMsg:
+#      exceptStr = where(self, self._xmlParsing)
+#      gLogger.exception(exceptStr,'',errorMsg)
+#    except AttributeError, errorMsg:
+#      exceptStr = where(self, self._xmlParsing)
+#      gLogger.exception(exceptStr,'',errorMsg)
+#      #return S_ERROR("%s%s" % (exceptStr,errorMsg))
+    except Exception, errorMsg:
+      return None    
+
     downtimes = doc.getElementsByTagName("DOWNTIME") 
     handler = {}    
     
