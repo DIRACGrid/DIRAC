@@ -172,7 +172,7 @@ class CSAPI:
         userList.append( username )
         self.__csMod.setOptionValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ), ",".join( userList ) )
       else:
-        gLogger.warning( "User %s is already in group %s" % ( username, group ) )
+        gLogger.warn( "User %s is already in group %s" % ( username, group ) )
 
   def addUser( self, username, properties ):
     """
