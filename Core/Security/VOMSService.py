@@ -13,7 +13,17 @@ class VOMSService:
         url = gConfig.getValue( "/Registry/VOMS/URLs/VOMS%s" % key, "" )
       if not url:
         raise Exception( "No URL defined for VOMS%s" % key )
-      self.__soapClients[ key ] = getSOAPClient( "%s?wsdl" % url )
+      retries = 3
+      while retries:
+        retries -= 1
+        try:
+          self.__soapClients[ key ] = getSOAPClient( "%s?wsdl" % url )
+          break
+        except:
+          if retries:
+            pass
+          else:
+            raise
 
   def __processListReturn( self, soapReturn ):
     data = []
