@@ -47,8 +47,8 @@ class RemovalAgent(Agent,RequestAgentMixIn):
     gMonitor.registerActivity("RemoveFileDone",     "File removal done",            "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
     gMonitor.registerActivity("RemoveFileFail",     "File removal failed",          "RemovalAgent",       "Removal/min",     gMonitor.OP_SUM)
 
-    self.maxNumberOfThreads = gConfig.getValue(self.section+'/NumberOfThreads',0)
-    self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',0)
+    self.maxNumberOfThreads = self.am_getOption('NumberOfThreads',0)
+    self.threadPoolDepth = self.am_getOption('ThreadPoolDepth',0)
     self.threadPool = ThreadPool(1,self.maxNumberOfThreads)
 
     self.useProxies = self.am_getOption('UseProxies','True').lower() in ( "y", "yes", "true" )
