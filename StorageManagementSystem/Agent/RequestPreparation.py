@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.FKduyw2449/dirac/DIRAC3/DIRAC/StorageManagementSystem/Agent/RequestPreparation.py,v 1.2 2009/10/30 22:03:03 acsmith Exp $
+# $HeadURL: /tmp/libdirac/tmp.FKduyw2449/dirac/DIRAC3/DIRAC/StorageManagementSystem/Agent/RequestPreparation.py,v 1.2 2009/10/30 22:03:03 acsmith Exp $
 
 __RCSID__ = "$Id: RequestPreparation.py,v 1.2 2009/10/30 22:03:03 acsmith Exp $"
 
@@ -15,9 +15,9 @@ from DIRAC.DataManagementSystem.Client.DataIntegrityClient import DataIntegrityC
 import time,os,sys,re
 from types import *
 
-AGENT_NAME = 'StorageManagement/RequestPreparation'
+AGENT_NAME = 'StorageManagement/RequestPreparationAgent'
 
-class RequestPreparation(AgentModule):
+class RequestPreparationAgent(AgentModule):
 
   def initialize(self):
     self.fileCatalog = FileCatalog()
