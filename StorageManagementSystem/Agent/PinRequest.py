@@ -11,21 +11,26 @@ from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 import time,os,sys,re
 from types import *
 
-AGENT_NAME = 'StorageManagement/PinRequest'
+AGENT_NAME = 'StorageManagement/PinRequestAgent'
 
-class PinRequest(AgentModule):
+class PinRequestAgent(AgentModule):
 
   def initialize(self):
     self.replicaManager = ReplicaManager()
     self.stagerClient = RPCClient('StorageManagement/Stager')
     self.pinLifeTime = 60*60*24*7 # 7 days
+    
+    self.proxyLocation = self.am_getOption('ProxyLocation', '' )
+    if not self.proxyLocation:
+      self.proxyLocation = False
+
+    self.am_setModuleParam('shifter','DataManager')
+    self.am_setModuleParam('shifterProxyLocation',self.proxyLocation)
+    
     return S_OK()
 
   def execute(self):
-    res = setupShifterProxyInEnv('DataManager','%s/runit/%s/proxy' % (rootPath,AGENT_NAME))
-    if not res['OK']:
-      gLogger.fatal("PinRequest.execute: Failed to setup data manager proxy.", res['Message'])
-      return res
+
     res = self.submitPinRequests()
     return res
 
