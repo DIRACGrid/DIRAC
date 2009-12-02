@@ -13,21 +13,26 @@ from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 import time,os,sys,re
 from types import *
 
-AGENT_NAME = 'StorageManagement/StageMonitor'
+AGENT_NAME = 'StorageManagement/StageMonitorAgent'
 
-class StageMonitor(AgentModule):
+class StageMonitorAgent(AgentModule):
 
   def initialize(self):
     self.replicaManager = ReplicaManager()
     self.stagerClient = RPCClient('StorageManagement/Stager')
     self.dataIntegrityClient = DataIntegrityClient()
+    
+    self.proxyLocation = self.am_getOption('ProxyLocation', '' )
+    if not self.proxyLocation:
+      self.proxyLocation = False
+
+    self.am_setModuleParam('shifter','DataManager')
+    self.am_setModuleParam('shifterProxyLocation',self.proxyLocation)
+    
     return S_OK()
 
   def execute(self):
-    res = setupShifterProxyInEnv('DataManager','%s/runit/%s/proxy' % (rootPath,AGENT_NAME))
-    if not res['OK']:
-      gLogger.fatal("StageMonitor.execute: Failed to setup data manager proxy.", res['Message'])
-      return res
+
     res = self.monitorStageRequests()
     return res
 
