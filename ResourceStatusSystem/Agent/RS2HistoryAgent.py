@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: FailoverRequest.py 18161 2009-11-11 12:07:09Z acasajus $
+# $HeadURL:  $
 ########################################################################
 """ RS2HistoryAgent is in charge of monitoring Resources and Sites
     DB tables, and update Resource Status history tables.
@@ -14,7 +14,7 @@ from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import RSSDBException
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
-__RCSID__ = "$Id: ZuziaAgent.py 18894 2009-12-02 17:23:55Z atsareg $"
+__RCSID__ = "$Id:  $"
 
 AGENT_NAME = 'ResourceStatus/RS2HistoryAgent'
 

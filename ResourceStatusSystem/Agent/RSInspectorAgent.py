@@ -1,5 +1,5 @@
 ########################################################################
-# $Id: FailoverRequest.py 18161 2009-11-11 12:07:09Z acasajus $
+# $HeadURL:  $
 ########################################################################
 
 import threading
@@ -12,7 +12,7 @@ from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
 
-__RCSID__ = "$Id: ZuziaAgent.py 18894 2009-12-02 17:23:55Z atsareg $"
+__RCSID__ = "$Id:  $"
 
 AGENT_NAME = 'ResourceStatus/RSInspectorAgent'
 
