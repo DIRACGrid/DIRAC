@@ -69,14 +69,17 @@ def logDEBUG( msg ):
   if cliParams.debug:
     for line in msg.split( "\n" ):
       print "[DEBUG] %s" % line
+    sys.stdout.flush()
 
 def logERROR( msg ):
   for line in msg.split( "\n" ):
     print "[ERROR] %s" % line
+  sys.stdout.flush()
 
 def logINFO( msg ):
   for line in msg.split( "\n" ):
     print "[INFO]  %s" % line
+  sys.stdout.flush()
 
 def executeAndGetOutput( cmd ):
   try:
