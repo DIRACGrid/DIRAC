@@ -11,31 +11,26 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.Agent                                 import Agent
+from DIRAC.Core.Base.AgentModule                           import AgentModule
 from DIRAC.Core.DISET.RPCClient                            import RPCClient
 from DIRAC.Core.Utilities.Shifter                          import setupShifterProxyInEnv
 from DIRAC                                                 import S_OK, S_ERROR, gConfig, gLogger
-
+from DIRAC.ConfigurationSystem.Client                      import PathFinder
 import os, sys, re, string, time
 
 AGENT_NAME = 'Stager/StagerMonitorAgent'
 
-class StagerMonitorAgent(Agent):
-
-  #############################################################################
-  def __init__(self):
-    """ Standard constructor for Agent
-    """
-    Agent.__init__(self,AGENT_NAME)
+class StagerMonitorAgent(AgentModule):
 
   #############################################################################
   def initialize(self):
     """Sets defaults
     """
-    result = Agent.initialize(self)
-    self.pollingTime = gConfig.getValue(self.section+'/PollingTime',60)
-    self.threadStartDelay = gConfig.getValue(self.section+'/ThreadStartDelay',5)
-    self.siteMonitor = gConfig.getValue(self.section+'/ModulePath','DIRAC.StagerSystem.Agent.SiteMonitor')
+
+    self.section = PathFinder.getAgentSection( AGENT_NAME )
+    self.pollingTime = self.am_getOption('PollingTime',60)
+    self.threadStartDelay = self.am_getOption('ThreadStartDelay',5)
+    self.siteMonitor = self.am_getOption('ModulePath','DIRAC.StagerSystem.Agent.SiteMonitor')
     self.started = False
     try:
       self.importModule = __import__(self.siteMonitor,globals(),locals(),['SiteMonitor'])
@@ -44,22 +39,26 @@ class StagerMonitorAgent(Agent):
       self.log.warn(x)
       self.log.warn(msg)
       return S_ERROR(msg)
-    return result
+    
+    self.proxyLocation = self.am_getOption('ProxyLocation', '' )
+    if not self.proxyLocation:
+      self.proxyLocation = False
+
+    self.am_setModuleParam('shifter','ProductionManager')
+    self.am_setModuleParam('shifterProxyLocation',self.proxyLocation)
+    
+    return S_OK()
 
   #############################################################################
   def execute(self):
     """The StagerMonitorAgent execution method.
     """
     # Update polling time
-    self.pollingTime = gConfig.getValue(self.section+'/PollingTime',60)
-
-    result = setupShifterProxyInEnv( "ProductionManager" )
-    if not result[ 'OK' ]:
-      return S_ERROR( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
+    self.pollingTime = self.am_getOption('PollingTime',60)
 
     agent = {}
     if not self.started:
-      sites = gConfig.getValue(self.section+'/Sites','LCG.CERN.ch')
+      sites = self.am_getOption('Sites','LCG.CERN.ch')
       if not type(sites)==type([]):
         sites = [x.strip() for x in string.split(sites,',')]
 

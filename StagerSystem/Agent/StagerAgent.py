@@ -41,7 +41,6 @@ class StagerAgent(AgentModule):
       self.log.warn(x)
       self.log.warn(msg)
       return S_ERROR(msg)
-    return result
   
     self.proxyLocation = self.am_getOption('ProxyLocation', '' )
     if not self.proxyLocation:
