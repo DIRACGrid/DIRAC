@@ -6,7 +6,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
-from DIRAC.Core.Base.Agent import Agent
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
@@ -20,15 +20,10 @@ from types import *
 
 AGENT_NAME = 'RequestManagement/DISETForwardingAgent'
 
-class DISETForwardingAgent(Agent,RequestAgentMixIn):
-
-  def __init__(self):
-    """ Standard constructor
-    """
-    Agent.__init__(self,AGENT_NAME)
+class DISETForwardingAgent(AgentModule,RequestAgentMixIn):
 
   def initialize(self):
-    result = Agent.initialize(self)
+
     self.RequestDBClient = RequestClient()
 
     gMonitor.registerActivity("Iteration",          "Agent Loops",                  "DISETForwardingAgent",      "Loops/min",      gMonitor.OP_SUM)
