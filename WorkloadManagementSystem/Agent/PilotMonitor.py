@@ -19,7 +19,7 @@ import DIRAC.Core.Utilities.Time as Time
 
 import os, time
 
-class PilotMonitor( AgentModule ):
+class PilotMonitorAgent( AgentModule ):
 
   #############################################################################
   def initialize( self ):
