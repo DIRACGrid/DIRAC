@@ -1,8 +1,12 @@
+########################################################################
+# $HeadURL$
+########################################################################
+
 """  ReplicationPlacementAgent determines the replications to be performed based on operations defined in the operations database
 """
 
 from DIRAC                                                  import gLogger,gMonitor, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Base.Agent                                  import Agent
+from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.RequestManagementSystem.Client.RequestClient     import RequestClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer  import RequestContainer
 from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
@@ -15,34 +19,33 @@ from DIRAC.Core.Utilities.List                              import sortList
 import time
 from types import *
 
+__RCSID__ = "$Id$"
+
 AGENT_NAME = 'DataManagement/ReplicationPlacementAgent'
 
-class ReplicationPlacementAgent(Agent):
-
-  def __init__(self):
-    """ Standard constructor
-    """
-    Agent.__init__(self,AGENT_NAME)
+class ReplicationPlacementAgent(AgentModule):
 
   def initialize(self):
-    result = Agent.initialize(self)
-    self.checkLFC = gConfig.getValue(self.section+'/CheckLFCFlag','yes')
+
+    self.checkLFC = self.am_getOption('CheckLFCFlag','yes')
     self.shifterDN = gConfig.getValue('/Operations/Production/ShiftManager','') 
     self.transferDBUrl = PathFinder.getServiceURL('RequestManagement/centralURL')
     self.TransferDB = RequestClient()
     self.DataLog = DataLoggingClient()
     gMonitor.registerActivity("Iteration","Agent Loops","ReplicationPlacementAgent","Loops/min",gMonitor.OP_SUM)
     return result
+  
+    self.proxyLocation = self.am_getOption('ProxyLocation', '' )
+    if not self.proxyLocation:
+      self.proxyLocation = False
+
+    self.am_setModuleParam('shifter','DataManager')
+    self.am_setModuleParam('shifterProxyLocation',self.proxyLocation)
 
   def execute(self):
     gMonitor.addMark('Iteration',1)
 
-    result = setupShifterProxyInEnv( "DataManager")
-    if not result[ 'OK' ]:
-      self.log.error("Can't get shifter's proxy: %s" % result[ 'Message' ])
-      return result
-
-    transName = gConfig.getValue(self.section+'/Transformation','All')
+    transName = self.am_getOption('Transformation','All')
     if transName == 'All':
       self.singleTransformation = False
       gLogger.info("ReplicationPlacementAgent.execute: Initializing general purpose agent.")
