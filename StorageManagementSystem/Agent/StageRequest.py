@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.FKduyw2449/dirac/DIRAC3/DIRAC/StorageManagementSystem/Agent/StageRequest.py,v 1.2 2009/10/30 22:03:03 acsmith Exp $
+# $HeadURL: /tmp/libdirac/tmp.FKduyw2449/dirac/DIRAC3/DIRAC/StorageManagementSystem/Agent/StageRequest.py,v 1.2 2009/10/30 22:03:03 acsmith Exp $
 __RCSID__ = "$Id: StageRequest.py,v 1.2 2009/10/30 22:03:03 acsmith Exp $"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
@@ -14,21 +14,26 @@ from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 import time,os,sys,re
 from types import *
 
-AGENT_NAME = 'StorageManagement/StageRequest'
+AGENT_NAME = 'StorageManagement/StageRequestAgent'
 
-class StageRequest(AgentModule):
+class StageRequestAgent(AgentModule):
 
   def initialize(self):
     self.replicaManager = ReplicaManager()
     self.stagerClient = RPCClient('StorageManagement/Stager')
     self.dataIntegrityClient = DataIntegrityClient()
+    
+    self.proxyLocation = self.am_getOption('ProxyLocation', '' )
+    if not self.proxyLocation:
+      self.proxyLocation = False
+
+    self.am_setModuleParam('shifter','DataManager')
+    self.am_setModuleParam('shifterProxyLocation',self.proxyLocation)
+    
     return S_OK()
 
   def execute(self):
-    res = setupShifterProxyInEnv('DataManager','%s/runit/%s/proxy' % (rootPath,AGENT_NAME))
-    if not res['OK']:
-      gLogger.fatal("StageRequest.execute: Failed to setup data manager proxy.", res['Message'])
-      return res
+
     # Get the current submitted stage space and the amount of pinned space for each storage element
     res = self.stagerClient.getSubmittedStagePins()
     if not res['OK']:
