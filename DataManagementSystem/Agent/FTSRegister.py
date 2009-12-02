@@ -1,7 +1,7 @@
 """  FTS Submit Agent takes files from the TransferDB and submits them to the FTS
 """
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Base.Agent import Agent
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
@@ -12,39 +12,30 @@ from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClien
 import os,time,re
 from types import *
 
-AGENT_NAME = 'DataManagement/FTSRegister'
-
-class FTSRegister(Agent):
-
-  def __init__(self):
-    """ Standard constructor
-    """
-    Agent.__init__(self,AGENT_NAME)
+class FTSRegisterAgent(AgentModule):
 
   def initialize(self):
-    result = Agent.initialize(self)
+
     self.TransferDB = TransferDB()
     self.ReplicaManager = ReplicaManager()
     self.DataLog = DataLoggingClient()
 
-    self.useProxies = gConfig.getValue(self.section+'/UseProxies','True').lower() in ( "y", "yes", "true" )
-    self.proxyLocation = gConfig.getValue( self.section+'/ProxyLocation', '' )
+    self.useProxies = self.am_getOption('UseProxies','True').lower() in ( "y", "yes", "true" )
+    self.proxyLocation = self.am_getOption('ProxyLocation', '' )
     if not self.proxyLocation:
       self.proxyLocation = False
 
-    return result
+    if self.useProxies:
+      self.am_setModuleParam('shifter','DataManager')
+      self.am_setModuleParam('shifterProxyLocation',self.proxyLocation)
+
+    return S_OK()
 
   def execute(self):
 
-    if self.useProxies:
-      result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
-      if not result[ 'OK' ]:
-        self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
-        return result
-
     res = self.TransferDB.getCompletedReplications()
     if not res['OK']:
-      gLogger.error("FTSRegister.execute: Failed to get the completed replications from TransferDB.",res['Message'])
+      gLogger.error("FTSRegisterAgent.execute: Failed to get the completed replications from TransferDB.",res['Message'])
       return S_OK()
     filesToRemove = {}
     for operation,sourceSE,lfn in res['Value']:
@@ -73,11 +64,11 @@ class FTSRegister(Agent):
       res = client.setRequest(requestName,requestString,'dips://volhcb03.cern.ch:9143/RequestManagement/RequestManager')
       print res['OK']
       """
-      gLogger.info("FTSRegister.execute:  Attemping to remove %s file(s) from %s." % (len(lfns),sourceSE))
+      gLogger.info("FTSRegisterAgent.execute:  Attemping to remove %s file(s) from %s." % (len(lfns),sourceSE))
       print lfns[0]
       res = self.ReplicaManager.removeReplica(sourceSE,lfns)
       if not res['OK']:
-        gLogger.error("FTSRegister.execute: Completely failed to remove replicas.",res['Message'])
+        gLogger.error("FTSRegisterAgent.execute: Completely failed to remove replicas.",res['Message'])
         return S_OK()
       for lfn in res['Value']['Successful'].keys():
         print 'successful'
@@ -86,7 +77,7 @@ class FTSRegister(Agent):
 
     res = self.TransferDB.getWaitingRegistrations()
     if not res['OK']:
-      gLogger.error("FTSRegister.execute: Failed to get waiting registrations from TransferDB.",res['Message'])
+      gLogger.error("FTSRegisterAgent.execute: Failed to get waiting registrations from TransferDB.",res['Message'])
       return S_OK()
     lfns = {}
     replicaTuples = []
@@ -95,16 +86,16 @@ class FTSRegister(Agent):
       replicaTuples.append((lfn,pfn,se))
 
     if replicaTuples:
-      gLogger.info("FTSRegister.execute: Found  %s waiting replica registrations." % len(replicaTuples))
+      gLogger.info("FTSRegisterAgent.execute: Found  %s waiting replica registrations." % len(replicaTuples))
       replicaTupleChunks = breakListIntoChunks(replicaTuples,100)
-      gLogger.info("FTSRegister.execute: Attempting in %s chunks." % len(replicaTupleChunks))
+      gLogger.info("FTSRegisterAgent.execute: Attempting in %s chunks." % len(replicaTupleChunks))
       chunk = 1
       for replicaChunk in replicaTupleChunks:
-        gLogger.info("FTSRegister.execute: Attempting chunk %s." % chunk)
+        gLogger.info("FTSRegisterAgent.execute: Attempting chunk %s." % chunk)
         chunk += 1
         res = self.ReplicaManager.registerReplica(replicaChunk)
         if not res['OK']:
-          gLogger.error("FTSRegister.execute: Completely failed to regsiter replicas.",res['Message'])
+          gLogger.error("FTSRegisterAgent.execute: Completely failed to regsiter replicas.",res['Message'])
           return S_OK()
         for lfn in res['Value']['Successful'].keys():
           channelID,fileID,se = lfns[lfn]
