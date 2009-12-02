@@ -1,3 +1,7 @@
+########################################################################
+# $Id: FailoverRequest.py 18161 2009-11-11 12:07:09Z acasajus $
+########################################################################
+
 import threading
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -7,6 +11,8 @@ from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
+
+__RCSID__ = "$Id: ZuziaAgent.py 18894 2009-12-02 17:23:55Z atsareg $"
 
 AGENT_NAME = 'ResourceStatus/SSInspectorAgent'
 
