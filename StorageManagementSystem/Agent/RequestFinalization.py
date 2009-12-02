@@ -1,4 +1,4 @@
-# $Header: /tmp/libdirac/tmp.FKduyw2449/dirac/DIRAC3/DIRAC/StorageManagementSystem/Agent/RequestFinalization.py,v 1.2 2009/10/30 22:03:03 acsmith Exp $
+# $HeadURL: /tmp/libdirac/tmp.FKduyw2449/dirac/DIRAC3/DIRAC/StorageManagementSystem/Agent/RequestFinalization.py,v 1.2 2009/10/30 22:03:03 acsmith Exp $
 
 __RCSID__ = "$Id: RequestFinalization.py,v 1.2 2009/10/30 22:03:03 acsmith Exp $"
 
@@ -9,9 +9,9 @@ from DIRAC.Core.DISET.RPCClient              import RPCClient
 import time,os,sys,re
 from types import *
 
-AGENT_NAME = 'StorageManagement/RequestFinalization'
+AGENT_NAME = 'StorageManagement/RequestFinalizationAgent'
 
-class RequestFinalization(AgentModule):
+class RequestFinalizationAgent(AgentModule):
 
   def initialize(self):
     self.stagerClient = RPCClient('StorageManagement/Stager')
