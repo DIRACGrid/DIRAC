@@ -18,21 +18,33 @@ class CSAPI:
     self.__initialized = self.initialize()
 
   def initialize( self ):
-    proxyLocation = Locations.getProxyLocation()
-    if not proxyLocation:
-      gLogger.error( "No proxy found!" )
-      return False
-    chain = X509Chain()
-    if not chain.loadProxyFromFile( proxyLocation ):
-      gLogger.error( "Can't read proxy!", proxyLocation )
-      return False
-    retVal = chain.getIssuerCert()
-    if not retVal[ 'OK' ]:
-      gLogger.error( "Can't parse proxy!", retVal[ 'Message' ] )
-      return False
-    issuerCert = retVal[ 'Value' ]
-    self.__userDN = issuerCert.getSubjectDN()[ 'Value' ]
-    self.__userGroup = issuerCert.getDIRACGroup()[ 'Value' ]
+    if not gConfig._useServerCertificate():
+      proxyLocation = Locations.getProxyLocation()
+      if not proxyLocation:
+        gLogger.error( "No proxy found!" )
+        return False
+      chain = X509Chain()
+      if not chain.loadProxyFromFile( proxyLocation ):
+        gLogger.error( "Can't read proxy!", proxyLocation )
+        return False
+      retVal = chain.getIssuerCert()
+      if not retVal[ 'OK' ]:
+        gLogger.error( "Can't parse proxy!", retVal[ 'Message' ] )
+        return False
+      idCert = retVal[ 'Value' ]
+    else:
+      certLocation = Locations.getHostCertificateAndKeyLocation()
+      if not certLocation:
+        gLogger.error( "No certificate found!" )
+        return False
+      chain = X509Chain()
+      retVal = chain.loadChainFromFile( certLocation[ 0 ] )
+      if not retVal[ 'OK' ]:
+        gLogger.error( "Can't parse certificate!", retVal[ 'Message' ] )
+        return False
+      idCert = chain.getIssuerCert()[ 'Value' ]
+    self.__userDN = idCert.getSubjectDN()[ 'Value' ]
+    self.__userGroup = idCert.getDIRACGroup()[ 'Value' ]
     retVal = gConfig.getOption( "/DIRAC/Configuration/MasterServer")
     if not retVal[ 'OK' ]:
       gLogger.warn( "Master server is not known. Is everything initialized?" )
