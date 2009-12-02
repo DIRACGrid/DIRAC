@@ -17,7 +17,7 @@ from   types import *
 import threading
 
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
-from DIRAC.Core.Utilities.ClassAd.ClassAdCondor        import ClassAd, matchClassAd
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight         import ClassAd
 from DIRAC                                             import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB           import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB    import JobLoggingDB
