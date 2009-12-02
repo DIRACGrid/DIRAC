@@ -23,7 +23,7 @@ def initializeProxyManagerHandler( serviceInfo ):
   global gProxyDB
 
   serviceCS = serviceInfo [ 'serviceSectionPath' ]
-  requireVoms = gConfig.getValue( "%s/requireVOMS" % serviceCS, "no" ).lower() in ( "yes", "y", "1" )
+  requireVoms = gConfig.getValue( "%s/RequireVOMS" % serviceCS, "no" ).lower() in ( "yes", "y", "1" )
   useMyProxy = gConfig.getValue( "%s/UseMyProxy" % serviceCS, "no" ).lower() in ( "yes", "y", "1" )
   try:
     gProxyDB = ProxyDB( requireVoms = requireVoms,
