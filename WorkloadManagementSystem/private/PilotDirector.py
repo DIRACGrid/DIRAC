@@ -274,6 +274,8 @@ class PilotDirector:
     # Use Filling mode
     pilotOptions.append( '-M %s' % self.maxJobsInFillMode )
 
+    # Debug
+    pilotOptions.append( '-d' )
     # Setup.
     pilotOptions.append( '-S %s' % taskQueueDict['Setup'] )
     # CS Servers
