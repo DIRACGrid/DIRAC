@@ -117,15 +117,16 @@ for group in availableGroups:
 
 myProxyFlag = gConfig.getValue('/DIRAC/VOPolicy/UseMyProxy',False)
 
+issuerCert = proxyInfo[ 'chain' ].getIssuerCert()[ 'Value' ]
+remainingSecs = issuerCert.getRemainingSecs()[ 'Value' ]
+cliParams.setProxyRemainingSecs( remainingSecs - 300 )
+
 if not pilotGroup:
   print "WARN: No pilot group defined for user %s" % proxyInfo[ 'username' ]
   if cliParams.strict:
     sys.exit(1)
 else:
   cliParams.setDIRACGroup( pilotGroup )
-  issuerCert = proxyInfo[ 'chain' ].getIssuerCert()[ 'Value' ]
-  remainingSecs = issuerCert.getRemainingSecs()[ 'Value' ]
-  cliParams.setProxyRemainingSecs( remainingSecs - 300 )
   if myProxyFlag:
     uploadProxyToMyProxy( cliParams, True )
   success = uploadProxyToDIRACProxyManager( cliParams )
