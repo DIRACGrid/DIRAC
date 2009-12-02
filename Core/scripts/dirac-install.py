@@ -272,8 +272,12 @@ CFG = imp.load_module( "CFG", cfgFD, cfgPath, ( "", "r", imp.PY_SOURCE ) )
 cfgFD.close()
 
 #Load releases
-downloadFileFromSVN( "trunk/releases.cfg", cliParams.targetPath, False, [] )
-mainCFG = CFG.CFG().loadFromFile( os.path.join( cliParams.targetPath, "releases.cfg" ) )
+cfgURL = "%s/%s/%s" % ( cliParams.downBaseURL, "tars", "releases-%s.cfg" % cliParams.release )
+cfgLocation = os.path.join( cliParams.targetPath, "releases.cfg" )
+if not urlretrieveTimeout( cfgURL, cfgLocation, 300 ):
+  logERROR( "Release %s doesn't seem to have been distributed" % cliParams.release )
+  sys.exit( 1 )
+mainCFG = CFG.CFG().loadFromFile( cfgLocation )
 
 if 'Releases' not in mainCFG.listSections():
   logERROR( " There's no Releases section in releases.cfg" )
@@ -355,7 +359,7 @@ if cliParams.lcgVer:
   tarBallName = "DIRAC-lcg-%s-%s-python%s" % ( cliParams.lcgVer, cliParams.platform, cliParams.pythonVersion )
   if not downloadAndExtractTarball( tarBallName, cliParams.targetPath, "lcgBundles", False ):
     logERROR( "Check that there is a release for your platform: %s" % tarBallName )
-                                         
+
 for file in ( "releases.cfg", "CFG.py", "CFG.pyc", "CFG.pyo" ):
   filePath = os.path.join( cliParams.targetPath, file )
   if os.path.isfile( filePath ):
