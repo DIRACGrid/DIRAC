@@ -1,3 +1,7 @@
+########################################################################
+# $HeadURL$
+########################################################################
+
 """  RegistrationAgent takes register requests from the RequestDB and registers them
 """
 
@@ -16,6 +20,8 @@ from DIRAC.RequestManagementSystem.Agent.RequestAgentMixIn import RequestAgentMi
 
 import time,os
 from types import *
+
+__RCSID__ = "$Id$"
 
 AGENT_NAME = 'DataManagement/RegistrationAgent'
 
