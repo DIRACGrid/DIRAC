@@ -33,21 +33,18 @@ class FTSMonitorAgent(AgentModule):
   def execute(self):
 
     if self.useProxies:
-      result = setupShifterProxyInEnv( "DataManager", self.proxyLocation )
-      if not result[ 'OK' ]:
-        self.log.error( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
-        return result
+      self.am_setModuleParam('shifter','DataManager')
 
     #########################################################################
     #  Get the details for all active FTS requests
     gLogger.info('Obtaining requests to monitor')
     res = self.TransferDB.getFTSReq()
     if not res['OK']:
-      errStr = "FTSAgent.execute: Failed to get FTS requests"
+      errStr = "FTSMonitorAgent.execute: Failed to get FTS requests"
       gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
     if not res['Value']:
-      infoStr = "FTSAgent. No FTS requests found to monitor."
+      infoStr = "FTSMonitorAgent. No FTS requests found to monitor."
       gLogger.info(infoStr)
       return S_OK()
     ftsReqs = res['Value']
@@ -86,7 +83,7 @@ class FTSMonitorAgent(AgentModule):
     gLogger.info('Obtaining the LFNs associated to this request')
     res = self.TransferDB.getFTSReqLFNs(ftsReqID)
     if not res['OK']:
-      errStr = "FTSAgent.monitorTransfer: Failed to obtain FTS request LFNs"
+      errStr = "FTSMonitorAgent.monitorTransfer: Failed to obtain FTS request LFNs"
       gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
     files = res['Value']
@@ -106,11 +103,11 @@ class FTSMonitorAgent(AgentModule):
     gLogger.info(infoStr)
     res = ftsReq.updateSummary()
     if not res['OK']:
-      errStr = "FTSAgent.monitorTransfer: Failed to update the FTS request summary"
+      errStr = "FTSMonitorAgent.monitorTransfer: Failed to update the FTS request summary"
       gLogger.error(errStr,res['Message'])
       res = self.TransferDB.setFTSReqLastMonitor(ftsReqID)
       if not res['OK']:
-        errStr = "FTSAgent.monitorTransfer: Failed to set FTS last monitor time"
+        errStr = "FTSMonitorAgent.monitorTransfer: Failed to set FTS last monitor time"
         gLogger.error(errStr,res['Message'])
       return S_ERROR(errStr)
     gLogger.info("%s%s\n\n" % ('Request Summary:'.ljust(20),ftsReq.getStatusSummary()))
@@ -118,15 +115,15 @@ class FTSMonitorAgent(AgentModule):
     gLogger.info('FTS Request found to be %s percent complete' % int(percentComplete))
     res = self.TransferDB.setFTSReqAttribute(ftsReqID,'PercentageComplete',percentComplete)
     if not res['OK']:
-      errStr = "FTSAgent.monitorTransfer: Failed to update FTS request attribute"
+      errStr = "FTSMonitorAgent.monitorTransfer: Failed to update FTS request attribute"
       gLogger.error(errStr,res['Message'])
     res = self.TransferDB.addLoggingEvent(ftsReqID,percentComplete)
     if not res['OK']:
-      errStr = "FTSAgent.monitorTransfer: Failed to add FTS logging event"
+      errStr = "FTSMonitorAgent.monitorTransfer: Failed to add FTS logging event"
       gLogger.error(errStr,res['Message'])
     res = self.TransferDB.setFTSReqLastMonitor(ftsReqID)
     if not res['OK']:
-      errStr = "FTSAgent.monitorTransfer: Failed to set FTS last monitor time"
+      errStr = "FTSMonitorAgent.monitorTransfer: Failed to set FTS last monitor time"
       gLogger.error(errStr,res['Message'])
 
     #########################################################################
@@ -135,7 +132,7 @@ class FTSMonitorAgent(AgentModule):
       gLogger.info('FTS Request found to be terminal, updating file states')
       res = ftsReq.updateFileStates()
       if not res['OK']:
-        errStr = "FTSAgent.monitorTransfer: Failed to update FTS file states"
+        errStr = "FTSMonitorAgent.monitorTransfer: Failed to update FTS file states"
         gLogger.error(errStr,res['Message'])
         return S_ERROR(errStr)
 
@@ -217,7 +214,7 @@ class FTSMonitorAgent(AgentModule):
       if not res['OK']:
         gLogger.error('Failed update FTS Request status', res['Message'])
       else:
-        gLogger.info("FTSAgent. preparing accounting message.")
+        gLogger.info("FTSMonitorAgent. preparing accounting message.")
         transferSize = 0
         if completedFileIDs:
           gLogger.info("FTSAgent. getting the size of the completed files.")
@@ -238,9 +235,9 @@ class FTSMonitorAgent(AgentModule):
         c = endTime-startTime
         transferTime = c.days * 86400 + c.seconds
         oAccounting.setValueByKey('TransferTime',transferTime)
-        gLogger.info("FTSAgent. accounting message prepared. sending....")
+        gLogger.info("FTSMonitorAgent. accounting message prepared. sending....")
         oAccounting.commit()
-        gLogger.info("FTSAgent. Accounting sent.")
+        gLogger.info("FTSMonitorAgent. Accounting sent.")
       
       if targetsToRemove:
         gLogger.info('Removing problematic target files')
