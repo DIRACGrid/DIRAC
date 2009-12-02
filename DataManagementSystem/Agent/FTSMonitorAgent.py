@@ -1,3 +1,7 @@
+########################################################################
+# $HeadURL$
+########################################################################
+
 """  FTS Monitor takes FTS Requests from the TransferDB and monitors them
 """
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
@@ -13,6 +17,7 @@ from DIRAC.Core.Utilities import Time
 import os,time,re
 from types import *
 
+__RCSID__ = "$Id$"
 
 AGENT_NAME = 'DataManagement/FTSMonitorAgent'
 

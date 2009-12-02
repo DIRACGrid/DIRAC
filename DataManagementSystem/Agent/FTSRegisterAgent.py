@@ -1,3 +1,7 @@
+########################################################################
+# $HeadURL$
+########################################################################
+
 """  FTS Submit Agent takes files from the TransferDB and submits them to the FTS
 """
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
@@ -11,6 +15,8 @@ from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
 import os,time,re
 from types import *
+
+__RCSID__ = "$Id$"
 
 class FTSRegisterAgent(AgentModule):
 
