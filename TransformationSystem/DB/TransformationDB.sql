@@ -20,31 +20,14 @@ CREATE TABLE Transformations (
     Status  CHAR(16) DEFAULT 'New',
     FileMask VARCHAR(255),
     TransformationGroup varchar(64) NOT NULL default 'General',
-    PRIMARY KEY(TransformationID),
-    INDEX(TransformationName)
-) ENGINE=InnoDB;
-
----------------------------------------------------------------------------------
--- CREATE TABLE T_$TransformationID(
---   FileID INTEGER NOT NULL,
---   Status VARCHAR(32) DEFAULT "Unused",
---   ErrorCount INT(4) NOT NULL DEFAULT 0,
---   JobID VARCHAR(32),
---   UsedSE VARCHAR(32) DEFAULT "Unknown",
---   PRIMARY KEY (FileID,Status)
-
----------------------------------------------------------------------------------
-DROP TABLE IF EXISTS TransformationParameters;
-CREATE TABLE TransformationParameters (
-    TransformationID INTEGER NOT NULL,
     GroupSize INT NOT NULL DEFAULT 1,
-    Parent VARCHAR(255) DEFAULT '',
     InheritedFrom INTEGER DEFAULT 0,
     Body BLOB,
     MaxNumberOfJobs INT NOT NULL DEFAULT 0,
     EventsPerJob INT NOT NULL DEFAULT 0,
-    PRIMARY KEY(TransformationID)
-);
+    PRIMARY KEY(TransformationID),
+    INDEX(TransformationName)
+) ENGINE=InnoDB;
 
 ---------------------------------------------------------------------------------
 DROP TABLE IF EXISTS AdditionalParameters;
