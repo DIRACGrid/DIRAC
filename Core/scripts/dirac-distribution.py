@@ -151,7 +151,7 @@ def tagSVNReleases( mainCFG, taggedReleases ):
     svnCmds = []
     checkOutPath = os.path.join( tmpPath, "svnco" )
     releasesFilePath = os.path.join( tmpPath, "releases.cfg" )
-    releasesTmpFilePath = os.path.join( tmp, "releases.cfg" )
+    releasesTmpFilePath = os.path.join( tmpPath, "releases.cfg" )
     releasesFinalFilePath = os.path.join( checkOutPath, "releases.cfg" )
     if not mainCFG.writeToFile( releasesTmpFilePath ):
       gLogger.error( "Could not write releases.cfg file to %s" % releasesTmpFilePath )
