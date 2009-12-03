@@ -193,15 +193,21 @@ CREATE VIEW PresentResources AS SELECT
   Resources.ResourceName, 
   Resources.SiteName, 
   Resources.ServiceName, 
-  Resources.ResourceType, 
+  Resources.ResourceType,
+  Sites.SiteType, 
   Resources.Status,
   Resources.DateEffective, 
   ResourcesHistory.Status AS FormerStatus,
   Resources.Reason,
   Resources.LastCheckTime,
   Resources.OperatorCode
-FROM Resources INNER JOIN ResourcesHistory ON 
-  Resources.ResourceName = ResourcesHistory.ResourceName AND 
-  Resources.DateEffective = ResourcesHistory.DateEnd 
+FROM (
+  (Resources INNER JOIN Sites ON 
+   Resources.SiteName = Sites.SiteName) 
+    INNER JOIN ResourcesHistory ON 
+      Resources.ResourceName = ResourcesHistory.ResourceName AND 
+      Resources.DateEffective = ResourcesHistory.DateEnd
+);
+   
 WHERE Resources.DateEffective < UTC_TIMESTAMP()
 ORDER BY SiteName;

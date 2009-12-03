@@ -317,6 +317,7 @@ class ResourceStatusDB:
       :attr:`operatorCode`: string. For the service itself: `RS_SVC`
     """
 
+    gLogger.info("Setting Site %s new status: %s" % (siteName, status))
     req = "SELECT SiteType FROM Sites WHERE SiteName = '%s' AND DateEffective < UTC_TIMESTAMP();" %(siteName)
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -476,37 +477,6 @@ class ResourceStatusDB:
     if not resUpdate['OK']:
       raise RSSDBException, where(self, self.addSiteType) + resUpdate['Message']
 
-
-#############################################################################
-
-  def getSitesToCheck(self, activeCheckFrequecy, probingCheckFrequecy, bannedCheckFrequecy):
-    """ 
-    Get sites to be checked
-    
-    :params:
-      :attr:`activeCheckFrequecy': integer. Frequency of active sites checking in minutes
-      
-      :attr:`probingCheckFrequecy': integer. Frequency of probing sites checking in minutes
-      
-      :attr:`bannedCheckFrequecy': integer. Frequency of banned sites checking in minutes
-    """
-    dateToCheckFromActive = (datetime.utcnow()-timedelta(minutes=activeCheckFrequecy)).isoformat(' ')
-    dateToCheckFromProbing = (datetime.utcnow()-timedelta(minutes=probingCheckFrequecy)).isoformat(' ')
-    dateToCheckFromBanned = (datetime.utcnow()-timedelta(minutes=bannedCheckFrequecy)).isoformat(' ')
-
-    req = "SELECT SiteName, Status, FormerStatus, Reason FROM PresentSites WHERE"
-    req = req + " (Status = 'Active' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( dateToCheckFromActive )
-    req = req + " (Status = 'Probing' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( dateToCheckFromProbing )
-    req = req + " (Status = 'Banned' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC');" %( dateToCheckFromBanned )
-
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getSitesToCheck) + resQuery['Message']
-    if not resQuery['Value']:
-      return []
-    sitesList = []
-    sitesList = [ x for x in resQuery['Value']]
-    return sitesList
 
 #############################################################################
 
@@ -833,6 +803,7 @@ class ResourceStatusDB:
       :attr:`operatorCode`: string. For the service itself: `RS_SVC`
     """
 
+    gLogger.info("Setting Resource %s new status: %s" % (resourceName, status))
     req = "SELECT ResourceType, ServiceName, SiteName FROM Resources WHERE ResourceName = '%s' AND DateEffective < UTC_TIMESTAMP();" %(resourceName)
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -1070,46 +1041,15 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def getResourcesToCheck(self, activeCheckFrequecy, probingCheckFrequecy, bannedCheckFrequecy):
-    """    
-    Get resources to be checked
-    
-    :params:
-      :attr:`activeCheckFrequecy': integer. Frequency of active resources checking in minutes
-      
-      :attr:`probingCheckFrequecy': integer. Frequency of probing resources checking in minutes
-      
-      :attr:`bannedCheckFrequecy': integer. Frequency of banned resources checking in minutes
-    
-    standard parameters taken from :mod:`DIRAC.ResourceStatusSystem.Policy.Configurations`
-    """
-    
-    dateToCheckFromActive = (datetime.utcnow()-timedelta(minutes=activeCheckFrequecy)).isoformat(' ')
-    dateToCheckFromProbing = (datetime.utcnow()-timedelta(minutes=probingCheckFrequecy)).isoformat(' ')
-    dateToCheckFromBanned = (datetime.utcnow()-timedelta(minutes=bannedCheckFrequecy)).isoformat(' ')
-
-    req = "SELECT ResourceName, Status, FormerStatus, Reason FROM PresentResources WHERE"
-    req = req + " (Status = 'Active' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( dateToCheckFromActive )
-    req = req + " (Status = 'Probing' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( dateToCheckFromProbing )
-    req = req + " (Status = 'Banned' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC');" %( dateToCheckFromBanned )
-
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getResourcesToCheck) + resQuery['Message']
-    if not resQuery['Value']:
-      return []
-    resourcesList = []
-    resourcesList = [ x for x in resQuery['Value']]
-    return resourcesList
-
-#############################################################################
 
 #############################################################################
 # Service functions
 #############################################################################
 
 #############################################################################
-  def getServicesList(self, paramsList = None, serviceName = None, status = None, serviceType = None):
+  
+  
+  def getServicesList(self, paramsList = None, serviceName = None, siteName = None, status = None, serviceType = None):
     """ 
     Get Present Services list. 
     
@@ -1117,6 +1057,8 @@ class ResourceStatusDB:
       :attr:`paramsList`: a list of parameters can be entered. If not, a custom list is used. 
       
       :attr:`serviceName`: a string or a list representing the service name
+      
+      :attr:`siteName`: a string or a list representing the site name
       
       :attr:`status`: a string or a list representing the status
       
@@ -1151,6 +1093,22 @@ class ResourceStatusDB:
         serviceName = [serviceName]
       serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName])
     
+    #siteName
+    if (siteName == None or siteName == []):
+      r = "SELECT SiteName FROM PresentSites"
+      resQuery = self.db._query(r)
+      if not resQuery['OK']:
+        raise RSSDBException, where(self, self.getSitesList)+resQuery['Message']
+      if not resQuery['Value']:
+        siteName = []
+      siteName = [ x[0] for x in resQuery['Value']]
+      siteName = ','.join(['"'+x.strip()+'"' for x in siteName])
+    else:
+      if type(siteName) is not list:
+        siteName = [siteName]
+      siteName = ','.join(['"'+x.strip()+'"' for x in siteName])
+
+   
     #status
     if (status == None or status == []):
       status = ValidStatus
@@ -1171,6 +1129,7 @@ class ResourceStatusDB:
     req = "SELECT %s FROM PresentServices WHERE" %(params)
     if serviceName != [] and serviceName != None and serviceName is not None and serviceName != '':
       req = req + " ServiceName IN (%s) AND" %(serviceName)
+    req = req + " SiteName in (%s) AND" % (siteName)
     req = req + " Status in (%s) AND" % (status)
     req = req + " ServiceType in (%s)" % (serviceType)
     
@@ -1219,6 +1178,7 @@ class ResourceStatusDB:
 
     paramsList = []
     services_select = []
+    sites_select = []
     status_select = []
     serviceType_select = []
     expand_service_history = ''
@@ -1234,6 +1194,14 @@ class ResourceStatusDB:
       if type(services_select) is not list:
         services_select = [services_select]
       del selectDict['ServiceName']
+      
+    #specify SiteName
+    if selectDict.has_key('SiteName'):
+      paramsList = ['ServiceName', 'ServiceType', 'SiteName', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
+      sites_select = selectDict['SiteName']
+      if type(sites_select) is not list:
+        sites_select = [sites_select]
+      del selectDict['SiteName']
       
     #Status
     if selectDict.has_key('Status'):
@@ -1274,7 +1242,7 @@ class ResourceStatusDB:
     
     else:
       #makes the right call to getServicesList
-      servicesList = self.getServicesList(paramsList = paramsList, serviceName = services_select, status = status_select, serviceType = serviceType_select)
+      servicesList = self.getServicesList(paramsList = paramsList, serviceName = services_select, siteName = sites_select, status = status_select, serviceType = serviceType_select)
       for service in servicesList:
         record = []
         record.append(service[0]) #ServiceName
@@ -1353,6 +1321,7 @@ class ResourceStatusDB:
       :attr:`operatorCode`: string. For the service itself: `RS_SVC`
     """
 
+    gLogger.info("Setting Service %s new status: %s" % (serviceName, status))
     req = "SELECT ServiceType, SiteName FROM Services WHERE ServiceName = '%s' AND DateEffective < UTC_TIMESTAMP();" %(serviceName)
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -1517,6 +1486,7 @@ class ResourceStatusDB:
     
     :params:
       :attr:`serviceType`: string
+      
       :attr:`description`: string, optional
     """
 
@@ -1527,39 +1497,6 @@ class ResourceStatusDB:
     if not resUpdate['OK']:
       raise RSSDBException, where(self, self.addServiceType) + resUpdate['Message']
 
-
-#############################################################################
-
-  def getServicesToCheck(self, activeCheckFrequecy, probingCheckFrequecy, bannedCheckFrequecy):
-    """ 
-    Get services to be checked
-    
-    :params:
-      :attr:`activeCheckFrequecy': integer. Frequency of active services checking in minutes
-      
-      :attr:`probingCheckFrequecy': integer. Frequency of probing services checking in minutes
-      
-      :attr:`bannedCheckFrequecy': integer. Frequency of banned services checking in minutes
-        
-    standard parameters taken from :mod:`DIRAC.ResourceStatusSystem.Policy.Configurations`
-    """
-    dateToCheckFromActive = (datetime.utcnow()-timedelta(minutes=activeCheckFrequecy)).isoformat(' ')
-    dateToCheckFromProbing = (datetime.utcnow()-timedelta(minutes=probingCheckFrequecy)).isoformat(' ')
-    dateToCheckFromBanned = (datetime.utcnow()-timedelta(minutes=bannedCheckFrequecy)).isoformat(' ')
-
-    req = "SELECT ServiceName, Status, FormerStatus, Reason FROM PresentServices WHERE"
-    req = req + " (Status = 'Active' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( dateToCheckFromActive )
-    req = req + " (Status = 'Probing' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( dateToCheckFromProbing )
-    req = req + " (Status = 'Banned' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC');" %( dateToCheckFromBanned )
-
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getServicesToCheck) + resQuery['Message']
-    if not resQuery['Value']:
-      return []
-    servicesList = []
-    servicesList = [ x for x in resQuery['Value']]
-    return servicesList
 
 #############################################################################
 
@@ -1586,7 +1523,9 @@ class ResourceStatusDB:
     
     :params:
       :attr:`serviceName`: string, service name
+      
       :attr:`reason`: string, reason
+      
       :attr:`operatorCode`: string, who's making this change (RS_SVC if it's the service itslef)
     """
     
@@ -1598,13 +1537,40 @@ class ResourceStatusDB:
 
 #############################################################################
 
+  def setServiceToBeChecked(self, granularity, name):
+    """ 
+    Set new reason to serviceName
+    
+    :params:
+      :attr:`granularity`: string, 'Site' or 'Resource'
+      
+      :attr:`name`: string, name of Site or Service
+    """
+    
+    if granularity in ('Site', 'Sites'):
+      serviceName = self.getServicesList(paramsList = ['ServiceName'], siteName = name)
+      if type(serviceName) is not list:
+        serviceName = [serviceName]
+      serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName[0]])
+      req = "UPDATE Services SET LastCheckTime = '00000-00-00 00:00:00' WHERE ServiceName IN (%s);" %(serviceName)
+    elif granularity in ('Resource', 'Resources'):
+      serviceName = self.getGeneralName(name, 'Resource', 'Service')
+      req = "UPDATE Services SET LastCheckTime = '00000-00-00 00:00:00' WHERE ServiceName  = '%s';" %(serviceName)
+    
+    resUpdate = self.db._update(req)
+    
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self.setServiceToBeChecked) + resUpdate['Message']
+
+
+#############################################################################
+
   def removeServiceType(self, serviceType):
     """ 
     Remove a service type from the ServiceTypes table
     
     :params:
       :attr:`serviceType`: string, a service type (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
-    
     """
 
     req = "DELETE from ServiceTypes WHERE ServiceType = '%s';" % (serviceType)
@@ -1754,17 +1720,19 @@ class ResourceStatusDB:
     
     :params:
       :attr:`resource`: a string with a name
+      
       :attr:`from_g`: a string with a valid granularity (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
+      
       :attr:`to_g`: a string with a valid granularity (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
       
     :return:
       a string with the resulting name
     """
 
-    if from_g == 'Resource':
-      if to_g == 'Site':
+    if from_g in ('Resource', 'Resources'):
+      if to_g in ('Site', 'Sites'):
         req = "SELECT SiteName FROM Resources WHERE ResourceName = '%s';" %(name)
-      elif to_g == 'Service':
+      elif to_g in ('Service', 'Services'):
         req = "SELECT SiteName, ResourceType FROM Resources WHERE ResourceName = '%s';" %(name)
         resQuery = self.db._query(req)
         if not resQuery['OK']:
@@ -1777,8 +1745,8 @@ class ResourceStatusDB:
         if resQuery['Value'][0][1] == 'SE':
           serviceType = 'Storage'
         req = "SELECT ServiceName FROM Services WHERE SiteName = '%s' AND ServiceType = '%s';" %(siteName, serviceType)
-    if from_g == 'Service':
-      if to_g == 'Site':
+    elif from_g in ('Service', 'Services'):
+      if to_g in ('Site', 'Sites'):
         req = "SELECT SiteName FROM Services WHERE ServiceName = '%s';" %(name)
 
     resQuery = self.db._query(req)
@@ -2179,6 +2147,10 @@ class ResourceStatusDB:
     sitesList = gConfig.getSections('Resources/Sites/LCG', True)
     if sitesList['OK']:
       sitesList = sitesList['Value']
+      try:
+        sitesList.remove('LCG.Dummy.ch')
+      except ValueError:
+        pass
     else:
       raise RSSException, where(self, self.syncWithCS) + sitesList['Message']
     
@@ -2279,12 +2251,16 @@ class ResourceStatusDB:
         
     #add new comp services and CEs - separate because of "race conditions"         
     for site in siteCE.keys():
+      if site == 'LCG.Dummy.ch':
+        continue
       for ce in siteCE[site]:
         service = 'Computing@' + site
         if service not in servicesIn:
           self.addOrModifyService(service, 'Computing', site, 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
           servicesIn.append(service)
     for site in siteCE.keys():
+      if site == 'LCG.Dummy.ch':
+        continue
       for ce in siteCE[site]:
         service = 'Computing@' + site
         if ce not in resourcesIn:
@@ -2293,12 +2269,16 @@ class ResourceStatusDB:
       
     #add new storage services and SEs - separate because of "race conditions"
     for site in siteSE.keys():
+      if site == 'LCG.Dummy.ch':
+        continue
       for se in siteSE[site]:
         service = 'Storage@' + site
         if service not in servicesIn:
           self.addOrModifyService(service, 'Storage', site, 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
           servicesIn.append(service)
     for site in siteSE.keys():
+      if site == 'LCG.Dummy.ch':
+        continue
       for se in siteSE[site]:
         service = 'Storage@' + site
         se = gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/Host" %se)
@@ -2309,4 +2289,84 @@ class ResourceStatusDB:
             seServiceSite.append(sss)
           
       
+#############################################################################
+
+  def getStuffToCheck(self, granularity, checkFrequency = None, maxN = None):
+    """ 
+    Get Sites, Services, or Resources to be checked
+    
+    :params:
+      :attr:`granularity`: a ValidRes
+      
+      :attr:`checkFrequecy': dictonary. Frequency of active sites/resources checking in minutes.
+              See :mod:`DIRAC.ResourceStatusSystem.Policy.Configurations`
+    """
+    
+    if granularity in ('Service', 'Services'):
+      req = "SELECT ServiceName, Status, FormerStatus, Reason FROM PresentServices WHERE"
+      req = req + " LastCheckTime = '0000-00-00 00:00:00'"
+      if maxN != None:
+        req = req + " LIMIT %d" %maxN
+      
+      resQuery = self.db._query(req)
+      if not resQuery['OK']:
+        raise RSSDBException, where(self, self.getStuffToCheck) + resQuery['Message']
+      if not resQuery['Value']:
+        return []
+      stuffList = []
+      stuffList = [ x for x in resQuery['Value']]
+  
+      return stuffList
+    
+    else:
+
+      T0activeCheckFrequecy = checkFrequency['T0_ACTIVE_CHECK_FREQUENCY']
+      T0probingCheckFrequecy = checkFrequency['T0_PROBING_CHECK_FREQUENCY']
+      T0bannedCheckFrequecy = checkFrequency['T0_BANNED_CHECK_FREQUENCY']
+      T1activeCheckFrequecy = checkFrequency['T1_ACTIVE_CHECK_FREQUENCY']
+      T1probingCheckFrequecy = checkFrequency['T1_PROBING_CHECK_FREQUENCY']
+      T1bannedCheckFrequecy = checkFrequency['T1_BANNED_CHECK_FREQUENCY']
+      T2activeCheckFrequecy = checkFrequency['T2_ACTIVE_CHECK_FREQUENCY']
+      T2probingCheckFrequecy = checkFrequency['T2_PROBING_CHECK_FREQUENCY']
+      T2bannedCheckFrequecy = checkFrequency['T2_BANNED_CHECK_FREQUENCY']
+  
+      T0dateToCheckFromActive = (datetime.utcnow()-timedelta(minutes=T0activeCheckFrequecy)).isoformat(' ')
+      T0dateToCheckFromProbing = (datetime.utcnow()-timedelta(minutes=T0probingCheckFrequecy)).isoformat(' ')
+      T0dateToCheckFromBanned = (datetime.utcnow()-timedelta(minutes=T0bannedCheckFrequecy)).isoformat(' ')
+      T1dateToCheckFromActive = (datetime.utcnow()-timedelta(minutes=T1activeCheckFrequecy)).isoformat(' ')
+      T1dateToCheckFromProbing = (datetime.utcnow()-timedelta(minutes=T1probingCheckFrequecy)).isoformat(' ')
+      T1dateToCheckFromBanned = (datetime.utcnow()-timedelta(minutes=T1bannedCheckFrequecy)).isoformat(' ')
+      T2dateToCheckFromActive = (datetime.utcnow()-timedelta(minutes=T2activeCheckFrequecy)).isoformat(' ')
+      T2dateToCheckFromProbing = (datetime.utcnow()-timedelta(minutes=T2probingCheckFrequecy)).isoformat(' ')
+      T2dateToCheckFromBanned = (datetime.utcnow()-timedelta(minutes=T2bannedCheckFrequecy)).isoformat(' ')
+  
+      if granularity in ('Site', 'Sites'):
+        req = "SELECT SiteName, Status, FormerStatus, Reason FROM PresentSites WHERE"
+      elif granularity in ('Resource', 'Resources'):
+        req = "SELECT ResourceName, Status, FormerStatus, Reason FROM PresentResources WHERE"
+      else:
+        raise InvalidRes, where(self, self.getStuffToCheck)
+      req = req + " (Status = 'Active' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromActive )
+      req = req + " (Status = 'Probing' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromProbing )
+      req = req + " (Status = 'Banned' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromBanned )
+      req = req + " (Status = 'Active' AND SiteType = 'T1' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T1dateToCheckFromActive )
+      req = req + " (Status = 'Probing' AND SiteType = 'T1' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T1dateToCheckFromProbing )
+      req = req + " (Status = 'Banned' AND SiteType = 'T1' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T1dateToCheckFromBanned )
+      req = req + " (Status = 'Active' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T2dateToCheckFromActive )
+      req = req + " (Status = 'Probing' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T2dateToCheckFromProbing )
+      req = req + " (Status = 'Banned' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC')" %( T2dateToCheckFromBanned )
+      req = req + " ORDER BY LastCheckTime"
+      if maxN != None:
+        req = req + " LIMIT %d" %maxN
+      
+      resQuery = self.db._query(req)
+      if not resQuery['OK']:
+        raise RSSDBException, where(self, self.getStuffToCheck) + resQuery['Message']
+      if not resQuery['Value']:
+        return []
+      stuffList = []
+      stuffList = [ x for x in resQuery['Value']]
+  
+      return stuffList
+
 #############################################################################

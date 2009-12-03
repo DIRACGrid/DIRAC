@@ -9,6 +9,8 @@ from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+from DIRAC.ResourceStatusSystem.Policy import Configurations
+
 
 class ResourceStatusDBTestCase(unittest.TestCase):
   """ Base class for the ResourceStatusDB test cases
@@ -66,10 +68,6 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     self.assertEqual(res['Records'], [])
     res = self.rsDB.getSitesStatusWeb({'SiteName':['XX', 'zz'], 'SiteType':['XX', 'zz'], 'Status':['XX', 'zz']}, [], 0, 500)
     self.assertEqual(res['Records'], [])
-
-  def test_getSitesToCheck(self):
-    res = self.rsDB.getSitesToCheck(1,2,3)
-    self.assertEqual(res, [])
 
   def test_getSitesHistory(self):
     res = self.rsDB.getSitesHistory()
@@ -159,10 +157,6 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     res = self.rsDB.getServicesStatusWeb({'ServiceName':['XX', 'zz'], 'ServiceType':['XX', 'zz'], 'Status':['XX', 'zz']}, [], 0, 500)
     self.assertEqual(res['Records'], [])
 
-  def test_getServicesToCheck(self):
-    res = self.rsDB.getServicesToCheck(1,2,3)
-    self.assertEqual(res, [])
-
   def test_getServicesHistory(self):
     res = self.rsDB.getServicesHistory()
     self.assertEqual(res, [])
@@ -191,6 +185,11 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     res = self.rsDB.setServiceReason('Active', 'reasons', 'Federico')
     self.assertEqual(res, None)
 
+  def test_setServiceToBeChecked(self):
+    for g in ('Site', 'Resource'):
+      res = self.rsDB.setServiceToBeChecked(g, 'CERN.ch')
+      self.assertEqual(res, None)
+
   def test_addOrModifyService(self):
     for status in ValidStatus:
       res = self.rsDB.addOrModifyService('Computing@Ferrara', 'Computing', 'Ferrara', status, 'ho delle ragioni', datetime.utcnow(), 'testOP', datetime.utcnow() + timedelta(minutes=10))
@@ -199,7 +198,6 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
   def test_addServiceType(self):
     res = self.rsDB.addServiceType('T1', 'test desc')
     self.assertEqual(res, None)
-
 
   def test_removeService(self):
     res = self.rsDB.removeService('CNAF')
@@ -272,10 +270,6 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     res = self.rsDB._addResourcesHistoryRow('CE01', 'Computing@Ferrara', 'Ferrara', 'Active', 'reasons', datetime.utcnow(), datetime.utcnow(), datetime.utcnow() + timedelta(minutes=10), 'Federico')
     self.assertEqual(res, None)
     
-  def test_getResourcesToCheck(self):
-    res = self.rsDB.getResourcesToCheck(1,2,3)
-    self.assertEqual(res, [])
-
   def test_setResourceStatus(self):
     res = self.rsDB.setResourceStatus('CE01', 'Active', 'reasons', 'Federico')
     self.assertEqual(res, None)
@@ -397,6 +391,12 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     res = self.rsDB.getServiceStats('XX')
     self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Banned': 0, 'Total': 0})
     
+  def test_getStuffToCheck(self):
+    for g in ValidRes:
+      res = self.rsDB.getStuffToCheck(g,Configurations.Sites_check_freq,3)
+    self.assertEqual(res, [])
+
+
 #  def test_syncWithCS(self):
 #    res = self.rsDB.syncWithCS()
 #    self.assertEqual(res, None)
@@ -427,7 +427,6 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
     self.assertRaises(RSSDBException, self.rsDB.getSitesList) 
     self.assertRaises(RSSDBException, self.rsDB.getSiteTypeList) 
     self.assertRaises(RSSDBException, self.rsDB.getSitesHistory) 
-    self.assertRaises(RSSDBException, self.rsDB.getSitesToCheck, 1,2,3) 
     self.assertRaises(RSSDBException, self.rsDB.addOrModifySite, 'CNAF', 'T1', 'Banned', 'test reason', datetime.utcnow(), 'testOP', datetime.utcnow() + timedelta(minutes=10)) 
     self.assertRaises(RSSDBException, self.rsDB.addSiteType, '') 
     self.assertRaises(RSSDBException, self.rsDB.removeSiteType, '') 
@@ -440,7 +439,6 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
     self.assertRaises(RSSDBException, self.rsDB.getServicesList)
     self.assertRaises(RSSDBException, self.rsDB.getServiceTypeList) 
     self.assertRaises(RSSDBException, self.rsDB.getServicesHistory)
-    self.assertRaises(RSSDBException, self.rsDB.getServicesToCheck, 1,2,3)
     self.assertRaises(RSSDBException, self.rsDB.addOrModifyService, 'Computing@CERN', 'Computing', 'CERN', 'Banned', 'test reason', datetime.utcnow(), 'testOP', datetime.utcnow() + timedelta(minutes=10))
     self.assertRaises(RSSDBException, self.rsDB.addServiceType, '')
     self.assertRaises(RSSDBException, self.rsDB.removeServiceType, '')
@@ -453,7 +451,6 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
     self.assertRaises(RSSDBException, self.rsDB.getResourcesList)
     self.assertRaises(RSSDBException, self.rsDB.getResourceTypeList) 
     self.assertRaises(RSSDBException, self.rsDB.getResourcesHistory)
-    self.assertRaises(RSSDBException, self.rsDB.getResourcesToCheck, 1,2,3)
     self.assertRaises(RSSDBException, self.rsDB.addOrModifyResource, 'CE01', 'T1', 'Computing@CERN', 'CNAF', 'Banned', 'test reason', datetime.utcnow(), 'testOP', datetime.utcnow() + timedelta(minutes=10))
     self.assertRaises(RSSDBException, self.rsDB.addResourceType, '')
     self.assertRaises(RSSDBException, self.rsDB.removeResourceType, '')
@@ -469,6 +466,8 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
     self.assertRaises(RSSDBException, self.rsDB.addStatus, '')
     self.assertRaises(RSSDBException, self.rsDB.removeStatus, '')
     self.assertRaises(RSSDBException, self.rsDB.setDateEnd, 'Site', 'CNAF', datetime.utcnow())
+    for g in ValidRes:
+      self.assertRaises(RSSDBException, self.rsDB.getStuffToCheck, g,Configurations.Sites_check_freq,3) 
 #    self.assertRaises(RSSDBException, self.rsDB.syncWithCS)
    
 
