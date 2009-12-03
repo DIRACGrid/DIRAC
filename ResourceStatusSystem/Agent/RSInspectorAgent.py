@@ -71,12 +71,11 @@ class RSInspectorAgent(AgentModule):
       resourcesGetter = ThreadedJob(self._getResourcesToCheck)
       self.threadPool.queueJob(resourcesGetter)
       
-      #for i in range(self.threadPoolDepth - 2):
       for i in range(self.maxNumberOfThreads - 1):
         checkExecutor = ThreadedJob(self._executeCheck)
         self.threadPool.queueJob(checkExecutor)
     
-      self.threadPool.processResults()
+      self.threadPool.processAllResults()
       return S_OK()
 
     except Exception, x:
@@ -88,11 +87,12 @@ class RSInspectorAgent(AgentModule):
 
   def _getResourcesToCheck(self):
     """ 
-    Call :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getSitesToCheck` and put result in a list
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getResourcesToCheck` 
+    and put result in a list
     """
 
     try:
-      res = self.rsDB.getResourcesToCheck(Configurations.ACTIVE_CHECK_FREQUENCY, Configurations.PROBING_CHECK_FREQUENCY, Configurations.BANNED_CHECK_FREQUENCY)
+      res = self.rsDB.getStuffToCheck('Resources', Configurations.Resources_check_freq, self.maxNumberOfThreads - 1)
     except RSSDBException, x:
       gLogger.error(whoRaised(x))
     except RSSException, x:
@@ -110,7 +110,7 @@ class RSInspectorAgent(AgentModule):
         self.ResToBeChecked.insert(0, resourceL)
       finally:
         self.lockObj.release()
-
+        
 #############################################################################
 
   def _executeCheck(self):
@@ -132,6 +132,7 @@ class RSInspectorAgent(AgentModule):
       formerStatus = toBeChecked[3]
       reason = toBeChecked[4]
       
+      gLogger.info("Checking Resource %s, with status %s" % (resourceName, status))
       newPEP = PEP(granularity = granularity, name = resourceName, status = status, formerStatus = formerStatus, reason = reason)
       newPEP.enforce()
 

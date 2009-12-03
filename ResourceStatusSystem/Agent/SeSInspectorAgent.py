@@ -21,6 +21,8 @@ class SeSInspectorAgent(AgentModule):
       table, and pass Service and Status to the PEP
   """
 
+#############################################################################
+
   def initialize(self):
     """ Standard constructor
     """
@@ -33,7 +35,7 @@ class SeSInspectorAgent(AgentModule):
       except RSSException, x:
         gLogger.error(whoRaised(x))
       
-      self.am_setOption( "PollingTime", 60 )
+      self.am_setOption( "PollingTime", 180 )
       self.ServicesToBeChecked = []
       self.ServiceNamesInCheck = []
       #self.maxNumberOfThreads = gConfig.getValue(self.section+'/NumberOfThreads',1)
@@ -59,6 +61,7 @@ class SeSInspectorAgent(AgentModule):
       gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr)
 
+#############################################################################
 
   def execute(self):
     """ The main SSInspectorAgent execution method
@@ -68,12 +71,11 @@ class SeSInspectorAgent(AgentModule):
       servicesGetter = ThreadedJob(self._getServicesToCheck)
       self.threadPool.queueJob(servicesGetter)
       
-      #for i in range(self.threadPoolDepth - 2):
       for i in range(self.maxNumberOfThreads - 1):
         checkExecutor = ThreadedJob(self._executeCheck)
         self.threadPool.queueJob(checkExecutor)
     
-      self.threadPool.processResults()
+      self.threadPool.processAllResults()
       return S_OK()
 
     except Exception, x:
@@ -81,13 +83,15 @@ class SeSInspectorAgent(AgentModule):
       gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr)
       
+#############################################################################
+
   def _getServicesToCheck(self):
     """ 
     Call :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getServicesToCheck` and put result in list
     """
     
     try:
-      res = self.rsDB.getServicesToCheck(Configurations.ACTIVE_CHECK_FREQUENCY, Configurations.PROBING_CHECK_FREQUENCY, Configurations.BANNED_CHECK_FREQUENCY)
+      res = self.rsDB.getStuffToCheck('Services', maxN = self.maxNumberOfThreads - 1)
     except RSSDBException, x:
       gLogger.error(whoRaised(x))
     except RSSException, x:
@@ -106,6 +110,7 @@ class SeSInspectorAgent(AgentModule):
       finally:
         self.lockObj.release()
 
+#############################################################################
 
   def _executeCheck(self):
     """ 
@@ -126,6 +131,7 @@ class SeSInspectorAgent(AgentModule):
       formerStatus = toBeChecked[3]
       reason = toBeChecked[4]
       
+      gLogger.info("Checking Service %s, with status %s" % (serviceName, status))
       newPEP = PEP(granularity = granularity, name = serviceName, status = status, formerStatus = formerStatus, reason = reason)
       newPEP.enforce()
 
@@ -134,3 +140,5 @@ class SeSInspectorAgent(AgentModule):
         self.ServiceNamesInCheck.remove(serviceName)
       finally:
         self.lockObj.release()
+
+#############################################################################

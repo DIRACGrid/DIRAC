@@ -68,12 +68,11 @@ class SSInspectorAgent(AgentModule):
       sitesGetter = ThreadedJob(self._getSitesToCheck)
       self.threadPool.queueJob(sitesGetter)
       
-      #for i in range(self.threadPoolDepth - 2):
       for i in range(self.maxNumberOfThreads - 1):
         checkExecutor = ThreadedJob(self._executeCheck)
         self.threadPool.queueJob(checkExecutor)
     
-      self.threadPool.processResults()
+      self.threadPool.processAllResults()
       return S_OK()
 
     except Exception, x:
@@ -87,7 +86,7 @@ class SSInspectorAgent(AgentModule):
     """
     
     try:
-      res = self.rsDB.getSitesToCheck(Configurations.ACTIVE_CHECK_FREQUENCY, Configurations.PROBING_CHECK_FREQUENCY, Configurations.BANNED_CHECK_FREQUENCY)
+      res = self.rsDB.getStuffToCheck('Sites', Configurations.Sites_check_freq, self.maxNumberOfThreads - 1)
     except RSSDBException, x:
       gLogger.error(whoRaised(x))
     except RSSException, x:
@@ -126,6 +125,7 @@ class SSInspectorAgent(AgentModule):
       formerStatus = toBeChecked[3]
       reason = toBeChecked[4]
       
+      gLogger.info("Checking Site %s, with status %s" % (siteName, status))
       newPEP = PEP(granularity = granularity, name = siteName, status = status, formerStatus = formerStatus, reason = reason)
       newPEP.enforce()
 
