@@ -16,16 +16,22 @@ class PilotsClient:
 #############################################################################
 
   def getPilotStats(self, granularity, name, periods):
-    """  return pilot stats of entity in args
-        - granularity should be a ValidRes
-        - name should be the name of the ValidRes
-        - periods contains the periods to consider in the query
+    """  
+    Return pilot stats
+    
+    :params:
+      :attr:`granularity`: string - should be a ValidRes
+    
+      :attr:`name`: string - should be the name of the ValidRes
+    
+      :attr:`periods`: list - contains the periods to consider in the query
 
-        returns:
-          {
-            'MeanProcessedPilots': X'
-            'LastProcessedPilots': X'
-          }
+    :return:
+      {
+        'MeanProcessedPilots': X'
+
+        'LastProcessedPilots': X'
+      }
     """
     
     if args[0].capitalize() not in ValidRes:
@@ -53,16 +59,20 @@ class PilotsClient:
 #############################################################################
 
   def getPilotsEff(self, granularity, name, periods):
-    """  return pilot stats of entity in args for periods
-        - granularity should be a ValidRes
-        - name should be the name of the ValidRes
-        
-        - periods contains the periods to consider in the query
+    """  
+    Return pilot stats of entity in args for periods
+    
+    :params:
+      :attr:`granularity`: string - should be a ValidRes
+    
+      :attr:`name`: string - should be the name of the ValidRes
+    
+      :attr:`name`: list - periods contains the periods to consider in the query
 
-        returns:
-          {
-            'PilotsEff': X (0-1)'
-          }
+    returns:
+      {
+        'PilotsEff': X (0-1)'
+      }
     """
 
     if args[0] == 'Site':
@@ -96,16 +106,19 @@ class PilotsClient:
 
 
   def getPilotsSimpleEff(self, granularity, name):
-    """  return pilots simple efficiency of entity in args for periods
-        - granularity should be a ValidRes
-        - name should be the name of the ValidRes
-            if granularity is resource, name is a tuple containing
-            the resource name along with its site name
+    """  
+    Return pilots simple efficiency of entity in args for periods
+    
+    :params:
+      :attr:`granularity`: string - should be a ValidRes
+      :attr:`name`: string - should be the name of the ValidRes
+    
+    If granularity is resource, name is a tuple containing the resource name along with its site name
         
-        returns:
-          {
-            'PilotsEff': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
-          }
+    :return:
+    {
+      'PilotsEff': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
+    }
     """
     
     RPC = RPCClient("WorkloadManagement/WMSAdministrator")

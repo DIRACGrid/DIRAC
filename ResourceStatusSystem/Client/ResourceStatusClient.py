@@ -1,5 +1,5 @@
-""" ResourceStatusClient class is a client for requesting info from 
-    the ResourceStatusService.
+""" 
+ResourceStatusClient class is a client for requesting info from the ResourceStatusService.
 """
 from DIRAC import gLogger
 from DIRAC.Core.DISET.RPCClient import RPCClient

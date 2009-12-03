@@ -14,14 +14,20 @@ class SAMResultsClient:
 #############################################################################
 
   def getStatus(self, args):
-    """  return stats of entity in args
+    """  
+    Return stats of entity in args
+    
+    :params:
+      :attr:`args`: a tuple
+
         - args[0] should be the name of the site
+
         - args[1] should be the name of the resource
 
-        returns:
-          {
-            'Status': ok|down|na|degraded|partial|maint'
-          }
+    :returns:
+      {
+        'Status': ok|down|na|degraded|partial|maint'
+      }
     """
 #    print args
     
@@ -35,7 +41,7 @@ class SAMResultsClient:
 #############################################################################
 
   def _curlDownload(self, site):
-    """ download SAM status for entity using the SAM DB programmatic interface
+    """ Download SAM status for entity using the SAM DB programmatic interface
     """
 
     samdbpi_url = "http://lcg-sam.cern.ch:8080/same-pi/"

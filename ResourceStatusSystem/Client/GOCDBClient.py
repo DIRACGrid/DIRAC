@@ -15,17 +15,21 @@ class GOCDBClient:
 #############################################################################
 
   def getStatus(self, args):
-    """  return actual GOCDB status of entity in args[1]
+    """  
+    Return actual GOCDB status of entity in args[1]
+        
+    :params:
+      :attr:`args`: a tuple
         - args[0] should be a ValidRes
         - args[1] should be the name of the ValidRes
 
-        returns:
-            None 
-            or  
-            {
-              'DT':'OUTAGE'|'AT_RISK',
-              'Enddate':datetime
-            }
+    :return:
+      None 
+      or  
+      {
+        'DT':'OUTAGE'|'AT_RISK',
+        'Enddate':datetime
+      }
 
     """
 
@@ -47,7 +51,7 @@ class GOCDBClient:
 #############################################################################
   
   def _curlDownload(self, entity, startDate=None):
-    """ download ongoing downtimes for entity using the GOC DB programmatic interface
+    """ Download ongoing downtimes for entity using the GOC DB programmatic interface
     """
 
     #GOCDB-PI url and method settings

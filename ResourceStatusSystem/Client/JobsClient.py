@@ -16,16 +16,22 @@ class JobsClient:
 #############################################################################
 
   def getJobsStats(self, granularity, name, periods):
-    """  return jobs stats of entity in args
-        - granularity should be a ValidRes
-        - name should be the name of the ValidRes
-        - periods contains the periods to consider in the query
+    """  
+    Return jobs stats of entity in args
+    
+    :params:
+      :attr:`granularity`: string - a ValidRes
+    
+      :attr:`name`: should be the name of the ValidRes
+    
+      :attr:`periods`: list - contains the periods to consider in the query
 
-        returns:
-          {
-            'MeanProcessedJobs': X'
-            'LastProcessedJobs': X'
-          }
+    :return:
+      {
+        'MeanProcessedJobs': X'
+
+        'LastProcessedJobs': X'
+      }
     """
     
     if args[0].capitalize() not in ValidRes:
@@ -53,16 +59,20 @@ class JobsClient:
 #############################################################################
 
   def getJobsEff(self, granularity, name, periods):
-    """  return job stats of entity in args for periods
-        - granularity should be a ValidRes
-        - name should be the name of the ValidRes
-        
-        - periods contains the periods to consider in the query
+    """
+    Return job stats of entity in args for periods
+    
+    :params:
+      :attr:`granularity`: string - should be a ValidRes
+    
+      :attr:`name` should be the name of the ValidRes
+    
+      :attr:`periods`: list - contains the periods to consider in the query
 
-        returns:
-          {
-            'JobsEff': X (0-1)'
-          }
+    returns:
+      {
+        'JobsEff': X (0-1)'
+      }
     """
 
     if args[0] == 'Site':
@@ -99,14 +109,17 @@ class JobsClient:
 
 
   def getJobsSimpleEff(self, granularity, name):
-    """  return jobs simple efficiency of entity in args for periods
-        - granularity should be a ValidRes
-        - name should be the name of the ValidRes
-        
-        returns:
-          {
-            'JobsEff': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
-          }
+    """  
+    Return simple jobs efficiency
+    
+    :params:
+      :attr:`granularity`: string - should be a ValidRes
+      :attr:`name`: string - should be the name of the ValidRes
+    
+    :return:
+      {
+        'JobsEff': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
+      }
     """
 
     
