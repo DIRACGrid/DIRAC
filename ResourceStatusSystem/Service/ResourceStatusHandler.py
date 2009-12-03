@@ -25,6 +25,7 @@ rsDB = False
 def initializeResourceStatusHandler(serviceInfo):
   global rsDB
   rsDB = ResourceStatusDB()
+  gConfig.addListenerToNewVersionEvent( rsDB.syncWithCS )
   return S_OK()
 
 class ResourceStatusHandler(RequestHandler):
@@ -955,7 +956,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.syncWithCS: Attempting to sync DB with CS")
       try:
-        res = rsDB.syncWithCS()
+        res = rsDB.syncWithCS(p1, p2)
 #        res = rsDB.getPeriods(granularity)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
