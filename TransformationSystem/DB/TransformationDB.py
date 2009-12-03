@@ -678,6 +678,9 @@ PRIMARY KEY (FileID)
       status = attrDict['WmsStatus']
       statusDict[status] = count
     return S_OK(statusDict)
+
+  def getTaskStats(self,transName,connection=False):
+    return self.getTransformationTaskStats(transName=transName,connection=connection)
   
   def reserveTask(self,transName,taskID,connection=False):
     """ Reserve the taskID from transformation for submission """
