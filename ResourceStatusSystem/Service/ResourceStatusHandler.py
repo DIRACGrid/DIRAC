@@ -31,7 +31,8 @@ class ResourceStatusHandler(RequestHandler):
 
   def initialize(self):
     #Listerer -> Listener
-    gConfig.addListenerToNewVersionEvent( self.export_syncWithCS )
+#    gConfig.addListenerToNewVersionEvent( self.export_syncWithCS )
+    pass
     
 #############################################################################
 
@@ -675,7 +676,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.Resource: Attempting to remove modify Resource %s" % resourceName)
       try:
-        rsDB.removeSite(resourceName)
+        rsDB.removeResource(resourceName = resourceName)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
