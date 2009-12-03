@@ -142,15 +142,19 @@ class PEP:
         if self.__granularity == 'Site':
           if res['Action']:
             rsDB.setSiteStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
+            rsDB.setServiceToBeChecked('Site', self.__name)
           else:
             rsDB.setSiteReason(self.__name, res['Reason'], 'RS_SVC')
           rsDB.setLastSiteCheckTime(self.__name)
+        
         elif self.__granularity == 'Resource':
           if res['Action']:
             rsDB.setResourceStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
+            rsDB.setServiceToBeChecked('Resource', self.__name)
           else:
             rsDB.setResourceReason(self.__name, res['Reason'], 'RS_SVC')
           rsDB.setLastResourceCheckTime(self.__name)
+
         elif self.__granularity == 'Service':
           if res['Action']:
             rsDB.setServiceStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
