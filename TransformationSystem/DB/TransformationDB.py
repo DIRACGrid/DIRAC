@@ -15,6 +15,7 @@ from DIRAC                                                             import gC
 from DIRAC.Core.Base.DB                                                import DB
 from DIRAC.DataManagementSystem.Client.ReplicaManager                  import ReplicaManager
 from DIRAC.Core.DISET.RPCClient                                        import RPCClient
+from DIRAC.Core.Security.Misc                                          import getProxyInfo
 from DIRAC.Core.Utilities.List                                         import stringListToString, intListToString
 from DIRAC.Core.Utilities.SiteSEMapping                                import getSEsForSite, getSitesForSE
 
@@ -124,13 +125,13 @@ class TransformationDB(DB):
         self.deleteTransformation(transID,connection)
         return res
       originalID = res['Value']
-      res = self.setTransformationStatus(originalID,'Stopped')
+      res = self.setTransformationStatus(originalID,'Stopped',author=authorDN,connection=connection)
       if not res['OK']:
         gLogger.error("Failed to update parent transformation status",res['Message'])
         self.deleteTransformation(transID,connection)
         return res
       message = 'Status changed to "Stopped" due to creation of the Derived Production (%d)' % transID
-      self.updateTransformationLogging(originalID,message,authorDN,connection)
+      self.__updateTransformationLogging(originalID,message,authorDN,connection=connection)
       res = self.__getTransformationFiles(originalID,connection)
       if not res['OK']:
         self.deleteTransformation(transID,connection)
@@ -147,6 +148,8 @@ class TransformationDB(DB):
         return res
     if addFiles and fileMask:
       self.__addExistingFiles(transID,connection)
+    message = "Created transformation %d" % transID
+    self.__updateTransformationLogging(transID,message,authorDN,connection=connection)
     return S_OK(transID)
 
   def getTransformations(self,condDict={},older=None, newer=None, timeStamp='CreationDate', orderAttribute=None, limit=None, extraParams=False,connection=False):
@@ -244,7 +247,7 @@ class TransformationDB(DB):
     if len(paramDict) == 1:
       return S_OK(paramDict[reqParam])  
     return S_OK(paramDict)
-  
+
   def getTransformationWithStatus(self,status,connection=False):
     """ Gets a list of the transformations with the supplied status """
     req = "SELECT TransformationID FROM Transformations WHERE Status = '%s';" % status
@@ -330,28 +333,37 @@ class TransformationDB(DB):
     #TODO: Eventually remove this once the ProductionCleaningAgent is updated
     return self.getTransformationParameters(transName,'LastUpdate',connection)
 
-  def setTransformationStatus(self,transName,status,connection=False):
-    #TODO: Update where this is used
-    return self.setTransformationParameter(transName,'Status',paramValue,connection=connection)
+  def setTransformationStatus(self,transName,status,author='',connection=False):
+    #TODO: Update where used
+    return self.setTransformationParameter(transName,'Status',paramValue,author=author,connection=connection)
 
-  def setTransformationAgentType(self,transName,status,connection=False):
-    #TODO: Update where this is used
-    return self.setTransformationParameter(transName,'AgentType',paramValue,connection=connection)
+  def setTransformationAgentType(self,transName,type,author='',connection=False):
+    #TODO: Update where used
+    return self.setTransformationParameter(transName,'AgentType',type,author=author,connection=connection)
 
   ###########################################################################
   #
   # These methods manipulate the AdditionalParameters tables
   #
-  def setTransformationParameter(self,transName,paramName,paramValue,connection=False):
+  def setTransformationParameter(self,transName,paramName,paramValue,author='',connection=False):
     """ Add a parameter for the supplied transformations """
     res = self.__getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
+    message = ''
     if (paramName in self.TRANSPARAMS):
-      return self.__updateTransformationParameter(transID,paramName,paramValue,connection)
-    return self.__addAdditionalTransformationParameter(transID, paramName, paramValue, connection)
+      res = self.__updateTransformationParameter(transID,paramName,paramValue,connection)
+      if res['OK'] and (paramName != 'Body'):
+        message = '%s updated to %s' % (paramName,paramValue)
+    else:
+      res = self.__addAdditionalTransformationParameter(transID, paramName, paramValue, connection)
+      if res['OK']:
+        message = 'Added additional parameter %s' % paramName
+    if message:
+      self.__updateTransformationLogging(transID,message,author,connection=connection)      
+    return res      
 
   def __addAdditionalTransformationParameter(self,transID,paramName,paramValue,connection=False):
     req = "DELETE FROM AdditionalParameters WHERE TransformationID=%d AND ParameterName='%s'" % (transID,paramName)
@@ -504,7 +516,6 @@ class TransformationDB(DB):
         successful[lfn] = 'Status updated to %s' % status
     return S_OK({"Successful":successful,"Failed":failed})
   
-
   def getTransformationStats(self,transName,connection=False):
     """ Get number of files in Transformation Table for each status """
     res = self.__getConnectionTransID(connection,transName)
@@ -619,7 +630,7 @@ PRIMARY KEY (FileID)
   # To clean-up
 
   def addLFNsToTransformation(self,lfnList,transName):
-    #TODO Update where this is used
+    #TODO Update LHCbDIRAC/TransformationSystem/Agent/BookkeepingWatchAgent.py
     return self.addFilesToTransformation(transName,lfnList)
   
   def getTransformationLFNs(self,transName,status='Unused'):
@@ -630,11 +641,11 @@ PRIMARY KEY (FileID)
       return res
     return S_OK(res['LFNs'])
   
-  def getFilesForTransformation(self,transName,jobOrdered=False):
-    #TODO Change this where it is used
+  def getFilesForTransformation(self,transName,taskOrdered=False):
+    #TODO Change LHCbDIRAC/LHCbSystem/Client/DiracProduction.py
     """ Get files and their status for the given transformation """
     ordering = 'LFN'
-    if jobOrdered:
+    if taskOrdered:
       ordering = 'JobID'
     res = self.getTransformationFiles(transName,orderAttribute=ordering)
     if not res['OK']:
@@ -740,14 +751,14 @@ PRIMARY KEY (FileID)
         taskDict['InputVector']=res['Value'][taskID]    
     return S_OK(taskDict)
   
-  def getTasksForSubmission(self,transName,statusList=[],numJobs=1,site='',older=None,newer=None,connection=False):
+  def getTasksForSubmission(self,transName,statusList=[],numTasks=1,site='',older=None,newer=None,connection=False):
     """ Select tasks with the given status (and site) for submission """
     res = self.__getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    res = self.selectTransformationTasks(transID,statusList,numJobs,site,older,newer,connection)
+    res = self.selectTransformationTasks(transID,statusList,numTasks,site,older,newer,connection)
     if not res['OK']:
       return res
     tasks = res['Value']
@@ -822,7 +833,7 @@ PRIMARY KEY (FileID)
           resultDict[int(row[1])] = (row[0],row[2])
     return S_OK(resultDict)
 
-  def selectTransformationTasks(self,transName,statusList=[],numJobs=1,site='',older=None,newer=None,connection=False):
+  def selectTransformationTasks(self,transName,statusList=[],numTasks=1,site='',older=None,newer=None,connection=False):
     """ Select tasks with the given status from the given transformation """
     res = self.__getConnectionTransID(connection,transName)
     if not res['OK']:
@@ -834,12 +845,12 @@ PRIMARY KEY (FileID)
       condDict["WmsStatus"] = statusList
     req = "SELECT JobID,CreationTime,TargetSE,WmsStatus FROM Jobs %s" % self.buildCondition(condDict, older=older, newer=newer, timeStamp='LastUpdateTime')
     if not site:
-      req += " LIMIT %d" % numJobs 
+      req += " LIMIT %d" % numTasks 
     return self._query(req,connection)
 
-  def deleteTasks(self,transName,jobIDbottom, jobIDtop,connection=False):
+  def deleteTasks(self,transName,jobIDbottom, jobIDtop,author='',connection=False):
     """ Delete tasks with taskID range in transformation
-        TODO: merge with removeTransformationTasks
+        TODO: merge with removeTransformationTask
     """
     res = self.__getConnectionTransID(connection,transName)
     if not res['OK']:
@@ -847,7 +858,11 @@ PRIMARY KEY (FileID)
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
     req = "DELETE FROM Jobs WHERE TransformationID=%d AND JobID>=%d AND JobID<=%d;" % (productionID,jobIDbottom, jobIDtop)
-    return self._update(req,connection)
+    res = self._update(req,connection)
+    if res['OK']:
+      message = "Deleted tasks from %d to %d" % (jobIDbottom,jobIDtop)
+      self.__updateTransformationLogging(transID,message,author,connection=connection)      
+    return res
   
   def __deleteTransformationTasks(self,transID,connection=False):
     """ Delete all the tasks from the Jobs table for transformation with TransformationID """
@@ -948,9 +963,13 @@ PRIMARY KEY (FileID)
   # These methods manipulate the TransformationLog table
   #
 
-  def updateTransformationLogging(self,transName,message,authorDN,connection=False):
+  def __updateTransformationLogging(self,transName,message,authorDN,connection=False):
     """ Update the Transformation log table with any modifications
     """
+    if not authorDN:
+      res = getProxyInfo(False,False)
+      if res['OK']:
+        authorDN = res['Value']['identity']
     res = self.__getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
@@ -1172,15 +1191,16 @@ PRIMARY KEY (FileID)
         return res
     return S_OK(taskID)
 
-  def extendTransformation(self, transName, nTasks, authorDN, connection=False):
+  def extendTransformation(self, transName, nTasks, author='', connection=False):
     """ Extend SIMULATION type transformation by nTasks number of tasks
     """
     connection = self.__getConnection(connection)
-    res  = self.getTransformation(transName,connection)
+    res  = self.getTransformation(transName,connection=connection)
     if not res['OK']:
       gLogger.error("Failed to get transformation details",res['Message'])
       return res
     transType = res['Value']['Type']
+    transID = res['Value']['TransformationID']
     if transType.lower() not in ['simulation','mcsimulation']:
       return S_ERROR('Can not extend non-SIMULATION type production')
     taskIDs = []
@@ -1191,10 +1211,10 @@ PRIMARY KEY (FileID)
       taskIDs.append(result['Value'])
     # Add information to the transformation logging
     message = 'Transformation extended by %d tasks' % nTasks
-    self.updateTransformationLogging(transName,message,authorDN,connection=connection)  
+    self.__updateTransformationLogging(transName,message,author,connection=connection)  
     return S_OK(taskIDs)
   
-  def cleanTransformation(self,transName,connection=False):
+  def cleanTransformation(self,transName,author='',connection=False):
     """ Clean the transformation specified by name or id """
     res = self.__getConnectionTransID(connection,transName)
     if not res['OK']:
@@ -1216,16 +1236,18 @@ PRIMARY KEY (FileID)
     res = self.__deleteTransformationParameters(transID,connection)
     if not res['OK']:
       return res
+    message = "Transformation Cleaned"
+    self.__updateTransformationLogging(transID,message,author,connection=connection)
     return S_OK(transID)
     
-  def deleteTransformation(self,transName,connection=False):
+  def deleteTransformation(self,transName,author='',connection=False):
     """ Remove the transformation specified by name or id """
     res = self.__getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    res = self.cleanTransformation(transID,connection)
+    res = self.cleanTransformation(transID,connection=connection)
     if not res['OK']:
       return res
     res = self.__deleteTransformationLog(transID,connection)
@@ -1602,7 +1624,7 @@ PRIMARY KEY (FileID)
         return result
       transList = [result['Value']]
     else:
-      result = self.getAllTransformations()
+      result = self.getTransformations()
       if not result['OK']:
         return S_ERROR('Can not get transformations')
       transList = result['Value']
