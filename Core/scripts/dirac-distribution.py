@@ -126,7 +126,7 @@ def tagSVNReleases( mainCFG, taggedReleases ):
     releaseSVNPath = "%s/tags/%s" % ( cliParams.svnRoot, releaseVersion )
     if releaseVersion not in taggedReleases:
       gLogger.info( "Creating global release dir %s" % releaseVersion )
-      svnCmd = "svn --parents -m 'Release %s' mkdir '%s'" % ( releaseVersion, releaseSVNPath )
+      svnCmd = "svn -m 'Release %s' mkdir '%s'" % ( releaseVersion, releaseSVNPath )
       result = Subprocess.shellCall( 300, svnCmd )
       if not result[ 'OK' ]:
         gLogger.error( "Error while generating release tag", result[ 'Message' ] )
