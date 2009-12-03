@@ -98,6 +98,16 @@ if not cliParams.releasesToBuild:
 #Helper functions
 ##
 
+def getVersion( package, version, cmtCompatiblePackages ):
+  if version.strip().lower() in ( "trunk", "", "head" ):
+    version = "trunk/%s" % ( package )
+  else:
+    if package in cmtCompatiblePackages:
+      version = "tags/%s/%s_%s" % ( package.upper(), package.upper(), version )
+    else:
+      version = "tags/%s" % ( version )
+  return version
+
 def tagSVNReleases( mainCFG, taggedReleases ):
   global cliParams
 
@@ -132,22 +142,24 @@ def tagSVNReleases( mainCFG, taggedReleases ):
       if p not in autoTarPackages:
         continue
       version = releasesCFG[ releaseVersion ].getOption( p, "" )
-      if version.strip().lower() in ( "trunk", "", "head" ):
-        version = "trunk/%s" % ( p )
-      else:
-        if p in cmtCompatiblePackages:
-          version = "tags/%s/%s_%s" % ( p, p, version )
-        else:
-          version = "tags/%s" % ( version )
-      svnLinks.append( "%s http://svnweb.cern.ch/guest/dirac/%s/%s" % ( p, p, version ) )
+      versionPath = getVersion( p, version, cmtCompatiblePackages )
+      svnLinks.append( "%s http://svnweb.cern.ch/guest/dirac/%s/%s" % ( p, p, versionPath ) )
     tmpPath = tempfile.mkdtemp()
     fd = open( os.path.join( tmpPath, "extProp" ), "wb" )
     fd.write( "%s\n" % "\n".join( svnLinks ) )
     fd.close()
     svnCmds = []
-    svnCmds.append( "svn co -N '%s' '%s/svnco'" % ( releaseSVNPath, tmpPath ) )
-    svnCmds.append( "svn propset svn:externals -F '%s/extProp' '%s/svnco'" % ( tmpPath, tmpPath ) )
-    svnCmds.append( "svn ci -m 'Release %s svn:externals' '%s/svnco'" % ( releaseVersion, tmpPath ) )
+    checkOutPath = os.path.join( tmpPath, "svnco" )
+    releasesFilePath = os.path.join( tmpPath, "releases.cfg" )
+    releasesTmpFilePath = os.path.join( checkOutPath, "releases.cfg" )
+    releasesFinalFilePath = os.path.join( checkOutPath, "releases.cfg" )
+    if not mainCFG.writeToFile( releasesTmpFilePath ):
+      gLogger.error( "Could not write releases.cfg file to %s" % releasesTmpFilePath )
+    svnCmds.append( "svn co -N '%s' '%s'" % ( releaseSVNPath, checkOutPath ) )
+    svnCmds.append( "mv '%s' '%s'" % ( releasesTmpFilePath, releasesFinalFilePath ) )
+    svnCmds.append( "svn add '%s'" % releasesFinalFilePath )
+    svnCmds.append( "svn propset svn:externals -F '%s/extProp' '%s'" % ( tmpPath, checkOutPath ) )
+    svnCmds.append( "svn ci -m 'Release %s svn:externals' '%s'" % ( releaseVersion, checkOutPath ) )
     gLogger.info( "Creating svn:externals in %s..." % releaseVersion )
     for cmd in svnCmds:
       result = Subprocess.shellCall( 900, cmd )
@@ -174,14 +186,8 @@ def autoTarPackages( mainCFG, targetDir ):
       if package not in autoTarPackages:
         continue
       version = releasesCFG[ releaseVersion ].getOption( package, "" )
-      if version.strip().lower() in ( "trunk", "", "head" ):
-        svnVersion = "trunk/%s" % ( package )
-      else:
-        if package in cmtCompatiblePackages:
-          svnVersion = "tags/%s/%s_%s" % ( package, package, version )
-        else:
-          svnVersion = "tags/%s" % ( version )
-      pkgSVNPath = "http://svnweb.cern.ch/guest/dirac/%s/%s" % ( package, svnVersion )
+      versionPath = getVersion( p, version, cmtCompatiblePackages )
+      pkgSVNPath = "http://svnweb.cern.ch/guest/dirac/%s/%s" % ( package, versionPath )
       pkgHDPath = os.path.join( releaseTMPPath, package )
       gLogger.info( " Getting %s" % pkgSVNPath )
       svnCmd = "svn export '%s' '%s'" % ( pkgSVNPath, pkgHDPath )
