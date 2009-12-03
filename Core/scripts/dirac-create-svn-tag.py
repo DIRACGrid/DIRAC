@@ -14,7 +14,7 @@ svnProjects = 'DIRAC'
 svnVersions = ""
 svnUsername = ""
 
-svnSshRoot    = "svn+ssh://%s@svn.cern.ch/reps/dirac/%s"
+svnSshRoot = "svn+ssh://%s@svn.cern.ch/reps/dirac/%s"
 
 def setVersion( optionValue ):
   global svnVersions
@@ -39,26 +39,26 @@ Script.registerSwitch( "u:", "username=", "svn username to use", setUsername )
 
 Script.parseCommandLine( ignoreErrors = False )
 
-gLogger.info( 'Executing: %s ' % ( ' '.join(sys.argv) ) )
+gLogger.info( 'Executing: %s ' % ( ' '.join( sys.argv ) ) )
 
 def usage():
   Script.showHelp()
-  exit(2)
-  
+  exit( 2 )
+
 if not svnVersions:
   usage()
-  
+
 def execAndGetOutput( cmd ):
-  p = subprocess.Popen( cmd, 
-                        shell = True, stdout=subprocess.PIPE, 
-                        stderr=subprocess.PIPE, close_fds = True )
+  p = subprocess.Popen( cmd,
+                        shell = True, stdout = subprocess.PIPE,
+                        stderr = subprocess.PIPE, close_fds = True )
   stdData = p.stdout.read()
   p.wait()
   return ( p.returncode, stdData )
 
 def getSVNFileContents( projectName, filePath ):
   import urllib2, stat
-  gLogger.info( "Reading %s/trunk/%s" % ( projectName, filePath ) ) 
+  gLogger.info( "Reading %s/trunk/%s" % ( projectName, filePath ) )
   viewSVNLocation = "http://svnweb.cern.ch/world/wsvn/dirac/%s/trunk/%s?op=dl&rev=0" % ( projectName, filePath )
   anonymousLocation = 'http://svnweb.cern.ch/guest/dirac/%s/trunk/%s' % ( projectName, filePath )
   for remoteLocation in ( viewSVNLocation, anonymousLocation ):
@@ -68,14 +68,14 @@ def getSVNFileContents( projectName, filePath ):
       gLogger.exception()
       continue
     remoteData = remoteFile.read()
-    remoteFile.close()      
+    remoteFile.close()
     if remoteData:
       return remoteData
   #Web cat failed. Try directly with svn
   exitStatus, remoteData = execAndGetOutput( "svn cat 'http://svnweb.cern.ch/guest/dirac/%s/trunk/%s'" % ( projectName, filePath ) )
   if exitStatus:
     print "Error: Could not retrieve %s from the web nor via SVN. Aborting..." % fileName
-    sys.exit(1)
+    sys.exit( 1 )
   return remoteData
 
 ##
@@ -90,11 +90,11 @@ if not svnUsername:
 
 #Start the magic!
 for svnProject in List.fromChar( svnProjects ):
-    
+
   versionsData = getSVNFileContents( svnProject, "%s/versions.cfg" % svnProject )
-  
+
   buildCFG = CFG.CFG().loadFromBuffer( versionsData )
-  
+
   if 'Versions' not in buildCFG.listSections():
     gLogger.error( "versions.cfg file in project %s does not contain a Versions top section" % svnProject )
     continue
@@ -105,21 +105,21 @@ for svnProject in List.fromChar( svnProjects ):
     createdVersions = []
   else:
     createdVersions = [ v.strip( "/" ) for v in data.split( "\n" ) if v.find( "/" ) > -1 ]
-  
+
 
   for svnVersion in List.fromChar( svnVersions ):
-    
-    gLogger.info( "Start tagging for project %s version %s " %  ( svnProject, svnVersion ) )
-    
+
+    gLogger.info( "Start tagging for project %s version %s " % ( svnProject, svnVersion ) )
+
     if "%s_%s" % ( svnProject, svnVersion ) in createdVersions:
       gLogger.error( "Version %s is already there for package %s :P" % ( svnVersion, svnProject ) )
       continue
-    
+
     if not svnVersion in buildCFG[ 'Versions' ].listSections():
       gLogger.error( 'Version does not exist:', svnVersion )
       gLogger.error( 'Available versions:', ', '.join( buildCFG.listSections() ) )
       continue
-  
+
     versionCFG = buildCFG[ 'Versions' ][svnVersion]
     packageList = versionCFG.listOptions()
     gLogger.info( "Tagging packages: %s" % ", ".join( packageList ) )
@@ -128,12 +128,12 @@ for svnProject in List.fromChar( svnProjects ):
     mkdirCmd = "svn -m %s mkdir '%s'" % ( msg, versionPath )
     cpCmds = []
     for extra in buildCFG.getOption( 'packageExtraFiles', ['__init__.py', 'versions.cfg'] ):
-      source = svnSshRoot % ( svnUsername, '%s/trunk/%s/%s'  % ( svnProject, svnProject, extra ) )
+      source = svnSshRoot % ( svnUsername, '%s/trunk/%s/%s' % ( svnProject, svnProject, extra ) )
       cpCmds.append( "svn -m '%s' copy '%s' '%s/%s'" % ( msg, source, versionPath, extra ) )
     for pack in packageList:
-      packVer = versionCFG.getOption(pack,'')
-      if packVer in ['trunk', '', 'HEAD']:
-        source = svnSshRoot % ( svnUsername, '%s/trunk/%s/%s'  % ( svnProject, svnProject, pack ) )
+      packVer = versionCFG.getOption( pack, '' )
+      if packVer.lower() in ( 'trunk', '', 'head' ):
+        source = svnSshRoot % ( svnUsername, '%s/trunk/%s/%s' % ( svnProject, svnProject, pack ) )
       else:
         source = svnSshRoot % ( svnUsername, '%s/tags/%s/%s/%s' % ( svnProject, svnProject, pack, packVer ) )
       cpCmds.append( "svn -m '%s' copy '%s' '%s/%s'" % ( msg, source, versionPath, pack ) )
@@ -151,4 +151,3 @@ for svnProject in List.fromChar( svnProjects ):
         gLogger.error( 'Failed to create tag' )
 
 
-  
