@@ -54,9 +54,6 @@ class ResourceStatusDB:
   
   def getSiteTypeList(self):
     return []
-
-  def getSitesToCheck(self, a, b, c):
-    return []
     
 
   ##########
@@ -90,9 +87,6 @@ class ResourceStatusDB:
   def getResourcesHistory(self, resourceName=None):
     return []
 
-  def getResourcesToCheck(self, a, b, c):
-    return []
-    
   def getResourceStats(self, gran, name):
     return []
 
@@ -125,9 +119,6 @@ class ResourceStatusDB:
     return []
   
   def getServiceTypeList(self):
-    return []
-
-  def getServicesToCheck(self, a, b, c):
     return []
     
   def getServiceStats(self, name):
@@ -166,3 +157,7 @@ class ResourceStatusDB:
 
   def removeStatus(self, status):
     pass
+
+  def getStuffToCheck(self, a, b = None, maxN = None):
+    return []
+    
