@@ -84,9 +84,8 @@ def getSVNFileContents( projectName, filePath ):
 
 #Get username
 if not svnUsername:
-  svnUsername = raw_input( "SVN User Name[%s]: " % getpass.getuser() )
-  if not svnUsername:
-    svnUsername = getpass.getuser()
+  svnUsername = getpass.getuser()
+gLogger.info( "Using %s as username" % svnUsername )
 
 #Start the magic!
 for svnProject in List.fromChar( svnProjects ):
@@ -94,6 +93,8 @@ for svnProject in List.fromChar( svnProjects ):
   versionsData = getSVNFileContents( svnProject, "%s/versions.cfg" % svnProject )
 
   buildCFG = CFG.CFG().loadFromBuffer( versionsData )
+  
+  upperCaseProject = svnProject.upper()
 
   if 'Versions' not in buildCFG.listSections():
     gLogger.error( "versions.cfg file in project %s does not contain a Versions top section" % svnProject )
@@ -105,7 +106,6 @@ for svnProject in List.fromChar( svnProjects ):
     createdVersions = []
   else:
     createdVersions = [ v.strip( "/" ) for v in data.split( "\n" ) if v.find( "/" ) > -1 ]
-
 
   for svnVersion in List.fromChar( svnVersions ):
 
@@ -124,7 +124,8 @@ for svnProject in List.fromChar( svnProjects ):
     packageList = versionCFG.listOptions()
     gLogger.info( "Tagging packages: %s" % ", ".join( packageList ) )
     msg = '"Release %s"' % svnVersion
-    versionPath = svnSshRoot % ( svnUsername, '%s/tags/%s/%s_%s' % ( svnProject, svnProject, svnProject, svnVersion ) )
+    versionPath = svnSshRoot % ( svnUsername, '%s/tags/%s/%s_%s' % ( svnProject, upperCaseProject, 
+                                                                     upperCaseProject, svnVersion ) )
     mkdirCmd = "svn -m %s mkdir '%s'" % ( msg, versionPath )
     cpCmds = []
     for extra in buildCFG.getOption( 'packageExtraFiles', ['__init__.py', 'versions.cfg'] ):
