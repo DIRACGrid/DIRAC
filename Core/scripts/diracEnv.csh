@@ -68,7 +68,7 @@ else
 endif
 
 
-setenv DIRACPLAT `$DIRACROOT/scripts/platform.py`
+setenv DIRACPLAT `$DIRACROOT/scripts/dirac-platform`
 setenv PATH $DIRACROOT/$DIRACPLAT/bin:$DIRACROOT/scripts:$PATH
 setenv DIRACPYTHON `which python`
 echo $userPasswd | lhcb-proxy-init -d -g $group --pwstdin

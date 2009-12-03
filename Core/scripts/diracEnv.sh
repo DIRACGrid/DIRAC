@@ -63,7 +63,7 @@ else
 fi
 
 
-export DIRACPLAT=`$DIRACROOT/scripts/platform.py`
+export DIRACPLAT=`$DIRACROOT/scripts/dirac-platform`
 export PATH=$DIRACROOT/$DIRACPLAT/bin:$DIRACROOT/scripts:$PATH
 export DIRACPYTHON=`which python`
 if ! echo $userPasswd | lhcb-proxy-init -d -g $group --pwstdin; then
