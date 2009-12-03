@@ -127,7 +127,7 @@ class ResourceStatusHandler(RequestHandler):
   types_setSiteStatus = [StringType, StringType, StringType, StringType]
   def export_setSiteStatus(self, siteName, status, reason, operatorCode):
     """ 
-    set Site status to the ResourceStatusDB.
+    Set Site status to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.setSiteStatus`
 
     :params:
@@ -138,7 +138,7 @@ class ResourceStatusHandler(RequestHandler):
       :attr:`reason`: a string representing the reason
 
       :attr:`operatorCode`: a string representing the operator Code
-      (can be a user name, or ``RS_SVC`` for the service itself
+      (can be a user name, or ``RS_SVC`` for the service itself)
     """
     try:
       gLogger.info("ResourceStatusHandler.setSiteStatus: Attempting to modify site %s status" % siteName)
@@ -160,7 +160,24 @@ class ResourceStatusHandler(RequestHandler):
   #ok
   types_addOrModifySite = [StringType, StringType, StringType, StringType, Time._dateTimeType, StringType, Time._dateTimeType]
   def export_addOrModifySite(self, siteName, siteType, status, reason, dateEffective, operatorCode, dateEnd):
-    """ add or modify a Site of the ResourceStatusDB
+    """ 
+    Add or modify a site to the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifySite`
+    
+    :params:
+      :attr:`siteName`: string - name of the site (DIRAC name)
+    
+      :attr:`siteType`: string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`reason`: string - free
+      
+      :attr:`dateEffective`: datetime - date from which the site status is effective
+
+      :attr:`operatorCode`: string - free
+
+      :attr:`dateEnd`: datetime - date from which the site status ends to be effective
     """
     try:
       gLogger.info("ResourceStatusHandler.addOrModifySite: Attempting to add or modify site %s" % siteName)
@@ -182,7 +199,9 @@ class ResourceStatusHandler(RequestHandler):
   #ok
   types_removeSite = [StringType]
   def export_removeSite(self, siteName):
-    """ remove a Site from those monitored
+    """ 
+    Remove a site type.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.removeSite`
     """
     try:
       gLogger.info("ResourceStatusHandler.removeSite: Attempting to remove modify site %s" % siteName)
@@ -204,7 +223,8 @@ class ResourceStatusHandler(RequestHandler):
   #ok
   types_getSitesHistory = [StringType]
   def export_getSitesHistory(self, site):
-    """ get sites history
+    """ 
+    Get sites history
     """
     try:
       gLogger.info("ResourceStatusHandler.getSitesHistory: Attempting to get site %s history" % (site))
@@ -276,7 +296,9 @@ class ResourceStatusHandler(RequestHandler):
 
   types_removeSiteType = [StringType]
   def export_removeSiteType(self, siteType):
-    """ remove a site type to the ResourceStatusDB
+    """ 
+    Remove a SiteType from those monitored.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.removeSiteType`
     """
     try:
       gLogger.info("ResourceStatusHandler.removeSiteType: Attempting to remove site type %s" % (siteType))
@@ -375,7 +397,7 @@ class ResourceStatusHandler(RequestHandler):
   types_setServiceStatus = [StringType, StringType, StringType, StringType]
   def export_setServiceStatus(self, serviceName, status, reason, operatorCode):
     """ 
-    set Service status to the ResourceStatusDB.
+    Set Service status to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.setServiceStatus`
 
     :params:
@@ -386,7 +408,7 @@ class ResourceStatusHandler(RequestHandler):
       :attr:`reason`: a string representing the reason
 
       :attr:`operatorCode`: a string representing the operator Code
-      (can be a user name, or ``RS_SVC`` for the service itself
+      (can be a user name, or ``RS_SVC`` for the service itself)
     """
     try:
       gLogger.info("ResourceStatusHandler.setServiceStatus: Attempting to modify service %s status" % serviceName)
@@ -408,7 +430,25 @@ class ResourceStatusHandler(RequestHandler):
   #ok
   types_addOrModifyService = [StringType, StringType, StringType, StringType, StringType, Time._dateTimeType, StringType, Time._dateTimeType]
   def export_addOrModifyService(self, serviceName, serviceType, siteName, status, reason, dateEffective, operatorCode, dateEnd=datetime(9999, 12, 31, 23, 59, 59)):
-    """ add or modify a Service of the ResourceStatusDB
+    """ 
+    Add or modify a service to the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifyService`
+    
+    :params:
+      :attr:`serviceName`: string - name of the service (DIRAC name)
+    
+      :attr:`serviceType`: string - ValidServiceType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`reason`: string - free
+      
+      :attr:`dateEffective`: datetime - date from which the service status is effective
+
+      :attr:`operatorCode`: string - free
+
+      :attr:`dateEnd`: datetime - date from which the service status ends to be effective
+    
     """
     try:
       gLogger.info("ResourceStatusHandler.addOrModifyService: Attempting to add or modify service %s" % serviceName)
@@ -430,7 +470,9 @@ class ResourceStatusHandler(RequestHandler):
   #tested
   types_removeService = [StringType]
   def export_removeService(self, serviceName):
-    """ remove a Service from those monitored
+    """ 
+    Remove a Service from those monitored
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.removeService`
     """
     try:
       gLogger.info("ResourceStatusHandler.removeService: Attempting to remove modify service %s" % serviceName)
@@ -452,7 +494,8 @@ class ResourceStatusHandler(RequestHandler):
   #ok
   types_getServicesHistory = [StringType]
   def export_getServicesHistory(self, service):
-    """ get services history
+    """ 
+    Get services history
     """
     try:
       gLogger.info("ResourceStatusHandler.getServicesHistory: Attempting to get service %s history" % (service))
@@ -481,6 +524,7 @@ class ResourceStatusHandler(RequestHandler):
     
     :Params:
       :attr:`serviceType`: a string
+
       :attr:`description`: an optional string
     """
     try:
@@ -557,7 +601,9 @@ class ResourceStatusHandler(RequestHandler):
 
   types_removeServiceType = [StringType]
   def export_removeServiceType(self, serviceType):
-    """ remove a service type to the ResourceStatusDB
+    """ 
+    Remove a service type to the ResourceStatusDB
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.removeServiceType`
     """
     try:
       gLogger.info("ResourceStatusHandler.removeServiceType: Attempting to remove service type %s" % (serviceType))
@@ -628,7 +674,19 @@ class ResourceStatusHandler(RequestHandler):
 
   types_setResourceStatus = [StringType, StringType, StringType, StringType]
   def export_setResourceStatus(self, resourceName, status, reason, operatorCode):
-    """ set Resource status to the ResourceStatusDB
+    """ 
+    Set Resource status to the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.setResourceStatus`
+
+    :params:
+      :attr:`resourceName`: a string representing the resource name
+      
+      :attr:`status`: a string representing the status
+
+      :attr:`reason`: a string representing the reason
+
+      :attr:`operatorCode`: a string representing the operator Code
+      (can be a user name, or ``RS_SVC`` for the service itself)
     """
     try:
       gLogger.info("ResourceStatusHandler.setResourceStatus: Attempting to modify resource %s status" % resourceName)
@@ -651,7 +709,24 @@ class ResourceStatusHandler(RequestHandler):
   #ok
   types_addOrModifyResource = [StringType, StringType, StringType, StringType, StringType, StringType, Time._dateTimeType, StringType, Time._dateTimeType]
   def export_addOrModifyResource(self, resourceName, resourceType, serviceName, siteName, status, reason, dateEffective, operatorCode, dateEnd=datetime(9999, 12, 31, 23, 59, 59)):
-    """ add or modify a Resource of the ResourceStatusDB
+    """ 
+    Add or modify a resource to the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifyResource`
+    
+    :params:
+      :attr:`resourceName`: string - name of the resource (DIRAC name)
+    
+      :attr:`resourceType`: string - ValidResourceType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`reason`: string - free
+      
+      :attr:`dateEffective`: datetime - date from which the resource status is effective
+
+      :attr:`operatorCode`: string - free
+
+      :attr:`dateEnd`: datetime - date from which the resource status ends to be effective
     """
     try:
       gLogger.info("ResourceStatusHandler.addOrModifyResource: Attempting to add or modify resource %s %s" % (resourceName, siteName))
@@ -672,7 +747,9 @@ class ResourceStatusHandler(RequestHandler):
 
   types_removeResource = [StringType]
   def export_removeResource(self, resourceName):
-    """ remove a Resource from those monitored
+    """ 
+    Remove a Resource from those monitored
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.removeResource`
     """
     try:
       gLogger.info("ResourceStatusHandler.Resource: Attempting to remove modify Resource %s" % resourceName)
@@ -745,7 +822,8 @@ class ResourceStatusHandler(RequestHandler):
 
   types_removeResourceType = [StringType]
   def export_removeResourceType(self, resourceType):
-    """ remove a resource type to the ResourceStatusDB
+    """ 
+    Remove a resource type to the ResourceStatusDB
     """
     try:
       gLogger.info("ResourceStatusHandler.removeResourceType: Attempting to remove resource type %s" % (resourceType))
@@ -906,7 +984,9 @@ class ResourceStatusHandler(RequestHandler):
 
   types_removeStatus = [StringType]
   def export_removeStatus(self, status):
-    """ remove a status from the ResourceStatusDB
+    """ 
+    Remove a status from the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.removeStatus`
     """
     try:
       gLogger.info("ResourceStatusHandler.removeStatus: Attempting to remove status %s" % (status))
@@ -948,10 +1028,10 @@ class ResourceStatusHandler(RequestHandler):
 #############################################################################
 
   #ok
-  #parameters are fakes
   types_syncWithCS = [StringType, StringType]
   def export_syncWithCS(self, p1, p2):
-    """ sync DB with CS
+    """ 
+    Synchronize DB with CS - parameters are fake
     """
     try:
       gLogger.info("ResourceStatusHandler.syncWithCS: Attempting to sync DB with CS")
@@ -970,4 +1050,3 @@ class ResourceStatusHandler(RequestHandler):
       return S_ERROR(errorStr)
 
 #############################################################################
-

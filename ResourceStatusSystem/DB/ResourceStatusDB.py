@@ -1,4 +1,6 @@
-""" ResourcesStatusDB module.
+""" 
+The ResourcesStatusDB module contains a couple of exception classes, and a 
+class to interact with the ResourceStatus DB.
 """
 
 from types import *
@@ -11,21 +13,45 @@ from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 #############################################################################
 
 class RSSDBException(RSSException):
-  """ RSS DB Exception
+  """ 
+  DB exception 
   """
   pass
 
 #############################################################################
 
 class NotAllowedDate(RSSException):
+  """ 
+  Exception that signals a not allowed date 
+  """
   pass
 
 #############################################################################
 
 class ResourceStatusDB:
-  """ The ResourcesStatusDB class is a front-end to the Resource Status Database.
-  """
+  """ 
+  The ResourcesStatusDB class is a front-end to the Resource Status Database.
+  
+  The simplest way to instantiate an object of type :class:`ResourceStatusDB` is simply by calling 
 
+   >>> rsDB = ResourceStatusDB()
+
+  This way, it will use the standard :mod:`DIRAC.Core.Base.DB`. But there's the possibility to use other DB classes. For example, we could pass custom DB instantiations to it, provided the interface is the same exposed by :mod:`DIRAC.Core.Base.DB`.
+
+   >>> AnotherDB = AnotherDBClass()
+   >>> rsDB = ResourceStatusDB(DBin = AnotherDB)
+
+  Alternatively, for testing purposes, I could do:
+
+   >>> from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
+   >>> mockDB = Mock()
+   >>> rsDB = ResourceStatusDB(DBin = mockDB)
+
+  Or, if I want to work with a local DB:
+
+   >>> rsDB = ResourceStatusDB(DBin = ['UserName', 'Password'])
+
+  """
 
 # SI PUO' FARE MEGLIO!!!
   def __init__(self, *args, **kwargs):
@@ -72,6 +98,7 @@ class ResourceStatusDB:
 #############################################################################
 
 #############################################################################
+
   def getSitesList(self, paramsList = None, siteName = None, status = None, siteType = None):
     """ 
     Get Present Sites list. 
@@ -276,6 +303,7 @@ class ResourceStatusDB:
         
     :params:
       :attr:`paramsList`: A list of parameters can be entered. If not, a custom list is used.
+  
       :attr:`siteName`: list of strings. If not given, fetches the complete list 
     """
     
@@ -312,8 +340,11 @@ class ResourceStatusDB:
         
     :params:
       :attr:`siteName`: string
+  
       :attr:`status`: string. Possibilities: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+  
       :attr:`reason`: string
+  
       :attr:`operatorCode`: string. For the service itself: `RS_SVC`
     """
 
@@ -332,7 +363,23 @@ class ResourceStatusDB:
 #############################################################################
 
   def addOrModifySite(self, siteName, siteType, status, reason, dateEffective, operatorCode, dateEnd):
-    """ Add or modify a site to the Sites table.
+    """ 
+    Add or modify a site to the Sites table.
+    
+    :params:
+      :attr:`siteName`: string - name of the site (DIRAC name)
+    
+      :attr:`siteType`: string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`reason`: string - free
+      
+      :attr:`dateEffective`: datetime - date from which the site status is effective
+
+      :attr:`operatorCode`: string - free
+
+      :attr:`dateEnd`: datetime - date from which the site status ends to be effective
     """
 
     dateCreated = datetime.utcnow()
@@ -372,7 +419,26 @@ class ResourceStatusDB:
 #############################################################################
 
   def _addSiteRow(self, siteName, siteType, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
-    #add a new site row in Sites table
+    """
+    Add a new site row in Sites table
+
+    :params:
+      :attr:`siteName`: string - name of the site (DIRAC name)
+    
+      :attr:`siteType`: string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`reason`: string - free
+      
+      :attr:`dateCreated`: datetime - date when which the site row is created
+
+      :attr:`dateEffective`: datetime - date from which the site status is effective
+
+      :attr:`dateEnd`: datetime - date from which the site status ends to be effective
+
+      :attr:`operatorCode`: string - free
+    """
 
     if not isinstance(dateCreated, basestring):
       dateCreated = dateCreated.isoformat(' ')
@@ -395,7 +461,23 @@ class ResourceStatusDB:
 #############################################################################
 
   def _addSiteHistoryRow(self, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
-    """ add an old site row in the history
+    """ 
+    Add an old site row in the SitesHistory table
+
+    :params:
+      :attr:`siteName`: string - name of the site (DIRAC name)
+    
+      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`reason`: string - free
+      
+      :attr:`dateCreated`: datetime - date when which the site row is created
+
+      :attr:`dateEffective`: datetime - date from which the site status is effective
+
+      :attr:`dateEnd`: datetime - date from which the site status ends to be effective
+
+      :attr:`operatorCode`: string - free
     """
 
     if not isinstance(dateCreated, basestring):
@@ -503,7 +585,9 @@ class ResourceStatusDB:
         
     :params:
       :attr:`siteName`: string, service name
+
       :attr:`reason`: string, reason
+
       :attr:`operatorCode`: string, who's making this change (RS_SVC if it's the service itslef)
     """
     
@@ -762,6 +846,7 @@ class ResourceStatusDB:
         
     :params:
       :attr:`paramsList`: A list of parameters can be entered. If not, a custom list is used.
+
       :attr:`resourceName`: list of strings. If not given, fetches the complete list 
     """
     
@@ -798,8 +883,11 @@ class ResourceStatusDB:
     
     :params:
       :attr:`resourceName`: string
+
       :attr:`status`: string. Possibilities: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+
       :attr:`reason`: string
+
       :attr:`operatorCode`: string. For the service itself: `RS_SVC`
     """
 
@@ -820,8 +908,23 @@ class ResourceStatusDB:
 #############################################################################
 
   def addOrModifyResource(self, resourceName, resourceType, serviceName, siteName, status, reason, dateEffective, operatorCode, dateEnd):
-    """ Add or modify a resource to the Resources table. 
-        If the dateEffective is not given, the resource status row is effective from now
+    """ 
+    Add or modify a resource to the Resources table.
+    
+    :params:
+      :attr:`resourceName`: string - name of the resource (DIRAC name)
+    
+      :attr:`resourceType`: string - ValidResourceType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`reason`: string - free
+      
+      :attr:`dateEffective`: datetime - date from which the resource status is effective
+
+      :attr:`operatorCode`: string - free
+
+      :attr:`dateEnd`: datetime - date from which the resource status ends to be effective
     """
 
     dateCreated = datetime.utcnow()
@@ -860,7 +963,25 @@ class ResourceStatusDB:
 #############################################################################
 
   def _addResourcesRow(self, resourceName, resourceType, serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
-    """ add a new resource row in Resources table
+    """ 
+    Add a new resource row in Resources table
+
+    :params:
+      :attr:`resourceName`: string - name of the resource (DIRAC name)
+    
+      :attr:`resourceType`: string - ValidResourceType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`reason`: string - free
+      
+      :attr:`dateCreated`: datetime - date when which the resource row is created
+
+      :attr:`dateEffective`: datetime - date from which the resource status is effective
+
+      :attr:`dateEnd`: datetime - date from which the resource status ends to be effective
+
+      :attr:`operatorCode`: string - free
     """
 
     if not isinstance(dateCreated, basestring):
@@ -885,7 +1006,23 @@ class ResourceStatusDB:
 #############################################################################
 
   def _addResourcesHistoryRow(self, resourceName, serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
-    """ add an old resource row in the history
+    """
+    Add an old resource row in the ResourcesHistory table
+
+    :params:
+      :attr:`resourceName`: string - name of the resource (DIRAC name)
+    
+      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`reason`: string - free
+      
+      :attr:`dateCreated`: datetime - date when which the resource row is created
+
+      :attr:`dateEffective`: datetime - date from which the resource status is effective
+
+      :attr:`dateEnd`: datetime - date from which the resource status ends to be effective
+
+      :attr:`operatorCode`: string - free
     """
 
     if not isinstance(dateCreated, basestring):
@@ -930,7 +1067,9 @@ class ResourceStatusDB:
         
     :params:
       :attr:`resourceName`: string, service name
+
       :attr:`reason`: string, reason
+
       :attr:`operatorCode`: string, who's making this change (RS_SVC if it's the service itslef)
     """
     
@@ -948,6 +1087,7 @@ class ResourceStatusDB:
         
     :params:
       :attr:`serviceType`: string
+
       :attr:`description`: string, optional
     """
 
@@ -1280,6 +1420,7 @@ class ResourceStatusDB:
         
     :params:
       :attr:`paramsList`: A list of parameters can be entered. If not, a custom list is used.
+      
       :attr:`serviceName`: list of strings. If not given, fetches the complete list 
     """
     
@@ -1316,8 +1457,11 @@ class ResourceStatusDB:
         
     :params:
       :attr:`serviceName`: string
+      
       :attr:`status`: string. Possibilities: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
       :attr:`reason`: string
+      
       :attr:`operatorCode`: string. For the service itself: `RS_SVC`
     """
 
@@ -1337,7 +1481,23 @@ class ResourceStatusDB:
 #############################################################################
 
   def addOrModifyService(self, serviceName, serviceType, siteName, status, reason, dateEffective, operatorCode, dateEnd):
-    """ Add or modify a service to the Services table.
+    """ 
+    Add or modify a service to the Services table.
+    
+    :params:
+      :attr:`serviceName`: string - name of the service (DIRAC name)
+    
+      :attr:`serviceType`: string - ValidServiceType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`reason`: string - free
+      
+      :attr:`dateEffective`: datetime - date from which the service status is effective
+
+      :attr:`operatorCode`: string - free
+
+      :attr:`dateEnd`: datetime - date from which the service status ends to be effective
     """
 
     dateCreated = datetime.utcnow()
@@ -1376,8 +1536,27 @@ class ResourceStatusDB:
 #############################################################################
 
   def _addServiceRow(self, serviceName, serviceType, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
-    #add a new service row in Services table
+    """
+    Add a new service row in Services table
 
+    :params:
+      :attr:`serviceName`: string - name of the service (DIRAC name)
+    
+      :attr:`serviceType`: string - ValidServiceType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`reason`: string - free
+      
+      :attr:`dateCreated`: datetime - date when which the service row is created
+
+      :attr:`dateEffective`: datetime - date from which the service status is effective
+
+      :attr:`dateEnd`: datetime - date from which the service status ends to be effective
+
+      :attr:`operatorCode`: string - free
+    """
+    
     if not isinstance(dateCreated, basestring):
       dateCreated = dateCreated.isoformat(' ')
     if not isinstance(dateEffective, basestring):
@@ -1399,7 +1578,24 @@ class ResourceStatusDB:
 #############################################################################
 
   def _addServiceHistoryRow(self, serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
-    """ add an old service row in the history
+    """
+    Add an old service row in the ServicesHistory table
+
+    :params:
+      :attr:`serviceName`: string - name of the service (DIRAC name)
+    
+      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`reason`: string - free
+      
+      :attr:`dateCreated`: datetime - date when which the service row is created
+
+      :attr:`dateEffective`: datetime - date from which the service status is effective
+
+      :attr:`dateEnd`: datetime - date from which the service status ends to be effective
+
+      :attr:`operatorCode`: string - free
+
     """
 
     if not isinstance(dateCreated, basestring):
@@ -1793,8 +1989,18 @@ class ResourceStatusDB:
 #############################################################################
 
   def getPeriods(self, granularity, name, status, hours):
-    """ get list of periods of times when a site or res was in status
-        for a total of hours
+    """ 
+    Get list of periods of times when a ValidRes was in ValidStatus 
+    (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`) for a total of `hours`
+    
+    :params:
+      :attr:`granularity`: string - ValidRes
+      
+      :attr:`name`: string - name
+      
+      :attr:`status`: string - ValidStatus
+      
+      :attr:`hours`: integer
     """
     
     hours = timedelta(hours = hours)
@@ -1845,7 +2051,8 @@ class ResourceStatusDB:
 #############################################################################
 
   def getTablesWithHistory(self):
-    """ get list of tables with associated an history table
+    """ 
+    Get list of tables with associated an history table
     """
 
     tablesList=[]
@@ -1890,7 +2097,21 @@ class ResourceStatusDB:
 
 
   def transact2History(self, *args):
-    """ Transact a row from a Sites or Service or Resources table to history 
+    """ 
+    Transact a row from a Sites or Service or Resources table to history.
+    Does not do a real transaction in terms of DB.
+    
+    :params:
+      :attr: a tuple with info on what to transact
+      
+    Examples of possible way to call it:
+    
+    >>> trasact2History(('Site', 'LCG.CERN.ch', datetime.utcnow().isoformat(' ')) - the date is the DateEffective parameter
+        trasact2History(('Site', 523)) - the number if the SiteID
+        trasact2History(('Service', 'Computing@LCG.CERN.ch', datetime.utcnow().isoformat(' ')) - the date is the DateEffective parameter
+        trasact2History(('Service', 523)) - the number if the ServiceID
+        trasact2History(('Resource', 'srm-lhcb.cern.ch', datetime.utcnow().isoformat(' ')) - the date is the DateEffective parameter
+        trasact2History(('Resource', 523)) - the number if the ResourceID
     """
     
     #get table (in args[0]) columns 
@@ -2041,7 +2262,17 @@ class ResourceStatusDB:
 #############################################################################
 
   def setDateEnd(self, *args):
-    """ set date end, for a Site or for a Resource 
+    """ 
+    Set date end, for a Site or for a Resource
+    
+    :params:
+      :attr:`args`: a tuple. 
+      
+        - args[0] is a ValidRes (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
+        
+        - args[1] is the name of the ValidRes
+        
+        - args[2] is its dateEffective
     """
     
     siteOrRes = args[0].capitalize()
@@ -2073,7 +2304,13 @@ class ResourceStatusDB:
 
   #usata solo nell'handler
   def addStatus(self, status, description=''):
-    """ Add a status
+    """ 
+    Add a status.
+    
+    :params:
+      :attr:`status`: string - a new status
+      
+      :attr:`description`: string - optional description
     """
 
     req = "INSERT INTO Status (Status, Description)"
@@ -2087,7 +2324,11 @@ class ResourceStatusDB:
 
   #usata solo nell'handler
   def removeStatus(self, status):
-    """ remove a status from the Status table
+    """ 
+    Remove a status from the Status table.
+    
+    :params:
+      :attr:`status`: string - status
     """
 
     req = "DELETE from Status WHERE Status = '%s';" % (status)
@@ -2098,7 +2339,13 @@ class ResourceStatusDB:
 #############################################################################
 
   def unique(self, table, ID):
-    """ check if the site or resource corresponding to the ID is unique in the table 
+    """ 
+    Check if a ValidRes is unique.
+    
+    :params:
+      :attr:`table`: string of the table name
+      
+      :attr:`ID`: integer
     """
     
     if table == 'Sites':
@@ -2125,8 +2372,9 @@ class ResourceStatusDB:
       
 #############################################################################
 
-  def syncWithCS(self):
-    """ Syncronize DB content with CS content
+  def syncWithCS(self, a, b):
+    """ 
+    Syncronize DB content with CS content. Params are fake.
     """ 
     
     from DIRAC.Core.Utilities.SiteCEMapping import getSiteCEMapping
@@ -2293,13 +2541,15 @@ class ResourceStatusDB:
 
   def getStuffToCheck(self, granularity, checkFrequency = None, maxN = None):
     """ 
-    Get Sites, Services, or Resources to be checked
+    Get Sites, Services, or Resources to be checked.
     
     :params:
       :attr:`granularity`: a ValidRes
       
       :attr:`checkFrequecy': dictonary. Frequency of active sites/resources checking in minutes.
               See :mod:`DIRAC.ResourceStatusSystem.Policy.Configurations`
+      
+      :attr:`maxN`: integer - maximum number of lines in output
     """
     
     if granularity in ('Service', 'Services'):
