@@ -100,7 +100,7 @@ for svnProject in List.fromChar( svnProjects ):
     gLogger.error( "versions.cfg file in project %s does not contain a Versions top section" % svnProject )
     continue
 
-  versionsRoot = svnSshRoot % ( svnUsername, '%s/tags/%s' % ( svnProject, svnProject ) )
+  versionsRoot = svnSshRoot % ( svnUsername, '%s/tags/%s' % ( svnProject, upperCaseProject ) )
   exitStatus, data = execAndGetOutput( "svn ls '%s'" % ( versionsRoot ) )
   if exitStatus:
     createdVersions = []
