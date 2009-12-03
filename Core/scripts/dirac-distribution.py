@@ -151,7 +151,7 @@ def tagSVNReleases( mainCFG, taggedReleases ):
     svnCmds = []
     checkOutPath = os.path.join( tmpPath, "svnco" )
     releasesFilePath = os.path.join( tmpPath, "releases.cfg" )
-    releasesTmpFilePath = os.path.join( checkOutPath, "releases.cfg" )
+    releasesTmpFilePath = os.path.join( tmp, "releases.cfg" )
     releasesFinalFilePath = os.path.join( checkOutPath, "releases.cfg" )
     if not mainCFG.writeToFile( releasesTmpFilePath ):
       gLogger.error( "Could not write releases.cfg file to %s" % releasesTmpFilePath )
@@ -186,7 +186,7 @@ def autoTarPackages( mainCFG, targetDir ):
       if package not in autoTarPackages:
         continue
       version = releasesCFG[ releaseVersion ].getOption( package, "" )
-      versionPath = getVersion( p, version, cmtCompatiblePackages )
+      versionPath = getVersion( package, version, cmtCompatiblePackages )
       pkgSVNPath = "http://svnweb.cern.ch/guest/dirac/%s/%s" % ( package, versionPath )
       pkgHDPath = os.path.join( releaseTMPPath, package )
       gLogger.info( " Getting %s" % pkgSVNPath )
