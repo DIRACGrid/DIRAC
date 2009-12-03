@@ -20,6 +20,7 @@ AGENT_NAME = 'ResourceStatus/RS2HistoryAgent'
 
 class RS2HistoryAgent(AgentModule):
 
+
   def initialize(self):
     """ RS2HistoryAgent initialization
     """
