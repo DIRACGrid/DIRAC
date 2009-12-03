@@ -796,6 +796,7 @@ class ResourceStatusDB:
       for resource in resourcesHistory:
         record = []
         record.append(resource[0]) #ResourceName
+        record.append(None) #ServiceName
         record.append(None) #SiteName
         record.append(None) #ResourceType
         record.append(None) #Country
