@@ -7,328 +7,473 @@ from DIRAC.TransformationSystem.DB.TransformationDB import TransformationDB
 
 class TransformationHandler(RequestHandler):
 
+  transTypes = list(StringTypes)+[IntType,LongType]
+
   def setDatabase(self,oDatabase):
     self.database = oDatabase
 
   types_getName = []
   def export_getName(self):
     res = self.database.getName()
-    return res
-  
-  ###########################################################################
-  #
-  # These methods are for adding new tasks to the transformation database
-  #
-
-  types_addTaskForTransformation = [[StringTypes]+[IntType,LongType]]
-  def export_addTaskForTransformation(self,transID,lfns=[],se='Unknown'):
-    return self.database.addTaskForTransformation(transID,lfns,se)
-  
-  ###########################################################################
-  #
-  # Still to consider
-  #
-
-  types_publishTransformation = [ StringType, StringType, StringType, StringType, IntType, BooleanType, DictType, StringType, StringType, StringType ]
-  def export_publishTransformation( self,transName,description,longDescription,fileMask='',groupsize=0,update=False,bkQuery = {},plugin='',transGroup='',transType=''):
-    """ Publish new transformation in the TransformationDB
-    """
-    authorDN = self._clientTransport.peerCredentials['DN']
-    authorGroup = self._clientTransport.peerCredentials['group']
-    res = self.database.addTransformation(transName,description,longDescription,authorDN,authorGroup,transType,plugin,'TransformationAgent',fileMask,bkQuery,transGroup)
-    if res['OK']:
-      message = 'Transformation created'
-      res = self.database.updateTransformationLogging(transName,message,authorDN)
-    return res
-
-  types_removeTransformation = [[LongType, IntType, StringType]]
-  def export_removeTransformation(self,transNameOrID):
-    return self.database.deleteTransformation(transNameOrID)
-
-  types_setTransformationStatus = [[LongType, IntType, StringType],StringType]
-  def export_setTransformationStatus(self,transNameOrID,status):
-    result = self.database.setTransformationStatus(transNameOrID,status)
-    if result['OK']:
-      authorDN = self._clientTransport.peerCredentials['DN']
-      message = "Status changed to %s" % status
-      result = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
-    return result
-    
-  types_setTransformationQuery = [[LongType, IntType, StringType],[LongType, IntType]]
-  def export_setTransformationQuery(self,transNameOrID,queryID):
-    result = self.database.setTransformationQuery(transNameOrID,queryID)
-    if result['OK']:
-      authorDN = self._clientTransport.peerCredentials['DN']
-      message = "Bookkeeping Query changed to %d" % queryID
-      result = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
-    return result  
-
-  types_setTransformationAgentType = [ [LongType, IntType, StringType], StringType ]
-  def export_setTransformationAgentType( self, transNameOrID, status ):
-    result = self.database.setTransformationAgentType(transNameOrID, status)
-    if not result['OK']:
-      gLogger.error(result['Message'])
-    else:
-      authorDN = self._clientTransport.peerCredentials['DN']
-      message = "Transformation AgentType changed to %s" % status
-      result = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
-    return result
-
-  types_setTransformationType = [ [LongType, IntType, StringType], StringType ]
-  def export_setTransformationType( self, transNameOrID, status ):
-    result = self.database.setTransformationType(transNameOrID, status)
-    if not result['OK']:
-      gLogger.error(result['Message'])
-    else:
-      authorDN = self._clientTransport.peerCredentials['DN']
-      message = "Transformation Type changed to %s" % status
-      result = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
-    return result
-
-  types_setTransformationPlugin = [ [LongType, IntType, StringType], StringType ]
-  def export_setTransformationPlugin( self, transNameOrID, status ):
-    result = self.database.setTransformationPlugin(transNameOrID, status)
-    if not result['OK']:
-      gLogger.error(result['Message'])
-    else:
-      authorDN = self._clientTransport.peerCredentials['DN']
-      message = "Transformation Plugin changed to %s" % status
-      result = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
-    return result
-
-  types_setTransformationMask = [[LongType, IntType, StringType],StringType]
-  def export_setTransformationMask(self,transNameOrID,fileMask):
-    res = self.database.setTransformationMask(transNameOrID,fileMask)
-    if res['OK']:
-      authorDN = self._clientTransport.peerCredentials['DN']
-      message = "Mask changed to %s" % fileMask
-      res = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
-    return res
-
-  types_changeTransformationName = [[LongType, IntType, StringType],StringType]
-  def export_changeTransformationName(self,transformationName,newName):
-    res = self.database.changeTransformationName(transformationName,newName)
-    authorDN = self._clientTransport.peerCredentials['DN']
-    if res['OK']:
-      message = "Transformation name changed to %s" % newName
-      res = self.database.updateTransformationLogging(newName,message,authorDN)
-    return res
-
-  types_addTransformationParameter = [[LongType, IntType, StringType],StringType,StringType]
-  def export_addTransformationParameter(self,transformationName,paramname,paramvalue):
-    res = self.database.addTransformationParameter(transformationName,paramname,paramvalue)
-    authorDN = self._clientTransport.peerCredentials['DN']
-    if res['OK']:
-      message = "Transformation parameter %s set to %s" % (paramname,paramvalue)
-      res = self.database.updateTransformationLogging(transformationName,message,authorDN)
-    return res
-
-  types_addTransformationParameters = []
-  def export_addTransformationParameters(self,transNameOrID,parameterDict):
-    authorDN = self._clientTransport.peerCredentials['DN']
-    failed = []
-    for paramName,paramValue in parameterDict.items():
-      result = self.database.addTransformationParameter(transNameOrID,paramName,paramValue)
-      if result['OK']:
-        message = 'Added parameter %s' % paramName
-        result = self.database.updateTransformationLogging(transNameOrID,message,authorDN)
-      else:
-        failed.append(paramName)
-    if failed:
-      return S_ERROR("Failed to add parameters %s" % str(failed))
-    return S_OK()
-
-  types_getTransformationLFNs = [[LongType, IntType, StringType]]
-  def export_getTransformationLFNs(self,transName,status='Unused'):
-    return self.database.getTransformationLFNs(transName,status)
-
-  types_getTransformationWithStatus = [StringType]
-  def export_getTransformationWithStatus(self,status):
-    return self.database.getTransformationWithStatus(status)
-
-  types_getTransformationLastUpdate = [[LongType,IntType]]
-  def export_getTransformationLastUpdate(self,transID):
-    return self.database.getTransformationLastUpdate(transID)
-
-  ############################################################################
-
-  types_getTransformationStats = [[LongType, IntType, StringType]]
-  def export_getTransformationStats(self,transformationName):
-    res = self.database.getTransformationStats(transformationName)
-    return res
-
-  types_getTransformation = [[LongType, IntType, StringType]]
-  def export_getTransformation(self,transformationName):
-    res = self.database.getTransformation(transformationName)
-    return res
-
-  types_getAllTransformations = []
-  def export_getAllTransformations(self):
-    res = self.database.getAllTransformations()
-    return res
-    
-  types_getDistinctAttributeValues = [StringTypes, DictType]
-  def export_getDistinctAttributeValues(self,attribute,selectDict):
-    """ Get distinct values of the given Transformation attribute
-    """
-    
-    resultDict = {}
-    last_update = None
-    if selectDict.has_key('CreationDate'):
-      last_update = selectDict['CreationDate']
-      del selectDict['CreationDate']
-    
-    result = self.database.getDistinctAttributeValues("Transformations",attribute,
-                                                      selectDict,
-                                                      newer=last_update,
-                                                      timeStamp='CreationDate')
-    return result  
-
-  types_getTransformationLogging = [[LongType, IntType, StringType]]
-  def export_getTransformationLogging(self,transID):
-    res = self.database.getTransformationLogging(transID)
-    return res
-
-  types_getFilesForTransformation = [[LongType, IntType, StringType]]
-  def export_getFilesForTransformation(self,transformationName,orderByJobs=False):
-    res = self.database.getFilesForTransformation(transformationName,orderByJobs)
-    return res
-
-  types_getFileSummary = [ListType,[LongType, IntType, StringType]]
-  def export_getFileSummary(self,lfns,transformationName):
-    res = self.database.getFileSummary(lfns,transformationName)
-    return res
-
-  types_getInputData = [[LongType, IntType, StringType],StringType]
-  def export_getInputData(self,transformationName,status):
-    res = self.database.getInputData(transformationName,status)
-    return res
-    
-  types_addLFNsToTransformation = [ListType,[LongType, IntType, StringType]]
-  def export_addLFNsToTransformation(self,lfns,transformationName):
-    res = self.database.addLFNsToTransformation(lfns,transformationName)
-    return res  
-
-  types_setFileSEForTransformation = [[LongType, IntType, StringType],StringType,ListType]
-  def export_setFileSEForTransformation(self,transformationName,storageElement,lfns):
-    res = self.database.setFileSEForTransformation(transformationName,storageElement,lfns)
-    return res
-
-  types_setFileStatusForTransformation = [[LongType, IntType, StringType],StringTypes,ListType]
-  def export_setFileStatusForTransformation(self,transformationName,status,lfns):
-    res = self.database.setFileStatusForTransformation(transformationName,status,lfns)
-    return res
-
-  types_resetFileStatusForTransformation = [[LongType, IntType, StringType],ListType]
-  def export_resetFileStatusForTransformation(self,transformationName,lfns):
-    res = self.database.resetFileStatusForTransformation(transformationName,lfns)
-    return res
-
-  types_setFileJobID = [[LongType, IntType, StringType],IntType,ListType]
-  def export_setFileJobID(self,transformationName,jobID,lfns):
-    res = self.database.setFileJobID(transformationName,jobID,lfns)
-    return res
-
-  types_updateTransformation = [ [LongType, IntType, StringType]]
-  def export_updateTransformation( self, id_ ):
-    result = self.database.updateTransformation(id_)
-    if not result['OK']:
-      gLogger.error(result['Message'])
-    return result  
-
-  types_addBookkeepingQuery = [ DictType ]
-  def export_addBookkeepingQuery( self, queryDict ):
-    result = self.database.addBookkeepingQuery(queryDict)
-    if not result['OK']:
-      gLogger.error(result['Message'])
-    return result  
-
-  types_getBookkeepingQueryForTransformation = [ [LongType, IntType, StringType]]
-  def export_getBookkeepingQueryForTransformation( self, id_ ):
-    result = self.database.getBookkeepingQueryForTransformation(id_)
-    if not result['OK']:
-      gLogger.error(result['Message'])
-    return result 
-    
-  types_getBookkeepingQuery = [ [LongType, IntType]]
-  def export_getBookkeepingQuery( self, id_ ):
-    result = self.database.getBookkeepingQuery(id_)
-    if not result['OK']:
-      gLogger.error(result['Message'])
-    return result   
-  
-  types_deleteBookkeepingQuery = [ [LongType, IntType]]
-  def export_deleteBookkeepingQuery( self, id_ ):
-    result = self.database.deleteBookkeepingQuery(id_)
-    if not result['OK']:
-      gLogger.error(result['Message'])
-    return result  
-  
-  types_getTransformationStatusCounters = []
-  def export_getTransformationStatusCounters( self ):
-    result = self.database.getCounters('Transformations',['Status'],{})
-    if not result['OK']:
-      gLogger.error(result['Message'])
-      
-    resultDict = {}
-    for attrDict,count in result['Value']:
-      status = attrDict['Status']
-      resultDict[status] = count
-        
-    return S_OK(resultDict)
+    return self.__parseRes(res)
 
   ####################################################################
   #
-  # These are the methods to file manipulation
+  # These are the methods to manipulate the transformations table
+  #
+    
+  types_addTransformation = [ StringType, StringType, StringType, StringType, StringType, StringType, StringType]
+  def export_addTransformation(self,transName,description,longDescription,type,plugin,agentType,fileMask,
+                                    transformationGroup = 'General',
+                                    groupSize           = 1,
+                                    inheritedFrom       = 0,
+                                    body                = '', 
+                                    maxJobs             = 0,
+                                    eventsPerJob        = 0,
+                                    addFiles            = True):    
+    authorDN = self._clientTransport.peerCredentials['DN']
+    authorGroup = self._clientTransport.peerCredentials['group']
+    res = self.database.addTransformation(transName,description,longDescription,authorDN,authorGroup,type,plugin,agentType,fileMask,
+                                    transformationGroup = transformationGroup,
+                                    groupSize           = groupSize,
+                                    inheritedFrom       = inheritedFrom,
+                                    body                = body, 
+                                    maxJobs             = maxJobs,
+                                    eventsPerJob        = eventsPerJob,
+                                    addFiles            = addFiles)    
+    if res['OK']:
+      gLogger.info("Added transformation %d" % res['Value'])  
+    return self.__parseRes(res)
+
+  types_deleteTransformation = [transTypes]
+  def export_deleteTransformation(self, transName):
+    res = self.database.deleteTransformation(transName)
+    return self.__parseRes(res)
+  
+  types_cleanTransformation = [transTypes]
+  def export_cleanTransformation(self, transName):
+    authorDN = self._clientTransport.peerCredentials['DN']
+    res = self.database.cleanTransformation(transName,author=authorDN)
+    return self.__parseRes(res)
+
+  types_addTransformationParameter = [transTypes,StringType]
+  def export_addTransformationParameter(self,transName,paramName,paramValue):
+    authorDN = self._clientTransport.peerCredentials['DN']
+    res = self.database.setTransformationParameter(transName,paramName,paramValue,author=authorDN)
+    return self.__parseRes(res)
+  
+  types_setTransformationStatus = [transTypes,StringTypes]
+  def export_setTransformationStatus(self,transName,status):
+    authorDN = self._clientTransport.peerCredentials['DN']
+    res = self.database.setTransformationStatus(transName,status,author=authorDN)
+    return self.__parseRes(res)
+
+  types_setTransformationAgentType = [transTypes,StringTypes]
+  def export_setTransformationAgentType( self, transName, status ):
+    authorDN = self._clientTransport.peerCredentials['DN']
+    res = self.database.setTransformationAgentType(transName, status, author=authorDN)
+    return self.__parseRes(res)
+
+  types_getTransformations = []
+  def export_getTransformations(self,condDict={},older=None, newer=None, timeStamp='CreationDate', orderAttribute=None, limit=None, extraParams=False):
+    res = self.getTransformations(condDict=condDict,
+                                  older=older,
+                                  newer=newer,
+                                  timeStamp=timeStamp,
+                                  orderAttribute=orderAttribute,
+                                  limit=limit, 
+                                  extraParams=extraParams)
+    return self.__parseRes(res)
+
+
+  types_getTransformationWithStatus = [[StringTypes,ListType,TupleType]]
+  def export_getTransformationWithStatus(self,status):
+    res = self.database.getTransformationWithStatus(status)
+    return self.__parseRes(res)
+
+  types_getTransformation = [transTypes]
+  def export_getTransformation(self,transName):
+    res = self.database.getTransformation(transName)
+    return self.__parseRes(res)
+
+  types_getTransformationLastUpdate = [transTypes]
+  def export_getTransformationLastUpdate(self,transName):
+    res = self.database.getTransformationLastUpdate(transName)
+    return self.__parseRes(res)
+
+  ####################################################################
+  #
+  # These are the methods to manipulate the T_* tables
   #
 
+  types_addTaskForTransformation = [transTypes]
+  def export_addTaskForTransformation(self,transName,lfns=[],se='Unknown'):
+    res = self.database.addTaskForTransformation(transName, lfns=lfns, se=se)
+    return self.__parseRes(res)
+
+  types_setFileStatusForTransformation = [transTypes,StringTypes,ListType]
+  def export_setFileStatusForTransformation(self,transName,status,lfns):
+    res = self.database.setFileStatusForTransformation(transName,status,lfns)
+    return self.__parseRes(res)
+
+  types_getTransformationLFNs = [transTypes]
+  def export_getTransformationLFNs(self,transName,status='Unused'):
+    res = self.database.getTransformationLFNs(transName,status)
+    return self.__parseRes(res)
+  
+  types_getTransformationStats = [transTypes]
+  def export_getTransformationStats(self,transName):
+    res = self.database.getTransformationStats(transName)
+    return self.__parseRes(res)
+  
+  ####################################################################
+  #
+  # These are the methods to manipulate the Tasks (Jobs) table
+  #
+
+  types_setTaskStatus = [transTypes, [IntType,LongType], StringTypes]
+  def export_setTaskStatus(self, transName, taskID, status):
+    res = self.database.setTaskStatus(transName, taskID, status)    
+    return self.__parseRes(res)
+
+  types_setTaskStatusAndWmsID = [ transTypes, [LongType,IntType], StringType, StringType]
+  def export_setTaskStatusAndWmsID(self, transName, taskID, status, taskWmsID):
+    res = self.database.setTaskStatusAndWmsID(transName, taskID, status, taskWmsID)
+    return self.__parseRes(res)
+
+  types_selectWMSTasks = [transTypes]
+  def export_selectWMSTasks(self,transName,statusList=[],newer=0):
+    res = self.database.selectWMSTasks(transName,statusList=statusList,newer=newer)  
+    return self.__parseRes(res)
+  
+  types_getTransformationTaskStats = [transTypes]
+  def export_getTransformationTaskStats(self, transName):
+    res = self.database.getTransformationTaskStats(transName)
+    return self.__parseRes(res)
+
+  types_getTaskInfo = [transTypes, [LongType,IntType]]
+  def export_getTaskInfo(self, transName, taskID):
+    res = self.database.getTaskInfo(transName,taskID)
+    return self.__parseRes(res)
+
+  types_getTaskStats = [transTypes]
+  def export_getTaskStats(self,transName):
+    res = self.database.getTaskStats(transName)
+    return self.__parseRes(res)
+  
+  types_deleteTasks = [transTypes, [LongType,IntType], [LongType,IntType]]
+  def export_deleteTasks(self, transName, taskMin, taskMax):
+    authorDN = self._clientTransport.peerCredentials['DN']
+    res = self.database.deleteTasks(transName, taskMin, taskMax,author=authorDN)
+    return self.__parseRes(res)
+
+  types_extendTransformation = [transTypes, [LongType, IntType]]
+  def export_extendTransformation( self, transName, nTasks):
+    authorDN = self._clientTransport.peerCredentials['DN']
+    res = self.database.extendTransformation(transName, nTasks, author=authorDN)
+    return self.__parseRes(res)
+
+  types_getTasksToSubmit = [transTypes, [LongType, IntType]]
+  def export_getTasksToSubmit(self,transName,numTasks,site=''):
+    """ Get information necessary for submission for a given number of tasks for a given transformation """
+    res = self.database.getTransformation(transName)
+    if not res['OK']:
+      return self.__parseRes(res)
+    transDict = res['Value']
+    status = transDict['Status']
+    submitDict = {}
+    if status in ['Active','Flush']:
+      res = self.database.getTasksForSubmission(transName,['Created'],numTasks=numTasks,site=site)
+      if not res['OK']:
+        return self.__parseRes(res)
+      tasksDict = result['Value']
+      for taskID,taskDict in tasksDict.items():
+        res = self.database.reserveJob(transName, long(taskID))
+        if not res['OK']:
+          return self.__parseRes(res)
+        else:
+          submitDict[taskID] = taskDict
+    transDict['JobDictionary'] = submitDict
+    return S_OK(transDict)
+
+  ####################################################################
+  #
+  # These are the methods for transformation logging manipulation
+  #
+
+  types_getTransformationLogging = [transTypes]
+  def export_getTransformationLogging(self,transName):
+    res = self.database.getTransformationLogging(transName)
+    return self.__parseRes(res)
+  
+  ####################################################################
+  #
+  # These are the methods for file manipulation
+  #
+
+  types_getFileSummary = [ListType,transTypes]
+  def export_getFileSummary(self,lfns,transName):
+    res = self.database.getFileSummary(lfns,transName)
+    return self.__parseRes(res)
+
   types_addDirectory = [StringType]
-  def export_addDirectory(self,path): #,force):
-    res = self.database.addDirectory(path) #,force)
-    return res
+  def export_addDirectory(self,path,force=False):
+    res = self.database.addDirectory(path,force=force)
+    return self.__parseRes(res)
 
   types_exists = [ListType]
   def export_exists(self,lfns):
     res = self.database.exists(lfns)
-    return res
+    return self.__parseRes(res)
 
   types_addFile = [ListType]
-  def export_addFile(self,fileTuples,force):
-    res = self.database.addFile(fileTuples,force)
-    return res
+  def export_addFile(self,fileTuples,force=False):
+    res = self.database.addFile(fileTuples,force=force)
+    return self.__parseRes(res)
 
   types_removeFile = [ListType]
   def export_removeFile(self,lfns):
     res = self.database.removeFile(lfns)
-    return res
+    return self.__parseRes(res)
+
+  ####################################################################
+  #
+  # These are the methods for replica manipulation
+  #
 
   types_addReplica = [ListType]
-  def export_addReplica(self,replicaTuples,force):
-    res = self.database.addReplica(replicaTuples,force)
-    return res
+  def export_addReplica(self,replicaTuples,force=False):
+    res = self.database.addReplica(replicaTuples,force=force)
+    return self.__parseRes(res)
 
   types_removeReplica = [ListType]
   def export_removeReplica(self,replicaTuples):
     res = self.database.removeReplica(replicaTuples)
-    return res
+    return self.__parseRes(res)
 
   types_getReplicas = [ListType]
   def export_getReplicas(self,lfns):
     res = self.database.getReplicas(lfns)
-    return res
+    return self.__parseRes(res)
 
   types_getReplicaStatus = [ListType]
   def export_getReplicaStatus(self,replicaTuples):
     res = self.database.getReplicaStatus(replicaTuples)
-    return res
+    return self.__parseRes(res)
 
   types_setReplicaStatus = [ListType]
   def export_setReplicaStatus(self,replicaTuples):
     res = self.database.setReplicaStatus(replicaTuples)
-    return res
+    return self.__parseRes(res)
 
   types_setReplicaHost = [ListType]
   def export_setReplicaHost(self,replicaTuples):
     res = self.database.setReplicaHost(replicaTuples)
-    return res
+    return self.__parseRes(res)
 
+
+  ####################################################################
+  #
+  # These are the methods used for web monitoring
+  #
+    
+  types_getDistinctAttributeValues = [StringTypes, DictType]
+  def export_getDistinctAttributeValues(self, attribute, selectDict):
+    res = self.database.getDistinctAttributeValues(attribute,selectDict)
+    return self.__parseRes(res)
+
+  types_getTransformationStatusCounters = []
+  def export_getTransformationStatusCounters( self ):
+    res = self.database.getCounters('Transformations',['Status'],{})
+    if not res['OK']:
+      return self.__parseRes(res)
+    statDict = {}
+    for attrDict,count in result['Value']:
+      statDict[attrDict['Status']] = count
+    return S_OK(statDict)
+
+  types_getTransformationSummary = []
+  def export_getTransformationSummary(self):
+    """ Get the summary of the currently existing transformations """
+    res = self.database.getTransformations()
+    if not res['OK']:
+      return self.__parseRes(res)
+    transList = res['Value']
+    resultDict = {}
+    for transDict in transList:
+      transID = transDict['TransformationID']
+      res = self.database.getTaskStats(transID)
+      if not res['OK']:
+        gLogger.warn('Failed to get job statistics for transformation %d' % transID)
+        continue
+      transDict['JobStats'] = res['Value']
+      res = self.database.getTransformationStats(transID)
+      if not res['OK']:
+        transDict['NumberOfFiles'] = -1
+      else:
+        transDict['NumberOfFiles'] = res['Value']['Total']
+      resultDict[transID] = transDict
+    return S_OK(resultDict)
+
+  types_getTransformationSummaryWeb = [DictType, ListType, IntType, IntType]
+  def export_getTransformationSummaryWeb(self, selectDict, sortList, startItem, maxItems):
+    """ Get the summary of the transformation information for a given page in the generic format """
+
+    # Obtain the timing information from the selectDict
+    last_update = selectDict.get('CreationDate',None)    
+    if last_update:
+      del selectDict['CreationDate']
+    fromDate = selectDict.get('FromDate',None)    
+    if fromDate:
+      del selectDict['FromDate']
+    if not fromDate:
+      fromDate = last_update  
+    toDate = selectDict.get('ToDate',None)    
+    if toDate:
+      del selectDict['ToDate']  
+    # Sorting instructions. Only one for the moment.
+    if sortList:
+      orderAttribute = sortList[0][0]+":"+sortList[0][1]
+    else:
+      orderAttribute = None
+
+    # Get the transformations that match the selection
+    res = self.database.getTransformations(condDict=selectDict,older=toDate, newer=fromDate, orderAttribute=orderAttribute)
+    if not res['OK']:
+      return self.__parseRes(res)
+
+    # Prepare the standard structure now within the resultDict dictionary
+    resultDict = {}
+    trList = res['Records']
+    # Create the total records entry
+    nTrans = len(trList)
+    resultDict['TotalRecords'] = nTrans
+    # Create the ParameterNames entry
+    paramNames = res['ParameterNames']
+    resultDict['ParameterNames'] = paramNames
+    # Add the job states to the ParameterNames entry
+    taskStateNames   = ['Created','Running','Submitted','Failed','Waiting','Done','Stalled']
+    resultDict['ParameterNames'] += ['Jobs_'+x for x in taskStateNames]
+    # Add the file states to the ParameterNames entry
+    fileStateNames  = ['PercentProcessed','Processed','Unused','Assigned','Total','Problematic']
+    resultDict['ParameterNames'] += ['Files_'+x for x in fileStateNames]
+    # Add the bk fields to the ParameterNames entry
+    #bkParameters    = ['ConfigName','ConfigVersion','EventType','Jobs','Files','Events','Steps']  
+    #resultDict['ParameterNames'] += ['Bk_'+x for x in bkParameters]
+    #fileOrder       = ['SETC','DST','DIGI','SIM']
+
+    # Get the transformations which are within the selected window
+    if nTrans == 0:
+      return S_OK(resultDict)
+    ini = startItem
+    last = ini + maxItems
+    if ini >= nTrans:
+      return S_ERROR('Item number out of range')
+    if last > nTrans:
+      last = nTrans
+    transList = trList[ini:last]
+
+    statusDict = {}
+    # Add specific information for each selected transformation
+    for trans in transList:
+      transDict = dict(zip(paramNames,trans))
+      
+      # Update the status counters
+      status = transDict['Status']
+      if not statusDict.has_key(status):
+        statusDict[status] = 0
+      statusDict[status] += 1
+      
+      # Get the statistics on the number of jobs for the transformation
+      prodID = transDict['TransformationID']
+      res = self.database.getTaskStats(prodID)
+      taskDict = {}
+      if res['OK']:
+        taskDict = result['Value']
+      for state in taskStateNames:
+        if taskDict and taskDict.has_key(state):
+          trans.append(taskDict[state])
+        else:
+          trans.append(0)
+
+      # Get the statistics for the number of files for the transformation
+      fileDict = {}
+      transType = transDict['Type']
+      if transType.lower().find('simulation') == -1:      
+        res = self.database.getTransformationStats(prodID)
+        if res['OK']:
+          fileDict = result['Value']
+          processed = fileDict.get['Processed']
+          if not processed:
+            processed = 0
+          percentProcessed = "%.1f" % ((processed*100.0)/fileDict['Total'])
+          fileDict['PercentProcessed'] = "%.1f" % ((processed*100.0)/fileDict['Total'])
+      for state in fileStateNames:
+        if fileDict and fileDict.has_key(state):
+          trans.append(fileDict[state])
+        else:
+          trans.append(0)
+          
+      # Get Bookkeeping information
+#      result = bkClient.getProductionInformations_new(long(prodID))
+#      if not result['OK']:
+#        for p in bkParameters:
+#          trans.append('-')
+#          
+#      if result['Value']['Production informations']:
+#        for row in result['Value']['Production informations']:
+#          if row[2]:
+#            trans += list(row)
+#            break
+#      else:
+#        trans += ['-','-','-']
+#        
+#      if result['Value']['Number of jobs']:  
+#        trans.append(result['Value']['Number of jobs'][0][0])    
+#      else:
+#        trans.append(0)
+#        
+#      # Number of files  
+#      files_done = False  
+#      if result['Value']['Number of files']:  
+#        for dfile in fileOrder:
+#          for row in result['Value']['Number of files']:
+#            if dfile == row[1]:
+#              trans.append(row[0])
+#              files_done = True
+#              break
+#          if files_done:
+#            break    
+#      if not files_done:
+#        trans.append(0)            
+#    
+#      # Number of events
+#      events_done = False
+#      if result['Value']['Number of events']:  
+#        for dfile in fileOrder:  
+#          for row in result['Value']['Number of events']:
+#            if dfile == row[0]:
+#              trans.append(row[1])
+#              events_done = True
+#              break
+#          if events_done:
+#            break 
+#      if not events_done:
+#        trans.append(0)      
+#        
+#      # Number of steps
+#      if result['Value']['Steps']:      
+#        trans.append(len(result['Value']['Steps'])) 
+#      else:
+#        trans.append(0)          
+
+    resultDict['Records'] = transList
+    resultDict['Extras'] = statusDict
+    return S_OK(resultDict)
+
+  ###########################################################################
+
+  def __parseRes(self,res):
+    if not res['OK']:
+      gLogger.error(res['Message'])
+    return res
