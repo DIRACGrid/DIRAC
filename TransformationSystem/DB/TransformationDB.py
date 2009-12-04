@@ -750,7 +750,7 @@ PRIMARY KEY (FileID)
         taskDict['InputVector']=res['Value'][taskID]    
     return S_OK(taskDict)
   
-  def getTasksForSubmission(self,transName,statusList=[],numTasks=1,site='',older=None,newer=None,connection=False):
+  def getTasksForSubmission(self,transName,numTasks=1,site='',statusList=['Created'],older=None,newer=None,connection=False):
     """ Select tasks with the given status (and site) for submission """
     res = self.__getConnectionTransID(connection,transName)
     if not res['OK']:
