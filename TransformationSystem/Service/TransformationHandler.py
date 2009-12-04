@@ -86,21 +86,26 @@ class TransformationHandler(RequestHandler):
                                   extraParams=extraParams)
     return self.__parseRes(res)
 
-
-  types_getTransformationWithStatus = [[StringTypes,ListType,TupleType]]
-  def export_getTransformationWithStatus(self,status):
-    res = self.database.getTransformationWithStatus(status)
-    return self.__parseRes(res)
-
   types_getTransformation = [transTypes]
   def export_getTransformation(self,transName):
     res = self.database.getTransformation(transName)
+    return self.__parseRes(res)
+
+  types_getTransformationParameters = [transTypes,[ListType,TupleType]]
+  def export_getTransformationParameters(self,transName,parameters):
+    res = self.database.getTransformationParameters(transName,parameters)
     return self.__parseRes(res)
 
   types_getTransformationLastUpdate = [transTypes]
   def export_getTransformationLastUpdate(self,transName):
     res = self.database.getTransformationLastUpdate(transName)
     return self.__parseRes(res)
+
+  types_getTransformationWithStatus = [[StringTypes,ListType,TupleType]]
+  def export_getTransformationWithStatus(self,status):
+    res = self.database.getTransformationWithStatus(status)
+    return self.__parseRes(res)
+
 
   ####################################################################
   #

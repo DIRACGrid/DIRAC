@@ -35,8 +35,9 @@ class TransformationDBClient(Client,FileCatalogueBase):
           setTransformationStatus(transName,status)
           setTransformationAgentType(transName,status)
           getTransformations(condDict={},older=None, newer=None, timeStamp='CreationDate', orderAttribute=None, limit=None, extraParams=False)
-          getTransformationWithStatus(status)
           getTransformation(transName)
+          getTransformationParameters(transName,paramNames)
+          getTransformationWithStatus(status)
           getTransformationLastUpdate(transName)
 
       T_* table manipulation
