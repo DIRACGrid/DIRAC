@@ -69,12 +69,6 @@ class TransformationHandler(RequestHandler):
     res = self.database.setTransformationStatus(transName,status,author=authorDN)
     return self.__parseRes(res)
 
-  types_setTransformationAgentType = [transTypes,StringTypes]
-  def export_setTransformationAgentType( self, transName, status ):
-    authorDN = self._clientTransport.peerCredentials['DN']
-    res = self.database.setTransformationAgentType(transName, status, author=authorDN)
-    return self.__parseRes(res)
-
   types_getTransformations = []
   def export_getTransformations(self,condDict={},older=None, newer=None, timeStamp='CreationDate', orderAttribute=None, limit=None, extraParams=False):
     res = self.getTransformations(condDict=condDict,
@@ -87,18 +81,13 @@ class TransformationHandler(RequestHandler):
     return self.__parseRes(res)
 
   types_getTransformation = [transTypes]
-  def export_getTransformation(self,transName):
-    res = self.database.getTransformation(transName)
+  def export_getTransformation(self,transName,extraParams=False):
+    res = self.database.getTransformation(transName,extraParams=extraParams)
     return self.__parseRes(res)
 
   types_getTransformationParameters = [transTypes,[ListType,TupleType]]
   def export_getTransformationParameters(self,transName,parameters):
     res = self.database.getTransformationParameters(transName,parameters)
-    return self.__parseRes(res)
-
-  types_getTransformationLastUpdate = [transTypes]
-  def export_getTransformationLastUpdate(self,transName):
-    res = self.database.getTransformationLastUpdate(transName)
     return self.__parseRes(res)
 
   types_getTransformationWithStatus = [[StringTypes,ListType,TupleType]]
@@ -122,11 +111,6 @@ class TransformationHandler(RequestHandler):
     res = self.database.setFileStatusForTransformation(transName,status,lfns)
     return self.__parseRes(res)
 
-  types_getTransformationLFNs = [transTypes]
-  def export_getTransformationLFNs(self,transName,status='Unused'):
-    res = self.database.getTransformationLFNs(transName,status)
-    return self.__parseRes(res)
-  
   types_getTransformationStats = [transTypes]
   def export_getTransformationStats(self,transName):
     res = self.database.getTransformationStats(transName)
