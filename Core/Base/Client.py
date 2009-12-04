@@ -19,14 +19,14 @@ class Client:
   def executeRPC(self, *parms, **kws):
     toExecute = self.call
     # Check whether 'rpc' keyword is specified
-    oRPC = False
+    rpc = False
     if kws.has_key('rpc'):
-      oRPC = kws['rpc']
+      rpc = kws['rpc']
       del kws['rpc']
     # Check whether the 'timeout' keyword is specified
     timeout=120
     if kws.has_key('timeout'):
-      oRPC = kws['timeout']
+      timeout = kws['timeout']
       del kws['timeout']
     # Check whether the 'url' keyword is specified
     url = ''
@@ -34,13 +34,13 @@ class Client:
       url = kws['url']
       del kws['url']
     # Create the RPCClient
-    rpcClient = self.__getRPC(oRPC, url, timeout)
+    rpcClient = self.__getRPC(rpc, url, timeout)
     # Execute the method
     return eval("rpcClient.%s(*parms,**kws)" % toExecute)
 
-  def __getRPC(self,oRPC=False,url='',timeout=120):
-    if not oRPC:
+  def __getRPC(self,rpc=False,url='',timeout=120):
+    if not rpc:
       if not url:
         url = self.serverURL
-      oRPC = RPCClient(self.serverURL,timeout=timeout)
-    return oRPC
+      rpc = RPCClient(url,timeout=timeout)
+    return rpc
