@@ -12,6 +12,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
+from DIRAC.DataManagementSystem.Client.FailoverTransfer             import FailoverTransfer
 from DIRAC.Resources.Catalog.PoolXMLCatalog                         import PoolXMLCatalog
 from DIRAC.Resources.Catalog.PoolXMLFile                            import getGUID
 from DIRAC.RequestManagementSystem.Client.RequestContainer          import RequestContainer
@@ -81,6 +82,8 @@ class JobWrapper:
     self.vo = gConfig.getValue('/DIRAC/VirtualOrganization','lhcb')
     self.bufferLimit = gConfig.getValue(self.section+'/BufferLimit',10485760)
     self.defaultOutputSE = gConfig.getValue('/Resources/StorageElementGroups/Tier1-USER',[])
+    self.defaultCatalog = gConfig.getValue(self.section+'/DefaultCatalog','LcgFileCatalogCombined')
+    self.defaultFailoverSE = gConfig.getValue('/Resources/StorageElementGroups/Tier1-Failover',[])
     self.defaultOutputPath = ''
     self.rm = ReplicaManager()
     self.log.verbose('===========================================================================')
@@ -669,12 +672,8 @@ class JobWrapper:
     if fileList and self.jobID:
       self.outputSandboxSize = getGlobbedTotalSize(fileList)
       self.log.info('Attempting to upload Sandbox with limit:', self.sandboxSizeLimit )
-      newSandboxClient = SandboxStoreClient()
-      if newSandboxClient.useOldSandboxes():
-        outputSandboxClient = SandboxClient('Output')
-        result = outputSandboxClient.sendFiles(self.jobID, fileList, self.sandboxSizeLimit) # 1024*1024*10
-      else:
-        result = newSandboxClient.uploadFilesAsSandboxForJob( fileList, self.jobID, 'Output', self.sandboxSizeLimit )
+      sandboxClient = SandboxStoreClient()
+      result = sandboxClient.uploadFilesAsSandboxForJob( fileList, self.jobID, 'Output', self.sandboxSizeLimit ) # 1024*1024*10
       if not result['OK']:
         self.log.error('Output sandbox upload failed with message',result['Message'])
         if result.has_key('SandboxFileName'):
@@ -767,39 +766,60 @@ class JobWrapper:
     else:
       pfnGUID = result['Value']
 
+    #Instantiate the failover transfer client
+    failoverTransfer = FailoverTransfer()
+    
     for outputFile in outputData:
       ( lfn, localfile ) = self.__getLFNfromOutputFile(owner,outputFile,outputPath)
-      if os.path.exists(localfile):
-        self.outputDataSize+=getGlobbedTotalSize(localfile)
-        outputFilePath = os.path.join(os.getcwd(),localfile)
-        fileGUID=None
-        if pfnGUID.has_key(localfile):
-          fileGUID=pfnGUID[localfile]
-          self.log.verbose('Found GUID for file from POOL XML catalogue %s' %localfile)
-        upload=S_ERROR('No result')
-        for se in List.randomize(outputSE):
-          self.log.verbose('Attempting putAndRegister("%s","%s","%s",guid=%s,catalog="LcgFileCatalogCombined")' %(lfn,outputFilePath,se,fileGUID))
-          upload = self.rm.putAndRegister(lfn,outputFilePath,se,guid=fileGUID,catalog='LcgFileCatalogCombined')
-          if upload['OK'] and not upload['Value']['Failed']:
-            self.log.info('"%s" successfully uploaded to "%s" as "LFN:%s"' % ( localfile, se, lfn ) )
-            uploaded.append(lfn)
-            break
-          if not upload['OK']:
-            self.log.warn(upload['Message'])
-
-        if not upload['OK'] or upload['Value']['Failed']:
-          self.log.error('Could not putAndRegister file %s with LFN %s to %s with GUID %s' %(localfile,lfn,outputSE,fileGUID))
-          missing.append(outputFile)
-      else:
+      if not os.path.exists(localfile):
         self.log.error('Missing specified output data file:', outputFile )
+        continue 
+      
+      self.outputDataSize+=getGlobbedTotalSize(localfile)
+      outputFilePath = os.path.join(os.getcwd(),localfile)
+      fileGUID=None
+      if pfnGUID.has_key(localfile):
+        fileGUID=pfnGUID[localfile]
+        self.log.verbose('Found GUID for file from POOL XML catalogue %s' %localfile)
+        
+      outputSEList = List.randomize(outputSE)
+      upload = failoverTransfer.transferAndRegisterFile(localFile,outputFilePath,lfn,outputSEList,fileGUID,self.defaultCatalog)
+      if upload['OK']:
+        self.log.info('"%s" successfully uploaded to "%s" as "LFN:%s"' % ( localfile, se, lfn ) )
+        uploaded.append(lfn)
+        continue
+
+      self.log.error('Could not putAndRegister file %s with LFN %s to %s with GUID %s trying failover storage' %(localfile,lfn,string.join(outputSEList,','),fileGUID))
+      if not self.defaultFailoverSE:
+        self.log.info('No failover SEs defined for JobWrapper, cannot try to upload output file %s anywhere else.' %outputFile)
+        missing.append(outputFile)   
+        continue
+                
+      failoverSEs = List.randomize(self.defaultFailoverSE)
+      targetSE = outputSEList[0]
+      result = failoverTransfer.transferAndRegisterFileFailover(localFile,outputFilePath,lfn,targetSE,failoverSEs,fileGUID,self.defaultCatalog)
+      if not result['OK']:
+        self.log.error('Completely failed to upload file to failover SEs with result:\n%s' %result)
+        missing.append(outputFile)
+      else:
+        self.log.info('File %s successfully uploaded to failover storage element' %lfn)
+        uploaded.append(lfn)
+   
 
     #For files correctly uploaded must report LFNs to job parameters
     if uploaded:
       report = string.join(uploaded,', ')
       self.jobReport.setJobParameter('UploadedOutputData',report,sendFlag=False)
 
-    #TODO Notify the user of any output data / output sandboxes
+    #Write out failover transfer request object in case of deferred operations 
+    result = failoverTransfer.getRequestObject()
+    if not result['OK']:
+      self.log.error(result)
+      return S_ERROR('Could not retrieve modified request')    
+    request = result['Value']
+    request.toFile('transferOutputDataFiles_request.xml')
 
+    #TODO Notify the user of any output data / output sandboxes
     if missing:
       self.__setJobParam('OutputData','MissingFiles: %s' %(string.join(missing,', ')))
       self.__report('Failed','Uploading Job OutputData')
