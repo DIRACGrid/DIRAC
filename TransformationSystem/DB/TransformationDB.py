@@ -574,7 +574,7 @@ PRIMARY KEY (FileID)
       return res
     return S_OK(fileIDs)
 
-  def __addExistingFiles(self,transID,connection=connection):
+  def __addExistingFiles(self,transID,connection=False):
     """ Add files that already exist in the DataFiles table to the transformation specified by the transID """
     for tID,filter in self.filters:
       if tid == transID:
@@ -1079,7 +1079,7 @@ PRIMARY KEY (FileID)
   #
   # These methods manipulate the Replicas table
   #
-	
+  
   def __addReplica(self,fileID,se,pfn,connection=False):
     """ Add a SE,PFN for the given fileID in the Replicas table.
     """
