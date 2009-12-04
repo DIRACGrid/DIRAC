@@ -72,6 +72,7 @@ class JobAgent( AgentModule ):
     #Timeleft
     self.timeLeftUtil = TimeLeft()
     self.timeLeft = gConfig.getValue( '/Resources/Computing/CEDefaults/MaxCPUTime', 0.0 )
+    self.gridCEQueue = gConfig.getValue( '/Resources/Computing/CEDefaults/GridCEQueue', '' )
     self.timeLeftError = ''
     self.scaledCPUTime = 0.0
     return S_OK()
@@ -186,6 +187,8 @@ class JobAgent( AgentModule ):
     self.jobCount += 1
     try:
       self.__setJobParam( jobID, 'MatcherServiceTime', str( matchTime ) )
+      if self.gridCEQueue:
+        self.__setJobParam( jobID, 'GridCEQueue', self.gridCEQueue )
       self.__report( jobID, 'Matched', 'Job Received by Agent' )
       self.__setJobSite( jobID, self.siteName )
       self.__reportPilotInfo( jobID )
