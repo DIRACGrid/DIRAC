@@ -1,9 +1,8 @@
 ########################################################################
 # $HeadURL:  $
 ########################################################################
-
-"""  TransformationAgent determines the processes transformations found in the transformation database.
-"""
+__RCSID__ = "$Id:  $"
+"""  TransformationAgent processes transformations found in the transformation database. """
 
 from DIRAC                                                  import gLogger,gMonitor, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                            import AgentModule
@@ -16,18 +15,15 @@ from DIRAC.Core.Utilities.List                              import sortList
 import time
 from types import *
 
-__RCSID__ = "$Id:  $"
-
 AGENT_NAME = 'TransformationSystem/TransformationAgent'
 
 class TransformationAgent(AgentModule):
 
   def initialize(self):
-
     self.checkCatalog = self.am_getOption('CheckCatalog','yes')
     self.transDB = '...'
     self.name = ''
-    return result
+    return S_OK()
 
   def execute(self):
     # Get the transformations to process
@@ -71,7 +67,7 @@ class TransformationAgent(AgentModule):
     transID = transDict['TransID']
 
     # First get the LFNs associated to the transformation
-    res = self.transDB.getTransformationLFNs(transID,'Unused')
+    res = self.transDB.getTransformationFiles(transID,condDict={'Status':'Unused'})
     if not res['OK']:
       gLogger.error("%s.processTransformation: Failed to obtain input data." % AGENT_NAME, res['Message'])
       return res
