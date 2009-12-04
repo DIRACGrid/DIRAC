@@ -1,1 +1,1 @@
-""" Core.Transformation package """
+""" DIRAC.TransformationSystem package """
