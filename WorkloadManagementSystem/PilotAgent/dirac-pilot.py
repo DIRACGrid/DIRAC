@@ -498,10 +498,10 @@ if diskSpace < cliParams.minDiskSpace:
 #
 
 if pilotRef != 'Unknown':
-  logINFO( 'CE = %s' % cliParams.ceName )
-  logINFO( 'LCG_SITE_CE = %s' % cliParams.site )
+  logINFO( 'CE = %s' % CE )
+  logINFO( 'LCG_SITE_CE = %s' % cliParams.ceName )
 
-  retCode, queueNormList = executeAndGetOutput( 'dirac-wms-get-queue-normalization %s' % cliParams.ceName )
+  retCode, queueNormList = executeAndGetOutput( 'dirac-wms-get-queue-normalization %s' % CE )
   if not retCode:
     queueNormList = queueNormList.strip().split( ' ' )
     if len( queueNormList ) == 2:
@@ -534,6 +534,7 @@ if pilotRef != 'Unknown':
 inProcessOpts = ['-s /Resources/Computing/CEDefaults' ]
 inProcessOpts .append( '-o WorkingDirectory=%s' % rootPath )
 inProcessOpts .append( '-o GridCE=%s' % cliParams.ceName )
+inProcessOpts .append( '-o GridCEQueue=%s' % CE )
 inProcessOpts .append( '-o LocalAccountString=%s' % localUser )
 inProcessOpts .append( '-o TotalCPUs=%s' % 1 )
 inProcessOpts .append( '-o MaxCPUTime=%s' % ( int( cliParams.jobCPUReq ) ) )
