@@ -33,18 +33,15 @@ class TransformationDBClient(Client,FileCatalogueBase):
           cleanTransformation(transName)
           addTransformationParameter(transName,paramName,paramValue)
           setTransformationStatus(transName,status)
-          setTransformationAgentType(transName,status)
           getTransformations(condDict={},older=None, newer=None, timeStamp='CreationDate', orderAttribute=None, limit=None, extraParams=False)
           getTransformation(transName)
           getTransformationParameters(transName,paramNames)
           getTransformationWithStatus(status)
-          getTransformationLastUpdate(transName)
 
       T_* table manipulation
       
           addTaskForTransformation(transName,lfns=[],se='Unknown')
           setFileStatusForTransformation(transName,status,lfns) 
-          getTransformationLFNs(transName,status='Unused') 
           getTransformationStats(transName)
           
       Jobs table manipulation 
