@@ -628,10 +628,6 @@ PRIMARY KEY (FileID)
   
   ###########################################################################
   # To clean-up
-
-  def addLFNsToTransformation(self,lfnList,transName):
-    #TODO Update LHCbDIRAC/TransformationSystem/Agent/BookkeepingWatchAgent.py
-    return self.addFilesToTransformation(transName,lfnList)
   
   def getTransformationLFNs(self,transName,status='Unused'):
     #TODO: Change this where it is used
