@@ -1,10 +1,10 @@
 -- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.15 2009/08/26 07:17:46 rgracian Exp $
----------------------------------------------------------------------------------
+-- -------------------------------------------------------------------------------
 --  Schema definition for the TransformationDB database a generic
 --  engine to define input data streams and support dynamic data 
 --  grouping per unit of execution.
 
----------------------------------------------------------------------------------
+-- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS Transformations;
 CREATE TABLE Transformations (
     TransformationID INTEGER NOT NULL AUTO_INCREMENT,
@@ -29,7 +29,7 @@ CREATE TABLE Transformations (
     INDEX(TransformationName)
 ) ENGINE=InnoDB;
 
----------------------------------------------------------------------------------
+-- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS AdditionalParameters;
 CREATE TABLE AdditionalParameters (
     TransformationID INTEGER NOT NULL,
@@ -38,7 +38,7 @@ CREATE TABLE AdditionalParameters (
     PRIMARY KEY(TransformationID,ParameterName)
 );
 
----------------------------------------------------------------------------------
+-- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationLog;
 CREATE TABLE TransformationLog (
     TransformationID INTEGER NOT NULL,
@@ -49,7 +49,7 @@ CREATE TABLE TransformationLog (
     INDEX (MessageDate)
 );
 
----------------------------------------------------------------------------------
+-- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS Jobs;
 CREATE TABLE Jobs (
 JobID INTEGER NOT NULL AUTO_INCREMENT,
@@ -63,7 +63,7 @@ PRIMARY KEY(TransformationID,JobID),
 INDEX(WmsStatus)
 );
 
----------------------------------------------------------------------------------
+-- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS JobInputs;
 CREATE TABLE JobInputs (
 TransformationID INTEGER NOT NULL,
@@ -72,7 +72,7 @@ InputVector BLOB,
 PRIMARY KEY(TransformationID,JobID)
 );
 
----------------------------------------------------------------------------------
+-- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS DataFiles;
 CREATE TABLE DataFiles (
    FileID INTEGER NOT NULL AUTO_INCREMENT,
@@ -82,7 +82,7 @@ CREATE TABLE DataFiles (
    PRIMARY KEY (FileID, LFN)
 );
 
----------------------------------------------------------------------------------
+-- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS Replicas;
 CREATE TABLE Replicas (
   FileID INTEGER NOT NULL,
@@ -93,7 +93,7 @@ CREATE TABLE Replicas (
   PRIMARY KEY (FileID, SE)
 );
 
----------------------------------------------------------------------------------
+-- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS FileTransformations;
 CREATE TABLE FileTransformations(
    FileID INTEGER NOT NULL,
