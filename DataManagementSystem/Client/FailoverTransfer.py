@@ -1,0 +1,185 @@
+########################################################################
+# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/DataManagementSystem/Client/FailoverTransfer $
+########################################################################
+
+""" Failover Transfer
+
+    The failover transfer client exposes the following methods:
+    - transferAndRegisterFile()
+    - transferAndRegisterFileFailover()
+    - getRequestObject()
+    
+    Initially these methods were developed inside workflow modules but 
+    have evolved to a generic 'transfer file with failover' client.
+    
+    The transferAndRegisterFile() method will correctly set registration
+    requests in case of failure. 
+    
+    The transferAndRegisterFileFailover() method will attempt to upload
+    a file to a list of alternative SEs and set appropriate replication 
+    to the original target SE as well as the removal request for the 
+    temporary replica.
+    
+    getRequestObject() allows to retrieve the modified request object 
+    after transfer operations.
+"""
+
+__RCSID__ = "$Id: FailoverTransfer 18161 2009-11-11 12:07:09Z acasajus $"
+
+from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC import S_OK, S_ERROR, gLogger
+
+
+class FailoverTransfer:
+
+  #############################################################################
+  def __init__(self,requestObject):
+    """ Constructor function, must specify request object to instantiate 
+        FailoverTransfer. 
+    """
+    self.log = gLogger.getSubLogger( "FailoverTransfer" )    
+    self.rm = ReplicaManager()
+    self.request = requestObject
+  
+  #############################################################################
+  def transferAndRegisterFile(self,fileName,localPath,lfn,destinationSEList,fileGUID=None,fileCatalog=None):
+    """Performs the transfer and register operation with failover.
+    """
+    if not self.request:
+      return S_ERROR('FailoverTransfer must be instantiated with a request object')
+    
+    errorList = []
+    for se in destinationSEList:
+      self.log.info('Attempting rm.putAndRegister("%s","%s","%s",guid="%s",catalog="%s")' %(lfn,localPath,se,fileGUID,fileCatalog))
+      result = self.rm.putAndRegister(lfn,localPath,se,guid=fileGUID,catalog=fileCatalog)
+      self.log.verbose(result)
+      if not result['OK']:
+        self.log.error('rm.putAndRegister failed with message',result['Message'])
+        errorList.append(result['Message'])
+        continue
+
+      if not result['Value']['Failed']:
+        self.log.info('rm.putAndRegister successfully uploaded %s to %s' %(fileName,se))
+        return S_OK({'uploadedSE':se})
+      
+      #Now we know something went wrong
+      errorDict = result['Value']['Failed'][lfn]
+      if not errorDict.has_key('register'):
+        self.log.error('rm.putAndRegister failed with unknown error',str(errorDict))
+        errorList.append('Unknown error while attempting upload to %s' %se)
+        continue
+
+      fileDict = errorDict['register']
+      #Therefore the registration failed but the upload was successful
+      result = self.__setRegistrationRequest(fileDict['LFN'],se,'')
+      if not result['OK']:
+        self.log.error('Failed to set registration request for: SE %s and metadata: \n%s' %(se,fileDict))
+        errorList.append('Failed to set registration request for: SE %s and metadata: \n%s' %(se,fileDict))
+        continue
+      else:
+        self.log.info('Successfully set registration request for: SE %s and metadata: \n%s' %(se,fileDict))
+        metadata = {}
+        metadata['filedict']=fileDict
+        metadata['uploadedSE']=se
+        return S_OK(metadata)
+
+    self.log.error('Encountered %s errors during attempts to upload output data' %len(errorList))
+    return S_ERROR('Failed to upload output data file')
+
+  #############################################################################
+  def transferAndRegisterFileFailover(self,fileName,localPath,lfn,targetSE,failoverSEList,fileGUID=None,fileCatalog=None):
+    """Performs the transfer and register operation to failover storage and sets the
+       necessary replication and removal requests to recover.
+    """
+    if not self.request:
+      return S_ERROR('FailoverTransfer must be instantiated with a request object')
+        
+    failover = self.transferAndRegisterFile(fileName,localPath,lfn,failoverSEList,fileGUID,fileCatalog)
+    if not failover['OK']:
+      self.log.error('Could not upload file to failover SEs',failover['Message'])
+      return failover
+
+    #set removal requests and replication requests
+    result = self.__setFileReplicationRequest(lfn,targetSE)
+    if not result['OK']:
+      self.log.error('Could not set file replication request',result['Message'])
+      return result
+
+    lfn = failover['Value']['lfn']
+    failoverSE = failover['Value']['uploadedSE']
+    self.log.info('Attempting to set replica removal request for LFN %s at failover SE %s' %(lfn,failoverSE))
+    result = self.__setReplicaRemovalRequest(lfn,failoverSE)
+    if not result['OK']:
+      self.log.error('Could not set removal request',result['Message'])
+      return result
+
+    return S_OK('%s uploaded to a failover SE' %fileName)
+
+  #############################################################################
+  def getRequestObject(self):
+    """Returns the potentially modified request object in order to propagate changes.
+    """
+    if not self.request:
+      return S_ERROR('FailoverTransfer must be instantiated with a request object')
+    
+    return S_OK(self.request)
+  
+  #############################################################################
+  def __setFileReplicationRequest(self,lfn,se):
+    """ Sets a registration request.
+    """
+    self.log.info('Setting replication request for %s to %s' % (lfn,se))
+    result = self.request.addSubRequest({'Attributes':{'Operation':'replicateAndRegister',
+                                                       'TargetSE':se,'ExecutionOrder':0}},
+                                         'transfer')
+    if not result['OK']:
+      return result
+
+    index = result['Value']
+    fileDict = {'LFN':lfn,'Status':'Waiting'}
+    self.request.setSubRequestFiles(index,'transfer',[fileDict])
+
+    return S_OK()
+
+  #############################################################################
+  def __setRegistrationRequest(self,lfn,se,catalog):
+    """ Sets a registration request.
+    """
+    self.log.info('Setting registration request for %s at %s for metadata:\n%s' % (lfn,se,fileDict))
+    result = self.request.addSubRequest({'Attributes':{'Operation':'registerFile','ExecutionOrder':0,
+                                                       'TargetSE':se,'Catalogue':catalog}},'register')
+    if not result['OK']:
+      return result
+
+    index = result['Value']
+    fileDict = {'LFN':lfn,'Status':'Waiting'}
+    self.request.setSubRequestFiles(index,'register',[fileDict])
+
+    return S_OK()
+
+  #############################################################################
+  def __setReplicaRemovalRequest(self,lfn,se):
+    """ Sets a removal request for a replica.
+    """
+    result = self.request.addSubRequest({'Attributes':{'Operation':'replicaRemoval',
+                                                       'TargetSE':se,'ExecutionOrder':1}},
+                                         'removal')
+    index = result['Value']
+    fileDict = {'LFN':lfn,'Status':'Waiting'}
+    self.request.setSubRequestFiles(index,'removal',[fileDict])
+
+    return S_OK()
+
+  #############################################################################
+  def __setFileRemovalRequest(self,lfn,se='',pfn=''):
+    """ Sets a removal request for a file including all replicas.
+    """
+    result = self.request.addSubRequest({'Attributes':{'Operation':'removeFile',
+                                                       'TargetSE':se,'ExecutionOrder':1}},
+                                         'removal')
+    index = result['Value']
+    fileDict = {'LFN':lfn,'PFN':pfn,'Status':'Waiting'}
+    self.request.setSubRequestFiles(index,'removal',[fileDict])
+
+    return S_OK()
+  
