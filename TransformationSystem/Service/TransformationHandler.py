@@ -1,9 +1,10 @@
-""" DISET request handler base class for the TransformationDB.
-"""
+""" DISET request handler base class for the TransformationDB."""
+# $HeadURL$
+__RCSID__ = "$Id$"
+
+from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
 from types import *
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.TransformationSystem.DB.TransformationDB import TransformationDB
 
 class TransformationHandler(RequestHandler):
 
