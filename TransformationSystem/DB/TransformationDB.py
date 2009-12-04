@@ -329,17 +329,9 @@ class TransformationDB(DB):
           result.append(transID)
     return result
   
-  def getTransformationLastUpdate(self,transName,connection=False):
-    #TODO: Eventually remove this once the ProductionCleaningAgent is updated
-    return self.getTransformationParameters(transName,'LastUpdate',connection)
-
   def setTransformationStatus(self,transName,status,author='',connection=False):
     #TODO: Update where used
     return self.setTransformationParameter(transName,'Status',paramValue,author=author,connection=connection)
-
-  def setTransformationAgentType(self,transName,type,author='',connection=False):
-    #TODO: Update where used
-    return self.setTransformationParameter(transName,'AgentType',type,author=author,connection=connection)
 
   ###########################################################################
   #
@@ -627,28 +619,6 @@ PRIMARY KEY (FileID)
     return res
   
   ###########################################################################
-  # To clean-up
-  
-  def getTransformationLFNs(self,transName,status='Unused'):
-    #TODO: Change this where it is used
-    """  Get input LFNs for the given transformation, only files with a given transformation status."""
-    res = self.getTransformationFiles(transName,condDict={'Status':status})
-    if not res['OK']:
-      return res
-    return S_OK(res['LFNs'])
-  
-  def getFilesForTransformation(self,transName,taskOrdered=False):
-    #TODO Change LHCbDIRAC/LHCbSystem/Client/DiracProduction.py
-    """ Get files and their status for the given transformation """
-    ordering = 'LFN'
-    if taskOrdered:
-      ordering = 'JobID'
-    res = self.getTransformationFiles(transName,orderAttribute=ordering)
-    if not res['OK']:
-      return res
-    return S_OK(res['Value'])
-  
-  ###########################################################################
   #
   # These methods manipulate the Jobs table
   #
@@ -691,7 +661,7 @@ PRIMARY KEY (FileID)
     if not res['Value']:
       return S_ERROR('Failed to set Reserved status for job %d - already Reserved' % int(jobID) )
     # The job is reserved, update the time stamp
-    res = self.setJobStatus(transID,taskID,'Reserved',connection=connection)
+    res = self.setTaskStatus(transID,taskID,'Reserved',connection=connection)
     if not res['OK']:
       return S_ERROR('Failed to set Reserved status for job %d - failed to update the time stamp' % int(taskID))
     return S_OK()
