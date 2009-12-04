@@ -26,28 +26,32 @@
 
 __RCSID__ = "$Id: FailoverTransfer 18161 2009-11-11 12:07:09Z acasajus $"
 
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.DataManagementSystem.Client.ReplicaManager      import ReplicaManager
+from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
+
 from DIRAC import S_OK, S_ERROR, gLogger
 
 
 class FailoverTransfer:
 
   #############################################################################
-  def __init__(self,requestObject):
+  def __init__(self,requestObject=False):
     """ Constructor function, must specify request object to instantiate 
         FailoverTransfer. 
     """
     self.log = gLogger.getSubLogger( "FailoverTransfer" )    
     self.rm = ReplicaManager()
+    if not requestObject:
+      self.request = RequestContainer()
+      self.request.setRequestName('default_request.xml')
+      self.request.setSourceComponent('FailoverTransfer')
+            
     self.request = requestObject
   
   #############################################################################
   def transferAndRegisterFile(self,fileName,localPath,lfn,destinationSEList,fileGUID=None,fileCatalog=None):
     """Performs the transfer and register operation with failover.
     """
-    if not self.request:
-      return S_ERROR('FailoverTransfer must be instantiated with a request object')
-    
     errorList = []
     for se in destinationSEList:
       self.log.info('Attempting rm.putAndRegister("%s","%s","%s",guid="%s",catalog="%s")' %(lfn,localPath,se,fileGUID,fileCatalog))
@@ -91,9 +95,6 @@ class FailoverTransfer:
     """Performs the transfer and register operation to failover storage and sets the
        necessary replication and removal requests to recover.
     """
-    if not self.request:
-      return S_ERROR('FailoverTransfer must be instantiated with a request object')
-        
     failover = self.transferAndRegisterFile(fileName,localPath,lfn,failoverSEList,fileGUID,fileCatalog)
     if not failover['OK']:
       self.log.error('Could not upload file to failover SEs',failover['Message'])
@@ -119,9 +120,6 @@ class FailoverTransfer:
   def getRequestObject(self):
     """Returns the potentially modified request object in order to propagate changes.
     """
-    if not self.request:
-      return S_ERROR('FailoverTransfer must be instantiated with a request object')
-    
     return S_OK(self.request)
   
   #############################################################################
