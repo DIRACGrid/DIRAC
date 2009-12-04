@@ -1,163 +1,84 @@
-""" Class that contains client access to the transformation DB handler.
-"""
+""" Class that contains client access to the transformation DB handler. """
 ########################################################################
 # $Id$
+# $HeadURL$
 ########################################################################
+__RCSID__ = "$Id$"
 
 from DIRAC                                          import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Resources.Catalog.FileCatalogueBase      import FileCatalogueBase
-from DIRAC.Core.Utilities.List                      import breakListIntoChunks
+from DIRAC.Core.Base.Client                         import Client
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
+from DIRAC.Core.Utilities.List                      import breakListIntoChunks
+from DIRAC.Resources.Catalog.FileCatalogueBase      import FileCatalogueBase
 import types
+    
+class TransformationDBClient(Client,FileCatalogueBase):
+  
+  """ Exposes the functionality available in the DIRAC/TransformationHandler
 
-class TransformationDBClient(FileCatalogueBase):
-  """ Exposing the functionality of the replica tables for the TransformationDB
+      This inherits the DIRAC base Client for direct execution of server functionality.
+      The following methods are available (although not visible here).
+      
+      Transformation (table) manipulation
+
+          addTransformation(transName,description,longDescription,type,plugin,agentType,fileMask,
+                            transformationGroup = 'General',
+                            groupSize           = 1,
+                            inheritedFrom       = 0,
+                            body                = '', 
+                            maxJobs             = 0,
+                            eventsPerJob        = 0,
+                            addFiles            = True)    
+          deleteTransformation(transName)
+          cleanTransformation(transName)
+          addTransformationParameter(transName,paramName,paramValue)
+          setTransformationStatus(transName,status)
+          setTransformationAgentType(transName,status)
+          getTransformations(condDict={},older=None, newer=None, timeStamp='CreationDate', orderAttribute=None, limit=None, extraParams=False)
+          getTransformationWithStatus(status)
+          getTransformation(transName)
+          getTransformationLastUpdate(transName)
+
+      T_* table manipulation
+      
+          addTaskForTransformation(transName,lfns=[],se='Unknown')
+          setFileStatusForTransformation(transName,status,lfns) 
+          getTransformationLFNs(transName,status='Unused') 
+          getTransformationStats(transName)
+          
+      Jobs table manipulation 
+          
+          setTaskStatus(transName, taskID, status) 
+          setTaskStatusAndWmsID(transName, taskID, status, taskWmsID) 
+          selectWMSTasks(transName,statusList=[],newer=0) 
+          getTransformationTaskStats(transName) 
+          getTaskInfo(transName, taskID) 
+          getTaskStats(transName) 
+          deleteTasks(transName, taskMin, taskMax) 
+          extendTransformation( transName, nTasks) 
+          getTasksToSubmit(transName,numTasks,site='') 
+          
+      TransformationLogging table manipulation
+          
+          getTransformationLogging(transName) 
+      
+      File/directory manipulation methods (the remainder of the interface can be found below)
+      
+          getFileSummary(lfns,transName)
+          addDirectory(path,force=False) 
+          exists(lfns) 
+          
+      Web monitoring tools    
+          
+          getDistinctAttributeValues(attribute, selectDict) 
+          getTransformationStatusCounters() 
+          getTransformationSummary() 
+          getTransformationSummaryWeb(selectDict, sortList, startItem, maxItems) 
+      
   """
+
   def setServer(self,url):
-    self.server = url
-
-  ###########################################################################
-  #
-  # These methods are for adding new tasks to the transformation database
-  #
-
-  def addTaskForTransformation(self,transID,lfns=[],se='Unknown'):
-    server = RPCClient(self.server,timeout=120)
-    return addTaskForTransformation(transID,lfns,se)
-
-  #####################################################################
-  #
-  # These are transformation management methods
-  #
-
-  def publishTransformation(self,transName,description,longDescription,fileMask='',groupsize=0,update=False,bkQuery = {},plugin='',transGroup='',transType=''):
-    server = RPCClient(self.server,timeout=120)
-    return server.publishTransformation(transName,description,longDescription,fileMask,groupsize,update,bkQuery,plugin,transGroup,transType)
-  
-  def getAllTransformations(self):
-    server = RPCClient(self.server,timeout=120)
-    return server.getAllTransformations()
-
-  def getTransformationWithStatus(self,status):
-    server = RPCClient(self.server,timeout=120)
-    return server.getTransformationWithStatus(status)
-
-  def removeTransformation(self,transID):
-    server = RPCClient(self.server,timeout=120)
-    return server.removeTransformation(transID)
-
-  def setTransformationStatus(self,transID,status):
-    server = RPCClient(self.server,timeout=120)
-    return server.setTransformationStatus(transID,status)
-
-  def setTransformationAgentType(self,transID,type):
-    server = RPCClient(self.server,timeout=120)
-    return server.setTransformationAgentType(transID,type)
-
-  def setTransformationType(self,transID,type):
-    server = RPCClient(self.server,timeout=120)    
-    return server.setTransformationType(transID,type)
-
-  def setTransformationPlugin(self,transID,plugin):
-    server = RPCClient(self.server,timeout=120)
-    return server.setTransformationPlugin(transID,plugin)
-
-  def setTransformationMask(self,transID,mask):
-    server = RPCClient(self.server,timeout=120)
-    return server.setTransformationMask(transID,mask)
-  
-  def updateTransformation(self,transID):
-    server = RPCClient(self.server,timeout=120)
-    return server.updateTransformation(transID)
-
-  def addTransformationParameter(self,transID,paramname,paramvalue):
-    server = RPCClient(self.server,timeout=120)
-    return server.addTransformationParameter(transID,paramname,paramvalue)
-
-  def addTransformationParameters(self,transID,paramDict):
-    server = RPCClient(self.server,timeout=120)
-    return server.addTransformationParameters(transID,paramDict)
-
-  def changeTransformationName(self,transID,name):
-    server = RPCClient(self.server,timeout=120)
-    return server.changeTransformationName(transID,name)
-
-  def getTransformation(self,transID):
-    server = RPCClient(self.server,timeout=120)
-    return server.getTransformation(transID)
-
-  def getTransformationLastUpdate(self,transID):
-    server = RPCClient(self.server,timeout=120)
-    return server.getTransformationLastUpdate(transID)
-
-  def getTransformationStats(self,transID):
-    server = RPCClient(self.server,timeout=120)
-    return server.getTransformationStats(transID)
-
-  def getTransformationLogging(self,transID):
-    server = RPCClient(self.server,timeout=120)
-    return server.getTransformationLogging(transID)
-
-  def getInputData(self,transID,status):
-    server = RPCClient(self.server,timeout=120)
-    return server.getInputData(transID,status)
-
-  def getTransformationLFNs(self,transID,status='Unused'):
-    server = RPCClient(self.server,timeout=120)
-    return server.getTransformationLFNs(transID,status)
-
-  def getFilesForTransformation(self,transID,orderByJobs=False):
-    server = RPCClient(self.server,timeout=120)
-    return server.getFilesForTransformation(transID,orderByJobs)
-
-  def addLFNsToTransformation(self,lfns,transID):
-    server = RPCClient(self.server,timeout=120)
-    return server.addLFNsToTransformation(lfns,transID)
-
-  def setFileStatusForTransformation(self,transID,status,lfns):
-    server = RPCClient(self.server,timeout=120)
-    return server.setFileStatusForTransformation(transID,status,lfns)
-
-  def setFileSEForTransformation(self,transID,se,lfns):
-    server = RPCClient(self.server,timeout=120)
-    return server.setFileSEForTransformation(transID,se,lfns)
-
-  def resetFileStatusForTransformation(self,transID,lfns):
-    server = RPCClient(self.server,timeout=120)
-    return server.resetFileStatusForTransformation(transID,lfns)  
-
-  def setFileJobID(self,transID,jobID,lfns):
-    server = RPCClient(self.server,timeout=120)
-    return server.setFileJobID(transID,jobID,lfns)
-
-  def getFileSummary(self,transID,lfns):
-    server = RPCClient(self.server,timeout=120)
-    return server.getFileSummary(lfns,transID)
-  
-  #####################################################################
-  #
-  # These are the bk query manipulation methods
-  #
-
-  def addBookkeepingQuery(self,queryDict):
-    server = RPCClient(self.server,timeout=120)
-    return server.addBookkeepingQuery(queryDict)
-
-  def getBookkeepingQuery(self,bkQueryID):
-    server = RPCClient(self.server,timeout=120)
-    return server.getBookkeepingQuery(bkQueryID)
-
-  def setTransformationQuery(self,transID,queryID):
-    server = RPCClient(self.server,timeout=120)
-    return server.setTransformationQuery(transID,queryID)
-
-  def getBookkeepingQueryForTransformation(self,transID):
-    server = RPCClient(self.server,timeout=120)
-    return server.getBookkeepingQueryForTransformation(transID)
-
-  def deleteBookkeepingQuery(self,bkQueryID):
-    server = RPCClient(self.server,timeout=120)
-    return server.deleteBookkeepingQuery(bkQueryID)
+    self.serverURL = url
 
   #####################################################################
   #
