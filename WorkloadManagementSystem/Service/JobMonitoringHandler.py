@@ -172,16 +172,17 @@ class JobMonitoringHandler( RequestHandler ):
                                    timeStamp='LastUpdateTime')
     if not resultDay['OK']:
       return resultDay
-    
+         
     resultDict = {}
-    for statusList, count in result['Value']:
-      status = statusList[0]
+    for statusDict, count in result['Value']:
+      status = statusDict['Status']
+      resultDict[status] = count 
       if status in FINAL_STATES:
-        for statusDayList,ccount in resultDay['Value']:
-          if status == statusDayList[0]:
+        resultDict[status] = 0
+        for statusDayDict,ccount in resultDay['Value']:
+          if status == statusDayDict['Status']:
             resultDict[status] = ccount
-      else:
-        resultDict[status] = count  
+          break     
         
     return S_OK(resultDict)        
 
