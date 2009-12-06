@@ -1684,6 +1684,20 @@ class JobDB(DB):
       siteList = [ x[0] for x in result['Value']]
 
     return S_OK(siteList)
+    
+#############################################################################
+  def getSiteMaskStatus(self):
+    """ Get the currently site mask status
+    """
+    cmd = "SELECT Site,Status FROM SiteMask"
+
+    result = self._query( cmd )
+    siteDict = {}
+    if result['OK']:
+      for site,status in result['Value']:
+        siteDict[site] = status
+
+    return S_OK(siteDict)    
 
 #############################################################################
   def setSiteMask(self,siteMaskList,authorDN='Unknown',comment='No comment'):

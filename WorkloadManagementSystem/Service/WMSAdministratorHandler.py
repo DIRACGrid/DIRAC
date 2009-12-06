@@ -136,6 +136,34 @@ class WMSAdministratorHandler(RequestHandler):
     else:
       msites = sites
     return jobDB.getSiteMaskLogging(msites)
+    
+##############################################################################
+  types_getSiteMaskSummary = [ ]
+  def export_getSiteMaskSummary(self):
+    """ Get the mask status for all the configured sites
+    """
+
+    # Get all the configured site names
+    result = gConfig.getSections('/Resources/Sites')
+    if not result['OK']:
+      return result
+    grids = result['Value']
+    sites = []
+    for grid in grids:
+      result = gConfig.getSections('/Resources/Sites/%s' % grid)
+      if not result['OK']:
+        return result  
+      sites += result['Value']
+      
+    # Get the current mask status
+    result = jobDB.getSiteMaskStatus()
+    siteDict = result['Value']  
+    for site in sites:
+      if site not in siteDict:
+        siteDict[site] = 'Unknown'
+        
+    return S_OK(siteDict)        
+    
 
 ##########################################################################################
   types_countPilots = [ DictType ]
@@ -272,6 +300,8 @@ class WMSAdministratorHandler(RequestHandler):
         resultDict['FileList'] = []
         return S_OK(resultDict)
 
+    print "AT >>>>", owner, group 
+
     ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
     if not ret['OK']:
       gLogger.error( ret['Message'] )
@@ -282,6 +312,8 @@ class WMSAdministratorHandler(RequestHandler):
     gridType = pilotDict['GridType']
 
     result = getPilotOutput( proxy, gridType, pilotReference )
+    
+    print "AT >>>> getPilotOutput", result
 
     if not result['OK']:
       return S_ERROR('Failed to get pilot output: '+result['Message'])
