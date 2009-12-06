@@ -31,6 +31,7 @@ SUMMARY = ['JobType','Site','JobName','Owner','SubmissionTime',
            'LastUpdateTime','Status','MinorStatus','ApplicationStatus']
 SUMMARY = []
 PRIMARY_SUMMARY = []
+FINAL_STATES = ['Done','Completed','Stalled','Failed','Killed']
 
 def initializeJobMonitoringHandler( serviceInfo ):
 
@@ -155,6 +156,34 @@ class JobMonitoringHandler( RequestHandler ):
     cutdate = str(cutDate)
 
     return jobDB.getCounters( 'Jobs',attrList, attrDict, newer=cutDate, timeStamp='LastUpdateTime')
+
+##############################################################################
+  types_getCurrentJobCounters = [ ]
+  def export_getCurrentJobCounters( self, attrDict={}):
+    """ Get job counters per Status with attrDict selection. Final statuses are given for
+        the last day.
+    """
+    
+    result = jobDB.getCounters( 'Jobs',['Status'], attrDict, timeStamp='LastUpdateTime')
+    if not result['OK']:
+      return result
+    last_update = Time.dateTime() - Time.day
+    resultDay = jobDB.getCounters( 'Jobs',['Status'], attrDict, newer=last_update,
+                                   timeStamp='LastUpdateTime')
+    if not resultDay['OK']:
+      return resultDay
+    
+    resultDict = {}
+    for statusList, count in result['Value']:
+      status = statusList[0]
+      if status in FINAL_STATES:
+        for statusDayList,ccount in resultDay['Value']:
+          if status == statusDayList[0]:
+            resultDict[status] = ccount
+      else:
+        resultDict[status] = count  
+        
+    return S_OK(resultDict)        
 
 ##############################################################################
   types_getJobStatus = [ IntType ]
