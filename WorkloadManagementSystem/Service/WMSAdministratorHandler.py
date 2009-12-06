@@ -36,6 +36,7 @@ jobDB = False
 pilotDB = False
 taskQueueDB = False
 
+FINAL_STATES = ['Done','Aborted','Cleared','Deleted','Stalled']
 
 def initializeWMSAdministratorHandler( serviceInfo ):
   """  WMS AdministratorService initialization
@@ -140,6 +141,35 @@ class WMSAdministratorHandler(RequestHandler):
   types_countPilots = [ DictType ]
   def export_countPilots( self, condDict, older=None, newer=None, timeStamp='SubmissionTime' ):
     return pilotDB.countPilots( condDict, older, newer, timeStamp )
+  
+##############################################################################
+  types_getCurrentPilotCounters = [ ]
+  def export_getCurrentPilotCounters( self, attrDict={}):
+    """ Get pilot counters per Status with attrDict selection. Final statuses are given for
+        the last day.
+    """
+    
+    result = pilotDB.getCounters( 'PilotAgents',['Status'], attrDict, timeStamp='LastUpdateTime')
+    if not result['OK']:
+      return result
+    last_update = Time.dateTime() - Time.day
+    resultDay = pilotDB.getCounters( 'PilotAgents',['Status'], attrDict, newer=last_update,
+                                   timeStamp='LastUpdateTime')
+    if not resultDay['OK']:
+      return resultDay
+         
+    resultDict = {}
+    for statusDict, count in result['Value']:
+      status = statusDict['Status']
+      resultDict[status] = count 
+      if status in FINAL_STATES:
+        resultDict[status] = 0
+        for statusDayDict,ccount in resultDay['Value']:
+          if status == statusDayDict['Status']:
+            resultDict[status] = ccount
+          break     
+        
+    return S_OK(resultDict) 
 
 ##########################################################################################
   types_addPilotTQReference = [ ListType, [IntType, LongType], StringTypes, StringTypes ]
