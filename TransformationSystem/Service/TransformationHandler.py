@@ -6,9 +6,9 @@ from DIRAC                                              import gLogger, gConfig,
 from DIRAC.Core.DISET.RequestHandler                    import RequestHandler
 from types import *
 
-class TransformationHandler(RequestHandler):
+transTypes = list(StringTypes)+[IntType,LongType]
 
-  transTypes = list(StringTypes)+[IntType,LongType]
+class TransformationHandler(RequestHandler):
 
   def setDatabase(self,oDatabase):
     self.database = oDatabase
