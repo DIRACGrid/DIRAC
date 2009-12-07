@@ -42,7 +42,11 @@ class WatchdogMac(Watchdog):
       info = parameterDict['Value'][1].split('\n')
       for val in info:
         if re.search('^kern.hostname',val):
-          hostname = val.split('=')[1].strip()
+          hostname = 'NA'
+          if re.search('=',val):
+            hostname = val.split('=')[1].strip()
+          else:
+            hostname = val.split(':')[1].strip()  
           result['Value']['HostName']=hostname
         if re.search('^hw.model',val):
           model = val.split('=')[1].strip()
@@ -74,7 +78,7 @@ class WatchdogMac(Watchdog):
     comm = 'sysctl vm.loadavg'
     loadAvgDict = shellCall(5,comm)
     if loadAvgDict['OK']:
-      la = float(string.split(loadAvgDict['Value'][1])[1])
+      la = float(string.split(loadAvgDict['Value'][1])[3])
       result['Value'] = la
     else:
       result = S_ERROR('Could not obtain load average')
