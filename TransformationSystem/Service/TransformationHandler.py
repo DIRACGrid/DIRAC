@@ -57,8 +57,8 @@ class TransformationHandler(RequestHandler):
     res = self.database.cleanTransformation(transName,author=authorDN)
     return self.__parseRes(res)
 
-  types_addTransformationParameter = [transTypes,StringType]
-  def export_addTransformationParameter(self,transName,paramName,paramValue):
+  types_setTransformationParameter = [transTypes,StringType]
+  def export_setTransformationParameter(self,transName,paramName,paramValue):
     authorDN = self._clientTransport.peerCredentials['DN']
     res = self.database.setTransformationParameter(transName,paramName,paramValue,author=authorDN)
     return self.__parseRes(res)
@@ -291,7 +291,8 @@ class TransformationHandler(RequestHandler):
     transList = res['Value']
     resultDict = {}
     for transDict in transList:
-      transID = transDict['TransformationID']
+      print transDict
+      transID = transDict['TransID']
       res = self.database.getTaskStats(transID)
       if not res['OK']:
         gLogger.warn('Failed to get job statistics for transformation %d' % transID)
