@@ -31,7 +31,7 @@ class TransformationDBClient(Client,FileCatalogueBase):
                             addFiles            = True)    
           deleteTransformation(transName)
           cleanTransformation(transName)
-          addTransformationParameter(transName,paramName,paramValue)
+          setTransformationParameter(transName,paramName,paramValue)
           setTransformationStatus(transName,status)
           getTransformations(condDict={},older=None, newer=None, timeStamp='CreationDate', orderAttribute=None, limit=None, extraParams=False)
           getTransformation(transName)
