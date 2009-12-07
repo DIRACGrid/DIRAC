@@ -88,7 +88,9 @@ class AgentReactor:
     self.__agentModules[ fullName ][ 'running' ] = True
     return S_OK()
 
-  def runNumCycles( self, numCycles = 1 ):
+  def runNumCycles( self, agentName = None, numCycles = 1 ):
+    if agentName:
+      self.loadAgentModule(agentName)
     for agentName in self.__agentModules:
       self.setAgentModuleCyclesToExecute( agentName, numCycles )
     self.go()
