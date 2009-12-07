@@ -451,7 +451,7 @@ class Dirac:
       return S_ERROR('Could not start DIRAC Job Agent')
 
     agent = AgentReactor(agentName)
-    result = agent.runNumCycles(numCycles=1)
+    result = agent.runNumCycles(agentName,numCycles=1)
     if not result['OK']:
       self.log.error('Job Agent execution completed with errors',result['Message'])
 
