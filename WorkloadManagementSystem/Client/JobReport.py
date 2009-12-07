@@ -148,10 +148,25 @@ class JobReport:
       return result
     else:
       return S_OK('Empty')
+    
+  def commit(self):
+    """ Send all the accumulated information
+    """
+    
+    success = True
+    result = self.sendStoredStatusInfo()
+    if not result['OK']:
+      success = False
+    result = self.sendStoredJobParameters()
+    if not result['OK']:
+      success = False    
+      
+    if success:
+      return S_OK()
+    return S_ERROR('Information upload to JobStateUpdate service failed')  
 
   def dump(self):
     """ Print out the contents of the internal cached information
-
     """
 
     print "Job status info:"
