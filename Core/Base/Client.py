@@ -34,13 +34,14 @@ class Client:
       url = kws['url']
       del kws['url']
     # Create the RPCClient
-    rpcClient = self.__getRPC(rpc, url, timeout)
+    rpcClient = self._getRPC(rpc, url, timeout)
     # Execute the method
     return eval("rpcClient.%s(*parms,**kws)" % toExecute)
 
-  def __getRPC(self,rpc=False,url='',timeout=120):
+  def _getRPC(self,rpc=False,url='',timeout=120):
     if not rpc:
       if not url:
         url = self.serverURL
       rpc = RPCClient(url,timeout=timeout)
+    print rpc,type(rpc)
     return rpc
