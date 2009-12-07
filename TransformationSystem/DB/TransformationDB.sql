@@ -12,6 +12,7 @@ CREATE TABLE Transformations (
     Description VARCHAR(255),
     LongDescription  BLOB,
     CreationDate DATETIME,
+    LastUpdate DATETIME,
     AuthorDN VARCHAR(255) NOT NULL,
     AuthorGroup VARCHAR(255) NOT NULL,
     Type CHAR(16) DEFAULT 'Simulation',
