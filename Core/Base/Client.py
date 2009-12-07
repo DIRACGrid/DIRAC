@@ -43,5 +43,4 @@ class Client:
       if not url:
         url = self.serverURL
       rpc = RPCClient(url,timeout=timeout)
-    print rpc,type(rpc)
     return rpc
