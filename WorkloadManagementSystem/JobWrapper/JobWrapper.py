@@ -202,7 +202,7 @@ class JobWrapper:
       parameters.append(('CPUNormalizationFactor', self.ceArgs['CPUNormalizationFactor']))
 
     parameters.append(('PilotAgent',self.diracVersion))
-    parameters.append(('JobWrapperPID',self.currenPID))
+    parameters.append(('JobWrapperPID',self.currentPID))
     result = self.__setJobParamList(parameters)
     return result  
 
