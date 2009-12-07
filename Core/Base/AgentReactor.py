@@ -92,6 +92,7 @@ class AgentReactor:
     for agentName in self.__agentModules:
       self.setAgentModuleCyclesToExecute( agentName, numCycles )
     self.go()
+    return S_OK()
 
   def go( self ):
     if self.__running:
