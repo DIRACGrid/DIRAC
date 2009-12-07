@@ -184,6 +184,27 @@ class JobWrapper:
     infoFile = open( 'job.info', 'w' )
     infoFile.write( self.__dictAsInfoString( self.jobArgs, '/Job' ) )
     infoFile.close()
+    
+  #############################################################################
+  def __setInitialJobParameters(self):
+    """Sets some initial job parameters
+    """
+    parameters = []
+    if self.ceArgs.has_key('LocalSE'):
+      parameters.append(('AgentLocalSE',string.join(self.ceArgs['LocalSE'],',')))
+    if self.ceArgs.has_key('CompatiblePlatforms'):
+      parameters.append(('AgentCompatiblePlatforms',string.join(self.ceArgs['CompatiblePlatforms'],',')))
+    if self.ceArgs.has_key('PilotReference'):
+      parameters.append(('Pilot_Reference', self.ceArgs['PilotReference']))
+    if self.ceArgs.has_key('CPUScalingFactor'):
+      parameters.append(('CPUScalingFactor', self.ceArgs['CPUScalingFactor']))
+    if self.ceArgs.has_key('CPUNormalizationFactor'):
+      parameters.append(('CPUNormalizationFactor', self.ceArgs['CPUNormalizationFactor']))
+
+    parameters.append(('PilotAgent',self.diracVersion))
+    parameters.append(('JobWrapperPID',self.currenPID))
+    result = self.__setJobParamList(parameters)
+    return result  
 
   #############################################################################
   def __loadLocalCFGFiles(self,localRoot):
@@ -284,10 +305,13 @@ class JobWrapper:
       exeThread = ExecutionThread(spObject,command,maxPeekLines,outputFile,errorFile,exeEnv)
       exeThread.start()
       time.sleep(5)
-      if not spObject.getChildPID():
+      payloadPID = spObject.getChildPID()
+      if not payloadPID:
         return S_ERROR( 'Payload process could not start after 5 seconds' )
     else:
       return S_ERROR('Path to executable %s not found' %(executable))
+
+    self.__setJobParam('PayloadPID',payloadPID) 
 
     watchdogFactory = WatchdogFactory()
     watchdogInstance = watchdogFactory.getWatchdog(self.currentPID, exeThread, spObject, jobCPUTime )
@@ -1091,26 +1115,6 @@ class JobWrapper:
       self.log.verbose('Cleaning up job working directory')
       if os.path.exists(str(self.jobID)):
         shutil.rmtree(str(self.jobID))
-
-  #############################################################################
-  def __setInitialJobParameters(self):
-    """Sets some initial job parameters
-    """
-    parameters = []
-    if self.ceArgs.has_key('LocalSE'):
-      parameters.append(('AgentLocalSE',string.join(self.ceArgs['LocalSE'],',')))
-    if self.ceArgs.has_key('CompatiblePlatforms'):
-      parameters.append(('AgentCompatiblePlatforms',string.join(self.ceArgs['CompatiblePlatforms'],',')))
-    if self.ceArgs.has_key('PilotReference'):
-      parameters.append(('Pilot_Reference', self.ceArgs['PilotReference']))
-    if self.ceArgs.has_key('CPUScalingFactor'):
-      parameters.append(('CPUScalingFactor', self.ceArgs['CPUScalingFactor']))
-    if self.ceArgs.has_key('CPUNormalizationFactor'):
-      parameters.append(('CPUNormalizationFactor', self.ceArgs['CPUNormalizationFactor']))
-
-    parameters.append (('PilotAgent',self.diracVersion))
-    result = self.__setJobParamList(parameters)
-    return result
 
   #############################################################################
   def __report(self,status='',minorStatus='',sendFlag=False):

@@ -111,9 +111,7 @@ def execute ( arguments ):
     return 1
 
   if arguments['Job'].has_key('InputSandbox'):
-    jobReport.sendStoredStatusInfo()
-    jobReport.sendStoredJobParameters()
-
+    jobReport.commit()
     try:
       result = job.transferInputSandbox(arguments['Job']['InputSandbox'])
       if not result['OK']:
@@ -127,8 +125,7 @@ def execute ( arguments ):
   else:
     gLogger.verbose('Job has no InputSandbox requirement')
 
-  jobReport.sendStoredStatusInfo()
-  jobReport.sendStoredJobParameters()
+  jobReport.commit()
 
   if arguments['Job'].has_key('InputData'):
     if arguments['Job']['InputData']:
@@ -148,8 +145,7 @@ def execute ( arguments ):
   else:
     gLogger.verbose('Job has no InputData requirement')
 
-  jobReport.sendStoredStatusInfo()
-  jobReport.sendStoredJobParameters()
+  jobReport.commit()
 
   try:
     result = job.execute(arguments)
@@ -197,13 +193,11 @@ ret = -3
 try:
   jobArgs = eval("""@JOBARGS@""")
   ret = execute( jobArgs )
-  jobReport.sendStoredStatusInfo()
-  jobReport.sendStoredJobParameters()
+  jobReport.commit()
 except Exception,x:
   try:
     gLogger.exception()
-    jobReport.sendStoredStatusInfo()
-    jobReport.sendStoredJobParameters()
+    jobReport.commit()
     ret = -1
   except Exception,x:
     gLogger.exception()
