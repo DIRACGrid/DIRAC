@@ -20,31 +20,33 @@ from DIRAC.ResourceStatusSystem.Policy import Configurations
 #  pass
 
 
-class PEP:
-  
+class PEP: 
 #############################################################################
+  """ 
+  PEP (Policy Enforcement Point) initialization
+  
+  :params:
+    :attr:`granularity`: string - a ValidRes (optional)
 
+    :attr:`name`: string - optional name (e.g. of a site)
+
+    :attr:`status`: string - optional status
+
+    :attr:`formerStatus`: string - optional former status
+
+    :attr:`reason`: string - optional reason for last status change
+
+    :attr:`futureEnforcement`: optional
+      [ 
+        { 
+          'PolicyType': a PolicyType
+          'Granularity': a ValidRes (optional) 
+        } 
+      ]
+        
+  """
+ 
   def __init__(self, granularity = None, name = None, status = None, formerStatus = None, reason = None, futureEnforcement = None):
-    """ 
-    PEP (Policy Enforcement Point) initialization
-    
-    :params:
-      :attr:`granularity`: string - a ValidRes (optional)
-
-      :attr:`name`: string - optional name (e.g. of a site)
-
-      :attr:`status`: string - optional status
-
-      :attr:`formerStatus`: string - optional former status
-
-      :attr:`reason`: string - optional reason for last status change
-
-      :attr:`futureEnforcement`: optional
-      [ { 'PolicyType': a PolicyType
-      'Granularity': a ValidRes (optional) } ]
-          
-    """
-    
 #    policyType = presentEnforcement['PolicyType']
 #    for pt in policyType:
 #      if pt not in PolicyTypes :

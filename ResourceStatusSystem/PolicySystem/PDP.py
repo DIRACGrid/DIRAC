@@ -17,24 +17,24 @@ from DIRAC.ResourceStatusSystem.Policy import Configurations
 #############################################################################
 
 class PDP:
+  """ 
+  PDP (Policy Decision Point) initialization
+
+  :params:
+    :attr:`granularity`: string - a ValidRes
+  
+    :attr:`name`: string - name (e.g. of a site)
+    
+    :attr:`status`: string - status
+    
+    :attr:`formerStatus`: string - former status
+    
+    :attr:`reason`: string - optional reason for last status change
+  """
 
 #############################################################################
   
   def __init__(self, granularity, name, status, formerStatus, reason):
-    """ 
-    PDP (Policy Decision Point) initialization
-  
-    :params:
-      granularity: string - a ValidRes
-    
-      name: string - name (e.g. of a site)
-      
-      status: string - status
-      
-      formerStatus: string - former status
-      
-      reason: string - optional reason for last status change
-    """
     granularity = granularity.capitalize()
     if granularity not in ValidRes:
       raise InvalidRes, where(self, self.__init__)
