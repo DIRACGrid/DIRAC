@@ -23,7 +23,7 @@ CREATE TABLE Transformations (
     TransformationGroup varchar(64) NOT NULL default 'General',
     GroupSize INT NOT NULL DEFAULT 1,
     InheritedFrom INTEGER DEFAULT 0,
-    Body BLOB,
+    Body LONGBLOB,
     MaxNumberOfJobs INT NOT NULL DEFAULT 0,
     EventsPerJob INT NOT NULL DEFAULT 0,
     PRIMARY KEY(TransformationID),
@@ -35,7 +35,7 @@ DROP TABLE IF EXISTS AdditionalParameters;
 CREATE TABLE AdditionalParameters (
     TransformationID INTEGER NOT NULL,
     ParameterName VARCHAR(32) NOT NULL,
-    ParameterValue BLOB NOT NULL,
+    ParameterValue LONGBLOB NOT NULL,
     PRIMARY KEY(TransformationID,ParameterName)
 );
 
