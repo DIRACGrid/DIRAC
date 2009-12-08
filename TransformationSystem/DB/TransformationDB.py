@@ -103,7 +103,7 @@ class TransformationDB(DB):
                                 VALUES ('%s','%s','%s',\
                                         UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s','%s','%s','%s','%s',\
                                         '%s','New','%s',%d,\
-                                        %d,'%s',%d,%d);" % \
+                                        %d,%s,%d,%d);" % \
                                       (transName, description, longDescription,
                                        authorDN, authorGroup, type, plugin, agentType,
                                        fileMask,transformationGroup,groupSize,
@@ -211,18 +211,16 @@ class TransformationDB(DB):
       transDict['MaxNumberOfJobs'] = row[17]
       transDict['EventsPerJob'] = row[18]
       if extraParams:
-        req = "SELECT ParameterName,ParameterValue FROM AdditionalParameters WHERE TransformationID = %d" % transDict['TransformationID']
-        res = self._query(req,connection)
+        res = self.__getAdditionalParameters(transDict['TransformationID'],connection=connection)
         if not res['OK']:
           return res
-        for parameterName,parameterValue in res['Value']:
-          transDict[parameterName] = parameterValue
+        transDict.update(res['Value'])
       resultList.append(transDict) 
     result = S_OK(resultList)
     result['Records'] = webList
     result['ParameterNames'] = self.TRANSPARAMS
     return result
-  
+
   def getTransformation(self,transName,extraParams=False,connection=False):
     """Get Transformation definition and parameters of Transformation identified by TransformationID
     """
@@ -377,8 +375,24 @@ class TransformationDB(DB):
     if not res['OK']:
       return S_ERROR("Failed to parse parameter value")
     paramValue = res['Value']
-    req = "INSERT INTO AdditionalParameters (TransformationID,ParameterName,ParameterValue) VALUES (%s,'%s','%s');" % (transID,paramName,paramValue)
+    paramType = 'StringType'
+    if type(paramValue) in [IntType,LongType]:
+      paramType = 'IntType'
+    req = "INSERT INTO AdditionalParameters (TransformationID,ParameterName,ParameterValue,ParameterType) VALUES (%s,'%s',%s,'%s');" % (transID,paramName,paramValue,paramType)
     return self._update(req,connection)
+
+  def __getAdditionalParameters(self,transID,connection=False):
+     req = "SELECT ParameterName,ParameterValue,ParameterType FROM AdditionalParameters WHERE TransformationID = %d" % transID
+     res = self._query(req,connection)
+     if not res['OK']:
+       return res
+     paramDict = {}
+     for parameterName,parameterValue,parameterType in res['Value']:
+       parameterType = eval(parameterType)
+       if parameterType in [IntType,LongType]:
+         parameterValue = int(parameterValue)
+       paramDict[parameterName] = parameterValue
+     return S_OK(paramDict)    
 
   def __deleteTransformationParameters(self,transID,connection=False):
     """ Remove the parameters associated to a transformation """
