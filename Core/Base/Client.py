@@ -36,7 +36,8 @@ class Client:
     # Create the RPCClient
     rpcClient = self._getRPC(rpc, url, timeout)
     # Execute the method
-    return eval("rpcClient.%s(*parms,**kws)" % toExecute)
+    evalString = "rpcClient.%s(*parms,**kws)" % toExecute
+    return eval(evalString)
 
   def _getRPC(self,rpc=False,url='',timeout=120):
     if not rpc:
