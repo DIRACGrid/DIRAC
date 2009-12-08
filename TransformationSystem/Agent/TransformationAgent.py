@@ -33,7 +33,7 @@ class TransformationAgent(AgentModule):
       return S_OK()
     # Process the transformations
     for transDict in res['Value']:
-      transID = long(transDict['TransID'])
+      transID = long(transDict['TransformationID'])
       gLogger.info("%s.execute: Processing transformation %s." % (AGENT_NAME,transID))
       startTime = time.time()
       res = self.processTransformation(transDict)
@@ -64,7 +64,7 @@ class TransformationAgent(AgentModule):
     return S_OK(transformations)
 
   def processTransformation(self,transDict):
-    transID = transDict['TransID']
+    transID = transDict['TransformationID']
 
     # First get the LFNs associated to the transformation
     res = self.transDB.getTransformationFiles(transID,condDict={'Status':'Unused'})
