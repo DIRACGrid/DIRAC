@@ -34,7 +34,6 @@ class TransformationDBClient(Client,FileCatalogueBase):
           setTransformationParameter(transName,paramName,paramValue)
           setTransformationStatus(transName,status)
           getTransformations(condDict={},older=None, newer=None, timeStamp='CreationDate', orderAttribute=None, limit=None, extraParams=False)
-          getTransformation(transName)
           getTransformationParameters(transName,paramNames)
           getTransformationWithStatus(status)
 
@@ -77,6 +76,10 @@ class TransformationDBClient(Client,FileCatalogueBase):
 
   def setServer(self,url):
     self.serverURL = url
+
+  def getTransformation(self,transName,extraParams=False,rpc='',url='',timeout=120):
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
+    return rpcClient.getTransformation(transName,extraParams)
 
   #####################################################################
   #
