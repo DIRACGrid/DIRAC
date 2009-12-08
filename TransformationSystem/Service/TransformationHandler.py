@@ -71,7 +71,7 @@ class TransformationHandler(RequestHandler):
 
   types_getTransformations = []
   def export_getTransformations(self,condDict={},older=None, newer=None, timeStamp='CreationDate', orderAttribute=None, limit=None, extraParams=False):
-    res = self.getTransformations(condDict=condDict,
+    res = self.database.getTransformations(condDict=condDict,
                                   older=older,
                                   newer=newer,
                                   timeStamp=timeStamp,
@@ -291,8 +291,7 @@ class TransformationHandler(RequestHandler):
     transList = res['Value']
     resultDict = {}
     for transDict in transList:
-      print transDict
-      transID = transDict['TransID']
+      transID = transDict['TransformationID']
       res = self.database.getTaskStats(transID)
       if not res['OK']:
         gLogger.warn('Failed to get job statistics for transformation %d' % transID)
