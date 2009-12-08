@@ -36,18 +36,21 @@ class ResourceStatusDB:
 
    >>> rsDB = ResourceStatusDB()
 
-  This way, it will use the standard :mod:`DIRAC.Core.Base.DB`. But there's the possibility to use other DB classes. For example, we could pass custom DB instantiations to it, provided the interface is the same exposed by :mod:`DIRAC.Core.Base.DB`.
+  This way, it will use the standard :mod:`DIRAC.Core.Base.DB`. 
+  But there's the possibility to use other DB classes. 
+  For example, we could pass custom DB instantiations to it, 
+  provided the interface is the same exposed by :mod:`DIRAC.Core.Base.DB`.
 
    >>> AnotherDB = AnotherDBClass()
    >>> rsDB = ResourceStatusDB(DBin = AnotherDB)
 
-  Alternatively, for testing purposes, I could do:
+  Alternatively, for testing purposes, you could do:
 
    >>> from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
    >>> mockDB = Mock()
    >>> rsDB = ResourceStatusDB(DBin = mockDB)
 
-  Or, if I want to work with a local DB:
+  Or, if you want to work with a local DB, provided it's MySQL:
 
    >>> rsDB = ResourceStatusDB(DBin = ['UserName', 'Password'])
 
@@ -190,16 +193,19 @@ class ResourceStatusDB:
       
       :attr:`maxItems`
       
-    :return: { 
+    :return: 
+      {
+     
       :attr:`ParameterNames`: ['SiteName', 'Tier', 'GridType', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'], 
       
-      :attr:'Records': [[], [], ...], 
+      :attr:`Records`: [[], [], ...], 
       
-      :attr:'TotalRecords': X,
+      :attr:`TotalRecords`: X,
        
-      :attr:'Extras': {}
+      :attr:`Extras`: {}
       
       }
+      
     """
         
     paramNames = ['SiteName', 'Tier', 'GridType', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
@@ -723,15 +729,15 @@ class ResourceStatusDB:
           :attr:`maxItems`: integer
     
         :return: 
-        { 
-        
+          { 
+      
           :attr:`ParameterNames`: ['ResourceName', 'ServiceName', 'SiteName', 'ResourceType', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason'], 
           
-          :attr:'Records': [[], [], ...],
+          :attr:`Records`: [[], [], ...],
           
-          :attr:'TotalRecords': X, 
+          :attr:`TotalRecords`: X, 
           
-          :attr:'Extras': {} 
+          :attr:`Extras`: {} 
           
           }
     """
@@ -1303,11 +1309,11 @@ class ResourceStatusDB:
     :return: { 
       :attr:`ParameterNames`: ['ServiceName', 'ServiceType', 'Site', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason'], 
       
-      :attr:'Records': [[], [], ...], 
+      :attr:`Records`: [[], [], ...], 
       
-      :attr:'TotalRecords': X,
+      :attr:`TotalRecords`: X,
        
-      :attr:'Extras': {}
+      :attr:`Extras`: {}
       
       }
     """
@@ -2380,6 +2386,7 @@ class ResourceStatusDB:
     
     from DIRAC.Core.Utilities.SiteCEMapping import getSiteCEMapping
     from DIRAC.Core.Utilities.SiteSEMapping import getSiteSEMapping
+    from DIRAC import S_OK, S_ERROR
     import time
     
     T0List = []
@@ -2536,6 +2543,8 @@ class ResourceStatusDB:
           if sss not in seServiceSite:
             self.addOrModifyResource(se, 'SE', service, site, 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
             seServiceSite.append(sss)
+            
+    return S_OK()
           
       
 #############################################################################
@@ -2547,10 +2556,11 @@ class ResourceStatusDB:
     :params:
       :attr:`granularity`: a ValidRes
       
-      :attr:`checkFrequecy': dictonary. Frequency of active sites/resources checking in minutes.
+      :attr:`checkFrequecy`: dictonary. Frequency of active sites/resources checking in minutes.
               See :mod:`DIRAC.ResourceStatusSystem.Policy.Configurations`
       
       :attr:`maxN`: integer - maximum number of lines in output
+      
     """
     
     if granularity in ('Service', 'Services'):
