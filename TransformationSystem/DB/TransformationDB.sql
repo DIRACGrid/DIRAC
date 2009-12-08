@@ -36,6 +36,7 @@ CREATE TABLE AdditionalParameters (
     TransformationID INTEGER NOT NULL,
     ParameterName VARCHAR(32) NOT NULL,
     ParameterValue LONGBLOB NOT NULL,
+    ParameterType VARCHAR(32) NOT NULL, 
     PRIMARY KEY(TransformationID,ParameterName)
 );
 
