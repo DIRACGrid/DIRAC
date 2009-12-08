@@ -92,6 +92,10 @@ class TransformationDB(DB):
     elif res['Message'] != "Transformation does not exist":
       return res
     self.lock.acquire()
+    res = self._escapeString(body)
+    if not res['OK']:
+      return S_ERROR("Failed to parse the transformation body")
+    body = res['Value']
     req = "INSERT INTO Transformations (TransformationName,Description,LongDescription, \
                                         CreationDate,LastUpdate,AuthorDN,AuthorGroup,Type,Plugin,AgentType,\
                                         FileMask,Status,TransformationGroup,GroupSize,\
@@ -369,6 +373,10 @@ class TransformationDB(DB):
     res = self._update(req,connection)
     if not res['OK']:
       return res
+    res = self._escapeString(paramValue)
+    if not res['OK']:
+      return S_ERROR("Failed to parse parameter value")
+    paramValue = res['Value']
     req = "INSERT INTO AdditionalParameters (TransformationID,ParameterName,ParameterValue) VALUES (%s,'%s','%s');" % (transID,paramName,paramValue)
     return self._update(req,connection)
 
