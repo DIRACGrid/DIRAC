@@ -583,7 +583,6 @@ PRIMARY KEY (FileID)
     return S_OK()
 
   def __addFilesToTransformation(self,transID,fileIDs,connection=False):
-    #TODO: Must add the files mapping to the FileTranformations table
     req = "SELECT FileID from T_%d WHERE FileID IN (%s);" % (transID,intListToString(fileIDs))
     res = self._query(req,connection)
     if not res['OK']:
@@ -599,6 +598,7 @@ PRIMARY KEY (FileID)
     res = self._update(req,connection)
     if not res['OK']:
       return res
+    self.__insertFileTransformations(transID,fileIDs,connection=connection)
     return S_OK(fileIDs)
 
   def __addExistingFiles(self,transID,connection=False):
@@ -1188,10 +1188,6 @@ PRIMARY KEY (FileID)
     # If we have input data then update their status, and taskID in the transformation table
     if lfns:
       res = self.__insertTaskInputs(transID,taskID,lfns,connection=connection)
-      if not res['OK']:
-        self.__removeTransformationTask(transID,taskID,connection=connection)
-        return res
-      res = self.__insertFileTransformations(transID,fileIDs,connection=connection)
       if not res['OK']:
         self.__removeTransformationTask(transID,taskID,connection=connection)
         return res
