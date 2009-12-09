@@ -443,7 +443,7 @@ class TransformationDB(DB):
     self.TRANSFILEPARAMS = ['FileID','Status','JobID','TargetSE','UsedSE','ErrorCount','LastUpdate']
     req = "SELECT %s FROM T_%d" % (intListToString(self.TRANSFILEPARAMS),transID)
     if condDict or older or newer:
-      req = "%s %s" % self.buildCondition(condDict, older, newer, timeStamp)
+      req = "%s %s" % (req,self.buildCondition(condDict, older, newer, timeStamp))
     if orderAttribute:
       orderType = None
       orderField = orderAttribute
@@ -471,7 +471,7 @@ class TransformationDB(DB):
       lfn = fileIDLfns[row[0]]
       # Prepare the structure for the web
       rList = [lfn]
-      for item in raw:
+      for item in row:
         if type(item) not in [IntType,LongType]:
           rList.append(str(item))
         else:
@@ -487,7 +487,7 @@ class TransformationDB(DB):
       fDict['UsedSE'] = usedSE
       fDict['ErrorCount'] = errorCount
       fDict['LastUpdate'] = lastUpdate
-      resultList.append(fileDict)
+      resultList.append(fDict)
     result = S_OK(resultList)
     result['LFNs'] = fileIDLfns.values()
     result['Records'] = webList
@@ -1031,7 +1031,7 @@ PRIMARY KEY (FileID)
 
   def __getLfnsForFileIDs(self,fileIDs,connection=False):
     """ Get lfns for the given list of fileIDs """
-    req = "SELECT LFN,FileID FROM DataFiles WHERE LFN in (%s);" % stringListToString(lfns)
+    req = "SELECT LFN,FileID FROM DataFiles WHERE FileID in (%s);" % stringListToString(fileIDs)
     res = self._query(req,connection)
     if not res['OK']:
       return res
