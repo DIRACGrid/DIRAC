@@ -25,7 +25,7 @@ class TransformationPlugin:
   def setParameters(self,params):
     self.params = params
 
-  def generateTask(self):
+  def generateTasks(self):
     try:
       evalString = "self._%s()" % self.plugin
       return eval(evalString)
@@ -87,7 +87,7 @@ class TransformationPlugin:
     for replicaSE,lfns in fileGroups.items():
       tasksLfns = breakListIntoChunks(lfns,groupSize)
       for taskLfns in tasksLfns:
-        if (status == 'Flush') or (len(taskLfns) > int(groupSize)):
+        if (status == 'Flush') or (len(taskLfns) >= int(groupSize)):
           tasks.append((replicaSE,taskLfns))
     return S_OK(tasks)
   
