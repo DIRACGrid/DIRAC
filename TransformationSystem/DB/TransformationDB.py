@@ -118,7 +118,7 @@ class TransformationDB(DB):
     if fileMask or inheritedFrom:
       self.filters.append((transID,re.compile(fileMask)))
       # Add already existing files to this transformation if any
-      res = self.__createTransformationTable(transID,connection=connection)
+      res = self._createTransformationTable(transID,connection=connection)
       if not res['OK']:
         self.deleteTransformation(transID,connection=connection)
         return res
@@ -406,7 +406,7 @@ class TransformationDB(DB):
 
   def addFilesToTransformation(self,transName,lfns,connection=False):
     """ Add a list of LFNs to the transformation directly """
-    if not lfnList:
+    if not lfns:
       return S_ERROR('Zero length LFN list')
     res = self.__getConnectionTransID(connection,transName)
     if not res['OK']:
@@ -560,7 +560,7 @@ class TransformationDB(DB):
     statusDict['Total']=total
     return S_OK(statusDict)
   
-  def __createTransformationTable(self,transID,connection=False):
+  def _createTransformationTable(self,transID,connection=False):
     """ Add a new Transformation table for a given transformation """
     req = "DROP TABLE IF EXISTS T_%d;" % transID
     self._update(req,connection)
@@ -583,7 +583,7 @@ PRIMARY KEY (FileID)
   def __addFilesToTransformation(self,transID,fileIDs,connection=False):
     #TODO: Must add the files mapping to the FileTranformations table
     req = "SELECT FileID from T_%d WHERE FileID IN (%s);" % (transID,intListToString(fileIDs))
-    res = self._update(req,connection)
+    res = self._query(req,connection)
     if not res['OK']:
       return res
     for tuple in res['Value']:
@@ -848,7 +848,7 @@ PRIMARY KEY (FileID)
     condDict = {"TransformationID":transID}
     if statusList:
       condDict["WmsStatus"] = statusList
-    req = "SELECT JobID,TransformationID,WmsStatus,JobWmsID,TargetSE,CreationTime,LastUpdateTime FROM Jobs %s" % self.buildCondition(condDict, older=older, newer=newer, 
+    req = "SELECT JobID,TransformationID,WmsStatus,JobWmsID,TargetSE,CreationTime,LastUpdateTime FROM Jobs %s" % self.buildCondition(condDict, older=older, newer=newer) 
     if not site:
       req += " LIMIT %d" % numTasks 
     return self._query(req,connection)
