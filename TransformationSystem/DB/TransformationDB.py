@@ -460,34 +460,36 @@ class TransformationDB(DB):
       return res
     transFiles = res['Value']
     fileIDs = [int(row[0]) for row in transFiles]
-    res = self.__getLfnsForFileIDs(fileIDs,connection=connection)
-    if not res['OK']:
-      return res
-    fileIDLfns = res['Value'][1]
     webList = []
     resultList = []
-    for row in transFiles:
-      fileID,status,taskID,targetSE,usedSE,errorCount,lastUpdate = row
-      lfn = fileIDLfns[row[0]]
-      # Prepare the structure for the web
-      rList = [lfn]
-      for item in row:
-        if type(item) not in [IntType,LongType]:
-          rList.append(str(item))
-        else:
-          rList.append(item)
-      webList.append(rList)
-      # Now prepare the standard dictionary
-      fDict = {}
-      fDict['LFN'] = lfn
-      fDict['FileID'] = fileID
-      fDict['Status'] = status
-      fDict['JobID'] = taskID
-      fDict['TargetSE'] = targetSE
-      fDict['UsedSE'] = usedSE
-      fDict['ErrorCount'] = errorCount
-      fDict['LastUpdate'] = lastUpdate
-      resultList.append(fDict)
+    fileIDLfns = {}
+    if fileIDs:
+      res = self.__getLfnsForFileIDs(fileIDs,connection=connection)
+      if not res['OK']:
+        return res
+      fileIDLfns = res['Value'][1]
+      for row in transFiles:
+        fileID,status,taskID,targetSE,usedSE,errorCount,lastUpdate = row
+        lfn = fileIDLfns[row[0]]
+        # Prepare the structure for the web
+        rList = [lfn]
+        for item in row:
+          if type(item) not in [IntType,LongType]:
+            rList.append(str(item))
+          else:
+            rList.append(item)
+        webList.append(rList)
+        # Now prepare the standard dictionary
+        fDict = {}
+        fDict['LFN'] = lfn
+        fDict['FileID'] = fileID
+        fDict['Status'] = status
+        fDict['JobID'] = taskID
+        fDict['TargetSE'] = targetSE
+        fDict['UsedSE'] = usedSE
+        fDict['ErrorCount'] = errorCount
+        fDict['LastUpdate'] = lastUpdate
+        resultList.append(fDict)
     result = S_OK(resultList)
     result['LFNs'] = fileIDLfns.values()
     result['Records'] = webList
