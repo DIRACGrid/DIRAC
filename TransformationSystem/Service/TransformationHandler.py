@@ -176,9 +176,9 @@ class TransformationHandler(RequestHandler):
       res = self.database.getTasksForSubmission(transName,numTasks=numTasks,site=site,statusList=['Created'])
       if not res['OK']:
         return self.__parseRes(res)
-      tasksDict = result['Value']
+      tasksDict = res['Value']
       for taskID,taskDict in tasksDict.items():
-        res = self.database.reserveJob(transName, long(taskID))
+        res = self.database.reserveTask(transName, long(taskID))
         if not res['OK']:
           return self.__parseRes(res)
         else:
