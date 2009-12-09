@@ -115,7 +115,7 @@ class TransformationPlugin:
         taskSize += fileSizes[lfn]
         taskLfns.append(lfn)
         if taskSize > requestedSize:
-          tasks.append(replicaSE,taskLfns)
+          tasks.append((replicaSE,taskLfns))
           taskLfns = []
           taskSize = 0
       if (status == 'Flush') and taskLfns:
