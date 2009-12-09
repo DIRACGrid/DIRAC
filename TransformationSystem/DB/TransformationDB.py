@@ -456,9 +456,9 @@ class TransformationDB(DB):
     if limit:
       req = "%s LIMIT %d" % (req,limit)
     res = self._query(req,connection)
-    if not res['OK']:
-      return res
-    transFiles = res['Value']
+    transFiles = []
+    if res['OK']:
+      transFiles = res['Value']
     fileIDs = [int(row[0]) for row in transFiles]
     webList = []
     resultList = []
