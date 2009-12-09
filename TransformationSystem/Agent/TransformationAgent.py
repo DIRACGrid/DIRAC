@@ -21,8 +21,12 @@ class TransformationAgent(AgentModule):
 
   def initialize(self):
     self.checkCatalog = self.am_getOption('CheckCatalog','yes')
-    self.transDB = '...'
-    self.name = ''
+    service = self.am_getOption('TransformationService','')
+    if not service:
+      gLogger.fatal("To initialise this agent the TransformationService option must be provided")
+      return S_ERROR()
+    self.transDB = TransformationDBClient('TransformationDB')
+    self.transDB.setServer(service)
     return S_OK()
 
   def execute(self):
