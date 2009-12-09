@@ -848,7 +848,7 @@ PRIMARY KEY (FileID)
     condDict = {"TransformationID":transID}
     if statusList:
       condDict["WmsStatus"] = statusList
-    req = "SELECT JobID,CreationTime,TargetSE,WmsStatus FROM Jobs %s" % self.buildCondition(condDict, older=older, newer=newer, timeStamp='LastUpdateTime')
+    req = "SELECT JobID,TransformationID,WmsStatus,JobWmsID,TargetSE,CreationTime,LastUpdateTime FROM Jobs %s" % self.buildCondition(condDict, older=older, newer=newer, 
     if not site:
       req += " LIMIT %d" % numTasks 
     return self._query(req,connection)
