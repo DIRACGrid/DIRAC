@@ -50,7 +50,7 @@ class ResourceStatusDB:
    >>> mockDB = Mock()
    >>> rsDB = ResourceStatusDB(DBin = mockDB)
 
-  Or, if you want to work with a local DB, provided it's MySQL:
+  Or, if you want to work with a local DB, providing it's mySQL:
 
    >>> rsDB = ResourceStatusDB(DBin = ['UserName', 'Password'])
 
@@ -193,19 +193,16 @@ class ResourceStatusDB:
       
       :attr:`maxItems`
       
-    :return: 
-      {
-     
+    :return: { 
       :attr:`ParameterNames`: ['SiteName', 'Tier', 'GridType', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'], 
       
-      :attr:`Records`: [[], [], ...], 
+      :attr:'Records': [[], [], ...], 
       
-      :attr:`TotalRecords`: X,
+      :attr:'TotalRecords': X,
        
-      :attr:`Extras`: {}
+      :attr:'Extras': {}
       
       }
-      
     """
         
     paramNames = ['SiteName', 'Tier', 'GridType', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
@@ -729,15 +726,15 @@ class ResourceStatusDB:
           :attr:`maxItems`: integer
     
         :return: 
-          { 
-      
+        { 
+        
           :attr:`ParameterNames`: ['ResourceName', 'ServiceName', 'SiteName', 'ResourceType', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason'], 
           
-          :attr:`Records`: [[], [], ...],
+          :attr:'Records': [[], [], ...],
           
-          :attr:`TotalRecords`: X, 
+          :attr:'TotalRecords': X, 
           
-          :attr:`Extras`: {} 
+          :attr:'Extras': {} 
           
           }
     """
@@ -1309,11 +1306,11 @@ class ResourceStatusDB:
     :return: { 
       :attr:`ParameterNames`: ['ServiceName', 'ServiceType', 'Site', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason'], 
       
-      :attr:`Records`: [[], [], ...], 
+      :attr:'Records': [[], [], ...], 
       
-      :attr:`TotalRecords`: X,
+      :attr:'TotalRecords': X,
        
-      :attr:`Extras`: {}
+      :attr:'Extras': {}
       
       }
     """
@@ -2556,11 +2553,10 @@ class ResourceStatusDB:
     :params:
       :attr:`granularity`: a ValidRes
       
-      :attr:`checkFrequecy`: dictonary. Frequency of active sites/resources checking in minutes.
+      :attr:`checkFrequecy': dictonary. Frequency of active sites/resources checking in minutes.
               See :mod:`DIRAC.ResourceStatusSystem.Policy.Configurations`
       
       :attr:`maxN`: integer - maximum number of lines in output
-      
     """
     
     if granularity in ('Service', 'Services'):
