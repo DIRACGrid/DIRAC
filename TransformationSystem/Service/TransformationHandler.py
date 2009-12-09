@@ -130,6 +130,11 @@ class TransformationHandler(RequestHandler):
   def export_setTaskStatusAndWmsID(self, transName, taskID, status, taskWmsID):
     res = self.database.setTaskStatusAndWmsID(transName, taskID, status, taskWmsID)
     return self.__parseRes(res)
+  
+  types_selectTransformationTasks = [transTypes]
+  def export_selectTransformationTasks(self,transName,statusList=[],numTasks=1,site='',older=None,newer=None):
+    res = self.database.selectTransformationTasks(transName,statusList=statusList,numTasks=numTasks,site=site,older=older,newer=newer)
+    return self.__parseRes(res)
 
   types_selectWMSTasks = [transTypes]
   def export_selectWMSTasks(self,transName,statusList=[],newer=0):
