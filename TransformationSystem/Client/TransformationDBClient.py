@@ -54,6 +54,7 @@ class TransformationDBClient(Client,FileCatalogueBase):
           deleteTasks(transName, taskMin, taskMax) 
           extendTransformation( transName, nTasks) 
           getTasksToSubmit(transName,numTasks,site='') 
+          selectTransformationTasks(transName,statusList=[],numTasks=1,site='',older=None,newer=None)
           
       TransformationLogging table manipulation
           
