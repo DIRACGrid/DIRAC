@@ -796,12 +796,12 @@ PRIMARY KEY (FileID)
           if not res['OK']:
             continue
           sites = res['Value']
-          site = 'Multiple'
+          usedSite = 'Multiple'
           if len(sites) == 1:
-            site = sites[0]
+            usedSite = sites[0]
         else:
-          site = 'ANY'      
-        resultDict[taskID] = {'InputData':inputVector,'TargetSE':se,'Status':status,'Site':site}
+          usedSite = 'ANY'      
+        resultDict[taskID] = {'InputData':inputVector,'TargetSE':se,'Status':status,'Site':usedSite}
       elif site and (se in selSEs):
         resultDict[taskID] = {'InputData':inputVector,'TargetSE':se,'Status':status,'Site':site}   
       else:
@@ -1282,7 +1282,7 @@ PRIMARY KEY (FileID)
     """ Check whether the update will perform an update """
     req = "UPDATE %s SET %s = '%s'" % (table,param,paramValue)
     if selectDict:
-      req = "%s %s" % (req,buildCondition(selectDict))
+      req = "%s %s" % (req,self.buildCondition(selectDict))
     return self._update(req,connection)
 
   def __getConnection(self,connection):
