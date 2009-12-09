@@ -101,6 +101,11 @@ class TransformationHandler(RequestHandler):
   # These are the methods to manipulate the T_* tables
   #
 
+  types_addFilesToTransformation = [transTypes,[ListType,TupleType]]
+  def export_addFilesToTransformation(self,transName,lfns):
+    res = self.database.addFilesToTransformation(transName,lfns)
+    return self.__parseRes(res)
+
   types_addTaskForTransformation = [transTypes]
   def export_addTaskForTransformation(self,transName,lfns=[],se='Unknown'):
     res = self.database.addTaskForTransformation(transName, lfns=lfns, se=se)

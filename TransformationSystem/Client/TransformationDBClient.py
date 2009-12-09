@@ -38,6 +38,7 @@ class TransformationDBClient(Client,FileCatalogueBase):
 
       T_* table manipulation
       
+          addFilesToTransformation(transName,lfns)
           addTaskForTransformation(transName,lfns=[],se='Unknown')
           setFileStatusForTransformation(transName,status,lfns) 
           getTransformationStats(transName)
