@@ -42,11 +42,11 @@ class TransformationPlugin:
     sourceSEs = self.params['SourceSE'].split(',')
     targetSEs = self.params['TargetSE'].split(',')
 
-    fileGroups = self.__getFileGroups(self.data)
+    fileGroups = self._getFileGroups(self.data)
     targetSELfns = {}
     for replicaSE,lfns in fileGroups.items():
       ses = replicaSE.split(',')
-      sourceSites = self.__getSitesForSEs(ses)
+      sourceSites = self._getSitesForSEs(ses)
       atSource = False
       for se in ses:
         if se in sourceSEs:
@@ -55,7 +55,7 @@ class TransformationPlugin:
         continue
       targets = []
       for targetSE in targetSEs:
-        site = self.__getSiteForSE(targetSE)['Value']
+        site = self._getSiteForSE(targetSE)['Value']
         if not site in sourceSites:
           targets.append(targetSE)
           sourceSites.append(site)
@@ -69,19 +69,19 @@ class TransformationPlugin:
     return S_OK(tasks)
 
   def _Standard(self):
-    return self.__groupByReplicas()
+    return self._groupByReplicas()
 
   def _BySize(self):
-    return self.__groupBySize()
+    return self._groupBySize()
 
-  def __groupByReplicas(self):
+  def _groupByReplicas(self):
     """ Generates a job based on the location of the input data """
     if not self.params:
       return S_ERROR("TransformationPlugin._Standard: The 'Standard' plug-in requires parameters.")
     status = self.params['Status']
     groupSize = self.params['GroupSize']
     # Group files by SE
-    fileGroups = self.__getFileGroups(self.data)
+    fileGroups = self._getFileGroups(self.data)
     # Create tasks based on the group size
     tasks = []
     for replicaSE,lfns in fileGroups.items():
@@ -91,14 +91,14 @@ class TransformationPlugin:
           tasks.append((replicaSE,taskLfns))
     return S_OK(tasks)
   
-  def __groupBySize(self):
+  def _groupBySize(self):
     """ Generate a task for a given amount of data """
     if not self.params:
       return S_ERROR("TransformationPlugin._BySize: The 'BySize' plug-in requires parameters.")
     status = self.params['Status']
     requestedSize = float(self.params['GroupSize'])*1000*1000*1000 # input size in GB converted to bytes
     # Group files by SE
-    fileGroups = self.__getFileGroups(self.data)
+    fileGroups = self._getFileGroups(self.data)
     # Get the file sizes
     rm = ReplicaManager()
     res = rm.getCatalogFileSize(self.data.keys())
@@ -122,7 +122,7 @@ class TransformationPlugin:
         tasks.append((replicaSE,taskLfns))
     return S_OK(tasks)
 
-  def __getFileGroups(self,fileReplicas):
+  def _getFileGroups(self,fileReplicas):
     fileGroups = {}
     for lfn,replicas in fileReplicas.items():
       replicaSEs = str.join(',',sortList(uniqueElements(replicas.keys())))
@@ -131,7 +131,7 @@ class TransformationPlugin:
       fileGroups[replicaSEs].append(lfn)
     return fileGroups
   
-  def __getSiteForSE(self,se):
+  def _getSiteForSE(self,se):
     """ Get site name for the given SE
     """
     result = getSitesForSE(se,gridName='LCG')
@@ -141,7 +141,7 @@ class TransformationPlugin:
       return S_OK(result['Value'][0])
     return S_OK('')
 
-  def __getSitesForSEs(self, seList):
+  def _getSitesForSEs(self, seList):
     """ Get all the sites for the given SE list
     """
     sites = []
