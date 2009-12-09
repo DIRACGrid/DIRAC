@@ -86,6 +86,10 @@ class TransformationDBClient(Client,FileCatalogueBase):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
     return rpcClient.getTransformation(transName,extraParams)
 
+  def getTransformationFiles(self,transName,condDict={},older=None, newer=None, timeStamp='LastUpdate', orderAttribute=None, limit=None, rpc='',url='',timeout=120):
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout) 
+    return rpcClient.getTransformationFiles(transName,condDict,older,newer,timeStamp,orderAttribute,limit)
+
   #####################################################################
   #
   # These are the file catalog interface methods
