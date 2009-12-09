@@ -4,16 +4,10 @@
 __RCSID__ = "$Id:  $"
 """  TransformationAgent processes transformations found in the transformation database. """
 
-from DIRAC                                                  import gLogger,gMonitor, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule                            import AgentModule
-from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
-from DIRAC.ConfigurationSystem.Client                       import PathFinder
-from DIRAC.Core.DISET.RPCClient                             import RPCClient
-from DIRAC.Core.Utilities.Shifter                           import setupShifterProxyInEnv
-from DIRAC.Core.Utilities.List                              import sortList
-
+from DIRAC                                                      import gLogger,gMonitor, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Base.AgentModule                                import AgentModule
+from DIRAC.TransformationSystem.Client.TransformationDBClient   import TransformationDBClient
 import time
-from types import *
 
 AGENT_NAME = 'TransformationSystem/TransformationAgent'
 
