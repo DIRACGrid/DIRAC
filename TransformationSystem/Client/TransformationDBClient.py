@@ -33,7 +33,6 @@ class TransformationDBClient(Client,FileCatalogueBase):
           cleanTransformation(transName)
           setTransformationParameter(transName,paramName,paramValue)
           setTransformationStatus(transName,status)
-          getTransformations(condDict={},older=None, newer=None, timeStamp='CreationDate', orderAttribute=None, limit=None, extraParams=False)
           getTransformationParameters(transName,paramNames)
           getTransformationWithStatus(status)
 
@@ -78,6 +77,10 @@ class TransformationDBClient(Client,FileCatalogueBase):
   def setServer(self,url):
     self.serverURL = url
 
+  def getTransformations(self,condDict={},older=None, newer=None, timeStamp='CreationDate', orderAttribute=None, limit=None, extraParams=False,rpc='',url='',timeout=120):
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
+    return rpcClient.getTransformations(condDict,older,newer,timeStamp,orderAttribute,limit,extraParams)
+
   def getTransformation(self,transName,extraParams=False,rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
     return rpcClient.getTransformation(transName,extraParams)
@@ -95,45 +98,45 @@ class TransformationDBClient(Client,FileCatalogueBase):
     """
     return self.name
 
-  def getReplicas(self,lfn):
+  def getReplicas(self,lfn,rpc='',url='',timeout=120):
     res = self.__checkArgumentFormat(lfn)
     if not res['OK']:
       return res
     lfns = res['Value'].keys()
-    server = RPCClient(self.server,timeout=120)
-    return server.getReplicas(lfns)
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
+    return rpcClient.getReplicas(lfns)
 
-  def addFile(self,lfn,force=False):
+  def addFile(self,lfn,force=False,rpc='',url='',timeout=120):
     res = self.__checkArgumentFormat(lfn)
     if not res['OK']:
       return res
     tuples = []
     for lfn,info in res['Value'].items():
-      tuples.append((lfn,info['PFN'],info['Size'],info['SE'],info['GUID'],info['Checksum']))     
-    server = RPCClient(self.server,timeout=120)
-    return server.addFile(tuples,force)
+      tuples.append((lfn,info['PFN'],info['Size'],info['SE'],info['GUID'],info['Checksum']))
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
+    return rpcClient.addFile(tuples,force)
 
-  def addReplica(self,lfn,force=False):
+  def addReplica(self,lfn,force=False,rpc='',url='',timeout=120):
     res = self.__checkArgumentFormat(lfn)
     if not res['OK']:
       return res
     tuples = []
     for lfn,info in res['Value'].items():
       tuples.append((lfn,info['PFN'],info['SE'],False))
-    server = RPCClient(self.server,timeout=120)
-    return server.addReplica(tuples,force)
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
+    return rpcClient.addReplica(tuples,force)
 
-  def removeFile(self,lfn):
+  def removeFile(self,lfn,rpc='',url='',timeout=120):
     res = self.__checkArgumentFormat(lfn)
     if not res['OK']:
       return res
     lfns = res['Value'].keys()
-    server = RPCClient(self.server,timeout=120)
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
     successful = {}
     failed = {}
     listOfLists = breakListIntoChunks(lfns,100)
     for list in listOfLists:
-      res = server.removeFile(list)
+      res = rpcClient.removeFile(list)
       if not res['OK']:
         return res
       successful.update(res['Value']['Successful'])
@@ -141,19 +144,19 @@ class TransformationDBClient(Client,FileCatalogueBase):
     resDict = {'Successful': successful, 'Failed':failed}
     return S_OK(resDict) 
 
-  def removeReplica(self,lfn):
+  def removeReplica(self,lfn,rpc='',url='',timeout=120):
     res = self.__checkArgumentFormat(lfn)
     if not res['OK']:
       return res
     tuples = []
     for lfn,info in res['Value'].items():
       tuples.append((lfn,info['PFN'],info['SE']))
-    server = RPCClient(self.server,timeout=120)
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
     successful = {}
     failed = {}
     listOfLists = breakListIntoChunks(tuples,100)
     for list in listOfLists:
-      res = server.removeReplica(list)
+      res = rpcClient.removeReplica(list)
       if not res['OK']:
         return res
       successful.update(res['Value']['Successful'])
@@ -161,46 +164,46 @@ class TransformationDBClient(Client,FileCatalogueBase):
     resDict = {'Successful': successful, 'Failed':failed}
     return S_OK(resDict)
 
-  def getReplicaStatus(self,lfn):
+  def getReplicaStatus(self,lfn,rpc='',url='',timeout=120):
     res = self.__checkArgumentFormat(lfn)
     if not res['OK']:
       return res
     tuples = []
     for lfn,info in res['Value'].items():
       tuples.append((lfn,info['SE']))
-    server = RPCClient(self.server,timeout=120)
-    return server.getReplicaStatus(tuples)
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
+    return rpcClient.getReplicaStatus(tuples)
 
-  def setReplicaStatus(self,lfn):
+  def setReplicaStatus(self,lfn,rpc='',url='',timeout=120):
     res = self.__checkArgumentFormat(lfn)
     if not res['OK']:
       return res
     tuples = []
     for lfn,info in res['Value'].items():
       tuples.append((lfn,info['PFN'],info['SE'],info['Status']))
-    server = RPCClient(self.server,timeout=120)
-    return server.setReplicaStatus(tuples)
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
+    return rpcClient.setReplicaStatus(tuples)
 
-  def setReplicaHost(self,lfn):
+  def setReplicaHost(self,lfn,rpc='',url='',timeout=120):
     res = self.__checkArgumentFormat(lfn)
     if not res['OK']:
       return res
     tuples = []
     for lfn,info in res['Value'].items():
       tuples.append((lfn,info['PFN'],info['SE'],info['NewSE']))
-    server = RPCClient(self.server,timeout=120)
-    return server.setReplicaHost(tuples)
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
+    return rpcClient.setReplicaHost(tuples)
 
-  def removeDirectory(self,lfn):
+  def removeDirectory(self,lfn,rpc='',url='',timeout=120):
     return self.__returnOK(lfn)
 
-  def createDirectory(self,lfn):
+  def createDirectory(self,lfn,rpc='',url='',timeout=120):
     return self.__returnOK(lfn)
 
-  def createLink(self,lfn):
+  def createLink(self,lfn,rpc='',url='',timeout=120):
     return self.__returnOK(lfn)
 
-  def removeLink(self,lfn):
+  def removeLink(self,lfn,rpc='',url='',timeout=120):
     return self.__returnOK(lfn)
 
   def __returnOK(self,lfn):
