@@ -904,7 +904,7 @@ PRIMARY KEY (FileID)
   def __insertTaskInputs(self,transID,taskID,lfns,connection=False):      
     vector= str.join(';',lfns)
     fields = ['TransformationID','JobID','InputVector']
-    values = [transID,taskID,inputVector]
+    values = [transID,taskID,vector]
     res = self._insert('JobInputs',fields,values,connection)
     if not res['OK']:
       gLogger.error("Failed to add input vector to task %d" % taskID)
