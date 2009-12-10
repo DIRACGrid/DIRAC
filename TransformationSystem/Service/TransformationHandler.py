@@ -90,11 +90,10 @@ class TransformationHandler(RequestHandler):
     res = self.database.getTransformationParameters(transName,parameters)
     return self.__parseRes(res)
 
-  types_getTransformationWithStatus = [[StringTypes,ListType,TupleType]]
+  types_getTransformationWithStatus = [list(StringTypes)+[ListType,TupleType]]
   def export_getTransformationWithStatus(self,status):
     res = self.database.getTransformationWithStatus(status)
     return self.__parseRes(res)
-
 
   ####################################################################
   #
