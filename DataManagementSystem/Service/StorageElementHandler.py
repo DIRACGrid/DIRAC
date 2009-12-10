@@ -51,9 +51,10 @@ def initializeStorageElementHandler(serviceInfo):
   if not base_path:
     gLogger.error('Failed to get the base path')
     return S_ERROR('Failed to get the base path')
+  if not os.path.exists(base_path):
+    os.makedirs(base_path) 
 
   use_tokens_flag = gConfig.getValue( "%s/UseTokens" % cfgPath, use_tokens_flag )
-
   max_storage_size = gConfig.getValue( "%s/MaxStorageSize" % cfgPath, max_storage_size )
 
   gLogger.info('Starting DIRAC Storage Element')
