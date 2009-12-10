@@ -151,6 +151,9 @@ DIRAC.gLogger.info( 'Checking DIRAC installation at "%s"' % DIRAC.rootPath )
 if not useServerCert:
   DIRAC.gLogger.debug( '/DIRAC/Security/UseServerCertificate =', 'no' )
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'no' )
+else:
+  # will be removed later but it is necessary to initialized the CS in script mode
+  Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'yes' )
 
 
 
@@ -174,6 +177,8 @@ else:
     pass
   Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
 
+if useServerCert:
+  Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
 
 gridSections = DIRAC.gConfig.getSections( '/Resources/Sites/' )
 if not gridSections['OK']:
