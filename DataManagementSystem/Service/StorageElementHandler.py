@@ -68,7 +68,6 @@ class StorageElementHandler(RequestHandler):
   def __confirmToken(self,token,path,mode):
     """ Confirm the access rights for the path in a given mode
     """
-
     # Not yet implemented
     return True
 
@@ -245,7 +244,7 @@ class StorageElementHandler(RequestHandler):
     """
     if not self.__checkForDiskSpace(base_path,10*1024*1024):
       return S_ERROR('Less than 10MB remaining')
-    dirName = fileID.replace('.bz2','').replace('.tar','')
+    dirName = fileID.replace('.bz2','').replace('.tar','').lstrip('/')
     dir_path = os.path.join(base_path,dirName)
     res = fileHelper.networkToBulk(dir_path)
     if not res['OK']:
