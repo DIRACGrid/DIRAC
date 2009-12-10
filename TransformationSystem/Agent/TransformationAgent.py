@@ -15,6 +15,7 @@ AGENT_NAME = 'TransformationSystem/TransformationAgent'
 class TransformationAgent(AgentModule):
 
   def initialize(self):
+    self.pluginLocation = self.am_getOption('PluginLocation','DIRAC.TransformationSystem.Agent.TransformationPlugin')
     self.checkCatalog = self.am_getOption('CheckCatalog','yes')
     service = self.am_getOption('TransformationService','')
     if not service:
@@ -132,7 +133,7 @@ class TransformationAgent(AgentModule):
     """ This simply instantiates the TransformationPlugin class with the relevant plugin name
     """
     try:
-      plugModule = __import__('DIRAC.TransformationSystem.Agent.TransformationPlugin',globals(),locals(),['TransformationPlugin'])
+      plugModule = __import__(self.pluginLocation,globals(),locals(),['TransformationPlugin'])
     except Exception, x:
       gLogger.exception("%s.__generatePluginObject: Failed to import 'TransformationPlugin'" % AGENT_NAME,'',x)
       return S_ERROR()
