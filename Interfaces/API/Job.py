@@ -127,7 +127,7 @@ class Job:
     """
     kwargs = {'executable':executable,'arguments':arguments,'logFile':logFile}
     if not type(executable) == type(' ') or not type(arguments) == type(' ') or not type(logFile) == type(' '):
-      return self.__reportError('Expected strings for executable and arguments',**kwargs)
+      return self._reportError('Expected strings for executable and arguments',**kwargs)
 
     if os.path.exists(executable):
       self.log.verbose('Found script executable file %s' % (executable))
@@ -183,7 +183,7 @@ class Job:
     """
     kwargs = {'jobname':jobName} 
     if not type(jobName) == type(' '):
-      return self.__reportError('Expected strings for job name',**kwargs)    
+      return self._reportError('Expected strings for job name',**kwargs)    
     else:
       self.workflow.setName(jobName)
       self._addParameter(self.workflow,'JobName','JDL',jobName,'User specified name')
@@ -227,7 +227,7 @@ class Job:
       self._addParameter(self.workflow,'InputSandbox','JDL',fileList,description)
     else:
       kwargs = {'files':files} 
-      return self.__reportError('Expected file string or list of files for input sandbox contents',**kwargs)
+      return self._reportError('Expected file string or list of files for input sandbox contents',**kwargs)
 
     return S_OK()
 
@@ -257,7 +257,7 @@ class Job:
       self._addParameter(self.workflow,'OutputSandbox','JDL',files,description)
     else:
       kwargs = {'files':files} 
-      return self.__reportError('Expected file string or list of files for output sandbox contents',**kwargs) 
+      return self._reportError('Expected file string or list of files for output sandbox contents',**kwargs) 
 
     return S_OK()
   
@@ -287,7 +287,7 @@ class Job:
       self._addParameter(self.workflow,'InputData','JDL',lfns,description)
     else:
       kwargs = {'lfns':lfns} 
-      return self.__reportError('Expected lfn string or list of lfns for input data',**kwargs) 
+      return self._reportError('Expected lfn string or list of lfns for input data',**kwargs) 
 
     return S_OK()
 
@@ -321,21 +321,21 @@ class Job:
       description = 'Output data file'
       self._addParameter(self.workflow,'OutputData','JDL',lfns,description)
     else:
-      return self.__reportError('Expected file name string or list of file names for output data',**kwargs) 
+      return self._reportError('Expected file name string or list of file names for output data',**kwargs) 
     
     if OutputSE:
       description = 'User specified Output SE'
       if type(OutputSE) in types.StringTypes:
         OutputSE = [OutputSE]
       elif type(OutputSE) != types.ListType:
-        return self.__reportError('Expected string or list for OutputSE',**kwargs)         
+        return self._reportError('Expected string or list for OutputSE',**kwargs)         
       OutputSE = ';'.join(OutputSE)
       self._addParameter(self.workflow,'OutputSE','JDL',OutputSE,description)
 
     if OutputPath:
       description = 'User specified Output Path'
       if not type(OutputPath) in types.StringTypes:
-        return self.__reportError('Expected string for OutputPath',**kwargs)
+        return self._reportError('Expected string for OutputPath',**kwargs)
       # Remove leading "/" that might cause problems with os.path.join
       while OutputPath[0] == '/': OutputPath=OutputPath[1:]
       self._addParameter(self.workflow,'OutputPath','JDL',OutputPath,description)
@@ -352,7 +352,7 @@ class Job:
     #should add protection here for list of supported platforms
     kwargs = {'backend':backend}
     if not type(backend) == type(" "):
-      return self.__reportError('Expected string for platform',**kwargs)
+      return self._reportError('Expected string for platform',**kwargs)
     
     if not backend.lower()=='any':
       self._addParameter(self.workflow,'SubmitPools','JDL',backend,'Platform type')
@@ -377,7 +377,7 @@ class Job:
     """
     kwargs = {'config':config}
     if not type(config) == type(" "):
-      return self.__reportError('Expected string for system configuration',**kwargs)
+      return self._reportError('Expected string for system configuration',**kwargs)
     
     description = 'User specified system configuration for job'
     self._addParameter(self.workflow,'SystemConfig','JDLReqt',config,description)
@@ -404,7 +404,7 @@ class Job:
         timeInSecs=int(timeInSecs)
       except Exception,x:
         if not re.search('{{',timeInSecs):
-          return self.__reportError('Expected numerical string or int for CPU time in seconds',**kwargs)
+          return self._reportError('Expected numerical string or int for CPU time in seconds',**kwargs)
 
     description = 'CPU time in secs'
     self._addParameter(self.workflow,'MaxCPUTime','JDLReqt',timeInSecs,description)
@@ -431,7 +431,7 @@ class Job:
       if not re.search('^DIRAC.',destination) and not destination.lower()=='any':
         result = self.__checkSiteIsValid(destination)
         if not result['OK']:
-          return self.__reportError('%s is not a valid destination site' %(destination),**kwargs)
+          return self._reportError('%s is not a valid destination site' %(destination),**kwargs)
       description = 'User specified destination site'
       self._addParameter(self.workflow,'Site','JDLReqt',destination,description)
     elif type(destination) == list:
@@ -439,12 +439,12 @@ class Job:
         if not re.search('^DIRAC.',site) and not site.lower()=='any':
           result = self.__checkSiteIsValid(site)
           if not result['OK']:
-            return self.__reportError('%s is not a valid destination site' %(destination),**kwargs)
+            return self._reportError('%s is not a valid destination site' %(destination),**kwargs)
       destSites = string.join(destination,';')
       description = 'List of sites selected by user'
       self._addParameter(self.workflow,'Site','JDLReqt',destSites,description)
     else:
-      return self.__reportError('%s is not a valid destination site, expected string' %(destination),**kwargs)
+      return self._reportError('%s is not a valid destination site, expected string' %(destination),**kwargs)
     return S_OK()
 
   #############################################################################
@@ -485,7 +485,7 @@ class Job:
       self._addParameter(self.workflow,'BannedSites','JDLReqt',sites,description)
     else:
       kwargs = {'sites':sites} 
-      return self.__reportError('Expected site string or list of sites',**kwargs) 
+      return self._reportError('Expected site string or list of sites',**kwargs) 
     return S_OK()
     
   #############################################################################
@@ -494,9 +494,8 @@ class Job:
 
        Normally users should always specify their immutable DIRAC nickname.
     """
-    kwargs={'ownerProvided':ownerProvided}
     if not type(ownerProvided)==type(" "):
-      return self.__reportError('Expected string for owner',**kwargs)
+      return self._reportError('Expected string for owner',**{'ownerProvided':ownerProvided})
     
     self._addParameter(self.workflow,'Owner','JDL',ownerProvided,'User specified ID')
     return S_OK()
@@ -507,9 +506,8 @@ class Job:
 
        Allows to force expected owner group of proxy.
     """
-    kwargs={'ownerGroup':ownerGroup}
     if not type(ownerGroup)==type(" "):
-      return self.__reportError('Expected string for job owner group',**kwargs)
+      return self._reportError('Expected string for job owner group',**{'ownerGroup':ownerGroup})
         
     self._addParameter(self.workflow,'OwnerGroup','JDL',ownerGroup,'User specified owner group.')
     return S_OK()
@@ -520,9 +518,8 @@ class Job:
 
        Specify job type for testing purposes.
     """
-    kwargs={'jobType':jobType}
     if not type(jobType)==type(" "):
-      return self.__reportError('Expected string for job type',**kwargs)
+      return self._reportError('Expected string for job type',**{'jobType':jobType})
         
     self._addParameter(self.workflow,'JobType','JDL',jobType,'User specified type')
     self.type = jobType
@@ -551,7 +548,7 @@ class Job:
       self._addParameter(self.workflow,'SoftwareTag','JDL',swTags,'List of VO software tags')
     else:
       kwargs = {'tags':tags}
-      return self.__reportError('Expected String or List of software tags',**kwargs)
+      return self._reportError('Expected String or List of software tags',**kwargs)
 
     return S_OK()
 
@@ -569,9 +566,8 @@ class Job:
        @param jobGroup: JobGroup name
        @type jobGroup: string
     """
-    kwargs={'jobGroup':jobGroup}
     if not type(jobGroup)==type(" "):
-      return self.__reportError('Expected string for job group name',**kwargs)
+      return self._reportError('Expected string for job group name',**{'jobGroup':jobGroup})
     
     description = 'User specified job group'
     self._addParameter(self.workflow,'JobGroup','JDL',jobGroup,description)
@@ -600,9 +596,9 @@ class Job:
         self.logLevel = logLevel
         self._addParameter(self.workflow,'LogLevel','JDL',logLevel,description)
       else:
-        return self.__reportError('Error Level "%s" not valid' % logLevel,**kwargs)
+        return self._reportError('Error Level "%s" not valid' % logLevel,**kwargs)
     else:
-      return self.__reportError('Expected string for logging level',**kwargs)
+      return self._reportError('Expected string for logging level',**kwargs)
     return S_OK()
 
   #############################################################################
@@ -610,9 +606,8 @@ class Job:
     """Developer function. Allow to pass arbitrary settings to the payload
        configuration service environment.
     """
-    kwargs={'cfgString':cfgString}
     if not type(cfgString)==type(" "):
-      return self.__reportError('Expected string for DIRAC Job Config Args',**kwargs)
+      return self._reportError('Expected string for DIRAC Job Config Args',**{'cfgString':cfgString})
         
     description = 'User specified cfg settings'
     self._addParameter(self.workflow,'JobConfigArgs','JDL',cfgString,description)
@@ -622,9 +617,8 @@ class Job:
   def setMode(self,mode):
     """Developer function. Under development.
     """
-    kwargs={'mode':mode}
     if not type(mode)==type(" "):
-      return self.__reportError('Expected string for job mode',**kwargs)
+      return self._reportError('Expected string for job mode',**{'mode':mode})
         
     description = 'Choose a different DIRAC job mode'
     self._addParameter(self.workflow,'JobMode','JDL',mode,description)
@@ -634,9 +628,8 @@ class Job:
   def selectSetup(self,setup):
     """Developer function. Under development.
     """
-    kwargs={'setup':setup}
     if not type(setup)==type(" "):
-      return self.__reportError('Expected string for DIRAC setup',**kwargs)
+      return self._reportError('Expected string for DIRAC setup',**{'setup':setup})
         
     description = 'Choose a different DIRAC setup in which to execute the job'
     self._addParameter(self.workflow,'DIRACSetup','JDL',setup,description)
@@ -662,14 +655,14 @@ class Job:
     """
     kwargs = {'environmentDict':environmentDict}
     if not type(environmentDict)==type({}):
-      return self.__reportError('Expected dictionary of environment variables',**kwargs)
+      return self._reportError('Expected dictionary of environment variables',**kwargs)
 
     environment = []
     for var,val in environmentDict.items():
       try:
         environment.append(string.join([str(var),str(val)],'='))
       except Exception,x:
-        return self.__reportError('Expected string for environment variable key value pairs',**kwargs)
+        return self._reportError('Expected string for environment variable key value pairs',**kwargs)
 
     envStr = string.join(environment,';')
     description = 'Env vars specified by user'
@@ -1023,12 +1016,14 @@ class Job:
     return self.errorDict
 
   #############################################################################
-  def __reportError(self,message,**kwargs):
+  def _reportError(self,message,name='',**kwargs):
     """Internal Function. Gets caller method name and arguments, formats the 
        information and adds an error to the global error dictionary to be 
        returned to the user. 
     """
-    className = __name__
+    className = name
+    if not name:
+      className = __name__
     methodName = sys._getframe(1).f_code.co_name
     arguments = []
     for key in kwargs:
