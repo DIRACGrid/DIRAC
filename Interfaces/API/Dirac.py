@@ -295,7 +295,7 @@ class Dirac:
       
       if formulationErrors:
         for method,errorList in formulationErrors.items():
-          self.log.error('>>>> Error in %s()\n%s' %(method,string.join(errorList,'\n')))
+          self.log.error('>>>> Error in %s() <<<<\n%s' %(method,string.join(errorList,'\n')))
         return S_ERROR(formulationErrors)    
         
       tmpdir = tempfile.mkdtemp( prefix='DIRAC_' )
