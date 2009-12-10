@@ -287,6 +287,17 @@ class Dirac:
         # os.unlink(name)
         # return jobID
     else:
+      try:
+        formulationErrors = job._getErrors()
+      except Exception,x:
+        self.log.verbose('Could not obtain job errors:%s' %(x))
+        formulationErrors = {}
+      
+      if formulationErrors:
+        for method,errorList in formulationErrors.items():
+          self.log.error('>>>> Error in %s()\n%s' %(method,string.join(errorList,'\n')))
+        return S_ERROR(formulationErrors)    
+        
       tmpdir = tempfile.mkdtemp( prefix='DIRAC_' )
       self.log.verbose('Created temporary directory for submission %s' % (tmpdir))
 
