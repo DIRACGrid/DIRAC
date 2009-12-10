@@ -1332,47 +1332,6 @@ class ReplicaManager(CatalogToStorage):
     resDict = {'Successful': successful,'Failed':failed}
     return S_OK(resDict)
 
-  def putDirectory(self,storagePath,localDirectory,diracSE):
-    """ Put a local file to a Storage Element
-
-        'lfn' is the path on the storage
-        'localDirectory' is the full path to local directory
-        'diracSE' is the Storage Element to which to put the file
-    """
-    # Check that the local directory exists
-    if not os.path.exists(localDirectory):
-      errStr = "ReplicaManager.putDirectory: Supplied directory does not exist."
-      gLogger.error(errStr,localDirectory)
-      return S_ERROR(errStr)
-    ##########################################################
-    #  Instantiate the destination storage element here.
-    storageElement = StorageElement(diracSE)
-    res = storageElement.isValid()
-    if not res['OK']:
-      errStr = "ReplicaManager.putDirectory: The storage element is not currently valid."
-      gLogger.error(errStr,"%s %s" % (diracSE,res['Message']))
-      return S_ERROR(errStr)
-    destinationSE = storageElement.getStorageElementName()['Value']
-    res = storageElement.getPfnForLfn(storagePath)
-    if not res['OK']:
-      errStr = "ReplicaManager.putDirectory: Failed to generate destination PFN."
-      gLogger.error(errStr,res['Message'])
-      return S_ERROR(errStr)
-    destPfn = res['Value']
-    dirDict = {destPfn:localDirectory}
-
-    ##########################################################
-    #  Perform the put here.
-    startTime = time.time()
-    putDirRes = storageElement.putDirectory(dirDict,singleDirectory=True)
-    putTime = time.time() - startTime
-    if not res['OK']:
-      errStr = "ReplicaManager.put: Failed to put file to Storage Element."
-      gLogger.error(errStr,"%s: %s" % (localDirectory,res['Message']))
-    else:
-      gLogger.info("ReplicaManager.put: Put directory to storage in %s seconds." % putTime)
-    return res
-
   def replicateAndRegister(self,lfn,destSE,sourceSE='',destPath='',localCache=''):
     """ Replicate a LFN to a destination SE and register the replica.
 
