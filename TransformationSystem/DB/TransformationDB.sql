@@ -41,6 +41,23 @@ CREATE TABLE AdditionalParameters (
 );
 
 -- -------------------------------------------------------------------------------
+DROP TABLE IF EXISTS TransformationFiles;
+CREATE TABLE TransformationFiles(
+    TransformationID INTEGER NOT NULL,
+    INDEX (TransformationID),
+    FileID INTEGER NOT NULL,
+    Status VARCHAR(32) DEFAULT "Unused",
+    INDEX (Status),
+    ErrorCount INT(4) NOT NULL DEFAULT 0,
+    JobID VARCHAR(32),
+    TargetSE VARCHAR(32) DEFAULT "Unknown",
+    UsedSE VARCHAR(32) DEFAULT "Unknown",
+    LastUpdate DATETIME,
+    Assigned  DATETIME,
+    PRIMARY KEY (TransformationID,FileID)
+);
+
+-- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationLog;
 CREATE TABLE TransformationLog (
     TransformationID INTEGER NOT NULL,
@@ -93,13 +110,4 @@ CREATE TABLE Replicas (
   Status VARCHAR(32) DEFAULT 'AprioriGood',
   INDEX (Status),
   PRIMARY KEY (FileID, SE)
-);
-
--- -------------------------------------------------------------------------------
-DROP TABLE IF EXISTS FileTransformations;
-CREATE TABLE FileTransformations(
-   FileID INTEGER NOT NULL,
-   TransformationID INTEGER NOT NULL,
-   TransformationType VARCHAR(32),
-   PRIMARY KEY (FileID, TransformationID)
 );
