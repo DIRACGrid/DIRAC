@@ -47,13 +47,10 @@ class TransformationDBClient(Client,FileCatalogueBase):
           
           setTaskStatus(transName, taskID, status) 
           setTaskStatusAndWmsID(transName, taskID, status, taskWmsID) 
-          selectWMSTasks(transName,statusList=[],newer=0) 
           getTransformationTaskStats(transName) 
-          getTaskInfo(transName, taskID) 
           deleteTasks(transName, taskMin, taskMax) 
           extendTransformation( transName, nTasks) 
           getTasksToSubmit(transName,numTasks,site='') 
-          selectTransformationTasks(transName,statusList=[],numTasks=1,site='',older=None,newer=None)
           
       TransformationLogging table manipulation
           
@@ -88,6 +85,11 @@ class TransformationDBClient(Client,FileCatalogueBase):
   def getTransformationFiles(self,transName,condDict={},older=None, newer=None, timeStamp='LastUpdate', orderAttribute=None, limit=None, rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout) 
     return rpcClient.getTransformationFiles(transName,condDict,older,newer,timeStamp,orderAttribute,limit)
+
+
+  def getTransformationTasks(self,condDict={},older=None, newer=None, timeStamp='CreationTime', orderAttribute=None, limit=None, inputVector=False,rpc='',url='',timeout=120):
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout) 
+    return rpcClient.getTransformationTasks(condDict,older, newer, timeStamp, orderAttribute, limit, inputVector)
 
   #####################################################################
   #
