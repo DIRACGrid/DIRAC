@@ -53,7 +53,7 @@ CREATE TABLE TransformationFiles(
     TargetSE VARCHAR(32) DEFAULT "Unknown",
     UsedSE VARCHAR(32) DEFAULT "Unknown",
     LastUpdate DATETIME,
-    Assigned  DATETIME,
+    InsertedTime  DATETIME,
     PRIMARY KEY (TransformationID,FileID)
 );
 
