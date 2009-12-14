@@ -410,15 +410,9 @@ class TransformationDB(DB):
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
   
-  def getTransformationFiles(self,transName,condDict={},older=None, newer=None, timeStamp='LastUpdate', orderAttribute=None, limit=None,connection=False):
+  def getTransformationFiles(self,condDict={},older=None, newer=None, timeStamp='LastUpdate', orderAttribute=None, limit=None,connection=False):
     """ Get files for the supplied transformations with support for the web standard structure """
     connection = self.__getConnection(connection)
-    if transName:
-      res = self._getTransformationID(transName, connection)
-      if not res['OK']:
-        return res
-      transID = res['Value']['TransformationID']
-      condDict['TransformationID'] = transID
     req = "SELECT %s FROM TransformationFiles" % (intListToString(self.TRANSFILEPARAMS),transID)
     if condDict or older or newer:
       req = "%s %s" % (req,self.buildCondition(condDict, older, newer, timeStamp,orderAttribute,limit))
@@ -468,9 +462,9 @@ class TransformationDB(DB):
     if not res['OK']:
       return res
     fileIDs,lfnFilesIDs = res['Value']
-    return self.getTransformationFiles(transID,condDict={'FileID':fileIDs.keys()},connection=connection)
+    return self.getTransformationFiles(condDict={'TransformationID':transID,'FileID':fileIDs.keys()},connection=connection)
 
-  def getFileSummary(self,lfns,transName=''):
+  def getFileSummary(self,lfns):
     """ Get file status summary in all the transformations """
     connection = self.__getConnection(connection)
     res = self.__getFileIDsForLfns(lfns,connection=connection)
@@ -482,7 +476,7 @@ class TransformationDB(DB):
       if lfn not in fileIDs.values():
         failed[lfn] = 'Did not exist in the Transformation database'
     condDict = {'FileID':fileIDs.keys()}
-    res = self.getTransformationFiles(self,transName,condDict=condDict,connection=connection)
+    res = self.getTransformationFiles(self,condDict=condDict,connection=connection)
     if not res['OK']:
       return res
     resDict = {}
@@ -513,7 +507,7 @@ class TransformationDB(DB):
     for lfn in lfns:
       if lfn not in fileIDs.values():
         failed[lfn] = 'File not found in the Transformation Database'
-    res = self.getTransformationFiles(transID,condDict={'FileID':fileIDs.keys()},connection=connection)
+    res = self.getTransformationFiles(condDict={'TransformationID':transID,'FileID':fileIDs.keys()},connection=connection)
     if not res['OK']:
       return res
     transFiles = res['Value']    
