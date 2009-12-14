@@ -78,7 +78,7 @@ class DB(MySQL):
 #  Utility functions
 #
 ########################################################################################
-  def buildCondition(self, condDict, older=None, newer=None, timeStamp=None):
+  def buildCondition(self, condDict, older=None, newer=None, timeStamp=None,orderAttribute=False,limit=False):
     """ Build SQL condition statement from provided condDict and other extra check on
         a specified time stamp.
         The conditions dictionary specifies for each attribute one or a List of possible
@@ -115,6 +115,18 @@ class DB(MySQL):
                                                conjunction,
                                                timeStamp,
                                                str(newer) )
+    if orderAttribute:
+      orderType = None
+      orderField = orderAttribute
+      if orderAttribute.find(':') != -1:
+        orderField = orderAttribute.split(':')[0]
+        orderType = orderAttribute.split(':')[1].upper()
+      req = "%s ORDER BY %s" % (condition,orderField)
+      if orderType:
+        req = "%s %s" % (condition,orderType)
+        
+    if limit:
+      req = "%s LIMIT %d" % (condition,limit)
 
     return condition
 
