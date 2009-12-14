@@ -65,7 +65,8 @@ class TransformationDB(DB):
                           'Status',
                           'MaxNumberOfJobs']
 
-    self.TRANSFILEPARAMS = ['FileID',
+    self.TRANSFILEPARAMS = ['TransformationName',
+                            'FileID',
                             'Status',
                             'JobID',
                             'TargetSE',
@@ -375,7 +376,6 @@ class TransformationDB(DB):
     """ Remove the parameters associated to a transformation """
     req = "DELETE FROM AdditionalParameters WHERE TransformationID=%d;" % transID
     return self._update(req,connection)
-  
 
   ###########################################################################
   #
@@ -411,14 +411,14 @@ class TransformationDB(DB):
     return S_OK(resDict)
   
   def getTransformationFiles(self,transName,condDict={},older=None, newer=None, timeStamp='LastUpdate', orderAttribute=None, limit=None,connection=False):
-    """ Get files for the supplied transformations with support for the web standard structure
-    """
-    res = self.__getConnectionTransID(connection,transName)
-    if not res['OK']:
-      return res
-    connection = res['Value']['Connection']
-    transID = res['Value']['TransformationID']
-    condDict['TransformationID'] = transID
+    """ Get files for the supplied transformations with support for the web standard structure """
+    connection = self.__getConnection(connection)
+    if transName:
+      res = self._getTransformationID(transName, connection)
+      if not res['OK']:
+        return res
+      transID = res['Value']['TransformationID']
+      condDict['TransformationID'] = transID
     req = "SELECT %s FROM TransformationFiles" % (intListToString(self.TRANSFILEPARAMS),transID)
     if condDict or older or newer:
       req = "%s %s" % (req,self.buildCondition(condDict, older, newer, timeStamp,orderAttribute,limit))
@@ -436,7 +436,6 @@ class TransformationDB(DB):
         return res
       fileIDLfns = res['Value'][1]
       for row in transFiles:
-        fileID,status,taskID,targetSE,usedSE,errorCount,lastUpdate,insertTime = row
         lfn = fileIDLfns[row[0]]
         # Prepare the structure for the web
         rList = [lfn]
@@ -470,6 +469,32 @@ class TransformationDB(DB):
       return res
     fileIDs,lfnFilesIDs = res['Value']
     return self.getTransformationFiles(transID,condDict={'FileID':fileIDs.keys()},connection=connection)
+
+  def getFileSummary(self,lfns,transName=''):
+    """ Get file status summary in all the transformations """
+    connection = self.__getConnection(connection)
+    res = self.__getFileIDsForLfns(lfns,connection=connection)
+    if not res['OK']:
+      return res   
+    fileIDs,lfnFilesIDs = res['Value']
+    failed = {}
+    for lfn in lfns:
+      if lfn not in fileIDs.values():
+        failed[lfn] = 'Did not exist in the Transformation database'
+    condDict = {'FileID':fileIDs.keys()}
+    res = self.getTransformationFiles(self,transName,condDict=condDict,connection=connection)
+    if not res['OK']:
+      return res
+    resDict = {}
+    for fileDict in res['Value']:
+      lfn = fileDict['LFN']
+      transID = fileDict['TransformationID']
+      if not resDict.has_key(lfn):
+        resDict[lfn] = {}
+      if not resDict[lfn].has_key(transID):
+        resultDict[lfn][transID] = {}
+      resultDict[lfn][transID] = fileDict
+    return S_OK({'Successful':resultDict,'Failed':failedDict})
   
   #TODO use the getTransformationFileInfo method 
   def setFileStatusForTransformation(self,transName,status,lfns,force=False,connection=False):
@@ -1496,88 +1521,3 @@ class TransformationDB(DB):
       errStr = "TransformationDB.__getReplicaManager: Failed to create ReplicaManager"
       gLogger.exception(errStr, lException=x)
       return S_ERROR(errStr)
-  
-####################################################################################
-#
-#  This part contains the getFileSummary code
-#
-#  TODO: Find a way to remove this
-#
-####################################################################################
-
-  def getFileSummary(self,lfns,transName=''):
-    """ Get file status summary in all the transformations
-    """
-    if transName:
-      result = self.getTransformation(transName)
-      if not result['OK']:
-        return result
-      transList = [result['Value']]
-    else:
-      result = self.getTransformations()
-      if not result['OK']:
-        return S_ERROR('Can not get transformations')
-      transList = result['Value']
-
-    resultDict = {}
-    res = self.__getFileIDsForLfns(lfns)
-    if not res['OK']:
-      return res   
-    fileIDs,lfnFilesIDs = res['Value']
-
-    failedDict = {}
-    for lfn in lfns:
-      if lfn not in fileIDs.values():
-        failedDict[lfn] = True
-
-    fileIDString = ','.join([ str(x) for x in fileIDs.keys() ])
-
-    for transDict in transList:
-      transID = transDict['TransformationID']
-      transStatus = transDict['Status']
-
-      req = "SELECT FileID,Status,TargetSE,UsedSE,JobID,ErrorCount,LastUpdate FROM TransformationFiles \
-             WHERE TransformationID=%d AND FileID in ( %s ) " % (transID,fileIDString)
-      result = self._query(req)
-      if not result['OK']:
-        continue
-      if not result['Value']:
-        continue
-
-      fileJobIDs = []
-
-      for fileID,status,se,usedSE,jobID,errorCount,lastUpdate in result['Value']:
-        lfn = fileIDs[fileID]
-        if not resultDict.has_key(fileIDs[fileID]):
-          resultDict[lfn] = {}
-        if not resultDict[lfn].has_key(transID):
-          resultDict[lfn][transID] = {}
-        resultDict[lfn][transID]['FileStatus'] = status
-        resultDict[lfn][transID]['TargetSE'] = se
-        resultDict[lfn][transID]['UsedSE'] = usedSE
-        resultDict[lfn][transID]['TransformationStatus'] = transStatus
-        if jobID:
-          resultDict[lfn][transID]['JobID'] = jobID
-          fileJobIDs.append(jobID)
-        else:
-          resultDict[lfn][transID]['JobID'] = 'No JobID assigned'
-        resultDict[lfn][transID]['JobStatus'] = 'Unknown'
-        resultDict[lfn][transID]['FileID'] = fileID
-        resultDict[lfn][transID]['ErrorCount'] = errorCount
-        resultDict[lfn][transID]['LastUpdate'] = str(lastUpdate)
-
-      #TODO: Since the transformation jobs are all in the same table this doesn't work anymore.
-      if fileJobIDs:
-        fileJobIDString = ','.join([ str(x) for x in fileJobIDs ])
-        req = "SELECT T.FileID,J.WmsStatus from Jobs_%s as J, TransformationFiles as T WHERE T.TransformationID=%d AND J.JobID in ( %s ) AND J.JobID=T.JobID" % (transID,transID,fileJobIDString)
-        result = self._query(req)
-        if not result['OK']:
-          continue
-        if not result['Value']:
-          continue
-        for fileID,jobStatus in result['Value']:
-          # If the file was not requested then just ignore it
-          if fileID in fileIDs.keys():
-            lfn = fileIDs[fileID]
-            resultDict[lfn][transID]['JobStatus'] = jobStatus
-    return S_OK({'Successful':resultDict,'Failed':failedDict})
