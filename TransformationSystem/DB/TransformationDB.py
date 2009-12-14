@@ -57,12 +57,30 @@ class TransformationDB(DB):
                           'Body',
                           'MaxNumberOfJobs',
                           'EventsPerJob']
+
     self.mutable = [      'TransformationName',
                           'Description',
                           'LongDescription',
                           'AgentType',
                           'Status',
                           'MaxNumberOfJobs']
+
+    self.TRANSFILEPARAMS = ['FileID',
+                            'Status',
+                            'JobID',
+                            'TargetSE',
+                            'UsedSE',
+                            'ErrorCount',
+                            'LastUpdate',
+                            'InsertTime']
+
+    self.TASKSPARAMS = [  'JobID',
+                          'TransformationID',
+                          'WmsStatus',
+                          'JobWmsID',
+                          'TargetSE',
+                          'CreationTime',
+                          'LastUpdateTime']
 
   def getName(self):
     """  Get the database name
@@ -115,13 +133,8 @@ class TransformationDB(DB):
     transID = res['lastRowId']
     self.lock.release()
     # If the transformation has an input data specification
-    if fileMask or inheritedFrom:
+    if fileMask:
       self.filters.append((transID,re.compile(fileMask)))
-      # Add already existing files to this transformation if any
-      res = self._createTransformationTable(transID,connection=connection)
-      if not res['OK']:
-        self.deleteTransformation(transID,connection=connection)
-        return res
       
     if inheritedFrom:
       res  = self._getTransformationID(inheritedFrom,connection=connection)
@@ -142,13 +155,7 @@ class TransformationDB(DB):
         self.deleteTransformation(transID,connection=connection)
         return res
       if res['Value']:
-        req = "INSERT INTO T_%d (Status,JobID,FileID,TargetSE,UsedSE,LastUpdate) VALUES" % transID
-        for fileID,status,taskID,targetSE,usedSE in res['Value']:
-          if taskID:
-            taskID = str(int(originalID)).zfill(8)+'_'+str(int(taskID)).zfill(8)
-          req = "%s ('%s','%s',%d,'%s','%s',UTC_TIMESTAMP())," % (req,status,taskID,fileID,targetSE,usedSE)
-        req = req.rstrip(",")
-        res = self._update(req,connection)
+        res = self.__insertExistingTransformationFiles(transID, res['Value'])
         if not res['OK']:
           self.deleteTransformation(transID,connection=connection)
           return res
@@ -159,23 +166,9 @@ class TransformationDB(DB):
     return S_OK(transID)
 
   def getTransformations(self,condDict={},older=None, newer=None, timeStamp='CreationDate', orderAttribute=None, limit=None, extraParams=False,connection=False):
-    """ Get parameters of all the Transformations with support for the web standard structure
-    """
+    """ Get parameters of all the Transformations with support for the web standard structure """
     connection = self.__getConnection(connection)
-    req = "SELECT TransformationID,TransformationName,Description,LongDescription,CreationDate,LastUpdate,\
-          AuthorDN,AuthorGroup,Type,Plugin,AgentType,Status,FileMask,TransformationGroup,GroupSize,\
-          InheritedFrom,Body,MaxNumberOfJobs,EventsPerJob FROM Transformations %s" % self.buildCondition(condDict, older, newer, timeStamp)
-    if orderAttribute:
-      orderType = None
-      orderField = orderAttribute
-      if orderAttribute.find(':') != -1:
-        orderField = orderAttribute.split(':')[0]
-        orderType = orderAttribute.split(':')[1].upper()
-      req = "%s ORDER BY %s" % (req,orderField)
-      if orderType:
-        req = "%s %s" % (req,orderType)
-    if limit:
-      req = "%s LIMIT %d" % (req,limit)
+    req = "SELECT %s FROM Transformations %s" % (intListToString(self.TRANSPARAMS),self.buildCondition(condDict, older, newer, timeStamp,orderAttribute,limit))
     res = self._query(req,connection)
     if not res['OK']:
       return res
@@ -184,32 +177,16 @@ class TransformationDB(DB):
     for row in res['Value']:
       # Prepare the structure for the web
       rList = []
+      transDict = {}
+      count = 0
       for item in row:
+        transDict[self.TRANSPARAMS[count]] = item
+        count += 1
         if type(item) not in [IntType,LongType]:
           rList.append(str(item))
         else:
           rList.append(item)
       webList.append(rList)
-      transDict = {}
-      transDict['TransformationID'] = row[0]
-      transDict['TransformationName'] = row[1]
-      transDict['Description'] = row[2]
-      transDict['LongDescription'] = row[3]
-      transDict['CreationDate'] = row[4]
-      transDict['LastUpdate'] = row[5]
-      transDict['AuthorDN'] = row[6]
-      transDict['AuthorGroup'] = row[7]
-      transDict['Type'] = row[8]
-      transDict['Plugin'] = row[9]
-      transDict['AgentType'] = row[10]
-      transDict['Status'] = row[11]
-      transDict['FileMask'] = row[12]
-      transDict['TransformationGroup'] = row[13]
-      transDict['GroupSize'] = row[14]
-      transDict['InheritedFrom'] = row[15]
-      transDict['Body'] = row[16]
-      transDict['MaxNumberOfJobs'] = row[17]
-      transDict['EventsPerJob'] = row[18]
       if extraParams:
         res = self.__getAdditionalParameters(transDict['TransformationID'],connection=connection)
         if not res['OK']:
@@ -398,10 +375,11 @@ class TransformationDB(DB):
     """ Remove the parameters associated to a transformation """
     req = "DELETE FROM AdditionalParameters WHERE TransformationID=%d;" % transID
     return self._update(req,connection)
+  
 
   ###########################################################################
   #
-  # These methods manipulate the T_* tables
+  # These methods manipulate the TransformationFiles table
   #
 
   def addFilesToTransformation(self,transName,lfns,connection=False):
@@ -440,21 +418,10 @@ class TransformationDB(DB):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    self.TRANSFILEPARAMS = ['FileID','Status','JobID','TargetSE','UsedSE','ErrorCount','LastUpdate']
-    req = "SELECT %s FROM T_%d" % (intListToString(self.TRANSFILEPARAMS),transID)
+    condDict['TransformationID'] = transID
+    req = "SELECT %s FROM TransformationFiles" % (intListToString(self.TRANSFILEPARAMS),transID)
     if condDict or older or newer:
-      req = "%s %s" % (req,self.buildCondition(condDict, older, newer, timeStamp))
-    if orderAttribute:
-      orderType = None
-      orderField = orderAttribute
-      if orderAttribute.find(':') != -1:
-        orderField = orderAttribute.split(':')[0]
-        orderType = orderAttribute.split(':')[1].upper()
-      req = "%s ORDER BY %s" % (req,orderField)
-      if orderType:
-        req = "%s %s" % (req,orderType)
-    if limit:
-      req = "%s LIMIT %d" % (req,limit)
+      req = "%s %s" % (req,self.buildCondition(condDict, older, newer, timeStamp,orderAttribute,limit))
     res = self._query(req,connection)
     transFiles = []
     if res['OK']:
@@ -469,26 +436,21 @@ class TransformationDB(DB):
         return res
       fileIDLfns = res['Value'][1]
       for row in transFiles:
-        fileID,status,taskID,targetSE,usedSE,errorCount,lastUpdate = row
+        fileID,status,taskID,targetSE,usedSE,errorCount,lastUpdate,insertTime = row
         lfn = fileIDLfns[row[0]]
         # Prepare the structure for the web
         rList = [lfn]
+        fDict = {}
+        fDict['LFN'] = lfn
+        count = 0
         for item in row:
+          fDict[self.TRANSFILEPARAMS[count]] = item
+          count += 1
           if type(item) not in [IntType,LongType]:
             rList.append(str(item))
           else:
             rList.append(item)
         webList.append(rList)
-        # Now prepare the standard dictionary
-        fDict = {}
-        fDict['LFN'] = lfn
-        fDict['FileID'] = fileID
-        fDict['Status'] = status
-        fDict['JobID'] = taskID
-        fDict['TargetSE'] = targetSE
-        fDict['UsedSE'] = usedSE
-        fDict['ErrorCount'] = errorCount
-        fDict['LastUpdate'] = lastUpdate
         resultList.append(fDict)
     result = S_OK(resultList)
     result['LFNs'] = fileIDLfns.values()
@@ -496,6 +458,20 @@ class TransformationDB(DB):
     result['ParameterNames'] = ['LFN'].extend(self.TRANSFILEPARAMS)
     return result
 
+  def getTransformationFileInfo(self,transID,lfns,connection=False):
+    """ Get the file status for given transformation files """
+    res = self.__getConnectionTransID(connection,transName)
+    if not res['OK']:
+      return res
+    connection = res['Value']['Connection']
+    transID = res['Value']['TransformationID']
+    res = self.__getFileIDsForLfns(lfns,connection=connection)
+    if not res['OK']:
+      return res
+    fileIDs,lfnFilesIDs = res['Value']
+    return self.getTransformationFiles(transID,condDict={'FileID':fileIDs.keys()},connection=connection)
+  
+  #TODO use the getTransformationFileInfo method 
   def setFileStatusForTransformation(self,transName,status,lfns,force=False,connection=False):
     """ Set file status for the given transformation """
     res = self.__getConnectionTransID(connection,transName)
@@ -515,7 +491,7 @@ class TransformationDB(DB):
     res = self.getTransformationFiles(transID,condDict={'FileID':fileIDs.keys()},connection=connection)
     if not res['OK']:
       return res
-    transFiles = res['Value']
+    transFiles = res['Value']    
     for fileDict in transFiles:
       currentStatus = fileDict['Status']
       errorCount = fileDict['ErrorCount']
@@ -527,11 +503,11 @@ class TransformationDB(DB):
         successful[lfn] = 'Status not changed'
       elif (status.lower() == 'unused') and (errorCount >= MAX_ERROR_COUNT) and (not force):
         failed[lfn] = 'Max number of resets reached'
-        req = "UPDATE T_%d SET Status='MaxReset', LastUpdate=UTC_TIMESTAMP() WHERE FileID=%d;" % (transID,fileID)
+        req = "UPDATE TransformationFiles SET Status='MaxReset', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d AND FileID=%d;" % (fileID,transID)
       elif (status.lower() == 'unused'):
-        req = "UPDATE T_%d SET Status='%s', LastUpdate=UTC_TIMESTAMP(),ErrorCount=ErrorCount+1 WHERE FileID=%d;" % (transID,status,fileID)
+        req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP(),ErrorCount=ErrorCount+1 WHERE TransformationID=%d AND FileID=%d;" % (status,transID,fileID)
       else:
-        req = "UPDATE T_%d SET Status='%s', LastUpdate=UTC_TIMESTAMP() WHERE FileID=%d;" % (transID,status,fileID)
+        req = "UPDATE TransformationFiles SET Status='%s', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d AND FileID=%d;" % (status,transID,fileID)
       if not req:
         continue
       res = self._update(req,connection)
@@ -550,11 +526,12 @@ class TransformationDB(DB):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    res = self.getCounters('T_%s' % transID,['Status'],{})
+    res = self.getCounters('TransformationFiles',['TransformationID','Status'],{})
     if not res['OK']:
       return res
     statusDict = {}
     total=0
+    #TOD: This should be checked
     for attrDict,count in res['Value']:
       status = attrDict['Status']
       statusDict[status]=count
@@ -562,28 +539,8 @@ class TransformationDB(DB):
     statusDict['Total']=total
     return S_OK(statusDict)
   
-  def _createTransformationTable(self,transID,connection=False):
-    """ Add a new Transformation table for a given transformation """
-    req = "DROP TABLE IF EXISTS T_%d;" % transID
-    self._update(req,connection)
-    req = """CREATE TABLE T_%d(
-FileID INTEGER NOT NULL,
-Status VARCHAR(32) DEFAULT "Unused",
-INDEX (Status),
-ErrorCount INT(4) NOT NULL DEFAULT 0,
-JobID VARCHAR(32),
-TargetSE VARCHAR(32) DEFAULT "Unknown",
-UsedSE VARCHAR(32) DEFAULT "Unknown",
-LastUpdate DATETIME,
-PRIMARY KEY (FileID)
-)""" % transID
-    res = self._update(req,connection)
-    if not res['OK']:
-      return S_ERROR("TransformationDB.__addTransformationTable: Failed to add new transformation table",res['Message'])
-    return S_OK()
-
   def __addFilesToTransformation(self,transID,fileIDs,connection=False):
-    req = "SELECT FileID from T_%d WHERE FileID IN (%s);" % (transID,intListToString(fileIDs))
+    req = "SELECT FileID from TransformationFiles WHERE TransformationID = %d AND FileID IN (%s);" % (transID,intListToString(fileIDs))
     res = self._query(req,connection)
     if not res['OK']:
       return res
@@ -591,14 +548,13 @@ PRIMARY KEY (FileID)
       fileIDs.remove(tuple[0])
     if not fileIDs:
       return S_OK()
-    req = "INSERT INTO T_%d (FileID,LastUpdate) VALUES" % transID
+    req = "INSERT INTO TransformationFiles (TransformationID,FileID,LastUpdate,InsertedTime) VALUES"
     for fileID in fileIDs:
-      req = "%s (%d,UTC_TIMESTAMP())," % (req,fileID)
+      req = "%s (%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP())," % (req,transID,fileID)
     req = req.rstrip(',')
     res = self._update(req,connection)
     if not res['OK']:
       return res
-    self.__insertFileTransformations(transID,fileIDs,connection=connection)
     return S_OK(fileIDs)
 
   def __addExistingFiles(self,transID,connection=False):
@@ -619,30 +575,40 @@ PRIMARY KEY (FileID)
         passFilter.append(fileID)
     return self.__addFilesToTransformation(transID, passFilter,connection=connection)
   
+  def __insertExistingTransformationFiles(self,transID,fileTuples):
+    req = "INSERT INTO TransformationFiles (TransformationID,Status,JobID,FileID,TargetSE,UsedSE,LastUpdate) VALUES"
+    for fileID,status,taskID,targetSE,usedSE in res['Value']:
+      if taskID:
+        taskID = str(int(originalID)).zfill(8)+'_'+str(int(taskID)).zfill(8)
+      req = "%s (%d,'%s','%s',%d,'%s','%s',UTC_TIMESTAMP())," % (req,transID,status,taskID,fileID,targetSE,usedSE)
+    req = req.rstrip(",")
+    return self._update(req,connection)
+
   def __assignTransformationFile(self,transID,taskID,se,fileIDs,connection=False):
-    """ Make necessary updates to the T_* table for the newly created task """
-    req = "UPDATE T_%d SET JobID='%d',UsedSE='%s',Status='Assigned',LastUpdate=UTC_TIMESTAMP() WHERE FileID IN (%s);" % (transID,taskID,se,intListToString(fileIDs.keys()))
+    """ Make necessary updates to the TransformationFiles table for the newly created task """
+    req = "UPDATE TransformationFiles SET JobID='%d',UsedSE='%s',Status='Assigned',LastUpdate=UTC_TIMESTAMP() WHERE TransformationID = %d AND FileID IN (%s);" % (taskID,se,transID,intListToString(fileIDs.keys()))
     res = self._update(req,connection)
     if not res['OK']:
       gLogger.error("Failed to assign file to task",res['Message'])
     return res
   
-  def __setTransformationFileStatus(self,transID,fileIDs,status,connection=False):
-    req = "UPDATE T_%d SET Status = '%s' WHERE FileID IN (%s);" % (transID,status,intListToString(fileIDs))
+  def __setTransformationFileStatus(self,fileIDs,status,connection=False):
+    req = "UPDATE TransformationFiles SET Status = '%s' WHERE FileID IN (%s);" % (status,intListToString(fileIDs))
     res = self._update(req,connection)
     if not res['OK']:
       gLogger.error("Failed to update file status",res['Message'])                                                                
     return res
 
   def __resetTransformationFile(self,transID,taskID,connection=False):	
-    req = "UPDATE T_%d SET JobID=NULL, UsedSE='Unknown', Status='Unused' WHERE JobID=%d;" % (transID,taskID)
+    req = "UPDATE TransformationFiles SET JobID=NULL, UsedSE='Unknown', Status='Unused' WHERE TransformationID = %d AND JobID=%d;" % (transID,taskID)
     res = self._update(req,connection)
     if not res['OK']:
       gLogger.error("Failed to reset transformation file",res['Message'])
     return res
 
+  #TODO USE THE GENERAL METHOD
   def __getTransformationFiles(self,transID,connection=False):
-    req = "SELECT FileID,Status,JobID,TargetSE,UsedSE from T_%d WHERE Status != 'Unused';" % (transID)
+    req = "SELECT FileID,Status,JobID,TargetSE,UsedSE from TransformationFiles WHERE TransformationID = %d AND Status != 'Unused';" % (transID)
     res = self._query(req,connection)
     if not res['OK']:
       gLogger.error("Failed to get transformation files",res['Message'])                                                                
@@ -650,7 +616,7 @@ PRIMARY KEY (FileID)
 
   def __deleteTransformationFiles(self,transID,connection=False):
     """ Remove the files associated to a transformation """  
-    req = "DROP TABLE IF EXISTS T_%d;" % transID
+    req = "DELETE FROM TransformationFiles WHERE TransformationID = %d;" % transID
     res = self._update(req,connection)
     if not res['OK']:
       gLogger.error("Failed to delete transformation files",res['Message'])                                                                
@@ -660,32 +626,106 @@ PRIMARY KEY (FileID)
   #
   # These methods manipulate the Jobs table
   #
-
-  def getTransformationTaskStats(self,transName='',connection=False):
-    """ Returns dictionary with number of jobs per status for the given production.
-    """
+  
+  def getTransformationTasks(self,condDict={},older=None, newer=None, timeStamp='CreationTime', orderAttribute=None, limit=None, inputVector=False, connection=False):
     connection = self.__getConnection(connection)
-    if transName:
-      res  = self._getTransformationID(transName,connection=connection)
-      if not res['OK']:
-        gLogger.error("Failed to get ID for transformation",res['Message'])
-        return res
-      res = self.getCounters('Jobs',['WmsStatus'],{'TransformationID':res['Value']},connection=connection)
-    else:
-      res = self.getCounters('Jobs',['WmsStatus','TransformationID'],{},connection=connection)
+    req = "SELECT %s FROM Jobs %s" % (intListToString(self.TASKSPARAMS),self.buildCondition(condDict, older, newer, timeStamp,orderAttribute,limit))
+    res = self._query(req,connection)
     if not res['OK']:
       return res
-    if not res['Value']:
-      return S_ERROR('No records found')
-    statusDict = {}
-    for attrDict,count in res['Value']:
-      status = attrDict['WmsStatus']
-      statusDict[status] = count
-    return S_OK(statusDict)
+    webList = []
+    resultList = []
+    for row in res['Value']:
+      # Prepare the structure for the web
+      rList = []
+      taskDict = {}
+      count = 0
+      for item in row:
+        taskDict[self.TASKSPARAMS[count]] = item
+        count += 1
+        if type(item) not in [IntType,LongType]:
+          rList.append(str(item))
+        else:
+          rList.append(item)
+      webList.append(rList)
+      if inputVector:
+        taskDict['InputVector'] = ''
+        taskID = taskDict['JobID']
+        transID = taskDict['TransformationID']
+        res = self.getTaskInputVector(transID,taskID)
+        if res['OK']:
+          if res['Value'].has_key(taskID):
+            taskDict['InputVector']=res['Value'][taskID]    
+      resultList.append(taskDict) 
+    result = S_OK(resultList)
+    result['Records'] = webList
+    result['ParameterNames'] = self.TASKSPARAMS
+    return result
 
-  def getTaskStats(self,transName,connection=False):
-    return self.getTransformationTaskStats(transName=transName,connection=connection)
-  
+  def getTasksForSubmission(self,transName,numTasks=1,site='',statusList=['Created'],older=None,newer=None,connection=False):
+    """ Select tasks with the given status (and site) for submission """
+    res = self.__getConnectionTransID(connection,transName)
+    if not res['OK']:
+      return res
+    connection = res['Value']['Connection']
+    transID = res['Value']['TransformationID']
+    condDict = {"TransformationID":transID}
+    if statusList:
+      condDict["WmsStatus"] = statusList
+    if site:
+      numTasks=0
+    res = self.getTransformationTasks(condDict=condDict,older=older, newer=newer, timeStamp='CreationTime', orderAttribute=None, limit=numTasks,inputVector=True,connection=connection)
+    if not res['OK']:
+      return res
+    # Prepare Site->SE resolution mapping
+    selSEs = []
+    if site:
+      res = getSEsForSite(site)
+      if not res['OK']:
+        return res
+      selSEs = res['Value']
+    # Now prepare the tasks
+    resultDict = {}
+    for taskDict in tasks:
+      if len(resultDict) >= numTasks:
+        break
+      taskID = taskDict['TransformationID']
+      se = taskDict['UsedSE']
+      status = taskDict['WmsStatus']
+      inputVector = taskDict['InputVector']
+      if not site:
+        if inputVector:
+          res = getSitesForSE(se)
+          if not res['OK']:
+            continue
+          sites = res['Value']
+          usedSite = 'Multiple'
+          if len(sites) == 1:
+            usedSite = sites[0]
+        else:
+          usedSite = 'ANY'      
+        resultDict[taskID] = {'InputData':inputVector,'TargetSE':se,'Status':status,'Site':usedSite}
+      elif site and (se in selSEs):
+        resultDict[taskID] = {'InputData':inputVector,'TargetSE':se,'Status':status,'Site':site}   
+      else:
+        gLogger.warn("Can not find corresponding site for se",se)
+    return S_OK(resultDict)
+
+  def deleteTasks(self,transName,taskIDbottom, taskIDtop,author='',connection=False):
+    """ Delete tasks with taskID range in transformation """
+    res = self.__getConnectionTransID(connection,transName)
+    if not res['OK']:
+      return res
+    connection = res['Value']['Connection']
+    transID = res['Value']['TransformationID']
+    for taskID in range(taskIDbottom,taskIDtop+1):
+      res = self.__removeTransformationTask(transID, taskID, connection=connection)
+      if not res['OK']:
+        return res
+    message = "Deleted tasks from %d to %d" % (taskIDbottom,taskIDtop)
+    self.__updateTransformationLogging(transID,message,author,connection=connection)      
+    return res
+
   def reserveTask(self,transName,taskID,connection=False):
     """ Reserve the taskID from transformation for submission """
     res = self.__getConnectionTransID(connection,transName)
@@ -712,8 +752,10 @@ PRIMARY KEY (FileID)
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    req = "UPDATE Jobs SET WmsStatus='%s', JobWmsID='%s', LastUpdateTime=UTC_TIMESTAMP() WHERE TransformationID=%d AND JobID=%d;" % (status,taskWmsID,transID,taskID)
-    return self._update(req,connection)
+    res = self.__setTaskParameterValue(transID,taskID,'WmsStatus',status,connection=connection)
+    if not res['OK']:
+      return res
+    return self.__setTaskParameterValue(transID, taskID, 'JobWmsID', taskWmsID, connection=connection)
 
   def setTaskStatus(self,transName,taskID,status,connection=False):
     """ Set status for job with jobID in production with transformationID """
@@ -726,154 +768,46 @@ PRIMARY KEY (FileID)
       taskIDList = [taskID]
     else:
       taskIDList = list(taskID)
-    taskString = ','.join([ str(x) for x in taskIDList ])
-    req = "UPDATE Jobs SET WmsStatus='%s', LastUpdateTime=UTC_TIMESTAMP() WHERE TransformationID=%d AND JobID in (%s)" % (status,transID,taskString)
-    return self._update(req,connection)
+    for taskID in taskIDList:
+      res = self.__setTaskParameterValue(transID, taskID, 'WmsStatus', status, connection=connection)
+      if not res['OK']:
+        return res
+    return S_OK()  
 
-  def getTaskInfo(self,transName,taskID,connection=False):
-    """ returns dictionary with information for given Task of given transformation ID """
-    res = self.__getConnectionTransID(connection,transName)
-    if not res['OK']:
-      return res
-    connection = res['Value']['Connection']
-    transID = res['Value']['TransformationID']
-    req = "SELECT JobID,JobWmsID,WmsStatus,TargetSE,CreationTime,LastUpdateTime FROM Jobs WHERE TransformationID=%d AND JobID='%d';" % (transID,taskID)
-    res = self._query(req,connection)
-    # lets create dictionary
+  def getTransformationTaskStats(self,transName='',connection=False):
+    """ Returns dictionary with number of jobs per status for the given production.
+    """
+    connection = self.__getConnection(connection)
+    if transName:
+      res  = self._getTransformationID(transName,connection=connection)
+      if not res['OK']:
+        gLogger.error("Failed to get ID for transformation",res['Message'])
+        return res
+      res = self.getCounters('Jobs',['WmsStatus'],{'TransformationID':res['Value']},connection=connection)
+    else:
+      res = self.getCounters('Jobs',['WmsStatus','TransformationID'],{},connection=connection)
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR("Failed to find job with JobID=%s/TransformationID=%s in the Jobs table with message: %s" % (taskID, transID, res['Message']))
-    taskDict = {}
-    taskDict['JobID']=res['Value'][0][0]
-    taskDict['JobWmsID']=res['Value'][0][1]
-    taskDict['WmsStatus']=res['Value'][0][2]
-    taskDict['TargetSE']=res['Value'][0][3]
-    taskDict['CreationTime']=res['Value'][0][4]
-    taskDict['LastUpdateTime']=res['Value'][0][5]
-    taskDict['InputVector']=''
-    res = self.getTaskInputVector(transID,taskID)
-    if res['OK']:
-      if res['Value'].has_key(taskID):
-        taskDict['InputVector']=res['Value'][taskID]    
-    return S_OK(taskDict)
-  
-  def getTasksForSubmission(self,transName,numTasks=1,site='',statusList=['Created'],older=None,newer=None,connection=False):
-    """ Select tasks with the given status (and site) for submission """
-    res = self.__getConnectionTransID(connection,transName)
-    if not res['OK']:
-      return res
-    connection = res['Value']['Connection']
-    transID = res['Value']['TransformationID']
-    res = self.selectTransformationTasks(transID,statusList,numTasks,site,older,newer,connection=connection)
-    if not res['OK']:
-      return res
-    tasks = res['Value']
-    taskList = [ int(x[0]) for x in tasks ]
-    res = self.getTaskInputVector(transID,taskList,connection=connection)
-    if not res:
-      return res
-    inputVectorDict = res['Value']
-    # Prepare Site->SE resolution mapping
-    selSEs = []
-    if site:
-      res = getSEsForSite(site)
-      if not res['OK']:
-        return res
-      selSEs = res['Value']
-    # Now prepare the tasks
-    resultDict = {}
-    for row in tasks:
-      if len(resultDict) >= numTasks:
-        break
-      taskID = int(row[0])
-      se = row[2]
-      status = row[3]
-      inputVector = ''
-      if inputVectorDict.has_key(taskID):
-        inputVector = inputVectorDict[taskID]
-      if not site:
-        if inputVector:
-          res = getSitesForSE(se)
-          if not res['OK']:
-            continue
-          sites = res['Value']
-          usedSite = 'Multiple'
-          if len(sites) == 1:
-            usedSite = sites[0]
-        else:
-          usedSite = 'ANY'      
-        resultDict[taskID] = {'InputData':inputVector,'TargetSE':se,'Status':status,'Site':usedSite}
-      elif site and (se in selSEs):
-        resultDict[taskID] = {'InputData':inputVector,'TargetSE':se,'Status':status,'Site':site}   
-      else:
-        gLogger.warn("Can not find corresponding site for se",se)
-    return S_OK(resultDict)
+      return S_ERROR('No records found')
+    statusDict = {}
+    for attrDict,count in res['Value']:
+      status = attrDict['WmsStatus']
+      statusDict[status] = count
+    return S_OK(statusDict)
 
-  def selectWMSTasks(self,transName,statusList = [],newer = 0,connection=False):
-    """ Select tasks IDs for the given production having one of the specified
-        statuses and optionally with last status update older than "newer" number
-        of minutes
-    """
-    res = self.__getConnectionTransID(connection,transName)
-    if not res['OK']:
-      return res
-    connection = res['Value']['Connection']
-    transID = res['Value']['TransformationID']
-    req = "SELECT JobID, JobWmsID, WmsStatus FROM Jobs"
-    condList = ['TransformationID=%d' % int(transID)]
-    if statusList:
-      statusString = ','.join(["'"+x+"'" for x in statusList])
-      condList.append("WmsStatus IN (%s)" % statusString)
-    if newer:
-      condList.append("LastUpdateTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d MINUTE)" % newer)
-    if condList:
-      condString = " AND ".join(condList)
-      req += " WHERE %s" % condString
-    result = self._query(req)
-    if not result['OK']:
-      return result
-    resultDict = {}
-    if result['Value']:
-      for row in result['Value']:
-        if row[1] and int(row[1]) != 0:
-          resultDict[int(row[1])] = (row[0],row[2])
-    return S_OK(resultDict)
+  def __setTaskParameterValue(self,transID,taskID,paramName,paramValue,connection=False):
+    req = "UPDATE Jobs SET %s='%s', LastUpdateTime=UTC_TIMESTAMP() WHERE TransformationID=%d AND JobID=%d;" % (paramName,paramValue,transID,taskID)
+    return self._update(req,connection)
 
-  def selectTransformationTasks(self,transName,statusList=[],numTasks=1,site='',older=None,newer=None,connection=False):
-    """ Select tasks with the given status from the given transformation """
-    res = self.__getConnectionTransID(connection,transName)
-    if not res['OK']:
-      return res
-    connection = res['Value']['Connection']
-    transID = res['Value']['TransformationID']
-    condDict = {"TransformationID":transID}
-    if statusList:
-      condDict["WmsStatus"] = statusList
-    req = "SELECT JobID,TransformationID,WmsStatus,JobWmsID,TargetSE,CreationTime,LastUpdateTime FROM Jobs %s" % self.buildCondition(condDict, older=older, newer=newer) 
-    if not site:
-      req += " LIMIT %d" % numTasks 
-    return self._query(req,connection)
-
-  def deleteTasks(self,transName,jobIDbottom, jobIDtop,author='',connection=False):
-    """ Delete tasks with taskID range in transformation
-        TODO: merge with removeTransformationTask
-    """
-    res = self.__getConnectionTransID(connection,transName)
-    if not res['OK']:
-      return res
-    connection = res['Value']['Connection']
-    transID = res['Value']['TransformationID']
-    req = "DELETE FROM Jobs WHERE TransformationID=%d AND JobID>=%d AND JobID<=%d;" % (productionID,jobIDbottom, jobIDtop)
-    res = self._update(req,connection)
-    if res['OK']:
-      message = "Deleted tasks from %d to %d" % (jobIDbottom,jobIDtop)
-      self.__updateTransformationLogging(transID,message,author,connection=connection)      
-    return res
-  
   def __deleteTransformationTasks(self,transID,connection=False):
     """ Delete all the tasks from the Jobs table for transformation with TransformationID """
     req = "DELETE FROM Jobs WHERE TransformationID=%d" % transID
+    return self._update(req,connection)
+
+  def __deleteTransformationTask(self,transID,taskID,connection=False):
+    """ Delete the task from the Jobs table for transformation with TransformationID """
+    req = "DELETE FROM Jobs WHERE TransformationID=%d AND JobID=%d" % (transID,taskID)
     return self._update(req,connection)
   
   ###########################################################################
@@ -913,54 +847,6 @@ PRIMARY KEY (FileID)
   def __deleteTransformationTaskInputs(self,transID,taskID=0,connection=False):
     """ Delete all the tasks inputs from the JobsInputs table for transformation with TransformationID """
     req = "DELETE FROM JobInputs WHERE TransformationID=%d" % transID
-    if taskID:
-      req = "%s AND JobID=%d" % (req,int(taskID))
-    return self._update(req,connection)
-
-  ###########################################################################
-  #
-  # These methods manipulate the FileTransformations table
-  #
-
-  def __insertFileTransformations(self,transID,fileIDs,connection=False):
-   req = "INSERT INTO FileTransformations (FileID,TransformationID) VALUES"
-   for fileID in fileIDs:
-     req = "%s (%d, %d)," % (req,fileID,transID)
-   req = req.rstrip(',')
-   res = self._update(req,connection)
-   if not res['OK']:
-     gLogger.error("Failed to insert rows to FileTransformations",res['Message'])   
-   return res
- 
-   def __getFileTransformations(self,fileIDs,connection=False):
-    """ Get the file transformation associations """
-    req = "SELECT FileID,TransformationID FROM FileTransformations WHERE FileID IN (%s);" % intListToString(fileIDs)
-    res = self._query(req,connection)
-    if not res['OK']:
-      return res
-    fileTrans = {}
-    for fileID,transID in res['Value']:
-      if not fileTrans.has_key(fileID):
-        fileTrans[fileID] = []
-      fileTrans[fileID].append(transID)
-    return S_OK(fileTrans)
-  
-  def __getFileTransformationFiles(self,fileIDs,connection=False):
-    """ Get the file transformation associations """
-    req = "SELECT FileID,TransformationID FROM FileTransformations WHERE FileID IN (%s);" % intListToString(fileIDs)
-    res = self._query(req,connection)
-    if not res['OK']:
-      return res
-    fileTrans = {}
-    for fileID,transID in res['Value']:
-      if not fileTrans.has_key(transID):
-        fileTrans[transID] = []
-      fileTrans[transID].append(fileID)
-    return S_OK(fileTrans)
-
-  def __deleteFileTransformations(self,transID,taskID=0,connection=False):
-    """ Delete all file associated to the supplied TransformationID """
-    req = "DELETE FROM FileTransformations WHERE TransformationID=%d" % transID
     if taskID:
       req = "%s AND JobID=%d" % (req,int(taskID))
     return self._update(req,connection)
@@ -1236,9 +1122,6 @@ PRIMARY KEY (FileID)
     res = self.__deleteTransformationTaskInputs(transID,connection=connection)
     if not res['OK']:
       return res
-    res = self.__deleteFileTransformations(transID,connection=connection)
-    if not res['OK']:
-      return res
     res = self.__deleteTransformationParameters(transID,connection=connection)
     if not res['OK']:
       return res
@@ -1271,7 +1154,7 @@ PRIMARY KEY (FileID)
     res = self.__deleteTransformationTaskInputs(transID,taskID,connection=connection)
     if not res['OK']:
       return res
-    res = self.__deleteFileTransformations(transID,taskID,connection=connection)
+    res = self.__deleteTransformationTask(transID,taskID,connection=connection)
     if not res['OK']:
       return res
     return self.__resetTransformationFile(transID,taskID,connection=connection)
@@ -1462,15 +1345,10 @@ PRIMARY KEY (FileID)
     for lfn in lfns:
       if not lfnFilesIDs.has_key(lfn):
         successful[lfn] = 'File did not exist'
-    res = self.__getFileTransformationFiles(fileIDs.keys(),connection=connection)
-    if not res['OK']:
-      return res
-    for transID,fileIDs in res['Value'].items():
-      res = self.__setTransformationFileStatus(transID, fileIDs, 'Deleted', connection=connection)
-      if not res['OK']:
-        for fileID in fileIDs:
-          failed[fileIDs[fileID]] = res['Message']
     if fileIDs:
+      res = self.__setTransformationFileStatus(fileIDs.keys(), 'Deleted', connection=connection)
+      if not res['OK']:
+        return res
       res = self.__deleteFileReplicas(fileIDs.keys(),connection=connection)
       if not res['OK']:
         return S_ERROR("TransformationDB.removeFile: Failed to remove file replicas.")
@@ -1658,8 +1536,8 @@ PRIMARY KEY (FileID)
       transID = transDict['TransformationID']
       transStatus = transDict['Status']
 
-      req = "SELECT FileID,Status,TargetSE,UsedSE,JobID,ErrorCount,LastUpdate FROM T_%s \
-             WHERE FileID in ( %s ) " % (transID,fileIDString)
+      req = "SELECT FileID,Status,TargetSE,UsedSE,JobID,ErrorCount,LastUpdate FROM TransformationFiles \
+             WHERE TransformationID=%d AND FileID in ( %s ) " % (transID,fileIDString)
       result = self._query(req)
       if not result['OK']:
         continue
@@ -1688,9 +1566,10 @@ PRIMARY KEY (FileID)
         resultDict[lfn][transID]['ErrorCount'] = errorCount
         resultDict[lfn][transID]['LastUpdate'] = str(lastUpdate)
 
+      #TODO: Since the transformation jobs are all in the same table this doesn't work anymore.
       if fileJobIDs:
         fileJobIDString = ','.join([ str(x) for x in fileJobIDs ])
-        req = "SELECT T.FileID,J.WmsStatus from Jobs_%s as J, T_%s as T WHERE J.JobID in ( %s ) AND J.JobID=T.JobID" % (transID,transID,fileJobIDString)
+        req = "SELECT T.FileID,J.WmsStatus from Jobs_%s as J, TransformationFiles as T WHERE T.TransformationID=%d AND J.JobID in ( %s ) AND J.JobID=T.JobID" % (transID,transID,fileJobIDString)
         result = self._query(req)
         if not result['OK']:
           continue
