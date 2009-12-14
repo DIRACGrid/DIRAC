@@ -129,7 +129,12 @@ class TransformationHandler(RequestHandler):
   #
   # These are the methods to manipulate the Tasks (Jobs) table
   #
-
+  
+  types_getTransformationTasks = []
+  def export_getTransformationTasks(self,condDict={},older=None, newer=None, timeStamp='CreationTime', orderAttribute=None, limit=None, inputVector=False):
+    res = self.database.getTransformationTasks(condDict=condDict,older=older,newer=newer,timeStamp=timeStamp,orderAttribute=orderAttribute,limit=limit,inputVector=inputVector)
+    return self.__parseRes(res)
+  
   types_setTaskStatus = [transTypes, [IntType,LongType], StringTypes]
   def export_setTaskStatus(self, transName, taskID, status):
     res = self.database.setTaskStatus(transName, taskID, status)    
@@ -140,24 +145,9 @@ class TransformationHandler(RequestHandler):
     res = self.database.setTaskStatusAndWmsID(transName, taskID, status, taskWmsID)
     return self.__parseRes(res)
   
-  types_selectTransformationTasks = [transTypes]
-  def export_selectTransformationTasks(self,transName,statusList=[],numTasks=1,site='',older=None,newer=None):
-    res = self.database.selectTransformationTasks(transName,statusList=statusList,numTasks=numTasks,site=site,older=older,newer=newer)
-    return self.__parseRes(res)
-
-  types_selectWMSTasks = [transTypes]
-  def export_selectWMSTasks(self,transName,statusList=[],newer=0):
-    res = self.database.selectWMSTasks(transName,statusList=statusList,newer=newer)  
-    return self.__parseRes(res)
-  
   types_getTransformationTaskStats = [transTypes]
   def export_getTransformationTaskStats(self, transName):
     res = self.database.getTransformationTaskStats(transName)
-    return self.__parseRes(res)
-
-  types_getTaskInfo = [transTypes, [LongType,IntType]]
-  def export_getTaskInfo(self, transName, taskID):
-    res = self.database.getTaskInfo(transName,taskID)
     return self.__parseRes(res)
 
   types_deleteTasks = [transTypes, [LongType,IntType], [LongType,IntType]]
