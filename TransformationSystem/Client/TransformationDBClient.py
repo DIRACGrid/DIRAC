@@ -36,7 +36,7 @@ class TransformationDBClient(Client,FileCatalogueBase):
           getTransformationParameters(transName,paramNames)
           getTransformationWithStatus(status)
 
-      T_* table manipulation
+      TransformationFiles table manipulation
       
           addFilesToTransformation(transName,lfns)
           addTaskForTransformation(transName,lfns=[],se='Unknown')
@@ -82,10 +82,9 @@ class TransformationDBClient(Client,FileCatalogueBase):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
     return rpcClient.getTransformation(transName,extraParams)
 
-  def getTransformationFiles(self,transName,condDict={},older=None, newer=None, timeStamp='LastUpdate', orderAttribute=None, limit=None, rpc='',url='',timeout=120):
+  def getTransformationFiles(self,condDict={},older=None, newer=None, timeStamp='LastUpdate', orderAttribute=None, limit=None, rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout) 
-    return rpcClient.getTransformationFiles(transName,condDict,older,newer,timeStamp,orderAttribute,limit)
-
+    return rpcClient.getTransformationFiles(condDict,older,newer,timeStamp,orderAttribute,limit)
 
   def getTransformationTasks(self,condDict={},older=None, newer=None, timeStamp='CreationTime', orderAttribute=None, limit=None, inputVector=False,rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout) 
