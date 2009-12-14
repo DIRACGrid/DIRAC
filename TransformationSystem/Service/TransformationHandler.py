@@ -160,11 +160,6 @@ class TransformationHandler(RequestHandler):
     res = self.database.getTaskInfo(transName,taskID)
     return self.__parseRes(res)
 
-  types_getTaskStats = [transTypes]
-  def export_getTaskStats(self,transName):
-    res = self.database.getTaskStats(transName)
-    return self.__parseRes(res)
-  
   types_deleteTasks = [transTypes, [LongType,IntType], [LongType,IntType]]
   def export_deleteTasks(self, transName, taskMin, taskMax):
     authorDN = self._clientTransport.peerCredentials['DN']
@@ -306,7 +301,7 @@ class TransformationHandler(RequestHandler):
     resultDict = {}
     for transDict in transList:
       transID = transDict['TransformationID']
-      res = self.database.getTaskStats(transID)
+      res = self.database.getTransformationTaskStats(transID)
       if not res['OK']:
         gLogger.warn('Failed to get job statistics for transformation %d' % transID)
         continue
@@ -390,7 +385,7 @@ class TransformationHandler(RequestHandler):
       
       # Get the statistics on the number of jobs for the transformation
       prodID = transDict['TransformationID']
-      res = self.database.getTaskStats(prodID)
+      res = self.database.getTransformationTaskStats(prodID)
       taskDict = {}
       if res['OK']:
         taskDict = result['Value']
