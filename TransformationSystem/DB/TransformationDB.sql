@@ -41,6 +41,17 @@ CREATE TABLE AdditionalParameters (
 );
 
 -- -------------------------------------------------------------------------------
+DROP TABLE IF EXISTS TransformationLog;
+CREATE TABLE TransformationLog (
+    TransformationID INTEGER NOT NULL,
+    Message VARCHAR(255) NOT NULL,
+    Author VARCHAR(255) NOT NULL DEFAULT "Unknown",
+    MessageDate DATETIME NOT NULL,
+    INDEX (TransformationID),
+    INDEX (MessageDate)
+);
+
+-- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationFiles;
 CREATE TABLE TransformationFiles(
     TransformationID INTEGER NOT NULL,
@@ -55,17 +66,6 @@ CREATE TABLE TransformationFiles(
     LastUpdate DATETIME,
     InsertedTime  DATETIME,
     PRIMARY KEY (TransformationID,FileID)
-);
-
--- -------------------------------------------------------------------------------
-DROP TABLE IF EXISTS TransformationLog;
-CREATE TABLE TransformationLog (
-    TransformationID INTEGER NOT NULL,
-    Message VARCHAR(255) NOT NULL,
-    Author VARCHAR(255) NOT NULL DEFAULT "Unknown",
-    MessageDate DATETIME NOT NULL,
-    INDEX (TransformationID),
-    INDEX (MessageDate)
 );
 
 -- -------------------------------------------------------------------------------
