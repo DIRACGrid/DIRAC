@@ -68,7 +68,7 @@ class TransformationAgent(AgentModule):
   def processTransformation(self,transDict):
     transID = transDict['TransformationID']
     # First get the LFNs associated to the transformation
-    res = self.transDB.getTransformationFiles(transID,condDict={'Status':'Unused'})
+    res = self.transDB.getTransformationFiles(condDict={'TransformationID':transID,'Status':'Unused'})
     if not res['OK']:
       gLogger.error("%s.processTransformation: Failed to obtain input data." % AGENT_NAME, res['Message'])
       return res
