@@ -91,5 +91,24 @@ class JobsEfficiency_Simple_Policy(PolicyBase):
         result['SAT'] = True
         result['Status'] = 'Banned'
         result['Reason'] = 'JobsEff:Bad'
+    elif args[2] == 'Banned':
+      if status == 'Good':
+        result['SAT'] = True
+        result['Status'] = 'Active'
+        result['Reason'] = 'JobsEff:Good'
+      elif status == 'Fair':
+        result['SAT'] = True
+        result['Status'] = 'Probing'
+        result['Reason'] = 'JobsEff:Fair'
+      elif status == 'Poor':
+        result['SAT'] = True
+        result['Status'] = 'Probing'
+        result['Reason'] = 'JobsEff:Poor'
+      elif status == 'Idle':
+        result['SAT'] = None
+      elif status == 'Bad':
+        result['SAT'] = False
+        result['Status'] = 'Banned'
+        result['Reason'] = 'JobsEff:Bad'
 
     return result
