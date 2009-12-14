@@ -50,7 +50,6 @@ class TransformationDBClient(Client,FileCatalogueBase):
           selectWMSTasks(transName,statusList=[],newer=0) 
           getTransformationTaskStats(transName) 
           getTaskInfo(transName, taskID) 
-          getTaskStats(transName) 
           deleteTasks(transName, taskMin, taskMax) 
           extendTransformation( transName, nTasks) 
           getTasksToSubmit(transName,numTasks,site='') 
