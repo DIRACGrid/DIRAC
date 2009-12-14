@@ -107,13 +107,13 @@ class ResourceStatusDB:
     Get Present Sites list. 
     
     :params:
-      :attr:`paramsList`: a list of parameters can be entered. If not, a custom list is used. 
+      :attr:`paramsList`: a list of parameters can be entered. If not given, a custom list is used. 
       
-      :attr:`siteName`: a string or a list representing the site name
+      :attr:`siteName`: a string or a list representing the site name. If not given, fetch all.
       
-      :attr:`status`: a string or a list representing the status
+      :attr:`status`: a string or a list representing the status. If not given, fetch all.
       
-      :attr:`siteType`: a string or a list representing the site type (T0, T1, T2)
+      :attr:`siteType`: a string or a list representing the site type (T0, T1, T2). If not given, fetch all.
       
     :return:
       list of siteName paramsList's values
@@ -361,7 +361,7 @@ class ResourceStatusDB:
 
     siteType = resQuery['Value'][0][0]
   
-    self.addOrModifySite(siteName, siteType, status, reason, datetime.utcnow(), operatorCode, datetime(9999, 12, 31, 23, 59, 59))
+    self.addOrModifySite(siteName, siteType, status, reason, datetime.utcnow().replace(microsecond = 0), operatorCode, datetime(9999, 12, 31, 23, 59, 59))
     
 #############################################################################
 
@@ -385,7 +385,7 @@ class ResourceStatusDB:
       :attr:`dateEnd`: datetime - date from which the site status ends to be effective
     """
 
-    dateCreated = datetime.utcnow()
+    dateCreated = datetime.utcnow().replace(microsecond = 0)
     if dateEffective < dateCreated:
       dateEffective = dateCreated
     if dateEnd < dateEffective:
@@ -412,7 +412,7 @@ class ResourceStatusDB:
         oldStatus = 'Banned'
       else:
         oldStatus = 'Active'
-      self._addSiteHistoryRow(siteName, oldStatus, reason, dateCreated, dateEffective, datetime.utcnow().isoformat(' '), operatorCode)
+      self._addSiteHistoryRow(siteName, oldStatus, reason, dateCreated, dateEffective, datetime.utcnow().replace(microsecond = 0).isoformat(' '), operatorCode)
 
     #in any case add a row to present Sites table
     self._addSiteRow(siteName, siteType, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
@@ -434,11 +434,11 @@ class ResourceStatusDB:
       
       :attr:`reason`: string - free
       
-      :attr:`dateCreated`: datetime - date when which the site row is created
+      :attr:`dateCreated`: datetime or string - date when which the site row is created
 
-      :attr:`dateEffective`: datetime - date from which the site status is effective
+      :attr:`dateEffective`: datetime or string - date from which the site status is effective
 
-      :attr:`dateEnd`: datetime - date from which the site status ends to be effective
+      :attr:`dateEnd`: datetime or string - date from which the site status ends to be effective
 
       :attr:`operatorCode`: string - free
     """
@@ -474,11 +474,11 @@ class ResourceStatusDB:
       
       :attr:`reason`: string - free
       
-      :attr:`dateCreated`: datetime - date when which the site row is created
+      :attr:`dateCreated`: datetime or string - date when which the site row is created
 
-      :attr:`dateEffective`: datetime - date from which the site status is effective
+      :attr:`dateEffective`: datetime or string - date from which the site status is effective
 
-      :attr:`dateEnd`: datetime - date from which the site status ends to be effective
+      :attr:`dateEnd`: datetime or string - date from which the site status ends to be effective
 
       :attr:`operatorCode`: string - free
     """
@@ -630,11 +630,11 @@ class ResourceStatusDB:
     :Params:
       :attr:`paramsList`: a list of parameters can be entered. If not, a custom list is used. 
       
-      :attr:`resourceName`: a string or a list representing the resource name
+      :attr:`resourceName`: a string or a list representing the resource name. If not given, fetch all.
       
-      :attr:`status`: a string or a list representing the status
+      :attr:`status`: a string or a list representing the status. If not given, fetch all.
       
-      :attr:`resourceType`: a string or a list representing the resource type
+      :attr:`resourceType`: a string or a list representing the resource type. If not given, fetch all.
       
     :return:
       list of resourceName paramsList's values
@@ -907,7 +907,7 @@ class ResourceStatusDB:
     serviceName = resQuery['Value'][0][1]
     siteName = resQuery['Value'][0][2]
 
-    self.addOrModifyResource(resourceName, resourceType, serviceName, siteName, status, reason, datetime.utcnow(), operatorCode, datetime(9999, 12, 31, 23, 59, 59))
+    self.addOrModifyResource(resourceName, resourceType, serviceName, siteName, status, reason, datetime.utcnow().replace(microsecond = 0), operatorCode, datetime(9999, 12, 31, 23, 59, 59))
     
 #############################################################################
 
@@ -931,7 +931,7 @@ class ResourceStatusDB:
       :attr:`dateEnd`: datetime - date from which the resource status ends to be effective
     """
 
-    dateCreated = datetime.utcnow()
+    dateCreated = datetime.utcnow().replace(microsecond = 0)
     if dateEffective < dateCreated:
       dateEffective = dateCreated
     if dateEnd < dateEffective:
@@ -957,7 +957,7 @@ class ResourceStatusDB:
         oldStatus = 'Banned'
       else:
         oldStatus = 'Active'
-      self._addResourcesHistoryRow(resourceName, serviceName, siteName, oldStatus, reason, dateCreated, dateEffective, datetime.utcnow().isoformat(' '),  operatorCode)
+      self._addResourcesHistoryRow(resourceName, serviceName, siteName, oldStatus, reason, dateCreated, dateEffective, datetime.utcnow().replace(microsecond = 0).isoformat(' '),  operatorCode)
 
     #in any case add a row to present Sites table
     self._addResourcesRow(resourceName, resourceType, serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
@@ -979,11 +979,11 @@ class ResourceStatusDB:
       
       :attr:`reason`: string - free
       
-      :attr:`dateCreated`: datetime - date when which the resource row is created
+      :attr:`dateCreated`: datetime  or string - date when which the resource row is created
 
-      :attr:`dateEffective`: datetime - date from which the resource status is effective
+      :attr:`dateEffective`: datetime or string - date from which the resource status is effective
 
-      :attr:`dateEnd`: datetime - date from which the resource status ends to be effective
+      :attr:`dateEnd`: datetime  or string - date from which the resource status ends to be effective
 
       :attr:`operatorCode`: string - free
     """
@@ -1020,11 +1020,11 @@ class ResourceStatusDB:
       
       :attr:`reason`: string - free
       
-      :attr:`dateCreated`: datetime - date when which the resource row is created
+      :attr:`dateCreated`: datetime  or string - date when which the resource row is created
 
-      :attr:`dateEffective`: datetime - date from which the resource status is effective
+      :attr:`dateEffective`: datetime  or string - date from which the resource status is effective
 
-      :attr:`dateEnd`: datetime - date from which the resource status ends to be effective
+      :attr:`dateEnd`: datetime  or string - date from which the resource status ends to be effective
 
       :attr:`operatorCode`: string - free
     """
@@ -1200,13 +1200,13 @@ class ResourceStatusDB:
     :params:
       :attr:`paramsList`: a list of parameters can be entered. If not, a custom list is used. 
       
-      :attr:`serviceName`: a string or a list representing the service name
+      :attr:`serviceName`: a string or a list representing the service name. If not given, fetch all.
       
-      :attr:`siteName`: a string or a list representing the site name
+      :attr:`siteName`: a string or a list representing the site name. If not given, fetch all.
       
-      :attr:`status`: a string or a list representing the status
+      :attr:`status`: a string or a list representing the status. If not given, fetch all.
       
-      :attr:`serviceType`: a string or a list representing the service type (T0, T1, T2)
+      :attr:`serviceType`: a string or a list representing the service type (T0, T1, T2). If not given, fetch all.
       
     :return:
       list of serviceName paramsList's values
@@ -1480,7 +1480,7 @@ class ResourceStatusDB:
     serviceType = resQuery['Value'][0][0]
     siteName = resQuery['Value'][0][1]
   
-    self.addOrModifyService(serviceName, serviceType, siteName, status, reason, datetime.utcnow(), operatorCode, datetime(9999, 12, 31, 23, 59, 59))
+    self.addOrModifyService(serviceName, serviceType, siteName, status, reason, datetime.utcnow().replace(microsecond = 0), operatorCode, datetime(9999, 12, 31, 23, 59, 59))
     
 #############################################################################
 
@@ -1504,7 +1504,7 @@ class ResourceStatusDB:
       :attr:`dateEnd`: datetime - date from which the service status ends to be effective
     """
 
-    dateCreated = datetime.utcnow()
+    dateCreated = datetime.utcnow().replace(microsecond = 0)
     if dateEffective < dateCreated:
       dateEffective = dateCreated
     if dateEnd < dateEffective:
@@ -1530,7 +1530,7 @@ class ResourceStatusDB:
         oldStatus = 'Banned'
       else:
         oldStatus = 'Active'
-      self._addServiceHistoryRow(serviceName, siteName, oldStatus, reason, dateCreated, dateEffective, datetime.utcnow().isoformat(' '), operatorCode)
+      self._addServiceHistoryRow(serviceName, siteName, oldStatus, reason, dateCreated, dateEffective, datetime.utcnow().replace(microsecond = 0).isoformat(' '), operatorCode)
 
     #in any case add a row to present Services table
     self._addServiceRow(serviceName, serviceType, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
@@ -1552,11 +1552,11 @@ class ResourceStatusDB:
       
       :attr:`reason`: string - free
       
-      :attr:`dateCreated`: datetime - date when which the service row is created
+      :attr:`dateCreated`: datetime or string - date when which the service row is created
 
-      :attr:`dateEffective`: datetime - date from which the service status is effective
+      :attr:`dateEffective`: datetime or string - date from which the service status is effective
 
-      :attr:`dateEnd`: datetime - date from which the service status ends to be effective
+      :attr:`dateEnd`: datetime or string - date from which the service status ends to be effective
 
       :attr:`operatorCode`: string - free
     """
@@ -1592,11 +1592,11 @@ class ResourceStatusDB:
       
       :attr:`reason`: string - free
       
-      :attr:`dateCreated`: datetime - date when which the service row is created
+      :attr:`dateCreated`: datetime or string - date when which the service row is created
 
-      :attr:`dateEffective`: datetime - date from which the service status is effective
+      :attr:`dateEffective`: datetime or string - date from which the service status is effective
 
-      :attr:`dateEnd`: datetime - date from which the service status ends to be effective
+      :attr:`dateEnd`: datetime or string - date from which the service status ends to be effective
 
       :attr:`operatorCode`: string - free
 
@@ -1739,20 +1739,26 @@ class ResourceStatusDB:
 
   def setServiceToBeChecked(self, granularity, name):
     """ 
-    Set new reason to serviceName
+    Set LastCheckTime to 0 to service(s)
     
     :params:
       :attr:`granularity`: string, 'Site' or 'Resource'
       
-      :attr:`name`: string, name of Site or Service
+      :attr:`name`: string, name of Site or Resource
     """
+    
+#    req = ""
     
     if granularity in ('Site', 'Sites'):
       serviceName = self.getServicesList(paramsList = ['ServiceName'], siteName = name)
       if type(serviceName) is not list:
         serviceName = [serviceName]
-      serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName[0]])
-      req = "UPDATE Services SET LastCheckTime = '00000-00-00 00:00:00' WHERE ServiceName IN (%s);" %(serviceName)
+      if serviceName == []:
+        raise RSSDBException, where(self, self.setServiceToBeChecked) + "No services for site %s" %name
+      else:  
+        serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName[0]])
+        req = "UPDATE Services SET LastCheckTime = '00000-00-00 00:00:00' WHERE ServiceName IN (%s);" %(serviceName)
+
     elif granularity in ('Resource', 'Resources'):
       serviceName = self.getGeneralName(name, 'Resource', 'Service')
       req = "UPDATE Services SET LastCheckTime = '00000-00-00 00:00:00' WHERE ServiceName  = '%s';" %(serviceName)
@@ -1992,11 +1998,11 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def getPeriods(self, granularity, name, status, hours):
+  def getPeriods(self, granularity, name, status, hours = None, days = None):
     """ 
     Get list of periods of times when a ValidRes was in ValidStatus 
-    (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`) for a total of `hours`
-    
+    (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`) 
+    for a total of `hours` or `days`.
     :params:
       :attr:`granularity`: string - ValidRes
       
@@ -2005,16 +2011,24 @@ class ResourceStatusDB:
       :attr:`status`: string - ValidStatus
       
       :attr:`hours`: integer
+      
+      :attr:`days`: integer
+      
+    :return:
+      list of periods of time as tuples in string format
     """
+    
+    if days is not None:
+      hours = 24*days
     
     hours = timedelta(hours = hours)
     
-    if granularity == 'Site':
-      req = "SELECT DateEffective FROM Sites WHERE SiteName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s';" %(name, status)
-    elif granularity == 'Resource':
-      req = "SELECT DateEffective FROM Resources WHERE ResourceName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s';" %(name, status)
-    elif granularity == 'Service':
-      req = "SELECT DateEffective FROM Services WHERE ServiceName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s';" %(name, status)
+    if granularity in ('Site', 'Sites'):
+      req = "SELECT DateEffective FROM Sites WHERE SiteName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %(name, status)
+    elif granularity in ('Resource', 'Resources'):
+      req = "SELECT DateEffective FROM Resources WHERE ResourceName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %(name, status)
+    elif granularity in ('Service', 'Services'):
+      req = "SELECT DateEffective FROM Services WHERE ServiceName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %(name, status)
     
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -2022,35 +2036,43 @@ class ResourceStatusDB:
     else:
       if resQuery['Value'] == '':
         return None
-      effFrom = resQuery['Value'][0][0]
-      timeInStatus = datetime.utcnow() - effFrom
-      if timeInStatus > hours:
-        return [((datetime.utcnow()-hours).isoformat(' '), datetime.utcnow().isoformat(' '))] 
+      elif resQuery['Value'] == ():
+        #actual status is not what was requested
+        periods = []
+        timeInStatus = timedelta(0)
       else:
-        periods = [(effFrom.isoformat(' '), datetime.utcnow().isoformat(' '))]
-        if granularity == 'Site':
-          req = "SELECT DateEffective, DateEnd FROM SitesHistory WHERE SiteName = '%s' AND Status = '%s';" %(name, status)
-        elif granularity == 'Resource':
-          req = "SELECT DateEffective, DateEnd FROM ResourcesHistory WHERE ResourceName = '%s' AND Status = '%s';" %(name, status)
-        elif granularity == 'Service':
-          req = "SELECT DateEffective, DateEnd FROM ServicesHistory WHERE ServiceName = '%s' AND Status = '%s';" %(name, status)
+        #actual status is what was requested
+        effFrom = resQuery['Value'][0][0]
+        timeInStatus = datetime.utcnow().replace(microsecond = 0) - effFrom
+   
+        if timeInStatus > hours:
+          return [((datetime.utcnow().replace(microsecond = 0)-hours).isoformat(' '), datetime.utcnow().replace(microsecond = 0).isoformat(' '))] 
         
-        resQuery = self.db._query(req)
-        if not resQuery['OK']:
-          raise RSSDBException, where(self, self.getPeriods) + resQuery['Message']
-        else:
-          for x in range(len(resQuery['Value'])):
-            i = len(resQuery['Value']) - x
-            effFrom = resQuery['Value'][i-1][0]
-            effTo = resQuery['Value'][i-1][1]
-            oldTimeInStatus = timeInStatus
-            timeInStatus = timeInStatus + (effTo - effFrom)
-            if timeInStatus > hours:
-              periods.append(((effTo - (hours - oldTimeInStatus)).isoformat(' '), effTo.isoformat(' ')))
-              return periods
-            else:
-              periods.append((effFrom.isoformat(' '), effTo.isoformat(' ')))
-        return periods
+        periods = [(effFrom.isoformat(' '), datetime.utcnow().replace(microsecond = 0).isoformat(' '))]
+   
+      if granularity in ('Site', 'Sites'):
+        req = "SELECT DateEffective, DateEnd FROM SitesHistory WHERE SiteName = '%s' AND Status = '%s'" %(name, status)
+      elif granularity in ('Resource', 'Resources'):
+        req = "SELECT DateEffective, DateEnd FROM ResourcesHistory WHERE ResourceName = '%s' AND Status = '%s'" %(name, status)
+      elif granularity in ('Service', 'Services'):
+        req = "SELECT DateEffective, DateEnd FROM ServicesHistory WHERE ServiceName = '%s' AND Status = '%s'" %(name, status)
+      
+      resQuery = self.db._query(req)
+      if not resQuery['OK']:
+        raise RSSDBException, where(self, self.getPeriods) + resQuery['Message']
+      else:
+        for x in range(len(resQuery['Value'])):
+          i = len(resQuery['Value']) - x
+          effFrom = resQuery['Value'][i-1][0]
+          effTo = resQuery['Value'][i-1][1]
+          oldTimeInStatus = timeInStatus
+          timeInStatus = timeInStatus + (effTo - effFrom)
+          if timeInStatus > hours:
+            periods.append(((effTo - (hours - oldTimeInStatus)).isoformat(' '), effTo.isoformat(' ')))
+            return periods
+          else:
+            periods.append((effFrom.isoformat(' '), effTo.isoformat(' ')))
+      return periods
 
 #############################################################################
 
@@ -2110,11 +2132,11 @@ class ResourceStatusDB:
       
     Examples of possible way to call it:
     
-    >>> trasact2History(('Site', 'LCG.CERN.ch', datetime.utcnow().isoformat(' ')) - the date is the DateEffective parameter
+    >>> trasact2History(('Site', 'LCG.CERN.ch', datetime.utcnow().replace(microsecond = 0).isoformat(' ')) - the date is the DateEffective parameter
         trasact2History(('Site', 523)) - the number if the SiteID
-        trasact2History(('Service', 'Computing@LCG.CERN.ch', datetime.utcnow().isoformat(' ')) - the date is the DateEffective parameter
+        trasact2History(('Service', 'Computing@LCG.CERN.ch', datetime.utcnow().replace(microsecond = 0).isoformat(' ')) - the date is the DateEffective parameter
         trasact2History(('Service', 523)) - the number if the ServiceID
-        trasact2History(('Resource', 'srm-lhcb.cern.ch', datetime.utcnow().isoformat(' ')) - the date is the DateEffective parameter
+        trasact2History(('Resource', 'srm-lhcb.cern.ch', datetime.utcnow().replace(microsecond = 0).isoformat(' ')) - the date is the DateEffective parameter
         trasact2History(('Resource', 523)) - the number if the ResourceID
     """
     
@@ -2454,19 +2476,19 @@ class ResourceStatusDB:
     #add new T0 sites
     for site in T0List:
       if site not in sitesIn:
-        self.addOrModifySite(site, 'T0', 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+        self.addOrModifySite(site, 'T0', 'Active', 'init', datetime.utcnow().replace(microsecond = 0), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
         sitesIn.append(site)
 
     #add new T1 sites
     for site in T1List:
       if site not in sitesIn:
-        self.addOrModifySite(site, 'T1', 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+        self.addOrModifySite(site, 'T1', 'Active', 'init', datetime.utcnow().replace(microsecond = 0), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
         sitesIn.append(site)
     
     #add new T2 sites
     for site in T2List:
       if site not in sitesIn:
-        self.addOrModifySite(site, 'T2', 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+        self.addOrModifySite(site, 'T2', 'Active', 'init', datetime.utcnow().replace(microsecond = 0), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
         sitesIn.append(site)
         
     #create SerCompList 
@@ -2494,7 +2516,7 @@ class ResourceStatusDB:
 #    #add new Computing services
 #    for ser in SerCompList:
 #      if ser not in servicesIn:
-#        self.addOrModifyService(ser, 'Computing', 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+#        self.addOrModifyService(ser, 'Computing', 'Active', 'init', datetime.utcnow().replace(microsecond = 0), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
 
     #remove CEs or SEs no more in the CS
    
@@ -2509,7 +2531,7 @@ class ResourceStatusDB:
       for ce in siteCE[site]:
         service = 'Computing@' + site
         if service not in servicesIn:
-          self.addOrModifyService(service, 'Computing', site, 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+          self.addOrModifyService(service, 'Computing', site, 'Active', 'init', datetime.utcnow().replace(microsecond = 0), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
           servicesIn.append(service)
     for site in siteCE.keys():
       if site == 'LCG.Dummy.ch':
@@ -2517,7 +2539,7 @@ class ResourceStatusDB:
       for ce in siteCE[site]:
         service = 'Computing@' + site
         if ce not in resourcesIn:
-          self.addOrModifyResource(ce, 'CE', service, site, 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+          self.addOrModifyResource(ce, 'CE', service, site, 'Active', 'init', datetime.utcnow().replace(microsecond = 0), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
           resourcesIn.append(ce)
       
     #add new storage services and SEs - separate because of "race conditions"
@@ -2527,7 +2549,7 @@ class ResourceStatusDB:
       for se in siteSE[site]:
         service = 'Storage@' + site
         if service not in servicesIn:
-          self.addOrModifyService(service, 'Storage', site, 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+          self.addOrModifyService(service, 'Storage', site, 'Active', 'init', datetime.utcnow().replace(microsecond = 0), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
           servicesIn.append(service)
     for site in siteSE.keys():
       if site == 'LCG.Dummy.ch':
@@ -2538,7 +2560,7 @@ class ResourceStatusDB:
         if se not in resourcesIn and se is not None:
           sss = se+service+site
           if sss not in seServiceSite:
-            self.addOrModifyResource(se, 'SE', service, site, 'Active', 'init', datetime.utcnow(), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+            self.addOrModifyResource(se, 'SE', service, site, 'Active', 'init', datetime.utcnow().replace(microsecond = 0), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
             seServiceSite.append(sss)
             
     return S_OK()
@@ -2587,15 +2609,15 @@ class ResourceStatusDB:
       T2probingCheckFrequecy = checkFrequency['T2_PROBING_CHECK_FREQUENCY']
       T2bannedCheckFrequecy = checkFrequency['T2_BANNED_CHECK_FREQUENCY']
   
-      T0dateToCheckFromActive = (datetime.utcnow()-timedelta(minutes=T0activeCheckFrequecy)).isoformat(' ')
-      T0dateToCheckFromProbing = (datetime.utcnow()-timedelta(minutes=T0probingCheckFrequecy)).isoformat(' ')
-      T0dateToCheckFromBanned = (datetime.utcnow()-timedelta(minutes=T0bannedCheckFrequecy)).isoformat(' ')
-      T1dateToCheckFromActive = (datetime.utcnow()-timedelta(minutes=T1activeCheckFrequecy)).isoformat(' ')
-      T1dateToCheckFromProbing = (datetime.utcnow()-timedelta(minutes=T1probingCheckFrequecy)).isoformat(' ')
-      T1dateToCheckFromBanned = (datetime.utcnow()-timedelta(minutes=T1bannedCheckFrequecy)).isoformat(' ')
-      T2dateToCheckFromActive = (datetime.utcnow()-timedelta(minutes=T2activeCheckFrequecy)).isoformat(' ')
-      T2dateToCheckFromProbing = (datetime.utcnow()-timedelta(minutes=T2probingCheckFrequecy)).isoformat(' ')
-      T2dateToCheckFromBanned = (datetime.utcnow()-timedelta(minutes=T2bannedCheckFrequecy)).isoformat(' ')
+      T0dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0activeCheckFrequecy)).isoformat(' ')
+      T0dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0probingCheckFrequecy)).isoformat(' ')
+      T0dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0bannedCheckFrequecy)).isoformat(' ')
+      T1dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1activeCheckFrequecy)).isoformat(' ')
+      T1dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1probingCheckFrequecy)).isoformat(' ')
+      T1dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1bannedCheckFrequecy)).isoformat(' ')
+      T2dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2activeCheckFrequecy)).isoformat(' ')
+      T2dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2probingCheckFrequecy)).isoformat(' ')
+      T2dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2bannedCheckFrequecy)).isoformat(' ')
   
       if granularity in ('Site', 'Sites'):
         req = "SELECT SiteName, Status, FormerStatus, Reason FROM PresentSites WHERE"
@@ -2627,3 +2649,119 @@ class ResourceStatusDB:
       return stuffList
 
 #############################################################################
+
+  def rankRes(self, granularity, days, startingDate = None):
+    """
+    Construct the rank of a ValidRes, based on the time it's been Active, Probing 
+    (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
+    
+    :params:
+      :attr:`granularity`: string, a ValidRes
+      
+      :attr:`days`: integer, amount of days in the past to look at
+      
+      :attr:`startingDate`: datetime or string - optional date to start from  
+    """
+
+    if granularity not in ValidRes:
+      raise InvalidRes
+
+    if startingDate is not None:
+      if isinstance(startingDate, basestring):
+        startingDate = datetime.strptime(startingDate, '%Y-%m-%d %H:%M:%S')
+    else:
+      startingDate = datetime.utcnow().replace(microsecond = 0)
+    
+    dateToCheckFrom = startingDate - timedelta(days = days)
+    
+    if granularity in ('Site', 'Sites'):
+      resList = self.getSitesList(paramsList = ['SiteName'])
+    if granularity in ('Service', 'Services'):
+      resList = self.getServicesList(paramsList = ['ServiceName'])
+    if granularity in ('Resource', 'Resources'):
+      resList = self.getResourcesList(paramsList = ['ResourceName'])
+    
+    rankList = []
+    activeRankList = []
+    probingRankList = []
+    
+    for res in resList:
+
+      periodsActive = self.getPeriods(granularity, res[0], 'Active', None, days)
+      periodsActive = [ [ datetime.strptime(period[0], '%Y-%m-%d %H:%M:%S'), datetime.strptime(period[1], '%Y-%m-%d %H:%M:%S') ] for period in periodsActive ]
+      
+      for p in periodsActive:
+        if p[1] < dateToCheckFrom:
+          periodsActive.remove(p)
+        elif p[0] < dateToCheckFrom:
+          p[0] = dateToCheckFrom
+      
+      activePeriodsLength = [ x[1]-x[0] for x in periodsActive ]
+      activePeriodsLength = [self.__convertTime(x) for x in activePeriodsLength]
+      activeRankList.append((res, sum(activePeriodsLength)))
+
+      
+      
+      periodsProbing = self.getPeriods(granularity, res[0], 'Probing', None, days)
+      periodsProbing = [ [ datetime.strptime(period[0], '%Y-%m-%d %H:%M:%S'), datetime.strptime(period[1], '%Y-%m-%d %H:%M:%S') ] for period in periodsProbing ]
+
+      for p in periodsProbing:
+        if p[1] < dateToCheckFrom:
+          periodsProbing.remove(p)
+        elif p[0] < dateToCheckFrom:
+          p[0] = dateToCheckFrom
+      
+      probingPeriodsLength = [ x[1]-x[0] for x in periodsProbing ]
+      probingPeriodsLength = [self.__convertTime(x) for x in probingPeriodsLength]
+      probingRankList.append((res, sum(probingPeriodsLength)))
+    
+      rankList.append( ( res[0], sum(activePeriodsLength) + sum(probingPeriodsLength)/2 ) )
+      
+    activeRankList = sorted(activeRankList, key=lambda x:(x[1], x[0]))
+    probingRankList = sorted(probingRankList, key=lambda x:(x[1], x[0]))
+    rankList =sorted(rankList, key=lambda x:(x[1], x[0]))
+
+    rank = {'WeightedRank':rankList, 'ActivesRank':activeRankList, 'ProbingsRank':probingRankList}
+
+    return rank
+
+#############################################################################
+
+  def __convertTime(self, t):
+    
+    sec = 0
+    
+    try:
+      tms = t.milliseconds
+      sec = sec + tms/1000
+    except AttributeError:
+      pass
+    try:
+      ts = t.seconds
+      sec = sec + ts
+    except AttributeError:
+      pass
+    try:
+      tm = t.minutes
+      sec = sec + tm * 60
+    except AttributeError:
+      pass
+    try:
+      th = t.hours
+      sec = sec + th * 3600
+    except AttributeError:
+      pass
+    try:
+      td = t.days
+      sec = sec + td * 86400
+    except AttributeError:
+      pass
+    try:
+      tw = t.weeks
+      sec = sec + tw * 604800
+    except AttributeError:
+      pass
+    
+    return sec
+    
+#############################################################################    

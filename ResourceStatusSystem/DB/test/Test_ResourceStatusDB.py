@@ -185,11 +185,6 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     res = self.rsDB.setServiceReason('Active', 'reasons', 'Federico')
     self.assertEqual(res, None)
 
-  def test_setServiceToBeChecked(self):
-    for g in ('Site', 'Resource'):
-      res = self.rsDB.setServiceToBeChecked(g, 'CERN.ch')
-      self.assertEqual(res, None)
-
   def test_addOrModifyService(self):
     for status in ValidStatus:
       res = self.rsDB.addOrModifyService('Computing@Ferrara', 'Computing', 'Ferrara', status, 'ho delle ragioni', datetime.utcnow(), 'testOP', datetime.utcnow() + timedelta(minutes=10))
@@ -370,6 +365,8 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
       for status in ValidStatus:
         res = self.rsDB.getPeriods(granularity, 'XX', status, 2)
         self.assertEqual(res, None)
+        res = self.rsDB.getPeriods(granularity, 'XX', status, None, 10)
+        self.assertEqual(res, None)
 #        res = self.rsDB.getPeriods(granularity, 'XX', status, 2)
 #        ((datetime.datetime(2009, 9, 21, 14, 38, 54), datetime.datetime(2009, 9, 21, 14, 38, 54)), (datetime.datetime(2009, 9, 21, 14, 38, 54), datetime.datetime(2009, 9, 22, 7, 8, 4)), (datetime.datetime(2009, 9, 22, 7, 8, 4), datetime.datetime(2009, 9, 22, 10, 48, 26)), (datetime.datetime(2009, 9, 22, 10, 48, 26), datetime.datetime(2009, 9, 24, 12, 12, 33)), (datetime.datetime(2009, 9, 24, 12, 12, 33), datetime.datetime(2009, 9, 24, 13, 5, 41)))
 
@@ -394,8 +391,16 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
   def test_getStuffToCheck(self):
     for g in ValidRes:
       res = self.rsDB.getStuffToCheck(g,Configurations.Sites_check_freq,3)
-    self.assertEqual(res, [])
+      self.assertEqual(res, [])
 
+  def test_setServiceToBeChecked(self):
+    res = self.rsDB.setServiceToBeChecked( 'Resource', 'aaa.ch')
+    self.assertEqual(res, None)
+
+  def test_rankRes(self):
+    for granularity in ValidRes:
+      res = self.rsDB.rankRes(granularity, 30)
+      self.assertEqual(res, {'WeightedRank':[], 'ActivesRank':[], 'ProbingsRank':[]})
 
 #  def test_syncWithCS(self):
 #    res = self.rsDB.syncWithCS()
@@ -466,10 +471,14 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
     self.assertRaises(RSSDBException, self.rsDB.addStatus, '')
     self.assertRaises(RSSDBException, self.rsDB.removeStatus, '')
     self.assertRaises(RSSDBException, self.rsDB.setDateEnd, 'Site', 'CNAF', datetime.utcnow())
+    self.assertRaises(RSSDBException, self.rsDB.setServiceToBeChecked, 'Site', 'CNAF')
+    self.assertRaises(RSSDBException, self.rsDB.rankRes, 'Site', 30)
     for g in ValidRes:
       self.assertRaises(RSSDBException, self.rsDB.getStuffToCheck, g,Configurations.Sites_check_freq,3) 
 #    self.assertRaises(RSSDBException, self.rsDB.syncWithCS)
    
+  def test_setServiceToBeChecked(self):
+    self.assertRaises(RSSDBException, self.rsDB.setServiceToBeChecked, 'Site', 'CERN.ch')
 
 
 if __name__ == '__main__':
