@@ -1,66 +1,45 @@
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/LHCbDIRAC/trunk/LHCbDIRAC/ProductionManagementSystem/Client/FileReport.py $
+# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/LHCbDIRAC/trunk/DIRAC/TransformationSystem/Client/FileReport.py $
 
-"""
-  FileReport class encapsulates methods to report file status in the
-  production environment in failover safe way
-"""
+""" FileReport class encapsulates methods to report file status to the transformation DB """
 
 __RCSID__ = "$Id: FileReport.py 18161 2009-11-11 12:07:09Z acasajus $"
 
-import copy
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC import S_OK, S_ERROR
-from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
-from DIRAC.RequestManagementSystem.Client.DISETSubRequest import DISETSubRequest
+from DIRAC                                                      import S_OK, S_ERROR
+from DIRAC.TransformationSystem.Client.TransformationDBClient   import TransformationDBClient
+from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
 
+import copy
 
 class FileReport:
 
   def __init__(self):
+    self.client = TransformationDBClient()
     self.statusDict = {}
-    self.production = None
+    self.transformation = None
 
-  def setFileStatus(self,production,lfn,status,sendFlag=False):
-    """ Set file status in the contesxt of the given transformation
-    """
-
-    if not self.production:
-      self.production = production
-
-    result = S_OK()
-    if sendFlag:
-      sendList = []
-      if self.statusDict:
-        for lfn_s,status_s in self.statusDict.items():
-          sendList.append((lfn_s,status_s))
-      sendList.append((lfn,status))
-      productionSvc = RPCClient('ProductionManagement/ProductionManager',timeout=120)
-      result = productionSvc.setFileStatusForTransformation(production,sendList)
-      if result['OK']:
-        return result
-
-    # Add the file status info to the internal cache for later retry
+  def setFileStatus(self,transformation,lfn,status,sendFlag=False):
+    """ Set file status in the context of the given transformation """
+    if not self.transformation:
+      self.transformation = transformation
     self.statusDict[lfn] = status
-    return result
+    if sendFlag:
+      return self.commit()
+    return S_OK()
 
   def setCommonStatus(self,status):
-    """ Set common status for all files in the internal cache
-    """
-
+    """ Set common status for all files in the internal cache """
     for lfn in self.statusDict.keys():
       self.statusDict[lfn] = status
-
     return S_OK()
 
   def getFiles(self):
-    """ Get the statuses of the files already accumulated in the FileReport object
-    """
-
+    """ Get the statuses of the files already accumulated in the FileReport object """
     return copy.deepcopy(self.statusDict)
 
   def commit(self):
-    """ Commit pending file status update records
-    """
+    """ Commit pending file status update records """
+    if not self.statusDict:
+      return S_OK()
 
     # create intermediate status dictionary
     sDict = {}
@@ -69,34 +48,23 @@ class FileReport:
         sDict[status] = []
       sDict[status].append(lfn)
 
-    statusList = []
     for status,lfns in sDict.items():
-      statusList.append((status,lfns))
-
-    if self.statusDict:
-      productionSvc = RPCClient('ProductionManagement/ProductionManager',timeout=120)
-      result = productionSvc.setFileStatusForTransformation(self.production,statusList)
-    else:
+      res = self.client.setFileStatusForTransformation(self.transformation,status,lfns) 
+      if res['OK']:
+        for lfn in lfns:
+          self.statusDict.pop(lfn)
+    
+    if not self.statusDict:
       return S_OK()
-
-    if result['OK']:
-      self.statusDict = {}
-      return S_OK()
-
-    return result
-
-
+    return S_ERROR("Failed to update all file statuses")
+  
   def generateRequest(self):
-    """ Commit the accumulated records and generate request eventually
-    """
-
+    """ Commit the accumulated records and generate request eventually """
     result = self.commit()
-
     request = None
     if not result['OK']:
       # Generate Request
       request = RequestContainer()
       if result.has_key('rpcStub'):
         request.setDISETRequest(result['rpcStub'])
-
     return S_OK(request)
