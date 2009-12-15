@@ -715,11 +715,12 @@ class TransformationDB(DB):
       inputVector = taskDict['InputVector']
       if not site:
         if inputVector:
-          res = getSitesForSE(se)
+          res = getSitesForSE(se,'LCG')
           if not res['OK']:
             continue
-          sites = res['Value']
-          usedSite = sites
+          usedSite = res['Value']
+          if len(usedSite) == 1:
+            usedSite = usedSite[0]
         else:
           usedSite = 'ANY'      
         resultDict[taskID] = {'InputData':inputVector,'TargetSE':se,'Status':status,'Site':usedSite}
