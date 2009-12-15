@@ -696,6 +696,7 @@ class TransformationDB(DB):
     res = self.getTransformationTasks(condDict=condDict,older=older, newer=newer, timeStamp='CreationTime', orderAttribute=None, limit=numTasks,inputVector=True,connection=connection)
     if not res['OK']:
       return res
+    tasks = res['Value']
     # Prepare Site->SE resolution mapping
     selSEs = []
     if site:
@@ -708,8 +709,8 @@ class TransformationDB(DB):
     for taskDict in tasks:
       if len(resultDict) >= numTasks:
         break
-      taskID = taskDict['TransformationID']
-      se = taskDict['UsedSE']
+      taskID = taskDict['JobID']
+      se = taskDict['TargetSE']
       status = taskDict['WmsStatus']
       inputVector = taskDict['InputVector']
       if not site:
@@ -756,7 +757,7 @@ class TransformationDB(DB):
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR('Failed to set Reserved status for job %d - already Reserved' % int(jobID) )
+      return S_ERROR('Failed to set Reserved status for job %d - already Reserved' % int(taskID) )
     # The job is reserved, update the time stamp
     res = self.setTaskStatus(transID,taskID,'Reserved',connection=connection)
     if not res['OK']:
