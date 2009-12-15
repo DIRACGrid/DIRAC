@@ -37,7 +37,7 @@ import re,types
 
 class FileCatalogueBase:
 
-  def __init__(self,name):
+  def __init__(self,name=''):
     self.name = name
 
   def setName(self,name):
