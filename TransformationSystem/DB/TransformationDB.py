@@ -65,7 +65,7 @@ class TransformationDB(DB):
                           'Status',
                           'MaxNumberOfJobs']
 
-    self.TRANSFILEPARAMS = ['TransformationName',
+    self.TRANSFILEPARAMS = ['TransformationID',
                             'FileID',
                             'Status',
                             'JobID',
@@ -73,7 +73,7 @@ class TransformationDB(DB):
                             'UsedSE',
                             'ErrorCount',
                             'LastUpdate',
-                            'InsertTime']
+                            'InsertedTime']
 
     self.TASKSPARAMS = [  'JobID',
                           'TransformationID',
@@ -413,13 +413,13 @@ class TransformationDB(DB):
   def getTransformationFiles(self,condDict={},older=None, newer=None, timeStamp='LastUpdate', orderAttribute=None, limit=None,connection=False):
     """ Get files for the supplied transformations with support for the web standard structure """
     connection = self.__getConnection(connection)
-    req = "SELECT %s FROM TransformationFiles" % (intListToString(self.TRANSFILEPARAMS),transID)
+    req = "SELECT %s FROM TransformationFiles" % (intListToString(self.TRANSFILEPARAMS))
     if condDict or older or newer:
       req = "%s %s" % (req,self.buildCondition(condDict, older, newer, timeStamp,orderAttribute,limit))
     res = self._query(req,connection)
-    transFiles = []
-    if res['OK']:
-      transFiles = res['Value']
+    if not res['OK']:
+      return res
+    transFiles = res['Value']
     fileIDs = [int(row[0]) for row in transFiles]
     webList = []
     resultList = []
