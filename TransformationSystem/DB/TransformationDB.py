@@ -430,7 +430,7 @@ class TransformationDB(DB):
         return res
       fileIDLfns = res['Value'][1]
       for row in transFiles:
-        lfn = fileIDLfns[row[0]]
+        lfn = fileIDLfns[row[1]]
         # Prepare the structure for the web
         rList = [lfn]
         fDict = {}
