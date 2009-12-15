@@ -43,7 +43,7 @@ class TransformationDB(DB):
                           'Description',
                           'LongDescription',
                           'CreationDate',
-                          'LastUpdate'
+                          'LastUpdate',
                           'AuthorDN',
                           'AuthorGroup',
                           'Type',
