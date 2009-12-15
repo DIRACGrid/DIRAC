@@ -55,6 +55,10 @@ class StagerAgent(AgentModule):
   def execute(self):
     """The StagerAgent execution method.
     """
+    # This is a temporary fix
+    result = setupShifterProxyInEnv( "ProductionManager" )
+    if not result[ 'OK' ]:
+      return S_ERROR( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
 
     agent = {}
     if not self.started:

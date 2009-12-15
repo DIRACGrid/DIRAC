@@ -53,8 +53,13 @@ class StagerMonitorAgent(AgentModule):
   def execute(self):
     """The StagerMonitorAgent execution method.
     """
+    # This is a temporary fix
+    result = setupShifterProxyInEnv( "ProductionManager" )
+    if not result[ 'OK' ]:
+      return S_ERROR( "Can't get shifter's proxy: %s" % result[ 'Message' ] )
+
     # Update polling time
-    self.pollingTime = self.am_getOption('PollingTime',60)
+    self.pollingTime = self.am_getOption( 'PollingTime', self.pollingTime )
 
     agent = {}
     if not self.started:
