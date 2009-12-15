@@ -282,8 +282,8 @@ class PilotDirector:
     csServers = gConfig.getValue( "/DIRAC/Configuration/Servers", [] )
     pilotOptions.append( '-C %s' % ",".join( csServers ) )
     # DIRAC Extensions
-    csServers = gConfig.getValue( "/DIRAC/Extensions", [] )
-    pilotOptions.append( '-e %s' % ",".join( extensions ) )
+    extensionsList = gConfig.getValue( "/DIRAC/Extensions", [] )
+    pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
     # Requested version of DIRAC
     pilotOptions.append( '-r %s' % self.diracVersion )
     # Requested CPU time
