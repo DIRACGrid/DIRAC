@@ -40,6 +40,9 @@ class FileCatalogueBase:
   def __init__(self,name):
     self.name = name
 
+  def setName(self,name):
+    self.name=name
+
   def exists(self, path):
     if type(path) == types.StringType:
       paths = [path]
