@@ -14,6 +14,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 from DIRAC.Core.Security.Misc                            import getProxyInfo
 from DIRAC.Core.Security                                 import Locations
 from DIRAC.Core.Security                                 import Properties
+import DIRAC
 
 import os, sys, re, string, time, urllib
 
@@ -28,7 +29,7 @@ class DiracSiteAgent(AgentModule):
     self.maxcount = loops
     
     self.logLevel = gConfig.getValue('DIRAC/LogLevel','INFO')
-    self.siteRoot = gConfig.getValue('LocalSite/Root',os.getcwd())
+    self.siteRoot = gConfig.getValue('LocalSite/Root',DIRAC.rootPath)
     self.localArea = gConfig.getValue('LocalSite/LocalArea','/tmp')
     self.siteName = gConfig.getValue('LocalSite/Site','Unknown')
     self.cpuFactor = gConfig.getValue('LocalSite/CPUScalingFactor','Unknown')
