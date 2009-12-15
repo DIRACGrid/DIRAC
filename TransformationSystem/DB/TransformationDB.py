@@ -719,9 +719,7 @@ class TransformationDB(DB):
           if not res['OK']:
             continue
           sites = res['Value']
-          usedSite = 'Multiple'
-          if len(sites) == 1:
-            usedSite = sites[0]
+          usedSite = sites
         else:
           usedSite = 'ANY'      
         resultDict[taskID] = {'InputData':inputVector,'TargetSE':se,'Status':status,'Site':usedSite}
