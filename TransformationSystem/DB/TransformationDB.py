@@ -420,7 +420,7 @@ class TransformationDB(DB):
     if not res['OK']:
       return res
     transFiles = res['Value']
-    fileIDs = [int(row[0]) for row in transFiles]
+    fileIDs = [int(row[1]) for row in transFiles]
     webList = []
     resultList = []
     fileIDLfns = {}
