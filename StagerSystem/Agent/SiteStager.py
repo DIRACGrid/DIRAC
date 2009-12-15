@@ -33,7 +33,7 @@ class SiteStager(Thread):
     self.fileSelectLimit = gConfig.getValue(self.configSection+'/FileSelectLimit',1000)
     self.maxRequests = gConfig.getValue(self.configSection+'/MaxFiles',20000)
     self.stageRepeatTime = gConfig.getValue(self.configSection+'/StageRepeatTime',6) #Hours
-    self.stagerClient = StagerClient()
+    self.stagerClient = StagerClient(useCerts=True)
     Thread.__init__(self)
     self.setDaemon( True )
 

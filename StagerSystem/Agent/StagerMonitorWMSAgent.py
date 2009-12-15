@@ -60,9 +60,9 @@ class StagerMonitorWMSAgent(AgentModule):
   def execute(self):
     """The StagerMonitorWMS execution method.
     """
-    self.pollingTime = self.am_getOption('PollingTime',60)
+    self.pollingTime = self.am_getOption('PollingTime',self.pollingTime)
 
-    self.stagerClient = StagerClient()
+    self.stagerClient = StagerClient(useCerts=True)
 
     self.log.verbose('Checking submitted jobs for status changes')
     result = self.__checkSubmittedJobs()

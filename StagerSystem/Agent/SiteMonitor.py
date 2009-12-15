@@ -35,7 +35,7 @@ class SiteMonitor(Thread):
     self.stageRepeatTime = gConfig.getValue(self.configSection+'/StageRepeatTime',21600) # e.g. 6hrs
     self.stageRetryMax = gConfig.getValue(self.configSection+'/StageRetryMax',4) # e.g. after 4 * 6 hrs
     self.taskSelectLimit = gConfig.getValue(self.configSection+'/TaskSelectLimit',100) # e.g. after 24hrs
-    self.stagerClient = StagerClient()
+    self.stagerClient = StagerClient(useCerts=True)
     self.rm = ReplicaManager()
     Thread.__init__(self)
     self.setDaemon( True )
