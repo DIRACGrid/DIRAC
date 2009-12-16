@@ -566,7 +566,7 @@ class TransformationDB(DB):
     for tuple in res['Value']:
       fileIDs.remove(tuple[0])
     if not fileIDs:
-      return S_OK()
+      return S_OK([])
     req = "INSERT INTO TransformationFiles (TransformationID,FileID,LastUpdate,InsertedTime) VALUES"
     for fileID in fileIDs:
       req = "%s (%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP())," % (req,transID,fileID)
