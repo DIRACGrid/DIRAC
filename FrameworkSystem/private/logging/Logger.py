@@ -18,6 +18,8 @@ from DIRAC.FrameworkSystem.private.logging.backends.BackendIndex import gBackend
 from DIRAC.Core.Utilities import ExitCallback, ColorCLI
 import DIRAC
 
+DEBUG = 0
+
 class Logger:
 
   def __init__( self ):
@@ -52,12 +54,15 @@ class Logger:
     if self._systemName == "Framework":
       from DIRAC.ConfigurationSystem.Client.Config import gConfig
       from os import getpid
+      
+      self.__printDebug( "The configuration path is %s" % cfgPath )
       #Get the options for the different output backends
       retDict = gConfig.getOptionsDict( "%s/BackendsOptions" % cfgPath )
       if not retDict[ 'OK' ]:
         self.backendsOptions = { 'FileName': 'Dirac-log_%s.log' % getpid(),
                                  'Interactive': True, 'SleepTime': 150 }
       else:
+        self.__printDebug( "The Options for the Backends are %s\n" % retDict[ 'Value' ] )
         self.backendsOptions = retDict[ 'Value' ]
 
         if not self.backendsOptions.has_key( 'Filename' ):
@@ -76,6 +81,7 @@ class Logger:
           self.backendsOptions[ 'Interactive' ] = True
 
       self.backendsOptions[ 'Site' ] = DIRAC.siteName()
+      self.__printDebug( "I'm running at %s" % self.backendsOptions[ 'Site' ] )
 
       #Configure outputs
       desiredBackends = gConfig.getValue( "%s/LogBackends" % cfgPath,
@@ -84,6 +90,9 @@ class Logger:
       #Configure verbosity
       self.setLevel( gConfig.getValue( "%s/LogLevel" % cfgPath, "INFO" ) )
       #Configure framing
+      self.__printDebug ( "I shall use %s with LogLevel %s" % 
+                          ( desiredBackends, 
+                            gConfig.getValue( "%s/LogLevel" % cfgPath, "INFO" ) ) )
       retDict = gConfig.getOption( "%s/LogShowLine" % cfgPath )
       if retDict[ 'OK' ] and retDict[ 'Value' ].lower() in ( "y", "yes", "1", "true" ) :
         self._showCallingFrame = True
@@ -299,4 +308,12 @@ class Logger:
     if not subName in self._subLoggersDict.keys():
       self._subLoggersDict[ subName ] = SubSystemLogger( subName, self, child )
     return self._subLoggersDict[ subName ]
+
+  def __printDebug( self, debugString ):
+    """ This function is implemented to debug problems with initialization 
+     of the logger. We have to use it because the Logger is obviously unusable 
+     during its initialization.
+    """
+    if DEBUG:
+      print debugString
 
