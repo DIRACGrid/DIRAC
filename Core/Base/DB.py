@@ -90,7 +90,7 @@ class DB(MySQL):
     if condDict != None:
       for attrName, attrValue in condDict.items():
         if type(attrValue) == types.ListType:
-          multiValue = ','.join(['"'+x.strip()+'"' for x in attrValue])
+          multiValue = ','.join(['"'+str(x).strip()+'"' for x in attrValue])
           condition = ' %s %s %s in (%s)' % ( condition,
                                               conjunction,
                                               str(attrName),
