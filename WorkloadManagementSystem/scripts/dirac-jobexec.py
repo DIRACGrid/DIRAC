@@ -22,7 +22,6 @@ from DIRAC.Core.Workflow.Workflow import *
 from DIRAC.Core.Workflow.WorkflowReader import *
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
-from DIRAC.TransformationSystem.Client.FileReport import FileReport
 from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 
@@ -52,7 +51,6 @@ def jobexec(jobxml,wfParameters={}):
     gLogger.info('DIRAC JobID %s is running at site %s' %( jobID, DIRAC.siteName() ))
 
   workflow.addTool('JobReport',JobReport(jobID))
-  workflow.addTool('FileReport',FileReport())
   workflow.addTool('AccountingReport',DataStoreClient())
   workflow.addTool('Request',RequestContainer())
 
