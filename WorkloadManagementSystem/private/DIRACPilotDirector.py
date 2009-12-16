@@ -280,10 +280,10 @@ try:
   pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix= 'DIRAC_' )
   os.chdir( pilotWorkingDirectory )
   open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedProxy)s" ) ) )
-  open( 'dirac-pilot', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedPilot)s" ) ) )
+  open( '%(pilotScript)s', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedPilot)s" ) ) )
   open( 'dirac-install', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedInstall)s" ) ) )
   os.chmod("proxy",0600)
-  os.chmod("dirac-pilot",0700)
+  os.chmod("%(pilotScript)s",0700)
   os.chmod("dirac-install",0700)
   if "LD_LIBRARY_PATH" not in os.environ:
     os.environ["LD_LIBRARY_PATH"]=""
