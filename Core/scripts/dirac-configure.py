@@ -211,11 +211,12 @@ if ceName or siteName:
       if ceName:
         DIRAC.gLogger.info( 'Setting /LocalSite/GridCE = %s' % ceName )
         Script.localCfg.addDefaultEntry( '/LocalSite/GridCE', ceName )
-      if not localSE:
+
+      if not localSE and siteName in sites:
         localSE = DIRAC.gConfig.getValue( '/Resources/Sites/%s/%s/SE' % ( grid, siteName ), 'None' )
         DIRAC.gLogger.info( 'Setting /LocalSite/LocalSE =', localSE )
         Script.localCfg.addDefaultEntry( '/LocalSite/LocalSE', localSE )
-      break
+        break
 
 
 if gatewayServer:
