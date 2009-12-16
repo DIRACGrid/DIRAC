@@ -404,8 +404,9 @@ class TransformationDB(DB):
     if not res['OK']:
       return res
     for fileID in fileIDs.keys():
+      lfn = fileIDs[fileID]
       successful[lfn] = "Present"
-      if not fileID in res['Value']:
+      if fileID in res['Value']:
         successful[lfn] = "Added"
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
