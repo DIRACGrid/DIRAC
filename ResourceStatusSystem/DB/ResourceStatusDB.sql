@@ -111,6 +111,27 @@ CREATE TABLE Resources(
   PRIMARY KEY (ResourceID)
 ) Engine = InnoDB ;
 
+DROP TABLE IF EXISTS StorageElements;
+CREATE TABLE StorageElements(
+  StorageElementID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  StorageElementName VARCHAR(64) NOT NULL,
+  INDEX (StorageElementName),
+  ResourceName VARCHAR(64) NOT NULL,
+  SiteName VARCHAR(64) NOT NULL,
+  INDEX (SiteName),
+  Status VARCHAR(8) NOT NULL,
+  INDEX (Status),
+  Reason VARCHAR(255) NOT NULL DEFAULT 'Unspecified',
+  DateCreated DATETIME NOT NULL,
+  DateEffective DATETIME NOT NULL,
+  INDEX (DateEffective),
+  DateEnd DATETIME,
+  OperatorCode VARCHAR(255) NOT NULL,
+  LastCheckTime DATETIME NOT NULL,
+  FOREIGN KEY (Status) REFERENCES Status(Status),
+  PRIMARY KEY (StorageElementID)
+) Engine = InnoDB ;
+
 
 DROP TABLE IF EXISTS SitesHistory;
 CREATE TABLE SitesHistory(
@@ -152,6 +173,21 @@ CREATE TABLE ResourcesHistory(
   DateEnd DATETIME NOT NULL,
   OperatorCode VARCHAR(255) NOT NULL,
   PRIMARY KEY (ResourcesHistoryID)
+) Engine=InnoDB;
+
+DROP TABLE IF EXISTS StorageElementsHistory;
+CREATE TABLE StorageElementsHistory(
+  StorageElementsHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  StorageElementName VARCHAR(64) NOT NULL,
+  ResourceName VARCHAR(64) NOT NULL,
+  SiteName VARCHAR(64) NOT NULL,
+  Status VARCHAR(8) NOT NULL,
+  Reason VARCHAR(255) NOT NULL,
+  DateCreated DATETIME NOT NULL,
+  DateEffective DATETIME NOT NULL,
+  DateEnd DATETIME NOT NULL,
+  OperatorCode VARCHAR(255) NOT NULL,
+  PRIMARY KEY (StorageElementsHistoryID)
 ) Engine=InnoDB;
 
 
@@ -207,7 +243,23 @@ FROM (
     INNER JOIN ResourcesHistory ON 
       Resources.ResourceName = ResourcesHistory.ResourceName AND 
       Resources.DateEffective = ResourcesHistory.DateEnd
-);
-   
-WHERE Resources.DateEffective < UTC_TIMESTAMP()
+) WHERE Resources.DateEffective < UTC_TIMESTAMP()
 ORDER BY SiteName;
+
+
+DROP VIEW IF EXISTS PresentStorageElements;
+CREATE VIEW PresentStorageElements AS SELECT 
+  StorageElements.StorageElementName, 
+  StorageElements.ResourceName, 
+  StorageElements.SiteName, 
+  StorageElements.Status,
+  StorageElements.DateEffective, 
+  StorageElementsHistory.Status AS FormerStatus,
+  StorageElements.Reason,
+  StorageElements.LastCheckTime,
+  StorageElements.OperatorCode
+FROM StorageElements INNER JOIN StorageElementsHistory ON 
+  StorageElements.StorageElementName = StorageElementsHistory.StorageElementName AND 
+  StorageElements.DateEffective = StorageElementsHistory.DateEnd 
+WHERE StorageElements.DateEffective < UTC_TIMESTAMP()
+ORDER BY StorageElementName;
