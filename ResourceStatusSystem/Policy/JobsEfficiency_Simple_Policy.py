@@ -33,9 +33,6 @@ class JobsEfficiency_Simple_Policy(PolicyBase):
     if args[2] not in ValidStatus:
       raise InvalidStatus, where(self, self.evaluate)
 
-    if args[2] == 'Banned':
-      return {'SAT':None}
-
     if knownInfo is not None:
       if 'JobsEff' in knownInfo.keys():
         status = knownInfo['JobsEff']
