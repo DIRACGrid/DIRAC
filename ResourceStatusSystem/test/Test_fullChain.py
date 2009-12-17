@@ -16,18 +16,18 @@ class PolicySystemFullChain(FullChainTestCase):
   
   def test_PolicySystemFullChain(self):
 
-#    print "\n %%%%%% SITO %%%%%%%\n "
-#    
-#    for status in ValidStatus:
-#      for oldStatus in ValidStatus:
-#        if status == oldStatus:
-#          continue
-#        print "############################"
-#        print " "
-#        print 'nel test:', status, oldStatus
-#        pdp = PDP('Site', 'LCG.Durham.uk', status, oldStatus, 'XX')
-#        res = pdp.takeDecision()
-#        print res
+    print "\n %%%%%% SITO %%%%%%%\n "
+    
+    for status in ValidStatus:
+      for oldStatus in ValidStatus:
+        if status == oldStatus:
+          continue
+        print "############################"
+        print " "
+        print 'nel test:', status, oldStatus
+        pdp = PDP('Site', 'LCG.CESGA.es', status, oldStatus, 'XX')
+        res = pdp.takeDecision()
+        print res
 
 #    print "\n %%%%%% SERVICE %%%%%%%\n "
 #    
@@ -44,18 +44,18 @@ class PolicySystemFullChain(FullChainTestCase):
 
 
     
-    print "\n %%%%%% RISORSA %%%%%%%\n "
-
-    for status in ValidStatus:
-      for oldStatus in ValidStatus:
-        if status == oldStatus:
-          continue
-        print "############################"
-        print " "
-        print status, oldStatus
-        pdp = PDP('Resource', 'cs-grid1.bgu.ac.il', status, oldStatus, 'XXXXX')
-        res = pdp.takeDecision()
-        print res
+#    print "\n %%%%%% RISORSA %%%%%%%\n "
+#
+#    for status in ValidStatus:
+#      for oldStatus in ValidStatus:
+#        if status == oldStatus:
+#          continue
+#        print "############################"
+#        print " "
+#        print status, oldStatus
+#        pdp = PDP('Resource', 'cs-grid1.bgu.ac.il', status, oldStatus, 'XXXXX')
+#        res = pdp.takeDecision()
+#        print res
 
 #    for status in ValidStatus:
 #      for oldStatus in ValidStatus:

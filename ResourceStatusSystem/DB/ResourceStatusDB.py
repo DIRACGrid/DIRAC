@@ -2025,10 +2025,12 @@ class ResourceStatusDB:
     
     if granularity in ('Site', 'Sites'):
       req = "SELECT DateEffective FROM Sites WHERE SiteName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %(name, status)
-    elif granularity in ('Resource', 'Resources'):
-      req = "SELECT DateEffective FROM Resources WHERE ResourceName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %(name, status)
     elif granularity in ('Service', 'Services'):
       req = "SELECT DateEffective FROM Services WHERE ServiceName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %(name, status)
+    elif granularity in ('Resource', 'Resources'):
+      req = "SELECT DateEffective FROM Resources WHERE ResourceName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %(name, status)
+    elif granularity in ('StorageElement', 'StorageElements'):
+      req = "SELECT DateEffective FROM StorageElements WHERE StorageElementName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %(name, status)
     
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -2312,17 +2314,24 @@ class ResourceStatusDB:
       if not resUpdate['OK']:
         raise RSSDBException, where(self, self.setDateEnd) + resUpdate['Message']
 
+    elif siteOrRes == 'Service':
+      query = "UPDATE Services SET DateEnd = '%s' WHERE ServiceName = '%s' AND DateEffective < '%s'" % (args[2], args[1], args[2])
+      resUpdate = self.db._update(query)
+      if not resUpdate['OK']:
+        raise RSSDBException, where(self, self.setDateEnd) + resUpdate['Message']
+
     elif siteOrRes == 'Resource':
       query = "UPDATE Resources SET DateEnd = '%s' WHERE ResourceName = '%s' AND DateEffective < '%s'" % (args[2], args[1], args[2])
       resUpdate = self.db._update(query)
       if not resUpdate['OK']:
         raise RSSDBException, where(self, self.setDateEnd) + resUpdate['Message']
 
-    elif siteOrRes == 'Service':
-      query = "UPDATE Services SET DateEnd = '%s' WHERE ServiceName = '%s' AND DateEffective < '%s'" % (args[2], args[1], args[2])
+    elif siteOrRes == 'StorageElement':
+      query = "UPDATE StorageElements SET DateEnd = '%s' WHERE StorageElementName = '%s' AND DateEffective < '%s'" % (args[2], args[1], args[2])
       resUpdate = self.db._update(query)
       if not resUpdate['OK']:
         raise RSSDBException, where(self, self.setDateEnd) + resUpdate['Message']
+
 
 
 #############################################################################
@@ -2400,8 +2409,12 @@ class ResourceStatusDB:
 
   def syncWithCS(self, a, b):
     """ 
-    Syncronize DB content with CS content. Params are fake.
+    Syncronize DB content with CS content. Params are fake (just to be invoked by 
+    meth:`DIRAC.gConfig.addListenerToNewVersionEvent`) during initialization of 
+    :mod:`DIRAC.ResourceStatusSystem.Service.ResourceStatusHandler` 
     """ 
+    
+    #sincrony of sites, services and nodes.
     
     from DIRAC.Core.Utilities.SiteCEMapping import getSiteCEMapping
     from DIRAC.Core.Utilities.SiteSEMapping import getSiteSEMapping
@@ -2563,6 +2576,13 @@ class ResourceStatusDB:
             self.addOrModifyResource(se, 'SE', service, site, 'Active', 'init', datetime.utcnow().replace(microsecond = 0), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
             seServiceSite.append(sss)
             
+    
+    #sincrony of assignee group for alarms        
+    #I just take all lhcb_prod users
+#    from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+#    nc = NotificationClient()
+#    nc.setAssigneeGroup('RSS_alarms', gConfig.getValue("Security/Groups/lhcb_prod/Users").replace(',', '').split())
+#            
     return S_OK()
           
       
@@ -2680,6 +2700,8 @@ class ResourceStatusDB:
       resList = self.getServicesList(paramsList = ['ServiceName'])
     if granularity in ('Resource', 'Resources'):
       resList = self.getResourcesList(paramsList = ['ResourceName'])
+    if granularity in ('StorageElement', 'StorageElements'):
+      resList = self.getStorageElementsList(paramsList = ['StorageElementName'])
     
     rankList = []
     activeRankList = []

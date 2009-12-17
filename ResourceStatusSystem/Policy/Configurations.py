@@ -9,6 +9,10 @@
 
 notified_users = 'fstagni'
 
+#from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+#nc = NotificationClient()
+#notified_users = nc.getAssigneeGroups()['Value']['RSS_alarms']
+
 #############################################################################
 # policies evaluated
 #############################################################################
@@ -45,6 +49,33 @@ SBA = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
 SBP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
         'Policies': ['DT_Policy', 'JobsEfficiencySimple_Policy', 'PilotsEfficiencySimple_Policy']}]       
 
+
+#when a service, now active, was probing
+SeAP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
+         'Policies': ['OnServicePropagation_Policy']}]
+
+#when a service, now active, was banned
+SeAB = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
+         'Policies': ['OnServicePropagation_Policy']}]
+
+#when a service, now probing, was active
+SePA = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
+         'Policies': ['OnServicePropagation_Policy']}]
+
+#when a service, now probing, was banned
+SePB = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
+         'Policies': ['OnServicePropagation_Policy']}]
+
+#when a service, now banned, was active
+SeBA = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
+         'Policies': ['OnServicePropagation_Policy']}]
+
+#when a service, now banned, was probing
+SeBP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
+         'Policies': ['OnServicePropagation_Policy']}]
+
+
+
 #when a resource, now active, was probing
 RAP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
         'Policies': ['DT_Policy', 'SAM_Policy', 'PilotsEfficiencySimple_Policy']}]
@@ -70,29 +101,6 @@ RBP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
         'Policies': ['DT_Policy', 'SAM_Policy', 'PilotsEfficiencySimple_Policy']}]
 
 
-#when a service, now active, was probing
-SeAP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-         'Policies': ['OnServicePropagation_Policy']}]
-
-#when a service, now active, was banned
-SeAB = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-         'Policies': ['OnServicePropagation_Policy']}]
-
-#when a service, now probing, was active
-SePA = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-         'Policies': ['OnServicePropagation_Policy']}]
-
-#when a service, now probing, was banned
-SePB = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-         'Policies': ['OnServicePropagation_Policy']}]
-
-#when a service, now banned, was active
-SeBA = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-         'Policies': ['OnServicePropagation_Policy']}]
-
-#when a service, now banned, was probing
-SeBP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-         'Policies': ['OnServicePropagation_Policy']}]
 
 #############################################################################
 # policies parameters

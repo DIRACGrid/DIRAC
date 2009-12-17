@@ -51,7 +51,7 @@ def getSiteRealName(s):
 # general parameters
 #############################################################################
 
-ValidRes = ['Site', 'Service', 'Resource']
+ValidRes = ['Site', 'Service', 'Resource', 'StorageElement']
 ValidStatus = ['Active', 'Probing', 'Banned']
 PolicyTypes = ['Resource_PolType', 'Alarm_PolType', 'Collective_PolType']
 ValidSiteType = ['T0', 'T1', 'T2']

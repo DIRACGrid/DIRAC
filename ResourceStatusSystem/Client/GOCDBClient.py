@@ -33,7 +33,7 @@ class GOCDBClient:
 
     """
 
-    if args[0].capitalize() not in ValidRes:
+    if args[0] not in ValidRes:
       raise InvalidRes, where(self, self.getStatus)
     
     if args[0] == 'Site':

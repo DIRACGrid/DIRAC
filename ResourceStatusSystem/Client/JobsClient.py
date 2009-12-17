@@ -39,7 +39,7 @@ class JobsClient:
     
     if args[0] == 'Site':
       entity = getSiteRealName(args[1])
-      _granularity = 'Site'
+      granularity = 'Site'
     else:
       entity = args[1]
       granularity = 'GridCE'
