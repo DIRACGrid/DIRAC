@@ -60,7 +60,7 @@ Systems
         $DB
         {
           User = Dirac
-          Host = localhost
+          Host = $HOST
           Password = $MYSQL_DIRAC_PWD
           DBName = $DB
         }
@@ -74,13 +74,19 @@ python << EOF
 from DIRAC.Core.Utilities.CFG import CFG
 mainCFG = CFG()
 mainCFG.loadFromFile( "etc/dirac.cfg" )
-
 db = CFG()
-
 db.loadFromFile( "/tmp/$DB.cfg" )
-
 open( "etc/dirac.cfg", "w" ).write( str(mainCFG.mergeWith( db )) )
+EOF
 
+touch etc/DBs.cfg
+python << EOF
+from DIRAC.Core.Utilities.CFG import CFG
+mainCFG = CFG()
+mainCFG.loadFromFile( "etc/DBs.cfg" )
+db = CFG()
+db.loadFromFile( "/tmp/$DB.cfg" )
+open( "etc/DBs.cfg", "w" ).write( str(mainCFG.mergeWith( db )) )
 EOF
 
 done
