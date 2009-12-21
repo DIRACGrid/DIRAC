@@ -371,7 +371,7 @@ class PilotAgentsDB(DB):
     result = self._update(req, conn = conn)
     return result
 
- ##########################################################################################
+##########################################################################################
   def setPilotBenchmark(self,pilotRef,mark):
     """ Set the pilot agent benchmark
     """
@@ -506,7 +506,7 @@ class PilotAgentsDB(DB):
         pilotList = [ x[0] for x in result['Value'] ]
         return S_OK(pilotList)
       else:
-        return S_ERROR('PilotJobReference '+pilotRef+' not found'  )
+        return S_ERROR('PilotID '+jobID+' not found'  )
 
 ##########################################################################################
   def getJobsForPilot( self, pilotID ):
@@ -622,7 +622,7 @@ class PilotAgentsDB(DB):
         ownerTuple = (result['Value'][0][0],result['Value'][0][1])
         return S_OK(ownerTuple)
       else:
-        return S_ERROR('PilotID '+str(pilotID)+' not found')
+        return S_ERROR('PilotJobReference '+str(pilotRef)+' not found')
 
 ##########################################################################################
   def getPilotSummary(self,startdate='',enddate=''):
