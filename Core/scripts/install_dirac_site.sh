@@ -219,7 +219,6 @@ Install_Options="-t server -r $DIRACVERSION -P $VERDIR -i $DIRACPYTHON -g $LCGVE
 [ "$LOGLEVEL" == "DEBUG" ] && Install_Options="$Install_Options -d"
 
 python $CURDIR/dirac-install.py $Install_Options || error_exit "Failed DIRAC installation"
-# "-o /LocalSite/Root=$ROOT -o /LocalSite/Site=$SiteName -o /LocalSite/ResourceDict/Site=$SiteName -o /DIRAC/Security/UseServerCertificate=yes"
 #
 # Create pro and old links
 old=$DESTDIR/old
@@ -230,11 +229,11 @@ pro=$DESTDIR/pro
 [ -e $pro ] && error_exit "Fail to rename $pro $old"
 ln -s $VERDIR $pro || error_exit "Fail to create link $pro -> $VERDIR"
 #
-# Retrive last version of CA's
+# Configure and Retrieve last version of CA's
 #
 [ $DIRACARCH ] || DIRACARCH=`$DESTDIR/pro/scripts/dirac-platform`
 export DIRACPLAT=$DIRACARCH
-$VERDIR/scripts/dirac-admin-get-CAs
+$VERDIR/scripts/dirac-configure -S LHCb-Development -C dips://lhcb-wms-dirac.cern.ch:9135/Configuration/Server,dips://lhcbprod.pic.es:9135/Configuration/Server -n $SiteName --UseServerCertificate -o /LocalSite/Root=$ROOT -o /LocalSite/ResourceDict/Site=$SiteName
 
 #
 # Create bin link
