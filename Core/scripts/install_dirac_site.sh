@@ -211,12 +211,13 @@ done
 dir=`echo $DESTDIR/pro/$DIRACARCH/bin | sed 's/\//\\\\\//g'`
 PATH=`echo $PATH | sed "s/$dir://"`
 
-Install_Options="-t server -r $DIRACVERSION -P $VERDIR -i $DIRACPYTHON -o /LocalSite/Root=$ROOT -o /LocalSite/Site=$SiteName -o /LocalSite/ResourceDict/Site=$SiteName -o /DIRAC/Security/UseServerCertificate=yes"
+Install_Options="-t server -r $DIRACVERSION -P $VERDIR -i $DIRACPYTHON "
 [ $EXTVERSION ] && Install_Options="$Install_Options -e $EXTVERSION"
 [ $DIRACARCH ] && Install_Options="$Install_Options -p $DIRACARCH"
 [ "$LOGLEVEL" == "DEBUG" ] && Install_Options="$Install_Options -d"
 
 python $CURDIR/dirac-install.py $Install_Options || error_exit "Failed DIRAC installation"
+# "-o /LocalSite/Root=$ROOT -o /LocalSite/Site=$SiteName -o /LocalSite/ResourceDict/Site=$SiteName -o /DIRAC/Security/UseServerCertificate=yes"
 #
 # Create pro and old links
 old=$DESTDIR/old
