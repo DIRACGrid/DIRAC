@@ -70,6 +70,8 @@ exit 1
 #
 # Python Version to use
 DIRACPYTHON=25
+# LCG tar version
+LCGVER="2009-08-13"
 # Directories to create at DESTDIR
 DIRACDIRS="startup runit data work control"
 #
@@ -211,7 +213,7 @@ done
 dir=`echo $DESTDIR/pro/$DIRACARCH/bin | sed 's/\//\\\\\//g'`
 PATH=`echo $PATH | sed "s/$dir://"`
 
-Install_Options="-t server -r $DIRACVERSION -P $VERDIR -i $DIRACPYTHON "
+Install_Options="-t server -r $DIRACVERSION -P $VERDIR -i $DIRACPYTHON -g $LCGVER "
 [ $EXTVERSION ] && Install_Options="$Install_Options -e $EXTVERSION"
 [ $DIRACARCH ] && Install_Options="$Install_Options -p $DIRACARCH"
 [ "$LOGLEVEL" == "DEBUG" ] && Install_Options="$Install_Options -d"
@@ -230,7 +232,7 @@ ln -s $VERDIR $pro || error_exit "Fail to create link $pro -> $VERDIR"
 #
 # Retrive last version of CA's
 #
-[ $DIRACARCH ] || DIRACARCH=`$DESTDIR/pro/scripts/platform.py`
+[ $DIRACARCH ] || DIRACARCH=`$DESTDIR/pro/scripts/dirac-platform`
 export DIRACPLAT=$DIRACARCH
 $VERDIR/scripts/dirac-admin-get-CAs
 
