@@ -20,7 +20,7 @@ Queue=default
 LOGLEVEL=VERBOSE
 #
 # CE Type to be used (currently it also corresponds to the CE Name)
-CEType=Inprocess
+CEType=InProcess
 
 #
 # Some Variable with no default that must be set by proper arguments
@@ -181,19 +181,6 @@ echo
 if [ ! -d $DESTDIR/etc/grid-security/certificates ]; then
   mkdir -p $DESTDIR/etc/grid-security/certificates || error_exit "Can not create directory $DESTDIR/etc/grid-security/certificates"
 fi
-if [ ! -e $DESTDIR/etc/dirac.cfg ] ; then
-  cat >> $DESTDIR/etc/dirac.cfg << EOF || error_exit "Can not create file $DESTDIR/etc/dirac.cfg"
-DIRAC
-{
-  Setup = $DIRACSETUP
-  Security
-  {
-    CertFile = $DESTDIR/etc/grid-security/hostcert.pem
-    KeyFile = $DESTDIR/etc/grid-security/hostkey.pem
-  }
-}
-EOF
-fi
 
 for dir in $DIRACDIRS ; do
   if [ ! -d $DESTDIR/$dir ]; then
@@ -231,8 +218,7 @@ ln -s $VERDIR $pro || error_exit "Fail to create link $pro -> $VERDIR"
 #
 # Configure and Retrieve last version of CA's
 #
-[ $DIRACARCH ] || DIRACARCH=`$DESTDIR/pro/scripts/dirac-platform`
-export DIRACPLAT=$DIRACARCH
+[ $DIRACARCH ] || DIRACARCH=`$DESTDIR/pro/DIRAC/Core/scripts/dirac-platform.py`
 $VERDIR/scripts/dirac-configure -S LHCb-Development -C dips://lhcb-wms-dirac.cern.ch:9135/Configuration/Server,dips://lhcbprod.pic.es:9135/Configuration/Server -n $SiteName --UseServerCertificate -o /LocalSite/Root=$ROOT -o /LocalSite/ResourceDict/Site=$SiteName
 
 #
@@ -250,7 +236,6 @@ $DESTDIR/pro/$DIRACARCH/bin/python -c "$cmd" 1> /dev/null     || error_exit "Fai
 $DESTDIR/pro/$DIRACARCH/bin/python -O -c "$cmd" 1> /dev/null  || error_exit "Fail to compile .pyo files"
 
 chmod +x $DESTDIR/pro/scripts/install_service.sh
-cp $CURDIR/dirac-install $DESTDIR/pro/scripts
 
 ##############################################################
 # INSTALL SERVICES
