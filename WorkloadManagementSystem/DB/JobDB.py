@@ -473,12 +473,12 @@ class JobDB(DB):
       if result['OK']:
         resultDict = result['value']
       else:
-       return S_ERROR('JobDB.getJobAttributes: can not retrieve job attributes')
+        return S_ERROR('JobDB.getJobAttributes: can not retrieve job attributes')
       result = self.getJobParameters(jobID)
       if result['OK']:
         resultDict.update(result['value'])
       else:
-       return S_ERROR('JobDB.getJobParameters: can not retrieve job parameters')
+        return S_ERROR('JobDB.getJobParameters: can not retrieve job parameters')
       return S_OK(resultDict)
 
     paramList = []
@@ -494,7 +494,7 @@ class JobDB(DB):
       result = self.getJobAttributes(jobID,attrList)
       if not result['OK']:
         return result
-      if len(res['Value']) > 0:
+      if len(result['Value']) > 0:
         resultDict = result['Value']
       else:
         return S_ERROR('Job '+str(jobID)+' not found')
@@ -504,7 +504,7 @@ class JobDB(DB):
       result = self.getJobParameters(jobID,paramList)
       if not result['OK']:
         return result
-      if len(res['Value']) > 0:
+      if len(result['Value']) > 0:
         resultDict.update(result['Value'])
 
     return S_OK(resultDict)
@@ -521,7 +521,7 @@ class JobDB(DB):
     else:
       return result
 
- #############################################################################
+#############################################################################
   def getJobParameter(self,jobID,parameter):
     """ Get the given parameter of a job specified by its jobID
     """
@@ -536,7 +536,7 @@ class JobDB(DB):
     else:
       return result
 
- #############################################################################
+#############################################################################
   def getJobOptParameter(self,jobID,parameter):
     """ Get optimizer parameters for the given job.
     """
