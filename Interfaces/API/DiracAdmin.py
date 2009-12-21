@@ -556,7 +556,7 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
     """
     if not type(gridReference)==type(" "):
-      return self.__errorReport(str(x),'Expected string for pilot reference')
+      return self.__errorReport( 'Expected string for pilot reference' )
 
     if not directory:
       directory = self.currentDir
@@ -605,6 +605,24 @@ class DiracAdmin:
     return result
 
   #############################################################################
+  def getPilotInfo(self,gridReference):
+    """Retrieve info relative to a pilot reference
+
+       >>> print dirac.getPilotInfo(12345)
+       {'OK': True, 'Value': {}}
+
+       @param gridReference: Pilot Job Reference
+       @type gridReference: string
+       @return: S_OK,S_ERROR
+    """
+    if not type(gridReference)==type(" "):
+      return self.__errorReport( 'Expected string for pilot reference' )
+
+    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
+    result = wmsAdmin.getPilotInfo(gridReference)
+    return result
+
+  #############################################################################
   def getPilotLoggingInfo(self,gridReference):
     """Retrieve the pilot logging info for an existing job in the WMS.
 
@@ -616,10 +634,11 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
     """
     if type(gridReference) not in types.StringTypes:
-      return self.__errorReport(str(x),'Expected string for pilot reference')
+      return self.__errorReport( 'Expected string for pilot reference' )
 
     wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
     return wmsAdmin.getPilotLoggingInfo(gridReference)
+
   #############################################################################
   def getJobPilots(self,jobID):
     """Extract the list of submitted pilots and their status for a given
