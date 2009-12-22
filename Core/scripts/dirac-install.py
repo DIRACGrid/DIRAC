@@ -37,17 +37,17 @@ cliParams = Params()
 def logDEBUG( msg ):
   if cliParams.debug:
     for line in msg.split( "\n" ):
-      print "[DEBUG] %s" % line
+      print "%s UTC dirac-install [DEBUG] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
     sys.stdout.flush()
 
 def logERROR( msg ):
   for line in msg.split( "\n" ):
-    print "[ERROR] %s" % line
+    print "%s UTC dirac-install [ERROR] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
   sys.stdout.flush()
 
 def logINFO( msg ):
   for line in msg.split( "\n" ):
-    print "[INFO]  %s" % line
+    print "%s UTC dirac-install [INFO]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
   sys.stdout.flush()
 
 #TODO: Helper functions for logging as DIRAC, subprocess

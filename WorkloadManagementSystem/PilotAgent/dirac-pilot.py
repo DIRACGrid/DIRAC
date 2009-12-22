@@ -15,6 +15,7 @@ import stat
 import socket
 import imp
 import re
+import time
 
 #Check PYTHONPATH and LD_LIBARY_PATH
 try:
@@ -68,17 +69,17 @@ class CliParams:
 def logDEBUG( msg ):
   if cliParams.debug:
     for line in msg.split( "\n" ):
-      print "[DEBUG] %s" % line
+      print "%s UTC dirac-pilot [DEBUG] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
     sys.stdout.flush()
 
 def logERROR( msg ):
   for line in msg.split( "\n" ):
-    print "[ERROR] %s" % line
+    print "%s UTC dirac-pilot [ERROR] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
   sys.stdout.flush()
 
 def logINFO( msg ):
   for line in msg.split( "\n" ):
-    print "[INFO]  %s" % line
+    print "%s UTC dirac-pilot [INFO]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
   sys.stdout.flush()
 
 def executeAndGetOutput( cmd ):
