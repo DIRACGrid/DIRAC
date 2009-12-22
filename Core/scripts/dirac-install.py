@@ -181,8 +181,11 @@ def downloadAndExtractTarball( pkgVer, targetPath, subDir = False, checkHash = T
     os.unlink( md5Path )
   #Extract
   tf = tarfile.open( os.path.join( cliParams.targetPath, tarName ), "r" )
+  cwd = os.getcwd()
+  os.chdir(cliParams.targetPath)
   for member in tf.getmembers():
-    tf.extract( member, cliParams.targetPath )
+    tf.extract( member )
+  os.chdir(cwd)
   #Delete tar
   os.unlink( tarPath )
   return True
