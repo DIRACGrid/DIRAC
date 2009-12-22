@@ -229,27 +229,42 @@ DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
 voName = DIRAC.gConfig.getValue( "/DIRAC/VirtualOrganization", "" )
 if not voName:
   sys.exit( 0 )
-result = DIRAC.gConfig.getOptions( "/Registry/VOMS/VOMSDIR/%s" % voName )
+result = DIRAC.gConfig.getSections( "/Registry/VOMS/Servers/%s" % voName )
 if not result[ 'OK' ]:
   sys.exit( 0 )
-DIRAC.gLogger.info( "Creating VOMSDIR files" )
+DIRAC.gLogger.info( "Creating VOMSDIR/VOMSES files" )
 vomsDirHosts = result[ 'Value' ]
 vomsDirPath = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'vomsdir', voName )
-if not os.path.isdir( vomsDirPath ):
-  try:
-    os.makedirs( vomsDirPath )
-  except Exception, e:
-    DIRAC.gLogger.error( "Could not create VOMSDIR directory", str( e ) )
-    sys.exit( 1 )
+vomsesDirPath = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'vomses' )
+for path in ( vomsDirPath, vomsesDirPath ):
+  if not os.path.isdir( path ):
+    try:
+      os.makedirs( path )
+    except Exception, e:
+      DIRAC.gLogger.error( "Could not create directory", str( e ) )
+      sys.exit( 1 )
+vomsesLines = []
 for vomsHost in vomsDirHosts:
   hostFilePath = os.path.join( vomsDirPath, "%s.lsc" % vomsHost )
   try:
-    val = DIRAC.gConfig.getValue( "/Registry/VOMS/VOMSDIR/%s/%s" % ( voName, vomsHost ), [] )
-    if not val or len( val ) != 2:
+    DN = DIRAC.gConfig.getValue( "/Registry/VOMS/Servers/%s/%s/DN" % ( voName, vomsHost ), "" )
+    CA = DIRAC.gConfig.getValue( "/Registry/VOMS/Servers/%s/%s/CA" % ( voName, vomsHost ), "" )
+    Port = DIRAC.gConfig.getValue( "/Registry/VOMS/Servers/%s/%s/Port" % ( voName, vomsHost ), 0 )
+    if not DN or not CA or not Port:
       continue
     fd = open( hostFilePath, "wb" )
-    fd.write( "%s\n" % "\n".join( val ) )
+    fd.write( "%s\n%s\n" % ( DN, CA ) )
     fd.close()
-    DIRAC.gLogger.info( "Created file %s" % hostFilePath )
+    vomsesLines.append( '"%s" "%s" "%s" "%s" "%s" "24"' % ( voName, vomsHost, Port, DN, voName ) )
+    DIRAC.gLogger.info( "Created vomsdir file %s" % hostFilePath )
   except:
-    gLogger.exception( "Could not generate vomsdir file for host %s" % vomsHost )
+    DIRAC.gLogger.exception( "Could not generate vomsdir file for host", vomsHost )
+
+try:
+  vomsesFilePath = os.path.join( vomsesDirPath, voName )
+  fd = open( vomsesFilePath, "wb" )
+  fd.write( "%s\n" % "\n".join( vomsesLines ) )
+  fd.close()
+  DIRAC.gLogger.info( "Created vomses file %s" % vomsesFilePath )
+except:
+  DIRAC.gLogger.exception( "Could not generate vomses file" )
