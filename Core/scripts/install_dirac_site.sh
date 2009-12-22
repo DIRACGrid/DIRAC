@@ -219,7 +219,7 @@ ln -s $VERDIR $pro || error_exit "Fail to create link $pro -> $VERDIR"
 # Configure and Retrieve last version of CA's
 #
 [ $DIRACARCH ] || DIRACARCH=`$DESTDIR/pro/DIRAC/Core/scripts/dirac-platform.py`
-export $DIRACARCH 
+export DIRACARCH 
 $VERDIR/scripts/dirac-configure -S LHCb-Development -C dips://lhcb-wms-dirac.cern.ch:9135/Configuration/Server,dips://lhcbprod.pic.es:9135/Configuration/Server -n $SiteName --UseServerCertificate -o /LocalSite/Root=$ROOT -o /LocalSite/ResourceDict/Site=$SiteName
 
 #
