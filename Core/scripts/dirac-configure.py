@@ -224,3 +224,32 @@ if gatewayServer:
   Script.localCfg.addDefaultEntry( '/DIRAC/GateWay/%s' % DIRAC.siteName(), gatewayServer )
 
 DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
+
+#Do the vomsdir magic
+voName = DIRAC.gConfig.getValue( "/DIRAC/VirtualOrganization", "" )
+if not voName:
+  sys.exit( 0 )
+result = DIRAC.gConfig.getOptions( "/Registry/VOMS/VOMSDIR/%s" % voName )
+if not result[ 'OK' ]:
+  sys.exit( 0 )
+DIRAC.gLogger.info( "Creating VOMSDIR files" )
+vomsDirHosts = result[ 'Value' ]
+vomsDirPath = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'vomsdir', voName )
+if not os.path.isdir( vomsDirPath ):
+  try:
+    os.makedirs( vomsDirPath )
+  except Exception, e:
+    DIRAC.gLogger.error( "Could not create VOMSDIR directory", str( e ) )
+    sys.exit( 1 )
+for vomsHost in vomsDirHosts:
+  hostFilePath = os.path.join( vomsDirPath, "%s.lsc" % vomsHost )
+  try:
+    val = DIRAC.gConfig.getValue( "/Registry/VOMS/VOMSDIR/%s/%s" % ( voName, vomsHost ), [] )
+    if not val or len( val ) != 2:
+      continue
+    fd = open( hostFilePath, "wb" )
+    fd.write( "%s\n" % "\n".join( val ) )
+    fd.close()
+    DIRAC.gLogger.info( "Created file %s" % hostFilePath )
+  except:
+    gLogger.exception( "Could not generate vomsdir file for host %s" % vomsHost )
