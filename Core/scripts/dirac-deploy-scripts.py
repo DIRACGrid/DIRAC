@@ -9,6 +9,24 @@ import os
 import shutil
 import stat
 import re
+import time
+import sys
+
+def logDEBUG( msg ):
+  if False:
+    for line in msg.split( "\n" ):
+      print "%s UTC dirac-deploy-scripts [DEBUG] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
+    sys.stdout.flush()
+
+def logERROR( msg ):
+  for line in msg.split( "\n" ):
+    print "%s UTC dirac-deploy-scripts [ERROR] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
+  sys.stdout.flush()
+
+def logINFO( msg ):
+  for line in msg.split( "\n" ):
+    print "%s UTC dirac-deploy-scripts [INFO]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
+  sys.stdout.flush()
 
 moduleSuffix = "DIRAC"
 defaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
@@ -80,12 +98,12 @@ def findDIRACRoot( path ):
 
 rootPath = findDIRACRoot( os.path.dirname( os.path.realpath( __file__ ) ) )
 if not rootPath:
-  print "Error: Cannot find DIRAC root!"
+  logERROR( "Error: Cannot find DIRAC root!" )
   sys.exit(1)
 
 targetScriptsPath = os.path.join( rootPath, "scripts" )
 pythonScriptRE = re.compile( "(.*/)*([a-z]+-[a-zA-Z0-9-]+).py" )
-print "Scripts will be deployed at %s" % targetScriptsPath
+logINFO( "Scripts will be deployed at %s" % targetScriptsPath )
 
 if not os.path.isdir( targetScriptsPath ):
   os.mkdir( targetScriptsPath )
@@ -97,7 +115,7 @@ for rootModule in os.listdir( rootPath ):
   extSuffixPos = rootModule.find( moduleSuffix )
   if extSuffixPos == -1 or extSuffixPos != len( rootModule ) - len( moduleSuffix ):
     continue
-  print "Inspecting %s module" % rootModule
+  logINFO( "Inspecting %s module" % rootModule )
   scripts = lookForScriptsInPath( modulePath, rootModule )
   for script in scripts:
     scriptPath = script[0]
@@ -106,12 +124,14 @@ for rootModule in os.listdir( rootPath ):
       continue
     scriptLen = len( scriptName )
     if scriptName not in simpleCopyMask and pythonScriptRE.match( scriptName ):
+      logDEBUG( " Wrapping %s" % scriptName[:-3] )
       fakeScriptPath = os.path.join( targetScriptsPath, scriptName[:-3] )
       fd = open( fakeScriptPath, "w" )
       fd.write( wrapperTemplate.replace( '$SCRIPTLOCATION$', scriptPath ) )
       fd.close()
       os.chmod( fakeScriptPath, defaultPerms )
     else:
+      logDEBUG( " Copying %s" % scriptName )
       shutil.copy( os.path.join( rootPath, scriptPath ), targetScriptsPath )
       copyPath = os.path.join( targetScriptsPath, scriptName )
       os.chmod( copyPath, defaultPerms )
