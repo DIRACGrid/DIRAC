@@ -5,7 +5,7 @@ Compile the externals
 """
 __RCSID__ = "$Id$"
 
-import sys, os, getopt, tarfile, urllib2, imp, signal, re
+import sys, os, getopt, tarfile, urllib2, imp, signal, re, time
 
 try:
   from hashlib import md5
