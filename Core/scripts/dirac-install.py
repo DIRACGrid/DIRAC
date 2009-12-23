@@ -99,7 +99,7 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
 
 def downloadFileFromSVN( filePath, destPath, isExecutable = False, filterLines = [] ):
   fileName = os.path.basename( filePath )
-  logINFO( " Downloading %s" % fileName )
+  logINFO( "Downloading %s" % fileName )
   viewSVNLocation = "http://svnweb.cern.ch/world/wsvn/dirac/%s?op=dl&rev=0" % filePath
   anonymousLocation = 'http://svnweb.cern.ch/guest/dirac/%s' % filePath
   downOK = False
