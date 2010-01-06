@@ -4,7 +4,7 @@
 
 from DIRAC import S_OK, S_ERROR
 
-from DIRAC import gConfig
+#from DIRAC import gConfig
 
 class Logger:
   
@@ -23,3 +23,13 @@ class Logger:
   
 gLogger = Logger()
 
+
+class Config:
+  
+  def __init__(self):
+    pass
+  
+  def addListenerToNewVersionEvent(self, a):
+    pass
+
+gConfig = Config()

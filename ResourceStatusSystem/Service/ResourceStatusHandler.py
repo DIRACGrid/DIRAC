@@ -53,7 +53,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.getSitesList: Attempting to get sites list")
       try:
-        r = rsDB.getSitesList(paramsList = ['SiteName'])
+        r = rsDB.getMonitoredsList('Site', paramsList = ['SiteName'])
         res = []
         for x in r:
           res.append(x[0])
@@ -110,7 +110,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.getSitesStatusWeb: Attempting to get sites list")
       try:
-        res = rsDB.getSitesStatusWeb(selectDict, sortList, startItem, maxItems)
+        res = rsDB.getMonitoredsStatusWeb('Site', selectDict, sortList, startItem, maxItems)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -229,7 +229,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.getSitesHistory: Attempting to get site %s history" % (site))
       try:
-        res = rsDB.getSitesHistory(siteName = site)
+        res = rsDB.getMonitoredsHistory('Site', name = site)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -238,33 +238,6 @@ class ResourceStatusHandler(RequestHandler):
       return S_OK(res)
     except Exception, x:
       errorStr = where(self, self.export_getSitesHistory)
-      gLogger.exception(errorStr,lException=x)
-      return S_ERROR(errorStr)
-
-#############################################################################
-
-  #ok
-  types_addSiteType = [StringType, StringType]
-  def export_addSiteType(self, siteType, description=''):
-    """ 
-    Add a site type to the ResourceStatusDB
-    
-    :Params:
-      :attr:`siteType`: a string
-      :attr:`description`: an optional string
-    """
-    try:
-      gLogger.info("ResourceStatusHandler.addSiteType: Attempting to add site type %s" % (siteType))
-      try:
-        rsDB.addSiteType(siteType, description)
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.addSiteType: Added site type %s" % (siteType))
-      return S_OK()
-    except Exception, x:
-      errorStr = where(self, self.export_addSiteType)
       gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr)
 
@@ -280,7 +253,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.getSiteTypeList: Attempting to get SiteType list")
       try:
-        res = rsDB.getSiteTypeList()
+        res = rsDB.getTypesList('Site')
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -303,7 +276,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.removeSiteType: Attempting to remove site type %s" % (siteType))
       try:
-        rsDB.removeSiteType(siteType)
+        rsDB.removeType('Site', siteType)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -333,7 +306,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.getServicesList: Attempting to get services list")
       try:
-        r = rsDB.getServicesList(paramsList = ['ServiceName'])
+        r = rsDB.getMonitoredsList('Service', paramsList = ['ServiceName'])
         res = []
         for x in r:
           res.append(x[0])
@@ -380,7 +353,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.getServicesStatusWeb: Attempting to get services list")
       try:
-        res = rsDB.getServicesStatusWeb(selectDict, sortList, startItem, maxItems)
+        res = rsDB.getMonitoredsStatusWeb('Service', selectDict, sortList, startItem, maxItems)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -500,7 +473,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.getServicesHistory: Attempting to get service %s history" % (service))
       try:
-        res = rsDB.getServicesHistory(serviceName = service)
+        res = rsDB.getMonitoredsHistory('Service', name = service)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -515,32 +488,32 @@ class ResourceStatusHandler(RequestHandler):
 #############################################################################
 
   #ok
-  types_addServiceType = [StringType, StringType]
-  def export_addServiceType(self, serviceType, description=''):
-    """ 
-    Add a service type to the ResourceStatusDB
-    
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.addServiceType`
-    
-    :Params:
-      :attr:`serviceType`: a string
-
-      :attr:`description`: an optional string
-    """
-    try:
-      gLogger.info("ResourceStatusHandler.addServiceType: Attempting to add service type %s" % (serviceType))
-      try:
-        rsDB.addServiceType(serviceType, description)
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.addServiceType: Added service type %s" % (serviceType))
-      return S_OK()
-    except Exception, x:
-      errorStr = where(self, self.export_addServiceType)
-      gLogger.exception(errorStr,lException=x)
-      return S_ERROR(errorStr)
+#  types_addServiceType = [StringType, StringType]
+#  def export_addServiceType(self, serviceType, description=''):
+#    """ 
+#    Add a service type to the ResourceStatusDB
+#    
+#    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.addServiceType`
+#    
+#    :Params:
+#      :attr:`serviceType`: a string
+#
+#      :attr:`description`: an optional string
+#    """
+#    try:
+#      gLogger.info("ResourceStatusHandler.addServiceType: Attempting to add service type %s" % (serviceType))
+#      try:
+#        rsDB.addServiceType(serviceType, description)
+#      except RSSDBException, x:
+#        gLogger.error(whoRaised(x))
+#      except RSSException, x:
+#        gLogger.error(whoRaised(x))
+#      gLogger.info("ResourceStatusHandler.addServiceType: Added service type %s" % (serviceType))
+#      return S_OK()
+#    except Exception, x:
+#      errorStr = where(self, self.export_addServiceType)
+#      gLogger.exception(errorStr,lException=x)
+#      return S_ERROR(errorStr)
 
 #############################################################################
 
@@ -554,7 +527,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.getServiceTypeList: Attempting to get ServiceType list")
       try:
-        res = rsDB.getServiceTypeList()
+        res = rsDB.getTypesList('Service')
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -608,7 +581,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.removeServiceType: Attempting to remove service type %s" % (serviceType))
       try:
-        rsDB.removeServiceType(serviceType)
+        rsDB.removeType('Service', serviceType)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -657,7 +630,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.getResourcesStatusWeb: Attempting to get resources list")
       try:
-        res = rsDB.getResourcesStatusWeb(selectDict, sortList, startItem, maxItems)
+        res = rsDB.getMonitoredsStatusWeb('Resource', selectDict, sortList, startItem, maxItems)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -769,30 +742,30 @@ class ResourceStatusHandler(RequestHandler):
 #############################################################################
 
   #ok
-  types_addResourceType = [StringType, StringType]
-  def export_addResourceType(self, resourceType, description=''):
-    """
-    Add a resource type to the ResourceStatusDB. 
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.addResourceType`
-    
-    :Params:
-      :attr:`resourceType`: a string
-      :attr:`description`: an optional long string
-    """
-    try:
-      gLogger.info("ResourceStatusHandler.addResourceType: Attempting to add resource type %s" % (resourceType))
-      try:
-        rsDB.addResourceType(resourceType, description)
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.addResourceType: Added resource type %s" % (resourceType))
-      return S_OK()
-    except Exception, x:
-      errorStr = where(self, self.export_addResourceType)
-      gLogger.exception(errorStr,lException=x)
-      return S_ERROR(errorStr)
+#  types_addResourceType = [StringType, StringType]
+#  def export_addResourceType(self, resourceType, description=''):
+#    """
+#    Add a resource type to the ResourceStatusDB. 
+#    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.addResourceType`
+#    
+#    :Params:
+#      :attr:`resourceType`: a string
+#      :attr:`description`: an optional long string
+#    """
+#    try:
+#      gLogger.info("ResourceStatusHandler.addResourceType: Attempting to add resource type %s" % (resourceType))
+#      try:
+#        rsDB.addResourceType(resourceType, description)
+#      except RSSDBException, x:
+#        gLogger.error(whoRaised(x))
+#      except RSSException, x:
+#        gLogger.error(whoRaised(x))
+#      gLogger.info("ResourceStatusHandler.addResourceType: Added resource type %s" % (resourceType))
+#      return S_OK()
+#    except Exception, x:
+#      errorStr = where(self, self.export_addResourceType)
+#      gLogger.exception(errorStr,lException=x)
+#      return S_ERROR(errorStr)
 
 #############################################################################
 
@@ -806,7 +779,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.getResourceTypeList: Attempting to get ResourceType list")
       try:
-        res = rsDB.getResourceTypeList()
+        res = rsDB.getTypesList('Resource')
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -828,7 +801,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.removeResourceType: Attempting to remove resource type %s" % (resourceType))
       try:
-        rsDB.removeResourceType(resourceType)
+        rsDB.removeType('Resource', resourceType)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -852,7 +825,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.getResourcesList: Attempting to get resources list")
       try:
-        r = rsDB.getResourcesList(paramsList = ['ResourceName'])
+        r = rsDB.getMonitoredsList('Resource', paramsList = ['ResourceName'])
         res = []
         for x in r:
           res.append(x[0])
@@ -877,7 +850,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.getResourcesHistory: Attempting to get resource %s history" % (resource))
       try:
-        res = rsDB.getResourcesHistory(resourceName = resource)
+        res = rsDB.getMonitoredsHistory('Resource', name = resource)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:

@@ -35,7 +35,6 @@ class PDP:
 #############################################################################
   
   def __init__(self, granularity, name, status, formerStatus, reason):
-    granularity = granularity.capitalize()
     if granularity not in ValidRes:
       raise InvalidRes, where(self, self.__init__)
     self.__granularity = granularity
@@ -91,58 +90,79 @@ class PDP:
     self.policy = policyIn
     self.knownInfo = knownInfo
     
-    if self.__granularity == 'Site': 
-      if self.__status == 'Active':
-        if self.__formerStatus == 'Probing':
-          EVAL = Configurations.SAP
-        elif self.__formerStatus == 'Banned':
-          EVAL = Configurations.SAB
-      elif self.__status == 'Probing':
-        if self.__formerStatus == 'Active':
-          EVAL = Configurations.SPA
-        elif self.__formerStatus == 'Banned':
-          EVAL = Configurations.SPB
-      elif self.__status == 'Banned':
-        if self.__formerStatus == 'Active':
-          EVAL = Configurations.SBA
-        elif self.__formerStatus == 'Probing':
-          EVAL = Configurations.SBP
-          
-    elif self.__granularity == 'Service':
-      if self.__status == 'Active':
-        if self.__formerStatus == 'Probing':
-          EVAL = Configurations.SeAP
-        elif self.__formerStatus == 'Banned':
-          EVAL = Configurations.SeAB
-      elif self.__status == 'Probing':
-        if self.__formerStatus == 'Active':
-          EVAL = Configurations.SePA
-        elif self.__formerStatus == 'Banned':
-          EVAL = Configurations.SePB
-      elif self.__status == 'Banned':
-        if self.__formerStatus == 'Active':
-          EVAL = Configurations.SeBA
-        elif self.__formerStatus == 'Probing':
-          EVAL = Configurations.SeBP
+#    if self.__granularity == 'Site': 
+#      if self.__status == 'Active':
+#        if self.__formerStatus == 'Probing':
+#          EVAL = Configurations.SAP
+#        elif self.__formerStatus == 'Banned':
+#          EVAL = Configurations.SAB
+#      elif self.__status == 'Probing':
+#        if self.__formerStatus == 'Active':
+#          EVAL = Configurations.SPA
+#        elif self.__formerStatus == 'Banned':
+#          EVAL = Configurations.SPB
+#      elif self.__status == 'Banned':
+#        if self.__formerStatus == 'Active':
+#          EVAL = Configurations.SBA
+#        elif self.__formerStatus == 'Probing':
+#          EVAL = Configurations.SBP
+#          
+#    elif self.__granularity == 'Service':
+#      if self.__status == 'Active':
+#        if self.__formerStatus == 'Probing':
+#          EVAL = Configurations.SeAP
+#        elif self.__formerStatus == 'Banned':
+#          EVAL = Configurations.SeAB
+#      elif self.__status == 'Probing':
+#        if self.__formerStatus == 'Active':
+#          EVAL = Configurations.SePA
+#        elif self.__formerStatus == 'Banned':
+#          EVAL = Configurations.SePB
+#      elif self.__status == 'Banned':
+#        if self.__formerStatus == 'Active':
+#          EVAL = Configurations.SeBA
+#        elif self.__formerStatus == 'Probing':
+#          EVAL = Configurations.SeBP
+#            
+#    elif self.__granularity == 'Resource': 
+#      if self.__status == 'Active':
+#        if self.__formerStatus == 'Probing':
+#          EVAL = Configurations.RAP
+#        elif self.__formerStatus == 'Banned':
+#          EVAL = Configurations.RAB
+#      elif self.__status == 'Probing':
+#        if self.__formerStatus == 'Active':
+#          EVAL = Configurations.RPA
+#        elif self.__formerStatus == 'Banned':
+#          EVAL = Configurations.RPB
+#      elif self.__status == 'Banned':
+#        if self.__formerStatus == 'Active':
+#          EVAL = Configurations.RBA
+#        elif self.__formerStatus == 'Probing':
+#          EVAL = Configurations.RBP
+#            
+#    elif self.__granularity == 'StorageElement': 
+#      if self.__status == 'Active':
+#        if self.__formerStatus == 'Probing':
+#          EVAL = Configurations.StElAP
+#        elif self.__formerStatus == 'Banned':
+#          EVAL = Configurations.StElAB
+#      elif self.__status == 'Probing':
+#        if self.__formerStatus == 'Active':
+#          EVAL = Configurations.StElPA
+#        elif self.__formerStatus == 'Banned':
+#          EVAL = Configurations.StElPB
+#      elif self.__status == 'Banned':
+#        if self.__formerStatus == 'Active':
+#          EVAL = Configurations.StElBA
+#        elif self.__formerStatus == 'Probing':
+#          EVAL = Configurations.StElBP
             
-    elif self.__granularity == 'Resource': 
-      if self.__status == 'Active':
-        if self.__formerStatus == 'Probing':
-          EVAL = Configurations.RAP
-        elif self.__formerStatus == 'Banned':
-          EVAL = Configurations.RAB
-      elif self.__status == 'Probing':
-        if self.__formerStatus == 'Active':
-          EVAL = Configurations.RPA
-        elif self.__formerStatus == 'Banned':
-          EVAL = Configurations.RPB
-      elif self.__status == 'Banned':
-        if self.__formerStatus == 'Active':
-          EVAL = Configurations.RBA
-        elif self.__formerStatus == 'Probing':
-          EVAL = Configurations.RBP
-            
+    EVAL = Configurations.getPolicyToApply(granularity = self.__granularity, 
+                                           status = self.__status, 
+                                           formerStatus = self.__formerStatus)
 
+    
     for policyGroup in EVAL:
     
       self.__policyType = policyGroup['PolicyType']
@@ -150,8 +170,10 @@ class PDP:
       if self.policy is not None:
         res = self.policy.evaluate(self.args)
       else:
+        if policyGroup['Policies'] is None:
+          return {'SAT': None}
         res = self._evaluate(policyGroup['Policies'])
-      
+                  
       policyResults = []
       
       #policy results communication

@@ -15,7 +15,7 @@ class GOCDBStatus_Command(Command):
     if not isinstance(args, tuple):
       raise TypeError, where(self, self.doCommand)
     
-    if args[0].capitalize() not in ValidRes:
+    if args[0] not in ValidRes:
       raise InvalidRes, where(self, self.doCommand)
     
     if clientIn is not None:

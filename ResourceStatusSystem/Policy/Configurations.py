@@ -3,6 +3,8 @@
     collects everything needed to configure policies
 """
 
+from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+
 #############################################################################
 # site/resource checking frequency
 #############################################################################
@@ -16,6 +18,162 @@ notified_users = 'fstagni'
 #############################################################################
 # policies evaluated
 #############################################################################
+
+Policies = { 
+  'DT_Policy' : 
+    { 'Granularity' : ['Site', 'Resource'], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ValidResourceType,
+     },
+  'SAM_Policy' : 
+    { 'Granularity' : ['Resource'], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ValidResourceType,
+     },
+  'JobsEfficiencySimple_Policy' :  
+    { 'Granularity' : ['Site'], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ValidResourceType,
+     },
+  'PilotsEfficiencySimple_Policy' : 
+    { 'Granularity' : ['Site', 'Resource'], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ValidResourceType,
+     },
+  'OnServicePropagation_Policy' :
+    { 'Granularity' : ['Service'], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ValidResourceType,
+     }
+}
+
+
+Policy_Types = {
+  'Resource_PolType' : 
+    { 'Granularity' : ['Site', 'Resource', 'StorageElement'], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ValidResourceType,
+     },
+  'Alarm_PolType' : 
+    { 'Granularity' : ValidRes, 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ValidResourceType,
+     },
+  'Collective_PolType' :
+    { 'Granularity' : [], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ValidResourceType,
+     }
+}
+
+
+def getPolicyToApply(granularity, status = None, formerStatus = None, 
+                     siteType = None, serviceType = None, resourceType = None ):
+  
+  pol_to_eval = []
+  pol_types = []
+  
+  for p in Policies.keys():
+    if granularity in Policies[p]['Granularity']:
+      pol_to_eval.append(p)
+      
+      if status is not None:
+        if status not in Policies[p]['Status']:
+          pol_to_eval.remove(p)
+      
+      if formerStatus is not None:
+        if formerStatus not in Policies[p]['FormerStatus']:
+          try:
+            pol_to_eval.remove(p)
+          except Exception:
+            continue
+          
+      if siteType is not None:
+        if siteType not in Policies[p]['SiteType']:
+          try:
+            pol_to_eval.remove(p)
+          except Exception:
+            continue
+          
+      if serviceType is not None:
+        if serviceType not in Policies[p]['ServiceType']:
+          try:
+            pol_to_eval.remove(p)
+          except Exception:
+            continue
+          
+      if resourceType is not None:
+        if resourceType not in Policies[p]['ResourceType']:
+          try:
+            pol_to_eval.remove(p)
+          except Exception:
+            continue
+          
+   
+  for pt in Policy_Types.keys():
+    if granularity in Policy_Types[pt]['Granularity']:
+      pol_types.append(pt)  
+  
+      if status is not None:
+        if status not in Policy_Types[pt]['Status']:
+          pol_to_eval.remove(pt)
+      
+      if formerStatus is not None:
+        if formerStatus not in Policy_Types[pt]['FormerStatus']:
+          try:
+            pol_to_eval.remove(pt)
+          except Exception:
+            continue
+          
+      if siteType is not None:
+        if siteType not in Policy_Types[pt]['SiteType']:
+          try:
+            pol_to_eval.remove(pt)
+          except Exception:
+            continue
+          
+      if serviceType is not None:
+        if serviceType not in Policy_Types[pt]['ServiceType']:
+          try:
+            pol_to_eval.remove(pt)
+          except Exception:
+            continue
+          
+      if resourceType is not None:
+        if resourceType not in Policy_Types[pt]['ResourceType']:
+          try:
+            pol_to_eval.remove(pt)
+          except Exception:
+            continue
+            
+  EVAL = [{'PolicyType':pol_types, 'Policies':pol_to_eval}]    
+  
+  return EVAL
+
 
 #when a site, now active, was probing
 #SAP = ['DT_Policy', 'False_Policy']
@@ -102,6 +260,32 @@ RBP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
 
 
 
+#when a storage element, now active, was probing
+StElAP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
+        'Policies': []}]
+
+#when a storage element, now active, was banned
+StElAB = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
+        'Policies': []}]
+
+#when a storage element, now probing, was active
+StElPA = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
+        'Policies': []}]
+
+#when a storage element, now probing, was banned
+StElPB = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
+        'Policies': []}]
+
+#when a storage element, now banned, was active
+StElBA = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
+        'Policies': []}]
+
+#when a storage element, now banned, was probing
+StElBP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
+        'Policies': []}]
+
+
+
 #############################################################################
 # policies parameters
 #############################################################################
@@ -153,6 +337,16 @@ Resources_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 10, \
                         'T2_ACTIVE_CHECK_FREQUENCY' : 40, \
                         'T2_PROBING_CHECK_FREQUENCY' : 20, \
                         'T2_BANNED_CHECK_FREQUENCY' : 40 }
+
+StorageElements_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 15, \
+                              'T0_PROBING_CHECK_FREQUENCY': 10, \
+                              'T0_BANNED_CHECK_FREQUENCY' : 12, \
+                              'T1_ACTIVE_CHECK_FREQUENCY' : 12, \
+                              'T1_PROBING_CHECK_FREQUENCY' : 10, \
+                              'T1_BANNED_CHECK_FREQUENCY' : 12, \
+                              'T2_ACTIVE_CHECK_FREQUENCY' : 40, \
+                              'T2_PROBING_CHECK_FREQUENCY' : 20, \
+                              'T2_BANNED_CHECK_FREQUENCY' : 40 }
 
 #############################################################################
 # policies invocation configuration

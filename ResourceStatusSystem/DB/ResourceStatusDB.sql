@@ -252,14 +252,18 @@ CREATE VIEW PresentStorageElements AS SELECT
   StorageElements.StorageElementName, 
   StorageElements.ResourceName, 
   StorageElements.SiteName, 
+  Sites.SiteType,
   StorageElements.Status,
   StorageElements.DateEffective, 
   StorageElementsHistory.Status AS FormerStatus,
   StorageElements.Reason,
   StorageElements.LastCheckTime,
   StorageElements.OperatorCode
-FROM StorageElements INNER JOIN StorageElementsHistory ON 
-  StorageElements.StorageElementName = StorageElementsHistory.StorageElementName AND 
-  StorageElements.DateEffective = StorageElementsHistory.DateEnd 
-WHERE StorageElements.DateEffective < UTC_TIMESTAMP()
+FROM ( 
+  (StorageElements INNER JOIN Sites ON 
+   StorageElements.SiteName = Sites.SiteName)
+    INNER JOIN StorageElementsHistory ON 
+      StorageElements.StorageElementName = StorageElementsHistory.StorageElementName AND 
+      StorageElements.DateEffective = StorageElementsHistory.DateEnd 
+) WHERE StorageElements.DateEffective < UTC_TIMESTAMP()
 ORDER BY StorageElementName;

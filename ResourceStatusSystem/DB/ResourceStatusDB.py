@@ -32,7 +32,8 @@ class ResourceStatusDB:
   """ 
   The ResourcesStatusDB class is a front-end to the Resource Status Database.
   
-  The simplest way to instantiate an object of type :class:`ResourceStatusDB` is simply by calling 
+  The simplest way to instantiate an object of type :class:`ResourceStatusDB` 
+  is simply by calling 
 
    >>> rsDB = ResourceStatusDB()
 
@@ -56,10 +57,9 @@ class ResourceStatusDB:
 
   """
 
-# SI PUO' FARE MEGLIO!!!
+  
   def __init__(self, *args, **kwargs):
-#    if kwargs['systemInstance']:
-#      systemInstance = kwargs['systemInstance'] 
+
     if len(args) == 1:
       if isinstance(args[0], str):
         systemInstance=args[0]
@@ -94,98 +94,224 @@ class ResourceStatusDB:
 #      self.db = DBin
 #    self.lock = threading.Lock()
     
-#############################################################################
-
-#############################################################################
-# Site functions
-#############################################################################
 
 #############################################################################
 
-  def getSitesList(self, paramsList = None, siteName = None, status = None, siteType = None):
+#############################################################################
+# Monitored functions
+#############################################################################
+
+#############################################################################
+
+  def getMonitoredsList(self, granularity, paramsList = None, siteName = None, 
+                        serviceName = None, resourceName = None, storageElementName = None, 
+                        status = None, siteType = None, resourceType = None, serviceType = None):
     """ 
-    Get Present Sites list. 
+    Get Present Sites/Services/Resources/StorageElements lists. 
     
     :params:
-      :attr:`paramsList`: a list of parameters can be entered. If not given, a custom list is used. 
+      :attr:`granularity`: a ValidRes
+    
+      :attr:`paramsList`: a list of parameters can be entered. If not given, 
+      a custom list is used. 
       
-      :attr:`siteName`: a string or a list representing the site name. If not given, fetch all.
+      :attr:`siteName`, `serviceName`, `resourceName`, `storageElementName`: 
+      a string or a list representing the site/service/resource/storageElement name. 
+      If not given, fetch all.
       
       :attr:`status`: a string or a list representing the status. If not given, fetch all.
       
-      :attr:`siteType`: a string or a list representing the site type (T0, T1, T2). If not given, fetch all.
+      :attr:`siteType`: a string or a list representing the site type (T0, T1, T2). 
+      If not given, fetch all.
+      
+      :attr:`serviceType`: a string or a list representing the service type (T0, T1, T2). 
+      If not given, fetch all.
+      
+      :attr:`resourceType`: a string or a list representing the resource type (CE, SE).
+      If not given, fetch all.
       
     :return:
-      list of siteName paramsList's values
+      list of monitored paramsList's values
     """
     
-    #query construction
-        
+    #get the parameters of the query
+    
+    getInfo = []
+    
+    if granularity in ('Site', 'Sites'):
+      DBname = 'SiteName'
+      DBtable = 'PresentSites'
+      getInfo = getInfo + ['SiteName', 'SiteType']
+    elif granularity in ('Service', 'Services'):
+      DBname = 'ServiceName'
+      DBtable = 'PresentServices'
+      getInfo = getInfo + ['SiteName', 'ServiceName', 'ServiceType']
+    elif granularity in ('Resource', 'Resources'):
+      DBname = 'ResourceName'
+      DBtable = 'PresentResources'
+      getInfo = getInfo + ['SiteName', 'ResourceName', 'ResourceType']
+    elif granularity in ('StorageElement', 'StorageElements'):
+      DBname = 'StorageElementName'
+      DBtable = 'PresentStorageElements'
+      getInfo = getInfo + ['SiteName', 'StorageElementName']
+    else:
+      raise InvalidRes, where(self, self.getMonitoredsList)
+
     #paramsList
     if (paramsList == None or paramsList == []):
-      params = 'SiteName, Status, FormerStatus, DateEffective, LastCheckTime '
+      params = DBname + ', Status, FormerStatus, DateEffective, LastCheckTime '
     else:
-      if type(paramsList) is not list:
+      if type(paramsList) is not type([]):
         paramsList = [paramsList]
       params = ','.join([x.strip()+' ' for x in paramsList])
 
     #siteName
-    if (siteName == None or siteName == []): 
-      r = "SELECT SiteName FROM PresentSites"
-      resQuery = self.db._query(r)
-      if not resQuery['OK']:
-        raise RSSDBException, where(self, self.getSitesList)+resQuery['Message']
-      if not resQuery['Value']:
-        siteName = []
-      siteName = [ x[0] for x in resQuery['Value']]
-      siteName = ','.join(['"'+x.strip()+'"' for x in siteName])
-    else:
-      if type(siteName) is not list:
-        siteName = [siteName]
-      siteName = ','.join(['"'+x.strip()+'"' for x in siteName])
+    if 'SiteName' in getInfo:
+      if (siteName == None or siteName == []):
+        r = "SELECT SiteName FROM PresentSites"
+        resQuery = self.db._query(r)
+        if not resQuery['OK']:
+          raise RSSDBException, where(self, self.getMonitoredsList)+resQuery['Message']
+        if not resQuery['Value']:
+          siteName = []
+        siteName = [ x[0] for x in resQuery['Value']]
+        siteName = ','.join(['"'+x.strip()+'"' for x in siteName])
+      else:
+        if type(siteName) is not type([]):
+          siteName = [siteName]
+        siteName = ','.join(['"'+x.strip()+'"' for x in siteName])
     
+    #serviceName
+    if 'ServiceName' in getInfo:
+      if (serviceName == None or serviceName == []): 
+        r = "SELECT ServiceName FROM PresentServices"
+        resQuery = self.db._query(r)
+        if not resQuery['OK']:
+          raise RSSDBException, where(self, self.getMonitoredsList)+resQuery['Message']
+        if not resQuery['Value']:
+          serviceName = []
+        serviceName = [ x[0] for x in resQuery['Value']]
+        serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName])
+      else:
+        if type(serviceName) is not type([]):
+          serviceName = [serviceName]
+        serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName])
+    
+    #resourceName
+    if 'ResourceName' in getInfo:
+      if (resourceName == None or resourceName == []): 
+        r = "SELECT ResourceName FROM PresentResources"
+        resQuery = self.db._query(r)
+        if not resQuery['OK']:
+          raise RSSDBException, where(self, self.getMonitoredsList)+resQuery['Message']
+        if not resQuery['Value']:
+          resourceName = []
+        resourceName = [ x[0] for x in resQuery['Value']]
+        resourceName = ','.join(['"'+x.strip()+'"' for x in resourceName])
+      else:
+        if type(resourceName) is not type([]):
+          resourceName = [resourceName]
+        resourceName = ','.join(['"'+x.strip()+'"' for x in resourceName])
+      
+    #storageElementName
+    if 'StorageElementName' in getInfo:
+      if (storageElementName == None or storageElementName == []): 
+        r = "SELECT StorageElementName FROM PresentStorageElements"
+        resQuery = self.db._query(r)
+        if not resQuery['OK']:
+          raise RSSDBException, where(self, self.getMonitoredsList)+resQuery['Message']
+        if not resQuery['Value']:
+          storageElementName = []
+        storageElementName = [ x[0] for x in resQuery['Value']]
+        storageElementName = ','.join(['"'+x.strip()+'"' for x in storageElementName])
+      else:
+        if type(storageElementName) is not type([]):
+          storageElementName = [storageElementName]
+        storageElementName = ','.join(['"'+x.strip()+'"' for x in storageElementName])
+      
     #status
     if (status == None or status == []):
       status = ValidStatus
     else:
-      if type(status) is not list:
+      if type(status) is not type([]):
         status = [status]
     status = ','.join(['"'+x.strip()+'"' for x in status])
 
     #siteType
-    if (siteType == None or siteType == []):
-      siteType = ValidSiteType
-    else:
-      if type(siteType) is not list:
-        siteType = [siteType]
-    siteType = ','.join(['"'+x.strip()+'"' for x in siteType])
+    if 'SiteType' in getInfo:
+      if (siteType == None or siteType == []):
+        siteType = ValidSiteType
+      else:
+        if type(siteType) is not type([]):
+          siteType = [siteType]
+      siteType = ','.join(['"'+x.strip()+'"' for x in siteType])
 
-    #query
-    req = "SELECT %s FROM PresentSites WHERE" %(params)
-    if siteName != [] and siteName != None and siteName is not None and siteName != '':
-      req = req + " SiteName IN (%s) AND" %(siteName)
+    #serviceType
+    if 'ServiceType' in getInfo:
+      if (serviceType == None or serviceType == []):
+        serviceType = ValidServiceType
+      else:
+        if type(serviceType) is not type([]):
+          serviceType = [serviceType]
+      serviceType = ','.join(['"'+x.strip()+'"' for x in serviceType])
+
+    #resourceType
+    if 'ResourceType' in getInfo:
+      if (resourceType == None or resourceType == []):
+        resourceType = ValidResourceType
+      else:
+        if type(resourceType) is not type([]):
+          resourceType = [resourceType]
+      resourceType = ','.join(['"'+x.strip()+'"' for x in resourceType])
+
+    #query construction
+    #base
+    req = "SELECT %s FROM %s WHERE" %(params, DBtable)
+    #what "names"
+    if 'SiteName' in getInfo:
+      if siteName != [] and siteName != None and siteName is not None and siteName != '':
+        req = req + " SiteName IN (%s) AND" %(siteName)
+    if 'ServiceName' in getInfo:
+      if serviceName != [] and serviceName != None and serviceName is not None and serviceName != '':
+        req = req + " ServiceName IN (%s) AND" %(serviceName)
+    if 'ResourceName' in getInfo:
+      if resourceName != [] and resourceName != None and resourceName is not None and resourceName != '':
+        req = req + " ResourceName IN (%s) AND" %(resourceName)
+    if 'StorageElementName' in getInfo:
+      if storageElementName != [] and storageElementName != None and storageElementName is not None and storageElementName != '':
+        req = req + " StorageElementName IN (%s) AND" %(storageElementName)
+    #status    
     req = req + " Status in (%s) AND" % (status)
-    req = req + " SiteType in (%s)" % (siteType)
-    
+    #types
+    if 'SiteType' in getInfo:
+      req = req + " SiteType in (%s)" % (siteType)
+    if 'ServiceType' in getInfo:
+      req = req + " ServiceType in (%s)" % (serviceType)
+    if 'ResourceType' in getInfo:
+      req = req + " ResourceType IN (%s)" % (resourceType)
+
     resQuery = self.db._query(req)
     if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getSitesList)+resQuery['Message']
+      raise RSSDBException, where(self, self.getMonitoredsList)+resQuery['Message']
     if not resQuery['Value']:
       return []
-    siteList = []
-    siteList = [ x for x in resQuery['Value']]
-    return siteList
+    list = []
+    list = [ x for x in resQuery['Value']]
+    return list
+
 
 #############################################################################
 
-  def getSitesStatusWeb(self, selectDict, sortList, startItem, maxItems):
+  def getMonitoredsStatusWeb(self, granularity, selectDict, sortList, startItem, maxItems):
     """ 
     Get present sites status list, for the web.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getSitesList`
-    and :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getSitesHistory`
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
+    and :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsHistory`
     
     :params:
-      :attr:`selectDict`: { 'SiteName':['XX', ...] , 'ExpandSiteHistory': ['XX', ...], 'Status': ['XX', ...]} 
+      :attr:`selectDict`: { 'SiteName':['XX', ...] , 'ExpandSiteHistory': ['XX', ...], 
+      'Status': ['XX', ...]}
+      and equivalents for the other monitoreds 
       
       :attr:`sortList` 
       
@@ -194,7 +320,8 @@ class ResourceStatusDB:
       :attr:`maxItems`
       
     :return: { 
-      :attr:`ParameterNames`: ['SiteName', 'Tier', 'GridType', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'], 
+      :attr:`ParameterNames`: ['SiteName', 'Tier', 'GridType', 'Country', 
+      'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'], 
       
       :attr:'Records': [[], [], ...], 
       
@@ -205,32 +332,75 @@ class ResourceStatusDB:
       }
     """
         
-    paramNames = ['SiteName', 'Tier', 'GridType', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
+    if granularity in ('Site', 'Sites'):
+      paramNames = ['SiteName', 'Tier', 'GridType', 'Country',
+                     'Status', 'DateEffective', 'FormerStatus', 'Reason']
+      paramsList = ['SiteName', 'SiteType', 'Status', 'DateEffective', 
+                    'FormerStatus', 'Reason']
+    elif granularity in ('Service', 'Services'):
+      paramNames = ['ServiceName', 'ServiceType', 'Site', 'Country', 'Status', 
+                    'DateEffective', 'FormerStatus', 'Reason']
+      paramsList = ['ServiceName', 'ServiceType', 'SiteName', 'Status', 
+                    'DateEffective', 'FormerStatus', 'Reason']
+    elif granularity in ('Resource', 'Resources'):
+      paramNames = ['ResourceName', 'ServiceName', 'SiteName', 'ResourceType', 
+                    'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
+      paramsList = ['ResourceName', 'ServiceName', 'SiteName', 'ResourceType', 
+                    'Status', 'DateEffective', 'FormerStatus', 'Reason']
+    elif granularity in ('StorageElement', 'StorageElements'):
+      paramNames = ['StorageElementName', 'ResourceName', 'SiteName', 'Country', 
+                    'Status', 'DateEffective', 'FormerStatus', 'Reason']
+      paramsList = ['StorageElementName', 'ResourceName', 'SiteName', 'Status', 
+                    'DateEffective', 'FormerStatus', 'Reason']
+    else:
+      raise InvalidRes, where(self, self.getMonitoredsStatusWeb)
 
     resultDict = {}
     records = []
 
-    paramsList = []
     sites_select = []
+    services_select = []
+    resources_select = []
+    storageElements_select = []
     status_select = []
     siteType_select = []
+    serviceType_select = []
+    resourceType_select = []
     expand_site_history = ''
-    
-    #get everything
-    if selectDict.keys() == []:
-      paramsList = ['SiteName', 'SiteType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
-      
+    expand_service_history = ''
+    expand_resource_history = ''
+    expand_storageElements_history = ''
+
     #specify SiteName
     if selectDict.has_key('SiteName'):
-      paramsList = ['SiteName', 'SiteType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
       sites_select = selectDict['SiteName']
       if type(sites_select) is not list:
         sites_select = [sites_select]
       del selectDict['SiteName']
       
+    #specify ServiceName
+    if selectDict.has_key('ServiceName'):
+      services_select = selectDict['ServiceName']
+      if type(services_select) is not list:
+        services_select = [services_select]
+      del selectDict['ServiceName']
+      
+    #ResourceName
+    if selectDict.has_key('ResourceName'):
+      resources_select = selectDict['ResourceName']
+      if type(resources_select) is not list:
+        resources_select = [resources_select]
+      del selectDict['ResourceName']
+
+    #StorageElementName
+    if selectDict.has_key('StorageElementName'):
+      storageElements_select = selectDict['StorageElementName']
+      if type(storageElements_select) is not list:
+        storageElements_select = [storageElements_select]
+      del selectDict['StorageElementName']
+
     #Status
     if selectDict.has_key('Status'):
-      paramsList = ['SiteName', 'SiteType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
       status_select = selectDict['Status']
       if type(status_select) is not list:
         status_select = [status_select]
@@ -238,20 +408,33 @@ class ResourceStatusDB:
       
     #SiteType
     if selectDict.has_key('SiteType'):
-      paramsList = ['SiteName', 'SiteType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
       siteType_select = selectDict['SiteType']
       if type(siteType_select) is not list:
         siteType_select = [siteType_select]
       del selectDict['SiteType']
       
+    #ServiceType
+    if selectDict.has_key('ServiceType'):
+      serviceType_select = selectDict['ServiceType']
+      if type(serviceType_select) is not list:
+        serviceType_select = [serviceType_select]
+      del selectDict['ServiceType']
+      
+    #ResourceType
+    if selectDict.has_key('ResourceType'):
+      resourceType_select = selectDict['ResourceType']
+      if type(resourceType_select) is not list:
+        resourceType_select = [resourceType_select]
+      del selectDict['ResourceType']
+    
     #ExpandSiteHistory
     if selectDict.has_key('ExpandSiteHistory'):
       paramsList = ['SiteName', 'Status', 'Reason', 'DateEffective']
       sites_select = selectDict['ExpandSiteHistory']
       if type(sites_select) is not list:
         sites_select = [sites_select]
-      #calls getSitesHistory
-      sitesHistory = self.getSitesHistory(paramsList = paramsList, siteName = sites_select)
+      sitesHistory = self.getMonitoredsHistory(granularity, paramsList = paramsList, 
+                                               name = sites_select)
       # sitesHistory is a list of tuples
       for site in sitesHistory:
         record = []
@@ -264,23 +447,146 @@ class ResourceStatusDB:
         record.append(None) #FormerStatus
         record.append(site[2]) #Reason
         records.append(record)
+
+    #ExpandServiceHistory
+    elif selectDict.has_key('ExpandServiceHistory'):
+      paramsList = ['ServiceName', 'Status', 'Reason', 'DateEffective']
+      services_select = selectDict['ExpandServiceHistory']
+      if type(services_select) is not list:
+        services_select = [services_select]
+      servicesHistory = self.getMonitoredsHistory(granularity, paramsList = paramsList, 
+                                                  name = services_select)
+      # servicesHistory is a list of tuples
+      for service in servicesHistory:
+        record = []
+        record.append(service[0]) #ServiceName
+        record.append(None) #ServiceType
+        record.append(None) #Site
+        record.append(None) #Country
+        record.append(service[1]) #Status
+        record.append(service[3].isoformat(' ')) #DateEffective
+        record.append(None) #FormerStatus
+        record.append(service[2]) #Reason
+        records.append(record)
+
+    #ExpandResourceHistory
+    elif selectDict.has_key('ExpandResourceHistory'):
+      paramsList = ['ResourceName', 'Status', 'Reason', 'DateEffective']
+      resources_select = selectDict['ExpandResourceHistory']
+      if type(resources_select) is not list:
+        resources_select = [resources_select]
+      resourcesHistory = self.getMonitoredsHistory(granularity, paramsList = paramsList,
+                                                    name = resources_select)
+      # resourcesHistory is a list of tuples
+      for resource in resourcesHistory:
+        record = []
+        record.append(resource[0]) #ResourceName
+        record.append(None) #ServiceName
+        record.append(None) #SiteName
+        record.append(None) #ResourceType
+        record.append(None) #Country
+        record.append(resource[1]) #Status
+        record.append(resource[3].isoformat(' ')) #DateEffective
+        record.append(None) #FormerStatus
+        record.append(resource[2]) #Reason
+        records.append(record)
+    
+    #ExpandStorageElementHistory
+    elif selectDict.has_key('ExpandStorageElementHistory'):
+      paramsList = ['StorageElementName', 'Status', 'Reason', 'DateEffective']
+      storageElements_select = selectDict['ExpandResourceHistory']
+      if type(storageElements_select) is not list:
+        storageElements_select = [storageElements_select]
+      storageElementsHistory = self.getMonitoredsHistory(granularity, paramsList = paramsList,
+                                                          name = storageElements_select)
+      # storageElementsHistory is a list of tuples
+      for storageElement in storageElementsHistory:
+        record = []
+        record.append(storageElement[0]) #StorageElementName
+        record.append(None) #ResourceName
+        record.append(None) #SiteName
+        record.append(None) #Country
+        record.append(resource[1]) #Status
+        record.append(resource[3].isoformat(' ')) #DateEffective
+        record.append(None) #FormerStatus
+        record.append(resource[2]) #Reason
+        records.append(record)
     
     else:
-      #makes the right call to getSitesList
-      sitesList = self.getSitesList(paramsList = paramsList, siteName = sites_select, status = status_select, siteType = siteType_select)
-      for site in sitesList:
-        record = []
-        record.append(site[0]) #SiteName
-        record.append(site[1]) #Tier
-        gridType = (site[0]).split('.').pop(0)
-        record.append(gridType) #GridType
-        country = (site[0]).split('.').pop()
-        record.append(country) #Country
-        record.append(site[2]) #Status
-        record.append(site[3].isoformat(' ')) #DateEffective
-        record.append(site[4]) #FormerStatus
-        record.append(site[5]) #Reason
-        records.append(record)
+      if granularity in ('Site', 'Sites'):
+        sitesList = self.getMonitoredsList(granularity, paramsList = paramsList, 
+                                           siteName = sites_select, status = status_select, 
+                                           siteType = siteType_select)
+        for site in sitesList:
+          record = []
+          record.append(site[0]) #SiteName
+          record.append(site[1]) #Tier
+          gridType = (site[0]).split('.').pop(0)
+          record.append(gridType) #GridType
+          country = (site[0]).split('.').pop()
+          record.append(country) #Country
+          record.append(site[2]) #Status
+          record.append(site[3].isoformat(' ')) #DateEffective
+          record.append(site[4]) #FormerStatus
+          record.append(site[5]) #Reason
+          records.append(record)
+
+      elif granularity in ('Service', 'Services'):
+        servicesList = self.getMonitoredsList(granularity, paramsList = paramsList, 
+                                              serviceName = services_select, 
+                                              siteName = sites_select, status = status_select, 
+                                              serviceType = serviceType_select)
+        for service in servicesList:
+          record = []
+          record.append(service[0]) #ServiceName
+          record.append(service[1]) #ServiceType
+          record.append(service[2]) #Site
+          country = (service[0]).split('.').pop()
+          record.append(country) #Country
+          record.append(service[3]) #Status
+          record.append(service[4].isoformat(' ')) #DateEffective
+          record.append(service[5]) #FormerStatus
+          record.append(service[6]) #Reason
+          records.append(record)
+
+      elif granularity in ('Resource', 'Resources'):
+        resourcesList = self.getMonitoredsList(granularity, paramsList = paramsList, 
+                                               resourceName = resources_select, 
+                                               siteName = sites_select, 
+                                               status = status_select, 
+                                               resourceType = resourceType_select)
+        for resource in resourcesList:
+          record = []
+          record.append(resource[0]) #ResourceName
+          record.append(resource[1]) #ServiceName
+          record.append(resource[2]) #SiteName
+          record.append(resource[3]) #ResourceType
+          country = (resource[2]).split('.').pop()
+          record.append(country) #Country
+          record.append(resource[4]) #Status
+          record.append(resource[5].isoformat(' ')) #DateEffective
+          record.append(resource[6]) #FormerStatus
+          record.append(resource[7]) #Reason
+          records.append(record)
+      
+
+      elif granularity in ('StorageElement', 'StorageElements'):
+        storageElementsList = self.getMonitoredsList(granularity, paramsList = paramsList, 
+                                                     storageElementName = storageElements_select, 
+                                                     siteName = sites_select, 
+                                                     status = status_select)
+        for storageElement in storageElementsList:
+          record = []
+          record.append(storageElement[0]) #StorageElementName
+          record.append(resource[1]) #ResourceName
+          record.append(resource[2]) #SiteName
+          country = (resource[2]).split('.').pop()
+          record.append(country) #Country
+          record.append(resource[4]) #Status
+          record.append(resource[5].isoformat(' ')) #DateEffective
+          record.append(resource[6]) #FormerStatus
+          record.append(resource[7]) #Reason
+          records.append(record)
 
 
     finalDict = {}
@@ -300,41 +606,149 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def getSitesHistory(self, paramsList = None, siteName = None):
+  def getMonitoredsHistory(self, granularity, paramsList = None, name = None):
     """ 
-    Get list of sites history (a site name can be specified)
+    Get history of sites/services/resources/storageElements in a list 
+    (a site name can be specified)
         
     :params:
+      :attr:`granularity`: a ValidRes
+    
       :attr:`paramsList`: A list of parameters can be entered. If not, a custom list is used.
   
-      :attr:`siteName`: list of strings. If not given, fetches the complete list 
+      :attr:`name`: list of strings. If not given, fetches the complete list 
     """
     
-        
-    if (paramsList == None or paramsList == []):
-      params = 'SiteName, Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode '
-    else:
-      if type(paramsList) is not list:
+    if paramsList is not None:
+      if type(paramsList) is not type([]):
         paramsList = [paramsList]
       params = ','.join([x.strip()+' ' for x in paramsList])
 
-    if (siteName == None or siteName == []): 
-      req = "SELECT %s FROM SitesHistory ORDER BY SiteName, SitesHistoryID" %(params)
+    if granularity in ('Site', 'Sites'):
+      if (paramsList == None or paramsList == []):
+        params = 'SiteName, Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode '
+      DBtable = 'SitesHistory'
+      DBname = 'SiteName'
+      DBid = 'SitesHistoryID'
+    elif granularity in ('Service', 'Services'):
+      if (paramsList == None or paramsList == []):
+        params = 'ServiceName, Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode '
+      DBtable = 'ServicesHistory'
+      DBname = 'ServiceName'
+      DBid = 'ServicesHistoryID'
+    elif granularity in ('Resource', 'Resources'):
+      if (paramsList == None or paramsList == []):
+        params = 'ResourceName, Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode '
+      DBtable = 'ResourcesHistory'
+      DBname = 'ResourceName'
+      DBid = 'ResourcesHistoryID'
+    elif granularity in ('StorageElement', 'StorageElements'):
+      if (paramsList == None or paramsList == []):
+        params = 'StorageElementName, Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode '
+      DBtable = 'StorageElementsHistory'
+      DBname = 'StorageElementName'
+      DBid = 'StorageElementsHistoryID'
     else:
-      if type(siteName) is not list:
-        siteName = [siteName]
-      siteName = ','.join(['"'+x.strip()+'"' for x in siteName])
-      req = "SELECT %s FROM SitesHistory WHERE SiteName IN (%s) ORDER BY SitesHistoryID" % (params, siteName)
+      raise InvalidRes, where(self, self.getMonitoredsHistory)
+      
+
+    if (name == None or name == []): 
+      req = "SELECT %s FROM %s ORDER BY %s, %s" %(params, DBtable, DBname, DBid)
+    else:
+      if type(name) is not type([]):
+        name = [name]
+      name = ','.join(['"'+x.strip()+'"' for x in name])
+      req = "SELECT %s FROM %s WHERE %s IN (%s) ORDER BY %s" % (params, DBtable, DBname, 
+                                                                name, DBid)
     
     resQuery = self.db._query(req)
     if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getSitesList)+resQuery['Message']
+      raise RSSDBException, where(self, self.getMonitoredsHistory)+resQuery['Message']
     if not resQuery['Value']:
       return []
-    siteList = []
-    siteList = [ x for x in resQuery['Value']]
-    return siteList
+    list = []
+    list = [ x for x in resQuery['Value']]
+    return list
  
+#############################################################################
+
+  def setLastMonitoredCheckTime(self, granularity, name):
+    """ 
+    Set to utcnow() LastCheckTime of table Sites/Services/Resources/StorageElements
+    
+    :params:
+      :attr:`granularity`: a ValidRes
+    
+      :attr:`name`: string
+    """
+    
+    if granularity in ('Site', 'Sites'):
+      DBtable = 'Sites'
+      DBname = 'SiteName'
+    elif granularity in ('Service', 'Services'):
+      DBtable = 'Services'
+      DBname = 'ServiceName'
+    elif granularity in ('Resource', 'Resources'):
+      DBtable = 'Resources'
+      DBname = 'ResourceName'
+    elif granularity in ('StorageElement', 'StorageElements'):
+      DBtable = 'StorageElements'
+      DBname = 'StorageElementName'
+    else:
+      raise InvalidRes, where(self, self.setLastMonitoredCheckTime)
+    
+    req = "UPDATE %s SET LastCheckTime = UTC_TIMESTAMP() WHERE " %(DBtable)
+    req = req + "%s = '%s' AND DateEffective <= UTC_TIMESTAMP();" % (DBname, name)
+    resUpdate = self.db._update(req)
+    
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self.setLastMonitoredCheckTime) + resUpdate['Message']
+
+#############################################################################
+
+  def setMonitoredReason(self, granularity, name, reason, operatorCode):
+    """
+    Set new reason to name.
+        
+    :params:
+      :attr:`granularity`: a ValidRes
+    
+      :attr:`name`: string, name or res
+
+      :attr:`reason`: string, reason
+
+      :attr:`operatorCode`: string, who's making this change 
+      (RS_SVC if it's the service itslef)
+    """
+    
+    if granularity in ('Site', 'Sites'):
+      DBtable = 'Sites'
+      DBname = 'SiteName'
+    elif granularity in ('Service', 'Services'):
+      DBtable = 'Services'
+      DBname = 'ServiceName'
+    elif granularity in ('Resource', 'Resources'):
+      DBtable = 'Resources'
+      DBname = 'ResourceName'
+    elif granularity in ('StorageElement', 'StorageElements'):
+      DBtable = 'StorageElements'
+      DBname = 'StorageElementName'
+    else:
+      raise InvalidRes, where(self, self.setMonitoredReason)
+    
+    req = "UPDATE %s SET Reason = '%s', " %(DBtable, reason)
+    req = req + "OperatorCode = '%s' WHERE %s = '%s';"  %(operatorCode, DBname, name)
+    resUpdate = self.db._update(req)
+    
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self.setMonitoredReason) + resUpdate['Message']
+
+#############################################################################
+
+#############################################################################
+# Site functions
+#############################################################################
+
 #############################################################################
 
   def setSiteStatus(self, siteName, status, reason, operatorCode):
@@ -344,7 +758,8 @@ class ResourceStatusDB:
     :params:
       :attr:`siteName`: string
   
-      :attr:`status`: string. Possibilities: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      :attr:`status`: string. Possibilities: 
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
   
       :attr:`reason`: string
   
@@ -352,7 +767,8 @@ class ResourceStatusDB:
     """
 
     gLogger.info("Setting Site %s new status: %s" % (siteName, status))
-    req = "SELECT SiteType FROM Sites WHERE SiteName = '%s' AND DateEffective < UTC_TIMESTAMP();" %(siteName)
+    req = "SELECT SiteType FROM Sites WHERE SiteName = '%s' " %(siteName)
+    req = req + "AND DateEffective < UTC_TIMESTAMP();"
     resQuery = self.db._query(req)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.setSiteStatus) + resQuery['Message']
@@ -361,20 +777,25 @@ class ResourceStatusDB:
 
     siteType = resQuery['Value'][0][0]
   
-    self.addOrModifySite(siteName, siteType, status, reason, datetime.utcnow().replace(microsecond = 0), operatorCode, datetime(9999, 12, 31, 23, 59, 59))
+    self.addOrModifySite(siteName, siteType, status, reason, 
+                         datetime.utcnow().replace(microsecond = 0), operatorCode, 
+                         datetime(9999, 12, 31, 23, 59, 59))
     
 #############################################################################
 
-  def addOrModifySite(self, siteName, siteType, status, reason, dateEffective, operatorCode, dateEnd):
+  def addOrModifySite(self, siteName, siteType, status, reason, dateEffective, 
+                      operatorCode, dateEnd):
     """ 
     Add or modify a site to the Sites table.
     
     :params:
       :attr:`siteName`: string - name of the site (DIRAC name)
     
-      :attr:`siteType`: string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      :attr:`siteType`: string - ValidSiteType: 
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
-      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      :attr:`status`: string - ValidStatus: 
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
       :attr:`reason`: string - free
       
@@ -412,16 +833,20 @@ class ResourceStatusDB:
         oldStatus = 'Banned'
       else:
         oldStatus = 'Active'
-      self._addSiteHistoryRow(siteName, oldStatus, reason, dateCreated, dateEffective, datetime.utcnow().replace(microsecond = 0).isoformat(' '), operatorCode)
+      self._addSiteHistoryRow(siteName, oldStatus, reason, dateCreated, dateEffective, 
+                              datetime.utcnow().replace(microsecond = 0).isoformat(' '), 
+                              operatorCode)
 
     #in any case add a row to present Sites table
-    self._addSiteRow(siteName, siteType, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
+    self._addSiteRow(siteName, siteType, status, reason, dateCreated, dateEffective, 
+                     dateEnd, operatorCode)
 #    siteRow = "Added %s --- %s " %(siteName, dateEffective)
 #    return siteRow
 
 #############################################################################
 
-  def _addSiteRow(self, siteName, siteType, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+  def _addSiteRow(self, siteName, siteType, status, reason, dateCreated, dateEffective, 
+                  dateEnd, operatorCode):
     """
     Add a new site row in Sites table
 
@@ -455,7 +880,8 @@ class ResourceStatusDB:
 
     req = "INSERT INTO Sites (SiteName, SiteType, Status, Reason, "
     req = req + "DateCreated, DateEffective, DateEnd, OperatorCode) "
-    req = req + "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (siteName, siteType, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
+    req = req + "VALUES ('%s', '%s', '%s', '%s', " % (siteName, siteType, status, reason) 
+    req = req + "'%s', '%s', '%s', '%s');" %(dateCreated, dateEffective, dateEnd, operatorCode)
 
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
@@ -463,14 +889,16 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def _addSiteHistoryRow(self, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+  def _addSiteHistoryRow(self, siteName, status, reason, dateCreated, dateEffective, 
+                         dateEnd, operatorCode):
     """ 
     Add an old site row in the SitesHistory table
 
     :params:
       :attr:`siteName`: string - name of the site (DIRAC name)
     
-      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      :attr:`status`: string - ValidStatus: 
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
       :attr:`reason`: string - free
       
@@ -478,7 +906,8 @@ class ResourceStatusDB:
 
       :attr:`dateEffective`: datetime or string - date from which the site status is effective
 
-      :attr:`dateEnd`: datetime or string - date from which the site status ends to be effective
+      :attr:`dateEnd`: datetime or string - date from which the site status 
+      ends to be effective
 
       :attr:`operatorCode`: string - free
     """
@@ -524,361 +953,10 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def removeSiteRow(self, siteName, dateEffective):
-    """ 
-    Remove a site row from the Sites table
-    
-    :params:
-      :attr:`siteName`: string
-      
-      :attr:`dateEffective`: string or datetime
-    """
-    #if type(dateEffective) not in types.StringTypes:
-    if not isinstance(dateEffective, basestring):
-      dateEffective = dateEffective.isoformat(' ')
-
-    req = "DELETE from Sites WHERE SiteName = '%s' AND DateEffective = '%s';" % (siteName, dateEffective)
-    resDel = self.db._update(req)
-    if not resDel['OK']:
-      raise RSSDBException, where(self, self.removeSiteRow) + resDel['Message'] 
-
-#############################################################################
-
-
-  def addSiteType(self, siteType, description=''):
-    """ 
-    Add a site type (T0, T1, T2, ...)
-    
-    :params:
-      :attr:`serviceType`: string
-
-      :attr:`description`: string, optional
-    """
-
-    req = "INSERT INTO SiteTypes (SiteType, Description)"
-    req = req + "VALUES ('%s', '%s');" % (siteType, description)
-
-    resUpdate = self.db._update(req)
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self.addSiteType) + resUpdate['Message']
-
-
-#############################################################################
-
-  def setLastSiteCheckTime(self, siteName):
-    """ 
-    Set to utcnow() LastCheckTime of table Resources
-    
-    :params:
-      :attr:`siteName`: string
-    """
-    
-    req = "UPDATE Sites SET LastCheckTime = UTC_TIMESTAMP() WHERE "
-    req = req + "SiteName = '%s' AND DateEffective <= UTC_TIMESTAMP();" % (siteName)
-    resUpdate = self.db._update(req)
-    
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self.setLastSiteCheckTime) + resUpdate['Message']
-
-#############################################################################
-
-  def setSiteReason(self, siteName, reason, operatorCode):
-    """
-    Set new reason to resourceName
-        
-    :params:
-      :attr:`siteName`: string, service name
-
-      :attr:`reason`: string, reason
-
-      :attr:`operatorCode`: string, who's making this change (RS_SVC if it's the service itslef)
-    """
-    
-    req = "UPDATE Sites SET Reason = '%s', OperatorCode = '%s' WHERE SiteName = '%s';" %(reason, operatorCode, siteName)
-    resUpdate = self.db._update(req)
-    
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self.setSiteReason) + resUpdate['Message']
-
-#############################################################################
-
-  def removeSiteType(self, siteType):
-    """ 
-    Remove a site type from the SiteTypes table
-    
-    :params:
-      :attr:`siteType`: string, a site type
-    """
-
-    req = "DELETE from SiteTypes WHERE SiteType = '%s';" % (siteType)
-    resDel = self.db._update(req)
-    if not resDel['OK']:
-      raise RSSDBException, where(self, self.removeSiteType) + resDel['Message']
-
-#############################################################################
-
 #############################################################################
 # Resource functions
 #############################################################################
 
-#############################################################################
-
-  def getResourcesList(self, paramsList = None, resourceName = None, siteName = None, status = None, resourceType = None):
-    """ 
-    Get Present Resources list. 
-    
-    :Params:
-      :attr:`paramsList`: a list of parameters can be entered. If not, a custom list is used. 
-      
-      :attr:`resourceName`: a string or a list representing the resource name. If not given, fetch all.
-      
-      :attr:`status`: a string or a list representing the status. If not given, fetch all.
-      
-      :attr:`resourceType`: a string or a list representing the resource type. If not given, fetch all.
-      
-    :return:
-      list of resourceName paramsList's values
-    """
-    
-    #paramsList    
-    if (paramsList == None or paramsList == []):
-      params = 'ResourceName, Status, FormerStatus, DateEffective, LastCheckTime '
-    else:
-      if type(paramsList) is not list:
-        paramsList = [paramsList]
-      params = ','.join([x.strip()+' ' for x in paramsList])
-
-    #siteName
-    if (siteName == None or siteName == []):
-      r = "SELECT SiteName FROM PresentSites"
-      resQuery = self.db._query(r)
-      if not resQuery['OK']:
-        raise RSSDBException, where(self, self.getSitesList)+resQuery['Message']
-      if not resQuery['Value']:
-        siteName = []
-      siteName = [ x[0] for x in resQuery['Value']]
-      siteName = ','.join(['"'+x.strip()+'"' for x in siteName])
-    else:
-      if type(siteName) is not list:
-        siteName = [siteName]
-      siteName = ','.join(['"'+x.strip()+'"' for x in siteName])
-
-    #status
-    if (status == None or status == []):
-      status = ValidStatus
-    else:
-      if type(status) is not list:
-        status = [status]
-    status = ','.join(['"'+x.strip()+'"' for x in status])
-
-    #resourceName
-    if (resourceName == None or resourceName == []): 
-      r = "SELECT ResourceName FROM PresentResources"
-      resQuery = self.db._query(r)
-      if not resQuery['OK']:
-        raise RSSDBException, where(self, self.getResourcesList)+resQuery['Message']
-      if not resQuery['Value']:
-        resourceName = []
-      resourceName = [ x[0] for x in resQuery['Value']]
-      resourceName = ','.join(['"'+x.strip()+'"' for x in resourceName])
-    else:
-      if type(resourceName) is not list:
-        resourceName = [resourceName]
-      resourceName = ','.join(['"'+x.strip()+'"' for x in resourceName])
-      
-    #resourceType
-    if (resourceType == None or resourceType == []):
-      resourceType = ValidResourceType
-    else:
-      if type(resourceType) is not list:
-        resourceType = [resourceType]
-    resourceType = ','.join(['"'+x.strip()+'"' for x in resourceType])
-
-    req = "SELECT %s FROM PresentResources WHERE" %(params) 
-    if resourceName != [] and resourceName != None and resourceName is not None and resourceName != '':
-      req = req + " ResourceName IN (%s) AND" %(resourceName)
-    if siteName != [] and siteName != None and siteName is not None and siteName != '':
-      req = req + " SiteName IN (%s) AND" %siteName
-    req = req + " Status IN (%s) AND" %status
-    req = req + " ResourceType IN (%s)" %resourceType
-    
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getResourcesList)+resQuery['Message']
-    if not resQuery['Value']:
-      return []
-    resourceList = []
-    resourceList = [ x for x in resQuery['Value']]
-    return resourceList
-
-#############################################################################
-
-  def getResourcesStatusWeb(self, selectDict, sortList, startItem, maxItems):
-    """ get present resources status list, for the web
-    
-        :params:
-          :attr:`selectDict`: {'ResourceName':['XX', ...], 'ExpandResourceHistory': ['XX', ...], 'Status':['XX', ...]}
-          
-          :attr:`sortList`: [] (now only empty)
-          
-          :attr:`startItem`: integer
-          
-          :attr:`maxItems`: integer
-    
-        :return: 
-        { 
-        
-          :attr:`ParameterNames`: ['ResourceName', 'ServiceName', 'SiteName', 'ResourceType', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason'], 
-          
-          :attr:'Records': [[], [], ...],
-          
-          :attr:'TotalRecords': X, 
-          
-          :attr:'Extras': {} 
-          
-          }
-    """
-    
-    paramNames = ['ResourceName', 'ServiceName', 'SiteName', 'ResourceType', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
-
-    resultDict = {}
-    records = []
-
-    paramsList = []
-    resources_select = []
-    sites_select = []
-    status_select = []
-    resourceType_select = []
-    expand_resource_history = ''
-    
-    # get everything
-    if selectDict.keys() == []:
-      paramsList = ['ResourceName', 'ServiceName', 'SiteName', 'ResourceType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
-    
-    #ResourceName
-    if selectDict.has_key('ResourceName'):
-      paramsList = ['ResourceName', 'ServiceName', 'SiteName', 'ResourceType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']      
-      resources_select = selectDict['ResourceName']
-      if type(resources_select) is not list:
-        resources_select = [resources_select]
-      del selectDict['ResourceName']
-      
-    #SiteName
-    if selectDict.has_key('SiteName'):
-      paramsList = ['ResourceName', 'ServiceName', 'SiteName', 'ResourceType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']      
-      sites_select = selectDict['SiteName']
-      if type(sites_select) is not list:
-        sites_select = [sites_select]
-      del selectDict['SiteName']
-      
-    #Status
-    if selectDict.has_key('Status'):
-      paramsList = ['ResourceName', 'ServiceName', 'SiteName', 'ResourceType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
-      status_select = selectDict['Status']
-      if type(status_select) is not list:
-        status_select = [status_select]
-      del selectDict['Status']
-
-    #ResourceType
-    if selectDict.has_key('ResourceType'):
-      paramsList = ['ResourceName', 'ServiceName', 'SiteName', 'ResourceType', 'Status', 'DateEffective', 'FormerStatus', 'Reason']      
-      resourceType_select = selectDict['ResourceType']
-      if type(resourceType_select) is not list:
-        resourceType_select = [resourceType_select]
-      del selectDict['ResourceType']
-    
-    #ResourceHistory
-    if selectDict.has_key('ExpandResourceHistory'):
-      paramsList = ['ResourceName', 'Status', 'Reason', 'DateEffective']
-      resources_select = selectDict['ExpandResourceHistory']
-      if type(resources_select) is not list:
-        resources_select = [resources_select]
-      #calls getSitesHistory
-      resourcesHistory = self.getResourcesHistory(paramsList = paramsList, resourceName = resources_select)
-      # resourcesHistory is a list of tuples
-      for resource in resourcesHistory:
-        record = []
-        record.append(resource[0]) #ResourceName
-        record.append(None) #ServiceName
-        record.append(None) #SiteName
-        record.append(None) #ResourceType
-        record.append(None) #Country
-        record.append(resource[1]) #Status
-        record.append(resource[3].isoformat(' ')) #DateEffective
-        record.append(None) #FormerStatus
-        record.append(resource[2]) #Reason
-        records.append(record)
-    
-    else:
-      #makes the right call to getResourcesList
-      resourcesList = self.getResourcesList(paramsList = paramsList, resourceName = resources_select, siteName = sites_select, status = status_select, resourceType = resourceType_select)
-      for resource in resourcesList:
-        record = []
-        record.append(resource[0]) #ResourceName
-        record.append(resource[1]) #ServiceName
-        record.append(resource[2]) #SiteName
-        record.append(resource[3]) #ResourceType
-        country = (resource[2]).split('.').pop()
-        record.append(country) #Country
-        record.append(resource[4]) #Status
-        record.append(resource[5].isoformat(' ')) #DateEffective
-        record.append(resource[6]) #FormerStatus
-        record.append(resource[7]) #Reason
-        records.append(record)
-      
-      
-      
-    finalDict = {}
-    finalDict['TotalRecords'] = len(records)
-    finalDict['ParameterNames'] = paramNames
-
-    # Return all the records if maxItems == 0 or the specified number otherwise
-    if maxItems:
-      finalDict['Records'] = records[startItem:startItem+maxItems]
-    else:
-      finalDict['Records'] = records
-
-    finalDict['Extras'] = None
-
-    return finalDict
-
-#############################################################################
-
-  def getResourcesHistory(self, paramsList = None, resourceName = None):
-    """ 
-    Get list of Resources history (a Resource name can be specified)
-        
-    :params:
-      :attr:`paramsList`: A list of parameters can be entered. If not, a custom list is used.
-
-      :attr:`resourceName`: list of strings. If not given, fetches the complete list 
-    """
-    
-        
-    if (paramsList == None or paramsList == []):
-      params = 'ResourceName, Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode '
-    else:
-      if type(paramsList) is not list:
-        paramsList = [paramsList]
-      params = ','.join([x.strip()+' ' for x in paramsList])
-
-    if (resourceName == None or resourceName == []): 
-      req = "SELECT %s FROM ResourcesHistory ORDER BY ResourceName, ResourcesHistoryID" %(params)
-    else:
-      if type(resourceName) is not list:
-        resourceName = [resourceName]
-      resourceName = ','.join(['"'+x.strip()+'"' for x in resourceName])
-      req = "SELECT %s FROM ResourcesHistory WHERE ResourceName IN (%s) ORDER BY ResourcesHistoryID" % (params, resourceName)
-    
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getResourcesHistory)+resQuery['Message']
-    if not resQuery['Value']:
-      return []
-    ResourceList = []
-    ResourceList = [ x for x in resQuery['Value']]
-    return ResourceList
- 
 #############################################################################
 
   def setResourceStatus(self, resourceName, status, reason, operatorCode):
@@ -888,7 +966,8 @@ class ResourceStatusDB:
     :params:
       :attr:`resourceName`: string
 
-      :attr:`status`: string. Possibilities: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      :attr:`status`: string. Possibilities: 
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
 
       :attr:`reason`: string
 
@@ -896,7 +975,8 @@ class ResourceStatusDB:
     """
 
     gLogger.info("Setting Resource %s new status: %s" % (resourceName, status))
-    req = "SELECT ResourceType, ServiceName, SiteName FROM Resources WHERE ResourceName = '%s' AND DateEffective < UTC_TIMESTAMP();" %(resourceName)
+    req = "SELECT ResourceType, ServiceName, SiteName FROM Resources WHERE "
+    req = req + "ResourceName = '%s' AND DateEffective < UTC_TIMESTAMP();" %(resourceName)
     resQuery = self.db._query(req)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.setResourceStatus) + resQuery['Message']
@@ -907,20 +987,25 @@ class ResourceStatusDB:
     serviceName = resQuery['Value'][0][1]
     siteName = resQuery['Value'][0][2]
 
-    self.addOrModifyResource(resourceName, resourceType, serviceName, siteName, status, reason, datetime.utcnow().replace(microsecond = 0), operatorCode, datetime(9999, 12, 31, 23, 59, 59))
+    self.addOrModifyResource(resourceName, resourceType, serviceName, siteName, status, 
+                             reason, datetime.utcnow().replace(microsecond = 0), 
+                             operatorCode, datetime(9999, 12, 31, 23, 59, 59))
     
 #############################################################################
 
-  def addOrModifyResource(self, resourceName, resourceType, serviceName, siteName, status, reason, dateEffective, operatorCode, dateEnd):
+  def addOrModifyResource(self, resourceName, resourceType, serviceName, siteName, status, 
+                          reason, dateEffective, operatorCode, dateEnd):
     """ 
     Add or modify a resource to the Resources table.
     
     :params:
       :attr:`resourceName`: string - name of the resource (DIRAC name)
     
-      :attr:`resourceType`: string - ValidResourceType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      :attr:`resourceType`: string - ValidResourceType: 
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
-      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      :attr:`status`: string - ValidStatus: 
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
       :attr:`reason`: string - free
       
@@ -957,33 +1042,42 @@ class ResourceStatusDB:
         oldStatus = 'Banned'
       else:
         oldStatus = 'Active'
-      self._addResourcesHistoryRow(resourceName, serviceName, siteName, oldStatus, reason, dateCreated, dateEffective, datetime.utcnow().replace(microsecond = 0).isoformat(' '),  operatorCode)
+      self._addResourcesHistoryRow(resourceName, serviceName, siteName, oldStatus, reason, 
+                                   dateCreated, dateEffective, 
+                                   datetime.utcnow().replace(microsecond = 0).isoformat(' '), 
+                                   operatorCode)
 
     #in any case add a row to present Sites table
-    self._addResourcesRow(resourceName, resourceType, serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
+    self._addResourcesRow(resourceName, resourceType, serviceName, siteName, status, reason, 
+                          dateCreated, dateEffective, dateEnd, operatorCode)
 #    resourceRow = "Added %s --- %s --- %s " %(resourceName, siteName, dateEffective)
 #    return resAddResourcesRow
 
 #############################################################################
 
-  def _addResourcesRow(self, resourceName, resourceType, serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+  def _addResourcesRow(self, resourceName, resourceType, serviceName, siteName, status, 
+                       reason, dateCreated, dateEffective, dateEnd, operatorCode):
     """ 
     Add a new resource row in Resources table
 
     :params:
       :attr:`resourceName`: string - name of the resource (DIRAC name)
     
-      :attr:`resourceType`: string - ValidResourceType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      :attr:`resourceType`: string - ValidResourceType: 
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
-      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      :attr:`status`: string - ValidStatus: 
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
       :attr:`reason`: string - free
       
       :attr:`dateCreated`: datetime  or string - date when which the resource row is created
 
-      :attr:`dateEffective`: datetime or string - date from which the resource status is effective
+      :attr:`dateEffective`: datetime or string - date from which the resource status 
+      is effective
 
-      :attr:`dateEnd`: datetime  or string - date from which the resource status ends to be effective
+      :attr:`dateEnd`: datetime  or string - date from which the resource status 
+      ends to be effective
 
       :attr:`operatorCode`: string - free
     """
@@ -1000,7 +1094,9 @@ class ResourceStatusDB:
     
     req = "INSERT INTO Resources (ResourceName, ResourceType, ServiceName, SiteName, Status, "
     req = req + "Reason, DateCreated, DateEffective, DateEnd, OperatorCode) "
-    req = req + "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (resourceName, resourceType, serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
+    req = req + "VALUES ('%s', '%s', '%s', " %(resourceName, resourceType, serviceName)
+    req = req + "'%s', '%s', '%s', " %(siteName, status, reason)
+    req = req + "'%s', '%s', '%s', '%s');" %(dateCreated, dateEffective, dateEnd, operatorCode)
 
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
@@ -1009,14 +1105,16 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def _addResourcesHistoryRow(self, resourceName, serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+  def _addResourcesHistoryRow(self, resourceName, serviceName, siteName, status, 
+                              reason, dateCreated, dateEffective, dateEnd, operatorCode):
     """
     Add an old resource row in the ResourcesHistory table
 
     :params:
       :attr:`resourceName`: string - name of the resource (DIRAC name)
     
-      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      :attr:`status`: string - ValidStatus: 
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
       :attr:`reason`: string - free
       
@@ -1044,44 +1142,6 @@ class ResourceStatusDB:
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
       raise RSSDBException, where(self, self._addResourcesHistoryRow) + resUpdate['Message']
-
-#############################################################################
-
-  def setLastResourceCheckTime(self, resourceName):
-    """ 
-    Set to utcnow() LastCheckTime of table Resources
-    
-        
-    :params:
-      :attr:`resourceName`: string
-    """
-    
-    req = "UPDATE Resources SET LastCheckTime = UTC_TIMESTAMP() WHERE "
-    req = req + "ResourceName = '%s' AND DateEffective <= UTC_TIMESTAMP();" % (resourceName)
-    resUpdate = self.db._update(req)
-    
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self.setLastResourceCheckTime) + resUpdate['Message']
-
-#############################################################################
-
-  def setResourceReason(self, resourceName, reason, operatorCode):
-    """ 
-    Set new reason to resourceName
-        
-    :params:
-      :attr:`resourceName`: string, service name
-
-      :attr:`reason`: string, reason
-
-      :attr:`operatorCode`: string, who's making this change (RS_SVC if it's the service itslef)
-    """
-    
-    req = "UPDATE Resources SET Reason = '%s', OperatorCode = '%s' WHERE ResourceName = '%s';" % (reason, operatorCode, resourceName)
-    resUpdate = self.db._update(req)
-    
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self.setResourceReason) + resUpdate['Message']
 
 #############################################################################
 
@@ -1148,43 +1208,6 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def removeResourceRow(self, resourceName, siteName, dateEffective):
-    """ 
-    Remove a Resource Status from the Resources table
-    
-    :params:
-      :attr:`resourceName`: string
-      
-      :attr:`siteName`: string
-      
-      :attr:`dateEffective`: string or datetime
-    """
-
-    if not isinstance(dateEffective, basestring):
-      dateEffective = dateEffective.isoformat(' ')
-
-    req = "DELETE from Resources WHERE ResourceName = '%s' AND SiteName = '%s' AND DateEffective = '%s';" % (resourceName, siteName, dateEffective)
-    resDel = self.db._update(req)
-    if not resDel['OK']:
-      raise RSSDBException, where(self, self.removeResourceRow) + resDel['Message']
-
-#############################################################################
-
-  def removeResourceType(self, resourceType):
-    """ 
-    Remove a Resource Type
-    
-    :params:
-      :attr:`resourceType`: string, a service type (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
-    """
-
-    req = "DELETE from ResourceTypes WHERE ResourceType = '%s';" % (resourceType)
-    resDel = self.db._update(req)
-    if not resDel['OK']:
-      raise RSSDBException, where(self, self.removeResourceType) + resDel['Message']
-
-#############################################################################
-
 
 #############################################################################
 # Service functions
@@ -1192,269 +1215,6 @@ class ResourceStatusDB:
 
 #############################################################################
   
-  
-  def getServicesList(self, paramsList = None, serviceName = None, siteName = None, status = None, serviceType = None):
-    """ 
-    Get Present Services list. 
-    
-    :params:
-      :attr:`paramsList`: a list of parameters can be entered. If not, a custom list is used. 
-      
-      :attr:`serviceName`: a string or a list representing the service name. If not given, fetch all.
-      
-      :attr:`siteName`: a string or a list representing the site name. If not given, fetch all.
-      
-      :attr:`status`: a string or a list representing the status. If not given, fetch all.
-      
-      :attr:`serviceType`: a string or a list representing the service type (T0, T1, T2). If not given, fetch all.
-      
-    :return:
-      list of serviceName paramsList's values
-    """
-    
-    #query construction
-        
-    #paramsList
-    if (paramsList == None or paramsList == []):
-      params = 'ServiceName, Status, FormerStatus, DateEffective, LastCheckTime '
-    else:
-      if type(paramsList) is not list:
-        paramsList = [paramsList]
-      params = ','.join([x.strip()+' ' for x in paramsList])
-
-    #serviceName
-    if (serviceName == None or serviceName == []): 
-      r = "SELECT ServiceName FROM PresentServices"
-      resQuery = self.db._query(r)
-      if not resQuery['OK']:
-        raise RSSDBException, where(self, self.getServicesList)+resQuery['Message']
-      if not resQuery['Value']:
-        serviceName = []
-      serviceName = [ x[0] for x in resQuery['Value']]
-      serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName])
-    else:
-      if type(serviceName) is not list:
-        serviceName = [serviceName]
-      serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName])
-    
-    #siteName
-    if (siteName == None or siteName == []):
-      r = "SELECT SiteName FROM PresentSites"
-      resQuery = self.db._query(r)
-      if not resQuery['OK']:
-        raise RSSDBException, where(self, self.getSitesList)+resQuery['Message']
-      if not resQuery['Value']:
-        siteName = []
-      siteName = [ x[0] for x in resQuery['Value']]
-      siteName = ','.join(['"'+x.strip()+'"' for x in siteName])
-    else:
-      if type(siteName) is not list:
-        siteName = [siteName]
-      siteName = ','.join(['"'+x.strip()+'"' for x in siteName])
-
-   
-    #status
-    if (status == None or status == []):
-      status = ValidStatus
-    else:
-      if type(status) is not list:
-        status = [status]
-    status = ','.join(['"'+x.strip()+'"' for x in status])
-
-    #serviceType
-    if (serviceType == None or serviceType == []):
-      serviceType = ValidServiceType
-    else:
-      if type(serviceType) is not list:
-        serviceType = [serviceType]
-    serviceType = ','.join(['"'+x.strip()+'"' for x in serviceType])
-
-    #query
-    req = "SELECT %s FROM PresentServices WHERE" %(params)
-    if serviceName != [] and serviceName != None and serviceName is not None and serviceName != '':
-      req = req + " ServiceName IN (%s) AND" %(serviceName)
-    req = req + " SiteName in (%s) AND" % (siteName)
-    req = req + " Status in (%s) AND" % (status)
-    req = req + " ServiceType in (%s)" % (serviceType)
-    
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getServicesList)+resQuery['Message']
-    if not resQuery['Value']:
-      return []
-    serviceList = []
-    serviceList = [ x for x in resQuery['Value']]
-    return serviceList
-
-#############################################################################
-
-  def getServicesStatusWeb(self, selectDict, sortList, startItem, maxItems):
-    """ 
-    Get present services status list, for the web.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getServicesList`
-    and :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getServicesHistory`
-    
-    :params:
-      :attr:`selectDict`: { 'ServiceName':['XX', ...] , 'ExpandServiceHistory': ['XX', ...], 'Status': ['XX', ...]} 
-      
-      :attr:`sortList` 
-      
-      :attr:`startItem` 
-      
-      :attr:`maxItems`
-      
-    :return: { 
-      :attr:`ParameterNames`: ['ServiceName', 'ServiceType', 'Site', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason'], 
-      
-      :attr:'Records': [[], [], ...], 
-      
-      :attr:'TotalRecords': X,
-       
-      :attr:'Extras': {}
-      
-      }
-    """
-        
-    paramNames = ['ServiceName', 'ServiceType', 'Site', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
-
-    resultDict = {}
-    records = []
-
-    paramsList = []
-    services_select = []
-    sites_select = []
-    status_select = []
-    serviceType_select = []
-    expand_service_history = ''
-    
-    #get everything
-    if selectDict.keys() == []:
-      paramsList = ['ServiceName', 'ServiceType', 'SiteName', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
-      
-    #specify ServiceName
-    if selectDict.has_key('ServiceName'):
-      paramsList = ['ServiceName', 'ServiceType', 'SiteName', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
-      services_select = selectDict['ServiceName']
-      if type(services_select) is not list:
-        services_select = [services_select]
-      del selectDict['ServiceName']
-      
-    #specify SiteName
-    if selectDict.has_key('SiteName'):
-      paramsList = ['ServiceName', 'ServiceType', 'SiteName', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
-      sites_select = selectDict['SiteName']
-      if type(sites_select) is not list:
-        sites_select = [sites_select]
-      del selectDict['SiteName']
-      
-    #Status
-    if selectDict.has_key('Status'):
-      paramsList = ['ServiceName', 'ServiceType', 'SiteName', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
-      status_select = selectDict['Status']
-      if type(status_select) is not list:
-        status_select = [status_select]
-      del selectDict['Status']
-      
-    #ServiceType
-    if selectDict.has_key('ServiceType'):
-      paramsList = ['ServiceName', 'ServiceType', 'SiteName', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
-      serviceType_select = selectDict['ServiceType']
-      if type(serviceType_select) is not list:
-        serviceType_select = [serviceType_select]
-      del selectDict['ServiceType']
-      
-    #ExpandServiceHistory
-    if selectDict.has_key('ExpandServiceHistory'):
-      paramsList = ['ServiceName', 'Status', 'Reason', 'DateEffective']
-      services_select = selectDict['ExpandServiceHistory']
-      if type(services_select) is not list:
-        services_select = [services_select]
-      #calls getServicesHistory
-      servicesHistory = self.getServicesHistory(paramsList = paramsList, serviceName = services_select)
-      # servicesHistory is a list of tuples
-      for service in servicesHistory:
-        record = []
-        record.append(service[0]) #ServiceName
-        record.append(None) #ServiceType
-        record.append(None) #Site
-        record.append(None) #Country
-        record.append(service[1]) #Status
-        record.append(service[3].isoformat(' ')) #DateEffective
-        record.append(None) #FormerStatus
-        record.append(service[2]) #Reason
-        records.append(record)
-    
-    else:
-      #makes the right call to getServicesList
-      servicesList = self.getServicesList(paramsList = paramsList, serviceName = services_select, siteName = sites_select, status = status_select, serviceType = serviceType_select)
-      for service in servicesList:
-        record = []
-        record.append(service[0]) #ServiceName
-        record.append(service[1]) #ServiceType
-        record.append(service[2]) #Site
-        country = (service[0]).split('.').pop()
-        record.append(country) #Country
-        record.append(service[3]) #Status
-        record.append(service[4].isoformat(' ')) #DateEffective
-        record.append(service[5]) #FormerStatus
-        record.append(service[6]) #Reason
-        records.append(record)
-
-
-    finalDict = {}
-    finalDict['TotalRecords'] = len(records)
-    finalDict['ParameterNames'] = paramNames
-
-    # Return all the records if maxItems == 0 or the specified number otherwise
-    if maxItems:
-      finalDict['Records'] = records[startItem:startItem+maxItems]
-    else:
-      finalDict['Records'] = records
-
-    finalDict['Extras'] = None
-
-    return finalDict
-
-
-#############################################################################
-
-  def getServicesHistory(self, paramsList = None, serviceName = None):
-    """ 
-    Get list of services history (a service name can be specified)
-        
-    :params:
-      :attr:`paramsList`: A list of parameters can be entered. If not, a custom list is used.
-      
-      :attr:`serviceName`: list of strings. If not given, fetches the complete list 
-    """
-    
-        
-    if (paramsList == None or paramsList == []):
-      params = 'ServiceName, Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode '
-    else:
-      if type(paramsList) is not list:
-        paramsList = [paramsList]
-      params = ','.join([x.strip()+' ' for x in paramsList])
-
-    if (serviceName == None or serviceName == []): 
-      req = "SELECT %s FROM ServicesHistory ORDER BY ServiceName, ServicesHistoryID" %(params)
-    else:
-      if type(serviceName) is not list:
-        serviceName = [serviceName]
-      serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName])
-      req = "SELECT %s FROM ServicesHistory WHERE ServiceName IN (%s) ORDER BY ServicesHistoryID" % (params, serviceName)
-    
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getServicesHistory)+resQuery['Message']
-    if not resQuery['Value']:
-      return []
-    serviceList = []
-    serviceList = [ x for x in resQuery['Value']]
-    return serviceList
- 
-#############################################################################
-
   def setServiceStatus(self, serviceName, status, reason, operatorCode):
     """ 
     Set a Service status, effective from now, with no ending
@@ -1659,84 +1419,6 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def removeServiceRow(self, serviceName, dateEffective):
-    """ 
-    Remove a service row from the Services table
-    
-    :params:
-      :attr:`serviceName`: string
-      
-      :attr:`dateEffective`: string or datetime
-    """
-    #if type(dateEffective) not in types.StringTypes:
-    if not isinstance(dateEffective, basestring):
-      dateEffective = dateEffective.isoformat(' ')
-
-    req = "DELETE from Services WHERE ServiceName = '%s' AND DateEffective = '%s';" % (serviceName, dateEffective)
-    resDel = self.db._update(req)
-    if not resDel['OK']:
-      raise RSSDBException, where(self, self.removeServiceRow) + resDel['Message']
-
-#############################################################################
-
-
-  def addServiceType(self, serviceType, description=''):
-    """ 
-    Add a service type (Computing, Storage, ...)
-    
-    :params:
-      :attr:`serviceType`: string
-      
-      :attr:`description`: string, optional
-    """
-
-    req = "INSERT INTO ServiceTypes (ServiceType, Description)"
-    req = req + "VALUES ('%s', '%s');" % (serviceType, description)
-
-    resUpdate = self.db._update(req)
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self.addServiceType) + resUpdate['Message']
-
-
-#############################################################################
-
-  def setLastServiceCheckTime(self, serviceName):
-    """ 
-    Set to utcnow() LastCheckTime of table Resources
-    
-    :params:
-      :attr:`serviceName`: string
-    """
-    
-    req = "UPDATE Services SET LastCheckTime = UTC_TIMESTAMP() WHERE "
-    req = req + "ServiceName = '%s' AND DateEffective <= UTC_TIMESTAMP();" % (serviceName)
-    resUpdate = self.db._update(req)
-    
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self.setLastServiceCheckTime) + resUpdate['Message']
-
-#############################################################################
-
-  def setServiceReason(self, serviceName, reason, operatorCode):
-    """ 
-    Set new reason to serviceName
-    
-    :params:
-      :attr:`serviceName`: string, service name
-      
-      :attr:`reason`: string, reason
-      
-      :attr:`operatorCode`: string, who's making this change (RS_SVC if it's the service itslef)
-    """
-    
-    req = "UPDATE Services SET Reason = '%s', OperatorCode = '%s' WHERE ServiceName = '%s';" %(reason, operatorCode, serviceName)
-    resUpdate = self.db._update(req)
-    
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self.setServiceReason) + resUpdate['Message']
-
-#############################################################################
-
   def setServiceToBeChecked(self, granularity, name):
     """ 
     Set LastCheckTime to 0 to service(s)
@@ -1750,7 +1432,7 @@ class ResourceStatusDB:
 #    req = ""
     
     if granularity in ('Site', 'Sites'):
-      serviceName = self.getServicesList(paramsList = ['ServiceName'], siteName = name)
+      serviceName = self.getMonitoredsList(granularity, paramsList = ['ServiceName'], siteName = name)
       if type(serviceName) is not list:
         serviceName = [serviceName]
       if serviceName == []:
@@ -1768,21 +1450,6 @@ class ResourceStatusDB:
     if not resUpdate['OK']:
       raise RSSDBException, where(self, self.setServiceToBeChecked) + resUpdate['Message']
 
-
-#############################################################################
-
-  def removeServiceType(self, serviceType):
-    """ 
-    Remove a service type from the ServiceTypes table
-    
-    :params:
-      :attr:`serviceType`: string, a service type (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
-    """
-
-    req = "DELETE from ServiceTypes WHERE ServiceType = '%s';" % (serviceType)
-    resDel = self.db._update(req)
-    if not resDel['OK']:
-      raise RSSDBException, where(self, self.removeServiceType) + resDel['Message']
 
 #############################################################################
 
@@ -1814,6 +1481,238 @@ class ResourceStatusDB:
     
     return res
 
+#############################################################################
+
+#############################################################################
+# StorageElement functions
+#############################################################################
+
+#############################################################################
+
+  def setStorageElementStatus(self, storageElementName, status, reason, operatorCode):
+    """ 
+    Set a StorageElement status, effective from now, with no ending
+        
+    :params:
+      :attr:`storageElementName`: string
+  
+      :attr:`status`: string. Possibilities: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+  
+      :attr:`reason`: string
+  
+      :attr:`operatorCode`: string. For the service itself: `RS_SVC`
+    """
+
+    gLogger.info("Setting StorageElement %s new status: %s" % (storageElementName, status))
+    req = "SELECT ResourceName, SiteName FROM StorageElements WHERE StorageElementName = '%s' AND DateEffective < UTC_TIMESTAMP();" %(storageElementName)
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.setStorageElementStatus) + resQuery['Message']
+    if not resQuery['Value']:
+      return None
+
+    resourceName = resQuery['Value'][0][0]
+    siteName = resQuery['Value'][0][1]
+  
+    self.addOrModifyStorageElement(storageElementName, resourceName, siteName, status, reason, datetime.utcnow().replace(microsecond = 0), operatorCode, datetime(9999, 12, 31, 23, 59, 59))
+    
+#############################################################################
+
+  def addOrModifyStorageElement(self, storageElementName, resourceName, siteName, 
+                                status, reason, dateEffective, operatorCode, dateEnd):
+    """ 
+    Add or modify a storageElement to the StorageElements table.
+    
+    :params:
+      :attr:`storageElementName`: string - name of the storageElement
+    
+      :attr:`resourceName`: string - name of the node
+    
+      :attr:`SiteName`: string - name of the site (DIRAC name)
+    
+      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`reason`: string - free
+      
+      :attr:`dateEffective`: datetime - date from which the storageElement status is effective
+
+      :attr:`operatorCode`: string - free
+
+      :attr:`dateEnd`: datetime - date from which the storageElement status ends to be effective
+    """
+
+    dateCreated = datetime.utcnow().replace(microsecond = 0)
+    if dateEffective < dateCreated:
+      dateEffective = dateCreated
+    if dateEnd < dateEffective:
+      raise NotAllowedDate, where(self, self.addOrModifyStorageElement)
+    if status not in ValidStatus:
+      raise InvalidStatus, where(self, self.addOrModifyStorageElement)
+
+    #check if the storageElement is already there
+    query = "SELECT StorageElementName FROM StorageElements WHERE StorageElementName='%s'" % storageElementName
+    resQuery = self.db._query(query)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.addOrModifyStorageElement) + resQuery['Message']
+
+    if resQuery['Value']: 
+      if dateEffective <= (dateCreated + timedelta(minutes=2)):
+        #storageElement modification, effective in less than 2 minutes
+        self.setDateEnd('StorageElement', storageElementName, dateEffective)
+        self.transact2History('StorageElement', storageElementName, resourceName, siteName, dateEffective)
+      else:
+        self.setDateEnd('StorageElement', storageElementName, dateEffective)
+    else:
+      if status in ('Active', 'Probing'):
+        oldStatus = 'Banned'
+      else:
+        oldStatus = 'Active'
+      self._addStorageElementHistoryRow(storageElementName, resourceName, siteName, oldStatus, reason, dateCreated, dateEffective, datetime.utcnow().replace(microsecond = 0).isoformat(' '), operatorCode)
+
+    #in any case add a row to present StorageElements table
+    self._addStorageElementRow(storageElementName, resourceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
+#    storageElementRow = "Added %s --- %s " %(storageElementName, dateEffective)
+#    return storageElementRow
+
+#############################################################################
+
+  def _addStorageElementRow(self, storageElementName, resourceName, siteName, status, 
+                            reason, dateCreated, dateEffective, dateEnd, operatorCode):
+    """
+    Add a new storageElement row in StorageElements table
+
+    :params:
+      :attr:`storageElementName`: string - name of the storageElement
+    
+      :attr:`resourceName`: string - name of the resource
+  
+      :attr:`siteName`: string - name of the site (DIRAC name)
+      
+      :attr:`status`: string - ValidStatus: 
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`reason`: string - free
+      
+      :attr:`dateCreated`: datetime or string - date when which the storageElement 
+      row is created
+
+      :attr:`dateEffective`: datetime or string - date from which the storageElement 
+      status is effective
+
+      :attr:`dateEnd`: datetime or string - date from which the storageElement status 
+      ends to be effective
+
+      :attr:`operatorCode`: string - free
+    """
+
+    if not isinstance(dateCreated, basestring):
+      dateCreated = dateCreated.isoformat(' ')
+    if not isinstance(dateEffective, basestring):
+      dateEffective = dateEffective.isoformat(' ')
+    if not isinstance(dateEnd, basestring):
+      dateEnd = dateEnd.isoformat(' ')
+    if status not in ValidStatus:
+      raise InvalidStatus, where(self, self._addStorageElementRow)
+      
+
+    req = "INSERT INTO StorageElements (StorageElementName, ResourceName, SiteName, "
+    req = req + "Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode) "
+    req = req + "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (storageElementName, resourceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
+
+    resUpdate = self.db._update(req)
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self._addStorageElementRow) + resUpdate['Message']
+
+#############################################################################
+
+  def _addStorageElementHistoryRow(self, storageElementName, resourceName, siteName, status, 
+                                   reason, dateCreated, dateEffective, dateEnd, operatorCode):
+    """ 
+    Add an old storageElement row in the StorageElementsHistory table
+
+    :params:
+      :attr:`storageElementName`: string - name of the storageElement
+    
+      :attr:`storageElementName`: string - name of the resource
+    
+      :attr:`storageElementName`: string - name of the site (DIRAC name)
+    
+      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`reason`: string - free
+      
+      :attr:`dateCreated`: datetime or string - date when which the storageElement row is created
+
+      :attr:`dateEffective`: datetime or string - date from which the storageElement status is effective
+
+      :attr:`dateEnd`: datetime or string - date from which the storageElement status ends to be effective
+
+      :attr:`operatorCode`: string - free
+    """
+
+    if not isinstance(dateCreated, basestring):
+      dateCreated = dateCreated.isoformat(' ')
+    if not isinstance(dateEffective, basestring):
+      dateEffective = dateEffective.isoformat(' ')
+    if not isinstance(dateEnd, basestring):
+      dateEnd = dateEnd.isoformat(' ')
+
+    req = "INSERT INTO StorageElementsHistory (StorageElementName, ResourceName, SiteName, "
+    req = req + "Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode) "
+    req = req + "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (storageElementName, resourceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode)
+
+    resUpdate = self.db._update(req)
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self._addStorageElementHistoryRow) + resUpdate['Message']
+
+
+#############################################################################
+
+  def removeStorageElement(self, storageElementName = None, resourceName = None, siteName = None):
+    """ 
+    Completely remove a storageElement from the StorageElements and StorageElementsHistory tables
+    
+    :params:
+      :attr:`storageElementName`: string
+
+      :attr:`resourceName`: string
+
+      :attr:`siteName`: string
+    """
+    
+    if resourceName == None and siteName == None:
+      req = "DELETE from StorageElements WHERE StorageElementName = '%s';" % (storageElementName)
+      resDel = self.db._update(req)
+      if not resDel['OK']:
+        raise RSSDBException, where(self, self.removeStorageElement) + resDel['Message']
+  
+      req = "DELETE from StorageElementsHistory WHERE StorageElementName = '%s';" % (storageElementName)
+      resDel = self.db._update(req)
+      if not resDel['OK']:
+        raise RSSDBException, where(self, self.removeStorageElement) + resDel['Message']
+
+    else:
+      if resourceName == None:
+        req = "DELETE from StorageElements WHERE SiteName = '%s';" % (siteName)
+        resDel = self.db._update(req)
+        if not resDel['OK']:
+          raise RSSDBException, where(self, self.removeStorageElement) + resDel['Message']
+    
+        req = "DELETE from StorageElementsHistory WHERE SiteName = '%s';" % (siteName)
+        resDel = self.db._update(req)
+        if not resDel['OK']:
+          raise RSSDBException, where(self, self.removeStorageElement) + resDel['Message']
+
+      else:
+        req = "DELETE from StorageElements WHERE ResourceName = '%s';" % (resourceName)
+        resDel = self.db._update(req)
+        if not resDel['OK']:
+          raise RSSDBException, where(self, self.removeStorageElement) + resDel['Message']
+    
+        req = "DELETE from StorageElementsHistory WHERE ResourceName = '%s';" % (resourceName)
+        resDel = self.db._update(req)
+        if not resDel['OK']:
+          raise RSSDBException, where(self, self.removeStorageElement) + resDel['Message']
 
 #############################################################################
 
@@ -1823,23 +1722,70 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def getSiteTypeList(self, siteType=None):
+  def removeRow(self, granularity, name, dateEffective):
     """ 
-    Get list of site types
+    Remove a row from one of the tables
     
-    :Params:
-      :attr:`siteType`: string, site type.
+    :params:
+      :attr:`name`: string
+      
+      :attr:`dateEffective`: string or datetime
     """
 
-    if siteType == None:
-      req = "SELECT SiteType FROM SiteTypes"
+    if not isinstance(dateEffective, basestring):
+      dateEffective = dateEffective.isoformat(' ')
+
+    if granularity in ('Site', 'Sites'):
+      DBname = 'SiteName'
+      DBtable = 'Sites'
+    elif granularity in ('Service', 'Services'):
+      DBname = 'ServiceName'
+      DBtable = 'Services'
+    elif granularity in ('Resource', 'Resources'):
+      DBname = 'ResourceName'
+      DBtable = 'Resources'
+    elif granularity in ('StorageElement', 'StorageElements'):
+      DBname = 'StorageElementName'
+      DBtable = 'StorageElements'
     else:
-      req = "SELECT SiteType, Description FROM SiteTypes "
-      req = req + "WHERE SiteType = '%s'" % (siteType)
+      raise InvalidRes, where(self, self.removeRow)
+    
+    req = "DELETE from %s WHERE %s = '%s' AND DateEffective = '%s';" % (DBtable, DBname, name, dateEffective)
+    resDel = self.db._update(req)
+    if not resDel['OK']:
+      raise RSSDBException, where(self, self.removeRow) + resDel['Message']
+
+#############################################################################
+
+  def getTypesList(self, granularity, type=None):
+    """ 
+    Get list of site, resource, service types with description
+    
+    :Params:
+      :attr:`type`: string, the type.
+    """
+    
+    if granularity in ('Site', 'Sites'):
+      DBtype = 'SiteType'
+      DBtable = 'SiteTypes'
+    elif granularity in ('Service', 'Services'):
+      DBtype = 'ServiceType'
+      DBtable = 'ServiceTypes'
+    elif granularity in ('Resource', 'Resources'):
+      DBtype = 'ResourceType'
+      DBtable = 'ResourceTypes'
+    else:
+      raise InvalidRes, where(self, self.getTypesList)
+
+    if type == None:
+      req = "SELECT %s FROM %s" %(DBtype, DBtable)
+    else:
+      req = "SELECT %s, Description FROM %s " %(DBtype, DBtable)
+      req = req + "WHERE %s = '%s'" % (DBtype, type)
 
     resQuery = self.db._query(req)
     if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getSiteTypeList) + resQuery['Message']
+      raise RSSDBException, where(self, self.getTypesList) + resQuery['Message']
     if not resQuery['Value']:
       return []
     typeList = []
@@ -1848,31 +1794,33 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def getResourceTypeList(self, resourceType=None):
+  def removeType(self, granularity, type):
     """ 
-    Get list of resource types.
+    Remove a type from the DB
     
-    :Params:
-      :attr:`resourceType`: a single resource type
+    :params:
+      :attr:`type`: string, a type (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
     """
 
-    if resourceType == None:
-      req = "SELECT ResourceType FROM ResourceTypes"
+    if granularity in ('Site', 'Sites'):
+      DBtype = 'SiteType'
+      DBtable = 'SiteTypes'
+    elif granularity in ('Service', 'Services'):
+      DBtype = 'ServiceType'
+      DBtable = 'ServiceTypes'
+    elif granularity in ('Resource', 'Resources'):
+      DBtype = 'ResourceType'
+      DBtable = 'ResourceTypes'
     else:
-      req= "SELECT ResourceType FROM ResourceTypes "
-      req = req + "WHERE ResourceType = '%s'" % (resourceType)
-
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getResourceTypeList) + resQuery['Message']
-    if not resQuery['Value']:
-      return []
-    typeList = []
-    typeList = [ x[0] for x in resQuery['Value']]
-    return typeList
+      raise InvalidRes, where(self, self.removeType)
+      
+    
+    req = "DELETE from %s WHERE %s = '%s';" % (DBtable, DBtype, type)
+    resDel = self.db._update(req)
+    if not resDel['OK']:
+      raise RSSDBException, where(self, self.removeType) + resDel['Message']
 
 #############################################################################
-
   def getStatusList(self):
     """ 
     Get list of status with no descriptions.
@@ -1890,32 +1838,6 @@ class ResourceStatusDB:
     return typeList
 
 #############################################################################
-
-  def getServiceTypeList(self, serviceType=None):
-    """ 
-    Get list of service types
-    
-    :Params:
-      :attr:`serviceType`: string, service type.
-    """
-
-    if serviceType == None:
-      req = "SELECT ServiceType FROM ServiceTypes"
-    else:
-      req = "SELECT ServiceType, Description FROM ServiceTypes "
-      req = req + "WHERE ServiceType = '%s'" % (serviceType)
-
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getServiceTypeList) + resQuery['Message']
-    if not resQuery['Value']:
-      return []
-    typeList = []
-    typeList = [ x[0] for x in resQuery['Value']]
-    return typeList
-
-#############################################################################
-
 
   def getGeneralName(self, name, from_g, to_g):
     """ 
@@ -2058,6 +1980,8 @@ class ResourceStatusDB:
         req = "SELECT DateEffective, DateEnd FROM ResourcesHistory WHERE ResourceName = '%s' AND Status = '%s'" %(name, status)
       elif granularity in ('Service', 'Services'):
         req = "SELECT DateEffective, DateEnd FROM ServicesHistory WHERE ServiceName = '%s' AND Status = '%s'" %(name, status)
+      elif granularity in ('StorageElement', 'StorageElements'):
+        req = "SELECT DateEffective, DateEnd FROM StorageElementsHistory WHERE StorageElementName = '%s' AND Status = '%s'" %(name, status)
       
       resQuery = self.db._query(req)
       if not resQuery['OK']:
@@ -2136,10 +2060,12 @@ class ResourceStatusDB:
     
     >>> trasact2History(('Site', 'LCG.CERN.ch', datetime.utcnow().replace(microsecond = 0).isoformat(' ')) - the date is the DateEffective parameter
         trasact2History(('Site', 523)) - the number if the SiteID
-        trasact2History(('Service', 'Computing@LCG.CERN.ch', datetime.utcnow().replace(microsecond = 0).isoformat(' ')) - the date is the DateEffective parameter
+        trasact2History(('Service', 'Computing@LCG.CERN.ch', 'LCG.CERN.ch', datetime.utcnow().replace(microsecond = 0).isoformat(' ')) - the date is the DateEffective parameter
         trasact2History(('Service', 523)) - the number if the ServiceID
-        trasact2History(('Resource', 'srm-lhcb.cern.ch', datetime.utcnow().replace(microsecond = 0).isoformat(' ')) - the date is the DateEffective parameter
+        trasact2History(('Resource', 'srm-lhcb.cern.ch', 'Computing@LCG.CERN.ch', 'LCG.CERN.ch', datetime.utcnow().replace(microsecond = 0).isoformat(' ')) - the date is the DateEffective parameter
         trasact2History(('Resource', 523)) - the number if the ResourceID
+        trasact2History(('StorageElement', 'CERN-RAW', 'srm-lhcb.cern.ch', 'LCG.CERN.ch', datetime.utcnow().replace(microsecond = 0).isoformat(' ')) - the date is the DateEffective parameter
+        trasact2History(('StorageElement', 523)) - the number if the StorageElementID
     """
     
     #get table (in args[0]) columns 
@@ -2174,7 +2100,7 @@ class ResourceStatusDB:
 
         #start "transaction" to history -- should be better to use a real transaction
         self._addSiteHistoryRow(args[1], oldStatus, oldReason, oldDateCreated, oldDateEffective, oldDateEnd, oldOperatorCode)
-        self.removeSiteRow(args[1], oldDateEffective)
+        self.removeRow(args[0], args[1], oldDateEffective)
 
       elif len(args) == 2:
         req = "SELECT SiteName, Status, Reason, DateCreated, "
@@ -2195,7 +2121,7 @@ class ResourceStatusDB:
 
         #start "transaction" to history -- should be better to use a real transaction
         self._addSiteHistoryRow(siteName, oldStatus, oldReason, oldDateCreated, oldDateEffective, oldDateEnd, oldOperatorCode)
-        self.removeSiteRow(siteName, oldDateEffective)
+        self.removeRow(args[0], siteName, oldDateEffective)
 
 
     if args[0] in ('Service', 'Services'):
@@ -2218,7 +2144,7 @@ class ResourceStatusDB:
 
         #start "transaction" to history -- should be better to use a real transaction
         self._addServiceHistoryRow(args[1], args[2], oldStatus, oldReason, oldDateCreated, oldDateEffective, oldDateEnd, oldOperatorCode)
-        self.removeServiceRow(args[1], oldDateEffective)
+        self.removeRow(args[0], args[1], oldDateEffective)
 
       elif len(args) == 2:
         req = "SELECT ServiceName, SiteName, Status, Reason, DateCreated, "
@@ -2240,7 +2166,7 @@ class ResourceStatusDB:
 
         #start "transaction" to history -- should be better to use a real transaction
         self._addServiceHistoryRow(serviceName, siteName, oldStatus, oldReason, oldDateCreated, oldDateEffective, oldDateEnd, oldOperatorCode)
-        self.removeServiceRow(serviceName, oldDateEffective)
+        self.removeRow(args[0], serviceName, oldDateEffective)
 
         
     if args[0] in ('Resource', 'Resources'):
@@ -2261,7 +2187,7 @@ class ResourceStatusDB:
         oldOperatorCode = resQuery['Value'][0][5]
 
         self._addResourcesHistoryRow(args[1], args[2], args[3], oldStatus, oldReason, oldDateCreated, oldDateEffective, oldDateEnd, oldOperatorCode)
-        self.removeResourceRow(args[1], args[3], oldDateEffective)
+        self.removeRow(args[0], args[1], oldDateEffective)
         
       elif len(args) == 2:
         req = "SELECT ResourceName, ServiceName, SiteName, Status, Reason, DateCreated, "
@@ -2284,58 +2210,89 @@ class ResourceStatusDB:
         
         #start "transaction" to history -- should be better to use a real transaction
         self._addResourcesHistoryRow(resourceName, serviceName, siteName, oldStatus, oldReason, oldDateCreated, oldDateEffective, oldDateEnd, oldOperatorCode)
-        self.removeResourceRow(resourceName, siteName, oldDateEffective)
+        self.removeRow(args[0], resourceName, oldDateEffective)
+
+    if args[0] in ('StorageElement', 'StorageElements'):
+      if len(args) == 5:
+        req = "SELECT Status, Reason, DateCreated, "
+        req = req + "DateEffective, DateEnd, OperatorCode from StorageElements "
+        req = req + "WHERE (StorageElementName='%s' AND DateEffective < '%s' );" % (args[1], args[4])
+        resQuery = self.db._query(req)
+        if not resQuery['OK']:
+          raise RSSDBException, where(self, self.transact2History) + resQuery['Message']
+        if not resQuery['Value']:
+          return None
+        oldStatus = resQuery['Value'][0][0]
+        oldReason = resQuery['Value'][0][1]
+        oldDateCreated = resQuery['Value'][0][2]
+        oldDateEffective = resQuery['Value'][0][3]
+        oldDateEnd = resQuery['Value'][0][4]
+        oldOperatorCode = resQuery['Value'][0][5]
+
+        self._addStorageElementHistoryRow(args[1], args[2], args[3], oldStatus, oldReason, oldDateCreated, oldDateEffective, oldDateEnd, oldOperatorCode)
+        self.removeRow(args[0], args[1], oldDateEffective)
+        
+      elif len(args) == 2:
+        req = "SELECT StorageElementName, ResourceName, SiteName, Status, Reason, "
+        req = req + "DateCreated, DateEffective, DateEnd, OperatorCode from StorageElements "
+        req = req + "WHERE (StorageElementID='%s');" % (args[1])
+        resQuery = self.db._query(req)
+        if not resQuery['OK']:
+          raise RSSDBException, where(self, self.transact2History) + resQuery['Message']
+        if not resQuery['Value']:
+          return None
+        storageElementName = resQuery['Value'][0][0]
+        resourceName = resQuery['Value'][0][1]
+        siteName = resQuery['Value'][0][2]
+        oldStatus = resQuery['Value'][0][3]
+        oldReason = resQuery['Value'][0][4]
+        oldDateCreated = resQuery['Value'][0][5]
+        oldDateEffective = resQuery['Value'][0][6]
+        oldDateEnd = resQuery['Value'][0][7]
+        oldOperatorCode = resQuery['Value'][0][8]
+        
+        #start "transaction" to history -- should be better to use a real transaction
+        self._addStorageElementHistoryRow(storageElementName, resourceName, siteName, oldStatus, oldReason, oldDateCreated, oldDateEffective, oldDateEnd, oldOperatorCode)
+        self.removeRow(args[0], storageElementName, oldDateEffective)
 
 
 #############################################################################
 
-  def setDateEnd(self, *args):
+  def setDateEnd(self, granularity, name, dateEffective):
     """ 
     Set date end, for a Site or for a Resource
     
     :params:
-      :attr:`args`: a tuple. 
+      :attr:`granularity`: a ValidRes. 
       
-        - args[0] is a ValidRes (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
+      :attr:`name`: string, the name of the ValidRes
         
-        - args[1] is the name of the ValidRes
-        
-        - args[2] is its dateEffective
+      :attr:`dateEffective`: a datetime
     """
     
-    siteOrRes = args[0].capitalize()
-    
-    if siteOrRes not in ValidRes:
+    if granularity in ('Site', 'Sites'):
+      DBtable = 'Sites'
+      DBname = 'SiteName'
+    elif granularity in ('Service', 'Services'):
+      DBtable = 'Services'
+      DBname = 'ServiceName'
+    elif granularity in ('Resource', 'Resources'):
+      DBtable = 'Resources'
+      DBname = 'ResourceName'
+    elif granularity in ('StorageElement', 'StorageElements'):
+      DBtable = 'StorageElements'
+      DBname = 'StorageElementName'
+    else:
       raise InvalidRes, where(self, self.setDateEnd)
-    
-    if siteOrRes == 'Site':
-      query = "UPDATE Sites SET DateEnd = '%s' WHERE SiteName = '%s' AND DateEffective < '%s'" % (args[2], args[1], args[2])
-      resUpdate = self.db._update(query)
-      if not resUpdate['OK']:
-        raise RSSDBException, where(self, self.setDateEnd) + resUpdate['Message']
-
-    elif siteOrRes == 'Service':
-      query = "UPDATE Services SET DateEnd = '%s' WHERE ServiceName = '%s' AND DateEffective < '%s'" % (args[2], args[1], args[2])
-      resUpdate = self.db._update(query)
-      if not resUpdate['OK']:
-        raise RSSDBException, where(self, self.setDateEnd) + resUpdate['Message']
-
-    elif siteOrRes == 'Resource':
-      query = "UPDATE Resources SET DateEnd = '%s' WHERE ResourceName = '%s' AND DateEffective < '%s'" % (args[2], args[1], args[2])
-      resUpdate = self.db._update(query)
-      if not resUpdate['OK']:
-        raise RSSDBException, where(self, self.setDateEnd) + resUpdate['Message']
-
-    elif siteOrRes == 'StorageElement':
-      query = "UPDATE StorageElements SET DateEnd = '%s' WHERE StorageElementName = '%s' AND DateEffective < '%s'" % (args[2], args[1], args[2])
-      resUpdate = self.db._update(query)
-      if not resUpdate['OK']:
-        raise RSSDBException, where(self, self.setDateEnd) + resUpdate['Message']
+      
+    query = "UPDATE %s SET DateEnd = '%s' WHERE %s = '%s' AND DateEffective < '%s'" % (DBtable, dateEffective, DBname, name, dateEffective)
+    resUpdate = self.db._update(query)
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self.setDateEnd) + resUpdate['Message']
 
 
 
 #############################################################################
-
 
   #usata solo nell'handler
   def addStatus(self, status, description=''):
@@ -2384,16 +2341,20 @@ class ResourceStatusDB:
     """
     
     if table == 'Sites':
-      req = "SELECT COUNT(*) FROM Sites WHERE SiteName = (SELECT SiteName FROM "
-      req = req + "Sites WHERE SiteID = '%d');" % (ID)
-      
+      DBname = 'SiteName'
+      DBid = 'SiteID'
     elif table == 'Resources':
-      req = "SELECT COUNT(*) FROM Resources WHERE ResourceName = (SELECT ResourceName "
-      req = req + " FROM Resources WHERE ResourceID = '%d');" % (ID)
-
+      DBname = 'ResourceName'
+      DBid = 'ResourceID'
     elif table == 'Services':
-      req = "SELECT COUNT(*) FROM Services WHERE ServiceName = (SELECT ServiceName "
-      req = req + " FROM Services WHERE ServiceID = '%d');" % (ID)
+      DBname = 'ServiceName'
+      DBid = 'ServiceID'
+    elif table == 'StorageElements':
+      DBname = 'StorageElementName'
+      DBid = 'StorageElementID'
+
+    req = "SELECT COUNT(*) FROM %s WHERE %s = (SELECT %s " %(table, DBname, DBname)
+    req = req + " FROM %s WHERE %s = '%d');" % (table, DBid, ID)
 
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -2465,12 +2426,14 @@ class ResourceStatusDB:
       if node not in SENodeList:
         SENodeList.append(node)
 
-    sitesIn = self.getSitesList(paramsList = ['SiteName'])
+    sitesIn = self.getMonitoredsList('Site', paramsList = ['SiteName'])
     sitesIn = [s[0] for s in sitesIn]
-    servicesIn = self.getServicesList(paramsList = ['ServiceName'])
+    servicesIn = self.getMonitoredsList('Service', paramsList = ['ServiceName'])
     servicesIn = [s[0] for s in servicesIn]
-    resourcesIn = self.getResourcesList(paramsList = ['ResourceName'])
+    resourcesIn = self.getMonitoredsList('Resource', paramsList = ['ResourceName'])
     resourcesIn = [s[0] for s in resourcesIn]
+#    storageElementsIn = self.getMonitoredsList('StorageElement', paramsList = ['StorageElementName'])
+#    storageElementsIn = [s[0] for s in storageElementsIn]
 
     #remove sites no more in the CS  - separate because of "race conditions"
     for site in sitesIn:
@@ -2555,7 +2518,7 @@ class ResourceStatusDB:
           self.addOrModifyResource(ce, 'CE', service, site, 'Active', 'init', datetime.utcnow().replace(microsecond = 0), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
           resourcesIn.append(ce)
       
-    #add new storage services and SEs - separate because of "race conditions"
+    #add new storage services and SEs nodes - separate because of "race conditions"
     for site in siteSE.keys():
       if site == 'LCG.Dummy.ch':
         continue
@@ -2575,6 +2538,20 @@ class ResourceStatusDB:
           if sss not in seServiceSite:
             self.addOrModifyResource(se, 'SE', service, site, 'Active', 'init', datetime.utcnow().replace(microsecond = 0), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
             seServiceSite.append(sss)
+
+    seRes = []
+
+    #add StorageElements
+    for site in siteSE.keys():
+      if site == 'LCG.Dummy.ch':
+        continue
+      for storageElement in siteSE[site]:
+        res = gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/Host" %storageElement)
+        if res is not None:
+          sr = storageElement+res
+          if sr not in seRes:
+            self.addOrModifyStorageElement(storageElement, res, site, 'Active', 'init', datetime.utcnow().replace(microsecond = 0), 'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+            seRes.append(sr)
             
     
     #sincrony of assignee group for alarms        
@@ -2643,6 +2620,8 @@ class ResourceStatusDB:
         req = "SELECT SiteName, Status, FormerStatus, Reason FROM PresentSites WHERE"
       elif granularity in ('Resource', 'Resources'):
         req = "SELECT ResourceName, Status, FormerStatus, Reason FROM PresentResources WHERE"
+      elif granularity in ('StorageElement', 'StorageElements'):
+        req = "SELECT StorageElementName, Status, FormerStatus, Reason FROM PresentStorageElements WHERE"
       else:
         raise InvalidRes, where(self, self.getStuffToCheck)
       req = req + " (Status = 'Active' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromActive )
@@ -2695,13 +2674,13 @@ class ResourceStatusDB:
     dateToCheckFrom = startingDate - timedelta(days = days)
     
     if granularity in ('Site', 'Sites'):
-      resList = self.getSitesList(paramsList = ['SiteName'])
+      resList = self.getMonitoredsList(granularity, paramsList = ['SiteName'])
     if granularity in ('Service', 'Services'):
-      resList = self.getServicesList(paramsList = ['ServiceName'])
+      resList = self.getMonitoredsList(granularity, paramsList = ['ServiceName'])
     if granularity in ('Resource', 'Resources'):
-      resList = self.getResourcesList(paramsList = ['ResourceName'])
+      resList = self.getMonitoredsList(granularity, paramsList = ['ResourceName'])
     if granularity in ('StorageElement', 'StorageElements'):
-      resList = self.getStorageElementsList(paramsList = ['StorageElementName'])
+      resList = self.getMonitoredsList(granularity, paramsList = ['StorageElementName'])
     
     rankList = []
     activeRankList = []

@@ -15,7 +15,7 @@ class ResourceStatusHandlerTestCase(unittest.TestCase):
     sys.modules["DIRAC.Core.DISET.RequestHandler"] = DIRAC.ResourceStatusSystem.test.fake_RequestHandler
     sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
     sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    from DIRAC.ResourceStatusSystem.Service.ResourceStatusHandler import ResourceStatusHandler, initializeResourceStatusHandler
+    from DIRAC.ResourceStatusSystem.Service.ResourceStatusHandlerNew import ResourceStatusHandler, initializeResourceStatusHandler
     
     a = Mock()
     initializeResourceStatusHandler(a)
@@ -36,10 +36,6 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     for status in ValidStatus:
       res = self.rsh.export_addOrModifySite('XX', 'XX', status, 'reason', 'dateEffective', 'OP', '')
       self.assert_(res['OK'])
-
-  def test_export_addSiteType(self):
-    res = self.rsh.export_addSiteType('')
-    self.assert_(res['OK'])
 
   def test_export_removeSite(self):
     res = self.rsh.export_removeSite('')
@@ -79,10 +75,6 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     for status in ValidStatus:
       res = self.rsh.export_addOrModifyService('XX', 'XX', 'description', status, 'reason', 'dateEffective', 'OP', '')
       self.assert_(res['OK'])
-
-  def test_export_addServiceType(self):
-    res = self.rsh.export_addServiceType('')
-    self.assert_(res['OK'])
 
   def test_export_removeService(self):
     res = self.rsh.export_removeService('')
@@ -127,10 +119,6 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     for status in ValidStatus:
       res = self.rsh.export_addOrModifyResource('resourceName', 'resourceType', 'serviceName', 'siteName', status, 'reason', 'dateEffective', 'operatorCode', 'dateEnd')
       self.assert_(res['OK'])
-
-  def test_export_addResourceType(self):
-    res = self.rsh.export_addResourceType('')
-    self.assert_(res['OK'])
 
   def test_export_removeResource(self):
     res = self.rsh.export_removeResource('')

@@ -35,7 +35,7 @@ class DT_Policy(PolicyBase):
     if not isinstance(args, tuple):
       raise TypeError, where(self, self.evaluate)
     
-    if args[0].capitalize() not in ValidRes:
+    if args[0] not in ValidRes:
       raise InvalidRes, where(self, self.evaluate)
     
     if args[2] not in ValidStatus:

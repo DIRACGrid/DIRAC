@@ -57,7 +57,6 @@ class PEP:
     try:
 #      granularity = presentEnforcement['Granularity']
       if granularity is not None:
-        granularity = granularity.capitalize()
         if granularity not in ValidRes:
           raise InvalidRes, where(self, self.__init__)
       self.__granularity = granularity
@@ -84,7 +83,6 @@ class PEP:
       try:
         futureGranularity = futureEnforcement['Granularity']
         if futureGranularity is not None:
-          futureGranularity = futureGranularity.capitalize()
           if futureGranularity not in ValidRes:
             raise InvalidRes, where(self, self.__init__)
         self.__futureGranularity = futureGranularity
@@ -146,23 +144,30 @@ class PEP:
             rsDB.setSiteStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
             rsDB.setServiceToBeChecked('Site', self.__name)
           else:
-            rsDB.setSiteReason(self.__name, res['Reason'], 'RS_SVC')
-          rsDB.setLastSiteCheckTime(self.__name)
+            rsDB.setMonitoredReason(self.__granularity, self.__name, res['Reason'], 'RS_SVC')
+          rsDB.setLastMonitoredCheckTime(self.__granularity, self.__name)
         
+        elif self.__granularity == 'Service':
+          if res['Action']:
+            rsDB.setServiceStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
+          else:
+            rsDB.setMonitoredReason(self.__granularity, self.__name, res['Reason'], 'RS_SVC')
+          rsDB.setLastMonitoredCheckTime(self.__granularity, self.__name)
+    
         elif self.__granularity == 'Resource':
           if res['Action']:
             rsDB.setResourceStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
             rsDB.setServiceToBeChecked('Resource', self.__name)
           else:
-            rsDB.setResourceReason(self.__name, res['Reason'], 'RS_SVC')
-          rsDB.setLastResourceCheckTime(self.__name)
+            rsDB.setMonitoredReason(self.__granularity, self.__name, res['Reason'], 'RS_SVC')
+          rsDB.setLastMonitoredCheckTime(self.__granularity, self.__name)
 
-        elif self.__granularity == 'Service':
+        elif self.__granularity == 'StorageElement':
           if res['Action']:
-            rsDB.setServiceStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
+            rsDB.setStorageElementStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
           else:
-            rsDB.setServiceReason(self.__name, res['Reason'], 'RS_SVC')
-          rsDB.setLastServiceCheckTime(self.__name)
+            rsDB.setMonitoredReason(self.__granularity, self.__name, res['Reason'], 'RS_SVC')
+          rsDB.setLastMonitoredCheckTime(self.__granularity, self.__name)
     
         if res.has_key('Enddate'):
           rsDB.setDateEnd(self.__granularity, self.__name, res['Enddate'])
