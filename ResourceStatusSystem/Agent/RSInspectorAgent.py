@@ -130,10 +130,13 @@ class RSInspectorAgent(AgentModule):
       resourceName = toBeChecked[1]
       status = toBeChecked[2]
       formerStatus = toBeChecked[3]
-      reason = toBeChecked[4]
+      siteType = toBeChecked[4]
+      resourceType = toBeChecked[5]
       
       gLogger.info("Checking Resource %s, with status %s" % (resourceName, status))
-      newPEP = PEP(granularity = granularity, name = resourceName, status = status, formerStatus = formerStatus, reason = reason)
+      newPEP = PEP(granularity = granularity, name = resourceName, status = status, 
+                   formerStatus = formerStatus, siteType = siteType, 
+                   resourceType = resourceType)
       newPEP.enforce()
 
       self.lockObj.acquire()

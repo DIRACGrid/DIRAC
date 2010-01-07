@@ -16,6 +16,15 @@ class InvalidRes(RSSException):
 class InvalidStatus(RSSException):
   pass
 
+class InvalidSiteType(RSSException):
+  pass
+
+class InvalidServiceType(RSSException):
+  pass
+
+class InvalidResourceType(RSSException):
+  pass
+
 class InvalidPolicyType(RSSException):
   pass
 

@@ -75,21 +75,21 @@ class SAMResultsClientSuccess(ClientsTestCase):
     self.assertEqual(res['Status'], 'ok')
       
 
-#class JobsClientSuccess(ClientsTestCase):
-#
-#  def test_getJobsSimpleEff(self):
-#    for granularity in ValidRes:
-#      self.JobsCli.getJobsSimpleEff(granularity, 'XX')
+class JobsClientSuccess(ClientsTestCase):
 
-#class PilotsClientSuccess(ClientsTestCase):
-#
-#  def test_getPilotsStats(self):
-#    self.mockRSS.getPeriods.return_value = {'OK':True, 'Value':[]}
-#    for granularity in ValidRes:
-#      for status in ValidStatus:
-#        res = self.RSCli.getPeriods(granularity, 'XX', status, 20)
-#        self.assertEqual(res['Periods'], [])
-#         
+  def test_getJobsSimpleEff(self):
+    for granularity in ValidRes:
+      self.JobsCli.getJobsSimpleEff(granularity, 'XX')
+
+class PilotsClientSuccess(ClientsTestCase):
+
+  def test_getPilotsStats(self):
+    self.mockRSS.getPeriods.return_value = {'OK':True, 'Value':[]}
+    for granularity in ValidRes:
+      for status in ValidStatus:
+        res = self.RSCli.getPeriods(granularity, 'XX', status, 20)
+        self.assertEqual(res['Periods'], [])
+         
 #  def test_getPilotsEff(self):
    
      
@@ -101,4 +101,6 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusClient_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResultsClientSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsClientSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsClientSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

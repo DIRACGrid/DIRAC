@@ -123,10 +123,11 @@ class SSInspectorAgent(AgentModule):
       siteName = toBeChecked[1]
       status = toBeChecked[2]
       formerStatus = toBeChecked[3]
-      reason = toBeChecked[4]
+      siteType = toBeChecked[4]
       
       gLogger.info("Checking Site %s, with status %s" % (siteName, status))
-      newPEP = PEP(granularity = granularity, name = siteName, status = status, formerStatus = formerStatus, reason = reason)
+      newPEP = PEP(granularity = granularity, name = siteName, status = status, 
+                   formerStatus = formerStatus, siteType = siteType)
       newPEP.enforce()
 
       self.lockObj.acquire()

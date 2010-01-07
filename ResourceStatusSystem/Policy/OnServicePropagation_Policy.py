@@ -72,7 +72,7 @@ class OnServicePropagation_Policy(PolicyBase):
         from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
         rsDB = ResourceStatusDB()
         siteName = rsDB.getGeneralName(args[0], 'Service', 'Site')
-        siteStatus = rsDB.getSitesStatusWeb({'SiteName':siteName}, [], 0, 1)['Records'][0][4]
+        siteStatus = rsDB.getMonitoredsStatusWeb('Site', {'SiteName':siteName}, [], 0, 1)['Records'][0][4]
     
     result = {}
     

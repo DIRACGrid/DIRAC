@@ -46,13 +46,14 @@ class PEP:
         
   """
  
-  def __init__(self, granularity = None, name = None, status = None, formerStatus = None, reason = None, futureEnforcement = None):
+  def __init__(self, granularity = None, name = None, status = None, formerStatus = None, 
+               reason = None, siteType = None, serviceType = None, resourceType = None, 
+               futureEnforcement = None):
 #    policyType = presentEnforcement['PolicyType']
 #    for pt in policyType:
 #      if pt not in PolicyTypes :
 #        raise InvalidPolicyType, where(self, self.__init__)
 #    self.__policyType = policyType
-    
     
     try:
 #      granularity = presentEnforcement['Granularity']
@@ -66,18 +67,30 @@ class PEP:
     self.__name = name
     
     if status is not None:
-      status = status.capitalize()
-      if status not in ValidStatus:
+      self.__status = status.capitalize()
+      if self.__status not in ValidStatus:
         raise InvalidStatus, where(self, self.__init__)
-    self.__status = status
-      
     if formerStatus is not None:
-      formerStatus = formerStatus.capitalize()
-      if formerStatus not in ValidStatus:
+      self.__formerStatus = formerStatus.capitalize()
+      if self.__formerStatus not in ValidStatus:
         raise InvalidStatus, where(self, self.__init__)
-    self.__formerStatus = formerStatus
     
-    self.__reason = reason
+    if reason is not None:
+      self.__reason = reason
+
+    if siteType is not None:
+      self.__siteType = siteType.capitalize()
+      if self.__siteType not in ValidSiteType:
+        raise InvalidSiteType, where(self, self.__init__)
+    if serviceType is not None:
+      self.__serviceType = serviceType.capitalize()
+      if self.__serviceType not in ValidServiceType:
+        raise InvalidServiceType, where(self, self.__init__)
+    if resourceType is not None:
+      self.__resourceType = resourceType
+      if self.__resourceType not in ValidResourceType:
+        raise InvalidResourceType, where(self, self.__init__)
+
       
     if futureEnforcement is not None:
       try:
@@ -105,6 +118,12 @@ class PEP:
   
      self.__reason (optional)
   
+     self.__siteType (optional)
+  
+     self.__serviceType (optional)
+  
+     self.__resourceType (optional)
+  
      self.__futurePolicyType (optional)
   
      self.__futureGranularity (optional)
@@ -121,7 +140,10 @@ class PEP:
     else:
       # Use standard DIRAC PDP
       from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
-      pdp = PDP(self.__granularity, self.__name, self.__status, self.__formerStatus, self.__reason)
+      pdp = PDP(granularity = self.__granularity, name = self.__name, status = self.__status, 
+                formerStatus = self.__formerStatus, reason = self.__reason, 
+                siteType = self.__siteType, serviceType = self.__serviceType, 
+                resourceType = self.__resourceType)
 
     if rsDBIn is not None:
       rsDB = rsDBIn

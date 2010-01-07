@@ -28,7 +28,10 @@ class ResourceStatusDB:
     return []
   
   def getMonitoredsStatusWeb(self, granularity, selectDict, sortList, startItem, maxItems):
-    return []
+    return {'TotalRecords': 1, 
+            'ParameterNames': ['SiteName', 'Tier', 'GridType', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason'], 
+            'Extras': None, 
+            'Records': [['LCG.Ferrara.it', 'T2', 'LCG', 'it', 'Active', '2009-12-15 12:47:31', 'Banned', 'DT:None|PilotsEff:Good']]}
   
   def getMonitoredsHistory(self, granularity, paramsList = None, name = None):
     return []

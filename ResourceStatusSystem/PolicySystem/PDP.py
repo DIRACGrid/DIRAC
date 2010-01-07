@@ -30,24 +30,46 @@ class PDP:
     :attr:`formerStatus`: string - former status
     
     :attr:`reason`: string - optional reason for last status change
+
+    :attr:`siteType`: string - optional site type
+
+    :attr:`serviceType`: string - optional service type
+
+    :attr:`resourceType`: string - optional resource type
   """
 
 #############################################################################
   
-  def __init__(self, granularity, name, status, formerStatus, reason):
+  def __init__(self, granularity, name, status = None, formerStatus = None, reason = None, 
+               siteType = None, serviceType = None, resourceType = None):
+    
     if granularity not in ValidRes:
       raise InvalidRes, where(self, self.__init__)
     self.__granularity = granularity
     self.__name = name
-    status = status.capitalize()
-    if status not in ValidStatus:
-      raise InvalidStatus, where(self, self.__init__)
-    self.__status = status
-    formerStatus = formerStatus.capitalize()
-    if formerStatus not in ValidStatus:
-      raise InvalidStatus, where(self, self.__init__)
-    self.__formerStatus = formerStatus
-    self.__reason = reason
+    if status is not None:
+      self.__status = status.capitalize()
+      if self.__status not in ValidStatus:
+        raise InvalidStatus, where(self, self.__init__)
+    if formerStatus is not None:
+      self.__formerStatus = formerStatus.capitalize()
+      if self.__formerStatus not in ValidStatus:
+        raise InvalidStatus, where(self, self.__init__)
+    if reason is not None:
+      self.__reason = reason
+    if siteType is not None:
+      self.__siteType = siteType.capitalize()
+      if self.__siteType not in ValidSiteType:
+        raise InvalidSiteType, where(self, self.__init__)
+    if serviceType is not None:
+      self.__serviceType = serviceType.capitalize()
+      if self.__siteType not in ValidServiceType:
+        raise InvalidServiceType, where(self, self.__init__)
+    if resourceType is not None:
+      self.__resourceType = resourceType.capitalize()
+      if self.__resourceType not in ValidResourceType:
+        raise InvalidResourceType, where(self, self.__init__)
+
 
     self.policyResults = []
 
@@ -89,80 +111,13 @@ class PDP:
     self.args = argsIn
     self.policy = policyIn
     self.knownInfo = knownInfo
-    
-#    if self.__granularity == 'Site': 
-#      if self.__status == 'Active':
-#        if self.__formerStatus == 'Probing':
-#          EVAL = Configurations.SAP
-#        elif self.__formerStatus == 'Banned':
-#          EVAL = Configurations.SAB
-#      elif self.__status == 'Probing':
-#        if self.__formerStatus == 'Active':
-#          EVAL = Configurations.SPA
-#        elif self.__formerStatus == 'Banned':
-#          EVAL = Configurations.SPB
-#      elif self.__status == 'Banned':
-#        if self.__formerStatus == 'Active':
-#          EVAL = Configurations.SBA
-#        elif self.__formerStatus == 'Probing':
-#          EVAL = Configurations.SBP
-#          
-#    elif self.__granularity == 'Service':
-#      if self.__status == 'Active':
-#        if self.__formerStatus == 'Probing':
-#          EVAL = Configurations.SeAP
-#        elif self.__formerStatus == 'Banned':
-#          EVAL = Configurations.SeAB
-#      elif self.__status == 'Probing':
-#        if self.__formerStatus == 'Active':
-#          EVAL = Configurations.SePA
-#        elif self.__formerStatus == 'Banned':
-#          EVAL = Configurations.SePB
-#      elif self.__status == 'Banned':
-#        if self.__formerStatus == 'Active':
-#          EVAL = Configurations.SeBA
-#        elif self.__formerStatus == 'Probing':
-#          EVAL = Configurations.SeBP
-#            
-#    elif self.__granularity == 'Resource': 
-#      if self.__status == 'Active':
-#        if self.__formerStatus == 'Probing':
-#          EVAL = Configurations.RAP
-#        elif self.__formerStatus == 'Banned':
-#          EVAL = Configurations.RAB
-#      elif self.__status == 'Probing':
-#        if self.__formerStatus == 'Active':
-#          EVAL = Configurations.RPA
-#        elif self.__formerStatus == 'Banned':
-#          EVAL = Configurations.RPB
-#      elif self.__status == 'Banned':
-#        if self.__formerStatus == 'Active':
-#          EVAL = Configurations.RBA
-#        elif self.__formerStatus == 'Probing':
-#          EVAL = Configurations.RBP
-#            
-#    elif self.__granularity == 'StorageElement': 
-#      if self.__status == 'Active':
-#        if self.__formerStatus == 'Probing':
-#          EVAL = Configurations.StElAP
-#        elif self.__formerStatus == 'Banned':
-#          EVAL = Configurations.StElAB
-#      elif self.__status == 'Probing':
-#        if self.__formerStatus == 'Active':
-#          EVAL = Configurations.StElPA
-#        elif self.__formerStatus == 'Banned':
-#          EVAL = Configurations.StElPB
-#      elif self.__status == 'Banned':
-#        if self.__formerStatus == 'Active':
-#          EVAL = Configurations.StElBA
-#        elif self.__formerStatus == 'Probing':
-#          EVAL = Configurations.StElBP
+
             
     EVAL = Configurations.getPolicyToApply(granularity = self.__granularity, 
                                            status = self.__status, 
                                            formerStatus = self.__formerStatus)
 
-    
+      
     for policyGroup in EVAL:
     
       self.__policyType = policyGroup['PolicyType']

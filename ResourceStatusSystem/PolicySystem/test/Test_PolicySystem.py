@@ -34,27 +34,30 @@ class PEPSuccess(PolicySystemTestCase):
               continue
             for newPolicyType in PolicyTypes:
               for newGranularity in ValidRes:
+#                for siteType in ValidSiteType:
+#                for serviceType in ValidServiceType:
+#                for resourceType in ValidResourceType:
                 self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'testReason'}]
-                pep = PEP(granularity, 'XX', status, oldStatus, 'XX', {'PolicyType':newPolicyType, 'Granularity':newGranularity})
+                pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', {'PolicyType':newPolicyType, 'Granularity':newGranularity})
                 self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'testReason'}, {'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'testReason'}]
-                pep = PEP(granularity, 'XX', status, oldStatus, 'XX', {'PolicyType':newPolicyType, 'Granularity':newGranularity})
+                pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', {'PolicyType':newPolicyType, 'Granularity':newGranularity})
                 res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
                 self.assertEqual(res, None)
                 self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':False, 'Reason':'testReason'}]
                 res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
                 self.assertEqual(res, None)
             self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'testReason'}]
-            pep = PEP(granularity, 'XX', status, oldStatus, 'XX')
+            pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE')
             res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
             self.assertEqual(res, None)
             self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':False, 'Reason':'testReason'}]
             res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
             self.assertEqual(res, None)
         self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'testReason'}]
-        pep = PEP()
+        pep = PEP(granularity, 'XX')
         res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
         self.assertEqual(res, None)
-        pep = PEP()
+        pep = PEP(granularity, 'XX')
         res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
         self.assertEqual(res, None)
         self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':False, 'Reason':'testReason'}]
@@ -78,9 +81,12 @@ class PEPFailure(PolicySystemTestCase):
               continue
             for newPolicyType in PolicyTypes:
               for newGranularity in ValidRes:
-                pep = PEP(granularity, 'XX', status, oldStatus, 'XX',  {'PolicyType':newPolicyType, 'Granularity':newGranularity})
-                self.failUnlessRaises(Exception, pep.enforce, self.mock_pdp, self.mock_rsDB)
-                self.failUnlessRaises(Exception, pep.enforce, self.mock_pdp, self.mock_rsDB, knownInfo={'DT':'AT_RISK'})
+                for siteType in ValidSiteType:
+                  for serviceType in ValidServiceType:
+                    for resourceType in ValidResourceType:
+                      pep = PEP(granularity, 'XX', status, oldStatus, 'XX', siteType, serviceType, resourceType,  {'PolicyType':newPolicyType, 'Granularity':newGranularity})
+                      self.failUnlessRaises(Exception, pep.enforce, self.mock_pdp, self.mock_rsDB)
+                      self.failUnlessRaises(Exception, pep.enforce, self.mock_pdp, self.mock_rsDB, knownInfo={'DT':'AT_RISK'})
     
 #############################################################################
 

@@ -50,10 +50,18 @@ Policies = {
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
-      'ResourceType' : ValidResourceType,
+      'ResourceType' : ['CE'],
      },
   'OnServicePropagation_Policy' :
     { 'Granularity' : ['Service'], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ValidResourceType,
+     },
+  'AlwaysFalse_Policy' :
+    { 'Granularity' : ['StorageElement'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
@@ -89,6 +97,8 @@ Policy_Types = {
       'ResourceType' : ValidResourceType,
      }
 }
+
+
 
 
 def getPolicyToApply(granularity, status = None, formerStatus = None, 
@@ -175,117 +185,6 @@ def getPolicyToApply(granularity, status = None, formerStatus = None,
   return EVAL
 
 
-#when a site, now active, was probing
-#SAP = ['DT_Policy', 'False_Policy']
-SAP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': ['DT_Policy', 'JobsEfficiencySimple_Policy', 'PilotsEfficiencySimple_Policy']}]
-#SAP = ['DT_Policy', 'SAM_Policy']
-#SAP = ['SAM_Policy']
-
-#when a site, now active, was banned
-#SAB = ['DT_Policy', 'False_Policy']
-SAB = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': ['DT_Policy', 'JobsEfficiencySimple_Policy', 'PilotsEfficiencySimple_Policy']}]
-
-#when a site, now probing, was active
-#SPA = ['DT_Policy', 'False_Policy']
-SPA = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': ['DT_Policy', 'JobsEfficiencySimple_Policy', 'PilotsEfficiencySimple_Policy']}]
-
-#when a site, now probing, was banned
-#SPB = ['DT_Policy', 'False_Policy']
-SPB = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': ['DT_Policy', 'JobsEfficiencySimple_Policy', 'PilotsEfficiencySimple_Policy']}]
-       
-#when a site, now banned, was active
-#SBA = ['DT_Policy', 'False_Policy']
-SBA = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': ['DT_Policy', 'JobsEfficiencySimple_Policy', 'PilotsEfficiencySimple_Policy']}]
-       
-#when a site, now banned, was probing
-#SBP = ['DT_Policy', 'False_Policy']
-SBP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': ['DT_Policy', 'JobsEfficiencySimple_Policy', 'PilotsEfficiencySimple_Policy']}]       
-
-
-#when a service, now active, was probing
-SeAP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-         'Policies': ['OnServicePropagation_Policy']}]
-
-#when a service, now active, was banned
-SeAB = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-         'Policies': ['OnServicePropagation_Policy']}]
-
-#when a service, now probing, was active
-SePA = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-         'Policies': ['OnServicePropagation_Policy']}]
-
-#when a service, now probing, was banned
-SePB = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-         'Policies': ['OnServicePropagation_Policy']}]
-
-#when a service, now banned, was active
-SeBA = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-         'Policies': ['OnServicePropagation_Policy']}]
-
-#when a service, now banned, was probing
-SeBP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-         'Policies': ['OnServicePropagation_Policy']}]
-
-
-
-#when a resource, now active, was probing
-RAP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': ['DT_Policy', 'SAM_Policy', 'PilotsEfficiencySimple_Policy']}]
-
-#when a resource, now active, was banned
-RAB = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': ['DT_Policy', 'SAM_Policy', 'PilotsEfficiencySimple_Policy']}]
-
-#when a resource, now probing, was active
-RPA = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': ['DT_Policy', 'SAM_Policy', 'PilotsEfficiencySimple_Policy']}]
-
-#when a resource, now probing, was banned
-RPB = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': ['DT_Policy', 'SAM_Policy', 'PilotsEfficiencySimple_Policy']}]
-
-#when a resource, now banned, was active
-RBA = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': ['DT_Policy', 'SAM_Policy', 'PilotsEfficiencySimple_Policy']}]
-
-#when a resource, now banned, was probing
-RBP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': ['DT_Policy', 'SAM_Policy', 'PilotsEfficiencySimple_Policy']}]
-
-
-
-#when a storage element, now active, was probing
-StElAP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': []}]
-
-#when a storage element, now active, was banned
-StElAB = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': []}]
-
-#when a storage element, now probing, was active
-StElPA = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': []}]
-
-#when a storage element, now probing, was banned
-StElPB = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': []}]
-
-#when a storage element, now banned, was active
-StElBA = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': []}]
-
-#when a storage element, now banned, was probing
-StElBP = [{'PolicyType':['Resource_PolType', 'Alarm_PolType'], \
-        'Policies': []}]
-
-
-
 #############################################################################
 # policies parameters
 #############################################################################
@@ -364,7 +263,7 @@ def policyInvocation(granularity = None, name = None, status = None, policy = No
       a = (granularity, name, status)
     res = _innerEval(p, a)
     
-  if pol == 'False_Policy':
+  if pol == 'AlwaysFalse_Policy':
     p = policy
     a = args
     if policy is None:

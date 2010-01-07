@@ -2579,8 +2579,8 @@ class ResourceStatusDB:
     """
     
     if granularity in ('Service', 'Services'):
-      req = "SELECT ServiceName, Status, FormerStatus, Reason FROM PresentServices WHERE"
-      req = req + " LastCheckTime = '0000-00-00 00:00:00'"
+      req = "SELECT ServiceName, Status, FormerStatus, SiteType, ServiceType FROM"
+      req = req + " PresentServices WHERE LastCheckTime = '0000-00-00 00:00:00'"
       if maxN != None:
         req = req + " LIMIT %d" %maxN
       
@@ -2617,11 +2617,11 @@ class ResourceStatusDB:
       T2dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2bannedCheckFrequecy)).isoformat(' ')
   
       if granularity in ('Site', 'Sites'):
-        req = "SELECT SiteName, Status, FormerStatus, Reason FROM PresentSites WHERE"
+        req = "SELECT SiteName, Status, FormerStatus, SiteType FROM PresentSites WHERE"
       elif granularity in ('Resource', 'Resources'):
-        req = "SELECT ResourceName, Status, FormerStatus, Reason FROM PresentResources WHERE"
+        req = "SELECT ResourceName, Status, FormerStatus, SiteType, ResourceType FROM PresentResources WHERE"
       elif granularity in ('StorageElement', 'StorageElements'):
-        req = "SELECT StorageElementName, Status, FormerStatus, Reason FROM PresentStorageElements WHERE"
+        req = "SELECT StorageElementName, Status, FormerStatus, SiteType FROM PresentStorageElements WHERE"
       else:
         raise InvalidRes, where(self, self.getStuffToCheck)
       req = req + " (Status = 'Active' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromActive )

@@ -87,7 +87,8 @@ class SeSInspectorAgent(AgentModule):
 
   def _getServicesToCheck(self):
     """ 
-    Call :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getServicesToCheck` and put result in list
+    Call :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getServicesToCheck` 
+    and put result in list
     """
     
     try:
@@ -129,10 +130,13 @@ class SeSInspectorAgent(AgentModule):
       serviceName = toBeChecked[1]
       status = toBeChecked[2]
       formerStatus = toBeChecked[3]
-      reason = toBeChecked[4]
+      siteType = toBeChecked[4]
+      serviceType = toBeChecked[5]
       
       gLogger.info("Checking Service %s, with status %s" % (serviceName, status))
-      newPEP = PEP(granularity = granularity, name = serviceName, status = status, formerStatus = formerStatus, reason = reason)
+      newPEP = PEP(granularity = granularity, name = serviceName, status = status, 
+                   formerStatus = formerStatus, siteType = siteType, 
+                   serviceType = serviceType)
       newPEP.enforce()
 
       self.lockObj.acquire()
