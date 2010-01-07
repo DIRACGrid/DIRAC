@@ -2579,7 +2579,7 @@ class ResourceStatusDB:
     """
     
     if granularity in ('Service', 'Services'):
-      req = "SELECT ServiceName, Status, FormerStatus, SiteType, ServiceType FROM"
+      req = "SELECT ServiceName, Status, FormerStatus, ServiceType FROM"
       req = req + " PresentServices WHERE LastCheckTime = '0000-00-00 00:00:00'"
       if maxN != None:
         req = req + " LIMIT %d" %maxN

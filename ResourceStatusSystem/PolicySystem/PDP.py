@@ -46,27 +46,33 @@ class PDP:
     if granularity not in ValidRes:
       raise InvalidRes, where(self, self.__init__)
     self.__granularity = granularity
+    
     self.__name = name
-    if status is not None:
-      self.__status = status.capitalize()
+    
+    self.__status = status
+    if self.__status is not None:
       if self.__status not in ValidStatus:
         raise InvalidStatus, where(self, self.__init__)
-    if formerStatus is not None:
-      self.__formerStatus = formerStatus.capitalize()
+    
+    self.__formerStatus = formerStatus
+    if self.__formerStatus is not None:
       if self.__formerStatus not in ValidStatus:
         raise InvalidStatus, where(self, self.__init__)
-    if reason is not None:
-      self.__reason = reason
-    if siteType is not None:
-      self.__siteType = siteType.capitalize()
+    
+    self.__reason = reason
+    
+    self.__siteType = siteType
+    if self.__siteType is not None:
       if self.__siteType not in ValidSiteType:
         raise InvalidSiteType, where(self, self.__init__)
-    if serviceType is not None:
-      self.__serviceType = serviceType.capitalize()
+    
+    self.__serviceType = serviceType
+    if self.__serviceType is not None:
       if self.__siteType not in ValidServiceType:
         raise InvalidServiceType, where(self, self.__init__)
-    if resourceType is not None:
-      self.__resourceType = resourceType.capitalize()
+    
+    self.__resourceType = resourceType
+    if self.__resourceType is not None:
       if self.__resourceType not in ValidResourceType:
         raise InvalidResourceType, where(self, self.__init__)
 
