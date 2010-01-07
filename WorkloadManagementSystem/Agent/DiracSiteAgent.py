@@ -19,7 +19,7 @@ import DIRAC
 import os, sys, re, string, time, urllib
 
 AGENT_NAME = 'WorkloadManagement/DiracSiteAgent'
-    
+
 class DiracSiteAgent(AgentModule):
 
   #############################################################################
@@ -27,16 +27,16 @@ class DiracSiteAgent(AgentModule):
     """Sets default parameters and creates CE instance
     """
     self.maxcount = loops
-    
+
     self.logLevel = gConfig.getValue('DIRAC/LogLevel','INFO')
     self.siteRoot = gConfig.getValue('LocalSite/Root',DIRAC.rootPath)
     self.localArea = gConfig.getValue('LocalSite/LocalArea','/tmp')
     self.siteName = gConfig.getValue('LocalSite/Site','Unknown')
     self.cpuFactor = gConfig.getValue('LocalSite/CPUScalingFactor','Unknown')
     self.maxPilots = gConfig.getValue('LocalSite/MaxPilots',100)
-    
+
     self.log.setLevel(self.logLevel)
-    
+
     self.log.info("Log level set to",self.logLevel)
 
     #these options are temporary until the Matcher procedure for the DIRAC site exists
@@ -44,9 +44,9 @@ class DiracSiteAgent(AgentModule):
     self.propertiesDict = {
                       '/DIRAC/Setup' : 'LHCb-Development',
                       '/LocalSite/Properties/OwnerDN' : '',
-                      '/LocalSite/Site' : ''         
-                      } 
-    
+                      '/LocalSite/Site' : ''
+                      }
+
     for propLocation, propDefault in self.propertiesDict.items():
       try:
         property = gConfig.getValue(propLocation, propDefault).replace('"','')
@@ -54,7 +54,7 @@ class DiracSiteAgent(AgentModule):
       except Exception,x:
         print x
         return S_ERROR('Expected string for %s field' %propLocation)
-    
+
     self.matchDict = {
                       'Setup' : self.propertiesDict['/DIRAC/Setup'],
                       'Site' : self.propertiesDict['/LocalSite/Site'],
@@ -85,7 +85,7 @@ class DiracSiteAgent(AgentModule):
     self.log.debug('======= Pilot Options =======')
     self.log.debug(self.pilotOptions)
     self.log.debug('=============================')
-    
+
     #create CE
     ceUniqueID = self.am_getOption('CEUniqueID','Torque')
     if not ceUniqueID['OK']:
@@ -97,14 +97,14 @@ class DiracSiteAgent(AgentModule):
       self.log.warn(ce['Message'])
       return ce
     self.computingElement = ce['Value']
-    
+
     #path to dirac-pilot script
     self.diracPilotFileName = 'dirac-pilot'
     self.diracPilotPath = self.siteRoot + '/DIRAC/WorkloadManagementSystem/PilotAgent/' + self.diracPilotFileName
-      
+
     #path to dirac-install script
     self.diracInstallFileName = 'dirac-install'
-    self.diracInstallURL = 'http://cern.ch/lhcbproject/dist/DIRAC3/scripts/dirac-install'
+    self.diracInstallURL = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/scripts/dirac-install'
     self.diracInstallPath = self.siteRoot + '/' + self.diracInstallFileName
     if not os.path.exists(self.diracInstallPath):
       self.diracInstallPath = self.diracInstallFileName
@@ -113,7 +113,7 @@ class DiracSiteAgent(AgentModule):
         os.chmod(self.diracInstallPath, 0755)
       except:
         self.log.error('Failed to retrieve %(diracInstallFileName)s from %(diracInstallUrl)s' % {'diracInstallFileName':self.diracInstallFileName,'diracInstallUrl':self.diracInstallURL})
-    
+
     return result
 
   #############################################################################
@@ -124,7 +124,7 @@ class DiracSiteAgent(AgentModule):
     """
 
     self.log.verbose('CE Agent execution loop')
-    
+
     #available = self.computingElement.available()
     #if not available['OK']:
     #  self.log.info('Resource is not available')
@@ -132,8 +132,8 @@ class DiracSiteAgent(AgentModule):
     #  return self.__finish('CE Not Available')
 
     #self.log.info(available['Value'])
-    
-    
+
+
     start = time.time()
     ret = self.__getPilots()
     if not ret['OK']:
@@ -143,14 +143,14 @@ class DiracSiteAgent(AgentModule):
       self.log.debug('get Pilot return value',ret['Value'])
       return ret
     pilots = ret['Value']
-    
+
     matchTime = time.time() - start
     self.log.verbose('Pilot Matcher Time = %.2f (s)' %(matchTime))
 
     ret = self.__submitPilots(pilots,self.computingElement)
     if not ret['OK']:
       self.log.warn(ret['Message'])
-    
+
     return ret
 
 
@@ -158,28 +158,28 @@ class DiracSiteAgent(AgentModule):
   def __createCE(self,ceName):
     self.log.info("Creating %s CE" %(ceName) )
 
-    ceFactory = ComputingElementFactory(ceName) 
+    ceFactory = ComputingElementFactory(ceName)
     ret = ceFactory.getCE()
     if not ret['OK']:
       self.log.warn(ret['Message'])
       return ret
-    
-    ceJDL = ret['Value'].getJDL() 
+
+    ceJDL = ret['Value'].getJDL()
     self.log.debug('CE jdl',ceJDL)
     return ret
 
   #############################################################################
   def __createPilotFile(self):
-      
+
     pilotOptionString = ''
-    
+
     for optName, optValue in self.pilotOptions.items():
       if len(optValue) > 0:
         self.log.debug('option',optName)
         pilotOptionString = ''.join([pilotOptionString,' -o ',optName,'=',optValue])
-        
+
     self.log.verbose("Pilot Options: ", pilotOptionString)
-      
+
     pilotFileName = 'pilot.sh'
 
     fileContent = """#!/bin/bash
@@ -190,18 +190,18 @@ export LD_LIBRARY_PATH=
     fopen = open(pilotFileName,'w')
     fopen.write(fileContent)
     fopen.close()
-    
+
     return pilotFileName
 
   #############################################################################
   def __getProxy(self):
     # get proxy
-    proxyLocation = getProxyLocation() 
-    
+    proxyLocation = getProxyLocation()
+
     fopen = open(proxyLocation,'r')
     proxyString = fopen.read()
     fopen.close()
-    
+
     return proxyString
 
   #############################################################################
@@ -214,27 +214,27 @@ export LD_LIBRARY_PATH=
         self.log.warn(ret['Message'])
         return ret
       self.log.debug("Result of Pilot submission:",ret)
-      
+
     return S_OK()
-    
+
   #############################################################################
   def __getPilots(self):
 
     rpcClient = RPCClient( "WorkloadManagement/Matcher" )
     result = rpcClient.getMatchingTaskQueues( self.matchDict )
     self.log.info('Matching result',result)
-    
+
     if not result['OK']:
       self.log.warn(result['Message'])
       return S_ERROR(result)
-  
+
     taskQueues = result['Value']
- 
+
     numberOfJobs = 0
-    
+
     for taskQueueID in taskQueues:
       numberOfJobs += taskQueues[taskQueueID]['Jobs']
-    
+
     if not numberOfJobs:
       return S_OK('No jobs selected for conditions: %s' %self.matchDict)
     else:
@@ -246,8 +246,8 @@ export LD_LIBRARY_PATH=
       # submit pilots for all jobs, but not more than configured in maxPilots
       for i in xrange(0,min(self.maxPilots,numberOfJobs)):
         pilots.append( {'pilotFile':pilot,'proxyString':proxy} )
-        
-      return S_OK(pilots)    
+
+      return S_OK(pilots)
 
   #############################################################################
   def __finish(self,message):
