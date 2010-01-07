@@ -130,13 +130,11 @@ class SeSInspectorAgent(AgentModule):
       serviceName = toBeChecked[1]
       status = toBeChecked[2]
       formerStatus = toBeChecked[3]
-      siteType = toBeChecked[4]
-      serviceType = toBeChecked[5]
+      serviceType = toBeChecked[4]
       
       gLogger.info("Checking Service %s, with status %s" % (serviceName, status))
       newPEP = PEP(granularity = granularity, name = serviceName, status = status, 
-                   formerStatus = formerStatus, siteType = siteType, 
-                   serviceType = serviceType)
+                   formerStatus = formerStatus, serviceType = serviceType)
       newPEP.enforce()
 
       self.lockObj.acquire()

@@ -127,7 +127,7 @@ class StElInspectorAgent(AgentModule):
       
       gLogger.info("Checking StorageElement %s, with status %s" % (storageElementName, status))
       newPEP = PEP(granularity = granularity, name = storageElementName, status = status, 
-                   formerStatus = formerStatus, reason = reason, siteType = siteType)
+                   formerStatus = formerStatus, siteType = siteType)
       newPEP.enforce()
 
       self.lockObj.acquire()
