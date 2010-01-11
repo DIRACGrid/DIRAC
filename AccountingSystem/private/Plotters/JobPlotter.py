@@ -208,6 +208,31 @@ class JobPlotter(BaseReporter):
                 }
     return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )
 
+  def _reportProcessingBandwidth( self, reportRequest ):
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM((%s/1000000)/(%s))/SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength', 'InputDataSize', 'CPUTime', 'entriesInBucket' ]
+                   )
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
+                                selectFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
+                                {} )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict, granularity = retVal[ 'Value' ]
+    self.stripDataField( dataDict, 0 )
+    dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+
+  def _plotProcessingBandwidth( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Processing Bandwidth by %s' % reportRequest[ 'grouping' ],
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ],
+                 'ylabel' : "MB/sec"  }
+    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
+
   def _reportInputSandboxSize( self, reportRequest ):
     return self.__reportFieldSizeinMB( reportRequest, ( "InputSandBoxSize", "Input sand box size" ) )
 
