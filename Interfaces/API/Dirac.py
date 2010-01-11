@@ -560,6 +560,20 @@ class Dirac:
         finalState=True
         return S_ERROR('Exceeded max waiting time of %s seconds for job %s to enter Waiting state, exiting.' %(maxWaitingTime,jobID))
       time.sleep(pollingTime)
+      
+  def __getVOPolicyModule(self,module):
+    """ Utility to get the VO Policy module name
+    """    
+    
+    moduleName = ''
+    setup = gConfig.getValue('/DIRAC/Setup','')
+    vo = gConfig.getValue('/DIRAC/VirtualOrganization','')   
+    if setup and vo:
+      moduleName = gConfig.getValue('DIRAC/VOPolicy/%s/%s/%s' % (vo,setup,module),'')
+      if not moduleName:
+        moduleName = gConfig.getValue('DIRAC/VOPolicy/%s' % module,'')
+
+    return moduleName
 
   #############################################################################
   def getInputDataCatalog(self,lfns,siteName='',fileName='pool_xml_catalog.xml',ignoreMissing=False):
@@ -606,7 +620,8 @@ class Dirac:
       return result
 
     self.log.verbose(localSEList)
-    inputDataPolicy = gConfig.getValue('DIRAC/VOPolicy/InputDataModule','')
+    
+    inputDataPolicy = self.__getVoPolicyModule('InputDataModule')
     if not inputDataPolicy:
       return self.__errorReport('Could not retrieve DIRAC/VOPolicy/InputDataModule for VO')
 
@@ -671,7 +686,7 @@ class Dirac:
     else:
       localSEList = [localSEList.replace(' ','')]
     self.log.verbose(localSEList)
-    inputDataPolicy = gConfig.getValue('DIRAC/VOPolicy/InputDataModule','')
+    inputDataPolicy = self.__getVoPolicyModule('InputDataModule')
     if not inputDataPolicy:
       return self.__errorReport('Could not retrieve DIRAC/VOPolicy/InputDataModule for VO')
 
@@ -764,7 +779,7 @@ class Dirac:
       else:
         localSEList = [localSEList.replace(' ','')]
       self.log.verbose(localSEList)
-      inputDataPolicy = gConfig.getValue('DIRAC/VOPolicy/InputDataModule','')
+      inputDataPolicy = self.__getVoPolicyModule('InputDataModule')
       if not inputDataPolicy:
         return self.__errorReport('Could not retrieve DIRAC/VOPolicy/InputDataModule for VO')
 
@@ -806,7 +821,7 @@ class Dirac:
       jobParamsDict['CE'] = {}
       jobParamsDict['CE']['CompatiblePlatforms']=localArch
 
-    softwarePolicy = gConfig.getValue('DIRAC/VOPolicy/SoftwareDistModule','')
+    softwarePolicy = self.__getVoPolicyModule('SoftwareDistModule')
     if not softwarePolicy:
       return self.__errorReport('Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO')
     moduleFactory = ModuleFactory()
