@@ -1,0 +1,2 @@
+""" DIRAC File Catalog components
+"""
