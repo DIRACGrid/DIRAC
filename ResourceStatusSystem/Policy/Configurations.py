@@ -73,7 +73,7 @@ Policies = {
 
 Policy_Types = {
   'Resource_PolType' : 
-    { 'Granularity' : ['Site', 'Resource', 'StorageElement'], 
+    { 'Granularity' : ['Site', 'Service', 'Resource', 'StorageElement'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
@@ -237,10 +237,10 @@ Resources_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 10, \
                         'T2_PROBING_CHECK_FREQUENCY' : 20, \
                         'T2_BANNED_CHECK_FREQUENCY' : 40 }
 
-StorageElements_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 15, \
+StorageElements_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 12, \
                               'T0_PROBING_CHECK_FREQUENCY': 10, \
                               'T0_BANNED_CHECK_FREQUENCY' : 12, \
-                              'T1_ACTIVE_CHECK_FREQUENCY' : 12, \
+                              'T1_ACTIVE_CHECK_FREQUENCY' : 15, \
                               'T1_PROBING_CHECK_FREQUENCY' : 10, \
                               'T1_BANNED_CHECK_FREQUENCY' : 12, \
                               'T2_ACTIVE_CHECK_FREQUENCY' : 40, \
@@ -251,7 +251,8 @@ StorageElements_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 15, \
 # policies invocation configuration
 #############################################################################
 
-def policyInvocation(granularity = None, name = None, status = None, policy = None, args = None, pol = None, DBIn = None):
+def policyInvocation(granularity = None, name = None, status = None, policy = None, 
+                     args = None, pol = None, DBIn = None):
   
   if pol == 'DT_Policy':
     p = policy

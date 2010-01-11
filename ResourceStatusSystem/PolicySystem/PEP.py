@@ -55,6 +55,7 @@ class PEP:
 #        raise InvalidPolicyType, where(self, self.__init__)
 #    self.__policyType = policyType
     
+    
     try:
 #      granularity = presentEnforcement['Granularity']
       if granularity is not None:
@@ -156,7 +157,7 @@ class PEP:
     
     # policy decision
     resDecisions = pdp.takeDecision(knownInfo=knownInfo)
-
+    
     for res in resDecisions:
       
       self.__policyType = res['PolicyType']
@@ -169,14 +170,12 @@ class PEP:
             rsDB.setServiceToBeChecked('Site', self.__name)
           else:
             rsDB.setMonitoredReason(self.__granularity, self.__name, res['Reason'], 'RS_SVC')
-          rsDB.setLastMonitoredCheckTime(self.__granularity, self.__name)
         
         elif self.__granularity == 'Service':
           if res['Action']:
             rsDB.setServiceStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
           else:
             rsDB.setMonitoredReason(self.__granularity, self.__name, res['Reason'], 'RS_SVC')
-          rsDB.setLastMonitoredCheckTime(self.__granularity, self.__name)
     
         elif self.__granularity == 'Resource':
           if res['Action']:
@@ -184,23 +183,26 @@ class PEP:
             rsDB.setServiceToBeChecked('Resource', self.__name)
           else:
             rsDB.setMonitoredReason(self.__granularity, self.__name, res['Reason'], 'RS_SVC')
-          rsDB.setLastMonitoredCheckTime(self.__granularity, self.__name)
 
         elif self.__granularity == 'StorageElement':
           if res['Action']:
             rsDB.setStorageElementStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
           else:
             rsDB.setMonitoredReason(self.__granularity, self.__name, res['Reason'], 'RS_SVC')
-          rsDB.setLastMonitoredCheckTime(self.__granularity, self.__name)
     
+        rsDB.setLastMonitoredCheckTime(self.__granularity, self.__name)
+        
         if res.has_key('Enddate'):
           rsDB.setDateEnd(self.__granularity, self.__name, res['Enddate'])
   
         if res['Action']:
           try:
             if self.__futureGranularity != self.__granularity:
-              self.__name = rsDB.getGeneralName(self.__name, self.__granularity, self.__futureGranularity)
-            newPEP = PEP(granularity = self.__futureGranularity, name = self.__name, status = self.__status, formerStatus = self.__formerStatus, reason = self.__reason)
+              self.__name = rsDB.getGeneralName(self.__name, self.__granularity, 
+                                                self.__futureGranularity)
+            newPEP = PEP(granularity = self.__futureGranularity, name = self.__name, 
+                         status = self.__status, formerStatus = self.__formerStatus, 
+                         reason = self.__reason)
             newPEP.enforce(pdpIn = pdp, rsDBIn = rsDB) 
           except AttributeError:
             pass

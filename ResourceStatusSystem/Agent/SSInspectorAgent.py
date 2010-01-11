@@ -82,11 +82,13 @@ class SSInspectorAgent(AgentModule):
       
   def _getSitesToCheck(self):
     """ 
-    Call :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getSitesToCheck` and put result in list
+    Call :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getSitesToCheck` 
+    and put result in list
     """
     
     try:
-      res = self.rsDB.getStuffToCheck('Sites', Configurations.Sites_check_freq, self.maxNumberOfThreads - 1)
+      res = self.rsDB.getStuffToCheck('Sites', Configurations.Sites_check_freq, 
+                                      self.maxNumberOfThreads - 1)
     except RSSDBException, x:
       gLogger.error(whoRaised(x))
     except RSSException, x:

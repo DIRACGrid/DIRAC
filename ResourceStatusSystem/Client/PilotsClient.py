@@ -45,9 +45,15 @@ class PilotsClient:
       granularity = 'GridCE'
     
     #######TODO
-#    numberOfPilotsLash2Hours = self.rc.getReport('Pilot', 'NumberOfPilots', datetime.utcnow()-timedelta(hours = 2), datetime.utcnow(), {granularity:[entity]}, 'GridStatus')
-#    numberOfPilotsLash2Hours = self.rc.getReport('Pilot', 'NumberOfPilots', datetime.utcnow()-timedelta(hours = 2), datetime.utcnow(), {granularity:[entity]}, 'GridStatus')
-    
+#    numberOfPilotsLash2Hours = self.rc.getReport('Pilot', 'NumberOfPilots', 
+#                                                 datetime.utcnow()-timedelta(hours = 2), 
+#                                                 datetime.utcnow(), {granularity:[entity]}, 
+#                                                 'GridStatus')
+#    numberOfPilotsLash2Hours = self.rc.getReport('Pilot', 'NumberOfPilots', 
+#                                                 datetime.utcnow()-timedelta(hours = 2), 
+#                                                 datetime.utcnow(), {granularity:[entity]}, 
+#                                                 'GridStatus')
+#    
 #    for x in numberOfPilots['Value']['data'].itervalues():
 #      total = 0
 #      for y in x.values():
@@ -83,7 +89,10 @@ class PilotsClient:
       granularity = 'GridCE'
     
     #######TODO
-#    numberOfPilots = self.rc.getReport('Pilot', 'NumberOfPilots', datetime.utcnow()-timedelta(hours = 24), datetime.utcnow(), {self._granularity:[self_entity]}, 'GridStatus')
+#    numberOfPilots = self.rc.getReport('Pilot', 'NumberOfPilots', 
+#                                       datetime.utcnow()-timedelta(hours = 24), 
+#                                       datetime.utcnow(), {self._granularity:[self_entity]}, 
+#                                       'GridStatus')
     
     
 #############################################################################
@@ -113,7 +122,8 @@ class PilotsClient:
       :attr:`granularity`: string - should be a ValidRes
       :attr:`name`: string - should be the name of the ValidRes
     
-    If granularity is resource, name is a tuple containing the resource name along with its site name
+    If granularity is resource, name is a tuple containing the resource name 
+    along with its site name
         
     :return:
     {

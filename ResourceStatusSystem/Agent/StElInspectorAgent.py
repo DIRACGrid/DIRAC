@@ -82,11 +82,14 @@ class StElInspectorAgent(AgentModule):
       
   def _getStorageElementsToCheck(self):
     """ 
-    Call :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getStorageElementsToCheck` and put result in list
+    Call :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getStorageElementsToCheck` 
+    and put result in list
     """
     
     try:
-      res = self.rsDB.getStuffToCheck('StorageElements', Configurations.StorageElements_check_freq, self.maxNumberOfThreads - 1)
+      res = self.rsDB.getStuffToCheck('StorageElements', 
+                                      Configurations.StorageElements_check_freq, 
+                                      self.maxNumberOfThreads - 1)
     except RSSDBException, x:
       gLogger.error(whoRaised(x))
     except RSSException, x:

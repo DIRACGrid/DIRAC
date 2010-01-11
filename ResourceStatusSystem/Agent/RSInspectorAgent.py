@@ -92,7 +92,8 @@ class RSInspectorAgent(AgentModule):
     """
 
     try:
-      res = self.rsDB.getStuffToCheck('Resources', Configurations.Resources_check_freq, self.maxNumberOfThreads - 1)
+      res = self.rsDB.getStuffToCheck('Resources', Configurations.Resources_check_freq, 
+                                      self.maxNumberOfThreads - 1)
     except RSSDBException, x:
       gLogger.error(whoRaised(x))
     except RSSException, x:

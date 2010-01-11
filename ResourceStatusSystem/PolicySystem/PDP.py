@@ -40,12 +40,13 @@ class PDP:
 
 #############################################################################
   
-  def __init__(self, granularity, name, status = None, formerStatus = None, reason = None, 
-               siteType = None, serviceType = None, resourceType = None):
+  def __init__(self, granularity = None, name = None, status = None, formerStatus = None, 
+               reason = None, siteType = None, serviceType = None, resourceType = None):
     
-    if granularity not in ValidRes:
-      raise InvalidRes, where(self, self.__init__)
     self.__granularity = granularity
+    if self.__granularity is not None:
+      if self.__granularity not in ValidRes:
+        raise InvalidRes, where(self, self.__init__)
     
     self.__name = name
     
@@ -68,7 +69,7 @@ class PDP:
     
     self.__serviceType = serviceType
     if self.__serviceType is not None:
-      if self.__siteType not in ValidServiceType:
+      if self.__serviceType not in ValidServiceType:
         raise InvalidServiceType, where(self, self.__init__)
     
     self.__resourceType = resourceType
@@ -141,7 +142,8 @@ class PDP:
       if res['SAT']:
         newstatus = res['Status']
         reason = res['Reason']
-        decision = {'PolicyType': self.__policyType, 'Action': True, 'Status':'%s'%newstatus, 'Reason':'%s'%reason}
+        decision = {'PolicyType': self.__policyType, 'Action': True, 'Status':'%s'%newstatus, 
+                    'Reason':'%s'%reason}
         if res.has_key('Enddate'):
           decision['Enddate'] = res['Enddate']
         policyResults.append(decision)
@@ -158,7 +160,8 @@ class PDP:
     
   def _evaluate(self, policies):
     
-    policyResults = self._policyInvocation(self.__granularity, self.__name, self.__status, self.policy, self.args, policies)
+    policyResults = self._policyInvocation(self.__granularity, self.__name, self.__status, 
+                                           self.policy, self.args, policies)
 
     if len(policyResults) == 1:
       return self._policyCombination(policyResults[0])
@@ -167,7 +170,8 @@ class PDP:
     if len(policyResults) == 3:
       return self._policyCombination(policyResults[0], policyResults[1], policyResults[2])
     if len(policyResults) == 4:
-      return self._policyCombination(policyResults[0], policyResults[1], policyResults[2], policyResults[3])
+      return self._policyCombination(policyResults[0], policyResults[1], policyResults[2], 
+                                     policyResults[3])
 
   
 #############################################################################
@@ -184,7 +188,9 @@ class PDP:
 #    
 #    try:
 #      for i in range(maxNumberOfThreads):
-#        policyResGetter = ThreadedJob(self.__policyInternalInvocation, args = [granularity, name, status, policy, args, policies[i]])
+#        policyResGetter = ThreadedJob(self.__policyInternalInvocation, 
+#                                      args = [granularity, name, status, policy, args, 
+#                                              policies[i]])
 #        threadPool.queueJob(policyResGetter)
 #  
 #      #threadPool.processAllResults()
@@ -204,7 +210,9 @@ class PDP:
   
   def __policyInternalInvocation(self, granularity, name, status, policy, args, policyToEval):
   
-    res = Configurations.policyInvocation(granularity = granularity, name = name, status = status, policy = policy, args = args, pol = policyToEval)
+    res = Configurations.policyInvocation(granularity = granularity, name = name, 
+                                          status = status, policy = policy, args = args, 
+                                          pol = policyToEval)
     
     if res['SAT'] != None:
       self.lockObj.acquire()

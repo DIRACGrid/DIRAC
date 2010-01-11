@@ -10,7 +10,8 @@ from DIRAC.ResourceStatusSystem.Policy import Configurations
 
 class PilotsEfficiency_Policy(PolicyBase):
   
-  def evaluate(self, args, knownInfo=None, commandPeriods=None, commandStats=None, commandEff=None):
+  def evaluate(self, args, knownInfo=None, commandPeriods=None, commandStats=None, 
+               commandEff=None):
     """ evaluate policy on pilots stats, using args (tuple). 
         - args[0] should be a ValidRes
         - args[1] should be the name of the ValidRes
@@ -43,10 +44,12 @@ class PilotsEfficiency_Policy(PolicyBase):
       
       periods = self._getPeriods(args, commandIn=commandPeriods)
       pilotsStats = self._getPilotsStats((args[0], args[1]), periods, commandIn=commandStats)
-      periodsForPilotsEff = self._getPeriods(args, pilotsStats['MeanProcessedPilots'], commandIn=commandPeriods)
+      periodsForPilotsEff = self._getPeriods(args, pilotsStats['MeanProcessedPilots'], 
+                                             commandIn=commandPeriods)
       if len(periodsForPilotsEff) != 1:
         return {'SAT':None}
-      status = self._getPilotsEff((args[0], args[1]), periodsForPilotsEff, commandIn=commandEff)
+      status = self._getPilotsEff((args[0], args[1]), periodsForPilotsEff, 
+                                  commandIn=commandEff)
       
       result = {}
       

@@ -97,7 +97,8 @@ class ResourceStatusHandler(RequestHandler):
           Value': 
           {
 
-            'ParameterNames': ['SiteName', 'Tier', 'GridType', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'], 
+            'ParameterNames': ['SiteName', 'Tier', 'GridType', 'Country', 'Status',
+             'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'], 
 
             'Records': [[], [], ...]
 
@@ -159,7 +160,8 @@ class ResourceStatusHandler(RequestHandler):
 
   #ok
   types_addOrModifySite = [StringType, StringType, StringType, StringType, Time._dateTimeType, StringType, Time._dateTimeType]
-  def export_addOrModifySite(self, siteName, siteType, status, reason, dateEffective, operatorCode, dateEnd):
+  def export_addOrModifySite(self, siteName, siteType, status, reason, dateEffective, 
+                             operatorCode, dateEnd):
     """ 
     Add or modify a site to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifySite`
@@ -402,7 +404,9 @@ class ResourceStatusHandler(RequestHandler):
   
   #ok
   types_addOrModifyService = [StringType, StringType, StringType, StringType, StringType, Time._dateTimeType, StringType, Time._dateTimeType]
-  def export_addOrModifyService(self, serviceName, serviceType, siteName, status, reason, dateEffective, operatorCode, dateEnd=datetime(9999, 12, 31, 23, 59, 59)):
+  def export_addOrModifyService(self, serviceName, serviceType, siteName, status, 
+                                reason, dateEffective, operatorCode, 
+                                dateEnd=datetime(9999, 12, 31, 23, 59, 59)):
     """ 
     Add or modify a service to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifyService`
@@ -410,7 +414,8 @@ class ResourceStatusHandler(RequestHandler):
     :params:
       :attr:`serviceName`: string - name of the service (DIRAC name)
     
-      :attr:`serviceType`: string - ValidServiceType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      :attr:`serviceType`: string - ValidServiceType: 
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
       :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
@@ -426,7 +431,8 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.addOrModifyService: Attempting to add or modify service %s" % serviceName)
       try:
-        rsDB.addOrModifyService(serviceName, serviceType, siteName, status, reason, dateEffective, operatorCode, dateEnd)
+        rsDB.addOrModifyService(serviceName, serviceType, siteName, status, reason, 
+                                dateEffective, operatorCode, dateEnd)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -681,7 +687,9 @@ class ResourceStatusHandler(RequestHandler):
 
   #ok
   types_addOrModifyResource = [StringType, StringType, StringType, StringType, StringType, StringType, Time._dateTimeType, StringType, Time._dateTimeType]
-  def export_addOrModifyResource(self, resourceName, resourceType, serviceName, siteName, status, reason, dateEffective, operatorCode, dateEnd=datetime(9999, 12, 31, 23, 59, 59)):
+  def export_addOrModifyResource(self, resourceName, resourceType, serviceName, siteName, 
+                                 status, reason, dateEffective, operatorCode, 
+                                 dateEnd=datetime(9999, 12, 31, 23, 59, 59)):
     """ 
     Add or modify a resource to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifyResource`
@@ -689,7 +697,8 @@ class ResourceStatusHandler(RequestHandler):
     :params:
       :attr:`resourceName`: string - name of the resource (DIRAC name)
     
-      :attr:`resourceType`: string - ValidResourceType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      :attr:`resourceType`: string - ValidResourceType: 
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
       :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       

@@ -10,7 +10,8 @@ from DIRAC.ResourceStatusSystem.Policy import Configurations
 
 class JobsEfficiency_Policy(PolicyBase):
   
-  def evaluate(self, args, knownInfo=None, commandPeriods=None, commandStats=None, commandEff=None, commandCharge=None):
+  def evaluate(self, args, knownInfo=None, commandPeriods=None, commandStats=None, 
+               commandEff=None, commandCharge=None):
     """ evaluate policy on jobs stats, using args (tuple). 
         - args[0] should be a ValidRes
         - args[1] should be the name of the ValidRes
@@ -47,7 +48,8 @@ class JobsEfficiency_Policy(PolicyBase):
       
       periods = self._getPeriods(args, commandIn=commandPeriods)
       jobsStats = self._getJobsStats((args[0], args[1]), periods, commandIn=commandStats)
-      periodsForJobsEff = self._getPeriods(args, jobsStats['MeanProcessedJobs'], commandIn=commandPeriods)
+      periodsForJobsEff = self._getPeriods(args, jobsStats['MeanProcessedJobs'], 
+                                           commandIn=commandPeriods)
       if len(periodsForJobsEff) != 1:
         return {'SAT':None}
       status = self._getJobsEff((args[0], args[1]), periodsForJobsEff, commandIn=commandEff)

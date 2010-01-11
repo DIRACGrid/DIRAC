@@ -45,8 +45,14 @@ class JobsClient:
       granularity = 'GridCE'
     
     #######TODO
-#    numberOfJobsLash2Hours = self.rc.getReport('Job', 'NumberOfJobs', datetime.utcnow()-timedelta(hours = 2), datetime.utcnow(), {granularity:[entity]}, 'GridStatus')
-#    numberOfJobsLash2Hours = self.rc.getReport('Job', 'NumberOfJobs', datetime.utcnow()-timedelta(hours = 2), datetime.utcnow(), {granularity:[entity]}, 'GridStatus')
+#    numberOfJobsLash2Hours = self.rc.getReport('Job', 'NumberOfJobs', 
+#                                               datetime.utcnow()-timedelta(hours = 2), 
+#                                               datetime.utcnow(), {granularity:[entity]}, 
+#                                               'GridStatus')
+#    numberOfJobsLash2Hours = self.rc.getReport('Job', 'NumberOfJobs', 
+#                                               datetime.utcnow()-timedelta(hours = 2), 
+#                                               datetime.utcnow(), {granularity:[entity]}, 
+#                                               'GridStatus')
 #    
 #    for x in numberOfJobs['Value']['data'].itervalues():
 #      total = 0
@@ -83,7 +89,10 @@ class JobsClient:
       granularity = 'GridCE'
     
     #######TODO
-#    numberOfJobs = self.rc.getReport('Job', 'NumberOfJobs', datetime.utcnow()-timedelta(hours = 24), datetime.utcnow(), {self._granularity:[self_entity]}, 'GridStatus')
+#    numberOfJobs = self.rc.getReport('Job', 'NumberOfJobs', 
+#                                     datetime.utcnow()-timedelta(hours = 24), 
+#                                     datetime.utcnow(), {self._granularity:[self_entity]}, 
+#                                     'GridStatus')
     
 
 #############################################################################
@@ -102,7 +111,9 @@ class JobsClient:
     
     #######TODO
 
-#    numberOfJobsLastHour = self.rc.getReport('Job', 'TotalNumberOfJobs', datetime.utcnow()-timedelta(hours = 1), datetime.utcnow(), {}, 'Grid')
+#    numberOfJobsLastHour = self.rc.getReport('Job', 'TotalNumberOfJobs', 
+#                                             datetime.utcnow()-timedelta(hours = 1), 
+#                                             datetime.utcnow(), {}, 'Grid')
     
     
 #############################################################################
