@@ -49,16 +49,14 @@ class TransferQuality_Policy(PolicyBase):
         
       clientsInvoker = ClientsInvoker()
       clientsInvoker.setCommand(command)
-      quality = clientsInvoker.doCommand((args[0], ))
+      quality = clientsInvoker.doCommand((args[0], ))['TransferQuality']
     
 
     result = {}
 
     if args[1] == 'Active':
       if quality == None:
-        result['SAT'] = False
-        result['Status'] = 'Active'
-        result['Reason'] = 'TransferQuality:None'
+        result['SAT'] = None
       elif quality <= Configurations.SE_QUALITY_LOW :
         result['SAT'] = True
         result['Status'] = 'Banned'
@@ -73,9 +71,7 @@ class TransferQuality_Policy(PolicyBase):
         result['Reason'] = 'TransferQuality:Mean'
     elif args[1] == 'Probing':
       if quality == None:
-        result['SAT'] = False
-        result['Status'] = 'Probing'
-        result['Reason'] = 'TransferQuality:None'
+        result['SAT'] = None
       elif quality <= Configurations.SE_QUALITY_LOW :
         result['SAT'] = True
         result['Status'] = 'Banned'
@@ -90,9 +86,7 @@ class TransferQuality_Policy(PolicyBase):
         result['Reason'] = 'TransferQuality:Mean'
     elif args[1] == 'Banned':
       if quality == None:
-        result['SAT'] = False
-        result['Status'] = 'Banned'
-        result['Reason'] = 'TransferQuality:None'
+        result['SAT'] = None
       elif quality <= Configurations.SE_QUALITY_LOW :
         result['SAT'] = False
         result['Status'] = 'Banned'
