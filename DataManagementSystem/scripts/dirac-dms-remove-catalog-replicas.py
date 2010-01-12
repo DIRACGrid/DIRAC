@@ -2,7 +2,7 @@
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 ########################################################################
-# $HeadURL$
+# $Header: /local/reps/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-remove-catalog-replicas.py,v 1.2 2009/03/19 17:45:06 acsmith Exp $
 ########################################################################
 __RCSID__   = "$Id$"
 __VERSION__ = "$ $"
@@ -27,12 +27,11 @@ if os.path.exists(inputFileName):
 else:
   lfns = [inputFileName]
 
-res = rm.removeCatalogReplica(storageElementName,lfns)
+res = rm.removeReplicaFromCatalog(storageElementName,lfns)
 if not res['OK']:
   print res['Message']
   sys.exit()
-for lfn in sortList(res['Value']['Successful'].keys()):
-  print 'Successfully removed %s replica of %s' % (storageElementName,lfn)
 for lfn in sortList(res['Value']['Failed'].keys()):
   message = res['Value']['Failed'][lfn]
   print 'Failed to remove %s replica of %s: %s' % (storageElementName,lfn,message)
+print 'Successfully remove %d catalog replicas at %s' % (len(res['Value']['Successful']),storageElementName)
