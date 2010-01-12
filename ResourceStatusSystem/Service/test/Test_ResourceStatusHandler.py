@@ -15,7 +15,7 @@ class ResourceStatusHandlerTestCase(unittest.TestCase):
     sys.modules["DIRAC.Core.DISET.RequestHandler"] = DIRAC.ResourceStatusSystem.test.fake_RequestHandler
     sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
     sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
-    from DIRAC.ResourceStatusSystem.Service.ResourceStatusHandlerNew import ResourceStatusHandler, initializeResourceStatusHandler
+    from DIRAC.ResourceStatusSystem.Service.ResourceStatusHandler import ResourceStatusHandler, initializeResourceStatusHandler
     
     a = Mock()
     initializeResourceStatusHandler(a)
@@ -150,6 +150,37 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     res = self.rsh.export_getResourceStats('Site', 'ZZ')
     self.assert_(res['OK'])
 
+
+#############################################################################
+# StorageElements functions
+#############################################################################
+
+  def test_export_setStorageElementStatus(self):
+    for status in ValidStatus:
+      res = self.rsh.export_setStorageElementStatus('XX', status, 'reason', 'Op')
+      self.assert_(res['OK'])
+
+  def test_export_addOrModifyStorageElement(self):
+    for status in ValidStatus:
+      res = self.rsh.export_addOrModifyStorageElement('XX', 'XX', 'XX', status, 'reason', 'dateEffective', 'OP', '')
+      self.assert_(res['OK'])
+
+  def test_export_removeStorageElement(self):
+    res = self.rsh.export_removeStorageElement('')
+    self.assert_(res['OK'])
+
+  def test_export_getStorageElementsHistory(self):
+    res = self.rsh.export_getStorageElementsHistory('')
+    self.assert_(res['OK'])
+        
+  def test_export_getStorageElementsList(self):
+    res = self.rsh.export_getStorageElementsList()
+    self.assert_(res['OK'])
+    
+  def test_export_getStorageElementsStatusWeb(self):
+    res = self.rsh.export_getStorageElementsStatusWeb({}, [], 0, 500)
+    self.assert_(res['OK'])
+    
     
 
 #############################################################################

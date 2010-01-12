@@ -48,7 +48,7 @@ class ResourceStatusHandler(RequestHandler):
   def export_getSitesList(self):
     """
     Get sites list from the ResourceStatusDB.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getSitesList`
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
     """
     try:
       gLogger.info("ResourceStatusHandler.getSitesList: Attempting to get sites list")
@@ -74,6 +74,7 @@ class ResourceStatusHandler(RequestHandler):
   types_getSitesStatusWeb = [DictType, ListType, IntType, IntType]
   def export_getSitesStatusWeb(self, selectDict, sortList, startItem, maxItems):
     """ get present sites status list, for the web
+        Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsStatusWeb`
     
         :Params:
           selectDict = 
@@ -303,7 +304,7 @@ class ResourceStatusHandler(RequestHandler):
   def export_getServicesList(self):
     """
     Get services list from the ResourceStatusDB.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getServicesList`
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
     """
     try:
       gLogger.info("ResourceStatusHandler.getServicesList: Attempting to get services list")
@@ -330,7 +331,7 @@ class ResourceStatusHandler(RequestHandler):
   def export_getServicesStatusWeb(self, selectDict, sortList, startItem, maxItems):
     """ 
     Get present services status list, for the web.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getServicesStatusWeb`
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsStatusWeb`
     
     :params:
       :attr:`selectDict`: { 'ServiceName':['XX', ...] , 'ExpandServiceHistory': ['XX', ...], 'Status': ['XX', ...]} 
@@ -611,6 +612,8 @@ class ResourceStatusHandler(RequestHandler):
   types_getResourcesStatusWeb = [DictType, ListType, IntType, IntType]
   def export_getResourcesStatusWeb(self, selectDict, sortList, startItem, maxItems):
     """ get present resources status list
+        Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsStatusWeb`
+
 
         Input:
         selectDict: {'ResourceName':'name of a resource' --- present status
@@ -829,7 +832,7 @@ class ResourceStatusHandler(RequestHandler):
   def export_getResourcesList(self):
     """ 
     Get resources list from the ResourceStatusDB.
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getResourcesList`
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
     """
     try:
       gLogger.info("ResourceStatusHandler.getResourcesList: Attempting to get resources list")
@@ -901,6 +904,218 @@ class ResourceStatusHandler(RequestHandler):
       return S_OK(res)
     except Exception, x:
       errorStr = where(self, self.export_getResourceStats)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+#############################################################################
+# StorageElements functions
+#############################################################################
+
+#############################################################################
+
+  #Ok
+  types_getStorageElementsList = []
+  def export_getStorageElementsList(self):
+    """
+    Get sites list from the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getStorageElementsList: Attempting to get sites list")
+      try:
+        r = rsDB.getMonitoredsList('StorageElement', paramsList = ['StorageElementName'])
+        res = []
+        for x in r:
+          res.append(x[0])
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getStorageElementsList: got sites list")
+      return S_OK(res)
+    except Exception, x:
+      errorStr = where(self, self.export_getStorageElementsList)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  #Ok
+  types_getStorageElementsStatusWeb = [DictType, ListType, IntType, IntType]
+  def export_getStorageElementsStatusWeb(self, selectDict, sortList, startItem, maxItems):
+    """ Get present sites status list, for the web
+        Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsStatusWeb`
+
+    
+        :Params:
+          :attr:`selectDict` = 
+            {
+              'StorageElementName':'name of a site' --- present status
+              'ExpandStorageElementHistory':'name of a site' --- site status history
+            }
+          
+          :attr:`sortList` = [] (no sorting provided)
+          
+          :attr:`startItem`
+          
+          :attr:`maxItems`
+    
+        :return:
+        {
+          'OK': XX, 
+
+          'rpcStub': XX, 'getStorageElementsStatusWeb', ({}, [], X, X)), 
+
+          Value': 
+          {
+
+            'ParameterNames': ['StorageElementName', 'Tier', 'GridType', 'Country', 'Status',
+             'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'], 
+
+            'Records': [[], [], ...]
+
+            'TotalRecords': X, 
+
+            'Extras': {}, 
+          }
+        }
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getStorageElementsStatusWeb: Attempting to get SEs list")
+      try:
+        res = rsDB.getMonitoredsStatusWeb('StorageElement', selectDict, sortList, startItem, maxItems)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getStorageElementsStatusWeb: got SEs list")
+      return S_OK(res)
+    except Exception, x:
+      errorStr = where(self, self.export_getStorageElementsStatusWeb)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  types_setStorageElementStatus = [StringType, StringType, StringType, StringType]
+  def export_setStorageElementStatus(self, seName, status, reason, operatorCode):
+    """ 
+    Set StorageElement status to the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.setStorageElementStatus`
+
+    :params:
+      :attr:`seName`: a string representing the se name
+      
+      :attr:`status`: a string representing the status
+
+      :attr:`reason`: a string representing the reason
+
+      :attr:`operatorCode`: a string representing the operator Code
+      (can be a user name, or ``RS_SVC`` for the service itself)
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.setStorageElementStatus: Attempting to modify se %s status" % seName)
+      try:
+        rsDB.setStorageElementStatus(seName, status, reason, operatorCode)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.setStorageElementStatus: Set SE %s status." % (seName))
+      return S_OK()
+    except Exception, x:
+      errorStr = where(self, self.export_setStorageElementStatus)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  #ok
+  types_addOrModifyStorageElement = [StringType, StringType, StringType, StringType, StringType, Time._dateTimeType, StringType, Time._dateTimeType]
+  def export_addOrModifyStorageElement(self, seName, resourceName, siteName, status, reason, dateEffective, 
+                             operatorCode, dateEnd):
+    """ 
+    Add or modify a site to the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifyStorageElement`
+    
+    :params:
+      :attr:`seName`: string - name of the se (DIRAC name)
+    
+      :attr:`resourceName`: string - name of the node (resource)
+    
+      :attr:`siteName`: string - name of the site (DIRAC name)
+    
+      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`reason`: string - free
+      
+      :attr:`dateEffective`: datetime - date from which the site status is effective
+
+      :attr:`operatorCode`: string - free
+
+      :attr:`dateEnd`: datetime - date from which the site status ends to be effective
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.addOrModifyStorageElement: Attempting to add or modify se %s" % seName)
+      try:
+        rsDB.addOrModifyStorageElement(seName, resourceName, siteName, status, reason, dateEffective, operatorCode, dateEnd)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.addOrModifyStorageElement: Added (or modified) SE %s." % (seName))
+      return S_OK()
+    except Exception, x:
+      errorStr = where(self, self.export_addOrModifyStorageElement)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  #ok
+  types_removeStorageElement = [StringType]
+  def export_removeStorageElement(self, seName):
+    """ 
+    Remove a site type.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.removeStorageElement`
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.removeStorageElement: Attempting to remove modify SE %s" % seName)
+      try:
+        rsDB.removeStorageElement(seName)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.removeStorageElement: removed SE %s." % (seName))
+      return S_OK()
+    except Exception, x:
+      errorStr = where(self, self.export_removeStorageElement)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  #ok
+  types_getStorageElementsHistory = [StringType]
+  def export_getStorageElementsHistory(self, se):
+    """ 
+    Get sites history
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getStorageElementsHistory: Attempting to get SE %s history" % (se))
+      try:
+        res = rsDB.getMonitoredsHistory('StorageElement', name = se)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getStorageElementsHistory: got SE %s history" % (se))
+      return S_OK(res)
+    except Exception, x:
+      errorStr = where(self, self.export_getStorageElementsHistory)
       gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr)
 
