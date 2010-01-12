@@ -998,7 +998,7 @@ class ReplicaManager(CatalogToStorage):
     res = self.__getCatalogDirectoryContents([dir])
     if not res['OK']:
       return res
-    filesFound = res['Value']
+    filesFound = res['Value'].keys()
     if filesFound:
       gLogger.info("Attempting to remove %d files from the catalog and storage" % len(filesFound))
       res = self.removeFile(filesFound)
@@ -1067,8 +1067,21 @@ class ReplicaManager(CatalogToStorage):
         activeDirs.extend(dirContents['SubDirs'])
         allFiles.update(dirContents['Files'])
     gLogger.info("Found %d files" % len(allFiles))
-    return S_OK(allFiles.keys())
+    return S_OK(allFiles)
 
+  def getReplicasFromDirectory(self,directory):
+    if type(directory) in types.StringTypes:
+      directories = [directory]
+    else:
+      directories = directory
+    res = self.__getCatalogDirectoryContents(directories)
+    if not res['OK']:
+      return res
+    allReplicas = {}
+    for lfn,metadata in res['Value'].items(): 
+      allReplicas[lfn] = metadata['Replicas']
+    return S_OK(allReplicas)
+    
   def getFilesFromDirectory(self,directory,days=0,wildcard='*'):
     if type(directory) in types.StringTypes:
       directories = [directory]
@@ -1855,6 +1868,8 @@ class ReplicaManager(CatalogToStorage):
         replicaTuple = (lfn,sePfn)
         replicaTuples.append(replicaTuple)
     res = self.__removeReplica(storageElementName,replicaTuples)
+    if not res['OK']:
+      return res
     failed.update(res['Value']['Failed'])
     successful.update(res['Value']['Successful'])
     resDict = {'Successful':successful,'Failed':failed}
@@ -1902,7 +1917,7 @@ class ReplicaManager(CatalogToStorage):
       gLogger.error(errStr)
       return S_ERROR(errStr)
     gLogger.verbose("ReplicaManager.removeCatalogReplica: Attempting to remove catalogue entry for %s lfns at %s." % (len(lfns),storageElementName))
-    res = self.fileCatalogue.getReplicas(lfns)
+    res = self.getCatalogReplicas(lfns,allStatus=True)
     if not res['OK']:
       errStr = "ReplicaManager.removeCatalogReplica: Completely failed to get replicas for lfns."
       gLogger.error(errStr,res['Message'])
