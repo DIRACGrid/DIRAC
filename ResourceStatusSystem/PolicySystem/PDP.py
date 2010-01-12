@@ -133,10 +133,13 @@ class PDP:
         res = self.policy.evaluate(self.args)
       else:
         if policyGroup['Policies'] is None:
-          return {'SAT': None}
+          return [{'PolicyType': self.__policyType, 'Action': False, 'Reason':'No policy results'}]
         res = self._evaluate(policyGroup['Policies'])
                   
       policyResults = []
+      
+      if res == None:
+        return [{'PolicyType': self.__policyType, 'Action': False, 'Reason':'No policy results'}]
       
       #policy results communication
       if res['SAT']:
