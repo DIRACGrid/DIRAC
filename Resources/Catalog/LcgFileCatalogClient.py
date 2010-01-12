@@ -2,8 +2,8 @@
 
 """
 import DIRAC
-from DIRAC                                      import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.Resources.Catalog.FileCatalogueBase  import FileCatalogueBase
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC.DataManagementSystem.Client.Catalog.FileCatalogueBase import FileCatalogueBase
 from stat import *
 import os, re, string, commands, types,time
 
@@ -542,11 +542,14 @@ class LcgFileCatalogClient(FileCatalogueBase):
       guid = info['GUID']
       checksum = info['Checksum']
       master = True
-      res = self.__checkAddFile(lfn,pfn,size,se,guid)
+      res = self.__checkAddFile(lfn,pfn,size,se,guid,checksum)
       if not res['OK']:
         errStr = "LcgFileCatalogClient.addFile: Failed pre-registration check."
         gLogger.error(errStr, res['Message'])
         failed[lfn] = "%s %s" % (errStr,res['Message'])
+      elif not res['Value']:
+        gLogger.verbose("This file was already registered.")
+        successful[lfn] = True
       else:
         size = long(size)
         self.__startTransaction()
@@ -903,8 +906,10 @@ class LcgFileCatalogClient(FileCatalogueBase):
     execString = "res = self.%s(path)" % method
     try:
       exec(execString)
+      if type(path) == types.DictType:
+        path = path.keys()[0]
       if not res['OK']:
-        return S_ERROR(res['Message'])
+        return res
       elif not res['Value']['Successful'].has_key(path):
         return S_ERROR(res['Value']['Failed'][path])
       else:
@@ -1074,7 +1079,30 @@ class LcgFileCatalogClient(FileCatalogueBase):
         return S_OK(replica.status)
     return S_ERROR("No replica at supplied site")
 
-  def __checkAddFile(self,lfn,pfn,size,se,guid):
+  def __checkAddFile(self,lfn,pfn,size,se,guid,checksum):
+    res = self.__executeOperation({lfn:guid},'exists')
+    if not res['OK']:
+      return S_ERROR("Failed to find pre-existance of LFN")
+    if res['Value']:
+      if res['Value'] != lfn:
+        return S_ERROR("The supplied GUID is already used by %s" % res['Value'])
+      res = self.__getPathStat(lfn)
+      if not res['OK']:
+        return S_ERROR("Failed to obtain metadata for existing LFN")
+      fstat = res['Value']
+      if fstat.guid != guid:
+        return S_ERROR("This LFN is already registered with another GUID")
+      if fstat.filesize != size:
+        return S_ERROR("This LFN is already registered with another size")
+      if fstat.csumvalue != checksum:
+        return S_ERROR("This LFN is already registered with another adler32")
+      res = self.__getFileReplicas(lfn,True)
+      if not res['OK']:
+        return S_ERROR("Failed to obtain replicas for existing LFN")
+      replicas = res['Value']
+      if not (replicas.has_key(se) and (replicas[se] == pfn)):
+        return S_ERROR("This LFN is already registered with another SE/PFN")
+      return S_OK(False)
     try:
       size = long(size)
     except:
@@ -1087,13 +1115,9 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return S_ERROR("The LFN for the file was not supplied.")
     if not guid:
       return S_ERROR("The GUID for the file was not supplied.")
-    res = self.__executeOperation(lfn,'exists')
-    if res['OK'] and res['Value']:
-      return S_ERROR("The LFN was already used.")
-    res = self.__executeOperation(lfn,'exists')
-    if res['OK'] and res['Value']:
-      return S_ERROR("The GUID is already used for %s." % res['Value'])
-    return S_OK()
+    if not checksum:
+      return S_ERROR("The adler32 for the file was not supplied.")
+    return S_OK(True)
 
   def __addFile(self,lfn,pfn,size,se,guid,checksum):
     lfc.lfc_umask(0000)
