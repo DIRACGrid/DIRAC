@@ -14,6 +14,7 @@ from DIRAC.ResourceStatusSystem.Policy.JobsEfficiency_Simple_Policy import JobsE
 from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
 from DIRAC.ResourceStatusSystem.Policy.GGUSTickets_Policy import GGUSTickets_Policy 
 from DIRAC.ResourceStatusSystem.Policy.OnServicePropagation_Policy import OnServicePropagation_Policy 
+from DIRAC.ResourceStatusSystem.Policy.TransferQuality_Policy import TransferQuality_Policy 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
@@ -38,6 +39,7 @@ class PoliciesTestCase(unittest.TestCase):
     self.SAMR_P = SAMResults_Policy()
     self.GGUS_P = GGUSTickets_Policy()
     self.OSP_P = OnServicePropagation_Policy()
+    self.TQ_P = TransferQuality_Policy()
     self.mock_command = Mock()
     self.mock_commandPeriods = Mock()
     self.mock_commandStats = Mock()
@@ -537,6 +539,39 @@ class OnservicePropagation_Policy_Failure(PoliciesTestCase):
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.OSP_P.evaluate, None )
   
+#############################################################################
+
+class TransferQuality_PolicySuccess(PoliciesTestCase):
+  
+  def test_evaluate(self):
+    for status in ValidStatus:
+      args = ('XX', status)
+      for resCl in [1, 0.91, 0.50, 0]:
+        res = self.TQ_P.evaluate(args, commandIn = self.mock_command, knownInfo={'TransferQuality':resCl})
+        self.assert_(res.has_key('SAT'))
+        self.assert_(res.has_key('Reason'))
+        self.mock_command.doCommand.return_value =  {'TransferQuality':resCl}
+        res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
+        self.assert_(res.has_key('SAT'))
+        self.assert_(res.has_key('Reason'))
+      res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
+      self.assert_(res.has_key('SAT'))
+      
+#############################################################################
+
+class TransferQuality_Policy_Failure(PoliciesTestCase):
+  
+#  def test_commandFail(self):
+#    self.mock_command.doCommand.sideEffect = RSSException
+#    for status in ValidStatus:
+#      self.failUnlessRaises(Exception, self.TQ_P.evaluate, ('XX', status), self.mock_command)
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.TQ_P.evaluate, None )
+     
+
+#############################################################################
+
 
 
 
@@ -563,4 +598,6 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnservicePropagation_PolicySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnservicePropagation_Policy_Failure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQuality_PolicySuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQuality_Policy_Failure))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

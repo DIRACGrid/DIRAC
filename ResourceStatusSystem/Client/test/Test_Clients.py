@@ -7,6 +7,7 @@ from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient
 from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import SAMResultsClient
+from DIRAC.ResourceStatusSystem.Client.DataOperationsClient import DataOperationsClient
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
@@ -22,6 +23,7 @@ class ClientsTestCase(unittest.TestCase):
     self.SAMCli = SAMResultsClient()
     self.PilotsCli = PilotsClient()
     self.JobsCli = JobsClient()
+    self.DOCli = DataOperationsClient()
 
 class GOCDBClientSuccess(ClientsTestCase):
 
@@ -91,6 +93,12 @@ class PilotsClientSuccess(ClientsTestCase):
         self.assertEqual(res['Periods'], [])
          
 #  def test_getPilotsEff(self):
+
+class DataOperationsClientSuccess(ClientsTestCase):
+
+  def test_getQualityStats(self):
+    res = self.DOCli.getQualityStats('XX')
+    self.assertEqual(res['TransferQuality'], None)
    
      
 
@@ -103,4 +111,5 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResultsClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsClientSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DataOperationsClientSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

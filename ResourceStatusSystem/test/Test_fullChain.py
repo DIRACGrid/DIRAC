@@ -22,46 +22,46 @@ class PolicySystemFullChain(FullChainTestCase):
     se = 'CERN-RAW'
     
     
-    print "\n ~~~~~~~ SITO ~~~~~~~ %s \n" %(sito)
-    
-    for status in ValidStatus:
-      for oldStatus in ValidStatus:
-        if status == oldStatus:
-          continue
-        print "############################"
-        print " "
-        print 'nel test:', status, oldStatus
-        pdp = PDP('Site', sito, status, oldStatus, 'XX')
-        res = pdp.takeDecision()
-        print res
-
-    print "\n ~~~~~~~ SERVICE ~~~~~~~ : %s \n " %servizio
-    
-    for status in ValidStatus:
-      for oldStatus in ValidStatus:
-        if status == oldStatus:
-          continue
-        print "############################"
-        print " "
-        print 'nel test:', status, oldStatus
-        pdp = PDP('Service', servizio, status, oldStatus, 'XX')
-        res = pdp.takeDecision()
-        print res
-
-
-    
-    print "\n ~~~~~~~ RISORSA ~~~~~~~ : %s \n " %risorsa
-
-    for status in ValidStatus:
-      for oldStatus in ValidStatus:
-        if status == oldStatus:
-          continue
-        print "############################"
-        print " "
-        print status, oldStatus
-        pdp = PDP('Resource', risorsa, status, oldStatus, 'XXXXX')
-        res = pdp.takeDecision()
-        print res
+#    print "\n ~~~~~~~ SITO ~~~~~~~ %s \n" %(sito)
+#    
+#    for status in ValidStatus:
+#      for oldStatus in ValidStatus:
+#        if status == oldStatus:
+#          continue
+#        print "############################"
+#        print " "
+#        print 'nel test:', status, oldStatus
+#        pdp = PDP('Site', sito, status, oldStatus, 'XX')
+#        res = pdp.takeDecision()
+#        print res
+#
+#    print "\n ~~~~~~~ SERVICE ~~~~~~~ : %s \n " %servizio
+#    
+#    for status in ValidStatus:
+#      for oldStatus in ValidStatus:
+#        if status == oldStatus:
+#          continue
+#        print "############################"
+#        print " "
+#        print 'nel test:', status, oldStatus
+#        pdp = PDP('Service', servizio, status, oldStatus, 'XX')
+#        res = pdp.takeDecision()
+#        print res
+#
+#
+#    
+#    print "\n ~~~~~~~ RISORSA ~~~~~~~ : %s \n " %risorsa
+#
+#    for status in ValidStatus:
+#      for oldStatus in ValidStatus:
+#        if status == oldStatus:
+#          continue
+#        print "############################"
+#        print " "
+#        print status, oldStatus
+#        pdp = PDP('Resource', risorsa, status, oldStatus, 'XXXXX')
+#        res = pdp.takeDecision()
+#        print res
 
 
  

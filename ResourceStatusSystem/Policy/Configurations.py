@@ -60,8 +60,16 @@ Policies = {
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
      },
-  'AlwaysFalse_Policy' :
+  'TransferQuality_Policy' :
     { 'Granularity' : ['StorageElement'], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ValidResourceType,
+     },
+  'AlwaysFalse_Policy' :
+    { 'Granularity' : [], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
@@ -212,6 +220,10 @@ LARGE_JOBS_PERIOD_WINDOW = 48
 # --- GGUS Tickets policy --- #
 HIGH_TICKTES_NUMBER = 2
 
+# --- SE transfer quality --- #
+SE_QUALITY_LOW = 0.60
+SE_QUALITY_HIGH = 0.90
+
 
 #############################################################################
 # site/services/resource checking frequency
@@ -355,6 +367,16 @@ def policyInvocation(granularity = None, name = None, status = None, policy = No
     if policy is None:
       from DIRAC.ResourceStatusSystem.Policy.OnServicePropagation_Policy import OnServicePropagation_Policy 
       p = OnServicePropagation_Policy()
+    if args is None:
+      a = (name, status)
+    res = _innerEval(p, a)
+
+  if pol == 'TransferQuality_Policy':
+    p = policy
+    a = args
+    if policy is None:
+      from DIRAC.ResourceStatusSystem.Policy.TransferQuality_Policy import TransferQuality_Policy 
+      p = TransferQuality_Policy()
     if args is None:
       a = (name, status)
     res = _innerEval(p, a)

@@ -12,6 +12,7 @@ from DIRAC.ResourceStatusSystem.Client.Command.SAMResults_Command import SAMResu
 from DIRAC.ResourceStatusSystem.Client.Command.GGUSTickets_Command import GGUSTickets_Command
 from DIRAC.ResourceStatusSystem.Client.Command.Propagation_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import *
+from DIRAC.ResourceStatusSystem.Client.Command.DataOperations_Command import TransferQuality_Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
@@ -36,6 +37,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.GGUS_C = GGUSTickets_Command()
     self.SeSt_C = ServiceStats_Command()
     self.ReSt_C = ResourceStats_Command()
+    self.DQ_C = TransferQuality_Command()
 
 class ClientsInvokerSuccess(ClientsCommandsTestCase):
 
@@ -334,6 +336,21 @@ class ResourceStats_CommandFailure(ClientsCommandsTestCase):
     self.failUnlessRaises(TypeError, self.ReSt_C.doCommand, None)
      
 
+class TransferOperations_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+
+    self.mock_client.getQualityStats.return_value = {}
+    res = self.DQ_C.doCommand(('XXX', ), clientIn = self.mock_client)
+    self.assertEqual(res, {})
+      
+
+class TransferOperations_CommandFailure(ClientsCommandsTestCase):
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.DQ_C.doCommand, None)
+     
+
 
 
 if __name__ == '__main__':
@@ -367,4 +384,6 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ServiceStats_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStats_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStats_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferOperations_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferOperations_CommandFailure))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
