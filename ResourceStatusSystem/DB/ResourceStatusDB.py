@@ -308,6 +308,8 @@ class ResourceStatusDB:
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
     and :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsHistory`
     
+    Example of parameters:
+    
     :params:
       :attr:`selectDict`: { 'SiteName':['XX', ...] , 'ExpandSiteHistory': ['XX', ...], 
       'Status': ['XX', ...]}
@@ -494,7 +496,7 @@ class ResourceStatusDB:
     #ExpandStorageElementHistory
     elif selectDict.has_key('ExpandStorageElementHistory'):
       paramsList = ['StorageElementName', 'Status', 'Reason', 'DateEffective']
-      storageElements_select = selectDict['ExpandResourceHistory']
+      storageElements_select = selectDict['ExpandStorageElementHistory']
       if type(storageElements_select) is not list:
         storageElements_select = [storageElements_select]
       storageElementsHistory = self.getMonitoredsHistory(granularity, paramsList = paramsList,
@@ -506,10 +508,10 @@ class ResourceStatusDB:
         record.append(None) #ResourceName
         record.append(None) #SiteName
         record.append(None) #Country
-        record.append(resource[1]) #Status
-        record.append(resource[3].isoformat(' ')) #DateEffective
+        record.append(storageElement[1]) #Status
+        record.append(storageElement[3].isoformat(' ')) #DateEffective
         record.append(None) #FormerStatus
-        record.append(resource[2]) #Reason
+        record.append(storageElement[2]) #Reason
         records.append(record)
     
     else:
@@ -578,14 +580,14 @@ class ResourceStatusDB:
         for storageElement in storageElementsList:
           record = []
           record.append(storageElement[0]) #StorageElementName
-          record.append(resource[1]) #ResourceName
-          record.append(resource[2]) #SiteName
-          country = (resource[2]).split('.').pop()
+          record.append(storageElement[1]) #ResourceName
+          record.append(storageElement[2]) #SiteName
+          country = (storageElement[2]).split('.').pop()
           record.append(country) #Country
-          record.append(resource[4]) #Status
-          record.append(resource[5].isoformat(' ')) #DateEffective
-          record.append(resource[6]) #FormerStatus
-          record.append(resource[7]) #Reason
+          record.append(storageElement[3]) #Status
+          record.append(storageElement[4].isoformat(' ')) #DateEffective
+          record.append(storageElement[5]) #FormerStatus
+          record.append(storageElement[6]) #Reason
           records.append(record)
 
 
