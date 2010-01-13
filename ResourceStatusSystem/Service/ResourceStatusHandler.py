@@ -876,7 +876,7 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
-  #TO-DO
+  #ok
   types_getResourceStats = [StringType]
   def export_getResourceStats(self, granularity, name):
     """ 
@@ -1116,6 +1116,39 @@ class ResourceStatusHandler(RequestHandler):
       return S_OK(res)
     except Exception, x:
       errorStr = where(self, self.export_getStorageElementsHistory)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  #ok
+  types_getStorageElementsStats = [StringType]
+  def export_getStorageElementsStats(self, granularity, name):
+    """ 
+    Returns simple statistics of active, probing and banned storageElementss of a site or resource;
+        
+    :params:
+      :attr:`granularity` string, should be in ['Site', 'Resource']
+      
+      :attr:`name`: string, name of site or service
+    
+    :returns:
+      S_OK { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
+      or S_Error
+    """
+
+    try:
+      gLogger.info("StorageElementsStatusHandler.getStorageElementsStats: Attempting to get storageElements stats for %s" %(name))
+      try:
+        res = rsDB.getStorageElementsStats(granularity, name)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("StorageElementsStatusHandler.getStorageElementsStats: got storageElements stats")
+      return S_OK(res)
+    except Exception, x:
+      errorStr = where(self, self.export_getStorageElementsStats)
       gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr)
 
