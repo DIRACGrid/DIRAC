@@ -61,6 +61,28 @@ class ResourceStatusClient:
 
 #############################################################################
 
+  def getStorageElementsStats(self, granularity, name):
+    """ 
+    Returns simple statistics of active, probing and banned storageElements of a site or a resource;
+        
+    :params:
+      :attr:`granularity` string, should be in ['Site', 'Resource']
+      
+      :attr:`name`: string, name of site or resource
+    
+    :returns:
+      { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
+    """
+
+    res = self.rsS.getStorageElementsStats(granularity, name)
+    if not res['OK']:
+      raise RSSException, where(self, self.getStorageElementsStats) + " " + res['Message'] 
+    else:
+      return res['Value']
+
+#############################################################################
+
+  
   def getPeriods(self, granularity, name, status, hours):
     """ 
     Returns a list of periods of time where name was in status

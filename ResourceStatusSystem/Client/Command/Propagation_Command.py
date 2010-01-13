@@ -75,3 +75,39 @@ class ResourceStats_Command(Command):
     return c.getResourceStats(args[0], args[1])
 
 #############################################################################
+
+class StorageElementsStats_Command(Command):
+  """ 
+  The StorageElementsStats_Command class is a command class to know about 
+  present storageElementss stats
+  """
+  
+  def doCommand(self, args, clientIn=None):
+    """ 
+    Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusClient.getStorageElementsStats`  
+
+    :params:
+      :attr:`args`: a tuple
+        - `args[0]` should be in ['Site', 'Resource']
+
+        - `args[1]` should be the name of the Site or Resource
+        
+    :returns:
+    
+    """
+
+    if not isinstance(args, tuple):
+      raise TypeError, where(self, self.doCommand)
+    
+    if args[0] not in ['Site', 'Resource']:
+      raise InvalidRes
+    
+    if clientIn is not None:
+      c = clientIn
+    else:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
+      c = ResourceStatusClient()
+      
+    return c.getStorageElementsStats(args[0], args[1])
+
+#############################################################################

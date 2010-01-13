@@ -37,6 +37,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.GGUS_C = GGUSTickets_Command()
     self.SeSt_C = ServiceStats_Command()
     self.ReSt_C = ResourceStats_Command()
+    self.StElSt_C = StorageElementsStats_Command()
     self.DQ_C = TransferQuality_Command()
 
 class ClientsInvokerSuccess(ClientsCommandsTestCase):
@@ -336,6 +337,23 @@ class ResourceStats_CommandFailure(ClientsCommandsTestCase):
     self.failUnlessRaises(TypeError, self.ReSt_C.doCommand, None)
      
 
+class StorageElementsStats_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+
+    self.mock_client.getStorageElementsStats.return_value = {}
+    res = self.StElSt_C.doCommand(('Site', ''), clientIn = self.mock_client)
+    self.assertEqual(res, {})
+    res = self.StElSt_C.doCommand(('Resource', ''), clientIn = self.mock_client)
+    self.assertEqual(res, {})
+      
+
+class StorageElementsStats_CommandFailure(ClientsCommandsTestCase):
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.StElSt_C.doCommand, None)
+     
+
 class TransferOperations_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
@@ -384,6 +402,8 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ServiceStats_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStats_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStats_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(StorageElementsStats_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(StorageElementsStats_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferOperations_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferOperations_CommandFailure))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

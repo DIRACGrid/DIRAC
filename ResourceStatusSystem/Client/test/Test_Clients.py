@@ -64,6 +64,13 @@ class ResourceStatusClientSuccess(ClientsTestCase):
     res = self.RSCli.getResourceStats('Service', '')
     self.assertEqual(res, [])
   
+  def test_getStorageElementsStats(self):
+    self.mockRSS.getStorageElementsStats.return_value = {'OK':True, 'Value':[]}
+    res = self.RSCli.getStorageElementsStats('Site', '')
+    self.assertEqual(res, [])
+    res = self.RSCli.getStorageElementsStats('Resource', '')
+    self.assertEqual(res, [])
+  
 class ResourceStatusClient_Failure(ClientsTestCase):
     
   def test_badArgs(self):
