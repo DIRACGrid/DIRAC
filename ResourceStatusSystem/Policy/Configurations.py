@@ -60,6 +60,14 @@ Policies = {
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
      },
+  'OnSENodePropagation_Policy' :
+    { 'Granularity' : ['Resource'], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ['SE'],
+     },
   'TransferQuality_Policy' :
     { 'Granularity' : ['StorageElement'], 
       'Status' : ValidStatus, 
@@ -114,6 +122,8 @@ def getPolicyToApply(granularity, status = None, formerStatus = None,
   
   pol_to_eval = []
   pol_types = []
+  
+#  print "in configuration: granularity = %s, status = %s, formerStatus =%s, siteType = %s, resourceType = %s" %(granularity, status, formerStatus, siteType, resourceType)
   
   for p in Policies.keys():
     if granularity in Policies[p]['Granularity']:
@@ -367,6 +377,16 @@ def policyInvocation(granularity = None, name = None, status = None, policy = No
     if policy is None:
       from DIRAC.ResourceStatusSystem.Policy.OnServicePropagation_Policy import OnServicePropagation_Policy 
       p = OnServicePropagation_Policy()
+    if args is None:
+      a = (name, status)
+    res = _innerEval(p, a)
+
+  if pol == 'OnSENodePropagation_Policy':
+    p = policy
+    a = args
+    if policy is None:
+      from DIRAC.ResourceStatusSystem.Policy.OnSENodePropagation_Policy import OnSENodePropagation_Policy 
+      p = OnSENodePropagation_Policy()
     if args is None:
       a = (name, status)
     res = _innerEval(p, a)
