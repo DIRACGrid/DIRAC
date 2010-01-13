@@ -1,10 +1,10 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-import urllib2, re, tarfile, os
+import urllib2, re, tarfile, os, types
 
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities import CFG, File
+from DIRAC.Core.Utilities import CFG, File, List
 
 def getRepositoryVersions( package = False, isCMTCompatible = False ):
   if package:
@@ -76,3 +76,67 @@ def createTarball( tarballPath, directoryToTar ):
   fd.close()
   return S_OK()
 
+def retrieveReleaseNotes( packages ):
+  if type( packages ) in ( types.StringType, types.UnicodeType ):
+    packages = [ str( packages ) ]
+  packageCFGDict = {}
+  #Get the versions.cfg
+  for package in packages:
+    packageCFGDict[ package ] = loadCFGFromRepository( "%s/trunk/%s/versions.cfg" % ( package, package ) )
+  #Parse the release notes
+  pkgNotesDict = {}
+  for package in packageCFGDict:
+    versionsCFG = packageCFGDict[ package ][ 'Versions' ]
+    pkgNotesDict[ package ] = []
+    for mainVersion in versionsCFG.listSections( ordered = True ):
+      vCFG = versionsCFG[ mainVersion ]
+      versionNotes = {}
+      for subsys in vCFG.listOptions():
+        comment = vCFG.getComment( subsys )
+        if not comment:
+          continue
+        versionNotes[ subsys ] = {}
+        lines = List.fromChar( comment, "\n" )
+        for typeComment in ( "NEW", "CHANGE", "BUGFIX" ):
+          for line in lines:
+            if line.find( "%s:" % typeComment ) == 0:
+              if typeComment not in versionNotes[ subsys ]:
+                versionNotes[ subsys ][ typeComment ] = []
+              versionNotes[ subsys ][ typeComment ].append( line[ len( typeComment ) + 1: ].strip() )
+      if versionNotes:
+        pkgNotesDict[ package ].append( { 'version' : mainVersion, 'notes' : versionNotes } )
+  return pkgNotesDict
+
+def writeReleaseNotes( packages, destinationPath ):
+  if type( packages ) in ( types.StringType, types.UnicodeType ):
+    packages = [ str( packages ) ]
+  pkgNotesDict = retrieveReleaseNotes( packages )
+  fileContents = []
+  for package in packages:
+    if package not in pkgNotesDict:
+      continue
+    #Add a section with the package name
+    dummy = "Package %s" % package
+    fileContents.append( "-" * len( dummy ) )
+    fileContents.append( dummy )
+    fileContents.append( "-" * len( dummy ) )
+    fileContents.append( "" )
+    vNotesDict = pkgNotesDict[ package ]
+    for versionNotes in vNotesDict:
+      dummy = "Version %s" % versionNotes[ 'version' ]
+      fileContents.append( dummy )
+      fileContents.append( "-" * len( dummy ) )
+      for noteType in ( "NEW", "CHANGE", "BUGFIX" ):
+        notes4Type =  []
+        for system in versionNotes[ 'notes' ]:
+          if noteType in versionNotes[ 'notes' ][ system ] and versionNotes[ 'notes' ][ system ][ noteType ]:
+            notes4Type.append( " %s" % system )
+            for line in versionNotes[ 'notes' ][ system ][ noteType ]:
+              notes4Type.append( "  - %s" % line )
+        if notes4Type:
+          fileContents.append( ":%s:" % noteType )
+          fileContents.extend( notes4Type )
+  fd = open( destinationPath, "w" )
+  fd.write( "\n".join( fileContents ) )
+  fd.close()
+            
