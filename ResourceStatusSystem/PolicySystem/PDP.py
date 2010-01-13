@@ -122,7 +122,10 @@ class PDP:
             
     EVAL = Configurations.getPolicyToApply(granularity = self.__granularity, 
                                            status = self.__status, 
-                                           formerStatus = self.__formerStatus)
+                                           formerStatus = self.__formerStatus, 
+                                           siteType = self.__siteType, 
+                                           serviceType = self.__serviceType,
+                                           resourceType = self.__resourceType)
 
       
     for policyGroup in EVAL:
@@ -168,11 +171,11 @@ class PDP:
 
     if len(policyResults) == 1:
       return self._policyCombination(policyResults[0])
-    if len(policyResults) == 2:
+    elif len(policyResults) == 2:
       return self._policyCombination(policyResults[0], policyResults[1])
-    if len(policyResults) == 3:
+    elif len(policyResults) == 3:
       return self._policyCombination(policyResults[0], policyResults[1], policyResults[2])
-    if len(policyResults) == 4:
+    elif len(policyResults) == 4:
       return self._policyCombination(policyResults[0], policyResults[1], policyResults[2], 
                                      policyResults[3])
 
