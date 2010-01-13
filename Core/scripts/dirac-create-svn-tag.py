@@ -6,7 +6,7 @@ Tag a new release in SVN
 __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base      import Script
-from DIRAC.Core.Utilities import List, CFG
+from DIRAC.Core.Utilities import List, CFG, Distribution
 
 import sys, os, tempfile, shutil, getpass, subprocess
 
@@ -113,7 +113,7 @@ for svnProject in List.fromChar( svnProjects ):
 
     if "%s_%s" % ( svnProject, svnVersion ) in createdVersions:
       gLogger.error( "Version %s is already there for package %s :P" % ( svnVersion, svnProject ) )
-      continue
+      #continue
 
     if not svnVersion in buildCFG[ 'Versions' ].listSections():
       gLogger.error( 'Version does not exist:', svnVersion )
@@ -141,13 +141,23 @@ for svnProject in List.fromChar( svnProjects ):
       gLogger.error( 'No packages to be included' )
       exit( -1 )
     gLogger.info( 'Creating SVN Dir:', versionPath )
-    ret = os.system( mkdirCmd )
-    if ret:
-      exit( -1 )
+    #ret = os.system( mkdirCmd )
+    #if ret:
+    #  exit( -1 )
     gLogger.info( 'Copying packages: %s' % ", ".join( packageList ) )
+    cpCmds = []
     for cpCmd in cpCmds:
       ret = os.system( cpCmd )
       if ret:
         gLogger.error( 'Failed to create tag' )
+    gLogger.info( "Generating release notes for %s" % svnProject )
+    fd, notesPath = tempfile.mkstemp()
+    Distribution.generateReleaseNotes( svnProject, notesPath )
+    notesSVNPath = "%s/releasenotes.rst" % ( versionPath )
+    svnCmd = "svn import '%s' '%s' -m 'Release notes for version %s'" % ( notesPath, notesSVNPath, svnVersion )
+    if os.system( svnCmd ):
+      gLogger.error( "Could not upload release notes" )
+      sys.exit(1)
+    gLogger.info( "Release notes committed" )
 
 
