@@ -6,7 +6,7 @@
 import unittest
 from datetime import datetime, timedelta
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDBNew import *
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
@@ -112,12 +112,6 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     res = self.rsDB.removeResource('XX', 'xx')
     self.assertEqual(res, None)
     res = self.rsDB.removeResource('XX', 'x', 'm')
-    self.assertEqual(res, None)
-
-  def test_getResourceStats(self):
-    res = self.rsDB.getResourceStats('Service', 'XX')
-    self.assertEqual(res, None)
-    res = self.rsDB.getResourceStats('Site', 'XX')
     self.assertEqual(res, None)
 
 
@@ -342,6 +336,12 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     res = self.rsDB.getServiceStats('XX')
     self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Banned': 0, 'Total': 0})
     
+  def test_getStorageElementsStats(self):
+    res = self.rsDB.getStorageElementsStats('Resource', 'XX')
+    self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Banned': 0, 'Total': 0})
+    res = self.rsDB.getStorageElementsStats('Site', 'XX')
+    self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Banned': 0, 'Total': 0})
+
   def test_getStuffToCheck(self):
     for g in ValidRes:
       res = self.rsDB.getStuffToCheck(g,Configurations.Sites_check_freq,3)
@@ -403,7 +403,10 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
     self.assertRaises(RSSDBException, self.rsDB.setDateEnd, 'Site', 'CNAF', datetime.utcnow())
     self.assertRaises(RSSDBException, self.rsDB.setServiceToBeChecked, 'Site', 'CNAF')
     self.assertRaises(RSSDBException, self.rsDB.rankRes, 'Site', 30)
-    
+    self.assertRaises(RSSDBException, self.rsDB.getServiceStats, 'xxx')
+    self.assertRaises(RSSDBException, self.rsDB.getResourceStats, 'Site', 'xxx')
+    self.assertRaises(RSSDBException, self.rsDB.getStorageElementsStats, 'Site', 'xxx')
+
     for g in ['Site', 'Service', 'Resource']:
       self.assertRaises(RSSDBException, self.rsDB.getTypesList, g) 
       self.assertRaises(RSSDBException, self.rsDB.removeType, g, 'xx') 

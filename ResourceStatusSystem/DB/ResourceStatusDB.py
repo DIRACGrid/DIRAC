@@ -1493,7 +1493,9 @@ class ResourceStatusDB:
     Returns simple statistics of active, probing and banned resources of a site or service;
         
     :params:
-      :attr:`siteName`: string - a site name
+      :attr:`granularity`: string: site or service
+      
+      :attr:`name`: string - name of site or service
     
     :returns:
       { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
@@ -1501,15 +1503,49 @@ class ResourceStatusDB:
     
     res = {'Active':0, 'Probing':0, 'Banned':0, 'Total':0}
     
-    if granularity == 'Site': 
+    if granularity in ('Site', 'Sites'): 
       req = "SELECT Status, COUNT(*)" 
       req = req + " FROM Resources WHERE SiteName = '%s' GROUP BY Status" %name
-    elif granularity == 'Service': 
+    elif granularity in ('Service', 'Services'): 
       req = "SELECT Status, COUNT(*)" 
       req = req + " FROM Resources WHERE ServiceName = '%s' GROUP BY Status" %name
     resQuery = self.db._query(req)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.getResourceStats) + resQuery['Message']
+    else:
+      for x in resQuery['Value']:
+        res[x[0]] = int(x[1])
+        
+    res['Total'] = sum(res.values())
+    
+    return res
+
+#############################################################################
+
+  def getStorageElementsStats(self, granularity, name):
+    """ 
+    Returns simple statistics of active, probing and banned resources of a site or resource;
+        
+    :params:
+      :attr:`granularity`: string: site or resource
+      
+      :attr:`name`: string - name of site or resource
+    
+    :returns:
+      { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
+    """
+    
+    res = {'Active':0, 'Probing':0, 'Banned':0, 'Total':0}
+    
+    if granularity in ('Site', 'Sites'): 
+      req = "SELECT Status, COUNT(*)" 
+      req = req + " FROM StorageElements WHERE SiteName = '%s' GROUP BY Status" %name
+    elif granularity in ('Resource', 'Resources'): 
+      req = "SELECT Status, COUNT(*)" 
+      req = req + " FROM StorageElements WHERE ResourceName = '%s' GROUP BY Status" %name
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.getStorageElementsStats) + resQuery['Message']
     else:
       for x in resQuery['Value']:
         res[x[0]] = int(x[1])
