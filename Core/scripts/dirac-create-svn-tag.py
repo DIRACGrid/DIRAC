@@ -113,7 +113,7 @@ for svnProject in List.fromChar( svnProjects ):
 
     if "%s_%s" % ( svnProject, svnVersion ) in createdVersions:
       gLogger.error( "Version %s is already there for package %s :P" % ( svnVersion, svnProject ) )
-      #continue
+      continue
 
     if not svnVersion in buildCFG[ 'Versions' ].listSections():
       gLogger.error( 'Version does not exist:', svnVersion )
@@ -141,11 +141,10 @@ for svnProject in List.fromChar( svnProjects ):
       gLogger.error( 'No packages to be included' )
       exit( -1 )
     gLogger.info( 'Creating SVN Dir:', versionPath )
-    #ret = os.system( mkdirCmd )
-    #if ret:
-    #  exit( -1 )
+    ret = os.system( mkdirCmd )
+    if ret:
+      exit( -1 )
     gLogger.info( 'Copying packages: %s' % ", ".join( packageList ) )
-    cpCmds = []
     for cpCmd in cpCmds:
       ret = os.system( cpCmd )
       if ret:
