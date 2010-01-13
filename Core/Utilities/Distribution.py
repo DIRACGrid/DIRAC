@@ -107,7 +107,7 @@ def retrieveReleaseNotes( packages ):
         pkgNotesDict[ package ].append( { 'version' : mainVersion, 'notes' : versionNotes } )
   return pkgNotesDict
 
-def writeReleaseNotes( packages, destinationPath ):
+def generateReleaseNotes( packages, destinationPath ):
   if type( packages ) in ( types.StringType, types.UnicodeType ):
     packages = [ str( packages ) ]
   pkgNotesDict = retrieveReleaseNotes( packages )
@@ -120,10 +120,10 @@ def writeReleaseNotes( packages, destinationPath ):
     fileContents.append( "-" * len( dummy ) )
     fileContents.append( dummy )
     fileContents.append( "-" * len( dummy ) )
-    fileContents.append( "" )
     vNotesDict = pkgNotesDict[ package ]
     for versionNotes in vNotesDict:
       dummy = "Version %s" % versionNotes[ 'version' ]
+      fileContents.append( "" )
       fileContents.append( dummy )
       fileContents.append( "-" * len( dummy ) )
       for noteType in ( "NEW", "CHANGE", "BUGFIX" ):
@@ -137,6 +137,6 @@ def writeReleaseNotes( packages, destinationPath ):
           fileContents.append( ":%s:" % noteType )
           fileContents.extend( notes4Type )
   fd = open( destinationPath, "w" )
-  fd.write( "\n".join( fileContents ) )
+  fd.write( "%s\n\n" % "\n".join( fileContents ) )
   fd.close()
             
