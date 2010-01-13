@@ -1451,39 +1451,139 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def setServiceToBeChecked(self, granularity, name):
+  def setMonitoredToBeChecked(self, monitoreds, granularity, name):
     """ 
-    Set LastCheckTime to 0 to service(s)
+    Set LastCheckTime to 0 to monitored(s)
     
     :params:
-      :attr:`granularity`: string, 'Site' or 'Resource'
+      :attr:`monitored`: string, or a list of strings where each is a ValidRes:
+      which granularity has to be set to be checked
+    
+      :attr:`granularity`: string, a ValidRes: from who this set comes 
       
       :attr:`name`: string, name of Site or Resource
     """
     
-#    req = ""
+    if type(monitoreds) is not list:
+      monitoreds = [monitoreds]
     
-    if granularity in ('Site', 'Sites'):
-      serviceName = self.getMonitoredsList('Service', paramsList = ['ServiceName'], 
-                                           siteName = name)
-      if type(serviceName) is not list:
-        serviceName = [serviceName]
-      if serviceName == []:
-        raise RSSDBException, where(self, self.setServiceToBeChecked) + "No services for site %s" %name
-      else:  
-        serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName[0]])
-        req = "UPDATE Services SET LastCheckTime = '00000-00-00 00:00:00'"
-        req = req + " WHERE ServiceName IN (%s);" %(serviceName)
-
-    elif granularity in ('Resource', 'Resources'):
-      serviceName = self.getGeneralName(name, 'Resource', 'Service')
-      req = "UPDATE Services SET LastCheckTime = '00000-00-00 00:00:00'" 
-      req = req + " WHERE ServiceName  = '%s';" %(serviceName)
+    for monitored in monitoreds:
     
-    resUpdate = self.db._update(req)
+      if monitored in ('Site', 'Sites'):
+        
+        siteName = self.getGeneralName(name, granularity, monitored)
+        req = "UPDATE Sites SET LastCheckTime = '00000-00-00 00:00:00'" 
+        req = req + " WHERE SiteName  = '%s';" %(siteName)
+  
+  
+      
+      elif monitored in ('Service', 'Services'):
+      
+        if granularity in ('Site', 'Sites'):
+          serviceName = self.getMonitoredsList('Service', paramsList = ['ServiceName'], 
+                                               siteName = name)
+          if type(serviceName) is not list:
+            serviceName = [serviceName]
+          if serviceName == []:
+            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + "No services for site %s" %name
+          else:  
+            serviceName = [x[0] for x in serviceName]
+            serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName])
+            req = "UPDATE Services SET LastCheckTime = '00000-00-00 00:00:00'"
+            req = req + " WHERE ServiceName IN (%s);" %(serviceName)
+        else:
+          serviceName = self.getGeneralName(name, granularity, monitored)
+          req = "UPDATE Services SET LastCheckTime = '00000-00-00 00:00:00'" 
+          req = req + " WHERE ServiceName  = '%s';" %(serviceName)
+      
+  
+      
+      elif monitored in ('Resource', 'Resources'):
+      
+        if granularity in ('Site', 'Sites'):
+          resourceName = self.getMonitoredsList('Resource', paramsList = ['ResourceName'], 
+                                                siteName = name)
+          if type(resourceName) is not list:
+            resourceName = [resourceName]
+          if resourceName == []:
+            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + "No resources for site %s" %name
+          else:
+            resourceName = [x[0] for x in resourceName]  
+            resourceName = ','.join(['"'+x.strip()+'"' for x in resourceName])
+            req = "UPDATE Resources SET LastCheckTime = '00000-00-00 00:00:00'"
+            req = req + " WHERE ResourceName IN (%s);" %(resourceName)
     
-    if not resUpdate['OK']:
-      raise RSSDBException, where(self, self.setServiceToBeChecked) + resUpdate['Message']
+        elif granularity in ('Service', 'Services'):
+  
+          resourceName = self.getMonitoredsList('Resource', paramsList = ['ResourceName'], 
+                                                serviceName = name)
+          if type(resourceName) is not list:
+            resourceName = [resourceName]
+          if resourceName == []:
+            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + "No resources for service %s" %name
+          else:  
+            resourceName = [x[0] for x in resourceName]
+            resourceName = ','.join(['"'+x.strip()+'"' for x in resourceName])
+            req = "UPDATE Resources SET LastCheckTime = '00000-00-00 00:00:00'"
+            req = req + " WHERE ResourceName IN (%s);" %(resourceName)
+    
+          
+        elif granularity in ('StorageElement', 'StorageElements'):
+          resourceName = self.getGeneralName(name, granularity, monitored)
+          req = "UPDATE Resources SET LastCheckTime = '00000-00-00 00:00:00'" 
+          req = req + " WHERE ResourceName  = '%s';" %(resourceName)
+      
+  
+  
+      elif monitored in ('StorageElement', 'StorageElements'):
+        
+        if granularity in ('Site', 'Sites'):
+          SEName = self.getMonitoredsList(monitored, paramsList = ['StorageElementName'],
+                                          siteName = name)
+          if type(SEName) is not list:
+            SEName = [SEName]
+          if SEName == []:
+            pass
+#            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + "No storage elements for site %s" %name
+          else:
+            SEName = [x[0] for x in SEName]
+            SEName = ','.join(['"'+x.strip()+'"' for x in SEName])
+            req = "UPDATE StorageElements SET LastCheckTime = '00000-00-00 00:00:00'"
+            req = req + " WHERE StorageElementName IN (%s);" %(SEName)
+        
+        elif granularity in ('Resource', 'Resources'):
+          SEName = self.getMonitoredsList(monitored, paramsList = ['StorageElementName'],
+                                          resourceName = name)
+          if type(SEName) is not list:
+            SEName = [SEName]
+          if SEName == []:
+            pass
+#            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + "No storage elements for resource %s" %name
+          else:  
+            SEName = [x[0] for x in SEName]
+            SEName = ','.join(['"'+x.strip()+'"' for x in SEName])
+            req = "UPDATE StorageElements SET LastCheckTime = '00000-00-00 00:00:00'"
+            req = req + " WHERE StorageElementName IN (%s);" %(SEName)
+    
+        elif granularity in ('Service', 'Services'):
+          SEName = self.getMonitoredsList(monitored, paramsList = ['StorageElementName'],
+                                          siteName = name.split('@').pop())
+          if type(SEName) is not list:
+            SEName = [SEName]
+          if SEName == []:
+            pass
+#            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + "No storage elements for service %s" %name
+          else:  
+            SEName = [x[0] for x in SEName]
+            SEName = ','.join(['"'+x.strip()+'"' for x in SEName])
+            req = "UPDATE StorageElements SET LastCheckTime = '00000-00-00 00:00:00'"
+            req = req + " WHERE StorageElementName IN (%s);" %(SEName)
+    
+         
+      resUpdate = self.db._update(req)
+      
+      if not resUpdate['OK']:
+        raise RSSDBException, where(self, self.setMonitoredToBeChecked) + resUpdate['Message']
 
 
 #############################################################################
@@ -1942,11 +2042,12 @@ class ResourceStatusDB:
     """ 
     Get name of res, of granularity `from_g`, to the name of res with granularity `to_g`
       
+    For a StorageElement, get the Site name, or the Service name, or the Resource name.
     For a Resource, get the Site name, or the Service name.
     For a Service name, get the Site name
     
     :params:
-      :attr:`resource`: a string with a name
+      :attr:`name`: a string with a name
       
       :attr:`from_g`: a string with a valid granularity 
       (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
@@ -1958,26 +2059,27 @@ class ResourceStatusDB:
       a string with the resulting name
     """
 
-    if from_g in ('Resource', 'Resources'):
-      if to_g in ('Site', 'Sites'):
-        req = "SELECT SiteName FROM Resources WHERE ResourceName = '%s';" %(name)
-      elif to_g in ('Service', 'Services'):
-        req = "SELECT SiteName, ResourceType FROM Resources WHERE ResourceName = '%s';" %(name)
-        resQuery = self.db._query(req)
-        if not resQuery['OK']:
-          raise RSSDBException, where(self, self.getGeneralName) + resQuery['Message']
-        if not resQuery['Value']:
-          return []
-        siteName = resQuery['Value'][0][0]
-        if resQuery['Value'][0][1] == 'CE':
-          serviceType = 'Computing'
-        if resQuery['Value'][0][1] == 'SE':
-          serviceType = 'Storage'
-        req = "SELECT ServiceName FROM Services WHERE"
-        req = req + " SiteName = '%s' AND ServiceType = '%s';" %(siteName, serviceType)
-    elif from_g in ('Service', 'Services'):
-      if to_g in ('Site', 'Sites'):
-        req = "SELECT SiteName FROM Services WHERE ServiceName = '%s';" %(name)
+    if from_g in ('Service', 'Services'):
+      DBtable = 'Services'
+      DBnameW = 'ServiceName'
+    elif from_g in ('Resource', 'Resources'):
+      DBtable = 'Resources'
+      DBnameW = 'ResourceName'
+    elif from_g in ('StorageElement', 'StorageElements'):
+      DBtable = 'StorageElements'
+      DBnameW = 'StorageElementName'
+    
+    if to_g in ('Site', 'Sites'):
+      DBname = 'SiteName'
+    elif to_g in ('Service', 'Services'):
+      DBname = 'ServiceName'
+    elif to_g in ('Resource', 'Resources'):
+      DBname = 'ResourceName'
+      
+    if from_g in ('StorageElement', 'StorageElements') and to_g in ('Service', 'Services'):
+      req = "SELECT SiteName FROM %s WHERE %s = '%s'" %(DBtable, DBnameW, name.split('@').pop())
+    else:
+      req = "SELECT %s FROM %s WHERE %s = '%s'" %(DBname, DBtable, DBnameW, name)
 
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -1985,7 +2087,10 @@ class ResourceStatusDB:
     if not resQuery['Value']:
       return []
     newName = resQuery['Value'][0][0]
-    return newName
+    if from_g in ('StorageElement', 'StorageElements') and to_g in ('Service', 'Services'):
+      return 'Storage@'+newName
+    else:
+      return newName
     
   
 #############################################################################

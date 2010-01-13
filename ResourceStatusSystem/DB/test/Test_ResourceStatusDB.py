@@ -319,12 +319,10 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
 #        ((datetime.datetime(2009, 9, 21, 14, 38, 54), datetime.datetime(2009, 9, 21, 14, 38, 54)), (datetime.datetime(2009, 9, 21, 14, 38, 54), datetime.datetime(2009, 9, 22, 7, 8, 4)), (datetime.datetime(2009, 9, 22, 7, 8, 4), datetime.datetime(2009, 9, 22, 10, 48, 26)), (datetime.datetime(2009, 9, 22, 10, 48, 26), datetime.datetime(2009, 9, 24, 12, 12, 33)), (datetime.datetime(2009, 9, 24, 12, 12, 33), datetime.datetime(2009, 9, 24, 13, 5, 41)))
 
   def test_getGeneralName(self):
-    res = self.rsDB.getGeneralName('XX', 'Resource', 'Site')
-    self.assertEqual(res, [])
-    res = self.rsDB.getGeneralName('XX', 'Resource', 'Service')
-    self.assertEqual(res, [])
-    res = self.rsDB.getGeneralName('XX', 'Service', 'Site')
-    self.assertEqual(res, [])
+    for g1 in ('Service', 'Resource', 'StorageElement'):
+      for g2 in ('Site', 'Service', 'Resource'):
+        res = self.rsDB.getGeneralName('XX', g1, g2)
+        self.assertEqual(res, [])
 
   def test_getResourceStats(self):
     res = self.rsDB.getResourceStats('Site', 'XX')
@@ -347,9 +345,13 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
       res = self.rsDB.getStuffToCheck(g,Configurations.Sites_check_freq,3)
       self.assertEqual(res, [])
 
-  def test_setServiceToBeChecked(self):
-    res = self.rsDB.setServiceToBeChecked( 'Resource', 'aaa.ch')
-    self.assertEqual(res, None)
+#  def test_setMonitoredToBeChecked(self):
+#    for monitored in ValidRes:
+#      for granularity in ValidRes:
+#        if monitored == granularity:
+#          continue
+#        res = self.rsDB.setMonitoredToBeChecked(monitored, granularity, 'aaa.ch')
+#        self.assertEqual(res, None)
 
   def test_rankRes(self):
     for granularity in ValidRes:
@@ -401,7 +403,7 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
     self.assertRaises(RSSDBException, self.rsDB.addStatus, '')
     self.assertRaises(RSSDBException, self.rsDB.removeStatus, '')
     self.assertRaises(RSSDBException, self.rsDB.setDateEnd, 'Site', 'CNAF', datetime.utcnow())
-    self.assertRaises(RSSDBException, self.rsDB.setServiceToBeChecked, 'Site', 'CNAF')
+    self.assertRaises(RSSDBException, self.rsDB.setMonitoredToBeChecked, 'Service', 'Site', 'CNAF')
     self.assertRaises(RSSDBException, self.rsDB.rankRes, 'Site', 30)
     self.assertRaises(RSSDBException, self.rsDB.getServiceStats, 'xxx')
     self.assertRaises(RSSDBException, self.rsDB.getResourceStats, 'Site', 'xxx')
@@ -419,8 +421,6 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
       self.assertRaises(RSSDBException, self.rsDB.setMonitoredReason, g, 'xxx', 'x', 'x')
 #    self.assertRaises(RSSDBException, self.rsDB.syncWithCS)
    
-  def test_setServiceToBeChecked(self):
-    self.assertRaises(RSSDBException, self.rsDB.setServiceToBeChecked, 'Site', 'CERN.ch')
 
 
 if __name__ == '__main__':
