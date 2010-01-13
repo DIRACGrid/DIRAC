@@ -216,7 +216,6 @@ class SRM2Storage(StorageBase):
     return S_OK(resDict)
 
   def __makeDir(self,path):
-    # First create a local file that will be used as a directory place holder in storage name space
     srcFile = '%s/%s' % (os.getcwd(),'dirac_directory')
     dfile = open(srcFile,'w')
     dfile.write(" ")
@@ -226,6 +225,7 @@ class SRM2Storage(StorageBase):
     res = self.__putFile(srcFile,destFile,0)
     if os.path.exists(srcFile):
       os.remove(srcFile)
+    self.__executeOperation(destFile,'removeFile')
     return res
 
   def __makeDirs(self,path):
