@@ -34,14 +34,12 @@ def getRepositoryVersions( package = False, isCMTCompatible = False ):
       versions.append( res.groups()[0] )
   return versions
 
-def loadCFGFromRepository( svnPath ):
+def getSVNFileContents( svnPath ):
   import urllib2, stat
   gLogger.info( "Reading %s" % ( svnPath ) )
-  if svnPath[0] == "/":
-    svnPath = svnPath[1:]
   viewSVNLocation = "http://svnweb.cern.ch/world/wsvn/dirac/%s?op=dl&rev=0" % ( svnPath )
   anonymousLocation = 'http://svnweb.cern.ch/guest/dirac/%s' % ( svnPath )
-  for remoteLocation in ( anonymousLocation, viewSVNLocation ):
+  for remoteLocation in ( viewSVNLocation, anonymousLocation ):
     try:
       remoteFile = urllib2.urlopen( remoteLocation )
     except urllib2.URLError:
@@ -50,12 +48,16 @@ def loadCFGFromRepository( svnPath ):
     remoteData = remoteFile.read()
     remoteFile.close()
     if remoteData:
-      return CFG.CFG().loadFromBuffer( remoteData )
+      return remoteData
   #Web cat failed. Try directly with svn
-  exitStatus, remoteData = execAndGetOutput( "svn cat 'http://svnweb.cern.ch/guest/dirac/%s'" % ( svnPath ) )
+  exitStatus, remoteData = execAndGetOutput( "svn cat 'http://svnweb.cern.ch/guest/dirac/%s" % ( svnPath ) )
   if exitStatus:
     print "Error: Could not retrieve %s from the web nor via SVN. Aborting..." % svnPath
     sys.exit( 1 )
+  return remoteData
+
+def loadCFGFromRepository( svnPath ):
+  remoteData = getSVNFileContents( svnPath )
   return CFG.CFG().loadFromBuffer( remoteData )
 
 def createTarball( tarballPath, directoryToTar ):
