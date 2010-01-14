@@ -64,24 +64,26 @@ def execAndGetOutput( cmd ):
   p.wait()
   return ( p.returncode, stdData )
 
-def generateAndUploadReleaseNotes( projectName, svnPath, versionReleased, singleVersion = False ):
-    gLogger.info( "Generating release notes for %s" % projectName )
-    fd, rstNotesPath = tempfile.mkstemp()
-    Distribution.generateReleaseNotes( projectName, rstNotesPath, versionReleased, singleVersion )
-    rstNotesSVNPath = "%s/releasenotes.rst" % ( svnPath )
-    svnCmd = "svn import '%s' '%s' -m 'Release notes for version %s'" % ( rstNotesPath, rstNotesSVNPath, versionReleased )
+def generateAndUploadReleaseNotes( projectName, svnPath, versionReleased ):
+    tmpDir = tempfile.mkdtemp()
+    gLogger.info( "Generating release notes for %s under %s" % ( projectName, tmpDir ) )
+    filesToUpload = []
+    for suffix, singleVersion in ( ( "history", False ), ( "notes", True ) ):
+      gLogger.info( "Generating %s rst" % suffix )
+      rstHistory = os.path.join( tmpDir, "release%s.rst" % suffix )
+      Distribution.generateReleaseNotes( projectName, rstHistory, versionReleased, singleVersion )
+      filesToUpload.append( rstHistory )
+      gLogger.info( "Generating %s html" % suffix )
+      htmlHistory = os.path.join( tmpDir, "release%s.html" % suffix )
+      Distribution.generateHTMLReleaseNotesFromRST( rstHistory, htmlHistory )
+      filesToUpload.append( htmlHistory )
+      
+    svnCmd = "svn import '%s' '%s' -m 'Release notes for version %s'" % ( tmpDir, svnPath, versionReleased )
     if os.system( svnCmd ):
       gLogger.error( "Could not upload release notes" )
       sys.exit(1)
-    htmlNotesPath = "%s.html" % rstNotesPath
-    if Distribution.generateHTMLReleaseNotesFromRST( rstNotesPath, htmlNotesPath ):
-      htmlNotesSVNPath = "%s/releasenotes.html" % ( svnPath )
-      svnCmd = "svn import '%s' '%s' -m 'HTML Release notes for version %s'" % ( htmlNotesPath, htmlNotesSVNPath, versionReleased )
-      if os.system( svnCmd ):
-        gLogger.error( "Could not upload release notes" )
-        sys.exit(1)
-      os.unlink( htmlNotesPath )
-    os.unlink( rstNotesPath )
+
+    os.system( "rm -rf '%s'" % tmpDir )
     gLogger.info( "Release notes committed" )
     
 ##
