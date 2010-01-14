@@ -6,7 +6,7 @@ Tag a new release in SVN
 __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base      import Script
-from DIRAC.Core.Utilities import List, CFG, Distribution
+from DIRAC.Core.Utilities import List, Distribution
 
 import sys, os, tempfile, shutil, getpass, subprocess
 
@@ -64,28 +64,6 @@ def execAndGetOutput( cmd ):
   p.wait()
   return ( p.returncode, stdData )
 
-def getSVNFileContents( projectName, filePath ):
-  import urllib2, stat
-  gLogger.info( "Reading %s/trunk/%s" % ( projectName, filePath ) )
-  viewSVNLocation = "http://svnweb.cern.ch/world/wsvn/dirac/%s/trunk/%s?op=dl&rev=0" % ( projectName, filePath )
-  anonymousLocation = 'http://svnweb.cern.ch/guest/dirac/%s/trunk/%s' % ( projectName, filePath )
-  for remoteLocation in ( viewSVNLocation, anonymousLocation ):
-    try:
-      remoteFile = urllib2.urlopen( remoteLocation )
-    except urllib2.URLError:
-      gLogger.exception()
-      continue
-    remoteData = remoteFile.read()
-    remoteFile.close()
-    if remoteData:
-      return remoteData
-  #Web cat failed. Try directly with svn
-  exitStatus, remoteData = execAndGetOutput( "svn cat 'http://svnweb.cern.ch/guest/dirac/%s/trunk/%s'" % ( projectName, filePath ) )
-  if exitStatus:
-    print "Error: Could not retrieve %s from the web nor via SVN. Aborting..." % fileName
-    sys.exit( 1 )
-  return remoteData
-
 def generateAndUploadReleaseNotes( projectName, svnPath, versionReleased, singleVersion = False ):
     gLogger.info( "Generating release notes for %s" % projectName )
     fd, rstNotesPath = tempfile.mkstemp()
@@ -118,9 +96,7 @@ gLogger.info( "Using %s as username" % svnUsername )
 #Start the magic!
 for svnProject in List.fromChar( svnProjects ):
 
-  versionsData = getSVNFileContents( svnProject, "%s/versions.cfg" % svnProject )
-
-  buildCFG = CFG.CFG().loadFromBuffer( versionsData )
+  buildCFG = Distribution.loadCFGFromRepository( "%s/trunk/%s/versions.cfg" % ( svnProject, svnProject ) )
   
   upperCaseProject = svnProject.upper()
 
