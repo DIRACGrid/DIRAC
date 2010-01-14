@@ -105,13 +105,17 @@ def retrieveReleaseNotes( packages ):
               versionNotes[ subsys ][ typeComment ].append( line[ len( typeComment ) + 1: ].strip() )
       if versionNotes:
         pkgNotesDict[ package ].append( { 'version' : mainVersion, 'notes' : versionNotes } )
+      versionComment = versionsCFG.getComment( mainVersion )
+      if versionComment:
+        pkgNotesDict[ package ][-1][ 'comment' ] = "\n".join( [ l.strip() for l in versionComment.split( "\n" ) ] )
   return pkgNotesDict
 
-def generateReleaseNotes( packages, destinationPath ):
+def generateReleaseNotes( packages, destinationPath, versionReleased = "", singleVersion = False ):
   if type( packages ) in ( types.StringType, types.UnicodeType ):
     packages = [ str( packages ) ]
   pkgNotesDict = retrieveReleaseNotes( packages )
   fileContents = []
+  foundStartVersion = versionReleased == ""
   for package in packages:
     if package not in pkgNotesDict:
       continue
@@ -122,12 +126,21 @@ def generateReleaseNotes( packages, destinationPath ):
     fileContents.append( "-" * len( dummy ) )
     vNotesDict = pkgNotesDict[ package ]
     for versionNotes in vNotesDict:
+      if singleVersion and versionReleased and versionNotes[ 'version' ] != versionReleased:
+        continue
+      if versionReleased and versionReleased == versionNotes[ 'version' ]:
+        foundStartVersion = True
+      #Skip until found initial version
+      if not foundStartVersion:
+        continue
       dummy = "Version %s" % versionNotes[ 'version' ]
       fileContents.append( "" )
       fileContents.append( dummy )
       fileContents.append( "-" * len( dummy ) )
+      if 'comment' in versionNotes:
+        fileContents.extend( [ '', versionNotes[ 'comment' ], '' ] )
       for noteType in ( "NEW", "CHANGE", "BUGFIX" ):
-        notes4Type =  []
+        notes4Type = []
         for system in versionNotes[ 'notes' ]:
           if noteType in versionNotes[ 'notes' ][ system ] and versionNotes[ 'notes' ][ system ][ noteType ]:
             notes4Type.append( " %s" % system )
@@ -139,4 +152,26 @@ def generateReleaseNotes( packages, destinationPath ):
   fd = open( destinationPath, "w" )
   fd.write( "%s\n\n" % "\n".join( fileContents ) )
   fd.close()
-            
+
+def generateHTMLReleaseNotesFromRST( rstFile, htmlFile ):
+  try:
+    import docutils.core
+  except:
+    gLogger.error( "Docutils is not installed, skipping generation of release notes in html format" )
+    return False
+  try:
+    fd = open( rstFile )
+    rstData = fd.read()
+    fd.close()
+  except:
+    gLogger.error( "Oops! Could not read the rst file :P" )
+    return False
+  parts = docutils.core.publish_parts( rstData, writer_name = 'html' )
+  try:
+    fd = open( htmlFile, "w" )
+    fd.write( parts[ 'whole' ] )
+    fd.close()
+  except:
+    gLogger.error( "Oops! Could not write the html file :P" )
+    return False
+  return True

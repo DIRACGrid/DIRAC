@@ -13,6 +13,7 @@ import sys, os, tempfile, shutil, getpass, subprocess
 svnProjects = 'DIRAC'
 svnVersions = ""
 svnUsername = ""
+onlyReleaseNotes = False
 
 svnSshRoot = "svn+ssh://%s@svn.cern.ch/reps/dirac/%s"
 
@@ -31,11 +32,18 @@ def setUsername( optionValue ):
   svnUsername = optionValue
   return S_OK()
 
+def setOnlyReleaseNotes( optionValue ):
+  global onlyReleaseNotes
+  gLogger.info( "Only updating release notes!" )
+  onlyReleaseNotes = True
+  return S_OK()
+
 Script.disableCS()
 
 Script.registerSwitch( "v:", "version=", "versions to tag comma separated (mandatory)", setVersion )
 Script.registerSwitch( "p:", "project=", "projects to tag comma separated (default = DIRAC)", setProject )
 Script.registerSwitch( "u:", "username=", "svn username to use", setUsername )
+Script.registerSwitch( "n", "releaseNotes", "Only refresh release notes", setOnlyReleaseNotes )
 
 Script.parseCommandLine( ignoreErrors = False )
 
@@ -78,6 +86,26 @@ def getSVNFileContents( projectName, filePath ):
     sys.exit( 1 )
   return remoteData
 
+def generateAndUploadReleaseNotes( projectName, svnPath, versionReleased, singleVersion = False ):
+    gLogger.info( "Generating release notes for %s" % projectName )
+    fd, rstNotesPath = tempfile.mkstemp()
+    Distribution.generateReleaseNotes( projectName, rstNotesPath, versionReleased, singleVersion )
+    rstNotesSVNPath = "%s/releasenotes.rst" % ( svnPath )
+    svnCmd = "svn import '%s' '%s' -m 'Release notes for version %s'" % ( rstNotesPath, rstNotesSVNPath, versionReleased )
+    if os.system( svnCmd ):
+      gLogger.error( "Could not upload release notes" )
+      sys.exit(1)
+    htmlNotesPath = "%s.html" % rstNotesPath
+    if Distribution.generateHTMLReleaseNotesFromRST( rstNotesPath, htmlNotesPath ):
+      htmlNotesSVNPath = "%s/releasenotes.html" % ( svnPath )
+      svnCmd = "svn import '%s' '%s' -m 'HTML Release notes for version %s'" % ( htmlNotesPath, htmlNotesSVNPath, versionReleased )
+      if os.system( svnCmd ):
+        gLogger.error( "Could not upload release notes" )
+        sys.exit(1)
+      os.unlink( htmlNotesPath )
+    os.unlink( rstNotesPath )
+    gLogger.info( "Release notes committed" )
+    
 ##
 #End of helper functions
 ##
@@ -112,14 +140,25 @@ for svnProject in List.fromChar( svnProjects ):
     gLogger.info( "Start tagging for project %s version %s " % ( svnProject, svnVersion ) )
 
     if "%s_%s" % ( svnProject, svnVersion ) in createdVersions:
-      gLogger.error( "Version %s is already there for package %s :P" % ( svnVersion, svnProject ) )
+      if not onlyReleaseNotes:
+        gLogger.error( "Version %s is already there for package %s :P" % ( svnVersion, svnProject ) )
+        continue
+      else:
+        gLogger.info( "Generating release notes for version %s" % svnVersion )
+        generateAndUploadReleaseNotes( svnProject, 
+                                       "%s/%s_%s" % ( versionsRoot, upperCaseProject, svnVersion ), 
+                                       svnVersion )
+        continue
+
+    if onlyReleaseNotes:
+      gLogger.error( "Version %s is not tagged for %s. Can't refresh the release notes" % ( svnVersion, svnProject ) )
       continue
 
     if not svnVersion in buildCFG[ 'Versions' ].listSections():
       gLogger.error( 'Version does not exist:', svnVersion )
       gLogger.error( 'Available versions:', ', '.join( buildCFG.listSections() ) )
       continue
-
+    
     versionCFG = buildCFG[ 'Versions' ][svnVersion]
     packageList = versionCFG.listOptions()
     gLogger.info( "Tagging packages: %s" % ", ".join( packageList ) )
@@ -149,14 +188,7 @@ for svnProject in List.fromChar( svnProjects ):
       ret = os.system( cpCmd )
       if ret:
         gLogger.error( 'Failed to create tag' )
-    gLogger.info( "Generating release notes for %s" % svnProject )
-    fd, notesPath = tempfile.mkstemp()
-    Distribution.generateReleaseNotes( svnProject, notesPath )
-    notesSVNPath = "%s/releasenotes.rst" % ( versionPath )
-    svnCmd = "svn import '%s' '%s' -m 'Release notes for version %s'" % ( notesPath, notesSVNPath, svnVersion )
-    if os.system( svnCmd ):
-      gLogger.error( "Could not upload release notes" )
-      sys.exit(1)
-    gLogger.info( "Release notes committed" )
-
+    
+    #Generate release notes for version
+    generateAndUploadReleaseNotes( svnProject, versionPath, svnVersion )
 
