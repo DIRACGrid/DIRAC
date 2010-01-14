@@ -12,6 +12,7 @@ Script.parseCommandLine(ignoreErrors = True)
 sites = Script.getPositionalArgs()
 
 def usage():
+  gLogger.info('dirac-admin-ban-catalog Tier1 [Tier1 ...]')
   gLogger.info(' Type "%s --help" for the available options and syntax' % Script.scriptName)
   DIRAC.exit(-1)
 
