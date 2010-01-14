@@ -268,7 +268,7 @@ class TransformationHandler(RequestHandler):
     
   types_getDistinctAttributeValues = [StringTypes, DictType]
   def export_getDistinctAttributeValues(self, attribute, selectDict):
-    res = self.database.getDistinctAttributeValues(attribute,selectDict)
+    res = self.database.getDistinctAttributeValue(attribute,selectDict)
     return self.__parseRes(res)
 
   types_getTransformationStatusCounters = []
@@ -277,7 +277,7 @@ class TransformationHandler(RequestHandler):
     if not res['OK']:
       return self.__parseRes(res)
     statDict = {}
-    for attrDict,count in result['Value']:
+    for attrDict,count in res['Value']:
       statDict[attrDict['Status']] = count
     return S_OK(statDict)
 
@@ -378,7 +378,7 @@ class TransformationHandler(RequestHandler):
       res = self.database.getTransformationTaskStats(prodID)
       taskDict = {}
       if res['OK']:
-        taskDict = result['Value']
+        taskDict = res['Value']
       for state in taskStateNames:
         if taskDict and taskDict.has_key(state):
           trans.append(taskDict[state])
@@ -391,12 +391,15 @@ class TransformationHandler(RequestHandler):
       if transType.lower().find('simulation') == -1:      
         res = self.database.getTransformationStats(prodID)
         if res['OK']:
-          fileDict = result['Value']
-          processed = fileDict.get['Processed']
+          fileDict = res['Value']
+          processed = fileDict.get('Processed')
           if not processed:
             processed = 0
-          percentProcessed = "%.1f" % ((processed*100.0)/fileDict['Total'])
-          fileDict['PercentProcessed'] = "%.1f" % ((processed*100.0)/fileDict['Total'])
+          if fileDict['Total'] == 0:
+            percentProcessed = "0.0"
+          else:
+            percentProcessed = "%.1f" % ((processed*100.0)/fileDict['Total'])
+          fileDict['PercentProcessed'] = percentProcessed
       for state in fileStateNames:
         if fileDict and fileDict.has_key(state):
           trans.append(fileDict[state])
