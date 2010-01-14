@@ -20,7 +20,7 @@ from DIRAC.Core.Utilities.List                                         import st
 from DIRAC.Core.Utilities.SiteSEMapping                                import getSEsForSite, getSitesForSE
 
 from types import *
-import re,time,string,threading
+import re,time,string,threading,copy
 
 MAX_ERROR_COUNT = 3
 
@@ -38,6 +38,7 @@ class TransformationDB(DB):
     res = self.__updateFilters()
     if not res['OK']:
       gLogger.fatal("Failed to create filters")
+
     self.TRANSPARAMS = [  'TransformationID',
                           'TransformationName',
                           'Description',
@@ -196,7 +197,7 @@ class TransformationDB(DB):
       resultList.append(transDict) 
     result = S_OK(resultList)
     result['Records'] = webList
-    result['ParameterNames'] = self.TRANSPARAMS
+    result['ParameterNames'] = copy.copy(self.TRANSPARAMS)
     return result
 
   def getTransformation(self,transName,extraParams=False,connection=False):
@@ -246,7 +247,7 @@ class TransformationDB(DB):
       transIDs.append(tuple[0])
     return S_OK(transIDs)
 
-  def getDistinctAttributeValues(self, attribute, selectDict, connection=False):
+  def getDistinctAttributeValue(self, attribute, selectDict, connection=False):
     """ Get distinct values of the given transformation attribute """
     if not attribute in self.TRANSPARAMS:
       return S_ERROR('Can not serve values for attribute %s' % attribute) 
@@ -332,7 +333,7 @@ class TransformationDB(DB):
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
     message = ''
-    if (paramName in self.TRANSPARAMS):
+    if paramName in self.TRANSPARAMS:
       res = self.__updateTransformationParameter(transID,paramName,paramValue,connection=connection)
       if res['OK'] and (paramName != 'Body'):
         message = '%s updated to %s' % (paramName,paramValue)
