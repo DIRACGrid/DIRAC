@@ -3,6 +3,7 @@
 from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Resources.Catalog.LcgFileCatalogClient       import LcgFileCatalogClient
 from DIRAC.Core.Utilities.Subprocess                    import pythonCall
+from DIRAC.Core.Utilities.ResolveCatalog                import getLocationOrderedCatalogs
 import random, time,os
 
 class LcgFileCatalogCombinedClient:
@@ -34,14 +35,17 @@ class LcgFileCatalogCombinedClient:
         self.valid = True
 
       if not mirrors:
-        configPath = '/Resources/FileCatalogs/LcgFileCatalogCombined/ReadOnlyHosts'
-        mirrors = gConfig.getValue(configPath,[])
+        siteName = DIRAC.siteName()
+        res = getLocationOrderedCatalogs(siteName=siteName)
+        if not res['OK']:
+          mirrors = []
+        else:
+          mirrors = res['Value']
       # Create the mirror LFC instances
       self.mirrors = []
       for mirror in mirrors:
         lfc = LcgFileCatalogClient(infosys,mirror)
         self.mirrors.append(lfc)
-      random.shuffle(self.mirrors)
       self.nmirrors = len(self.mirrors)
 
       # Keep the environment for the master instance
