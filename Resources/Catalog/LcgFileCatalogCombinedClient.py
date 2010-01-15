@@ -1,5 +1,6 @@
 """ File catalog client for the LFC service combined with multiple read-only mirrors """
 
+import DIRAC
 from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Resources.Catalog.LcgFileCatalogClient       import LcgFileCatalogClient
 from DIRAC.Core.Utilities.Subprocess                    import pythonCall
