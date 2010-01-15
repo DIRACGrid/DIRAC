@@ -45,7 +45,7 @@ while [ $1 ]; do
   export DB
   awk 'BEGIN { N = 0 }
          { if ( tolower($0) ~ tolower("use "ENVIRON["DB"]";") ) N=1;
-           if ( N == 1 ) print }' $file | mysql -u root $DB
+           if ( N == 1 ) print }' $file | mysql -u root -p$MYSQL_ROOT_PWD $DB
 
 SYSTEM=`dirname $file` ; SYSTEM=`dirname $SYSTEM` ;SYSTEM=`basename $SYSTEM System`
 cat << EOF > /tmp/$DB.cfg
