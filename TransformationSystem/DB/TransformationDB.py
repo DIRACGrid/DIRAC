@@ -552,7 +552,6 @@ class TransformationDB(DB):
       return res
     statusDict = {}
     total=0
-    #TOD: This should be checked
     for attrDict,count in res['Value']:
       status = attrDict['Status']
       statusDict[status]=count
