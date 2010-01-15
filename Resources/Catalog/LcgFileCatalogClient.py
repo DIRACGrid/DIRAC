@@ -2,8 +2,8 @@
 
 """
 import DIRAC
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.DataManagementSystem.Client.Catalog.FileCatalogueBase import FileCatalogueBase
+from DIRAC                                      import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC.Resources.Catalog.FileCatalogueBase  import FileCatalogueBase
 from stat import *
 import os, re, string, commands, types,time
 
