@@ -73,10 +73,6 @@ def generateAndUploadReleaseNotes( projectName, svnPath, versionReleased ):
       rstHistory = os.path.join( tmpDir, "release%s.rst" % suffix )
       Distribution.generateReleaseNotes( projectName, rstHistory, versionReleased, singleVersion )
       filesToUpload.append( rstHistory )
-      gLogger.info( "Generating %s html" % suffix )
-      htmlHistory = os.path.join( tmpDir, "release%s.html" % suffix )
-      Distribution.generateHTMLReleaseNotesFromRST( rstHistory, htmlHistory )
-      filesToUpload.append( htmlHistory )
       
     svnCmd = "svn import '%s' '%s' -m 'Release notes for version %s'" % ( tmpDir, svnPath, versionReleased )
     if os.system( svnCmd ):
@@ -99,14 +95,12 @@ gLogger.info( "Using %s as username" % svnUsername )
 for svnProject in List.fromChar( svnProjects ):
 
   buildCFG = Distribution.loadCFGFromRepository( "%s/trunk/%s/versions.cfg" % ( svnProject, svnProject ) )
-  
-  upperCaseProject = svnProject.upper()
 
   if 'Versions' not in buildCFG.listSections():
     gLogger.error( "versions.cfg file in project %s does not contain a Versions top section" % svnProject )
     continue
 
-  versionsRoot = svnSshRoot % ( svnUsername, '%s/tags/%s' % ( svnProject, upperCaseProject ) )
+  versionsRoot = svnSshRoot % ( svnUsername, '%s/tags/%s' % ( svnProject, svnProject ) )
   exitStatus, data = execAndGetOutput( "svn ls '%s'" % ( versionsRoot ) )
   if exitStatus:
     createdVersions = []
@@ -117,14 +111,14 @@ for svnProject in List.fromChar( svnProjects ):
 
     gLogger.info( "Start tagging for project %s version %s " % ( svnProject, svnVersion ) )
 
-    if "%s_%s" % ( svnProject, svnVersion ) in createdVersions:
+    if svnVersion in createdVersions:
       if not onlyReleaseNotes:
         gLogger.error( "Version %s is already there for package %s :P" % ( svnVersion, svnProject ) )
         continue
       else:
         gLogger.info( "Generating release notes for version %s" % svnVersion )
         generateAndUploadReleaseNotes( svnProject, 
-                                       "%s/%s_%s" % ( versionsRoot, upperCaseProject, svnVersion ), 
+                                       "%s/%s" % ( versionsRoot, svnVersion ), 
                                        svnVersion )
         continue
 
@@ -141,7 +135,7 @@ for svnProject in List.fromChar( svnProjects ):
     packageList = versionCFG.listOptions()
     gLogger.info( "Tagging packages: %s" % ", ".join( packageList ) )
     msg = '"Release %s"' % svnVersion
-    versionPath = "%s/%s_%s" % ( versionsRoot, upperCaseProject, svnVersion ) 
+    versionPath = "%s/%s" % ( versionsRoot, svnVersion ) 
     mkdirCmd = "svn -m %s mkdir '%s'" % ( msg, versionPath )
     cpCmds = []
     for extra in buildCFG.getOption( 'packageExtraFiles', ['__init__.py', 'versions.cfg'] ):

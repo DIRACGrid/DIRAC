@@ -98,21 +98,17 @@ if not cliParams.releasesToBuild:
 #Helper functions
 ##
 
-def getVersion( package, version, cmtCompatiblePackages ):
+def getVersionPath( package, version ):
   if version.strip().lower() in ( "trunk", "", "head" ):
-    version = "trunk/%s" % ( package )
+    version = "%s/trunk/%s" % ( package, package )
   else:
-    if package in cmtCompatiblePackages:
-      version = "tags/%s/%s_%s" % ( package.upper(), package.upper(), version )
-    else:
-      version = "tags/%s" % ( version )
+    version = "%s/tags/%s/%s" % ( package, package, version )
   return version
 
 def tagSVNReleases( mainCFG, taggedReleases ):
   global cliParams
 
   releasesCFG = mainCFG[ 'Releases' ]
-  cmtCompatiblePackages = mainCFG.getOption( 'CMTCompatiblePackages', [] )
 
   autoTarPackages = mainCFG.getOption( 'AutoTarPackages', [] )
 
@@ -142,8 +138,8 @@ def tagSVNReleases( mainCFG, taggedReleases ):
       if p not in autoTarPackages:
         continue
       version = releasesCFG[ releaseVersion ].getOption( p, "" )
-      versionPath = getVersion( p, version, cmtCompatiblePackages )
-      svnLinks.append( "%s http://svnweb.cern.ch/guest/dirac/%s/%s" % ( p, p, versionPath ) )
+      versionPath = getVersionPath( p, version )
+      svnLinks.append( "%s http://svnweb.cern.ch/guest/dirac/%s" % ( p, versionPath ) )
     tmpPath = tempfile.mkdtemp()
     fd = open( os.path.join( tmpPath, "extProp" ), "wb" )
     fd.write( "%s\n" % "\n".join( svnLinks ) )
@@ -176,7 +172,6 @@ def autoTarPackages( mainCFG, targetDir ):
   global cliParams
 
   releasesCFG = mainCFG[ 'Releases' ]
-  cmtCompatiblePackages = mainCFG.getOption( 'CMTCompatiblePackages', [] )
   autoTarPackages = mainCFG.getOption( 'AutoTarPackages', [] )
   for releaseVersion in cliParams.releasesToBuild:
     releaseTMPPath = os.path.join( targetDir, releaseVersion )
@@ -186,8 +181,8 @@ def autoTarPackages( mainCFG, targetDir ):
       if package not in autoTarPackages:
         continue
       version = releasesCFG[ releaseVersion ].getOption( package, "" )
-      versionPath = getVersion( package, version, cmtCompatiblePackages )
-      pkgSVNPath = "http://svnweb.cern.ch/guest/dirac/%s/%s" % ( package, versionPath )
+      versionPath = getVersionPath( package, version )
+      pkgSVNPath = "http://svnweb.cern.ch/guest/dirac/%s" % ( versionPath )
       pkgHDPath = os.path.join( releaseTMPPath, package )
       gLogger.info( " Getting %s" % pkgSVNPath )
       svnCmd = "svn export '%s' '%s'" % ( pkgSVNPath, pkgHDPath )

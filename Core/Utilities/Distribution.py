@@ -6,7 +6,7 @@ import urllib2, re, tarfile, os, types
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import CFG, File, List
 
-def getRepositoryVersions( package = False, isCMTCompatible = False ):
+def getRepositoryVersions( package = False ):
   if package:
     webLocation = 'http://svnweb.cern.ch/guest/dirac/%s/tags/%s' % ( package, package )
   else:
@@ -23,10 +23,7 @@ def getRepositoryVersions( package = False, isCMTCompatible = False ):
     gLogger.error( "Could not retrieve versions for package %s" % package )
     sys.exit( 1 )
   versions = []
-  if isCMTCompatible and package:
-    rePackage = "%s_.*" % package
-  else:
-    rePackage = ".*"
+  rePackage = ".*"
   versionRE = re.compile( "<li> *<a *href=.*> *(%s)/ *</a> *</li>" % rePackage )
   for line in remoteData.split( "\n" ):
     res = versionRE.search( line )
