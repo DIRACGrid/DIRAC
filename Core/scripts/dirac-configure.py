@@ -179,6 +179,8 @@ else:
 
 if useServerCert:
   Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
+  # When using Server Certs CA's will be checked, the flag only disables initial download
+  Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
 
 gridSections = DIRAC.gConfig.getSections( '/Resources/Sites/' )
 if not gridSections['OK']:
