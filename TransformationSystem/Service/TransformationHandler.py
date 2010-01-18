@@ -388,11 +388,15 @@ class TransformationHandler(RequestHandler):
       # Get the statistics for the number of files for the transformation
       fileDict = {}
       transType = transDict['Type']
-      if transType.lower().find('simulation') == -1:      
+      if transType.lower().find('simulation') != -1:
+        fileDict['PercentProcessed']  = '-'
+      else:
         res = self.database.getTransformationStats(prodID)
         if res['OK']:
           fileDict = res['Value']
-          if fileDict['Total'] > 0:
+          if fileDict['Total'] == 0:
+            fileDict['PercentProcessed']  = 0
+          else:
             processed = fileDict.get('Processed')
             if not processed:
               processed = 0
