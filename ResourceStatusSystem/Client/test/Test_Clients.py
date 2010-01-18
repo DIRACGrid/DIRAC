@@ -30,7 +30,7 @@ class GOCDBClientSuccess(ClientsTestCase):
   def test_getStatus(self):
     for granularity in ValidRes:
       res = self.GOCCli.getStatus((granularity, 'XX'))
-      self.assertEqual(res, None)
+      self.assertEqual(res, {'DT':'No Info'})
       
 #    res = self.GOCCli.getStatus(('Site', 'pic'))
 #    self.assertEqual(res, None)

@@ -17,7 +17,7 @@ class DataOperationsClient:
 
   def getQualityStats(self, name, fromD = None, toD = None):
     """  
-    Return quialty of transfer stats. If fromD and toD are not specified, takes last 2h.
+    Return quality of transfer stats. If fromD and toD are not specified, takes last 2 hours.
     
     :params:
       :attr:`name`: string - 

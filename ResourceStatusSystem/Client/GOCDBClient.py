@@ -27,7 +27,7 @@ class GOCDBClient:
       None 
       or  
       {
-        'DT':'OUTAGE'|'AT_RISK',
+        'DT':'OUTAGE'|'AT_RISK'|'No Info',
         'Enddate':datetime
       }
 
@@ -102,7 +102,9 @@ class GOCDBClient:
     except Exception, errorMsg:
       return None    
 
-    downtimes = doc.getElementsByTagName("DOWNTIME") 
+    downtimes = doc.getElementsByTagName("DOWNTIME")
+#    if downtimes == []:
+#      return {'DT':'No Info'} 
     handler = {}    
     
     for dt in downtimes:
