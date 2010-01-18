@@ -73,15 +73,15 @@ def generateAndUploadReleaseNotes( projectName, svnPath, versionReleased ):
       rstHistory = os.path.join( tmpDir, "release%s.rst" % suffix )
       Distribution.generateReleaseNotes( projectName, rstHistory, versionReleased, singleVersion )
       filesToUpload.append( rstHistory )
-      
+
     svnCmd = "svn import '%s' '%s' -m 'Release notes for version %s'" % ( tmpDir, svnPath, versionReleased )
     if os.system( svnCmd ):
       gLogger.error( "Could not upload release notes" )
-      sys.exit(1)
+      sys.exit( 1 )
 
     os.system( "rm -rf '%s'" % tmpDir )
     gLogger.info( "Release notes committed" )
-    
+
 ##
 #End of helper functions
 ##
@@ -117,8 +117,8 @@ for svnProject in List.fromChar( svnProjects ):
         continue
       else:
         gLogger.info( "Generating release notes for version %s" % svnVersion )
-        generateAndUploadReleaseNotes( svnProject, 
-                                       "%s/%s" % ( versionsRoot, svnVersion ), 
+        generateAndUploadReleaseNotes( svnProject,
+                                       "%s/%s" % ( versionsRoot, svnVersion ),
                                        svnVersion )
         continue
 
@@ -130,15 +130,15 @@ for svnProject in List.fromChar( svnProjects ):
       gLogger.error( 'Version does not exist:', svnVersion )
       gLogger.error( 'Available versions:', ', '.join( buildCFG.listSections() ) )
       continue
-    
+
     versionCFG = buildCFG[ 'Versions' ][svnVersion]
     packageList = versionCFG.listOptions()
     gLogger.info( "Tagging packages: %s" % ", ".join( packageList ) )
     msg = '"Release %s"' % svnVersion
-    versionPath = "%s/%s" % ( versionsRoot, svnVersion ) 
+    versionPath = "%s/%s" % ( versionsRoot, svnVersion )
     mkdirCmd = "svn -m %s mkdir '%s'" % ( msg, versionPath )
     cpCmds = []
-    for extra in buildCFG.getOption( 'packageExtraFiles', ['__init__.py', 'versions.cfg'] ):
+    for extra in buildCFG.getOption( 'packageExtraFiles', [ '__init__.py', 'versions.cfg' ] ):
       source = svnSshRoot % ( svnUsername, '%s/trunk/%s/%s' % ( svnProject, svnProject, extra ) )
       cpCmds.append( "svn -m '%s' copy '%s' '%s/%s'" % ( msg, source, versionPath, extra ) )
     for pack in packageList:
@@ -160,7 +160,7 @@ for svnProject in List.fromChar( svnProjects ):
       ret = os.system( cpCmd )
       if ret:
         gLogger.error( 'Failed to create tag' )
-    
+
     #Generate release notes for version
     generateAndUploadReleaseNotes( svnProject, versionPath, svnVersion )
 
