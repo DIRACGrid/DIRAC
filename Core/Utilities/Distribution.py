@@ -57,9 +57,14 @@ def loadCFGFromRepository( svnPath ):
   remoteData = getSVNFileContents( svnPath )
   return CFG.CFG().loadFromBuffer( remoteData )
 
-def createTarball( tarballPath, directoryToTar ):
+def createTarball( tarballPath, directoryToTar, additionalDirectoriesToTar = [] ):
   tf = tarfile.open( tarballPath, "w:gz" )
-  tf.add( directoryToTar, os.path.basename( directoryToTar ), recursive = True )
+  tf.add( directoryToTar, os.path.basename( os.path.abspath( directoryToTar ) ), recursive = True )
+  if type( additionalDirectoriesToTar ) in ( types.StringType, types.UnicodeType ):
+    additionalDirectoriesToTar = [ additionalDirectoriesToTar ]
+  for dirToTar in additionalDirectoriesToTar:
+    if os.path.isdir( dirToTar ):
+      tf.add( dirToTar, os.path.basename( os.path.abspath( dirToTar ) ), recursive = True )
   tf.close()
   md5FilePath = False
   for suffix in ( ".tar.gz", ".gz" ):

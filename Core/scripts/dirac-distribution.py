@@ -72,6 +72,7 @@ class Params:
 cliParams = Params()
 
 Script.disableCS()
+Script.addDefaultOptionValue( "/DIRAC/Setup", "Dummy" )
 Script.registerSwitch( "r:", "releases=", "reseases to build (mandatory, comma separated)", cliParams.setReleases )
 Script.registerSwitch( "u:", "username=", "svn username to use", cliParams.setUserName )
 Script.registerSwitch( "l", "forceSVNLinks", "Redo the svn links even if the release exists", cliParams.setForceSVNLink )
@@ -248,7 +249,9 @@ def tarExternals( mainCFG, targetDir ):
         gLogger.error( "Error while compiling externals!" )
         sys.exit( 1 )
       tarfilePath = os.path.join( targetDir, "Externals-%s.tar.gz" % ( requestedExternalsString ) )
-      result = Distribution.createTarball( tarfilePath, compileTarget )
+      result = Distribution.createTarball( tarfilePath,
+                                           compileTarget,
+                                           os.path.join( targetDir, "mysql" ) )
       if not result[ 'OK' ]:
         gLogger.error( "Could not generate tarball for package %s" % package, result[ 'Error' ] )
         sys.exit( 1 )
