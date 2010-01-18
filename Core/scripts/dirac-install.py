@@ -180,12 +180,14 @@ def downloadAndExtractTarball( pkgVer, targetPath, subDir = False, checkHash = T
     #Delete md5 file
     os.unlink( md5Path )
   #Extract
-  tf = tarfile.open( os.path.join( cliParams.targetPath, tarName ), "r" )
-  cwd = os.getcwd()
-  os.chdir(cliParams.targetPath)
-  for member in tf.getmembers():
-    tf.extract( member )
-  os.chdir(cwd)
+  #cwd = os.getcwd()
+  #os.chdir(cliParams.targetPath)
+  #tf = tarfile.open( tarPath, "r" )
+  #for member in tf.getmembers():
+  #  tf.extract( member )
+  #os.chdir(cwd)
+  tarCmd = "tar xzf '%s' -C '%s'" % ( tarPath, cliParams.targetPath )
+  os.system( tarCmd )
   #Delete tar
   os.unlink( tarPath )
   return True
@@ -203,10 +205,10 @@ def fixBuildPaths():
     fd = open( pydocPath )
     line = fd.readline()
     fd.close()
-    buildPath = line[2:line.find(cliParams.platform)-1]
+    buildPath = line[2:line.find( cliParams.platform ) - 1]
     replaceCmd = "grep -rIl '%s' %s | xargs sed -i 's:%s:%s:g'" % ( buildPath, cliParams.targetPath, buildPath, cliParams.targetPath )
-    os.system(replaceCmd)
-    
+    os.system( replaceCmd )
+
   except:
     pass
 
@@ -368,7 +370,7 @@ else:
   if extAvailable:
     if not downloadAndExtractTarball( extTar, cliParams.targetPath ):
       sys.exit( 1 )
-    fixBuildPaths()  
+    fixBuildPaths()
   else:
     if cliParams.buildIfNotAvailable:
       if os.system( buildCmd ):
