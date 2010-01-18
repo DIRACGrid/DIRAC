@@ -392,14 +392,11 @@ class TransformationHandler(RequestHandler):
         res = self.database.getTransformationStats(prodID)
         if res['OK']:
           fileDict = res['Value']
-          processed = fileDict.get('Processed')
-          if not processed:
-            processed = 0
-          if fileDict['Total'] == 0:
-            percentProcessed = "0.0"
-          else:
-            percentProcessed = "%.1f" % ((processed*100.0)/fileDict['Total'])
-          fileDict['PercentProcessed'] = percentProcessed
+          if fileDict['Total'] > 0:
+            processed = fileDict.get('Processed')
+            if not processed:
+              processed = 0
+            fileDict['PercentProcessed'] = "%.1f" % ((processed*100.0)/fileDict['Total'])
       for state in fileStateNames:
         if fileDict and fileDict.has_key(state):
           trans.append(fileDict[state])
