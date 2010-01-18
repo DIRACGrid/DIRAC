@@ -127,18 +127,46 @@ def resolvePackagesToBuild( compType, buildCFG, alreadyExplored = [] ):
       packagesToBuild.append( pkg )
   return packagesToBuild
   
+def fixAbsoluteLinks( path ):
+  for entry in os.listdir( path ):
+    entryPath = os.path.join( path, entry )
+    if os.path.islink( entryPath ):
+      destPath = os.readlink( entryPath )
+      if os.path.isabs( destPath ):
+        absLinkDirSplit = [ d for d in os.path.abspath( path ).split( "/" ) if d.strip() ]
+        absDestDirSplit = [ d for d in destPath.split( "/" ) if d.strip() ]
+        common = -1
+        for i in range( min( len( absLinkDirSplit ), len( absDestDirSplit ) ) ):
+          if absLinkDirSplit[ i ] == absDestDirSplit[ i ]:
+            common = i
+          else:
+            break
+        absLinkDirSplit = absLinkDirSplit[ common+1: ]
+        absDestDirSplit = absDestDirSplit[ common+1: ]
+        finalDestination = [ ".." for d in absLinkDirSplit ]
+        finalDestination.extend( absDestDirSplit )
+        finalDestination = os.path.join( *finalDestination )
+        print "Relinking %s" % entryPath
+        print "    %s -> %s" % ( destPath, finalDestination )
+        os.unlink( entryPath )
+        os.symlink( finalDestination, entryPath )
+    elif os.path.isdir( entryPath ):
+      fixAbsoluteLinks( entryPath )
+  
 cmdOpts = ( ( 'd:', 'destination=',   'Destination where to build the externals' ),
             ( 't:', 'type=',          'Type of compilation (default: client)' ),
             ( 'e:', 'externalsPath=', 'Path to the externals sources' ),
             ( 'v:', 'version=',       'Version of the externals to compile (default will be trunk)' ),
             ( 'h',  'help',           'Show this help' ),
-            ( 'i:', 'pythonVersion=', 'Python version to compile (25/24)' )
+            ( 'i:', 'pythonVersion=', 'Python version to compile (25/24)' ),
+            ( 'f',  'fixLinksOnly',   'Only fix absolute soft links' )
           )
 
 compExtVersion = False
 compType = 'client'
 compDest = False
 compExtSource = False
+onlyFixLinks = False
 compVersionDict = { 'PYTHONVERSION' : '2.5' }
   
 optList, args = getopt.getopt( sys.argv[1:], 
@@ -160,6 +188,8 @@ for o, v in optList:
     compExtVersion = v  
   elif o in ( '-i', '--pythonversion' ):
     compVersionDict[ 'PYTHONVERSION' ] = ".".join( [ c for c in v ] )
+  elif o in ( '-f', '--fixLinksOnly'):
+    onlyFixLinks = True
 
 if not compDest:
   basePath = os.path.dirname( os.path.realpath( __file__ ) )
@@ -177,6 +207,11 @@ if not compDest:
     print >> sys.stderr, "Can not determine local platform"
     sys.exit(-1)
   compDest = os.path.join( diracRoot, platform )
+
+if onlyFixLinks:
+  print "Fixing absolute links"
+  fixAbsoluteLinks( compDest )
+  sys.exit(0)
 
 if compDest:  
   if os.path.isdir( compDest ):
@@ -242,7 +277,9 @@ for prog in finalPackages:
     print "Oops! Error while compiling %s" % prog
     print "Take a look at %s for more info" % buildErrPath
     sys.exit(1)
-
+    
+print "Fixing absolute links"
+fixAbsoluteLinks( compDest )
 
 
 
