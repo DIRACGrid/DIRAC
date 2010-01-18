@@ -7,7 +7,7 @@ source /opt/dirac/bashrc
 #
 # Fix mysql.server to make it point to the actual db directory
 #
-sed -i "s:^datadir=.*:datadir=/opt/dirac/mysql/db:" /opt/dirac/pro/mysql/mysql/share/mysql/mysql.server
+sed -i "s:^datadir=.*:datadir=/opt/dirac/mysql/db:" /opt/dirac/pro/mysql/share/mysql/mysql.server
 
 for dir in /opt/dirac/mysql/db /opt/dirac/mysql/log ; do
   [ -e $dir ] && echo "Existing directory $dir" && echo "Skip MySQL installation" && exit
