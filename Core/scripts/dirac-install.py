@@ -190,6 +190,26 @@ def downloadAndExtractTarball( pkgVer, targetPath, subDir = False, checkHash = T
   os.unlink( tarPath )
   return True
 
+def fixBuildPaths():
+  """
+  At compilation time many scripts get the building directory inserted, 
+  this needs to be changed to point to the current installation path: 
+  cliParams.targetPath
+"""
+
+  # Locate build path (from header of pydoc)
+  pydocPath = os.path.join( cliParams.targetPath, cliParams.platform, 'bin', 'pydoc' )
+  try:
+    fd = open( pydocPath )
+    line = fd.readline()
+    fd.close()
+    buildPath = line[2:line.find(cliParams.platform)-1]
+    replaceCmd = "grep -rIl '%s' %s | xargs sed -i 's:%s:%s:g'" % ( buildPath, cliParams.targetPath, buildPath, cliParams.targetPath )
+    os.system(replaceCmd)
+    
+  except:
+    pass
+
 ####
 # End of helper functions
 ####
@@ -348,6 +368,7 @@ else:
   if extAvailable:
     if not downloadAndExtractTarball( extTar, cliParams.targetPath ):
       sys.exit( 1 )
+    fixBuildPaths()  
   else:
     if cliParams.buildIfNotAvailable:
       if os.system( buildCmd ):
