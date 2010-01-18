@@ -219,7 +219,8 @@ class PEP:
           notif = notif + "%s %s is perceived as" %(self.__granularity, self.__name) 
           notif = notif + " %s. Reason: %s." %(res['Status'], res['Reason'])
           
-          nc.addNotificationForUser(Configurations.notified_users, notif)
+          for user in Configurations.notified_users:
+            nc.addNotificationForUser(user, notif)
           
       if 'Collective_PolType' in self.__policyType:
         # do something
