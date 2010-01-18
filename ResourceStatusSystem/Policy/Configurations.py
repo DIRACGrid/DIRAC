@@ -9,7 +9,7 @@ from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 # site/resource checking frequency
 #############################################################################
 
-notified_users = 'fstagni'
+notified_users = ['fstagni', 'roma']
 
 #from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 #nc = NotificationClient()

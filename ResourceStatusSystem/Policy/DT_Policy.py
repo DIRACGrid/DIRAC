@@ -75,6 +75,8 @@ class DT_Policy(PolicyBase):
           result['Status'] = 'Probing'
           result['Reason'] = 'DT:AT_RISK'
           result['Enddate'] = status['Enddate']
+#        elif status['DT'] == 'No Info':
+#          result['SAT'] = None
     
     elif args[2] == 'Probing':
       if status == None:
@@ -91,6 +93,8 @@ class DT_Policy(PolicyBase):
           result['SAT'] = False
           result['Status'] = 'Probing'
           result['Reason'] = 'DT:AT_RISK'
+#        elif status['DT'] == 'No Info':
+#          result['SAT'] = None
       
     elif args[2] == 'Banned':
       if status == None:
@@ -107,6 +111,8 @@ class DT_Policy(PolicyBase):
           result['Status'] = 'Probing'
           result['Reason'] = 'DT:AT_RISK'
           result['Enddate'] = status['Enddate']
-    
+#        elif status['DT'] == 'No Info':
+#          result['SAT'] = None
+   
     
     return result
