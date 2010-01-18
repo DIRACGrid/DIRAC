@@ -16,25 +16,27 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.Security import CS
 
-class NotificationDB(DB):
+class NotificationDB( DB ):
 
   def __init__( self, maxQueueSize = 10 ):
     DB.__init__( self, 'NotificationDB', 'Framework/NotificationDB', maxQueueSize )
     result = self.__initializeDB()
     if not result[ 'OK' ]:
       self.log.fatal( "Cannot initialize DB!", result[ 'Message' ] )
-    self.__alarmQueryFields = [ 'alarmid', 'author', 'creationtime', 'modtime', 'subject', 
+    self.__alarmQueryFields = [ 'alarmid', 'author', 'creationtime', 'modtime', 'subject',
                                 'status', 'type', 'body', 'assignee' ]
     self.__alarmLogFields = [ 'timestamp', 'author', 'comment', 'modifications' ]
     self.__notificationQueryFields = ( 'id', 'user', 'seen', 'message', 'timestamp' )
-    self.__newAlarmMandatoryFields = [ 'author', 'subject', 'status', 'type', 'body', 'assignee' ]
-    self.__updateAlarmMandatoryFields = [ 'id', 'author' ]
+    self.__newAlarmMandatoryFields = [ 'author', 'subject', 'status', 'notifications', 'body', 'assignee', 'priority' ]
+    self.__updateAlarmIdentificationFields = [ 'id', 'alarmKey' ]
+    self.__updateAlarmMandatoryFields = [ 'author' ]
     self.__updateAlarmAtLeastOneField = [ 'comment', 'modifications' ]
-    self.__updateAlarmModificableFields = [ 'status', 'type', 'assignee' ]
+    self.__updateAlarmModificableFields = [ 'status', 'type', 'assignee', 'priority' ]
     self.__validAlarmStatus = [ 'Open', 'OnGoing', 'Closed', 'Testing' ]
-    self.__validAlarmTypes = [ 'Action' ]
-    
-  def __initializeDB(self):
+    self.__validAlarmNotifications = [ 'Web', 'Mail', 'SMS' ]
+    self.__validAlarmPriorities = [ 'Low', 'Medium', 'High', 'Extreme' ]
+
+  def __initializeDB( self ):
     retVal = self._query( "show tables" )
     if not retVal[ 'OK' ]:
       return retVal
@@ -43,17 +45,19 @@ class NotificationDB(DB):
     tablesToCreate = {}
     if 'ntf_Alarms' not in tablesInDB:
       tablesToCreate[ 'ntf_Alarms' ] = { 'Fields' : { 'AlarmId' : 'INTEGER UNSIGNED AUTO_INCREMENT NOT NULL',
+                                                      'AlarmKey' : 'VARCHAR(32) NOT NULL',
                                                          'Author' : 'VARCHAR(64) NOT NULL',
                                                          'CreationTime' : 'DATETIME NOT NULL',
                                                          'ModTime' : 'DATETIME NOT NULL',
                                                          'Subject' : 'VARCHAR(255) NOT NULL',
                                                          'Status' : 'VARCHAR(64) NOT NULL',
-                                                         'Type' : 'VARCHAR(32) NOT NULL',
+                                                         'Priority' : 'VARCHAR(32) NOT NULL',
                                                          'Body' : 'BLOB',
-                                                         'Assignee' : 'VARCHAR(64) NOT NULL'
+                                                         'Assignee' : 'VARCHAR(64) NOT NULL',
+                                                         'Notifications' : 'VARCHAR(128) NOT NULL'
                                                         },
                                             'PrimaryKey' : 'AlarmId',
-                                            'Indexes' : { 'Status' : [ 'Status' ], 
+                                            'Indexes' : { 'Status' : [ 'Status' ],
                                                           'Assignee' : [ 'Assignee' ] }
                                           }
     if 'ntf_AssigneeGroups' not in tablesInDB:
@@ -62,7 +66,7 @@ class NotificationDB(DB):
                                                         },
                                             'Indexes' : { 'ag' : [ 'AssigneeGroup' ] }
                                           }
-      
+
     if 'ntf_AlarmLog' not in tablesInDB:
       tablesToCreate[ 'ntf_AlarmLog' ] = { 'Fields' : { 'AlarmId' : 'INTEGER UNSIGNED NOT NULL',
                                                             'Timestamp' : 'DATETIME NOT NULL',
@@ -72,7 +76,7 @@ class NotificationDB(DB):
                                                         },
                                             'Indexes' : { 'AlarmID' : [ 'AlarmId' ] }
                                           }
-      
+
     if 'ntf_AlarmFollowers' not in tablesInDB:
       tablesToCreate[ 'ntf_AlarmFollowers' ] = { 'Fields' : { 'AlarmId'   : 'INTEGER UNSIGNED NOT NULL',
                                                                   'User'  : 'VARCHAR(64) NOT NULL',
@@ -82,7 +86,7 @@ class NotificationDB(DB):
                                                         },
                                             'Indexes' : { 'AlarmID' : [ 'AlarmId' ] }
                                           }
-      
+
     if 'ntf_Notifications' not in tablesInDB:
       tablesToCreate[ 'ntf_Notifications' ] = { 'Fields' : { 'Id'   : 'INTEGER UNSIGNED AUTO_INCREMENT NOT NULL',
                                                                  'User'  : 'VARCHAR(64) NOT NULL',
@@ -94,11 +98,11 @@ class NotificationDB(DB):
                                                         },
                                                     'PrimaryKey' : 'Id',
                                                   }
-      
+
     if tablesToCreate:
       return self._createTables( tablesToCreate )
     return S_OK()
-    
+
   def __checkAlarmField( self, name, value ):
     name = name.lower()
     if name == 'status':
@@ -107,6 +111,9 @@ class NotificationDB(DB):
     elif name == 'type':
       if value not in self.__validAlarmTypes:
         return S_ERROR( "Type %s is invalid. Valid ones are: %s" % ( value, self.__validAlarmTypes ) )
+    elif name == 'priority':
+      if value not in self.__validAlarmPriorities:
+        return S_ERROR( "Type %s is invalid. Valid ones are: %s" % ( value, self.__validAlarmPriorities ) )
     elif name == 'assignee':
       result = self.getUserAsignees( value )
       if not result[ 'OK' ]:
@@ -131,36 +138,58 @@ class NotificationDB(DB):
     author = alarmDef[ 'author' ]
     if author not in followers:
       followers.append( author )
-      
+
     sqlFieldsName = []
     sqlFieldsValue = []
     for field in self.__newAlarmMandatoryFields:
+      if field == 'notifications':
+        notifications = {}
+        for type in self.__validAlarmNotifications:
+          if type in alarmDef[ field ]:
+            notifications[ type ] = 1
+          else:
+            notifications[ type ] = 0
+        val = DEncode.encode( notifications )
+      else:
+        val = alarmDef[ field ]
+      #Add to the list of fields to add
       sqlFieldsName.append( field )
-      val = alarmDef[ field ]
       result = self._escapeString( val )
       if result['OK']:
         sqlFieldsValue.append( result['Value'] )
       else:
-        return S_ERROR('Failed to escape value %s' % val )
+        return S_ERROR( 'Failed to escape value %s' % val )
     sqlFieldsName.extend( [ 'CreationTime', 'ModTime' ] )
     sqlFieldsValue.extend( [ 'UTC_TIMESTAMP()', 'UTC_TIMESTAMP()' ] )
-      
-    
-    sqlInsert = "INSERT INTO `ntf_Alarms` (%s) VALUES (%s)" % ( ",".join( sqlFieldsName ), 
+
+    #Get the defined alarmkey and generate a random one if not defined
+    if 'AlarmKey' in alarmDef:
+      result = self._escapeString( alarmDef[ 'AlarmKey' ] )
+      if result['OK']:
+        alarmKey = result['Value']
+      else:
+        return S_ERROR( 'Failed to escape value %s for key AlarmKey' % val )
+    else:
+      alarmKey = str( time.time() )[-31:]
+    sqlFieldsName.append( 'AlarmKey' )
+    sqlFieldsValue.append( alarmKey )
+
+
+    sqlInsert = "INSERT INTO `ntf_Alarms` (%s) VALUES (%s)" % ( ",".join( sqlFieldsName ),
                                                                     ",".join( sqlFieldsValue ) )
-    
+
     result = self._update( sqlInsert )
     if not result['OK']:
       return result
     alarmId = result[ 'lastRowId' ]
     for follower in followers:
-      result = self.modifyFollowerForAlarm( alarmId, follower, 1, 0, 0)
+      result = self.modifyFollowerForAlarm( alarmId, follower, notifications )
       if not result[ 'OK' ]:
         varMsg = "\nFollower: %s\nAlarm: %s\nError: %s" % ( follower, alarmId, result['Message'] )
         self.log.error( "Couldn't set follower for alarm", varMsg )
     self.__notifyAlarm( alarmId )
     return S_OK( alarmId )
-  
+
   def __processUpdateAlarmModifications( self, modifications ):
     if type( modifications ) != types.DictType:
       return S_ERROR( "Modifications must be a dictionary" )
@@ -180,8 +209,32 @@ class NotificationDB(DB):
         return result
       updateFields.append( "%s=%s" % ( field, result[ 'Value' ] ) )
     return S_OK( ( ", ".join( updateFields ), DEncode.encode( modifications ), followers ) )
-        
+
+  def __getAlarmIdFromKey( self, alarmKey ):
+    result = self._escape( alarmKey )
+    if not result[ 'OK' ]:
+      return S_ERROR( "Cannot escape alarmKey %s" % alarmKey )
+    alarmKey = result[ 'Value' ]
+    sqlQuery = "SELECT AlarmId FROM `ntf_Alarms` WHERE AlarmKey=%s" % alarmKey
+    result = self._query( sqlQuery )
+    if result[ 'OK' ]:
+      result[ 'Value' ] = result[ 'Value' ][0][0]
+    return result
+
   def updateAlarm( self, updateReq ):
+    #Discover alarm identification
+    idOK = False
+    for field in self.__updateAlarmIdentificationFields:
+      if field in updateReq:
+        idOK = True
+    if not idOK:
+      return S_ERROR( "Need at least one field to identify which alarm to update! %s" % self.__updateAlarmIdentificationFields )
+    if 'AlarmKey' in updateReq:
+      result = self.__getAlarmIdFromKey( alarmKey )
+      if not result[ 'OK' ]:
+        return result
+      updateReq[ 'id' ] = result[ 'Value' ]
+    #Check fields
     for field in self.__updateAlarmMandatoryFields:
       if field not in updateReq:
         return S_ERROR( "Oops. Missing %s" % field )
@@ -200,7 +253,7 @@ class NotificationDB(DB):
       return result
     author = result[ 'Value' ]
     try:
-      alarmId  = int( updateReq[ 'id' ] )
+      alarmId = int( updateReq[ 'id' ] )
     except:
       return S_ERROR( "Oops, Alarm id is not valid! (bad boy...)" )
     result = self._query( "SELECT AlarmId FROM `ntf_Alarms` WHERE AlarmId=%d" % alarmId )
@@ -243,13 +296,23 @@ class NotificationDB(DB):
     result = self._update( updateSQL )
     if not result[ 'OK' ]:
       return result
+    #Get notifications config
+    sqlQuery = "SELECT Notifications FROM `ntf_Alarms` WHERE AlarmId=%s" % alarmId
+    result = self._query( sqlQuery )
+    if not result[ 'OK' ] or not result[ 'Value' ]:
+      self.log.error( "Could not retrieve default notifications for alarm %s" % alarmId )
+      return S_OK( alarmId )
+    notificationsDict = DEncode.decode( result[ 'Value' ][0][0] )[0]
+    for v in self.__validAlarmNotifications:
+      if v not in notificationsDict:
+        notificationsDict[ v ] = 0
     for follower in followers:
-      result = self.modifyFollowerForAlarm( alarmId, follower, 1, 0, 0, overwrite = False )
+      result = self.modifyFollowerForAlarm( alarmId, follower, notificationsDict, overwrite = False )
       if not result[ 'OK' ]:
         varMsg = "\nFollower: %s\nAlarm: %s\nError: %s" % ( follower, alarmId, result['Message'] )
         self.log.error( "Couldn't set follower for alarm", varMsg )
     return self.__notifyAlarm( alarmId )
-  
+
   def __notifyAlarm( self, alarmId ):
     result = self.getSubscribersForAlarm( alarmId )
     if not result[ 'OK' ]:
@@ -287,7 +350,7 @@ class NotificationDB(DB):
       #TODO
       pass
     return S_OK()
-  
+
   def __generateAlarmLogMessage( self, alarmLog, showOnlyLast = False ):
     if len( alarmLog[ 'Records' ] ) == 0:
       return ""
@@ -295,7 +358,7 @@ class NotificationDB(DB):
     if showOnlyLast:
       logToShow = [-1]
     else:
-      logToShow = range( len( records ) -1, -1, -1 )
+      logToShow = range( len( records ) - 1, -1, -1 )
     finalMessage = []
     for id in logToShow:
       rec = records[ id ]
@@ -317,10 +380,10 @@ class NotificationDB(DB):
         msg.append( " Comment:\n\n%s" % data[ 'comment' ] )
       finalMessage.append( "\n".join( msg ) )
     return "\n\n===============\n".join( finalMessage )
-    
+
   def __generateAlarmInfoMessage( self, alarmInfo ):
     #[ 'alarmid', 'author', 'creationtime', 'modtime', 'subject', 'status', 'type', 'body', 'assignee' ]
-    msg =  " Alarm %6d\n" % alarmInfo[ 'alarmid' ]
+    msg = " Alarm %6d\n" % alarmInfo[ 'alarmid' ]
     msg += "   Author            : %s\n" % alarmInfo[ 'author' ]
     msg += "   Subject           : %s\n" % alarmInfo[ 'subject' ]
     msg += "   Status            : %s\n" % alarmInfo[ 'status' ]
@@ -328,9 +391,9 @@ class NotificationDB(DB):
     msg += "   Assignee          : %s\n" % alarmInfo[ 'assignee' ]
     msg += "   Creation date     : %s UTC\n" % alarmInfo[ 'creationtime' ].strftime( "%Y/%m/%d %H:%M:%S" )
     msg += "   Last modificaiton : %s UTC\n" % alarmInfo[ 'modtime' ].strftime( "%Y/%m/%d %H:%M:%S" )
-    msg += "   Body:\n\n%s" % alarmInfo[ 'body' ] 
+    msg += "   Body:\n\n%s" % alarmInfo[ 'body' ]
     return msg
-    
+
   def __sendMailToUser( self, user, subject, message ):
     address = gConfig.getValue( "/Registry/Users/%s/email" % user, "" )
     if not address:
@@ -343,13 +406,13 @@ class NotificationDB(DB):
     m._mailAddress = address
     result = m._send()
     if not result['OK']:
-      gLogger.warn('Could not send mail with the following message:\n%s' %result['Message'])
+      gLogger.warn( 'Could not send mail with the following message:\n%s' % result['Message'] )
 
     return result
 
 
   def getAlarms( self, condDict = {}, sortList = False, start = 0, limit = 0, modifiedAfter = False ):
-    
+
     condSQL = []
     for field in self.__alarmQueryFields:
       if field in condDict:
@@ -371,7 +434,7 @@ class NotificationDB(DB):
             return result
           fieldValues.append( result[ 'Value' ] )
         condSQL.append( "%s in ( %s )" % ( field, ",".join( fieldValues ) ) )
-    
+
     selSQL = "SELECT %s FROM `ntf_Alarms`" % ",".join( self.__alarmQueryFields )
     if modifiedAfter:
       condSQL.append( "ModTime >= %s" % modifiedAfter.strftime( "%Y-%m-%d %H:%M:%S" ) )
@@ -388,9 +451,9 @@ class NotificationDB(DB):
 
     resultDict = {}
     resultDict['ParameterNames'] = self.__alarmQueryFields
-    resultDict['Records'] = [ list(v) for v in result['Value'] ]
+    resultDict['Records'] = [ list( v ) for v in result['Value'] ]
     return S_OK( resultDict )
-  
+
   def getAlarmInfo( self, alarmId ):
     result = self.getAlarms( { 'alarmId' : alarmId } )
     if not result[ 'OK' ]:
@@ -402,7 +465,7 @@ class NotificationDB(DB):
     for i in range( len( data[ 'ParameterNames' ] ) ):
       alarmInfo[ data[ 'ParameterNames' ][i] ] = data[ 'Records' ][0][i]
     return S_OK( alarmInfo )
-  
+
   def getAlarmLog( self, alarmId ):
     try:
       alarmId = int( alarmId )
@@ -421,7 +484,7 @@ class NotificationDB(DB):
         continue
       dec = DEncode.decode( row[ 3 ] )
       decodedRows[-1][3] = dec[0]
-    
+
     resultDict = {}
     resultDict['ParameterNames'] = self.__alarmLogFields
     resultDict['Records'] = decodedRows
@@ -431,7 +494,7 @@ class NotificationDB(DB):
 # Followers management
 ###    
 
-  def modifyFollowerForAlarm( self, alarmId, user, notification, mail, sms, overwrite = True ):
+  def modifyFollowerForAlarm( self, alarmId, user, notificationsDict, overwrite = True ):
     rawUser = user
     if rawUser not in CS.getAllUsers():
       return S_OK()
@@ -439,7 +502,11 @@ class NotificationDB(DB):
     if not result[ 'OK' ]:
       return result
     user = result[ 'Value' ]
-    subscriber = mail or notification or sms
+    subscriber = False
+    for k in notificationsDict:
+      if notificationsDict[ k ]:
+        subscriber = True
+        break
     selSQL = "SELECT Notification, Mail, SMS FROM `ntf_AlarmFollowers` WHERE AlarmId=%d AND User=%s" % ( alarmId, user )
     result = self._query( selSQL )
     if not result[ 'OK' ]:
@@ -448,8 +515,8 @@ class NotificationDB(DB):
       if not subscriber:
         return S_OK()
       sqlValues = [ "%d" % alarmId, user ]
-      for v in ( notification, mail, sms ):
-        if v:
+      for k in self.__validAlarmNotifications:
+        if notificationsDict[ k ]:
           sqlValues.append( "1" )
         else:
           sqlValues.append( "0" )
@@ -458,13 +525,13 @@ class NotificationDB(DB):
     sqlCond = "AlarmId=%d AND User=%s" % ( alarmId, user )
     #Need to delete
     if not subscriber:
-      return self._update( "DELETE FROM `ntf_AlarmFollowers` WHERE %s" % sqlCond)
+      return self._update( "DELETE FROM `ntf_AlarmFollowers` WHERE %s" % sqlCond )
     if not overwrite:
       return S_OK()
     #Need to update
     modSQL = []
-    for k, v in ( ( 'Mail', mail ), ( 'Notification', notification ), ( 'SMS', sms ) ):
-      if v:
+    for k in self.__validAlarmNotifications:
+      if notificationsDict[ k ]:
         modSQL.append( "%s=1" % k )
       else:
         modSQL.append( "%s=0" % k )
@@ -489,12 +556,12 @@ class NotificationDB(DB):
       if SMS:
         followWays[ 'sms' ].append( user )
     return S_OK( followWays )
-    
-      
+
+
 ###
 # Assignee groups management
 ###
-  
+
   def getUserAsignees( self, assignee ):
     #Check if it is a user
     if assignee in CS.getAllUsers():
@@ -511,7 +578,7 @@ class NotificationDB(DB):
     if not users:
       return S_OK( [] )
     return S_OK( users )
-    
+
   def setAssigneeGroup( self, groupName, usersList ):
     validUsers = CS.getAllUsers()
     result = self._escapeString( groupName )
@@ -557,13 +624,13 @@ class NotificationDB(DB):
       if not result[ 'OK' ]:
         return result
     return S_OK()
-  
+
   def deleteAssigneeGroup( self, groupName ):
     result = self._escapeString( groupName )
     if not result[ 'OK' ]:
       return result
     escGroup = result[ 'Value' ]
-    sqlSel = "SELECT AlarmId FROM `ntf_Alarms` WHERE Assignee=%s" % escGroup 
+    sqlSel = "SELECT AlarmId FROM `ntf_Alarms` WHERE Assignee=%s" % escGroup
     result = self._query( sqlSel )
     if not result[ 'OK' ]:
       return result
@@ -572,7 +639,7 @@ class NotificationDB(DB):
       return S_ERROR( "There are %s alarms assigned to this group" % len( alarmIds ) )
     sqlDel = "DELETE FROM `ntf_AssigneeGroups` WHERE AssigneeGroup=%s" % escGroup
     return self._update( sqlDel )
-  
+
   def getAssigneeGroups( self ):
     result = self._query( "SELECT AssigneeGroup, User from `ntf_AssigneeGroups` ORDER BY User" )
     if not result[ 'OK' ]:
@@ -585,7 +652,7 @@ class NotificationDB(DB):
         agDict[ ag ] = []
       agDict[ ag ].append( user )
     return S_OK( agDict )
-  
+
   def getAssigneeGroupsForUser( self, user ):
     if user not in CS.getAllUsers():
       return S_ERROR( "%s is an unknown user" % user )
@@ -597,11 +664,11 @@ class NotificationDB(DB):
     if not result[ 'OK' ]:
       return result
     return S_OK( [ row[0] for row in result[ 'Value' ] ] )
-  
+
 ###
 # Notifications
 ###
-  
+
   def addNotificationForUser( self, user, message, lifetime = 0, deferToMail = 1 ):
     if user not in CS.getAllUsers():
       return S_ERROR( "%s is an unknown user" % user )
@@ -622,13 +689,13 @@ class NotificationDB(DB):
     if lifetime:
       sqlFields.append( "Expiration" )
       sqlValues.append( "TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() )" % int( lifetime ) )
-    sqlInsert = "INSERT INTO `ntf_Notifications` (%s) VALUES (%s) " % ( ",".join(sqlFields), 
-                                                                        ",".join(sqlValues) )
+    sqlInsert = "INSERT INTO `ntf_Notifications` (%s) VALUES (%s) " % ( ",".join( sqlFields ),
+                                                                        ",".join( sqlValues ) )
     result = self._update( sqlInsert )
     if not result[ 'OK' ]:
       return result
     return S_OK( result[ 'lastRowId' ] )
-  
+
   def removeNotificationsForUser( self, user, msgIds = False ):
     if user not in CS.getAllUsers():
       return S_ERROR( "%s is an unknown user" % user )
@@ -644,9 +711,9 @@ class NotificationDB(DB):
         if not result[ 'OK' ]:
           return result
         escapedIDs.append( result[ 'Value' ] )
-      delSQL = "%s AND Id in ( %s ) " % ( delSQL, ",".join( escapedIDs ) ) 
+      delSQL = "%s AND Id in ( %s ) " % ( delSQL, ",".join( escapedIDs ) )
     return self._update( delSQL )
-  
+
   def markNotificationsSeen( self, user, seen = True, msgIds = False ):
     if user not in CS.getAllUsers():
       return S_ERROR( "%s is an unknown user" % user )
@@ -666,11 +733,11 @@ class NotificationDB(DB):
         if not result[ 'OK' ]:
           return result
         escapedIDs.append( result[ 'Value' ] )
-      updateSQL = "%s AND Id in ( %s ) " % ( updateSQL, ",".join( escapedIDs ) ) 
+      updateSQL = "%s AND Id in ( %s ) " % ( updateSQL, ",".join( escapedIDs ) )
     return self._update( updateSQL )
-  
+
   def getNotifications( self, condDict = {}, sortList = False, start = 0, limit = 0 ):
-    
+
     condSQL = []
     for field in self.__notificationQueryFields:
       if field in condDict:
@@ -681,7 +748,7 @@ class NotificationDB(DB):
             return result
           fieldValues.append( result[ 'Value' ] )
         condSQL.append( "%s in ( %s )" % ( field, ",".join( fieldValues ) ) )
-    
+
     selSQL = "SELECT %s FROM `ntf_Notifications`" % ",".join( self.__notificationQueryFields )
     if condSQL:
       selSQL = "%s WHERE %s" % ( selSQL, " AND ".join( condSQL ) )
@@ -698,9 +765,9 @@ class NotificationDB(DB):
 
     resultDict = {}
     resultDict['ParameterNames'] = self.__notificationQueryFields
-    resultDict['Records'] = [ list(v) for v in result['Value'] ]
+    resultDict['Records'] = [ list( v ) for v in result['Value'] ]
     return S_OK( resultDict )
-    
+
   def purgeExpiredNotifications( self ):
     self.log.info( "Purging expired notifications" )
     delConds = [ '(Seen=1 OR DeferToMail=0)' 'TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), Expiration ) < 0 )' ]
@@ -719,12 +786,12 @@ class NotificationDB(DB):
       return S_OK()
     ids = []
     for msg in messages:
-      self.__sendMailToUser(msg[1], 'Notification defered to mail', msg[2])
+      self.__sendMailToUser( msg[1], 'Notification defered to mail', msg[2] )
       ids.append( str( msg[0] ) )
     self.log.info( "Defered %s notifications" % len( ids ) )
     return self._update( "DELTE FROM `ntf_Notifications` WHERE Id in (%s)" % ",".join( ids ) )
-    
-    
-    
-    
-    
+
+
+
+
+
