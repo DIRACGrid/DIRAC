@@ -55,7 +55,7 @@ ValidRes = ['Site', 'Service', 'Resource', 'StorageElement']
 ValidStatus = ['Active', 'Probing', 'Banned']
 PolicyTypes = ['Resource_PolType', 'Alarm_PolType', 'Collective_PolType']
 ValidSiteType = ['T0', 'T1', 'T2']
-ValidResourceType = ['CE', 'SE']
+ValidResourceType = ['CE', 'SE', 'LFC', 'FTS']
 ValidService = ValidServiceType = ['Computing', 'Storage']
 #ValidReasons = ['init', 'DT:OUTAGE', 'DT:AT_RISK', 'DT:None']
 
