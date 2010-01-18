@@ -121,14 +121,16 @@ class ResourceStatusDB:
       
       :attr:`status`: a string or a list representing the status. If not given, fetch all.
       
-      :attr:`siteType`: a string or a list representing the site type (T0, T1, T2). 
+      :attr:`siteType`: a string or a list representing the site type. 
       If not given, fetch all.
       
-      :attr:`serviceType`: a string or a list representing the service type (T0, T1, T2). 
+      :attr:`serviceType`: a string or a list representing the service type. 
       If not given, fetch all.
       
-      :attr:`resourceType`: a string or a list representing the resource type (CE, SE).
+      :attr:`resourceType`: a string or a list representing the resource type.
       If not given, fetch all.
+      
+      See :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils` for these parameters.
       
     :return:
       list of monitored paramsList's values
@@ -2614,12 +2616,13 @@ class ResourceStatusDB:
     :mod:`DIRAC.ResourceStatusSystem.Service.ResourceStatusHandler` 
     """ 
     
-    #sincrony of sites, services and nodes.
+    gLogger.info("!!! Sync DB content with CS content !!!")
     
     from DIRAC.Core.Utilities.SiteCEMapping import getSiteCEMapping
     from DIRAC.Core.Utilities.SiteSEMapping import getSiteSEMapping
     from DIRAC import S_OK, S_ERROR
     import time
+    import socket
     
     T0List = []
     T1List = []
@@ -2630,6 +2633,7 @@ class ResourceStatusDB:
     SerStorList = []
     SEList = []
     SENodeList = []
+    LFCNodeList = []
     seServiceSite = []
     
     sitesList = gConfig.getSections('Resources/Sites/LCG', True)
@@ -2653,7 +2657,14 @@ class ResourceStatusDB:
    
     siteCE = getSiteCEMapping('LCG')['Value']
     for i in siteCE.values():
-      CEList = CEList+i
+      for ce in i:
+        if ce is None:
+          continue
+#        try:
+#          ce = socket.gethostbyname_ex(ce)[0]
+#        except socket.gaierror:
+#          pass
+        CEList.append(ce)
       
     siteSE = getSiteSEMapping('LCG')['Value']
     for i in siteSE.values():
@@ -2662,9 +2673,29 @@ class ResourceStatusDB:
         
     for SE in SEList:
       node = gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/Host" %SE)
+      if node is None:
+        continue
+#      try:
+#        node = socket.gethostbyname_ex(node)[0]
+#      except socket.gaierror:
+#        pass
       if node not in SENodeList:
         SENodeList.append(node)
 
+    #create LFCNodeList
+    for site in gConfig.getSections('Resources/FileCatalogs/LcgFileCatalogCombined', True)['Value']:
+      for readable in ('ReadOnly', 'ReadWrite'):
+        LFCNode = gConfig.getValue('Resources/FileCatalogs/LcgFileCatalogCombined/%s/%s' %(site, readable))
+        if LFCNode is None:
+          continue
+#        try:
+#          LFCNode = socket.gethostbyname_ex(LFCNode)[0]
+#        except socket.gaierror:
+#          pass
+        if LFCNode is not None and LFCNode not in LFCNodeList:
+          LFCNodeList.append(LFCNode)
+      
+      
 
     sitesIn = self.getMonitoredsList('Site', paramsList = ['SiteName'])
     sitesIn = [s[0] for s in sitesIn]
@@ -2743,9 +2774,9 @@ class ResourceStatusDB:
 #                                datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
 #                                datetime(9999, 12, 31, 23, 59, 59))
 
-    #remove CEs or SEs nodes no more in the CS
+    #remove CEs or SEs or LFCs nodes no more in the CS
     for res in resourcesIn:
-      if res not in CEList + SENodeList:
+      if res not in CEList + SENodeList + LFCNodeList:
         self.removeResource(res)
         
     #remove SEs no more in the CS
@@ -2768,7 +2799,13 @@ class ResourceStatusDB:
       if site == 'LCG.Dummy.ch':
         continue
       for ce in siteCE[site]:
+        if ce is None:
+          continue
         service = 'Computing@' + site
+#        try:
+#          ce = socket.gethostbyname_ex(ce)[0]
+#        except socket.gaierror:
+#          pass
         if ce not in resourcesIn:
           self.addOrModifyResource(ce, 'CE', service, site, 'Active', 'init', 
                                    datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
@@ -2792,6 +2829,12 @@ class ResourceStatusDB:
       for se in siteSE[site]:
         service = 'Storage@' + site
         se = gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/Host" %se)
+        if se is None:
+          continue
+#        try:
+#          se = socket.gethostbyname_ex(se)[0]
+#        except socket.gaierror:
+#          pass
         if se not in resourcesIn and se is not None:
           sss = se+service+site
           if sss not in seServiceSite:
@@ -2800,6 +2843,34 @@ class ResourceStatusDB:
                                      datetime(9999, 12, 31, 23, 59, 59))
             seServiceSite.append(sss)
 
+
+    #add new storage services and LFCs - separate because of "race conditions"         
+    for site in gConfig.getSections('Resources/FileCatalogs/LcgFileCatalogCombined', True)['Value']:
+      service = 'Storage@'+site
+      if service not in servicesIn:
+        self.addOrModifyService(service, 'Storage', site, 'Active', 'init', 
+                                datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
+                                datetime(9999, 12, 31, 23, 59, 59))
+        servicesIn.append(service)
+      
+      for readable in ('ReadOnly', 'ReadWrite'):
+        LFCNode = gConfig.getValue('Resources/FileCatalogs/LcgFileCatalogCombined/%s/%s' %(site, readable))
+        if LFCNode is None:
+          continue
+#        try:
+#          LFCNode = socket.gethostbyname_ex(LFCNode)[0]
+#        except socket.gaierror:
+#          pass
+        if LFCNode is not None and LFCNode not in resourcesIn:
+          #Otherwise I can't monitor SAM!
+          if site == 'LCG.NIKHEF.nl':
+            site = 'LCG.SARA.nl'
+          self.addOrModifyResource(LFCNode, 'LFC', service, site, 'Active', 'init', 
+                                   datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
+                                   datetime(9999, 12, 31, 23, 59, 59))
+          resourcesIn.append(LFCNode)
+    
+    
     seRes = []
 
     #add StorageElements
@@ -2807,14 +2878,15 @@ class ResourceStatusDB:
       if site == 'LCG.Dummy.ch':
         continue
       for storageElement in siteSE[site]:
-        res = gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/Host" %storageElement)
-        if res is not None:
-          sr = storageElement+res
-          if sr not in seRes:
-            self.addOrModifyStorageElement(storageElement, res, site, 'Active', 'init', 
-                                           datetime.utcnow().replace(microsecond = 0), 
-                                           'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
-            seRes.append(sr)
+        if storageElement not in storageElementsIn:
+          res = gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/Host" %storageElement)
+          if res is not None:
+            sr = storageElement+res
+            if sr not in seRes:
+              self.addOrModifyStorageElement(storageElement, res, site, 'Active', 'init', 
+                                             datetime.utcnow().replace(microsecond = 0), 
+                                             'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+              seRes.append(sr)
             
     
     #sincrony of assignee group for alarms        
