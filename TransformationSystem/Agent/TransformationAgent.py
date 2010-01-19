@@ -75,6 +75,12 @@ class TransformationAgent(AgentModule):
     lfns = res['LFNs']
     if not lfns:
       gLogger.info("%s.processTransformation: No 'Unused' files found for transformation." % AGENT_NAME)
+      if transDict['Status'] == 'Flush':
+        res = self.transDB.setTransformationStatus(transID, 'Active')
+        if not res['OK']:
+          gLogger.error("%s.execute: Failed to update transformation status to 'Active'." % AGENT_NAME, res['Message'])
+        else:
+          gLogger.info("%s.execute: Updated transformation status to 'Active'." % AGENT_NAME)
       return S_OK()
 
     # Check the data is available with replicas
