@@ -70,7 +70,7 @@ except Exception, x:
 installScript = os.path.join( myPath, installScript )
 
 if not os.path.exists( installScript ):
-  print '"%s" requires "%s" in the same directory'
+  print '"%s" requires "%s" in the same directory' % ('dirac-pilot',os.path.basename(installScript))
   sys.exit(0)
 os.chmod( installScript, stat.S_IRWXU )
 
