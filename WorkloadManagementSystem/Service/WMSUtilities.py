@@ -30,11 +30,11 @@ def getPilotOutput( proxy, grid, pilotRef ):
   elif grid == 'gLite':
     cmd = [ 'glite-wms-job-output' ]
   else:
-    return S_ERROR( 'Unknnown GRID %s' % grid  )
+    return S_ERROR( 'Unknown GRID %s' % grid  )
 
   cmd.extend( ['--noint','--dir', tmp_dir, pilotRef] )
 
-  ret = _gridCommand( proxy, cmd )
+  ret = _gridCommand( proxy, cmd )  
   if not ret['OK']:
     shutil.rmtree(tmp_dir)
     return ret
@@ -62,9 +62,9 @@ def getPilotOutput( proxy, grid, pilotRef ):
 
   # Get the list of files
 
-  if grid == 'LCG':
-    # LCG always creates an unique sub-directory
-    tmp_dir = os.path.join(tmp_dir,os.listdir(tmp_dir)[0])
+  # LCG always creates an unique sub-directory
+  # gLite does it too now
+  tmp_dir = os.path.join(tmp_dir,os.listdir(tmp_dir)[0])
 
   result = S_OK()
   result['FileList'] = outputSandboxFiles
@@ -117,7 +117,7 @@ def _gridCommand( proxy, cmd):
 
   ret = gProxyManager.dumpProxyToFile( proxy )
   if not ret['OK']:
-    return ret
+    return ret    
   gridEnv[ 'X509_USER_PROXY' ] = ret['Value']
   gridEnv[ 'LOGNAME' ]         = 'dirac'
 
