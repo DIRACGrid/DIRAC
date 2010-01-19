@@ -1387,8 +1387,11 @@ class JobDB(DB):
     classAdReq.insertAttributeString( 'Setup',      diracSetup )
     classAdReq.insertAttributeString( 'OwnerDN',    ownerDN )
     classAdReq.insertAttributeString( 'OwnerGroup', ownerGroup )
-
-    voPolicyDict = gConfig.getOptionsDict('/DIRAC/VOPolicy')
+    
+    setup = gConfig.getValue('/DIRAC/Setup','')
+    vo = gConfig.getValue('/DIRAC/VirtualOrganization','')
+    voPolicyDict = gConfig.getOptionsDict('/DIRAC/VOPolicy/%s/%s' % (vo,setup))
+    #voPolicyDict = gConfig.getOptionsDict('/DIRAC/VOPolicy')
     if voPolicyDict['OK']:
       voPolicy = voPolicyDict['Value']
       for param,val in voPolicy.items():
