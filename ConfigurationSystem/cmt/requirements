@@ -1,1 +1,3 @@
 package ConfigurationSystem
+
+use DiracPolicy *
