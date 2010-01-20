@@ -377,7 +377,7 @@ class TransformationHandler(RequestHandler):
       prodID = transDict['TransformationID']
       res = self.database.getTransformationTaskStats(prodID)
       taskDict = {}
-      if res['OK']:
+      if res['OK'] and res['Value']:
         taskDict = res['Value']
       for state in taskStateNames:
         if taskDict and taskDict.has_key(state):
