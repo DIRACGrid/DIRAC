@@ -50,7 +50,7 @@ class TransformationAgent(AgentModule):
     transName = self.am_getOption('Transformation','All')
     if transName == 'All':
       gLogger.info("%s.getTransformations: Initializing general purpose agent." % AGENT_NAME)
-      res = self.transDB.getTransformations({'Status':['Active','Flush']})
+      res = self.transDB.getTransformations({'Status':['Active','Flush']},extraParams=True)
       if not res['OK']:
         gLogger.error("%s.getTransformations: Failed to get transformations." % AGENT_NAME, res['Message'])
         return res
@@ -58,7 +58,7 @@ class TransformationAgent(AgentModule):
       gLogger.info("%s.getTransformations: Obtained %d transformations to process" % (AGENT_NAME,len(transformations)))
     else:
       gLogger.info("%s.getTransformations: Initializing for transformation %s." % (AGENT_NAME,transName))
-      res = self.transDB.getTransformation(transName)
+      res = self.transDB.getTransformation(transName,extraParams=True)
       if not res['OK']:
         gLogger.error("%s.getTransformations: Failed to get transformation." % AGENT_NAME, res['Message'])
         return res
