@@ -91,7 +91,7 @@ class NotificationClient:
                  'priority' : priority, 'body' : body }
     if alarmKey:
       alarmDef[ 'alarmKey' ] = alarmKey
-    return rpcClient.newAlarm()
+    return rpcClient.newAlarm( alarmDef )
 
   def updateAlarm( self, id = -1, alarmKey = "", comment = False, modDict = {} ):
     rpcClient = self.__getRPCClient()

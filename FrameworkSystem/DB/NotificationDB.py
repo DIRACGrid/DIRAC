@@ -24,14 +24,14 @@ class NotificationDB( DB ):
     if not result[ 'OK' ]:
       self.log.fatal( "Cannot initialize DB!", result[ 'Message' ] )
     self.__alarmQueryFields = [ 'alarmid', 'author', 'creationtime', 'modtime', 'subject',
-                                'status', 'type', 'body', 'assignee' ]
+                                'status', 'priority', 'notifications', 'body', 'assignee' ]
     self.__alarmLogFields = [ 'timestamp', 'author', 'comment', 'modifications' ]
     self.__notificationQueryFields = ( 'id', 'user', 'seen', 'message', 'timestamp' )
     self.__newAlarmMandatoryFields = [ 'author', 'subject', 'status', 'notifications', 'body', 'assignee', 'priority' ]
     self.__updateAlarmIdentificationFields = [ 'id', 'alarmKey' ]
     self.__updateAlarmMandatoryFields = [ 'author' ]
     self.__updateAlarmAtLeastOneField = [ 'comment', 'modifications' ]
-    self.__updateAlarmModificableFields = [ 'status', 'type', 'assignee', 'priority' ]
+    self.__updateAlarmModificableFields = [ 'status', 'assignee', 'priority' ]
     self.__validAlarmStatus = [ 'Open', 'OnGoing', 'Closed', 'Testing' ]
     self.__validAlarmNotifications = [ 'Web', 'Mail', 'SMS' ]
     self.__validAlarmPriorities = [ 'Low', 'Medium', 'High', 'Extreme' ]
@@ -163,12 +163,18 @@ class NotificationDB( DB ):
     sqlFieldsValue.extend( [ 'UTC_TIMESTAMP()', 'UTC_TIMESTAMP()' ] )
 
     #Get the defined alarmkey and generate a random one if not defined
-    if 'AlarmKey' in alarmDef:
-      result = self._escapeString( alarmDef[ 'AlarmKey' ] )
+    if 'alarmKey' in alarmDef:
+      result = self._escapeString( alarmDef[ 'alarmKey' ] )
       if result['OK']:
         alarmKey = result['Value']
       else:
         return S_ERROR( 'Failed to escape value %s for key AlarmKey' % val )
+      gLogger.info( "Checking there are no alarms with key %s" % alarmKey )
+      result = self._query( "SELECT AlarmId FROM `ntf_Alarms` WHERE AlarmKey=%s" % alarmKey )
+      if not result[ 'OK' ]:
+        return result
+      if result[ 'Value' ]:
+        return S_ERROR( "Oops, alarm with id %s has the same alarm key!" % result[ 'Value' ][0][0] )
     else:
       alarmKey = str( time.time() )[-31:]
     sqlFieldsName.append( 'AlarmKey' )
@@ -211,7 +217,7 @@ class NotificationDB( DB ):
     return S_OK( ( ", ".join( updateFields ), DEncode.encode( modifications ), followers ) )
 
   def __getAlarmIdFromKey( self, alarmKey ):
-    result = self._escape( alarmKey )
+    result = self._escapeString( alarmKey )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot escape alarmKey %s" % alarmKey )
     alarmKey = result[ 'Value' ]
@@ -229,11 +235,14 @@ class NotificationDB( DB ):
         idOK = True
     if not idOK:
       return S_ERROR( "Need at least one field to identify which alarm to update! %s" % self.__updateAlarmIdentificationFields )
-    if 'AlarmKey' in updateReq:
+    if 'alarmKey' in updateReq:
+      alarmKey = updateReq[ 'alarmKey' ]
       result = self.__getAlarmIdFromKey( alarmKey )
       if not result[ 'OK' ]:
+        self.log.error( "Could not get alarm id for key", " %s: %s" % ( alarmKey, result[ 'Value' ] ) )
         return result
       updateReq[ 'id' ] = result[ 'Value' ]
+      self.log.info( "Retrieving alarm key %s maps to id %s" % ( alarmKey, updateReq[ 'id' ] ) )
     #Check fields
     for field in self.__updateAlarmMandatoryFields:
       if field not in updateReq:
@@ -387,7 +396,7 @@ class NotificationDB( DB ):
     msg += "   Author            : %s\n" % alarmInfo[ 'author' ]
     msg += "   Subject           : %s\n" % alarmInfo[ 'subject' ]
     msg += "   Status            : %s\n" % alarmInfo[ 'status' ]
-    msg += "   Type              : %s\n" % alarmInfo[ 'type' ]
+    msg += "   Priority          : %s\n" % alarmInfo[ 'priority' ]
     msg += "   Assignee          : %s\n" % alarmInfo[ 'assignee' ]
     msg += "   Creation date     : %s UTC\n" % alarmInfo[ 'creationtime' ].strftime( "%Y/%m/%d %H:%M:%S" )
     msg += "   Last modificaiton : %s UTC\n" % alarmInfo[ 'modtime' ].strftime( "%Y/%m/%d %H:%M:%S" )
@@ -395,10 +404,10 @@ class NotificationDB( DB ):
     return msg
 
   def __sendMailToUser( self, user, subject, message ):
-    address = gConfig.getValue( "/Registry/Users/%s/email" % user, "" )
+    address = gConfig.getValue( "/Registry/Users/%s/Email" % user, "" )
     if not address:
-      self.log.error( "User does not have an email registered ", user )
-      return S_ERROR( "User % does not have an email registered" % user )
+      self.log.error( "User does not have an email registered", user )
+      return S_ERROR( "User %s does not have an email registered" % user )
     self.log.info( "Sending mail (%s) to user %s at %s" % ( subject, user, address ) )
     m = Mail()
     m._subject = "[DIRAC] %s" % subject
