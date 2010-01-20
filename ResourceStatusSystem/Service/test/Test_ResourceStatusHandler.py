@@ -215,6 +215,12 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     res = self.rsh.export_getServiceStats('')
     self.assert_(res['OK'])
 
+  def test_export_getGeneralName(self):
+    for g_1 in ValidRes:
+      for g_2 in ValidRes:
+        res = self.rsh.export_getGeneralName(g_1, 'XX', g_2)
+        self.assert_(res['OK'])
+    
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusHandlerTestCase)

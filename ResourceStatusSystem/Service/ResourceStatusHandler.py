@@ -1280,3 +1280,24 @@ class ResourceStatusHandler(RequestHandler):
       return S_ERROR(errorStr)
 
 #############################################################################
+
+  types_getGeneralName = [StringType, StringType, StringType]
+  def export_getGeneralName(self, granularity, name, toGranularity):
+    """ get General Name
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getGeneralName: Attempting to get %s general name" % (name))
+      try:
+        res = rsDB.getGeneralName(name, granularity, toGranularity)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getGeneralName: got %s general name" % (name))
+      return S_OK(res)
+    except Exception, x:
+      errorStr = where(self, self.export_getPeriods)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
