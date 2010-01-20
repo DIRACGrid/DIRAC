@@ -547,7 +547,7 @@ class TransformationDB(DB):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    res = self.getCounters('TransformationFiles',['TransformationID','Status'],{})
+    res = self.getCounters('TransformationFiles',['TransformationID','Status'],{'TransformationID':transID})
     if not res['OK']:
       return res
     statusDict = {}
