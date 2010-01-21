@@ -132,6 +132,23 @@ class RequestDBMySQL(DB):
 
     return S_OK(summaryDict)
 
+  def getRequestFileStatus(self,requestID):
+    req = "SELECT DISTINCT SubRequestID FROM SubRequests WHERE RequestID = %d;" % requestID 
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    subRequests = []
+    for subRequestID in res['Value'][0]:
+      subRequests.append(subRequestID)
+    req = "SELECT SubRequestID,LFN,Status from Files WHERE SubRequestID IN (%s) ORDER BY FileID;" % intListToString(subRequestID)
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    files = []
+    for srID,lfn,status in res['Value']:
+      files.append((srID,lfn,status))
+    return S_OK(files)
+
   def getRequest(self,requestType=''):
     dmRequest = RequestContainer(init=False)
     self.getIdLock.acquire()
