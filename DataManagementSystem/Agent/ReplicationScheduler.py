@@ -4,7 +4,7 @@
 
 """  Replication Scheduler assigns replication requests to channels
 """
-from DIRAC                                                  import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC                                                  import gLogger, gConfig, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Base.AgentModule                            import AgentModule
 from DIRAC.ConfigurationSystem.Client.PathFinder            import getDatabaseSection
 from DIRAC.RequestManagementSystem.DB.RequestDBMySQL        import RequestDBMySQL
@@ -32,25 +32,18 @@ class ReplicationScheduler(AgentModule):
     self.DataLog = DataLoggingClient()
     self.factory = StorageFactory()
     self.rm = ReplicaManager()
-    return result
 
-    self.proxyLocation = self.am_getOption('ProxyLocation', '' )
-    if not self.proxyLocation:
-      self.proxyLocation = False
-
-    self.am_setModuleParam('shifter','DataManager')
-    self.am_setModuleParam('shifterProxyLocation',self.proxyLocation)
-    
+    self.am_setModuleParam("shifterProxy", "DataManager")
+    self.am_setModuleParam("shifterProxyLocation","%s/runit/%s/proxy" % (rootPath,AGENT_NAME))
     return S_OK()
 
   def execute(self):
-    """ The main agent execution method
-    """
+    """ The main agent execution method """
 
     # This allows dynamic changing of the throughput timescale
     self.throughputTimescale = self.am_getOption('ThroughputTimescale',3600)
     self.throughputTimescale = 60*60*1
-    print 'ThroughputTimescale:',self.throughputTimescale
+    #print 'ThroughputTimescale:',self.throughputTimescale
     ######################################################################################
     #
     #  Obtain information on the current state of the channel queues
@@ -337,16 +330,16 @@ class StrategyHandler:
     self.supportedStrategies = ['Simple','DynamicThroughput','Swarm','MinimiseTotalWait']
     self.sigma = gConfig.getValue(configSection+'/HopSigma',0.0)
     self.schedulingType = gConfig.getValue(configSection+'/SchedulingType','File')
-    self.activeStrategies = gConfig.getValue(configSection+'/ActiveStrategies',['Simple','MinimiseTotalWait','DynamicThroughput'])
+    self.activeStrategies = gConfig.getValue(configSection+'/ActiveStrategies',['MinimiseTotalWait'])#['Simple','MinimiseTotalWait','DynamicThroughput'])
     self.numberOfStrategies = len(self.activeStrategies)
     self.acceptableFailureRate = gConfig.getValue(configSection+'/AcceptableFailureRate',75)
     self.bandwidths = bandwidths
     self.channels = channels
     self.chosenStrategy = 0
 
-    print 'Scheduling Type',self.schedulingType
-    print 'Sigma',self.sigma
-    print 'Acceptable failure rate',self.acceptableFailureRate
+    #print 'Scheduling Type',self.schedulingType
+    #print 'Sigma',self.sigma
+    #print 'Acceptable failure rate',self.acceptableFailureRate
 
 
   def getSupportedStrategies(self):
@@ -372,7 +365,7 @@ class StrategyHandler:
       elements = strategy.split('_')
       if len(elements) > 1:
         self.sigma = float(elements[-1])
-        print 'SET self.sigma TO BE %s' % self.sigma
+        #print 'SET self.sigma TO BE %s' % self.sigma
       if sourceSE == 'None':
         tree = self.__dynamicThroughput(replicas.keys(),targetSEs)
       else:
@@ -382,7 +375,7 @@ class StrategyHandler:
       elements = strategy.split('_')
       if len(elements) > 1:
         self.sigma = float(elements[-1])
-        print 'SET self.sigma TO BE %s' % self.sigma
+        #print 'SET self.sigma TO BE %s' % self.sigma
       if sourceSE == 'None':
         tree = self.__minimiseTotalWait(replicas.keys(),targetSEs)
       else:
@@ -506,7 +499,7 @@ class StrategyHandler:
             errStr = 'StrategyHandler.__dynamicThroughput: Channel not defined'
             gLogger.error(errStr,channelName)
 
-      print 'Selected %s \n' % selectedPathTimeToStart
+      #print 'Selected %s \n' % selectedPathTimeToStart
 
       random.shuffle(candidateChannels)
       selectedSourceSE,selectedDestSE,selectedChannelID = candidateChannels[0]
@@ -618,7 +611,7 @@ class StrategyHandler:
         else:
           successRate = 100.0
         if successRate < self.acceptableFailureRate:
-          print 'This channel is failing %s' % channelName
+          #print 'This channel is failing %s' % channelName
           throughputTimeToStart = float('inf') # Make the channel extremely unattractive but still available
           fileTimeToStart = float('inf') # Make the channel extremely unattractive but still available
         else:
