@@ -163,6 +163,18 @@ class RequestManagerHandler(RequestHandler):
     result = requestDB.getRequestStatus(requestID)
     return result
 
+  types_getRequestInfo = [list(StringTypes)+[IntType,LongType]]
+  def export_getRequestInfo(self,requestName):
+    if type(requestName) in StringTypes:
+      result = requestDB._getRequestAttribute('RequestID',requestName=requestName)
+      if not result['OK']:
+        return result
+      requestID = result['Value']
+    else:
+      requestID = requestName
+    result = requestDB.getRequestInfo(requestID)
+    return result
+
   types_deleteRequest = [StringTypes]
   def export_deleteRequest(self,requestName):
     """ Delete the request with the supplied name

@@ -689,6 +689,15 @@ class RequestDBMySQL(DB):
     digest = '\n'.join(digestStrings)
     return S_OK(digest)
 
+  def getRequestInfo(self,requestID):
+    """ Get the request information from the Requests table """
+    req = "SELECT RequestID, Status, RequestName, JobID, OwnerDN, OwnerGroup, DIRACSetup, SourceComponent, CreationTime, SubmissionTime, LastUpdate from Requests where RequestID = %d;" % requestID
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    requestID,status, requestName,jobID,dn,group,setup,source,creation,submission,lastupdate = res['Value'][0]
+    return S_OK((requestID,status, requestName,jobID,dn,group,setup,source,creation,submission,lastupdate))
+
   def getRequestStatus(self,requestID):
     """ Get status of the request and its subrequests
     """

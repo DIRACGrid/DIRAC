@@ -272,3 +272,14 @@ class RequestClient:
     requestRPCClient = RPCClient(url,timeout=120)
     result = requestRPCClient.getRequestStatus(requestName)
     return result
+
+  def getRequestInfo(self,requestName,url=''):
+    """ The the request info given a request name """
+    lurl = url
+    if not lurl:
+      lurl = self.central
+    if not lurl:
+      return S_ERROR("URL not defined")
+    requestRPCClient = RPCClient(url,timeout=120)
+    result = requestRPCClient.getRequestInfo(requestName)
+    return result
