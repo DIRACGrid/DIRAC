@@ -35,7 +35,7 @@ class SystemLoggingDB(DB):
   def __init__( self, maxQueueSize=10 ):
     """ Standard Constructor
     """
-    DB.__init__( self, 'SystemLoggingDB', 'Logging/SystemLoggingDB',
+    DB.__init__( self, 'SystemLoggingDB', 'Framework/SystemLoggingDB',
                  maxQueueSize)
     self._insertDataIntoMemDB()
 
