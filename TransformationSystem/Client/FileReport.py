@@ -49,14 +49,16 @@ class FileReport:
         sDict[status] = []
       sDict[status].append(lfn)
 
+    summaryDict = {}
     for status,lfns in sDict.items():
       res = self.client.setFileStatusForTransformation(self.transformation,status,lfns) 
       if res['OK']:
+        summaryDict[status] = len(lfns)
         for lfn in lfns:
           self.statusDict.pop(lfn)
     
     if not self.statusDict:
-      return S_OK()
+      return S_OK(summaryDict)
     return S_ERROR("Failed to update all file statuses")
   
   def generateRequest(self):
