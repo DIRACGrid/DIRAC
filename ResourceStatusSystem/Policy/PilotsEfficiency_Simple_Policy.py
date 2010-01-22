@@ -12,14 +12,21 @@ class PilotsEfficiency_Simple_Policy(PolicyBase):
   
   def evaluate(self, args, knownInfo=None, commandIn=None):
     """ evaluate policy on pilots stats, using args (tuple). 
-        - args[0] should be a ValidRes
-        - args[1] should be the name of the ValidRes
-        - args[2] should be the present status
+        
+        :params:
+          :attr:`args`
+            - args[0]: string - should be a ValidRes
+        
+            - args[1]: string - should be the name of the ValidRes
+            
+            - args[2]: string - should be the present status
         
         returns:
             { 
-              'SAT':True|False, 
+              'SAT':True|False,
+               
               'Status':Active|Probing|Banned, 
+              
               'Reason':'PilotsEff:low|PilotsEff:med|PilotsEff:good',
             }
     """ 
@@ -47,6 +54,9 @@ class PilotsEfficiency_Simple_Policy(PolicyBase):
       clientsInvoker = ClientsInvoker()
       clientsInvoker.setCommand(command)
       status = clientsInvoker.doCommand(args)['PilotsEff']
+    
+    if status == None:
+      return {'SAT':None}
     
     result = {}
     

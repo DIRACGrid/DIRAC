@@ -8,5 +8,5 @@ class Command:
     pass
   
   # method to be extended by sub(real) commands
-  def doCommand(self, args):
+  def doCommand(self, args, clientIn = None):
     pass

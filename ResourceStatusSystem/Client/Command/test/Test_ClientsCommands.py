@@ -2,6 +2,8 @@
 """
 
 import unittest
+from datetime import datetime 
+
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Client.Command.ClientsInvoker import ClientsInvoker
 from DIRAC.ResourceStatusSystem.Client.Command.GOCDBStatus_Command import GOCDBStatus_Command
@@ -10,7 +12,6 @@ from DIRAC.ResourceStatusSystem.Client.Command.Pilots_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.Jobs_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.SAMResults_Command import SAMResults_Command
 from DIRAC.ResourceStatusSystem.Client.Command.GGUSTickets_Command import GGUSTickets_Command
-from DIRAC.ResourceStatusSystem.Client.Command.Propagation_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.DataOperations_Command import TransferQuality_Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
@@ -24,6 +25,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.ci = ClientsInvoker()
     self.GOCDBS_C = GOCDBStatus_Command()
     self.mock_client = Mock()
+    self.mock_client_2 = Mock()
     self.R2SS_C = Res2SiteStatus_Command()
     self.PE_C = PilotsEff_Command()
     self.PS_C = PilotsStats_Command()
@@ -38,6 +40,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.SeSt_C = ServiceStats_Command()
     self.ReSt_C = ResourceStats_Command()
     self.StElSt_C = StorageElementsStats_Command()
+    self.MS_C = MonitoredStatus_Command()
     self.DQ_C = TransferQuality_Command()
 
 class ClientsInvokerSuccess(ClientsCommandsTestCase):
@@ -310,8 +313,9 @@ class ServiceStats_CommandSuccess(ClientsCommandsTestCase):
   def test_doCommand(self):
 
     self.mock_client.getServiceStats.return_value = {}
-    res = self.SeSt_C.doCommand(('', ), clientIn = self.mock_client)
-    self.assertEqual(res, {})
+    for g in ValidRes:
+      res = self.SeSt_C.doCommand((g, ''), clientIn = self.mock_client)
+      self.assertEqual(res, {})
       
 
 class ServiceStats_CommandFailure(ClientsCommandsTestCase):
@@ -326,9 +330,9 @@ class ResourceStats_CommandSuccess(ClientsCommandsTestCase):
 
     self.mock_client.getResourceStats.return_value = {}
     res = self.ReSt_C.doCommand(('Site', ''), clientIn = self.mock_client)
-    self.assertEqual(res, {})
+    self.assertEqual(res, {'ResourceStats':{}})
     res = self.ReSt_C.doCommand(('Service', ''), clientIn = self.mock_client)
-    self.assertEqual(res, {})
+    self.assertEqual(res, {'ResourceStats':{}})
       
 
 class ResourceStats_CommandFailure(ClientsCommandsTestCase):
@@ -343,9 +347,9 @@ class StorageElementsStats_CommandSuccess(ClientsCommandsTestCase):
 
     self.mock_client.getStorageElementsStats.return_value = {}
     res = self.StElSt_C.doCommand(('Site', ''), clientIn = self.mock_client)
-    self.assertEqual(res, {})
+    self.assertEqual(res, {'StorageElementStats': {}})
     res = self.StElSt_C.doCommand(('Resource', ''), clientIn = self.mock_client)
-    self.assertEqual(res, {})
+    self.assertEqual(res, {'StorageElementStats': {}})
       
 
 class StorageElementsStats_CommandFailure(ClientsCommandsTestCase):
@@ -354,12 +358,34 @@ class StorageElementsStats_CommandFailure(ClientsCommandsTestCase):
     self.failUnlessRaises(TypeError, self.StElSt_C.doCommand, None)
      
 
+class MonitoredStatus_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+
+    self.mock_client.getMonitoredStatus.return_value = 'Active'
+    for g in ValidRes:
+      res = self.MS_C.doCommand((g, ''), clientIn = self.mock_client)
+      self.assertEqual(res, {'MonitoredStatus':'Active'})
+      
+
+class MonitoredStatus_CommandFailure(ClientsCommandsTestCase):
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.MS_C.doCommand, None)
+     
+
 class TransferOperations_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
 
     self.mock_client.getQualityStats.return_value = {}
-    res = self.DQ_C.doCommand(('XXX', ), clientIn = self.mock_client)
+    res = self.DQ_C.doCommand(('StorageElement', 'XXX'), clientIn = self.mock_client)
+    self.assertEqual(res, {})
+    res = self.DQ_C.doCommand(('StorageElement', 'XXX', datetime.utcnow()), 
+                              clientIn = self.mock_client)
+    self.assertEqual(res, {})
+    res = self.DQ_C.doCommand(('StorageElement', 'XXX', datetime.utcnow(), 
+                               datetime.utcnow()), clientIn = self.mock_client)
     self.assertEqual(res, {})
       
 
@@ -368,6 +394,17 @@ class TransferOperations_CommandFailure(ClientsCommandsTestCase):
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.DQ_C.doCommand, None)
      
+
+#class Macros_CommandSuccess(ClientsCommandsTestCase):
+#  
+#  def test_doCommand(self):
+#    
+#    self.mock_client.getJobsSimpleEff.return_value =  {'JobsEff':'Good'}
+#    self.mock_client_2.getStatus.return_value =  {'DT':'OUTAGE', 'Enddate':''}
+#    
+#    macroC = MacroCommand()
+    
+    
 
 
 
@@ -404,6 +441,8 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStats_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(StorageElementsStats_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(StorageElementsStats_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoredStatus_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoredStatus_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferOperations_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferOperations_CommandFailure))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

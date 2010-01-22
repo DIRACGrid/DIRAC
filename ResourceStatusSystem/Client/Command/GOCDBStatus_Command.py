@@ -9,7 +9,13 @@ from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 class GOCDBStatus_Command(Command):
   
   def doCommand(self, args, clientIn=None):
-    """ Return getStatus from GOC DB Client  
+    """ Return getStatus from GOC DB Client
+    
+       :params:
+         :attr:`args`: 
+           - args[0]: string: should be a ValidRes
+      
+           - args[1]: string should be the name of the ValidRes
     """
 
     if not isinstance(args, tuple):
@@ -25,4 +31,4 @@ class GOCDBStatus_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.GOCDBClient import GOCDBClient   
       c = GOCDBClient()
       
-    return c.getStatus(args)
+    return c.getStatus(args[0], args[1])

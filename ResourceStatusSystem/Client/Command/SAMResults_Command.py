@@ -21,4 +21,11 @@ class SAMResults_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import SAMResultsClient   
       c = SAMResultsClient()
       
-    return c.getStatus(args)
+    if len(args) == 2:
+      res = c.getStatus(args[0], args[1])
+    elif len(args) == 3:
+      res = c.getStatus(args[0], args[1], args[2])
+    if len(args) == 4:
+      res = c.getStatus(args[0], args[1], args[2], args[3])
+
+    return res

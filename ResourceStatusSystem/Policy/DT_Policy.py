@@ -60,7 +60,7 @@ class DT_Policy(PolicyBase):
     result = {}
     
     if args[2] == 'Active':
-      if status == None:
+      if status['DT'] == 'None':
         result['SAT'] = False
         result['Status'] = 'Active'
         result['Reason'] = 'DT:None'
@@ -79,7 +79,7 @@ class DT_Policy(PolicyBase):
 #          result['SAT'] = None
     
     elif args[2] == 'Probing':
-      if status == None:
+      if status['DT'] == 'None':
         result['SAT'] = True
         result['Status'] = 'Active'
         result['Reason'] = 'DT:None'
@@ -97,7 +97,7 @@ class DT_Policy(PolicyBase):
 #          result['SAT'] = None
       
     elif args[2] == 'Banned':
-      if status == None:
+      if status['DT'] == 'None':
         result['SAT'] = True
         result['Status'] = 'Active'
         result['Reason'] = 'DT:None'

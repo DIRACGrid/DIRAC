@@ -125,6 +125,7 @@ class JobsClient:
     
     :params:
       :attr:`granularity`: string - should be a ValidRes
+    
       :attr:`name`: string - should be the name of the ValidRes
     
     :return:
@@ -133,6 +134,10 @@ class JobsClient:
       }
     """
 
+    if granularity not in ('Site', 'Sites'):
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient 
+      rsc = ResourceStatusClient()
+      name = rsc.getGeneralName(granularity, name, 'Site')
     
     RPC = RPCClient("WorkloadManagement/WMSAdministrator")
     res = RPC.getSiteSummaryWeb({'Site':name},[],0,500)

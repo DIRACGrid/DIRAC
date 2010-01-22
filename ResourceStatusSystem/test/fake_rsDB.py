@@ -124,7 +124,7 @@ class ResourceStatusDB:
     return []
     
   def getGeneralName(self, name, from_g, to_g):
-    return 'LCG.Bari.it'
+    return 'LCG.PIC.es'
 
   def getEndings(self, table):
     return []

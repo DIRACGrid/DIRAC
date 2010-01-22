@@ -15,12 +15,14 @@ class DataOperationsClient:
 
 #############################################################################
 
-  def getQualityStats(self, name, fromD = None, toD = None):
+  def getQualityStats(self, granularity, name, fromD = None, toD = None):
     """  
     Return quality of transfer stats. If fromD and toD are not specified, takes last 2 hours.
     
     :params:
-      :attr:`name`: string - 
+      :attr:`granularity`: string - 'Site', 'Resource' or 'StoragaElement'
+      
+      :attr:`name`: string - the name of the res
     
       :attr:`fromD`: datetime object: date from which take stats - optional 
     
@@ -37,8 +39,12 @@ class DataOperationsClient:
     if toD is None:
       toD = datetime.utcnow()
      
-    pr_quality = self.rc.getReport('DataOperation', 'Quality', fromD, toD, 
-                      {'OperationType':'putAndRegister', 'Destination':[name]}, 'Channel')
+    if granularity in ('StorageElement', 'StorageElements'):
+      pr_quality = self.rc.getReport('DataOperation', 'Quality', fromD, toD, 
+                        {'OperationType':'putAndRegister', 'Destination':[name]}, 'Channel')
+    else:
+      raise InvalidRes, where(self, self.getQualityStats)
+      
     if not pr_quality['OK']:
       raise RSSException, where(self, self.getQualityStats) + pr_quality['Message']
     
@@ -48,14 +54,16 @@ class DataOperationsClient:
       return {'TransferQuality': None}
     else:
       if len(pr_q_d) == 1:
+        print pr_q_d
         values = []
         for k in pr_q_d.keys():
-          values.append(pr_q_d[k])
+          for n in pr_q_d[k].values():
+            values.append(n)
         return {'TransferQuality': sum(values)/len(values)}
       else:
         values = []
-        for k in pr_q_d['Total'].keys():
-          values.append(pr_q_d['Total'][k])
+        for n in pr_q_d['Total'].values():
+          values.append(n)
         return {'TransferQuality': sum(values)/len(values)} 
   
 #############################################################################

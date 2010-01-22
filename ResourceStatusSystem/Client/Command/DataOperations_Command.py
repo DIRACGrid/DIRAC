@@ -11,23 +11,36 @@ class TransferQuality_Command(Command):
     """ Return getQuality from Data Operations Client
     
         :params:
-          :attr:`args`: a tuple. It has to contains just the SE name (a string),
-          and optionally two datetime for from and to dates.
+          :attr:`args`: a tuple
+            - args[0]: string: should be a ValidRes
+      
+            - args[1]: string should be the name of the ValidRes
+
+            - args[2]: optional dateTime object: a "from" date
+          
+            - args[3]: optional dateTime object: a "to" date
+          
+        :returns:
+          {'TransferQuality': None| a number between 0 and 1}
     """
 
     if not isinstance(args, tuple):
       raise TypeError, where(self, self.doCommand)
     
-    if len(args) == 1:
-      args = (args[0], None, None)
     if len(args) == 2:
-      args = (args[0], args[1], None)
+      args = (args[0], args[1], None, None)
+    elif len(args) == 3:
+      args = (args[0], args[1], args[2], None)
+    elif len(args) == 4:
+      pass
+    else:
+      raise RSSException, where(self, self.doCommand)
     
     if clientIn is not None:
       doc = clientIn
     else:
-      # use standard GOC DB Client
+      # use standard Client
       from DIRAC.ResourceStatusSystem.Client.DataOperationsClient import DataOperationsClient   
       doc = DataOperationsClient()
       
-    return doc.getQualityStats(args[0], args[1], args[2])
+    return doc.getQualityStats(args[0], args[1], args[2], args[3])

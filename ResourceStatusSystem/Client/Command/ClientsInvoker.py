@@ -8,7 +8,7 @@ class ClientsInvoker:
     """
     self.command = c
     
-  def doCommand(self, args):
+  def doCommand(self, args, clientIn = None):
     """ Call command.doCommand 
     """
-    return self.command.doCommand(args)
+    return self.command.doCommand(args, clientIn = clientIn)

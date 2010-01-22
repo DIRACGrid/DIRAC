@@ -14,8 +14,15 @@ class TransferQuality_Policy(PolicyBase):
         
         :params:
           :attr:`args`: a tuple 
-            - `args[0]` should be the name of the SE
-            - `args[1]` should be the present status
+            - `args[0]`: string - a ValidRes ('Site', 'Resource', 'StorageElements')
+
+            - `args[1]`: string - should be the name of the SE
+
+            - `args[2]`: string - should be the present status
+          
+            - args[3]: optional dateTime object: a "from" date
+          
+            - args[4]: optional dateTime object: a "to" date
           
           :attr:`commandIn`: optional command object
           
@@ -33,12 +40,12 @@ class TransferQuality_Policy(PolicyBase):
     if not isinstance(args, tuple):
       raise TypeError, where(self, self.evaluate)
     
-    if args[1] not in ValidStatus:
+    if args[2] not in ValidStatus:
       raise InvalidStatus, where(self, self.evaluate)
 
     if knownInfo is not None:
       if 'TransferQuality' in knownInfo.keys():
-        quality = knownInfo
+        quality = knownInfo['TransferQuality']
     else:
       if commandIn is not None:
         command = commandIn
@@ -49,53 +56,62 @@ class TransferQuality_Policy(PolicyBase):
         
       clientsInvoker = ClientsInvoker()
       clientsInvoker.setCommand(command)
-      quality = clientsInvoker.doCommand((args[0], ))['TransferQuality']
+      
+      if len(args) == 3:
+        quality = clientsInvoker.doCommand((args[0], args[1]))
+      elif len(args) == 4:
+        quality = clientsInvoker.doCommand((args[0], args[1], args[3]))
+      elif len(args) == 5:
+        quality = clientsInvoker.doCommand((args[0], args[1], args[3], args[4]))
+      else:
+        raise RSSException, where(self, self.evaluate)
     
+      quality = quality['TransferQuality']
 
     result = {}
 
-    if args[1] == 'Active':
+    if args[2] == 'Active':
       if quality == None:
         result['SAT'] = None
-      elif quality <= Configurations.SE_QUALITY_LOW :
+      elif quality <= Configurations.Transfer_QUALITY_LOW :
         result['SAT'] = True
         result['Status'] = 'Banned'
         result['Reason'] = 'TransferQuality:Low'
-      elif quality >= Configurations.SE_QUALITY_HIGH :
+      elif quality >= Configurations.Transfer_QUALITY_HIGH :
         result['SAT'] = False
         result['Status'] = 'Active'
         result['Reason'] = 'TransferQuality:High'
-      elif quality > Configurations.SE_QUALITY_LOW and quality < Configurations.SE_QUALITY_HIGH:   
+      elif quality > Configurations.Transfer_QUALITY_LOW and quality < Configurations.Transfer_QUALITY_HIGH:   
         result['SAT'] = True
         result['Status'] = 'Probing'
         result['Reason'] = 'TransferQuality:Mean'
-    elif args[1] == 'Probing':
+    elif args[2] == 'Probing':
       if quality == None:
         result['SAT'] = None
-      elif quality <= Configurations.SE_QUALITY_LOW :
+      elif quality <= Configurations.Transfer_QUALITY_LOW :
         result['SAT'] = True
         result['Status'] = 'Banned'
         result['Reason'] = 'TransferQuality:Low'
-      elif quality >= Configurations.SE_QUALITY_HIGH :
+      elif quality >= Configurations.Transfer_QUALITY_HIGH :
         result['SAT'] = True
         result['Status'] = 'Active'
         result['Reason'] = 'TransferQuality:High'
-      elif quality > Configurations.SE_QUALITY_LOW and quality < Configurations.SE_QUALITY_HIGH:   
+      elif quality > Configurations.Transfer_QUALITY_LOW and quality < Configurations.Transfer_QUALITY_HIGH:   
         result['SAT'] = False
         result['Status'] = 'Probing'
         result['Reason'] = 'TransferQuality:Mean'
-    elif args[1] == 'Banned':
+    elif args[2] == 'Banned':
       if quality == None:
         result['SAT'] = None
-      elif quality <= Configurations.SE_QUALITY_LOW :
+      elif quality <= Configurations.Transfer_QUALITY_LOW :
         result['SAT'] = False
         result['Status'] = 'Banned'
         result['Reason'] = 'TransferQuality:Low'
-      elif quality >= Configurations.SE_QUALITY_HIGH :
+      elif quality >= Configurations.Transfer_QUALITY_HIGH :
         result['SAT'] = True
         result['Status'] = 'Active'
         result['Reason'] = 'TransferQuality:High'
-      elif quality > Configurations.SE_QUALITY_LOW and quality < Configurations.SE_QUALITY_HIGH:   
+      elif quality > Configurations.Transfer_QUALITY_LOW and quality < Configurations.Transfer_QUALITY_HIGH:   
         result['SAT'] = True
         result['Status'] = 'Probing'
         result['Reason'] = 'TransferQuality:Mean'

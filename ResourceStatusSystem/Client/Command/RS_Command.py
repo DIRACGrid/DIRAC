@@ -34,3 +34,150 @@ class RSPeriods_Command(Command):
       
     return c.getPeriods(args[0], args[1], args[2], args[3])
 
+
+#############################################################################
+
+class ServiceStats_Command(Command):
+  """ 
+  The ServiceStats_Command class is a command class to know about 
+  present services stats
+  """
+  
+  def doCommand(self, args, clientIn=None):
+    """ 
+    Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusClient.getServiceStats`  
+
+    :params:
+      :attr:`args`: a tuple
+        - args[1]: a ValidRes 
+        
+        - args[0]: should be the name of the Site
+        
+    :returns:
+      {'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz}
+    """
+
+    if not isinstance(args, tuple):
+      raise TypeError, where(self, self.doCommand)
+    
+    if clientIn is not None:
+      c = clientIn
+    else:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
+      c = ResourceStatusClient()
+      
+    return c.getServiceStats(args[0], args[1])
+
+#############################################################################
+
+class ResourceStats_Command(Command):
+  """ 
+  The ResourceStats_Command class is a command class to know about 
+  present resources stats
+  """
+  
+  def doCommand(self, args, clientIn=None):
+    """ 
+    Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusClient.getResourceStats`  
+
+    :params:
+      :attr:`args`: a tuple
+        - `args[0]` should be in ['Site', 'Service']
+
+        - `args[1]` should be the name of the Site or Service
+        
+    :returns:
+    
+    """
+
+    if not isinstance(args, tuple):
+      raise TypeError, where(self, self.doCommand)
+    
+    if args[0] not in ['Site', 'Service']:
+      raise InvalidRes
+    
+    if clientIn is not None:
+      c = clientIn
+    else:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
+      c = ResourceStatusClient()
+      
+    res = c.getResourceStats(args[0], args[1])
+    return {'ResourceStats':res}
+
+#############################################################################
+
+class StorageElementsStats_Command(Command):
+  """ 
+  The StorageElementsStats_Command class is a command class to know about 
+  present storageElementss stats
+  """
+  
+  def doCommand(self, args, clientIn=None):
+    """ 
+    Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusClient.getStorageElementsStats`  
+
+    :params:
+      :attr:`args`: a tuple
+        - `args[0]` should be in ['Site', 'Resource']
+
+        - `args[1]` should be the name of the Site or Resource
+        
+    :returns:
+    
+    """
+
+    if not isinstance(args, tuple):
+      raise TypeError, where(self, self.doCommand)
+    
+    if args[0] not in ['Site', 'Resource']:
+      raise InvalidRes
+    
+    if clientIn is not None:
+      c = clientIn
+    else:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
+      c = ResourceStatusClient()
+      
+    res = c.getStorageElementsStats(args[0], args[1])
+    return {'StorageElementStats':res}
+
+#############################################################################
+
+class MonitoredStatus_Command(Command):
+  """ 
+  The MonitoredStatus_Command class is a command class to know about 
+  monitored status
+  """
+  
+  def doCommand(self, args, clientIn=None):
+    """ 
+    Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusClient.getMonitoredStatus`  
+
+    :params:
+      :attr:`args`: a tuple
+        - `args[0]`: string - should be a ValidRes
+
+        - `args[1]`: string - should be the name of the ValidRes
+        
+    :returns:
+    
+    """
+
+    if not isinstance(args, tuple):
+      raise TypeError, where(self, self.doCommand)
+    
+    if args[0] not in ValidRes:
+      raise InvalidRes
+    
+    if clientIn is not None:
+      c = clientIn
+    else:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
+      c = ResourceStatusClient()
+      
+    res = c.getMonitoredStatus(args[0], args[1])
+    
+    return {'MonitoredStatus':res}
+
+#############################################################################

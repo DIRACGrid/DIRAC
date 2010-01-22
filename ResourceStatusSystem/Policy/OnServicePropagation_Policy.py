@@ -3,13 +3,13 @@
 """
 
 from DIRAC.ResourceStatusSystem.Policy.PolicyBase import PolicyBase
-from DIRAC.ResourceStatusSystem.Client.Command.ClientsInvoker import ClientsInvoker
+from DIRAC.ResourceStatusSystem.Client.Command.MacroCommand import MacroCommand
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
 class OnServicePropagation_Policy(PolicyBase):
   
-  def evaluate(self, args, commandIn_1=None, commandIn_2=None, knownInfo=None):
+  def evaluate(self, args, commandIn=None, knownInfo=None):
     """ Evaluate policy on Service Status, using args (tuple).
         Get Resources stats and Site status. 
         By standard, service status is active. If all the resources are banned, service status is banned.
@@ -17,9 +17,12 @@ class OnServicePropagation_Policy(PolicyBase):
         The site status is simply propagated.
         
         :params:
-          :attr:`args`: a tuple 
-            `args[0]` should be the name of the service
-            `args[1]` should be the present status
+          :attr:`args`: a tuple
+            `args[0]` should be a ValidRes (just 'Service' - is ignored!)
+           
+            `args[1]` should be the name of the service
+
+            `args[2]` should be the present status
           
           :attr:`commandIn`: optional command object
           
@@ -36,23 +39,35 @@ class OnServicePropagation_Policy(PolicyBase):
     if not isinstance(args, tuple):
       raise TypeError, where(self, self.evaluate)
     
-    if args[1] not in ValidStatus:
+    if args[2] not in ValidStatus:
       raise InvalidStatus, where(self, self.evaluate)
 
     #get resources stats
-    if knownInfo is not None and 'ResourceStats' in knownInfo.keys():
+    if knownInfo is not None and 'ResourceStats' in knownInfo.keys() and 'MonitoredStatus' in knownInfo.keys():
       resourceStats = knownInfo['ResourceStats']
+      siteStatus = knownInfo['MonitoredStatus']
     else:
-      if commandIn_1 is not None:
-        command = commandIn_1
+      if commandIn is not None:
+        commandsList = commandIn
       else:
-        # use standard Command
-        from DIRAC.ResourceStatusSystem.Client.Command.Propagation_Command import ResourceStats_Command
-        command = ResourceStats_Command()
+        # use standard Commands 
+        from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import ResourceStats_Command
+        rs_c = ResourceStats_Command()
         
-      clientsInvoker = ClientsInvoker()
-      clientsInvoker.setCommand(command)
-      resourceStats = clientsInvoker.doCommand(('Service', args[0]))
+        from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import MonitoredStatus_Command
+        ms_c = MonitoredStatus_Command()
+        
+        commandsList = [rs_c, ms_c]
+      
+      #make a MacroCommand
+      command = MacroCommand(commandsList)
+      res = command.doCommand((args[0], args[1]))
+      
+      resourceStats = res[0]['ResourceStats']
+      siteStatus = res[1]['MonitoredStatus']
+      
+      if resourceStats is None or siteStatus is None:
+        return {'SAT':None}
       
     resourcesStatus = 'Active'
     
@@ -64,25 +79,25 @@ class OnServicePropagation_Policy(PolicyBase):
           resourcesStatus = 'Probing'
     
     #get site status
-    if knownInfo is not None and 'SiteStatus' in knownInfo.keys():
-      siteStatus = knownInfo['SiteStatus']
-    else:
-      if commandIn_2 is not None:
-        command = commandIn_2
-        clientsInvoker = ClientsInvoker()
-        clientsInvoker.setCommand(command)
-        siteStatus = clientsInvoker.doCommand((args[0], ))
-      else:
-        # use standard way to get Site status
-        from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
-        rsDB = ResourceStatusDB()
-        siteName = rsDB.getGeneralName(args[0], 'Service', 'Site')
-        siteStatus = rsDB.getMonitoredsStatusWeb('Site', 
-                                                 {'SiteName':siteName}, [], 0, 1)['Records'][0][4]
+#    if knownInfo is not None and 'SiteStatus' in knownInfo.keys():
+#      siteStatus = knownInfo['SiteStatus']
+#    else:
+#      if commandIn_2 is not None:
+#        command = commandIn_2
+#        clientsInvoker = ClientsInvoker()
+#        clientsInvoker.setCommand(command)
+#        siteStatus = clientsInvoker.doCommand((args[0], args[1]))
+#      else:
+#        # use standard way to get Site status
+#        from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
+#        rsDB = ResourceStatusDB()
+#        siteName = rsDB.getGeneralName(args[1], 'Service', 'Site')
+#        siteStatus = rsDB.getMonitoredsStatusWeb('Site', 
+#                                                 {'SiteName':siteName}, [], 0, 1)['Records'][0][4]
     
     result = {}
     
-    if args[1] == 'Active':
+    if args[2] == 'Active':
       if siteStatus == 'Active' and resourcesStatus == 'Active':
         result['SAT'] = False
         result['Status'] = 'Active'
@@ -105,7 +120,7 @@ class OnServicePropagation_Policy(PolicyBase):
                                                                  resourceStats['Probing'], 
                                                                  resourceStats['Banned'])
         
-    elif args[1] == 'Probing':
+    elif args[2] == 'Probing':
       if siteStatus == 'Active' and resourcesStatus == 'Active':
         result['SAT'] = True
         result['Status'] = 'Active'
@@ -128,7 +143,7 @@ class OnServicePropagation_Policy(PolicyBase):
                                                                  resourceStats['Probing'], 
                                                                  resourceStats['Banned'])
         
-    elif args[1] == 'Banned':
+    elif args[2] == 'Banned':
       if siteStatus == 'Active' and resourcesStatus == 'Active':
         result['SAT'] = True
         result['Status'] = 'Active'

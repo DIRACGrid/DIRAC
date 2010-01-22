@@ -57,8 +57,12 @@ class PilotsEffSimple_Command(Command):
   
   def doCommand(self, args, clientIn=None):
     """ Returns simple pilots efficiency
-        - args[0] should be a ValidRes
-        - args[1] should be the name of the ValidRes
+    
+        :params:
+          :attr:`args`:
+            - args[0]: string - should be a ValidRes
+            
+            - args[1]: string - should be the name of the ValidRes
 
         returns:
           {

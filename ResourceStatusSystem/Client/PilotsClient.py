@@ -114,17 +114,18 @@ class PilotsClient:
 #############################################################################
 
 
-  def getPilotsSimpleEff(self, granularity, name):
+  def getPilotsSimpleEff(self, granularity, name, siteName = None):
     """  
     Return pilots simple efficiency of entity in args for periods
     
     :params:
-      :attr:`granularity`: string - should be a ValidRes
+      :attr:`granularity`: string - should be a ValidRes (Site or Resource)
+      
       :attr:`name`: string - should be the name of the ValidRes
+      
+      :attr:`siteName`: string - optional site name, in case 
+      granularity is `Resource`
     
-    If granularity is resource, name is a tuple containing the resource name 
-    along with its site name
-        
     :return:
     {
       'PilotsEff': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
@@ -132,28 +133,39 @@ class PilotsClient:
     """
     
     RPC = RPCClient("WorkloadManagement/WMSAdministrator")
-    if granularity == 'Site':
-      res = RPC.getPilotSummaryWeb({'GridSite':name},[],0,500)
-    elif granularity == 'Resource':
-      res = RPC.getPilotSummaryWeb({'ExpandSite':name[1]},[],0,500)
+    if granularity in ('Site', 'Sites'):
+      res = RPC.getPilotSummaryWeb({'GridSite':name},[],0,1)
+    elif granularity in ('Resource', 'Resources'):
+      if siteName is None:
+        from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+        rsc = ResourceStatusClient()
+        siteName = rsc.getGeneralName(granularity, name, 'Site')
+        if siteName is None or siteName == []:
+          gLogger.info('%s is not a resource in DIRAC' %name)
+          return {'PilotsEff':None}
+        
+      res = RPC.getPilotSummaryWeb({'ExpandSite':siteName},[],0,100)
+    else:
+      raise InvalidRes, where(self, self.getPilotSimpleEff)
+    
     if not res['OK']:
       raise RSSException, where(self, self.getPilotsSimpleEff) + " " + res['Message'] 
     
     try:
-      if granularity == 'Site':
+      if granularity in ('Site', 'Sites'):
         eff = res['Value']['Records'][0][14]
         return {'PilotsEff':eff}
-      elif granularity == 'Resource':
+      elif granularity in ('Resource', 'Resources'):
         for x in res['Value']['Records']:
-          if x[1] == args[0]:
+          if x[1] == name:
             eff = x[14]
         try:
           eff
           return {'PilotsEff':eff}
         except NameError:
-          return {'PilotsEff':'Idle'} 
+          return {'PilotsEff':None} 
         
     except IndexError:
-      return {'PilotsEff':'Idle'}
+      return {'PilotsEff':None}
     
 #############################################################################

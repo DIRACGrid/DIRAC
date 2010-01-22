@@ -21,18 +21,25 @@ class ResourceStatusClient:
 
 #############################################################################
 
-  def getServiceStats(self, siteName):
+  def getServiceStats(self, granularity, name):
     """ 
     Returns simple statistics of active, probing and banned services of a site;
         
     :params:
-      :attr:`siteName`: string - a site name
+      :attr:`name`: string - a service name
     
     :returns:
       { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
     """
 
-    res = self.rsS.getServiceStats(siteName)
+    if granularity in ('Resource', 'Resources', 'StorageElement', 'StorageElements'):
+      self.getGeneralName(granularity, name, 'Service')
+    elif granularity in ('Service', 'Services'):
+      pass  
+    else:
+      raise InvalidRes, where(self, self.getServiceStats)
+
+    res = self.rsS.getServiceStats(name)
     if not res['OK']:
       raise RSSException, where(self, self.getServiceStats) + " " + res['Message'] 
     else:
@@ -102,7 +109,67 @@ class ResourceStatusClient:
     return {'Periods':periods['Value']}
 
 
+#############################################################################
 
+  def getGeneralName(self, granularity, name, toGranularity):
+    """ 
+    Returns simple statistics of active, probing and banned storageElements of a site or a resource;
+        
+    :params:
+      :attr:`granularity` string, should be a ValidRes
+      
+      :attr:`name`: string, name of site or resource
+    
+      :attr:`toGranularity` string, should be a ValidRes
+      
+    :returns:
+      { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
+    """
+
+    res = self.rsS.getGeneralName(granularity, name, toGranularity)
+    if not res['OK']:
+      raise RSSException, where(self, self.getGeneralName) + " " + res['Message'] 
+    else:
+      return res['Value']
+
+#############################################################################
+
+  def getMonitoredStatus(self, granularity, name):
+    """ 
+    Returns RSS status of name
+        
+    :params:
+      :attr:`granularity` string, should be a ValidRes
+      
+      :attr:`name`: string, name of the ValidRes
+      
+    :returns:
+      'Active'|'Probing'|'Banned'|None
+    """
+
+    if granularity in ('Site', 'Sites'):
+      res = self.rsS.getSitesStatusWeb({'SiteName':name}, [], 0, 1)
+    elif granularity in ('Service', 'Services'):
+      res = self.rsS.getServicesStatusWeb({'ServiceName':name}, [], 0, 1)
+    elif granularity in ('Resource', 'Resources'):
+      res = self.rsS.getResourcesStatusWeb({'ResourceName':name}, [], 0, 1)
+    elif granularity in ('StorageElement', 'StorageElements'):
+      res = self.rsS.getStorageElementsStatusWeb({'StorageElementName':name}, [], 0, 1)
+    else:
+      raise InvalidRes, where(self, self.getMonitoredStatus)
+    
+    if not res['OK']:
+      raise RSSException, where(self, self.getGeneralName) + " " + res['Message'] 
+    else:
+      try:
+        if granularity in ('Resource', 'Resources'):
+          return res['Value']['Records'][0][5]
+        else:
+          return res['Value']['Records'][0][4]
+      except IndexError:
+        return None
+
+#############################################################################
 
 #  
 #  def addOrModifySite(self, siteName, siteType, description, status, reason, dateEffective, operatorCode, dateEnd):

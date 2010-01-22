@@ -80,8 +80,12 @@ class JobsEffSimple_Command(Command):
   
   def doCommand(self, args, clientIn=None):
     """ Returns simple jobs efficiency
-        - args[0] should be a ValidRes
-        - args[1] should be the name of the ValidRes
+        
+       :params:
+         :attr:`args`: 
+           - args[0]: string: should be a ValidRes
+      
+           - args[1]: string should be the name of the ValidRes
 
         returns:
           {
@@ -89,11 +93,11 @@ class JobsEffSimple_Command(Command):
           }
     """
 
-    if args[0] not in ValidRes:
-      raise InvalidRes, where(self, self.doCommand)
-    
     if not isinstance(args, tuple):
       raise TypeError, where(self, self.doCommand)
+    
+    if args[0] not in ValidRes:
+      raise InvalidRes, where(self, self.doCommand)
     
     if clientIn is not None:
       c = clientIn

@@ -28,14 +28,22 @@ Policies = {
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
      },
-  'SAM_Policy' : 
+    'SAM_Policy' : 
     { 'Granularity' : ['Resource'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
-      'ResourceType' : ValidResourceType,
+      'ResourceType' : ['SE', 'LFC'],
      },
+  'SAM_CE_Policy' : 
+    { 'Granularity' : ['Resource'], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ['CE'],
+     },     
   'JobsEfficiencySimple_Policy' :  
     { 'Granularity' : ['Site'], 
       'Status' : ValidStatus, 
@@ -231,8 +239,8 @@ LARGE_JOBS_PERIOD_WINDOW = 48
 HIGH_TICKTES_NUMBER = 2
 
 # --- SE transfer quality --- #
-SE_QUALITY_LOW = 0.60
-SE_QUALITY_HIGH = 0.90
+Transfer_QUALITY_LOW = 0.60
+Transfer_QUALITY_HIGH = 0.90
 
 
 #############################################################################
@@ -274,7 +282,7 @@ StorageElements_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 12, \
 #############################################################################
 
 def policyInvocation(granularity = None, name = None, status = None, policy = None, 
-                     args = None, pol = None, DBIn = None):
+                     args = None, pol = None):
   
   if pol == 'DT_Policy':
     p = policy
@@ -299,25 +307,25 @@ def policyInvocation(granularity = None, name = None, status = None, policy = No
   if pol == 'SAM_Policy':
     p = policy
     a = args
-    rsDB = DBIn
-    if policy is not None:
-      if DBIn is None:
-        from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
-        rsDB = ResourceStatusDB()
-      if args is None:
-        site = rsDB.getGeneralName(name, 'Resource', 'Site')
-        a = (site, name, status)
-      res = _innerEval(p, a)
-    else:
+    if policy is None:
       from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
       p = SAMResults_Policy()
-      if DBIn is None:
-        from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
-        rsDB = ResourceStatusDB()
-      if args is None:
-        site = rsDB.getGeneralName(name, 'Resource', 'Site')
-        a = (site, name, status)
-      res = _innerEval(p, a)
+    if args is None:
+      a = (granularity, name, status)
+    res = _innerEval(p, a)
+
+  if pol == 'SAM_CE_Policy':
+    p = policy
+    a = args
+    if policy is None:
+      from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
+      p = SAMResults_Policy()
+    if args is None:
+      a = (granularity, name, status, None, 
+           ['LHCb CE-lhcb-availability', 'LHCb CE-lhcb-install', 'LHCb CE-lhcb-job-Boole', 
+            'LHCb CE-lhcb-job-Brunel', 'LHCb CE-lhcb-job-DaVinci', 'LHCb CE-lhcb-job-Gauss', 'LHCb CE-lhcb-os', 
+            'LHCb CE-lhcb-queues', 'bi', 'csh', 'js', 'gfal', 'swdir', 'voms'])
+    res = _innerEval(p, a)
 
   if pol == 'GGUSTickets_Policy':
     p = policy
@@ -326,7 +334,7 @@ def policyInvocation(granularity = None, name = None, status = None, policy = No
       from DIRAC.ResourceStatusSystem.Policy.GGUSTickets_Policy import GGUSTickets_Policy 
       p = GGUSTickets_Policy()
     if args is None:
-      a = (name, status)
+      a = (granularity, name, status)
     res = _innerEval(p, a)
 
   if pol == 'PilotsEfficiency_Policy':
@@ -378,7 +386,7 @@ def policyInvocation(granularity = None, name = None, status = None, policy = No
       from DIRAC.ResourceStatusSystem.Policy.OnServicePropagation_Policy import OnServicePropagation_Policy 
       p = OnServicePropagation_Policy()
     if args is None:
-      a = (name, status)
+      a = (granularity, name, status)
     res = _innerEval(p, a)
 
   if pol == 'OnSENodePropagation_Policy':
@@ -388,7 +396,7 @@ def policyInvocation(granularity = None, name = None, status = None, policy = No
       from DIRAC.ResourceStatusSystem.Policy.OnSENodePropagation_Policy import OnSENodePropagation_Policy 
       p = OnSENodePropagation_Policy()
     if args is None:
-      a = (name, status)
+      a = (granularity, name, status)
     res = _innerEval(p, a)
 
   if pol == 'TransferQuality_Policy':
@@ -398,7 +406,7 @@ def policyInvocation(granularity = None, name = None, status = None, policy = No
       from DIRAC.ResourceStatusSystem.Policy.TransferQuality_Policy import TransferQuality_Policy 
       p = TransferQuality_Policy()
     if args is None:
-      a = (name, status)
+      a = (granularity, name, status)
     res = _innerEval(p, a)
 
   return res
@@ -406,14 +414,14 @@ def policyInvocation(granularity = None, name = None, status = None, policy = No
         
 #############################################################################
 
-def _innerEval(p, a, ki=None):
+def _innerEval(p, a, knownInfo=None):
   """ policy evaluation
   """
   from DIRAC.ResourceStatusSystem.Policy.PolicyInvoker import PolicyInvoker
   policyInvoker = PolicyInvoker()
 
   policyInvoker.setPolicy(p)
-  res = policyInvoker.evaluatePolicy(a, ki)
+  res = policyInvoker.evaluatePolicy(a, knownInfo = knownInfo)
   return res 
       
 #############################################################################

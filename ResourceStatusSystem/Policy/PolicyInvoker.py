@@ -16,4 +16,4 @@ class PolicyInvoker:
     
     if not isinstance(args, tuple):
       raise TypeError, where(self, self.evaluatePolicy)
-    return self.policy.evaluate(args, knownInfo)
+    return self.policy.evaluate(args, knownInfo = knownInfo)

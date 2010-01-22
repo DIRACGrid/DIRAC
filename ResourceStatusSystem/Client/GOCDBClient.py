@@ -14,37 +14,37 @@ class GOCDBClient:
   
 #############################################################################
 
-  def getStatus(self, args):
+  def getStatus(self, granularity, name):
     """  
-    Return actual GOCDB status of entity in args[1]
+    Return actual GOCDB status of entity in `name`
         
     :params:
-      :attr:`args`: a tuple
-        - args[0] should be a ValidRes
-        - args[1] should be the name of the ValidRes
+      :attr:`granularity`: string: should be a ValidRes
+      
+      :attr:`name` should be the name of the ValidRes
 
     :return:
-      None 
-      or  
       {
-        'DT':'OUTAGE'|'AT_RISK'|'No Info',
+        'DT':'OUTAGE'|'AT_RISK'|'None',
         'Enddate':datetime
       }
 
     """
 
-    if args[0] not in ValidRes:
+    if granularity in ('Site', 'Sites'):
+      self._entity = getSiteRealName(name)
+    elif granularity in ('Resource', 'Resources'):
+      self._entity = name
+    else:
       raise InvalidRes, where(self, self.getStatus)
     
-    if args[0] == 'Site':
-      self._entity = getSiteRealName(args[1])
-    else:
-      self._entity = args[1]
-    
     resCDL = self._curlDownload(self._entity)
-#    print resCDL
-    res = self._xmlParsing(resCDL, args[0])
     
+    res = self._xmlParsing(resCDL, granularity)
+    
+    if res is None:
+      return {'DT':'None'}
+      
     return res
   
 

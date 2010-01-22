@@ -2,6 +2,8 @@
 """
 
 import unittest
+from datetime import datetime
+
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Policy.PolicyInvoker import PolicyInvoker
 from DIRAC.ResourceStatusSystem.Policy.DT_Policy import DT_Policy
@@ -92,14 +94,14 @@ class DT_PolicySuccess(PoliciesTestCase):
     for granularity in ValidRes:
       for status in ValidStatus:
         args = (granularity, 'XX', status)
-        for clientRes in ({'DT':'OUTAGE', 'Enddate':''}, {'DT':'AT_RISK', 'Enddate':''}, None):
+        for clientRes in ({'DT':'OUTAGE', 'Enddate':''}, {'DT':'AT_RISK', 'Enddate':''}, {'DT':'None'}):
           self.mock_command.doCommand.return_value = clientRes
           res = self.DT_P.evaluate(args, commandIn = self.mock_command, knownInfo=clientRes)
           if clientRes in ({'DT':'OUTAGE', 'Enddate':''}, {'DT':'AT_RISK', 'Enddate':''}) and status == 'Active':
             self.assert_(res['SAT'])
-          elif clientRes in ({'DT':'OUTAGE', 'Enddate':''}, None) and status == 'Probing':
+          elif clientRes in ({'DT':'OUTAGE', 'Enddate':''}, {'DT':'None'}) and status == 'Probing':
             self.assert_(res['SAT'])
-          elif clientRes in ({'DT':'AT_RISK', 'Enddate':''}, None) and status == 'Banned':
+          elif clientRes in ({'DT':'AT_RISK', 'Enddate':''}, {'DT':'None'}) and status == 'Banned':
             self.assert_(res['SAT'])
           else:
             self.assertFalse(res['SAT'])
@@ -107,9 +109,9 @@ class DT_PolicySuccess(PoliciesTestCase):
           res = self.DT_P.evaluate(args, commandIn = self.mock_command)
           if clientRes in ({'DT':'OUTAGE', 'Enddate':''}, {'DT':'AT_RISK', 'Enddate':''}) and status == 'Active':
             self.assert_(res['SAT'])
-          elif clientRes in ({'DT':'OUTAGE', 'Enddate':''}, None) and status == 'Probing':
+          elif clientRes in ({'DT':'OUTAGE', 'Enddate':''},  {'DT':'None'}) and status == 'Probing':
             self.assert_(res['SAT'])
-          elif clientRes in ({'DT':'AT_RISK', 'Enddate':''}, None) and status == 'Banned':
+          elif clientRes in ({'DT':'AT_RISK', 'Enddate':''},  {'DT':'None'}) and status == 'Banned':
             self.assert_(res['SAT'])
           else:
             self.assertFalse(res['SAT'])
@@ -445,20 +447,23 @@ class SAMResults_PolicySuccess(PoliciesTestCase):
   
   def test_evaluate(self):
     for status in ValidStatus:
-      args = ('XX', 'XX', status)
-      for resCl in ['ok', 'down', 'degraded', 'partial', 'maint']:
-        res = self.SAMR_P.evaluate(args, commandIn = self.mock_command, knownInfo={'Status':resCl})
+      for g in ('Site', 'Resource'):
+        args = (g, 'XX', status)
+        for resCl in ['ok', 'down', 'degraded', 'partial', 'maint']:
+          res = self.SAMR_P.evaluate(args, commandIn = self.mock_command, 
+                                     knownInfo={'SAM-Status':{'SS':resCl, 'js':'ok'}})
+          self.assert_(res.has_key('SAT'))
+          self.assert_(res.has_key('Reason'))
+          self.mock_command.doCommand.return_value =  {'SAM-Status':{'SS':resCl}}
+          res = self.SAMR_P.evaluate(args, commandIn = self.mock_command)
+          self.assert_(res.has_key('SAT'))
+          self.assert_(res.has_key('Reason'))
+        res = self.SAMR_P.evaluate(args, commandIn = self.mock_command, 
+                                   knownInfo={'SAM-Status':{'SS':'na'}})
         self.assert_(res.has_key('SAT'))
-        self.assert_(res.has_key('Reason'))
-        self.mock_command.doCommand.return_value =  {'Status':resCl}
+        self.mock_command.doCommand.return_value =  {'SAM-Status':{'SS':'na'}}
         res = self.SAMR_P.evaluate(args, commandIn = self.mock_command)
         self.assert_(res.has_key('SAT'))
-        self.assert_(res.has_key('Reason'))
-      res = self.SAMR_P.evaluate(args, commandIn = self.mock_command, knownInfo={'Status':'na'})
-      self.assert_(res.has_key('SAT'))
-      self.mock_command.doCommand.return_value =  {'Status':'na'}
-      res = self.SAMR_P.evaluate(args, commandIn = self.mock_command)
-      self.assert_(res.has_key('SAT'))
       
 #############################################################################
 
@@ -510,7 +515,7 @@ class OnservicePropagation_PolicySuccess(PoliciesTestCase):
   
   def test_evaluate(self):
     for status in ValidStatus:
-      args = ('XX', status)
+      args = ('Service', 'XX', status)
       for resCl_1 in [{'Active':0, 'Probing':0, 'Banned':2, 'Total':2}, \
                       {'Active':2, 'Probing':2, 'Banned':0, 'Total':2}, \
                       {'Active':0, 'Probing':0, 'Banned':0, 'Total':2}, \
@@ -518,14 +523,15 @@ class OnservicePropagation_PolicySuccess(PoliciesTestCase):
                       {'Active':1, 'Probing':0, 'Banned':1, 'Total':2}, \
                       {'Active':0, 'Probing':1, 'Banned':1, 'Total':2} ] :
         for resCl_2 in ValidStatus:
-          res = self.OSP_P.evaluate(args, knownInfo = {'ResourceStats':resCl_1, 'SiteStatus':resCl_2})
+          res = self.OSP_P.evaluate(args, knownInfo = {'ResourceStats':resCl_1, 'MonitoredStatus':resCl_2})
           self.assert_(res.has_key('SAT'))
           self.assert_(res.has_key('Status'))
           self.assert_(res.has_key('Reason'))
           
-          self.mock_propCommand.doCommand.return_value = resCl_1
-          self.mock_siteStatusCommand.doCommand.return_value = resCl_2
-          res = self.OSP_P.evaluate(args, self.mock_propCommand, self.mock_siteStatusCommand)
+          self.mock_propCommand.doCommand.return_value = {'ResourceStats':resCl_1}
+          self.mock_siteStatusCommand.doCommand.return_value = {'MonitoredStatus':resCl_2}
+          commandList = [self.mock_propCommand, self.mock_siteStatusCommand]
+          res = self.OSP_P.evaluate(args, commandIn = commandList)
           self.assert_(res.has_key('SAT'))
           self.assert_(res.has_key('Status'))
           self.assert_(res.has_key('Reason'))
@@ -536,7 +542,7 @@ class OnservicePropagation_Policy_Failure(PoliciesTestCase):
   def test_commandFail(self):
     self.mock_command.doCommand.sideEffect = RSSException
     for status in ValidStatus:
-      self.failUnlessRaises(Exception, self.OSP_P.evaluate, ('XX', status), self.mock_command)
+      self.failUnlessRaises(Exception, self.OSP_P.evaluate, ('Service', 'XX', status), self.mock_command)
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.OSP_P.evaluate, None )
@@ -547,20 +553,20 @@ class OnSENodePropagation_PolicySuccess(PoliciesTestCase):
   
   def test_evaluate(self):
     for status in ValidStatus:
-      args = ('XX', status)
+      args = ('Resource', 'XX', status)
       for resCl in [{'Active':0, 'Probing':0, 'Banned':2, 'Total':2},
                     {'Active':2, 'Probing':2, 'Banned':0, 'Total':2}, 
                     {'Active':0, 'Probing':0, 'Banned':0, 'Total':2},
                     {'Active':1, 'Probing':1, 'Banned':0, 'Total':2}, 
                     {'Active':1, 'Probing':0, 'Banned':1, 'Total':2},
                     {'Active':0, 'Probing':1, 'Banned':1, 'Total':2} ] :
-        res = self.OSENP_P.evaluate(args, knownInfo = {'SEStats':resCl})
+        res = self.OSENP_P.evaluate(args, knownInfo = {'StorageElementStats':{'StorageElementStats':resCl}})
         self.assert_(res.has_key('SAT'))
         self.assert_(res.has_key('Status'))
         self.assert_(res.has_key('Reason'))
         
-        self.mock_propCommand.doCommand.return_value = resCl
-        res = self.OSENP_P.evaluate(args, self.mock_propCommand)
+        self.mock_propCommand.doCommand.return_value = {'StorageElementStats':  resCl}
+        res = self.OSENP_P.evaluate(args, commandIn = self.mock_propCommand)
         self.assert_(res.has_key('SAT'))
         self.assert_(res.has_key('Status'))
         self.assert_(res.has_key('Reason'))
@@ -582,17 +588,42 @@ class TransferQuality_PolicySuccess(PoliciesTestCase):
   
   def test_evaluate(self):
     for status in ValidStatus:
-      args = ('XX', status)
-      for resCl in [1, 0.91, 0.50, 0]:
-        res = self.TQ_P.evaluate(args, commandIn = self.mock_command, knownInfo={'TransferQuality':resCl})
-        self.assert_(res.has_key('SAT'))
-        self.assert_(res.has_key('Reason'))
-        self.mock_command.doCommand.return_value =  {'TransferQuality':resCl}
+      for g in ('StorageElement'):
+        args = (g, 'XX', status)
+        for resCl in [1, 0.91, 0.50, 0]:
+          res = self.TQ_P.evaluate(args, commandIn = self.mock_command, knownInfo={'TransferQuality':resCl})
+          self.assert_(res.has_key('SAT'))
+          self.assert_(res.has_key('Reason'))
+          self.mock_command.doCommand.return_value =  {'TransferQuality':resCl}
+          res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
+          self.assert_(res.has_key('SAT'))
+          self.assert_(res.has_key('Reason'))
         res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
         self.assert_(res.has_key('SAT'))
-        self.assert_(res.has_key('Reason'))
-      res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
-      self.assert_(res.has_key('SAT'))
+        
+        args = (g, 'XX', status, datetime.utcnow())
+        for resCl in [1, 0.91, 0.50, 0]:
+          res = self.TQ_P.evaluate(args, commandIn = self.mock_command, knownInfo={'TransferQuality':resCl})
+          self.assert_(res.has_key('SAT'))
+          self.assert_(res.has_key('Reason'))
+          self.mock_command.doCommand.return_value =  {'TransferQuality':resCl}
+          res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
+          self.assert_(res.has_key('SAT'))
+          self.assert_(res.has_key('Reason'))
+        res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
+        self.assert_(res.has_key('SAT'))
+      
+        args = (g, 'XX', status, datetime.utcnow(), datetime.utcnow())
+        for resCl in [1, 0.91, 0.50, 0]:
+          res = self.TQ_P.evaluate(args, commandIn = self.mock_command, knownInfo={'TransferQuality':resCl})
+          self.assert_(res.has_key('SAT'))
+          self.assert_(res.has_key('Reason'))
+          self.mock_command.doCommand.return_value =  {'TransferQuality':resCl}
+          res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
+          self.assert_(res.has_key('SAT'))
+          self.assert_(res.has_key('Reason'))
+        res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
+        self.assert_(res.has_key('SAT'))
       
 #############################################################################
 

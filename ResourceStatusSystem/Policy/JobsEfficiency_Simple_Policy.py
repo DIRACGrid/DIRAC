@@ -12,9 +12,14 @@ class JobsEfficiency_Simple_Policy(PolicyBase):
   
   def evaluate(self, args, knownInfo=None, commandIn=None):
     """ evaluate policy on jobs stats, using args (tuple). 
-        - args[0] should be a ValidRes
-        - args[1] should be the name of the ValidRes
-        - args[2] should be the present status
+        
+        :params:
+          :attr:`args`:
+            - args[0]: string - should be a ValidRes
+
+            - args[1]: string - should be the name of the ValidRes
+    
+            - args[2]: string - should be the present status (ValidStatus)
         
         returns:
             { 
@@ -46,7 +51,9 @@ class JobsEfficiency_Simple_Policy(PolicyBase):
         
       clientsInvoker = ClientsInvoker()
       clientsInvoker.setCommand(command)
-      status = clientsInvoker.doCommand(args)['JobsEff']
+      status = clientsInvoker.doCommand((args[0], args[1]))
+      
+      status = status['JobsEff']
     
     result = {}
 

@@ -129,6 +129,8 @@ class PDP:
 
       
     for policyGroup in EVAL:
+      
+      print policyGroup
     
       self.__policyType = policyGroup['PolicyType']
   
