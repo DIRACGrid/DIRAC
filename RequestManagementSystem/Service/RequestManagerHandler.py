@@ -147,6 +147,18 @@ class RequestManagerHandler(RequestHandler):
     result = requestDB.getCurrentExecutionOrder(requestID)
     return result
 
+  types_getRequestFileStatus = [list(StringTypes)+[IntType,LongType],ListType]
+  def export_getRequestFileStatus(self,requestName,lfns):
+    """ Get the current status of the provided files for the request """
+    if type(requestName) in StringTypes:
+      result = requestDB._getRequestAttribute('RequestID',requestName=requestName)
+      if not result['OK']:
+        return result
+      requestID = result['Value']
+    else:
+      requestID = requestName
+    return requestDB.getRequestFileStatus(requestID,lfns)
+
   types_getRequestStatus = [list(StringTypes)+[IntType,LongType]]
   def export_getRequestStatus(self,requestName):
     """ Get the current execution order of the given request

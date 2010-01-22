@@ -7,7 +7,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.DB import DB
 from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities.List import intListToString
+from DIRAC.Core.Utilities.List import intListToString,stringListToString
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
 
 import os
@@ -132,7 +132,7 @@ class RequestDBMySQL(DB):
 
     return S_OK(summaryDict)
 
-  def getRequestFileStatus(self,requestID):
+  def getRequestFileStatus(self,requestID,files):
     req = "SELECT DISTINCT SubRequestID FROM SubRequests WHERE RequestID = %d;" % requestID 
     res = self._query(req)
     if not res['OK']:
@@ -140,13 +140,13 @@ class RequestDBMySQL(DB):
     subRequests = []
     for subRequestID in res['Value'][0]:
       subRequests.append(subRequestID)
-    req = "SELECT SubRequestID,LFN,Status from Files WHERE SubRequestID IN (%s) ORDER BY FileID;" % intListToString(subRequestID)
+    req = "SELECT LFN,Status from Files WHERE SubRequestID IN (%s) AND LFN in (%s);" % (intListToString(subRequests),stringListToString(files))
     res = self._query(req)
     if not res['OK']:
       return res
-    files = []
-    for srID,lfn,status in res['Value']:
-      files.append((srID,lfn,status))
+    files = {}
+    for lfn,status in res['Value']:
+      files[lfn] = status
     return S_OK(files)
 
   def getRequest(self,requestType=''):
