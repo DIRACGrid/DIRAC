@@ -560,7 +560,8 @@ class Dirac:
         finalState=True
         return S_ERROR('Exceeded max waiting time of %s seconds for job %s to enter Waiting state, exiting.' %(maxWaitingTime,jobID))
       time.sleep(pollingTime)
-      
+
+  #############################################################################      
   def __getVOPolicyModule(self,module):
     """ Utility to get the VO Policy module name
     """    
@@ -621,7 +622,7 @@ class Dirac:
 
     self.log.verbose(localSEList)
     
-    inputDataPolicy = self.__getVoPolicyModule('InputDataModule')
+    inputDataPolicy = self.__getVOPolicyModule('InputDataModule')
     if not inputDataPolicy:
       return self.__errorReport('Could not retrieve DIRAC/VOPolicy/InputDataModule for VO')
 
@@ -686,7 +687,7 @@ class Dirac:
     else:
       localSEList = [localSEList.replace(' ','')]
     self.log.verbose(localSEList)
-    inputDataPolicy = self.__getVoPolicyModule('InputDataModule')
+    inputDataPolicy = self.__getVOPolicyModule('InputDataModule')
     if not inputDataPolicy:
       return self.__errorReport('Could not retrieve DIRAC/VOPolicy/InputDataModule for VO')
 
@@ -779,7 +780,7 @@ class Dirac:
       else:
         localSEList = [localSEList.replace(' ','')]
       self.log.verbose(localSEList)
-      inputDataPolicy = self.__getVoPolicyModule('InputDataModule')
+      inputDataPolicy = self.__getVOPolicyModule('InputDataModule')
       if not inputDataPolicy:
         return self.__errorReport('Could not retrieve DIRAC/VOPolicy/InputDataModule for VO')
 
@@ -821,7 +822,7 @@ class Dirac:
       jobParamsDict['CE'] = {}
       jobParamsDict['CE']['CompatiblePlatforms']=localArch
 
-    softwarePolicy = self.__getVoPolicyModule('SoftwareDistModule')
+    softwarePolicy = self.__getVOPolicyModule('SoftwareDistModule')
     if not softwarePolicy:
       return self.__errorReport('Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO')
     moduleFactory = ModuleFactory()
