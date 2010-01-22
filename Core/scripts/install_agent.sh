@@ -45,7 +45,9 @@ exec 2>&1
 #
 renice 20 -p \$\$
 #
-exec python \$DIRAC/DIRAC/Core/scripts/dirac-agent.py $System/$Agent \$DIRAC/etc/${System}_${Agent}.cfg \$DIRAC/etc/DBs.cfg -o LogLevel=$LOGLEVEL < /dev/null
+DBs=""
+[ -e \$DIRAC/etc/DBs.cfg ] && DBs=\$DIRAC/etc/DBs.cfg
+exec python \$DIRAC/DIRAC/Core/scripts/dirac-agent.py $System/$Agent \$DIRAC/etc/${System}_${Agent}.cfg \$DBs -o LogLevel=$LOGLEVEL < /dev/null
 EOF
 chmod +x $AgentDir/log/run $AgentDir/run
 
