@@ -22,7 +22,8 @@ class RequestDBFile:
     csSection = csSection = PathFinder.getServiceSection( "RequestManagement/RequestManager" )
     root = gConfig.getValue('%s/Path' % csSection)
     if not root:
-      diracRoot = gConfig.getValue('/LocalSite/Root')
+      import DIRAC
+      diracRoot = gConfig.getValue('/LocalSite/Root',DIRAC.rootPath)
       root = diracRoot+'/requestdb'
     if not os.path.exists(root):
       os.makedirs(root)
