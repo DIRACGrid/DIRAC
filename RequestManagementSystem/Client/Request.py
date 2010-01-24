@@ -7,7 +7,7 @@
 __RCSID__ = "$Id$"
 
 import commands, os, xml.dom.minidom, types, time, copy, datetime
-from DIRAC import gConfig
+from DIRAC import gConfig, S_OK, S_ERROR
 
 from DIRAC.Core.Security.Misc import getProxyInfo
 
@@ -64,7 +64,7 @@ class Request:
 
     elif type(request) == types.InstanceType:
       for attr in self.attributeNames:
-        self.attributes[attr] = script.attributes[attr]
+        self.attributes[attr] = request.attributes[attr]
 
     # initialize request from an XML string
     if type(request) in types.StringTypes:
