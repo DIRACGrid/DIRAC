@@ -16,7 +16,7 @@ from DIRAC.AccountingSystem.Client.Types.DataOperation      import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient          import gDataStoreClient
 from DIRAC.Core.Utilities.List                              import sortList
 from DIRAC.Core.Utilities.Adler                             import compareAdler
-import time,os,datetime
+import time, os, datetime, re
 from types import *
 
 __RCSID__ = "$Id$"
