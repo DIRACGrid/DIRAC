@@ -289,6 +289,7 @@ class RequestDBMySQL(DB):
           # Remove the existing request
           result = self._deleteRequest(requestName)
           if not result['OK']:
+            message = res['Message']
             return S_ERROR('Failed to set request: '+message+' can not override')
           res = self._getRequestID(requestName)
           if not res['OK']:
@@ -588,17 +589,20 @@ class RequestDBMySQL(DB):
     res = self._update(req)
     if not res['OK']:
       self.getIdLock.release()
+      err = 'RequestDB._getFileID: Failed to insert New  SubRequestID'
       return S_ERROR( '%s\n%s' % (err, res['Message'] ) )
     req = 'SELECT MAX(FileID) FROM Files WHERE SubRequestID=%s' % subRequestID
     res = self._query(req)
     if not res['OK']:
       self.getIdLock.release()
+      err = 'RequestDB._getFileID: Failed to get FileID'
       return S_ERROR( '%s\n%s' % (err, res['Message'] ) )
     self.getIdLock.release()
     try:
       fileID = int(res['Value'][0][0])
       self.log.info( 'RequestDB: New FileID served "%s"' % fileID )
     except Exception, x:
+      err = 'RequestDB._getFileID: Failed to get FileID'
       return S_ERROR( '%s\n%s' % (err, str(x) ) )
     return S_OK(fileID)
 
