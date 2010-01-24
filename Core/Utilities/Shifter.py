@@ -11,7 +11,7 @@ def getShifterProxy( type, file = False ):
   """
   if file:
     try:
-      os.makedirs( os.dirname( file ) )
+      os.makedirs( os.path.dirname( file ) )
     except:
       pass
   shifterSection = "/Operations/Shifter/%s" % type
