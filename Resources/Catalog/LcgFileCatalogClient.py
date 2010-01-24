@@ -1648,7 +1648,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     else:
       return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
 
-  def __changeMod(self,lfc,mode):
+  def __changeMod(self,lfn,mode):
     fullLfn = '%s%s' % (self.prefix,lfn)
     res = lfc.lfc_chmod(fullLfn,mode)
     if res == 0:
