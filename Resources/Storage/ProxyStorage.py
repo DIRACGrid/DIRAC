@@ -4,7 +4,10 @@ from DIRAC                                              import gLogger, gConfig,
 from DIRAC.Resources.Storage.StorageBase                import StorageBase
 from DIRAC.ConfigurationSystem.Client                   import PathFinder
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
-import types
+from DIRAC.Core.DISET.TransferClient                    import TransferClient
+from DIRAC.Core.Utilities.File                          import getSize
+
+import types, os
  
 ISOK = True
 
