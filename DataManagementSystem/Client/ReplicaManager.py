@@ -649,9 +649,9 @@ class StorageFile(StorageBase):
         'storageElementName' is the target StorageElement
     """
     if singleFile:
-      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'replicateFile',argsDict={sourceSize:size})
+      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'replicateFile',argsDict={'sourceSize':size})
     else:
-      return self._executeStorageElementFunction(storageElementName,physicalFile,'replicateFile',argsDict={sourceSize:size})
+      return self._executeStorageElementFunction(storageElementName,physicalFile,'replicateFile',argsDict={'sourceSize':size})
 
 class StorageDirectory(StorageBase):
 
@@ -1947,7 +1947,7 @@ class ReplicaManager(CatalogToStorage):
     """
     if type(replicaTuple) == types.ListType:
       replicaTuples = replicaTuple
-    elif type(lfn) == types.TupleType:
+    elif type(replicaTuple) == types.TupleType:
       replicaTuples = [replicaTuple]
     else:
       errStr = "ReplicaManager.removeCatalogPhysicalFileNames: Supplied info must be tuple or list of tuples."
@@ -2011,7 +2011,7 @@ class ReplicaManager(CatalogToStorage):
     successful = {}
     pfnDict = {}
     for lfn,repDict in res['Value']['Successful'].items():
-      if not lfnReplicas.has_key(storageElementName):
+      if not repDict.has_key(storageElementName):
         # The file doesn't exist at the storage element so don't have to remove it
         successful[lfn] = True
       else:
