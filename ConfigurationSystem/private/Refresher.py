@@ -61,6 +61,7 @@ class Refresher( threading.Thread ):
     if not gConfigurationData.getAutoPublish():
       gLogger.debug( "Slave server won't auto publish itself" )
     if not gConfigurationData.getName():
+      import DIRAC
       DIRAC.abort( 10, "Missing configuration name!" )
     self.sURL = sURL
     self.bAutomaticUpdate = True
