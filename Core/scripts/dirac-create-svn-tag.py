@@ -8,7 +8,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base      import Script
 from DIRAC.Core.Utilities import List, Distribution
 
-import sys, os, tempfile, shutil, getpass, subprocess
+import sys, os, tempfile, shutil, getpass
 
 svnProjects = 'DIRAC'
 svnVersions = ""
@@ -56,14 +56,6 @@ def usage():
 if not svnVersions:
   usage()
 
-def execAndGetOutput( cmd ):
-  p = subprocess.Popen( cmd,
-                        shell = True, stdout = subprocess.PIPE,
-                        stderr = subprocess.PIPE, close_fds = True )
-  stdData = p.stdout.read()
-  p.wait()
-  return ( p.returncode, stdData )
-
 def generateAndUploadReleaseNotes( projectName, svnPath, versionReleased ):
     tmpDir = tempfile.mkdtemp()
     gLogger.info( "Generating release notes for %s under %s" % ( projectName, tmpDir ) )
@@ -101,7 +93,7 @@ for svnProject in List.fromChar( svnProjects ):
     continue
 
   versionsRoot = svnSshRoot % ( svnUsername, '%s/tags/%s' % ( svnProject, svnProject ) )
-  exitStatus, data = execAndGetOutput( "svn ls '%s'" % ( versionsRoot ) )
+  exitStatus, data = Distribution.execAndGetOutput( "svn ls '%s'" % ( versionsRoot ) )
   if exitStatus:
     createdVersions = []
   else:
