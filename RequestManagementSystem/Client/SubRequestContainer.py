@@ -150,7 +150,7 @@ class Ignore:
     """ Output the sub-request to XML
     """
     name = self.RequestType.upper()+'_SUBREQUEST'
-    out = self.__dictionaryToXML(name,self.subRequests[rtype][ind])
+    out = self.__dictionaryToXML(name,self.subRequests)
     return S_OK(out)
 
   def __dictionaryToXML(self,name,dict,indent = 0,attributes={}):
