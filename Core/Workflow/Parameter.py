@@ -187,8 +187,6 @@ class Parameter(object):
         +" in="+ str(self.typein)+ " out="+str(self.typeout)\
         +" description="+str(self.description)
 
-        return ret
-
     def toXML(self):
         return '<Parameter name="'+self.name +'" type="'+str(self.type)\
         +'" linked_module="'+str(self.linked_module) + '" linked_parameter="'+str(self.linked_parameter)\
@@ -210,7 +208,7 @@ class Parameter(object):
             (self.typeout == s.typeout) and \
             (self.description == s.description)
         else:
-            return false
+            return False
 #
 #    def __deepcopy__(self, memo):
 #        return Parameter(parameter=self)
@@ -433,7 +431,7 @@ class ParameterCollection(list):
     def remove(self, name_or_ind):
         # work for index as well as for the string
         if isinstance(name_or_ind, list) and isinstance(name_or_ind[0], str):
-             for s in opt:
+             for s in name_or_ind:
                 par = self.find(s)
                 if par == None:
                     print "ERROR ParameterCollection.remove() can not find parameter with the name=%s"% (s)
@@ -629,8 +627,8 @@ class AttributeCollection(dict):
     def findParameter(self, name_or_ind):
         return self.parameters.find(name_or_ind)
 
-    def findParameterIndex(self, name):
-        return self.parameters.findIndex(name_or_ind)
+    def findParameterIndex(self, ind):
+        return self.parameters.findIndex(ind)
 
     def compareParameters(self, s):
         return self.parameters.compare(s)
