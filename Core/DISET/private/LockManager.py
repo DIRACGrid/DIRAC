@@ -42,7 +42,7 @@ class LockManager:
     
   def createNewLockManager( self, sLockManagerName ):
     if sLockManagerName in self.dSubManagers.keys():
-      raise RuntimeError( "%s lock already exists" % sLockName )
+      raise RuntimeError( "%s lock already exists" % sLockManagerName )
     self.dSubManagers[ sLockManagerName ] = LockManager( self.iMaxThreads ) 
     return self.dSubManagers[ sLockManagerName ]
     
@@ -50,4 +50,4 @@ class LockManager:
     try:
       return self.dSubManagers[ sLockManagerName ]
     except KeyError:
-      raise KeyError( "Sub LockManager %s has not been defined" % sLockName )        
+      raise KeyError( "Sub LockManager %s has not been defined" % sLockManagerName )        
