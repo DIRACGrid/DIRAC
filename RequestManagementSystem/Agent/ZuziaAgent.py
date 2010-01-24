@@ -39,7 +39,7 @@ class ZuziaAgent(AgentModule):
       errStr = 'The RequestManagement/centralURL option must be defined.'
       gLogger.fatal(errStr)
       return S_ERROR(errStr)
-    return result
+    return S_OK()
 
   def execute(self):
     """ This agent is the smallest and (cutest) of all the DIRAC agents in existence.
