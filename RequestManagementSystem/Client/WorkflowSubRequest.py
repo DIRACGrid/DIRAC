@@ -8,6 +8,8 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Workflow.Utility import *
+from DIRAC.Core.Workflow.Module import *
+from DIRAC.Core.Workflow.WF_utilities import createSingleModuleWorkflow
 import commands, datetime
 
 class WorkflowSubRequest:
@@ -53,7 +55,7 @@ class WorkflowSubRequest:
     """ Get the request representation as a dictionary
     """
 
-    self.workflow = createSingleModuleWorkflow(module,moduleType)
+    workflow = createSingleModuleWorkflow(self.module,self.moduleType)
     self.subAttributes['Workflow'] = workflow.toXML()
     resultDict = {}
     resultDict['Attributes'] = self.subAttributes
