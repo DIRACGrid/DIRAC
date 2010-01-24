@@ -162,11 +162,11 @@ class Server:
       value = serviceCfg.getOption( kw )
       if value:
         transportArgs[ kw ] = value
-    protocol = serviceCfg.getProtocol()
-    if protocol in gProtocolDict.keys():
-      gLogger.verbose( "Initializing %s transport" % protocol, serviceCfg.getURL() )
+    sProtocol = serviceCfg.getProtocol()
+    if sProtocol in gProtocolDict.keys():
+      gLogger.verbose( "Initializing %s transport" % sProtocol, serviceCfg.getURL() )
       from DIRAC.Core.DISET.private.Transports.PlainTransport import PlainTransport
-      self.transport = gProtocolDict[ protocol ][ 'transport' ]( ( "", serviceCfg.getPort() ),
+      self.transport = gProtocolDict[ sProtocol ][ 'transport' ]( ( "", serviceCfg.getPort() ),
                             bServerMode = True, **transportArgs )
       retVal = self.transport.initAsServer()
       if not retVal[ 'OK' ]:
