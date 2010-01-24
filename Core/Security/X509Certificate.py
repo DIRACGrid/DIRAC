@@ -6,6 +6,7 @@
 __RCSID__ = "$Id$"
 
 import GSI
+import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Security import CS
@@ -54,7 +55,7 @@ class X509Certificate:
 
   def setCertificate( self, x509Obj ):
     if type( x509Obj ) != GSI.crypto.X509Type:
-      return S_ERROR( "Object %s has to be of type X509" % str( X509Obj ) )
+      return S_ERROR( "Object %s has to be of type X509" % str( x509Obj ) )
     self.__certObj = x509Obj
     self.__valid = True
     return S_OK()
