@@ -114,7 +114,7 @@ class TimeLeft:
         # timeLeft = float(cpuConsumed*self.scaleFactor*(wcRemaining-self.cpuMargin)/cpuFactor)
         timeLeft = float( cpuRemaining * cpuLimit / 100 * self.scaleFactor )
       else:
-        self.log.verbose('Remaining CPU %.02f < margin %s and WallClock %.02f < margin %s so no time left' %(cpuRemaining,margin,wcRemaining,margin))
+        self.log.verbose('Remaining CPU %.02f < margin %s and WallClock %.02f < margin %s so no time left' %(cpuRemaining,self.cpuMargin,wcRemaining,self.cpuMargin))
 
     if timeLeft:
       self.log.verbose('Remaining CPU in normalized units is: %.02f' %timeLeft)
