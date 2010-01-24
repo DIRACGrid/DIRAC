@@ -17,6 +17,8 @@ from DIRAC.DataManagementSystem.Agent.NamespaceBrowser                      impo
 import time,os
 from types import *
 
+AGENT_NAME = "DataManagement/LFCvsSEAgent"
+
 __RCSID__ = "$Id$"
 
 class LFCvsSEAgent(AgentModule):
@@ -26,7 +28,7 @@ class LFCvsSEAgent(AgentModule):
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
 
-    elf.useProxies = self.am_getOption('UseProxies','True').lower() in ( "y", "yes", "true" )
+    self.useProxies = self.am_getOption('UseProxies','True').lower() in ( "y", "yes", "true" )
     self.proxyLocation = self.am_getOption('ProxyLocation', '' )
     if not self.proxyLocation:
       self.proxyLocation = False
