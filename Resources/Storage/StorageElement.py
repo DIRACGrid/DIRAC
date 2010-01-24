@@ -519,7 +519,7 @@ class StorageElement:
           try:
             exec(execString)
           except AttributeError,errMessage:
-            exceptStr = "StorageElement.__executeFunction: Exception while perfoming %s." % method
+            exceptStr = "StorageElement.__executeFunction: Exception while performing %s." % method
             gLogger.exception(exceptStr,str(errMessage))
             res = S_ERROR(exceptStr)
 
@@ -562,7 +562,7 @@ class StorageElement:
         res = storage.getProtocolPfn(res['Value'],True)
         if not res['OK']:
           errStr = "StorageElement.__generatePfnDict %s." % res['Message']
-          gLogger.error(errStr,'%s for protocol %s' % (pfn,protocolName))
+          gLogger.error(errStr,'for %s' % (pfn))
           if not failed.has_key(pfn):
             failed[pfn] = ''
           failed[pfn] = "%s %s" % (failed[pfn],errStr)
