@@ -182,7 +182,7 @@ class FTSRequest:
       return S_ERROR(errStr)
     guid = output.replace('\n','')
     if not checkGuid(guid):
-      return S_ERROR(error)
+      return S_ERROR('Wrong GUID format returned')
     self.ftsGUID = guid
     return res
 
