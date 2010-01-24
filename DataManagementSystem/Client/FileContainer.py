@@ -36,7 +36,7 @@ class File:
 
   def setLFN(self,lfn):
     if not type(lfn) in types.StringTypes: 
-      return S_ERROR("LFN should be %s and not %s" % (types.StringType,type(se)))
+      return S_ERROR("LFN should be %s and not %s" % (types.StringType,type(lfn)))
     self.lfn = str(lfn)  
     return S_OK()
       
