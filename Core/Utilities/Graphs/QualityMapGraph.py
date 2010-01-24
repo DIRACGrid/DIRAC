@@ -12,6 +12,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
+from DIRAC.Core.Utilities.Graphs.BarGraph import BarGraph
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
 from pylab import setp
 from matplotlib.colors import normalize, LinearSegmentedColormap
