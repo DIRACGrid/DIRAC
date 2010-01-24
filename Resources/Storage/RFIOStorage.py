@@ -1090,6 +1090,6 @@ class RFIOStorage(StorageBase):
       else:
         return S_OK(res['Value']['Successful'][url])
     except AttributeError,errMessage:
-      exceptStr = "RFIOStorage.__executeOperation: Exception while perfoming %s." % method
+      exceptStr = "RFIOStorage.__executeOperation: Exception while performing %s." % method
       gLogger.exception(exceptStr,'',errMessage)
       return S_ERROR("%s%s" % (exceptStr,errMessage))
