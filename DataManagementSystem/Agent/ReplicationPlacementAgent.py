@@ -33,7 +33,7 @@ class ReplicationPlacementAgent(AgentModule):
     self.TransferDB = RequestClient()
     self.DataLog = DataLoggingClient()
     gMonitor.registerActivity("Iteration","Agent Loops","ReplicationPlacementAgent","Loops/min",gMonitor.OP_SUM)
-    return result
+    return S_OK()
   
     self.proxyLocation = self.am_getOption('ProxyLocation', '' )
     if not self.proxyLocation:
