@@ -98,7 +98,7 @@ class StorageElementProxyHandler(RequestHandler):
       shutil.rmtree(putFileDir)
       gLogger.debug("Cleared existing putFile cache")
     except Exception, x:
-      gLogger.exception("Failed to remove source dir.",getFileDir,x)
+      gLogger.exception("Failed to remove destination dir.",putFileDir,x)
     return res
 
   types_prepareFile = [StringType,StringType]
