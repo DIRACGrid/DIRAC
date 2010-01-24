@@ -4,6 +4,7 @@ __RCSID__ = "$Id$"
 import socket
 import select
 import time
+import os
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
