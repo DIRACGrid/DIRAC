@@ -389,7 +389,7 @@ class TransferDB(DB):
       req = "SELECT ChannelID,COUNT(*),SUM(FileSize) FROM Channel WHERE Status LIKE 'Waiting%s' GROUP BY ChannelID;" % ('%')
     res = self._query(req)
     if not res['OK']:
-      err = "TransferDB.getChannelQueues: Failed to get Channel contents for Channels." % strChannelIDs
+      err = "TransferDB.getChannelQueues: Failed to get Channel contents for Channels."
       return S_ERROR('%s\n%s' % (err,res['Message']))
     channelDict = {}
     for channelID,fileCount,sizeCount in res['Value']:
@@ -728,7 +728,7 @@ class TransferDB(DB):
     req = "SELECT Files.LFN,FileToFTS.Status,Duration,Reason,Retries,FileSize FROM FileToFTS,Files WHERE FTSReqID =%s and Files.FileID=FileToFTS.FileID;" % ftsReqID
     res = self._query(req)
     if not res['OK']:
-      err = "TransferDB.getFTSJobDetail: Failed to get detailed info for FTSReq %s: %s." %s (ftsReqID,res['Message'])
+      err = "TransferDB.getFTSJobDetail: Failed to get detailed info for FTSReq %s: %s." % (ftsReqID,res['Message'])
       return S_ERROR(err)
     files = []
     for tuple in res['Value']:
