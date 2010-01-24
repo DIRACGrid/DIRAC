@@ -96,7 +96,7 @@ class StorageElementHandler(RequestHandler):
         resultDict['Exists'] = False
         return S_OK(resultDict)
       else:
-        return S_ERROR('Failed to get metadata for %s' % file_path)
+        return S_ERROR('Failed to get metadata for %s' % path)
 
     resultDict['Exists'] = True
     mode = statTuple[ST_MODE]
