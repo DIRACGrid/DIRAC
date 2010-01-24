@@ -398,9 +398,7 @@ class TransferDBMonitoringHandler(RequestHandler):
     metadata['endtime'] = endTime
     metadata['ylabel'] = "Seconds"
     res = fileCache.generateFile(histogram,data,metadata)
-    if not res['OK']:
-      return res
-    return S_OK('%s.png' % outputFile)
+    return res
 
   def transfer_toClient(self,fileId,token,fileHelper):
     """ Get the plot data """
