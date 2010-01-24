@@ -8,7 +8,7 @@
 
 __RCSID__ = "$Id:  $"
 
-import time
+import time, os, types
 from DIRAC import S_OK, S_ERROR
 
 class DirectoryNodeTree:
@@ -181,7 +181,7 @@ class DirectoryNodeTree:
   def getChildren(self,path):
     """ Get child directory IDs for the given directory 
     """  
-    if type(path) in StringTypes:
+    if type(path) in types.StringTypes:
       result = self.findDir(path)
       if not result['OK']:
         return result
