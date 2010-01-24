@@ -78,7 +78,7 @@ def getPropertiesForHost( hostName, defaultValue = [] ):
 def getPropertiesForEntity( group, name = "", DN = "", defaultValue = [] ):
   if group == 'hosts':
     if not name:
-      result = getHostNameForDN( DN )
+      result = getHostnameForDN( DN )
       if not result[ 'OK' ]:
         return defaultValue
       name = result[ 'Value' ]
