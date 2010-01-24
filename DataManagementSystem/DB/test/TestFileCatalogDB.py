@@ -1,41 +1,43 @@
+from DIRAC.Core.Base import Script
+Script.parseCommandLine()
+
 import unittest,types,time
-from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
+from DIRAC.DataManagementSystem.Client.FileCatalogClient import FileCatalogClient
 
 class FileCatalogDBTestCase(unittest.TestCase):
   """ Base class for the FileCatalogDB test cases
   """
   def setUp(self):
-    self.fcDB = FileCatalogDB()
+    self.fc = FileCatalogClient()
 
 class UserGroupCase(FileCatalogDBTestCase):
 
   def test_userOperations(self):
 
     user = 'atsareg'
-    userDN = '/O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Andrei Tsaregorodtsev'
-    result = self.fcDB.addUser(user,userDN)
+    result = self.fc.addUser(user)    
     self.assert_( result['OK'])
-    result = self.fcDB.getUsers()
+    result = self.fc.getUsers()
     self.assert_( result['OK'])
 
   def test_groupOperations(self):
 
-    result = self.fcDB.addGroup('lhcb')
+    result = self.fc.addGroup('lhcb')    
     self.assert_( result['OK'])
-    result = self.fcDB.getGroups()
+    result = self.fc.getGroups()
     self.assert_( result['OK'])
 
 class DirectoryCase(FileCatalogDBTestCase):
 
   def test_directoryOperations(self):
 
-    result = self.fcDB.mkdir('/')
+    result = self.fc.createDirectory('/')
     self.assert_( result['OK'])
-    result = self.fcDB.setDirectoryOwner('/','atsareg')
+    result = self.fc.changePathOwner({'/':'atsareg'})
     self.assert_( result['OK'])
-    result = self.fcDB.setDirectoryGroup('/','lhcb')
+    result = self.fc.changePathGroup({'/':'lhcb'})
     self.assert_( result['OK'])
-    result = self.fcDB.getDirectory('/')
+    result = self.fc.isDirectory('/')
     self.assert_( result['OK'])
 
 class FileCase(FileCatalogDBTestCase):
@@ -43,7 +45,7 @@ class FileCase(FileCatalogDBTestCase):
   def test_fileOperations(self):
 
     fname = '/lhcb/user/a/atsareg/first_test'
-    result = self.fcDB.addFile(fname)
+    result = self.fc.addFile(fname)
 
 if __name__ == '__main__':
 

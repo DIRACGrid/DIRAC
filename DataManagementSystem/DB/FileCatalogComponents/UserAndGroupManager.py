@@ -13,40 +13,81 @@ from DIRAC import S_OK, S_ERROR
 
 class UserAndGroupManager:
   
+  
+  def getUserAndGroupRight(self,user,group):
+    """ Evaluate rights for user and group operations
+    """
+    
+    if group == "diracAdmin" or group == 0:
+      return S_OK(True)
+    else:
+      return S_OK(False)
+  
 #####################################################################
 #
 #  User related methods
 #
 #####################################################################
-  def addUser(self,name):
+  def addUser(self,name,ruser,rgroup):
     """ Add a new user with a nickname 'name' 
     """
 
+    result = self.getUserAndGroupRight(ruser,rgroup)
+    if not result['Value']:
+      return S_ERROR('Permission denied')
+
+    userID = 0
+    result = self.findUser(name)
+    if not result['OK']:
+      if result['Message'].find('not found') == -1:
+        return result
+    else:  
+      userID = result['Value']
+      
+    if userID:
+      return S_OK(userID)
+    
+    # Get the user ID
+    req = "SELECT MAX(UID) FROM FC_Users"
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    uid = result['Value'][0][0]+1
+    
+    result = self._insert('FC_Users',['UserName','UID'],[name,uid])
+    if not result['OK']:
+      return result
+    
     result = self.findUser(name)
     if not result['OK']:
       return result
-    userID = result['Value']
-    if userID:
-      return S_OK(userID)
-
-    result = self._insert('FC_Users',['UserName'],[name])
-    if not result['OK']:
-      return result
-    return S_OK(result['lastRowId'])
+    return S_OK(result['Value'])
 
 #####################################################################
-  def deleteUser(self,name):
+  def deleteUser(self,name,ruser,rgroup,force=True):
     """ Delete a user specified by its nickname
     """
+    
+    result = self.getUserAndGroupRight(ruser,rgroup)
+    if not result['Value']:
+      return S_ERROR('Permission denied')
+
+    if not force:
+      # ToDo: Check first if there are files belonging to the user
+      pass
 
     req = "DELETE FROM FC_Users WHERE UserName='%s'" % name
     resUpdate = self._update(req)
     return resUpdate
 
 #####################################################################
-  def getUsers(self):
+  def getUsers(self,ruser=0,rgroup=0):
     """ Get the current user IDs and names
     """
+
+    result = self.getUserAndGroupRight(ruser,rgroup)
+    if not result['Value']:
+      return S_ERROR('Permission denied')
 
     resDict = {}
     query = "SELECT UID,UserName from FC_Users"
@@ -78,43 +119,92 @@ class UserAndGroupManager:
         return S_ERROR('User %s not found' % user)
     else:
       return resQuery
+    
+#####################################################################
+  def getUserName(self,uid):
+    """ Get user name for the given id
+    """   
+    
+    if uid in self.users:
+      return S_OK(self.users[uid])
+    else:
+      result = self.getUsers(0,0)
+      uDict = result['Value']
+      self.users = {}
+      uname = ''
+      for name,id in uDict.items():
+        self.users[id] = name
+        if id == uid:
+          uname = name
+    if uname:
+      return S_OK(uname)
+    else:
+      return S_ERROR('User id %d not found' % uid)    
 
 #####################################################################
 #
 #  Group related methods
 #
 #####################################################################
-  def addGroup(self,gname,gid=0):
+  def addGroup(self,gname,ruser,rgroup,gid=0):
     """ Add a new group with a name 'name'
     """
+    
+    result = self.getUserAndGroupRight(ruser,rgroup)
+    if not result['Value']:
+      return S_ERROR('Permission denied')
+    
+    groupID = 0
     result = self.findGroup(gname)
     if not result['OK']:
-      return result
-    groupID = result['Value']
+      if result['Message'].find('not found') == -1:
+        return result
+    else:  
+      groupID = result['Value']
+    
     if groupID:
       result = S_OK(groupID)
       result['Message'] = "Group "+gname+" already exists"
       return result
 
-    result = self._insert('FC_Groups',['GroupName'],[gname])
+    # Get the new group ID
+    req = "SELECT MAX(GID) FROM FC_Groups"
+    result = self._query(req)
     if not result['OK']:
       return result
-    return S_OK(result['lastRowId'])
+    gid = result['Value'][0][0]+1
+
+    result = self._insert('FC_Groups',['GroupName','GID'],[gname,gid])
+    if not result['OK']:
+      return result
+    
+    result = self.findGroup(gname)
+    if not result['OK']:
+      return result
+    return S_OK(result['Value'])
 
 
 #####################################################################
-  def deleteGroup(self,gname):
+  def deleteGroup(self,gname,ruser,rgroup):
     """ Delete a group specified by its name
     """
+
+    result = self.getUserAndGroupRight(ruser,rgroup)
+    if not result['Value']:
+      return S_ERROR('Permission denied')
 
     req = "DELETE FROM FC_Groups WHERE GroupName='%s'" % gname
     resUpdate = self._update(req)
     return resUpdate
  
 #####################################################################
-  def getGroups(self):
+  def getGroups(self,ruser=0,rgroup=0):
     """ Get the current group IDs and names
     """
+
+    result = self.getUserAndGroupRight(ruser,rgroup)
+    if not result['Value']:
+      return S_ERROR('Permission denied')
 
     resDict = {}
     query = "SELECT GID, GroupName from FC_Groups"
@@ -146,3 +236,24 @@ class UserAndGroupManager:
         return S_ERROR('Group %s not found' % group)
     else:
       return resQuery
+
+#####################################################################
+  def getGroupName(self,gid):
+    """ Get group name for the given id
+    """   
+    
+    if gid in self.groups:
+      return S_OK(self.groups[gid])
+    else:
+      result = self.getGroups(0,0)
+      gDict = result['Value']
+      self.groups = {}
+      gname = ''
+      for name,id in gDict.items():
+        self.groups[id] = name
+        if id == gid:
+          gname = name
+    if gname:
+      return S_OK(gname)
+    else:
+      return S_ERROR('Group id %d not found' % gid)  

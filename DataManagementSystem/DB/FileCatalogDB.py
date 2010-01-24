@@ -61,6 +61,8 @@ class FileCatalogDB(DB,
     self.dtree.setDatabase(self)
     # umask default setting
     self.umask = 0775
+    self.users = {}
+    self.groups = {}
     
   def setUmask(self,umask):
     
@@ -157,8 +159,9 @@ class FileCatalogDB(DB,
 
     return result
   
+#####################################################################
   def isDirectory(self,paths,s_uid=0,s_gid=0):
-    """ 
+    """ Checking for existence of directories
     """
     result = self.findUser(s_uid)
     if not result['OK']:
@@ -187,6 +190,36 @@ class FileCatalogDB(DB,
         successful[dir] = False  
           
     return S_OK({'Successful':successful,'Failed':failed})
+  
+ #####################################################################
+  def createDirectory(self,arguments,s_uid=0,s_gid=0):
+    """ Checking for existence of directories
+    """
+    result = self.findUser(s_uid)
+    if not result['OK']:
+      return result
+    uid = result['Value']
+    result = self.findGroup(s_gid)
+    if not result['OK']:
+      return result
+    gid = result['Value']
+    
+    result = checkArgumentFormat(arguments)
+    if not result['OK']:
+      return result
+    arguments = result['Value']
+    
+    dirs = arguments.keys()
+    successful = {}
+    failed = {}
+    for dir in dirs:
+      result = self.makeDirectories(dir)
+      if not result['OK']:
+        failed[dir] = result['Message']
+      else: 
+        successful[dir] = True  
+          
+    return S_OK({'Successful':successful,'Failed':failed}) 
 
 #####################################################################
   def removeDirectory(self,dirname,force=False):
@@ -232,10 +265,22 @@ class FileCatalogDB(DB,
 
     dirDict = {}
     dirDict['DirID'] = int(resQuery['Value'][0][0])
-    dirDict['UID'] = int(resQuery['Value'][0][1])
+    uid = int(resQuery['Value'][0][1])
+    dirDict['UID'] = uid
+    owner = 'unknown'
+    result = self.getUserName(uid)
+    if result['OK']:
+      owner = result['Value'] 
+    dirDict['Owner'] = owner
+    gid = int(resQuery['Value'][0][2])
     dirDict['GID'] = int(resQuery['Value'][0][2])
+    group = 'unknown'
+    result = self.getGroupName(gid)
+    if result['OK']:
+      group = result['Value']  
+    dirDict['OwnerGroup'] = group
     dirDict['Status'] = int(resQuery['Value'][0][3])
-    dirDict['Mode'] = int(resQuery['Value'][0][4])
+    dirDict['Permissions'] = int(resQuery['Value'][0][4])
     dirDict['CreationDate'] = resQuery['Value'][0][5]
     dirDict['ModificationDate'] = resQuery['Value'][0][6]
 
@@ -249,7 +294,7 @@ class FileCatalogDB(DB,
     if not result['OK']:
       return result
     dirID = result['Value']
-    req = "UPDATE FC_Directories SET %s=%d WHERE DirID=%d" % (pname,pvalue,dirID)
+    req = "UPDATE FC_DirectoryInfo SET %s=%d WHERE DirID=%d" % (pname,pvalue,dirID)    
     result = self._update(req)
     return result
 
@@ -274,10 +319,38 @@ class FileCatalogDB(DB,
     if not result['OK']:
       return result
     dirID = result['Value']
-    result = self.getUidByName(owner)
+    result = self.findUser(owner)
     uid = result['Value']
     result = self.__setDirectoryUid(dirID,uid)
     return result
+  
+#####################################################################
+  def changeDirectoryOwner(self,paths,s_uid=0,s_gid=0):
+    """ Bulk setting of the directory owner
+    """  
+    result = self.findUser(s_uid)
+    if not result['OK']:
+      return result
+    uid = result['Value']
+    result = self.findGroup(s_gid)
+    if not result['OK']:
+      return result
+    gid = result['Value']
+    
+    result = checkArgumentFormat(paths)
+    if not result['OK']:
+      return result
+    arguments = result['Value']
+    successful = {}
+    failed = {}
+    for path,owner in arguments.items():
+      result = self.setDirectoryOwner(path,owner)
+      if not result['OK']:
+        failed[path] = result['Message']
+      else:
+        successful[path] = True
+        
+    return S_OK({'Successful':successful,'Failed':failed})      
 
 #####################################################################
   def setDirectoryGroup(self,path,gname):
@@ -288,16 +361,72 @@ class FileCatalogDB(DB,
     if not result['OK']:
       return result
     dirID = result['Value']
-    result = self.getGid(gname)
+    result = self.findGroup(gname)
     gid = result['Value']
     result = self.__setDirectoryGid(dirID,gid)
     return result
+  
+#####################################################################
+  def changeDirectoryGroup(self,paths,s_uid=0,s_gid=0):
+    """ Bulk setting of the directory owner
+    """  
+    result = self.findUser(s_uid)
+    if not result['OK']:
+      return result
+    uid = result['Value']
+    result = self.findGroup(s_gid)
+    if not result['OK']:
+      return result
+    gid = result['Value']
+    
+    result = checkArgumentFormat(paths)
+    if not result['OK']:
+      return result
+    arguments = result['Value']
+    successful = {}
+    failed = {}
+    for path,group in arguments.items():
+      result = self.setDirectoryGroup(path,group)
+      if not result['OK']:
+        failed[path] = result['Message']
+      else:
+        successful[path] = True
+        
+    return S_OK({'Successful':successful,'Failed':failed})        
 
 #####################################################################
   def setDirectoryMode(self,path,mode):
     """ set the directory mask
     """
     return self.__setDirectoryParameter(path,'Mode',mode)
+  
+#####################################################################
+  def changeDirectoryMode(self,paths,s_uid=0,s_gid=0):
+    """ Bulk setting of the directory owner
+    """  
+    result = self.findUser(s_uid)
+    if not result['OK']:
+      return result
+    uid = result['Value']
+    result = self.findGroup(s_gid)
+    if not result['OK']:
+      return result
+    gid = result['Value']
+    
+    result = checkArgumentFormat(arguments)
+    if not result['OK']:
+      return result
+    arguments = result['Value']
+    successful = {}
+    failed = {}
+    for path,mode in arguments.items():
+      result = self.setDirectoryMode(path,mode)
+      if not result['OK']:
+        failed[path] = result['Message']
+      else:
+        successful[path] = True
+        
+    return S_OK({'Successful':successful,'Failed':failed})     
 
 #####################################################################
   def setDirectoryStatus(self,path,status):
@@ -353,7 +482,15 @@ class FileCatalogDB(DB,
       result = self.dtree.getDirectoryName(dirID)
       if not result['OK']:
         return result
-      directories[result['Value']] = True
+      dirName = result['Value']
+      if details:
+        result = self.getDirectoryParameters(dirID)
+        if not result['OK']:
+          directories[dirName] = False
+        else:
+          directories[dirName] = result['Value']
+      else:    
+        directories[dirName] = True
                   
     # Get files
     result = self.__getFilesInDirectory(directoryID)
@@ -365,7 +502,14 @@ class FileCatalogDB(DB,
       if not result['OK']:
         return result
       fname = os.path.basename(result['Value'])
-      files[fname] = True
+      if details:
+        result = self.getFileInfo(fileID)
+        if not result['OK']:
+          files[fname] = False
+        else:
+          files[fname] = result['Value']  
+      else:  
+        files[fname] = True
       
     # Get links                
     pass
@@ -373,7 +517,7 @@ class FileCatalogDB(DB,
     pathDict = {'Files': files,'SubDirs':directories,'Links':links}    
     return S_OK(pathDict)           
 
-  def listDirectory(self,lfns,s_uid=0,s_gid=0):
+  def listDirectory(self,lfns,s_uid=0,s_gid=0,verbose=False):
     """ Get the directory listing
     """
     
@@ -395,7 +539,7 @@ class FileCatalogDB(DB,
     successful = {}
     failed = {}
     for path in paths:
-      result = self.__getDirectoryContents(path)
+      result = self.__getDirectoryContents(path,details=verbose)
       if not result['OK']:
         failed[path] = result['Message']
       else:
@@ -584,7 +728,7 @@ class FileCatalogDB(DB,
       else:
         successful[lfn] = True
         
-    return S_OK({'Failed':successful,'Failed':failed})      
+    return S_OK({'Successful':successful,'Failed':failed})      
     
   def __addFile(self,lfn,pfn='',size=0,se='',guid='',checksum='',checksumtype='',uid=0,gid=0):
     """Add (register) a file to the catalog. The file is specified by its
@@ -726,6 +870,151 @@ class FileCatalogDB(DB,
     
     return S_OK(lfn)
   
+  def setFileOwner(self,fileID,owner):
+    """ Set the file owner
+    """
+    
+    result = self.findUser(owner)
+    if not result['OK']:
+      return result
+    userID = result['Value']
+    
+    req = 'UPDATE FC_FileInfo SET UID=%d WHERE FileID=%d' % (int(userID),int(fileID))
+    result = self._update(req) 
+    return result
+  
+  def changeFileOwner(self,lfns,s_uid=0,s_gid=0):
+    """ Bulk method to set the file owner
+    """
+    result = self.findUser(s_uid)
+    if not result['OK']:
+      return result
+    uid = result['Value']
+    result = self.findGroup(s_gid)
+    if not result['OK']:
+      return result
+    gid = result['Value']
+    
+    result = checkArgumentFormat(lfns)
+    if not result['OK']:
+      return result
+    arguments = result['Value']
+    
+    lfnList = arguments.keys()
+    result = self.findFile(lfnList)
+    if not result['OK']:
+      return result
+    lfnDict = result['Value']['Successful']
+    
+    successful = {}
+    failed = {}
+    for lfn,owner in arguments.items():
+      if lfn in lfnDict:
+        result = self.setFileOwner(lfnDict[lfn],owner)
+        if result['OK']:
+          successful[lfn] = True
+        else:
+          failed[lfn] = result['Message']
+      else:
+        failed[lfn] = 'Path not found'
+             
+    return S_OK({'Successful':successful,'Failed':failed})
+    
+  def setFileGroup(self,fileID,group):
+    """ Set the file owner
+    """
+    
+    result = self.findGroup(group)
+    if not result['OK']:
+      return result
+    groupID = result['Value']
+    
+    req = 'UPDATE FC_FileInfo SET GID=%d WHERE FileID=%d' % (int(groupID),int(fileID))    
+    result = self._update(req) 
+    return result
+  
+  def changeFileGroup(self,lfns,s_uid=0,s_gid=0):
+    """ Bulk method to set the file owner
+    """
+    result = self.findUser(s_uid)
+    if not result['OK']:
+      return result
+    uid = result['Value']
+    result = self.findGroup(s_gid)
+    if not result['OK']:
+      return result
+    gid = result['Value']
+    
+    result = checkArgumentFormat(lfns)
+    if not result['OK']:
+      return result
+    arguments = result['Value']
+    
+    lfnList = arguments.keys()
+    result = self.findFile(lfnList)
+    if not result['OK']:
+      return result
+    lfnDict = result['Value']['Successful']
+    
+    successful = {}
+    failed = {}
+    for lfn,group in arguments.items():
+      if lfn in lfnDict:
+        result = self.setFileGroup(lfnDict[lfn],group)
+        if result['OK']:
+          successful[lfn] = True
+        else:
+          failed[lfn] = result['Message']
+      else:
+        failed[lfn] = 'Path not found'
+             
+    return S_OK({'Successful':successful,'Failed':failed})
+  
+  def setFileMode(self,fileID,mode):
+    """ Set the file owner
+    """
+    
+    req = 'UPDATE FC_FileInfo SET Mode=%d WHERE FileID=%d' % (int(mode),int(fileID))
+    result = self._update(req) 
+    return result
+  
+  def changeFileMode(self,lfns,s_uid=0,s_gid=0):
+    """ Bulk method to set the file owner
+    """
+    result = self.findUser(s_uid)
+    if not result['OK']:
+      return result
+    uid = result['Value']
+    result = self.findGroup(s_gid)
+    if not result['OK']:
+      return result
+    gid = result['Value']
+    
+    result = checkArgumentFormat(lfns)
+    if not result['OK']:
+      return result
+    arguments = result['Value']
+    
+    lfnList = arguments.keys()
+    result = self.findFile(lfnList)
+    if not result['OK']:
+      return result
+    lfnDict = result['Value']['Successful']
+    
+    successful = {}
+    failed = {}
+    for lfn,mode in arguments.items():
+      if lfn in lfnDict:
+        result = self.setFileMode(lfnDict[lfn],mode)
+        if result['OK']:
+          successful[lfn] = True
+        else:
+          failed[lfn] = result['Message']
+      else:
+        failed[lfn] = 'Path not found'
+             
+    return S_OK({'Successful':successful,'Failed':failed})    
+  
 #####################################################################
   def getFileInfo(self,fileID):
     """ Get file information for the given file ID
@@ -743,11 +1032,31 @@ class FileCatalogDB(DB,
     resultDict['Size'] = result['Value'][0][1]
     resultDict['CheckSum'] = result['Value'][0][2]
     resultDict['CheckSumType'] = result['Value'][0][3]
-    resultDict['UID'] = result['Value'][0][4]
-    resultDict['GID'] = result['Value'][0][5]
+    
+    uid = int(result['Value'][0][4])
+    resultDict['UID'] = uid
+    owner = 'unknown'
+    if uid == 0:
+      owner = 'root'
+    else:  
+      resGet = self.getUserName(uid)
+      if resGet['OK']:
+        owner = resGet['Value'] 
+    resultDict['Owner'] = owner
+    gid = int(result['Value'][0][5])
+    resultDict['GID'] = gid
+    group = 'unknown'
+    if gid == 0:
+      group = 'root'
+    else:  
+      resGet = self.getGroupName(gid)      
+      if resGet['OK']:
+        group = resGet['Value']  
+    resultDict['OwnerGroup'] = group
+    
     resultDict['CreationDate'] = result['Value'][0][6]
     resultDict['ModificationDate'] = result['Value'][0][7]
-    resultDict['Mode'] = result['Value'][0][8]
+    resultDict['Permissions'] = result['Value'][0][8]
     resultDict['Status'] = result['Value'][0][9]
     
     req = "SELECT DirID,FileName from FC_Files WHERE FileID=%d" % fileID
@@ -759,6 +1068,9 @@ class FileCatalogDB(DB,
     resultDict['DirID'] = result['Value'][0][0]
     resultDict['FileName'] = result['Value'][0][1]
     
+    # ToDo: Number of links to be evaluated
+    resultDict['NumberOfLinks'] = 0
+    
     dirID = resultDict['DirID']
     result = self.dtree.getDirectoryPath(dirID)
     if not result['OK']:
@@ -766,8 +1078,7 @@ class FileCatalogDB(DB,
     if not result['Value']:
       return S_ERROR('Directory %d not found' % dirID)
     dirPath = result['Value']
-    resultDict['LFN'] = dirPath+'/'+resultDict['FileName']
-      
+    resultDict['LFN'] = dirPath+'/'+resultDict['FileName']      
     return S_OK(resultDict)  
 
 #####################################################################
@@ -791,7 +1102,157 @@ class FileCatalogDB(DB,
       result['Exists'] = False
 
     return result
+  
+##################################################################### 
+  def isFile(self,lfns,s_uid=0,s_gid=0):
+    """ Check for the existence of files
+    """
+    result = self.findUser(s_uid)
+    if not result['OK']:
+      return result
+    uid = result['Value']
+    result = self.findGroup(s_gid)
+    if not result['OK']:
+      return result
+    gid = result['Value']
     
+    result = self.findFile(lfns)
+    return result
+  
+  def changePathOwner(self,paths,s_uid=0,s_gid=0):
+    """ Change the owner for the given paths
+    """
+    result = self.findUser(s_uid)
+    if not result['OK']:
+      return result
+    uid = result['Value']
+    result = self.findGroup(s_gid)
+    if not result['OK']:
+      return result
+    gid = result['Value']
+    
+    result = checkArgumentFormat(lfns)
+    if not result['OK']:
+      return result
+    arguments = result['Value']
+    
+    result = self.isDirectory(paths,uid,gid)
+    if not result['OK']:
+      return result
+    dirList = result['Value']['Successful'].keys()
+    fileList = []
+    if len(dirList) < len(paths):
+      result = self.isFile(paths,uid,gid)
+      if not result['OK']:
+        return result
+      fileList = result['Value']['Successful'].keys()
+    
+    successful = {}
+    failed = {}
+    
+    dirArgs = {}
+    fileArgs = {}
+    
+    for path in arguments:
+      if not path in dirList and not path in fileList:
+        failed[path] = 'Path not found'
+      if path in dirList:
+        dirArgs[path] = arguments[path]
+      elif path in fileList:
+        fileArgs[path] = arguments[path]
+        
+    result = self.changeDirectoryOwner(dirArgs,uid,gid)
+    if not result['OK']:
+      return result
+    successful.update(result['Value']['Successful'])
+    failed.update(result['Value']['Successful'])
+    
+    result = self.changeFileOwner(fileArgs,uid,gid)
+    if not result['OK']:
+      return result
+    successful.update(result['Value']['Successful'])
+    failed.update(result['Value']['Successful'])    
+    
+    return S_OK({'Successful':successful,'Failed':failed})    
+  
+  def __changePathFunction(self,paths,s_uid,s_gid,change_function_directory,change_function_file):
+    """ A generic function to change Owner, Group or Mode for the given paths
+    """
+    result = self.findUser(s_uid)
+    if not result['OK']:
+      return result
+    uid = result['Value']
+    result = self.findGroup(s_gid)
+    if not result['OK']:
+      return result
+    gid = result['Value']
+    
+    result = checkArgumentFormat(paths)
+    if not result['OK']:
+      return result
+    arguments = result['Value']
+    
+    dirList = []
+    result = self.isDirectory(paths,uid,gid)    
+    if not result['OK']:
+      return result
+    for p in result['Value']['Successful']:
+      if result['Value']['Successful'][p]:
+        dirList.append(p)
+    fileList = []
+    if len(dirList) < len(paths):
+      result = self.isFile(paths,uid,gid)      
+      if not result['OK']:
+        return result
+      fileList = result['Value']['Successful'].keys()
+    
+    successful = {}
+    failed = {}
+    
+    dirArgs = {}
+    fileArgs = {}
+    
+    for path in arguments:
+      if (not path in dirList) and (not path in fileList):
+        failed[path] = 'Path not found'
+      if path in dirList:
+        dirArgs[path] = arguments[path]
+      elif path in fileList:
+        fileArgs[path] = arguments[path]        
+    if dirArgs:        
+      result = change_function_directory(dirArgs,uid,gid)
+      if not result['OK']:
+        return result
+      successful.update(result['Value']['Successful'])
+      failed.update(result['Value']['Successful'])    
+    if fileArgs:
+      result = change_function_file(fileArgs,uid,gid)
+      if not result['OK']:
+        return result
+      successful.update(result['Value']['Successful'])
+      failed.update(result['Value']['Successful'])    
+    
+    return S_OK({'Successful':successful,'Failed':failed})
+  
+  def changePathOwner(self,paths,s_uid=0,s_gid=0):  
+    """ Bulk method to change Owner for the given paths
+    """
+    return self.__changePathFunction(paths,s_uid,s_gid,self.changeDirectoryOwner,self.changeFileOwner)
+  
+  def changePathGroup(self,paths,s_uid=0,s_gid=0):  
+    """ Bulk method to change Owner for the given paths
+    """
+    return self.__changePathFunction(paths,s_uid,s_gid,self.changeDirectoryGroup,self.changeFileGroup)
+  
+  def changePathMode(self,paths,s_uid=0,s_gid=0):  
+    """ Bulk method to change Owner for the given paths
+    """
+    return self.__changePathFunction(paths,s_uid,s_gid,self.changeDirectoryMode,self.changeFileMode)
+
+#########################################################################
+#
+#  Replica related methods
+#    
   
   def __addReplica(self,fileID,se,pfn='',rtype='Master'):
     """ Add a replica to the file catalog
@@ -853,10 +1314,7 @@ class FileCatalogDB(DB,
       result = self.findSE(se)
       if not result['OK']:
         return result
-      seID = result['Value']
-      
-    print "AT >>>>",  fileID,seID
-      
+      seID = result['Value']      
     req = "SELECT RepID FROM FC_Replicas WHERE FileID=%d AND SEID=%d" % (fileID,seID)
     result = self._query(req)
     if not result['OK']:

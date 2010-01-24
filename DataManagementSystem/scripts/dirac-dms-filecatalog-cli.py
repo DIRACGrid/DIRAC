@@ -29,5 +29,5 @@ elif fcType == "DiracFC":
   print "Starting DIRAC FileCatalog client"
   cli.cmdloop()  
 else:
-  print "Unknown catalog type", catype
+  print "Unknown catalog type", fcType
 
