@@ -354,7 +354,7 @@ class Dirac:
     if os.path.isdir( cleanPath ):
       shutil.rmtree(cleanPath, ignore_errors=True)
       return
-    self.__printOutput(std.out, 'Could not remove %s' % str(cleanPath) )
+    self.__printOutput(sys.stdout, 'Could not remove %s' % str(cleanPath) )
     return
 
   #############################################################################
@@ -618,7 +618,7 @@ class Dirac:
 
     localSEList = getSEsForSite(siteName)
     if not localSEList['OK']:
-      return result
+      return localSEList
 
     self.log.verbose(localSEList)
     
@@ -2644,10 +2644,10 @@ class Dirac:
     """Under Development, retrieve logging informations.
     """
     if not type(numberOfRecords)==type(1):
-      return self.__errorReport(str(x),'Expected integer for number of records')
+      return self.__errorReport('Expected integer for number of records')
     logger = LoggerClient()
     conditions = {}
-    result =  logger.getMessages(conds=conditions,beginDate=startDate,endDate=finalDate,maxRecords=numberOfRecords)
+    result =  logger.getMessages(conds=conditions,maxRecords=numberOfRecords)
     if printOutput:
       print self.pPrint.pformat(result['Value'])
     return result
@@ -2657,7 +2657,7 @@ class Dirac:
     """Under Development, retrieve logging informations.
     """
     if not type(numberOfRecords)==type(1):
-      return self.__errorReport(str(x),'Expected integer for number of records')
+      return self.__errorReport('Expected integer for number of records')
     logger = LoggerClient()
     result =  logger.getGroupedMessages(groupField='FixedTextString',orderList=[['recordCount','DESC']],maxRecords=numberOfRecords)
     if printOutput:
