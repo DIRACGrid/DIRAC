@@ -475,7 +475,7 @@ class StatusSet:
           if 'Port' not in dbComp:
             self.__setStatus( dbComp, 'Error', "Port is not defined" )
           elif dbComp[ 'Port' ] not in [ compDict[ 'Port' ] for compDict in compDictList if 'Port' in compDict ]:
-            self.__setStatus( component, 'Error',
+            self.__setStatus( compDict["ComponentName"], 'Error',
                               "Port (%s) is different that specified in the CS" % dbComp[ 'Port' ] )
         elapsed = now - dbComp[ 'LastHeartbeat' ]
         elapsed = elapsed.days * 86400 + elapsed.seconds
