@@ -10,7 +10,7 @@ from DIRAC.Core.Utilities.List                          import randomize
 def getActiveCatalogs():
   res = gConfig.getSections("/Resources/FileCatalogs/LcgFileCatalogCombined")
   if not res['OK']:
-    gLogger.error("Failed to find Tier1 catalog section","%s %s" % (tier1,res['Message']))
+    gLogger.error("Failed to get Active Catalogs","%s" % res['Message'] )
     return res
   readDict = {}
   for site in res['Value']:
