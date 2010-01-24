@@ -1,10 +1,18 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-import urllib2, re, tarfile, os, types
+import urllib2, re, tarfile, os, types, sys, subprocess
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import CFG, File, List
+
+def execAndGetOutput( cmd ):
+  p = subprocess.Popen( cmd,
+                        shell = True, stdout = subprocess.PIPE,
+                        stderr = subprocess.PIPE, close_fds = True )
+  stdData = p.stdout.read()
+  p.wait()
+  return ( p.returncode, stdData )
 
 def getRepositoryVersions( package = False ):
   if package:
