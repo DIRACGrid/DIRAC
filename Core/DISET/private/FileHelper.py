@@ -229,7 +229,7 @@ class FileHelper:
 
   def DataSourceToNetwork( self, dataSource ):
     if "read" not in dir( dataSource ):
-      return S_ERROR( "%s data source object does not have a read method" % str( dataSink ) )
+      return S_ERROR( "%s data source object does not have a read method" % str( dataSource ) )
     self.__oMD5 = md5.new()
     iPacketSize = self.packetSize
     try:
