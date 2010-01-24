@@ -143,7 +143,7 @@ class FailoverTransfer:
   def __setRegistrationRequest(self,lfn,se,catalog):
     """ Sets a registration request.
     """
-    self.log.info('Setting registration request for %s at %s for metadata:\n%s' % (lfn,se,fileDict))
+    self.log.info('Setting registration request for %s at %s.' % (lfn,se))
     result = self.request.addSubRequest({'Attributes':{'Operation':'registerFile','ExecutionOrder':0,
                                                        'TargetSE':se,'Catalogue':catalog}},'register')
     if not result['OK']:
