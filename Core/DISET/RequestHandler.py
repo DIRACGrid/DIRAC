@@ -78,7 +78,7 @@ class RequestHandler:
     elif actionType == "FileTransfer":
       retVal = self.__doFileTransfer( actionTuple[1] )
     else:
-      raise Exception( "Unknown action (%s)" % action )
+      raise Exception( "Unknown action (%s)" % actionType )
     if not retVal:
       message = "Method %s for action %s does not have a return value!" % ( actionTuple[1], actionTuple[0] )
       gLogger.error( message )
