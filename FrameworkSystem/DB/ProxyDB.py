@@ -195,7 +195,7 @@ class ProxyDB(DB):
     if len( attr ) == 0 or attr[0] == validVOMSAttr:
       return S_OK( 'OK' )
     msg = "VOMS attributes are not aligned with dirac group"
-    msg += "Attributes are %s and allowed is %s for group %s" % ( attr, validVOMSAttrs, userGroup )
+    msg += "Attributes are %s and allowed is %s for group %s" % ( attr, validVOMSAttr, userGroup )
     return S_ERROR( msg )
 
   def completeDelegation( self, requestId, userDN, delegatedPem ):
