@@ -3,8 +3,8 @@
 __RCSID__ = "$Id: test_MySQL,v 1.5 2009/04/18 18:26:59 rgracian Exp $"
 """
 """
-from DIRACEnvironment import DIRAC
 import time
+import DIRAC
 from DIRAC.Core.Utilities.MySQL              import MySQL
 
 nThread = 3
