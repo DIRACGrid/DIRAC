@@ -91,7 +91,7 @@ class FileCache:
              lifeTime : life time for the file
     """
     if not fileName:
-      fileName = "%s.png" % self.__generateName( funcToGenerate, extraArgs, fileLifeTime )
+      fileName = "%s.png" % self.__generateName( funcToGenerate, extraArgs, lifeTime )
     if fileName not in self.__cachedFiles:
       filePath = "%s/%s" %( self.__filesLocation, fileName )
       try:
