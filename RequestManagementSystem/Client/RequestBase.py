@@ -130,7 +130,7 @@ class RequestBase:
     """ Get the parameter specified by its name
     """
     if name in self.parameterNames:
-      return self.parameters[aname]
+      return self.parameters[name]
     else:
       return ''
 
