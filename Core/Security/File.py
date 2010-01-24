@@ -29,7 +29,7 @@ def writeToProxyFile( proxyContents, fileName = False):
   try:
     os.chmod( fileName, stat.S_IRUSR | stat.S_IWUSR )
   except Exception, e:
-    return S_ERROR( "Cannot set permissions to file %s :%s" % ( filePath, str(e) ) )
+    return S_ERROR( "Cannot set permissions to file %s :%s" % ( fileName, str(e) ) )
   return S_OK( fileName )
 
 def writeChainToProxyFile( proxyChain, fileName ):
