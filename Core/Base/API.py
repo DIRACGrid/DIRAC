@@ -11,6 +11,7 @@ Script.parseCommandLine()
 from DIRAC                          import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List      import sortList
 from DIRAC.Core.Security.Misc       import getProxyInfo,formatProxyInfoAsString
+from DIRAC.Core.Security.CS         import getDNForUsername
 import string,pprint 
 
 COMPONENT_NAME='API'
