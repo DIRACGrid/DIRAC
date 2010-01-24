@@ -70,7 +70,7 @@ class LoggerClient:
         that were generated between beginDate and endDate     
     """
     loggingQuery = RPCClient('Framework/SystemLoggingReport', timeout = 10)
-    return loggingQuery.getMessages( { 'OwnerDN': UserDN,
+    return loggingQuery.getMessages( { 'OwnerDN': userDN,
                                          'beginDate': beginDate, 
                                          'endDate': endDate }, [], 
                                        startRecord, maxRecords )
