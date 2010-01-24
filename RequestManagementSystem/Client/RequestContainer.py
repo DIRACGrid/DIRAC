@@ -50,7 +50,7 @@ class RequestContainer:
       self.attributes['DIRACSetup'] = gConfig.getValue('/DIRAC/Setup','LHCb-Development')
     elif type(request) == types.InstanceType:
       for attr in self.attributeNames:
-        self.attributes[attr] = script.attributes[attr]
+        self.attributes[attr] = request.attributes[attr]
 
     # initialize request from an XML string
     if type(request) in types.StringTypes:
