@@ -24,7 +24,7 @@ class DataIntegrityClient:
   def removeProblematic(self,fileID):
     """ This removes the specified file ID from the integrity DB
     """
-    if type(fileID) == ListType:
+    if type(fileID) == types.ListType:
       fileIDs = fileID
     else:
       fileIDs = [int(fileID)]
@@ -453,7 +453,7 @@ class DataIntegrityClient:
     for lfn,lfnCatalogMetadata in catalogMetadata.items():
       lfnStorageMetadata = storageMetadata[lfn]
       if (lfnStorageMetadata['Size'] != lfnCatalogMetadata['Size']) and (lfnStorageMetadata['Size'] != 0):
-        sizeMismatch.append((lfn,lfnPfns[lfn],storageElement,'CatalogPFNSizeMismatch'))
+        sizeMismatch.append((lfn,storageMetadata[lfn]['PFN'],storageElement,'CatalogPFNSizeMismatch'))
     if sizeMismatch:
      self.__reportProblematicReplicas(sizeMismatch,storageElement,'CatalogPFNSizeMismatch')
     gLogger.info('Checking storage files exist in the catalog complete')
