@@ -13,6 +13,7 @@ from DIRAC.Core.Utilities.ColorCLI import colorize
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC import gLogger
 
 class CSCLI( cmd.Cmd ):
 
