@@ -27,12 +27,12 @@ class RequestClient:
         urls[url]
       urls.append(self.voBoxUrls)
       for url in urls:
-        requestRPCClient = DISETClient(url)
+        requestRPCClient = RPCClient(url)
         res = requestRPCClient.setRequest(requestType,requestName,requestStatus,requestString)
         if res['OK']:
-          gLogger.info("Succeded setting request for %s at %s" % (requestName,status,url))
-          result["Server"] = url
-          return result
+          gLogger.info("Succeded setting request for %s at %s" % (requestName,url))
+          res["Server"] = url
+          return res
         else:
           errKey = "Failed setting request at %s" % url
           errExpl = " : for %s because: %s" % (requestName,res['Message'])
