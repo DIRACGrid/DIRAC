@@ -53,7 +53,7 @@ class GetObjectMemDB:
           rangeVars.append(decTemp[k])          
     return rangeVars
   
-  def _getIntervalValue(self, dictName , Key, keyPosition, fieldsNumber):
+  def _getIntervalValue(self, dictName , key, keyPosition, fieldsNumber):
     rangeVars=[]
     dictTemp = self.__keyIdentDict[dictName]
     for k, v in dictTemp.iteritems():
