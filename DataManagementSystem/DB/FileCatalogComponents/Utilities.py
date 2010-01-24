@@ -7,7 +7,7 @@
 
 __RCSID__ = "$Id:  $"
 
-import md5
+import md5, random
 from types import *
 from DIRAC import S_OK, S_ERROR
 
