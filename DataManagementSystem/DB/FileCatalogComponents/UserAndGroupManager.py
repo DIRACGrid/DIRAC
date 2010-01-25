@@ -52,7 +52,10 @@ class UserAndGroupManager:
     result = self._query(req)
     if not result['OK']:
       return result
-    uid = result['Value'][0][0]+1
+    if result['Value'] and result['Value'][0][0]:
+      uid = result['Value'][0][0]+1
+    else:
+      uid = 1
     
     result = self._insert('FC_Users',['UserName','UID'],[name,uid])
     if not result['OK']:
@@ -172,7 +175,10 @@ class UserAndGroupManager:
     result = self._query(req)
     if not result['OK']:
       return result
-    gid = result['Value'][0][0]+1
+    if result['Value'] and result['Value'][0][0]:
+      gid = result['Value'][0][0]+1
+    else:
+      gid = 1
 
     result = self._insert('FC_Groups',['GroupName','GID'],[gname,gid])
     if not result['OK']:
