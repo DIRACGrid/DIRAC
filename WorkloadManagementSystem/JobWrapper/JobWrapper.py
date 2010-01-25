@@ -675,7 +675,7 @@ class JobWrapper:
     resolvedSandbox = self.__resolveOutputSandboxFiles(outputSandbox)
     if not resolvedSandbox['OK']:
       self.log.warn('Output sandbox file resolution failed:')
-      self.log.warn(result['Message'])
+      self.log.warn(resolvedSandbox['Message'])
       self.__report('Failed','Resolving Output Sandbox')
 
     fileList = resolvedSandbox['Value']['Files']
@@ -807,9 +807,9 @@ class JobWrapper:
         self.log.verbose('Found GUID for file from POOL XML catalogue %s' %localfile)
         
       outputSEList = List.randomize(outputSE)
-      upload = failoverTransfer.transferAndRegisterFile(localFile,outputFilePath,lfn,outputSEList,fileGUID,self.defaultCatalog)
+      upload = failoverTransfer.transferAndRegisterFile(localfile,outputFilePath,lfn,outputSEList,fileGUID,self.defaultCatalog)
       if upload['OK']:
-        self.log.info('"%s" successfully uploaded to "%s" as "LFN:%s"' % ( localfile, se, lfn ) )
+        self.log.info('"%s" successfully uploaded to "%s" as "LFN:%s"' % ( localfile, upload['uploadedSE'], lfn ) )
         uploaded.append(lfn)
         continue
 
@@ -821,7 +821,7 @@ class JobWrapper:
                 
       failoverSEs = List.randomize(self.defaultFailoverSE)
       targetSE = outputSEList[0]
-      result = failoverTransfer.transferAndRegisterFileFailover(localFile,outputFilePath,lfn,targetSE,failoverSEs,fileGUID,self.defaultCatalog)
+      result = failoverTransfer.transferAndRegisterFileFailover(localfile,outputFilePath,lfn,targetSE,failoverSEs,fileGUID,self.defaultCatalog)
       if not result['OK']:
         self.log.error('Completely failed to upload file to failover SEs with result:\n%s' %result)
         missing.append(outputFile)
@@ -944,7 +944,6 @@ class JobWrapper:
         return S_ERROR(str(failed))
       for lfn in lfns:
         if os.path.exists('%s/%s' %(self.root,os.path.basename(download['Value']['Successful'][lfn]))):
-          checkFileSize.append(os.path.basename(download['Value']['Successful'][lfn]))
           sandboxFiles.append(os.path.basename(download['Value']['Successful'][lfn]))
 
     userFiles = sandboxFiles + [ os.path.basename( lfn ) for lfn in lfns ]
@@ -958,7 +957,7 @@ class JobWrapper:
           for member in tarFile.getmembers():
             tarFile.extract( member, os.getcwd() )
       except Exception,x :
-        return S_ERROR( 'Could not untar %s with exception %s' %(sandboxFile,str(x)) )
+        return S_ERROR( 'Could not untar %s with exception %s' %(possibleTarFile,str(x)) )
 
     if userFiles:
       self.inputSandboxSize = getGlobbedTotalSize( userFiles )
