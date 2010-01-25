@@ -19,6 +19,93 @@ class Transformation(API):
     self.transClient = TransformationDBClient()
     #TODO REMOVE THIS
     self.transClient.setServer("ProductionManagement/ProductionManager")
+
+    self.paramTypes =   { 'TransformationID'      : [types.IntType,types.LongType],
+                          'TransformationName'    : types.StringTypes,
+                          'Status'                : types.StringTypes,
+                          'Description'           : types.StringTypes,
+                          'LongDescription'       : types.StringTypes,
+                          'Type'                  : types.StringTypes,
+                          'Plugin'                : types.StringTypes,
+                          'AgentType'             : types.StringTypes,
+                          'FileMask'              : types.StringTypes,
+                          'TransformationGroup'   : types.StringTypes,
+                          'GroupSize'             : [types.IntType,types.LongType],
+                          'InheritedFrom'         : [types.IntType,types.LongType],
+                          'Body'                  : types.StringTypes,
+                          'MaxNumberOfJobs'       : [types.IntType,types.LongType],
+                          'EventsPerJob'          : [types.IntType,types.LongType]}
+    self.paramValues =  { 'TransformationID'      : 0,
+                          'TransformationName'    : '',
+                          'Status'                : 'New',
+                          'Description'           : '',
+                          'LongDescription'       : '',
+                          'Type'                  : '',
+                          'Plugin'                : 'Standard',
+                          'AgentType'             : 'Manual',
+                          'FileMask'              : '',
+                          'TransformationGroup'   : 'General',
+                          'GroupSize'             : 1,
+                          'InheritedFrom'         : 0,
+                          'Body'                  : '',
+                          'MaxNumberOfJobs'       : 0,
+                          'EventsPerJob'          : 0}
+    self.extraParams  = {}
+    self.exists = False
+    if transID:
+      res = self.getTransformation(transID)
+      if res['OK']:
+        self.exists = True
+      else:
+        gLogger.fatal("The supplied transformation does not exist in transformation database", "%s @ %s" % (transID,self.transClient.serverURL))
+        return S_ERROR()
+
+      
+  def getTransformation(self,transID,printOutput=False):
+    res = self.transClient.getTransformation(transID,extraParams=True)
+    if not res['OK']:
+      return res
+    for paramName,parmValue in res['Value'].items():
+      if paramName in self.paramValues.keys():
+        self.paramValues[paramName] = paramValue
+      else:
+        self.extraParams[paramName] = paramValue
+    
+
+  def getTransformationLogging(self,transID,printOutput=False):
+    """The logging information for the given transformation is returned. """
+    pass
+
+    
+  def __getattr__(self,name):
+    if name.startswith('get'):
+      paramName = name.replace('get','')
+      if paramName in self.paramValues.keys():
+        return S_OK(self.paramValues[paramName])
+    if name.startswith('set'):
+      paramName = name.replace('set','')
+      paramValue = *parms[0]
+      if paramName in self.paramValues.keys():
+        if not (type(paramValue) in self.paramTypes[paramName]):
+          return self._reportError() # TODO FILL ARGUMENTS
+        self.paramValues[paramName] = paramValue
+        if paramName = 'TransformationID':
+          self.exists = True
+      else:
+        paramValues[paramName] = paramValue
+      return S_OK()
+    raise AttributeError
+  
+  def addTransformation(self,transName,description,longDescription,type,plugin,agentType,fileMask,
+                            transformationGroup = 'General',
+                            groupSize           = 1,
+                            inheritedFrom       = 0,
+                            body                = '', 
+                            maxJobs             = 0,
+                            eventsPerJob        = 0,
+                            addFiles            = True,
+                            printOutput = False):
+    pass
     
   #############################################################################
   def getTransformations(self,transID=[], transStatus=[], outputFields=['TransformationID','Status','AgentType','TransformationName','CreationDate'],orderBy='TransformationID',printOutput=False):
