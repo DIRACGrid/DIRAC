@@ -270,7 +270,7 @@ class TransformationDB(DB):
     cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s';" % transName
     res = self._query(cmd,connection)
     if not res['OK']:
-      gLogger.error("Failed to obtain transformation ID for transformation","%s:%s" % (name,res['Message']))
+      gLogger.error("Failed to obtain transformation ID for transformation","%s:%s" % (transName,res['Message']))
       return res
     elif not res['Value']:
       gLogger.verbose("Transformation with name %s does not exists" % (transName))
@@ -466,17 +466,17 @@ class TransformationDB(DB):
     fileIDs,lfnFilesIDs = res['Value']
     return self.getTransformationFiles(condDict={'TransformationID':transID,'FileID':fileIDs.keys()},connection=connection)
 
-  def getFileSummary(self,lfns):
+  def getFileSummary(self,lfns,connection=False):
     """ Get file status summary in all the transformations """
     connection = self.__getConnection(connection)
     res = self.__getFileIDsForLfns(lfns,connection=connection)
     if not res['OK']:
       return res   
     fileIDs,lfnFilesIDs = res['Value']
-    failed = {}
+    failedDict = {}
     for lfn in lfns:
       if lfn not in fileIDs.values():
-        failed[lfn] = 'Did not exist in the Transformation database'
+        failedDict[lfn] = 'Did not exist in the Transformation database'
     condDict = {'FileID':fileIDs.keys()}
     res = self.getTransformationFiles(self,condDict=condDict,connection=connection)
     if not res['OK']:
@@ -488,9 +488,9 @@ class TransformationDB(DB):
       if not resDict.has_key(lfn):
         resDict[lfn] = {}
       if not resDict[lfn].has_key(transID):
-        resultDict[lfn][transID] = {}
-      resultDict[lfn][transID] = fileDict
-    return S_OK({'Successful':resultDict,'Failed':failedDict})
+        resDict[lfn][transID] = {}
+      resDict[lfn][transID] = fileDict
+    return S_OK({'Successful':resDict,'Failed':failedDict})
   
   #TODO use the getTransformationFileInfo method 
   def setFileStatusForTransformation(self,transName,status,lfns,force=False,connection=False):
@@ -1083,7 +1083,7 @@ class TransformationDB(DB):
     res = self._update(req,connection)
     if not res['OK']:
       self.lock.release()
-      gLogger.error("Failed to publish task for transformation", result['Message'])
+      gLogger.error("Failed to publish task for transformation", res['Message'])
       return res
     res = self._query("SELECT LAST_INSERT_ID();", connection)
     self.lock.release()
@@ -1308,7 +1308,7 @@ class TransformationDB(DB):
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
-  def removeReplica(self,replicaTuples):
+  def removeReplica(self,replicaTuples,connection=False):
     """ Remove replica pfn of lfn. """
     gLogger.info("TransformationDB.removeReplica: Attempting to remove %s replicas." % len(replicaTuples))
     successful = {}
@@ -1381,7 +1381,7 @@ class TransformationDB(DB):
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
   
-  def setReplicaStatus(self,replicaTuples):
+  def setReplicaStatus(self,replicaTuples,connection=False):
     """Set status for the supplied replica tuples
     """
     gLogger.info("TransformationDB.setReplicaStatus: Attempting to set statuses for %s replicas." % len(replicaTuples))
@@ -1418,7 +1418,7 @@ class TransformationDB(DB):
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
-  def getReplicaStatus(self,replicaTuples):
+  def getReplicaStatus(self,replicaTuples,connection=False):
     """ Get the status for the supplied file replicas """
     gLogger.info("TransformationDB.getReplicaStatus: Attempting to get statuses of file replicas.")
     failed = {}
@@ -1448,7 +1448,7 @@ class TransformationDB(DB):
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
-  def setReplicaHost(self,replicaTuples):
+  def setReplicaHost(self,replicaTuples,connection=False):
     gLogger.info("TransformationDB.setReplicaHost: Attempting to set SE for %s replicas." % len(replicaTuples))
     successful = {}
     failed = {}
@@ -1463,6 +1463,7 @@ class TransformationDB(DB):
     for lfn in lfns:
       if not lfnFilesIDs.has_key(lfn):
         successful[lfn] = 'File did not exist'
+    seFiles = {}
     if fileIDs:
       for lfn,pfn,oldSE,newSE in replicaTuples:
         if not seFiles.has_key(oldSE):
