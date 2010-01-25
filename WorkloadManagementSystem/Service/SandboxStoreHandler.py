@@ -23,6 +23,7 @@ from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataD
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities import List
 
@@ -302,7 +303,7 @@ class SandboxStoreHandler( RequestHandler ):
         gLogger.verbose( "Ooops, SB transfer wasn't in the successful ones", str( result ) )
         return S_ERROR( "RM returned OK to the action but SB transfer wasn't in the successful ones" )
       return S_OK( ( self.__externalSEName, okTrans[ sbPath ] ) )
-    except Except, e:
+    except Exception, e:
       return S_ERROR( "Error while moving sandbox to SE: %s" % str(e) )
 
   ##################
@@ -320,7 +321,7 @@ class SandboxStoreHandler( RequestHandler ):
     for entityId in enDict:
       for sbTuple in enDict[ entityId ]:
         if type( sbTuple ) not in ( types.TupleType, types.ListType ):
-          return S_ERROR( "Entry for job %s is not a iterable of tuples/lists" % jobId )
+          return S_ERROR( "Entry for entity %s is not a itterable of tuples/lists" % entityId )
         if len( sbTuple ) != 2:
           return S_ERROR( "SB definition is not ( SBLocation, Type )! It's '%s'" % str( sbTuple ) )
         SBLocation = sbTuple[0]
