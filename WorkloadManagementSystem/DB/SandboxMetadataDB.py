@@ -333,7 +333,7 @@ class SandboxMetadataDB(DB):
       return result
     data = result[ 'Value' ]
     if len( data ) > 1:
-      self.log.error( "More than one sandbox registered with the same Location!", location )
+      self.log.error( "More than one sandbox registered with the same Id!", data )
     if len( data ) == 0:
       return S_ERROR( "No sandbox matches the requirements" )
     return S_OK( data[0][0] )
