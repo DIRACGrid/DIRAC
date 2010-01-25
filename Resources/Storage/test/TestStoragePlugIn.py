@@ -37,25 +37,6 @@ class StoragePlugInTestCase(unittest.TestCase):
 
 class DirectoryTestCase(StoragePlugInTestCase):
 
-  def test_isDirectory(self):
-    print '\n\n#########################################################################\n\n\t\t\tIs Directory test\n'
-    # Test that we can determine what is a directory
-    destDir = self.storage.getCurrentURL('')['Value']
-    isDirRes = self.storage.isDirectory(destDir)
-    # Test that we can determine that a directory is not a directory
-    dummyDir = self.storage.getCurrentURL('NonExistantFile')['Value']
-    nonExistantDirRes = self.storage.isDirectory(dummyDir)
-
-    # Check the is directory operation
-    self.assert_(isDirRes['OK'])
-    self.assert_(isDirRes['Value']['Successful'].has_key(destDir))
-    self.assert_(isDirRes['Value']['Successful'][destDir])
-    # Check the non existant directory operation
-    self.assert_(nonExistantDirRes['OK'])
-    self.assert_(nonExistantDirRes['Value']['Failed'].has_key(dummyDir))
-    expectedError = 'Directory does not exist'
-    self.assert_(expectedError in nonExistantDirRes['Value']['Failed'][dummyDir])
-
   def test_putRemoveDirectory(self):
     print '\n\n#########################################################################\n\n\t\t\tPut Directory test\n'
     # First clean the remote directory incase something was left there
@@ -87,7 +68,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
       self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Files'],self.numberOfFiles)
       self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Size'],self.numberOfFiles*sizeOfLocalFile)
     self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Files']) == IntType)
-    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Size']) == IntType)
+    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Size']) in [LongType, IntType])
     # Perform the checks for the remove dir operation
     self.assert_(removeDirRes['OK'])
     self.assert_(removeDirRes['Value']['Successful'].has_key(remoteDir))
@@ -95,7 +76,26 @@ class DirectoryTestCase(StoragePlugInTestCase):
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'],self.numberOfFiles)
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved'],self.numberOfFiles*sizeOfLocalFile)
     self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']) == IntType)
-    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) == IntType)
+    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) in [LongType, IntType])
+
+  def test_isDirectory(self):
+    print '\n\n#########################################################################\n\n\t\t\tIs Directory test\n'
+    # Test that we can determine what is a directory
+    destDir = self.storage.getCurrentURL('')['Value']
+    isDirRes = self.storage.isDirectory(destDir)
+    # Test that we can determine that a directory is not a directory
+    dummyDir = self.storage.getCurrentURL('NonExistantFile')['Value']
+    nonExistantDirRes = self.storage.isDirectory(dummyDir)
+
+    # Check the is directory operation
+    self.assert_(isDirRes['OK'])
+    self.assert_(isDirRes['Value']['Successful'].has_key(destDir))
+    self.assert_(isDirRes['Value']['Successful'][destDir])
+    # Check the non existant directory operation
+    self.assert_(nonExistantDirRes['OK'])
+    self.assert_(nonExistantDirRes['Value']['Failed'].has_key(dummyDir))
+    expectedError = 'Directory does not exist'
+    self.assert_(expectedError in nonExistantDirRes['Value']['Failed'][dummyDir])
 
   def test_putGetDirectoryMetadata(self):
     print '\n\n#########################################################################\n\n\t\t\tGet Directory Metadata test\n'
@@ -131,7 +131,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
       self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Files'],self.numberOfFiles)
       self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Size'],self.numberOfFiles*sizeOfLocalFile)
     self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Files']) == IntType)
-    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Size']) == IntType)
+    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Size']) in [LongType, IntType])
     # Perform the checks for the get metadata operation
     self.assert_(getMetadataRes['OK'])
     self.assert_(getMetadataRes['Value']['Successful'].has_key(remoteDir))
@@ -143,7 +143,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'],self.numberOfFiles)
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved'],self.numberOfFiles*sizeOfLocalFile)
     self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']) == IntType)
-    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) == IntType)
+    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) in [LongType, IntType])
 
   def test_putGetDirectorySize(self):
     print '\n\n#########################################################################\n\n\t\t\tGet Directory Size test\n'
@@ -177,12 +177,12 @@ class DirectoryTestCase(StoragePlugInTestCase):
       self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Files'],self.numberOfFiles)
       self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Size'],self.numberOfFiles*sizeOfLocalFile)
     self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Files']) == IntType)
-    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Size']) == IntType)
+    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Size']) in [LongType, IntType])
     #Now perform the checks for the get directory size operation
     self.assert_(getDirSizeRes['OK'])
     self.assert_(getDirSizeRes['Value']['Successful'].has_key(remoteDir))
     resDict = getDirSizeRes['Value']['Successful'][remoteDir]
-    self.assert_(type(resDict['Size']) == IntType)
+    self.assert_(type(resDict['Size']) in [LongType, IntType])
     self.assert_(type(resDict['Files']) == IntType)
     # Perform the checks for the remove directory operation
     self.assert_(removeDirRes['OK'])
@@ -191,7 +191,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'],self.numberOfFiles)
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved'],self.numberOfFiles*sizeOfLocalFile)
     self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']) == IntType)
-    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) == IntType)
+    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) in [LongType, IntType])
 
   def test_putListDirectory(self):
     print '\n\n#########################################################################\n\n\t\t\tList Directory test\n'
@@ -225,7 +225,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
       self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Files'],self.numberOfFiles)
       self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Size'],self.numberOfFiles*sizeOfLocalFile)
     self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Files']) == IntType)
-    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Size']) == IntType)
+    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Size']) in [LongType, IntType])
     # Perform the checks for the list dir operation
     self.assert_(listDirRes['OK'])
     self.assert_(listDirRes['Value']['Successful'].has_key(remoteDir))
@@ -240,7 +240,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'],self.numberOfFiles)
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved'],self.numberOfFiles*sizeOfLocalFile)
     self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']) == IntType)
-    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) == IntType)
+    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) in [LongType, IntType])
 
   def test_putGetDirectory(self):
     print '\n\n#########################################################################\n\n\t\t\tGet Directory test\n'
@@ -276,7 +276,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
       self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Files'],self.numberOfFiles)
       self.assertEqual(putDirRes['Value']['Successful'][remoteDir]['Size'],self.numberOfFiles*sizeOfLocalFile)
     self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Files']) == IntType)
-    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Size']) == IntType)
+    self.assert_(type(putDirRes['Value']['Successful'][remoteDir]['Size']) in [LongType, IntType])
     # Perform the checks for the get dir operation
     self.assert_(getDirRes['OK'])
     self.assert_(getDirRes['Value']['Successful'].has_key(remoteDir))
@@ -285,7 +285,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
       self.assertEqual(resDict['Files'],self.numberOfFiles)
       self.assertEqual(resDict['Size'],self.numberOfFiles*sizeOfLocalFile)
     self.assert_(type(resDict['Files']) == IntType)
-    self.assert_(type(resDict['Size']) == IntType)
+    self.assert_(type(resDict['Size']) in [LongType, IntType])
     # Perform the checks for the remove directory operation
     self.assert_(removeDirRes['OK'])
     self.assert_(removeDirRes['Value']['Successful'].has_key(remoteDir))
@@ -293,7 +293,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'],self.numberOfFiles)
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved'],self.numberOfFiles*sizeOfLocalFile)
     self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']) == IntType)
-    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) == IntType)
+    self.assert_(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) in [LongType, IntType])
 
 class FileTestCase(StoragePlugInTestCase):
 
