@@ -136,6 +136,7 @@ class MatcherHandler(RequestHandler):
 
     resultDict = {}
     resultDict['JDL'] = result['Value']
+    resultDict['JobID'] = jobID
 
     matchTime = time.time() - startTime
     gLogger.info("Match time: [%s]" % str(matchTime))
