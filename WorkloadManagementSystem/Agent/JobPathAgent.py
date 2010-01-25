@@ -44,7 +44,7 @@ class JobPathAgent(OptimizerModule):
 
     return S_OK()
 
-  def __syncJobDesc( self, jobId, jobDesc, classAd ):
+  def __syncJobDesc( self, jobId, jobDesc, classAdJob ):
     if not jobDesc.isDirty():
       return
     for op in jobDesc.getOptions():
