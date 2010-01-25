@@ -149,7 +149,6 @@ class TransformationAgent(AgentModule):
     except Exception, x:
       gLogger.exception("%s.__generatePluginObject: Failed to create %s()." % (AGENT_NAME,plugin),'',x)
       return S_ERROR()
-    return S_OK(oPlugin)
 
   def __getDataReplicas(self,transID,lfns):
     """ Get the replicas for the LFNs and check their statuses """
