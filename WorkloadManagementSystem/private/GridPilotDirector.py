@@ -27,7 +27,7 @@ ERROR_JDL        = 'Could not create Grid JDL'
 ERROR_RB         = 'No Broker available'
 ERROR_TOKEN      = 'Invalid proxy token request'
 
-import os, tempfile, time, re, shutil
+import os, tempfile, time, re, shutil, sys
 
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities   import outputSandboxFiles
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
