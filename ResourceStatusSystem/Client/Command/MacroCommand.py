@@ -3,6 +3,8 @@
 """
 
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions   import *
+from DIRAC.ResourceStatusSystem.Utilities.Utils        import *
 
 class MacroCommand(Command):
   
