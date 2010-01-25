@@ -344,8 +344,6 @@ def policyInvocation(granularity = None, name = None, status = None, policy = No
       from DIRAC.ResourceStatusSystem.Policy.PilotsEfficiency_Policy import PilotsEfficiency_Policy 
       p = PilotsEfficiency_Policy()
     if args is None:
-      if granularity == 'Resource':
-        name = (name, rsDB.getGeneralName(name, 'Resource', 'Site'))
       a = (granularity, name, status)
     res = _innerEval(p, a)
 
