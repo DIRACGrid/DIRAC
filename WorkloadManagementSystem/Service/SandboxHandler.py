@@ -159,7 +159,7 @@ class SandboxHandler(RequestHandler):
     """ Remove sandbox for the given job
     """
 
-    return sandboxDB.removeSandbox(jobID,fname,sandbox_type)
+    return sandboxDB.removeJob(jobID,sandbox_type)
 
   types_getSandboxStats = []
   def export_getSandboxStats(self):
