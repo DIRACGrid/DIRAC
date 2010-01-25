@@ -2853,22 +2853,37 @@ class ResourceStatusDB:
                                 datetime(9999, 12, 31, 23, 59, 59))
         servicesIn.append(service)
       
-      for readable in ('ReadOnly', 'ReadWrite'):
-        LFCNode = gConfig.getValue('Resources/FileCatalogs/LcgFileCatalogCombined/%s/%s' %(site, readable))
-        if LFCNode is None:
-          continue
-#        try:
-#          LFCNode = socket.gethostbyname_ex(LFCNode)[0]
-#        except socket.gaierror:
-#          pass
-        if LFCNode is not None and LFCNode not in resourcesIn:
+      LFCNode = gConfig.getValue('Resources/FileCatalogs/LcgFileCatalogCombined/%s/ReadWrite' %(site))
+      if LFCNode is None:
+        continue
+#      try:
+#        LFCNode = socket.gethostbyname_ex(LFCNode)[0]
+#      except socket.gaierror:
+#        pass
+      if LFCNode is not None and LFCNode not in resourcesIn:
+        if site == 'LCG.NIKHEF.nl':
+          site = 'LCG.SARA.nl'
           #Otherwise I can't monitor SAM!
-          if site == 'LCG.NIKHEF.nl':
-            site = 'LCG.SARA.nl'
-          self.addOrModifyResource(LFCNode, 'LFC', service, site, 'Active', 'init', 
-                                   datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
-                                   datetime(9999, 12, 31, 23, 59, 59))
-          resourcesIn.append(LFCNode)
+      self.addOrModifyResource(LFCNode, 'LFC_C', service, site, 'Active', 'init', 
+                                 datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
+                                 datetime(9999, 12, 31, 23, 59, 59))
+      resourcesIn.append(LFCNode)
+
+      LFCNode = gConfig.getValue('Resources/FileCatalogs/LcgFileCatalogCombined/%s/ReadOnly' %(site))
+      if LFCNode is None:
+        continue
+#      try:
+#        LFCNode = socket.gethostbyname_ex(LFCNode)[0]
+#      except socket.gaierror:
+#        pass
+      if LFCNode is not None and LFCNode not in resourcesIn:
+        if site == 'LCG.NIKHEF.nl':
+          site = 'LCG.SARA.nl'
+          #Otherwise I can't monitor SAM!
+      self.addOrModifyResource(LFCNode, 'LFC_L', service, site, 'Active', 'init', 
+                                 datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
+                                 datetime(9999, 12, 31, 23, 59, 59))
+      resourcesIn.append(LFCNode)
     
     
     seRes = []
