@@ -329,7 +329,7 @@ class PilotDirector:
         self.log.error( ret['Message'] )
         self.log.error( 'No proxy Available', 'User "%s", Group "%s"' % ( ownerDN, ownerGroup ) )
         try:
-          shutil.rmtree( workingDirectory )
+          shutil.rmtree( workDir )
         except:
           pass
         return S_ERROR( ERROR_PROXY )
