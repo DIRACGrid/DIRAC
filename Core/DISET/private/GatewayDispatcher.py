@@ -21,7 +21,7 @@ class GatewayDispatcher( Dispatcher ):
 
   def __init__( self, serviceCfgList ):
     Dispatcher.__init__( self, serviceCfgList )
-    self.__transferBytesLimit = 1024*1024*100 #100MiB
+    self.__transferBytesLimit = 1024 * 1024 * 100 #100MiB
 
   def loadHandlers( self ):
     """
@@ -66,7 +66,7 @@ class GatewayDispatcher( Dispatcher ):
       identity = "unknown"
       if 'username' in credDict:
         if 'group' in credDict:
-          identity = "[%s:%s]" % ( credDict[ 'username' ], credDict[ 'group' ]  )
+          identity = "[%s:%s]" % ( credDict[ 'username' ], credDict[ 'group' ] )
         else:
           identity = "[%s:unknown]" % credDict[ 'username' ]
       if 'DN' in credDict:
@@ -99,7 +99,7 @@ class GatewayDispatcher( Dispatcher ):
     retVal = clientTransport.receiveData()
     if not retVal[ 'OK' ]:
       gLogger.error( "Error while receiving file description", retVal[ 'Message' ] )
-      clientTransport.sendData(  S_ERROR( "Error while receiving file description: %s" % retVal[ 'Message' ] ) )
+      clientTransport.sendData( S_ERROR( "Error while receiving file description: %s" % retVal[ 'Message' ] ) )
       return
     actionType = proposalTuple[1][0]
     actionMethod = proposalTuple[1][1]
@@ -108,14 +108,14 @@ class GatewayDispatcher( Dispatcher ):
     if actionType == "FileTransfer":
       gLogger.warn( "Received a file transfer action from %s" % userDesc )
       clientTransport.sendData( S_OK( "Accepted" ) )
-      retVal =  self.__forwardFileTransferCall( targetService, clientInitArgs,
+      retVal = self.__forwardFileTransferCall( targetService, clientInitArgs,
                                                 actionMethod, retVal[ 'Value' ], clientTransport )
     elif actionType == "RPC":
       gLogger.info( "Forwarding %s/%s action to %s for %s" % ( actionType, actionMethod, targetService, userDesc ) )
       retVal = self.__forwardRPCCall( targetService, clientInitArgs, actionMethod, retVal[ 'Value' ] )
     else:
       gLogger.warn( "Received an unknown %s action from %s" % ( actionType, userDesc ) )
-      retVal =  S_ERROR( "Unknown type of action (%s)" % actionType )
+      retVal = S_ERROR( "Unknown type of action (%s)" % actionType )
     clientTransport.sendData( retVal )
 
   def __checkDelegation( self, clientTransport ):
@@ -204,17 +204,6 @@ class GatewayDispatcher( Dispatcher ):
     if requestedTransferSize <= self.__transferBytesLimit:
       return True
     return False
-
-  def __ftFromClient( self, sIO, fileHelper, fileId, token ):
-    gLogger.info( "[FromClient] About to get data from client" )
-    result = fileHelper.networkToDataSink( sIO, self.__transferBytesLimit )
-    if not result[ 'OK' ]:
-      return result
-    gLogger.info( "[FromClient] Got %s bytes from client" % fileHelper.getTransferedBytes() )
-    result = transferClient.sendFile( sIO, fileId, token )
-    gLogger.info( "[FromClient] Sent data to service %s (%s)" % ( targetService, result ) )
-    return result
-
 
 class TransferRelay( TransferClient ):
 
