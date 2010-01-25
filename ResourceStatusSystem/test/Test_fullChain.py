@@ -22,10 +22,13 @@ Script.parseCommandLine()
 #sito = {'name':'LCG.CESGA.fr', 'siteType':'T2'} #OK
 sito = {'name':'LCG.CERN.ch', 'siteType':'T0'} #OK
 servizio = {'name':'Computing@LCG.Ferrara.it', 'siteType':'T2', 'serviceType':'Computing'} #OK
-risorsa = {'name':'ce06.pic.es', 'siteType':'T1', 'resourceType':'CE'} #OK
+#risorsa = {'name':'pearl.amu.edu.pl', 'siteType':'T1', 'resourceType':'CE'} #OK
 #risorsa = {'name':'ce125.cern.ch', 'siteType':'T0', 'resourceType':'CE'} #OK
 #risorsa = {'name':'cream-1-fzk.gridka.de', 'siteType':'T1', 'resourceType':'CE'} #OK
+risorsa = {'name':'bocecream.bo.infn.it', 'siteType':'T1', 'resourceType':'CREAMCE'} #OK
 risorsa2 = {'name':'srm-lhcb.cern.ch', 'siteType':'T0', 'resourceType':'SE'} #OK
+risorsa3 = {'name':'lfclhcb.pic.es', 'siteType':'T1', 'resourceType':'LFC_L'} #OK
+#risorsa3 = {'name':'prod-lfc-lhcb-central.cern.ch', 'siteType':'T1', 'resourceType':'LFC_C'} #OK
 se = {'name':'CERN_MC_M-DST', 'siteType':'T0'} #OK
 
 
@@ -80,36 +83,51 @@ for status in ValidStatus:
               resourceType = risorsa['resourceType'])
     res = pdp.takeDecision()
     print res
+#
+#print "\n\n ~~~~~~~ RISORSA 2 ~~~~~~~ : %s \n " %risorsa2
+#
+#for status in ValidStatus:
+#  for oldStatus in ValidStatus:
+#    if status == oldStatus:
+#      continue
+#    print "############################"
+#    print " "
+#    print status, oldStatus
+#    pdp = PDP(granularity = 'Resource', name = risorsa2['name'], status = status, 
+#              formerStatus = oldStatus, reason = 'XXXXX', siteType = risorsa2['siteType'], 
+#              resourceType = risorsa2['resourceType'])
+#    res = pdp.takeDecision()
+#    print res
 
-print "\n\n ~~~~~~~ RISORSA 2 ~~~~~~~ : %s \n " %risorsa2
+#print "\n\n ~~~~~~~ RISORSA 3 ~~~~~~~ : %s \n " %risorsa3
+#
+#for status in ValidStatus:
+#  for oldStatus in ValidStatus:
+#    if status == oldStatus:
+#      continue
+#    print "############################"
+#    print " "
+#    print status, oldStatus
+#    pdp = PDP(granularity = 'Resource', name = risorsa3['name'], status = status, 
+#              formerStatus = oldStatus, reason = 'XXXXX', siteType = risorsa3['siteType'], 
+#              resourceType = risorsa3['resourceType'])
+#    res = pdp.takeDecision()
+#    print res
 
-for status in ValidStatus:
-  for oldStatus in ValidStatus:
-    if status == oldStatus:
-      continue
-    print "############################"
-    print " "
-    print status, oldStatus
-    pdp = PDP(granularity = 'Resource', name = risorsa2['name'], status = status, 
-              formerStatus = oldStatus, reason = 'XXXXX', siteType = risorsa2['siteType'], 
-              resourceType = risorsa2['resourceType'])
-    res = pdp.takeDecision()
-    print res
-
-print "\n\n ~~~~~~~ StorageElement ~~~~~~~ : %s \n " %se
-
-for status in ValidStatus:
-  for oldStatus in ValidStatus:
-    if status == oldStatus:
-      continue
-    print "############################"
-    print " "
-    print status, oldStatus
-    pdp = PDP(granularity = 'StorageElement', name = risorsa['name'], status = status, 
-              formerStatus = oldStatus, reason = 'XXXXX', siteType = risorsa['siteType'], 
-              resourceType = risorsa['resourceType']) 
-    res = pdp.takeDecision()
-    print res
+#print "\n\n ~~~~~~~ StorageElement ~~~~~~~ : %s \n " %se
+#
+#for status in ValidStatus:
+#  for oldStatus in ValidStatus:
+#    if status == oldStatus:
+#      continue
+#    print "############################"
+#    print " "
+#    print status, oldStatus
+#    pdp = PDP(granularity = 'StorageElement', name = risorsa['name'], status = status, 
+#              formerStatus = oldStatus, reason = 'XXXXX', siteType = risorsa['siteType'], 
+#              resourceType = risorsa['resourceType']) 
+#    res = pdp.takeDecision()
+#    print res
 
         
 #if __name__ == '__main__':
