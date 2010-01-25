@@ -415,7 +415,7 @@ class SandboxDB(DB):
         if not result['OK']:
           gLogger.warn('Failed to remove files for job %d' % jobID)
           return result
-      if flink and link.find('part') == 0:
+      if flink and flink.find('part') == 0:
         dummy,pTable,jID,fname = flink[5:].split('/')
         if jID == jobID:
           partitions_touched.append(partition)
