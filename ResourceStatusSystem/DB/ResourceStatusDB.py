@@ -2622,7 +2622,7 @@ class ResourceStatusDB:
     from DIRAC.Core.Utilities.SiteSEMapping import getSiteSEMapping
     from DIRAC import S_OK, S_ERROR
     import time
-    import socket
+#    import socket
     
     T0List = []
     T1List = []
@@ -2695,8 +2695,6 @@ class ResourceStatusDB:
         if LFCNode is not None and LFCNode not in LFCNodeList:
           LFCNodeList.append(LFCNode)
       
-      
-
     sitesIn = self.getMonitoredsList('Site', paramsList = ['SiteName'])
     sitesIn = [s[0] for s in sitesIn]
     servicesIn = self.getMonitoredsList('Service', paramsList = ['ServiceName'])
@@ -2844,7 +2842,7 @@ class ResourceStatusDB:
             seServiceSite.append(sss)
 
 
-    #add new storage services and LFCs - separate because of "race conditions"         
+    #add new storage services and LFCs - separate because of "race conditions"
     for site in gConfig.getSections('Resources/FileCatalogs/LcgFileCatalogCombined', True)['Value']:
       service = 'Storage@'+site
       if service not in servicesIn:
@@ -2854,8 +2852,8 @@ class ResourceStatusDB:
         servicesIn.append(service)
       
       LFCNode = gConfig.getValue('Resources/FileCatalogs/LcgFileCatalogCombined/%s/ReadWrite' %(site))
-      if LFCNode is None:
-        continue
+#      if LFCNode is None:
+#        continue
 #      try:
 #        LFCNode = socket.gethostbyname_ex(LFCNode)[0]
 #      except socket.gaierror:
@@ -2864,14 +2862,14 @@ class ResourceStatusDB:
         if site == 'LCG.NIKHEF.nl':
           site = 'LCG.SARA.nl'
           #Otherwise I can't monitor SAM!
-      self.addOrModifyResource(LFCNode, 'LFC_C', service, site, 'Active', 'init', 
-                                 datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
-                                 datetime(9999, 12, 31, 23, 59, 59))
-      resourcesIn.append(LFCNode)
+        self.addOrModifyResource(LFCNode, 'LFC_C', service, site, 'Active', 'init', 
+                                   datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
+                                   datetime(9999, 12, 31, 23, 59, 59))
+        resourcesIn.append(LFCNode)
 
       LFCNode = gConfig.getValue('Resources/FileCatalogs/LcgFileCatalogCombined/%s/ReadOnly' %(site))
-      if LFCNode is None:
-        continue
+#      if LFCNode is None:
+#        continue
 #      try:
 #        LFCNode = socket.gethostbyname_ex(LFCNode)[0]
 #      except socket.gaierror:
@@ -2880,10 +2878,10 @@ class ResourceStatusDB:
         if site == 'LCG.NIKHEF.nl':
           site = 'LCG.SARA.nl'
           #Otherwise I can't monitor SAM!
-      self.addOrModifyResource(LFCNode, 'LFC_L', service, site, 'Active', 'init', 
-                                 datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
-                                 datetime(9999, 12, 31, 23, 59, 59))
-      resourcesIn.append(LFCNode)
+        self.addOrModifyResource(LFCNode, 'LFC_L', service, site, 'Active', 'init', 
+                                   datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
+                                   datetime(9999, 12, 31, 23, 59, 59))
+        resourcesIn.append(LFCNode)
     
     
     seRes = []
