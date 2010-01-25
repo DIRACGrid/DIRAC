@@ -95,7 +95,7 @@ class MyProxy( BaseSecurity ):
     cmdEnv = self._getExternalCmdEnvironment()
     if self._secRunningFromTrustedHost:
       cmdEnv['X509_USER_CERT'] = self._secCertLoc
-      cmdEnv['X509_USER_KEY']  = self._secKeyLoc
+      cmdEnv['X509_USER_KEY'] = self._secKeyLoc
       if 'X509_USER_PROXY' in cmdEnv:
         del cmdEnv['X509_USER_PROXY']
     else:
@@ -125,7 +125,7 @@ class MyProxy( BaseSecurity ):
 
     if not result['OK']:
       errMsg = "Call to myproxy-logon failed: %s" % result[ 'Message' ]
-      self._unlinkFiles( newProxyLocation )
+      File.deleteMultiProxy( proxyDict )
       return S_ERROR( errMsg )
 
     status, output, error = result['Value']
@@ -134,16 +134,16 @@ class MyProxy( BaseSecurity ):
     if status:
       errMsg = "Call to myproxy-logon failed"
       extErrMsg = 'Command: %s; StdOut: %s; StdErr: %s' % ( cmd, result, error )
-      self._unlinkFiles( newProxyLocation )
+      File.deleteMultiProxy( proxyDict )
       return S_ERROR( "%s %s" % ( errMsg, extErrMsg ) )
 
     chain = X509Chain()
     retVal = chain.loadProxyFromFile( newProxyLocation )
     if not retVal[ 'OK' ]:
-      self._unlinkFiles( newProxyLocation )
+      File.deleteMultiProxy( proxyDict )
       return S_ERROR( "myproxy-logon failed when reading delegated file: %s" % retVal[ 'Message' ] )
 
-    self._unlinkFiles( newProxyLocation )
+    File.deleteMultiProxy( proxyDict )
     return S_OK( chain )
 
   def getInfo( self, proxyChain, useDNAsUserName = False ):
@@ -167,7 +167,7 @@ class MyProxy( BaseSecurity ):
     cmdEnv = self._getExternalCmdEnvironment()
     if self._secRunningFromTrustedHost:
       cmdEnv['X509_USER_CERT'] = self._secCertLoc
-      cmdEnv['X509_USER_KEY']  = self._secKeyLoc
+      cmdEnv['X509_USER_KEY'] = self._secKeyLoc
       if 'X509_USER_PROXY' in cmdEnv:
         del cmdEnv['X509_USER_PROXY']
     else:
@@ -194,7 +194,7 @@ class MyProxy( BaseSecurity ):
 
     if not result['OK']:
       errMsg = "Call to myproxy-info failed: %s" % result[ 'Message' ]
-      self._unlinkFiles( newProxyLocation )
+      File.deleteMultiProxy( proxyDict )
       return S_ERROR( errMsg )
 
     status, output, error = result['Value']
@@ -212,14 +212,14 @@ class MyProxy( BaseSecurity ):
     for line in List.fromChar( output, "\n" ):
       match = usernameRE.search( line )
       if match:
-        infoDict[ 'username' ] = match.group(1)
+        infoDict[ 'username' ] = match.group( 1 )
       match = ownerRE.search( line )
       if match:
-        infoDict[ 'owner' ] = match.group(1)
+        infoDict[ 'owner' ] = match.group( 1 )
       match = timeLeftRE.search( line )
       if match:
         try:
-          fields = List.fromChar( match.group(1), ":" )
+          fields = List.fromChar( match.group( 1 ), ":" )
           fields.reverse()
           secsLeft = 0
           for iP in range( len( fields ) ):
