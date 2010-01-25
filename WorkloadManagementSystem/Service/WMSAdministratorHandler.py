@@ -78,8 +78,8 @@ class WMSAdministratorHandler(RequestHandler):
     if result['Status'] == "OK":
       active_list = result['Value']
       mask = []
-      for i in range(1,len(tmp_list),2):
-        mask.append(tmp_list[i])
+      for i in range(1,len(active_list),2):
+        mask.append(active_list[i])
 
       return S_OK(mask)
     else:
