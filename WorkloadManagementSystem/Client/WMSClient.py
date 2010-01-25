@@ -14,7 +14,7 @@ from DIRAC.WorkloadManagementSystem.Client.SandboxClient       import SandboxCli
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 
-import os
+import os, commands
 
 class WMSClient:
 
