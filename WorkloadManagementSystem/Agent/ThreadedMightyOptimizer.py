@@ -148,9 +148,9 @@ class JobsInTheWorks:
     try:
       if job in self.__jobs:
         del( self.__jobs[ job ] )
-    except:
+    except Exception, e:
       print "="*20
-      print "EXcePTION", e
+      print "EXCEPTION", e
       print "THIS SHOULDN'T HAPPEN"
       print "="*20
       
