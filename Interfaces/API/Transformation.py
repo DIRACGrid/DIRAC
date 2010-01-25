@@ -12,19 +12,29 @@ from DIRAC.TransformationSystem.Client.TransformationDBClient     import Transfo
 
 COMPONENT_NAME='Transformation'
 
-class Transformation:
+class Transformation(API):
 
   #############################################################################
   def __init__(self):
     self.transClient = TransformationDBClient()
+    #TODO REMOVE THIS
+    self.transClient.setServer("ProductionManagement/ProductionManager")
     
   #############################################################################
-  def getTransformations(self,printOutput=False):
-    res = self.transClient.getTransformations()
+  def getTransformations(self,transID=[], transStatus=[], outputFields=['TransformationID','Status','AgentType','TransformationName','CreationDate'],orderBy='TransformationID',printOutput=False):
+    condDict = {}
+    if transID:
+      condDict['TransformationID'] = transID
+    if transStatus:
+      condDict['Status'] = transStatus
+    res = self.transClient.getTransformations(condDict=condDict)
     if not res['OK']:
       return res
     if printOutput:
-      self._printFormattedDictList(res['Value'],[],'','')
+      if not outputFields:
+        gLogger.info("Available fields are: %s" % string.join(res['ParameterNames']))
+      else:
+        self._printFormattedDictList(res['Value'],outputFields,'TransformationID',orderBy)
     return res
 
   #############################################################################
@@ -60,6 +70,7 @@ class Transformation:
     """ Extend Simulation type transformation by number of tasks. """
     pass
 
+  #############################################################################
   def addTransformation(self,transName,description,longDescription,type,plugin,agentType,fileMask,
                             transformationGroup = 'General',
                             groupSize           = 1,
@@ -98,9 +109,6 @@ class Transformation:
   def setFileStatusForTransformation(self,transName,status,lfns,printOutput=False): 
     pass
 
-  def getTransformationStats(self,transName, printOutput=False):
-    pass
-          
   def setTaskStatus(self,transName, taskID, status, printOutput=False):
     pass
    
@@ -119,9 +127,9 @@ class Transformation:
   def getTransformationFileSummary(self,lfns,transName, printOutput=False):
     pass
 
-  def getTransformations(self,condDict={},older=None, newer=None, timeStamp='CreationDate', orderAttribute=None, limit=None, extraParams=False,printOutput=False):
+  def getTransformationStats(self,transName, printOutput=False):
     pass
-  
+
   def getTransformation(self,transName,extraParams=False,printOutput=False):
     pass
 
