@@ -49,8 +49,8 @@ class RSInspectorAgent(AgentModule):
                          self.am_getOption('maxThreadsInPool'),
                          self.am_getOption('totalThreadsInPool') )
       if not self.threadPool:
-        self.log.error('Can not create Thread Pool:', directorPool)
-        return
+        self.log.error('Can not create Thread Pool')
+        return S_ERROR('Can not create Thread Pool')
       
       self.lockObj = threading.RLock()
       

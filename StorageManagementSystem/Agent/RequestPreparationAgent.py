@@ -9,7 +9,7 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
 
-from DIRAC.DataManagementSystem.Client.FileCatalog import FileCatalog
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient import DataIntegrityClient
 
 import time,os,sys,re

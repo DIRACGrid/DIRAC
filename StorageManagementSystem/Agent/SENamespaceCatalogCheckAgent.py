@@ -46,8 +46,8 @@ class SENamespaceCatalogCheckAgent(AgentModule):
     """
     castorLocations = {  'http://castor.web.cern.ch/castor/DiskPoolDump/lhcb.lhcbdata.last'      : ['CERN-disk','CERN_MC_M-DST']}
     for dumpLocation,storageElements in castorLocations.items():
-      gLogger.info('Attempting to get dump at %s for SEs %s' % (location,storageElements))
-      res = self.__getDump(location)
+      gLogger.info('Attempting to get dump at %s for SEs %s' % (dumpLocation,storageElements))
+      res = self.__getDump(dumpLocation)
       if not res['OK']:
         return res
       res = self.verifyCastorDump(res['Value'],storageElements)

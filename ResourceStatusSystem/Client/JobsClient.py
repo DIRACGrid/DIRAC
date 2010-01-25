@@ -34,15 +34,15 @@ class JobsClient:
       }
     """
     
-    if args[0].capitalize() not in ValidRes:
+    if granularity.capitalize() not in ValidRes:
       raise InvalidRes, where(self, self.getJobStats)
     
-    if args[0] == 'Site':
-      entity = getSiteRealName(args[1])
-      granularity = 'Site'
+    if granularity == 'Site':
+      entity = getSiteRealName(name)
+      _granularity = 'Site'
     else:
-      entity = args[1]
-      granularity = 'GridCE'
+      entity = name
+      _granularity = 'GridCE'
     
     #######TODO
 #    numberOfJobsLash2Hours = self.rc.getReport('Job', 'NumberOfJobs', 
@@ -81,12 +81,12 @@ class JobsClient:
       }
     """
 
-    if args[0] == 'Site':
-      entity = getSiteRealName(args[1])
+    if granularity == 'Site':
+      entity = getSiteRealName(name)
       _granularity = 'Site'
     else:
-      entity = args[1]
-      granularity = 'GridCE'
+      entity = name
+      _granularity = 'GridCE'
     
     #######TODO
 #    numberOfJobs = self.rc.getReport('Job', 'NumberOfJobs', 

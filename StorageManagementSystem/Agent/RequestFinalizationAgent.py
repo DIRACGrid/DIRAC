@@ -104,6 +104,7 @@ class RequestFinalizationAgent(AgentModule):
     if not res['OK']:
       gLogger.fatal("RequestFinalization.clearReleasedTasks: Failed to get Released Tasks from StagerDB.", res['Message'])
       return res
+    stagedTasks = res['Value']
     gLogger.info("RequestFinalization.clearReleasedTasks: Removing %s tasks..." % len(stagedTasks))
     res = self.stagerClient.removeTasks(stagedTasks.keys())
     if not res['OK']:

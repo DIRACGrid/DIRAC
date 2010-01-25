@@ -76,7 +76,7 @@ class JobsEfficiency_Policy(PolicyBase):
         result['Status'] = 'Active'
         result['Reason'] = 'JobsEff:good'
       else:
-        if status['JobsEff'] < MEDIUM_JOBS_EFFICIENCY:
+        if status['JobsEff'] < Configurations.MEDIUM_JOBS_EFFICIENCY:
           result['SAT'] = True
           result['Status'] = 'Banned'
           result['Reason'] = 'JobsEff:low'

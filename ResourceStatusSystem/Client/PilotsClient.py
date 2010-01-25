@@ -34,15 +34,15 @@ class PilotsClient:
       }
     """
     
-    if args[0].capitalize() not in ValidRes:
+    if granularity.capitalize() not in ValidRes:
       raise InvalidRes, where(self, self.getPilotStats)
     
-    if args[0] == 'Site':
-      entity = getSiteRealName(args[1])
+    if granularity == 'Site':
+      entity = getSiteRealName(name)
       _granularity = 'Site'
     else:
-      entity = args[1]
-      granularity = 'GridCE'
+      entity = name
+      _granularity = 'GridCE'
     
     #######TODO
 #    numberOfPilotsLash2Hours = self.rc.getReport('Pilot', 'NumberOfPilots', 
@@ -81,11 +81,11 @@ class PilotsClient:
       }
     """
 
-    if args[0] == 'Site':
-      entity = getSiteRealName(args[1])
+    if granularity == 'Site':
+      entity = getSiteRealName(name)
       _granularity = 'Site'
     else:
-      entity = args[1]
+      entity = name
       granularity = 'GridCE'
     
     #######TODO

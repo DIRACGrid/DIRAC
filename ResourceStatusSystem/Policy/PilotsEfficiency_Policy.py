@@ -98,7 +98,7 @@ class PilotsEfficiency_Policy(PolicyBase):
         result['Status'] = 'Active'
         result['Reason'] = 'PilotsEff:good'
       else:
-        if status['PilotsEff'] < MEDIUM_PILOTS_EFFICIENCY:
+        if status['PilotsEff'] < Configurations.MEDIUM_PILOTS_EFFICIENCY:
           result['SAT'] = True
           result['Status'] = 'Banned'
           result['Reason'] = 'PilotsEff:low'

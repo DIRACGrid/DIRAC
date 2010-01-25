@@ -6,7 +6,7 @@ import DIRAC
 from DIRAC                                                                        import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.DISET.RPCClient                                                   import RPCClient
 from DIRAC.ConfigurationSystem.Client                                             import PathFinder
-from DIRAC.DataManagementSystem.Client.Catalog.MigrationMonitoringCatalogClient   import MigrationMonitoringCatalogClient
+from DIRAC.Resources.Catalog.MigrationMonitoringCatalogClient                     import   MigrationMonitoringCatalogClient
 import types
 
 class MigrationMonitoringClient(MigrationMonitoringCatalogClient):
