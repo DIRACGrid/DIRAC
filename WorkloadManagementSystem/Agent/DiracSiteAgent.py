@@ -114,7 +114,7 @@ class DiracSiteAgent(AgentModule):
       except:
         self.log.error('Failed to retrieve %(diracInstallFileName)s from %(diracInstallUrl)s' % {'diracInstallFileName':self.diracInstallFileName,'diracInstallUrl':self.diracInstallURL})
 
-    return result
+    return S_OK()
 
   #############################################################################
   def execute(self):
@@ -259,11 +259,5 @@ export LD_LIBRARY_PATH=
     fd.close()
     return S_OK(message)
 
-  #############################################################################
-  def finalize(self):
-    """Force the Dirac site agent to complete gracefully.
-    """
-
-    Agent.finalize(self)
 
   #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
