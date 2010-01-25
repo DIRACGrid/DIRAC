@@ -79,7 +79,7 @@ class OptimizerModule(AgentModule):
     for job in result['Value']:
       result = self.getJobDefinition( job )
       if not result['OK']:
-        self.setFailedJob( job, result[ 'Message' ], jobDef[ 'classad' ] )
+        self.setFailedJob( job, result[ 'Message' ], '' )
         continue
       jobDef = result[ 'Value' ]
       result = self.optimizeJob( job, jobDef[ 'classad' ] )
