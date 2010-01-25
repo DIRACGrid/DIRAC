@@ -108,6 +108,7 @@ class SRM2Storage(StorageBase):
         fileName = fileName.lstrip('/')
     try:
       fullUrl = '%s://%s:%s%s%s/%s' % (self.protocol,self.host,self.port,self.wspath,self.cwd,fileName)
+      fullUrl = fullUrl.rstrip('/')
       return S_OK(fullUrl)
     except Exception,x:
       errStr = "Failed to create URL %s" % x
@@ -933,11 +934,14 @@ class SRM2Storage(StorageBase):
             # Parse the subpaths for the directory
             for subPathDict in subPaths:
               subPathSURL = self.getUrl(subPathDict['surl'])['Value']
-              statDict = self.__parse_file_metadata(subPathDict)
-              if statDict['File']:
-                subPathFiles[subPathSURL] = statDict
-              elif statDict['Directory']:
-                subPathDirs[subPathSURL] = statDict
+              if subPathDict['status'] == 22:
+                gLogger.error("File found with status 22",subPathDict)
+              elif subPathDict['status'] == 0:
+                statDict = self.__parse_file_metadata(subPathDict)
+                if statDict['File']:
+                  subPathFiles[subPathSURL] = statDict
+                elif statDict['Directory']:
+                  subPathDirs[subPathSURL] = statDict
           # Keep the infomation about this path's subpaths
           successful[pathSURL]['SubDirs'] = subPathDirs
           successful[pathSURL]['Files'] = subPathFiles
@@ -1196,16 +1200,14 @@ class SRM2Storage(StorageBase):
     return S_OK(resDict)
 
   def __getDirectoryContents(self,directory):
-    res = self.listDirectory(directory)
+    directory = directory.rstrip('/')
     errMessage = "SRM2Storage.__getDirectoryContents: Failed to list directory."
+    res = self.__executeOperation(directory,'listDirectory')
     if not res['OK']:
       gLogger.error(errMessage,res['Message'])
       return S_ERROR(errMessage)
-    if not res['Value']['Successful'].has_key(directory):
-      gLogger.error(errMessage,res['Value']['Failed'][directory])
-      return S_ERROR(errMessage)
-    surlsDict = res['Value']['Successful'][directory]['Files']
-    subDirsDict = res['Value']['Successful'][directory]['SubDirs']
+    surlsDict = res['Value']['Files']
+    subDirsDict = res['Value']['SubDirs']
     filesToRemove = {}
     for url in surlsDict.keys():
       filesToRemove[url] = surlsDict[url]['Size']
