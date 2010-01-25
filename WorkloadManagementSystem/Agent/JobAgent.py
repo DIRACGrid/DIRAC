@@ -128,6 +128,7 @@ class JobAgent( AgentModule ):
         return S_OK( jobRequest['Message'] )
 
     matcherInfo = jobRequest['Value']
+    jobID = matcherInfo['JobID']
     matcherParams = ['JDL', 'DN', 'Group']
     for p in matcherParams:
       if not matcherInfo.has_key( p ):
@@ -158,8 +159,9 @@ class JobAgent( AgentModule ):
     params = parameters['Value']
     if not params.has_key( 'JobID' ):
       msg = 'Job has not JobID defined in JDL parameters'
+      self.__report( jobID, 'Failed', msg )
       self.log.warn( msg )
-      return S_OK( msg )
+      return self.__finish( 'JDL Problem' )
     else:
       jobID = params['JobID']
 
@@ -628,6 +630,6 @@ class JobAgent( AgentModule ):
     if not result['OK']:
       self.log.warn( result['Message'] )
 
-    Agent.finalize( self )
+    return S_OK()
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
