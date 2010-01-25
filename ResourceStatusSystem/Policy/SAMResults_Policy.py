@@ -82,6 +82,8 @@ class SAMResults_Policy(PolicyBase):
         values.append(30)
       elif s == 'maint':
         values.append(0)
+      elif s == 'error':
+        values.append(0)
     
     if len(values) == 0:
       status = 'na'
@@ -97,7 +99,7 @@ class SAMResults_Policy(PolicyBase):
         status = 'maint'
       else:
         status = 'down'
-        
+    
     result = {}
     
     if args[2] == 'Active':

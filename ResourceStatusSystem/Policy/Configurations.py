@@ -28,14 +28,14 @@ Policies = {
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
      },
-    'SAM_Policy' : 
-    { 'Granularity' : ['Resource'], 
-      'Status' : ValidStatus, 
-      'FormerStatus' : ValidStatus,
-      'SiteType' : ValidSiteType,
-      'ServiceType' : ValidServiceType,
-      'ResourceType' : ['SE', 'LFC'],
-     },
+#    'SAM_Policy' : 
+#    { 'Granularity' : ['Resource'], 
+#      'Status' : ValidStatus, 
+#      'FormerStatus' : ValidStatus,
+#      'SiteType' : ValidSiteType,
+#      'ServiceType' : ValidServiceType,
+#      'ResourceType' : ['SE', 'LFC'],
+#     },
   'SAM_CE_Policy' : 
     { 'Granularity' : ['Resource'], 
       'Status' : ValidStatus, 
@@ -43,6 +43,38 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['CE'],
+     },     
+  'SAM_CREAMCE_Policy' : 
+    { 'Granularity' : ['Resource'], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ['CREAMCE'],
+     },     
+  'SAM_SE_Policy' : 
+    { 'Granularity' : ['Resource'], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ['SE'],
+     },     
+  'SAM_LFC_C_Policy' : 
+    { 'Granularity' : ['Resource'], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ['LFC_C'],
+     },     
+  'SAM_LFC_L_Policy' : 
+    { 'Granularity' : ['Resource'], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ['LFC_L'],
      },     
   'JobsEfficiencySimple_Policy' :  
     { 'Granularity' : ['Site'], 
@@ -130,8 +162,6 @@ def getPolicyToApply(granularity, status = None, formerStatus = None,
   
   pol_to_eval = []
   pol_types = []
-  
-#  print "in configuration: granularity = %s, status = %s, formerStatus =%s, siteType = %s, resourceType = %s" %(granularity, status, formerStatus, siteType, resourceType)
   
   for p in Policies.keys():
     if granularity in Policies[p]['Granularity']:
@@ -325,6 +355,50 @@ def policyInvocation(granularity = None, name = None, status = None, policy = No
            ['LHCb CE-lhcb-availability', 'LHCb CE-lhcb-install', 'LHCb CE-lhcb-job-Boole', 
             'LHCb CE-lhcb-job-Brunel', 'LHCb CE-lhcb-job-DaVinci', 'LHCb CE-lhcb-job-Gauss', 'LHCb CE-lhcb-os', 
             'LHCb CE-lhcb-queues', 'bi', 'csh', 'js', 'gfal', 'swdir', 'voms'])
+    res = _innerEval(p, a)
+
+  if pol == 'SAM_CREAMCE_Policy':
+    p = policy
+    a = args
+    if policy is None:
+      from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
+      p = SAMResults_Policy()
+    if args is None:
+      a = (granularity, name, status, None, 
+           ['bi', 'csh', 'gfal', 'swdir', 'creamvoms'])
+    res = _innerEval(p, a)
+
+  if pol == 'SAM_SE_Policy':
+    p = policy
+    a = args
+    if policy is None:
+      from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
+      p = SAMResults_Policy()
+    if args is None:
+      a = (granularity, name, status, None, 
+           ['DiracTestUSER', 'FileAccessV2'])
+    res = _innerEval(p, a)
+
+  if pol == 'SAM_LFC_C_Policy':
+    p = policy
+    a = args
+    if policy is None:
+      from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
+      p = SAMResults_Policy()
+    if args is None:
+      a = (granularity, name, status, None, 
+           ['lfcwf', 'lfclr', 'lfcls', 'lfcping'])
+    res = _innerEval(p, a)
+
+  if pol == 'SAM_LFC_L_Policy':
+    p = policy
+    a = args
+    if policy is None:
+      from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
+      p = SAMResults_Policy()
+    if args is None:
+      a = (granularity, name, status, None, 
+           ['lfcstreams', 'lfclr', 'lfcls', 'lfcping'])
     res = _innerEval(p, a)
 
   if pol == 'GGUSTickets_Policy':
