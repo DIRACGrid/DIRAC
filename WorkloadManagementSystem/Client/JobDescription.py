@@ -177,6 +177,7 @@ class JobDescription:
     cfg.setOption( levels[-1], varValue )
 
   def getVar( self, varName, defaultValue = None ):
+    cfg = self.__description
     return cfg.getOption( varName, defaultValue )
 
   def getOptionList( self, section = "" ):
