@@ -73,23 +73,43 @@ class API:
     print self.pPrint.pformat(object)
 
   #############################################################################
-  def _promptUser(self,message):
+  def _promptUser(self,message,choices=['y','n'],default='n'):
     """Internal function to pretty print an object. """
-    self.log.info('%s %s' %(message,'[yes/no] : '))
-    response = raw_input('%s %s' %(message,'[yes/no] : '))
-    responses = ['yes','y','n','no']
-    if not response.strip() or response=='\n':
-      self.log.info('Possible responses are: %s' %(string.join(responses,', ')))
-      response = raw_input('%s %s' %(message,'[yes/no] : '))
-
-    if not response.strip().lower() in responses:
-      self.log.info('Problem interpreting input "%s", assuming negative response.' %(response))
-      return S_ERROR(response)
-
-    if response.strip().lower()=='y' or response.strip().lower()=='yes':
-      return S_OK(response)
+    if (choices) and (default) and (not default in choices):
+      return S_ERROR("The default value is not a valid choice")
+    choiceString = string.join(choices,'/').replace(default,default.upper())
+    if choiceString:
+      self.log.info('%s [%s] :' % (message,choiceString))
+    elif default:
+      self.log.info('%s [%s] :' % (message,default))
     else:
-      return S_ERROR(response)
+      self.log.info('%s :' % message)
+    response = raw_input()
+    promptAgain = False
+    if (not response) and (default):
+      response = default
+    elif (not response) and (not default):
+      promptAgain = True
+    elif (response) and (choices) and (not response in choices):
+      promptAgain = True
+ 
+    if promptAgain:
+      if choices:      
+        self.log.info('Possible responses are: %s' % (string.join(choices,', ')))
+      if choiceString:
+        self.log.info('%s [%s] :' % (message,choiceString))
+      elif default:
+        self.log.info('%s [%s] :' % (message,default))
+      else:
+        self.log.info('%s :' % message)
+      response = raw_input()
+      if (response) and (choices) and (not response in choices):
+        gLogger.error("Failed to determine user selection")
+        return S_ERROR("Failed to determine user selection")
+      elif (not response) and (not default):
+        gLogger.error("Failed to determine user selection")
+        return S_ERROR("Failed to determine user selection")
+    return S_OK(response)
 
   #############################################################################
   def _getCurrentUser(self):
@@ -134,4 +154,3 @@ class API:
     """Returns the dictionary of stored errors.
     """
     return self.errorDict
-   
