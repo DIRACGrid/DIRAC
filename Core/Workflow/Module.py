@@ -9,9 +9,9 @@ __RCSID__ = "$Revision: 1.19 $"
 import copy
 import new, sys, os
 
-#try: # this part to inport as part of the DIRAC framework
+#try: # this part to import as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
-from DIRAC.Core.Workflow.Step import *
+#from DIRAC.Core.Workflow.Step import *
 #except: # this part is to import code without DIRAC
 #  from Parameter import *
 
