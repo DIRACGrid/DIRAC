@@ -346,10 +346,6 @@ class TransformationHandler(RequestHandler):
     # Add the file states to the ParameterNames entry
     fileStateNames  = ['PercentProcessed','Processed','Unused','Assigned','Total','Problematic']
     resultDict['ParameterNames'] += ['Files_'+x for x in fileStateNames]
-    # Add the bk fields to the ParameterNames entry
-    #bkParameters    = ['ConfigName','ConfigVersion','EventType','Jobs','Files','Events','Steps']  
-    #resultDict['ParameterNames'] += ['Bk_'+x for x in bkParameters]
-    #fileOrder       = ['SETC','DST','DIGI','SIM']
 
     # Get the transformations which are within the selected window
     if nTrans == 0:
@@ -374,8 +370,8 @@ class TransformationHandler(RequestHandler):
       statusDict[status] += 1
       
       # Get the statistics on the number of jobs for the transformation
-      prodID = transDict['TransformationID']
-      res = self.database.getTransformationTaskStats(prodID)
+      transID = transDict['TransformationID']
+      res = self.database.getTransformationTaskStats(transID)
       taskDict = {}
       if res['OK'] and res['Value']:
         taskDict = res['Value']
@@ -391,7 +387,7 @@ class TransformationHandler(RequestHandler):
       if transType.lower().find('simulation') != -1:
         fileDict['PercentProcessed']  = '-'
       else:
-        res = self.database.getTransformationStats(prodID)
+        res = self.database.getTransformationStats(transID)
         if res['OK']:
           fileDict = res['Value']
           if fileDict['Total'] == 0:
@@ -406,59 +402,6 @@ class TransformationHandler(RequestHandler):
           trans.append(fileDict[state])
         else:
           trans.append(0)
-          
-      # Get Bookkeeping information
-#      result = bkClient.getProductionInformations_new(long(prodID))
-#      if not result['OK']:
-#        for p in bkParameters:
-#          trans.append('-')
-#          
-#      if result['Value']['Production informations']:
-#        for row in result['Value']['Production informations']:
-#          if row[2]:
-#            trans += list(row)
-#            break
-#      else:
-#        trans += ['-','-','-']
-#        
-#      if result['Value']['Number of jobs']:  
-#        trans.append(result['Value']['Number of jobs'][0][0])    
-#      else:
-#        trans.append(0)
-#        
-#      # Number of files  
-#      files_done = False  
-#      if result['Value']['Number of files']:  
-#        for dfile in fileOrder:
-#          for row in result['Value']['Number of files']:
-#            if dfile == row[1]:
-#              trans.append(row[0])
-#              files_done = True
-#              break
-#          if files_done:
-#            break    
-#      if not files_done:
-#        trans.append(0)            
-#    
-#      # Number of events
-#      events_done = False
-#      if result['Value']['Number of events']:  
-#        for dfile in fileOrder:  
-#          for row in result['Value']['Number of events']:
-#            if dfile == row[0]:
-#              trans.append(row[1])
-#              events_done = True
-#              break
-#          if events_done:
-#            break 
-#      if not events_done:
-#        trans.append(0)      
-#        
-#      # Number of steps
-#      if result['Value']['Steps']:      
-#        trans.append(len(result['Value']['Steps'])) 
-#      else:
-#        trans.append(0)          
 
     resultDict['Records'] = transList
     resultDict['Extras'] = statusDict
