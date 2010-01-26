@@ -52,7 +52,6 @@ class Transformation(API):
     #TODO REMOVE THIS
     self.transClient.setServer("ProductionManagement/ProductionManager")
     self.exists = False
-    print transID
     if transID:
       self.paramValues['TransformationID'] = transID
       res = self.getTransformation()
@@ -62,9 +61,25 @@ class Transformation(API):
         self.paramValues['TransformationID'] = 0
         gLogger.fatal("The supplied transformation does not exist in transformation database", "%s @ %s" % (transID,self.transClient.serverURL))
 
-  def resetTransformation(self):
-    self.__init__(self)
+  def reset(self,transID=0):
+    self.__init__(self,transID=transID)
 
+  def setTargetSE(self,seList):
+    res = self.__checkSEs(seList)
+    if not res['OK']:
+      return res
+    paramValue = string.join(seList,',')
+    self.item_called = 'TargetSE' 
+    return self.__setParam(paramValue)
+
+  def setSourceSE(self,seList):
+    res = self.__checkSEs(seList)
+    if not res['OK']:
+      return res
+    paramValue = string.join(seList,',')
+    self.item_called = 'SourceSE' 
+    return self.__setParam(paramValue)
+    
   def __getattr__(self,name):
     if name.find('get') ==0:
       item = name[3:]
@@ -95,7 +110,9 @@ class Transformation(API):
         else:
           raise TypeError, "%s %s %s expected one of %s" % (self.item_called,value,type(value),self.paramTypes[self.item_called])
     if not self.item_called in self.paramTypes.keys():
-      if self.paramValues.has_key(self.item_called):
+      if not self.paramValues.has_key(self.item_called):
+        change = True
+      else:
         oldValue =  self.paramValues[self.item_called]
         if oldValue != value:
           change = True
@@ -122,8 +139,7 @@ class Transformation(API):
       return res
     transParams = res['Value']
     for paramName,paramValue in transParams.items():
-      self.item_called = paramName
-      self.__setParam(paramValue)
+      execString = "self.set%s(paramValue)" % paramName
     if printOutput:
       gLogger.info("No printing available yet")
     return S_OK(transParams)
@@ -249,7 +265,7 @@ class Transformation(API):
     if self.paramValues['TransformationID']:
       gLogger.info("You are currently working with an active transformation definition.")
       gLogger.info("If you wish to create a new transformation reset the TransformationID.")
-      gLogger.info("oTransformation.setTransformationID(0)") 
+      gLogger.info("oTransformation.reset()") 
       return S_ERROR()
 
     requiredParameters = ['TransformationName','Description' ,'LongDescription','Type']
@@ -262,8 +278,8 @@ class Transformation(API):
 
     pluginParams = {}
     pluginParams['Broadcast'] = {}
-    pluginParams['Broadcast']['SourceSE'] = [types.ListType] + list(types.StringTypes)
-    pluginParams['Broadcast']['TargetSE'] = [types.ListType] + list(types.StringTypes)
+    pluginParams['Broadcast']['SourceSE'] = types.StringTypes
+    pluginParams['Broadcast']['TargetSE'] = types.StringTypes
     pluginParams['Standard'] = {}
     pluginParams['Standard']['GroupSize'] = [types.IntType,types.LongType]
     pluginParams['BySize'] = {}
@@ -278,39 +294,84 @@ class Transformation(API):
     plugin = self.paramValues['Plugin']
  
     requiredParams = pluginParams[plugin].keys()
-    gLogger.info("The plugin %s required the following parameters be set: %s" % (plugin,string.join(requiredParams,', ')))
+    gLogger.info("The %s plugin requires the following parameters be set: %s" % (plugin,string.join(requiredParams,', ')))
     for requiredParam in requiredParams:
       if (not self.paramValues.has_key(requiredParam)) or (not self.paramValues[requiredParam]):
         res = self.__promptForParameter(requiredParam,insert=False)
         if not res['OK']:
           return res
         paramValue = res['Value']
-        if requiredParam = 'TargetSE':
-          pass
-	
-    print self.paramValues
+        if requiredParam in ['TargetSE','SourceSE']:
+          ses = paramValue.replace(',',' ').split()
+          execString = "res = self.set%s(ses)" % requiredParam
+          exec(execString)
+          if not res['OK']:
+            return res
+          
+      if requiredParam in ['GroupSize']:
+        paramValue = self.paramValues[requiredParam]
+        if (paramValue <= 0):
+          gLogger.info("The GroupSize was found to be less than zero. It has been set to 1.")
+          paramValue = 1
+        execString = "res = self.set%s(paramValue)" % requiredParam
+        exec(execString)
+        if not res['OK']:
+          return res
+        
+    res = self.transClient.addTransformation(self.paramValues['TransformationName'],
+                                             self.paramValues['Description'],
+                                             self.paramValues['LongDescription'],
+                                             self.paramValues['Type'],
+                                             self.paramValues['Plugin'],
+                                             self.paramValues['AgentType'],
+                                             self.paramValues['FileMask'],
+                                             transformationGroup = self.paramValues['TransformationGroup'],
+                                             groupSize           = self.paramValues['GroupSize'],
+                                             inheritedFrom       = self.paramValues['InheritedFrom'],
+                                             body                = self.paramValues['Body'],
+                                             maxJobs             = self.paramValues['MaxNumberOfJobs'],
+                                             eventsPerJob        = self.paramValues['EventsPerJob'],
+                                             addFiles            = addFiles)
+    if not res['OK']:
+      self._prettyPrint(res)
+      return res
+    transID = res['Value']
+    self.exists = True
+    execString = "self.setTransformationID(transID)"
+    exec(execString)
+    gLogger.info("Created transformation %d" % transID)
+    for paramName,paramValue in self.paramValues.items():
+      if not self.paramTypes.has_key(paramName):
+        res = self.transClient.setTransformationParameter(transID,paramName,paramValue)
+        if not res['OK']:
+          gLogger.error("Failed to add parameter", "%s %s" % (paramName,res['Message']))
+          gLogger.info("To add this parameter later please execute the following.")
+          gLogger.info("oTransformation = Transformation(%d)" % transID)
+          gLogger.info("oTransformation.set%s(...)" % paramName)
     return S_OK()
 
+  def __checkSEs(self,seList):
+    res = gConfig.getSections('/Resources/StorageElements')
+    if not res['OK']:
+      return self._errorReport(res,'Failed to get possible StorageElements')
+    missing = []
+    for se in seList:
+      if not se in res['Value']:
+        gLogger.error("StorageElement %s is not known" % se)
+        missing.append(se)
+    if missing:
+      return S_ERROR("%d StorageElements not known" %  len(missing))
+    return S_OK()
+  
   def __promptForParameter(self,parameter,choices = [], default = '',insert=True):
     res = self._promptUser("Please enter %s" % parameter, choices=choices,default=default)
     if not res['OK']:
       return self._errorReport(res)
     gLogger.info("%s will be set to '%s'" % (parameter,res['Value']))
-    self.item_called = parameter
     paramValue = res['Value']
     if insert:
-      res = self.__setParam(paramValue)
+      execString = "res = self.set%s(paramValue)" % parameter
+      exec(execString)
       if not res['OK']:
         return res
-    return S_OK(paramValue)    
-
-    """
-                            ,transName,description,longDescription,type,plugin,agentType,fileMask,
-                            transformationGroup = 'General',
-                            groupSize           = 1,
-                            inheritedFrom       = 0,
-                            body                = '', 
-                            maxJobs             = 0,
-                            eventsPerJob        = 0,
-                            addFiles            = True):
-    """
+    return S_OK(paramValue)
