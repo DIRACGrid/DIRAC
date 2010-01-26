@@ -1,0 +1,2 @@
+""" DIRAC.LHCbSystem package
+"""
