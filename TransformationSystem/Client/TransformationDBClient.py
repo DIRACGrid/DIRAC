@@ -21,14 +21,6 @@ class TransformationDBClient(Client,FileCatalogueBase):
       
       Transformation (table) manipulation
 
-          addTransformation(transName,description,longDescription,type,plugin,agentType,fileMask,
-                            transformationGroup = 'General',
-                            groupSize           = 1,
-                            inheritedFrom       = 0,
-                            body                = '', 
-                            maxJobs             = 0,
-                            eventsPerJob        = 0,
-                            addFiles            = True)    
           deleteTransformation(transName)
           cleanTransformation(transName)
           setTransformationParameter(transName,paramName,paramValue)
@@ -68,11 +60,25 @@ class TransformationDBClient(Client,FileCatalogueBase):
           getTransformationStatusCounters() 
           getTransformationSummary() 
           getTransformationSummaryWeb(selectDict, sortList, startItem, maxItems) 
-      
   """
+
+  def __init__(self):
+    self.setServer('TransformationSystem/TransformationHandler')
 
   def setServer(self,url):
     self.serverURL = url
+
+  def addTransformation(self, transName,description,longDescription,type,plugin,agentType,fileMask,
+                            transformationGroup = 'General',
+                            groupSize           = 1,
+                            inheritedFrom       = 0,
+                            body                = '', 
+                            maxJobs             = 0,
+                            eventsPerJob        = 0,
+                            addFiles            = True,
+                            rpc='',url='',timeout=120):
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
+    return rpcClient.addTransformation(transName,description,longDescription,type,plugin,agentType,fileMask,groupSize,inheritedFrom,body,maxJobs,eventsPerJob,addFiles)    
 
   def getTransformations(self,condDict={},older=None, newer=None, timeStamp='CreationDate', orderAttribute=None, limit=None, extraParams=False,rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
