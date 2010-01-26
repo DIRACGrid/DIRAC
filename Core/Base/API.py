@@ -77,11 +77,18 @@ class API:
     """Internal function to pretty print an object. """
     if (choices) and (default) and (not default in choices):
       return S_ERROR("The default value is not a valid choice")
-    choiceString = string.join(choices,'/').replace(default,default.upper())
+    choiceString = ''
+    if choices and default:
+      choiceString = string.join(choices,'/').replace(default,'[%s]' % default)
+    elif choices and (not default):
+      choiceString = string.join(choices,'/')
+    elif (not choices) and (default):
+      choiceString = '[%s]' % default
+ 
     if choiceString:
-      self.log.info('%s [%s] :' % (message,choiceString))
+      self.log.info('%s %s :' % (message,choiceString))
     elif default:
-      self.log.info('%s [%s] :' % (message,default))
+      self.log.info('%s %s :' % (message,default))
     else:
       self.log.info('%s :' % message)
     response = raw_input()
@@ -97,9 +104,9 @@ class API:
       if choices:      
         self.log.info('Possible responses are: %s' % (string.join(choices,', ')))
       if choiceString:
-        self.log.info('%s [%s] :' % (message,choiceString))
+        self.log.info('%s %s :' % (message,choiceString))
       elif default:
-        self.log.info('%s [%s] :' % (message,default))
+        self.log.info('%s %s :' % (message,default))
       else:
         self.log.info('%s :' % message)
       response = raw_input()
