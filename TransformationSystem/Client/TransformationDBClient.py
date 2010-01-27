@@ -62,7 +62,7 @@ class TransformationDBClient(Client,FileCatalogueBase):
           getTransformationSummaryWeb(selectDict, sortList, startItem, maxItems) 
   """
 
-  def __init__(self):
+  def __init__(self,name='TransformationDBClient'):
     self.setServer('TransformationSystem/TransformationHandler')
 
   def setServer(self,url):
