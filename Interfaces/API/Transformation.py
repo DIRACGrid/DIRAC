@@ -48,6 +48,7 @@ class Transformation(API):
                           'MaxNumberOfJobs'       : 0,
                           'EventsPerJob'          : 0}
 
+    self.supportedPlugins = ['Broadcast','Standard','BySize']
     self.transClient = TransformationDBClient()
     #TODO REMOVE THIS
     self.transClient.setServer("ProductionManagement/ProductionManager")
@@ -262,62 +263,13 @@ class Transformation(API):
 
   #############################################################################
   def addTransformation(self,addFiles=True, printOutput=False):
-    if self.paramValues['TransformationID']:
-      gLogger.info("You are currently working with an active transformation definition.")
-      gLogger.info("If you wish to create a new transformation reset the TransformationID.")
-      gLogger.info("oTransformation.reset()") 
-      return S_ERROR()
+    res = self._checkCreation()
+    if not res['OK']:
+      return self._errorReport(res,'Failed transformation sanity check')
+    if printOutput:
+      gLogger.info("Will attempt to create transformation with the following parameters")
+      self._prettyPrint(self.paramValues)
 
-    requiredParameters = ['TransformationName','Description' ,'LongDescription','Type']
-    for parameter in requiredParameters: 
-      if not self.paramValues[parameter]:
-        gLogger.info("%s is not defined for this transformation. This is required..." % parameter)
-        res = self.__promptForParameter(parameter)
-        if not res['OK']:
-          return res
-
-    pluginParams = {}
-    pluginParams['Broadcast'] = {}
-    pluginParams['Broadcast']['SourceSE'] = types.StringTypes
-    pluginParams['Broadcast']['TargetSE'] = types.StringTypes
-    pluginParams['Standard'] = {}
-    pluginParams['Standard']['GroupSize'] = [types.IntType,types.LongType]
-    pluginParams['BySize'] = {}
-    pluginParams['BySize']['GroupSize'] = [types.IntType,types.LongType]
-
-    plugin = self.paramValues['Plugin']
-    if not plugin in pluginParams.keys():
-      gLogger.info("The selected Plugin (%s) is not known to the transformation agent." % self.paramValues['Plugin'])
-      res = self.__promptForParameter('Plugin',choices=pluginParams.keys(),default='Standard')
-      if not res['OK']:
-        return res
-    plugin = self.paramValues['Plugin']
- 
-    requiredParams = pluginParams[plugin].keys()
-    gLogger.info("The %s plugin requires the following parameters be set: %s" % (plugin,string.join(requiredParams,', ')))
-    for requiredParam in requiredParams:
-      if (not self.paramValues.has_key(requiredParam)) or (not self.paramValues[requiredParam]):
-        res = self.__promptForParameter(requiredParam,insert=False)
-        if not res['OK']:
-          return res
-        paramValue = res['Value']
-        if requiredParam in ['TargetSE','SourceSE']:
-          ses = paramValue.replace(',',' ').split()
-          execString = "res = self.set%s(ses)" % requiredParam
-          exec(execString)
-          if not res['OK']:
-            return res
-          
-      if requiredParam in ['GroupSize']:
-        paramValue = self.paramValues[requiredParam]
-        if (paramValue <= 0):
-          gLogger.info("The GroupSize was found to be less than zero. It has been set to 1.")
-          paramValue = 1
-        execString = "res = self.set%s(paramValue)" % requiredParam
-        exec(execString)
-        if not res['OK']:
-          return res
-        
     res = self.transClient.addTransformation(self.paramValues['TransformationName'],
                                              self.paramValues['Description'],
                                              self.paramValues['LongDescription'],
@@ -337,8 +289,7 @@ class Transformation(API):
       return res
     transID = res['Value']
     self.exists = True
-    execString = "self.setTransformationID(transID)"
-    exec(execString)
+    self.setTransformationID(transID)
     gLogger.info("Created transformation %d" % transID)
     for paramName,paramValue in self.paramValues.items():
       if not self.paramTypes.has_key(paramName):
@@ -348,6 +299,60 @@ class Transformation(API):
           gLogger.info("To add this parameter later please execute the following.")
           gLogger.info("oTransformation = Transformation(%d)" % transID)
           gLogger.info("oTransformation.set%s(...)" % paramName)
+    return S_OK()
+
+  def _checkCreation(self):
+    if self.paramValues['TransformationID']:
+      gLogger.info("You are currently working with an active transformation definition.")
+      gLogger.info("If you wish to create a new transformation reset the TransformationID.")
+      gLogger.info("oTransformation.reset()") 
+      return S_ERROR()
+
+    requiredParameters = ['TransformationName','Description' ,'LongDescription','Type']
+    for parameter in requiredParameters: 
+      if not self.paramValues[parameter]:
+        gLogger.info("%s is not defined for this transformation. This is required..." % parameter)
+        res = self.__promptForParameter(parameter)
+        if not res['OK']:
+          return res
+        
+    plugin = self.paramValues['Plugin']
+    if not plugin in self.supportedPlugins:
+      gLogger.info("The selected Plugin (%s) is not known to the transformation agent." % plugin)
+      res = self.__promptForParameter('Plugin',choices=self.supportedPlugins,default='Standard')
+      if not res['OK']:
+        return res
+    plugin = self.paramValues['Plugin']
+    execString = "res = self._check%sPlugin()" % plugin
+    exec(execString)
+    return res
+
+  def _checkBySizePlugin(self):
+    return self._checkStandardPlugin()
+
+  def _checkStandardPlugin(self):
+    groupSize = self.paramValues['GroupSize']
+    if (groupSize <= 0):
+      gLogger.info("The GroupSize was found to be less than zero. It has been set to 1.")
+      res = self.setGroupSize(1)
+      if not res['OK']:
+        return res
+    return S_OK()
+
+  def _checkBroadcastPlugin(self):
+    gLogger.info("The Broadcast plugin requires the following parameters be set: %s" % (string.join(['SourceSE','TargetSE'],', ')))
+    requiredParams = ['SourceSE','TargetSE']
+    for requiredParam in requiredParams:
+      if (not self.paramValues.has_key(requiredParam)) or (not self.paramValues[requiredParam]):
+        res = self.__promptForParameter(requiredParam,insert=False)
+        if not res['OK']:
+          return res
+        paramValue = res['Value']
+        ses = paramValue.replace(',',' ').split()
+        execString = "res = self.set%s(ses)" % requiredParam
+        exec(execString)
+        if not res['OK']:
+          return res
     return S_OK()
 
   def __checkSEs(self,seList):
