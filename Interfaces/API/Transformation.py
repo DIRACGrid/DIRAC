@@ -66,6 +66,8 @@ class Transformation(API):
     self.__init__(self,transID=transID)
 
   def setTargetSE(self,seList):
+    if type(seList) in types.StringTypes:
+      seList = seList.replace(',',' ').split()
     res = self.__checkSEs(seList)
     if not res['OK']:
       return res
@@ -74,6 +76,8 @@ class Transformation(API):
     return self.__setParam(paramValue)
 
   def setSourceSE(self,seList):
+    if type(seList) in types.StringTypes:
+      seList = seList.replace(',',' ').split()
     res = self.__checkSEs(seList)
     if not res['OK']:
       return res
@@ -141,6 +145,7 @@ class Transformation(API):
     transParams = res['Value']
     for paramName,paramValue in transParams.items():
       execString = "self.set%s(paramValue)" % paramName
+      exec(execString)
     if printOutput:
       gLogger.info("No printing available yet")
     return S_OK(transParams)
@@ -163,9 +168,11 @@ class Transformation(API):
     return self.__executeOperation('extendTransformation', nTasks, printOutput=printOutput)
 
   def cleanTransformation(self,printOutput=False):
+    #TODO Check why the status of the transformation is not changed
     return self.__executeOperation('cleanTransformation', printOutput=printOutput)
 
   def deleteTransformation(self,printOutput=False):
+    #TODO Check what this does on the service.
     return self.__executeOperation('deleteTransformation', printOutput=printOutput)
 
   def addFilesToTransformation(self,lfns, printOutput=False):
