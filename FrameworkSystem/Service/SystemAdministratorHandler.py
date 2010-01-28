@@ -1,9 +1,9 @@
-# $HeadURL:  $
+# $HeadURL$
 
 """ SystemAdministrator service is a tool to control and monitor the DIRAC services and agents
 """
 
-__RCSID__ = "$Id:  $"
+__RCSID__ = "$Id$"
 
 import os
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
