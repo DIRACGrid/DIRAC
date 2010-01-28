@@ -29,6 +29,7 @@ from DIRAC.Core.Utilities.ModuleFactory                             import Modul
 from DIRAC.Core.Utilities.Subprocess                                import systemCall, shellCall
 from DIRAC.Core.Utilities.Subprocess                                import Subprocess
 from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize
+from DIRAC.Core.Utilities.Version                                   import getCurrentVersion
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, List
 import DIRAC
 
@@ -67,7 +68,11 @@ class JobWrapper:
     self.localSiteRoot = gConfig.getValue('/LocalSite/Root',DIRAC.rootPath)
     # FIXME: Why do we need to load any .cfg file here????
     self.__loadLocalCFGFiles(self.localSiteRoot)
-    self.diracVersion = 'DIRAC version %s' % DIRAC.buildVersion
+    result = getCurrentVersion()
+    if result['OK']:
+      self.diracVersion = result['Value']
+    else:
+      self.diracVersion = 'DIRAC version %s' % DIRAC.buildVersion  
     self.maxPeekLines = gConfig.getValue(self.section+'/MaxJobPeekLines',20)
     if self.maxPeekLines < 0: self.maxPeekLines = 0
     self.defaultCPUTime = gConfig.getValue(self.section+'/DefaultCPUTime',600)
