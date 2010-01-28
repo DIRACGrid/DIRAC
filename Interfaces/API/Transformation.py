@@ -63,28 +63,24 @@ class Transformation(API):
         gLogger.fatal("The supplied transformation does not exist in transformation database", "%s @ %s" % (transID,self.transClient.serverURL))
 
   def reset(self,transID=0):
-    self.__init__(self,transID=transID)
+    self.__init__(transID)
+    return S_OK()
 
   def setTargetSE(self,seList):
-    if type(seList) in types.StringTypes:
-      seList = seList.replace(',',' ').split()
-    res = self.__checkSEs(seList)
-    if not res['OK']:
-      return res
-    paramValue = string.join(seList,',')
-    self.item_called = 'TargetSE' 
-    return self.__setParam(paramValue)
+    return self.__setSE('TargetSE',seList)
 
   def setSourceSE(self,seList):
+    return self.__setSE('SourceSE',seList)
+
+  def __setSE(self,se,seList):
     if type(seList) in types.StringTypes:
       seList = seList.replace(',',' ').split()
     res = self.__checkSEs(seList)
     if not res['OK']:
       return res
-    paramValue = string.join(seList,',')
-    self.item_called = 'SourceSE' 
-    return self.__setParam(paramValue)
-    
+    self.item_called = se 
+    return self.__setParam(seList)
+
   def __getattr__(self,name):
     if name.find('get') ==0:
       item = name[3:]
@@ -168,7 +164,6 @@ class Transformation(API):
     return self.__executeOperation('extendTransformation', nTasks, printOutput=printOutput)
 
   def cleanTransformation(self,printOutput=False):
-    #TODO Check why the status of the transformation is not changed
     return self.__executeOperation('cleanTransformation', printOutput=printOutput)
 
   def deleteTransformation(self,printOutput=False):
@@ -215,8 +210,8 @@ class Transformation(API):
     if lfns:
       condDict['LFN'] = lfns
     res = self.transClient.getTransformationFiles(condDict=condDict)
-    #TODO RETURN PROPERLY FROM THE SERVICE
-    res['ParameterNames'] = ['Status','LastUpdate','TargetSE','TransformationID','LFN','JobID','UsedSE','InsertedTime','ErrorCount','FileID']
+    # TODO check wether this should be removed as service updated.
+    #res['ParameterNames'] = ['Status','LastUpdate','TargetSE','TransformationID','LFN','JobID','UsedSE','InsertedTime','ErrorCount','FileID']
     if not res['OK']:
       self._prettyPrint(res)
       return res
