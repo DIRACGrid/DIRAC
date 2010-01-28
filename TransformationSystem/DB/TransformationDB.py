@@ -450,7 +450,7 @@ class TransformationDB(DB):
     result = S_OK(resultList)
     result['LFNs'] = fileIDLfns.values()
     result['Records'] = webList
-    result['ParameterNames'] = ['LFN'].extend(self.TRANSFILEPARAMS)
+    result['ParameterNames'] = ['LFN'] + self.TRANSFILEPARAMS
     return result
 
   def getTransformationFileInfo(self,transID,lfns,connection=False):
@@ -1143,6 +1143,9 @@ class TransformationDB(DB):
     if not res['OK']:
       return res
     res = self.__deleteTransformationParameters(transID,connection=connection)
+    if not res['OK']:
+      return res
+    res = self.setTransformationParameter(transID,'Status','Cleaned',author=author,connection=connection)
     if not res['OK']:
       return res
     message = "Transformation Cleaned"
