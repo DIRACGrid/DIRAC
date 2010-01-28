@@ -18,7 +18,7 @@ from DIRAC.FrameworkSystem.private.logging.backends.BackendIndex import gBackend
 from DIRAC.Core.Utilities import ExitCallback, ColorCLI
 import DIRAC
 
-DEBUG = 0
+DEBUG = 1
 
 class Logger:
 
@@ -54,15 +54,17 @@ class Logger:
     if self._systemName == "Framework":
       from DIRAC.ConfigurationSystem.Client.Config import gConfig
       from os import getpid
-      
-      self.__printDebug( "The configuration path is %s" % cfgPath )
+            
+      #self.__printDebug( "The configuration path is %s" % cfgPath )
       #Get the options for the different output backends
       retDict = gConfig.getOptionsDict( "%s/BackendsOptions" % cfgPath )
+      
+      #self.__printDebug( retDict )
       if not retDict[ 'OK' ]:
         self.backendsOptions = { 'FileName': 'Dirac-log_%s.log' % getpid(),
                                  'Interactive': True, 'SleepTime': 150 }
       else:
-        self.__printDebug( "The Options for the Backends are %s\n" % retDict[ 'Value' ] )
+        #self.__printDebug( "The Options for the Backends are %s\n" % retDict[ 'Value' ] )
         self.backendsOptions = retDict[ 'Value' ]
 
         if not self.backendsOptions.has_key( 'Filename' ):
@@ -81,16 +83,19 @@ class Logger:
           self.backendsOptions[ 'Interactive' ] = True
 
       self.backendsOptions[ 'Site' ] = DIRAC.siteName()
-      self.__printDebug( "I'm running at %s" % self.backendsOptions[ 'Site' ] )
+      #self.__printDebug( "I'm running at %s" % self.backendsOptions[ 'Site' ] )
 
       #Configure outputs
       desiredBackends = gConfig.getValue( "%s/LogBackends" % cfgPath,
                                           'stdout' )
       self.registerBackends( List.fromChar( desiredBackends ) )
       #Configure verbosity
+      #self.__printDebug ( gConfig.getOption("%s/LogLevel" % cfgPath))
+      #self.__printDebug ( "%s/LogLevel" % cfgPath ) 
       self.setLevel( gConfig.getValue( "%s/LogLevel" % cfgPath, "INFO" ) )
       #Configure framing
-      self.__printDebug ( "I shall use %s with LogLevel %s" % 
+      #self.__printDebug ( gConfig.getOption( '/Systems/Framework/Development/Services/SystemLoggingReport/Port' )) 
+      #self.__printDebug ( "I shall use %s with LogLevel %s" % 
                           ( desiredBackends, 
                             gConfig.getValue( "%s/LogLevel" % cfgPath, "INFO" ) ) )
       retDict = gConfig.getOption( "%s/LogShowLine" % cfgPath )
