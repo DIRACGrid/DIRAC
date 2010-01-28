@@ -96,8 +96,8 @@ class Logger:
       #Configure framing
       #self.__printDebug ( gConfig.getOption( '/Systems/Framework/Development/Services/SystemLoggingReport/Port' )) 
       #self.__printDebug ( "I shall use %s with LogLevel %s" % 
-                          ( desiredBackends, 
-                            gConfig.getValue( "%s/LogLevel" % cfgPath, "INFO" ) ) )
+      #                    ( desiredBackends, 
+      #                      gConfig.getValue( "%s/LogLevel" % cfgPath, "INFO" ) ) )
       retDict = gConfig.getOption( "%s/LogShowLine" % cfgPath )
       if retDict[ 'OK' ] and retDict[ 'Value' ].lower() in ( "y", "yes", "1", "true" ) :
         self._showCallingFrame = True
