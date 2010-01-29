@@ -394,21 +394,30 @@ class TransformationDB(DB):
     transID = res['Value']['TransformationID']
     res = self.__getFileIDsForLfns(lfns,connection=connection)
     if not res['OK']:
-      return res   
+      return res
     fileIDs,lfnFilesIDs = res['Value']
     failed = {}
     successful = {}
+    missing = []
     for lfn in lfns:
       if lfn not in fileIDs.values():
-        failed[lfn] = 'File not found in the Transformation Database'
-    res = self.__addFilesToTransformation(transID, fileIDs.keys(),connection=connection)  
-    if not res['OK']:
-      return res
-    for fileID in fileIDs.keys():
-      lfn = fileIDs[fileID]
-      successful[lfn] = "Present"
-      if fileID in res['Value']:
-        successful[lfn] = "Added"
+        missing.append((lfn,'Unknown','Unknown'))
+    if missing:
+      res = self.__addFileTuples(missing,connection=connection)
+      if not res['OK']:
+        return res
+      for lfn,fileID in res['Value'].items():
+        fileIDs[fileID] = lfn 
+    # must update the fileIDs
+    if fileIDs:
+      res = self.__addFilesToTransformation(transID, fileIDs.keys(),connection=connection)  
+      if not res['OK']:
+        return res
+      for fileID in fileIDs.keys():
+        lfn = fileIDs[fileID]
+        successful[lfn] = "Present"
+        if fileID in res['Value']:
+          successful[lfn] = "Added"
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
   
@@ -520,8 +529,10 @@ class TransformationDB(DB):
       fileID = fileDict['FileID']
       if (currentStatus.lower() == "processed") and (status.lower() != "processed"):
         failed[lfn] = 'Can not change Processed status'
+        req = ''
       elif (currentStatus == status):
         successful[lfn] = 'Status not changed'
+        req = ''
       elif (status.lower() == 'unused') and (errorCount >= MAX_ERROR_COUNT) and (not force):
         failed[lfn] = 'Max number of resets reached'
         req = "UPDATE TransformationFiles SET Status='MaxReset', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d AND FileID=%d;" % (fileID,transID)
@@ -1053,6 +1064,7 @@ class TransformationDB(DB):
   def addTaskForTransformation(self,transID,lfns=[],se='Unknown',connection=False):
     """ Create a new task with the supplied files for a transformation.
     """
+    #TODO IF LFNS SUPPLIED ARE NOT UNUSED IT SHOULD NOT ALLOW A TASK TO BE CREATED
     connection = self.__getConnection(connection)
     # Be sure the all the supplied LFNs are known to the databse
     if lfns:
@@ -1142,9 +1154,6 @@ class TransformationDB(DB):
     res = self.__deleteTransformationTaskInputs(transID,connection=connection)
     if not res['OK']:
       return res
-    res = self.__deleteTransformationParameters(transID,connection=connection)
-    if not res['OK']:
-      return res
     res = self.setTransformationParameter(transID,'Status','Cleaned',author=author,connection=connection)
     if not res['OK']:
       return res
@@ -1163,6 +1172,9 @@ class TransformationDB(DB):
     if not res['OK']:
       return res
     res = self.__deleteTransformationLog(transID,connection=connection)
+    if not res['OK']:
+      return res
+    res = self.__deleteTransformationParameters(transID,connection=connection)
     if not res['OK']:
       return res
     res = self.__deleteTransformation(transID,connection=connection)
@@ -1273,6 +1285,7 @@ class TransformationDB(DB):
         else:
           failed[lfn] = True
       # Add the files to the transformations
+      #TODO: THIS SHOULD BE TESTED WITH A TRANSFORMATION WITH A FILTER
       for transID,lfns in transFiles.items():
         fileIDs = []
         for lfn in lfns:
