@@ -60,7 +60,7 @@ class SandboxStoreClient:
     """
     errorFiles = []
     files2Upload = []
-    
+
     for key in assignTo:
       if assignTo[ key ] not in self.__validSandboxTypes:
         return S_ERROR( "Invalid sandbox type %s" % assignTo[ key ] )
@@ -81,10 +81,10 @@ class SandboxStoreClient:
       return S_ERROR( "Failed to locate files: %s" % ", ".join( errorFiles ) )
 
     try:
-      fd, tmpFilePath = tempfile.mkstemp( prefix="LDSB." )
-      os.close(fd)
+      fd, tmpFilePath = tempfile.mkstemp( prefix = "LDSB." )
+      os.close( fd )
     except Exception, e:
-      return S_ERROR( "Cannot create temporal file: %s" % str(e) )
+      return S_ERROR( "Cannot create temporal file: %s" % str( e ) )
 
     tf = tarfile.open( name = tmpFilePath, mode = "w|bz2" )
     for file in files2Upload:
@@ -117,7 +117,7 @@ class SandboxStoreClient:
   ##############
   # Download sandbox
 
-  def downloadSandbox( self,  sbLocation,  destinationDir=""  ):
+  def downloadSandbox( self, sbLocation, destinationDir = "" ):
     """
     Download a sandbox file and keep it in bundled form
     """
@@ -140,9 +140,9 @@ class SandboxStoreClient:
         pass
 
     try:
-      tmpSBDir = tempfile.mkdtemp( prefix="TMSB." )
+      tmpSBDir = tempfile.mkdtemp( prefix = "TMSB." )
     except Exception, e:
-      return S_ERROR( "Cannot create temporal file: %s" % str(e) )
+      return S_ERROR( "Cannot create temporal file: %s" % str( e ) )
 
     rm = ReplicaManager()
     result = rm.getStorageFile( SEPFN, SEName, tmpSBDir, singleFile = True )
@@ -153,18 +153,21 @@ class SandboxStoreClient:
     result = S_OK()
     tarFileName = os.path.join( tmpSBDir, sbFileName )
     try:
+      sandboxSize = 0
       tf = tarfile.open( name = tarFileName, mode = "r" )
       for tarinfo in tf:
         tf.extract( tarinfo, path = destinationDir )
+        sandboxSize += tarinfo.size
       tf.close()
+      result[ 'Value' ] = sandboxSize
     except Exception, e:
-      result = S_ERROR( "Could not open bundle: %s" % str(e) )
+      result = S_ERROR( "Could not open bundle: %s" % str( e ) )
 
     try:
       os.unlink( tarFileName )
       os.rmdir( tmpSBDir )
     except Exception, e:
-      gLogger.warn( "Could not remove temporary dir %s: %s" % ( tmpSBDir, str(e) ) )
+      gLogger.warn( "Could not remove temporary dir %s: %s" % ( tmpSBDir, str( e ) ) )
 
     return result
 
@@ -188,7 +191,7 @@ class SandboxStoreClient:
       entitiesList.append( "Job:%s" % jobId )
     return self.__unassignEntities( entitiesList )
 
-  def downloadSandboxForJob( self, jobId, sbType, destinationPath="" ):
+  def downloadSandboxForJob( self, jobId, sbType, destinationPath = "" ):
     result = self.__getSandboxesForEntity( "Job:%s" % jobId )
     if not result[ 'OK' ]:
       return result
@@ -221,7 +224,7 @@ class SandboxStoreClient:
       entitiesList.append( "Pilot:%s" % pilotId )
     return self.__unassignEntities( entitiesList )
 
-  def downloadSandboxForPilot( self, jobId, sbType, destinationPath="" ):
+  def downloadSandboxForPilot( self, jobId, sbType, destinationPath = "" ):
     result = self.__getSandboxesForEntity( "Pilot:%s" % jobId )
     if not result[ 'OK' ]:
       return result
@@ -271,6 +274,6 @@ class SandboxStoreClient:
   #TODO: DELETEME WHEn OLD SANDBOXES ARE REMOVED
   def useOldSandboxes( self, prefix = "" ):
     if prefix:
-      prefix="%s-" % prefix
+      prefix = "%s-" % prefix
     setup = gConfig.getValue( "/DIRAC/Setup", "Default" )
     return gConfig.getValue( "/DIRAC/%s%s-UseOldSandboxes" % ( prefix, setup ), False )
