@@ -94,7 +94,7 @@ class ResourceStats_Command(Command):
       raise TypeError, where(self, self.doCommand)
     
     if args[0] not in ['Site', 'Service']:
-      raise InvalidRes
+      raise InvalidRes, where(self, self.doCommand)
     
     if clientIn is not None:
       c = clientIn
@@ -131,7 +131,7 @@ class StorageElementsStats_Command(Command):
       raise TypeError, where(self, self.doCommand)
     
     if args[0] not in ['Site', 'Resource']:
-      raise InvalidRes
+      raise InvalidRes, where(self, self.doCommand)
     
     if clientIn is not None:
       c = clientIn
@@ -160,15 +160,18 @@ class MonitoredStatus_Command(Command):
 
         - `args[1]`: string - should be the name of the ValidRes
         
+        - `args[2]`: optional string - a ValidRes (get status of THIS ValidRes
+          for name in args[1], will call getGeneralName)
+        
     :returns:
-    
+      {'MonitoredStatus': 'Active'|'Probing'|'Banned'}
     """
 
     if not isinstance(args, tuple):
       raise TypeError, where(self, self.doCommand)
     
     if args[0] not in ValidRes:
-      raise InvalidRes
+      raise InvalidRes, where(self, self.doCommand)
     
     if clientIn is not None:
       c = clientIn
@@ -176,7 +179,13 @@ class MonitoredStatus_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
       c = ResourceStatusClient()
       
-    res = c.getMonitoredStatus(args[0], args[1])
+    if len(args) == 3:
+      if ValidRes.index(args[2]) >= ValidRes.index(args[0]):
+        raise InvalidRes, where(self, self.doCommand)
+      generalName = c.getGeneralName(args[0], args[1], args[2])
+      res = c.getMonitoredStatus(args[2], generalName)
+    else:
+      res = c.getMonitoredStatus(args[0], args[1])
     
     return {'MonitoredStatus':res}
 

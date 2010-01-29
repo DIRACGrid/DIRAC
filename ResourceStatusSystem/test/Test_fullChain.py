@@ -21,7 +21,7 @@ Script.parseCommandLine()
 
 #sito = {'name':'LCG.CESGA.fr', 'siteType':'T2'} #OK
 sito = {'name':'LCG.CERN.ch', 'siteType':'T0'} #OK
-servizio = {'name':'Computing@LCG.Ferrara.it', 'siteType':'T2', 'serviceType':'Computing'} #OK
+servizio = {'name':'Computing@LCG.CESGA.es', 'siteType':'T2', 'serviceType':'Computing'} #OK
 #risorsa = {'name':'pearl.amu.edu.pl', 'siteType':'T1', 'resourceType':'CE'} #OK
 #risorsa = {'name':'ce125.cern.ch', 'siteType':'T0', 'resourceType':'CE'} #OK
 #risorsa = {'name':'cream-1-fzk.gridka.de', 'siteType':'T1', 'resourceType':'CE'} #OK
@@ -52,24 +52,7 @@ se = {'name':'CERN_MC_M-DST', 'siteType':'T0'} #OK
 #    res = pdp.takeDecision()
 #    print res
 #
-#print "\n\n ~~~~~~~ SERVICE ~~~~~~~ : %s \n " %servizio
-#
-#for status in ValidStatus:
-#  for oldStatus in ValidStatus:
-#    if status == oldStatus:
-#      continue
-#    print "############################"
-#    print " "
-#    print 'nel test:', status, oldStatus
-#    pdp = PDP(granularity = 'Service', name = servizio['name'], status = status, 
-#              formerStatus = oldStatus, reason = 'XXXXX', siteType = servizio['siteType'],
-#              serviceType = servizio['serviceType']) 
-#    res = pdp.takeDecision()
-#    print res
-
-
-
-print "\n\n ~~~~~~~ RISORSA 1 ~~~~~~~ : %s \n " %risorsa
+print "\n\n ~~~~~~~ SERVICE ~~~~~~~ : %s \n " %servizio
 
 for status in ValidStatus:
   for oldStatus in ValidStatus:
@@ -77,12 +60,29 @@ for status in ValidStatus:
       continue
     print "############################"
     print " "
-    print status, oldStatus
-    pdp = PDP(granularity = 'Resource', name = risorsa['name'], status = status, 
-              formerStatus = oldStatus, reason = 'XXXXX', siteType = risorsa['siteType'], 
-              resourceType = risorsa['resourceType'])
+    print 'nel test:', status, oldStatus
+    pdp = PDP(granularity = 'Service', name = servizio['name'], status = status, 
+              formerStatus = oldStatus, reason = 'XXXXX', siteType = servizio['siteType'],
+              serviceType = servizio['serviceType']) 
     res = pdp.takeDecision()
     print res
+
+
+
+#print "\n\n ~~~~~~~ RISORSA 1 ~~~~~~~ : %s \n " %risorsa
+#
+#for status in ValidStatus:
+#  for oldStatus in ValidStatus:
+#    if status == oldStatus:
+#      continue
+#    print "############################"
+#    print " "
+#    print status, oldStatus
+#    pdp = PDP(granularity = 'Resource', name = risorsa['name'], status = status, 
+#              formerStatus = oldStatus, reason = 'XXXXX', siteType = risorsa['siteType'], 
+#              resourceType = risorsa['resourceType'])
+#    res = pdp.takeDecision()
+#    print res
 #
 #print "\n\n ~~~~~~~ RISORSA 2 ~~~~~~~ : %s \n " %risorsa2
 #

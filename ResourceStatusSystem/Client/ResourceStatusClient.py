@@ -159,7 +159,7 @@ class ResourceStatusClient:
       raise InvalidRes, where(self, self.getMonitoredStatus)
     
     if not res['OK']:
-      raise RSSException, where(self, self.getGeneralName) + " " + res['Message'] 
+      raise RSSException, where(self, self.getMonitoredStatus) + " " + res['Message'] 
     else:
       try:
         if granularity in ('Resource', 'Resources'):

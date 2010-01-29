@@ -61,7 +61,7 @@ class OnServicePropagation_Policy(PolicyBase):
       
       #make a MacroCommand
       command = MacroCommand(commandsList)
-      res = command.doCommand((args[0], args[1]))
+      res = command.doCommand((args[0], args[1], 'Site'))
       
       resourceStats = res[0]['ResourceStats']
       siteStatus = res[1]['MonitoredStatus']

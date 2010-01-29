@@ -916,6 +916,32 @@ class ResourceStatusHandler(RequestHandler):
 #############################################################################
 
   #Ok
+  types_getSESitesList = []
+  def export_getSESitesList(self):
+    """
+    Get sites list of the storage elements from the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getSESitesList: Attempting to get SE sites list")
+      try:
+        r = rsDB.getMonitoredsList('StorageElement', paramsList = ['SiteName'])
+        res = []
+        for x in r:
+          res.append(x[0])
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getSESitesList: got SE sites list")
+      return S_OK(res)
+    except Exception, x:
+      errorStr = where(self, self.export_getSitesList)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+  #Ok
   types_getStorageElementsList = []
   def export_getStorageElementsList(self):
     """
