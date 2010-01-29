@@ -1,12 +1,41 @@
 #! /usr/bin/env python
 from DIRAC.Interfaces.API.Transformation        import Transformation
+from DIRAC.Core.Utilities.List                  import sortList
 import unittest,types,time
 
 class APITestCase(unittest.TestCase):
-  """ TransformationAPI test case """
 
-  def test_setGetReset(self):
-    """ Tests the following:
+  def setUp(self):
+    self.transID = 0
+    transName = 'APITestCaseTransformation-%s' % time.strftime("%Y%m%d-%H:%M:%S")
+    res = self.__createTransformation(transName)
+    self.assert_(res['OK'])
+    self.transID = res['Value']
+
+  def tearDown(self):
+    if self.transID:
+      tAPI = Transformation(self.transID)
+      tAPI.deleteTransformation()
+
+  def __createTransformation(self,transName):
+    tAPI = Transformation()
+    res = tAPI.setTransformationName(transName)
+    self.assert_(res['OK'])
+    description = 'Test transforamtion description'
+    res = tAPI.setDescription(description)
+    longDescription = 'Test transforamtion long description'
+    res = tAPI.setLongDescription(longDescription)
+    self.assert_(res['OK'])
+    res = tAPI.setType('MCSimulation')
+    self.assert_(res['OK'])
+    res = tAPI.addTransformation()
+    self.assert_(res['OK'])
+    self.transID = res['Value']
+    return res
+
+  def test_SetGetReset(self):
+    """ Testing of the set, get and reset methods.
+
           set*()
           get*()
           setTargetSE()
@@ -16,9 +45,6 @@ class APITestCase(unittest.TestCase):
           reset()
         Ensures that after a reset all parameters are returned to their defaults
     """
-        
-    transName = 'APITestCaseTransformation-%s' % time.strftime("%Y%m%d-%H:%M:%S")
-    
     tAPI = Transformation()
     res = tAPI.getParameters()
     self.assert_(res['OK'])
@@ -60,105 +86,162 @@ class APITestCase(unittest.TestCase):
     self.assertRaises(AttributeError,tAPI.getTargetSE)
     self.assertRaises(AttributeError,tAPI.getSourceSE)
 
+  def test_DeleteTransformation(self):
+    """ Testing of the deletion of a transformation. 
+
+          addTransformation()
+          deleteTransformation()
+           
+        Tests that a transformation can be removed.
+        Tests that retrieving a non existant transformation raises an AttributeError.
+    """
+    tAPI = Transformation(self.transID)
+    res = tAPI.deleteTransformation()
+    self.assert_(res['OK'])
+    self.assertRaises(AttributeError,Transformation,self.transID)
+    self.transID = 0
+
+  def test_ExtendCleanTransformation(self):
+    """ Tests the extension of transformations and the removal of tasks. Also obtain tasks, their status and update their status.
+        
+          extendTransformation()
+          getTransformationTasks()
+          getTransformationTaskStats()
+          deleteTasks()
+          setTaskStatus()
+          cleanTransformation()
+        
+        Tests a transformation can be extended.
+        Tests can obtain the the transformation tasks and their statistics.
+        Tests the removal of already created tasks.
+        Tests can change the status of a task.
+        Tests that Cleaning a transformation removes tasks defined for the transformation.
+    """
+    tAPI = Transformation(self.transID)
+    nTasks = 100
+    res = tAPI.extendTransformation(nTasks)
+    self.assert_(res['OK'])
+    taskIDs = res['Value']
+    self.assertEqual(len(taskIDs),nTasks)
+    res = tAPI.getTransformationTasks()
+    self.assert_(res['OK'])
+    parameters = ['TargetSE', 'TransformationID', 'LastUpdateTime', 'JobWmsID', 'CreationTime', 'JobID', 'WmsStatus']
+    self.assertEqual(sortList(res['ParameterNames']),sortList(parameters))
+    self.assertEqual(sortList(res['Value'][0].keys()),sortList(parameters))
+    self.assertEqual(res['Value'][0]['TargetSE'],'Unknown')
+    self.assertEqual(res['Value'][0]['TransformationID'],self.transID)
+    self.assertEqual(res['Value'][0]['JobWmsID'],'0')
+    self.assertEqual(res['Value'][0]['JobID'],1)
+    self.assertEqual(res['Value'][0]['WmsStatus'],'Created')
+    self.assertEqual(res['Records'][0][0],1)
+    self.assertEqual(res['Records'][0][1],self.transID)
+    self.assertEqual(res['Records'][0][2],'Created')
+    self.assertEqual(res['Records'][0][3],'0')
+    self.assertEqual(res['Records'][0][4],'Unknown')
+    res = tAPI.getTransformationTaskStats()
+    self.assert_(res['OK'])
+    self.assertEqual(res['Value']['Created'],100)
+    res = tAPI.deleteTasks(11,100)
+    self.assert_(res['OK'])
+    res = tAPI.getTransformationTaskStats()
+    self.assert_(res['OK'])
+    self.assertEqual(res['Value']['Created'],10)
+    res = tAPI.setTaskStatus(1, 'Done')
+    self.assert_(res['OK'])
+    res = tAPI.getTransformationTaskStats()
+    self.assert_(res['OK'])
+    self.assertEqual(res['Value']['Created'],10)
+    self.assertEqual(res['Value']['Done'],1)
+    res = tAPI.cleanTransformation()
+    self.assert_(res['OK'])
+    res = tAPI.getStatus()
+    self.assert_(res['OK'])
+    self.assertEqual(res['Value'],'Cleaned')
+    res = tAPI.getTransformationTasks()
+    self.assert_(res['OK'])
+    self.assertFalse(res['Value'])
+    self.assertFalse(res['Records'])
+
+  def test_AddFilesGetFilesSetFileStatus(self):
+    """ Testing adding, getting and setting file status.
+
+          addFilesToTransformation()
+          getTransformationFiles()
+          getTransformationStats()
+          setFileStatusForTransformation()
+          addTaskForTransformation()
+
+        Test adding and files to transformation.
+        Test selecting the files for the transformation.
+        Test getting the status count of the transformation files.
+        Test setting the file status for transformation.
+        Test creating a task for the added files and ensure the status is updated correctly.
+    """
+    tAPI = Transformation(self.transID)
+    lfns = ['/test/lfn/file1','/test/lfn/file2']
+    res = tAPI.addFilesToTransformation(lfns)
+    self.assert_(res['OK'])
+    res = tAPI.getTransformationFiles()
+    self.assert_(res['OK'])
+    self.assertEqual(sortList(lfns),res['LFNs'])
+    self.assertEqual(len(lfns),len(res['Records']))
+    self.assertEqual(len(lfns),len(res['Value']))
+    fileParams = sortList(['LFN', 'TransformationID', 'FileID', 'Status', 'JobID', 'TargetSE', 'UsedSE', 'ErrorCount', 'LastUpdate', 'InsertedTime'])
+    self.assertEqual(fileParams,sortList(res['ParameterNames']))
+    self.assertEqual(res['Records'][0][0], lfns[0])
+    self.assertEqual(res['Value'][0]['LFN'],lfns[0]) 
+    self.assertEqual(res['Records'][0][1], self.transID)
+    self.assertEqual(res['Value'][0]['TransformationID'], self.transID)
+    self.assertEqual(res['Records'][0][3],'Unused')
+    self.assertEqual(res['Value'][0]['Status'],'Unused')
+    res = tAPI.getTransformationStats()
+    self.assert_(res['OK'])
+    self.assertEqual(res['Value']['Total'],2)
+    self.assertEqual(res['Value']['Unused'],2)
+    res = tAPI.setFileStatusForTransformation('Processed',[lfns[0]])
+    self.assert_(res['OK'])
+    res = tAPI.getTransformationStats()
+    self.assert_(res['OK'])
+    self.assertEqual(res['Value']['Total'],2)
+    self.assertEqual(res['Value']['Unused'],1)
+    self.assertEqual(res['Value']['Processed'],1)
+    res = tAPI.setFileStatusForTransformation('Unused',[lfns[0]])
+    self.assert_(res['OK'])
+    self.assert_(res['Value']['Failed'].has_key(lfns[0]))
+    self.assertEqual(res['Value']['Failed'][lfns[0]],'Can not change Processed status')
+    res = tAPI.addTaskForTransformation(lfns=[lfns[1]],se='Test')
+    self.assert_(res['OK'])
+    res = tAPI.getTransformationStats()
+    self.assert_(res['OK'])
+    self.assertEqual(res['Value']['Total'],2)
+    self.assertEqual(res['Value']['Assigned'],1)
+    self.assertEqual(res['Value']['Processed'],1)
+  
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(APITestCase)  
-  testResult = unittest.TextTestRunner(verbosity=3).run(suite)
+  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 
 """
-  # Still to test
-  def getTransformation(self,printOutput=False):
-  def getTransformationLogging(self,printOutput=False):
-  def extendTransformation(self,nTasks, printOutput=False):
-  def cleanTransformation(self,printOutput=False):
-  def deleteTransformation(self,printOutput=False):
-  def addFilesToTransformation(self,lfns, printOutput=False):
-  def setFileStatusForTransformation(self,status,lfns,printOutput=False): 
-  def getTransformationTaskStats(self,printOutput=False):
-  def getTransformationStats(self,printOutput=False):
-  def deleteTasks(self,taskMin, taskMax, printOutput=False): 
-  def addTaskForTransformation(self,lfns=[],se='Unknown', printOutput=False):
-  def setTaskStatus(self, taskID, status, printOutput=False):
-  def getTransformationFiles(self,fileStatus=[],lfns=[],outputFields=['FileID','LFN','Status','JobID','TargetSE','UsedSE','ErrorCount','InsertedTime','LastUpdate'], orderBy='FileID', printOutput=False):
-  def getTransformationTasks(self,taskStatus=[],taskIDs=[],outputFields=['TransformationID','JobID','WmsStatus','JobWmsID','TargetSE','CreationTime','LastUpdateTime'],orderBy='JobID',printOutput=False):
-  def getTransformations(self,transID=[], transStatus=[], outputFields=['TransformationID','Status','AgentType','TransformationName','CreationDate'],orderBy='TransformationID',printOutput=False):
-  def addTransformation(self,addFiles=True, printOutput=False):
+tAPI.getTransformationLogging(printOutput=True)
+tAPI.getTransformations(printOutput=True)
+
+tAPI = Transformation()
+tAPI.setTransformationName("TransformationTestName")
+tAPI.setDescription("This is a short description")
+tAPI.setLongDescription("This is a very long description isnt it")
+tAPI.setType('Replication')
+tAPI.setPlugin('Broadcast')
+tAPI.setTargetSE(['GRIDKA_MC-DST'])
+tAPI.setSourceSE(['CERN_MC_M-DST'])
+print tAPI.generateBKQuery(test=True,printOutput=True)
+res = tAPI.generateBkQuery(test=True,printOutput=True)
+if not res['OK']:
+  print res['Message']
+else:
+  bkQuery = res['Value']
+  print bkQuery
+  print tAPI.setBkQuery(bkQuery)
+  print tAPI.getBkQuery()
+  print tAPI.getBkQueryID()
+  print tAPI.removeTransformationBkQuery()
 """
-
-
-#tAPI = Transformation(9)
-
-""" Test getting the transformation parameters """
-#res = tAPI.getParameters()
-#if not res['OK']:
-#  print res['Message']
-#else:
-#  for key,value in res['Value'].items():
-#    print key,value
-
-""" Test the ability to get and set individual parameters """
-#print tAPI.getAvailable()
-
-#print tAPI.getStatus()
-#print tAPI.setStatus('Active')
-#print tAPI.getStatus()
-
-""" Test setting imutable parameters """
-#print tAPI.getPlugin()
-#print tAPI.setPlugin('ByRun')
-#print tAPI.getPlugin()
-
-""" Test getting the logging info """
-#tAPI.getTransformationLogging(printOutput=True)
-
-""" Test extending transformation """
-#tAPI.extendTransformation(100,printOutput=True)
-
-""" Test cleaning/deleting the transformation """
-#TODO
-#tAPI.cleanTransformation(printOutput=True) 
-#tAPI.deleteTransformation(printOutput=True)
-
-""" Test getting all the transformations """
-#tAPI.getTransformations(printOutput=True)
-
-""" Test getting the tasks assocated to the transformation """
-#tAPI.getTransformationTasks(taskIDs=range(10,100),printOutput=True)
-
-""" Test obtaining the task stats """
-#tAPI.getTransformationTaskStats(printOutput=True)
-#tAPI.getTransformationStats(printOutput=True)
-
-""" Test obtaining the task files """
-#tAPI.getTransformationFiles(orderBy='JobID', printOutput=True)
-
-""" Publish production """
-#tAPI = Transformation(9)
-#print tAPI.getPlugin()
-#tAPI.resetTransformation()
-#print tAPI.getPlugin()
-
-
-#tAPI = Transformation()
-#tAPI.setTransformationName("TransformationTestName")
-#tAPI.setDescription("This is a short description")
-#tAPI.setLongDescription("This is a very long description isnt it")
-#tAPI.setType('Replication')
-#tAPI.setPlugin('Broadcast')
-#tAPI.setTargetSE(['GRIDKA_MC-DST'])
-#tAPI.setSourceSE(['CERN_MC_M-DST'])
-#print tAPI.addTransformation(printOutput=True)
-
-#tAPI = Transformation()
-#print tAPI.generateBKQuery(test=True,printOutput=True)
-
-#res = tAPI.generateBkQuery(test=True,printOutput=True)
-#if not res['OK']:
-#  print res['Message']
-#else:
-#  bkQuery = res['Value']
-#  print bkQuery
-#  print tAPI.setBkQuery(bkQuery)
-#  print tAPI.getBkQuery()
-#  print tAPI.getBkQueryID()
-#  print tAPI.removeTransformationBkQuery()
-#  print tAPI.cleanTransformation(printOutput=True)
