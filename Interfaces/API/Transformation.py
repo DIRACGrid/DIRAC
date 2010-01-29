@@ -58,9 +58,11 @@ class Transformation(API):
       res = self.getTransformation()
       if res['OK']:
         self.exists = True
+      elif res['Message'] == 'Transformation %s did not exist' % transID:
+        raise AttributeError,'TransformationID %d does not exist' % transID
       else:
         self.paramValues['TransformationID'] = 0
-        gLogger.fatal("The supplied transformation does not exist in transformation database", "%s @ %s" % (transID,self.transClient.serverURL))
+        gLogger.fatal("Failed to get transformation from database", "%s @ %s" % (transID,self.transClient.serverURL))
 
   def reset(self,transID=0):
     self.__init__(transID)
@@ -136,7 +138,8 @@ class Transformation(API):
       return S_ERROR()
     res = self.transClient.getTransformation(transID,extraParams=True)
     if not res['OK']:
-      self._prettyPrint(res)
+      if printOutput:
+        self._prettyPrint(res)
       return res
     transParams = res['Value']
     for paramName,paramValue in transParams.items():
@@ -153,7 +156,8 @@ class Transformation(API):
       return S_ERROR()
     res = self.transClient.getTransformationLogging(transID)
     if not res['OK']:
-      self._prettyPrint(res)
+      if printOutput:
+        self._prettyPrint(res)
       return res
     loggingList = res['Value']
     if printOutput:
@@ -164,11 +168,16 @@ class Transformation(API):
     return self.__executeOperation('extendTransformation', nTasks, printOutput=printOutput)
 
   def cleanTransformation(self,printOutput=False):
-    return self.__executeOperation('cleanTransformation', printOutput=printOutput)
+    res = self.__executeOperation('cleanTransformation', printOutput=printOutput)
+    if res['OK']:
+      self.paramValues['Status'] = 'Cleaned'
+    return res
 
   def deleteTransformation(self,printOutput=False):
-    #TODO Check what this does on the service.
-    return self.__executeOperation('deleteTransformation', printOutput=printOutput)
+    res =  self.__executeOperation('deleteTransformation', printOutput=printOutput)
+    if res['OK']:
+      self.reset()
+    return res 
 
   def addFilesToTransformation(self,lfns, printOutput=False):
     return self.__executeOperation('addFilesToTransformation', lfns, printOutput=printOutput)
@@ -186,7 +195,7 @@ class Transformation(API):
     return self.__executeOperation('deleteTasks',taskMin,taskMax,printOutput=printOutput)
 
   def addTaskForTransformation(self,lfns=[],se='Unknown', printOutput=False):
-    return self.__executeOperation('addTaskForTransformation',lfns=lfns,se=se,printOutput=printOutput)
+    return self.__executeOperation('addTaskForTransformation',lfns,se,printOutput=printOutput)
 
   def setTaskStatus(self, taskID, status, printOutput=False):
     return self.__executeOperation('setTaskStatus',taskID, status,printOutput=printOutput)
@@ -210,10 +219,9 @@ class Transformation(API):
     if lfns:
       condDict['LFN'] = lfns
     res = self.transClient.getTransformationFiles(condDict=condDict)
-    # TODO check wether this should be removed as service updated.
-    #res['ParameterNames'] = ['Status','LastUpdate','TargetSE','TransformationID','LFN','JobID','UsedSE','InsertedTime','ErrorCount','FileID']
     if not res['OK']:
-      self._prettyPrint(res)
+      if printOutput:
+        self._prettyPrint(res)
       return res
     if printOutput:
       if not outputFields:
@@ -232,7 +240,8 @@ class Transformation(API):
       condDict['JobID'] = taskIDs
     res = self.transClient.getTransformationTasks(condDict=condDict)
     if not res['OK']:
-      self._prettyPrint(res)
+      if printOutput:
+        self._prettyPrint(res)
       return res
     if printOutput:
       if not outputFields:
@@ -252,7 +261,8 @@ class Transformation(API):
       condDict['Status'] = transStatus
     res = self.transClient.getTransformations(condDict=condDict)
     if not res['OK']:
-      self._prettyPrint(res)
+      if printOutput:
+        self._prettyPrint(res)
       return res
     if printOutput:
       if not outputFields:
@@ -287,7 +297,8 @@ class Transformation(API):
                                              eventsPerJob        = self.paramValues['EventsPerJob'],
                                              addFiles            = addFiles)
     if not res['OK']:
-      self._prettyPrint(res)
+      if printOutput:
+        self._prettyPrint(res)
       return res
     transID = res['Value']
     self.exists = True
@@ -301,7 +312,7 @@ class Transformation(API):
           gLogger.info("To add this parameter later please execute the following.")
           gLogger.info("oTransformation = Transformation(%d)" % transID)
           gLogger.info("oTransformation.set%s(...)" % paramName)
-    return S_OK()
+    return S_OK(transID)
 
   def _checkCreation(self):
     if self.paramValues['TransformationID']:
