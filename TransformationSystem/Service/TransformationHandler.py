@@ -48,7 +48,8 @@ class TransformationHandler(RequestHandler):
 
   types_deleteTransformation = [transTypes]
   def export_deleteTransformation(self, transName):
-    res = self.database.deleteTransformation(transName)
+    authorDN = self._clientTransport.peerCredentials['DN']
+    res = self.database.deleteTransformation(transName,author=authorDN)
     return self.__parseRes(res)
   
   types_cleanTransformation = [transTypes]

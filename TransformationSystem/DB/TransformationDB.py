@@ -1159,7 +1159,7 @@ class TransformationDB(DB):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    res = self.cleanTransformation(transID,connection=connection)
+    res = self.cleanTransformation(transID,author=author,connection=connection)
     if not res['OK']:
       return res
     res = self.__deleteTransformationLog(transID,connection=connection)
