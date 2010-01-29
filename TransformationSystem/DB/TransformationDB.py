@@ -94,7 +94,7 @@ class TransformationDB(DB):
   # These methods manipulate the Transformations table
   #
 
-  def addTransformation(self, transName, description, longDescription,authorDN, authorGroup, type, plugin,agentType,fileMask,
+  def addTransformation(self, transName, description, longDescription,authorDN, authorGroup, transType, plugin,agentType,fileMask,
                         transformationGroup = 'General',
                         groupSize           = 1,
                         inheritedFrom       = 0,
@@ -125,7 +125,7 @@ class TransformationDB(DB):
                                         '%s','New','%s',%d,\
                                         %d,%s,%d,%d);" % \
                                       (transName, description, longDescription,
-                                       authorDN, authorGroup, type, plugin, agentType,
+                                       authorDN, authorGroup, transType, plugin, agentType,
                                        fileMask,transformationGroup,groupSize,
                                        inheritedFrom,body,maxJobs,eventsPerJob)
     res = self._update(req,connection)
