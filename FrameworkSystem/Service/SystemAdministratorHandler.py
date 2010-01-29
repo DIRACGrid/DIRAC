@@ -5,13 +5,13 @@
 
 __RCSID__ = "$Id$"
 
-import os,re
+import os, re, shutil
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, shellCall
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.FrameworkSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
 
 cmDB = None
-DIRACROOT = '/opt/dirac/pro'
+DIRACROOT = '/opt/dirac'
 
 def initializeSystemAdministratorHandler( serviceInfo ):
 
@@ -21,9 +21,8 @@ def initializeSystemAdministratorHandler( serviceInfo ):
 
 
 class SystemAdministratorHandler( RequestHandler ):
-
-  types_getSoftwareComponents = [ ]
-  def export_getSoftwareComponents(self):
+  
+  def __getSoftwareComponents(self):
     """  Get the list of all the components ( services and agents ) for which the software
          is installed on the system
     """
@@ -35,14 +34,14 @@ class SystemAdministratorHandler( RequestHandler ):
     services = {}
     agents = {}
     
-    systemList = os.listdir(DIRACROOT+'/DIRAC')
+    systemList = os.listdir(DIRACROOT+'/pro/DIRAC')
     for extension in ['DIRAC']+[ x+'DIRAC' for x in extensions]:
       for system in systemList:
         try:
-          agentList = os.listdir(DIRACROOT+'/%s/%s/Agent' % (extension,system) )
+          agentList = os.listdir(DIRACROOT+'/pro/%s/%s/Agent' % (extension,system) )
           for agent in agentList:
             if agent[-3:] == ".py":
-              afile = open(DIRACROOT+'/%s/%s/Agent/' % (extension,system)+agent,'r')
+              afile = open(DIRACROOT+'/pro/%s/%s/Agent/' % (extension,system)+agent,'r')
               body = afile.read()
               afile.close()
               if body.find('AgentModule') != -1 or body.find('OptimizerModuleModule') != -1:
@@ -52,7 +51,7 @@ class SystemAdministratorHandler( RequestHandler ):
         except OSError:
           pass  
         try:
-          serviceList = os.listdir(DIRACROOT+'/%s/%s/Service' % (extension,system) )
+          serviceList = os.listdir(DIRACROOT+'/pro/%s/%s/Service' % (extension,system) )
           for service in serviceList:
             if service.find('Handler') != -1 and service[-3:] == '.py':
               if not services.has_key(system):
@@ -64,7 +63,14 @@ class SystemAdministratorHandler( RequestHandler ):
     resultDict = {}
     resultDict['Services'] = services
     resultDict['Agents'] = agents   
-    return S_OK(resultDict)        
+    return S_OK(resultDict)    
+
+  types_getSoftwareComponents = [ ]
+  def export_getSoftwareComponents(self):
+    """  Get the list of all the components ( services and agents ) for which the software
+         is installed on the system
+    """
+    return self.__getSoftwareComponents()
     
   types_getInstalledComponents = [ ]
   def export_getInstalledComponents(self):
@@ -74,12 +80,12 @@ class SystemAdministratorHandler( RequestHandler ):
    
     services = {}
     agents = {}
-    systemList = os.listdir('/opt/dirac/runit')
+    systemList = os.listdir(DIRACROOT+'/runit')
     for system in systemList:
-      components = os.listdir('/opt/dirac/runit/%s' % system)
+      components = os.listdir(DIRACROOT+'/runit/%s' % system)
       for component in components:
         try:
-          rfile = open('/opt/dirac/runit/%s/%s/run' % (system,component),'r')
+          rfile = open(DIRACROOT+'/runit/%s/%s/run' % (system,component),'r')
           body = rfile.read()
           rfile.close()
           if body.find('dirac-service') != -1:
@@ -101,16 +107,16 @@ class SystemAdministratorHandler( RequestHandler ):
   types_getSetupComponents = [ ]
   def export_getSetupComponents(self):
     """  Get the list of all the components ( services and agents ) 
-         set up for runnig with runsvdir in /opt/dirac/startup directory 
+         set up for running with runsvdir in /opt/dirac/startup directory 
     """
 
     services = {}
     agents = {}
 
-    componentList = os.listdir('/opt/dirac/startup')
+    componentList = os.listdir(DIRACROOT+'/startup')
     for component in componentList:
       try:
-        rfile = open('/opt/dirac/startup/%s' % component + '/run','r')
+        rfile = open(DIRACROOT+'/startup/%s' % component + '/run','r')
         body = rfile.read()
         rfile.close()
         if body.find('dirac-service') != -1:
@@ -134,15 +140,21 @@ class SystemAdministratorHandler( RequestHandler ):
     resultDict['Agents'] = agents
     return S_OK(resultDict)
 
-  types_getRunitComponentStatus = [ ]
-  def export_getRunitComponentStatus(self):
+  def __getRunitComponentStatus(self,componentList):
     """  Get the list of all the components ( services and agents ) 
          set up for runnig with runsvdir in /opt/dirac/startup directory 
     """
-    result = shellCall(0,'runsvstat /opt/dirac/startup/*')
+    
+    if componentList:
+      cList = [ DIRACROOT+'/startup/'+c for c in componentList]
+      cString = ' '.join(cList)
+    else:
+      cString = DIRACROOT+'/startup/*'        
+    result = shellCall(0,'runsvstat %s' % cString)
     if not result['OK']:
       return S_ERROR('Failed runsvstat shell call')
     output = result['Value'][1].strip().split('\n')
+    
     componentDict = {}
     for line in output:
       cname,routput = line.split(':')
@@ -183,5 +195,201 @@ class SystemAdministratorHandler( RequestHandler ):
       componentDict[cname] = runDict
 
     return S_OK(componentDict)
+  
+  types_getRunitComponentStatus = [ ListType ]
+  def export_getRunitComponentStatus(self,componentList):
+    """  Get the list of all the components ( services and agents ) 
+         set up for runnig with runsvdir in /opt/dirac/startup directory 
+    """
+    return self.__getRunitComponentStatus(componentList)
+  
+  def __getComponentType(self,system,component):
+    """ Check the component software and get its type
+    """
+
+    result = self.__getSoftwareComponents()
+    if not result['OK']:
+      return result
+    softDict = result['Value']
+    componentType = 'unknown'
+    if softDict['Services'].has_key(system):
+      if component in softDict['Services'][system]:
+        componentType = 'service'
+    if softDict['Agents'].has_key(system):
+      if component in softDict['Agents'][system]:
+        componentType = 'agent'
     
+    return componentType
+  
+  def __installComponent(self,system,component):
+    """ Install runit directory for the specified component
+    """  
+    
+    # Check that the software for the component is installed
+    componentType = self.__getComponentType()
+    if componentType == 'unknown':
+      return S_ERROR('Software for component %s_%s is not installed' % (system,component) ) 
+    if componentType == 'service':
+      result = shellCall(0,'install_service.sh %s %s' % (system,component) )
+    elif componentType == 'agent':
+      result = shellCall(0,'install_agent.sh %s %s' % (system,component) )    
+    else:
+      return S_ERROR('Faulty component type %s' % componentType)
+    
+    if not result['OK']:
+      return S_ERROR(result['Value'][2])
+    
+    return S_OK(componentType) 
+    
+  types_installComponent = [ StringTypes, StringTypes ]
+  def export_installComponent(self,system,component):
+    """ Install runit directory for the specified component
+    """   
+    return self.__installComponent(system,component)
+  
+  types_setupComponent = [ StringTypes, StringTypes ]
+  def export_setupComponent(self,system,component):
+    """ Setup the specified component for running with the runsv daemon
+    """  
+    
+    # Check that the runit directory is there and sain
+    runitDir = DIRACROOT+'/runit/%s/%s' % (system,component)
+    if not os.path.exists(runitDir):
+      # Check that the software for the component is installed              
+      result = self.__installComponent(system,component)
+      if not result['OK']:
+        return result
+      
+    sainCheck = True
+    message = ''
+    if not os.path.exists(runitDir+'/run'):
+      sainCheck = False
+      message += ' No run script;'
+    if not os.path.exists(runitDir+'/log'):
+      sainCheck = False
+      message += ' No log directory;'
+    if not os.path.exists(runitDir+'/log/run'):
+      sainCheck = False 
+      message += ' No log run script'
+    if not sainCheck:
+      return S_ERROR('No sain installation: %s' % message )       
+    
+    # Create the startup entry now
+    os.symlink(DIRACROOT+'/runit/%s/%s' % (system,component), DIRACROOT+'/startup/%s_%s' % (system,component) )
+    
+    # Check the runsv status
+    start = time.time()
+    while (time.time()-10) < start: 
+      result = self.__getRunitComponentStatus(['%s_%s' % (system,component)])
+      if not result['OK']:
+        return S_ERROR('Failed to start the component %s_%s' % (system,component) )
+      if result['Value']['%s_%s' % (system,component)]['RunitStatus'] == "Run":
+        return S_OK("Run")
+      time.sleep(1)
+    
+    # Final check
+    result = self.__getRunitComponentStatus(['%s_%s' % (system,component)])
+    if not result['OK']:
+      return S_ERROR('Failed to start the component %s_%s' % (system,component) )
+    
+    return S_OK(result['Value']['%s_%s' % (system,component)]['RunitStatus'])  
+  
+  types_unsetupComponent = [ StringTypes, StringTypes ]
+  def export_unsetupComponent(self,system,component):
+    """ Setup the specified component for running with the runsv daemon
+    """  
+    startupDir = DIRACROOT+'/startup/%s_%s' % (system,component)
+    if os.path.lexists(startupDir):
+      os.unlink(startupDir)
+    
+    return S_OK()
+  
+  types_uninstallComponent = [ StringTypes, StringTypes ]
+  def export_uninstallComponent(self,system,component):
+    """ Setup the specified component for running with the runsv daemon
+    """  
+    startupDir = DIRACROOT+'/startup/%s_%s' % (system,component)
+    if os.path.lexists(startupDir):
+      os.unlink(startupDir)
+    
+    runitDir = DIRACROOT+'/runit/%s/%s' % (system,component)
+    if os.path.exists(runitDir):
+      shutil.rmtree(runitDir)
+      
+    return S_OK()
+    
+  def __startComponent(self,system,component,mode):
+    """ Start the specified component for running with the runsv daemon
+    """ 
+    result = shellCall(0,'runsvctrl %s '+DIRACROOT+'/startup/%s %s' % (mode,system,component) )
+    # Check the runsv status
+    start = time.time()
+    while (time.time()-10) < start: 
+      result = self.__getRunitComponentStatus(['%s_%s' % (system,component)])
+      if not result['OK']:
+        return S_ERROR('Failed to start the component %s_%s' % (system,component) )
+      if result['Value']['%s_%s' % (system,component)]['RunitStatus'] == "Run":
+        return S_OK("Run")
+      time.sleep(1)
+    
+    # Final check
+    result = self.__getRunitComponentStatus(['%s_%s' % (system,component)])
+    if not result['OK']:
+      return S_ERROR('Failed to start the component %s_%s' % (system,component) )
+    
+    return S_OK(result['Value']['%s_%s' % (system,component)]['RunitStatus'])    
+  
+  types_startComponent = [ StringTypes, StringTypes ]
+  def export_startComponent(self,system,component):
+    """ Start the specified component for running with the runsv daemon
+    """ 
+    return self.__startComponent('u',system,component)
+  
+  types_restartComponent = [ StringTypes, StringTypes ]
+  def export_restartComponent(self,system,component):
+    """ Start the specified component for running with the runsv daemon
+    """ 
+    return self.__startComponent('t',system,component)
+  
+  types_stopComponent = [ StringTypes, StringTypes ]
+  def export_stopComponent(self,system,component):
+    """ Start the specified component for running with the runsv daemon
+    """ 
+    result = shellCall(0,'runsvctrl d '+DIRACROOT+'/startup/%s %s' % (system,component) )
+    # Check the runsv status
+    start = time.time()
+    while (time.time()-10) < start: 
+      result = self.__getRunitComponentStatus(['%s_%s' % (system,component)])
+      if not result['OK']:
+        return S_ERROR('Failed to stop the component %s_%s' % (system,component) )
+      if result['Value']['%s_%s' % (system,component)]['RunitStatus'] == "Down":
+        return S_OK("Down")
+      time.sleep(1)
+    
+    # Final check
+    result = self.__getRunitComponentStatus(['%s_%s' % (system,component)])
+    if not result['OK']:
+      return S_ERROR('Failed to stop the component %s_%s' % (system,component) )
+    
+    return S_OK(result['Value']['%s_%s' % (system,component)]['RunitStatus']) 
      
+     
+  types_getLogTail = [ StringTypes, StringTypes ]
+  def export_getLogTail(self,system,component):
+    """ Get the tail of the component log file
+    """       
+    
+    logFileName = DIRACROOT+'/runit/%s/%s/log/current' % (system,component)
+    if not os.path.exists(logFileName):
+      return S_ERROR('No log file found')
+    
+    logFile = open(logFileName,'r')
+    lines = logFile.readlines()
+    logFile.close()
+    
+    if len(lines) < 100:
+      return S_OK( '\n'.join(lines) )
+    else:
+      tail = '\n'.join(lines[-100:])
+      return S_OK(tail)
+    
