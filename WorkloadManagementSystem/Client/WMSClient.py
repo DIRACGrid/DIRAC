@@ -10,7 +10,6 @@ from DIRAC.Core.DISET.RPCClient                import RPCClient
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC                                     import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities                      import File
-from DIRAC.WorkloadManagementSystem.Client.SandboxClient       import SandboxClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient  import SandboxStoreClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
 
@@ -18,7 +17,7 @@ import os, commands
 
 class WMSClient:
 
-  def __init__(self, jobManagerClient=False, sbRPCClient = False, sbTransferClient = False, useCertificates=False):
+  def __init__( self, jobManagerClient = False, sbRPCClient = False, sbTransferClient = False, useCertificates = False ):
     """ WMS Client constructor
     """
     gProxyManager.uploadProxy()
@@ -30,13 +29,13 @@ class WMSClient:
 ###############################################################################
 
   def __getInputSandboxEntries( self, classAdJob ):
-    if classAdJob.lookupAttribute("InputSandbox"):
-      inputSandbox = classAdJob.get_expression("InputSandbox")
-      inputSandbox = inputSandbox.replace('","',"\n")
-      inputSandbox = inputSandbox.replace('{',"")
-      inputSandbox = inputSandbox.replace('}',"")
-      inputSandbox = inputSandbox.replace('"',"")
-      inputSandbox = inputSandbox.replace(',',"")
+    if classAdJob.lookupAttribute( "InputSandbox" ):
+      inputSandbox = classAdJob.get_expression( "InputSandbox" )
+      inputSandbox = inputSandbox.replace( '","', "\n" )
+      inputSandbox = inputSandbox.replace( '{', "" )
+      inputSandbox = inputSandbox.replace( '}', "" )
+      inputSandbox = inputSandbox.replace( '"', "" )
+      inputSandbox = inputSandbox.replace( ',', "" )
       inputSandbox = inputSandbox.split()
     else:
       inputSandbox = []
@@ -45,12 +44,12 @@ class WMSClient:
 
   #This are the NEW methods
 
-  def __uploadInputSandbox(self, classAdJob):
+  def __uploadInputSandbox( self, classAdJob ):
     """Checks the validity of the job Input Sandbox.
        The function returns the list of Input Sandbox files.
        The total volume of the input sandbox is evaluated
     """
-    sandboxClient = SandboxStoreClient(useCertificates=self.useCertificates,rpcClient = self.sbRPCClient, transferClient = self.sbTransferClient )
+    sandboxClient = SandboxStoreClient( useCertificates = self.useCertificates, rpcClient = self.sbRPCClient, transferClient = self.sbTransferClient )
     inputSandbox = self.__getInputSandboxEntries( classAdJob )
 
     realFiles = []
@@ -72,19 +71,19 @@ class WMSClient:
     for file in realFiles:
       if not os.path.exists( file ):
         badFiles.append( file )
-        print "inputSandbox file/directory "+file+" not found"
+        print "inputSandbox file/directory " + file + " not found"
         continue
       okFiles.append( file )
 
     #print "Total size of the inputSandbox: "+str(totalSize)
     totalSize = File.getGlobbedTotalSize( okFiles )
     if badFiles:
-      result = S_ERROR('Input Sandbox is not valid')
+      result = S_ERROR( 'Input Sandbox is not valid' )
       result['BadFile'] = badFiles
       result['TotalSize'] = totalSize
       return result
 
-    if okFiles:   
+    if okFiles:
       result = sandboxClient.uploadFilesAsSandbox( okFiles )
       if not result[ 'OK' ]:
         return result
@@ -107,16 +106,16 @@ class WMSClient:
         return result
     return S_OK()
 
-  def newSubmitJob(self,jdl):
+  def submitJob( self, jdl ):
     """ Submit one job specified by its JDL to WMS
     """
-    
+
     if not self.jobManagerClient:
-      jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=self.useCertificates,timeout=120)
+      jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = self.useCertificates, timeout = 120 )
     else:
       jobManager = self.jobManagerClient
-    if os.path.exists(jdl):
-      fic = open (jdl, "r")
+    if os.path.exists( jdl ):
+      fic = open ( jdl, "r" )
       jdlString = fic.read()
       fic.close()
     else:
@@ -130,15 +129,15 @@ class WMSClient:
       jdlString = "[%s]" % jdlString
     classAdJob = ClassAd( jdlString )
     if not classAdJob.isOK():
-      return S_ERROR('Invalid job JDL')
+      return S_ERROR( 'Invalid job JDL' )
 
     # Check the size and the contents of the input sandbox
-    result = self.__uploadInputSandbox(classAdJob)
+    result = self.__uploadInputSandbox( classAdJob )
     if not result['OK']:
       return result
 
     # Submit the job now and get the new job ID
-    result = jobManager.submitJob(classAdJob.asJDL())
+    result = jobManager.submitJob( classAdJob.asJDL() )
 
     if not result['OK']:
       return result
@@ -147,11 +146,11 @@ class WMSClient:
       gProxyManager.uploadProxy()
 
     #print "Sandbox uploading"
-    return S_OK(jobID)
+    return S_OK( jobID )
 
   #This is the OLD method
 
-  def __checkInputSandbox(self, classAdJob):
+  def __checkInputSandbox( self, classAdJob ):
     """Checks the validity of the job Input Sandbox.
        The function returns the list of Input Sandbox files.
        The total volume of the input sandbox is evaluated
@@ -165,29 +164,29 @@ class WMSClient:
 
       totalSize = 0
       for file in inputSandbox:
-        if file.find('lfn:') != 0 and file.find('LFN:') != 0 and file.find( "SB:" ) != 0:
-          if not os.path.exists(file):
+        if file.find( 'lfn:' ) != 0 and file.find( 'LFN:' ) != 0 and file.find( "SB:" ) != 0:
+          if not os.path.exists( file ):
             badfile = file
-            print "inputSandbox file/directory "+file+" not found"
+            print "inputSandbox file/directory " + file + " not found"
             ok = 0
           else:
-            if os.path.isdir(file):
-              comm = 'du -b -s '+file
-              status,out = commands.getstatusoutput(comm)
+            if os.path.isdir( file ):
+              comm = 'du -b -s ' + file
+              status, out = commands.getstatusoutput( comm )
               try:
-                dirSize = int(out.split()[0])
-              except Exception,x:
-                print "Input Sandbox directory name",file,"is not valid !"
-                print str(x)
+                dirSize = int( out.split()[0] )
+              except Exception, x:
+                print "Input Sandbox directory name", file, "is not valid !"
+                print str( x )
                 badfile = file
                 ok = 0
               totalSize = totalSize + dirSize
             else:
-              totalSize = int(os.stat(file)[6]) + totalSize
+              totalSize = int( os.stat( file )[6] ) + totalSize
 
       #print "Total size of the inputSandbox: "+str(totalSize)
       if not ok:
-        result = S_ERROR('Input Sandbox is not valid')
+        result = S_ERROR( 'Input Sandbox is not valid' )
         result['BadFile'] = file
         result['TotalSize'] = totalSize
         return result
@@ -203,96 +202,34 @@ class WMSClient:
       result['InputSandbox'] = None
       return result
 
-  def oldSubmitJob(self,jdl):
-    """ Submit one job specified by its JDL to WMS
-    """
-    jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False,timeout=120)
-    sandbox = SandboxClient()
-    if os.path.exists(jdl):
-      fic = open (jdl, "r")
-      jdlString = fic.read()
-      fic.close()
-    else:
-      # If file JDL does not exist, assume that the JDL is
-      # passed as a string
-      jdlString = jdl
-    # Check the validity of the input JDL
-    classAdJob = ClassAd('['+jdlString+']')
-    if not classAdJob.isOK():
-      return S_ERROR('Invalid job JDL')
-
-    # Check the size and the contents of the input sandbox
-    result = self.__checkInputSandbox(classAdJob)
-    if not result['OK']:
-      return result
-
-    inputs = result['InputSandbox']
-    insize = result['TotalSize']
-
-    # Submit the job now and get the new job ID
-    result = jobManager.submitJob(jdlString)
-
-    if not result['OK']:
-      return result
-    jobID = result['Value']
-    if 'requireProxyUpload' in result and result[ 'requireProxyUpload' ]:
-      gProxyManager.uploadProxy()
-
-    #print "Sandbox uploading"
-
-    # Upload input sandbox if any
-    if insize > 0:
-      result = sandbox.sendFiles(jobID,inputs)
-      #print result
-      if result['OK']:
-        result = sandbox.setSandboxReady(jobID)
-        if not result['OK']:
-          return S_ERROR('Failed to set the Input Sandbox flag to ready')
-      else:
-        return S_ERROR('Failed to upload the Input Sandbox')
-    else:
-      result = sandbox.setSandboxReady(jobID)
-      if not result['OK']:
-        return S_ERROR('Failed to set the Input Sandbox flag to ready')
-
-    return S_OK(jobID)
-
-  #Submit "decider"
-  def submitJob( self, jdl ):
-    if SandboxStoreClient().useOldSandboxes( 'Client' ):
-      result = self.oldSubmitJob( jdl )
-      return result
-    else:
-      return self.newSubmitJob( jdl )
-
-  def killJob(self,jobID):
+  def killJob( self, jobID ):
     """ Kill running job.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False,timeout=120)
-    result = jobManager.killJob(jobID)
+    jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False, timeout = 120 )
+    result = jobManager.killJob( jobID )
     return result
 
-  def deleteJob(self,jobID):
+  def deleteJob( self, jobID ):
     """ Delete job(s) from the WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False,timeout=120)
-    result = jobManager.deleteJob(jobID)
+    jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False, timeout = 120 )
+    result = jobManager.deleteJob( jobID )
     return result
 
-  def rescheduleJob(self,jobID):
+  def rescheduleJob( self, jobID ):
     """ Reschedule job(s) in WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False,timeout=120)
-    result = jobManager.rescheduleJob(jobID)
+    jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False, timeout = 120 )
+    result = jobManager.rescheduleJob( jobID )
     return result
 
-  def resetJob(self,jobID):
+  def resetJob( self, jobID ):
     """ Reset job(s) in WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False,timeout=120)
-    result = jobManager.resetJob(jobID)
+    jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False, timeout = 120 )
+    result = jobManager.resetJob( jobID )
     return result
