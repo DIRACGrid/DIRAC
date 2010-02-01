@@ -48,7 +48,6 @@ def getSVNFileContents( svnPath ):
     try:
       remoteFile = urllib2.urlopen( remoteLocation )
     except urllib2.URLError:
-      gLogger.exception()
       continue
     remoteData = remoteFile.read()
     remoteFile.close()
