@@ -5,7 +5,9 @@ Compile the externals
 """
 __RCSID__ = "$Id$"
 
-import sys, os, getopt, tarfile, urllib2, imp, signal, re, time
+import sys, os, getopt, tarfile, urllib2, imp, signal, re, time, stat
+
+executablePerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 
 try:
   from hashlib import md5
@@ -49,8 +51,6 @@ def logINFO( msg ):
   for line in msg.split( "\n" ):
     print "%s UTC dirac-install [INFO]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
   sys.stdout.flush()
-
-#TODO: Helper functions for logging as DIRAC, subprocess
 
 def alarmTimeoutHandler():
   raise Exception( 'Timeout' )
@@ -212,6 +212,28 @@ def fixBuildPaths():
   except:
     pass
 
+
+def runExternalsPostInstall():
+  """
+   If there are any postInstall in externals, run them
+  """
+  postInstallPath = os.path.join( cliParams.targetPath, cliParams.platform, "postInstall" )
+  if not os.path.isdir( postInstallPath ):
+    logDEBUG( "There's no %s directory. Skipping postInstall step" % postInstallPath )
+    return
+  postInstallSuffix = "-postInstall"
+  for scriptName in os.listdir( postInstallPath ):
+    suffixFindPos = scriptName.find( postInstallSuffix )
+    if suffixFindPos == -1 or not suffixFindPos == len( scriptName ) - len( postInstallSuffix ):
+      logDEBUG( "%s does not have the %s suffix. Skipping.." % ( scriptName, postInstallSuffix ) )
+      continue
+    scriptPath = os.path.join( postInstallPath, scriptName )
+    os.chmod( scriptPath , executablePerms )
+    logINFO( "Executing %s..." % scriptPath )
+    if os.system( "'%s' > '%s.out' 2> '%s.err'" % ( scriptPath, scriptPath, scriptPath ) ):
+      logERROR( "Post installation script %s failed. Check %s.err" % ( scriptPath, scriptPath ) )
+      sys.exit(1)
+
 ####
 # End of helper functions
 ####
@@ -371,6 +393,7 @@ else:
     if not downloadAndExtractTarball( extTar, cliParams.targetPath ):
       sys.exit( 1 )
     fixBuildPaths()
+    runExternalsPostInstall()
   else:
     if cliParams.buildIfNotAvailable:
       if os.system( buildCmd ):
