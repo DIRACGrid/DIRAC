@@ -24,7 +24,7 @@ class NotificationDB( DB ):
     if not result[ 'OK' ]:
       self.log.fatal( "Cannot initialize DB!", result[ 'Message' ] )
     self.__alarmQueryFields = [ 'alarmid', 'author', 'creationtime', 'modtime', 'subject',
-                                'status', 'priority', 'notifications', 'body', 'assignee' ]
+                                'status', 'priority', 'notifications', 'body', 'assignee', 'alarmkey' ]
     self.__alarmLogFields = [ 'timestamp', 'author', 'comment', 'modifications' ]
     self.__notificationQueryFields = ( 'id', 'user', 'seen', 'message', 'timestamp' )
     self.__newAlarmMandatoryFields = [ 'author', 'subject', 'status', 'notifications', 'body', 'assignee', 'priority' ]
@@ -195,6 +195,40 @@ class NotificationDB( DB ):
         self.log.error( "Couldn't set follower for alarm", varMsg )
     self.__notifyAlarm( alarmId )
     return S_OK( alarmId )
+
+  def deleteAlarmsByAlarmKey( self, alarmKeyList ):
+    alarmsIdList = []
+    for alarmKey in alarmKeyList:
+      result = self.__getAlarmIdFromKey( alarmKey )
+      if not result[ 'OK' ]:
+        return result
+      alarmId = result[ 'Value' ]
+      alarmsIdList.append( alarmId )
+    self.log.info( "Trying to delete alarms with:\n alamKey %s\n  alarmId %s" % ( alarmKeyList, alarmsIdList ) )
+    return self.deleteAlarmsByAlarmId( alarmsIdList )
+
+  def deleteAlarmsByAlarmId( self, alamIdList ):
+    self.log.info( "Trying to delete alarms with ids %s" % alamIdList )
+    try:
+      alamId = int( alamIdList )
+      alamIdList = [ alarmId ]
+    except:
+      pass
+
+    try:
+      alamIdList = [ int( alarmId ) for alarmId in alamIdList ]
+    except:
+      self.log.error( "At least one alarmId is not a number", str( alamIdList ) )
+      return S_ERROR( "At least one alarmId is not a number: %s" % str( alamIdList ) )
+
+    tablesToCheck = ( "ntf_AlarmLog", "ntf_AlarmFollowers", "ntf_Alarms" )
+    alamsSQLList = ",".join( [ "%d" % alarmId for alarmId in alamIdList ] )
+    for tableName in tablesToCheck:
+      delSql = "DELETE FROM `%s` WHERE AlarmId in ( %s )" % ( tableName, alamsSQLList )
+      result = self._update( delSql )
+      if not result[ 'OK' ]:
+        self.log.error( "Could not delete alarm", "from table %s: %s" % ( tableName, result[ 'Message' ] ) )
+    return S_OK()
 
   def __processUpdateAlarmModifications( self, modifications ):
     if type( modifications ) != types.DictType:

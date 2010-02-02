@@ -142,6 +142,19 @@ class NotificationHandler( RequestHandler ):
     """
     return gNotDB.getAlarms( selectDict, sortList, startItem, maxItems )
 
+  types_deleteAlarmsByAlarmId = [ ( ListType, IntType ) ]
+  def export_deleteAlarmsByAlarmId( self, alarmsIdList ):
+    """ Delete alarms by alarmId
+    """
+    return gNotDB.deleteAlarmsByAlarmId( alarmsIdList )
+
+  types_deleteAlarmsByAlarmKey = [ ( ListType, StringType ) ]
+  def export_deleteAlarmsByAlarmKey( self, alarmsKeyList ):
+    """ Delete alarms by alarmId
+    """
+    return gNotDB.deleteAlarmsByAlarmKey( alarmsKeyList )
+
+
   ###########################################################################
   # MANANGE ASSIGNEE GROUPS
   ###########################################################################

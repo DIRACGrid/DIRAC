@@ -112,6 +112,14 @@ class NotificationClient:
     rpcClient = self.__getRPCClient()
     return rpcClient.getAlarmInfo( alarmId )
 
+  def deleteAlarmsById( self, alarmIdList ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.deleteAlarmsByAlarmId( alarmIdList )
+
+  def deleteAlarmsByKey( self, alarmKeyList ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.deleteAlarmsByAlarmKey( alarmKeyList )
+
   ###########################################################################
   # MANANGE ASSIGNEE GROUPS
   ###########################################################################
