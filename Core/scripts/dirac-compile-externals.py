@@ -27,10 +27,10 @@ def downloadExternalsSVN( destPath, version = False ):
     version = "trunk"
   extPath = os.path.join( destPath, "Externals" )
   osCmd = "svn export http://svnweb.cern.ch/guest/dirac/Externals/%s '%s'" % ( snapshotPath, extPath )
-  return not os.system( osCmd )          
-  
+  return not os.system( osCmd )
+
 def downloadExternalsTar( destPath, version = False ):
-  netReadSize = 1024*1024
+  netReadSize = 1024 * 1024
   if version and not version.lower() in ( "trunk", "head" ):
     snapshotPath = "tags/%s" % version
   else:
@@ -56,10 +56,10 @@ def downloadExternalsTar( destPath, version = False ):
       os.rename( os.path.join( destPath, entry ), os.path.join( destPath, "Externals" ) )
       break
   return True
-  
+
 def downloadFileFromSVN( filePath, destPath, isExecutable = False, filterLines = [] ):
   fileName = os.path.basename( filePath )
-  print " - Downloading %s" % fileName 
+  print " - Downloading %s" % fileName
   viewSVNLocation = "http://svnweb.cern.ch/world/wsvn/dirac/DIRAC/trunk/%s?op=dl&rev=0" % filePath
   anonymousLocation = 'http://svnweb.cern.ch/guest/dirac/DIRAC/trunk/%s' % filePath
   downOK = False
@@ -70,7 +70,7 @@ def downloadFileFromSVN( filePath, destPath, isExecutable = False, filterLines =
     except urllib2.URLError:
       continue
     remoteData = remoteFile.read()
-    remoteFile.close()      
+    remoteFile.close()
     if remoteData:
       localFile = open( localPath , "wb" )
       localFile.write( remoteData )
@@ -81,7 +81,7 @@ def downloadFileFromSVN( filePath, destPath, isExecutable = False, filterLines =
     osCmd = "svn cat 'http://svnweb.cern.ch/guest/dirac/DIRAC/trunk/%s' > %s" % ( filePath, localPath )
     if os.system( osCmd ):
       print "Error: Could not retrieve %s from the web nor via SVN. Aborting..." % fileName
-      sys.exit(1)
+      sys.exit( 1 )
   if filterLines:
     fd = open( localPath, "rb" )
     fileContents = fd.readlines()
@@ -97,8 +97,8 @@ def downloadFileFromSVN( filePath, destPath, isExecutable = False, filterLines =
         fd.write( line )
     fd.close()
   if isExecutable:
-    os.chmod(localPath , executablePerms )
-  
+    os.chmod( localPath , executablePerms )
+
 def findDIRACRoot( path ):
   dirContents = os.listdir( path )
   if 'DIRAC' in dirContents and os.path.isdir( os.path.join( path, 'DIRAC' ) ):
@@ -107,7 +107,7 @@ def findDIRACRoot( path ):
   if parentPath == path or len( parentPath ) == 1:
     return False
   return findDIRACRoot( os.path.dirname( path ) )
-  
+
 def resolvePackagesToBuild( compType, buildCFG, alreadyExplored = [] ):
   explored = list( alreadyExplored )
   packagesToBuild = []
@@ -126,7 +126,7 @@ def resolvePackagesToBuild( compType, buildCFG, alreadyExplored = [] ):
     if pkg not in packagesToBuild:
       packagesToBuild.append( pkg )
   return packagesToBuild
-  
+
 def fixAbsoluteLinks( path ):
   for entry in os.listdir( path ):
     entryPath = os.path.join( path, entry )
@@ -141,8 +141,8 @@ def fixAbsoluteLinks( path ):
             common = i
           else:
             break
-        absLinkDirSplit = absLinkDirSplit[ common+1: ]
-        absDestDirSplit = absDestDirSplit[ common+1: ]
+        absLinkDirSplit = absLinkDirSplit[ common + 1: ]
+        absDestDirSplit = absDestDirSplit[ common + 1: ]
         finalDestination = [ ".." for d in absLinkDirSplit ]
         finalDestination.extend( absDestDirSplit )
         finalDestination = os.path.join( *finalDestination )
@@ -152,14 +152,14 @@ def fixAbsoluteLinks( path ):
         os.symlink( finalDestination, entryPath )
     elif os.path.isdir( entryPath ):
       fixAbsoluteLinks( entryPath )
-  
-cmdOpts = ( ( 'd:', 'destination=',   'Destination where to build the externals' ),
-            ( 't:', 'type=',          'Type of compilation (default: client)' ),
+
+cmdOpts = ( ( 'd:', 'destination=', 'Destination where to build the externals' ),
+            ( 't:', 'type=', 'Type of compilation (default: client)' ),
             ( 'e:', 'externalsPath=', 'Path to the externals sources' ),
-            ( 'v:', 'version=',       'Version of the externals to compile (default will be trunk)' ),
-            ( 'h',  'help',           'Show this help' ),
+            ( 'v:', 'version=', 'Version of the externals to compile (default will be trunk)' ),
+            ( 'h', 'help', 'Show this help' ),
             ( 'i:', 'pythonVersion=', 'Python version to compile (25/24)' ),
-            ( 'f',  'fixLinksOnly',   'Only fix absolute soft links' )
+            ( 'f', 'fixLinksOnly', 'Only fix absolute soft links' )
           )
 
 compExtVersion = False
@@ -168,16 +168,16 @@ compDest = False
 compExtSource = False
 onlyFixLinks = False
 compVersionDict = { 'PYTHONVERSION' : '2.5' }
-  
-optList, args = getopt.getopt( sys.argv[1:], 
+
+optList, args = getopt.getopt( sys.argv[1:],
                                "".join( [ opt[0] for opt in cmdOpts ] ),
                                [ opt[1] for opt in cmdOpts ] )
 for o, v in optList:
   if o in ( '-h', '--help' ):
     print "Usage %s <opts>" % sys.argv[0]
     for cmdOpt in cmdOpts:
-      print "%s %s : %s" % ( cmdOpt[0].ljust(4), cmdOpt[1].ljust(15), cmdOpt[2] )
-    sys.exit(1)
+      print "%s %s : %s" % ( cmdOpt[0].ljust( 4 ), cmdOpt[1].ljust( 15 ), cmdOpt[2] )
+    sys.exit( 1 )
   elif o in ( '-t', '--type' ):
     compType = v.lower()
   elif o in ( '-e', '--externalsPath' ):
@@ -185,10 +185,10 @@ for o, v in optList:
   elif o in ( '-d', '--destination' ):
     compDest = v
   elif o in ( '-v', '--version' ):
-    compExtVersion = v  
+    compExtVersion = v
   elif o in ( '-i', '--pythonversion' ):
     compVersionDict[ 'PYTHONVERSION' ] = ".".join( [ c for c in v ] )
-  elif o in ( '-f', '--fixLinksOnly'):
+  elif o in ( '-f', '--fixLinksOnly' ):
     onlyFixLinks = True
 
 if not compDest:
@@ -196,7 +196,7 @@ if not compDest:
   diracRoot = findDIRACRoot( basePath )
   if not diracRoot:
     print "Error: Could not find DIRAC root"
-    sys.exit(1)
+    sys.exit( 1 )
   platformPath = os.path.join( diracRoot, "DIRAC", "Core", "Utilities", "Platform.py" )
   platFD = open( platformPath, "r" )
   Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
@@ -205,34 +205,34 @@ if not compDest:
   print "Using platform %s" % platform
   if not platform or platform == "ERROR":
     print >> sys.stderr, "Can not determine local platform"
-    sys.exit(-1)
+    sys.exit( -1 )
   compDest = os.path.join( diracRoot, platform )
 
 if onlyFixLinks:
   print "Fixing absolute links"
   fixAbsoluteLinks( compDest )
-  sys.exit(0)
+  sys.exit( 0 )
 
-if compDest:  
+if compDest:
   if os.path.isdir( compDest ):
     print "Error: %s already exists! Please make sure target dir does not exist" % compDest
-    sys.exit(1)
-    
+    sys.exit( 1 )
+
 if not compExtSource:
   workDir = tempfile.mkdtemp( prefix = "ExtDIRAC" )
   print "Creating temporary work dir at %s" % workDir
   downOK = False
-  for fnc in ( downloadExternalsTar, downloadExternalsSVN ):
+  for fnc in ( downloadExternalsSVN, downloadExternalsTar ):
     if fnc( workDir, compExtVersion ):
       downOK = True
       break
   if not downOK:
     print "Oops! Could not download Externals!"
-    sys.exit(1)
+    sys.exit( 1 )
   externalsDir = os.path.join( workDir, "Externals" )
 else:
   externalsDir = compExtSource
-  
+
 downloadFileFromSVN( "DIRAC/Core/scripts/dirac-platform.py", externalsDir, True )
 downloadFileFromSVN( "DIRAC/Core/Utilities/CFG.py", externalsDir, False, [ '@gCFGSynchro' ] )
 
@@ -247,7 +247,7 @@ buildCFG = CFG.CFG().loadFromFile( os.path.join( externalsDir, "builds.cfg" ) )
 if compType not in buildCFG.listSections():
   print "Invalid compilation type %s" % compType
   print " Valid ones are: %s" % ", ".join( buildCFG.listSections() )
-  sys.exit(1)
+  sys.exit( 1 )
 
 packagesToBuild = resolvePackagesToBuild( compType, buildCFG )
 
@@ -261,7 +261,7 @@ finalPackages = []
 for prog in packagesToBuild:
   for k in compVersionDict:
     finalPackages.append( prog.replace( "$%s$" % k, compVersionDict[k] ) )
-    
+
 print "Building %s" % ", ".join ( finalPackages )
 for prog in finalPackages:
   print "== BUILDING %s == " % prog
@@ -276,11 +276,10 @@ for prog in finalPackages:
   if ret:
     print "Oops! Error while compiling %s" % prog
     print "Take a look at %s for more info" % buildErrPath
-    sys.exit(1)
-    
+    sys.exit( 1 )
+
 print "Fixing absolute links"
 fixAbsoluteLinks( compDest )
 
 
 
-  
