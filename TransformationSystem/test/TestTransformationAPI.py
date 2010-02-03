@@ -1,14 +1,14 @@
 #! /usr/bin/env python
 from DIRAC.Interfaces.API.Transformation        import Transformation
 from DIRAC.Core.Utilities.List                  import sortList
-import unittest,types,time
+import unittest,types,time,re
 
 class APITestCase(unittest.TestCase):
 
   def setUp(self):
     self.transID = 0
     transName = 'APITestCaseTransformation-%s' % time.strftime("%Y%m%d-%H:%M:%S")
-    res = self.__createTransformation(transName)
+    res = self._createTransformation(transName)
     self.assert_(res['OK'])
     self.transID = res['Value']
 
@@ -17,7 +17,7 @@ class APITestCase(unittest.TestCase):
       tAPI = Transformation(self.transID)
       tAPI.deleteTransformation()
 
-  def __createTransformation(self,transName):
+  def _createTransformation(self,transName,plugin='Standard'):
     tAPI = Transformation()
     res = tAPI.setTransformationName(transName)
     self.assert_(res['OK'])
@@ -27,6 +27,8 @@ class APITestCase(unittest.TestCase):
     res = tAPI.setLongDescription(longDescription)
     self.assert_(res['OK'])
     res = tAPI.setType('MCSimulation')
+    self.assert_(res['OK'])
+    res = tAPI.setPlugin(plugin)
     self.assert_(res['OK'])
     res = tAPI.addTransformation()
     self.assert_(res['OK'])
@@ -216,32 +218,50 @@ class APITestCase(unittest.TestCase):
     self.assertEqual(res['Value']['Total'],2)
     self.assertEqual(res['Value']['Assigned'],1)
     self.assertEqual(res['Value']['Processed'],1)
-  
+ 
+  def test_getTransformations(self):  
+    """ Testing the selection of transformations from the database
+
+          getTransformations
+         
+        This will select all the transformations associated to this test suite and remove them.
+    """
+    tAPI = Transformation()
+    res = tAPI.getTransformations()
+    self.assert_(res['OK'])
+    parameters = ['TransformationID', 'TransformationName', 'Description', 'LongDescription', 'CreationDate', 'LastUpdate', 'AuthorDN', 'AuthorGroup', 'Type', 'Plugin', 'AgentType', 'Status', 'FileMask', 'TransformationGroup', 'GroupSize', 'InheritedFrom', 'Body', 'MaxNumberOfJobs', 'EventsPerJob']
+    self.assertEqual(sortList(res['ParameterNames']),sortList(parameters))
+    self.assertEqual(sortList(res['Value'][0].keys()),sortList(parameters))
+    self.assertEqual(len(res['Value']),len(res['Records']))
+    ignore = self.transID
+    for transDict in res['Value']:
+      name = transDict['TransformationName']
+      if re.search('APITestCaseTransformation',name):
+        transID = transDict['TransformationID']
+        if transID != ignore:
+          tAPI = Transformation(transID)
+          res = tAPI.deleteTransformation()
+          self.assert_(res['OK'])
+    self.transID = ignore
+
+  def test_getTransformationLogging(self):
+    """ Testing the obtaining of transformation logging information
+     
+          getTransformationLogging()
+    """
+    tAPI = Transformation(self.transID)
+    res = tAPI.setStatus('Active')
+    self.assert_(res['OK'])
+    res = tAPI.extendTransformation(100)
+    self.assert_(res['OK'])
+    res = tAPI.setStatus('Completed')
+    self.assert_(res['OK'])
+    res = tAPI.cleanTransformation()
+    self.assert_(res['OK'])
+    res = tAPI.getTransformationLogging()
+    self.assert_(res['OK'])
+    self.assertEqual(len(res['Value']),6)
+ 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(APITestCase)  
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
-
-"""
-tAPI.getTransformationLogging(printOutput=True)
-tAPI.getTransformations(printOutput=True)
-
-tAPI = Transformation()
-tAPI.setTransformationName("TransformationTestName")
-tAPI.setDescription("This is a short description")
-tAPI.setLongDescription("This is a very long description isnt it")
-tAPI.setType('Replication')
-tAPI.setPlugin('Broadcast')
-tAPI.setTargetSE(['GRIDKA_MC-DST'])
-tAPI.setSourceSE(['CERN_MC_M-DST'])
-print tAPI.generateBKQuery(test=True,printOutput=True)
-res = tAPI.generateBkQuery(test=True,printOutput=True)
-if not res['OK']:
-  print res['Message']
-else:
-  bkQuery = res['Value']
-  print bkQuery
-  print tAPI.setBkQuery(bkQuery)
-  print tAPI.getBkQuery()
-  print tAPI.getBkQueryID()
-  print tAPI.removeTransformationBkQuery()
-"""
