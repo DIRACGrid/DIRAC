@@ -3,7 +3,7 @@ from DIRAC.TransformationSystem.Client.Transformation   import Transformation
 from DIRAC.Core.Utilities.List                          import sortList
 import unittest,types,time,re
 
-class TestClientTransformation(unittest.TestCase):
+class TestClientTransformationTestCase(unittest.TestCase):
 
   def setUp(self):
     self.transID = 0
@@ -263,5 +263,5 @@ class TestClientTransformation(unittest.TestCase):
     self.assertEqual(len(res['Value']),6)
  
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(APITestCase)  
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestClientTransformationTestCase)  
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
