@@ -46,7 +46,9 @@ class DataOperationsClient:
       raise InvalidRes, where(self, self.getQualityStats)
       
     if not pr_quality['OK']:
-      raise RSSException, where(self, self.getQualityStats) + pr_quality['Message']
+      exceptStr = where(self, self.getQualityStats) + pr_quality['Message']
+      gLogger.exception(exceptStr,'',errorMsg)
+      return {'TransferQuality': None}
     
     pr_q_d = pr_quality['Value']['data']
     

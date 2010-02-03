@@ -39,6 +39,8 @@ class GOCDBClient:
       raise InvalidRes, where(self, self.getStatus)
     
     resCDL = self._curlDownload(self._entity)
+    if resCDL is None:
+      return {'DT':'None'}
     
     res = self._xmlParsing(resCDL, granularity)
     
@@ -69,14 +71,19 @@ class GOCDBClient:
     gocdb_ep = gocdbpi_url + "method=" + gocdbpi_method + "&topentity=" + gocdbpi_topEntity + "&ongoing_only=yes"
     #gocdb_ep = gocdbpi_url + "method=" + gocdbpi_method + "&topentity=" + gocdbpi_topEntity + "&startdate=" + gocdbpi_startDate
 
-    opener = urllib2.build_opener()
     try:
+      opener = urllib2.build_opener()
       dtPage = opener.open(gocdb_ep)
     except IOError, errorMsg:
       exceptStr = where(self, self._curlDownload) + " while opening %s." % gocdb_ep
       gLogger.exception(exceptStr,'',errorMsg)
+      return None
       #return S_ERROR("%s%s" % (exceptStr,errorMsg))
-
+    except Exception, errorMsg:
+      exceptStr = where(self, self._curlDownload) + " while opening %s." % gocdb_ep
+      gLogger.exception(exceptStr,'',errorMsg)
+      return None
+      
     dt = dtPage.read()
     
     opener.close()
@@ -100,6 +107,8 @@ class GOCDBClient:
 #      gLogger.exception(exceptStr,'',errorMsg)
 #      #return S_ERROR("%s%s" % (exceptStr,errorMsg))
     except Exception, errorMsg:
+      exceptStr = where(self, self._xmlParsing)
+      gLogger.exception(exceptStr,'',errorMsg)
       return None    
 
     downtimes = doc.getElementsByTagName("DOWNTIME")

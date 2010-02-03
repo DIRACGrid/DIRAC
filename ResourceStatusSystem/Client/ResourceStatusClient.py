@@ -83,7 +83,10 @@ class ResourceStatusClient:
 
     res = self.rsS.getStorageElementsStats(granularity, name)
     if not res['OK']:
-      raise RSSException, where(self, self.getStorageElementsStats) + " " + res['Message'] 
+#      raise RSSException, where(self, self.getStorageElementsStats) + " " + res['Message'] 
+      exceptStr = where(self, self.getStorageElementsStats)
+      gLogger.exception(exceptStr,'', res['Message'])
+      return None
     else:
       return res['Value']
 
@@ -128,7 +131,10 @@ class ResourceStatusClient:
 
     res = self.rsS.getGeneralName(granularity, name, toGranularity)
     if not res['OK']:
-      raise RSSException, where(self, self.getGeneralName) + " " + res['Message'] 
+#      raise RSSException, where(self, self.getGeneralName) + " " + res['Message'] 
+      exceptStr = where(self, self.getGeneralName)
+      gLogger.exception(exceptStr,'', res['Message'])
+      return None
     else:
       return res['Value']
 
@@ -159,7 +165,10 @@ class ResourceStatusClient:
       raise InvalidRes, where(self, self.getMonitoredStatus)
     
     if not res['OK']:
-      raise RSSException, where(self, self.getMonitoredStatus) + " " + res['Message'] 
+#      raise RSSException, where(self, self.getMonitoredStatus) + " " + res['Message'] 
+      exceptStr = where(self, self.getMonitoredStatus)
+      gLogger.exception(exceptStr,'', res['Message'])
+      return None
     else:
       try:
         if granularity in ('Resource', 'Resources'):

@@ -85,10 +85,14 @@ class SAMResultsClient:
     # SAMDB-PI to query
     samdb_ep = samdbpi_url + samdbpi_method + "VO_name=LHCb" + "&Site_name=" + samdbpi_site + samdbpi_test
     
-    opener = urllib2.build_opener()
     try:
+      opener = urllib2.build_opener()
       samPage = opener.open(samdb_ep)
     except IOError, errorMsg:
+      exceptStr = where(self, self._curlDownload) + " while opening %s." % samdb_ep
+      gLogger.exception(exceptStr,'',errorMsg)
+      return None
+    except:
       exceptStr = where(self, self._curlDownload) + " while opening %s." % samdb_ep
       gLogger.exception(exceptStr,'',errorMsg)
       return None
@@ -156,9 +160,8 @@ class SAMResultsClient:
       
     
     except Exception, errorMsg:
-#      exceptStr = where(self, self._xmlParsing)
-#      gLogger.exception(exceptStr,'',errorMsg)
-#      return {'Status':'na'}
+      exceptStr = where(self, self._xmlParsing)
+      gLogger.exception(exceptStr,'',errorMsg)
       return None
     
     return status

@@ -149,7 +149,10 @@ class PilotsClient:
       raise InvalidRes, where(self, self.getPilotSimpleEff)
     
     if not res['OK']:
-      raise RSSException, where(self, self.getPilotsSimpleEff) + " " + res['Message'] 
+#      raise RSSException, where(self, self.getPilotsSimpleEff) + " " + res['Message'] 
+      exceptStr = where(self, self.getPilotsSimpleEff)
+      gLogger.exception(exceptStr,'', res['Message'])
+      return {'PilotsEff': None}
     
     try:
       if granularity in ('Site', 'Sites'):
