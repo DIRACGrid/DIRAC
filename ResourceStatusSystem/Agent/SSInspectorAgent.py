@@ -56,7 +56,7 @@ class SSInspectorAgent(AgentModule):
     
     except Exception, x:
       errorStr = where(self, self.execute)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr,'',x)
       return S_ERROR(errorStr)
 
 
@@ -87,25 +87,29 @@ class SSInspectorAgent(AgentModule):
     """
     
     try:
-      res = self.rsDB.getStuffToCheck('Sites', Configurations.Sites_check_freq, 
-                                      self.maxNumberOfThreads - 1)
-    except RSSDBException, x:
-      gLogger.error(whoRaised(x))
-    except RSSException, x:
-      gLogger.error(whoRaised(x))
-
-    for siteTuple in res:
-      if siteTuple[0] in self.SiteNamesInCheck:
-        break
-      siteL = ['Site']
-      for x in siteTuple:
-        siteL.append(x)
-      self.lockObj.acquire()
       try:
-        self.SiteNamesInCheck.insert(0, siteL[1])
-        self.SitesToBeChecked.insert(0, siteL)
-      finally:
-        self.lockObj.release()
+        res = self.rsDB.getStuffToCheck('Sites', Configurations.Sites_check_freq, 
+                                        self.maxNumberOfThreads - 1)
+      except RSSDBException, x:
+        gLogger.exception(whoRaised(x))
+      except RSSException, x:
+        gLogger.exception(whoRaised(x))
+  
+      for siteTuple in res:
+        if siteTuple[0] in self.SiteNamesInCheck:
+          break
+        siteL = ['Site']
+        for x in siteTuple:
+          siteL.append(x)
+        self.lockObj.acquire()
+        try:
+          self.SiteNamesInCheck.insert(0, siteL[1])
+          self.SitesToBeChecked.insert(0, siteL)
+        finally:
+          self.lockObj.release()
+    
+    except Exception, x:
+      gLogger.exception(whoRaised(x),'',x)
 
 
   def _executeCheck(self):
@@ -113,27 +117,32 @@ class SSInspectorAgent(AgentModule):
     Create istance of a PEP, instantiated popping a site from lists.
     """
     
-    if len(self.SitesToBeChecked) > 0:
+    try:
+    
+      if len(self.SitesToBeChecked) > 0:
+          
+        self.lockObj.acquire()
+        try:
+          toBeChecked = self.SitesToBeChecked.pop()
+        finally:
+          self.lockObj.release()
         
-      self.lockObj.acquire()
-      try:
-        toBeChecked = self.SitesToBeChecked.pop()
-      finally:
-        self.lockObj.release()
-      
-      granularity = toBeChecked[0]
-      siteName = toBeChecked[1]
-      status = toBeChecked[2]
-      formerStatus = toBeChecked[3]
-      siteType = toBeChecked[4]
-      
-      gLogger.info("Checking Site %s, with status %s" % (siteName, status))
-      newPEP = PEP(granularity = granularity, name = siteName, status = status, 
-                   formerStatus = formerStatus, siteType = siteType)
-      newPEP.enforce()
+        granularity = toBeChecked[0]
+        siteName = toBeChecked[1]
+        status = toBeChecked[2]
+        formerStatus = toBeChecked[3]
+        siteType = toBeChecked[4]
+        
+        gLogger.info("Checking Site %s, with status %s" % (siteName, status))
+        newPEP = PEP(granularity = granularity, name = siteName, status = status, 
+                     formerStatus = formerStatus, siteType = siteType)
+        newPEP.enforce()
+  
+        self.lockObj.acquire()
+        try:
+          self.SiteNamesInCheck.remove(siteName)
+        finally:
+          self.lockObj.release()
 
-      self.lockObj.acquire()
-      try:
-        self.SiteNamesInCheck.remove(siteName)
-      finally:
-        self.lockObj.release()
+    except Exception, x:
+      gLogger.exception(whoRaised(x),'',x)

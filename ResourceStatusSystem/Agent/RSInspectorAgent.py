@@ -58,7 +58,7 @@ class RSInspectorAgent(AgentModule):
     
     except Exception, x:
       errorStr = where(self, self.execute)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr,'',x)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -92,25 +92,31 @@ class RSInspectorAgent(AgentModule):
     """
 
     try:
-      res = self.rsDB.getStuffToCheck('Resources', Configurations.Resources_check_freq, 
-                                      self.maxNumberOfThreads - 1)
-    except RSSDBException, x:
-      gLogger.error(whoRaised(x))
-    except RSSException, x:
-      gLogger.error(whoRaised(x))
- 
-    for resourceTuple in res:
-      if resourceTuple[0] in self.ResNamesInCheck:
-        break
-      resourceL = ['Resource']
-      for x in resourceTuple:
-        resourceL.append(x)
-      self.lockObj.acquire()
+    
       try:
-        self.ResNamesInCheck.insert(0, resourceL[1])
-        self.ResToBeChecked.insert(0, resourceL)
-      finally:
-        self.lockObj.release()
+        res = self.rsDB.getStuffToCheck('Resources', Configurations.Resources_check_freq, 
+                                        self.maxNumberOfThreads - 1)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+   
+      for resourceTuple in res:
+        if resourceTuple[0] in self.ResNamesInCheck:
+          break
+        resourceL = ['Resource']
+        for x in resourceTuple:
+          resourceL.append(x)
+        self.lockObj.acquire()
+        try:
+          self.ResNamesInCheck.insert(0, resourceL[1])
+          self.ResToBeChecked.insert(0, resourceL)
+        finally:
+          self.lockObj.release()
+
+    except Exception, x:
+      gLogger.exception(whoRaised(x),'',x)
+
         
 #############################################################################
 
@@ -119,29 +125,35 @@ class RSInspectorAgent(AgentModule):
     Create instance of a PEP, instantiated popping a resource from lists.
     """
     
-    if len(self.ResToBeChecked) > 0:
-        
-      self.lockObj.acquire()
-      try:
-        toBeChecked = self.ResToBeChecked.pop()
-      finally:
-        self.lockObj.release()
-      
-      granularity = toBeChecked[0]
-      resourceName = toBeChecked[1]
-      status = toBeChecked[2]
-      formerStatus = toBeChecked[3]
-      siteType = toBeChecked[4]
-      resourceType = toBeChecked[5]
-      
-      gLogger.info("Checking Resource %s, with status %s" % (resourceName, status))
-      newPEP = PEP(granularity = granularity, name = resourceName, status = status, 
-                   formerStatus = formerStatus, siteType = siteType, 
-                   resourceType = resourceType)
-      newPEP.enforce()
+    try:
 
-      self.lockObj.acquire()
-      try:
-        self.ResNamesInCheck.remove(resourceName)
-      finally:
-        self.lockObj.release()
+      if len(self.ResToBeChecked) > 0:
+          
+        self.lockObj.acquire()
+        try:
+          toBeChecked = self.ResToBeChecked.pop()
+        finally:
+          self.lockObj.release()
+        
+        granularity = toBeChecked[0]
+        resourceName = toBeChecked[1]
+        status = toBeChecked[2]
+        formerStatus = toBeChecked[3]
+        siteType = toBeChecked[4]
+        resourceType = toBeChecked[5]
+        
+        gLogger.info("Checking Resource %s, with status %s" % (resourceName, status))
+        newPEP = PEP(granularity = granularity, name = resourceName, status = status, 
+                     formerStatus = formerStatus, siteType = siteType, 
+                     resourceType = resourceType)
+        newPEP.enforce()
+  
+        self.lockObj.acquire()
+        try:
+          self.ResNamesInCheck.remove(resourceName)
+        finally:
+          self.lockObj.release()
+        
+    except Exception, x:
+      gLogger.exception(whoRaised(x),'',x)
+      

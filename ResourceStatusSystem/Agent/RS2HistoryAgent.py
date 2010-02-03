@@ -49,6 +49,7 @@ class RS2HistoryAgent(AgentModule):
 
     
     try:
+      
       try:
         tablesWithHistory = self.rsDB.getTablesWithHistory()
       except RSSDBException, x:

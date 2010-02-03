@@ -58,7 +58,7 @@ class SeSInspectorAgent(AgentModule):
     
     except Exception, x:
       errorStr = where(self, self.execute)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr,'',x)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -80,7 +80,7 @@ class SeSInspectorAgent(AgentModule):
 
     except Exception, x:
       errorStr = where(self, self.execute)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr,'',x)
       return S_ERROR(errorStr)
       
 #############################################################################
@@ -92,24 +92,29 @@ class SeSInspectorAgent(AgentModule):
     """
     
     try:
-      res = self.rsDB.getStuffToCheck('Services', maxN = self.maxNumberOfThreads - 1)
-    except RSSDBException, x:
-      gLogger.error(whoRaised(x))
-    except RSSException, x:
-      gLogger.error(whoRaised(x))
 
-    for serviceTuple in res:
-      if serviceTuple[0] in self.ServiceNamesInCheck:
-        break
-      serviceL = ['Service']
-      for x in serviceTuple:
-        serviceL.append(x)
-      self.lockObj.acquire()
       try:
-        self.ServiceNamesInCheck.insert(0, serviceL[1])
-        self.ServicesToBeChecked.insert(0, serviceL)
-      finally:
-        self.lockObj.release()
+        res = self.rsDB.getStuffToCheck('Services', maxN = self.maxNumberOfThreads - 1)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+  
+      for serviceTuple in res:
+        if serviceTuple[0] in self.ServiceNamesInCheck:
+          break
+        serviceL = ['Service']
+        for x in serviceTuple:
+          serviceL.append(x)
+        self.lockObj.acquire()
+        try:
+          self.ServiceNamesInCheck.insert(0, serviceL[1])
+          self.ServicesToBeChecked.insert(0, serviceL)
+        finally:
+          self.lockObj.release()
+
+    except Exception, x:
+      gLogger.exception(whoRaised(x),'',x)
 
 #############################################################################
 
@@ -118,29 +123,35 @@ class SeSInspectorAgent(AgentModule):
     Create instance of a PEP, instantiated popping a service from lists.
     """
     
-    if len(self.ServicesToBeChecked) > 0:
-        
-      self.lockObj.acquire()
-      try:
-        toBeChecked = self.ServicesToBeChecked.pop()
-      finally:
-        self.lockObj.release()
-      
-      granularity = toBeChecked[0]
-      serviceName = toBeChecked[1]
-      status = toBeChecked[2]
-      formerStatus = toBeChecked[3]
-      serviceType = toBeChecked[4]
-      
-      gLogger.info("Checking Service %s, with status %s" % (serviceName, status))
-      newPEP = PEP(granularity = granularity, name = serviceName, status = status, 
-                   formerStatus = formerStatus, serviceType = serviceType)
-      newPEP.enforce()
+    try:
 
-      self.lockObj.acquire()
-      try:
-        self.ServiceNamesInCheck.remove(serviceName)
-      finally:
-        self.lockObj.release()
+      if len(self.ServicesToBeChecked) > 0:
+          
+        self.lockObj.acquire()
+        try:
+          toBeChecked = self.ServicesToBeChecked.pop()
+        finally:
+          self.lockObj.release()
+        
+        granularity = toBeChecked[0]
+        serviceName = toBeChecked[1]
+        status = toBeChecked[2]
+        formerStatus = toBeChecked[3]
+        serviceType = toBeChecked[4]
+        
+        gLogger.info("Checking Service %s, with status %s" % (serviceName, status))
+        newPEP = PEP(granularity = granularity, name = serviceName, status = status, 
+                     formerStatus = formerStatus, serviceType = serviceType)
+        newPEP.enforce()
+  
+        self.lockObj.acquire()
+        try:
+          self.ServiceNamesInCheck.remove(serviceName)
+        finally:
+          self.lockObj.release()
+
+    except Exception, x:
+      gLogger.exception(whoRaised(x),'',x)
+
 
 #############################################################################

@@ -77,7 +77,7 @@ class StElInspectorAgent(AgentModule):
 
     except Exception, x:
       errorStr = where(self, self.execute)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr,'', x)
       return S_ERROR(errorStr)
       
   def _getStorageElementsToCheck(self):
@@ -87,26 +87,31 @@ class StElInspectorAgent(AgentModule):
     """
     
     try:
-      res = self.rsDB.getStuffToCheck('StorageElements', 
-                                      Configurations.StorageElements_check_freq, 
-                                      self.maxNumberOfThreads - 1)
-    except RSSDBException, x:
-      gLogger.error(whoRaised(x))
-    except RSSException, x:
-      gLogger.error(whoRaised(x))
-
-    for storageElementTuple in res:
-      if storageElementTuple[0] in self.StorageElementNamesInCheck:
-        break
-      storageElementL = ['StorageElement']
-      for x in storageElementTuple:
-        storageElementL.append(x)
-      self.lockObj.acquire()
+      
       try:
-        self.StorageElementNamesInCheck.insert(0, storageElementL[1])
-        self.StorageElementsToBeChecked.insert(0, storageElementL)
-      finally:
-        self.lockObj.release()
+        res = self.rsDB.getStuffToCheck('StorageElements', 
+                                        Configurations.StorageElements_check_freq, 
+                                        self.maxNumberOfThreads - 1)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+  
+      for storageElementTuple in res:
+        if storageElementTuple[0] in self.StorageElementNamesInCheck:
+          break
+        storageElementL = ['StorageElement']
+        for x in storageElementTuple:
+          storageElementL.append(x)
+        self.lockObj.acquire()
+        try:
+          self.StorageElementNamesInCheck.insert(0, storageElementL[1])
+          self.StorageElementsToBeChecked.insert(0, storageElementL)
+        finally:
+          self.lockObj.release()
+
+    except Exception, x:
+      gLogger.exception(whoRaised(x),'',x)
 
 
   def _executeCheck(self):
@@ -114,27 +119,33 @@ class StElInspectorAgent(AgentModule):
     Create istance of a PEP, instantiated popping a storageElement from lists.
     """
     
-    if len(self.StorageElementsToBeChecked) > 0:
+    try:
+    
+      if len(self.StorageElementsToBeChecked) > 0:
+          
+        self.lockObj.acquire()
+        try:
+          toBeChecked = self.StorageElementsToBeChecked.pop()
+        finally:
+          self.lockObj.release()
         
-      self.lockObj.acquire()
-      try:
-        toBeChecked = self.StorageElementsToBeChecked.pop()
-      finally:
-        self.lockObj.release()
-      
-      granularity = toBeChecked[0]
-      storageElementName = toBeChecked[1]
-      status = toBeChecked[2]
-      formerStatus = toBeChecked[3]
-      siteType = toBeChecked[4]
-      
-      gLogger.info("Checking StorageElement %s, with status %s" % (storageElementName, status))
-      newPEP = PEP(granularity = granularity, name = storageElementName, status = status, 
-                   formerStatus = formerStatus, siteType = siteType)
-      newPEP.enforce()
-
-      self.lockObj.acquire()
-      try:
-        self.StorageElementNamesInCheck.remove(storageElementName)
-      finally:
-        self.lockObj.release()
+        granularity = toBeChecked[0]
+        storageElementName = toBeChecked[1]
+        status = toBeChecked[2]
+        formerStatus = toBeChecked[3]
+        siteType = toBeChecked[4]
+        
+        gLogger.info("Checking StorageElement %s, with status %s" % (storageElementName, status))
+        newPEP = PEP(granularity = granularity, name = storageElementName, status = status, 
+                     formerStatus = formerStatus, siteType = siteType)
+        newPEP.enforce()
+  
+        self.lockObj.acquire()
+        try:
+          self.StorageElementNamesInCheck.remove(storageElementName)
+        finally:
+          self.lockObj.release()
+        
+    except Exception, x:
+      gLogger.exception(whoRaised(x),'',x)
+        
