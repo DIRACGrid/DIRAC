@@ -4,9 +4,10 @@
 """
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+from DIRAC import gConfig
 
 #############################################################################
-# site/resource checking frequency
+# alarms and notifications
 #############################################################################
 
 notified_users = ['fstagni', 'roma']
@@ -14,6 +15,72 @@ notified_users = ['fstagni', 'roma']
 #from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 #nc = NotificationClient()
 #notified_users = nc.getAssigneeGroups()['Value']['RSS_alarms']
+
+AssigneeGroups = {
+  'VladRob_PROD': 
+  {'Users': ['roma', 'santinel'],
+   'Setup': ['LHCb-Production'],
+   'Granularity': ValidRes,
+   'SiteType': ValidSiteType, 
+   'Notifications': ['Web', 'Mail']
+   }, 
+  'VladRob_DEV': 
+  {'Users': ['roma', 'santinel'],
+   'Setup': ['LHCb-Development', 'LHCb-Certification'], 
+   'Granularity': ValidRes,
+   'SiteType': ValidSiteType, 
+   'Notifications': ['Web']
+   }, 
+  'me_PROD': 
+  {'Users': ['fstagni'],
+   'Setup': ['LHCb-Production'],
+   'Granularity': ValidRes,
+   'SiteType': ValidSiteType, 
+   'Notifications': ['Web', 'Mail']
+   }, 
+  'me_DEV': 
+  {'Users': ['fstagni'],
+   'Setup': ['LHCb-Development', 'LHCb-Certification'], 
+   'Granularity': ValidRes,
+   'SiteType': ValidSiteType, 
+   'Notifications': ['Web', 'Mail']
+   }, 
+  'Andrew_PROD': 
+  {'Users': ['acsmith'],
+   'Setup': ['LHCb-Production'],
+   'Granularity': ['StorageElement'],
+   'SiteType': ValidSiteType, 
+   'Notifications': ['Web', 'Mail']
+   }, 
+  'Andrew_DEV': 
+  {'Users': ['acsmith'],
+   'Setup': ['LHCb-Development', 'LHCb-Certification'], 
+   'Granularity': ['StorageElement'],
+   'SiteType': ValidSiteType, 
+   'Notifications': ['Web']
+   }, 
+}
+
+
+_setup = gConfig.getValue("DIRAC/Setup")
+
+def getUsersToNotify(granularity, siteType = None, setup = _setup ):
+  
+  users = []
+  notifications = []
+  
+  NOTIFinfo = {}
+  NOTIF = []
+  
+  for ag in AssigneeGroups.keys():
+    
+    if setup in AssigneeGroups[ag]['Setup'] and granularity in AssigneeGroups[ag]['Granularity']:
+      if siteType is not None and siteType not in AssigneeGroups[ag]['SiteType']:
+        continue
+      NOTIF.append( {'Users':AssigneeGroups[ag]['Users'], 'Notifications':AssigneeGroups[ag]['Notifications']} )
+        
+  return NOTIF
+
 
 #############################################################################
 # policies evaluated

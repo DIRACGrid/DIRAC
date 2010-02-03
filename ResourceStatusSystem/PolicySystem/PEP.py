@@ -12,6 +12,9 @@
        c. other....
 """
 
+from DIRAC import gConfig
+from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
@@ -35,6 +38,12 @@ class PEP:
     :attr:`formerStatus`: string - optional former status
 
     :attr:`reason`: string - optional reason for last status change
+
+    :attr:`siteType`: string - optional site type
+
+    :attr:`serviceType`: string - optional service type
+
+    :attr:`resourceType`: string - optional resource type
 
     :attr:`futureEnforcement`: optional
       [ 
@@ -131,11 +140,12 @@ class PEP:
   
      self.__futureGranularity (optional)
      
-     pdpIn: a custom PDP object (optional)
+     :params:
+       :attr:`pdpIn`: a custom PDP object (optional)
   
-     rsDBIn: a custom database object (optional)
+       :attr:`rsDBIn`: a custom database object (optional)
      
-     knownInfo: a string of known provided information (optional)
+       :attr:`knownInfo`: a string of known provided information (optional)
     """
 
     if pdpIn is not None:
@@ -212,15 +222,28 @@ class PEP:
         # raise alarm, right now makes a simple notification
         
         if res['Action']:
-          from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+
           nc = NotificationClient()
           
-          notif = "ResourceStatusSystem notification: "
-          notif = notif + "%s %s is perceived as" %(self.__granularity, self.__name) 
+          notif = "%s %s is perceived as" %(self.__granularity, self.__name) 
           notif = notif + " %s. Reason: %s." %(res['Status'], res['Reason'])
           
-          for user in Configurations.notified_users:
-            nc.addNotificationForUser(user, notif)
+          NOTIF_D = Configurations.getUsersToNotify(self.__granularity, self.__siteType)
+          
+          for notification in NOTIF_D:
+            for user in notification['Users']:
+              if 'Web' in notification['Notifications']:
+                nc.addNotificationForUser(user, notif)
+              if 'Mail' in notification['Notifications']:
+                mailMessage = "Granularity: %s \n" %self.__granularity
+                mailMessage = mailMessage + "Name: %s\n" %self.__name
+                mailMessage = mailMessage + "New perceived status: %s\n" %res['Status']
+                mailMessage = mailMessage + "Reason for status change: %s\n" %res['Reason']
+                nc.sendMail(gConfig.getValue("Security/Users/%s/email" %user), 
+                            '%s: %s' %(self.__name, res['Status']), mailMessage)
+          
+#          for alarm in Configurations.alarms_list:
+#            nc.updateAlarm(alarmKey = alarm, comment = notif) 
           
       if 'Collective_PolType' in self.__policyType:
         # do something

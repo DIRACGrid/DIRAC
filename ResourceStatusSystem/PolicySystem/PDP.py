@@ -187,29 +187,6 @@ class PDP:
     for i in range(len(policies)):
       self.__policyInternalInvocation(granularity, name, status, policy, args, policies[i])
     
-#    maxNumberOfThreads = len(policies)
-#    threadPool = ThreadPool(1, len(policies))
-#    if not threadPool:
-#      raise RSSException, where(self, self._policyInvocation)
-#    
-#    try:
-#      for i in range(maxNumberOfThreads):
-#        policyResGetter = ThreadedJob(self.__policyInternalInvocation, 
-#                                      args = [granularity, name, status, policy, args, 
-#                                              policies[i]])
-#        threadPool.queueJob(policyResGetter)
-#  
-#      #threadPool.processAllResults()
-#      threadPool.processResults()
-#    
-#
-#    except Exception, x:
-#      raise RSSException, where(self, self._policyInvocation) + x
-#
-#    
-#    while(threadPool.isWorking()):
-#      time.sleep(1)
-    
     return self.policyResults
       
 #############################################################################
