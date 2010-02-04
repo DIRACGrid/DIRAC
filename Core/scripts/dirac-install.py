@@ -232,7 +232,7 @@ def runExternalsPostInstall():
     logINFO( "Executing %s..." % scriptPath )
     if os.system( "'%s' > '%s.out' 2> '%s.err'" % ( scriptPath, scriptPath, scriptPath ) ):
       logERROR( "Post installation script %s failed. Check %s.err" % ( scriptPath, scriptPath ) )
-      sys.exit(1)
+      sys.exit( 1 )
 
 ####
 # End of helper functions
@@ -382,7 +382,7 @@ extAvailable = "%s.tar.gz" % ( extTar ) in availableTars
 
 buildCmd = os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-compile-externals.py" )
 buildCmd = "%s -t '%s' -d '%s' -v '%s' -i '%s'" % ( buildCmd, cliParams.externalsType,
-                                                    cliParams.targetPath+'/'+cliParams.platform, 
+                                                    os.path.join( cliParams.targetPath, cliParams.platform ),
                                                     extVersion,
                                                     cliParams.pythonVersion )
 if cliParams.buildExternals:
