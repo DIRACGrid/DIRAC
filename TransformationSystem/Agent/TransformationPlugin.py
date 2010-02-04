@@ -2,7 +2,7 @@
 """
 from DIRAC                                                  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SiteSEMapping                     import getSitesForSE
-from DIRAC.Core.Utilities.List                              import breakListIntoChunks, sortList, uniqueElements
+from DIRAC.Core.Utilities.List                              import breakListIntoChunks, sortList, uniqueElements,randomize
 from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
 import random
 
@@ -35,12 +35,14 @@ class TransformationPlugin:
       return S_ERROR(x)
 
   def _Broadcast(self):
-    """ This plug-in takes files found at the sourceSE and broadcasts to all targetSEs.
-    """
+    """ This plug-in takes files found at the sourceSE and broadcasts to all (or a selection of) targetSEs. """
     if not self.params:
       return S_ERROR("TransformationPlugin._Broadcast: The 'Broadcast' plugin requires additional parameters.")
-    sourceSEs = self.params['SourceSE'].split(',')
-    targetSEs = self.params['TargetSE'].split(',')
+    sourceSEs = eval(self.params['SourceSE'])
+    targetSEs = eval(self.params['TargetSE'])
+    destinations = int(self.params.get('Destinations',0))
+    if destinations and (destinations >= targetSEs):
+      destinations = 0
 
     fileGroups = self._getFileGroups(self.data)
     targetSELfns = {}
@@ -53,16 +55,21 @@ class TransformationPlugin:
           atSource = True
       if not atSource:
         continue
-      targets = []
-      for targetSE in targetSEs:
-        site = self._getSiteForSE(targetSE)['Value']
-        if not site in sourceSites:
-          targets.append(targetSE)
-          sourceSites.append(site)
-      strTargetSEs = str.join(',',targets)
-      if not targetSELfns.has_key(strTargetSEs):
-        targetSELfns[strTargetSEs] = []
-      targetSELfns[strTargetSEs].extend(lfns)
+      
+      for lfn in lfns:
+        targets = []
+        sources = self._getSitesForSEs(ses)
+        for targetSE in randomize(targetSEs):
+          site = self._getSiteForSE(targetSE)['Value']
+          if not site in sources:
+            if (destinations) and (len(targets) >= destinations):
+              continue
+            targets.append(targetSE)
+            sources.append(site)
+        strTargetSEs = str.join(',',sortList(targets))
+        if not targetSELfns.has_key(strTargetSEs):
+          targetSELfns[strTargetSEs] = []
+        targetSELfns[strTargetSEs].append(lfn)
     tasks = []
     for ses,lfns in targetSELfns.items():
       tasks.append((ses,lfns))
