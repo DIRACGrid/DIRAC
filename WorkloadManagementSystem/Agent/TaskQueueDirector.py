@@ -139,7 +139,7 @@ from DIRAC.Resources.Computing.ComputingElement import getResourceDict
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, taskQueueDB
 
 from DIRAC.Core.Utilities.ThreadPool                       import ThreadPool
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig, List, Time, Source, systemCall, DictCache
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig, List, Time, systemCall, DictCache
 
 import random, time
 import DIRAC
