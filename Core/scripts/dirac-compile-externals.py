@@ -215,8 +215,8 @@ if onlyFixLinks:
 
 if compDest:
   if os.path.isdir( compDest ):
-    print "Error: %s already exists! Please make sure target dir does not exist" % compDest
-    sys.exit( 1 )
+    print "Warning: %s already exists! Please make sure target dir does not exist" % compDest
+    os.rename(compDest,compDest+'.old')
 
 if not compExtSource:
   workDir = tempfile.mkdtemp( prefix = "ExtDIRAC" )
