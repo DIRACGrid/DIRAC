@@ -76,7 +76,10 @@ class Transformation(API):
 
   def __setSE(self,se,seList):
     if type(seList) in types.StringTypes:
-      seList = seList.replace(',',' ').split()
+      try:
+        seList = eval(seList)
+      except:
+        seList = seList.replace(',',' ').split()
     res = self.__checkSEs(seList)
     if not res['OK']:
       return res
