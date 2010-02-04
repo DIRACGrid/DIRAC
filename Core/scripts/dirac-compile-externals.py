@@ -13,6 +13,7 @@ import getopt
 import sys
 import stat
 import imp
+import shutil
 
 svnPublicRoot = "http://svnweb.cern.ch/guest/dirac/Externals/%s"
 tarWebRoot = "http://svnweb.cern.ch/world/wsvn/dirac/Externals/%s/?op=dl&rev=0&isdir=1"
@@ -216,6 +217,8 @@ if onlyFixLinks:
 if compDest:
   if os.path.isdir( compDest ):
     print "Warning: %s already exists! Please make sure target dir does not exist" % compDest
+    if os.path.exists(compDest+'.old'):
+      shutil.rmtree(compDest+'.old')
     os.rename(compDest,compDest+'.old')
 
 if not compExtSource:
