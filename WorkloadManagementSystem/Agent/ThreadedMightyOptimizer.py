@@ -80,7 +80,9 @@ class ThreadedMightyOptimizer( AgentModule ):
         return S_OK()
       if not result[ 'OK' ]:
         returnValue = result
-    print "ADL: Deleting job %s" % jobId
+        gLogger.error( "Could not send job to optimizer\n",
+                       "\tJob: %s\n\Message: %s" % ( jobId,
+                                                     result[ 'Message' ] ) )
     self._optimizingJobs.deleteJob( jobId )
     return returnValue
 
@@ -121,6 +123,7 @@ class JobsInTheWorks:
   def __init__( self, maxTime = 0 ):
     self.__jobs = {}
     self.__maxTime = maxTime
+    self.log = gLogger.getSubLogger( "JobsBeingOptimized" )
 
   @gOptimizingJobs
   def addJobs( self, jobsList ):
@@ -131,6 +134,7 @@ class JobsInTheWorks:
       if job not in self.__jobs:
         self.__jobs[ job ] = now
         addedJobs.append( job )
+    self.log.info( "Added %s jobs to the list" % addedJobs )
     return addedJobs
 
   def __purgeExpiredJobs( self ):
@@ -147,6 +151,7 @@ class JobsInTheWorks:
   def deleteJob( self, job ):
     try:
       if job in self.__jobs:
+        self.log.info( "Deleted job %s from the list" % job )
         del( self.__jobs[ job ] )
     except Exception, e:
       print "=" * 20
@@ -241,18 +246,22 @@ class ThreadedOptimizer( threading.Thread ):
                        "\tJob: %s\n\tOptimizer: %s\n\tMessage: %s" % ( jobId,
                                                                        self.optimizerName,
                                                                        result[ 'Message' ] ) )
-        continue
-      #Job optimization was OK
-      nextOptimizer = result[ 'Value' ]
-      #Check if the JDL has changed
-      newJDL = jobDef[ 'classad' ].asJDL()
-      if newJDL != jobDef[ 'jdl' ]:
-        jobDef[ 'jdl' ] = newJDL
-      #If there's a new optimizer set it!
-      if nextOptimizer:
-        jobAttrs[ 'Status' ] = 'Checking'
-        jobAttrs[ 'MinorStatus' ] = nextOptimizer
-      self.dispatchFunction( jobId, jobAttrs, jobDef, nextOptimizer )
+        self.dispatchFunction( jobId, jobAttrs, jobDef, False )
+      else:
+        #Job optimization was OK
+        nextOptimizer = result[ 'Value' ]
+        #Check if the JDL has changed
+        newJDL = jobDef[ 'classad' ].asJDL()
+        if newJDL != jobDef[ 'jdl' ]:
+          jobDef[ 'jdl' ] = newJDL
+        #If there's a new optimizer set it!
+        if nextOptimizer:
+          jobAttrs[ 'Status' ] = 'Checking'
+          jobAttrs[ 'MinorStatus' ] = nextOptimizer
+          gLogger.info( "Sending job %s to next optimizer: %s" % ( jobId, nextOptimizer ) )
+        else:
+          gLogger.info( "Finished optimizing job %s" % jobId )
+        self.dispatchFunction( jobId, jobAttrs, jobDef, nextOptimizer )
 
 
 
