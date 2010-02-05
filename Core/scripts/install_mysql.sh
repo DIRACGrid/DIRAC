@@ -13,15 +13,19 @@ for dir in /opt/dirac/mysql/db /opt/dirac/mysql/log ; do
   [ -e $dir ] && echo "Existing directory $dir" && echo "Skip MySQL installation" && exit
 done
 
-echo -n 'Enter MySQL root password:'
-read -t 30 -s passwd || exit 1
-echo
-export MYSQL_ROOT_PWD="$passwd"
+if [ -z "$MYSQL_ROOT_PWD" ] ; then
+  echo -n 'Enter MySQL root password:'
+  read -t 30 -s passwd || exit 1
+  echo
+  export MYSQL_ROOT_PWD="$passwd"
+fi  
 
-echo -n 'Enter Dirac password:'
-read -t 30 -s diracpwd || exit 1
-echo
-export MYSQL_DIRAC_PWD="$diracpwd"
+if [ -z "$MYSQL_DIRAC_PWD" ] ; then
+  echo -n 'Enter Dirac password:'
+  read -t 30 -s diracpwd || exit 1
+  echo
+  export MYSQL_DIRAC_PWD="$diracpwd"
+fi
 
 mkdir -p /opt/dirac/mysql/db
 mkdir -p /opt/dirac/mysql/log
