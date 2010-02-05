@@ -12,7 +12,7 @@ import time
 import os
 import threading
 import Queue
-from DIRAC  import gLogger, gConfig, gMonitor,S_OK, S_ERROR
+from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB         import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB  import JobLoggingDB
@@ -22,16 +22,16 @@ from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 
 gOptimizerLoadSync = ThreadSafe.Synchronizer()
 
-class ThreadedMightyOptimizer(AgentModule):
+class ThreadedMightyOptimizer( AgentModule ):
 
   __jobStates = [ 'Received', 'Checking' ]
-  __defaultValidOptimizers = [ 'WorkloadManagement/JobPath', 
-                               'WorkloadManagement/JobSanity', 
-                               'WorkloadManagement/JobScheduling', 
-                               'WorkloadManagement/TaskQueue', 
+  __defaultValidOptimizers = [ 'WorkloadManagement/JobPath',
+                               'WorkloadManagement/JobSanity',
+                               'WorkloadManagement/JobScheduling',
+                               'WorkloadManagement/TaskQueue',
                                ]
 
-  def initialize(self):
+  def initialize( self ):
     """ Standard constructor
     """
     self.jobDB = JobDB()
@@ -44,7 +44,7 @@ class ThreadedMightyOptimizer(AgentModule):
 
   def execute( self ):
     #Get jobs from DB
-    result = self.jobDB.selectJobs(  { 'Status': self.__jobStates  } )
+    result = self.jobDB.selectJobs( { 'Status': self.__jobStates  } )
     if not result[ 'OK' ]:
       gLogger.error( "Cannot retrieve jobs in states %s" % self.__jobStates )
       return result
@@ -63,19 +63,19 @@ class ThreadedMightyOptimizer(AgentModule):
     if not result[ 'OK' ]:
       gLogger.error( "Cannot retrieve attributes for %s jobs %s" % len( newJobsList ) )
       return result
-    jobsToProcess =  result[ 'Value' ]
+    jobsToProcess = result[ 'Value' ]
     for jobId in jobsToProcess:
-      self.log.info( "== Processing job %s == " % jobId  )
+      self.log.info( "== Processing job %s == " % jobId )
       jobAttrs = jobsToProcess[ jobId ]
       result = self.__dispatchJob( jobId, jobAttrs, False )
       if not result[ 'OK' ]:
         gLogger.error( "There was a problem optimizing job", "JID %s: %s" % ( jobId, result[ 'Message' ] ) )
     return S_OK()
-  
+
   def __dispatchJob( self, jobId, jobAttrs, jobDef, keepOptimizing = True ):
     returnValue = S_OK()
     if keepOptimizing:
-      result = self.__sendJobToOptimizer(jobId, jobAttrs, jobDef )
+      result = self.__sendJobToOptimizer( jobId, jobAttrs, jobDef )
       if result[ 'OK' ] and result[ 'Value' ]:
         return S_OK()
       if not result[ 'OK' ]:
@@ -83,7 +83,7 @@ class ThreadedMightyOptimizer(AgentModule):
     print "ADL: Deleting job %s" % jobId
     self._optimizingJobs.deleteJob( jobId )
     return returnValue
-    
+
   def __sendJobToOptimizer( self, jobId, jobAttrs, jobDef ):
     optimizerName = self.__getNextOptimizerName( jobAttrs )
     if not optimizerName:
@@ -91,7 +91,7 @@ class ThreadedMightyOptimizer(AgentModule):
     if optimizerName not in self.am_getOption( "ValidOptimizers", self.__defaultValidOptimizers ):
       return S_OK( False )
     if optimizerName not in self._threadedOptimizers:
-      to = ThreadedOptimizer( optimizerName, self.am_getModuleParam( 'fullName' ), 
+      to = ThreadedOptimizer( optimizerName, self.am_getModuleParam( 'fullName' ),
                               self.__dispatchJob )
       result = to.initialize( self.jobDB, self.jobLoggingDB )
       if not result[ 'OK' ]:
@@ -99,7 +99,7 @@ class ThreadedMightyOptimizer(AgentModule):
       self._threadedOptimizers[ optimizerName ] = to
     self._threadedOptimizers[ optimizerName ].optimizeJob( jobId, jobAttrs, jobDef )
     return S_OK( True )
-    
+
   def __getNextOptimizerName( self, jobAttrs ):
     if jobAttrs[ 'Status' ] == 'Received':
       optList = "JobPath"
@@ -109,7 +109,7 @@ class ThreadedMightyOptimizer(AgentModule):
       return False
     optList = List.fromChar( optList, "/" )
     if len( optList ) == 1:
-      optList.insert( 0, "WorkloadManagement")
+      optList.insert( 0, "WorkloadManagement" )
     if len( optList ) > 2:
       optList[1] = "/".join( optList[1:] )
     return "/".join( optList )
@@ -117,11 +117,11 @@ class ThreadedMightyOptimizer(AgentModule):
 gOptimizingJobs = ThreadSafe.Synchronizer()
 
 class JobsInTheWorks:
-  
-  def __init__( self, maxTime = 0):
+
+  def __init__( self, maxTime = 0 ):
     self.__jobs = {}
     self.__maxTime = maxTime
-    
+
   @gOptimizingJobs
   def addJobs( self, jobsList ):
     now = time.time()
@@ -132,31 +132,31 @@ class JobsInTheWorks:
         self.__jobs[ job ] = now
         addedJobs.append( job )
     return addedJobs
-  
+
   def __purgeExpiredJobs( self ):
     if not self.__maxTime:
-      return 
+      return
     stillOnIt = {}
     now = time.time()
     for job in self.__jobs:
-      if now - self.__jobs[ job ] < self.__maxTime: 
+      if now - self.__jobs[ job ] < self.__maxTime:
         stillOnIt[ job ] = self.__jobs[ job ]
     self.__jobs = stillOnIt
-  
-  @gOptimizingJobs  
+
+  @gOptimizingJobs
   def deleteJob( self, job ):
     try:
       if job in self.__jobs:
         del( self.__jobs[ job ] )
     except Exception, e:
-      print "="*20
+      print "=" * 20
       print "EXCEPTION", e
       print "THIS SHOULDN'T HAPPEN"
-      print "="*20
-      
-  
+      print "=" * 20
+
+
 class ThreadedOptimizer( threading.Thread ):
-  
+
   def __init__( self, optimizerName, containerName, dispatchFunction ):
     threading.Thread.__init__( self )
     self.setDaemon( True )
@@ -164,7 +164,7 @@ class ThreadedOptimizer( threading.Thread ):
     self.containerName = containerName
     self.dispatchFunction = dispatchFunction
     self.jobQueue = Queue.Queue()
-    
+
   def initialize( self, jobDB, jobLoggingDB ):
     self.jobDB = jobDB
     self.jobLoggingDB = jobLoggingDB
@@ -175,7 +175,7 @@ class ThreadedOptimizer( threading.Thread ):
     self.optimizer = result[ 'Value' ]
     self.start()
     return S_OK()
-  
+
   @gOptimizerLoadSync
   def __loadOptimizer( self ):
     #Need to load an optimizer
@@ -193,7 +193,7 @@ class ThreadedOptimizer( threading.Thread ):
                                 globals(),
                                 locals(), agentName )
       except ImportError, e:
-        gLogger.info( "Can't load %s: %s" % ( opPyPath, str(e) ) )
+        gLogger.info( "Can't load %s: %s" % ( opPyPath, str( e ) ) )
         continue
       try:
         optimizerClass = getattr( optimizerModule, agentName )
@@ -205,10 +205,10 @@ class ThreadedOptimizer( threading.Thread ):
       except Exception, e:
         gLogger.exception( "Can't load optimizer %s with root module %s" % ( self.optimizerName, rootModule ) )
     return S_ERROR( "Can't load optimizer %s" % self.optimizerName )
-  
+
   def optimizeJob( self, jobId, jobAttrs, jobDef ):
     self.jobQueue.put( ( jobId, jobAttrs, jobDef ), block = True )
-  
+
   def run( self ):
     while True:
       jobId, jobAttrs, jobDef = self.jobQueue.get( block = True )
@@ -233,12 +233,17 @@ class ThreadedOptimizer( threading.Thread ):
         return result
       #Do the work
       result = self.optimizer.optimizeJob( jobId, jobDef[ 'classad' ] )
-      if not result[ 'OK' ]:
-        return result
-      nextOptimizer = result[ 'Value' ]
       #If there was a shifter proxy, unset it
       if shifterEnv:
         del( os.environ[ 'X509_USER_PROXY' ] )
+      if not result[ 'OK' ]:
+        gLogger.error( "Job failed optimization step\n",
+                       "\tJob: %s\n\tOptimizer: %s\n\tMessage: %s" % ( jobId,
+                                                                       self.optimizerName,
+                                                                       result[ 'Message' ] ) )
+        continue
+      #Job optimization was OK
+      nextOptimizer = result[ 'Value' ]
       #Check if the JDL has changed
       newJDL = jobDef[ 'classad' ].asJDL()
       if newJDL != jobDef[ 'jdl' ]:
