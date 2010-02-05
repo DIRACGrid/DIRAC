@@ -269,9 +269,10 @@ for o, v in optList:
     cliParams.release = v
   elif o in ( '-e', '--extraPackages' ):
     for pkg in [ p.strip() for p in v.split( "," ) if p.strip() ]:
-      iPos = pkg.find( "DIRAC" )
-      if iPos == -1 or iPos != len( pkg ) - 5:
-        pkg = "%sDIRAC" % pkg
+      if pkg != 'Web':
+        iPos = pkg.find( "DIRAC" )
+        if iPos == -1 or iPos != len( pkg ) - 5:
+          pkg = "%sDIRAC" % pkg
     if pkg not in cliParams.packagesToInstall:
       cliParams.packagesToInstall.append( pkg )
   elif o in ( '-t', '--installType' ):
