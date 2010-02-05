@@ -35,14 +35,20 @@ class DB(MySQL):
     self.dbUser = ''
     result = gConfig.getOption( self.cs_path+'/User')
     if not result['OK']:
-      self.log.fatal('Failed to get the configuration parameters: User')
-      return
+      # No individual user name found, try at the common place
+      result = gConfig.getOption('/Systems/Databases/User')
+      if not result['OK']:
+        self.log.fatal('Failed to get the configuration parameters: User')
+        return
     self.dbUser = result['Value']
     self.dbPass = ''
     result = gConfig.getOption( self.cs_path+'/Password')
     if not result['OK']:
-      self.log.fatal('Failed to get the configuration parameters: Password')
-      return
+      # No individual password found, try at the common place
+      result = gConfig.getOption('/Systems/Databases/Password')
+      if not result['OK']:
+        self.log.fatal('Failed to get the configuration parameters: Password')
+        return
     self.dbPass = result['Value']
     self.dbName = ''
     result = gConfig.getOption( self.cs_path+'/DBName')
