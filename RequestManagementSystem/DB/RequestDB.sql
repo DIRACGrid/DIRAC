@@ -28,7 +28,7 @@ CREATE TABLE Requests (
    SubmissionTime DATETIME,
    LastUpdate DATETIME,
    PRIMARY KEY (RequestID,RequestName,Status)
-);
+)ENGINE=INNODB;
 
 DROP TABLE IF EXISTS SubRequests;
 CREATE TABLE SubRequests (
@@ -49,7 +49,7 @@ CREATE TABLE SubRequests (
    SubmissionTime DATETIME,
    LastUpdate DATETIME,
    PRIMARY KEY (SubRequestID,Status,RequestType)
-);
+)ENGINE=INNODB;
 
 DROP TABLE IF EXISTS Files;
 CREATE TABLE Files (
@@ -66,7 +66,7 @@ CREATE TABLE Files (
    Attempt varchar(32),
    Error varchar(255),
    PRIMARY KEY (FileID,Status)
-);
+)ENGINE=INNODB;
 
 DROP TABLE IF EXISTS Datasets;
 CREATE TABLE Datasets(
@@ -74,6 +74,6 @@ CREATE TABLE Datasets(
    Dataset varchar(255) NOT NULL,
    Status varchar(32) DEFAULT 'NEW',
    PRIMARY KEY (Dataset,Status)
-);
+)ENGINE=INNODB;
 
 SOURCE DIRAC/DataManagementSystem/DB/TransferDB.sql

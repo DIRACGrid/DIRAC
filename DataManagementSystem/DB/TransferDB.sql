@@ -11,7 +11,7 @@ CREATE TABLE Channels (
    Files int(8) default 50,
    ChannelName  varchar(32),
    PRIMARY KEY (ChannelID,SourceSite,DestinationSite)
-);
+)ENGINE=INNODB;
 
 DROP TABLE IF EXISTS Channel;
 CREATE TABLE Channel (
@@ -31,7 +31,7 @@ CREATE TABLE Channel (
   LastUpdateTimeOrder DOUBLE(11,3) NOT NULL,
   CompletionTime DATETIME,
   PRIMARY KEY (ChannelID,FileID)
-);
+)ENGINE=INNODB;
 
 delimiter //
 CREATE TRIGGER channelAfterUpdate AFTER UPDATE ON Channel
@@ -62,7 +62,7 @@ CREATE TABLE FTSReq (
   LastMonitor datetime,
   PercentageComplete float default 0.0,
   PRIMARY KEY (FTSReqID,ChannelID)
-);
+)ENGINE=INNODB;
 
 DROP TABLE IF EXISTS FileToFTS;
 CREATE TABLE FileToFTS (
@@ -79,14 +79,14 @@ CREATE TABLE FileToFTS (
   SubmissionTime datetime,
   TerminalTime datetime,
   PRIMARY KEY (FileID,FTSReqID)
-);
+)ENGINE=INNODB;
 
 DROP TABLE IF EXISTS FTSReqLogging;
 CREATE TABLE FTSReqLogging (
   FTSReqID INTEGER NOT NULL,
   Event varchar(100),
   EventDateTime datetime
-);
+)ENGINE=INNODB;
 
 DROP TABLE IF EXISTS FileToCat;
 CREATE TABLE FileToCat (
@@ -101,7 +101,7 @@ CREATE TABLE FileToCat (
   SubmitTime  datetime NOT NULL,
   CompleteTime datetime,
   PRIMARY KEY (FileID,ChannelID,Status)
-);
+)ENGINE=INNODB;
 
 DROP TABLE IF EXISTS ReplicationTree;
 CREATE TABLE ReplicationTree (
@@ -110,4 +110,4 @@ CREATE TABLE ReplicationTree (
   AncestorChannel varchar(8) NOT NULL,
   Strategy varchar(32),
   CreationTime datetime NOT NULL
-);
+)ENGINE=INNODB;
