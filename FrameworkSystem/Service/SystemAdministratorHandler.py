@@ -5,11 +5,12 @@
 
 __RCSID__ = "$Id$"
 
-import os, re, shutil, time
+import os, re, shutil, time, socket
 from types import *
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, shellCall
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.FrameworkSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
+from DIRAC.Core.Utilities.CFG import CFG
 
 cmDB = None
 DIRACROOT = '/opt/dirac'
@@ -17,7 +18,10 @@ DIRACROOT = '/opt/dirac'
 def initializeSystemAdministratorHandler( serviceInfo ):
 
   global cmDB
-  cmDB = ComponentMonitoringDB()
+  try:
+    cmDB = ComponentMonitoringDB()
+  except Exception,x:
+    gLogger.warn('Failed to create an instance of ComponentMonitoringDB ')
   return S_OK()
 
 
@@ -398,3 +402,97 @@ class SystemAdministratorHandler( RequestHandler ):
     else:
       tail = '\n'.join(lines[-length:])
       return S_OK(tail)
+
+  def __executeMySQLCommand(self,command,password):
+    """ Execute a MySQL command as root
+    """
+    command = 'echo %s | mysql -u root -p%s' % (command,password)
+    result = shellCall(0,command)
+    if not result['OK']:
+      return S_ERROR('Failed shell call')
+    output = result['Value'][1].strip()
+    return S_OK(output)
+
+  types_getDatabases = [ StringTypes ]
+  def export_getDatabases(self,password):
+    """ Get the list of installed databases
+    """
+    result = self.__executeMySQLCommand('show databases',password)
+    if not result['OK']:
+      return result
+    dbList = []
+    for db in result['Value'].split():
+      if not db in ['Database','information_schema','mysql','test']:
+        dbList.append(db)
+
+    return S_OK(dbList)
+
+  types_getSoftwareDatabases = [ ]
+  def export_getSoftwareDatabases(self):
+    """ Get the list of databases which software is installed in the system
+    """
+
+    extensions = [ x+'DIRAC' for x in gConfig.getValue('/DIRAC/Extensions',[]) ]
+    dbList = []
+    for extension in extensions+['DIRAC']:
+      result = shellCall(0,'find /opt/dirac/pro/%s -name "*.sql"' % extension)
+      if not result['OK']:
+        return result
+      outputs = result['Value'][1].strip().split()
+      for db in outputs:
+        dbName = os.path.basename(db)
+        if not dbName in dbList:
+          dbList.append(dbName.replace('.sql','')) 
+
+    return S_OK(dbList) 
+
+  def __createSection(self,cfg,section):
+    """ Create CFG section recursively
+    """
+
+    if cfg.isSection(section):
+      return
+    if section.find('/') != -1:
+      self.__createSection(cfg,os.path.dirname(section))
+    cfg.createNewSection(section)
+
+  types_setLocalConfigurationOption = [ StringTypes, StringTypes ]
+  def export_setLocalConfigurationOption(self,option,value):
+    """ Set option in the local configuration file
+    """
+    localCFG = CFG()
+    localCFG.loadFromFile('/opt/dirac/etc/dirac.cfg') 
+    section = os.path.dirname(option[1:])
+    if not localCFG.isSection(section):
+      self.__createSection(localCFG,section)
+    localCFG.setOption(option,value)
+    cfgfile = open( "/opt/dirac/etc/dirac.cfg", "w" )
+    cfgfile.write(str(localCFG))
+
+    return S_OK()
+
+  types_installMySQL = [ StringTypes, StringTypes ]
+  def export_installMySQL(self,rootpwd,diracpwd):
+    """ Install MySQL database server
+    """
+    currentEnv = os.environ
+    currentEnv['MYSQL_ROOT_PWD'] = rootpwd
+    currentEnv['MYSQL_DIRAC_PWD'] = diracpwd
+    result = shellCall(0,'/opt/dirac/pro/DIRAC/Core/scripts/install_mysql.sh',env=currentEnv)
+    return result
+    
+  types_installDatabase = [ StringTypes ]
+  def export_installDatabase(self,rootpwd,dbname):
+    """ Install a DIRAC database named dbname
+    """ 
+    diracpwd = gConfig.getValue('/Systems/Databases/Password','')
+    if not diracpwd:
+      return S_ERROR('Database password is not defined')
+    currentEnv = os.environ
+    currentEnv['MYSQL_ROOT_PWD'] = rootpwd
+    currentEnv['MYSQL_DIRAC_PWD'] = diracpwd
+    if not currentEnv.has_key('HOST'):
+      currentEnv['HOST'] = socket.getfqdn()
+
+    result = shellCall(0,'/opt/dirac/pro/DIRAC/Core/scripts/install_mysql_db.sh %s' % dbname,env=currentEnv)
+    return result
