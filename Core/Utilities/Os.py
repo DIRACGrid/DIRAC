@@ -7,9 +7,12 @@ __RCSID__ = "$Id$"
 
 from types                          import StringTypes
 from string                         import join
+import os
 
+import DIRAC
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import List
+from DIRAC import platformTuple
 
 import shutil, os
 
@@ -75,3 +78,110 @@ def getDirectorySize(path):
     size = int(output.split()[0])
     return size
 
+def sourceEnv( timeout, cmdTuple, inputEnv=None ):
+  """ Function to source configuration files in a platform dependent way and get 
+      back the environment
+  """
+
+  # add appropiated extension to first element of the tuple (the command)
+  envAsDict = '&& python -c "import os,sys ; print >> sys.stderr, os.environ"'
+
+  # 1.- Choose the right version of the configuration file
+  if DIRAC.platformTuple[0] == 'Windows':
+    cmdTuple[0] += '.bat'
+  else:
+    cmdTuple[0] += '.sh'
+
+  # 2.- Check that it exists
+  if not os.path.exists( cmdTuple[0] ):
+    result = DIRAC.S_ERROR( 'Missing script: %s' % cmdTuple[0] )
+    result['stdout'] = ''
+    result['stderr'] = 'Missing script: %s' % cmdTuple[0]
+    return result
+
+  # Source it in a platform dependent way:
+  # On windows the execution makes the environment to be inherit
+  # On Linux or Darwin use bash and source the file.
+  if DIRAC.platformTuple[0] == 'Windows':
+    # this needs to be tested
+    cmd = ' '.join(cmdTuple) + envAsDict
+    ret = DIRAC.shellCall( timeout, [ cmd ], env = inputEnv ) 
+  else:
+    cmdTuple.insert(0,'source')
+    cmd = ' '.join(cmdTuple) + envAsDict
+    ret = DIRAC.systemCall( timeout, [ '/bin/bash', '-c', cmd ], env = inputEnv )
+
+  # 3.- Now get back the result
+  stdout = ''
+  stderr = ''
+  result = DIRAC.S_OK()
+  if ret['OK']:
+    # The Command has not timeout, retrieve stdout and stderr
+    stdout = ret['Value'][1]
+    stderr = ret['Value'][2] 
+    if ret['Value'][0] == 0:
+      # execution was OK
+      try:
+        result['outputEnv'] = eval( stderr.split('\n')[-2]+'\n' )
+        stderr = '\n'.join(stderr.split('\n')[:-2])
+      except:
+        stdout = cmd + '\n' + stdout
+        result = DIRAC.S_ERROR('Could not parse Environment dictionary from stderr')
+    else:
+      # execution error
+      stdout = cmd + '\n' + stdout
+      result = DIRAC.S_ERROR('Execution returns %s' % ret['Value'][0] )
+  else:
+    # Timeout
+    stdout = cmd
+    stderr = ret['Message']
+    result = DIRAC.S_ERROR( stderr )
+
+  # 4.- Put stdout and stderr in result structure
+  result['stdout'] = stdout
+  result['stderr'] = stderr
+  
+  return result
+
+def unifyLdLibraryPath( path, newpath ):
+  """ for Linux and MacOS link all the files in the path in a single directory 
+      newpath. For that we go along the path in a reverse order and link all files
+      from the path, the latest appearance of a file will take precedence
+  """    
+  if not platformTuple[0] == 'Windows':
+    if os.path.exists( newpath ):
+      if not os.path.isdir(newpath):
+        try:
+          os.remove( newpath )
+        except:
+          return path
+    else:
+      try:
+        os.makedirs( newpath )
+      except:
+        return path
+    pathList = path.split(':')
+    for dummy in pathList[:]:
+      ldDir = pathList.pop()
+      if not os.path.isdir( ldDir ):
+        continue
+      ldLibs = os.listdir( ldDir )
+      for f in ldLibs:
+        newF = os.path.join( newpath,f )
+        ldF  = os.path.join( ldDir, f)
+        # 1. Check if the file exist (broken links will return False)
+        if os.path.isfile( ldF ):
+          ldF = os.path.realpath( ldF )
+          # 2. Check if the link is present already
+          if os.path.exists( newF ):
+            # 3. Check is the point to the same file
+            if os.path.samefile( newF, ldF ):
+              continue
+            else:
+              os.remove( newF )
+          # 4. Create the link
+          os.symlink( ldF, newF )
+    return newpath
+  else:
+    # Windows does nothing for the moment
+    return path
