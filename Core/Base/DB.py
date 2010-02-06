@@ -8,7 +8,7 @@
 
 __RCSID__ = "$Id$"
 
-import sys, types
+import sys, types, socket
 from DIRAC                           import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities.MySQL      import MySQL
@@ -32,6 +32,12 @@ class DB(MySQL):
       self.log.fatal('Failed to get the configuration parameters: Host')
       return
     self.dbHost = result['Value']
+    # Check if the host is the local one and then set it to 'localhost' to use
+    # a socket connection
+    if self.dbHost != 'localhost':
+      localHostName = socket.getfqdn()
+      if localHostName == self.dbHost:
+        self.dbHost = 'localhost'
     self.dbUser = ''
     result = gConfig.getOption( self.cs_path+'/User')
     if not result['OK']:
