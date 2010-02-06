@@ -33,20 +33,6 @@ CREATE TABLE Channel (
   PRIMARY KEY (ChannelID,FileID)
 )ENGINE=INNODB;
 
-delimiter //
-CREATE TRIGGER channelAfterUpdate AFTER UPDATE ON Channel
-FOR EACH ROW
-BEGIN
-  IF NEW.Status = 'Failed' THEN
-    UPDATE Files SET Status='Failed' WHERE FileID = NEW.FileID;
-  ELSEIF NEW.Status = 'Done' THEN
-    IF (SELECT COUNT(*) FROM Channel WHERE Status != 'Done' AND FileID = NEW.FileID) = 0 THEN 
-      UPDATE Files SET Status='Done' WHERE FileID = NEW.FileID;
-    END IF;
-  END IF;
-END;//
-delimiter ;
-
 DROP TABLE IF EXISTS FTSReq;
 CREATE TABLE FTSReq (
   FTSReqID INTEGER NOT NULL AUTO_INCREMENT,

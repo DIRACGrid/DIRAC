@@ -309,6 +309,25 @@ class TransferDB(DB):
 
   def updateCompletedChannelStatus(self,channelID,fileIDs):
     time_order = self.__getFineTime()
+    req = "select FileID,Status,COUNT(*) from Channel WHERE FileID IN (%s) GROUP BY FileID,Status;" % intListToString(fileIDs)
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    fileDict = {}
+    for fileID,status,count in res['Value']:
+      if not fileDict.has_key(fileID):
+        fileDict[fileID] = 0
+      if status != 'Done':
+        fileDict[fileID] += count
+    toUpdate = []
+    for fileID,notDone in fileDict.items():
+      if notDone == 1:   
+        toUpdate.append(fileID)
+    if toUpdate:
+      req = "UPDATE Files SET Status = 'Done' WHERE FileID IN (%s);" % intListToString(toUpdate)
+      res = self._update(req)
+      if not res['OK']:
+        return res
     req = "UPDATE Channel SET Status = 'Done',LastUpdate=UTC_TIMESTAMP(),LastUpdateTimeOrder = %s, CompletionTime=UTC_TIMESTAMP() WHERE FileID IN (%s) AND ChannelID = %s;" % (time_order,intListToString(fileIDs),channelID)
     res = self._update(req)
     if not res['OK']:
@@ -338,6 +357,11 @@ class TransferDB(DB):
     return S_OK(attrValue)
 
   def setFileChannelStatus(self,channelID,fileID,status):
+    if status == 'Failed':
+      req = "UPDATE Files SET Status = 'Failed' WHERE FileID = %d" % fileID
+      res = self._update(req)
+      if not res['OK']:
+        return res
     res = self.setFileChannelAttribute(channelID, fileID, 'Status', status)
     return res
 
