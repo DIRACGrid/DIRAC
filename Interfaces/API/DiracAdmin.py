@@ -25,7 +25,7 @@ from DIRAC.FrameworkSystem.Client.NotificationClient          import Notificatio
 from DIRAC.Core.Security.X509Chain                            import X509Chain
 from DIRAC.Core.Security                                      import Locations, CS
 from DIRAC                                                    import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.ldapsearchBDII                      import ldapSite, ldapCluster, ldapCE, ldapCEState, ldapCEVOView, ldapSA
+from DIRAC.Core.Utilities.Grid                                import ldapSite, ldapCluster, ldapCE, ldapCEState, ldapCEVOView, ldapSA
 
 import re, os, sys, string, time, shutil, types
 import pprint
