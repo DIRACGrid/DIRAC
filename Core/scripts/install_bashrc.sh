@@ -21,16 +21,6 @@ export PYTHONOPTIMIZE=x
 export HOME=$HOME
 PYTHONPATH=""
 LD_LIBRARY_PATH=""
-if [ -e /afs/cern.ch/lhcb/scripts/GridEnv.sh ] ; then
-  source /afs/cern.ch/lhcb/scripts/GridEnv.sh
-  #
-  # Forces their python first in the path, remove it.
-  # LCGPYTHON=\`which python\`
-  # LCGPATH=\`dirname \$LCGPYTHON\`
-  # PATH=\`echo \$PATH | awk -F: '{\$1="";OFS=":";print \$0}'\`
-  PYTHONPATH=\`echo \$PYTHONPATH | awk -F: '{\$1="" ; \$2="" ; OFS=":";print \$0}'\`
-  PYTHONPATH=""
-fi
 
 DIRAC=$DESTDIR/pro
 DIRACBIN=$DESTDIR/pro/$ARCH/bin
