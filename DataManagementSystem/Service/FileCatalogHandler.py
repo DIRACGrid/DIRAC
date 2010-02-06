@@ -138,7 +138,10 @@ class FileCatalogHandler(RequestHandler):
     user = result['username']
     group = result['group']
     return fcDB.createDirectory(lfns,user,group)
-  
+
+  ########################################################################
+  # Path operations
+  #  
   types_changePathOwner = [[ListType,DictType]+list(StringTypes)]
   def export_changePathOwner(self,lfns):
     """ Get replica info for the given list of LFNs
