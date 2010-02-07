@@ -1,7 +1,8 @@
 #!/bin/bash 
-# $HeadURL$
 ########################################################################
 # File :   install_seed.sh
+# $HeadURL$
+# $Id$
 #
 # This is scripts installs the bare minimal setup of DIRAC which allows
 # to manage the composition of the DIRAC service remotely. 
