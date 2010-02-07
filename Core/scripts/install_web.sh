@@ -1,6 +1,6 @@
 #!/bin/bash
 ########################################################################
-# $HeadURL: /local/reps/dirac/DIRAC3/scripts/install_agent.sh,v 1.17 2009/05/25 07:15:37 rgracian Exp $
+# $HeadURL$
 # File :   install_agent.sh
 # Author : Ricardo Graciani, A.T.
 ########################################################################
