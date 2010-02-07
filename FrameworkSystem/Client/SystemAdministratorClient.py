@@ -1,12 +1,12 @@
 ########################################################################
-# $HeadURL:  $
+# $HeadURL$
 ########################################################################
 
 """ The SystemAdministratorClient is a class representing the client of the DIRAC
     SystemAdministrator service
 """ 
 
-__RCSID__ = "$Id:  $"
+__RCSID__ = "$Id$"
 
 import re, time, random, os, types, getpass
 from DIRAC.Core.DISET.RPCClient  import RPCClient
