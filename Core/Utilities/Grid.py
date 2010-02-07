@@ -23,6 +23,8 @@ def executeGridCommand(proxy, cmd, gridEnvScript=None ):
       if ret['stdout']: self.log.verbose( ret['stdout'] )
       if ret['stderr']: self.log.warn( ret['stderr'] )
       gridEnv = ret['outputEnv']
+    else:
+      gridEnv = currentEnv
 
     ret = gProxyManager.dumpProxyToFile( proxy )
     if not ret['OK']:
