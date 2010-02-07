@@ -1,10 +1,10 @@
-# $HeadURL:  $
+# $HeadURL$
 
 
 """ The Grid module contains several utilities for grid operations
 """
 
-__RCSID__ = "$Id:  $"
+__RCSID__ = "$Id$"
 
 import os
 from DIRAC.Core.Utilities.Os import sourceEnv
@@ -12,27 +12,26 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient  import gProxyManager
 from DIRAC import systemCall, shellCall, S_OK, S_ERROR
 
 def executeGridCommand(self, proxy, cmd, gridEnvScript=None ):
-    """
-     Execute cmd tuple after sourcing GridEnv
-    """
-    currentEnv = dict(os.environ)
-    if gridEnvScript:
-      self.log.verbose( 'Sourcing GridEnv script:', gridEnvScript )
-      ret = sourceEnv( 10, [gridEnvScript] )
-      if not ret['OK']:
-        self.log.error( 'Failed sourcing GridEnv:', ret['Message'] )
-        return S_ERROR( 'Failed sourcing GridEnv' )
-      if ret['stdout']: self.log.verbose( ret['stdout'] )
-      if ret['stderr']: self.log.warn( ret['stderr'] )
-      gridEnv = ret['outputEnv']
-
-    ret = gProxyManager.dumpProxyToFile( proxy )
+  """ Execute cmd tuple after sourcing GridEnv
+  """
+  currentEnv = dict(os.environ)
+  if gridEnvScript:
+    self.log.verbose( 'Sourcing GridEnv script:', gridEnvScript )
+    ret = sourceEnv( 10, [gridEnvScript] )
     if not ret['OK']:
-      self.log.error( 'Failed to dump Proxy to file' )
-      return ret
-    gridEnv[ 'X509_USER_PROXY' ] = ret['Value']
-    self.log.verbose( 'Executing', ' '.join(cmd) )
-    return systemCall( 120, cmd, env = gridEnv )
+      self.log.error( 'Failed sourcing GridEnv:', ret['Message'] )
+      return S_ERROR( 'Failed sourcing GridEnv' )
+    if ret['stdout']: self.log.verbose( ret['stdout'] )
+    if ret['stderr']: self.log.warn( ret['stderr'] )
+    gridEnv = ret['outputEnv']
+
+  ret = gProxyManager.dumpProxyToFile( proxy )
+  if not ret['OK']:
+    self.log.error( 'Failed to dump Proxy to file' )
+    return ret
+  gridEnv[ 'X509_USER_PROXY' ] = ret['Value']
+  self.log.verbose( 'Executing', ' '.join(cmd) )
+  return systemCall( 120, cmd, env = gridEnv )
   
 def ldapsearchBDII( filt=None, attr=None, host=None, base = None ):
   """ Python wrapper for ldapserch at bdii.
