@@ -36,6 +36,9 @@ sed -i 's/innodb_log_arch_dir.*$//' $mycnf
 
 mysql_install_db --datadir=/opt/dirac/mysql/db/ 2>&1 > /opt/dirac/mysql/log/mysql_install_db.log
 
+#
+# Set the root password
+echo Setting the root password ...
 /opt/dirac/pro/mysql/share/mysql/mysql.server start
 mysqladmin -u root password "$MYSQL_ROOT_PWD"
 mysqladmin -u root -h $1 password "$MYSQL_ROOT_PWD"
