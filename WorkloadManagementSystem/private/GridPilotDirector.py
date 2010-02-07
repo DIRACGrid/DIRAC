@@ -92,7 +92,15 @@ class GridPilotDirector(PilotDirector):
     """
     PilotDirector.configureFromSection( self, mySection )
 
-    self.gridEnv              = gConfig.getValue( mySection+'/GridEnv'              , self.gridEnv )
+    self.gridEnv = gConfig.getValue( mySection+'/GridEnv', self.gridEnv )
+    if not self.gridEnv:
+      # No specific option found, try a general one
+      setup = gConfig.getValue('/DIRAC/Setup','')
+      if setup:
+        instance = gConfig.getValue('/DIRAC/Setups/%s/WorkloadManagement' % setup,'')
+        if instance:
+          self.gridEnv = gConfig.getValue('/Systems/WorkloadManagement/%s/GridEnv' % instance,'')
+          
     self.resourceBrokers      = gConfig.getValue( mySection+'/ResourceBrokers'      , self.resourceBrokers )
 
     self.timePolicy           = gConfig.getValue( mySection+'/TimePolicy'           , self.timePolicy )
@@ -272,29 +280,6 @@ class GridPilotDirector(PilotDirector):
 
     return (pilotJDL,pilotRequirements)
 
-  def _gridCommand(self, proxy, cmd):
-    """
-     Execute cmd tuple after sourcing GridEnv
-    """
-    gridEnv = dict(os.environ)
-    if self.gridEnv:
-      self.log.verbose( 'Sourcing GridEnv script:', self.gridEnv )
-      ret = Source( 10, [self.gridEnv] )
-      if not ret['OK']:
-        self.log.error( 'Failed sourcing GridEnv:', ret['Message'] )
-        return S_ERROR( 'Failed sourcing GridEnv' )
-      if ret['stdout']: self.log.verbose( ret['stdout'] )
-      if ret['stderr']: self.log.warn( ret['stderr'] )
-      gridEnv = ret['outputEnv']
-
-    ret = gProxyManager.dumpProxyToFile( proxy )
-    if not ret['OK']:
-      self.log.error( 'Failed to dump Proxy to file' )
-      return ret
-    gridEnv[ 'X509_USER_PROXY' ] = ret['Value']
-    self.log.verbose( 'Executing', ' '.join(cmd) )
-    return systemCall( 120, cmd, env = gridEnv )
-
 
   def parseListMatchStdout(self, proxy, cmd, taskQueueID, rb ):
     """
@@ -303,7 +288,7 @@ class GridPilotDirector(PilotDirector):
     self.log.verbose( 'Executing List Match for TaskQueue', taskQueueID )
 
     start = time.time()
-    ret = self._gridCommand( proxy, cmd )
+    ret = executeGridCommand( proxy, cmd, self.gridEnv )
 
     if not ret['OK']:
       self.log.error( 'Failed to execute List Match:', ret['Message'] )
@@ -343,7 +328,7 @@ class GridPilotDirector(PilotDirector):
     start = time.time()
     self.log.verbose( 'Executing Job Submit for TaskQueue', taskQueueID )
 
-    ret = self._gridCommand( proxy, cmd )
+    ret = executeGridCommand( proxy, cmd, self.gridEnv )
 
     if not ret['OK']:
       self.log.error( 'Failed to execute Job Submit:', ret['Message'] )

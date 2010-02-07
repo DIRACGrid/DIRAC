@@ -13,6 +13,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.private.GridPilotDirector  import GridPilotDirector
 from DIRAC import S_OK, S_ERROR, gConfig, List
+from DIRAC.Core.Utilities.Grid import executeGridCommand
 
 import os, time, re
 
@@ -157,7 +158,7 @@ ParameterStart = 0;
     start = time.time()
     self.log.verbose( 'Executing Job Status for TaskQueue', taskQueueID )
 
-    ret = self._gridCommand( proxy, cmd )
+    ret = executeGridCommand( proxy, cmd, self.gridEnv )
 
     if not ret['OK']:
       self.log.error( 'Failed to execute Job Status', ret['Message'] )

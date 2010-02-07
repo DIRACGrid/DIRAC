@@ -16,7 +16,10 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.Core.Security import CS
-from DIRAC import gConfig, Source
+from DIRAC.Core.Utilities.Grid import executeGridCommand
+from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
+from DIRAC import gConfig
+
 
 import os, sys, re, string, time
 from types import *
@@ -49,6 +52,13 @@ class PilotStatusAgent( AgentModule ):
 
     self.pilotStalledDays = self.am_getOption( 'PilotStalledDays', 3 )
     self.gridEnv = self.am_getOption( 'GridEnv' )
+    if not self.gridEnv:
+      # No specific option found, try a general one
+      setup = gConfig.getValue('/DIRAC/Setup','')
+      if setup:
+        instance = gConfig.getValue('/DIRAC/Setups/%s/WorkloadManagement' % setup,'')
+        if instance:
+          self.gridEnv = gConfig.getValue('/Systems/WorkloadManagement/%s/GridEnv' % instance,'')
     result = self.pilotDB._getConnection()
     if result['OK']:
       connection = result['Value']
@@ -308,25 +318,9 @@ class PilotStatusAgent( AgentModule ):
     else:
       return S_ERROR()
     cmd.extend( pilotRefList )
-
-    gridEnv = dict( os.environ )
-    if self.gridEnv:
-      self.log.verbose( 'Sourcing GridEnv script:', self.gridEnv )
-      ret = Source( 10, [self.gridEnv] )
-      if not ret['OK']:
-        self.log.error( 'Failed sourcing GridEnv:', ret['Message'] )
-        return S_ERROR( 'Failed sourcing GridEnv' )
-      if ret['stdout']: self.log.verbose( ret['stdout'] )
-      if ret['stderr']: self.log.warn( ret['stderr'] )
-      gridEnv = ret['outputEnv']
-    ret = gProxyManager.dumpProxyToFile( proxy )
-    if not ret['OK']:
-      self.log.error( 'Failed to dump Proxy to file' )
-      return ret
-    gridEnv[ 'X509_USER_PROXY' ] = ret['Value']
-    self.log.verbose( 'Executing', ' '.join( cmd ) )
+    
     start = time.time()
-    ret = systemCall( 120, cmd, env = gridEnv )
+    ret = executeGridCommand( proxy, cmd, self.gridEnv )
     self.log.info( '%s Job Status Execution Time for %d jobs:' % ( gridType, len( pilotRefList ) ), time.time() - start )
 
     if not ret['OK']:
@@ -423,21 +417,6 @@ class PilotStatusAgent( AgentModule ):
              'ChildRefs' : childRefs,
              'ChildDicts' : childDicts }
 
-  def __getSiteFromCE( self, ce ):
-    siteSections = gConfig.getSections( '/Resources/Sites/LCG/' )
-    if not siteSections['OK']:
-      self.log.error( 'Could not get LCG site list' )
-      return "unknown"
-
-    sites = siteSections['Value']
-    for site in sites:
-      lcgCEs = gConfig.getValue( '/Resources/Sites/LCG/%s/CE' % site, [] )
-      if ce in lcgCEs:
-        return site
-
-    self.log.error( 'Could not determine DIRAC site name for CE:', ce )
-    return "unknown"
-
   def __addPilotsAccountingReport( self, pilotsData ):
     for pRef in pilotsData:
       pData = pilotsData[pRef]
@@ -452,7 +431,11 @@ class PilotStatusAgent( AgentModule ):
         userName = retVal[ 'Value' ]
       pA.setValueByKey( 'User', userName )
       pA.setValueByKey( 'UserGroup', pData[ 'OwnerGroup' ] )
-      pA.setValueByKey( 'Site', self.__getSiteFromCE( pData[ 'DestinationSite' ] ) )
+      result = getSiteForCE(pData[ 'DestinationSite' ])
+      if result['OK']:
+        pA.setValueByKey( 'Site', result['Value'] )
+      else:
+        pA.setValueByKey( 'Site', 'Unknown' )  
       pA.setValueByKey( 'GridCE', pData[ 'DestinationSite' ] )
       pA.setValueByKey( 'GridMiddleware', pData[ 'GridType' ] )
       pA.setValueByKey( 'GridResourceBroker', pData[ 'Broker' ] )

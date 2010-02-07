@@ -11,8 +11,9 @@ from tempfile import mkdtemp
 import shutil, os
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
+from DIRAC.Core.Utilities.Grid import executeGridCommand
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gConfig
 
 # List of files to be inserted/retrieved into/from pilot Output Sandbox
 # first will be defined as StdOut in JDL and the second as StdErr
@@ -33,8 +34,15 @@ def getPilotOutput( proxy, grid, pilotRef ):
     return S_ERROR( 'Unknown GRID %s' % grid  )
 
   cmd.extend( ['--noint','--dir', tmp_dir, pilotRef] )
-
-  ret = _gridCommand( proxy, cmd )  
+  
+  gridEnv = ''
+  setup = gConfig.getValue('/DIRAC/Setup','')
+  if setup:
+    instance = gConfig.getValue('/DIRAC/Setups/%s/WorkloadManagement' % setup,'')
+    if instance:
+      gridEnv = gConfig.getValue('/Systems/WorkloadManagement/%s/GridEnv' % instance,'')
+      
+  ret = executeGridCommand( proxy, cmd, gridEnv )  
   if not ret['OK']:
     shutil.rmtree(tmp_dir)
     return ret
@@ -99,7 +107,14 @@ def getPilotLoggingInfo( proxy, grid, pilotRef ):
 
   cmd.extend( ['--noint', pilotRef] )
 
-  ret = _gridCommand( proxy, cmd )
+  gridEnv = ''
+  setup = gConfig.getValue('/DIRAC/Setup','')
+  if setup:
+    instance = gConfig.getValue('/DIRAC/Setups/%s/WorkloadManagement' % setup,'')
+    if instance:
+      gridEnv = gConfig.getValue('/Systems/WorkloadManagement/%s/GridEnv' % instance,'')
+      
+  ret = executeGridCommand( proxy, cmd, gridEnv )
   if not ret['OK']:
     return ret
 
@@ -109,17 +124,4 @@ def getPilotLoggingInfo( proxy, grid, pilotRef ):
 
   return S_OK( output )
 
-def _gridCommand( proxy, cmd):
-  """
-   Execute cmd tuple
-  """
-  gridEnv = dict(os.environ)
-
-  ret = gProxyManager.dumpProxyToFile( proxy )
-  if not ret['OK']:
-    return ret    
-  gridEnv[ 'X509_USER_PROXY' ] = ret['Value']
-  gridEnv[ 'LOGNAME' ]         = 'dirac'
-
-  return systemCall( COMMAND_TIMEOUT, cmd, env = gridEnv )
 
