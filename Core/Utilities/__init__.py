@@ -12,7 +12,6 @@ from DIRAC.Core.Utilities.Time               import *
 from DIRAC.Core.Utilities.ThreadPool         import *
 from DIRAC.Core.Utilities.Tests              import *
 from DIRAC.Core.Utilities.ExitCallback       import *
-from DIRAC.Core.Utilities.Source             import *
 from DIRAC.Core.Utilities.ThreadSafe         import *
 from DIRAC.Core.Utilities.DEncode            import encode, decode
 from DIRAC.Core.Utilities.DictCache          import *
