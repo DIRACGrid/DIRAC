@@ -1,7 +1,7 @@
 ########################################################################
-# $HeadURL:  $
+# $HeadURL$
 ########################################################################
-__RCSID__   = "$Id: $"
+__RCSID__   = "$Id$"
 
 """ FileCatalogHandler is a simple Replica and Metadata Catalog service 
 """
