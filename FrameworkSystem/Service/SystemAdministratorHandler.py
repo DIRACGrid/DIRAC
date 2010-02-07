@@ -471,6 +471,13 @@ class SystemAdministratorHandler( RequestHandler ):
 
     return S_OK()
 
+  types_executeCommand = [ StringTypes ]
+  def export_executeCommand(self,command):
+    """ Execute a command locally and return its output
+    """
+    result = shellCall(0,command)
+    return result
+
   types_installMySQL = [ StringTypes, StringTypes ]
   def export_installMySQL(self,rootpwd,diracpwd):
     """ Install MySQL database server
@@ -478,7 +485,8 @@ class SystemAdministratorHandler( RequestHandler ):
     currentEnv = os.environ
     currentEnv['MYSQL_ROOT_PWD'] = rootpwd
     currentEnv['MYSQL_DIRAC_PWD'] = diracpwd
-    result = shellCall(0,'/opt/dirac/pro/DIRAC/Core/scripts/install_mysql.sh',env=currentEnv)
+    host = socket.getfqdn()
+    result = shellCall(0,'/opt/dirac/pro/DIRAC/Core/scripts/install_mysql.sh %s' % host,env=currentEnv)
     return result
     
   types_installDatabase = [ StringTypes ]
