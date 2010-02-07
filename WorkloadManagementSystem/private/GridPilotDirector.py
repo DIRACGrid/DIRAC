@@ -34,8 +34,9 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.private.PilotDirector  import PilotDirector
 from DIRAC.FrameworkSystem.Client.NotificationClient       import NotificationClient
 from DIRAC.Core.Security.Misc                              import getProxyInfoAsString
+from DIRAC.Core.Utilities.Grid                             import executeGridCommand
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB
-from DIRAC import S_OK, S_ERROR, DictCache, List, Time, systemCall, gConfig, Source
+from DIRAC import S_OK, S_ERROR, DictCache, List, Time, systemCall, gConfig
 
 class GridPilotDirector(PilotDirector):
   """
