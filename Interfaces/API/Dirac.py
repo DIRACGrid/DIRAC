@@ -45,6 +45,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder         import getSystemSection
 from DIRAC.Core.Utilities.Time                           import toString
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks, sortList
 from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite
+from DIRAC.Core.Utilities.Version                        import getCurrentVersion
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC.Core.Base.AgentReactor                        import AgentReactor
 from DIRAC.Core.Security.X509Chain                       import X509Chain
@@ -64,8 +65,8 @@ class Dirac:
     self.log = gLogger.getSubLogger( COMPONENT_NAME )
     self.setup = gConfig.getValue( '/DIRAC/Setup', 'Unknown' )
     self.section = '/LocalSite/'
-    self.cvsVersion = 'CVS version ' + __RCSID__
-    self.diracInfo = 'DIRAC version %s' % DIRAC.buildVersion
+    self.cvsVersion = 'SVN version ' + __RCSID__
+    self.diracInfo = getCurrentVersion()['Value']
 
     self.jobRepo = False
     if WithRepo:
