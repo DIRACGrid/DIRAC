@@ -6,6 +6,7 @@
 
 __RCSID__ = "$Id:  $"
 
+import os
 from DIRAC.Core.Utilities.Os import sourceEnv
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient  import gProxyManager
 from DIRAC import systemCall, shellCall, S_OK, S_ERROR

@@ -12,7 +12,6 @@ import os
 import DIRAC
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import List
-from DIRAC import platformTuple
 
 import shutil, os
 
@@ -148,7 +147,7 @@ def unifyLdLibraryPath( path, newpath ):
       newpath. For that we go along the path in a reverse order and link all files
       from the path, the latest appearance of a file will take precedence
   """    
-  if not platformTuple[0] == 'Windows':
+  if not DIRAC.platformTuple[0] == 'Windows':
     if os.path.exists( newpath ):
       if not os.path.isdir(newpath):
         try:
