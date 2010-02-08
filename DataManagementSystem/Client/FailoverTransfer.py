@@ -36,18 +36,18 @@ class FailoverTransfer:
 
   #############################################################################
   def __init__(self,requestObject=False):
-    """ Constructor function, must specify request object to instantiate 
-        FailoverTransfer. 
+    """ Constructor function, can specify request object to instantiate 
+        FailoverTransfer or a new request object is created.
     """
     self.log = gLogger.getSubLogger( "FailoverTransfer" )    
     self.rm = ReplicaManager()
-    if not requestObject:
+    self.request = requestObject    
+ 
+    if not self.request:
       self.request = RequestContainer()
       self.request.setRequestName('default_request.xml')
       self.request.setSourceComponent('FailoverTransfer')
-            
-    self.request = requestObject
-  
+              
   #############################################################################
   def transferAndRegisterFile(self,fileName,localPath,lfn,destinationSEList,fileGUID=None,fileCatalog=None):
     """Performs the transfer and register operation with failover.
