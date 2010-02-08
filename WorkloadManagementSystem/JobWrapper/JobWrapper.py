@@ -844,8 +844,10 @@ class JobWrapper:
     if not result['OK']:
       self.log.error( result )
       return S_ERROR( 'Could not retrieve modified request' )
-    request = result['Value']
-    request.toFile( 'transferOutputDataFiles_request.xml' )
+
+    request = result['Value']    
+    if not request.isEmpty()['Value']:
+      request.toFile( 'transferOutputDataFiles_request.xml' )
 
     #TODO Notify the user of any output data / output sandboxes
     if missing:
