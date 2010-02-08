@@ -813,7 +813,7 @@ class JobWrapper:
       outputSEList = List.randomize( outputSE )
       upload = failoverTransfer.transferAndRegisterFile( localfile, outputFilePath, lfn, outputSEList, fileGUID, self.defaultCatalog )
       if upload['OK']:
-        self.log.info( '"%s" successfully uploaded to "%s" as "LFN:%s"' % ( localfile, upload['uploadedSE'], lfn ) )
+        self.log.info( '"%s" successfully uploaded to "%s" as "LFN:%s"' % ( localfile, upload['Value']['uploadedSE'], lfn ) )
         uploaded.append( lfn )
         continue
 
