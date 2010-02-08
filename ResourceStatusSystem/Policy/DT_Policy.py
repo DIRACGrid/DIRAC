@@ -28,7 +28,7 @@ class DT_Policy(PolicyBase):
               'SAT':True|False, 
               'Status':Active|Probing|Banned, 
               'Reason':'DT:None'|'DT:OUTAGE|'DT:AT_RISK',
-              'Enddate':datetime (if needed)
+              'EndDate':datetime (if needed)
             }
     """ 
 
@@ -54,8 +54,15 @@ class DT_Policy(PolicyBase):
         
       clientsInvoker = ClientsInvoker()
       clientsInvoker.setCommand(command)
-      status = clientsInvoker.doCommand((args[0], args[1]))
+      if len(args) == 3:
+        status = clientsInvoker.doCommand((args[0], args[1]))
+      elif len(args) == 4:
+        status = clientsInvoker.doCommand((args[0], args[1], args[3]))
     
+#    if len(args) == 3:
+#      when = 'OnGoing'
+#    elif len(args) == 4:
+#      when = 'Scheduled'
 
     result = {}
     
@@ -63,18 +70,18 @@ class DT_Policy(PolicyBase):
       if status['DT'] == 'None':
         result['SAT'] = False
         result['Status'] = 'Active'
-        result['Reason'] = 'DT:None'
+        result['Reason'] = 'DT:%s' %status['DT']
       else:
-        if status['DT'] == 'OUTAGE':
+        if 'OUTAGE' in status['DT']:
           result['SAT'] = True
           result['Status'] = 'Banned'
-          result['Reason'] = 'DT:OUTAGE'
-          result['Enddate'] = status['Enddate']
-        elif status['DT'] == 'AT_RISK':
+          result['Reason'] = 'DT:%s' %status['DT']
+          result['EndDate'] = status['EndDate']
+        elif 'AT_RISK' in status['DT']:
           result['SAT'] = True
           result['Status'] = 'Probing'
-          result['Reason'] = 'DT:AT_RISK'
-          result['Enddate'] = status['Enddate']
+          result['Reason'] = 'DT:%s' %status['DT']
+          result['EndDate'] = status['EndDate']
 #        elif status['DT'] == 'No Info':
 #          result['SAT'] = None
     
@@ -82,17 +89,17 @@ class DT_Policy(PolicyBase):
       if status['DT'] == 'None':
         result['SAT'] = True
         result['Status'] = 'Active'
-        result['Reason'] = 'DT:None'
+        result['Reason'] = 'DT:%s' %status['DT']
       else:
-        if status['DT'] == 'OUTAGE':
+        if 'OUTAGE' in status['DT']:
           result['SAT'] = True
           result['Status'] = 'Banned'
-          result['Reason'] = 'DT:OUTAGE'
-          result['Enddate'] = status['Enddate']
-        elif status['DT'] == 'AT_RISK':
+          result['Reason'] = 'DT:%s' %status['DT']
+          result['EndDate'] = status['EndDate']
+        elif 'AT_RISK' in status['DT']:
           result['SAT'] = False
           result['Status'] = 'Probing'
-          result['Reason'] = 'DT:AT_RISK'
+          result['Reason'] = 'DT:%s' %status['DT']
 #        elif status['DT'] == 'No Info':
 #          result['SAT'] = None
       
@@ -100,17 +107,17 @@ class DT_Policy(PolicyBase):
       if status['DT'] == 'None':
         result['SAT'] = True
         result['Status'] = 'Active'
-        result['Reason'] = 'DT:None'
+        result['Reason'] = 'DT:%s' %status['DT']
       else:
         if status['DT'] == 'OUTAGE':
           result['SAT'] = False
           result['Status'] = 'Banned'
-          result['Reason'] = 'DT:OUTAGE'
-        elif status['DT'] == 'AT_RISK':
+          result['Reason'] = 'DT:%s' %status['DT']
+        elif 'AT_RISK' in status['DT']:
           result['SAT'] = True
           result['Status'] = 'Probing'
-          result['Reason'] = 'DT:AT_RISK'
-          result['Enddate'] = status['Enddate']
+          result['Reason'] = 'DT:%s' %status['DT']
+          result['EndDate'] = status['EndDate']
 #        elif status['DT'] == 'No Info':
 #          result['SAT'] = None
    

@@ -1,9 +1,12 @@
 import unittest
+import sys
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
+
+import DIRAC.ResourceStatusSystem.test.fake_NotificationClient
 
 #############################################################################
 
@@ -13,10 +16,12 @@ class PolicySystemTestCase(unittest.TestCase):
 #############################################################################
 
   def setUp(self):
+    sys.modules["DIRAC.FrameworkSystem.Client.NotificationClient"] = DIRAC.ResourceStatusSystem.test.fake_NotificationClient
     self.mock_p = Mock()
     self.mock_args = Mock()
     self.mock_pdp = Mock()
     self.mock_rsDB = Mock()
+    self.mock_nc = Mock()
     
 #############################################################################
 
@@ -41,27 +46,27 @@ class PEPSuccess(PolicySystemTestCase):
                 pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', {'PolicyType':newPolicyType, 'Granularity':newGranularity})
                 self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'testReason'}, {'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'testReason'}]
                 pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', {'PolicyType':newPolicyType, 'Granularity':newGranularity})
-                res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
+                res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
                 self.assertEqual(res, None)
                 self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':False, 'Reason':'testReason'}]
-                res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
+                res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
                 self.assertEqual(res, None)
             self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'testReason'}]
             pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE')
-            res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
+            res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
             self.assertEqual(res, None)
             self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':False, 'Reason':'testReason'}]
-            res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
+            res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
             self.assertEqual(res, None)
         self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'testReason'}]
         pep = PEP(granularity, 'XX')
-        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
+        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
         self.assertEqual(res, None)
         pep = PEP(granularity, 'XX')
-        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
+        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
         self.assertEqual(res, None)
         self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':False, 'Reason':'testReason'}]
-        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB)
+        res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
         self.assertEqual(res, None)
 
 #############################################################################
@@ -85,8 +90,8 @@ class PEPFailure(PolicySystemTestCase):
                   for serviceType in ValidServiceType:
                     for resourceType in ValidResourceType:
                       pep = PEP(granularity, 'XX', status, oldStatus, 'XX', siteType, serviceType, resourceType,  {'PolicyType':newPolicyType, 'Granularity':newGranularity})
-                      self.failUnlessRaises(Exception, pep.enforce, self.mock_pdp, self.mock_rsDB)
-                      self.failUnlessRaises(Exception, pep.enforce, self.mock_pdp, self.mock_rsDB, knownInfo={'DT':'AT_RISK'})
+                      self.failUnlessRaises(Exception, pep.enforce, self.mock_pdp, self.mock_rsDB, ncIn = self.mock_nc)
+                      self.failUnlessRaises(Exception, pep.enforce, self.mock_pdp, self.mock_rsDB, knownInfo={'DT':'AT_RISK'}, ncIn = self.mock_nc)
     
 #############################################################################
 

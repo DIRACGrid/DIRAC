@@ -3011,7 +3011,7 @@ class ResourceStatusDB:
     """
 
     if granularity not in ValidRes:
-      raise InvalidRes
+      raise InvalidRes, where(self, self.rankRes)
 
     if startingDate is not None:
       if isinstance(startingDate, basestring):
@@ -3047,7 +3047,7 @@ class ResourceStatusDB:
           p[0] = dateToCheckFrom
       
       activePeriodsLength = [ x[1]-x[0] for x in periodsActive ]
-      activePeriodsLength = [self.__convertTime(x) for x in activePeriodsLength]
+      activePeriodsLength = [convertTime(x) for x in activePeriodsLength]
       activeRankList.append((res, sum(activePeriodsLength)))
 
       
@@ -3063,7 +3063,7 @@ class ResourceStatusDB:
           p[0] = dateToCheckFrom
       
       probingPeriodsLength = [ x[1]-x[0] for x in periodsProbing ]
-      probingPeriodsLength = [self.__convertTime(x) for x in probingPeriodsLength]
+      probingPeriodsLength = [convertTime(x) for x in probingPeriodsLength]
       probingRankList.append((res, sum(probingPeriodsLength)))
     
       rankList.append( ( res[0], sum(activePeriodsLength) + sum(probingPeriodsLength)/2 ) )
@@ -3078,42 +3078,3 @@ class ResourceStatusDB:
     return rank
 
 #############################################################################
-
-  def __convertTime(self, t):
-    
-    sec = 0
-    
-    try:
-      tms = t.milliseconds
-      sec = sec + tms/1000
-    except AttributeError:
-      pass
-    try:
-      ts = t.seconds
-      sec = sec + ts
-    except AttributeError:
-      pass
-    try:
-      tm = t.minutes
-      sec = sec + tm * 60
-    except AttributeError:
-      pass
-    try:
-      th = t.hours
-      sec = sec + th * 3600
-    except AttributeError:
-      pass
-    try:
-      td = t.days
-      sec = sec + td * 86400
-    except AttributeError:
-      pass
-    try:
-      tw = t.weeks
-      sec = sec + tw * 604800
-    except AttributeError:
-      pass
-    
-    return sec
-    
-#############################################################################    

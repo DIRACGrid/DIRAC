@@ -2,10 +2,12 @@
 """
 
 import urllib2
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
 from xml.dom import minidom
 
 from DIRAC import gLogger
+
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
@@ -14,19 +16,27 @@ class GOCDBClient:
   
 #############################################################################
 
-  def getStatus(self, granularity, name):
+  def getStatus(self, granularity, name, startDate = None, startingInHours = None):
     """  
     Return actual GOCDB status of entity in `name`
         
     :params:
       :attr:`granularity`: string: should be a ValidRes
       
-      :attr:`name` should be the name of the ValidRes
+      :attr:`name`: should be the name of the ValidRes
+      
+      :attr:`startDate`: if not given, takes only ongoing DownTimes.
+      if given, could be a datetime or a string ("YYYY-MM-DD"), and download 
+      DownTimes starting after that date.
+      
+      :attr:`startingInHours`: optional integer. If given, donwload 
+      DownTimes starting in the next given hours (startDate is then useless)  
 
     :return:
       {
-        'DT':'OUTAGE'|'AT_RISK'|'None',
-        'Enddate':datetime
+        'DT':'OUTAGE in X hours'|'AT_RISK in X hours'|'OUTAGE'|'AT_RISK'|'None',
+        'Startdate':datetime (in string)
+        'Enddate':datetime (in string)
       }
 
     """
@@ -38,14 +48,30 @@ class GOCDBClient:
     else:
       raise InvalidRes, where(self, self.getStatus)
     
-    resCDL = self._curlDownload(self._entity)
+    startDate_STR = None
+    startDateMax = None
+    startDateMax_STR = None
+    
+    if startingInHours is not None:
+      startDate = datetime.utcnow()
+      startDateMax = startDate + timedelta(hours = startingInHours)
+      startDateMax_STR = startDateMax.isoformat(' ')[0:10]
+        
+    if startDate is not None:
+      if isinstance(startDate, basestring):
+        startDate_STR = startDate
+        startDate = datetime(*time.strptime(startDate, "%Y-%m-%d")[0:3])
+      elif isinstance(startDate, datetime):
+        startDate_STR = startDate.isoformat(' ')[0:10]
+    
+    resCDL = self._curlDownload(self._entity, startDate_STR)
     if resCDL is None:
-      return {'DT':'None'}
+      return [{'DT':'None'}]
     
-    res = self._xmlParsing(resCDL, granularity)
+    res = self._xmlParsing(resCDL, granularity, startDate, startDateMax)
     
-    if res is None:
-      return {'DT':'None'}
+    if res is None or res == []:
+      return [{'DT':'None'}]
       
     return res
   
@@ -65,11 +91,15 @@ class GOCDBClient:
     # Set your topentity
     gocdbpi_topEntity = entity
     # Set the desidered start date
-    gocdbpi_startDate = startDate
+    if startDate is None: 
+      when = "&ongoing_only=yes" 
+      gocdbpi_startDate = ""
+    else:
+      when = "&startdate="
+      gocdbpi_startDate = startDate
      
     # GOCDB-PI to query
-    gocdb_ep = gocdbpi_url + "method=" + gocdbpi_method + "&topentity=" + gocdbpi_topEntity + "&ongoing_only=yes"
-    #gocdb_ep = gocdbpi_url + "method=" + gocdbpi_method + "&topentity=" + gocdbpi_topEntity + "&startdate=" + gocdbpi_startDate
+    gocdb_ep = gocdbpi_url + "method=" + gocdbpi_method + "&topentity=" + gocdbpi_topEntity + when + gocdbpi_startDate
 
     try:
       opener = urllib2.build_opener()
@@ -93,51 +123,72 @@ class GOCDBClient:
 
 #############################################################################
 
-  def _xmlParsing(self, dt, siteOrRes):
+  def _xmlParsing(self, dt, siteOrRes, startDate = None, startDateMax = None):
     """ Performs xml parsing from the dt string (returns a dictionary)
     """
 
     try:
       doc = minidom.parseString(dt)
-#    except TypeError, errorMsg:
-#      exceptStr = where(self, self._xmlParsing)
-#      gLogger.exception(exceptStr,'',errorMsg)
-#    except AttributeError, errorMsg:
-#      exceptStr = where(self, self._xmlParsing)
-#      gLogger.exception(exceptStr,'',errorMsg)
-#      #return S_ERROR("%s%s" % (exceptStr,errorMsg))
+
+      downtimes = doc.getElementsByTagName("DOWNTIME")
+#      if downtimes == []:
+#        return {'DT':'No Info'} 
+      DTList = []  
+      
+      for dt in downtimes:
+        handler = {}  
+        if dt.getAttributeNode("CLASSIFICATION"):
+          attrs_class = dt.attributes["CLASSIFICATION"]
+          # List containing all the DOM elements
+          dom_elements = dt.childNodes
+          
+          for elements in dom_elements:
+            if siteOrRes == 'Site':
+              if elements.nodeName == "HOSTNAME":
+                break
+            if elements.nodeName == "SEVERITY":
+              for element in elements.childNodes:
+                if element.nodeType == element.TEXT_NODE: 
+                  severity = str(element.nodeValue)
+                  handler['DT'] = severity
+            elif elements.nodeName == "START_DATE":
+              for element in elements.childNodes:
+                if element.nodeType == element.TEXT_NODE: 
+                  sdate = float(element.nodeValue)
+                start_date = datetime.utcfromtimestamp(sdate)
+                start_date_STR = start_date.isoformat(' ')
+                handler['StartDate'] = start_date_STR
+            elif elements.nodeName == "END_DATE":
+              for element in elements.childNodes:
+                if element.nodeType == element.TEXT_NODE: 
+                  edate = float(element.nodeValue)
+                end_date = datetime.utcfromtimestamp(edate)
+                end_date_STR = end_date.isoformat(' ')
+                handler['EndDate'] = end_date_STR
+        
+          try:
+            if startDate is not None:
+              if end_date < startDate:
+                continue
+            if startDateMax is not None:
+              if start_date > startDateMax:
+                continue
+              
+            if start_date > datetime.utcnow():
+              hoursTo = convertTime(start_date - datetime.utcnow(), 'hours')
+              handler['DT'] = handler['DT'] + " in %d hours" %hoursTo
+          except NameError:
+            pass
+        
+        if handler != {}:
+          DTList.append(handler)
+          
+      return DTList
+    
     except Exception, errorMsg:
       exceptStr = where(self, self._xmlParsing)
       gLogger.exception(exceptStr,'',errorMsg)
       return None    
 
-    downtimes = doc.getElementsByTagName("DOWNTIME")
-#    if downtimes == []:
-#      return {'DT':'No Info'} 
-    handler = {}    
-    
-    for dt in downtimes:
-      if dt.getAttributeNode("CLASSIFICATION"):
-        attrs_class = dt.attributes["CLASSIFICATION"]
-        # List containing all the DOM elements
-        dom_elements = dt.childNodes
-
-        for elements in dom_elements:
-          if siteOrRes == 'Site':
-            if elements.nodeName == "HOSTNAME":
-              return None
-          if elements.nodeName == "SEVERITY":
-            for element in elements.childNodes:
-              if element.nodeType == element.TEXT_NODE: 
-                severity = str(element.nodeValue)
-                handler['DT'] = severity
-          elif elements.nodeName == "END_DATE":
-            for element in elements.childNodes:
-              if element.nodeType == element.TEXT_NODE: 
-                edate = float(element.nodeValue)
-              end_date = datetime.utcfromtimestamp(edate).isoformat(' ')
-              handler['Enddate'] = end_date
-      return handler
-    
     
 #############################################################################

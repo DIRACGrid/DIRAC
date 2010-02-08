@@ -1,6 +1,7 @@
 ### UnitTest class for GOCDBClient class
 
 import unittest
+from datetime import datetime
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Client.GOCDBClient import GOCDBClient
 from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient
@@ -30,7 +31,11 @@ class GOCDBClientSuccess(ClientsTestCase):
   def test_getStatus(self):
     for granularity in ('Site', 'Resource'):
       res = self.GOCCli.getStatus(granularity, 'XX')
-      self.assertEqual(res, {'DT':'None'})
+      self.assertEqual(res, [{'DT':'None'}])
+      res = self.GOCCli.getStatus(granularity, 'XX', datetime.utcnow())
+      self.assertEqual(res, [{'DT':'None'}])
+      res = self.GOCCli.getStatus(granularity, 'XX', datetime.utcnow(), 12)
+      self.assertEqual(res, [{'DT':'None'}])
       
 #    res = self.GOCCli.getStatus(('Site', 'pic'))
 #    self.assertEqual(res, None)

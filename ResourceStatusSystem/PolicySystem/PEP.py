@@ -1,5 +1,5 @@
-""" The PEP (Policy Enforcement Point) module contains what is necessary 
-    for enforcing policies. Its class(es) are used for:
+"""
+    Module used for enforcing policies. Its class is used for:
 
     1. invoke a PDP and collects results
 
@@ -13,7 +13,6 @@
 """
 
 from DIRAC import gConfig
-from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
@@ -116,7 +115,7 @@ class PEP:
       
 #############################################################################
     
-  def enforce(self, pdpIn=None, rsDBIn=None, knownInfo=None):
+  def enforce(self, pdpIn=None, rsDBIn=None, knownInfo=None, ncIn=None):
     """ 
     enforce policies, using a PDP  (Policy Decision Point), based on
 
@@ -203,8 +202,8 @@ class PEP:
     
         rsDB.setLastMonitoredCheckTime(self.__granularity, self.__name)
         
-        if res.has_key('Enddate'):
-          rsDB.setDateEnd(self.__granularity, self.__name, res['Enddate'])
+        if res.has_key('EndDate'):
+          rsDB.setDateEnd(self.__granularity, self.__name, res['EndDate'])
   
         if res['Action']:
           try:
@@ -223,7 +222,11 @@ class PEP:
         
         if res['Action']:
 
-          nc = NotificationClient()
+          if ncIn is not None:
+            nc = ncIn
+          else:
+            from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+            nc = NotificationClient()
           
           notif = "%s %s is perceived as" %(self.__granularity, self.__name) 
           notif = notif + " %s. Reason: %s." %(res['Status'], res['Reason'])

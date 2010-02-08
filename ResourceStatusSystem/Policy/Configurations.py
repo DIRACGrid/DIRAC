@@ -87,7 +87,15 @@ def getUsersToNotify(granularity, siteType = None, setup = _setup ):
 #############################################################################
 
 Policies = { 
-  'DT_Policy' : 
+  'DT_Policy_OnGoing_Only' : 
+    { 'Granularity' : [], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ValidResourceType,
+     },
+  'DT_Policy_Scheduled' : 
     { 'Granularity' : ['Site', 'Resource'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
@@ -157,7 +165,7 @@ Policies = {
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
-      'ResourceType' : ['CE'],
+      'ResourceType' : ['CE', 'CREAMCE'],
      },
   'OnServicePropagation_Policy' :
     { 'Granularity' : ['Service'], 
@@ -312,6 +320,8 @@ def getPolicyToApply(granularity, status = None, formerStatus = None,
 # policies parameters
 #############################################################################
 
+DTinHours = 12
+
 # --- Pilots Efficiency policy --- #
 HIGH_PILOTS_NUMBER = 60
 MEDIUM_PILOTS_NUMBER = 20
@@ -381,7 +391,7 @@ StorageElements_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 12, \
 def policyInvocation(granularity = None, name = None, status = None, policy = None, 
                      args = None, pol = None):
   
-  if pol == 'DT_Policy':
+  if pol == 'DT_Policy_OnGoing_Only':
     p = policy
     a = args
     if policy is None:
@@ -389,6 +399,16 @@ def policyInvocation(granularity = None, name = None, status = None, policy = No
       p = DT_Policy()
     if args is None:
       a = (granularity, name, status)
+    res = _innerEval(p, a)
+    
+  if pol == 'DT_Policy_Scheduled':
+    p = policy
+    a = args
+    if policy is None:
+      from DIRAC.ResourceStatusSystem.Policy.DT_Policy import DT_Policy 
+      p = DT_Policy()
+    if args is None:
+      a = (granularity, name, status, DTinHours)
     res = _innerEval(p, a)
     
   if pol == 'AlwaysFalse_Policy':

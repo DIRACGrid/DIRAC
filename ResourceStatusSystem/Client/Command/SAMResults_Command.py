@@ -25,7 +25,7 @@ class SAMResults_Command(Command):
       res = c.getStatus(args[0], args[1])
     elif len(args) == 3:
       res = c.getStatus(args[0], args[1], args[2])
-    if len(args) == 4:
+    elif len(args) == 4:
       res = c.getStatus(args[0], args[1], args[2], args[3])
 
     return res

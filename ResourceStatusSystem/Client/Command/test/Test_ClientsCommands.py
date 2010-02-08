@@ -80,15 +80,15 @@ class GOCDBStatus_CommandSuccess(ClientsCommandsTestCase):
 
     for granularity in ValidRes:
       args = (granularity, 'XX')
-      self.mock_client.getStatus.return_value =  {'DT':'OUTAGE', 'Enddate':''}
+      self.mock_client.getStatus.return_value =  [{'DT':'OUTAGE in 8 hours', 'Enddate':''}]
       res = self.GOCDBS_C.doCommand(args, clientIn = self.mock_client)
-      self.assertEqual(res['DT'], 'OUTAGE')
-      self.mock_client.getStatus.return_value = {'DT':'AT_RISK', 'Enddate':''}
+      self.assertEqual(res['DT'], 'OUTAGE in 8 hours')
+      self.mock_client.getStatus.return_value = [{'DT':'AT_RISK', 'Enddate':''}]
       res = self.GOCDBS_C.doCommand(args, clientIn = self.mock_client)
       self.assertEqual(res['DT'], 'AT_RISK')
-      self.mock_client.getStatus.return_value =  None
+      self.mock_client.getStatus.return_value =  [{'DT':'None'}]
       res = self.GOCDBS_C.doCommand(args, clientIn = self.mock_client)
-      self.assertEqual(res, None)
+      self.assertEqual(res['DT'], 'None')
 
     
 

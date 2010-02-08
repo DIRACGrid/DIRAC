@@ -112,7 +112,7 @@ class PDP:
             'Action': True|False,
             'Status': 'Active'|'Probing'|'Banned',
             'Reason': a reason
-            'Enddate: datetime (in a string)}
+            'EndDate: datetime (in a string)}
     """
   
     self.args = argsIn
@@ -150,14 +150,14 @@ class PDP:
         reason = res['Reason']
         decision = {'PolicyType': self.__policyType, 'Action': True, 'Status':'%s'%newstatus, 
                     'Reason':'%s'%reason}
-        if res.has_key('Enddate'):
-          decision['Enddate'] = res['Enddate']
+        if res.has_key('EndDate'):
+          decision['EndDate'] = res['EndDate']
         policyResults.append(decision)
       elif not res['SAT']:
         reason = res['Reason']
         decision = {'PolicyType': self.__policyType, 'Action': False, 'Reason':'%s'%reason}
-        if res.has_key('Enddate'):
-          decision['Enddate'] = res['Enddate']
+        if res.has_key('EndDate'):
+          decision['EndDate'] = res['EndDate']
         policyResults.append(decision)
 
     return policyResults
@@ -286,5 +286,6 @@ class PDP:
       resFirstCombination = self._policyCombination(args[0], args[1])
       resSecondCombination = self._policyCombination(resFirstCombination, args[2])
       resThirdCombination = self._policyCombination(resSecondCombination, args[3])
+      return resThirdCombination
 
 #############################################################################

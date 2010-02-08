@@ -15,7 +15,10 @@ class GOCDBStatus_Command(Command):
          :attr:`args`: 
            - args[0]: string: should be a ValidRes
       
-           - args[1]: string should be the name of the ValidRes
+           - args[1]: string: should be the name of the ValidRes
+
+           - args[2]: string: optional, number of hours in which 
+           the down time is starting
     """
 
     if not isinstance(args, tuple):
@@ -31,4 +34,9 @@ class GOCDBStatus_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.GOCDBClient import GOCDBClient   
       c = GOCDBClient()
       
-    return c.getStatus(args[0], args[1])
+    if len(args) == 2:
+      res = c.getStatus(args[0], args[1])
+    elif len(args) == 3:
+      res = c.getStatus(args[0], args[1], None, args[2])
+
+    return res[0]

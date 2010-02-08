@@ -58,9 +58,9 @@ class SAMResults_Policy(PolicyBase):
       clientsInvoker.setCommand(command)
       if len(args) == 3:
         status = clientsInvoker.doCommand((args[0], args[1]))
-      if len(args) == 4:
+      elif len(args) == 4:
         status = clientsInvoker.doCommand((args[0], args[1], args[3]))
-      if len(args) == 5:
+      elif len(args) == 5:
         status = clientsInvoker.doCommand((args[0], args[1], args[3], args[4]))
       
       status = status['SAM-Status']

@@ -94,24 +94,24 @@ class DT_PolicySuccess(PoliciesTestCase):
     for granularity in ValidRes:
       for status in ValidStatus:
         args = (granularity, 'XX', status)
-        for clientRes in ({'DT':'OUTAGE', 'Enddate':''}, {'DT':'AT_RISK', 'Enddate':''}, {'DT':'None'}):
+        for clientRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}, {'DT':'None'}):
           self.mock_command.doCommand.return_value = clientRes
           res = self.DT_P.evaluate(args, commandIn = self.mock_command, knownInfo=clientRes)
-          if clientRes in ({'DT':'OUTAGE', 'Enddate':''}, {'DT':'AT_RISK', 'Enddate':''}) and status == 'Active':
+          if clientRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}) and status == 'Active':
             self.assert_(res['SAT'])
-          elif clientRes in ({'DT':'OUTAGE', 'Enddate':''}, {'DT':'None'}) and status == 'Probing':
+          elif clientRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'None'}) and status == 'Probing':
             self.assert_(res['SAT'])
-          elif clientRes in ({'DT':'AT_RISK', 'Enddate':''}, {'DT':'None'}) and status == 'Banned':
+          elif clientRes in ({'DT':'AT_RISK', 'EndDate':''}, {'DT':'None'}) and status == 'Banned':
             self.assert_(res['SAT'])
           else:
             self.assertFalse(res['SAT'])
           
           res = self.DT_P.evaluate(args, commandIn = self.mock_command)
-          if clientRes in ({'DT':'OUTAGE', 'Enddate':''}, {'DT':'AT_RISK', 'Enddate':''}) and status == 'Active':
+          if clientRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}) and status == 'Active':
             self.assert_(res['SAT'])
-          elif clientRes in ({'DT':'OUTAGE', 'Enddate':''},  {'DT':'None'}) and status == 'Probing':
+          elif clientRes in ({'DT':'OUTAGE', 'EndDate':''},  {'DT':'None'}) and status == 'Probing':
             self.assert_(res['SAT'])
-          elif clientRes in ({'DT':'AT_RISK', 'Enddate':''},  {'DT':'None'}) and status == 'Banned':
+          elif clientRes in ({'DT':'AT_RISK', 'EndDate':''},  {'DT':'None'}) and status == 'Banned':
             self.assert_(res['SAT'])
           else:
             self.assertFalse(res['SAT'])
@@ -143,21 +143,21 @@ class Res2SiteStatus_PolicySuccess(PoliciesTestCase):
       for clientRes in ():
         self.mock_command.doCommand.return_value = clientRes
         res = self.Res2SiteStatus_P.evaluate(args, commandIn = self.mock_command, knownInfo=clientRes)
-        if clientRes in ({'DT':'OUTAGE', 'Enddate':''}, {'DT':'AT_RISK', 'Enddate':''}) and status == 'Active':
+        if clientRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}) and status == 'Active':
           self.assert_(res['SAT'])
-        elif clientRes in ({'DT':'OUTAGE', 'Enddate':''}, None) and status == 'Probing':
+        elif clientRes in ({'DT':'OUTAGE', 'EndDate':''}, None) and status == 'Probing':
           self.assert_(res['SAT'])
-        elif clientRes in ({'DT':'AT_RISK', 'Enddate':''}, None) and status == 'Banned':
+        elif clientRes in ({'DT':'AT_RISK', 'EndDate':''}, None) and status == 'Banned':
           self.assert_(res['SAT'])
         else:
           self.assertFalse(res['SAT'])
         
         res = self.Res2SiteStatus_P.evaluate(args, commandIn = self.mock_command)
-        if clientRes in ({'DT':'OUTAGE', 'Enddate':''}, {'DT':'AT_RISK', 'Enddate':''}) and status == 'Active':
+        if clientRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}) and status == 'Active':
           self.assert_(res['SAT'])
-        elif clientRes in ({'DT':'OUTAGE', 'Enddate':''}, None) and status == 'Probing':
+        elif clientRes in ({'DT':'OUTAGE', 'EndDate':''}, None) and status == 'Probing':
           self.assert_(res['SAT'])
-        elif clientRes in ({'DT':'AT_RISK', 'Enddate':''}, None) and status == 'Banned':
+        elif clientRes in ({'DT':'AT_RISK', 'EndDate':''}, None) and status == 'Banned':
           self.assert_(res['SAT'])
         else:
           self.assertFalse(res['SAT'])
