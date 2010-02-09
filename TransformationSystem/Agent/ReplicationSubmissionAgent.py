@@ -165,12 +165,12 @@ class ReplicationSubmissionAgent(AgentModule):
       res = self.requestClient.getRequestInfo(taskName,'RequestManagement/RequestManager')
       if res['OK']:
         taskNameIDs[taskName] = res['Value'][0]
-      elif re.search("Failed to retreive RequestID for Request", res['Message']):
+      elif re.search("Failed to retrieve RequestID for Request", res['Message']):
         noTasks.append(taskName)
       else:
         gLogger.warn("Failed to get requestID for request", res['Message'])
 
-    # For the tasks with no assoicated request found re-set the status of the task in the transformationDB
+    # For the tasks with no associated request found re-set the status of the task in the transformationDB
     for taskName in noTasks:
       transID,taskID = taskName.split('_')
       gLogger.info("%s.checkReservedTasks: Resetting status of %s to Reserved as no associated task found" % (AGENT_NAME,taskName))
@@ -178,7 +178,7 @@ class ReplicationSubmissionAgent(AgentModule):
       if not res['OK']:
         gLogger.warn("%s.checkReservedTasks: Failed to update task status and ID after recovery" % AGENT_NAME, "%s %s" % (taskName,res['Message']))
 
-    # For the tasks for which an assoicated request was found update the task details in the transformationDB
+    # For the tasks for which an associated request was found update the task details in the transformationDB
     for taskName,extTaskID in taskNameIDs.items():
       transID,taskID = taskName.split('_')
       gLogger.info("%s.checkReservedTasks: Resetting status of %s to Created with ID %s" % (AGENT_NAME,taskName,extTaskID))
@@ -205,7 +205,7 @@ class ReplicationSubmissionAgent(AgentModule):
     transIDs = []
     for transformation in res['Value']:
       transIDs.append(transformation['TransformationID'])
-
+      
     # Get the files which are in a UPDATE state
     updateStatus = self.am_getOption('UpdateStatus',['Created','Submitted','Received','Waiting','Running'])
     timeStamp = str(datetime.datetime.utcnow() - datetime.timedelta(minutes=10))
