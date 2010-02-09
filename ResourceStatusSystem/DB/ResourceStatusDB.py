@@ -1154,22 +1154,37 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def addResourceType(self, resourceType, description=''):
+  def addType(self, granularity, type, description=''):
     """ 
-    Add a resource type (CE (different types also), SE, ...)
+    Add a site, service or resource type 
+    (T1, Computing, CE (different types also), SE, ...)
         
     :params:
+      :attr:`granularity`: string - 'Site', 'Service', 'Resource' 
+    
       :attr:`serviceType`: string
 
       :attr:`description`: string, optional
     """
 
-    req = "INSERT INTO ResourceTypes (ResourceType, Description)"
+    if granularity in ('Site', 'Sites'):
+      DBtype = 'SiteType'
+      DBtable = 'SiteTypes'
+    elif granularity in ('Service', 'Services'):
+      DBtype = 'ServiceType'
+      DBtable = 'ServiceTypes'
+    elif granularity in ('Resource', 'Resources'):
+      DBtype = 'ResourceType'
+      DBtable = 'ResourceTypes'
+    else:
+      raise InvalidRes, where(self, self.addType)
+    
+    req = "INSERT INTO %s (%s, Description)" %(DBtable, DBtype)
     req = req + "VALUES ('%s', '%s');" % (resourceType, description)
 
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
-      raise RSSDBException, where(self, self.addResourceType) + resUpdate['Message']
+      raise RSSDBException, where(self, self.addType) + resUpdate['Message']
 
 #############################################################################
 
@@ -2022,6 +2037,7 @@ class ResourceStatusDB:
       raise RSSDBException, where(self, self.removeType) + resDel['Message']
 
 #############################################################################
+  
   def getStatusList(self):
     """ 
     Get list of status with no descriptions.
@@ -2034,9 +2050,8 @@ class ResourceStatusDB:
       raise RSSDBException, where(self, self.getStatusList) + resQuery['Message']
     if not resQuery['Value']:
       return []
-    typeList = []
-    typeList = [ x[0] for x in resQuery['Value']]
-    return typeList
+    l = [ x[0] for x in resQuery['Value']]
+    return l
 
 #############################################################################
 
@@ -2635,6 +2650,25 @@ class ResourceStatusDB:
     SENodeList = []
     LFCNodeList = []
     seServiceSite = []
+    
+    #Add status list
+    statusIn = self.getStatusList()
+    for s in ValidStatus:
+      if s not in statusIn:
+        self.addStatus(s)
+    
+    #Add types list
+    for g in ('Site', 'Service', 'Resource'):
+      tIn = self.getTypesList(g)
+      if g == 'Site':
+        typesList = ValidSiteType
+      elif g == 'Service':
+        typesList = ValidServiceType
+      if g == 'Resource':
+        typesList = ValidResourceType
+      for t in typesList:
+        if t not in tIn:
+          self.addType(g, t)
     
     sitesList = gConfig.getSections('Resources/Sites/LCG', True)
     if sitesList['OK']:
