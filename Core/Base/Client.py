@@ -12,6 +12,9 @@ class Client:
   """ Simple class to redirect unknown actions directly to the server. 
       - The self.serverURL member should be set by the inheriting class
   """
+  def setServer(self,url):
+    self.serverURL = url
+
   def __getattr__(self, name):
     self.call = name
     return self.executeRPC
