@@ -68,6 +68,8 @@ class FTSRegisterAgent(AgentModule):
         if not res['OK']:
           gLogger.error("FTSRegisterAgent.execute: Completely failed to regsiter replicas.",res['Message'])
           return S_OK()
+        for lfn,error in res['Value']['Failed'].items():
+          gLogger.error("Failed to register replica for file","%s %s" % (lfn,error))
         for lfn in res['Value']['Successful'].keys():
           channelID,fileID,se = lfns[lfn]
           self.TransferDB.setRegistrationDone(channelID,fileID)
