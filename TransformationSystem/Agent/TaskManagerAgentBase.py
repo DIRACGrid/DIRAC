@@ -73,7 +73,13 @@ class TaskManagerAgentBase(AgentModule):
     return S_OK()
   
   def _selectTransformations(self,transType=[],status=['Active'],agentType=['Automatic']):
-    selectCond = {'Type' : transType, 'Status' : status, 'AgentType' : agentType}
+    selectCond = {}
+    if status:
+      selectCond['Status'] = status
+    if transType:
+      selectCond['Type'] = transType
+    if agentType:
+      selectCond['AgentType'] = agentType
     res = self.transClient.getTransformations(condDict=selectCond)
     if not res['OK']:
       gLogger.error("_selectTransformations: Failed to get transformations for selection.",res['Message'])
@@ -146,7 +152,8 @@ class TaskManagerAgentBase(AgentModule):
       if not statusDict:
         gLogger.info("updateFileStatus: No file statuses to be updated for transformation %s." % transID)
         continue
-      fileReport = FileReport(server='TransformationSystem/TransformationManager')
+      #TODO GET this properly
+      fileReport = FileReport(server='ProductionManagement/ProductionManager')
       for lfn,status in statusDict.items():
         fileReport.setFileStatus(int(transID),lfn,status)
       res = fileReport.commit()
@@ -168,7 +175,7 @@ class TaskManagerAgentBase(AgentModule):
     for transformation in res['Value']:
       transID = transformation['TransformationID']
       # Select the tasks which have been in Reserved status for more than 1 hour for selected transformations
-      condDict = {"TransformationID":transIDs,"WmsStatus":'Reserved'}
+      condDict = {"TransformationID":transID,"WmsStatus":'Reserved'}
       time_stamp_older = str(datetime.datetime.utcnow() - datetime.timedelta(hours=1))
       time_stamp_newer = str(datetime.datetime.utcnow() - datetime.timedelta(days=7))
       res = self.transClient.getTransformationTasks(condDict=condDict,older=time_stamp_older,newer=time_stamp_newer, timeStamp='LastUpdateTime')
@@ -178,7 +185,7 @@ class TaskManagerAgentBase(AgentModule):
       if not res['Value']:
         gLogger.info("checkReservedTasks: No Reserved tasks found for transformation %s" % transID)
         continue
-      res = self.checkReservedTasks(taskNameList)
+      res = self.updateTransformationReservedTasks(res['Value'])
       if not res['OK']:
         gLogger.info("checkReservedTasks: No Reserved tasks found for transformation %s" % transID)
         continue
@@ -187,7 +194,7 @@ class TaskManagerAgentBase(AgentModule):
       # For the tasks with no associated request found re-set the status of the task in the transformationDB
       for taskName in noTasks:
         transID,taskID = taskName.split('_')
-        gLogger.info("checkReservedTasks: Resetting status of %s to Reserved as no associated task found" % (taskName))
+        gLogger.info("checkReservedTasks: Resetting status of %s to Created as no associated task found" % (taskName))
         res = self.transClient.setTaskStatus(int(transID),int(taskID),'Created')
         if not res['OK']:
           gLogger.warn("checkReservedTasks: Failed to update task status and ID after recovery", "%s %s" % (taskName,res['Message']))
@@ -211,6 +218,7 @@ class TaskManagerAgentBase(AgentModule):
       return res
     for transformation in res['Value']:
       transID = transformation['TransformationID']
+      transBody = transformation['Body']
       res = self.transClient.getTasksToSubmit(transID,tasksPerLoop)
       if not res['OK']:
         gLogger.error("submitTasks: Failed to obtain tasks for transformation", "%s %s" % (transID,res['Message']))
@@ -220,15 +228,15 @@ class TaskManagerAgentBase(AgentModule):
         gLogger.info("submitTasks: No tasks found for submission for transformation %s" % transID)
         continue
       gLogger.info("submitTasks: Obtained %d tasks for submission for transformation %s" % (len(tasks),transID))
-      res = self.prepareTasks(tasks)
+      res = self.prepareTransformationTasks(transBody,tasks,'hack1','hack2')
       if not res['OK']:
         gLogger.error("submitTasks: Failed to prepare tasks for transformation", "%s %s" % (transID,res['Message']))
         continue
-      res = self.submitTasks(res['Value'])
+      res = self.submitTransformationTasks(res['Value'])
       if not res['OK']:
         gLogger.error("submitTasks: Failed to submit prepared tasks for transformation", "%s %s" % (transID,res['Message']))
         continue
-      res = self.updateDBAfterSubmission(res['Value'])
+      res = self.updateDBAfterTaskSubmission(res['Value'])
       if not res['OK']:
         gLogger.error("submitTasks: Failed to update DB after task submission for transformation", "%s %s" % (transID,res['Message']))
         continue
