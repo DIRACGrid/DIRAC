@@ -13,6 +13,48 @@ from DIRAC.Interfaces.API.Job                                   import Job
 
 import string
 
+class TaskBase:
+  
+  def __init__(self):
+    self.transClient = TransformationDBClient()
+  
+  def prepareTasks(self,transBody,taskDict,owner,ownerGroup):
+    return S_ERROR("Not implemented")
+    
+  def submitTasks(self,taskDict):
+    return S_ERROR("Not implemented")
+  
+  def submitToExternal(self,task):
+    return S_ERROR("Not implemented")
+  
+  def updateDBAfterSubmission(self,taskDict):
+    updated = 0
+    startTime = time.time()
+    for taskID in sortList(taskDict.keys()):
+      taskName = taskDict[taskID]['TaskName']
+      if not taskDict[taskID]['Success']:
+        transID = taskDict['TransformationID']
+        res = self.transClient.setTaskStatus(transID,taskID,'Created')
+        if not res['OK']:
+          gLogger.warn("updateDBAfterSubmission: Failed to update task status after submission failure" , "%s %s" % (taskName,res['Message']))
+      else:
+        res = self.transClient.setTaskStatusAndWmsID(transID,taskID,'Submitted',str(taskDict[taskID]['ExternalID']))
+        if not res['OK']:
+          gLogger.warn("updateDBAfterSubmission: Failed to update task status after submission" , "%s %s" % (taskName,res['Message']))
+        gMonitor.addMark("SubmittedTasks",1)
+        updated +=1
+    gLogger.info("updateDBAfterSubmission: Updated %d tasks in %.1f seconds" % (updated,time.time()-startTime))
+    return S_OK()
+  
+  def checkReservedTasks(self,taskDicts):
+    return S_ERROR("Not implemented")
+
+  def getSubmittedTaskStatus(self,taskDicts):
+    return S_ERROR("Not implemented")
+
+  def getSubmittedFileStatus(self,fileDicts):
+    return S_ERROR("Not implemented")
+
 class RequestTasks(TaskBase):
   
   def __init__(self):
@@ -305,44 +347,3 @@ class WorkflowTasks(TaskBase):
             updateDict[lfn] = newFileStatus
     return S_OK(updateDict)
   
-class TaskBase:
-  
-  def __init__(self):
-    self.transClient = TransformationDBClient()
-  
-  def prepareTasks(self,transBody,taskDict,owner,ownerGroup):
-    return S_ERROR("Not implemented")
-    
-  def submitTasks(self,taskDict):
-    return S_ERROR("Not implemented")
-  
-  def submitToExternal(self,task):
-    return S_ERROR("Not implemented")
-  
-  def updateDBAfterSubmission(self,taskDict):
-    updated = 0
-    startTime = time.time()
-    for taskID in sortList(taskDict.keys()):
-      taskName = taskDict[taskID]['TaskName']
-      if not taskDict[taskID]['Success']:
-        transID = taskDict['TransformationID']
-        res = self.transClient.setTaskStatus(transID,taskID,'Created')
-        if not res['OK']:
-          gLogger.warn("updateDBAfterSubmission: Failed to update task status after submission failure" , "%s %s" % (taskName,res['Message']))
-      else:
-        res = self.transClient.setTaskStatusAndWmsID(transID,taskID,'Submitted',str(taskDict[taskID]['ExternalID']))
-        if not res['OK']:
-          gLogger.warn("updateDBAfterSubmission: Failed to update task status after submission" , "%s %s" % (taskName,res['Message']))
-        gMonitor.addMark("SubmittedTasks",1)
-        updated +=1
-    gLogger.info("updateDBAfterSubmission: Updated %d tasks in %.1f seconds" % (updated,time.time()-startTime))
-    return S_OK()
-  
-  def checkReservedTasks(self,taskDicts):
-    return S_ERROR("Not implemented")
-
-  def getSubmittedTaskStatus(self,taskDicts):
-    return S_ERROR("Not implemented")
-
-  def getSubmittedFileStatus(self,fileDicts):
-    return S_ERROR("Not implemented")
