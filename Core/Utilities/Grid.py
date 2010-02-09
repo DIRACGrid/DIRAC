@@ -26,10 +26,13 @@ def executeGridCommand(proxy, cmd, gridEnvScript=None ):
     else:
       gridEnv = currentEnv
 
-    ret = gProxyManager.dumpProxyToFile( proxy )
-    if not ret['OK']:
-      return ret
-    gridEnv[ 'X509_USER_PROXY' ] = ret['Value']
+    if os.path.exists(proxy):
+      gridEnv[ 'X509_USER_PROXY' ] = proxy
+    else:  
+      ret = gProxyManager.dumpProxyToFile( proxy )
+      if not ret['OK']:
+        return ret
+      gridEnv[ 'X509_USER_PROXY' ] = ret['Value']
     return systemCall( 120, cmd, env = gridEnv )
   
 def ldapsearchBDII( filt=None, attr=None, host=None, base = None ):
