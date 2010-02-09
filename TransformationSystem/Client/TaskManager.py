@@ -4,6 +4,7 @@ COMPONENT_NAME='TaskManager'
 
 from DIRAC                                                      import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.TransformationSystem.Client.TransformationDBClient   import TransformationDBClient
+from DIRAC.Core.Utilities.List                                  import sortList
 
 from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
 from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
@@ -11,23 +12,23 @@ from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestCl
 from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
 from DIRAC.Interfaces.API.Job                                   import Job
 
-import string
+import string,re,time,types
 
 class TaskBase:
   
   def __init__(self):
     self.transClient = TransformationDBClient()
-  
-  def prepareTasks(self,transBody,taskDict,owner,ownerGroup):
+
+  def prepareTransformationTasks(self,transBody,taskDict,owner,ownerGroup):
     return S_ERROR("Not implemented")
     
-  def submitTasks(self,taskDict):
+  def submitTransformationTasks(self,taskDict):
     return S_ERROR("Not implemented")
   
-  def submitToExternal(self,task):
+  def submitTasksToExternal(self,task):
     return S_ERROR("Not implemented")
   
-  def updateDBAfterSubmission(self,taskDict):
+  def updateDBAfterTaskSubmission(self,taskDict):
     updated = 0
     startTime = time.time()
     for taskID in sortList(taskDict.keys()):
@@ -46,7 +47,7 @@ class TaskBase:
     gLogger.info("updateDBAfterSubmission: Updated %d tasks in %.1f seconds" % (updated,time.time()-startTime))
     return S_OK()
   
-  def checkReservedTasks(self,taskDicts):
+  def updateTransformationReservedTasks(self,taskDicts):
     return S_ERROR("Not implemented")
 
   def getSubmittedTaskStatus(self,taskDicts):
@@ -61,55 +62,60 @@ class RequestTasks(TaskBase):
     TaskBase.__init__(self)
     self.requestClient = RequestClient()
     
-  def prepareTasks(self,transBody,taskDict,owner,ownerGroup):
-    requestType,requestOperation = transBody.split(';')
-    for taskNumber in sortList(taskDict.keys()):
-      paramDict = taskDict[taskNumber]
+  def prepareTransformationTasks(self,transBody,taskDict,owner,ownerGroup):
+    requestType = 'transfer'
+    requestOperation = 'replicateAndRegister'
+    try:
+      requestType,requestOperation = transBody.split(';')
+    except:
+      pass
+    for taskID in sortList(taskDict.keys()):
+      paramDict = taskDict[taskID]
+      transID = paramDict['TransformationID']
       oRequest = RequestContainer(init=False)
       subRequestIndex = oRequest.initiateSubRequest(requestType)['Value']
-      attributeDict = {'Operation':requestOperation,'TargetSE':taskDict['TargetSE']}
+      attributeDict = {'Operation':requestOperation,'TargetSE':paramDict['TargetSE']}
       oRequest.setSubRequestAttributes(subRequestIndex,requestType,attributeDict)
       files = []
-      for lfn in taskDict['InputData'].split(';'):
+      for lfn in paramDict['InputData'].split(';'):
         files.append({'LFN':lfn})     
       oRequest.setSubRequestFiles(subRequestIndex,requestType,files)
       requestName = str(transID).zfill(8)+'_'+str(taskID).zfill(8)
       oRequest.setRequestAttributes({'RequestName':requestName})
-      taskDict[taskNumber]['TaskObject'] = oRequest.toXML()['Value']
+      taskDict[taskID]['TaskObject'] = oRequest.toXML()['Value']
     return S_OK(taskDict)
 
-  def submitTasks(self,taskDict):
+  def submitTransformationTasks(self,taskDict):
     submitted = 0
     failed = 0
     startTime = time.time()
-    for taskID in sortLit(taskDict.keys()):
+    for taskID in sortList(taskDict.keys()):
       taskDict[taskID]
-      res = self.submitToExternal(taskDict[taskID]['TaskObject'])
+      res = self.submitTaskToExternal(taskDict[taskID]['TaskObject'])
       if res['OK']:
         taskDict[taskID]['ExternalID'] = res['Value']
         taskDict[taskID]['Success'] = True
         submitted +=1
       else:      
-        self.log.warn("Failed to submit task to WMS",res['Message'])
+        self.log.error("Failed to submit task to WMS",res['Message'])
         taskDict[taskID]['Success'] = False
         failed += 1
     self.log.info('submitTasks: Submitted %d tasks to RMS in %.1f seconds' % (submitted,time.time()-startTime))
-    self.log.info('submitTasks: Failed to submit %d tasks to RMS.' % (failed,time.time()-startTime))
+    self.log.info('submitTasks: Failed to submit %d tasks to RMS.' % (failed))
     return S_OK(taskDict)
 
-  def submitToExternal(self,request):
-    if not (request in types.StringTypes):
-      try:
-        name = request.getRequestName()['Value']
-        request = request.toXML()['Value']
-      except:
-        return S_ERROR("Not valid request description")
-    else:
+  def submitTaskToExternal(self,request):
+    if type(request) in types.StringTypes:
       oRequest = RequestContainer(request)
       name = oRequest.getRequestName()['Value']
+    elif type(request) == types.InstanceType:
+      name = request.getRequestName()['Value']
+      request = request.toXML()['Value']
+    else:
+      return S_ERROR("Request should be string or request object")
     return self.requestClient.setRequest(name,request)
 
-  def checkReservedTasks(self,taskDicts):
+  def updateTransformationReservedTasks(self,taskDicts):
     taskNameIDs = {}
     noTasks = []
     for taskDict in taskDicts:
@@ -119,7 +125,7 @@ class RequestTasks(TaskBase):
       res = self.requestClient.getRequestInfo(taskName,'RequestManagement/RequestManager')
       if res['OK']:
         taskNameIDs[taskName] = res['Value'][0]
-      elif re.search("Failed to retrieve RequestID for Request", res['Message']):
+      elif re.search("Failed to retreive RequestID for Request", res['Message']):
         noTasks.append(taskName)
       else:
         gLogger.warn("Failed to get requestID for request", res['Message'])
@@ -178,7 +184,7 @@ class WorkflowTasks(TaskBase):
     TaskBase.__init__(self)
     self.wmsClient = WMSClient()
 
-  def prepareTasks(self,transBody,taskDict,owner,ownerGroup):
+  def prepareTransformationTasks(self,transBody,taskDict,owner,ownerGroup):
     oJob = Job(transBody)
     for taskNumber in sortList(taskDict.keys()):
       paramsDict = taskDict[taskNumber]
@@ -221,13 +227,13 @@ class WorkflowTasks(TaskBase):
     # This should return a dictionary containing the output data file LFNs to be produced
     return S_OK({})
   
-  def submitTasks(self,taskDict):
+  def submitTransformationTasks(self,taskDict):
     submitted = 0
     failed = 0
     startTime = time.time()
-    for taskID in sortLit(taskDict.keys()):
+    for taskID in sortList(taskDict.keys()):
       taskDict[taskID]
-      res = self.submitToExternal(taskDict[taskID]['TaskObject'])
+      res = self.submitTaskToExternal(taskDict[taskID]['TaskObject'])
       if res['OK']:
         taskDict[taskID]['ExternalID'] = res['Value']
         taskDict[taskID]['Success'] = True
@@ -236,19 +242,23 @@ class WorkflowTasks(TaskBase):
         self.log.warn("Failed to submit task to WMS",res['Message'])
         taskDict[taskID]['Success'] = False
         failed += 1
-    self.log.info('submitTasks: Submitted %d tasks to WMS in %.1f seconds' % (submitted,time.time()-startTime))
-    self.log.info('submitTasks: Failed to submit %d tasks to WMS.' % (failed,time.time()-startTime))
+    self.log.info('submitTransformationTasks: Submitted %d tasks to WMS in %.1f seconds' % (submitted,time.time()-startTime))
+    self.log.info('submitTransformationTasks: Failed to submit %d tasks to WMS.' % (failed))
     return S_OK(taskDict)
 
-  def submitToExternal(self,job):
-    if not (job in types.StringTypes):
+  def submitTaskToExternal(self,job):
+    if type(job) in types.StringTypes:
+      pass
+    elif type(job) == types.InstanceType:
       try:
         job = job._toXML()
       except:
         return S_ERROR("Not valid job description")
+    else:
+      return S_ERROR("Job should be string or Job object")
     return self.wmsClient.submitJob(job)
   
-  def checkReservedTasks(self,taskDicts):
+  def updateTransformationReservedTasks(self,taskDicts):
     taskNames = []
     for taskDict in taskDicts:
       transID = taskDict['TransformationID']
@@ -257,14 +267,14 @@ class WorkflowTasks(TaskBase):
       taskNames.append(taskName)
     res = self.wmsClient.getJobs({'JobName':taskNames})
     if not ['OK']:
-      self.log.info("checkReservedTasks: Failed to get task from WMS",res['Message'])
+      self.log.info("updateTransformationReservedTasks: Failed to get task from WMS",res['Message'])
       return res
     taskNameIDs = {}
     allAccounted = True
     for wmsID in res['Value']:
       res = self.wmsClient.getJobPrimarySummary(int(wmsID))
       if not res['OK']:
-        self.log.warn("checkReservedTasks: Failed to get task summary from WMS",res['Message'])
+        self.log.warn("updateTransformationReservedTasks: Failed to get task summary from WMS",res['Message'])
         allAccounted = False
         continue
       jobName = res['Value']['JobName']  
@@ -317,7 +327,7 @@ class WorkflowTasks(TaskBase):
       if not taskFiles.has_key(taskName):
         taskFiles[taskName] = {}
       taskFiles[taskName][fileDict['LFN']] = fileDict['Status']
-    res = self.checkReservedTasks(fileDicts)
+    res = self.checkTransformationReservedTasks(fileDicts)
     if not res['OK']:
       self.log.warn("Failed to obtain taskIDs for files")
       return res
