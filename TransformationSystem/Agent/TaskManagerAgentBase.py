@@ -90,7 +90,7 @@ class TaskManagerAgentBase(AgentModule):
     return res
 
   def updateTaskStatus(self):
-    gLogger.info("updateTaskStatus: Updating the Status of replication tasks")
+    gLogger.info("updateTaskStatus: Updating the Status of tasks")
     # Get the transformations to be updated
     status = self.am_getOption('UpdateTasksStatus',['Active','Stopped'])
     res = self._selectTransformations(transType=self.transType,status=status,agentType=[])
