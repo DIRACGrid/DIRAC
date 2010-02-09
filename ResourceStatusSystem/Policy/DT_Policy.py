@@ -109,7 +109,7 @@ class DT_Policy(PolicyBase):
         result['Status'] = 'Active'
         result['Reason'] = 'DT:%s' %status['DT']
       else:
-        if status['DT'] == 'OUTAGE':
+        if 'OUTAGE' in status['DT']:
           result['SAT'] = False
           result['Status'] = 'Banned'
           result['Reason'] = 'DT:%s' %status['DT']
