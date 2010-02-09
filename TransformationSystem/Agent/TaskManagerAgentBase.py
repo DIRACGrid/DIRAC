@@ -7,7 +7,7 @@ __RCSID__ = "$Id: TaskManagerAgentBase.py 20001 2010-01-20 12:47:38Z acsmith $"
 
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
-from DIRAC.TransformationSystem.Client.TransforamtionDBClient       import TransformationDBClient
+from DIRAC.TransformationSystem.Client.TransformationDBClient       import TransformationDBClient
 from DIRAC.TransformationSystem.Client.FileReport                   import FileReport
 
 from DIRAC.Core.Utilities.List                                      import sortList
@@ -21,6 +21,7 @@ class TaskManagerAgentBase(AgentModule):
   def initialize(self):
     self.am_setModuleParam('shifter','ProductionManager')
     self.am_setModuleParam("shifterProxyLocation","%s/runit/%s/proxy" % (rootPath,AGENT_NAME))
+    self.section = self.am_getOption("section")
     gMonitor.registerActivity("SubmittedTasks","Automatically submitted tasks","Transformation Monitoring","Tasks", gMonitor.OP_ACUM)
     self.transClient = TransformationDBClient()
     return S_OK()
@@ -32,7 +33,8 @@ class TaskManagerAgentBase(AgentModule):
     # Determine whether the task status is to be monitored and updated
     enableTaskMonitor = self.am_getOption('MonitorTasks',False)
     if not enableTaskMonitor:
-      gLogger.info("execute: Monitoring of tasks is disabled. To enable create the following option %s/MonitorTasks" % (self.section))
+      gLogger.info("execute: Monitoring of tasks is disabled.")
+      gLogger.info("execute: To enable create the 'MonitorTasks' option")
     else:
       res = self.updateTaskStatus()
       if not res['OK']:
@@ -41,7 +43,8 @@ class TaskManagerAgentBase(AgentModule):
     # Determine whether the task files status is to be monitored and updated
     enableFileMonitor = self.am_getOption('MonitorFiles',False)
     if not enableFileMonitor:
-      gLogger.info("execute: Monitoring of files is disabled. To enable create the following option %s/MonitorFiles" % (self.section))
+      gLogger.info("execute: Monitoring of files is disabled.")
+      gLogger.info("execute: To enable create the 'MonitorFiles' option")
     else:
       res = self.updateFileStatus()
       if not res['OK']:
@@ -50,7 +53,8 @@ class TaskManagerAgentBase(AgentModule):
     # Determine whether the checking of reserved tasks is to be performed
     enableCheckReserved = self.am_getOption('CheckReserved',False)
     if not enableCheckReserved:
-      gLogger.info("execute: Checking of reserved tasks is disabled. To enable create the following option %s/CheckReserved" % (self.section))
+      gLogger.info("execute: Checking of reserved tasks is disabled.")
+      gLogger.info("execute: To enable create the 'CheckReserved' option")
     else:
       res = self.checkReservedTasks()
       if not res['OK']:
@@ -59,7 +63,8 @@ class TaskManagerAgentBase(AgentModule):
     # Determine whether the submission of tasks is to be executed
     enableSubmission = self.am_getOption('SubmitTasks',False)
     if not enableSubmission:
-      gLogger.info("execute: Submission of tasks is disabled. To enable create the following option %s/SubmitTasks" % (self.section))
+      gLogger.info("execute: Submission of tasks is disabled.")
+      gLogger.info("execute: To enable create the 'SubmitTasks' option")
     else:
       res = self.submitTasks()
       if not res['OK']:
