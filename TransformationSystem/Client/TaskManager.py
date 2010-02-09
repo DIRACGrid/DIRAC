@@ -10,6 +10,7 @@ from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestCo
 from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestClient
 
 from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient  import JobMonitoringClient
 from DIRAC.Interfaces.API.Job                                   import Job
 
 import string,re,time,types
@@ -182,7 +183,8 @@ class WorkflowTasks(TaskBase):
   
   def __init__(self):
     TaskBase.__init__(self)
-    self.wmsClient = WMSClient()
+    self.submissionClient = WMSClient()
+    self.jobMonitoringClient = JobMonitoringClient()
 
   def prepareTransformationTasks(self,transBody,taskDict,owner,ownerGroup):
     oJob = Job(transBody)
@@ -256,7 +258,7 @@ class WorkflowTasks(TaskBase):
         return S_ERROR("Not valid job description")
     else:
       return S_ERROR("Job should be string or Job object")
-    return self.wmsClient.submitJob(job)
+    return self.submissionClient.submitJob(job)
   
   def updateTransformationReservedTasks(self,taskDicts):
     taskNames = []
@@ -265,20 +267,20 @@ class WorkflowTasks(TaskBase):
       taskID = taskDict['JobID']
       taskName = str(transID).zfill(8)+'_'+str(taskID).zfill(8)
       taskNames.append(taskName)
-    res = self.wmsClient.getJobs({'JobName':taskNames})
+    res = self.jobMonitoringClient.getJobs({'JobName':taskNames})
     if not ['OK']:
       self.log.info("updateTransformationReservedTasks: Failed to get task from WMS",res['Message'])
       return res
     taskNameIDs = {}
     allAccounted = True
     for wmsID in res['Value']:
-      res = self.wmsClient.getJobPrimarySummary(int(wmsID))
+      res = self.jobMonitoringClient.getJobPrimarySummary(int(wmsID))
       if not res['OK']:
         self.log.warn("updateTransformationReservedTasks: Failed to get task summary from WMS",res['Message'])
         allAccounted = False
         continue
       jobName = res['Value']['JobName']  
-      taskNameIDs[jobName] = wmsID
+      taskNameIDs[jobName] = int(wmsID)
     noTask = []
     if allAccounted:
       for taskName in taskNames:
@@ -291,12 +293,12 @@ class WorkflowTasks(TaskBase):
     for taskDict in taskDicts:
       wmsID = taskDict['JobWmsID']
     wmsIDs.append(wmsID)
-    res = self.wmsClient.getJobsStatus(wmsIDs)
+    res = self.jobMonitoringClient.getJobsStatus(wmsIDs)
     if not res['OK']:
       self.log.warn("Failed to get job status from the WMS system")
       return res
     updateDict = {}
-    statusDict = result['Value']
+    statusDict = res['Value']
     for taskDict in taskDicts:
       transID = taskDict['TransformationID']
       taskID = taskDict['JobID']
@@ -308,13 +310,13 @@ class WorkflowTasks(TaskBase):
       if wmsID in statusDict.keys():
         newStatus = statusDict[wmsID]['Status']
       if oldStatus != newStatus:
-        if status == "Removed":
+        if newStatus == "Removed":
           self.log.verbose('Production/Job %d/%d removed from WMS while it is in %s status' % (transID,taskID,oldStatus))
-          status = "Failed"
-        self.log.verbose('Setting job status for Production/Job %d/%d to %s' % (transID,jobID,status))
-        if not updateDict.has_key(status):
-          updateDict[status] = []
-        updateDict[status].append(taskID)
+          newStatus = "Failed"
+        self.log.verbose('Setting job status for Production/Job %d/%d to %s' % (transID,taskID,newStatus))
+        if not updateDict.has_key(newStatus):
+          updateDict[newStatus] = []
+        updateDict[newStatus].append(taskID)
     return S_OK(updateDict)
   
   def getSubmittedFileStatus(self,fileDicts):
@@ -327,7 +329,7 @@ class WorkflowTasks(TaskBase):
       if not taskFiles.has_key(taskName):
         taskFiles[taskName] = {}
       taskFiles[taskName][fileDict['LFN']] = fileDict['Status']
-    res = self.checkTransformationReservedTasks(fileDicts)
+    res = self.updateTransformationReservedTasks(fileDicts)
     if not res['OK']:
       self.log.warn("Failed to obtain taskIDs for files")
       return res
@@ -338,7 +340,7 @@ class WorkflowTasks(TaskBase):
       for lfn,oldStatus in taskFiles[taskName].items():
         if oldStatus != 'Unused':
           updateDict[lfn] = 'Unused'
-    res = self.wmsClient.getJobsStatus(taskNameIDs.values())
+    res = self.jobMonitoringClient.getJobsStatus(taskNameIDs.values())
     if not res['OK']:
       self.log.warn("Failed to get job status from the WMS system")
       return res
@@ -346,7 +348,7 @@ class WorkflowTasks(TaskBase):
     for taskName,wmsID in taskNameIDs.items():
       newFileStatus = ''
       if statusDict.has_key(wmsID):
-        jobStatus = statusDict[wmsID]
+        jobStatus =  statusDict[wmsID]['Status']
         if jobStatus in ['Done','Completed']:
           newFileStatus = 'Processed'
         elif jobStatus in ['Failed']:
