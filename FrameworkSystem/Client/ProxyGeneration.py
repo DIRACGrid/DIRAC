@@ -3,7 +3,7 @@
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id$"
+__RCSID__ = "$Id$"
 __VERSION__ = "$Revision: 1.2 $"
 
 import sys
@@ -31,7 +31,7 @@ class CLIParams:
 
   def setProxyLifeTime( self, arg ):
     try:
-      fields = [ f.strip() for f in arg.split(":") ]
+      fields = [ f.strip() for f in arg.split( ":" ) ]
       self.proxyLifeTime = int( fields[0] ) * 3600 + int( fields[1] ) * 60
     except:
       print "Can't parse %s time! Is it a HH:MM?" % arg
@@ -102,7 +102,7 @@ class CLIParams:
     print "Version:"
     print " ", __RCSID__
     print " ", __VERSION__
-    sys.exit(0)
+    sys.exit( 0 )
     return DIRAC.S_OK()
 
   def disableClockCheck( self, arg ):
@@ -143,7 +143,7 @@ def generateProxy( params ):
       if deviation > 600:
         print "Error: Your host clock seems to be off by more than TEN MINUTES! Thats really bad."
         print "We're cowardly refusing to generate a proxy. Please fix your system time"
-        DIRAC.exit(1)
+        DIRAC.exit( 1 )
       elif deviation > 180:
         print "Error: Your host clock seems to be off by more than THREE minutes! Thats bad."
         print "Warn : We'll generate the proxy but please fix your system time"
@@ -163,11 +163,11 @@ def generateProxy( params ):
       keyLoc = cakLoc[1]
 
   testChain = X509Chain()
-  retVal = testChain.loadKeyFromFile(keyLoc, password = params.userPasswd )
+  retVal = testChain.loadKeyFromFile( keyLoc, password = params.userPasswd )
   if not retVal[ 'OK' ]:
     passwdPrompt = "Enter Certificate password:"
     if params.stdinPasswd:
-      userPasswd = sys.stdin.readline().strip("\n")
+      userPasswd = sys.stdin.readline().strip( "\n" )
     else:
       userPasswd = getpass.getpass( passwdPrompt )
     params.userPasswd = userPasswd
@@ -178,7 +178,7 @@ def generateProxy( params ):
 
   if params.debug:
     h = int( params.proxyLifeTime / 3600 )
-    m = int( params.proxyLifeTime / 60 )- h * 60
+    m = int( params.proxyLifeTime / 60 ) - h * 60
     print "Proxy lifetime will be %02d:%02d" % ( h, m )
     print "User cert is %s" % certLoc
     print "User key  is %s" % keyLoc
@@ -195,21 +195,24 @@ def generateProxy( params ):
   #Load user cert and key
   retVal = chain.loadChainFromFile( certLoc )
   if not retVal[ 'OK' ]:
+    params.debugMsg( "ERROR: %s" % retVal[ 'Message' ] )
     return S_ERROR( "Can't load %s" % certLoc )
   retVal = chain.loadKeyFromFile( keyLoc, password = params.userPasswd )
   if not retVal[ 'OK' ]:
+    params.debugMsg( "ERROR: %s" % retVal[ 'Message' ] )
     return S_ERROR( "Can't load %s" % keyLoc )
 
   if params.checkWithCS and params.diracGroup:
     retVal = chain.generateProxyToFile( proxyLoc,
                                         params.proxyLifeTime,
-                                        strength =params.proxyStrength,
+                                        strength = params.proxyStrength,
                                         limited = params.limitedProxy )
 
     params.debugMsg( "Contacting CS..." )
 
     retVal = Script.enableCS()
     if not retVal[ 'OK' ]:
+      params.debugMsg( "ERROR: %s" % retVal[ 'Message' ] )
       return S_ERROR( "Can't contact DIRAC CS: %s" % retVal[ 'Message' ] )
     if not params.diracGroup:
       params.diracGroup = CS.getDefaultUserGroup()
@@ -217,11 +220,13 @@ def generateProxy( params ):
     params.debugMsg( "Checking DN %s" % userDN )
     retVal = CS.getUsernameForDN( userDN )
     if not retVal[ 'OK' ]:
+      params.debugMsg( "ERROR: %s" % retVal[ 'Message' ] )
       return S_ERROR( "DN %s is not registered" % userDN )
     username = retVal[ 'Value' ]
     params.debugMsg( "Username is %s" % username )
     retVal = CS.getGroupsForUser( username )
     if not retVal[ 'OK' ]:
+      params.debugMsg( "ERROR: %s" % retVal[ 'Message' ] )
       return S_ERROR( "User %s has no groups defined" % username )
     groups = retVal[ 'Value' ]
     if params.diracGroup not in groups:
@@ -231,10 +236,11 @@ def generateProxy( params ):
   retVal = chain.generateProxyToFile( proxyLoc,
                                       params.proxyLifeTime,
                                       params.diracGroup,
-                                      strength =params.proxyStrength,
+                                      strength = params.proxyStrength,
                                       limited = params.limitedProxy )
 
   if not retVal[ 'OK' ]:
+    params.debugMsg( "ERROR: %s" % retVal[ 'Message' ] )
     return S_ERROR( "Couldn't generate proxy: %s" % retVal[ 'Message' ] )
   return S_OK( proxyLoc )
 
