@@ -15,6 +15,8 @@ class RequestTaskAgent(TaskManagerAgentBase,RequestTasks):
   #############################################################################
   def initialize(self):
     """ Sets defaults """
-    TaskManagerAgentBase.initialize()
+    TaskManagerAgentBase.initialize(self)
     RequestTasks.__init__(self)
+    self.transType = ['Replication','Removal']
+    self.transClient.setServer('ProductionManagement/ProductionManager')
     return S_OK()
