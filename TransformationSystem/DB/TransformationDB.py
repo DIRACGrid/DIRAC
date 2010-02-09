@@ -725,6 +725,7 @@ class TransformationDB(DB):
       se = taskDict['TargetSE']
       status = taskDict['WmsStatus']
       inputVector = taskDict['InputVector']
+      transID = taskDict['TransformationID']
       if not site:
         if inputVector:
           res = getSitesForSE(se,'LCG')
@@ -735,9 +736,9 @@ class TransformationDB(DB):
             usedSite = usedSite[0]
         else:
           usedSite = 'ANY'      
-        resultDict[taskID] = {'InputData':inputVector,'TargetSE':se,'Status':status,'Site':usedSite}
+        resultDict[taskID] = {'InputData':inputVector,'TargetSE':se,'Status':status,'Site':usedSite,'TransformationID':transID}
       elif site and (se in selSEs):
-        resultDict[taskID] = {'InputData':inputVector,'TargetSE':se,'Status':status,'Site':site}   
+        resultDict[taskID] = {'InputData':inputVector,'TargetSE':se,'Status':status,'Site':site,'TransformationID':transID}   
       else:
         gLogger.warn("Can not find corresponding site for se",se)
     return S_OK(resultDict)
