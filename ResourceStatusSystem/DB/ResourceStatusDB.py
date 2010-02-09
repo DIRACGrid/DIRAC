@@ -1180,7 +1180,7 @@ class ResourceStatusDB:
       raise InvalidRes, where(self, self.addType)
     
     req = "INSERT INTO %s (%s, Description)" %(DBtable, DBtype)
-    req = req + "VALUES ('%s', '%s');" % (resourceType, description)
+    req = req + "VALUES ('%s', '%s');" % (type, description)
 
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
@@ -2651,23 +2651,31 @@ class ResourceStatusDB:
     LFCNodeList = []
     seServiceSite = []
     
-    #Add status list
     statusIn = self.getStatusList()
+    #delete status not more in Utils
+    for stIn in statusIn:
+      if stIn not in ValidStatus:
+        self.removeStatus(stIn)
+    #Add new status
     for s in ValidStatus:
       if s not in statusIn:
         self.addStatus(s)
     
-    #Add types list
     for g in ('Site', 'Service', 'Resource'):
-      tIn = self.getTypesList(g)
+      typeIn = self.getTypesList(g)
       if g == 'Site':
         typesList = ValidSiteType
       elif g == 'Service':
         typesList = ValidServiceType
       if g == 'Resource':
         typesList = ValidResourceType
+      #delete types not more in Utils
+      for tIn in typeIn:
+        if tIn not in typesList:
+          self.removeType(g, tIn)
+      #Add new types
       for t in typesList:
-        if t not in tIn:
+        if t not in typeIn:
           self.addType(g, t)
     
     sitesList = gConfig.getSections('Resources/Sites/LCG', True)
