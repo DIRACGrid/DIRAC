@@ -248,7 +248,8 @@ class WorkflowTasks(TaskBase):
         taskDict[taskID]['Success'] = False
         failed += 1
     self.log.info('submitTransformationTasks: Submitted %d tasks to WMS in %.1f seconds' % (submitted,time.time()-startTime))
-    self.log.info('submitTransformationTasks: Failed to submit %d tasks to WMS.' % (failed))
+    if failed:
+      self.log.info('submitTransformationTasks: Failed to submit %d tasks to WMS.' % (failed))
     return S_OK(taskDict)
 
   def submitTaskToExternal(self,job):
