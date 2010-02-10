@@ -4,6 +4,7 @@ COMPONENT_NAME='TaskManager'
 
 from DIRAC                                                      import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.TransformationSystem.Client.TransformationDBClient   import TransformationDBClient
+from DIRAC.Core.Security.Misc                                   import getProxyInfo
 from DIRAC.Core.Utilities.List                                  import sortList
 
 from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
@@ -13,14 +14,14 @@ from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient  import JobMonitoringClient
 from DIRAC.Interfaces.API.Job                                   import Job
 
-import string,re,time,types
+import string,re,time,types,os
 
 class TaskBase:
   
   def __init__(self):
     self.transClient = TransformationDBClient()
 
-  def prepareTransformationTasks(self,transBody,taskDict,owner,ownerGroup):
+  def prepareTransformationTasks(self,transBody,taskDict,owner='',ownerGroup=''):
     return S_ERROR("Not implemented")
     
   def submitTransformationTasks(self,taskDict):
@@ -33,9 +34,9 @@ class TaskBase:
     updated = 0
     startTime = time.time()
     for taskID in sortList(taskDict.keys()):
-      taskName = taskDict[taskID]['TaskName']
+      transID = taskDict[taskID]['TransformationID']
       if not taskDict[taskID]['Success']:
-        transID = taskDict['TransformationID']
+        transName = str(transID).zfill(8)+'_'+str(taskID).zfill(8)
         res = self.transClient.setTaskStatus(transID,taskID,'Created')
         if not res['OK']:
           gLogger.warn("updateDBAfterSubmission: Failed to update task status after submission failure" , "%s %s" % (taskName,res['Message']))
@@ -43,7 +44,6 @@ class TaskBase:
         res = self.transClient.setTaskStatusAndWmsID(transID,taskID,'Submitted',str(taskDict[taskID]['ExternalID']))
         if not res['OK']:
           gLogger.warn("updateDBAfterSubmission: Failed to update task status after submission" , "%s %s" % (taskName,res['Message']))
-        gMonitor.addMark("SubmittedTasks",1)
         updated +=1
     gLogger.info("updateDBAfterSubmission: Updated %d tasks in %.1f seconds" % (updated,time.time()-startTime))
     return S_OK()
@@ -63,7 +63,7 @@ class RequestTasks(TaskBase):
     TaskBase.__init__(self)
     self.requestClient = RequestClient()
     
-  def prepareTransformationTasks(self,transBody,taskDict,owner,ownerGroup):
+  def prepareTransformationTasks(self,transBody,taskDict,owner='',ownerGroup=''):
     requestType = 'transfer'
     requestOperation = 'replicateAndRegister'
     try:
@@ -91,7 +91,6 @@ class RequestTasks(TaskBase):
     failed = 0
     startTime = time.time()
     for taskID in sortList(taskDict.keys()):
-      taskDict[taskID]
       res = self.submitTaskToExternal(taskDict[taskID]['TaskObject'])
       if res['OK']:
         taskDict[taskID]['ExternalID'] = res['Value']
@@ -102,7 +101,8 @@ class RequestTasks(TaskBase):
         taskDict[taskID]['Success'] = False
         failed += 1
     self.log.info('submitTasks: Submitted %d tasks to RMS in %.1f seconds' % (submitted,time.time()-startTime))
-    self.log.info('submitTasks: Failed to submit %d tasks to RMS.' % (failed))
+    if failed:
+      self.log.info('submitTasks: Failed to submit %d tasks to RMS.' % (failed))
     return S_OK(taskDict)
 
   def submitTaskToExternal(self,request):
@@ -186,7 +186,14 @@ class WorkflowTasks(TaskBase):
     self.submissionClient = WMSClient()
     self.jobMonitoringClient = JobMonitoringClient()
 
-  def prepareTransformationTasks(self,transBody,taskDict,owner,ownerGroup):
+  def prepareTransformationTasks(self,transBody,taskDict,owner='',ownerGroup=''):
+    if (not owner) or (not ownerGroup):
+      res = getProxyInfo(False,False)
+      if not res['OK']:
+        return res
+      proxyInfo = res['Value']
+      owner = proxyInfo['username']
+      ownerGroup = proxyInfo['group']
     oJob = Job(transBody)
     for taskNumber in sortList(taskDict.keys()):
       paramsDict = taskDict[taskNumber]
@@ -211,12 +218,9 @@ class WorkflowTasks(TaskBase):
             oJob.setInputData(paramValue)
             inputData = paramValue
         if paramName=='Site':
-          if not site:
+          if paramValue:
             self.log.verbose('Setting allocated site to: %s' %(paramValue))
             oJob.setDestination(paramValue)
-          else:
-            self.log.verbose('Setting destination to chosen site %s' %site)
-            oJob.setDestination(site)
       res = self.getOutputData({'Job':Job(oJob._toXML()),'TransformationID':transID,'TaskID':taskNumber,'InputData':inputData})
       if not res ['OK']:
         continue
@@ -225,7 +229,7 @@ class WorkflowTasks(TaskBase):
       taskDict[taskNumber]['TaskObject'] = Job(oJob._toXML())
     return S_OK(taskDict)
 
-  def getOutputData(self,oJob,transID,taskNumber,inputData):
+  def getOutputData(self,paramDict):
     # This should return a dictionary containing the output data file LFNs to be produced
     return S_OK({})
   
@@ -234,14 +238,13 @@ class WorkflowTasks(TaskBase):
     failed = 0
     startTime = time.time()
     for taskID in sortList(taskDict.keys()):
-      taskDict[taskID]
       res = self.submitTaskToExternal(taskDict[taskID]['TaskObject'])
       if res['OK']:
         taskDict[taskID]['ExternalID'] = res['Value']
         taskDict[taskID]['Success'] = True
         submitted +=1
       else:      
-        self.log.warn("Failed to submit task to WMS",res['Message'])
+        self.log.error("Failed to submit task to WMS",res['Message'])
         taskDict[taskID]['Success'] = False
         failed += 1
     self.log.info('submitTransformationTasks: Submitted %d tasks to WMS in %.1f seconds' % (submitted,time.time()-startTime))
@@ -250,16 +253,23 @@ class WorkflowTasks(TaskBase):
 
   def submitTaskToExternal(self,job):
     if type(job) in types.StringTypes:
-      pass
-    elif type(job) == types.InstanceType:
       try:
-        job = job._toXML()
-      except:
-        return S_ERROR("Not valid job description")
+        job = Job(job)
+      except Exception,x:
+        gLogger.exception("Failed to create job object",'',x)
+        return S_ERROR("Failed to create job object")
+    elif type(job) == types.InstanceType:
+      pass
     else:
-      return S_ERROR("Job should be string or Job object")
-    return self.submissionClient.submitJob(job)
-  
+      gLogger.error("No valid job description found")
+      return S_ERROR("No valid job description found")
+    workflowFile = open("jobDescription.xml",'w')
+    workflowFile.write(job._toXML())
+    jdl = job._toJDL()
+    res = self.submissionClient.submitJob(jdl)
+    os.remove("jobDescription.xml")
+    return res
+
   def updateTransformationReservedTasks(self,taskDicts):
     taskNames = []
     for taskDict in taskDicts:
