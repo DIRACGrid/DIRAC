@@ -5,7 +5,8 @@
 # $Id$
 #
 # This is scripts installs the bare minimal setup of DIRAC which allows
-# to manage the composition of the DIRAC service remotely. 
+# to manage the composition of the DIRAC service remotely. The script should
+# be only used for the initial installation and not for the software updates. 
 #
 # Points to check before the installation can be done:
 # 1. The local user account under which the services will be running should
@@ -14,7 +15,10 @@
 #    by the 'dirac' user
 # 3. The host certificate and key pem files should be placed into the 
 #    $DESTDIR/etc/grid-security directory and made readable by the 
-#    'dirac' user
+#    'dirac' user. The $DESTDIR/etc/grid-security/certificates directory
+#    should be populated with the CA certificates.
+#
+# Authors: R.Graciani, A.T.
 ########################################################################
 #
 # Check the following settings before installation 
@@ -59,10 +63,13 @@ DIRACSETUP=LHCb-NewProduction
 export DIRACINSTANCE=NewProduction
 #
 # DIRAC software version
-DIRACVERSION=v5r0p0-pre17
+DIRACVERSION=v5r0p0-pre19
 #
 # Use the following extensions
-EXTENSION="LHCb Web"
+EXTENSION=LHCb
+#
+# Install Web Portal flag
+INSTALL_WEB=yes
 #
 # The binary platform 
 DIRACARCH=Linux_x86_64_glibc-2.5
@@ -141,7 +148,7 @@ Registry
     host-$DIRACHOST
     {
       DN = $DIRACHOSTDN
-      Properties = JobAdministrator,FullDelegation,Operator,CSAdministrator,ProductionManagement,AlarmsManagement,ProxyManagement
+      Properties = JobAdministrator,FullDelegation,Operator,CSAdministrator,ProductionManagement,AlarmsManagement,ProxyManagement,TrustedHost
     }
   }
   Groups
@@ -207,17 +214,19 @@ for dir in $DIRACDIRS ; do
   fi
 done
 
-# give an unique name to dest directory
-# VERDIR
+#
+# give a unique name to dest directory VERDIR
 VERDIR=$DESTDIR/versions/${DIRACVERSION}-`date +"%s"`
 mkdir -p $VERDIR   || exit 1
+
 #
 # Install DIRAC software now
 # First get the dirac-install script
 echo Downloading dirac-install.py script
 [ -e dirac-install.py ] && rm dirac-install.py
 wget http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/dirac-install.py
-#
+
+# Prepare the list of extensions
 EXT=''
 if [ ! -z "$EXTENSION" ]; then
   for ext in $EXTENSION; do
@@ -227,18 +236,18 @@ fi
 echo Installing DIRAC software
 echo python dirac-install.py -t server -P $VERDIR -r $DIRACVERSION -g $LCGVERSION -p $DIRACARCH -i $DIRACPYTHON $EXT || exit 1
      python dirac-install.py -t server -P $VERDIR -r $DIRACVERSION -g $LCGVERSION -p $DIRACARCH -i $DIRACPYTHON $EXT || exit 1
-echo python dirac-install.py -t web -P $VERDIR -r $DIRACVERSION -p $DIRACARCH -i $DIRACPYTHON || exit 1
-     python dirac-install.py -t web -P $VERDIR -r $DIRACVERSION -p $DIRACARCH -i $DIRACPYTHON || exit 1
 #
 # Create link to permanent directories
-for dir in etc $DIRACDIRS ; do
-  [ -e $VERDIR/$dir ] || ln -s ../../$dir $VERDIR   || exit 1
-done
+#for dir in etc $DIRACDIRS ; do
+  [ -e $VERDIR/etc ] || ln -s ../../etc $VERDIR   || exit 1
+#done
+
 #
 # Do the standard DIRAC configuration
 echo 
-     $VERDIR/scripts/dirac-configure -n $SiteName --UseServerCertificate -o /LocalSite/Root=$ROOT/pro -V $VO --SkipCAChecks || exit 1
+  $VERDIR/scripts/dirac-configure -n $SiteName --UseServerCertificate -o /LocalSite/Root=$ROOT/pro -V $VO --SkipCAChecks || exit 1
 echo
+
 #
 # Create pro and old links
 old=$DESTDIR/old
@@ -248,9 +257,9 @@ pro=$DESTDIR/pro
 #
 # Create bin link
 ln -sf pro/$DIRACARCH/bin $DESTDIR/bin
-##
-## Compile all python files .py -> .pyc, .pyo
-##
+
+#
+# Compile all python files .py -> .pyc, .pyo
 cmd="from compileall import compile_dir ; compile_dir('"$DESTDIR/pro"', force=1, quiet=True )"
 $DESTDIR/pro/$DIRACARCH/bin/python -c "$cmd" 1> /dev/null || exit 1
 $DESTDIR/pro/$DIRACARCH/bin/python -O -c "$cmd" 1> /dev/null  || exit 1
@@ -265,6 +274,7 @@ $DESTDIR/pro/scripts/install_bashrc.sh    $DESTDIR $DIRACVERSION $DIRACARCH pyth
 grep -q "source $DESTDIR/bashrc" $HOME/.bashrc || \
   echo "source $DESTDIR/bashrc" >> $HOME/.bashrc
 
+source $DESTDIR/bashrc
 #
 # install startup at boot script
 if [ ! -e $DESTDIR/sbin/runsvdir-start ] ; then
@@ -284,6 +294,7 @@ chmod +x $DESTDIR/sbin/runsvdir-start
 # Install the minimal set of services which allows a remote 
 # management of the DIRAC setup 
 #
+# Install basic services
 $DESTDIR/pro/scripts/install_service.sh Configuration Server
 $DESTDIR/pro/scripts/install_service.sh Framework SystemAdministrator
 
@@ -318,8 +329,9 @@ Systems
 }
 EOF
 
-[ -e $DESTDIR/etc/Framework_SystemAdministrator.cfg ] && rm -f  $DESTDIR/etc/Framework_SystemAdministrator.cfg
-cat >> $DESTDIR/etc/Framework_SystemAdministrator.cfg << EOF || exit
+#
+# Put the SystemAdministrator config into the global CS
+cat >> $DESTDIR/etc/$CONFIGNAME.cfg << EOF || exit
 Systems
 {
   Framework
@@ -349,8 +361,18 @@ EOF
 #
 # Put the basic services under the runit control
 [ -e  $DESTDIR/startup/Configuration_Server ] || ln -s $DESTDIR/runit/Configuration/Server $DESTDIR/startup/Configuration_Server
-[ -e   $DESTDIR/startup/Configuration_Server  ] || ln -s $DESTDIR/runit/Framework/SystemAdministrator $DESTDIR/startup/Framework_SystemAdministrator
+[ -e  $DESTDIR/startup/Framework_SystemAdministrator ] || ln -s $DESTDIR/runit/Framework/SystemAdministrator $DESTDIR/startup/Framework_SystemAdministrator
+
+ls -ltr /opt/dirac/pro
 
 #
-# Install the Web Portal components
-$DESTDIR/pro/scripts/install_web.sh
+# Install Web Portal
+if [ ! -z "$INSTALL_WEB" ]; then
+  install_web.sh $DESTDIR $VERDIR $DIRACVERSION $DIRACARCH $DIRACPYTHON 
+fi
+
+#
+# Create link to permanent directories
+for dir in etc $DIRACDIRS ; do
+  [ -e $VERDIR/$dir ] || ln -s ../../$dir $VERDIR   || exit 1
+done

@@ -1,19 +1,33 @@
 #!/bin/bash
 ########################################################################
-# $HeadURL$
-# $Id$
-# File :   install_agent.sh
+# $Header: /local/reps/dirac/DIRAC3/scripts/install_agent.sh,v 1.17 2009/05/25 07:15:37 rgracian Exp $
+# File :   install_web.sh
 # Author : Ricardo Graciani, A.T.
 ########################################################################
+
+echo Installing DIRAC Web Portal
+
 #
-DESTDIR=`dirname $0`
-DESTDIR=`cd $DESTDIR/../..; pwd`
-[ -z "$LOGLEVEL" ] && LOGLEVEL=INFO
+DESTDIR=$1
+VERDIR=$2
+DIRACVERSION=$3
+DIRACARCH=$4
+DIRACPYTHON=$5
 #
 source $DESTDIR/bashrc
+#
+# Install the DIRAC Web Portal software
+echo python dirac-install.py -t server -P $VERDIR -r $DIRACVERSION -p $DIRACARCH -i $DIRACPYTHON -e Web || exit 1
+     python dirac-install.py -t server -P $VERDIR -r $DIRACVERSION -p $DIRACARCH -i $DIRACPYTHON -e Web || exit 1
+echo python dirac-install.py -t web -P $VERDIR -r $DIRACVERSION -p $DIRACARCH -i $DIRACPYTHON || exit 1
+     python dirac-install.py -t web -P $VERDIR -r $DIRACVERSION -p $DIRACARCH -i $DIRACPYTHON || exit 1
+
+#
+# Deploy Ext and YUI libraries
+$DESTDIR/pro/Web/tarballs/deploy.sh
 
 #################################################
-# Create the Web Server runit directories
+# Create the Web Server runit directory
 #
 
 ServerDir=$DESTDIR/runit/Web/Server
@@ -47,7 +61,7 @@ chmod +x $ServerDir/log/run $ServerDir/run
 [ -e $DESTDIR/startup/Web_Server ] || ln -s $ServerDir $DESTDIR/startup/Web_Server
 
 ####################################################################
-# Create the Paster runit directories
+# Create the Paster runit directory
 #
 ServerDir=$DESTDIR/runit/Web/Paster
 mkdir -p $ServerDir/log
@@ -80,4 +94,5 @@ chmod +x $ServerDir/log/run $ServerDir/run
 # Create startup link
 [ -e $DESTDIR/startup/Web_Paster ] || ln -s $ServerDir $DESTDIR/startup/Web_Paster
 
+echo Web Portal successfully installed
 exit 0

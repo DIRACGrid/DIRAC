@@ -22,6 +22,9 @@ export HOME=$HOME
 PYTHONPATH=""
 LD_LIBRARY_PATH=""
 
+export X509_CERT_DIR=/afs/cern.ch/project/gd/LCG-share/current/external/etc/grid-security/certificates
+export X509_VOMS_DIR=/opt/dirac/etc/grid-security/vomsdir
+
 DIRAC=$DESTDIR/pro
 DIRACBIN=$DESTDIR/pro/$ARCH/bin
 DIRACSCRIPTS=$DESTDIR/pro/scripts
