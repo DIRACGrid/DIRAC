@@ -9,7 +9,7 @@ from DIRAC                                                          import S_OK,
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.TransformationSystem.Client.TransformationDBClient       import TransformationDBClient
 from DIRAC.TransformationSystem.Client.FileReport                   import FileReport
-
+from DIRAC.Core.Security.Misc                                       import getProxyInfo
 from DIRAC.Core.Utilities.List                                      import sortList
 import os, time, string, datetime, re
 
@@ -19,7 +19,7 @@ class TaskManagerAgentBase(AgentModule):
 
   #############################################################################
   def initialize(self):
-    self.am_setModuleParam('shifter','ProductionManager')
+    self.am_setModuleParam('shifterProxy','ProductionManager')
     self.am_setModuleParam("shifterProxyLocation","%s/runit/%s/proxy" % (rootPath,AGENT_NAME))
     self.section = self.am_getOption("section")
     gMonitor.registerActivity("SubmittedTasks","Automatically submitted tasks","Transformation Monitoring","Tasks", gMonitor.OP_ACUM)
@@ -210,6 +210,14 @@ class TaskManagerAgentBase(AgentModule):
 
   def submitTasks(self):
     gLogger.info("submitTasks: Submitting tasks for transformations")
+    res = getProxyInfo(False,False)
+    if not res['OK']:
+      gLogger.error("submitTasks: Failed to determine credentials for submission",res['Message'])
+      return res
+    proxyInfo = res['Value']
+    owner = proxyInfo['username']
+    ownerGroup = proxyInfo['group']
+    gLogger.info("submitTasks: Tasks will be submitted with the credentials %s:%s" % (owner,ownerGroup))
     # Get the transformations which should be submitted
     tasksPerLoop = self.am_getOption('TasksPerLoop',50)
     status = self.am_getOption('SubmitStatus',['Active'])
@@ -228,7 +236,7 @@ class TaskManagerAgentBase(AgentModule):
         gLogger.info("submitTasks: No tasks found for submission for transformation %s" % transID)
         continue
       gLogger.info("submitTasks: Obtained %d tasks for submission for transformation %s" % (len(tasks),transID))
-      res = self.prepareTransformationTasks(transBody,tasks,'hack1','hack2')
+      res = self.prepareTransformationTasks(transBody,tasks,owner,ownerGroup)
       if not res['OK']:
         gLogger.error("submitTasks: Failed to prepare tasks for transformation", "%s %s" % (transID,res['Message']))
         continue
