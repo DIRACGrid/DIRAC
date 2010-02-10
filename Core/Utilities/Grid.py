@@ -6,7 +6,7 @@
 
 __RCSID__ = "$Id$"
 
-import os
+import os, types
 from DIRAC.Core.Utilities.Os import sourceEnv
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient  import gProxyManager
 from DIRAC import systemCall, shellCall, S_OK, S_ERROR
@@ -26,9 +26,12 @@ def executeGridCommand(proxy, cmd, gridEnvScript=None ):
     else:
       gridEnv = currentEnv
 
-    if os.path.exists(proxy):
-      gridEnv[ 'X509_USER_PROXY' ] = proxy
-    else:  
+    if type(proxy) in types.StringTypes:
+      if os.path.exists(proxy):
+        gridEnv[ 'X509_USER_PROXY' ] = proxy
+      else:
+        return S_ERROR('Can not treat proxy passed as a string')
+    else:
       ret = gProxyManager.dumpProxyToFile( proxy )
       if not ret['OK']:
         return ret
