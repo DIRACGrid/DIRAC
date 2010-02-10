@@ -12,6 +12,7 @@ from DIRAC.RequestManagementSystem.Client.RequestClient         import RequestCl
 
 from DIRAC.WorkloadManagementSystem.Client.WMSClient            import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient  import JobMonitoringClient
+from DIRAC.Core.Utilities.ModuleFactory                         import ModuleFactory
 from DIRAC.Interfaces.API.Job                                   import Job
 
 import string,re,time,types,os
@@ -91,6 +92,10 @@ class RequestTasks(TaskBase):
     failed = 0
     startTime = time.time()
     for taskID in sortList(taskDict.keys()):
+      if not taskDict[taskID]['TaskObject']:
+        taskDict[taskID]['Success'] = False
+        failed +=1
+        continue
       res = self.submitTaskToExternal(taskDict[taskID]['TaskObject'])
       if res['OK']:
         taskDict[taskID]['ExternalID'] = res['Value']
@@ -221,8 +226,10 @@ class WorkflowTasks(TaskBase):
           if paramValue:
             self.log.verbose('Setting allocated site to: %s' %(paramValue))
             oJob.setDestination(paramValue)
-      res = self.getOutputData({'Job':Job(oJob._toXML()),'TransformationID':transID,'TaskID':taskNumber,'InputData':inputData})
+      taskDict[taskNumber]['TaskObject'] = '' 
+      res = self.getOutputData({'Job':oJob._toXML(),'TransformationID':transID,'TaskID':taskNumber,'InputData':inputData})
       if not res ['OK']:
+        self.log.error("Failed to generate output data",res['Message'])
         continue
       for name,output in res['Value'].items():
         oJob._addJDLParameter(name,string.join(output,';'))
@@ -230,14 +237,23 @@ class WorkflowTasks(TaskBase):
     return S_OK(taskDict)
 
   def getOutputData(self,paramDict):
-    # This should return a dictionary containing the output data file LFNs to be produced
-    return S_OK({})
+    moduleFactory = ModuleFactory()
+    moduleLocation = gConfig.getValue("/DIRAC/VOPolicy/OutputDataModule","LHCbDIRAC.Core.Utilities.OutputDataPolicy")
+    moduleInstance = moduleFactory.getModule(moduleLocation, paramDict)
+    if not moduleInstance['OK']:
+      return moduleInstance
+    module = moduleInstance['Value']
+    return module.execute()
   
   def submitTransformationTasks(self,taskDict):
     submitted = 0
     failed = 0
     startTime = time.time()
     for taskID in sortList(taskDict.keys()):
+      if not taskDict[taskID]['TaskObject']:
+        taskDict[taskID]['Success'] = False
+        failed +=1
+        continue
       res = self.submitTaskToExternal(taskDict[taskID]['TaskObject'])
       if res['OK']:
         taskDict[taskID]['ExternalID'] = res['Value']
@@ -266,6 +282,7 @@ class WorkflowTasks(TaskBase):
       return S_ERROR("No valid job description found")
     workflowFile = open("jobDescription.xml",'w')
     workflowFile.write(job._toXML())
+    workflowFile.close()
     jdl = job._toJDL()
     res = self.submissionClient.submitJob(jdl)
     os.remove("jobDescription.xml")
