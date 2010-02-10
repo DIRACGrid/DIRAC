@@ -285,6 +285,7 @@ class SystemAdministratorHandler( RequestHandler ):
     linkName = DIRACROOT+'/startup/%s_%s' % (system,component)
     if not os.path.lexists(linkName):
       os.symlink(DIRACROOT+'/runit/%s/%s' % (system,component), linkName )
+      time.sleep(1)
     
     # Check the runsv status
     start = time.time()
@@ -292,7 +293,7 @@ class SystemAdministratorHandler( RequestHandler ):
       result = self.__getRunitComponentStatus(['%s_%s' % (system,component)])
       if not result['OK']:
         return S_ERROR('Failed to start the component %s_%s' % (system,component) )
-      if result['Value']['%s_%s' % (system,component)]['RunitStatus'] == "Run":
+      if result['Value'] and result['Value']['%s_%s' % (system,component)]['RunitStatus'] == "Run":
         return S_OK("Run")
       time.sleep(1)
     
