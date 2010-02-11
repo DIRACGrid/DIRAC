@@ -56,7 +56,7 @@ class Transformation(API):
       res = self.getTransformation()
       if res['OK']:
         self.exists = True
-      elif res['Message'] == 'Transformation %s did not exist' % transID:
+      elif res['Message'] == 'Transformation does not exist':
         raise AttributeError,'TransformationID %d does not exist' % transID
       else:
         self.paramValues['TransformationID'] = 0
