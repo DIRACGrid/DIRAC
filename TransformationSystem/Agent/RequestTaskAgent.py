@@ -18,5 +18,4 @@ class RequestTaskAgent(TaskManagerAgentBase,RequestTasks):
     TaskManagerAgentBase.initialize(self)
     RequestTasks.__init__(self)
     self.transType = ['Replication','Removal']
-    self.transClient.setServer('ProductionManagement/ProductionManager')
     return S_OK()
