@@ -12,10 +12,11 @@ class Client:
   """ Simple class to redirect unknown actions directly to the server. 
       - The self.serverURL member should be set by the inheriting class
   """
+
   def setServer(self,url):
     self.serverURL = url
 
-  def getServer(self,url)::
+  def getServer(self,url):
     return self.serverURL
 
   def __getattr__(self, name):
