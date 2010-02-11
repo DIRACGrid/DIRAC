@@ -50,8 +50,6 @@ class Transformation(API):
 
     self.supportedPlugins = ['Broadcast','Standard','BySize']
     self.transClient = TransformationDBClient()
-    #TODO REMOVE THIS
-    self.transClient.setServer("ProductionManagement/ProductionManager")
     self.exists = False
     if transID:
       self.paramValues['TransformationID'] = transID
