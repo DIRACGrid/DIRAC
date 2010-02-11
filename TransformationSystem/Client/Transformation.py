@@ -63,7 +63,11 @@ class Transformation(API):
         gLogger.fatal("Failed to get transformation from database", "%s @ %s" % (transID,self.transClient.serverURL))
 
   def setServer(self,server):
-    self.transClient.setServer(server)
+    self.serverURL = server
+    self.transClient.setServer(self.serverURL)
+
+  def getServer(self):
+    return self.serverURL
 
   def reset(self,transID=0):
     self.__init__(transID)
