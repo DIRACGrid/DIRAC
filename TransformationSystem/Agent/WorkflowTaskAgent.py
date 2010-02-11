@@ -18,5 +18,4 @@ class WorkflowTaskAgent(TaskManagerAgentBase,WorkflowTasks):
     TaskManagerAgentBase.initialize(self)
     WorkflowTasks.__init__(self)
     self.transType = ['MCSimulation','DataReconstruction','DataStripping','MCStripping','Merge']
-    self.transClient.setServer('ProductionManagement/ProductionManager')
     return S_OK()
