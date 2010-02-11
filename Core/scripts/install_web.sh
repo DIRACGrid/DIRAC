@@ -19,8 +19,6 @@ source $DESTDIR/bashrc
 # Install the DIRAC Web Portal software
 echo python dirac-install.py -t server -P $VERDIR -r $DIRACVERSION -p $DIRACARCH -i $DIRACPYTHON -e Web || exit 1
      python dirac-install.py -t server -P $VERDIR -r $DIRACVERSION -p $DIRACARCH -i $DIRACPYTHON -e Web || exit 1
-echo python dirac-install.py -t web -P $VERDIR -r $DIRACVERSION -p $DIRACARCH -i $DIRACPYTHON || exit 1
-     python dirac-install.py -t web -P $VERDIR -r $DIRACVERSION -p $DIRACARCH -i $DIRACPYTHON || exit 1
 
 #
 # Deploy Ext and YUI libraries
@@ -96,3 +94,4 @@ chmod +x $ServerDir/log/run $ServerDir/run
 
 echo Web Portal successfully installed
 exit 0
+

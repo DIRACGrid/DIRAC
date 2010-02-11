@@ -27,10 +27,10 @@
 DIRACUSER=dirac
 #
 # Host where it is allowed to run the script
-DIRACHOST=volhcb17.cern.ch
+DIRACHOST=volhcb20.cern.ch
 #
 # The DN of the host certificate
-DIRACHOSTDN=/DC=ch/DC=cern/OU=computers/CN=volhcb17.cern.ch
+DIRACHOSTDN=/DC=ch/DC=cern/OU=computers/CN=volhcb20.cern.ch
 #
 # The user name of the primary DIRAC administrator
 DIRACADMIN=atsareg
@@ -48,7 +48,7 @@ DIRACADMINEMAIL=atsareg@in2p3.fr
 DESTDIR=/opt/dirac
 #
 # Installation site name
-SiteName=VOLHCB17.cern.ch
+SiteName=VOLHCB20.cern.ch
 #
 # The main VO name
 VO=lhcb
@@ -63,7 +63,7 @@ DIRACSETUP=LHCb-NewProduction
 export DIRACINSTANCE=NewProduction
 #
 # DIRAC software version
-DIRACVERSION=v5r0p0-pre19
+DIRACVERSION=v5r0p0-pre20
 #
 # Use the following extensions
 EXTENSION=LHCb
@@ -71,7 +71,7 @@ EXTENSION=LHCb
 # Install Web Portal flag
 INSTALL_WEB=yes
 #
-# The binary platform 
+# The binary platform as evaluated by the dirac-platform script 
 DIRACARCH=Linux_x86_64_glibc-2.5
 #
 # The version of the python interpreter
@@ -79,9 +79,6 @@ DIRACPYTHON=25
 #
 # The version of the LCG middleware
 LCGVERSION=2009-08-13
-#
-# The LogLevel of the installed components
-export LOGLEVEL=VERBOSE
 
 ######################################################################
 #
@@ -91,20 +88,19 @@ export LOGLEVEL=VERBOSE
 
 DIRACDIRS="startup runit data work control sbin"
 
-# check if we are called in the rigth host
+# check if we are called in the right host
+echo Checking the host name
 if [ "`hostname`" != "$DIRACHOST" ] ; then
   echo $0 should be run at $DIRACHOST
 fi
 # check if we are the right user
+echo Checking the user
 if [ $USER != $DIRACUSER ] ; then
   echo $0 should be run by $DIRACUSER
   exit
 fi
 # make sure $DESTDIR is available
 mkdir -p $DESTDIR || exit 1
-
-CURDIR=`dirname $0`
-CURDIR=`cd $CURDIR; pwd -P`
 
 ROOT=`dirname $DESTDIR`/dirac
 
@@ -113,8 +109,12 @@ echo "Installing under $ROOT"
 echo
 [ -d $ROOT ] || exit
 
+#
+# Check that the security info is in place
 if [ ! -d $DESTDIR/etc ]; then
-  mkdir -p $DESTDIR/etc || exit 1
+  echo Directory $DESTDIR/etc is missing, it should contain the host certificates
+  echo and CA certificates. Exiting... 
+  exit 1
 fi
 
 ###################<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -148,7 +148,14 @@ Registry
     host-$DIRACHOST
     {
       DN = $DIRACHOSTDN
-      Properties = JobAdministrator,FullDelegation,Operator,CSAdministrator,ProductionManagement,AlarmsManagement,ProxyManagement,TrustedHost
+      Properties  = JobAdministrator
+      Properties += FullDelegation
+      Properties += Operator
+      Properties += CSAdministrator
+      Properties += ProductionManagement
+      Properties += AlarmsManagement
+      Properties += ProxyManagement
+      Properties += TrustedHost
     }
   }
   Groups
@@ -156,7 +163,14 @@ Registry
     diracAdmin
     {
       Users = $DIRACADMIN
-      Properties = Operator,FullDelegation,ProxyManagement,NormalUser,ServiceAdministrator,JobAdministrator,CSAdministrator,AlarmsManagement
+      Properties  = Operator
+      Properties += FullDelegation
+      Properties += ProxyManagement
+      Properties += NormalUser
+      Properties += ServiceAdministrator
+      Properties += JobAdministrator
+      Properties += CSAdministrator
+      Properties += AlarmsManagement
     }
   }
   Users
@@ -233,14 +247,13 @@ if [ ! -z "$EXTENSION" ]; then
     EXT="-e $ext $EXT"
   done
 fi
+#
+# Create link to etc directory to prevent etc directory to be created
+[ -e $VERDIR/etc ] || ln -s ../../etc $VERDIR   || exit 1
+
 echo Installing DIRAC software
 echo python dirac-install.py -t server -P $VERDIR -r $DIRACVERSION -g $LCGVERSION -p $DIRACARCH -i $DIRACPYTHON $EXT || exit 1
      python dirac-install.py -t server -P $VERDIR -r $DIRACVERSION -g $LCGVERSION -p $DIRACARCH -i $DIRACPYTHON $EXT || exit 1
-#
-# Create link to permanent directories
-#for dir in etc $DIRACDIRS ; do
-  [ -e $VERDIR/etc ] || ln -s ../../etc $VERDIR   || exit 1
-#done
 
 #
 # Do the standard DIRAC configuration
@@ -368,7 +381,7 @@ ls -ltr /opt/dirac/pro
 #
 # Install Web Portal
 if [ ! -z "$INSTALL_WEB" ]; then
-  install_web.sh $DESTDIR $VERDIR $DIRACVERSION $DIRACARCH $DIRACPYTHON 
+  /home/dirac/install_web.sh $DESTDIR $VERDIR $DIRACVERSION $DIRACARCH $DIRACPYTHON 
 fi
 
 #
@@ -376,3 +389,4 @@ fi
 for dir in etc $DIRACDIRS ; do
   [ -e $VERDIR/$dir ] || ln -s ../../$dir $VERDIR   || exit 1
 done
+
