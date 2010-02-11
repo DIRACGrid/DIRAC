@@ -216,10 +216,11 @@ if onlyFixLinks:
 
 if compDest:
   if os.path.isdir( compDest ):
-    print "Warning: %s already exists! Please make sure target dir does not exist" % compDest
-    if os.path.exists(compDest+'.old'):
-      shutil.rmtree(compDest+'.old')
-    os.rename(compDest,compDest+'.old')
+    oldCompDest = compDest + '.old'
+    print "Warning: %s already exists! Backing it up to %s" % ( compDest, oldCompDest )
+    if os.path.exists( oldCompDest ):
+      shutil.rmtree( oldCompDest )
+    os.rename( compDest, oldCompDest )
 
 if not compExtSource:
   workDir = tempfile.mkdtemp( prefix = "ExtDIRAC" )
@@ -255,7 +256,7 @@ if compType not in buildCFG.listSections():
 packagesToBuild = resolvePackagesToBuild( compType, buildCFG )
 
 if compDest:
-  makeArgs = compDest
+  makeArgs = os.path.abspath( compDest )
 else:
   makeArgs = ""
 
