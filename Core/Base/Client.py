@@ -16,7 +16,7 @@ class Client:
   def setServer(self,url):
     self.serverURL = url
 
-  def getServer(self,url):
+  def getServer(self):
     return self.serverURL
 
   def __getattr__(self, name):
