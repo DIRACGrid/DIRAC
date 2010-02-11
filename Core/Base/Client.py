@@ -15,6 +15,9 @@ class Client:
   def setServer(self,url):
     self.serverURL = url
 
+  def getServer(self,url)::
+    return self.serverURL
+
   def __getattr__(self, name):
     self.call = name
     return self.executeRPC
