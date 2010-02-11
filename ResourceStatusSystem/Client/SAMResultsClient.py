@@ -14,7 +14,6 @@ class SAMResultsClient:
 #############################################################################
 
   def getStatus(self, granularity, name, siteName = None, tests = None):
-#TO CHANGE
     """  
     Return stats of entity in args
     
@@ -23,6 +22,8 @@ class SAMResultsClient:
       
       :attr:`resource`: string: the name of the resource
       
+      :attr:`siteName`: optional (string) for the sitename
+
       :attr:`tests`: optional (list of) tests. 
       If omitted, takes only the service status metrics
 
@@ -55,7 +56,7 @@ class SAMResultsClient:
     
     samStatus = self._xmlParsing(granularity, sam, name, tests)
     
-    if samStatus is None:
+    if samStatus is None or samStatus == {}:
       return {'SAM-Status':None} 
     
     return {'SAM-Status': samStatus}
@@ -136,27 +137,27 @@ class SAMResultsClient:
           return None
         
         
-        if tests is None:
-          s = serviceToCheck.getElementsByTagName("status")[0].childNodes
-          status['SS'] = str(s[0].nodeValue)
+        if tests is None or tests == []:
+          tests = ['SS']
+        
+        for test in tests:
           
-        else:
+          metrics = serviceToCheck.getElementsByTagName("ServiceMetric")
+          metricToCheck = None
           
-          for test in tests:
-            
-            metrics = serviceToCheck.getElementsByTagName("ServiceMetric")
-            metricToCheck = None
-            
-            for metric in metrics:
-              if metric.getAttributeNode("abbreviation"):
-                metricName = metric.attributes["abbreviation"]
-                res = str(metricName.value)
-                if res == test:
-                  metricToCheck = metric
-                  break
-  
-            s = metricToCheck.getElementsByTagName("status")[0].childNodes
-            status[test] = str(s[0].nodeValue)
+          for metric in metrics:
+            if metric.getAttributeNode("abbreviation"):
+              metricName = metric.attributes["abbreviation"]
+              res = str(metricName.value)
+              if res == test:
+                metricToCheck = metric
+                break
+          
+          if metricToCheck is None:
+            continue
+
+          s = metricToCheck.getElementsByTagName("status")[0].childNodes
+          status[test] = str(s[0].nodeValue)
       
     
     except Exception, errorMsg:

@@ -2,7 +2,7 @@
 """
 
 from datetime import datetime, timedelta
-#from DIRAC import gLogger
+from DIRAC import gLogger
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient

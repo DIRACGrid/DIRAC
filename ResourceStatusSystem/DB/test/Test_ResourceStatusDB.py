@@ -102,10 +102,6 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
       res = self.rsDB.addOrModifyResource('CE01', 'T1', 'Computing@Ferrara', 'CNAF', status, 'test reason', datetime.utcnow(), 'testOP', datetime.utcnow() + timedelta(minutes=10))
       self.assertEqual(res, None)
 
-  def test_addResourceType(self):
-    res = self.rsDB.addResourceType('CE', 'test desc')
-    self.assertEqual(res, None)
-
   def test_removeResource(self):
     res = self.rsDB.removeResource('XX')
     self.assertEqual(res, None)
@@ -285,6 +281,11 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
   def test_addStatus(self):
     for status in ValidStatus:
       res = self.rsDB.addStatus(status, 'test desc')
+      self.assertEqual(res, None)
+
+  def test_addType(self):
+    for g in ('Site', 'Service', 'Resource'):
+      res = self.rsDB.addType(g, 'CE', 'test desc')
       self.assertEqual(res, None)
 
   def test_unique(self):

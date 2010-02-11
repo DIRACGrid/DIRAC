@@ -69,7 +69,7 @@ class ResourceStatusDB:
   def _addResourcesHistoryRow(self, resourceName, serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
     pass
   
-  def addResourceType(self, resourceType, description=''):
+  def addType(self, granularity, type, description=''):
     pass
   
   def removeResource(self, resourceName = None, serviceName = None, siteName = None):
