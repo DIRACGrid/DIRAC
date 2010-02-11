@@ -1366,7 +1366,8 @@ class TransformationDB(DB):
       for fileID in fileIDs.keys():
         if not fileID in fileReplicas.keys():
           noReplicas.append(fileIDs[fileID])
-      self.removeFile(noReplicas)
+      if noReplicas:
+        self.removeFile(noReplicas)
     resDict = {'Successful':successful,'Failed':failed}
     return S_OK(resDict)
 
@@ -1377,6 +1378,8 @@ class TransformationDB(DB):
     failed = {}
     successful = {}
     connection = self.__getConnection(connection)
+    if not lfns:
+      return S_ERROR("No LFNs supplied")
     res = self.__getFileIDsForLfns(lfns, connection=connection)
     if not res['OK']:
       return res
