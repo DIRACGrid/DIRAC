@@ -13,11 +13,13 @@ __RCSID__ = "$Id$"
 
 from DIRAC                                                             import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB                                                import DB
-from DIRAC.DataManagementSystem.Client.ReplicaManager                  import ReplicaManager
+from DIRAC.DataManagementSystem.Client.ReplicaManager                  import CatalogDirectory
 from DIRAC.Core.DISET.RPCClient                                        import RPCClient
 from DIRAC.Core.Security.Misc                                          import getProxyInfo
 from DIRAC.Core.Utilities.List                                         import stringListToString, intListToString
 from DIRAC.Core.Utilities.SiteSEMapping                                import getSEsForSite, getSitesForSE
+from DIRAC.Core.Utilities.Shifter                                      import setupShifterProxyInEnv
+from DIRAC.Core.Utilities.Subprocess                                   import pythonCall
 
 from types import *
 import re,time,string,threading,copy
@@ -1503,12 +1505,19 @@ class TransformationDB(DB):
   def addDirectory(self,path,force=False):
     """ Adds all the files stored in a given directory in file catalog """
     gLogger.info("TransformationDB.addDirectory: Attempting to populate %s." % path)
-    res = self.__getReplicaManager()
+    res = pythonCall(0,self.__addDirectory,path,force)
     if not res['OK']:
+      gLogger.error("Failed to invoke addDirectory with shifter proxy")
       return res
-    rm = res['Value']
+    return res['Value']
+
+  def __addDirectory(self,path,force):
+    res = setupShifterProxyInEnv("ProductionManager")    
+    if not res['OK']:
+      return S_OK("Failed to setup shifter proxy")
+    catalog = CatalogDirectory()
     start = time.time()
-    res = rm.getCatalogDirectoryReplicas(path,True)
+    res = catalog.getCatalogDirectoryReplicas(path,singleFile=True)
     if not res['OK']:
       gLogger.error("TransformationDB.addDirectory: Failed to get replicas. %s" % res['Message'])
       return res
@@ -1523,14 +1532,4 @@ class TransformationDB(DB):
         return res
       if not res['Value']['Successful']:
         return S_ERROR("Failed to add any files to database")
-    return S_OK()
-
-  def __getReplicaManager(self):
-    """Gets the RM client instance
-    """
-    try:
-      return S_OK(ReplicaManager())
-    except Exception,x:
-      errStr = "TransformationDB.__getReplicaManager: Failed to create ReplicaManager"
-      gLogger.exception(errStr, lException=x)
-      return S_ERROR(errStr)
+    return S_OK(len(res['Value']['Successful']))
