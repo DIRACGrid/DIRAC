@@ -256,7 +256,7 @@ if compType not in buildCFG.listSections():
 packagesToBuild = resolvePackagesToBuild( compType, buildCFG )
 
 if compDest:
-  makeArgs = os.path.abspath( compDest )
+  makeArgs = os.path.realpath( compDest )
 else:
   makeArgs = ""
 
