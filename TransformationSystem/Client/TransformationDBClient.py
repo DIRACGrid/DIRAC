@@ -51,7 +51,6 @@ class TransformationDBClient(Client,FileCatalogueBase):
       File/directory manipulation methods (the remainder of the interface can be found below)
       
           getFileSummary(lfns,transName)
-          addDirectory(path,force=False) 
           exists(lfns) 
           
       Web monitoring tools    
@@ -108,6 +107,10 @@ class TransformationDBClient(Client,FileCatalogueBase):
     """ Get the file catalog type name
     """
     return self.name
+
+  def addDirectory(self,path,force=False,rpc='',url='',timeout=120):
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
+    return rpcClient.addDirectory(path,force)
 
   def getReplicas(self,lfn,rpc='',url='',timeout=120):
     res = self.__checkArgumentFormat(lfn)
