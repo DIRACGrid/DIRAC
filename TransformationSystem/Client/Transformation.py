@@ -1,8 +1,8 @@
 # $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/Interfaces/API/Transformation.py $
 __RCSID__ = "$Id: Transformation.py 19505 $"
 
-from DIRAC.Core.Base import Script
-Script.parseCommandLine()
+#from DIRAC.Core.Base import Script
+#Script.parseCommandLine()
 
 import string, os, shutil, types, pprint
 
@@ -15,7 +15,7 @@ COMPONENT_NAME='Transformation'
 class Transformation(API):
 
   #############################################################################
-  def __init__(self,transID=0):
+  def __init__(self,transID=0,transClient=''):
     API.__init__(self)
     self.paramTypes =   { 'TransformationID'      : [types.IntType,types.LongType],
                           'TransformationName'    : types.StringTypes,
@@ -49,7 +49,11 @@ class Transformation(API):
                           'EventsPerJob'          : 0}
 
     self.supportedPlugins = ['Broadcast','Standard','BySize']
-    self.transClient = TransformationDBClient()
+    if not transClient:
+      self.transClient = TransformationDBClient()
+    else:
+      self.transClient = transClient   
+    self.serverURL = self.transClient.getServer()
     self.exists = False
     if transID:
       self.paramValues['TransformationID'] = transID
@@ -71,6 +75,7 @@ class Transformation(API):
 
   def reset(self,transID=0):
     self.__init__(transID)
+    self.transClient.setServer(self.serverURL)
     return S_OK()
 
   def setTargetSE(self,seList):

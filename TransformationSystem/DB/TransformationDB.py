@@ -205,7 +205,7 @@ class TransformationDB(DB):
   def getTransformation(self,transName,extraParams=False,connection=False):
     """Get Transformation definition and parameters of Transformation identified by TransformationID
     """
-    res = self.__getConnectionTransID(connection,transName)
+    res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
@@ -329,7 +329,7 @@ class TransformationDB(DB):
   #
   def setTransformationParameter(self,transName,paramName,paramValue,author='',connection=False):
     """ Add a parameter for the supplied transformations """
-    res = self.__getConnectionTransID(connection,transName)
+    res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
@@ -346,6 +346,22 @@ class TransformationDB(DB):
     if message:
       self.__updateTransformationLogging(transID,message,author,connection=connection)      
     return res      
+
+  def deleteTransformationParameter(self,transName,paramName,author='',connection=False):
+    """ Delete a parameter from the additional parameters table """
+    res = self._getConnectionTransID(connection,transName)
+    if not res['OK']:
+      return res
+    connection = res['Value']['Connection']
+    transID = res['Value']['TransformationID']
+    message = ''
+    if paramName in self.TRANSPARAMS: 
+      return S_ERROR("Can not delete core transformation parameter")
+    res = self.__deleteTransformationParameters(transID,parameters=[paramName],connection=connection)
+    if not res['OK']:
+      return res
+    self.__updateTransformationLogging(transID,'Removed additional parameter %s' % paramName,author,connection=connection)
+    return res
 
   def __addAdditionalTransformationParameter(self,transID,paramName,paramValue,connection=False):
     req = "DELETE FROM AdditionalParameters WHERE TransformationID=%d AND ParameterName='%s'" % (transID,paramName)
@@ -375,9 +391,11 @@ class TransformationDB(DB):
        paramDict[parameterName] = parameterValue
      return S_OK(paramDict)    
 
-  def __deleteTransformationParameters(self,transID,connection=False):
+  def __deleteTransformationParameters(self,transID,parameters=[],connection=False):
     """ Remove the parameters associated to a transformation """
-    req = "DELETE FROM AdditionalParameters WHERE TransformationID=%d;" % transID
+    req = "DELETE FROM AdditionalParameters WHERE TransformationID=%d" % transID
+    if parameters:
+      req = "%s AND ParameterName IN (%s);" % (req,stringListToString(parameters))
     return self._update(req,connection)
 
   ###########################################################################
@@ -389,7 +407,7 @@ class TransformationDB(DB):
     """ Add a list of LFNs to the transformation directly """
     if not lfns:
       return S_ERROR('Zero length LFN list')
-    res = self.__getConnectionTransID(connection,transName)
+    res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
@@ -466,7 +484,7 @@ class TransformationDB(DB):
 
   def getTransformationFileInfo(self,transID,lfns,connection=False):
     """ Get the file status for given transformation files """
-    res = self.__getConnectionTransID(connection,transName)
+    res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
@@ -506,7 +524,7 @@ class TransformationDB(DB):
   #TODO use the getTransformationFileInfo method 
   def setFileStatusForTransformation(self,transName,status,lfns,force=False,connection=False):
     """ Set file status for the given transformation """
-    res = self.__getConnectionTransID(connection,transName)
+    res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
@@ -555,7 +573,7 @@ class TransformationDB(DB):
   
   def getTransformationStats(self,transName,connection=False):
     """ Get number of files in Transformation Table for each status """
-    res = self.__getConnectionTransID(connection,transName)
+    res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
@@ -697,7 +715,7 @@ class TransformationDB(DB):
 
   def getTasksForSubmission(self,transName,numTasks=1,site='',statusList=['Created'],older=None,newer=None,connection=False):
     """ Select tasks with the given status (and site) for submission """
-    res = self.__getConnectionTransID(connection,transName)
+    res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
@@ -747,7 +765,7 @@ class TransformationDB(DB):
 
   def deleteTasks(self,transName,taskIDbottom, taskIDtop,author='',connection=False):
     """ Delete tasks with taskID range in transformation """
-    res = self.__getConnectionTransID(connection,transName)
+    res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
@@ -762,7 +780,7 @@ class TransformationDB(DB):
 
   def reserveTask(self,transName,taskID,connection=False):
     """ Reserve the taskID from transformation for submission """
-    res = self.__getConnectionTransID(connection,transName)
+    res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
@@ -781,7 +799,7 @@ class TransformationDB(DB):
   def setTaskStatusAndWmsID(self,transName,taskID,status,taskWmsID,connection=False):
     """ Set status and JobWmsID for job with jobID in production with transformationID
     """
-    res = self.__getConnectionTransID(connection,transName)
+    res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
@@ -793,7 +811,7 @@ class TransformationDB(DB):
 
   def setTaskStatus(self,transName,taskID,status,connection=False):
     """ Set status for job with jobID in production with transformationID """
-    res = self.__getConnectionTransID(connection,transName)
+    res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
@@ -851,7 +869,7 @@ class TransformationDB(DB):
 
   def getTaskInputVector(self,transName,taskID,connection=False):
     """ Get input vector for the given task """
-    res = self.__getConnectionTransID(connection,transName)
+    res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
@@ -897,7 +915,7 @@ class TransformationDB(DB):
       res = getProxyInfo(False,False)
       if res['OK']:
         authorDN = res['Value']['identity']
-    res = self.__getConnectionTransID(connection,transName)
+    res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
@@ -907,7 +925,7 @@ class TransformationDB(DB):
   
   def getTransformationLogging(self,transName,connection=False):
     """ Get logging info from the TransformationLog table """
-    res = self.__getConnectionTransID(connection,transName)
+    res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
@@ -1143,7 +1161,7 @@ class TransformationDB(DB):
   
   def cleanTransformation(self,transName,author='',connection=False):
     """ Clean the transformation specified by name or id """
-    res = self.__getConnectionTransID(connection,transName)
+    res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
@@ -1166,7 +1184,7 @@ class TransformationDB(DB):
     
   def deleteTransformation(self,transName,author='',connection=False):
     """ Remove the transformation specified by name or id """
-    res = self.__getConnectionTransID(connection,transName)
+    res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
@@ -1213,7 +1231,7 @@ class TransformationDB(DB):
     gLogger.warn("Failed to get MySQL connection",res['Message'])
     return connection
 
-  def __getConnectionTransID(self,connection,transName):
+  def _getConnectionTransID(self,connection,transName):
     connection = self.__getConnection(connection)
     res  = self._getTransformationID(transName,connection=connection)
     if not res['OK']:

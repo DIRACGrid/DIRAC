@@ -23,10 +23,11 @@ class TransformationDBClient(Client,FileCatalogueBase):
 
           deleteTransformation(transName)
           cleanTransformation(transName)
-          setTransformationParameter(transName,paramName,paramValue)
           setTransformationStatus(transName,status)
           getTransformationParameters(transName,paramNames)
           getTransformationWithStatus(status)
+          setTransformationParameter(transName,paramName,paramValue)
+          deleteTransformationParameter(transName,paramName)
 
       TransformationFiles table manipulation
       
@@ -62,7 +63,7 @@ class TransformationDBClient(Client,FileCatalogueBase):
   """
 
   def __init__(self,name='TransformationDBClient'):
-    self.setServer('TransformationSystem/TransformationHandler')
+    self.setServer('Transformation/TransformationHandler')
 
   def setServer(self,url):
     self.serverURL = url
