@@ -262,18 +262,18 @@ class TransformationDB(DB):
   def _getTransformationID(self,transName,connection=False):
     """ Method returns ID of transformation with the name=<name> """
     try:
-      return S_OK(long(transName))
+      transName = long(transName)
+      cmd = "SELECT TransformationID from Transformations WHERE TransformationID=%d;" % transName
     except:
-      pass
-    if type(transName) not in StringTypes:
-      return S_ERROR("Transformation should ID or name")
-    cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s';" % transName
+      if type(transName) not in StringTypes:
+        return S_ERROR("Transformation should ID or name")
+      cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s';" % transName
     res = self._query(cmd,connection)
     if not res['OK']:
       gLogger.error("Failed to obtain transformation ID for transformation","%s:%s" % (transName,res['Message']))
       return res
     elif not res['Value']:
-      gLogger.verbose("Transformation with name %s does not exists" % (transName))
+      gLogger.verbose("Transformation %s does not exist" % (transName))
       return S_ERROR("Transformation does not exist")
     return S_OK(res['Value'][0][0])
 
