@@ -319,8 +319,8 @@ class WorkflowTasks(TaskBase):
   def getSubmittedTaskStatus(self,taskDicts):
     wmsIDs = []
     for taskDict in taskDicts:
-      wmsID = taskDict['JobWmsID']
-    wmsIDs.append(wmsID)
+      wmsID = int(taskDict['JobWmsID'])
+      wmsIDs.append(wmsID)
     res = self.jobMonitoringClient.getJobsStatus(wmsIDs)
     if not res['OK']:
       self.log.warn("Failed to get job status from the WMS system")
