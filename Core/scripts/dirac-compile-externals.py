@@ -271,14 +271,13 @@ for prog in finalPackages:
   progDir = os.path.join( externalsDir, prog )
   makePath = os.path.join( progDir, "dirac-make" )
   buildOutPath = os.path.join( progDir, "build.out" )
-  buildErrPath = os.path.join( progDir, "build.err" )
   os.chmod( makePath, executablePerms )
   instCmd = "'%s' '%s'" % ( makePath, makeArgs )
   print " - Executing %s" % instCmd
-  ret = os.system( "%s  > '%s' 2>'%s'" % ( instCmd, buildOutPath, buildErrPath ) )
+  ret = os.system( "%s  > '%s' 2>&1" % ( instCmd, buildOutPath ) )
   if ret:
     print "Oops! Error while compiling %s" % prog
-    print "Take a look at %s for more info" % buildErrPath
+    print "Take a look at %s for more info" % buildOutPath
     sys.exit( 1 )
 
 print "Fixing absolute links"
