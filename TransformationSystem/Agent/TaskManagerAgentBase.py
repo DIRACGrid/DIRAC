@@ -152,8 +152,7 @@ class TaskManagerAgentBase(AgentModule):
       if not statusDict:
         gLogger.info("updateFileStatus: No file statuses to be updated for transformation %s." % transID)
         continue
-      #TODO GET this properly
-      fileReport = FileReport(server='ProductionManagement/ProductionManager')
+      fileReport = FileReport(server=self.transClient.getServer())
       for lfn,status in statusDict.items():
         fileReport.setFileStatus(int(transID),lfn,status)
       res = fileReport.commit()
