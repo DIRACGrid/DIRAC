@@ -159,13 +159,12 @@ class SAMResultsClient:
           s = metricToCheck.getElementsByTagName("status")[0].childNodes
           status[test] = str(s[0].nodeValue)
       
+      return status
     
     except Exception, errorMsg:
       exceptStr = where(self, self._xmlParsing)
       gLogger.exception(exceptStr,'',errorMsg)
       return None
-    
-    return status
     
     
 #############################################################################

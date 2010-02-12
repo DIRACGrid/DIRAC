@@ -134,24 +134,28 @@ class JobsClient:
       }
     """
 
-    if granularity not in ('Site', 'Sites'):
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient 
-      rsc = ResourceStatusClient()
-      name = rsc.getGeneralName(granularity, name, 'Site')
-    
-    RPC = RPCClient("WorkloadManagement/WMSAdministrator")
-    res = RPC.getSiteSummaryWeb({'Site':name},[],0,500)
-    if not res['OK']:
-#      raise RSSException, where(self, self.getJobsSimpleEff) + " " + res['Message'] 
-      exceptStr = where(self, self.getJobsSimpleEff)
-      gLogger.exception(exceptStr,'', res['Message'])
-      return {'JobsEff': None}
-    
     try:
-      eff = res['Value']['Records'][0][16]
-    except IndexError:
-      return {'JobsEff':'Idle'}
-    
-    return {'JobsEff':eff}
+      if granularity not in ('Site', 'Sites'):
+        from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient 
+        rsc = ResourceStatusClient()
+        name = rsc.getGeneralName(granularity, name, 'Site')
+      
+      RPC = RPCClient("WorkloadManagement/WMSAdministrator")
+      res = RPC.getSiteSummaryWeb({'Site':name},[],0,500)
+      if not res['OK']:
+        raise RSSException, where(self, self.getJobsSimpleEff) + " " + res['Message'] 
+#      
+      try:
+        eff = res['Value']['Records'][0][16]
+      except IndexError:
+        return {'JobsEff':'Idle'}
+      
+      return {'JobsEff':eff}
+
+    except Exception, errorMsg:
+      exceptStr = where(self, self.getJobsSimpleEff)
+      gLogger.exception(exceptStr,'',errorMsg)
+      return {'JobsEff':None}    
+
   
 #############################################################################

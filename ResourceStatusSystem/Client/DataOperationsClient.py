@@ -39,16 +39,22 @@ class DataOperationsClient:
     if toD is None:
       toD = datetime.utcnow()
      
-    if granularity in ('StorageElement', 'StorageElements'):
-      pr_quality = self.rc.getReport('DataOperation', 'Quality', fromD, toD, 
-                        {'OperationType':'putAndRegister', 'Destination':[name]}, 'Channel')
-    else:
-      raise InvalidRes, where(self, self.getQualityStats)
+    try:
       
-    if not pr_quality['OK']:
-      exceptStr = where(self, self.getQualityStats) + pr_quality['Message']
+      if granularity in ('StorageElement', 'StorageElements'):
+        pr_quality = self.rc.getReport('DataOperation', 'Quality', fromD, toD, 
+                          {'OperationType':'putAndRegister', 'Destination':[name]}, 'Channel')
+      else:
+        raise InvalidRes, where(self, self.getQualityStats)
+        
+      if not pr_quality['OK']:
+        raise RSSException, where(self, self.getQualityStats) + " " + pr_quality['Message'] 
+    
+    except Exception, errorMsg:
+      exceptStr = where(self, self.getQualityStats)
       gLogger.exception(exceptStr,'',errorMsg)
       return {'TransferQuality': None}
+
     
     pr_q_d = pr_quality['Value']['data']
     

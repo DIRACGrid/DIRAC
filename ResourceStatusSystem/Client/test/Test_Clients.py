@@ -85,12 +85,6 @@ class ResourceStatusClientSuccess(ClientsTestCase):
       res = self.RSCli.getMonitoredStatus(g, '')
       self.assertEqual(res, 'Active')
   
-class ResourceStatusClient_Failure(ClientsTestCase):
-    
-  def test_badArgs(self):
-    self.failUnlessRaises(InvalidRes, self.RSCli.getPeriods, 'sites', '', '', 20)
-
-
 class SAMResultsClientSuccess(ClientsTestCase):
 
   def test_getStatus(self):
@@ -145,12 +139,11 @@ class DataOperationsClientSuccess(ClientsTestCase):
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ClientsTestCase)
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBClientSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBClient_Failure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusClientSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusClient_Failure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBClientSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBClient_Failure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResultsClientSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsClientSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsClientSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsClientSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DataOperationsClientSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

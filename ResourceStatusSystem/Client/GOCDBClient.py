@@ -108,7 +108,6 @@ class GOCDBClient:
       exceptStr = where(self, self._curlDownload) + " while opening %s." % gocdb_ep
       gLogger.exception(exceptStr,'',errorMsg)
       return None
-      #return S_ERROR("%s%s" % (exceptStr,errorMsg))
     except Exception, errorMsg:
       exceptStr = where(self, self._curlDownload) + " while opening %s." % gocdb_ep
       gLogger.exception(exceptStr,'',errorMsg)

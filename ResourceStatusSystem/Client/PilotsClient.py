@@ -132,43 +132,47 @@ class PilotsClient:
     }
     """
     
-    RPC = RPCClient("WorkloadManagement/WMSAdministrator")
-    if granularity in ('Site', 'Sites'):
-      res = RPC.getPilotSummaryWeb({'GridSite':name},[],0,1)
-    elif granularity in ('Resource', 'Resources'):
-      if siteName is None:
-        from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-        rsc = ResourceStatusClient()
-        siteName = rsc.getGeneralName(granularity, name, 'Site')
-        if siteName is None or siteName == []:
-          gLogger.info('%s is not a resource in DIRAC' %name)
-          return {'PilotsEff':None}
-        
-      res = RPC.getPilotSummaryWeb({'ExpandSite':siteName},[],0,100)
-    else:
-      raise InvalidRes, where(self, self.getPilotSimpleEff)
-    
-    if not res['OK']:
-#      raise RSSException, where(self, self.getPilotsSimpleEff) + " " + res['Message'] 
-      exceptStr = where(self, self.getPilotsSimpleEff)
-      gLogger.exception(exceptStr,'', res['Message'])
-      return {'PilotsEff': None}
-    
     try:
+    
+      RPC = RPCClient("WorkloadManagement/WMSAdministrator")
       if granularity in ('Site', 'Sites'):
-        eff = res['Value']['Records'][0][14]
-        return {'PilotsEff':eff}
+        res = RPC.getPilotSummaryWeb({'GridSite':name},[],0,1)
       elif granularity in ('Resource', 'Resources'):
-        for x in res['Value']['Records']:
-          if x[1] == name:
-            eff = x[14]
-        try:
-          eff
+        if siteName is None:
+          from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+          rsc = ResourceStatusClient()
+          siteName = rsc.getGeneralName(granularity, name, 'Site')
+          if siteName is None or siteName == []:
+            gLogger.info('%s is not a resource in DIRAC' %name)
+            return {'PilotsEff':None}
+          
+        res = RPC.getPilotSummaryWeb({'ExpandSite':siteName},[],0,100)
+      else:
+        raise InvalidRes, where(self, self.getPilotSimpleEff)
+      
+      if not res['OK']:
+        raise RSSException, where(self, self.getPilotsSimpleEff) + " " + res['Message'] 
+      
+      try:
+        if granularity in ('Site', 'Sites'):
+          eff = res['Value']['Records'][0][14]
           return {'PilotsEff':eff}
-        except NameError:
-          return {'PilotsEff':None} 
-        
-    except IndexError:
-      return {'PilotsEff':None}
+        elif granularity in ('Resource', 'Resources'):
+          for x in res['Value']['Records']:
+            if x[1] == name:
+              eff = x[14]
+          try:
+            eff
+            return {'PilotsEff':eff}
+          except NameError:
+            return {'PilotsEff':None} 
+          
+      except IndexError:
+        return {'PilotsEff':None}
+    
+    except Exception, x:
+      exceptStr = where(self, self.getPilotsSimpleEff)
+      gLogger.exception(exceptStr,'', x)
+      return {'PilotsEff': None}
     
 #############################################################################
