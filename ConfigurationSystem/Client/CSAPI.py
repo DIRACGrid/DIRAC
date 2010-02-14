@@ -351,6 +351,29 @@ class CSAPI:
       self.__csModified = False
       return self.downloadCSData()
     return S_OK()
+  
+  def commit(self):
+    """ Commit the accumulated changes to the CS server
+    """
+    if not self.__initialized:
+      return S_ERROR( "CSAPI didn't initialize properly" )
+    if self.__csModified:
+      retVal = self.__csMod.commit()
+      if not retVal[ 'OK' ]:
+        gLogger.error( "Can't commit new data: %s" % retVal[ 'Message' ] )
+        return retVal
+      self.__csModified = False
+      return self.downloadCSData()
+    return S_OK()
+  
+  def mergeFromCFG(self,cfg):
+    """ Merge the internal CFG data with the input
+    """
+    if not self.__initialized:
+      return S_ERROR( "CSAPI didn't initialize properly" )
+    self.__csMod.mergeFromCFG(cfg)
+    self.__csModified = True
+    return S_OK()
 
   def modifyValue(self,optionPath,newValue):
     """Modify an existing value at the specified options path.
