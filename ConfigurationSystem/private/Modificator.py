@@ -180,6 +180,9 @@ class Modificator:
     cfg = CFG()
     cfg.loadFromFile( filename )
     self.cfgData = self.cfgData.mergeWith( cfg )
+    
+  def mergeFromCFG(self, cfg):
+    self.cfgData = self.cfgData.mergeWith( cfg )  
 
   def __str__( self ):
     return str( self.cfgData )
