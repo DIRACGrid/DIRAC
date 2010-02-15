@@ -43,9 +43,7 @@ source $DESTDIR/bashrc
 #
 exec 2>&1
 #
-DBs=""
-[ -e \$DIRAC/etc/DBs.cfg ] && DBs=\$DIRAC/etc/DBs.cfg
-exec python \$DIRAC/DIRAC/Core/scripts/dirac-service.py $System/$Service \$DIRAC/etc/${System}_${Service}.cfg \$DBs -o LogLevel=$LOGLEVEL < /dev/null
+exec python \$DIRAC/DIRAC/Core/scripts/dirac-service.py $System/$Service \$DIRAC/etc/${System}_${Service}.cfg -o LogLevel=$LOGLEVEL < /dev/null
 EOF
 chmod +x $ServiceDir/log/run $ServiceDir/run
 
