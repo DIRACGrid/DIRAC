@@ -340,7 +340,7 @@ class ConfigurationData:
     configurationFilename = "%s.cfg" % self.getName()
     configurationFile = os.path.join( DIRAC.rootPath, "etc", configurationFilename )
     today = Time.date()
-    backupPath = os.path.join( self.getBackupDir(), str( today.year ), str( today.month ) )
+    backupPath = os.path.join( self.getBackupDir(), str( today.year ), "%02d" % today.month )
     try:
       os.makedirs( backupPath )
     except:
