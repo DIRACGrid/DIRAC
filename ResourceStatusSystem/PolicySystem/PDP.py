@@ -8,7 +8,7 @@ The PDP (Policy Decision Point) module is used to:
 #############################################################################
 
 import time
-import threading
+#import threading
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
@@ -78,9 +78,7 @@ class PDP:
         raise InvalidResourceType, where(self, self.__init__)
 
 
-    self.policyResults = []
-
-    self.lockObj = threading.RLock()
+#    self.lockObj = threading.RLock()
     
 
       
@@ -133,41 +131,56 @@ class PDP:
       self.__policyType = policyGroup['PolicyType']
   
       if self.policy is not None:
-        res = self.policy.evaluate(self.args)
+        res = self.policy.evaluate(self.policy)
       else:
         if policyGroup['Policies'] is None:
-          return [{'PolicyType': self.__policyType, 'Action': False, 'Reason':'No policy results'}]
-        res = self._evaluate(policyGroup['Policies'])
+          return {'SinglePolicyResults' : [], 
+                  'PolicyCombinedResult' : [{'PolicyType': self.__policyType, 
+                                             'Action': False, 
+                                             'Reason':'No policy results'}]}
+#        res = self._evaluate(policyGroup['Policies'])
                   
-      policyResults = []
+        singlePolicyResults = self._policyInvocation(self.__granularity, self.__name, self.__status,
+                                                   self.policy, self.args, policyGroup['Policies'])
+
+        policyCombinedResults = self._evaluate(singlePolicyResults)
       
-      if res == None:
-        return [{'PolicyType': self.__policyType, 'Action': False, 'Reason':'No policy results'}]
+      
+      policyCombinedResultsList = []
+      
+      if policyCombinedResults == None:
+          return {'SinglePolicyResults' : singlePolicyResults, 
+                  'PolicyCombinedResult' : [{'PolicyType': self.__policyType, 
+                                             'Action': False, 
+                                             'Reason':'No policy results'}]}
       
       #policy results communication
-      if res['SAT']:
-        newstatus = res['Status']
-        reason = res['Reason']
+      if policyCombinedResults['SAT']:
+        newstatus = policyCombinedResults['Status']
+        reason = policyCombinedResults['Reason']
         decision = {'PolicyType': self.__policyType, 'Action': True, 'Status':'%s'%newstatus, 
                     'Reason':'%s'%reason}
-        if res.has_key('EndDate'):
-          decision['EndDate'] = res['EndDate']
-        policyResults.append(decision)
-      elif not res['SAT']:
-        reason = res['Reason']
+        if policyCombinedResults.has_key('EndDate'):
+          decision['EndDate'] = policyCombinedResults['EndDate']
+        policyCombinedResultsList.append(decision)
+      elif not policyCombinedResults['SAT']:
+        reason = policyCombinedResults['Reason']
         decision = {'PolicyType': self.__policyType, 'Action': False, 'Reason':'%s'%reason}
-        if res.has_key('EndDate'):
-          decision['EndDate'] = res['EndDate']
-        policyResults.append(decision)
+        if policyCombinedResults.has_key('EndDate'):
+          decision['EndDate'] = policyCombinedResults['EndDate']
+        policyCombinedResultsList.append(decision)
 
-    return policyResults
+    res = {'SinglePolicyResults': singlePolicyResults, 
+           'PolicyCombinedResult' : policyCombinedResultsList}
+
+    return res
 
 #############################################################################
     
-  def _evaluate(self, policies):
+  def _evaluate(self, policyResults):
     
-    policyResults = self._policyInvocation(self.__granularity, self.__name, self.__status, 
-                                           self.policy, self.args, policies)
+#    policyResults = self._policyInvocation(self.__granularity, self.__name, self.__status, 
+#                                           self.policy, self.args, policies)
 
     if len(policyResults) == 1:
       return self._policyCombination(policyResults[0])
@@ -184,27 +197,22 @@ class PDP:
   
   def _policyInvocation(self, granularity, name, status, policy, args, policies):
     
-    for i in range(len(policies)):
-      self.__policyInternalInvocation(granularity, name, status, policy, args, policies[i])
+    policyResults = []
     
-    return self.policyResults
+    for p in policies:
+      res = Configurations.policyInvocation(granularity = granularity, name = name, 
+                                            status = status, policy = policy, args = args, 
+                                            pol = p)
       
-#############################################################################
-  
-  def __policyInternalInvocation(self, granularity, name, status, policy, args, policyToEval):
-  
-    res = Configurations.policyInvocation(granularity = granularity, name = name, 
-                                          status = status, policy = policy, args = args, 
-                                          pol = policyToEval)
+      if res['SAT'] != None:
+#        self.lockObj.acquire()
+#        try:
+        policyResults.append(res)
+#        finally:
+#          self.lockObj.release()
     
-    if res['SAT'] != None:
-      self.lockObj.acquire()
-      try:
-        self.policyResults.append(res)
-      finally:
-        self.lockObj.release()
-
-    
+    return policyResults
+      
 #############################################################################
   
   def _policyCombination(self, *args):
@@ -214,40 +222,20 @@ class PDP:
         
     elif len(args) == 2:
     
-      # none is SAT
       if not args[0]['SAT'] and not args[1]['SAT']:
         compReason = args[0]['Reason'] + '|' + args[1]['Reason']
-        if args[0].has_key('Enddate') and args[1].has_key('Enddate'):
-          new = args[0]
-          new['EndDate'] = max(args[0]['Enddate'], args[1]['Enddate'])
-          new['Reason'] = compReason
-          return new 
-        elif args[0].has_key('Enddate'):
-          new = args[0]
-          new['Reason'] = compReason
-          return new
-        else:
-          new = args[1]
-          new['Reason'] = compReason
-          return new
+        pcr = args[0]
 
-      # only the first of the two is SAT
-      elif (args[0]['SAT'] and not args[1]['SAT']):
+      # only one of the two is SAT
+      elif (args[0]['SAT'] and not args[1]['SAT']
+            or
+            not args[0]['SAT'] and args[1]['SAT']):
         s0 = args[0]['Status']
         s1 = args[1]['Status']
         if ValidStatus.index(s0) > ValidStatus.index(s1):
-          return args[0]
+          pcr = args[0]
         elif ValidStatus.index(s0) < ValidStatus.index(s1):
-          return args[1]
-
-      # only the second of the two is SAT
-      elif (not args[0]['SAT'] and args[1]['SAT']):
-        s0 = args[0]['Status']
-        s1 = args[1]['Status']
-        if ValidStatus.index(s0) > ValidStatus.index(s1):
-          return args[0]
-        elif ValidStatus.index(s0) < ValidStatus.index(s1):
-          return args[1]
+          pcr = args[1]
 
       # both are SAT
       elif args[0]['SAT'] and args[1]['SAT']:
@@ -255,24 +243,95 @@ class PDP:
         s1 = args[1]['Status']
 
         if ValidStatus.index(s0) > ValidStatus.index(s1):
-          return args[0]
+          pcr = args[0]
         elif ValidStatus.index(s0) < ValidStatus.index(s1):
-          return args[1]
+          pcr = args[1]
         else:
+          pcr = args[0]
           compReason = args[0]['Reason'] + '|' + args[1]['Reason']
-        if args[0].has_key('Enddate') and args[1].has_key('Enddate'):
-          new = args[0]
-          new['EndDate'] = max(args[0]['Enddate'], args[1]['Enddate'])
-          new['Reason'] = compReason
-          return new 
-        elif args[0].has_key('Enddate'):
-          new = args[0]
-          new['Reason'] = compReason
-          return new
-        else:
-          new = args[1]
-          new['Reason'] = compReason
-          return new
+
+      # if there's an EndDate
+      if args[0].has_key('EndDate') and args[1].has_key('EndDate'):
+        endDate = max(args[0]['EndDate'], args[1]['EndDate'])
+      elif args[0].has_key('EndDate') and not args[1].has_key('EndDate'):
+        endDate = args[0]['EndDate']
+      elif not args[0].has_key('EndDate') and args[1].has_key('EndDate'):
+        endDate = args[1]['EndDate']
+
+      res = {}
+
+      for k in pcr.keys():
+        res[k] = pcr[k]
+      try:
+        res['Reason'] = compReason
+      except:
+        pass
+      try:
+        res['EndDate'] = endDate
+      except:
+        pass
+    
+      return res
+    
+      # none is SAT
+#      if not args[0]['SAT'] and not args[1]['SAT']:
+#        compReason = args[0]['Reason'] + '|' + args[1]['Reason']
+#        if args[0].has_key('EndDate') and args[1].has_key('EndDate'):
+#          new = args[0]
+#          new['EndDate'] = max(args[0]['EndDate'], args[1]['EndDate'])
+#          new['Reason'] = compReason
+#          return new 
+#        elif args[0].has_key('EndDate'):
+#          new = args[0]
+#          new['Reason'] = compReason
+#          return new
+#        else:
+#          new = args[1]
+#          new['Reason'] = compReason
+#          return new
+#
+#      # only the first of the two is SAT
+#      elif (args[0]['SAT'] and not args[1]['SAT']):
+#        s0 = args[0]['Status']
+#        s1 = args[1]['Status']
+#        if ValidStatus.index(s0) > ValidStatus.index(s1):
+#          return args[0]
+#        elif ValidStatus.index(s0) < ValidStatus.index(s1):
+#          return args[1]
+#
+#      # only the second of the two is SAT
+#      elif (not args[0]['SAT'] and args[1]['SAT']):
+#        s0 = args[0]['Status']
+#        s1 = args[1]['Status']
+#        if ValidStatus.index(s0) > ValidStatus.index(s1):
+#          return args[0]
+#        elif ValidStatus.index(s0) < ValidStatus.index(s1):
+#          return args[1]
+#
+#      # both are SAT
+#      elif args[0]['SAT'] and args[1]['SAT']:
+#        s0 = args[0]['Status']
+#        s1 = args[1]['Status']
+#
+#        if ValidStatus.index(s0) > ValidStatus.index(s1):
+#          return args[0]
+#        elif ValidStatus.index(s0) < ValidStatus.index(s1):
+#          return args[1]
+#        else:
+#          compReason = args[0]['Reason'] + '|' + args[1]['Reason']
+#        if args[0].has_key('EndDate') and args[1].has_key('EndDate'):
+#          new = args[0]
+#          new['EndDate'] = max(args[0]['EndDate'], args[1]['EndDate'])
+#          new['Reason'] = compReason
+#          return new 
+#        elif args[0].has_key('EndDate'):
+#          new = args[0]
+#          new['Reason'] = compReason
+#          return new
+#        else:
+#          new = args[1]
+#          new['Reason'] = compReason
+#          return new
         
 
     elif len(args) == 3:

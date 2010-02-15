@@ -100,6 +100,7 @@ class DT_Policy(PolicyBase):
           result['SAT'] = False
           result['Status'] = 'Probing'
           result['Reason'] = 'DT:%s' %status['DT']
+          result['EndDate'] = status['EndDate']
 #        elif status['DT'] == 'No Info':
 #          result['SAT'] = None
       
@@ -113,6 +114,7 @@ class DT_Policy(PolicyBase):
           result['SAT'] = False
           result['Status'] = 'Banned'
           result['Reason'] = 'DT:%s' %status['DT']
+          result['EndDate'] = status['EndDate']
         elif 'AT_RISK' in status['DT']:
           result['SAT'] = True
           result['Status'] = 'Probing'

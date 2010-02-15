@@ -568,6 +568,8 @@ def policyInvocation(granularity = None, name = None, status = None, policy = No
       a = (granularity, name, status)
     res = _innerEval(p, a)
 
+  res['PolicyName'] = pol
+
   return res
 
         
