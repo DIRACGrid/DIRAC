@@ -349,8 +349,8 @@ EOF
 
 #
 # Generate System Administrator service configuration
-[ -e $DESTDIR/etc/Framework_SysAdministrator.cfg ] && rm -f $DESTDIR/etc/Framework_SysAdministrator.cfg
-cat >> $DESTDIR/etc/Framework_SysAdministrator.cfg << EOF || exit
+[ -e $DESTDIR/etc/Framework_SystemAdministrator.cfg ] && rm -f $DESTDIR/etc/Framework_SysAdministrator.cfg
+cat >> $DESTDIR/etc/Framework_SystemAdministrator.cfg << EOF || exit
 Systems
 {
   Framework
