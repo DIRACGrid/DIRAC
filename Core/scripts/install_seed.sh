@@ -343,8 +343,9 @@ Systems
 EOF
 
 #
-# Put the SystemAdministrator config into the global CS
-cat >> $DESTDIR/etc/$CONFIGNAME.cfg << EOF || exit
+# Generate System Administrator service configuration
+[ -e $DESTDIR/etc/Framework_SysAdministrator.cfg ] && rm -f $DESTDIR/etc/Framework_SysAdministrator.cfg
+cat >> $DESTDIR/etc/Framework_SysAdministrator.cfg << EOF || exit
 Systems
 {
   Framework
@@ -381,7 +382,7 @@ ls -ltr /opt/dirac/pro
 #
 # Install Web Portal
 if [ ! -z "$INSTALL_WEB" ]; then
-  /home/dirac/install_web.sh $DESTDIR $VERDIR $DIRACVERSION $DIRACARCH $DIRACPYTHON 
+  install_web.sh $DESTDIR $VERDIR $DIRACVERSION $DIRACARCH $DIRACPYTHON 
 fi
 
 #
