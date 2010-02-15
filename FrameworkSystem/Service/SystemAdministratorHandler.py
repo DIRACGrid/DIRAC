@@ -618,8 +618,22 @@ class SystemAdministratorHandler( RequestHandler ):
     currentEnv['MYSQL_DIRAC_PWD'] = diracpwd
     host = socket.getfqdn()
     result = shellCall(0,'/opt/dirac/pro/DIRAC/Core/scripts/install_mysql.sh %s' % host,env=currentEnv)
-    return result
     
+    # Add the database access info to the local configuration
+    cfg = CFG()
+    cfg.createNewSection('Systems')
+    cfg.createNewSection('Systems/Databases')
+    cfg.setOption('Systems/Databases/User','Dirac')
+    cfg.setOption('Systems/Databases/Password',diracpwd)
+    
+    diracCfg = CFG()
+    diracCfg.loadFromFile('/opt/dirac/etc/dirac.cfg')
+    newCfg = diracCfg.mergeWith(cfg)
+    if not newCfg.writeToFile('/opt/dirac/etc/dirac.cfg'):
+      return S_ERROR('Failed to write out the local component options')
+    else:
+      return S_OK()
+        
   types_installDatabase = [ StringTypes ]
   def export_installDatabase(self,rootpwd,dbname):
     """ Install a DIRAC database named dbname
