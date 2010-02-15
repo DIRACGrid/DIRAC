@@ -50,11 +50,13 @@ LCGVERSION=2009-08-13
 DIRACDIRS="startup runit data work control sbin"
 
 # check if we are the right user
-echo Checking the user
-if [ $USER != $DIRACUSER ] ; then
-  echo $0 should be run by $DIRACUSER
-  exit
-fi
+#echo Checking the user
+#if [ "$USER" != "$DIRACUSER" ] ; then
+#  echo $0 should be run by $DIRACUSER
+#  exit
+#fi
+
+#
 # make sure $DESTDIR is available
 if [ ! -d $DESTDIR ]; then
  echo There is no DIRAC installation to update
@@ -84,10 +86,14 @@ mkdir -p $VERDIR || exit 1
 #
 # Install DIRAC software now
 # First get the dirac-install script
-echo Downloading dirac-install.py script
-[ -e dirac-install.py ] && rm dirac-install.py
-wget http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/dirac-install.py
-
+if [ -e $DESTDIR/pro/DIRAC/Core/scripts/dirac-install.py ]; then
+  INSTALL_SCRIPT=$DESTDIR/pro/DIRAC/Core/scripts/dirac-install.py
+else  
+  echo Downloading dirac-install.py script
+  [ -e dirac-install.py ] && rm dirac-install.py
+  wget http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/dirac-install.py
+  INSTALL_SCRIPT=dirac-install.py
+fi
 #
 # Prepare the list of extensions  
 EXT=''
@@ -104,8 +110,8 @@ fi
 [ -e $VERDIR/etc ] || ln -s ../../etc $VERDIR   || exit 1
 
 echo Installing DIRAC software
-echo python dirac-install.py -t server -P $VERDIR -r $DIRACVERSION -g $LCGVERSION -p $DIRACARCH -i $DIRACPYTHON $EXT || exit 1
-     python dirac-install.py -t server -P $VERDIR -r $DIRACVERSION -g $LCGVERSION -p $DIRACARCH -i $DIRACPYTHON $EXT || exit 1
+echo python $INSTALL_SCRIPT -t server -P $VERDIR -r $DIRACVERSION -g $LCGVERSION -p $DIRACARCH -i $DIRACPYTHON $EXT || exit 1
+     python $INSTALL_SCRIPT -t server -P $VERDIR -r $DIRACVERSION -g $LCGVERSION -p $DIRACARCH -i $DIRACPYTHON $EXT || exit 1
 
 #
 # Create pro and old links

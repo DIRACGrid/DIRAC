@@ -4,7 +4,7 @@
 # $HeadURL$
 # $Id$
 #
-# This is scripts installs the bare minimal setup of DIRAC which allows
+# This script installs the bare minimal setup of DIRAC which allows
 # to manage the composition of the DIRAC service remotely. The script should
 # be only used for the initial installation and not for the software updates. 
 #
@@ -171,6 +171,11 @@ Registry
       Properties += JobAdministrator
       Properties += CSAdministrator
       Properties += AlarmsManagement
+    }
+    ${VO}_user
+    {
+      Users = $DIRACADMIN
+      Properties = NormalUser
     }
   }
   Users
