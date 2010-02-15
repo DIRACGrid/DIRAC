@@ -619,3 +619,93 @@ class SystemAdministratorHandler( RequestHandler ):
 
     result = shellCall(0,'/opt/dirac/pro/DIRAC/Core/scripts/install_mysql_db.sh %s' % dbname,env=currentEnv)
     return result
+  
+  types_addCSDatabaseOptions = [ StringTypes, StringTypes ]
+  def export_addCSDatabaseOptions(self,system,dbname,hostName=None,local=False,user=None,password=None):
+    """ Add default component options to the global CS or to the local options
+    """
+    host = hostName
+    if not hostName:
+      host = socket.getfqdn()
+    if not local:
+      if user or password:
+        return S_ERROR('Database User and Password settings are not allowed in the global CS')
+      return self.__addCSDBOptions(system,dbname,host)
+    else:
+      result = self.__getDatabaseCFG(system,component,host,user,password)
+      if not result['OK']:
+        return result
+      cfg = result['Value']
+      diracCfg = CFG()
+      diracCfg.loadFromFile('/opt/dirac/etc/dirac.cfg')
+      newCfg = diracCfg.mergeWith(cfg)
+      if not newCfg.writeToFile('/opt/dirac/etc/dirac.cfg'):
+        return S_ERROR('Failed to write out the local component options')
+      else:
+        return S_OK()
+      
+  def __getDatabaseCFG(self,system,dbname,host,user=None,password=None):
+    """ Get the CFG configuration file for a database
+    """
+    instance = self.__getInstance(system)
+    if instance == "Unknown":
+      return S_ERROR('Unknown setup')
+    
+    cfg = CFG() 
+    cfg.createNewSection('Systems')
+    cfg.createNewSection('Systems/%s' % system)
+    cfg.createNewSection('Systems/%s/%s' % (system,instance) )
+    cfg.createNewSection('Systems/%s/%s/Databases' % (system,instance) )
+    secName = 'Systems/%s/%s/Databases/%s' % (system,instance,dbname )
+    cfg.createNewSection(secName )
+    cfg.setOption(secName+'/DBName',dbname)
+    cfg.setOption(secName+'/Host',host)
+    cfg.setOption(secName+'/MaxQueueSize',10)
+    if user:
+      cfg.setOption(secName+'/User',user)
+    if password:
+      cfg.setOption(secName+'/Password',password)    
+
+    return S_OK(cfg) 
+    
+  
+  def __addCSDBOptions(self,system,dbname,host,override=False):
+    """ Add the section with the database options to the CS
+    """
+    instance = self.__getInstance(system)
+    if instance == "Unknown":
+      return S_ERROR('Unknown setup')
+
+    # Check if the component CS options exist
+    addOptions = True
+    if not override:
+      result = gConfig.getOptions('/Systems/%s/%s/Databases/%s' % (system,instance,dbname) )
+      if result['OK']:
+        addOptions = False
+    if not addOptions:
+      return S_OK('Database options already exist')
+        
+    # Add the component options now
+    result = self.__getDatabaseCFG(system,dbname,host)
+    if not result['OK']:
+      return result
+    cfg = result['Value']
+
+    cfgClient = CSAPI()
+    result = cfgClient.downloadCSData()
+    if not result['OK']:
+      return result
+    result = cfgClient.mergeFromCFG(cfg)
+    if not result['OK']:
+      return result
+    result = cfgClient.commit()
+
+    return result    
+  
+  types_updateSoftware = [ StringTypes ]
+  def export_updateSoftware(self,version):
+    """ Update the local DIRAC software installation to version
+    """
+    result = shellCall(0,'/opt/dirac/pro/DIRAC/Core/scripts/update_sw.sh %s' % version)
+    return result
+    
