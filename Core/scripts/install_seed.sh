@@ -303,7 +303,7 @@ RUNSVCTRL=`which runsvctrl`
 chpst -u dirac \$RUNSVCTRL d $DESTDIR/startup/*
 killall runsv svlogd
 RUNSVDIR=`which runsvdir`
-exec chpst -u dirac \$RUNSVDIR -P $DESTDIR/startup 'log:  DIRAC runsv'
+exec chpst -u $DIRACUSER \$RUNSVDIR -P $DESTDIR/startup 'log:  DIRAC runsv'
 EOF
 fi
 chmod +x $DESTDIR/sbin/runsvdir-start
