@@ -315,7 +315,7 @@ class SystemAdministratorHandler( RequestHandler ):
     instance = gConfig.getValue('/DIRAC/Setups/%s/%s' % (setup,system),'Unknown')
     return instance
   
-  def __getComponentCFG(system,component,compType=None,inst=None):
+  def __getComponentCFG(self,system,component,compType=None,inst=None):
     """ Get the CFG object of the component configuration
     """
     if not compType:
@@ -331,7 +331,11 @@ class SystemAdministratorHandler( RequestHandler ):
         return S_ERROR('Unknown setup')
     else:
       instance = inst
-      
+     
+    sectionName = 'Services'
+    if componentType == 'agent':
+      sectionName = 'Agents'
+
     # Find the component options template  
     extensions = gConfig.getValue('/DIRAC/Extensions',[])
     compCfg = ''
@@ -351,7 +355,7 @@ class SystemAdministratorHandler( RequestHandler ):
     else:
       return S_ERROR('No configuration template found')      
 
-  def __addCSOptions(self,system,component,compType=None,override=False):
+  def __addCSOptions(self,system,component,compType=None,override=False,host=None):
     """ Add the section with the component options to the CS
     """
     if not compType:
@@ -382,6 +386,7 @@ class SystemAdministratorHandler( RequestHandler ):
     result = self.__getComponentCFG(system,component,componentType,instance)
     if not result['OK']:
       return result
+    compCfg = result['Value']
 
     cfg = CFG() 
     cfg.createNewSection('Systems')
@@ -390,6 +395,17 @@ class SystemAdministratorHandler( RequestHandler ):
     cfg.createNewSection('Systems/%s/%s/%s' % (system,instance,sectionName) )
     cfg.createNewSection('Systems/%s/%s/%s/%s' % (system,instance,sectionName,component ),'',compCfg )
 
+    # Add the service URL
+    if componentType == "service":
+      port = compCfg.getOption('/Port',0)
+      if port:
+        hostName = host
+        if not host:
+          hostName = socket.getfqdn()
+        cfg.createNewSection('Systems/%s/%s/URLs' % (system,instance) )
+        cfg.setOption('Systems/%s/%s/URLs/%s' % (system,instance,component),
+                      'dips://%s:%d/%s/%s' % (hostName,port,system,component) )
+    
     cfgClient = CSAPI()
     result = cfgClient.downloadCSData()
     if not result['OK']:
@@ -402,11 +418,11 @@ class SystemAdministratorHandler( RequestHandler ):
     return result
 
   types_addCSDefaultOptions = [ StringTypes, StringTypes ]
-  def export_addCSDefaultOptions(self,system,component,local=False):
+  def export_addCSDefaultOptions(self,system,component,host=None,local=False):
     """ Add default component options to the global CS or to the local options
     """
     if not local:
-      return self.__addCSOptions(system,component)
+      return self.__addCSOptions(system,component,host=host)
     else:
       result = self.__getComponentCFG(system,component)
       if not result['OK']:
@@ -708,4 +724,3 @@ class SystemAdministratorHandler( RequestHandler ):
     """
     result = shellCall(0,'/opt/dirac/pro/DIRAC/Core/scripts/update_sw.sh %s' % version)
     return result
-    
