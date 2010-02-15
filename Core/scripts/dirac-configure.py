@@ -113,14 +113,6 @@ def setVO( optionValue ):
   return DIRAC.S_OK()
 
 Script.disableCS()
-try:
-  dirName = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'certificates' )
-  if not os.path.exists( dirName ):
-    os.makedirs( dirName )
-except:
-  DIRAC.gLogger.exception()
-  DIRAC.gLogger.fatal( 'Fail to create directory:', dirName )
-  DIRAC.exit( -1 )
 
 Script.registerSwitch( "S:", "Setup=", "Set <setup> as DIRAC setup", setSetup )
 Script.registerSwitch( "C:", "ConfigurationServer=", "Set <server> as DIRAC configuration server", setServer )
@@ -166,6 +158,14 @@ else:
   # Necessary to allow initial download of CA's
   DIRAC.gConfig.setOptionValue( '/DIRAC/Security/SkipCAChecks', 'yes' )
   Script.enableCS()
+  try:
+    dirName = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'certificates' )
+    if not os.path.exists( dirName ):
+      os.makedirs( dirName )
+  except:
+    DIRAC.gLogger.exception()
+    DIRAC.gLogger.fatal( 'Fail to create directory:', dirName )
+    DIRAC.exit( -1 )
   try:
     from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
     bdc = BundleDeliveryClient()
