@@ -7,10 +7,11 @@ __RCSID__ = "$Id$"
 
 import os, re, shutil, time, socket
 from types import *
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger, shellCall
+from DIRAC import S_OK, S_ERROR, gConfig, gLogger, shellCall, rootPath
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.FrameworkSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
 from DIRAC.Core.Utilities.CFG import CFG
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 cmDB = None
 DIRACROOT = '/opt/dirac'
@@ -303,7 +304,120 @@ class SystemAdministratorHandler( RequestHandler ):
       return S_ERROR('Failed to start the component %s_%s' % (system,component) )
     
     return S_OK(result['Value']['%s_%s' % (system,component)]['RunitStatus'])  
+
+  def __getInstance(self,system):
+    """ Get the name of the local instance of the given system
+    """
+    
+    setup = gConfig.getValue('/DIRAC/Setup','')
+    if not setup:
+      return False
+    instance = gConfig.getValue('/DIRAC/Setups/%s/%s' % (setup,system),'Unknown')
+    return instance
   
+  def __getComponentCFG(system,component,compType=None,inst=None):
+    """ Get the CFG object of the component configuration
+    """
+    if not compType:
+      componentType = self.__getComponentType(system,component)
+    else:
+      componentType = compType
+    if not componentType or componentType == 'unknown':
+      return S_ERROR('Failed to determine the component type')
+    
+    if not inst:
+      instance = self.__getInstance(system)
+      if instance == "Unknown":
+        return S_ERROR('Unknown setup')
+    else:
+      instance = inst
+      
+    # Find the component options template  
+    extensions = gConfig.getValue('/DIRAC/Extensions',[])
+    compCfg = ''
+    for pkg in extensions+['DIRAC']:
+      cfgPath = '/%s/%s/%sSystem/ConfigTemplate.cfg'%(rootPath,pkg,system)
+      if os.path.exists(cfgPath):
+        # Look up the component in this template
+        loadCfg = CFG() 
+        loadCfg.loadFromFile(cfgPath)
+        try:
+          compCfg = loadCfg[sectionName][component]
+        except NameError,x:
+          gLogger.warn('No %s section found' % componentType)  
+          
+    if compCfg:
+      return S_OK(compCfg)
+    else:
+      return S_ERROR('No configuration template found')      
+
+  def __addCSOptions(self,system,component,compType=None,override=False):
+    """ Add the section with the component options to the CS
+    """
+    if not compType:
+      componentType = self.__getComponentType(system,component)
+    else:
+      componentType = compType
+    if not componentType or componentType == 'unknown':
+      return S_ERROR('Failed to determine the component type')
+
+    instance = self.__getInstance(system)
+    if instance == "Unknown":
+      return S_ERROR('Unknown setup')
+    
+    sectionName = "Agents"
+    if componentType == 'service':
+      sectionName = "Services"
+
+    # Check if the component CS options exist
+    addOptions = True
+    if not override:
+      result = gConfig.getOptions('/Systems/%s/%s/%s/%s' % (system,instance,sectionName,component) )
+      if result['OK']:
+        addOptions = False
+    if not addOptions:
+      return S_OK('Component options already exist')
+        
+    # Add the component options now
+    result = self.__getComponentCFG(system,component,componentType,instance)
+    if not result['OK']:
+      return result
+
+    cfg = CFG() 
+    cfg.createNewSection('Systems')
+    cfg.createNewSection('Systems/%s' % system)
+    cfg.createNewSection('Systems/%s/%s' % (system,instance) )
+    cfg.createNewSection('Systems/%s/%s/%s' % (system,instance,sectionName) )
+    cfg.createNewSection('Systems/%s/%s/%s/%s' % (system,instance,sectionName,component ),'',compCfg )
+
+    cfgClient = CSAPI()
+    result = cfgClient.downloadCSData()
+    if not result['OK']:
+      return result
+    result = cfgClient.mergeFromCFG(cfg)
+    if not result['OK']:
+      return result
+    result = cfgClient.commit()
+
+    return result
+
+  types_addCSDefaultOptions = [ StringTypes, StringTypes ]
+  def export_addCSDefaultOptions(self,system,component,local=False):
+    """ Add default component options to the global CS or to the local options
+    """
+    if not local:
+      return self.__addCSOptions(system,component)
+    else:
+      result = self.__getComponentCFG(system,component)
+      if not result['OK']:
+        return result
+      cfg = result['Value']
+      fname = '/opt/dirac/etc/%s_%s.cfg' % (system,component)
+      if cfg.writeToFile(fname):
+        return S_ERROR('Failed to write out the local component options')
+      else:
+        return S_OK()
+ 
   types_unsetupComponent = [ StringTypes, StringTypes ]
   def export_unsetupComponent(self,system,component):
     """ Setup the specified component for running with the runsv daemon
