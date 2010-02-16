@@ -6,7 +6,7 @@
 """
 
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
-from DIRAC.Core.Base.Agent import Agent
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
@@ -23,7 +23,7 @@ __RCSID__ = "$Id$"
 
 AGENT_NAME = 'DataManagement/RemovalAgent'
 
-class RemovalAgent(Agent,RequestAgentMixIn):
+class RemovalAgent(AgentModule,RequestAgentMixIn):
 
   def initialize(self):
 
