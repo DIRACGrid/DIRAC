@@ -33,8 +33,8 @@ class RegistrationAgent(AgentModule,RequestAgentMixIn):
     self.ReplicaManager = ReplicaManager()
     self.DataLog = DataLoggingClient()
 
-    self.maxNumberOfThreads = gConfig.getValue(self.section+'/NumberOfThreads',1)
-    self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',1)
+    self.maxNumberOfThreads = self.am_getOption('NumberOfThreads',1)
+    self.threadPoolDepth = self.am_getOption('ThreadPoolDepth',1)
     self.threadPool = ThreadPool(1,self.maxNumberOfThreads)
 
     self.useProxies = self.am_getOption('UseProxies','True').lower() in ( "y", "yes", "true" )
