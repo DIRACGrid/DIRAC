@@ -1,6 +1,6 @@
 
 import os, stat, tempfile, shutil
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC import S_OK, S_ERROR, gConfig, rootPath
 import DIRAC.Core.Security.Locations as Locations
 import DIRAC.Core.Security.File as File
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
@@ -147,21 +147,23 @@ class VOMS( BaseSecurity ):
 
   def getVOMSESLocation( self ):
     #755
-    requiredDirPerms = stat.S_IRWXU + stat.S_IRGRP + stat.S_IXGRP + stat.S_IROTH + stat.S_IXOTH
+    requiredDirPerms = stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
     #644
-    requiredFilePerms = stat.S_IRUSR + stat.S_IWUSR + stat.S_IRGRP + stat.S_IROTH
+    requiredFilePerms = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
+    #777
+    allPerms = stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
     vomsesPaths = []
     if 'DIRAC_VOMSES' in os.environ:
       vomsesPaths.append( os.environ[ 'DIRAC_VOMSES' ] )
-    vomsesPaths.append( os.path.join( DIRAC.rootPath, "etc", "grid-security", "vomses" ) )
+    vomsesPaths.append( os.path.join( rootPath, "etc", "grid-security", "vomses" ) )
     for vomsesPath in vomsesPaths:
       if not os.path.exists( vomsesPath ):
         continue
       if os.path.isfile( vomsesPath ):
         pathMode = os.stat( vomsesPath )[ stat.ST_MODE ]
-        if pathMode & requiredFilePerms == requiredFilePerms:
+        if ( pathMode & allPerms ) ^ requiredFilePerms == 0:
           return vomsesPath
-        fd, tmpPath = tempfile.mkstem( "vomses" )
+        fd, tmpPath = tempfile.mkstemp( "vomses" )
         os.close( fd )
         shutil.copy( vomsesPath , tmpPath )
         os.chmod( tmpPath, requiredFilePerms )
@@ -169,17 +171,19 @@ class VOMS( BaseSecurity ):
         return tmpPath
       elif os.path.isdir( vomsesPath ):
         ok = True
-        if os.stat( vomsesPath )[ stat.ST_MODE ] & requiredDirPerms != requiredDirPerms:
+        pathMode = os.stat( vomsesPath )[ stat.ST_MODE ]
+        if ( pathMode & allPerms ) ^ requiredDirPerms:
           ok = False
         if ok:
           for fP in os.listdir( vomsesPath ):
-            if os.stat( os.path.join( vomsesPath, fP ) )[ stat.ST_MODE ] & requiredFilePerms != requiredFilePerms:
+            pathMode = os.stat( os.path.join( vomsesPath, fP ) )[ stat.ST_MODE ]
+            if ( pathMode & allPerms ) ^ requiredFilePerms:
               ok = False
               break
         if ok:
           return vomsesPath
         tmpDir = tempfile.mkdtemp()
-        tmpDir = os.path.join( tmpDir, tmpDir )
+        tmpDir = os.path.join( tmpDir, "vomses" )
         shutil.copytree( vomsesPath, tmpDir )
         os.chmod( tmpDir, requiredDirPerms )
         for fP in os.listdir( tmpDir ):
