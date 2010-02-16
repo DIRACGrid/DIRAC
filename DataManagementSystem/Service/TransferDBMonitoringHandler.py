@@ -5,14 +5,11 @@ from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
-from DIRAC.Core.Utilities.Plotting import histogram
-from DIRAC.Core.Utilities.FileCache import FileCache
 from DIRAC.ConfigurationSystem.Client import PathFinder
 import os
 
 # These are global instances of the DB classes
 transferDB = False
-fileCache = False
 #this should also select the SourceSite,DestinationSite
 SUMMARY = ['Status','NumberOfFiles','PercentageComplete','TotalSize','SubmitTime','LastMonitor']
 
@@ -26,8 +23,6 @@ def initializeTransferDBMonitoringHandler(serviceInfo):
 
   global transferDB
   transferDB = TransferDB()
-  global fileCache
-  fileCache = FileCache('TransferDBMonitoring')
 
   monitoringSection = PathFinder.getServiceSection("DataManagement/TransferDBMonitoring")
   #Get data location
@@ -363,50 +358,3 @@ class TransferDBMonitoringHandler(RequestHandler):
   types_getChannelStatus = []
   def export_getChanelStatus(self):
     return transferDB.getDistinctChannelsAttributes('Status')
-
-  types_histogramTransferDuration = [DictType]
-  def export_histogramTransferDuration(self,paramsDict):
-    """  Plot a histogram of transfer duration for the supplied parameters
-    """
-    if not paramsDict.has_key('Source'):
-      return S_ERROR('Source must be supplied')
-    sourceSite = paramsDict['Source']
-    if not paramsDict.has_key('Destination'):
-      return S_ERROR('Destination must be supplied')
-    destSite = paramsDict['Destination']
-
-    res = transferDB.getChannelID(sourceSite,destSite)
-    if not res['OK']:
-      return res
-    channelID = res['Value']
-
-    startTime = ''
-    if paramsDict.has_key('StartTime'):
-      startTime = paramsDict['StartTime']
-    endTime = ''
-    if paramsDict.has_key('EndTime'):
-      endTime = paramsDict['EndTime']
-
-    res = transferDB.getTransferDurations(channelID,startTime,endTime)
-    if not res['OK']:
-      return S_ERROR('Failed to get DB info: %s' % res['Message'])
-    data = res['Value']
-
-    metadata = {}
-    metadata['title'] = 'Transfer durations from %s to %s' % (sourceSite,destSite)
-    metadata['starttime'] = startTime
-    metadata['endtime'] = endTime
-    metadata['ylabel'] = "Seconds"
-    res = fileCache.generateFile(histogram,data,metadata)
-    return res
-
-  def transfer_toClient(self,fileId,token,fileHelper):
-    """ Get the plot data """
-    retVal = fileCache.getFileData(fileId)
-    if not retVal[ 'OK' ]:
-      return retVal
-    retVal = fileHelper.sendData( retVal[ 'Value' ] )
-    if not retVal[ 'OK' ]:
-      return retVal
-    fileHelper.sendEOF()
-    return S_OK()
