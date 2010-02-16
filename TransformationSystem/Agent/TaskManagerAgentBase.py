@@ -29,7 +29,7 @@ class TaskManagerAgentBase(AgentModule):
     """ The TaskManagerBase execution method. """
 
     # Determine whether the task status is to be monitored and updated
-    enableTaskMonitor = self.am_getOption('MonitorTasks',False)
+    enableTaskMonitor = self.am_getOption('MonitorTasks','')
     if not enableTaskMonitor:
       gLogger.info("execute: Monitoring of tasks is disabled.")
       gLogger.info("execute: To enable create the 'MonitorTasks' option")
@@ -39,7 +39,7 @@ class TaskManagerAgentBase(AgentModule):
         gLogger.warn('execute: Failed to update task states', res['Message'])
 
     # Determine whether the task files status is to be monitored and updated
-    enableFileMonitor = self.am_getOption('MonitorFiles',False)
+    enableFileMonitor = self.am_getOption('MonitorFiles','')
     if not enableFileMonitor:
       gLogger.info("execute: Monitoring of files is disabled.")
       gLogger.info("execute: To enable create the 'MonitorFiles' option")
@@ -49,7 +49,7 @@ class TaskManagerAgentBase(AgentModule):
         gLogger.warn('execute: Failed to update file states', res['Message'])
 
     # Determine whether the checking of reserved tasks is to be performed
-    enableCheckReserved = self.am_getOption('CheckReserved',False)
+    enableCheckReserved = self.am_getOption('CheckReserved','')
     if not enableCheckReserved:
       gLogger.info("execute: Checking of reserved tasks is disabled.")
       gLogger.info("execute: To enable create the 'CheckReserved' option")
@@ -59,7 +59,7 @@ class TaskManagerAgentBase(AgentModule):
         gLogger.warn('execute: Failed to checked reserved tasks',res['Message'])
 
     # Determine whether the submission of tasks is to be executed
-    enableSubmission = self.am_getOption('SubmitTasks',False)
+    enableSubmission = self.am_getOption('SubmitTasks','')
     if not enableSubmission:
       gLogger.info("execute: Submission of tasks is disabled.")
       gLogger.info("execute: To enable create the 'SubmitTasks' option")
