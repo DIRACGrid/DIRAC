@@ -139,6 +139,8 @@ class RequestClient:
         urls = [url]
       elif self.local:
         urls = [self.local]
+      elif self.central:
+        urls = [self.central]
       elif self.voBoxUrls:
         urls = self.voBoxUrls
       else:
@@ -172,6 +174,8 @@ class RequestClient:
         urls = [url]
       elif self.local:
         urls = [self.local]
+      elif self.central:
+        urls = [self.central]
       elif self.voBoxUrls:
         urls = self.voBoxUrls
       else:
@@ -207,6 +211,8 @@ class RequestClient:
         urls = [url]
       elif self.local:
         urls = [self.local]
+      elif self.central:
+        urls = [self.central]
       elif self.voBoxUrls:
         urls = self.voBoxUrls
       else:
