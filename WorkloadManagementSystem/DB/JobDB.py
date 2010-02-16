@@ -89,7 +89,7 @@ class JobDB(DB):
 
     DB.__init__(self,'JobDB','WorkloadManagement/JobDB',maxQueueSize)
 
-    self.maxRescheduling = gConfig.getValue( self.cs_path+'/MaxRescheduling', 30)
+    self.maxRescheduling = gConfig.getValue( self.cs_path+'/MaxRescheduling', 3 )
 
     self.jobAttributeNames = []
 
