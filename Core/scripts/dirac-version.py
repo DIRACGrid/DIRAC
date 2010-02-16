@@ -9,5 +9,5 @@ __VERSION__ = "$Revision: 1.3 $"
 """
     print version of current DIRAC instalation
 """
-from DIRACEnvironment import DIRAC
+import DIRAC
 print DIRAC.version
