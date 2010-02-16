@@ -21,6 +21,7 @@ DESTDIR=/opt/dirac
 DIRACVERSION=$1
 if [ -z "$DIRACVERSION" ]; then
   echo DIRAC version is not given
+  exit 1
 fi  
 #
 # Use the following extensions
@@ -41,6 +42,8 @@ DIRACPYTHON=25
 # The version of the LCG middleware
 LCGVERSION=2009-08-13
 
+ORACLE_CLIENT=`$DESTDIR/pro/$DIRACARCH/bin/python -c "import cx_Oracle"  > /dev/null 2>&1 ; echo $?`
+
 ######################################################################
 #
 # The installation starts here
@@ -53,14 +56,14 @@ DIRACDIRS="startup runit data work control sbin"
 #echo Checking the user
 #if [ "$USER" != "$DIRACUSER" ] ; then
 #  echo $0 should be run by $DIRACUSER
-#  exit
+#  exit 1
 #fi
 
 #
 # make sure $DESTDIR is available
 if [ ! -d $DESTDIR ]; then
  echo There is no DIRAC installation to update
- exit
+ exit 1
 fi
 
 ROOT=`dirname $DESTDIR`/dirac
@@ -144,3 +147,5 @@ done
 # Fix mysql.server to make it point to the actual db directory
 #
 sed -i "s:^datadir=.*:datadir=/opt/dirac/mysql/db:" /opt/dirac/pro/mysql/share/mysql/mysql.server
+
+[ $ORACLE_CLIENT -eq 0 ] && $DESTDIR/pro/scripts/install_oracle-client.sh
