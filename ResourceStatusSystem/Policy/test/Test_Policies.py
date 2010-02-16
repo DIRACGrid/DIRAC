@@ -8,7 +8,7 @@ from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Policy.PolicyInvoker import PolicyInvoker
 from DIRAC.ResourceStatusSystem.Policy.DT_Policy import DT_Policy
 from DIRAC.ResourceStatusSystem.Policy.AlwaysFalse_Policy import AlwaysFalse_Policy 
-from DIRAC.ResourceStatusSystem.Policy.Res2SiteStatus_Policy import Res2SiteStatus_Policy 
+#from DIRAC.ResourceStatusSystem.Policy.Res2SiteStatus_Policy import Res2SiteStatus_Policy 
 from DIRAC.ResourceStatusSystem.Policy.PilotsEfficiency_Policy import PilotsEfficiency_Policy 
 from DIRAC.ResourceStatusSystem.Policy.PilotsEfficiency_Simple_Policy import PilotsEfficiency_Simple_Policy
 from DIRAC.ResourceStatusSystem.Policy.JobsEfficiency_Policy import JobsEfficiency_Policy
@@ -34,7 +34,7 @@ class PoliciesTestCase(unittest.TestCase):
     self.pi = PolicyInvoker()
     self.DT_P = DT_Policy()
     self.AF_P = AlwaysFalse_Policy()
-    self.Res2SiteStatus_P = Res2SiteStatus_Policy()
+#    self.Res2SiteStatus_P = Res2SiteStatus_Policy()
     self.PE_P = PilotsEfficiency_Policy()
     self.PES_P = PilotsEfficiency_Simple_Policy()
     self.JE_P = JobsEfficiency_Policy()
@@ -650,7 +650,7 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DT_PolicySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DT_Policy_Failure))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Res2SiteStatus_PolicySuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Res2SiteStatus_Policy_Failure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Res2SiteStatus_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(AlwaysFalse_PolicySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEfficiency_PolicySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEfficiency_Policy_Failure))

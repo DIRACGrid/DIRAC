@@ -145,6 +145,8 @@ class PEP:
        :attr:`rsDBIn`: a custom database object (optional)
      
        :attr:`knownInfo`: a string of known provided information (optional)
+
+       :attr:`ncIn`: a custom notification client object (optional)
     """
 
     if pdpIn is not None:
@@ -167,7 +169,10 @@ class PEP:
     # policy decision
     resDecisions = pdp.takeDecision(knownInfo=knownInfo)
     
-    for res in resDecisions:
+#    for res in resDecisions['SinglePolicyResults']:
+#      rsDB.
+    
+    for res in resDecisions['PolicyCombinedResult']:
       
       self.__policyType = res['PolicyType']
 
@@ -231,7 +236,8 @@ class PEP:
           notif = "%s %s is perceived as" %(self.__granularity, self.__name) 
           notif = notif + " %s. Reason: %s." %(res['Status'], res['Reason'])
           
-          NOTIF_D = Configurations.getUsersToNotify(self.__granularity, self.__siteType)
+          NOTIF_D = self._getUsersToNotify(self.__granularity, 
+                                           self.__siteType, Configurations._setup)
           
           for notification in NOTIF_D:
             for user in notification['Users']:
@@ -252,3 +258,24 @@ class PEP:
         # do something
         pass
     
+#############################################################################
+
+  def _getUsersToNotify(self, granularity, siteType = None, setup = 'LCHb-Production'):
+    
+    users = []
+    notifications = []
+    
+    NOTIFinfo = {}
+    NOTIF = []
+    
+    for ag in Configurations.AssigneeGroups.keys():
+      
+      if setup in Configurations.AssigneeGroups[ag]['Setup'] and granularity in Configurations.AssigneeGroups[ag]['Granularity']:
+        if siteType is not None and siteType not in Configurations.AssigneeGroups[ag]['SiteType']:
+          continue
+        NOTIF.append( {'Users':Configurations.AssigneeGroups[ag]['Users'], 
+                       'Notifications':Configurations.AssigneeGroups[ag]['Notifications']} )
+          
+    return NOTIF
+
+#############################################################################

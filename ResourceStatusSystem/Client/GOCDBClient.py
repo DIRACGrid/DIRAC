@@ -36,7 +36,8 @@ class GOCDBClient:
       {
         'DT':'OUTAGE in X hours'|'AT_RISK in X hours'|'OUTAGE'|'AT_RISK'|'None',
         'Startdate':datetime (in string)
-        'Enddate':datetime (in string)
+        'EndDate':datetime (in string)
+        'StartDate':datetime (in string)
       }
 
     """

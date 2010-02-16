@@ -13,6 +13,7 @@ from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
 from DIRAC.ResourceStatusSystem.Policy import Configurations
+from DIRAC.ResourceStatusSystem.Policy.PolicyInvoker import PolicyInvoker
 
 #############################################################################
 
@@ -118,36 +119,36 @@ class PDP:
     self.knownInfo = knownInfo
 
             
-    EVAL = Configurations.getPolicyToApply(granularity = self.__granularity, 
-                                           status = self.__status, 
-                                           formerStatus = self.__formerStatus, 
-                                           siteType = self.__siteType, 
-                                           serviceType = self.__serviceType,
-                                           resourceType = self.__resourceType)
+    EVAL = self._getPolicyToApply(granularity = self.__granularity, 
+                                  status = self.__status, 
+                                  formerStatus = self.__formerStatus, 
+                                  siteType = self.__siteType, 
+                                  serviceType = self.__serviceType,
+                                  resourceType = self.__resourceType)
 
+    policyCombinedResultsList = []
       
     for policyGroup in EVAL:
           
       self.__policyType = policyGroup['PolicyType']
   
       if self.policy is not None:
-        res = self.policy.evaluate(self.policy)
+        singlePolicyResults = self.policy.evaluate(self.policy)
       else:
         if policyGroup['Policies'] is None:
           return {'SinglePolicyResults' : [], 
                   'PolicyCombinedResult' : [{'PolicyType': self.__policyType, 
                                              'Action': False, 
                                              'Reason':'No policy results'}]}
-#        res = self._evaluate(policyGroup['Policies'])
                   
-        singlePolicyResults = self._policyInvocation(self.__granularity, self.__name, self.__status,
-                                                   self.policy, self.args, policyGroup['Policies'])
+        singlePolicyResults = self._invocation(self.__granularity, self.__name,
+                                               self.__status, self.policy, 
+                                               self.args, policyGroup['Policies'])
 
-        policyCombinedResults = self._evaluate(singlePolicyResults)
-      
-      
-      policyCombinedResultsList = []
-      
+      policyCombinedResults = self._evaluate(singlePolicyResults)
+    
+    
+    
       if policyCombinedResults == None:
           return {'SinglePolicyResults' : singlePolicyResults, 
                   'PolicyCombinedResult' : [{'PolicyType': self.__policyType, 
@@ -176,12 +177,311 @@ class PDP:
     return res
 
 #############################################################################
+
+  def _getPolicyToApply(self, granularity, status = None, formerStatus = None, 
+                       siteType = None, serviceType = None, resourceType = None ):
+    
+    pol_to_eval = []
+    pol_types = []
+    
+    for p in Configurations.Policies.keys():
+      if granularity in Configurations.Policies[p]['Granularity']:
+        pol_to_eval.append(p)
+        
+        if status is not None:
+          if status not in Configurations.Policies[p]['Status']:
+            pol_to_eval.remove(p)
+        
+        if formerStatus is not None:
+          if formerStatus not in Configurations.Policies[p]['FormerStatus']:
+            try:
+              pol_to_eval.remove(p)
+            except Exception:
+              continue
+            
+        if siteType is not None:
+          if siteType not in Configurations.Policies[p]['SiteType']:
+            try:
+              pol_to_eval.remove(p)
+            except Exception:
+              continue
+            
+        if serviceType is not None:
+          if serviceType not in Configurations.Policies[p]['ServiceType']:
+            try:
+              pol_to_eval.remove(p)
+            except Exception:
+              continue
+            
+        if resourceType is not None:
+          if resourceType not in Configurations.Policies[p]['ResourceType']:
+            try:
+              pol_to_eval.remove(p)
+            except Exception:
+              continue
+            
+     
+    for pt in Configurations.Policy_Types.keys():
+      if granularity in Configurations.Policy_Types[pt]['Granularity']:
+        pol_types.append(pt)  
+    
+        if status is not None:
+          if status not in Configurations.Policy_Types[pt]['Status']:
+            pol_to_eval.remove(pt)
+        
+        if formerStatus is not None:
+          if formerStatus not in Configurations.Policy_Types[pt]['FormerStatus']:
+            try:
+              pol_to_eval.remove(pt)
+            except Exception:
+              continue
+            
+        if siteType is not None:
+          if siteType not in Configurations.Policy_Types[pt]['SiteType']:
+            try:
+              pol_to_eval.remove(pt)
+            except Exception:
+              continue
+            
+        if serviceType is not None:
+          if serviceType not in Configurations.Policy_Types[pt]['ServiceType']:
+            try:
+              pol_to_eval.remove(pt)
+            except Exception:
+              continue
+            
+        if resourceType is not None:
+          if resourceType not in Configurations.Policy_Types[pt]['ResourceType']:
+            try:
+              pol_to_eval.remove(pt)
+            except Exception:
+              continue
+              
+    EVAL = [{'PolicyType':pol_types, 'Policies':pol_to_eval}]    
+    
+    return EVAL
+
+#############################################################################
+
+  def _invocation(self, granularity, name, status, policy, args, policies):
+    
+    policyResults = []
+    
+    for p in policies:
+      res = self._policyInvocation(granularity = granularity, name = name,
+                                   status = status, policy = policy, args = args,
+                                   pol = p)
+      
+      if res['SAT'] != None:
+        policyResults.append(res)
+    
+    return policyResults
+      
+#############################################################################
+
+
+  def _policyInvocation(self, granularity = None, name = None, status = None, 
+                        policy = None, args = None, pol = None):
+    
+    if pol == 'DT_Policy_OnGoing_Only':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.DT_Policy import DT_Policy 
+        p = DT_Policy()
+      if args is None:
+        a = (granularity, name, status)
+      res = self.__innerEval(p, a)
+      
+    if pol == 'DT_Policy_Scheduled':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.DT_Policy import DT_Policy 
+        p = DT_Policy()
+      if args is None:
+        a = (granularity, name, status, Configurations.DTinHours)
+      res = self.__innerEval(p, a)
+      
+    if pol == 'AlwaysFalse_Policy':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.AlwaysFalse_Policy import AlwaysFalse_Policy 
+        p = AlwaysFalse_Policy()
+      if args is None:
+        a = (granularity, name, status)
+      res = self.__innerEval(p, a)
+  
+    if pol == 'SAM_Policy':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
+        p = SAMResults_Policy()
+      if args is None:
+        a = (granularity, name, status)
+      res = self.__innerEval(p, a)
+  
+    if pol == 'SAM_CE_Policy':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
+        p = SAMResults_Policy()
+      if args is None:
+        a = (granularity, name, status, None, 
+             ['LHCb CE-lhcb-availability', 'LHCb CE-lhcb-install', 'LHCb CE-lhcb-job-Boole', 
+              'LHCb CE-lhcb-job-Brunel', 'LHCb CE-lhcb-job-DaVinci', 'LHCb CE-lhcb-job-Gauss', 'LHCb CE-lhcb-os', 
+              'LHCb CE-lhcb-queues', 'bi', 'csh', 'js', 'gfal', 'swdir', 'voms'])
+      res = self.__innerEval(p, a)
+  
+    if pol == 'SAM_CREAMCE_Policy':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
+        p = SAMResults_Policy()
+      if args is None:
+        a = (granularity, name, status, None, 
+             ['bi', 'csh', 'gfal', 'swdir', 'creamvoms'])
+      res = self.__innerEval(p, a)
+  
+    if pol == 'SAM_SE_Policy':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
+        p = SAMResults_Policy()
+      if args is None:
+        a = (granularity, name, status, None, 
+             ['DiracTestUSER', 'FileAccessV2'])
+      res = self.__innerEval(p, a)
+  
+    if pol == 'SAM_LFC_C_Policy':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
+        p = SAMResults_Policy()
+      if args is None:
+        a = (granularity, name, status, None, 
+             ['lfcwf', 'lfclr', 'lfcls', 'lfcping'])
+      res = self.__innerEval(p, a)
+  
+    if pol == 'SAM_LFC_L_Policy':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
+        p = SAMResults_Policy()
+      if args is None:
+        a = (granularity, name, status, None, 
+             ['lfcstreams', 'lfclr', 'lfcls', 'lfcping'])
+      res = self.__innerEval(p, a)
+  
+    if pol == 'GGUSTickets_Policy':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.GGUSTickets_Policy import GGUSTickets_Policy 
+        p = GGUSTickets_Policy()
+      if args is None:
+        a = (granularity, name, status)
+      res = self.__innerEval(p, a)
+  
+    if pol == 'PilotsEfficiency_Policy':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.PilotsEfficiency_Policy import PilotsEfficiency_Policy 
+        p = PilotsEfficiency_Policy()
+      if args is None:
+        a = (granularity, name, status)
+      res = self.__innerEval(p, a)
+  
+    if pol == 'PilotsEfficiencySimple_Policy':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.PilotsEfficiency_Simple_Policy import PilotsEfficiency_Simple_Policy 
+        p = PilotsEfficiency_Simple_Policy()
+      if args is None:
+        a = (granularity, name, status)
+      res = self.__innerEval(p, a)
+  
+    if pol == 'JobsEfficiency_Policy':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.JobsEfficiency_Policy import JobsEfficiency_Policy 
+        p = JobsEfficiency_Policy()
+      if args is None:
+        a = (granularity, name, status)
+      res = self.__innerEval(p, a)
+  
+    if pol == 'JobsEfficiencySimple_Policy':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.JobsEfficiency_Simple_Policy import JobsEfficiency_Simple_Policy 
+        p = JobsEfficiency_Simple_Policy()
+      if args is None:
+        a = (granularity, name, status)
+      res = self.__innerEval(p, a)
+  
+    if pol == 'OnServicePropagation_Policy':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.OnServicePropagation_Policy import OnServicePropagation_Policy 
+        p = OnServicePropagation_Policy()
+      if args is None:
+        a = (granularity, name, status)
+      res = self.__innerEval(p, a)
+  
+    if pol == 'OnSENodePropagation_Policy':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.OnSENodePropagation_Policy import OnSENodePropagation_Policy 
+        p = OnSENodePropagation_Policy()
+      if args is None:
+        a = (granularity, name, status)
+      res = self.__innerEval(p, a)
+  
+    if pol == 'TransferQuality_Policy':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.TransferQuality_Policy import TransferQuality_Policy 
+        p = TransferQuality_Policy()
+      if args is None:
+        a = (granularity, name, status)
+      res = self.__innerEval(p, a)
+  
+    res['PolicyName'] = pol
+  
+    return res
+
+        
+#############################################################################
+
+  def __innerEval(self, p, a, knownInfo=None):
+    """ policy evaluation
+    """
+    policyInvoker = PolicyInvoker()
+  
+    policyInvoker.setPolicy(p)
+    res = policyInvoker.evaluatePolicy(a, knownInfo = knownInfo)
+    return res 
+      
+#############################################################################
+
+
     
   def _evaluate(self, policyResults):
     
-#    policyResults = self._policyInvocation(self.__granularity, self.__name, self.__status, 
-#                                           self.policy, self.args, policies)
-
     if len(policyResults) == 1:
       return self._policyCombination(policyResults[0])
     elif len(policyResults) == 2:
@@ -194,42 +494,25 @@ class PDP:
 
   
 #############################################################################
-  
-  def _policyInvocation(self, granularity, name, status, policy, args, policies):
-    
-    policyResults = []
-    
-    for p in policies:
-      res = Configurations.policyInvocation(granularity = granularity, name = name, 
-                                            status = status, policy = policy, args = args, 
-                                            pol = p)
-      
-      if res['SAT'] != None:
-#        self.lockObj.acquire()
-#        try:
-        policyResults.append(res)
-#        finally:
-#          self.lockObj.release()
-    
-    return policyResults
-      
-#############################################################################
-  
+ 
   def _policyCombination(self, *args):
     
     if len(args) == 1:
-      return args[0]
+      res = {}
+      for k in args[0].keys():
+        res[k] = args[0][k]
+      return res
         
     elif len(args) == 2:
     
-      if not args[0]['SAT'] and not args[1]['SAT']:
+      if ( ( not args[0]['SAT'] ) and ( not args[1]['SAT'] ) ):
         compReason = args[0]['Reason'] + '|' + args[1]['Reason']
         pcr = args[0]
 
       # only one of the two is SAT
-      elif (args[0]['SAT'] and not args[1]['SAT']
+      elif ( ( args[0]['SAT'] and ( not args[1]['SAT'] ) )
             or
-            not args[0]['SAT'] and args[1]['SAT']):
+            ( ( not args[0]['SAT'] ) and args[1]['SAT'] ) ):
         s0 = args[0]['Status']
         s1 = args[1]['Status']
         if ValidStatus.index(s0) > ValidStatus.index(s1):
@@ -273,67 +556,6 @@ class PDP:
     
       return res
     
-      # none is SAT
-#      if not args[0]['SAT'] and not args[1]['SAT']:
-#        compReason = args[0]['Reason'] + '|' + args[1]['Reason']
-#        if args[0].has_key('EndDate') and args[1].has_key('EndDate'):
-#          new = args[0]
-#          new['EndDate'] = max(args[0]['EndDate'], args[1]['EndDate'])
-#          new['Reason'] = compReason
-#          return new 
-#        elif args[0].has_key('EndDate'):
-#          new = args[0]
-#          new['Reason'] = compReason
-#          return new
-#        else:
-#          new = args[1]
-#          new['Reason'] = compReason
-#          return new
-#
-#      # only the first of the two is SAT
-#      elif (args[0]['SAT'] and not args[1]['SAT']):
-#        s0 = args[0]['Status']
-#        s1 = args[1]['Status']
-#        if ValidStatus.index(s0) > ValidStatus.index(s1):
-#          return args[0]
-#        elif ValidStatus.index(s0) < ValidStatus.index(s1):
-#          return args[1]
-#
-#      # only the second of the two is SAT
-#      elif (not args[0]['SAT'] and args[1]['SAT']):
-#        s0 = args[0]['Status']
-#        s1 = args[1]['Status']
-#        if ValidStatus.index(s0) > ValidStatus.index(s1):
-#          return args[0]
-#        elif ValidStatus.index(s0) < ValidStatus.index(s1):
-#          return args[1]
-#
-#      # both are SAT
-#      elif args[0]['SAT'] and args[1]['SAT']:
-#        s0 = args[0]['Status']
-#        s1 = args[1]['Status']
-#
-#        if ValidStatus.index(s0) > ValidStatus.index(s1):
-#          return args[0]
-#        elif ValidStatus.index(s0) < ValidStatus.index(s1):
-#          return args[1]
-#        else:
-#          compReason = args[0]['Reason'] + '|' + args[1]['Reason']
-#        if args[0].has_key('EndDate') and args[1].has_key('EndDate'):
-#          new = args[0]
-#          new['EndDate'] = max(args[0]['EndDate'], args[1]['EndDate'])
-#          new['Reason'] = compReason
-#          return new 
-#        elif args[0].has_key('EndDate'):
-#          new = args[0]
-#          new['Reason'] = compReason
-#          return new
-#        else:
-#          new = args[1]
-#          new['Reason'] = compReason
-#          return new
-        
-
     elif len(args) == 3:
       
       resFirstCombination = self._policyCombination(args[0], args[1])

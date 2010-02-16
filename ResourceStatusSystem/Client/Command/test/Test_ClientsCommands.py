@@ -7,7 +7,7 @@ from datetime import datetime
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Client.Command.ClientsInvoker import ClientsInvoker
 from DIRAC.ResourceStatusSystem.Client.Command.GOCDBStatus_Command import GOCDBStatus_Command
-from DIRAC.ResourceStatusSystem.Client.Command.Res2SiteStatus_Command import Res2SiteStatus_Command
+#from DIRAC.ResourceStatusSystem.Client.Command.Res2SiteStatus_Command import Res2SiteStatus_Command
 from DIRAC.ResourceStatusSystem.Client.Command.Pilots_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.Jobs_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.SAMResults_Command import SAMResults_Command
@@ -26,7 +26,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.GOCDBS_C = GOCDBStatus_Command()
     self.mock_client = Mock()
     self.mock_client_2 = Mock()
-    self.R2SS_C = Res2SiteStatus_Command()
+#    self.R2SS_C = Res2SiteStatus_Command()
     self.PE_C = PilotsEff_Command()
     self.PS_C = PilotsStats_Command()
     self.JE_C = JobsEff_Command()

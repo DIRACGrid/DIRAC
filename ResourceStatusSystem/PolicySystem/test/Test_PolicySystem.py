@@ -42,30 +42,105 @@ class PEPSuccess(PolicySystemTestCase):
 #                for siteType in ValidSiteType:
 #                for serviceType in ValidServiceType:
 #                for resourceType in ValidResourceType:
-                self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'testReason'}]
+                self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType],
+                                                                                     'Action':True, 'Status':status,
+                                                                                     'Reason':'testReason'}], 
+                                                           'SinglePolicyResults': [{'Status': 'Active', 
+                                                                                    'PolicyName': 'SAM_CE_Policy', 
+                                                                                    'Reason': 'SAM:ok', 
+                                                                                    'SAT': True}, 
+                                                                                    {'Status': 'Banned', 
+                                                                                     'PolicyName': 'DT_Policy_Scheduled', 
+                                                                                     'Reason': 'DT:OUTAGE in 1 hours', 
+                                                                                     'EndDate': '2010-02-16 15:00:00', 
+                                                                                     'SAT': True}] }
                 pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', {'PolicyType':newPolicyType, 'Granularity':newGranularity})
-                self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'testReason'}, {'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'testReason'}]
+                self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType], 
+                                                                                     'Action':True, 'Status':status, 
+                                                                                     'Reason':'testReason'}, 
+                                                                                     {'PolicyType':[policyType, newPolicyType], 
+                                                                                      'Action':True, 'Status':status, 
+                                                                                      'Reason':'testReason'}], 
+                                                           'SinglePolicyResults': [{'Status': 'Active', 
+                                                                                    'PolicyName': 'SAM_CE_Policy', 
+                                                                                    'Reason': 'SAM:ok', 
+                                                                                    'SAT': True}, 
+                                                                                    {'Status': 'Banned', 
+                                                                                     'PolicyName': 'DT_Policy_Scheduled', 
+                                                                                     'Reason': 'DT:OUTAGE in 1 hours', 
+                                                                                     'EndDate': '2010-02-16 15:00:00', 
+                                                                                     'SAT': True}] }
                 pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', {'PolicyType':newPolicyType, 'Granularity':newGranularity})
                 res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
                 self.assertEqual(res, None)
-                self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':False, 'Reason':'testReason'}]
+                self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType],
+                                                                                     'Action':False, 'Reason':'testReason'}], 
+                                                           'SinglePolicyResults': [{'Status': 'Active', 
+                                                                                    'PolicyName': 'SAM_CE_Policy', 
+                                                                                    'Reason': 'SAM:ok', 
+                                                                                    'SAT': True}, 
+                                                                                    {'Status': 'Banned', 
+                                                                                     'PolicyName': 'DT_Policy_Scheduled', 
+                                                                                     'Reason': 'DT:OUTAGE in 1 hours', 
+                                                                                     'EndDate': '2010-02-16 15:00:00', 
+                                                                                     'SAT': True}] }
                 res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
                 self.assertEqual(res, None)
-            self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'testReason'}]
+            self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType], 
+                                                                                 'Action':True, 'Status':status, 'Reason':'testReason'}], 
+                                                       'SinglePolicyResults': [{'Status': 'Active', 
+                                                                                    'PolicyName': 'SAM_CE_Policy', 
+                                                                                    'Reason': 'SAM:ok', 
+                                                                                    'SAT': True}, 
+                                                                                    {'Status': 'Banned', 
+                                                                                     'PolicyName': 'DT_Policy_Scheduled', 
+                                                                                     'Reason': 'DT:OUTAGE in 1 hours', 
+                                                                                     'EndDate': '2010-02-16 15:00:00', 
+                                                                                     'SAT': True}] }
             pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE')
             res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
             self.assertEqual(res, None)
-            self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':False, 'Reason':'testReason'}]
+            self.mock_pdp.takeDecision.return_value =  {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType], 
+                                                                                  'Action':False, 'Reason':'testReason'}], 
+                                                       'SinglePolicyResults': [{'Status': 'Active', 
+                                                                                'PolicyName': 'SAM_CE_Policy', 
+                                                                                'Reason': 'SAM:ok', 
+                                                                                'SAT': True}, 
+                                                                                {'Status': 'Banned', 
+                                                                                 'PolicyName': 'DT_Policy_Scheduled', 
+                                                                                 'Reason': 'DT:OUTAGE in 1 hours', 
+                                                                                 'EndDate': '2010-02-16 15:00:00', 
+                                                                                 'SAT': True}] }
             res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
             self.assertEqual(res, None)
-        self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':True, 'Status':status, 'Reason':'testReason'}]
+        self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType], 
+                                                                             'Action':True, 'Status':status, 'Reason':'testReason'}], 
+                                                  'SinglePolicyResults': [{'Status': 'Active', 
+                                                                           'PolicyName': 'SAM_CE_Policy', 
+                                                                           'Reason': 'SAM:ok', 
+                                                                           'SAT': True}, 
+                                                                           {'Status': 'Banned', 
+                                                                            'PolicyName': 'DT_Policy_Scheduled', 
+                                                                            'Reason': 'DT:OUTAGE in 1 hours', 
+                                                                            'EndDate': '2010-02-16 15:00:00', 
+                                                                            'SAT': True}] }
         pep = PEP(granularity, 'XX')
         res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
         self.assertEqual(res, None)
         pep = PEP(granularity, 'XX')
         res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
         self.assertEqual(res, None)
-        self.mock_pdp.takeDecision.return_value = [{'PolicyType':[policyType, newPolicyType], 'Action':False, 'Reason':'testReason'}]
+        self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType], 
+                                                                             'Action':False, 'Reason':'testReason'}], 
+                                                  'SinglePolicyResults': [{'Status': 'Active', 
+                                                                           'PolicyName': 'SAM_CE_Policy', 
+                                                                           'Reason': 'SAM:ok', 
+                                                                           'SAT': True}, 
+                                                                           {'Status': 'Banned', 
+                                                                            'PolicyName': 'DT_Policy_Scheduled', 
+                                                                            'Reason': 'DT:OUTAGE in 1 hours', 
+                                                                            'EndDate': '2010-02-16 15:00:00', 
+                                                                            'SAT': True}] }
         res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc)
         self.assertEqual(res, None)
 
@@ -125,25 +200,33 @@ class PDPSuccess(PolicySystemTestCase):
         for oldStatus in ValidStatus:
           if status == oldStatus:
             continue
-          self.mock_p.evaluate.return_value = {'SAT':True, 'Status':status, 'Reason':'testReason'}
+          self.mock_p.evaluate.return_value = [{'SAT':True, 'Status':status, 
+                                               'Reason':'testReason', 'PolicyName': 'test_P'}]
           pdp = PDP(granularity, 'XX', status, oldStatus, 'XX')
           res = pdp.takeDecision(policyIn = self.mock_p)
+          res = res['PolicyCombinedResult']
           for r in res:
             self.assert_(r['Action'])
           res = pdp.takeDecision(policyIn = self.mock_p, argsIn = ())
+          res = res['PolicyCombinedResult']
           for r in res:
             self.assert_(r['Action'])
           res = pdp.takeDecision(policyIn = self.mock_p, knownInfo={})
+          res = res['PolicyCombinedResult']
           for r in res:
             self.assert_(r['Action'])
-          self.mock_p.evaluate.return_value = {'SAT':False, 'Reason':'testReason'}
+          self.mock_p.evaluate.return_value = [{'SAT':False, 'Status':status, 
+                                               'Reason':'testReason', 'PolicyName': 'test_P'}]
           res = pdp.takeDecision(policyIn = self.mock_p)
+          res = res['PolicyCombinedResult']
           for r in res:
             self.assertFalse(r['Action'])
           res = pdp.takeDecision(policyIn = self.mock_p, argsIn = ())
+          res = res['PolicyCombinedResult']
           for r in res:
             self.assertFalse(r['Action'])
           res = pdp.takeDecision(policyIn = self.mock_p, knownInfo={})
+          res = res['PolicyCombinedResult']
           for r in res:
             self.assertFalse(r['Action'])
  
@@ -158,9 +241,11 @@ class PDPSuccess(PolicySystemTestCase):
             newStatusF1 = newStatus1
             for newStatus2 in ValidStatus:
               newStatusF2 = newStatus2
+              if newStatus1 == newStatusF2 or newStatusF1 == newStatus2:
+                continue
               pdp = PDP(granularity, 'XX', status, oldStatus, 'XX')
               polRes = {'SAT':True, 'Status':newStatus1, 'Reason':'-Reason1-'}
-              polResF = {'SAT':False, 'Status':newStatus2, 'Reason':'-Reason2-'}
+              polResF = {'SAT':False, 'Status':newStatusF2, 'Reason':'-Reason2-'}
               # 1 policy
               res = pdp._policyCombination(polRes)
               self.assert_(res['SAT'])
@@ -177,28 +262,31 @@ class PDPSuccess(PolicySystemTestCase):
               self.assertFalse(res['SAT'])
               self.assertEqual(res['Status'], newStatus2)
               self.assertEqual(res['Reason'], '-Reason2-|-Reason2-')
-              # TRUE, FALSE
-              polResF = {'SAT':False, 'Status':newStatus2, 'Reason':'-Reason2-'}
-              res = pdp._policyCombination(polRes, polResF)
-              if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus2):
-                self.assert_(res['SAT'])
-                self.assertEqual(res['Status'], newStatus1)
-                self.assertEqual(res['Reason'], '-Reason1-')
-              elif ValidStatus.index(newStatus1) < ValidStatus.index(newStatus2):
-                self.assertFalse(res['SAT'])
-                self.assertEqual(res['Status'], newStatus2)
-                self.assertEqual(res['Reason'], '-Reason2-')
               # FALSE, TRUE
-              polResF = {'SAT':False, 'Status':newStatus2, 'Reason':'-Reason2-'}
-              res = pdp._policyCombination(polResF, polRes)
-              if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus2):
-                self.assert_(res['SAT'])
-                self.assertEqual(res['Status'], newStatus1)
-                self.assertEqual(res['Reason'], '-Reason1-')
-              elif ValidStatus.index(newStatus1) < ValidStatus.index(newStatus2):
-                self.assertFalse(res['SAT'])
-                self.assertEqual(res['Status'], newStatus2)
-                self.assertEqual(res['Reason'], '-Reason2-')
+#              polResF = {'SAT':False, 'Status':newStatus2, 'Reason':'-Reason2-'}
+              if newStatus1 == newStatusF2 or newStatusF1 == newStatus2:
+                continue
+              else:
+                res = pdp._policyCombination(polResF, polRes)
+                if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus2):
+                  self.assert_(res['SAT'])
+                  self.assertEqual(res['Status'], newStatus1)
+                  self.assertEqual(res['Reason'], '-Reason1-')
+                elif ValidStatus.index(newStatus1) < ValidStatus.index(newStatus2):
+                  self.assertFalse(res['SAT'])
+                  self.assertEqual(res['Status'], newStatus2)
+                  self.assertEqual(res['Reason'], '-Reason2-')
+                # TRUE, FALSE
+   #             polResF = {'SAT':False, 'Status':newStatus2, 'Reason':'-Reason2-'}
+                res = pdp._policyCombination(polRes, polResF)
+                if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus2):
+                  self.assert_(res['SAT'])
+                  self.assertEqual(res['Status'], newStatus1)
+                  self.assertEqual(res['Reason'], '-Reason1-')
+                elif ValidStatus.index(newStatus1) < ValidStatus.index(newStatus2):
+                  self.assertFalse(res['SAT'])
+                  self.assertEqual(res['Status'], newStatus2)
+                  self.assertEqual(res['Reason'], '-Reason2-')
               # TRUE, TRUE
               polRes2 = {'SAT':True, 'Status':newStatus2, 'Reason':'-Reason2-'}
               res = pdp._policyCombination(polRes, polRes2)
@@ -258,26 +346,29 @@ class PDPSuccess(PolicySystemTestCase):
                 self.assertEqual(res['Reason'], '-ReasonTrue-|-ReasonTrue2-|-ReasonTrue3-')
               # etc...
               # TRUE, TRUE, FALSE
-              res = pdp._policyCombination(polRes, polRes2, polResF3)
-              if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus2):
-                if ValidStatus.index(newStatus2) > ValidStatus.index(newStatus3):
-                  self.assert_(res['SAT'])
-                  self.assertEqual(res['Status'], newStatus1)
-                  self.assertEqual(res['Reason'], '-ReasonTrue-')
-              if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus3):
+              if newStatusF3 == newStatus1 or newStatusF3 == newStatus2:
+                continue
+              else:  
+                res = pdp._policyCombination(polRes, polRes2, polResF3)
+                if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus2):
+                  if ValidStatus.index(newStatus2) > ValidStatus.index(newStatus3):
+                    self.assert_(res['SAT'])
+                    self.assertEqual(res['Status'], newStatus1)
+                    self.assertEqual(res['Reason'], '-ReasonTrue-')
+                if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus3):
+                  if ValidStatus.index(newStatus3) > ValidStatus.index(newStatus2):
+                    print newStatus3
+                    print res
+                    self.assert_(res['SAT'])
+                    self.assertEqual(res['Status'], newStatus1)
+                    self.assertEqual(res['Reason'], '-ReasonTrue-')
                 if ValidStatus.index(newStatus3) > ValidStatus.index(newStatus2):
-                  print newStatus3
-                  print res
-                  self.assert_(res['SAT'])
-                  self.assertEqual(res['Status'], newStatus1)
-                  self.assertEqual(res['Reason'], '-ReasonTrue-')
-              if ValidStatus.index(newStatus3) > ValidStatus.index(newStatus2):
-                if ValidStatus.index(newStatus2) > ValidStatus.index(newStatus1):
-                  print newStatus3
-                  print res
-                  self.assert_(res['SAT'])
-                  self.assertEqual(res['Status'], newStatus3)
-                  self.assertEqual(res['Reason'], '-ReasonTrue3-')
+                  if ValidStatus.index(newStatus2) > ValidStatus.index(newStatus1):
+                    print newStatus3
+                    print res
+                    self.assert_(res['SAT'])
+                    self.assertEqual(res['Status'], newStatus3)
+                    self.assertEqual(res['Reason'], '-ReasonTrue3-')
 
 
 #############################################################################
