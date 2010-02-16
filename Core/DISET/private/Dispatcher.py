@@ -98,7 +98,7 @@ class Dispatcher:
     if not handlerLocation:
       handlerLocation = self.__autoDiscoverHandlerLocation( serviceName )
       if not handlerLocation:
-        return S_ERROR( "HandlerLocation is not defined in %s and autodiscover failed" % serviceCfg.getSectionPath() )
+        return S_ERROR( "HandlerLocation is not defined in %s and autodiscover failed" % serviceCfg.getServicePath() )
     gLogger.debug( "Found a handler", handlerLocation )
     if handlerLocation.find( "Handler.py" ) != len( handlerLocation ) - 10:
       return S_ERROR( "File %s does not have a valid handler name" % handlerLocation )
