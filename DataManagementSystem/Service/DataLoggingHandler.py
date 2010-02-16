@@ -20,7 +20,6 @@ from DIRAC.DataManagementSystem.DB.DataLoggingDB    import DataLoggingDB
 from types import *
 import time,os
 
-from DIRAC.Core.Utilities.Graph                     import Graph
 from DIRAC.ConfigurationSystem.Client               import PathFinder
 
 # This is a global instance of the DataLoggingDB class
@@ -113,7 +112,4 @@ class DataLoggingHandler( RequestHandler ):
     if not res['OK']:
       return S_ERROR('Failed to get DB info: %s' % res['Message'])
     dataPoints = res['Value']
-    res = Graph().histogram(title,xlabel,ylabel,dataPoints,outputFile)
-    if not res['OK']:
-      return res
-    return S_OK('%s.png' % outputFile)
+    return S_ERROR("To be migrated to new plotting package")
