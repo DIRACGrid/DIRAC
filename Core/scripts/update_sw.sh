@@ -140,3 +140,7 @@ for dir in etc $DIRACDIRS ; do
   [ -e $VERDIR/$dir ] || ln -s ../../$dir $VERDIR   || exit 1
 done
 
+#
+# Fix mysql.server to make it point to the actual db directory
+#
+sed -i "s:^datadir=.*:datadir=/opt/dirac/mysql/db:" /opt/dirac/pro/mysql/share/mysql/mysql.server
