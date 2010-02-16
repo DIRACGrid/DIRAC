@@ -1,4 +1,5 @@
 
+import os, stat, tempfile, shutil
 from DIRAC import S_OK, S_ERROR, gConfig
 import DIRAC.Core.Security.Locations as Locations
 import DIRAC.Core.Security.File as File
@@ -6,11 +7,11 @@ from DIRAC.Core.Security.BaseSecurity import BaseSecurity
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import List
-import os
+
 
 class VOMS( BaseSecurity ):
 
-  def getVOMSAttributes( self, proxy, switch="all" ):
+  def getVOMSAttributes( self, proxy, switch = "all" ):
     """
     Return VOMS proxy attributes as list elements if switch="all" (default) OR
     return the string prepared to be stored in DB if switch="db" OR
@@ -63,12 +64,12 @@ class VOMS( BaseSecurity ):
 
     # Sorting and joining attributes
     if switch == "db":
-      returnValue = ":".join(attributes)
+      returnValue = ":".join( attributes )
     elif switch == "option":
-      if len(attributes)>1:
-        returnValue = voName+" -order "+' -order '.join(attributes)
+      if len( attributes ) > 1:
+        returnValue = voName + " -order " + ' -order '.join( attributes )
       elif attributes:
-        returnValue = voName+":"+attributes[0]
+        returnValue = voName + ":" + attributes[0]
       else:
         returnValue = voName
     elif switch == 'nickname':
@@ -76,7 +77,7 @@ class VOMS( BaseSecurity ):
     elif switch == 'all':
       returnValue = attributes
 
-    return S_OK(returnValue)
+    return S_OK( returnValue )
 
   def getVOMSProxyFQAN( self, proxy ):
     """ Get the VOMS proxy fqan attributes
@@ -103,10 +104,10 @@ class VOMS( BaseSecurity ):
         @return:  status, output, error, pyerror.
     """
 
-    validOptions = ['actimeleft','timeleft','identity','fqan','all']
+    validOptions = ['actimeleft', 'timeleft', 'identity', 'fqan', 'all']
     if option:
       if option not in validOptions:
-        S_ERROR('Non valid option %s' % option)
+        S_ERROR( 'Non valid option %s' % option )
 
     retVal = File.multiProxyArgument( proxy )
     if not retVal[ 'OK' ]:
@@ -125,25 +126,69 @@ class VOMS( BaseSecurity ):
       self._unlinkFiles( proxyLocation )
 
     if not result['OK']:
-      return S_ERROR('Failed to call voms-proxy-info')
+      return S_ERROR( 'Failed to call voms-proxy-info' )
 
     status, output, error = result['Value']
     # FIXME: if the local copy of the voms server certificate is not up to date the command returns 0.
     # the stdout needs to be parsed.
     if status:
-      if error.find('VOMS extension not found') == -1 and \
-         not error.find('WARNING: Unable to verify signature! Server certificate possibly not installed.') == 0:
-        return S_ERROR('Failed to get proxy info. Command: %s; StdOut: %s; StdErr: %s' % (cmd,output,error))
+      if error.find( 'VOMS extension not found' ) == -1 and \
+         not error.find( 'WARNING: Unable to verify signature! Server certificate possibly not installed.' ) == 0:
+        return S_ERROR( 'Failed to get proxy info. Command: %s; StdOut: %s; StdErr: %s' % ( cmd, output, error ) )
 
     if option == 'fqan':
       if output:
-        output = output.split('/Role')[0]
+        output = output.split( '/Role' )[0]
       else:
         output = '/lhcb'
 
     return S_OK( output )
 
-  def setVOMSAttributes( self, proxy, attribute=None, vo = False ):
+
+  def getVOMSESLocation( self ):
+    #755
+    requiredDirPerms = stat.S_IRWXU + stat.S_IRGRP + stat.S_IXGRP + stat.S_IROTH + stat.S_IXOTH
+    #644
+    requiredFilePerms = stat.S_IRUSR + stat.S_IWUSR + stat.S_IRGRP + stat.S_IROTH
+    vomsesPaths = []
+    if 'DIRAC_VOMSES' in os.environ:
+      vomsesPaths.append( os.environ[ 'DIRAC_VOMSES' ] )
+    vomsesPaths.append( os.path.join( DIRAC.rootPath, "etc", "grid-security", "vomses" ) )
+    for vomsesPath in vomsesPaths:
+      if not os.path.exists( vomsesPath ):
+        continue
+      if os.path.isfile( vomsesPath ):
+        pathMode = os.stat( vomsesPath )[ stat.ST_MODE ]
+        if pathMode & requiredFilePerms == requiredFilePerms:
+          return vomsesPath
+        fd, tmpPath = tempfile.mkstem( "vomses" )
+        os.close( fd )
+        shutil.copy( vomsesPath , tmpPath )
+        os.chmod( tmpPath, requiredFilePerms )
+        os.environ[ 'DIRAC_VOMSES' ] = tmpPath
+        return tmpPath
+      elif os.path.isdir( vomsesPath ):
+        ok = True
+        if os.stat( vomsesPath )[ stat.ST_MODE ] & requiredDirPerms != requiredDirPerms:
+          ok = False
+        if ok:
+          for fP in os.listdir( vomsesPath ):
+            if os.stat( os.path.join( vomsesPath, fP ) )[ stat.ST_MODE ] & requiredFilePerms != requiredFilePerms:
+              ok = False
+              break
+        if ok:
+          return vomsesPath
+        tmpDir = tempfile.mkdtemp()
+        tmpDir = os.path.join( tmpDir, tmpDir )
+        shutil.copytree( vomsesPath, tmpDir )
+        os.chmod( tmpDir, requiredDirPerms )
+        for fP in os.listdir( tmpDir ):
+          os.chmod( os.path.join( tmpDir, fP ), requiredFilePerms )
+        os.environ[ 'DIRAC_VOMSES' ] = tmpDir
+        return tmpDir
+
+
+  def setVOMSAttributes( self, proxy, attribute = None, vo = False ):
     """ Sets voms attributes to a proxy
     """
     if not vo:
@@ -177,39 +222,28 @@ class VOMS( BaseSecurity ):
     if attribute and attribute != 'NoRole':
       cmdArgs.append( '-voms "%s:%s"' % ( vo, attribute ) )
     else:
-      cmdArgs.append( '-voms "%s"' % vo )  
+      cmdArgs.append( '-voms "%s"' % vo )
     cmdArgs.append( '-valid "%s:%s"' % ( hours, mins ) )
     tmpDir = False
-    if 'DIRAC_VOMSES' in os.environ:
-      diracVomses = os.environ[ 'DIRAC_VOMSES' ]
-      if os.path.exists( diracVomses ):
-        # Copy the vomses files into a local directory
-        import tempfile
-        tmpDir = tempfile.mkdtemp()
-        import shutil
-        vomsesDir = os.path.join(tmpDir,'vomses')
-        shutil.copytree(diracVomses,vomsesDir)
-        vomses = os.listdir(vomsesDir)
-        # set authorisation to 644
-        for v in vomses:
-          os.chmod(os.path.join(vomsesDir,v),6*64+4*8+4)
-        cmdArgs.append( '-vomses "%s"' % vomsesDir )
+    vomsesPath = self.getVOMSESLocation()
+    if vomsesPath:
+      cmdArgs.append( '-vomses "%s"' % vomsesPath )
 
     cmd = 'voms-proxy-init %s' % " ".join( cmdArgs )
     result = shellCall( self._secCmdTimeout, cmd )
-    if tmpDir: shutil.rmtree(tmpDir)
+    if tmpDir: shutil.rmtree( tmpDir )
 
     File.deleteMultiProxy( proxyDict )
 
     if not result['OK']:
       self._unlinkFiles( newProxyLocation )
-      return S_ERROR('Failed to call voms-proxy-init')
+      return S_ERROR( 'Failed to call voms-proxy-init' )
 
     status, output, error = result['Value']
 
     if status:
       self._unlinkFiles( newProxyLocation )
-      return S_ERROR('Failed to set VOMS attributes. Command: %s; StdOut: %s; StdErr: %s' % (cmd,output,error))
+      return S_ERROR( 'Failed to set VOMS attributes. Command: %s; StdOut: %s; StdErr: %s' % ( cmd, output, error ) )
 
     newChain = X509Chain()
     retVal = newChain.loadProxyFromFile( newProxyLocation )
@@ -231,3 +265,4 @@ class VOMS( BaseSecurity ):
     if status:
       return False
     return True
+
