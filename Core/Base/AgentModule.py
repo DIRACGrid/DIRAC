@@ -50,7 +50,7 @@ class AgentModule:
     self.__configDefaults[ 'MonitoringEnabled'] = True
     self.__configDefaults[ 'Enabled'] = self.am_getOption( "Status", "Active" ).lower() in ( 'active' )
     self.__configDefaults[ 'PollingTime'] = self.am_getOption( "PollingTime", 120 )
-    self.__configDefaults[ 'MaxCycles'] = self.am_getOption( "MaxCycles", 0 )
+    self.__configDefaults[ 'MaxCycles'] = self.am_getOption( "MaxCycles", 500 )
     self.__configDefaults[ 'ControlDirectory' ] = os.path.join( DIRAC.rootPath,
                                                             'control',
                                                             os.path.join( *self.__moduleProperties[ 'fullName' ].split( "/" ) ) )
