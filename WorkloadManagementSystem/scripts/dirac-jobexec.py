@@ -27,7 +27,7 @@ from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContain
 
 import DIRAC
 
-import os,os.path,sys
+import os,os.path,sys,string
 
 # Register workflow parameter switch
 Script.registerSwitch('p:','parameter=','Parameters that are passed directly to the workflow')
@@ -76,7 +76,7 @@ for switch,parameter in parList:
   if switch == "p":
     name,value = parameter.split('=')
     parDict[name] = value
-gLogger.info('PYTHONPATH:\n %s' %(sys.path))
+gLogger.verbose('PYTHONPATH:\n%s' %(string.join(sys.path,'\n')))
 result = jobexec(jobXMLfile,parDict)
 if not result['OK']:
   gLogger.debug('Workflow execution finished with errors, exiting')
