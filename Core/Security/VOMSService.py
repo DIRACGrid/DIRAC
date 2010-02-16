@@ -45,14 +45,18 @@ class VOMSService:
       result = self.__soapClients[ 'Admin' ].service.listMembers()
     except Exception, e:
       return S_ERROR( "Error in function listMembers: %s" % str( e ) )
-    return S_OK( self.__processListDictReturn( result.listMembersReturn ) )
+    if 'listMembersReturn' in dir( result ):
+      return S_OK( self.__processListDictReturn( result.listMembersReturn ) )
+    return S_OK( self.__processListDictReturn( result ) )
 
   def admListRoles( self ):
     try:
       result = self.__soapClients[ 'Admin' ].service.listRoles()
     except Exception, e:
       return S_ERROR( "Error in function listRoles: %s" % str( e ) )
-    return S_OK( self.__processListReturn( result.listRolesReturn ) )
+    if 'listRolesReturn' in dir( result ):
+      return S_OK( self.__processListReturn( result.listRolesReturn ) )
+    return S_OK( self.__processListReturn( result ) )
 
 
   def admListUsersWithRole( self, group, role ):
@@ -60,7 +64,9 @@ class VOMSService:
       result = self.__soapClients[ 'Admin' ].service.listUsersWithRole( group, role )
     except Exception, e:
       return S_ERROR( "Error in function listUsersWithRole: %s" % str( e ) )
-    return S_OK( self.__processListDictReturn( result.listUsersWithRoleReturn ) )
+    if 'listUsersWithRoleReturn' in dir( result ):
+      return S_OK( self.__processListDictReturn( result.listUsersWithRoleReturn ) )
+    return S_OK( self.__processListDictReturn( result ) )
 
   def admGetVOName( self ):
     try:
@@ -77,4 +83,7 @@ class VOMSService:
       result = self.__soapClients[ 'Attributes' ].service.listUserAttributes( user )
     except Exception, e:
       return S_ERROR( "Error in function getUserNickname: %s" % str( e ) )
-    return S_OK( result.listUserAttributesReturn[0].value )
+    if 'listUserAttributesReturn' in dir( result ):
+      return S_OK( result.listUserAttributesReturn[0].value )
+    return S_OK( result[0].value )
+  
