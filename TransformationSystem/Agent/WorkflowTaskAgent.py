@@ -18,4 +18,6 @@ class WorkflowTaskAgent(TaskManagerAgentBase,WorkflowTasks):
     TaskManagerAgentBase.initialize(self)
     WorkflowTasks.__init__(self)
     self.transType = ['MCSimulation','DataReconstruction','DataStripping','MCStripping','Merge']
+    self.am_setModuleParam('shifterProxy','ProductionManager')
+    self.am_setModuleParam("shifterProxyLocation","%s/runit/%s/proxy" % (rootPath,AGENT_NAME))
     return S_OK()

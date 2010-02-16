@@ -18,4 +18,6 @@ class RequestTaskAgent(TaskManagerAgentBase,RequestTasks):
     TaskManagerAgentBase.initialize(self)
     RequestTasks.__init__(self)
     self.transType = ['Replication','Removal']
+    self.am_setModuleParam('shifterProxy','ProductionManager')
+    self.am_setModuleParam("shifterProxyLocation","%s/runit/%s/proxy" % (rootPath,AGENT_NAME))
     return S_OK()

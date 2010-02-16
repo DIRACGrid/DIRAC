@@ -19,8 +19,6 @@ class TaskManagerAgentBase(AgentModule):
 
   #############################################################################
   def initialize(self):
-    self.am_setModuleParam('shifterProxy','ProductionManager')
-    self.am_setModuleParam("shifterProxyLocation","%s/runit/%s/proxy" % (rootPath,AGENT_NAME))
     self.section = self.am_getOption("section")
     gMonitor.registerActivity("SubmittedTasks","Automatically submitted tasks","Transformation Monitoring","Tasks", gMonitor.OP_ACUM)
     self.transClient = TransformationDBClient()
