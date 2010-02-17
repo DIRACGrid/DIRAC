@@ -33,7 +33,7 @@ class JobCleaningAgent( AgentModule ):
     self.am_setOption( "PollingTime", 120.0 )
     self.jobDB = JobDB()
     self.taskQueueDB = TaskQueueDB()
-    self.sandboxDB = SandboxDB( 'SandboxDB' )
+    # self.sandboxDB = SandboxDB( 'SandboxDB' )
 
     return S_OK()
 
@@ -87,20 +87,20 @@ class JobCleaningAgent( AgentModule ):
     for jobID in jobList:
       resultJobDB = self.jobDB.removeJobFromDB( jobID )
       resultTQ = self.taskQueueDB.deleteJob( jobID )
-      resultISB = self.sandboxDB.removeJob( jobID, 'InputSandbox' )
-      resultOSB = self.sandboxDB.removeJob( jobID, 'OutputSandbox' )
+      # resultISB = self.sandboxDB.removeJob( jobID, 'InputSandbox' )
+      # resultOSB = self.sandboxDB.removeJob( jobID, 'OutputSandbox' )
       if not resultJobDB['OK']:
         gLogger.warn( 'Failed to remove job %d from JobDB' % jobID, result['Message'] )
         error_count += 1
       elif not resultTQ['OK']:
         gLogger.warn( 'Failed to remove job %d from TaskQueueDB' % jobID, result['Message'] )
         error_count += 1
-      elif not resultISB['OK']:
-        gLogger.warn( 'Failed to remove job %d from InputSandboxDB' % jobID, result['Message'] )
-        error_count += 1
-      elif not resultOSB['OK']:
-        gLogger.warn( 'Failed to remove job %d from OutputSandboxDB' % jobID, result['Message'] )
-        error_count += 1
+      # elif not resultISB['OK']:
+      #   gLogger.warn( 'Failed to remove job %d from InputSandboxDB' % jobID, result['Message'] )
+      #   error_count += 1
+      # elif not resultOSB['OK']:
+      #   gLogger.warn( 'Failed to remove job %d from OutputSandboxDB' % jobID, result['Message'] )
+      #   error_count += 1
       else:
         count += 1
 
