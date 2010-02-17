@@ -87,6 +87,9 @@ def createTarball( tarballPath, directoryToTar, additionalDirectoriesToTar = [] 
   fd.close()
   return S_OK()
 
+allowedNoteTypes = ( "NEW", "CHANGE", "BUGFIX", 'FIX' )
+noteTypeAlias = { 'FIX' : 'BUGFIX' }
+
 def retrieveReleaseNotes( packages ):
   if type( packages ) in ( types.StringType, types.UnicodeType ):
     packages = [ str( packages ) ]
@@ -108,12 +111,22 @@ def retrieveReleaseNotes( packages ):
           continue
         versionNotes[ subsys ] = {}
         lines = List.fromChar( comment, "\n" )
-        for typeComment in ( "NEW", "CHANGE", "BUGFIX" ):
-          for line in lines:
+        lastCommentType = False
+        for line in lines:
+          processedLine = False
+          for typeComment in allowedNoteTypes:
             if line.find( "%s:" % typeComment ) == 0:
-              if typeComment not in versionNotes[ subsys ]:
-                versionNotes[ subsys ][ typeComment ] = []
-              versionNotes[ subsys ][ typeComment ].append( line[ len( typeComment ) + 1: ].strip() )
+              if typeComment in noteTypeAlias:
+                effectiveType = noteTypeAlias[ typeComment ]
+              else:
+                effectiveType = typeComment
+              if effectiveType not in versionNotes[ subsys ]:
+                versionNotes[ subsys ][ effectiveType ] = []
+              versionNotes[ subsys ][ effectiveType ].append( line[ len( typeComment ) + 1: ].strip() )
+              lastCommentType = effectiveType
+              processedLine = True
+          if not processedLine and lastCommentType:
+            versionNotes[ subsys ][ effectiveType ][-1] += " %s" % line.strip()
       if versionNotes:
         pkgNotesDict[ package ].append( { 'version' : mainVersion, 'notes' : versionNotes } )
       versionComment = versionsCFG.getComment( mainVersion )
@@ -150,7 +163,7 @@ def generateReleaseNotes( packages, destinationPath, versionReleased = "", singl
       fileContents.append( "-" * len( dummy ) )
       if 'comment' in versionNotes:
         fileContents.extend( [ '', versionNotes[ 'comment' ], '' ] )
-      for noteType in ( "NEW", "CHANGE", "BUGFIX" ):
+      for noteType in allowedNoteTypes:
         notes4Type = []
         for system in versionNotes[ 'notes' ]:
           if noteType in versionNotes[ 'notes' ][ system ] and versionNotes[ 'notes' ][ system ][ noteType ]:
