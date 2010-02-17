@@ -64,7 +64,7 @@ class FailoverTransfer:
 
       if not result['Value']['Failed']:
         self.log.info('rm.putAndRegister successfully uploaded %s to %s' %(fileName,se))
-        return S_OK({'uploadedSE':se})
+        return S_OK({'uploadedSE':se,'lfn':lfn})
       
       #Now we know something went wrong
       errorDict = result['Value']['Failed'][lfn]
@@ -85,6 +85,7 @@ class FailoverTransfer:
         metadata = {}
         metadata['filedict']=fileDict
         metadata['uploadedSE']=se
+        metadata['lfn']=lfn
         return S_OK(metadata)
 
     self.log.error('Encountered %s errors during attempts to upload output data' %len(errorList))
