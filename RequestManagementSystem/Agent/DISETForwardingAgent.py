@@ -96,8 +96,10 @@ class DISETForwardingAgent(AgentModule,RequestAgentMixIn):
           oRequest.setSubRequestStatus(ind,'diset','Done')
           gMonitor.addMark("Successful",1)
           modified = True
+        elif res['Message'] == 'No Matching Job':
+          gLogger.warn("DISETForwardingAgent.execute: No corresponding job found. Setting to done.")
+          oRequest.setSubRequestStatus(ind,'diset','Done')
         else:
-          oRequest.setSubRequestError(ind,'diset',res['Message'])
           gLogger.error("DISETForwardingAgent.execute: Failed to forward request.",res['Message'])
       else:
         gLogger.info("DISETForwardingAgent.execute: Sub-request %s is status '%s' and  not to be executed." % (ind,subRequestAttributes['Status']))
