@@ -9,6 +9,7 @@ __RCSID__ = "$Id$"
 import os, types
 from DIRAC.Core.Utilities.Os import sourceEnv
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient  import gProxyManager
+from DIRAC.Core.Security.Misc                         import getProxyInfo
 from DIRAC import systemCall, shellCall, S_OK, S_ERROR
 
 def executeGridCommand(proxy, cmd, gridEnvScript=None ):
@@ -31,11 +32,17 @@ def executeGridCommand(proxy, cmd, gridEnvScript=None ):
         gridEnv[ 'X509_USER_PROXY' ] = proxy
       else:
         return S_ERROR('Can not treat proxy passed as a string')
+    elif not proxy:
+      res = getProxyInfo()      
+      if not res['OK']:
+        return res
+      gridEnv['X509_USER_PROXY' ] = res['Value']['path']
     else:
       ret = gProxyManager.dumpProxyToFile( proxy )
       if not ret['OK']:
         return ret
       gridEnv[ 'X509_USER_PROXY' ] = ret['Value']
+    
     return systemCall( 120, cmd, env = gridEnv )
   
 def ldapsearchBDII( filt=None, attr=None, host=None, base = None ):
