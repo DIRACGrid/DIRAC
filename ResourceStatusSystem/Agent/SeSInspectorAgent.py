@@ -45,14 +45,15 @@ class SeSInspectorAgent(AgentModule):
       #self.threadPool = ThreadPool(1,self.maxNumberOfThreads)
   
       #vedi taskQueueDirector
-      self.threadPool = ThreadPool( self.am_getOption('minThreadsInPool'),
-                         self.am_getOption('maxThreadsInPool'),
-                         self.am_getOption('totalThreadsInPool') )
+      self.threadPool = ThreadPool( self.am_getOption('minThreadsInPool', 1),
+                         self.am_getOption('maxThreadsInPool', 1),
+                         self.am_getOption('totalThreadsInPool', 1) )
       if not self.threadPool:
         self.log.error('Can not create Thread Pool:')
-        return
+        return S_ERROR('Can not create Thread Pool')
       
       self.lockObj = threading.RLock()
+      self.setup = gConfig.getValue("DIRAC/Setup")
       
       return S_OK()
     
@@ -142,16 +143,19 @@ class SeSInspectorAgent(AgentModule):
         gLogger.info("Checking Service %s, with status %s" % (serviceName, status))
         newPEP = PEP(granularity = granularity, name = serviceName, status = status, 
                      formerStatus = formerStatus, serviceType = serviceType)
-        newPEP.enforce()
+        newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup)
   
+    except Exception, x:
+      gLogger.exception(whoRaised(x),'',x)
+    finally:
+      try:
         self.lockObj.acquire()
         try:
           self.ServiceNamesInCheck.remove(serviceName)
         finally:
           self.lockObj.release()
-
-    except Exception, x:
-      gLogger.exception(whoRaised(x),'',x)
+      except NameError:
+        pass
 
 
 #############################################################################

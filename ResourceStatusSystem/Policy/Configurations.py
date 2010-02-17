@@ -17,33 +17,47 @@ notified_users = ['fstagni', 'roma']
 #notified_users = nc.getAssigneeGroups()['Value']['RSS_alarms']
 
 AssigneeGroups = {
-  'VladRob_PROD': 
+  'VladRob_PROD-Mail': 
+  {'Users': ['roma', 'santinel'],
+   'Setup': ['LHCb-Production'],
+   'Granularity': ValidRes,
+   'SiteType': ['T0', 'T1'], 
+   'Notifications': ['Mail']
+   }, 
+  'VladRob_PROD-Web': 
   {'Users': ['roma', 'santinel'],
    'Setup': ['LHCb-Production'],
    'Granularity': ValidRes,
    'SiteType': ValidSiteType, 
-   'Notifications': ['Web', 'Mail']
+   'Notifications': ['Web']
    }, 
   'VladRob_DEV': 
   {'Users': ['roma', 'santinel'],
    'Setup': ['LHCb-Development', 'LHCb-Certification'], 
    'Granularity': ValidRes,
-   'SiteType': ValidSiteType, 
+   'SiteType': [], 
    'Notifications': ['Web']
    }, 
-  'me_PROD': 
+  'me_PROD-Mail': 
+  {'Users': ['fstagni'],
+   'Setup': ['LHCb-Production'],
+   'Granularity': ValidRes,
+   'SiteType': ['T0', 'T1'],
+   'Notifications': ['Mail']
+   }, 
+  'me_PROD-Web': 
   {'Users': ['fstagni'],
    'Setup': ['LHCb-Production'],
    'Granularity': ValidRes,
    'SiteType': ValidSiteType, 
-   'Notifications': ['Web', 'Mail']
+   'Notifications': ['Web']
    }, 
   'me_DEV': 
   {'Users': ['fstagni'],
    'Setup': ['LHCb-Development', 'LHCb-Certification'], 
    'Granularity': ValidRes,
    'SiteType': ValidSiteType, 
-   'Notifications': ['Web', 'Mail']
+   'Notifications': ['Web']
    }, 
   'Andrew_PROD': 
   {'Users': ['acsmith'],
@@ -62,25 +76,7 @@ AssigneeGroups = {
 }
 
 
-_setup = gConfig.getValue("DIRAC/Setup")
-
-#def getUsersToNotify(granularity, siteType = None, setup = _setup ):
-#  
-#  users = []
-#  notifications = []
-#  
-#  NOTIFinfo = {}
-#  NOTIF = []
-#  
-#  for ag in AssigneeGroups.keys():
-#    
-#    if setup in AssigneeGroups[ag]['Setup'] and granularity in AssigneeGroups[ag]['Granularity']:
-#      if siteType is not None and siteType not in AssigneeGroups[ag]['SiteType']:
-#        continue
-#      NOTIF.append( {'Users':AssigneeGroups[ag]['Users'], 'Notifications':AssigneeGroups[ag]['Notifications']} )
-#        
-#  return NOTIF
-
+#_setup = gConfig.getValue("DIRAC/Setup")
 
 #############################################################################
 # policies evaluated

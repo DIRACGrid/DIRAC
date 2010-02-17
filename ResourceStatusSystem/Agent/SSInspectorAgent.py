@@ -36,21 +36,21 @@ class SSInspectorAgent(AgentModule):
       self.am_setOption( "PollingTime", 60 )
       self.SitesToBeChecked = []
       self.SiteNamesInCheck = []
-      #self.maxNumberOfThreads = gConfig.getValue(self.section+'/NumberOfThreads',1)
-      #self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',1)
       
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
       #self.threadPool = ThreadPool(1,self.maxNumberOfThreads)
   
-      #vedi taskQueueDirector
-      self.threadPool = ThreadPool( self.am_getOption('minThreadsInPool'),
-                         self.am_getOption('maxThreadsInPool'),
-                         self.am_getOption('totalThreadsInPool') )
+      #see taskQueueDirector
+      self.threadPool = ThreadPool( self.am_getOption('minThreadsInPool', 1),
+                         self.am_getOption('maxThreadsInPool', 1),
+                         self.am_getOption('totalThreadsInPool', 1) )
       if not self.threadPool:
         self.log.error('Can not create Thread Pool:')
-        return
+        return S_ERROR('Can not create Thread Pool')
       
       self.lockObj = threading.RLock()
+
+      self.setup = gConfig.getValue("DIRAC/Setup")
       
       return S_OK()
     
@@ -118,6 +118,9 @@ class SSInspectorAgent(AgentModule):
     """
     
     try:
+#    
+#      print "self.SitesToBeChecked", self.SitesToBeChecked
+#      print "self.SiteNamesInCheck", self.SiteNamesInCheck
     
       if len(self.SitesToBeChecked) > 0:
           
@@ -136,13 +139,16 @@ class SSInspectorAgent(AgentModule):
         gLogger.info("Checking Site %s, with status %s" % (siteName, status))
         newPEP = PEP(granularity = granularity, name = siteName, status = status, 
                      formerStatus = formerStatus, siteType = siteType)
-        newPEP.enforce()
+        newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup)
   
+    except Exception, x:
+      gLogger.exception(whoRaised(x),'',x)
+    finally:
+      try:
         self.lockObj.acquire()
         try:
           self.SiteNamesInCheck.remove(siteName)
         finally:
           self.lockObj.release()
-
-    except Exception, x:
-      gLogger.exception(whoRaised(x),'',x)
+      except NameError:
+        pass

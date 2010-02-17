@@ -62,7 +62,6 @@ class DataOperationsClient:
       return {'TransferQuality': None}
     else:
       if len(pr_q_d) == 1:
-        print pr_q_d
         values = []
         for k in pr_q_d.keys():
           for n in pr_q_d[k].values():

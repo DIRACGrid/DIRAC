@@ -45,14 +45,16 @@ class RSInspectorAgent(AgentModule):
       #self.threadPool = ThreadPool(1,self.maxNumberOfThreads)
   
       #vedi taskQueueDirector
-      self.threadPool = ThreadPool( self.am_getOption('minThreadsInPool'),
-                         self.am_getOption('maxThreadsInPool'),
-                         self.am_getOption('totalThreadsInPool') )
+      self.threadPool = ThreadPool( self.am_getOption('minThreadsInPool', 1),
+                         self.am_getOption('maxThreadsInPool', 1),
+                         self.am_getOption('totalThreadsInPool', 1) )
       if not self.threadPool:
         self.log.error('Can not create Thread Pool')
         return S_ERROR('Can not create Thread Pool')
       
       self.lockObj = threading.RLock()
+      
+      self.setup = gConfig.getValue("DIRAC/Setup")
       
       return S_OK()
     
@@ -146,14 +148,17 @@ class RSInspectorAgent(AgentModule):
         newPEP = PEP(granularity = granularity, name = resourceName, status = status, 
                      formerStatus = formerStatus, siteType = siteType, 
                      resourceType = resourceType)
-        newPEP.enforce()
+        newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup)
   
+    except Exception, x:
+      gLogger.exception(whoRaised(x),'',x)
+    finally:
+      try:
         self.lockObj.acquire()
         try:
           self.ResNamesInCheck.remove(resourceName)
         finally:
           self.lockObj.release()
-        
-    except Exception, x:
-      gLogger.exception(whoRaised(x),'',x)
+      except NameError:
+        pass
       

@@ -18,9 +18,6 @@ from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
 
-#class PEPBadInput(Exception):
-#  pass
-
 
 class PEP: 
 #############################################################################
@@ -57,12 +54,6 @@ class PEP:
   def __init__(self, granularity = None, name = None, status = None, formerStatus = None, 
                reason = None, siteType = None, serviceType = None, resourceType = None, 
                futureEnforcement = None):
-#    policyType = presentEnforcement['PolicyType']
-#    for pt in policyType:
-#      if pt not in PolicyTypes :
-#        raise InvalidPolicyType, where(self, self.__init__)
-#    self.__policyType = policyType
-    
     
     try:
 #      granularity = presentEnforcement['Granularity']
@@ -115,7 +106,8 @@ class PEP:
       
 #############################################################################
     
-  def enforce(self, pdpIn=None, rsDBIn=None, knownInfo=None, ncIn=None):
+  def enforce(self, pdpIn = None, rsDBIn = None, knownInfo = None,
+              ncIn = None, setupIn = None):
     """ 
     enforce policies, using a PDP  (Policy Decision Point), based on
 
@@ -168,9 +160,6 @@ class PEP:
     
     # policy decision
     resDecisions = pdp.takeDecision(knownInfo=knownInfo)
-    
-#    for res in resDecisions['SinglePolicyResults']:
-#      rsDB.
     
     for res in resDecisions['PolicyCombinedResult']:
       
@@ -236,8 +225,11 @@ class PEP:
           notif = "%s %s is perceived as" %(self.__granularity, self.__name) 
           notif = notif + " %s. Reason: %s." %(res['Status'], res['Reason'])
           
+          if setupIn is None:
+            setupIn = gConfig.getValue("DIRAC/Setup")
+          
           NOTIF_D = self._getUsersToNotify(self.__granularity, 
-                                           self.__siteType, Configurations._setup)
+                                           setupIn, self.__siteType)
           
           for notification in NOTIF_D:
             for user in notification['Users']:
@@ -260,7 +252,7 @@ class PEP:
     
 #############################################################################
 
-  def _getUsersToNotify(self, granularity, siteType = None, setup = 'LCHb-Production'):
+  def _getUsersToNotify(self, granularity, setup, siteType = None):
     
     users = []
     notifications = []
