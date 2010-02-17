@@ -1,5 +1,8 @@
 """ RequestManager is the implementation of the RequestDB service in the DISET framework
 """
+
+__RCSID__ = "$Id$"
+
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
