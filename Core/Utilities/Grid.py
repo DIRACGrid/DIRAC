@@ -1,6 +1,5 @@
 # $HeadURL$
 
-
 """ The Grid module contains several utilities for grid operations
 """
 
@@ -27,22 +26,23 @@ def executeGridCommand(proxy, cmd, gridEnvScript=None ):
     else:
       gridEnv = currentEnv
 
-    if type(proxy) in types.StringTypes:
-      if os.path.exists(proxy):
-        gridEnv[ 'X509_USER_PROXY' ] = proxy
-      else:
-        return S_ERROR('Can not treat proxy passed as a string')
-    elif not proxy:
+
+    if not proxy:
       res = getProxyInfo()      
       if not res['OK']:
         return res
       gridEnv['X509_USER_PROXY' ] = res['Value']['path']
+    elif type(proxy) in types.StringTypes:
+      if os.path.exists(proxy):
+        gridEnv[ 'X509_USER_PROXY' ] = proxy
+      else:
+        return S_ERROR('Can not treat proxy passed as a string')
     else:
       ret = gProxyManager.dumpProxyToFile( proxy )
       if not ret['OK']:
         return ret
       gridEnv[ 'X509_USER_PROXY' ] = ret['Value']
-    
+   
     return systemCall( 120, cmd, env = gridEnv )
   
 def ldapsearchBDII( filt=None, attr=None, host=None, base = None ):
@@ -265,5 +265,3 @@ def ldapSA( site, vo='lhcb', attr=None, host=None ):
         sas.append(result['Value'][0]['attr'])
 
   return S_OK(sas)
-
-  
