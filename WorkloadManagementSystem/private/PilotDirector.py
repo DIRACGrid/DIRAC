@@ -328,10 +328,6 @@ class PilotDirector:
       if not ret['OK']:
         self.log.error( ret['Message'] )
         self.log.error( 'No proxy Available', 'User "%s", Group "%s"' % ( ownerDN, ownerGroup ) )
-        try:
-          shutil.rmtree( workDir )
-        except:
-          pass
         return S_ERROR( ERROR_PROXY )
       proxy = ret['Value']
       # Now call a Grid Specific method to handle the final submission of the pilots
