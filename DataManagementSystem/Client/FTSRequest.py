@@ -1,5 +1,5 @@
 from DIRAC  import gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Core.Utilities.File import checkGuid
 #from DIRAC.DataManagementSystem.Storage.StorageElement import StorageElement
@@ -8,6 +8,8 @@ import re,os
 class FTSRequest:
 
   def __init__(self):
+
+    self.gridEnv = '/afs/cern.ch/project/gd/LCG-share/3.2.4-0/etc/profile.d/grid-env'
 
     self.finalStates = ['Canceled','Failed','Hold','Finished','FinishedDirty']
     self.failedStates = ['Canceled','Failed','Hold','Finished','FinishedDirty']
@@ -169,11 +171,12 @@ class FTSRequest:
        OPERATION: Constuct the system call to be made and execute it.
                   Check that the returned string is a GUID.
     """
+    comm = ['glite-transfer-submit','-s', self.ftsServer,'-f',self.surlFile]
     if self.spaceToken:
-      comm = 'glite-transfer-submit -s %s -f %s -t %s' % (self.ftsServer,self.surlFile,self.spaceToken)
-    else:
-      comm = 'glite-transfer-submit -s %s -f %s' % (self.ftsServer,self.surlFile)
-    res = shellCall(120,comm)
+      comm.append('-t')
+      comm.append(self.spaceToken)
+
+    res = executeGridCommand('',comm,self.gridEnv)
     os.remove(self.surlFile)
     if not res['OK']:
       return res
@@ -241,8 +244,8 @@ class FTSRequest:
     """
     if not self.ftsServer:
       return S_ERROR('FTS Server information not supplied with request')
-    comm = 'glite-transfer-status --verbose -s %s %s' % (self.ftsServer,self.ftsGUID)
-    res = shellCall(180,comm)
+    comm = ['glite-transfer-status','--verbose','-s',self.ftsServer,self.ftsGUID]
+    res = executeGridCommand('',comm,self.gridEnv)
     if not res['OK']:
       return res
     returnCode,output,errStr = res['Value']
@@ -311,8 +314,8 @@ class FTSRequest:
                   For each LFN the following information is obtained (self.fileDict):
                     'Duration','Reason','Retries'
     """
-    comm = 'glite-transfer-status -s %s -l %s' % (self.ftsServer,self.ftsGUID)
-    res = shellCall(180,comm)
+    comm = ['glite-transfer-status','-s',self.ftsServer,'-l',self.ftsGUID]
+    res = executeGridCommand('',comm,self.gridEnv)
     if not res['OK']:
       return res
     returnCode,output,errStr = res['Value']
