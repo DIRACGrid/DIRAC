@@ -256,8 +256,9 @@ class FTSMonitorAgent(AgentModule):
     gfalDict = {}
     gfalDict['surls'] = surls
     gfalDict['nbfiles'] =  len(gfalDict['surls'])
-    #gfalDict['defaultsetype'] = 'srmv2'
-    #gfalDict['no_bdii_check'] = 1
+    gfalDict['defaultsetype'] = 'srmv2'
+    gfalDict['no_bdii_check'] = 1
+    #os.environ['LCG_GFAL_INFOSYS'] = 'lcg-bdii.cern.ch:2170'
     errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
     if errCode == 0:
       errCode,gfalObject,errMessage = gfal.gfal_deletesurls(gfalObject)
