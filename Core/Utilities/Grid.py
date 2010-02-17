@@ -20,8 +20,6 @@ def executeGridCommand(proxy, cmd, gridEnvScript=None ):
       ret = sourceEnv( 10, [gridEnvScript] )
       if not ret['OK']:
         return S_ERROR( 'Failed sourcing GridEnv' )
-      if ret['stdout']: self.log.verbose( ret['stdout'] )
-      if ret['stderr']: self.log.warn( ret['stderr'] )
       gridEnv = ret['outputEnv']
     else:
       gridEnv = currentEnv
