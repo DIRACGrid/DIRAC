@@ -32,6 +32,8 @@ class Params:
 
 cliParams = Params()
 
+platformAlias = { 'Darwin_i386_10.6' : 'Darwin_i386_10.5' }
+
 ####
 # Start of helper functions
 ####
@@ -234,6 +236,14 @@ def runExternalsPostInstall():
       logERROR( "Post installation script %s failed. Check %s.err" % ( scriptPath, scriptPath ) )
       sys.exit( 1 )
 
+def checkPlatformAliasLink():
+  """
+  Make a link if there's an alias
+  """
+  if cliParams.platform in platformAlias:
+    os.symlink( os.path.join( cliParams.targetPath, platformAlias[ cliParams.platform ] ),
+                os.path.join( cliParams.targetPath, cliParams.platform ) )
+
 ####
 # End of helper functions
 ####
@@ -374,8 +384,12 @@ logINFO( "Using platform: %s" % cliParams.platform )
 
 #Externals stuff
 extVersion = releaseCFG.getOption( 'Externals', "trunk" )
+if cliParams.platform in platformAlias:
+  effectivePlatform = platformAlias[ cliParams.platform ]
+else:
+  effectivePlatform = cliParams.platform
 extDesc = "-".join( [ cliParams.externalsType, extVersion,
-                          cliParams.platform, 'python%s' % cliParams.pythonVersion ] )
+                          effectivePlatform, 'python%s' % cliParams.pythonVersion ] )
 
 logDEBUG( "Externals version is %s" % extDesc )
 extTar = "Externals-%s" % extDesc
@@ -396,6 +410,7 @@ else:
       sys.exit( 1 )
     fixBuildPaths()
     runExternalsPostInstall()
+    checkPlatformAliasLink()
   else:
     if cliParams.buildIfNotAvailable:
       if os.system( buildCmd ):
