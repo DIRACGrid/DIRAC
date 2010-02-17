@@ -30,7 +30,7 @@
 __RCSID__ = "$Id$"
 
 from pkgutil import extend_path
-__path__ = extend_path(__path__, __name__)
+__path__ = extend_path( __path__, __name__ )
 
 import sys, os, platform
 
@@ -38,10 +38,10 @@ import sys, os, platform
 
 majorVersion = 5
 minorVersion = 0
-patchLevel   = 0
-preVersion   = 0
+patchLevel = 0
+preVersion = 0
 
-version      = "v%sr%s" % ( majorVersion, minorVersion )
+version = "v%sr%s" % ( majorVersion, minorVersion )
 buildVersion = "v%dr%d" % ( majorVersion, minorVersion )
 if patchLevel:
   version = "%sp%s" % ( version, patchLevel )
@@ -52,18 +52,18 @@ if preVersion:
 
 # Check of python version
 
-__pythonMajorVersion = ["2",]
-__pythonMinorVersion = ["4","5","6"]
+__pythonMajorVersion = ( "2", )
+__pythonMinorVersion = ( "4", "5", "6" )
 
-if not ( __pythonMajorVersion.__contains__( platform.python_version_tuple()[0] ) and
-         __pythonMinorVersion.__contains__( platform.python_version_tuple()[1] ) ):
+pythonVersion = platform.python_version_tuple()
+if str( pythonVersion[0] ) not in __pythonMajorVersion or str( pythonVersion[1] ) not in __pythonMinorVersion:
   print "Python Version %s not supported by DIRAC" % platform.python_version()
   print "Supported versions are: "
   for major in __pythonMajorVersion:
     for minor in __pythonMinorVersion:
       print "%s.%s.x" % ( major, minor )
 
-  sys.exit(-1)
+  sys.exit( 1 )
 
 errorMail = "dirac.alarms@gmail.com"
 alarmMail = "dirac.alarms@gmail.com"
@@ -90,9 +90,9 @@ from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 # Some Defaults if not present in the configuration
 FQDN = getFQDN()
-if len( FQDN.split('.') ) > 2 :
+if len( FQDN.split( '.' ) ) > 2 :
   # Use the last component of the FQDN as country code if there are more than 2 components
-  _siteName = 'DIRAC.Client.%s' % FQDN.split('.')[-1]
+  _siteName = 'DIRAC.Client.%s' % FQDN.split( '.' )[-1]
 else:
   # else use local as country code
   _siteName = 'DIRAC.Client.local'
@@ -102,7 +102,7 @@ __siteName = False
 def siteName():
   global __siteName
   if not __siteName:
-    __siteName = gConfig.getValue('/LocalSite/Site', _siteName )
+    __siteName = gConfig.getValue( '/LocalSite/Site', _siteName )
   return __siteName
 
 #Callbacks
@@ -111,7 +111,7 @@ ExitCallback.registerSignals()
 #Set the platform
 from DIRAC.Core.Utilities.Platform import getPlatformString
 platform = getPlatformString()
-platformTuple = tuple(platform.split('_'))
+platformTuple = tuple( platform.split( '_' ) )
 
 def exit( exitCode = 0 ):
   ExitCallback.execute( exitCode, [] )
