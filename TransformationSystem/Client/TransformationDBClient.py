@@ -68,6 +68,10 @@ class TransformationDBClient(Client,FileCatalogueBase):
   def setServer(self,url):
     self.serverURL = url
 
+  def getCounters(self, table, attrList, condDict, older=None, newer=None, timeStamp=None,rpc='',url='',timeout=120):
+    rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
+    return rpcClient. getCounters(table,attrList,condDict,older,newer,timeStamp)   
+
   def addTransformation(self, transName,description,longDescription,type,plugin,agentType,fileMask,
                             transformationGroup = 'General',
                             groupSize           = 1,

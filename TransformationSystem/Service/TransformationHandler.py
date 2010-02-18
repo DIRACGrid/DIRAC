@@ -18,6 +18,11 @@ class TransformationHandler(RequestHandler):
     res = self.database.getName()
     return self.__parseRes(res)
 
+  types_getCounters = [StringType,ListType,DictType]
+  def export_getCounters(self, table, attrList, condDict, older=None, newer=None, timeStamp=None):
+    res = self.database.getCounters(table, attrList, condDict, older=older, newer=newer, timeStamp=timeStamp)
+    return self.__parseRes(res)
+
   ####################################################################
   #
   # These are the methods to manipulate the transformations table

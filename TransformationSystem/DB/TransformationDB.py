@@ -445,23 +445,36 @@ class TransformationDB(DB):
     """ Get files for the supplied transformations with support for the web standard structure """
     connection = self.__getConnection(connection)
     req = "SELECT %s FROM TransformationFiles" % (intListToString(self.TRANSFILEPARAMS))
+    originalFileIDs = {}
     if condDict or older or newer:
+      if condDict.has_key('LFN'):
+        lfns = condDict.pop('LFN')
+        if type(lfns) in StringTypes:
+          lfns = [lfns]
+        res = self.__getFileIDsForLfns(lfns,connection=connection)
+        if not res['OK']:
+          return res
+        originalFileIDs,ignore = res['Value']
+        condDict['FileID'] = originalFileIDs.keys()
       req = "%s %s" % (req,self.buildCondition(condDict, older, newer, timeStamp,orderAttribute,limit))
     res = self._query(req,connection)
     if not res['OK']:
       return res
+
     transFiles = res['Value']
     fileIDs = [int(row[1]) for row in transFiles]
     webList = []
     resultList = []
-    fileIDLfns = {}
-    if fileIDs:
-      res = self.__getLfnsForFileIDs(fileIDs,connection=connection)
-      if not res['OK']:
-        return res
-      fileIDLfns = res['Value'][1]
+    if not fileIDs:
+      originalFileIDs = {}
+    else:
+      if not originalFileIDs:
+        res = self.__getLfnsForFileIDs(fileIDs,connection=connection)
+        if not res['OK']:
+          return res
+        originalFileIDs = res['Value'][1]
       for row in transFiles:
-        lfn = fileIDLfns[row[1]]
+        lfn = originalFileIDs[row[1]]
         # Prepare the structure for the web
         rList = [lfn]
         fDict = {}
@@ -477,7 +490,7 @@ class TransformationDB(DB):
         webList.append(rList)
         resultList.append(fDict)
     result = S_OK(resultList)
-    result['LFNs'] = fileIDLfns.values()
+    result['LFNs'] = originalFileIDs.values()
     result['Records'] = webList
     result['ParameterNames'] = ['LFN'] + self.TRANSFILEPARAMS
     return result
