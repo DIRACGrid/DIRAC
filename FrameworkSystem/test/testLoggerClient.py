@@ -1,9 +1,10 @@
 import DIRAC
 from DIRAC import gLogger
+from DIRAC.Core.Base.Script import parseCommandLine
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.FrameworkSystem.Client.LoggerClient import LoggerClient
 
-
+parseCommandLine()
 LClient = LoggerClient()
 
 retval = LClient.getSites()
