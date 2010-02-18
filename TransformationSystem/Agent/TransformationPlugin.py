@@ -37,6 +37,12 @@ class TransformationPlugin:
     except Exception,x:
       raise Exception,x
 
+  def _Standard(self):
+    return self._groupByReplicas()
+
+  def _BySize(self):
+    return self._groupBySize()
+
   def _Broadcast(self):
     """ This plug-in takes files found at the sourceSE and broadcasts to all (or a selection of) targetSEs. """
     if not self.params:
@@ -78,12 +84,121 @@ class TransformationPlugin:
       tasks.append((ses,lfns))
     return S_OK(tasks)
 
-  def _Standard(self):
-    return self._groupByReplicas()
+  def _ByShare(self,type='CPU'):  
+    res = self._getShares(type,normalise=True)
+    if not res['OK']:
+      return res  
+    cpuShares = res['Value']
+    gLogger.info("Obtained the following target shares (%):")
+    for site in sortList(cpuShares.keys()):
+      gLogger.info("%s: %.1f" % (site.ljust(15),cpuShares[site]))
 
-  def _BySize(self):
-    return self._groupBySize()
+    # Get the existing destinations from the transformationDB
+    res = self._getExistingCounters()
+    if not res['OK']:
+      gLogger.error("Failed to get existing file share",res['Message'])
+      return res
+    existingCount = res['Value']
+    if existingCount:
+      gLogger.info("Existing storage element utilization (%):") 
+      normalisedExistingCount = self._normaliseShares(existingCount)
+      for se in sortList(normalisedExistingCount.keys()):
+        gLogger.info("%s: %.1f" % (se.ljust(15),normalisedExistingCount[se]))
 
+    # Group the files by their existing replicas
+    res = self._groupByReplicas()
+    if not res['OK']:
+      return res
+    tasks = []
+    # For the replica groups 
+    for replicaSE,lfns in res['Value']:
+      possibleSEs = replicaSE.split(',')
+      res = self._getNextDestination(existingCount,cpuShares)
+      if not res['OK']:
+        gLogger.error("Failed to get next destination SE",res['Message']) 
+        continue
+      targetSite = res['Value']
+      res = getSEsForSite(targetSite)
+      if not res['OK']:
+        continue
+      ses = res['Value']
+      for chosenSE in ses:
+        if chosenSE in possibleSEs:
+          tasks.append((chosenSE,lfns))
+          if not existingCount.has_key(chosenSE):
+            existingCount[chosenSE] = 0
+          existingCount[chosenSE] += len(lfns)
+    return S_OK(tasks)
+
+  def _getShares(self,type,normalise=False):
+    res = gConfig.getOptionsDict('/Resources/Shares/%s' % type)
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      return S_ERROR("/Resources/Shares/%s option contains no shares" % type)
+    shares = res['Value']
+    if normalise:
+      shares = self._normaliseShares(shares)
+    if not shares:
+      return S_ERROR("No non-zero shares defined")
+    return S_OK(shares)
+
+  def _getExistingCounters(self,normalise=False):
+    res = TransformationDBClient().getCounters('TransformationFiles',['UsedSE'],{'TransformationID':self.params['TransformationID']}) 
+    if not res['OK']:
+      return res
+    usageDict = {}
+    for usedDict,count in res['Value']:
+      usedSE = usedDict['UsedSE']
+      if usedSE != 'Unknown':
+        usageDict[usedSE] = count
+    if normalise:
+      usageDict = self._normaliseShares(usageDict)
+    return S_OK(usageDict)
+
+  def _normaliseShares(self,shares):
+    total = 0.0
+    for site in shares.keys():   
+      share = float(shares[site])
+      if not share:
+        shares.pop(site)
+      else:
+        shares[site] = share
+        total += share
+    for site in shares.keys():
+      share = 100.0*(shares[site]/total)
+      shares[site] = share
+    return shares
+
+  def _getNextDestination(self,existingCount,cpuShares):
+    # resolve the current share by site from the existing share by SE
+    siteShare = {}
+    for se,count in existingCount.items():
+      res = getSitesForSE(se)
+      if not res['OK']:
+        return res
+      for site in res['Value']:
+        if site in cpuShares.keys():
+          if not siteShare.has_key(site):
+            siteShare[site] = 0
+          siteShare[site]+= count
+    # then normalise the shares
+    siteShare = self._normaliseShares(siteShare)
+    # then fill the missing share values to 0
+    for site in cpuShares.keys():
+      if (not siteShare.has_key(site)):
+        siteShare[site] = 0.0
+    # determine which site is furthest from its share
+    chosenSite = ''
+    minShareShortFall = - float("inf")
+    for site,cpuShare in cpuShares.items():
+      existingShare = siteShare[site]
+      shareShortFall = cpuShare-existingShare
+      if shareShortFall > minShareShortFall:
+        minShareShortFall = shareShortFall
+        chosenSite = site
+    return S_OK(chosenSite)
+ 
   def _groupByReplicas(self):
     """ Generates a job based on the location of the input data """
     if not self.params:
