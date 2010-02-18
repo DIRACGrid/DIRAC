@@ -4,7 +4,7 @@ from DIRAC                                                  import gConfig, gLog
 from DIRAC.Core.Utilities.SiteSEMapping                     import getSitesForSE
 from DIRAC.Core.Utilities.List                              import breakListIntoChunks, sortList, uniqueElements,randomize
 from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
-import random
+import random,re
 
 class TransformationPlugin:
 
@@ -30,9 +30,12 @@ class TransformationPlugin:
       evalString = "self._%s()" % self.plugin
       return eval(evalString)
     except AttributeError,x:
-      return S_ERROR("Plugin not found")
+      if re.search(self.plugin,str(x)):
+        return S_ERROR("Plugin not found")
+      else:
+        raise AttributeError,x
     except Exception,x:
-      return S_ERROR(x)
+      raise Exception,x
 
   def _Broadcast(self):
     """ This plug-in takes files found at the sourceSE and broadcasts to all (or a selection of) targetSEs. """
