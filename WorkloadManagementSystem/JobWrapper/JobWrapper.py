@@ -1039,9 +1039,15 @@ class JobWrapper:
   #############################################################################
   def sendFailoverRequest( self, status = '', minorStatus = '' ):
     """ Create and send a combined job failover request if any
-    """
+    """    
     request = RequestContainer()
-    requestName = 'job_%s_combined_request.xml' % self.jobID
+    requestName = '%s.xml' % self.jobID
+    if self.jobArgs.has_key('JobName'):
+      #To make the request names more appealing for users
+      jobName = self.jobArgs['JobName']
+      jobName = jobName.replace(' ','').replace('(','').replace(')','').replace('.','').replace('{','').replace('}','').replace(':','')
+      requestName = '%s_%s' %(jobName,requestName)
+      
     request.setRequestName( requestName )
     request.setJobID( self.jobID )
     request.setSourceComponent( "Job_%s" % self.jobID )
