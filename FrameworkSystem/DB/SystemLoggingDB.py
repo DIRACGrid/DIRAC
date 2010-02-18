@@ -246,6 +246,9 @@ class SystemLoggingDB(DB):
     """
     grouping=''
     ordering=''
+    ######OJO PUESTO PARA QUE FUNCIONE AL HACER LAS SUBSELECTS
+    count=False
+    groupColumn=False 
     result = self.__buildCondition( condDict, older, newer )
     if not result['OK']: return result
     condition = result['Value']
@@ -282,7 +285,7 @@ class SystemLoggingDB(DB):
         else:
           sortingFields.append( field ) 
       ordering='ORDER BY %s' %  ', '.join( sortingFields )
-    
+    #Ojo, el grouping y el recordcount hacen que se agrupen los valores
     cmd = 'SELECT %s FROM %s %s %s %s' % ( ','.join(showFieldList ),
                                     tableList, condition, grouping, ordering )
     if condDict!=None and (('LogLevel' in condDict.keys()) and (len(condDict)==1)==False):
@@ -316,7 +319,8 @@ class SystemLoggingDB(DB):
     v=tuple(dev)
     #New Returned Query
     returned_finish['Value']=v
-    #Query old -> self._query(cmd)    
+    #Query old -> self._query(cmd)  
+    gLogger.debug("_Query:",cmd)
     return returned_finish
   
   def __getConditionsIDs(self, cmd2 = None, tableList = None, grouping = None, ordering = None, 
