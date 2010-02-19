@@ -48,7 +48,7 @@ class Transformation(API):
                           'MaxNumberOfJobs'       : 0,
                           'EventsPerJob'          : 0}
 
-    self.supportedPlugins = ['Broadcast','Standard','BySize']
+    self.supportedPlugins = ['Broadcast','Standard','BySize','ByShare']
     if not transClient:
       self.transClient = TransformationDBClient()
     else:
@@ -354,6 +354,9 @@ class Transformation(API):
     return res
 
   def _checkBySizePlugin(self):
+    return self._checkStandardPlugin()
+
+  def _checkBySharePlugin(self):
     return self._checkStandardPlugin()
 
   def _checkStandardPlugin(self):
