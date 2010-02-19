@@ -1,9 +1,10 @@
 """  TransformationPlugin is a class wrapping the supported transformation plugins
 """
-from DIRAC                                                  import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.SiteSEMapping                     import getSitesForSE
-from DIRAC.Core.Utilities.List                              import breakListIntoChunks, sortList, uniqueElements,randomize
-from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
+from DIRAC                                                               import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.SiteSEMapping                                  import getSitesForSE,getSEsForSite
+from DIRAC.Core.Utilities.List                                           import breakListIntoChunks, sortList, uniqueElements,randomize
+from DIRAC.DataManagementSystem.Client.ReplicaManager                    import ReplicaManager
+from LHCbDIRAC.ProductionManagementSystem.Client.TransformationDBClient  import TransformationDBClient
 import random,re
 
 class TransformationPlugin:
@@ -94,40 +95,45 @@ class TransformationPlugin:
       gLogger.info("%s: %.1f" % (site.ljust(15),cpuShares[site]))
 
     # Get the existing destinations from the transformationDB
-    res = self._getExistingCounters()
+    res = self._getExistingCounters(requestedSites=cpuShares.keys())
     if not res['OK']:
       gLogger.error("Failed to get existing file share",res['Message'])
       return res
     existingCount = res['Value']
     if existingCount:
-      gLogger.info("Existing storage element utilization (%):") 
-      normalisedExistingCount = self._normaliseShares(existingCount)
+      gLogger.info("Existing site utilization (%):") 
+      normalisedExistingCount = self._normaliseShares(existingCount.copy())
       for se in sortList(normalisedExistingCount.keys()):
         gLogger.info("%s: %.1f" % (se.ljust(15),normalisedExistingCount[se]))
 
-    # Group the files by their existing replicas
+    # Group the input files by their existing replicas
     res = self._groupByReplicas()
     if not res['OK']:
       return res
+    replicaGroups = res['Value']
+
     tasks = []
     # For the replica groups 
-    for replicaSE,lfns in res['Value']:
+    for replicaSE,lfns in replicaGroups:
       possibleSEs = replicaSE.split(',')
-      res = self._getNextDestination(existingCount,cpuShares)
+      # Determine the next site based on requested shares, existing usage and candidate sites
+      res = self._getNextSite(existingCount,cpuShares,candidates=self._getSitesForSEs(possibleSEs))
       if not res['OK']:
         gLogger.error("Failed to get next destination SE",res['Message']) 
         continue
       targetSite = res['Value']
+      # Resolve the ses for the target site
       res = getSEsForSite(targetSite)
       if not res['OK']:
         continue
       ses = res['Value']
+      # Determine the selected SE and create the task 
       for chosenSE in ses:
         if chosenSE in possibleSEs:
           tasks.append((chosenSE,lfns))
-          if not existingCount.has_key(chosenSE):
-            existingCount[chosenSE] = 0
-          existingCount[chosenSE] += len(lfns)
+          if not existingCount.has_key(targetSite):
+            existingCount[targetSite] = 0
+          existingCount[targetSite] += len(lfns)
     return S_OK(tasks)
 
   def _getShares(self,type,normalise=False):
@@ -143,7 +149,7 @@ class TransformationPlugin:
       return S_ERROR("No non-zero shares defined")
     return S_OK(shares)
 
-  def _getExistingCounters(self,normalise=False):
+  def _getExistingCounters(self,normalise=False,requestedSites=[]):
     res = TransformationDBClient().getCounters('TransformationFiles',['UsedSE'],{'TransformationID':self.params['TransformationID']}) 
     if not res['OK']:
       return res
@@ -152,11 +158,22 @@ class TransformationPlugin:
       usedSE = usedDict['UsedSE']
       if usedSE != 'Unknown':
         usageDict[usedSE] = count
+    if requestedSites:
+      siteDict = {}
+      for se,count in usageDict.items():
+        res = getSitesForSE(se,gridName='LCG')
+        if not res['OK']:
+          return res
+        for site in res['Value']:
+          if site in requestedSites:
+            siteDict[site] = count
+      usageDict = siteDict.copy() 
     if normalise:
       usageDict = self._normaliseShares(usageDict)
     return S_OK(usageDict)
 
-  def _normaliseShares(self,shares):
+  def _normaliseShares(self,originalShares):
+    shares = originalShares.copy()    
     total = 0.0
     for site in shares.keys():   
       share = float(shares[site])
@@ -170,20 +187,9 @@ class TransformationPlugin:
       shares[site] = share
     return shares
 
-  def _getNextDestination(self,existingCount,cpuShares):
-    # resolve the current share by site from the existing share by SE
-    siteShare = {}
-    for se,count in existingCount.items():
-      res = getSitesForSE(se)
-      if not res['OK']:
-        return res
-      for site in res['Value']:
-        if site in cpuShares.keys():
-          if not siteShare.has_key(site):
-            siteShare[site] = 0
-          siteShare[site]+= count
-    # then normalise the shares
-    siteShare = self._normaliseShares(siteShare)
+  def _getNextSite(self,existingCount,cpuShares,candidates=[]):
+    # normalise the shares
+    siteShare = self._normaliseShares(existingCount)
     # then fill the missing share values to 0
     for site in cpuShares.keys():
       if (not siteShare.has_key(site)):
@@ -192,6 +198,8 @@ class TransformationPlugin:
     chosenSite = ''
     minShareShortFall = - float("inf")
     for site,cpuShare in cpuShares.items():
+      if (candidates) and not (site in candidates):
+        continue 
       existingShare = siteShare[site]
       shareShortFall = cpuShare-existingShare
       if shareShortFall > minShareShortFall:
@@ -209,7 +217,8 @@ class TransformationPlugin:
     fileGroups = self._getFileGroups(self.data)
     # Create tasks based on the group size
     tasks = []
-    for replicaSE,lfns in fileGroups.items():
+    for replicaSE in sortList(fileGroups.keys()):
+      lfns = fileGroups[replicaSE]
       tasksLfns = breakListIntoChunks(lfns,groupSize)
       for taskLfns in tasksLfns:
         if (status == 'Flush') or (len(taskLfns) >= int(groupSize)):
