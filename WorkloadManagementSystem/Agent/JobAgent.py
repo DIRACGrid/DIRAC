@@ -194,25 +194,33 @@ class JobAgent( AgentModule ):
       self.__report( jobID, 'Matched', 'Job Received by Agent' )
       self.__setJobSite( jobID, self.siteName )
       self.__reportPilotInfo( jobID )
-      ret = getProxyInfo( disableVOMS = True )
-      if not ret['OK']:
-        self.log.error( 'Invalid Proxy', ret['Message'] )
-        return self.__rescheduleFailedJob( jobID , 'Invalid Proxy' )
-
-      proxyChain = ret['Value']['chain']
-      if not 'groupProperties' in ret['Value']:
-        print ret['Value']
-        print proxyChain.dumpAllToString()
-        self.log.error( 'Invalid Proxy', 'Group has no properties defined' )
-        return self.__rescheduleFailedJob( jobID , 'Proxy has no group properties defined' )
-
-      if Properties.GENERIC_PILOT in ret['Value']['groupProperties']:
+      if gConfig.getValue( '/DIRAC/Security/UseServerCertificate' , False ):
         proxyResult = self.__setupProxy( jobID, ownerDN, jobGroup, self.siteRoot )
         if not proxyResult['OK']:
           self.log.error( 'Invalid Proxy', proxyResult['Message'] )
           return self.__rescheduleFailedJob( jobID , 'Fail to setup proxy' )
         else:
-          proxyChain = proxyResult['Value']
+          proxyChain = proxyResult['Value']        
+      else:
+        ret = getProxyInfo( disableVOMS = True )
+        if not ret['OK']:
+          self.log.error( 'Invalid Proxy', ret['Message'] )
+          return self.__rescheduleFailedJob( jobID , 'Invalid Proxy' )
+  
+        proxyChain = ret['Value']['chain']
+        if not 'groupProperties' in ret['Value']:
+          print ret['Value']
+          print proxyChain.dumpAllToString()
+          self.log.error( 'Invalid Proxy', 'Group has no properties defined' )
+          return self.__rescheduleFailedJob( jobID , 'Proxy has no group properties defined' )
+  
+        if Properties.GENERIC_PILOT in ret['Value']['groupProperties']:
+          proxyResult = self.__setupProxy( jobID, ownerDN, jobGroup, self.siteRoot )
+          if not proxyResult['OK']:
+            self.log.error( 'Invalid Proxy', proxyResult['Message'] )
+            return self.__rescheduleFailedJob( jobID , 'Fail to setup proxy' )
+          else:
+            proxyChain = proxyResult['Value']
 
       saveJDL = self.__saveJobJDLRequest( jobID, jobJDL )
       #self.__report(jobID,'Matched','Job Prepared to Submit')
