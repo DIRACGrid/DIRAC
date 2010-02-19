@@ -9,6 +9,11 @@ class AgentsTestCase(unittest.TestCase):
   """ Base class for the Agents test cases
   """
   def setUp(self):
+
+    from DIRAC.Core.Base import Script
+    Script.parseCommandLine() 
+    
+    
     sys.modules["DIRAC.LoggingSystem.Client.Logger"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Base.AgentModule"] = DIRAC.ResourceStatusSystem.test.fake_AgentModule
     sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB

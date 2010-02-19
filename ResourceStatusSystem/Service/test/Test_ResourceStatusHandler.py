@@ -12,6 +12,8 @@ class ResourceStatusHandlerTestCase(unittest.TestCase):
   """ Base class for the RS2history test cases
   """
   def setUp(self):
+    from DIRAC.Core.Base import Script
+    Script.parseCommandLine() 
     sys.modules["DIRAC.Core.DISET.RequestHandler"] = DIRAC.ResourceStatusSystem.test.fake_RequestHandler
     sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
     sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger

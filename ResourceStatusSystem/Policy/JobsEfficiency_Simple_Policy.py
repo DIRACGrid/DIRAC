@@ -52,7 +52,7 @@ class JobsEfficiency_Simple_Policy(PolicyBase):
       clientsInvoker = ClientsInvoker()
       clientsInvoker.setCommand(command)
       status = clientsInvoker.doCommand((args[0], args[1]))
-      
+
       status = status['JobsEff']
     
     result = {}

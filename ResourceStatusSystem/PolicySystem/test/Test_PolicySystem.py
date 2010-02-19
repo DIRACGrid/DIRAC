@@ -16,6 +16,9 @@ class PolicySystemTestCase(unittest.TestCase):
 #############################################################################
 
   def setUp(self):
+    from DIRAC.Core.Base import Script
+    Script.parseCommandLine() 
+    
     sys.modules["DIRAC.FrameworkSystem.Client.NotificationClient"] = DIRAC.ResourceStatusSystem.test.fake_NotificationClient
     self.mock_p = Mock()
     self.mock_args = Mock()

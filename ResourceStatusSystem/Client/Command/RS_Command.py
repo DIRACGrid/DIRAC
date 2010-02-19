@@ -66,8 +66,9 @@ class ServiceStats_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
       c = ResourceStatusClient()
       
-    return c.getServiceStats(args[0], args[1])
-
+    res = c.getServiceStats(args[0], args[1])
+    return {'stats':res}
+  
 #############################################################################
 
 class ResourceStats_Command(Command):
@@ -82,7 +83,7 @@ class ResourceStats_Command(Command):
 
     :params:
       :attr:`args`: a tuple
-        - `args[0]` should be in ['Site', 'Service']
+        - `args[0]` string, a ValidRes. Should be in ('Site', 'Service')
 
         - `args[1]` should be the name of the Site or Service
         
@@ -93,7 +94,7 @@ class ResourceStats_Command(Command):
     if not isinstance(args, tuple):
       raise TypeError, where(self, self.doCommand)
     
-    if args[0] not in ['Site', 'Service']:
+    if args[0] not in ('Site', 'Service'):
       raise InvalidRes, where(self, self.doCommand)
     
     if clientIn is not None:
@@ -103,7 +104,7 @@ class ResourceStats_Command(Command):
       c = ResourceStatusClient()
       
     res = c.getResourceStats(args[0], args[1])
-    return {'ResourceStats':res}
+    return {'stats':res}
 
 #############################################################################
 
@@ -130,7 +131,13 @@ class StorageElementsStats_Command(Command):
     if not isinstance(args, tuple):
       raise TypeError, where(self, self.doCommand)
     
-    if args[0] not in ['Site', 'Resource']:
+    if args[0] in ('Service', 'Services'):
+      granularity = 'Site'
+      name = args[1].split('@')[1]
+    elif args[0] in ('Site', 'Sites', 'Resource', 'Resources'):
+      granularity = args[0]
+      name = args[1]
+    else:
       raise InvalidRes, where(self, self.doCommand)
     
     if clientIn is not None:
@@ -139,8 +146,8 @@ class StorageElementsStats_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
       c = ResourceStatusClient()
       
-    res = c.getStorageElementsStats(args[0], args[1])
-    return {'StorageElementStats':res}
+    res = c.getStorageElementsStats(granularity, name)
+    return {'stats':res}
 
 #############################################################################
 

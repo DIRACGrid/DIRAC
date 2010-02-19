@@ -17,6 +17,7 @@ from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Polic
 from DIRAC.ResourceStatusSystem.Policy.GGUSTickets_Policy import GGUSTickets_Policy 
 from DIRAC.ResourceStatusSystem.Policy.OnServicePropagation_Policy import OnServicePropagation_Policy 
 from DIRAC.ResourceStatusSystem.Policy.OnSENodePropagation_Policy import OnSENodePropagation_Policy 
+from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
 from DIRAC.ResourceStatusSystem.Policy.TransferQuality_Policy import TransferQuality_Policy 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
@@ -29,6 +30,9 @@ class PoliciesTestCase(unittest.TestCase):
   """
   def setUp(self):
 
+    from DIRAC.Core.Base import Script
+    Script.parseCommandLine() 
+    
     self.mock_policy = Mock()
     self.mock_DB = Mock()
     self.pi = PolicyInvoker()
@@ -43,6 +47,7 @@ class PoliciesTestCase(unittest.TestCase):
     self.GGUS_P = GGUSTickets_Policy()
     self.OSP_P = OnServicePropagation_Policy()
     self.OSENP_P = OnSENodePropagation_Policy()
+    self.P_P = Propagation_Policy()
     self.TQ_P = TransferQuality_Policy()
     self.mock_command = Mock()
     self.mock_commandPeriods = Mock()
@@ -584,6 +589,43 @@ class OnSENodePropagation_Policy_Failure(PoliciesTestCase):
   
 #############################################################################
 
+class Propagation_PolicySuccess(PoliciesTestCase):
+  
+  def test_evaluate(self):
+    for status in ValidStatus:
+      for g in ('Site', 'Service'):
+        for g2 in ('Service', 'Resource', 'StorageElement'):
+          args = (g, 'XX', status, g2)
+          for resCl in [{'Active':0, 'Probing':0, 'Banned':2, 'Total':2},
+                        {'Active':2, 'Probing':2, 'Banned':0, 'Total':2}, 
+                        {'Active':0, 'Probing':0, 'Banned':0, 'Total':2},
+                        {'Active':1, 'Probing':1, 'Banned':0, 'Total':2}, 
+                        {'Active':1, 'Probing':0, 'Banned':1, 'Total':2},
+                        {'Active':0, 'Probing':1, 'Banned':1, 'Total':2} ] :
+            res = self.P_P.evaluate(args, knownInfo = {'stats':resCl})
+            self.assert_(res.has_key('SAT'))
+            self.assert_(res.has_key('Status'))
+            self.assert_(res.has_key('Reason'))
+            
+            self.mock_propCommand.doCommand.return_value = {'stats': resCl}
+            res = self.P_P.evaluate(args, commandIn = self.mock_propCommand)
+            self.assert_(res.has_key('SAT'))
+            self.assert_(res.has_key('Status'))
+            self.assert_(res.has_key('Reason'))
+          
+        
+class Propagation_Policy_Failure(PoliciesTestCase):
+  
+  def test_commandFail(self):
+    self.mock_command.doCommand.sideEffect = RSSException
+    for status in ValidStatus:
+      self.failUnlessRaises(Exception, self.P_P.evaluate, ('XX', status), self.mock_command)
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.P_P.evaluate, None )
+  
+#############################################################################
+
 class TransferQuality_PolicySuccess(PoliciesTestCase):
   
   def test_evaluate(self):
@@ -668,6 +710,8 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnservicePropagation_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnSENodePropagation_PolicySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnSENodePropagation_Policy_Failure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Propagation_PolicySuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Propagation_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQuality_PolicySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQuality_Policy_Failure))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

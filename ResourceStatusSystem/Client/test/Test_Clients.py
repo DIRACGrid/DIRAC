@@ -16,6 +16,9 @@ class ClientsTestCase(unittest.TestCase):
   """ Base class for the clients test cases
   """
   def setUp(self):
+
+    from DIRAC.Core.Base.Script import parseCommandLine
+    parseCommandLine()
     
     self.mockRSS = Mock()
     
@@ -59,7 +62,7 @@ class ResourceStatusClientSuccess(ClientsTestCase):
   
   def test_getServiceStats(self):
     self.mockRSS.getServiceStats.return_value = {'OK':True, 'Value':[]}
-    res = self.RSCli.getServiceStats('Service', '')
+    res = self.RSCli.getServiceStats('Site', '')
     self.assertEqual(res, [])
   
   def test_getResourceStats(self):

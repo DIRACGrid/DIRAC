@@ -147,8 +147,6 @@ class PDP:
 
       policyCombinedResults = self._evaluate(singlePolicyResults)
     
-    
-    
       if policyCombinedResults == None:
           return {'SinglePolicyResults' : singlePolicyResults, 
                   'PolicyCombinedResult' : [{'PolicyType': self.__policyType, 
@@ -400,7 +398,17 @@ class PDP:
         a = (granularity, name, status)
       res = self.__innerEval(p, a)
   
-    if pol == 'PilotsEfficiencySimple_Policy':
+    if pol == 'PilotsEfficiencySimple_Policy_Service':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.PilotsEfficiency_Simple_Policy import PilotsEfficiency_Simple_Policy 
+        p = PilotsEfficiency_Simple_Policy()
+      if args is None:
+        a = (granularity, name, status)
+      res = self.__innerEval(p, a)
+  
+    if pol == 'PilotsEfficiencySimple_Policy_Resource':
       p = policy
       a = args
       if policy is None:
@@ -430,6 +438,46 @@ class PDP:
         a = (granularity, name, status)
       res = self.__innerEval(p, a)
   
+    if pol == 'OnSitePropagation_Policy':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
+        p = Propagation_Policy()
+      if args is None:
+        a = (granularity, name, status, 'Service')
+      res = self.__innerEval(p, a)
+
+    if pol == 'OnComputingServicePropagation_Policy':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
+        p = Propagation_Policy()
+      if args is None:
+        a = (granularity, name, status, 'Resource')
+      res = self.__innerEval(p, a)
+
+    if pol == 'OnStorageServicePropagation_Policy_Resources':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
+        p = Propagation_Policy()
+      if args is None:
+        a = (granularity, name, status, 'Resource')
+      res = self.__innerEval(p, a)
+    
+    if pol == 'OnStorageServicePropagation_Policy_StorageElements':
+      p = policy
+      a = args
+      if policy is None:
+        from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
+        p = Propagation_Policy()
+      if args is None:
+        a = (granularity, name, status, 'StorageElement')
+      res = self.__innerEval(p, a)
+    
     if pol == 'OnServicePropagation_Policy':
       p = policy
       a = args

@@ -26,31 +26,29 @@ class ResourceStatusClient:
     Returns simple statistics of active, probing and banned services of a site;
         
     :params:
+      :attr:`granularity`: string, has to be 'Site'
+    
       :attr:`name`: string - a service name
     
     :returns:
       { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
     """
 
-    try:
-    
-      if granularity in ('Resource', 'Resources', 'StorageElement', 'StorageElements'):
-        self.getGeneralName(granularity, name, 'Service')
-      elif granularity in ('Service', 'Services'):
-        pass  
-      else:
-        raise InvalidRes, where(self, self.getServiceStats)
-  
-      res = self.rsS.getServiceStats(name)
-      if not res['OK']:
-        raise RSSException, where(self, self.getServiceStats) + " " + res['Message'] 
+#    try:
+#    
+    if granularity not in ('Site', 'Sites'):
+      raise InvalidRes, where(self, self.getServiceStats)
 
-      return res['Value']
+    res = self.rsS.getServiceStats(name)
+    if not res['OK']:
+      raise RSSException, where(self, self.getServiceStats) + " " + res['Message'] 
 
-    except Exception, errorMsg:
-      exceptStr = where(self, self.getServiceStats)
-      gLogger.exception(exceptStr,'',errorMsg)
-      return None    
+    return res['Value']
+
+#    except Exception, errorMsg:
+#      exceptStr = where(self, self.getServiceStats)
+#      gLogger.exception(exceptStr,'',errorMsg)
+#      return None    
 
 #############################################################################
 
@@ -59,7 +57,7 @@ class ResourceStatusClient:
     Returns simple statistics of active, probing and banned resources of a site or a service;
         
     :params:
-      :attr:`granularity` string, should be in ['Site', 'Service']
+      :attr:`granularity` string, should be in ('Site', 'Service')
       
       :attr:`name`: string, name of site or service
     

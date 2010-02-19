@@ -96,7 +96,15 @@ class JobsEffSimple_Command(Command):
     if not isinstance(args, tuple):
       raise TypeError, where(self, self.doCommand)
     
-    if args[0] not in ValidRes:
+    if args[0] in ('Service', 'Services'):
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
+      c = ResourceStatusClient()
+      name = c.getGeneralName(args[0], args[1], 'Site')
+      granularity = 'Site'
+    elif args[0] in ('Site', 'Sites'):
+      name = args[1]
+      granularity = args[0]
+    else:
       raise InvalidRes, where(self, self.doCommand)
     
     if clientIn is not None:
@@ -105,6 +113,6 @@ class JobsEffSimple_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient   
       c = JobsClient()
       
-    return c.getJobsSimpleEff(args[0], args[1])
+    return c.getJobsSimpleEff(granularity, name)
 
 #############################################################################

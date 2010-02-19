@@ -3,7 +3,7 @@
 ########################################################################
 
 import threading
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *

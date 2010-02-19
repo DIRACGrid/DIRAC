@@ -17,7 +17,8 @@ class ResourceStatusDBTestCase(unittest.TestCase):
   """
   def setUp(self):
     # Create a mock of DB class
-
+    from DIRAC.Core.Base import Script
+    Script.parseCommandLine() 
     self.mock_DB = Mock()
 
     # Setting mock return value

@@ -21,6 +21,10 @@ class ClientsCommandsTestCase(unittest.TestCase):
   """ Base class for the ClientsCommands test cases
   """
   def setUp(self):
+    
+    from DIRAC.Core.Base.Script import parseCommandLine
+    parseCommandLine()
+    
     self.mock_command = Mock()
     self.ci = ClientsInvoker()
     self.GOCDBS_C = GOCDBStatus_Command()
@@ -167,7 +171,7 @@ class PilotsEffSimple_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
 
-    for granularity in ValidRes:
+    for granularity in ('Site', 'Service', 'Resource'):
       args = (granularity, 'XX')
       for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
         self.mock_client.getPilotsSimpleEff.return_value =  {'PilotsEff':pe}
@@ -238,7 +242,7 @@ class JobsEffSimple_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
 
-    for granularity in ValidRes:
+    for granularity in ('Site', 'Service'):
       args = (granularity, 'XX')
       for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
         self.mock_client.getJobsSimpleEff.return_value =  {'JobsEff':pe}
@@ -315,7 +319,7 @@ class ServiceStats_CommandSuccess(ClientsCommandsTestCase):
     self.mock_client.getServiceStats.return_value = {}
     for g in ValidRes:
       res = self.SeSt_C.doCommand((g, ''), clientIn = self.mock_client)
-      self.assertEqual(res, {})
+      self.assertEqual(res, {'stats':{}})
       
 
 class ServiceStats_CommandFailure(ClientsCommandsTestCase):
@@ -330,9 +334,9 @@ class ResourceStats_CommandSuccess(ClientsCommandsTestCase):
 
     self.mock_client.getResourceStats.return_value = {}
     res = self.ReSt_C.doCommand(('Site', ''), clientIn = self.mock_client)
-    self.assertEqual(res, {'ResourceStats':{}})
+    self.assertEqual(res, {'stats':{}})
     res = self.ReSt_C.doCommand(('Service', ''), clientIn = self.mock_client)
-    self.assertEqual(res, {'ResourceStats':{}})
+    self.assertEqual(res, {'stats':{}})
       
 
 class ResourceStats_CommandFailure(ClientsCommandsTestCase):
@@ -347,9 +351,9 @@ class StorageElementsStats_CommandSuccess(ClientsCommandsTestCase):
 
     self.mock_client.getStorageElementsStats.return_value = {}
     res = self.StElSt_C.doCommand(('Site', ''), clientIn = self.mock_client)
-    self.assertEqual(res, {'StorageElementStats': {}})
+    self.assertEqual(res, {'stats': {}})
     res = self.StElSt_C.doCommand(('Resource', ''), clientIn = self.mock_client)
-    self.assertEqual(res, {'StorageElementStats': {}})
+    self.assertEqual(res, {'stats': {}})
       
 
 class StorageElementsStats_CommandFailure(ClientsCommandsTestCase):

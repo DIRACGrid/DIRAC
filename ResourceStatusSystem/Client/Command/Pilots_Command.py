@@ -70,7 +70,15 @@ class PilotsEffSimple_Command(Command):
           }
     """
 
-    if args[0] not in ValidRes:
+    if args[0] in ('Service', 'Services'):
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
+      c = ResourceStatusClient()
+      name = c.getGeneralName(args[0], args[1], 'Site')
+      granularity = 'Site'
+    elif args[0] in ('Site', 'Sites', 'Resource', 'Resources'):
+      name = args[1]
+      granularity = args[0]
+    else:
       raise InvalidRes, where(self, self.doCommand)
     
     if not isinstance(args, tuple):
@@ -82,6 +90,6 @@ class PilotsEffSimple_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient   
       c = PilotsClient()
       
-    return c.getPilotsSimpleEff(args[0], args[1])
+    return c.getPilotsSimpleEff(granularity, name)
 
 #############################################################################
