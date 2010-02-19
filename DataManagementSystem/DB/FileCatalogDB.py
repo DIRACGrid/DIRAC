@@ -281,8 +281,8 @@ class FileCatalogDB(DB,
     dirDict['OwnerGroup'] = group
     dirDict['Status'] = int(resQuery['Value'][0][3])
     dirDict['Permissions'] = int(resQuery['Value'][0][4])
-    dirDict['CreationDate'] = resQuery['Value'][0][5]
-    dirDict['ModificationDate'] = resQuery['Value'][0][6]
+    dirDict['CreationTime'] = resQuery['Value'][0][5]
+    dirDict['ModificationTime'] = resQuery['Value'][0][6]
 
     return S_OK(dirDict)
 
@@ -1054,8 +1054,8 @@ class FileCatalogDB(DB,
         group = resGet['Value']  
     resultDict['OwnerGroup'] = group
     
-    resultDict['CreationDate'] = result['Value'][0][6]
-    resultDict['ModificationDate'] = result['Value'][0][7]
+    resultDict['CreationTime'] = result['Value'][0][6]
+    resultDict['ModificationTime'] = result['Value'][0][7]
     resultDict['Permissions'] = result['Value'][0][8]
     resultDict['Status'] = result['Value'][0][9]
     
