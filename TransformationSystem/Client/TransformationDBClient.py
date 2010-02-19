@@ -33,7 +33,8 @@ class TransformationDBClient(Client,FileCatalogueBase):
       
           addFilesToTransformation(transName,lfns)
           addTaskForTransformation(transName,lfns=[],se='Unknown')
-          setFileStatusForTransformation(transName,status,lfns) 
+          setFileStatusForTransformation(transName,status,lfns)
+          setFileUsedSEForTransformation(transName,usedSE,lfns)  
           getTransformationStats(transName)
           
       Jobs table manipulation 

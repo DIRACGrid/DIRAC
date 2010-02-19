@@ -495,6 +495,7 @@ class TransformationDB(DB):
     result['ParameterNames'] = ['LFN'] + self.TRANSFILEPARAMS
     return result
 
+  #TODO Get rid of this
   def getTransformationFileInfo(self,transID,lfns,connection=False):
     """ Get the file status for given transformation files """
     res = self._getConnectionTransID(connection,transName)
@@ -508,6 +509,7 @@ class TransformationDB(DB):
     fileIDs,lfnFilesIDs = res['Value']
     return self.getTransformationFiles(condDict={'TransformationID':transID,'FileID':fileIDs.keys()},connection=connection)
 
+  #TODO Update to supply lfns to getTransformationFiles
   def getFileSummary(self,lfns,connection=False):
     """ Get file status summary in all the transformations """
     connection = self.__getConnection(connection)
@@ -533,8 +535,31 @@ class TransformationDB(DB):
         resDict[lfn][transID] = {}
       resDict[lfn][transID] = fileDict
     return S_OK({'Successful':resDict,'Failed':failedDict})
+
+  def setFileUsedSEForTransformation(self,transName,usedSE,lfns,connection=False):
+    """ Set the UsedSE for supplied files and the Status = 'Processed' """
+    res = self._getConnectionTransID(connection,transName)
+    if not res['OK']:
+      return res
+    connection = res['Value']['Connection']   
+    transID = res['Value']['TransformationID']
+    res = self.setFileStatusForTransformation(transID,'Processed',lfns,connection=connection)
+    if not res['OK']:
+      return res
+    resDict = res['Value']
+    res = self.__getFileIDsForLfns(resDict['Successful'].keys(),connection=connection)
+    if not res['OK']:
+      return res
+    fileIDs,lfnFilesIDs = res['Value']
+    updateUsedSE = []
+    for lfn,message in resDict['Successful'].items():
+      if message == 'Status updated to Processed':
+        updateUsedSE.append(lfnFilesIDs[lfn])
+    if updateUsedSE:
+      print self.__setTransformationFileUsedSE(updateUsedSE,usedSE,connection=connection)
+    return S_OK(resDict)
   
-  #TODO use the getTransformationFileInfo method 
+  #TODO update to supply LFNs to getTransformationFiles
   def setFileStatusForTransformation(self,transName,status,lfns,force=False,connection=False):
     """ Set file status for the given transformation """
     res = self._getConnectionTransID(connection,transName)
@@ -661,6 +686,13 @@ class TransformationDB(DB):
     res = self._update(req,connection)
     if not res['OK']:
       gLogger.error("Failed to update file status",res['Message'])                                                                
+    return res
+  
+  def __setTransformationFileUsedSE(self,fileIDs,usedSE,connection=False):
+    req = "UPDATE TransformationFiles SET UsedSE = '%s' WHERE FileID IN (%s);" % (usedSE,intListToString(fileIDs))
+    res = self._update(req,connection)
+    if not res['OK']:
+      gLogger.error("Failed to update file usedSE",res['Message'])                                                                
     return res
 
   def __resetTransformationFile(self,transID,taskID,connection=False):	

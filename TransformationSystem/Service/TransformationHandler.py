@@ -127,6 +127,11 @@ class TransformationHandler(RequestHandler):
     res = self.database.setFileStatusForTransformation(transName,status,lfns)
     return self.__parseRes(res)
 
+  types_setFileUsedSEForTransformation = [transTypes,StringTypes,ListType]
+  def export_setFileUsedSEForTransformation(self,transName,usedSE,lfns):
+    res = self.database.setFileUsedSEForTransformation(transName,usedSE,lfns)
+    return self.__parseRes(res)
+
   types_getTransformationStats = [transTypes]
   def export_getTransformationStats(self,transName):
     res = self.database.getTransformationStats(transName)
