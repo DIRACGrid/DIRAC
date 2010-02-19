@@ -39,7 +39,13 @@ class TransformationPlugin:
       raise Exception,x
 
   def _Standard(self):
-    return self._groupByReplicas()
+    res = self._groupByReplicas()
+    if not res['OK']:
+      return res
+    newTasks = []
+    for se,lfns in res['Value']:
+      newTasks.append(('',lfns))
+    return S_OK(newTasks)
 
   def _BySize(self):
     return self._groupBySize()
