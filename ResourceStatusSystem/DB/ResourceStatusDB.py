@@ -2968,74 +2968,76 @@ class ResourceStatusDB:
       :attr:`maxN`: integer - maximum number of lines in output
     """
     
-    if granularity in ('Service', 'Services'):
-      req = "SELECT ServiceName, Status, FormerStatus, ServiceType FROM"
-      req = req + " PresentServices WHERE LastCheckTime = '0000-00-00 00:00:00'"
-      if maxN != None:
-        req = req + " LIMIT %d" %maxN
-      
-      resQuery = self.db._query(req)
-      if not resQuery['OK']:
-        raise RSSDBException, where(self, self.getStuffToCheck) + resQuery['Message']
-      if not resQuery['Value']:
-        return []
-      stuffList = []
-      stuffList = [ x for x in resQuery['Value']]
-  
-      return stuffList
-    
-    else:
+#    if granularity in ('Service', 'Services'):
+#      req = "SELECT ServiceName, Status, FormerStatus, ServiceType FROM"
+#      req = req + " PresentServices WHERE LastCheckTime = '0000-00-00 00:00:00'"
+#      if maxN != None:
+#        req = req + " LIMIT %d" %maxN
+#      
+#      resQuery = self.db._query(req)
+#      if not resQuery['OK']:
+#        raise RSSDBException, where(self, self.getStuffToCheck) + resQuery['Message']
+#      if not resQuery['Value']:
+#        return []
+#      stuffList = []
+#      stuffList = [ x for x in resQuery['Value']]
+#  
+#      return stuffList
+#    
+#    else:
 
-      T0activeCheckFrequecy = checkFrequency['T0_ACTIVE_CHECK_FREQUENCY']
-      T0probingCheckFrequecy = checkFrequency['T0_PROBING_CHECK_FREQUENCY']
-      T0bannedCheckFrequecy = checkFrequency['T0_BANNED_CHECK_FREQUENCY']
-      T1activeCheckFrequecy = checkFrequency['T1_ACTIVE_CHECK_FREQUENCY']
-      T1probingCheckFrequecy = checkFrequency['T1_PROBING_CHECK_FREQUENCY']
-      T1bannedCheckFrequecy = checkFrequency['T1_BANNED_CHECK_FREQUENCY']
-      T2activeCheckFrequecy = checkFrequency['T2_ACTIVE_CHECK_FREQUENCY']
-      T2probingCheckFrequecy = checkFrequency['T2_PROBING_CHECK_FREQUENCY']
-      T2bannedCheckFrequecy = checkFrequency['T2_BANNED_CHECK_FREQUENCY']
-  
-      T0dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0activeCheckFrequecy)).isoformat(' ')
-      T0dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0probingCheckFrequecy)).isoformat(' ')
-      T0dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0bannedCheckFrequecy)).isoformat(' ')
-      T1dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1activeCheckFrequecy)).isoformat(' ')
-      T1dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1probingCheckFrequecy)).isoformat(' ')
-      T1dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1bannedCheckFrequecy)).isoformat(' ')
-      T2dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2activeCheckFrequecy)).isoformat(' ')
-      T2dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2probingCheckFrequecy)).isoformat(' ')
-      T2dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2bannedCheckFrequecy)).isoformat(' ')
-  
-      if granularity in ('Site', 'Sites'):
-        req = "SELECT SiteName, Status, FormerStatus, SiteType FROM PresentSites WHERE"
-      elif granularity in ('Resource', 'Resources'):
-        req = "SELECT ResourceName, Status, FormerStatus, SiteType, ResourceType FROM PresentResources WHERE"
-      elif granularity in ('StorageElement', 'StorageElements'):
-        req = "SELECT StorageElementName, Status, FormerStatus, SiteType FROM PresentStorageElements WHERE"
-      else:
-        raise InvalidRes, where(self, self.getStuffToCheck)
-      req = req + " (Status = 'Active' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromActive )
-      req = req + " (Status = 'Probing' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromProbing )
-      req = req + " (Status = 'Banned' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromBanned )
-      req = req + " (Status = 'Active' AND SiteType = 'T1' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T1dateToCheckFromActive )
-      req = req + " (Status = 'Probing' AND SiteType = 'T1' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T1dateToCheckFromProbing )
-      req = req + " (Status = 'Banned' AND SiteType = 'T1' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T1dateToCheckFromBanned )
-      req = req + " (Status = 'Active' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T2dateToCheckFromActive )
-      req = req + " (Status = 'Probing' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T2dateToCheckFromProbing )
-      req = req + " (Status = 'Banned' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC')" %( T2dateToCheckFromBanned )
-      req = req + " ORDER BY LastCheckTime"
-      if maxN != None:
-        req = req + " LIMIT %d" %maxN
-      
-      resQuery = self.db._query(req)
-      if not resQuery['OK']:
-        raise RSSDBException, where(self, self.getStuffToCheck) + resQuery['Message']
-      if not resQuery['Value']:
-        return []
-      stuffList = []
-      stuffList = [ x for x in resQuery['Value']]
-  
-      return stuffList
+    T0activeCheckFrequecy = checkFrequency['T0_ACTIVE_CHECK_FREQUENCY']
+    T0probingCheckFrequecy = checkFrequency['T0_PROBING_CHECK_FREQUENCY']
+    T0bannedCheckFrequecy = checkFrequency['T0_BANNED_CHECK_FREQUENCY']
+    T1activeCheckFrequecy = checkFrequency['T1_ACTIVE_CHECK_FREQUENCY']
+    T1probingCheckFrequecy = checkFrequency['T1_PROBING_CHECK_FREQUENCY']
+    T1bannedCheckFrequecy = checkFrequency['T1_BANNED_CHECK_FREQUENCY']
+    T2activeCheckFrequecy = checkFrequency['T2_ACTIVE_CHECK_FREQUENCY']
+    T2probingCheckFrequecy = checkFrequency['T2_PROBING_CHECK_FREQUENCY']
+    T2bannedCheckFrequecy = checkFrequency['T2_BANNED_CHECK_FREQUENCY']
+
+    T0dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0activeCheckFrequecy)).isoformat(' ')
+    T0dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0probingCheckFrequecy)).isoformat(' ')
+    T0dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0bannedCheckFrequecy)).isoformat(' ')
+    T1dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1activeCheckFrequecy)).isoformat(' ')
+    T1dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1probingCheckFrequecy)).isoformat(' ')
+    T1dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1bannedCheckFrequecy)).isoformat(' ')
+    T2dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2activeCheckFrequecy)).isoformat(' ')
+    T2dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2probingCheckFrequecy)).isoformat(' ')
+    T2dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2bannedCheckFrequecy)).isoformat(' ')
+
+    if granularity in ('Site', 'Sites'):
+      req = "SELECT SiteName, Status, FormerStatus, SiteType FROM PresentSites WHERE"
+    elif granularity in ('Service', 'Services'):
+      req = "SELECT ServiceName, Status, FormerStatus, SiteType, ServiceType FROM PresentServices WHERE"
+    elif granularity in ('Resource', 'Resources'):
+      req = "SELECT ResourceName, Status, FormerStatus, SiteType, ResourceType FROM PresentResources WHERE"
+    elif granularity in ('StorageElement', 'StorageElements'):
+      req = "SELECT StorageElementName, Status, FormerStatus, SiteType FROM PresentStorageElements WHERE"
+    else:
+      raise InvalidRes, where(self, self.getStuffToCheck)
+    req = req + " (Status = 'Active' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromActive )
+    req = req + " (Status = 'Probing' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromProbing )
+    req = req + " (Status = 'Banned' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromBanned )
+    req = req + " (Status = 'Active' AND SiteType = 'T1' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T1dateToCheckFromActive )
+    req = req + " (Status = 'Probing' AND SiteType = 'T1' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T1dateToCheckFromProbing )
+    req = req + " (Status = 'Banned' AND SiteType = 'T1' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T1dateToCheckFromBanned )
+    req = req + " (Status = 'Active' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T2dateToCheckFromActive )
+    req = req + " (Status = 'Probing' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T2dateToCheckFromProbing )
+    req = req + " (Status = 'Banned' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC')" %( T2dateToCheckFromBanned )
+    req = req + " ORDER BY LastCheckTime"
+    if maxN != None:
+      req = req + " LIMIT %d" %maxN
+    
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.getStuffToCheck) + resQuery['Message']
+    if not resQuery['Value']:
+      return []
+    stuffList = []
+    stuffList = [ x for x in resQuery['Value']]
+
+    return stuffList
 
 #############################################################################
 

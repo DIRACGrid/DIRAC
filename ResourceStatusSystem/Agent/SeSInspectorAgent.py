@@ -95,7 +95,8 @@ class SeSInspectorAgent(AgentModule):
     try:
 
       try:
-        res = self.rsDB.getStuffToCheck('Services', maxN = self.maxNumberOfThreads - 1)
+        res = self.rsDB.getStuffToCheck('Services', Configurations.Services_check_freq, 
+                                        maxN = self.maxNumberOfThreads - 1)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:

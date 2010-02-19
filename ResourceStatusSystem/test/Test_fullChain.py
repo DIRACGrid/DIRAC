@@ -10,8 +10,8 @@ from DIRAC.Core.Base import Script
 Script.parseCommandLine() 
 
 #sito = {'name':'LCG.IFJ-PAN.pl', 'siteType':'T2'} #OK
-#sito = {'name':'LCG.CERN.ch', 'siteType':'T0'} #OK
-sito = {'name':'LCG.ITEP.ru', 'siteType':'T1'} #OK
+sito = {'name':'LCG.CERN.ch', 'siteType':'T0'} #OK
+#sito = {'name':'LCG.ITEP.ru', 'siteType':'T1'} #OK
 servizio = {'name':'Computing@LCG.GRIDKA.de', 'siteType':'T2', 'serviceType':'Computing'} #OK
 servizio2 = {'name':'Storage@LCG.GRIDKA.de', 'siteType':'T2', 'serviceType':'Storage'} #OK
 #risorsa = {'name':'gazon.nikhef.nl', 'siteType':'T2', 'resourceType':'CE'} #OK
@@ -31,19 +31,19 @@ se = {'name':'NIKHEF-USER', 'siteType':'T1'} #OK
 #risorsa2 = {'name':'srm-lhcb.cern.ch#', 'siteType':'T0', 'resourceType':'SE'} #WRONG
 #se = {'name':'CERN_MC_M-DST#', 'siteType':'T0'} #WRONG
 
-#print "\n\n ~~~~~~~ SITO ~~~~~~~ %s \n" %(sito)
-#
-#for status in ValidStatus:
-#  for oldStatus in ValidStatus:
-#    if status == oldStatus:
-#      continue
-#    print "############################"
-#    print " "
-#    print 'nel test:', status, oldStatus
-#    pdp = PDP(granularity = 'Site', name = sito['name'], status = status, 
-#              formerStatus = oldStatus, reason = 'XXXXX', siteType = sito['siteType']) 
-#    res = pdp.takeDecision()
-#    print res
+print "\n\n ~~~~~~~ SITO ~~~~~~~ %s \n" %(sito)
+
+for status in ValidStatus:
+  for oldStatus in ValidStatus:
+    if status == oldStatus:
+      continue
+    print "############################"
+    print " "
+    print 'nel test:', status, oldStatus
+    pdp = PDP(granularity = 'Site', name = sito['name'], status = status, 
+              formerStatus = oldStatus, reason = 'XXXXX', siteType = sito['siteType']) 
+    res = pdp.takeDecision()
+    print res
 
 print "\n\n ~~~~~~~ SERVICE 1 ~~~~~~~ : %s \n " %servizio
 
@@ -108,32 +108,32 @@ for status in ValidStatus:
     res = pdp.takeDecision()
     print res
 
-#print "\n\n ~~~~~~~ RISORSA 3 ~~~~~~~ : %s \n " %risorsa3
-#
-#for status in ValidStatus:
-#  for oldStatus in ValidStatus:
-#    if status == oldStatus:
-#      continue
-#    print "############################"
-#    print " "
-#    print status, oldStatus
-#    pdp = PDP(granularity = 'Resource', name = risorsa3['name'], status = status, 
-#              formerStatus = oldStatus, reason = 'XXXXX', siteType = risorsa3['siteType'], 
-#              resourceType = risorsa3['resourceType'])
-#    res = pdp.takeDecision()
-#    print res
+print "\n\n ~~~~~~~ RISORSA 3 ~~~~~~~ : %s \n " %risorsa3
 
-#print "\n\n ~~~~~~~ StorageElement ~~~~~~~ : %s \n " %se
-#
-#for status in ValidStatus:
-#  for oldStatus in ValidStatus:
-#    if status == oldStatus:
-#      continue
-#    print "############################"
-#    print " "
-#    print status, oldStatus
-#    pdp = PDP(granularity = 'StorageElement', name = risorsa['name'], status = status, 
-#              formerStatus = oldStatus, reason = 'XXXXX', siteType = risorsa['siteType'], 
-#              resourceType = risorsa['resourceType']) 
-#    res = pdp.takeDecision()
-#    print res
+for status in ValidStatus:
+  for oldStatus in ValidStatus:
+    if status == oldStatus:
+      continue
+    print "############################"
+    print " "
+    print status, oldStatus
+    pdp = PDP(granularity = 'Resource', name = risorsa3['name'], status = status, 
+              formerStatus = oldStatus, reason = 'XXXXX', siteType = risorsa3['siteType'], 
+              resourceType = risorsa3['resourceType'])
+    res = pdp.takeDecision()
+    print res
+
+print "\n\n ~~~~~~~ StorageElement ~~~~~~~ : %s \n " %se
+
+for status in ValidStatus:
+  for oldStatus in ValidStatus:
+    if status == oldStatus:
+      continue
+    print "############################"
+    print " "
+    print status, oldStatus
+    pdp = PDP(granularity = 'StorageElement', name = risorsa['name'], status = status, 
+              formerStatus = oldStatus, reason = 'XXXXX', siteType = risorsa['siteType'], 
+              resourceType = risorsa['resourceType']) 
+    res = pdp.takeDecision()
+    print res
