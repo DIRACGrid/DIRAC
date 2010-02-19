@@ -223,8 +223,10 @@ class VOMS( BaseSecurity ):
     cmdArgs.append( '-cert "%s"' % proxyLocation )
     cmdArgs.append( '-key "%s"' % proxyLocation )
     cmdArgs.append( '-out "%s"' % newProxyLocation )
-    if attribute and attribute != 'NoRole':
+    if attribute and attribute != 'NoRole' and attribute != 'None':
       cmdArgs.append( '-voms "%s:%s"' % ( vo, attribute ) )
+    if attribute and attribute == 'None':
+      pass
     else:
       cmdArgs.append( '-voms "%s"' % vo )
     cmdArgs.append( '-valid "%s:%s"' % ( hours, mins ) )
