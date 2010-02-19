@@ -175,11 +175,10 @@ class DefinitionsPool(dict):
             raise TypeError('Can not create object type '+str(type(self))+' from the '+ str(type(pool)))
 
     def __setitem__(self, i, obj):
-        if self.has_key(i):
-            print 'We need to write piece of code to replace existent DefinitionsPool.__setitem__()'
-            print 'For now we ignore it for the', obj.getType()
-        else:
+        if not self.has_key(i):
             dict.__setitem__(self, i, obj)
+#            print 'We need to write piece of code to replace existent DefinitionsPool.__setitem__()'
+#            print 'For now we ignore it for the', obj.getType()
 
     def append(self, obj):
         """ We add new Definition (Module, Step)
