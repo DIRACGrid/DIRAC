@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL:  $
+# $HeadURL$
 ########################################################################
-__RCSID__   = "$Id: $"
+__RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
 import sys,os
 import DIRAC
@@ -19,6 +19,16 @@ for switch in Script.getUnprocessedSwitches():
 from DIRAC.DataManagementSystem.Client.FileCatalogClientCLI import FileCatalogClientCLI
 
 if fcType == "LFC":
+  from DIRAC.Resources.Catalog.LcgFileCatalogClient import LcgFileCatalogClient
+  try:
+    host = os.environ['LFC_HOST']
+  except Exception,x:
+    print "LFC_HOST environment variable not defined"
+    sys.exit(1)
+  cli = FileCatalogClientCLI(LcgFileCatalogClient(host=host))
+  print "Starting LFC FileCatalog client"
+  cli.cmdloop()
+elif fcType == "LFCProxy":
   from DIRAC.Resources.Catalog.LcgFileCatalogProxyClient import LcgFileCatalogProxyClient
   cli = FileCatalogClientCLI(LcgFileCatalogProxyClient())
   print "Starting LFC Proxy FileCatalog client"
@@ -30,4 +40,3 @@ elif fcType == "DiracFC":
   cli.cmdloop()  
 else:
   print "Unknown catalog type", fcType
-
