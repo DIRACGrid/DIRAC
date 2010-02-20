@@ -98,6 +98,7 @@ chmod +x $ServerDir/log/run $ServerDir/run
 grep Website $DESTDIR/etc/$CONFIGNAME.cfg || cat >> $DESTDIR/etc/$CONFIGNAME.cfg << EOF || exit
 Website
 {
+  DefaultGroups = diracAdmin
   Authorization
   {
     systems
