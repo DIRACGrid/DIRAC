@@ -13,6 +13,7 @@ import commands
 import os.path
 from   types import *
 from DIRAC                                  import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Security import CS
 
 class DirectoryListing:
   
@@ -24,13 +25,29 @@ class DirectoryListing:
     """ Pretty print of the file ls output
     """        
     perm = fileDict['Permissions']
-    date = fileDict['ModificationDate']
+    date = fileDict['ModificationTime']
     nlinks = fileDict['NumberOfLinks']
     size = fileDict['Size']
-    uname = fileDict['Owner']
+    if fileDict.has_key('Owner'):
+      uname = fileDict['Owner']
+    elif fileDict.has_key('OwnerDN'):
+      result = CS.getUsernameForDN(fileDict['OwnerDN'])
+      if result['OK']:
+        uname = result['Value']
+      else:
+        uname = 'unknown' 
+    else:
+      uname = 'unknown'
     if numericid:
       uname = str(fileDict['UID'])
-    gname = fileDict['OwnerGroup']
+    if fileDict.has_key('OwnerGroup'):
+      gname = fileDict['OwnerGroup']
+    elif fileDict.has_key('OwnerRole'):
+      groups = CS.getGroupsWithVOMSAttribute(fileDict['OwnerRole'])
+      if groups: 
+        gname = groups[0]
+      else:
+        gname = 'unknown' 
     if numericid:
       gname = str(fileDict['GID'])
     
@@ -40,13 +57,29 @@ class DirectoryListing:
     """ Pretty print of the file ls output
     """    
     perm = dirDict['Permissions']
-    date = dirDict['ModificationDate']
+    date = dirDict['ModificationTime']
     nlinks = 0
     size = 0
-    uname = dirDict['Owner']
+    if dirDict.has_key('Owner'):
+      uname = dirDict['Owner']
+    elif dirDict.has_key('OwnerDN'):
+      result = CS.getUsernameForDN(dirDict['OwnerDN'])
+      if result['OK']:
+        uname = result['Value']
+      else:
+        uname = 'unknown'
+    else:
+      uname = 'unknown'
     if numericid:
       uname = str(dirDict['UID'])
-    gname = dirDict['OwnerGroup']
+    if dirDict.has_key('OwnerGroup'):
+      gname = dirDict['OwnerGroup']
+    elif dirDict.has_key('OwnerRole'):
+      groups = CS.getGroupsWithVOMSAttribute('/'+dirDict['OwnerRole'])
+      if groups:
+        gname = groups[0]
+      else:
+        gname = 'unknown'
     if numericid:
       gname = str(dirDict['GID'])
     
@@ -390,7 +423,7 @@ File Catalog Client $Revision: 1.17 $Date:
     # Get directory contents now
     try:
     #while 1:  
-      result =  self.fc.listDirectory(path,long)      
+      result =  self.fc.listDirectory(path,long)     
       dList = DirectoryListing()
       if result['OK']:
         if result['Value']['Successful']:
@@ -682,3 +715,4 @@ if __name__ == "__main__":
         cli.cmdloop()  
       else:
         print "Unknown catalog type", catype
+        
