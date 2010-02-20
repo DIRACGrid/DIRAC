@@ -1300,6 +1300,16 @@ class LcgFileCatalogClient(FileCatalogueBase):
           pathMetadata['ModificationTime'] = time.ctime(oPath.mtime)
           pathMetadata['NumberOfLinks'] = oPath.nlink
           pathMetadata['LastAccess'] = oPath.atime
+          res = self.__getDNFromUID(oPath.uid)
+          if res['OK']:
+            pathMetadata['OwnerDN'] = res['Value']
+          else:
+            pathMetadata['OwnerDN'] = None
+          res = self.__getRoleFromGID(oPath.gid)
+          if res['OK']:
+            pathMetadata['OwnerRole'] = res['Value']
+          else:
+            pathMetadata['OwnerRole'] = None
       if S_ISDIR(entry.filemode):
         subDirs[subPath] = pathMetadata
       else:
