@@ -24,11 +24,9 @@ class DirectoryListing:
   def addFile(self,name,fileDict,numericid):
     """ Pretty print of the file ls output
     """        
-    
-    # Nasty, this should be fixed in the catalog client interface
     if fileDict.has_key('MetaData'):
       fileDict = fileDict['MetaData']
-      
+
     perm = fileDict['Permissions']
     date = fileDict['ModificationTime']
     nlinks = fileDict['NumberOfLinks']
@@ -36,7 +34,7 @@ class DirectoryListing:
     if fileDict.has_key('Owner'):
       uname = fileDict['Owner']
     elif fileDict.has_key('OwnerDN'):
-      result = CS.getUsernameForDN('/'+fileDict['OwnerDN'])
+      result = CS.getUsernameForDN(fileDict['OwnerDN'])
       if result['OK']:
         uname = result['Value']
       else:
@@ -48,9 +46,15 @@ class DirectoryListing:
     if fileDict.has_key('OwnerGroup'):
       gname = fileDict['OwnerGroup']
     elif fileDict.has_key('OwnerRole'):
-      groups = CS.getGroupsWithVOMSAttribute(fileDict['OwnerRole'])
+      groups = CS.getGroupsWithVOMSAttribute('/'+fileDict['OwnerRole'])
       if groups: 
-        gname = groups[0]
+        if len(groups) > 1:
+          gname = groups[0]
+          default_group = gConfig.getValue('/Registry/DefaultGroup','unknown')
+          if default_group in groups:
+            gname = default_group
+        else:
+          gname = groups[0]
       else:
         gname = 'unknown' 
     if numericid:
@@ -82,7 +86,13 @@ class DirectoryListing:
     elif dirDict.has_key('OwnerRole'):
       groups = CS.getGroupsWithVOMSAttribute('/'+dirDict['OwnerRole'])
       if groups:
-        gname = groups[0]
+        if len(groups) > 1:
+          gname = groups[0]
+          default_group = gConfig.getValue('/Registry/DefaultGroup','unknown')
+          if default_group in groups:
+            gname = default_group
+        else:
+          gname = groups[0]
       else:
         gname = 'unknown'
     if numericid:
