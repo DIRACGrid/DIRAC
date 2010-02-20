@@ -13,6 +13,7 @@ VERDIR=$2
 DIRACVERSION=$3
 DIRACARCH=$4
 DIRACPYTHON=$5
+CONFIGNAME=$6
 #
 source $DESTDIR/bashrc
 #
@@ -91,6 +92,31 @@ EOF
 chmod +x $ServerDir/log/run $ServerDir/run
 # Create startup link
 [ -e $DESTDIR/startup/Web_Paster ] || ln -s $ServerDir $DESTDIR/startup/Web_Paster
+
+#
+# Create minimal web site configuration
+grep Website $DESTDIR/etc/$CONFIGNAME.cfg || cat >> $DESTDIR/etc/$CONFIGNAME.cfg << EOF || exit
+Website
+{
+  Authorization
+  {
+    systems
+    {
+      configuration
+      {
+        showHistory = CSAdministrator
+        commitConfiguration = CSAdministrator
+        showCurrentDiff = CSAdministrator
+        showDiff = CSAdministrator
+        rollbackToVersion = CSAdministrator
+        manageRemoteConfig = CSAdministrator
+        manageRemoteConfig += ServiceAdministrator
+        Default = all
+      }
+    }
+  }
+}
+EOF
 
 echo Web Portal successfully installed
 exit 0

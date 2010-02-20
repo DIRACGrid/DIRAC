@@ -300,7 +300,7 @@ cat >> $DESTDIR/sbin/runsvdir-start << EOF || exit
 #!/bin/bash
 source $DESTDIR/bashrc
 RUNSVCTRL=`which runsvctrl`
-chpst -u dirac \$RUNSVCTRL d $DESTDIR/startup/*
+chpst -u $DIRACUSER \$RUNSVCTRL d $DESTDIR/startup/*
 killall runsv svlogd
 RUNSVDIR=`which runsvdir`
 exec chpst -u $DIRACUSER \$RUNSVDIR -P $DESTDIR/startup 'log:  DIRAC runsv'
@@ -349,8 +349,8 @@ EOF
 
 #
 # Generate System Administrator service configuration
-[ -e $DESTDIR/etc/Framework_SystemAdministrator.cfg ] && rm -f $DESTDIR/etc/Framework_SysAdministrator.cfg
-cat >> $DESTDIR/etc/Framework_SystemAdministrator.cfg << EOF || exit
+#[ -e $DESTDIR/etc/Framework_SystemAdministrator.cfg ] && rm -f $DESTDIR/etc/Framework_SysAdministrator.cfg
+grep SystemAdministrator $DESTDIR/etc/$CONFIGNAME.cfg > /dev/null || cat >> $DESTDIR/etc/$CONFIGNAME.cfg << EOF || exit
 Systems
 {
   Framework
@@ -387,7 +387,7 @@ ls -ltr /opt/dirac/pro
 #
 # Install Web Portal
 if [ ! -z "$INSTALL_WEB" ]; then
-  install_web.sh $DESTDIR $VERDIR $DIRACVERSION $DIRACARCH $DIRACPYTHON 
+  install_web.sh $DESTDIR $VERDIR $DIRACVERSION $DIRACARCH $DIRACPYTHON $CONFIGNAME
 fi
 
 #
