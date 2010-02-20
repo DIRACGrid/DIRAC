@@ -11,8 +11,8 @@ import sys
 import cmd
 import commands
 import os.path
-from   types import *
-from DIRAC                                  import gConfig, gLogger, S_OK, S_ERROR
+from types  import *
+from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Security import CS
 
 class DirectoryListing:
@@ -24,6 +24,11 @@ class DirectoryListing:
   def addFile(self,name,fileDict,numericid):
     """ Pretty print of the file ls output
     """        
+    
+    # Nasty, this should be fixed in the catalog client interface
+    if fileDict.has_key('MetaData'):
+      fileDict = fileDict['MetaData']
+      
     perm = fileDict['Permissions']
     date = fileDict['ModificationTime']
     nlinks = fileDict['NumberOfLinks']
@@ -31,7 +36,7 @@ class DirectoryListing:
     if fileDict.has_key('Owner'):
       uname = fileDict['Owner']
     elif fileDict.has_key('OwnerDN'):
-      result = CS.getUsernameForDN(fileDict['OwnerDN'])
+      result = CS.getUsernameForDN('/'+fileDict['OwnerDN'])
       if result['OK']:
         uname = result['Value']
       else:
