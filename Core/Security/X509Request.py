@@ -98,7 +98,7 @@ class X509Request:
     if not self.__valid:
       return S_ERROR( "No request loaded" )
     try:
-      certList = crypto.load_certificate_chain( crypto.FILETYPE_PEM, pemData )
+      certList = GSI.crypto.load_certificate_chain( GSI.crypto.FILETYPE_PEM, pemData )
     except Exception, e:
       return S_ERROR( "Can't load pem data: %s" % str(e) )
     chain = X509Chain()
