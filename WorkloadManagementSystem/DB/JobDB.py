@@ -1407,6 +1407,7 @@ class JobDB(DB):
     classAdReq.insertAttributeInt(    'CPUTime',    cpuTime )
 
     if systemConfig and systemConfig.lower() != 'any':
+      # FIXME: need to reformulate in a VO independent mode
       # Get the LHCb Platforms that are compatible with the requested systemConfig
       result = gConfig.getOptionsDict('/Resources/Computing/OSCompatibility')
       if result['OK'] and result['Value']:
