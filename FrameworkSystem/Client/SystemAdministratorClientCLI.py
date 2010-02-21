@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL:  $
+# $HeadURL$
 ########################################################################
 """ File Catalog Client Command Line Interface. """
 
-__RCSID__ = "$Id:  $"
+__RCSID__ = "$Id$"
 
 import stat
 import sys
