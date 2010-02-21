@@ -70,7 +70,7 @@ class SRM2Storage(StorageBase):
     # setting some variables for use with lcg_utils
     self.nobdii = 1
     self.defaulttype = 2
-    self.vo = 'lhcb'
+    self.vo = gConfig.getValue('/DIRAC/VirtualOrganization', 'lhcb')
     self.verbose = 0
     self.conf_file = 'ignored'
     self.insecure = 0
