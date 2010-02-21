@@ -129,7 +129,7 @@ DIRAC
 {
   Configuration
   {
-    Servers = dips://$DIRACHOST:9135/Configuration/Server
+    Servers = dips://$DIRACHOST:9135/Configuration/Configuration
     Name = $CONFIGNAME
   }
   Setups
@@ -214,7 +214,7 @@ DIRAC
   Configuration
   {
     Master = yes
-    Servers = dips://$DIRACHOST:9135/Configuration/Server
+    Servers = dips://$DIRACHOST:9135/Configuration/Configuration
     Name = $CONFIGNAME
   }
   Security
@@ -313,14 +313,14 @@ chmod +x $DESTDIR/sbin/runsvdir-start
 # management of the DIRAC setup 
 #
 # Install basic services
-$DESTDIR/pro/scripts/install_service.sh Configuration Server
+$DESTDIR/pro/scripts/install_service.sh Configuration Configuration
 $DESTDIR/pro/scripts/install_service.sh Framework SystemAdministrator
 
 ###################<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 # Generate the required Configuration Server configuration
 #
-[ -e $DESTDIR/etc/Configuration_Server.cfg ] && rm -f $DESTDIR/etc/Configuration_Server.cfg
-cat >> $DESTDIR/etc/Configuration_Server.cfg << EOF || exit
+[ -e $DESTDIR/etc/Configuration_Configuration.cfg ] && rm -f $DESTDIR/etc/Configuration_Configuration.cfg
+cat >> $DESTDIR/etc/Configuration_Configuration.cfg << EOF || exit
 Systems
 {
   Configuration
@@ -329,10 +329,9 @@ Systems
     {
       Services
       {
-        Server
+        Configuration
         {
           LogLevel = DEBUG
-          HandlerPath = DIRAC/ConfigurationSystem/Service/ConfigurationHandler.py
           Port = 9135
           Protocol = dips
           Authorization
@@ -362,7 +361,6 @@ Systems
         SystemAdministrator
         {
           LogLevel = DEBUG
-          HandlerPath = DIRAC/FrameworkSystem/Service/SystemAdministratorHandler.py
           Port = 9162
           Protocol = dips
           Authorization
@@ -379,7 +377,7 @@ EOF
 
 #
 # Put the basic services under the runit control
-[ -e  $DESTDIR/startup/Configuration_Server ] || ln -s $DESTDIR/runit/Configuration/Server $DESTDIR/startup/Configuration_Server
+[ -e  $DESTDIR/startup/Configuration_Configuration ] || ln -s $DESTDIR/runit/Configuration/Configuration $DESTDIR/startup/Configuration_Configuration
 [ -e  $DESTDIR/startup/Framework_SystemAdministrator ] || ln -s $DESTDIR/runit/Framework/SystemAdministrator $DESTDIR/startup/Framework_SystemAdministrator
 
 ls -ltr /opt/dirac/pro
