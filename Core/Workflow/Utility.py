@@ -94,13 +94,13 @@ def expandDatafileOption(option):
       for f in fnames:
         opt.append(template.replace(fname,f))
 
-      result = '={'+string.join(opt,',')+'}'
+      result = '={'+','.join(opt)+'}'
 
   return result
 
-def dataFromOptions(parameters):
-
-  for n,v in parameters.items():
-    files = dataFromOption(v)
-    if fname:
-      gLog.info( str( files ) )
+#def dataFromOptions(parameters):
+#
+#  for n,v in parameters.items():
+#    files = dataFromOption(v)
+#    if fname:
+#      gLogger.info( str( files ) )
