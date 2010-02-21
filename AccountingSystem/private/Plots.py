@@ -77,7 +77,7 @@ def generateTimedStackedBarPlot( fileName, data, metadata ):
   try:
     fn = file( fileName, "wb" )
   except:
-    return S_ERROR( "Can't open %s" % filename )
+    return S_ERROR( "Can't open %s" % fileName )
   #if not data:
   #  return S_ERROR( "No data for that selection" )
   metadata, data = convertUTCToLocal( metadata, data )
@@ -91,7 +91,7 @@ def generateQualityPlot( fileName, data, metadata ):
   try:
     fn = file( fileName, "wb" )
   except:
-    return S_ERROR( "Can't open %s" % filename )
+    return S_ERROR( "Can't open %s" % fileName )
   #if not data:
   #  return S_ERROR( "No data for that selection" )
   plotter = QualityMap()
@@ -105,7 +105,7 @@ def generateCumulativePlot( fileName, data, metadata ):
   try:
     fn = file( fileName, "wb" )
   except:
-    return S_ERROR( "Can't open %s" % filename )
+    return S_ERROR( "Can't open %s" % fileName )
   if 'is_cumulative' not in metadata:
     metadata[ 'is_cumulative' ] = True
   #if not data:
@@ -121,7 +121,7 @@ def generatePiePlot( fileName, data, metadata ):
   try:
     fn = file( fileName, "wb" )
   except:
-    return S_ERROR( "Can't open %s" % filename )
+    return S_ERROR( "Can't open %s" % fileName )
   plotter = PieGraph()
   plotter( data, fn, metadata )
   fn.close()
