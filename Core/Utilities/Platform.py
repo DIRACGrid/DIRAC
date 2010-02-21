@@ -30,7 +30,7 @@ def getPlatformString():
   elif platformTuple[0] == 'Windows':
     platformTuple += ( platform.win32_ver()[0], )
   else:
-    platfromTuple += ( platform.release() )
+    platformTuple += ( platform.release() )
 
   platformString = "%s_%s_%s" % platformTuple
 
