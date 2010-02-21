@@ -71,7 +71,7 @@ if not unit in scaleDict.keys():
   usage()
 scaleFactor = scaleDict[unit]
 
-rpc = RPCClient('dips://volhcb08.cern.ch:9151/DataManagement/StorageUsage')
+rpc = RPCClient('DataManagement/StorageUsage')
 res = rpc.getStorageSummary(dir,fileType,prod,ses)
 if not res['Value']:
   print 'No usage found'
