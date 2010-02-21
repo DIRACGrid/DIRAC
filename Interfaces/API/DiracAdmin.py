@@ -30,6 +30,7 @@ from DIRAC.Core.Utilities.Grid                                import ldapSite, l
 import re, os, sys, string, time, shutil, types
 import pprint
 
+vo = gConfig.getValue('/DIRAC/VirtualOrganization', 'lhcb')
 
 COMPONENT_NAME='/Interfaces/API/DiracAdmin'
 
@@ -1086,21 +1087,21 @@ class DiracAdmin:
     return ldapCE(ce, host=host)
 
   #############################################################################
-  def getBDIICEState(self,ce,vo='lhcb',host=None):
+  def getBDIICEState(self,ce,useVO=vo,host=None):
     """Get information about ce state from BDII at host
     """
-    return ldapCEState(ce,vo,host=host)
+    return ldapCEState(ce,useVO,host=host)
 
   #############################################################################
-  def getBDIICEVOView(self,ce,vo='lhcb',host=None):
+  def getBDIICEVOView(self,ce,useVO=vo,host=None):
     """Get information about ce voview from BDII at host
     """
-    return ldapCEVOView(ce,vo,host=host)
+    return ldapCEVOView(ce,useVO,host=host)
 
   #############################################################################
-  def getBDIISA(self,site,vo='lhcb',host=None):
+  def getBDIISA(self,site,useVO=vo,host=None):
     """Get information about SA  from BDII at host
     """
-    return ldapSA(site,vo,host=host)
+    return ldapSA(site,useVO,host=host)
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
