@@ -525,6 +525,9 @@ class SystemAdministratorHandler( RequestHandler ):
       tail = '\n'.join(lines[-length:])
       return S_OK(tail)
 
+######################################################################################
+#  Database related methods
+#
   def __executeMySQLCommand(self,command,password):
     """ Execute a MySQL command as root
     """
@@ -535,6 +538,30 @@ class SystemAdministratorHandler( RequestHandler ):
     output = result['Value'][1].strip()
     return S_OK(output)
 
+  types_getMySQLStatus = [ ]
+  def export_getMySQLStatus(self):
+    """ Get the status of the MySQL database installation
+    """
+    result = shellCall(0,'mysqladmin status')
+    if not result['OK']:
+      return result
+    status = result['Value'][0]
+    if status:
+      return S_OK({})
+    else:
+      output = result['Value'][1]
+      d1,uptime,nthreads,nquestions,nslow,nopens,nflash,nopen,nqpersec = output.split(':')
+      resDict = {}
+      resDict['UpTime'] = uptime.strip().split()[0]
+      resDict['NumberOfThreads'] = nthreads.strip().split()[0]
+      resDict['NumberOfQuestions'] = nquestions.strip().split()[0]
+      resDict['NumberOfSlowQueries'] = nslow.strip().split()[0]
+      resDict['NumberOfOpens'] = nopens.strip().split()[0]
+      resDict['OpenTables'] = nopen.strip().split()[0]
+      resDict['FlushTables'] = nflash.strip().split()[0]
+      resDict['QueriesPerSecond'] = nqpersec.strip().split()[0]
+      return S_OK(resDict)
+    
   types_getDatabases = [ StringTypes ]
   def export_getDatabases(self,password):
     """ Get the list of installed databases
@@ -567,38 +594,6 @@ class SystemAdministratorHandler( RequestHandler ):
           dbList.append(dbName.replace('.sql','')) 
 
     return S_OK(dbList) 
-
-  def __createSection(self,cfg,section):
-    """ Create CFG section recursively
-    """
-
-    if cfg.isSection(section):
-      return
-    if section.find('/') != -1:
-      self.__createSection(cfg,os.path.dirname(section))
-    cfg.createNewSection(section)
-
-  types_setLocalConfigurationOption = [ StringTypes, StringTypes ]
-  def export_setLocalConfigurationOption(self,option,value):
-    """ Set option in the local configuration file
-    """
-    localCFG = CFG()
-    localCFG.loadFromFile('/opt/dirac/etc/dirac.cfg') 
-    section = os.path.dirname(option[1:])
-    if not localCFG.isSection(section):
-      self.__createSection(localCFG,section)
-    localCFG.setOption(option,value)
-    cfgfile = open( "/opt/dirac/etc/dirac.cfg", "w" )
-    cfgfile.write(str(localCFG))
-
-    return S_OK()
-
-  types_executeCommand = [ StringTypes ]
-  def export_executeCommand(self,command):
-    """ Execute a command locally and return its output
-    """
-    result = shellCall(0,command)
-    return result
 
   types_installMySQL = [ StringTypes, StringTypes ]
   def export_installMySQL(self,rootpwd,diracpwd):
@@ -682,10 +677,45 @@ class SystemAdministratorHandler( RequestHandler ):
 
     return S_OK(cfg) 
   
+#######################################################################################
+# General purpose methods
+#  
   types_updateSoftware = [ StringTypes ]
   def export_updateSoftware(self,version):
     """ Update the local DIRAC software installation to version
     """
     result = shellCall(0,'/opt/dirac/pro/DIRAC/Core/scripts/update_sw.sh %s' % version)
+    return result
+  
+  def __createSection(self,cfg,section):
+    """ Create CFG section recursively
+    """
+
+    if cfg.isSection(section):
+      return
+    if section.find('/') != -1:
+      self.__createSection(cfg,os.path.dirname(section))
+    cfg.createNewSection(section)
+
+  types_setLocalConfigurationOption = [ StringTypes, StringTypes ]
+  def export_setLocalConfigurationOption(self,option,value):
+    """ Set option in the local configuration file
+    """
+    localCFG = CFG()
+    localCFG.loadFromFile('/opt/dirac/etc/dirac.cfg') 
+    section = os.path.dirname(option[1:])
+    if not localCFG.isSection(section):
+      self.__createSection(localCFG,section)
+    localCFG.setOption(option,value)
+    cfgfile = open( "/opt/dirac/etc/dirac.cfg", "w" )
+    cfgfile.write(str(localCFG))
+
+    return S_OK()
+
+  types_executeCommand = [ StringTypes ]
+  def export_executeCommand(self,command):
+    """ Execute a command locally and return its output
+    """
+    result = shellCall(0,command)
     return result
   
