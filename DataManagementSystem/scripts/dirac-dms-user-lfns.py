@@ -15,7 +15,7 @@ Script.registerSwitch( "d:", "Days=", "     Match files older than number of day
 Script.registerSwitch( "m:", "Months=", "   Match files older than number of months [%s]" % months)
 Script.registerSwitch( "y:", "Years=", "    Match files older than number of years [%s]" % years)
 Script.registerSwitch( "w:", "Wildcard=", " Wildcard for matching filenames [%s]" % wildcard)
-Script.registerSwitch( "b:", "BaseDir=", "  Base directory to begin search [/lhcb/user/initial/username]")
+Script.registerSwitch( "b:", "BaseDir=", "  Base directory to begin search /[vo]/user/[initial]/[username]")
 Script.parseCommandLine( ignoreErrors = False )
 
 args = Script.getPositionalArgs()
@@ -39,12 +39,14 @@ from datetime import datetime,timedelta
 import sys,os,time,fnmatch
 rm = ReplicaManager()
 
+vo = DIRAC.gConfig.getValue('/DIRAC/VirtualOrganization', 'lhcb')
+
 def usage():
   gLogger.info('Usage: %s [<options>] <Directory>' % (Script.scriptName))
   gLogger.info(' Get all the files contained in the supplied directory <or by default the user home directory>')
   gLogger.info(' Only files older than a given date can be found using the -d, -m and -y options.')
   gLogger.info(' Wildcards can be used to match the filename or path with the -w option.')
-  gLogger.info(' Users may only search in their own directories according to /lhcb/user/initial/username convention.')
+  gLogger.info(' Users may only search in their own directories according to /%s/user/[initial]/[username] convention.' % vo)
   gLogger.info(' Type "%s --help" for the available options and syntax' % Script.scriptName)
   DIRAC.exit(2)
 
@@ -74,7 +76,7 @@ if not res['OK']:
   DIRAC.exit(2)
 proxyInfo = res['Value']
 username = proxyInfo['username']
-userBase = '/lhcb/user/%s/%s' % (username[0],username)
+userBase = '/%s/user/%s/%s' % (vi, username[0], username)
 if not baseDir:
   baseDir = userBase
 elif not baseDir.startswith(userBase):
@@ -105,7 +107,7 @@ while len(activeDirs) > 0:
     files = dirContents['Files'].keys()
     gLogger.info("%s: %d files, %d sub-directories" % (currentDir,len(files),len(subdirs)))
 
-outputFileName = '%s.lfns' % baseDir.replace('/lhcb','lhcb').replace('/','-')
+outputFileName = '%s.lfns' % baseDir.replace( '/%s' % vo, '%s' % vo ).replace('/','-')
 outputFile = open(outputFileName,'w')
 for lfn in sortList(allFiles):
   outputFile.write(lfn+'\n')
