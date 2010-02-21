@@ -42,12 +42,13 @@ class SystemAdministratorHandler( RequestHandler ):
     
     systemList = os.listdir(DIRACROOT+'/pro/DIRAC')
     for extension in ['DIRAC']+[ x+'DIRAC' for x in extensions]:
-      for system in systemList:
+      for sys in systemList:
+        system = sys.replace('System','')
         try:
-          agentList = os.listdir(DIRACROOT+'/pro/%s/%s/Agent' % (extension,system) )
+          agentList = os.listdir(DIRACROOT+'/pro/%s/%s/Agent' % (extension,sys) )
           for agent in agentList:
             if agent[-3:] == ".py":
-              afile = open(DIRACROOT+'/pro/%s/%s/Agent/' % (extension,system)+agent,'r')
+              afile = open(DIRACROOT+'/pro/%s/%s/Agent/' % (extension,sys)+agent,'r')
               body = afile.read()
               afile.close()
               if body.find('AgentModule') != -1 or body.find('OptimizerModuleModule') != -1:
@@ -57,7 +58,7 @@ class SystemAdministratorHandler( RequestHandler ):
         except OSError:
           pass  
         try:
-          serviceList = os.listdir(DIRACROOT+'/pro/%s/%s/Service' % (extension,system) )
+          serviceList = os.listdir(DIRACROOT+'/pro/%s/%s/Service' % (extension,sys) )
           for service in serviceList:
             if service.find('Handler') != -1 and service[-3:] == '.py':
               if not services.has_key(system):
@@ -140,6 +141,67 @@ class SystemAdministratorHandler( RequestHandler ):
     resultDict['Services'] = services
     resultDict['Agents'] = agents
     return S_OK(resultDict)
+
+  types_getOverallStatus = []
+  def export_getOverallStatus(self):
+    """  Get the complete status information for the components in the
+         given list
+    """
+    result = self.__getSoftwareComponents()
+    if not result['OK']:
+      return result
+    softDict = result['Value']
+    
+    result = self.export_getSetupComponents()
+    if not result['OK']:
+      return result
+    setupDict = result['Value']
+    
+    result = self.export_getInstalledComponents()
+    if not result['OK']:
+      return result
+    installedDict = result['Value']
+    
+    result = self.__getRunitComponentStatus([])
+    if not result['OK']:
+      return result
+    runitDict = result['Value']
+    # Collect the info now
+    resultDict = {'Services':{},'Agents':{}}
+    for compType in ['Services','Agents']:
+      if softDict.has_key('Services'):
+        for system in softDict[compType]:
+          resultDict[compType][system] = {}
+          for component in softDict[compType][system]:
+            resultDict[compType][system][component] = {}
+            resultDict[compType][system][component]['Setup'] = False
+            resultDict[compType][system][component]['Installed'] = False
+            resultDict[compType][system][component]['RunitStatus'] = 'Unknown'
+            resultDict[compType][system][component]['Timeup'] = 0
+            resultDict[compType][system][component]['PID'] = 0
+            try:
+              if component in setupDict[compType][system]:
+                resultDict[compType][system][component]['Setup'] = True
+            except Exception,x:
+              #print str(x)
+              pass
+            try:
+              if component in installedDict[compType][system]:
+                resultDict[compType][system][component]['Installed'] = True
+            except Exception,x:
+              #print str(x) 
+              pass  
+            try:
+              compDir = system+'_'+component
+              if runitDict.has_key(compDir):
+                resultDict[compType][system][component]['RunitStatus'] = runitDict[compDir]['RunitStatus']
+                resultDict[compType][system][component]['Timeup'] = runitDict[compDir]['Timeup']
+                resultDict[compType][system][component]['PID'] = runitDict[compDir]['PID']
+            except Exception,x:
+              #print str(x)
+              pass
+      
+    return S_OK(resultDict) 
 
   def __getRunitComponentStatus(self,componentList):
     """  Get the list of all the components ( services and agents ) 
@@ -349,7 +411,7 @@ class SystemAdministratorHandler( RequestHandler ):
     else:
       return S_ERROR('No configuration template found')      
 
-  types_addCSDefaultOptions = [ StringTypes, StringTypes ]
+  types_addLocalDefaultOptions = [ StringTypes, StringTypes ]
   def export_addLocalDefaultOptions(self,system,component):
     """ Add default component options to the global CS or to the local options
     """
@@ -509,6 +571,7 @@ class SystemAdministratorHandler( RequestHandler ):
   def __createSection(self,cfg,section):
     """ Create CFG section recursively
     """
+
     if cfg.isSection(section):
       return
     if section.find('/') != -1:
@@ -578,7 +641,7 @@ class SystemAdministratorHandler( RequestHandler ):
     result = shellCall(0,'/opt/dirac/pro/DIRAC/Core/scripts/install_mysql_db.sh %s' % dbname,env=currentEnv)
     return result
   
-  types_addCSDatabaseOptions = [ StringTypes, StringTypes ]
+  types_addLocalDatabaseOptions = [ StringTypes, StringTypes ]
   def export_addLocalDatabaseOptions(self,system,dbname,user=None,password=None):
     """ Add default component options to the global CS or to the local options
     """
@@ -625,3 +688,4 @@ class SystemAdministratorHandler( RequestHandler ):
     """
     result = shellCall(0,'/opt/dirac/pro/DIRAC/Core/scripts/update_sw.sh %s' % version)
     return result
+  
