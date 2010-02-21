@@ -70,7 +70,7 @@ class Job:
     self.name = 'Name'
     self.type = 'User'
     self.priority = 1
-    self.group = 'lhcb'
+    self.group = gConfig.getValue('/DIRAC/VirtualOrganization', 'lhcb')
     self.site = 'ANY' #ANY
     #self.setup = 'Development'
     self.origin = 'DIRAC'
