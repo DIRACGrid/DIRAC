@@ -659,7 +659,7 @@ File Catalog Client $Revision: 1.17 $Date:
     path = args.split()[0]
     lfn = self.getPath(path)
     print "lfn:",lfn
-    rmse = string.split(args)[1]
+    rmse = args.split()[1]
     try:
       result =  self.fc.getPfnsByLfn(lfn)
       if result['Status'] == 'OK':
