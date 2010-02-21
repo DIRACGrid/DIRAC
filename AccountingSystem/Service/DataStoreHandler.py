@@ -131,7 +131,7 @@ class DataStoreHandler( RequestHandler ):
         return S_ERROR( "Invalid records" )
       for i in range( len( entry ) ):
         if type( entry[i] ) != expectedTypes[i]:
-          return S_ERROR( "%s field in the records should be %s" % ( i, expectedType[i] ) )
+          return S_ERROR( "%s field in the records should be %s" % ( i, expectedTypes[i] ) )
     records = []
     for entry in entriesList:
       typeName = "%s_%s" % ( setup, entry[0] )
