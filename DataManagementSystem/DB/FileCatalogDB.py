@@ -413,7 +413,7 @@ class FileCatalogDB(DB,
       return result
     gid = result['Value']
     
-    result = checkArgumentFormat(arguments)
+    result = checkArgumentFormat(paths)
     if not result['OK']:
       return result
     arguments = result['Value']
@@ -1131,7 +1131,7 @@ class FileCatalogDB(DB,
       return result
     gid = result['Value']
     
-    result = checkArgumentFormat(lfns)
+    result = checkArgumentFormat(paths)
     if not result['OK']:
       return result
     arguments = result['Value']
