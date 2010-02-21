@@ -1479,13 +1479,14 @@ class LcgFileCatalogClient(FileCatalogueBase):
   def getUserDirectory(self,username):
     """ Takes a list of users and determines whether their directories already exist
     """
+    vo = gConfig.getValue('/DIRAC/VirtualOrganization', 'lhcb')
     res = self.__checkArgumentFormat(username)
     if not res['OK']:
       return res
     usernames = res['Value'].keys()
     usernameDict = {}
     for username in usernames:
-      userDirectory = "/lhcb/user/%s/%s" % (username[0],username)
+      userDirectory = "/%s/user/%s/%s" % (vo,username[0],username)
       usernameDict[userDirectory] = username
     res = self.exists(usernameDict.keys())
     if not res['OK']:
@@ -1502,6 +1503,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
   def createUserDirectory(self,username):
     """ Creates the user directory
     """ 
+    vo = gConfig.getValue('/DIRAC/VirtualOrganization', 'lhcb')
     res = self.__checkArgumentFormat(username)
     if not res['OK']:
       return res
@@ -1510,7 +1512,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     failed = {}
     created = self.__openSession()
     for username in usernames:
-      userDirectory = "/lhcb/user/%s/%s" % (username[0],username)
+      userDirectory = "/%s/user/%s/%s" % (vo,username[0],username)
       res = self.__makeDirs(userDirectory,0755)
       if res['OK']:
         successful[username] = userDirectory
