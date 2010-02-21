@@ -482,7 +482,7 @@ class Watchdog:
         return S_ERROR( 'Job has exceeded maximum CPU time limit' )
       else:
         return S_OK( 'Job within CPU limit' )
-    elif not wrapperCPU and not currentCPU:
+    elif not currentCPU:
       self.log.verbose( 'Both initial and current CPU consumed are null' )
       return S_OK( 'CPU consumed is not measurable yet' )
     else:
