@@ -37,7 +37,7 @@ class JobSanityAgent(OptimizerModule):
     self.inputSandboxCheck = self.am_getOption( 'InputSandboxCheck', 1 )
     self.platformCheck     = self.am_getOption( 'PlatformCheck', 0 )
     #Other parameters
-    self.voName               = self.am_getOption( 'VO', 'lhcb' )
+    self.voName               = gConfig.getValue( '/DIRAC/VirtualOrganization', 'lhcb' )
     self.successStatus        = self.am_getOption( 'SuccessfulJobStatus', 'OutputReady' )
     self.maxDataPerJob        = self.am_getOption( 'MaxInputDataPerJob', 100 )
     #Sandbox
