@@ -559,7 +559,7 @@ class RequestDBMySQL(DB):
     else:
       return S_ERROR('RequestDB.setSubRequestAttribute: failed to set attribute')
 
-  def _setSubRequestLastUpdate(self,subRequestID):
+  def _setSubRequestLastUpdate(self, requestID, subRequestID):
     req = "UPDATE SubRequests SET LastUpdate=UTC_TIMESTAMP() WHERE  RequestID=%s AND SubRequestID='%s';" % (requestID,subRequestID)
     res = self._update(req)
     if res['OK']:
