@@ -315,22 +315,16 @@ class SystemAdministratorHandler( RequestHandler ):
     instance = gConfig.getValue('/DIRAC/Setups/%s/%s' % (setup,system),'Unknown')
     return instance
   
-  def __getComponentCFG(self,system,component,compType=None,inst=None):
+  def __getComponentCFG(self,system,component):
     """ Get the CFG object of the component configuration
     """
-    if not compType:
-      componentType = self.__getComponentType(system,component)
-    else:
-      componentType = compType
+    componentType = self.__getComponentType(system,component)
     if not componentType or componentType == 'unknown':
       return S_ERROR('Failed to determine the component type')
     
-    if not inst:
-      instance = self.__getInstance(system)
-      if instance == "Unknown":
-        return S_ERROR('Unknown setup')
-    else:
-      instance = inst
+    instance = self.__getInstance(system)
+    if instance == "Unknown":
+      return S_ERROR('Unknown setup')
      
     sectionName = 'Services'
     if componentType == 'agent':
@@ -355,84 +349,19 @@ class SystemAdministratorHandler( RequestHandler ):
     else:
       return S_ERROR('No configuration template found')      
 
-  def __addCSOptions(self,system,component,compType=None,override=False,host=None):
-    """ Add the section with the component options to the CS
-    """
-    if not compType:
-      componentType = self.__getComponentType(system,component)
-    else:
-      componentType = compType
-    if not componentType or componentType == 'unknown':
-      return S_ERROR('Failed to determine the component type')
-
-    instance = self.__getInstance(system)
-    if instance == "Unknown":
-      return S_ERROR('Unknown setup')
-    
-    sectionName = "Agents"
-    if componentType == 'service':
-      sectionName = "Services"
-
-    # Check if the component CS options exist
-    addOptions = True
-    if not override:
-      result = gConfig.getOptions('/Systems/%s/%s/%s/%s' % (system,instance,sectionName,component) )
-      if result['OK']:
-        addOptions = False
-    if not addOptions:
-      return S_OK('Component options already exist')
-        
-    # Add the component options now
-    result = self.__getComponentCFG(system,component,componentType,instance)
-    if not result['OK']:
-      return result
-    compCfg = result['Value']
-
-    cfg = CFG() 
-    cfg.createNewSection('Systems')
-    cfg.createNewSection('Systems/%s' % system)
-    cfg.createNewSection('Systems/%s/%s' % (system,instance) )
-    cfg.createNewSection('Systems/%s/%s/%s' % (system,instance,sectionName) )
-    cfg.createNewSection('Systems/%s/%s/%s/%s' % (system,instance,sectionName,component ),'',compCfg )
-
-    # Add the service URL
-    if componentType == "service":
-      port = compCfg.getOption('/Port',0)
-      if port:
-        hostName = host
-        if not host:
-          hostName = socket.getfqdn()
-        cfg.createNewSection('Systems/%s/%s/URLs' % (system,instance) )
-        cfg.setOption('Systems/%s/%s/URLs/%s' % (system,instance,component),
-                      'dips://%s:%d/%s/%s' % (hostName,port,system,component) )
-    
-    cfgClient = CSAPI()
-    result = cfgClient.downloadCSData()
-    if not result['OK']:
-      return result
-    result = cfgClient.mergeFromCFG(cfg)
-    if not result['OK']:
-      return result
-    result = cfgClient.commit()
-
-    return result
-
   types_addCSDefaultOptions = [ StringTypes, StringTypes ]
-  def export_addCSDefaultOptions(self,system,component,host=None,local=False):
+  def export_addLocalDefaultOptions(self,system,component):
     """ Add default component options to the global CS or to the local options
     """
-    if not local:
-      return self.__addCSOptions(system,component,host=host)
+    result = self.__getComponentCFG(system,component)
+    if not result['OK']:
+      return result
+    cfg = result['Value']
+    fname = '/opt/dirac/etc/%s_%s.cfg' % (system,component)
+    if cfg.writeToFile(fname):
+      return S_ERROR('Failed to write out the local component options')
     else:
-      result = self.__getComponentCFG(system,component)
-      if not result['OK']:
-        return result
-      cfg = result['Value']
-      fname = '/opt/dirac/etc/%s_%s.cfg' % (system,component)
-      if cfg.writeToFile(fname):
-        return S_ERROR('Failed to write out the local component options')
-      else:
-        return S_OK()
+      return S_OK()
  
   types_unsetupComponent = [ StringTypes, StringTypes ]
   def export_unsetupComponent(self,system,component):
@@ -580,7 +509,6 @@ class SystemAdministratorHandler( RequestHandler ):
   def __createSection(self,cfg,section):
     """ Create CFG section recursively
     """
-
     if cfg.isSection(section):
       return
     if section.find('/') != -1:
@@ -651,28 +579,21 @@ class SystemAdministratorHandler( RequestHandler ):
     return result
   
   types_addCSDatabaseOptions = [ StringTypes, StringTypes ]
-  def export_addCSDatabaseOptions(self,system,dbname,hostName=None,local=False,user=None,password=None):
+  def export_addLocalDatabaseOptions(self,system,dbname,user=None,password=None):
     """ Add default component options to the global CS or to the local options
     """
-    host = hostName
-    if not hostName:
-      host = socket.getfqdn()
-    if not local:
-      if user or password:
-        return S_ERROR('Database User and Password settings are not allowed in the global CS')
-      return self.__addCSDBOptions(system,dbname,host)
+    host = socket.getfqdn()
+    result = self.__getDatabaseCFG(system,component,host,user,password)
+    if not result['OK']:
+      return result
+    cfg = result['Value']
+    diracCfg = CFG()
+    diracCfg.loadFromFile('/opt/dirac/etc/dirac.cfg')
+    newCfg = diracCfg.mergeWith(cfg)
+    if not newCfg.writeToFile('/opt/dirac/etc/dirac.cfg'):
+      return S_ERROR('Failed to write out the local component options')
     else:
-      result = self.__getDatabaseCFG(system,component,host,user,password)
-      if not result['OK']:
-        return result
-      cfg = result['Value']
-      diracCfg = CFG()
-      diracCfg.loadFromFile('/opt/dirac/etc/dirac.cfg')
-      newCfg = diracCfg.mergeWith(cfg)
-      if not newCfg.writeToFile('/opt/dirac/etc/dirac.cfg'):
-        return S_ERROR('Failed to write out the local component options')
-      else:
-        return S_OK()
+      return S_OK()
       
   def __getDatabaseCFG(self,system,dbname,host,user=None,password=None):
     """ Get the CFG configuration file for a database
@@ -697,40 +618,6 @@ class SystemAdministratorHandler( RequestHandler ):
       cfg.setOption(secName+'/Password',password)    
 
     return S_OK(cfg) 
-    
-  
-  def __addCSDBOptions(self,system,dbname,host,override=False):
-    """ Add the section with the database options to the CS
-    """
-    instance = self.__getInstance(system)
-    if instance == "Unknown":
-      return S_ERROR('Unknown setup')
-
-    # Check if the component CS options exist
-    addOptions = True
-    if not override:
-      result = gConfig.getOptions('/Systems/%s/%s/Databases/%s' % (system,instance,dbname) )
-      if result['OK']:
-        addOptions = False
-    if not addOptions:
-      return S_OK('Database options already exist')
-        
-    # Add the component options now
-    result = self.__getDatabaseCFG(system,dbname,host)
-    if not result['OK']:
-      return result
-    cfg = result['Value']
-
-    cfgClient = CSAPI()
-    result = cfgClient.downloadCSData()
-    if not result['OK']:
-      return result
-    result = cfgClient.mergeFromCFG(cfg)
-    if not result['OK']:
-      return result
-    result = cfgClient.commit()
-
-    return result    
   
   types_updateSoftware = [ StringTypes ]
   def export_updateSoftware(self,version):
