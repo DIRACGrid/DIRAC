@@ -263,6 +263,5 @@ class SystemAdministratorClient(Client):
       return result
     result = cfgClient.commit()
 
-    return result      
-    
+    return result        
     
