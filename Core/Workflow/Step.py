@@ -80,7 +80,7 @@ class StepDefinition(AttributeCollection):
     def addModule(self, module):
         # KGG We need to add code to update existing modules
         if self.module_definitions == None:
-            parents.module_definitions.append(module)
+            self.parent.module_definitions.append(module)
         else:
             self.module_definitions.append(module)
         return module
@@ -114,8 +114,8 @@ class StepDefinition(AttributeCollection):
       """
       AttributeCollection.updateParents(self, parent)
       self.module_instances.updateParent(self)
-      if( module_definitions != None ):
-          module_definitions.updateParent(self)
+      if( self.module_definitions != None ):
+          self.module_definitions.updateParent(self)
 
     def createCode(self):
       """ Create Step code
@@ -140,21 +140,21 @@ class StepInstance(AttributeCollection):
       if obj == None:
         self.parameters = ParameterCollection()
       elif isinstance(obj, StepInstance) or isinstance(obj, StepDefinition):
-          if name == None:
-              self.setName(obj.getName())
-          else:
-              self.setName(name)
-          self.setType(obj.getType())
-          self.setDescrShort(obj.getDescrShort())
-          self.parameters = ParameterCollection(obj.parameters)
+        if name == None:
+            self.setName(obj.getName())
+        else:
+            self.setName(name)
+        self.setType(obj.getType())
+        self.setDescrShort(obj.getDescrShort())
+        self.parameters = ParameterCollection(obj.parameters)
       elif (obj == None) or isinstance(obj, ParameterCollection):
-          # set attributes
-          self.setName(name)
-          self.setType("")
-          self.setDescrShort("")
-          self.parameters = ParameterCollection(obj)
-      elif coll != None:
-          raise TypeError('Can not create object type '+ str(type(self)) + ' from the '+ str(type(opt)))
+        # set attributes
+        self.setName(name)
+        self.setType("")
+        self.setDescrShort("")
+        self.parameters = ParameterCollection(obj)
+      elif obj != None:
+        raise TypeError('Can not create object type '+ str(type(self)) + ' from the '+ str(type(obj)))
 
       self.step_commons = {}
       self.stepStatus = S_OK()
@@ -286,7 +286,7 @@ class StepInstance(AttributeCollection):
                 self.step_commons[key] = result[key]
               elif type(result['Value']) == types.DictType:
                 for vkey in result['Value'].keys():
-                  self.step_commons[key] = result['Value'][key]
+                  self.step_commons[vkey] = result['Value'][vkey]
 
       except Exception, x:
         print "Exception while module execution"
