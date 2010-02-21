@@ -4,7 +4,7 @@
 # $HeadURL$
 # $Id$
 #
-# This script installs the bare minimal setup of DIRAC which allows
+# This script installs the bare minimal setup of the DIRAC system which allows
 # to manage the composition of the DIRAC service remotely. The script should
 # be only used for the initial installation and not for the software updates. 
 #
@@ -60,10 +60,10 @@ CONFIGNAME=LHCb-Prod
 DIRACSETUP=LHCb-NewProduction
 #
 # The name of the local service instance 
-export DIRACINSTANCE=NewProduction
+DIRACINSTANCE=NewProduction
 #
 # DIRAC software version
-DIRACVERSION=v5r0p0-pre20
+DIRACVERSION=v5r0
 #
 # Use the following extensions
 EXTENSION=LHCb
