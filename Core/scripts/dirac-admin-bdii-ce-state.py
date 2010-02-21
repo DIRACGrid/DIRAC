@@ -21,7 +21,7 @@ if not len(args)==1:
 ce = args[0]
 
 host = None
-vo = 'lhcb'
+vo = DIRAC.gConfig.getValue('/DIRAC/VirtualOrganization', 'lhcb')
 for unprocSw in Script.getUnprocessedSwitches():
   if unprocSw[0] in ( "h", "host" ):
         host = unprocSw[1]
