@@ -6,6 +6,7 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
 from DIRAC.ConfigurationSystem.Client import PathFinder
+import DIRAC
 import os
 
 # These are global instances of the DB classes
@@ -31,7 +32,7 @@ def initializeTransferDBMonitoringHandler(serviceInfo):
     return retDict
   dataPath = retDict[ 'Value' ].strip()
   if "/" != dataPath[0]:
-    dataPath = os.path.realpath( "%s/%s" % ( rootPath, dataPath ) )
+    dataPath = os.path.realpath( "%s/%s" % ( DIRAC.rootPath, dataPath ) )
   gLogger.info( "Data will be written into %s" % dataPath )
   try:
     os.makedirs( dataPath )
@@ -75,9 +76,9 @@ class TransferDBMonitoringHandler(RequestHandler):
 
   types_getFTSInfo = [IntType]
   def export_getFTSInfo(self,ftsReqID):
-   """ Get the details of a particular FTS job
-   """
-   return transferDB.getFTSJobDetail(ftsReqID)
+    """ Get the details of a particular FTS job
+    """
+    return transferDB.getFTSJobDetail(ftsReqID)
 
   types_getFTSJobs = []
   def export_getFTSJobs(self):
@@ -165,7 +166,7 @@ class TransferDBMonitoringHandler(RequestHandler):
       return S_ERROR('Item number out of range')
 
     if lastRequest > nRequests:
-      lastRequests = nRequests
+      lastRequest = nRequests
 
     summaryRequestList = requestList[iniRequest:lastRequest]
     result = transferDB.getAttributesForRequestList(summaryRequestList,RequestsColumns)
@@ -223,7 +224,7 @@ class TransferDBMonitoringHandler(RequestHandler):
       return S_ERROR('Item number out of range')
 
     if lastRequest > nRequests:
-      lastRequests = nRequests
+      lastRequest = nRequests
 
     summaryRequestList = requestList[iniRequest:lastRequest]
     result = transferDB.getAttributesForSubRequestList(summaryRequestList,SubRequestsColumns)
@@ -280,7 +281,7 @@ class TransferDBMonitoringHandler(RequestHandler):
       return S_ERROR('Item number out of range')
 
     if lastRequest > nRequests:
-      lastRequests = nRequests
+      lastRequest = nRequests
     summaryRequestList = requestList[iniRequest:lastRequest]
     result = transferDB.getAttributesForFilesList(summaryRequestList,FilesColumns)
     if not result['OK']:
