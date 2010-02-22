@@ -23,6 +23,17 @@ def initializeFileCatalogHandler(serviceInfo):
 class FileCatalogHandler(RequestHandler):
   
   ###################################################################
+  #  isOK
+  #
+  types_isOK = []
+  def export_isOK(self):
+    """ returns S_OK if DB is connected
+    """
+    if fcDB and fcDB._connected:
+      return S_OK()
+    return S_ERROR( 'Server not connected to DB' )
+  
+  ###################################################################
   #  User and Group operations
   #
   types_addUser = [StringTypes]
