@@ -296,7 +296,7 @@ class JobAgent( AgentModule ):
       self.log.info( "No token defined. Trying to download proxy without token" )
       token = False
     retVal = gProxyManager.getPayloadProxyFromDIRACGroup( ownerDN, ownerGroup,
-                                                          token, self.defaultProxyLength )
+                                                          self.defaultProxyLength, token )
     if not retVal[ 'OK' ]:
       self.log.error( 'Could not retrieve proxy' )
       self.log.verbose( retVal )
