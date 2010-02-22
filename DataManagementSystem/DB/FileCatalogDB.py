@@ -444,7 +444,7 @@ class FileCatalogDB(DB,
     result = checkArgumentFormat(lfns)
     if not result['OK']:
       return result
-    paths = result['Value'].keys
+    paths = result['Value'].keys()
     
     successful = {}
     failed = {}
