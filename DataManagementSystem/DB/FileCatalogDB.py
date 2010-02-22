@@ -160,9 +160,11 @@ class FileCatalogDB(DB,
     return result
   
 #####################################################################
-  def isDirectory(self,paths,s_uid=0,s_gid=0):
+  def isDirectory(self,paths,credDict):
     """ Checking for existence of directories
     """
+    s_uid = credDict['username']
+    s_gid = credDict['group']
     result = self.findUser(s_uid)
     if not result['OK']:
       return result
@@ -192,9 +194,11 @@ class FileCatalogDB(DB,
     return S_OK({'Successful':successful,'Failed':failed})
   
  #####################################################################
-  def createDirectory(self,arguments,s_uid=0,s_gid=0):
+  def createDirectory(self,arguments,credDict):
     """ Checking for existence of directories
     """
+    s_uid = credDict['username']
+    s_gid = credDict['group']
     result = self.findUser(s_uid)
     if not result['OK']:
       return result
@@ -517,10 +521,11 @@ class FileCatalogDB(DB,
     pathDict = {'Files': files,'SubDirs':directories,'Links':links}    
     return S_OK(pathDict)           
 
-  def listDirectory(self,lfns,s_uid=0,s_gid=0,verbose=False):
+  def listDirectory(self,lfns,credDict,verbose=False):
     """ Get the directory listing
     """
-    
+    s_uid = credDict['username']
+    s_gid = credDict['group']        
     result = self.findUser(s_uid)
     if not result['OK']:
       return result
@@ -697,10 +702,11 @@ class FileCatalogDB(DB,
       return S_ERROR('File %d not found' % fileID)
     return S_OK(result['Value'][0][0])
     
-  def addFile(self,lfns,s_uid=0,s_gid=0):
+  def addFile(self,lfns,credDict):
     """ Add files to the catalog
     """  
-    
+    s_uid = credDict['username']
+    s_gid = credDict['group']
     result = self.findUser(s_uid)
     if not result['OK']:
       return result
@@ -1119,9 +1125,11 @@ class FileCatalogDB(DB,
     result = self.findFile(lfns)
     return result
   
-  def changePathOwner(self,paths,s_uid=0,s_gid=0):
+  def changePathOwner(self,paths,credDict):
     """ Change the owner for the given paths
     """
+    s_uid = credDict['username']
+    s_gid = credDict['group']    
     result = self.findUser(s_uid)
     if not result['OK']:
       return result
@@ -1175,9 +1183,11 @@ class FileCatalogDB(DB,
     
     return S_OK({'Successful':successful,'Failed':failed})    
   
-  def __changePathFunction(self,paths,s_uid,s_gid,change_function_directory,change_function_file):
+  def __changePathFunction(self,paths,credDict,change_function_directory,change_function_file):
     """ A generic function to change Owner, Group or Mode for the given paths
     """
+    s_uid = credDict['username']
+    s_gid = credDict['group']
     result = self.findUser(s_uid)
     if not result['OK']:
       return result
@@ -1234,20 +1244,20 @@ class FileCatalogDB(DB,
     
     return S_OK({'Successful':successful,'Failed':failed})
   
-  def changePathOwner(self,paths,s_uid=0,s_gid=0):  
+  def changePathOwner(self,paths,credDict):  
     """ Bulk method to change Owner for the given paths
     """
-    return self.__changePathFunction(paths,s_uid,s_gid,self.changeDirectoryOwner,self.changeFileOwner)
+    return self.__changePathFunction(paths,credDict,self.changeDirectoryOwner,self.changeFileOwner)
   
-  def changePathGroup(self,paths,s_uid=0,s_gid=0):  
+  def changePathGroup(self,paths,credDict):  
     """ Bulk method to change Owner for the given paths
     """
-    return self.__changePathFunction(paths,s_uid,s_gid,self.changeDirectoryGroup,self.changeFileGroup)
+    return self.__changePathFunction(paths,credDict,self.changeDirectoryGroup,self.changeFileGroup)
   
-  def changePathMode(self,paths,s_uid=0,s_gid=0):  
+  def changePathMode(self,paths,credDict):  
     """ Bulk method to change Owner for the given paths
     """
-    return self.__changePathFunction(paths,s_uid,s_gid,self.changeDirectoryMode,self.changeFileMode)
+    return self.__changePathFunction(paths,credDict,self.changeDirectoryMode,self.changeFileMode)
 
 #########################################################################
 #
@@ -1368,11 +1378,12 @@ class FileCatalogDB(DB,
     return S_OK()
     
 #####################################################################
-  def addReplica(self,lfns,s_uid=0,s_gid=0):
+  def addReplica(self,lfns,credDict):
     """ Add replica pfn in storage element se for the file specified by its lfn
         to the catalog. Pass optionally guid for extra verification
     """
-    
+    s_uid = credDict['username']
+    s_gid = credDict['group']      
     result = self.findUser(s_uid)
     if not result['OK']:
       return result
@@ -1445,10 +1456,11 @@ class FileCatalogDB(DB,
     return S_OK({'Successful':successful,'Failed':failed})
   
 #####################################################################  
-  def getReplicas(self,lfns,s_uid=0,s_gid=0):
+  def getReplicas(self,lfns,credDict):
     """ Get Replicas for the given LFNs
     """
-    
+    s_uid = credDict['username']
+    s_gid = credDict['group']     
     result = self.findUser(s_uid)
     if not result['OK']:
       return result
