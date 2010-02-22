@@ -942,6 +942,7 @@ class ResourceStatusDB:
       :attr:`siteName`: string
     """
     
+    self.removeStorageElement(siteName = siteName)
     self.removeResource(siteName = siteName)
     self.removeService(siteName = siteName)
     
@@ -1197,6 +1198,9 @@ class ResourceStatusDB:
     """
 
     if serviceName == None and siteName == None:
+      self.removeStorageElement(resourceName = resourceName)
+
+      
       req = "DELETE from Resources WHERE ResourceName = '%s';" % (resourceName)
       resDel = self.db._update(req)
       if not resDel['OK']:
@@ -1209,6 +1213,9 @@ class ResourceStatusDB:
 
     else:
       if serviceName == None:
+        self.removeStorageElement(siteName = resourceName)
+
+        
         req = "DELETE from Resources WHERE SiteName = '%s';" % (siteName)
         resDel = self.db._update(req)
         if not resDel['OK']:
@@ -1220,6 +1227,8 @@ class ResourceStatusDB:
           raise RSSDBException, where(self, self.removeResource) + resDel['Message']
 
       else:
+        self.removeStorageElement(siteName = serviceName.split('@')[1])
+
         req = "DELETE from Resources WHERE ServiceName = '%s';" % (serviceName)
         resDel = self.db._update(req)
         if not resDel['OK']:
@@ -1439,6 +1448,7 @@ class ResourceStatusDB:
     
     if siteName == None: 
 
+      self.removeStorageElement(siteName = serviceName.split('@')[1])
       self.removeResource(serviceName = serviceName)
       
       req = "DELETE from Services WHERE ServiceName = '%s';" % (serviceName)
@@ -1453,6 +1463,7 @@ class ResourceStatusDB:
 
     else: 
 
+      self.removeStorageElement(siteName = siteName)
       self.removeResource(siteName = siteName)
       
       req = "DELETE from Services WHERE SiteName = '%s';" % (siteName)
@@ -1937,11 +1948,71 @@ class ResourceStatusDB:
 
 #############################################################################
 
+  def addOrModifyPolicyRes(self, granularity, name, policyName, 
+                           status, reason, dateEffective = None):
+    """
+    Add or modify a Policy Result to the PolicyRes table.
+    
+    :params:
+      :attr:`granularity`: string - a ValidRes
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+    
+      :attr:`name`: string - name of the ValidRes
+    
+      :attr:`status`: string - a ValidStatus: 
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`reason`: string - free
+      
+      :attr:`dateEffective`: datetime - 
+      date from which the result is effective
+    """
+    
+    now = datetime.utcnow().replace(microsecond = 0).isoformat(' ')
+    
+    if dateEffective is None:
+      dateEffective = now
+    
+    req = "SELECT Granularity, Name, PolicyName, Status, Reason FROM PolicyRes "
+    req = req + "WHERE Granularity = '%s' AND Name = '%s' AND " %(granularity, name)
+    req = req + "PolicyName = '%s'" %(policyName)
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.addOrModifyPolicyRes) + resQuery['Message']
+
+    if resQuery['Value']: 
+      req = "UPDATE PolicyRes SET "
+      if resQuery['Value'][0][3] != status:
+        req = req + "Status = '%s', Reason = '%s', DateEffective = '%s', " %(status, reason, dateEffective)
+      elif resQuery['Value'][0][4] != reason:
+        req = req + "Reason = '%s', " %(reason)
+      req = req + "LastCheckTime = '%s' WHERE Granularity = '%s' " %(now, granularity)
+      req = req + "AND Name = '%s' AND PolicyName = '%s'" %(name, policyName)
+      
+      resUpdate = self.db._update(req)
+      if not resUpdate['OK']:
+        raise RSSDBException, where(self, self.addOrModifyPolicyRes) + resUpdate['Message']
+    else:
+      req = "INSERT INTO PolicyRes (Granularity, Name, PolicyName, Status, Reason, DateEffective, "
+      req = req + "LastCheckTime) VALUES ('%s', '%s', '%s', " %(granularity, name, policyName)
+      req = req + "'%s', '%s', '%s', '%s')" %(status, reason, dateEffective, now)
+      resUpdate = self.db._update(req)
+      if not resUpdate['OK']:
+        raise RSSDBException, where(self, self.addOrModifyPolicyRes) + resUpdate['Message']
+    
+
+
+#############################################################################
+
+  
   def removeRow(self, granularity, name, dateEffective):
     """ 
     Remove a row from one of the tables
     
     :params:
+      :attr:`granularity`: string, a ValidRes
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+    
       :attr:`name`: string
       
       :attr:`dateEffective`: string or datetime
@@ -2649,7 +2720,12 @@ class ResourceStatusDB:
     SEList = []
     SENodeList = []
     LFCNodeList = []
-    seServiceSite = []
+    srmServiceSite = []
+
+    #create SitesWithSRMList - now by hand, it's impossible to create automatically from the CS
+    SitesWithSRMList = ['LCG.CERN.ch', 'LCG.CNAF.it', 'LCG.IN2P3.fr', 'LCG.PIC.es', 
+                        'LCG.RAL.uk', 'LCG.GRIDKA.de', 'LCG.NIKHEF.nl', 'LCG.CPPM.fr',
+                        'LCG.TCD.ie', 'LCG.UKI-SCOTGRID-ECDF.uk']
     
     statusIn = self.getStatusList()
     #delete status not more in Utils
@@ -2713,29 +2789,27 @@ class ResourceStatusDB:
       for x in i:
         SEList.append(x)
         
+
+    
     for SE in SEList:
       node = gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/Host" %SE)
       if node is None:
         continue
-#      try:
-#        node = socket.gethostbyname_ex(node)[0]
-#      except socket.gaierror:
-#        pass
       if node not in SENodeList:
         SENodeList.append(node)
 
-    #create LFCNodeList
+    #create LFCNodeList and add Storage@Site in SerStorList
     for site in gConfig.getSections('Resources/FileCatalogs/LcgFileCatalogCombined', True)['Value']:
       for readable in ('ReadOnly', 'ReadWrite'):
         LFCNode = gConfig.getValue('Resources/FileCatalogs/LcgFileCatalogCombined/%s/%s' %(site, readable))
         if LFCNode is None:
           continue
-#        try:
-#          LFCNode = socket.gethostbyname_ex(LFCNode)[0]
-#        except socket.gaierror:
-#          pass
-        if LFCNode is not None and LFCNode not in LFCNodeList:
+        if LFCNode not in LFCNodeList:
           LFCNodeList.append(LFCNode)
+        service = 'Storage@' + site
+        if service not in SerStorList:
+          SerStorList.append(service)
+        
       
     sitesIn = self.getMonitoredsList('Site', paramsList = ['SiteName'])
     sitesIn = [s[0] for s in sitesIn]
@@ -2743,9 +2817,12 @@ class ResourceStatusDB:
     servicesIn = [s[0] for s in servicesIn]
     resourcesIn = self.getMonitoredsList('Resource', paramsList = ['ResourceName'])
     resourcesIn = [s[0] for s in resourcesIn]
+#    storageElementsIn = self.getMonitoredsList('StorageElement',
+#                                               paramsList = ['StorageElementName'])
+#    storageElementsIn = [s[0] for s in storageElementsIn]
     storageElementsIn = self.getMonitoredsList('StorageElement',
-                                               paramsList = ['StorageElementName'])
-    storageElementsIn = [s[0] for s in storageElementsIn]
+                                               paramsList = ['StorageElementName', 'ResourceName'])
+    storageElementsIn = [s[0]+'@'+s[1] for s in storageElementsIn]
 
     #remove sites no more in the CS  - separate because of "race conditions"
     for site in sitesIn:
@@ -2792,17 +2869,19 @@ class ResourceStatusDB:
         if service not in SerCompList:
           SerCompList.append(service)
 
-    #create SerStorList 
+    #add Storage@Site to SerStorList for the SEs 
     for site in siteSE.keys():
+      if site not in SitesWithSRMList:
+        continue
       for se in siteSE[site]:
+        srm = gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/Host" %se)
+        if srm is None:
+          continue
         service = 'Storage@' + site
         if service not in SerStorList:
           SerStorList.append(service)
           
-    #remove Services no more in the CS  - separate because of "race conditions"
-    for ser in servicesIn:
-      if ser not in SerCompList + SerStorList:
-        self.removeResource(serviceName = ser)
+    #remove Services no more in the CS
     for ser in servicesIn:
       if ser not in SerCompList + SerStorList:
         self.removeService(ser)
@@ -2820,9 +2899,18 @@ class ResourceStatusDB:
         self.removeResource(res)
         
     #remove SEs no more in the CS
-    for res in storageElementsIn:
-      if res not in SEList:
-        self.removeStorageElement(res)
+    # compile list of SE@SRM
+    SESRMList = []
+    for se in SEList:
+      srm = gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/Host" %se)
+      if srm is not None:
+        sesrm = se+'@'+srm
+        if sesrm not in SESRMList:
+          SESRMList.append(sesrm)
+    
+    for SEin in storageElementsIn:
+      if SEin not in SESRMList:
+        self.removeStorageElement(SEin.split('@')[0])
         
     #add new comp services and CEs - separate because of "race conditions"         
     for site in siteCE.keys():
@@ -2854,34 +2942,40 @@ class ResourceStatusDB:
       
     #add new storage services and SEs nodes - separate because of "race conditions"
     for site in siteSE.keys():
+      if site not in SitesWithSRMList:
+        continue
       if site == 'LCG.Dummy.ch':
         continue
       for se in siteSE[site]:
         service = 'Storage@' + site
+        srm = gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/Host" %se)
+        if srm is None:
+          continue
         if service not in servicesIn:
           self.addOrModifyService(service, 'Storage', site, 'Active', 'init', 
                                   datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
                                   datetime(9999, 12, 31, 23, 59, 59))
           servicesIn.append(service)
     for site in siteSE.keys():
+      if site not in SitesWithSRMList:
+        continue
       if site == 'LCG.Dummy.ch':
         continue
+      if site == 'LCG.NIKHEF.nl':
+        site = 'LCG.SARA.nl'
+        #Otherwise I can't monitor SAM!
       for se in siteSE[site]:
-        service = 'Storage@' + site
-        se = gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/Host" %se)
-        if se is None:
+        srm = gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/Host" %se)
+        if srm is None:
           continue
-#        try:
-#          se = socket.gethostbyname_ex(se)[0]
-#        except socket.gaierror:
-#          pass
-        if se not in resourcesIn and se is not None:
-          sss = se+service+site
-          if sss not in seServiceSite:
-            self.addOrModifyResource(se, 'SE', service, site, 'Active', 'init', 
+        service = 'Storage@' + site
+        if srm not in resourcesIn and srm is not None:
+          sss = srm+service+site
+          if sss not in srmServiceSite:
+            self.addOrModifyResource(srm, 'SE', service, site, 'Active', 'init', 
                                      datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
                                      datetime(9999, 12, 31, 23, 59, 59))
-            seServiceSite.append(sss)
+            srmServiceSite.append(sss)
 
 
     #add new storage services and LFCs - separate because of "race conditions"
@@ -2930,18 +3024,19 @@ class ResourceStatusDB:
 
     #add StorageElements
     for site in siteSE.keys():
+      if site not in SitesWithSRMList:
+        continue
       if site == 'LCG.Dummy.ch':
         continue
       for storageElement in siteSE[site]:
-        if storageElement not in storageElementsIn:
-          res = gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/Host" %storageElement)
-          if res is not None:
-            sr = storageElement+res
-            if sr not in seRes:
-              self.addOrModifyStorageElement(storageElement, res, site, 'Active', 'init', 
-                                             datetime.utcnow().replace(microsecond = 0), 
-                                             'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
-              seRes.append(sr)
+        res = gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/Host" %storageElement)
+        if res is not None:
+          sr = storageElement + '@' + res
+          if sr not in storageElementsIn:
+            self.addOrModifyStorageElement(storageElement, res, site, 'Active', 'init', 
+                                           datetime.utcnow().replace(microsecond = 0), 
+                                           'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
+            storageElementsIn.append(sr)
             
     
     #sincrony of assignee group for alarms        

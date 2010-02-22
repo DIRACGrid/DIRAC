@@ -195,9 +195,12 @@ class PEP:
             rsDB.setMonitoredReason(self.__granularity, self.__name, res['Reason'], 'RS_SVC')
     
         rsDB.setLastMonitoredCheckTime(self.__granularity, self.__name)
+        for resP in resDecisions['SinglePolicyResults']:
+          rsDB.addOrModifyPolicyRes(self.__granularity, self.__name, 
+                                    resP['PolicyName'], resP['Status'], resP['Reason'])
         
         if res.has_key('EndDate'):
-          rsDB.setDateEnd(self.__granularity, self.__name, res['EndDate'])
+          rsDB.setDateEnd(self.__granularity, self.__name, res['EndDate']) 
   
         if res['Action']:
           try:

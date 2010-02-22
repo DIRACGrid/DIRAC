@@ -139,11 +139,12 @@ class SeSInspectorAgent(AgentModule):
         serviceName = toBeChecked[1]
         status = toBeChecked[2]
         formerStatus = toBeChecked[3]
-        serviceType = toBeChecked[4]
+        siteType = toBeChecked[4]
+        serviceType = toBeChecked[5]
         
         gLogger.info("Checking Service %s, with status %s" % (serviceName, status))
         newPEP = PEP(granularity = granularity, name = serviceName, status = status, 
-                     formerStatus = formerStatus, serviceType = serviceType)
+                     formerStatus = formerStatus, siteType = siteType, serviceType = serviceType)
         newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup)
   
     except Exception, x:

@@ -211,6 +211,7 @@ DROP VIEW IF EXISTS PresentServices;
 CREATE VIEW PresentServices AS SELECT 
   Services.ServiceName,
   Services.SiteName, 
+  Sites.SiteType,
   Services.ServiceType, 
   Services.Status,
   Services.DateEffective, 
@@ -218,10 +219,13 @@ CREATE VIEW PresentServices AS SELECT
   Services.Reason,
   Services.LastCheckTime,
   Services.OperatorCode
-FROM Services INNER JOIN ServicesHistory ON 
-  Services.ServiceName = ServicesHistory.ServiceName AND 
-  Services.DateEffective = ServicesHistory.DateEnd 
-WHERE Services.DateEffective < UTC_TIMESTAMP()
+FROM (
+	(Services INNER JOIN Sites ON
+	 Services.Sitename = Sites.SiteName)
+	 INNER JOIN ServicesHistory ON 
+	  Services.ServiceName = ServicesHistory.ServiceName AND 
+  	Services.DateEffective = ServicesHistory.DateEnd 
+) WHERE Services.DateEffective < UTC_TIMESTAMP()
 ORDER BY ServiceName;
 
 DROP VIEW IF EXISTS PresentResources;
@@ -229,8 +233,8 @@ CREATE VIEW PresentResources AS SELECT
   Resources.ResourceName, 
   Resources.SiteName, 
   Resources.ServiceName, 
-  Resources.ResourceType,
   Sites.SiteType, 
+  Resources.ResourceType,
   Resources.Status,
   Resources.DateEffective, 
   ResourcesHistory.Status AS FormerStatus,
@@ -267,3 +271,20 @@ FROM (
       StorageElements.DateEffective = StorageElementsHistory.DateEnd 
 ) WHERE StorageElements.DateEffective < UTC_TIMESTAMP()
 ORDER BY StorageElementName;
+
+DROP TABLE IF EXISTS PolicyRes;
+CREATE TABLE PolicyRes(
+  prID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  Granularity VARCHAR(16) NOT NULL,
+  Name VARCHAR(64) NOT NULL,
+  INDEX (Name),
+  PolicyName VARCHAR(64) NOT NULL,
+  INDEX (PolicyName),
+  Status VARCHAR(8) NOT NULL,
+  Index(Status),
+  Reason VARCHAR(255) NOT NULL DEFAULT 'Unspecified',
+  DateEffective DATETIME NOT NULL,
+  LastCheckTime DATETIME NOT NULL,
+  FOREIGN KEY (Status) REFERENCES Status(Status),
+  PRIMARY KEY(prID)
+) Engine=InnoDB;
