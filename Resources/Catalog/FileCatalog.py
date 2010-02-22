@@ -1,3 +1,7 @@
+########################################################################
+# $HeadURL$
+########################################################################
+__RCSID__   = "$Id$"
 """ File catalog class. This is a simple dispatcher for the file catalogue plug-ins.
     It ensures that all operations are performed on the desired catalogs.
 """
