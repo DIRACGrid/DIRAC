@@ -194,33 +194,11 @@ class JobAgent( AgentModule ):
       self.__report( jobID, 'Matched', 'Job Received by Agent' )
       self.__setJobSite( jobID, self.siteName )
       self.__reportPilotInfo( jobID )
-      if gConfig.getValue( '/DIRAC/Security/UseServerCertificate' , False ):
-        proxyResult = self.__setupProxy( jobID, ownerDN, jobGroup, self.siteRoot )
-        if not proxyResult['OK']:
-          self.log.error( 'Invalid Proxy', proxyResult['Message'] )
-          return self.__rescheduleFailedJob( jobID , 'Fail to setup proxy' )
-        else:
-          proxyChain = proxyResult['Value']
-      else:
-        ret = getProxyInfo( disableVOMS = True )
-        if not ret['OK']:
-          self.log.error( 'Invalid Proxy', ret['Message'] )
-          return self.__rescheduleFailedJob( jobID , 'Invalid Proxy' )
-
-        proxyChain = ret['Value']['chain']
-        if not 'groupProperties' in ret['Value']:
-          print ret['Value']
-          print proxyChain.dumpAllToString()
-          self.log.error( 'Invalid Proxy', 'Group has no properties defined' )
-          return self.__rescheduleFailedJob( jobID , 'Proxy has no group properties defined' )
-
-        if Properties.GENERIC_PILOT in ret['Value']['groupProperties']:
-          proxyResult = self.__setupProxy( jobID, ownerDN, jobGroup, self.siteRoot )
-          if not proxyResult['OK']:
-            self.log.error( 'Invalid Proxy', proxyResult['Message'] )
-            return self.__rescheduleFailedJob( jobID , 'Fail to setup proxy' )
-          else:
-            proxyChain = proxyResult['Value']
+      result = self.__setupProxy( ownerDN, jobGroup )
+      if not result[ 'OK' ]:
+        return self.__rescheduleFailedJob( jobID, retVal[ 'Message' ] )
+      if 'Value' in result and result[ 'Value' ]:
+        proxyChain = result[ 'Value' ]
 
       saveJDL = self.__saveJobJDLRequest( jobID, jobJDL )
       #self.__report(jobID,'Matched','Job Prepared to Submit')
@@ -286,10 +264,41 @@ class JobAgent( AgentModule ):
     return S_OK()
 
   #############################################################################
-  def __setupProxy( self, job, ownerDN, ownerGroup, workingDir ):
+  def __setupProxy( self, ownerDN, ownerGroup ):
+    if gConfig.getValue( '/DIRAC/Security/UseServerCertificate' , False ):
+      proxyResult = self.__requestProxyFromProxyManager( ownerDN, ownerGroup )
+      if not proxyResult['OK']:
+        self.log.error( 'Invalid Proxy', proxyResult['Message'] )
+        return S_ERROR( 'Failed to setup proxy: %s' % result[ 'Value' ] )
+      return S_OK( proxyResult['Value'] )
+    else:
+      ret = getProxyInfo( disableVOMS = True )
+      if not ret['OK']:
+        self.log.error( 'Invalid Proxy', ret['Message'] )
+        return S_ERROR( 'Invalid Proxy' )
+
+      proxyChain = ret['Value']['chain']
+      if not 'groupProperties' in ret['Value']:
+        print ret['Value']
+        print proxyChain.dumpAllToString()
+        self.log.error( 'Invalid Proxy', 'Group has no properties defined' )
+        return S_ERROR( 'Proxy has no group properties defined' )
+
+      if Properties.GENERIC_PILOT in ret['Value']['groupProperties']:
+        proxyResult = self.__requestProxyFromProxyManager( ownerDN, ownerGroup )
+        if not proxyResult['OK']:
+          self.log.error( 'Invalid Proxy', proxyResult['Message'] )
+          return S_ERROR( 'Failed to setup proxy: %s' % result[ 'Value' ] )
+        proxyChain = proxyResult['Value']
+
+    return S_OK( proxyChain )
+
+  #############################################################################
+  def __requestProxyFromProxyManager( self, ownerDN, ownerGroup ):
     """Retrieves user proxy with correct role for job and sets up environment to
        run job locally.
     """
+
     self.log.info( "Requesting proxy for %s@%s" % ( ownerDN, ownerGroup ) )
     token = gConfig.getValue( "/Security/ProxyToken", "" )
     if not token:
@@ -299,15 +308,12 @@ class JobAgent( AgentModule ):
                                                           self.defaultProxyLength, token )
     if not retVal[ 'OK' ]:
       self.log.error( 'Could not retrieve proxy' )
-      self.log.verbose( retVal )
-      self.__setJobParam( job, 'ProxyError', retVal[ 'Message' ] )
+      self.log.warn( retVal )
       os.system( 'dirac-proxy-info' )
       sys.stdout.flush()
-      self.__report( job, 'Failed', 'Proxy Retrieval' )
       return S_ERROR( 'Error retrieving proxy' )
 
     chain = retVal[ 'Value' ]
-
     return S_OK( chain )
 
   #############################################################################
