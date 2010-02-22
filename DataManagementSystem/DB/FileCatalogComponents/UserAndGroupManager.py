@@ -1,11 +1,11 @@
 ########################################################################
-# $HeadURL:  $
+# $HeadURL$
 ########################################################################
 
 """ DIRAC FileCatalog mix-in class to manage users and groups
 """
 
-__RCSID__ = "$Id:  $"
+__RCSID__ = "$Id$"
 
 import time
 from types import *
