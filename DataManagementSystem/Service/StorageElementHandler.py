@@ -82,6 +82,8 @@ class StorageElementHandler(RequestHandler):
   def export_getMetadata(self,fileID):
     """ Get metadata for the file or directory specified by fileID
     """
+    while fileID[0] == '/':
+      fileID = fileID[1:]
     file_path = os.path.join(base_path,fileID)
     return self.__getFileStat(file_path)
 
@@ -114,6 +116,8 @@ class StorageElementHandler(RequestHandler):
   def export_exists(self,path):
     """ Check existnce of the path
     """
+    while path[0] == '/':
+      path = path[1:]
     fpath = os.path.join(base_path,path)
     if os.path.exists(fpath):
       return S_OK(True)
@@ -124,6 +128,8 @@ class StorageElementHandler(RequestHandler):
   def export_createDirectory(self,dir_path):
     """ Creates the directory on the storage
     """
+    while dir_path[0] == '/':
+      dir_path = dir_path[1:]
     path = os.path.join(base_path,dir_path)
     gLogger.info("StorageElementHandler.createDirectory: Attempting to create %s." % path)
     if os.path.exists(path):
@@ -148,6 +154,8 @@ class StorageElementHandler(RequestHandler):
     """ Return the dir_path directory listing
     """
     is_file = False
+    while dir_path[0] == '/':
+      dir_path = dir_path[1:]
     path = os.path.join(base_path,dir_path)
     if not os.path.exists(path):
       return S_ERROR('Directory %s does not exist' % dir_path )
@@ -198,7 +206,8 @@ class StorageElementHandler(RequestHandler):
     """
     if not self.__checkForDiskSpace(base_path,fileSize):
       return S_ERROR('Not enough disk space')
-
+    while fileID[0] == '/':
+      fileID = fileID[1:]
     file_path = os.path.join(base_path,fileID)
     if not os.path.exists(os.path.dirname(file_path)):
       os.makedirs(os.path.dirname(file_path))
@@ -219,7 +228,8 @@ class StorageElementHandler(RequestHandler):
         fileID is the local file name in the SE.
         token is used for access rights confirmation.
     """
-
+    while fileID[0] == '/':
+      fileID = fileID[1:]
     file_path = os.path.join(base_path,fileID)
     result = fileHelper.getFileDescriptor(file_path,'r')
     if not result['OK']:
@@ -291,7 +301,8 @@ class StorageElementHandler(RequestHandler):
   def __removeFile(self,fileID,token):
     """ Remove one file with fileID name from the storage
     """
-
+    while fileID[0] == '/':
+      fileID = fileID[1:]
     file_path = os.path.join(base_path,fileID)
     if self.__confirmToken(token,fileID,'x'):
       try:
@@ -310,6 +321,8 @@ class StorageElementHandler(RequestHandler):
   def export_getDirectorySize(self,fileID):
     """ Get the size occupied by the given directory
     """
+    while fileID[0] == '/':
+      fileID = fileID[1:]
     dir_path = os.path.join(base_path,fileID)
     if os.path.exists(dir_path):
       try:
@@ -325,6 +338,8 @@ class StorageElementHandler(RequestHandler):
   def export_removeDirectory(self,fileID,token):
     """ Remove the given directory from the storage
     """
+    while fileID[0] == '/':
+      fileID = fileID[1:]
     dir_path = os.path.join(base_path,fileID)
     if not self.__confirmToken(token,fileID,'x'):
       return S_ERROR('Directory removal %s not authorized' % fileID)
