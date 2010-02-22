@@ -724,7 +724,7 @@ if __name__ == "__main__":
         print "Starting LFC Proxy FileCatalog client"
         cli.cmdloop() 
       elif catype == "DiracFC":
-        from DIRAC.DataManagementSystem.Client.FileCatalogClient import FileCatalogClient
+        from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
         cli = FileCatalogClientCLI(FileCatalogClient())
         print "Starting ProcDB FileCatalog client"
         cli.cmdloop()  
