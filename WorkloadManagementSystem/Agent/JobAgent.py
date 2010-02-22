@@ -200,20 +200,20 @@ class JobAgent( AgentModule ):
           self.log.error( 'Invalid Proxy', proxyResult['Message'] )
           return self.__rescheduleFailedJob( jobID , 'Fail to setup proxy' )
         else:
-          proxyChain = proxyResult['Value']        
+          proxyChain = proxyResult['Value']
       else:
         ret = getProxyInfo( disableVOMS = True )
         if not ret['OK']:
           self.log.error( 'Invalid Proxy', ret['Message'] )
           return self.__rescheduleFailedJob( jobID , 'Invalid Proxy' )
-  
+
         proxyChain = ret['Value']['chain']
         if not 'groupProperties' in ret['Value']:
           print ret['Value']
           print proxyChain.dumpAllToString()
           self.log.error( 'Invalid Proxy', 'Group has no properties defined' )
           return self.__rescheduleFailedJob( jobID , 'Proxy has no group properties defined' )
-  
+
         if Properties.GENERIC_PILOT in ret['Value']['groupProperties']:
           proxyResult = self.__setupProxy( jobID, ownerDN, jobGroup, self.siteRoot )
           if not proxyResult['OK']:
@@ -292,18 +292,11 @@ class JobAgent( AgentModule ):
     """
     self.log.info( "Requesting proxy for %s@%s" % ( ownerDN, ownerGroup ) )
     token = gConfig.getValue( "/Security/ProxyToken", "" )
-    if token:
-      retVal = gProxyManager.getPayloadProxyFromDIRACGroup( ownerDN,
-                                                            ownerGroup,
-                                                            token,
-                                                            self.defaultProxyLength
-                                                          )
-    else:
+    if not token:
       self.log.info( "No token defined. Trying to download proxy without token" )
-      retVal = gProxyManager.downloadVOMSProxy( ownerDN,
-                                                ownerGroup,
-                                                limited = True,
-                                                requiredTimeLeft = self.defaultProxyLength )
+      token = False
+    retVal = gProxyManager.getPayloadProxyFromDIRACGroup( ownerDN, ownerGroup,
+                                                          token, self.defaultProxyLength )
     if not retVal[ 'OK' ]:
       self.log.error( 'Could not retrieve proxy' )
       self.log.verbose( retVal )
