@@ -521,11 +521,8 @@ class ProxyDB(DB):
     retVal = self._update( cmd, conn = connObj )
     if not retVal[ 'OK' ]:
       return retVal
+    retVal1 = VOMS().getVOMSProxyInfo( chain, 'actimeleft' )
     retVal2 = VOMS().getVOMSProxyInfo( chain, 'timeleft' )
-    if vomsAttr == 'None':
-      retVal1 = retVal2
-    else:
-      retVal1 = VOMS().getVOMSProxyInfo( chain, 'actimeleft' )
     if not retVal1[ 'OK' ]:
       return retVal1
     if not retVal2[ 'OK' ]:
