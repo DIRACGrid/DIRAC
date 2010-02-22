@@ -38,57 +38,39 @@ class FileCatalogHandler(RequestHandler):
   #
   types_addUser = [StringTypes]
   def export_addUser(self,userName):
-    """ Add a new user name to the File Catalog
+    """ Add a new user to the File Catalog
     """
-    result = self.getRemoteCredentials()
-    user = result['username']
-    group = result['group']
-    return fcDB.addUser(userName,user,group)
+    return fcDB.addUser(userName,self.getRemoteCredentials())
   
   types_deleteUser = [StringTypes]
   def export_deleteUser(self,userName):
     """ Delete user from the File Catalog
     """
-    result = self.getRemoteCredentials()
-    user = result['username']
-    group = result['group']
-    return fcDB.deleteUser(userName,user,group)
+    return fcDB.deleteUser(userName,self.getRemoteCredentials())
   
   types_getUsers = []
   def export_getUsers(self):
     """ Get all the users defined in the File Catalog
     """
-    result = self.getRemoteCredentials()
-    user = result['username']
-    group = result['group']
-    return fcDB.getUsers(user,group)
+    return fcDB.getUsers(self.getRemoteCredentials())
   
   types_addGroup = [StringTypes]
   def export_addGroup(self,groupName):
-    """ Get replica info for the given list of LFNs
+    """ Add a new group to the File Catalog
     """
-    result = self.getRemoteCredentials()
-    user = result['username']
-    group = result['group']
-    return fcDB.addGroup(groupName,user,group)
+    return fcDB.addGroup(groupName,self.getRemoteCredentials())
   
   types_deleteGroup = [StringTypes]
   def export_deleteGroup(self,groupName):
-    """ Get replica info for the given list of LFNs
+    """ Delete group from the File Catalog
     """
-    result = self.getRemoteCredentials()
-    user = result['username']
-    group = result['group']
-    return fcDB.deleteGroup(groupName,user,group)
+    return fcDB.deleteGroup(groupName,self.getRemoteCredentials())
   
   types_getGroups = []
   def export_getGroups(self):
     """ Get all the groups defined in the File Catalog
     """
-    result = self.getRemoteCredentials()
-    user = result['username']
-    group = result['group']
-    return fcDB.getGroups(user,group)
+    return fcDB.getGroups(self.getRemoteCredentials())
   
   ########################################################################
   # File operations
@@ -97,28 +79,19 @@ class FileCatalogHandler(RequestHandler):
   def export_addFile(self,lfns):
     """ Get replica info for the given list of LFNs
     """
-    result = self.getRemoteCredentials()
-    user = result['username']
-    group = result['group']
-    return fcDB.addFile(lfns,user,group)
+    return fcDB.addFile(lfns,self.getRemoteCredentials())
   
   types_addReplica = [[ListType,DictType]+list(StringTypes)]
   def export_addReplica(self,lfns):
     """ Get replica info for the given list of LFNs
     """
-    result = self.getRemoteCredentials()
-    user = result['username']
-    group = result['group']
-    return fcDB.addReplica(lfns,user,group)
+    return fcDB.addReplica(lfns,self.getRemoteCredentials())
   
   types_getReplicas = [[ListType,DictType]+list(StringTypes)]
   def export_getReplicas(self,lfns):
     """ Get replica info for the given list of LFNs
     """
-    result = self.getRemoteCredentials()
-    user = result['username']
-    group = result['group']
-    return fcDB.getReplicas(lfns,user,group)
+    return fcDB.getReplicas(lfns,self.getRemoteCredentials())
   
   ########################################################################
   # Directory operations
@@ -127,28 +100,19 @@ class FileCatalogHandler(RequestHandler):
   def export_listDirectory(self,lfns,verbose):
     """ Get replica info for the given list of LFNs
     """
-    result = self.getRemoteCredentials()
-    user = result['username']
-    group = result['group']
-    return fcDB.listDirectory(lfns,user,group,verbose=verbose)
+    return fcDB.listDirectory(lfns,self.getRemoteCredentials(),verbose=verbose)
   
   types_isDirectory = [[ListType,DictType]+list(StringTypes)]
   def export_isDirectory(self,lfns):
     """ Get replica info for the given list of LFNs
     """
-    result = self.getRemoteCredentials()
-    user = result['username']
-    group = result['group']
-    return fcDB.isDirectory(lfns,user,group)
+    return fcDB.isDirectory(lfns,self.getRemoteCredentials())
   
   types_createDirectory = [[ListType,DictType]+list(StringTypes)]
   def export_createDirectory(self,lfns):
     """ Get replica info for the given list of LFNs
     """
-    result = self.getRemoteCredentials()
-    user = result['username']
-    group = result['group']
-    return fcDB.createDirectory(lfns,user,group)
+    return fcDB.createDirectory(lfns,self.getRemoteCredentials())
 
   ########################################################################
   # Path operations
@@ -157,25 +121,16 @@ class FileCatalogHandler(RequestHandler):
   def export_changePathOwner(self,lfns):
     """ Get replica info for the given list of LFNs
     """
-    result = self.getRemoteCredentials()
-    user = result['username']
-    group = result['group']
-    return fcDB.changePathOwner(lfns,user,group)
+    return fcDB.changePathOwner(lfns,self.getRemoteCredentials())
   
   types_changePathGroup = [[ListType,DictType]+list(StringTypes)]
   def export_changePathGroup(self,lfns):
     """ Get replica info for the given list of LFNs
     """
-    result = self.getRemoteCredentials()
-    user = result['username']
-    group = result['group']
-    return fcDB.changePathGroup(lfns,user,group)
+    return fcDB.changePathGroup(lfns,self.getRemoteCredentials())
   
   types_changePathMode = [[ListType,DictType]+list(StringTypes)]
   def export_changePathMode(self,lfns):
     """ Get replica info for the given list of LFNs
     """
-    result = self.getRemoteCredentials()
-    user = result['username']
-    group = result['group']
-    return fcDB.changePathMode(lfns,user,group)
+    return fcDB.changePathMode(lfns,self.getRemoteCredentials())
