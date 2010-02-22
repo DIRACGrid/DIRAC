@@ -4,7 +4,7 @@
 # $HeadURL$
 # $Id$
 #
-# This script installs the bare minimal setup of the DIRAC system which allows
+# This script installs the bare minimal setup of DIRAC which allows
 # to manage the composition of the DIRAC service remotely. The script should
 # be only used for the initial installation and not for the software updates. 
 #
@@ -27,10 +27,10 @@
 DIRACUSER=dirac
 #
 # Host where it is allowed to run the script
-DIRACHOST=volhcb20.cern.ch
+DIRACHOST=volhcb17.cern.ch
 #
 # The DN of the host certificate
-DIRACHOSTDN=/DC=ch/DC=cern/OU=computers/CN=volhcb20.cern.ch
+DIRACHOSTDN=/DC=ch/DC=cern/OU=computers/CN=volhcb17.cern.ch
 #
 # The user name of the primary DIRAC administrator
 DIRACADMIN=atsareg
@@ -48,7 +48,7 @@ DIRACADMINEMAIL=atsareg@in2p3.fr
 DESTDIR=/opt/dirac
 #
 # Installation site name
-SiteName=VOLHCB20.cern.ch
+SiteName=VOLHCB17.cern.ch
 #
 # The main VO name
 VO=lhcb
@@ -124,6 +124,14 @@ if [ ! -e $DESTDIR/etc/$CONFIGNAME.cfg ] ; then
 
   echo Generate $CONFIGNAME.cfg file
 
+#
+# Add Extensions option
+  CONFIGEXT=
+  if [ ! -z "$EXTENSION" ]; then
+    EXT=`echo $EXTENSION | sed 's/ /,/'`
+    CONFIGEXT="Extensions = $EXT"
+  fi
+
   cat >> $DESTDIR/etc/$CONFIGNAME.cfg << EOF || exit
 DIRAC
 {
@@ -140,6 +148,7 @@ DIRAC
       Framework = $DIRACINSTANCE
     }
   }
+  $CONFIGEXT
 }
 Registry
 {
@@ -393,4 +402,3 @@ fi
 for dir in etc $DIRACDIRS ; do
   [ -e $VERDIR/$dir ] || ln -s ../../$dir $VERDIR   || exit 1
 done
-
