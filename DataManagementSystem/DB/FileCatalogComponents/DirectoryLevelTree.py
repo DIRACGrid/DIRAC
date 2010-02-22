@@ -35,7 +35,7 @@ class DirectoryLevelTree:
       return result
     
     if not result['Value']:
-      return S_OK('')
+      return S_ERROR('Directory not found')
     
     res = S_OK(result['Value'][0][0])  
     res['Level'] = result['Value'][0][1]
