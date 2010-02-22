@@ -1,5 +1,5 @@
 [
-    Executable = "\$DIRACROOT/scripts/dirac-proxy-info";
+    Executable = "$DIRACROOT/scripts/dirac-proxy-info";
     Arguments = "&& dd if=/dev/urandom of=LargeOutputSB bs=10240 count=10240";
     JobName = "GenericJob";
     OutputSandbox =
