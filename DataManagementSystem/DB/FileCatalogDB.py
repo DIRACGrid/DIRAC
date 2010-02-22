@@ -1144,7 +1144,7 @@ class FileCatalogDB(DB,
       return result
     arguments = result['Value']
     
-    result = self.isDirectory(paths,uid,gid)
+    result = self.isDirectory(paths,credDict)
     if not result['OK']:
       return result
     dirList = result['Value']['Successful'].keys()
@@ -1203,7 +1203,7 @@ class FileCatalogDB(DB,
     arguments = result['Value']
     
     dirList = []
-    result = self.isDirectory(paths,uid,gid)    
+    result = self.isDirectory(paths,credDict)    
     if not result['OK']:
       return result
     for p in result['Value']['Successful']:
