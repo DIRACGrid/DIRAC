@@ -78,12 +78,12 @@ class SystemAdministratorClientCLI(cmd.Cmd):
         print "ERROR:",result['Message']
       else:  
         rDict = result['Value']
-        print "   System",' '*20,'Type',' '*5,'Name',' '*23,'Setup    Installed   Runit    Uptime    PID'
+        print "   System",' '*20,'Name',' '*5,'Type',' '*23,'Setup    Installed   Runit    Uptime    PID'
         print '-'*116
         for compType in rDict:
           for system in rDict[compType]:
             for component in rDict[compType][system]:
-              print  system.ljust(28),compType.lower()[:-1].ljust(7),component.ljust(28),
+              print  system.ljust(28),component.ljust(28),compType.lower()[:-1].ljust(7),
               if rDict[compType][system][component]['Setup']:
                 print 'SetUp'.rjust(12),
               else:
@@ -169,6 +169,14 @@ class SystemAdministratorClientCLI(cmd.Cmd):
       result = client.setupComponent(system,component)
       if not result['OK']:
         print "ERROR:",result['Message']
+        return      
+      compType = result['Value']['ComponentType']
+      runit = result['Value']['RunitStatus']
+      result = client.addCSDefaultOptions(system,component,self.host)
+      if not result['OK']:
+        print "ERROR:",result['Message']
+        return
+      print "%s %s_%s is installed, runit status: %s" % (compType,system,component,runit)  
     else:
       print "Unknown option:",option          
       

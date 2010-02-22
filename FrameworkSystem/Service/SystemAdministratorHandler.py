@@ -358,7 +358,7 @@ class SystemAdministratorHandler( RequestHandler ):
       if not result['OK']:
         return S_ERROR('Failed to start the component %s_%s' % (system,component) )
       if result['Value'] and result['Value']['%s_%s' % (system,component)]['RunitStatus'] == "Run":
-        return S_OK("Run")
+        break
       time.sleep(1)
     
     # Final check

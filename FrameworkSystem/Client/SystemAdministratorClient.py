@@ -31,14 +31,13 @@ class SystemAdministratorClient(Client):
     if not result['OK']:
       return 'unknown'
     
-    sysName = system+'System'
     services = result['Value']['Services']
-    if services.has_key(sysName):
-      if component in services[sysName]:
+    if services.has_key(system):
+      if component in services[system]:
         return 'service'
     agents = result['Value']['Agents']
-    if agents.has_key(sysName):
-      if component in agents[sysName]:
+    if agents.has_key(system):
+      if component in agents[system]:
         return 'agent'  
     return 'unknown'  
       
