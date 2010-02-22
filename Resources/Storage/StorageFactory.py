@@ -21,6 +21,10 @@ class StorageFactory:
 
     self.rootConfigPath = '/Resources/StorageElements'
     self.valid = True
+    self.proxy= False
+    res = gConfig.getOption("%s/UseProxy" % self.rootConfigPath)
+    if res['OK'] and (res['Value'] == 'True'):
+      self.proxy=True
 
   ###########################################################################################
   #
@@ -247,6 +251,10 @@ class StorageFactory:
       configPath = '%s/%s' % (protocolConfigPath,option)
       optionValue = gConfig.getValue(configPath,'')
       protocolDict[option] = optionValue
+
+    # If the user has requested to use Proxy storage
+    if self.proxy:
+      protocolDict['ProtocolName'] = 'Proxy'
 
     # Now update the local and remote protocol lists.
     # A warning will be given if the Access option is not set.
