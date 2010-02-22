@@ -42,12 +42,12 @@ def getDiskSpace(path='.'):
     return -1
   comm = 'df -P -m %s | tail -1' % path
   resultDF = shellCall(0,comm)
-  if resultDF['OK'] and resultDF['Value'][0] == 0:
+  if resultDF['OK'] and not resultDF['Value'][0]:
     output = resultDF['Value'][1]
     if output.find(' /afs') >= 0 :    # AFS disk space
       comm = 'fs lq | tail -1'
       resultAFS = shellCall(0,comm)
-      if resultAFS['OK'] and resultAFS['Value'][0] == 0:
+      if resultAFS['OK'] and not resultAFS['Value'][0]:
         output = resultAFS['Value'][1]
         fields = output.split()
         quota = long(fields[1])
