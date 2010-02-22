@@ -2,7 +2,7 @@ from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
 import unittest,types,time
-from DIRAC.DataManagementSystem.Client.FileCatalogClient import FileCatalogClient
+from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 
 class FileCatalogDBTestCase(unittest.TestCase):
   """ Base class for the FileCatalogDB test cases
