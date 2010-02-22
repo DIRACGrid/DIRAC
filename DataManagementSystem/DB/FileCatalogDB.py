@@ -432,14 +432,33 @@ class FileCatalogDB(DB,
         
     return S_OK({'Successful':successful,'Failed':failed})     
 
-#####################################################################
+  #####################################################################
   def setDirectoryStatus(self,path,status):
     """ set the directory mask
     """
     return self.__setDirectoryParameter(path,'Status',status)
+
+  def getPathPermissions(self, lfns, credDict):
+    """ Get permissions for the given user/group to manipulate the given lfns 
+    """
+    result = checkArgumentFormat(lfns)
+    if not result['OK']:
+      return result
+    paths = result['Value'].keys
+    
+    successful = {}
+    failed = {}
+    for path in paths:
+      result = self.getDirectoryPermissions(path,credDict)
+      if not result['OK']:
+        failed[path] = result['Message']
+      else:
+        successful[path] = result['Value']
+        
+    return S_OK({'Successful':successful,'Failed':failed}) 
   
- #####################################################################
-  def getDirectoryPermissions(self,path,uid,gid):
+  #####################################################################
+  def getDirectoryPermissions(self,path,credDict):
     """ Get permissions for the given user/group to manipulate the given directory 
     """ 
     
@@ -705,16 +724,6 @@ class FileCatalogDB(DB,
   def addFile(self,lfns,credDict):
     """ Add files to the catalog
     """  
-    s_uid = credDict['username']
-    s_gid = credDict['group']
-    result = self.findUser(s_uid)
-    if not result['OK']:
-      return result
-    uid = result['Value']
-    result = self.findGroup(s_gid)
-    if not result['OK']:
-      return result
-    gid = result['Value']
     
     result = checkArgumentFormat(lfns)
     if not result['OK']:
@@ -728,7 +737,7 @@ class FileCatalogDB(DB,
       size = int(info['Size'])
       guid = info['GUID']
       checksum = info['Checksum']
-      result = self.__addFile(lfn,pfn,size,se,guid,checksum,uid,gid)
+      result = self.__addFile(lfn,pfn,size,se,guid,checksum,credDict)
       if not result['OK']:
         failed[lfn] = result['Message']
       else:
@@ -736,17 +745,26 @@ class FileCatalogDB(DB,
         
     return S_OK({'Successful':successful,'Failed':failed})      
     
-  def __addFile(self,lfn,pfn='',size=0,se='',guid='',checksum='',checksumtype='',uid=0,gid=0):
+  def __addFile(self,lfn,pfn='',size=0,se='',guid='',checksum='',checksumtype='',credDict):
     """Add (register) a file to the catalog. The file is specified by its
        logical file name lfn, physical replica pfn, size, storage element se
        and global unique identifier guid
     """
 
     start = time.time()
-
+    s_uid = credDict['username']
+    s_gid = credDict['group']
+    result = self.findUser(s_uid)
+    if not result['OK']:
+      return result
+    uid = result['Value']
+    result = self.findGroup(s_gid)
+    if not result['OK']:
+      return result
+    gid = result['Value']
     # check directory permissions
     lfnDir = os.path.dirname(lfn)
-    result = self.getDirectoryPermissions(lfnDir,uid,gid)
+    result = self.getDirectoryPermissions(lfnDir,credDict)
     if not result['OK']:
       return result
     permDict = result['Value']
@@ -1405,7 +1423,7 @@ class FileCatalogDB(DB,
       se = info['SE']
       # check directory permissions
       lfnDir = os.path.dirname(lfn)
-      result = self.getDirectoryPermissions(lfnDir,uid,gid)
+      result = self.getDirectoryPermissions(lfnDir,credDict)
       if not result['OK']:
         failed[lfn] = result['Message']
         continue
