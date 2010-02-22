@@ -137,7 +137,7 @@ DIRAC
 {
   Configuration
   {
-    Servers = dips://$DIRACHOST:9135/Configuration/Configuration
+    Servers = dips://$DIRACHOST:9135/Configuration/Server
     Name = $CONFIGNAME
   }
   Setups
@@ -223,7 +223,7 @@ DIRAC
   Configuration
   {
     Master = yes
-    Servers = dips://$DIRACHOST:9135/Configuration/Configuration
+    Servers = dips://$DIRACHOST:9135/Configuration/Server
     Name = $CONFIGNAME
   }
   Security
@@ -322,14 +322,14 @@ chmod +x $DESTDIR/sbin/runsvdir-start
 # management of the DIRAC setup 
 #
 # Install basic services
-$DESTDIR/pro/scripts/install_service.sh Configuration Configuration
+$DESTDIR/pro/scripts/install_service.sh Configuration Server
 $DESTDIR/pro/scripts/install_service.sh Framework SystemAdministrator
 
 ###################<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 # Generate the required Configuration Server configuration
 #
-[ -e $DESTDIR/etc/Configuration_Configuration.cfg ] && rm -f $DESTDIR/etc/Configuration_Configuration.cfg
-cat >> $DESTDIR/etc/Configuration_Configuration.cfg << EOF || exit
+[ -e $DESTDIR/etc/Configuration_Server.cfg ] && rm -f $DESTDIR/etc/Configuration_Server.cfg
+cat >> $DESTDIR/etc/Configuration_Server.cfg << EOF || exit
 Systems
 {
   Configuration
@@ -338,10 +338,11 @@ Systems
     {
       Services
       {
-        Configuration
+        Server
         {
           LogLevel = DEBUG
           Port = 9135
+          HandlerPath = DIRAC/ConfigurationSystem/Service/ConfigurationHandler.py
           Protocol = dips
           Authorization
           {
@@ -386,7 +387,7 @@ EOF
 
 #
 # Put the basic services under the runit control
-[ -e  $DESTDIR/startup/Configuration_Configuration ] || ln -s $DESTDIR/runit/Configuration/Configuration $DESTDIR/startup/Configuration_Configuration
+[ -e  $DESTDIR/startup/Configuration_Server ] || ln -s $DESTDIR/runit/Configuration/Server $DESTDIR/startup/Configuration_Server
 [ -e  $DESTDIR/startup/Framework_SystemAdministrator ] || ln -s $DESTDIR/runit/Framework/SystemAdministrator $DESTDIR/startup/Framework_SystemAdministrator
 
 ls -ltr /opt/dirac/pro
