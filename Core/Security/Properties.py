@@ -32,3 +32,5 @@ PPG_AUTHORITY = "PPGAuthority"
 BOOKKEEPING_MANAGEMENT = "BookkeepingManagement"
 #Allow to set notifications and manage alarms
 ALARMS_MANAGEMENT = "AlarmsManagement"
+#Allow FC Management
+FC_MANAGEMENT = "FileCatalogManagement"
