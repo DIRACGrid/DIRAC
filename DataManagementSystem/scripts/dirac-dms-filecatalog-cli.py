@@ -34,7 +34,7 @@ elif fcType == "LFCProxy":
   print "Starting LFC Proxy FileCatalog client"
   cli.cmdloop() 
 elif fcType == "DiracFC":
-  from DIRAC.DataManagementSystem.Client.FileCatalogClient import FileCatalogClient
+  from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
   cli = FileCatalogClientCLI(FileCatalogClient())
   print "Starting DIRAC FileCatalog client"
   cli.cmdloop()  
