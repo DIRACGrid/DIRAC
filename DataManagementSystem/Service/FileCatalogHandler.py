@@ -134,3 +134,12 @@ class FileCatalogHandler(RequestHandler):
     """ Get replica info for the given list of LFNs
     """
     return fcDB.changePathMode(lfns,self.getRemoteCredentials())
+
+  ########################################################################
+  # ACL Operations
+  #
+  types_getPathPermissions = [[ListType,DictType]+list(StringTypes)]
+  def export_getPathPermissions(self, lfns):
+    """ Determine the ACL information for a supplied path
+    """
+    return fcDB.getPathPermissions(lfns,self.getRemoteCredentials())
