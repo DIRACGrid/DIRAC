@@ -155,6 +155,13 @@ class SystemAdministratorClientCLI(cmd.Cmd):
       result = client.installDatabase(database)
       if not result['OK']:
         print "ERROR:",result['Message']
+        return
+      extension,system = result['Value']
+      result = client.addCSDatabaseOptions(system,database,self.host)
+      if not result['OK']:
+        print "ERROR:",result['Message']
+        return
+      print "Database %s from %s installed successfully" % (database,extension) 
     elif option == "service" or option == "agent":
       system = argss[0]
       component = argss[1]

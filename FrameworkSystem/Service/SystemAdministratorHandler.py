@@ -623,7 +623,7 @@ class SystemAdministratorHandler( RequestHandler ):
   types_installDatabase = [ StringTypes ]
   def export_installDatabase(self,rootpwd,dbname):
     """ Install a DIRAC database named dbname
-    """ 
+    """
     diracpwd = gConfig.getValue('/Systems/Databases/Password','')
     if not diracpwd:
       return S_ERROR('Database password is not defined')
@@ -634,7 +634,18 @@ class SystemAdministratorHandler( RequestHandler ):
       currentEnv['HOST'] = socket.getfqdn()
 
     result = shellCall(0,'/opt/dirac/pro/DIRAC/Core/scripts/install_mysql_db.sh %s' % dbname,env=currentEnv)
-    return result
+    if not result['OK']:
+      return result
+
+    # Get the database system
+    extensions = gConfig.getValue('/DIRAC/Extensions',[])
+    for extension in [ x+'DIRAC' for x in extensions]+['DIRAC']:
+      systemList = os.listdir(rootPath+'/%s' % extension)
+      for system in systemList:
+        if os.path.exists(rootPath+'/%s/%s/DB/%s.sql' % (extension,system,dbname) ):
+          return S_OK( (extension,system) )
+
+    return S_ERROR('Database %s not found' % dbname) 
   
   types_addLocalDatabaseOptions = [ StringTypes, StringTypes ]
   def export_addLocalDatabaseOptions(self,system,dbname,user=None,password=None):

@@ -191,13 +191,6 @@ class SystemAdministratorClient(Client):
       
     server = RPCClient(self.serverURL)
     return server.installDatabase(rpword,database)      
-    
-  def addCSDatabaseOptions(self,system,dbname,host,user=None,password=None):
-    """ Add default component options to the global CS or to the local options
-    """
-    if user or password:
-      return S_ERROR('Database User and Password settings are not allowed in the global CS')
-    return self.__addCSDBOptions(system,dbname,host)
   
   def __getInstance(self,system):
     """ Get the name of the local instance of the given system
@@ -232,9 +225,10 @@ class SystemAdministratorClient(Client):
 
     return S_OK(cfg) 
   
-  def __addCSDBOptions(self,system,dbname,host,override=False):
+  def addCSDatabaseOptions(self,systemName,dbname,host,override=False):
     """ Add the section with the database options to the CS
     """
+    system = systemName.replace('System','')
     instance = self.__getInstance(system)
     if instance == "Unknown":
       return S_ERROR('Unknown setup')
