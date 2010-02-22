@@ -276,11 +276,11 @@ class SystemAdministratorHandler( RequestHandler ):
     if not result['OK']:
       return componentType
     softDict = result['Value']
-    if softDict['Services'].has_key(system+'System'):
-      if component in softDict['Services'][system+'System']:
+    if softDict['Services'].has_key(system):
+      if component in softDict['Services'][system]:
         componentType = 'service'
-    if softDict['Agents'].has_key(system+'System'):
-      if component in softDict['Agents'][system+'System']:
+    if softDict['Agents'].has_key(system):
+      if component in softDict['Agents'][system]:
         componentType = 'agent'
     
     return componentType
@@ -321,7 +321,7 @@ class SystemAdministratorHandler( RequestHandler ):
   def export_setupComponent(self,system,component):
     """ Setup the specified component for running with the runsv daemon
     """  
-    
+    componentType='unknown'
     # Check that the runit directory is there and sain
     runitDir = DIRACROOT+'/runit/%s/%s' % (system,component)
     if not os.path.exists(runitDir):
@@ -329,6 +329,7 @@ class SystemAdministratorHandler( RequestHandler ):
       result = self.__installComponent(system,component)
       if not result['OK']:
         return result
+      componentType = result['Value']
       
     sainCheck = True
     message = ''
@@ -365,7 +366,10 @@ class SystemAdministratorHandler( RequestHandler ):
     if not result['OK']:
       return S_ERROR('Failed to start the component %s_%s' % (system,component) )
     
-    return S_OK(result['Value']['%s_%s' % (system,component)]['RunitStatus'])  
+    resDict = {}
+    resDict['ComponentType'] = componentType
+    resDict['RunitStatus'] = result['Value']['%s_%s' % (system,component)]['RunitStatus'] 
+    return S_OK(resDict)  
 
   def __getInstance(self,system):
     """ Get the name of the local instance of the given system
