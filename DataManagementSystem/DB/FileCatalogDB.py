@@ -737,7 +737,7 @@ class FileCatalogDB(DB,
       size = int(info['Size'])
       guid = info['GUID']
       checksum = info['Checksum']
-      result = self.__addFile(lfn,pfn,size,se,guid,checksum,credDict)
+      result = self.__addFile(lfn,credDict,pfn,size,se,guid,checksum)
       if not result['OK']:
         failed[lfn] = result['Message']
       else:
@@ -745,7 +745,7 @@ class FileCatalogDB(DB,
         
     return S_OK({'Successful':successful,'Failed':failed})      
     
-  def __addFile(self,lfn,pfn='',size=0,se='',guid='',checksum='',checksumtype='',credDict):
+  def __addFile(self,lfn,credDict,pfn='',size=0,se='',guid='',checksum='',checksumtype=''):
     """Add (register) a file to the catalog. The file is specified by its
        logical file name lfn, physical replica pfn, size, storage element se
        and global unique identifier guid
