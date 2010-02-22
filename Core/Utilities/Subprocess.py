@@ -50,7 +50,7 @@ class Subprocess:
     self.log = gLogger.getSubLogger( 'Subprocess' )
     try:
       self.changeTimeout( timeout )
-      self.bufferLimit = int( bufferLimit) # 5MB limit for data
+      self.bufferLimit = int( bufferLimit ) # 5MB limit for data
     except Exception, v:
       self.log.exception( 'Failed initialisation of Subprocess object' )
       raise v
@@ -83,18 +83,18 @@ class Subprocess:
     try:
       os.write( writePipe, DEncode.encode( S_OK( function( *stArgs, **stKeyArgs ) ) ) )
     except OSError, v:
-      if str(v) == '[Errno 32] Broken pipe':
+      if str( v ) == '[Errno 32] Broken pipe':
         # the parent has died
         pass
     except Exception, v:
       self.log.exception( 'Exception while executing', function.__name__ )
       os.write( writePipe, DEncode.encode( S_ERROR( str( v ) ) ) )
       #HACK: Allow some time to flush logs
-      time.sleep(1)
+      time.sleep( 1 )
     try:
       os.close( writePipe )
     finally:
-      os._exit(0)
+      os._exit( 0 )
 
   def __selectFD( self, readSeq, timeout = False ):
     validList = []
@@ -117,7 +117,7 @@ class Subprocess:
     try:
       os.kill( pid, signal )
     except Exception, v:
-      if not str(v) == '[Errno 3] No such process':
+      if not str( v ) == '[Errno 3] No such process':
         self.log.exeption( 'Exception while killing timed out process' )
         raise v
 
@@ -130,7 +130,7 @@ class Subprocess:
   def killChild( self, recursive = True ):
     if self.childPID < 1:
       self.log.error( "Could not kill child. Child PID is %s" % self.childPID )
-      return -1
+      return - 1
     os.kill( self.childPID, signal.SIGSTOP )
     if recursive:
       for gcpid in getChildrenPIDs( self.childPID, lambda cpid: os.kill( cpid, signal.SIGSTOP ) ):
@@ -173,7 +173,7 @@ class Subprocess:
         return S_ERROR( "Can't read from call %s" % ( function.__name__ ) )
       try:
         if len( readSeq ) == 0:
-          self.log.debug( 'Timeout limit reached for pythonCall', function.__name__)
+          self.log.debug( 'Timeout limit reached for pythonCall', function.__name__ )
           self.__killPid( pid )
 
           #HACK to avoid python bug
@@ -219,11 +219,11 @@ class Subprocess:
     except Exception, v:
       self.log.exception( "SUPROCESS: readFromFile exception" )
       try:
-        self.log.error( 'Error reading', 'type(nB) =%s' % type(nB) )
-        self.log.error( 'Error reading', 'nB =%s' % str(nB) )
+        self.log.error( 'Error reading', 'type(nB) =%s' % type( nB ) )
+        self.log.error( 'Error reading', 'nB =%s' % str( nB ) )
       except:
         pass
-      return S_ERROR( 'Can not read from output: %s' % str(v) )
+      return S_ERROR( 'Can not read from output: %s' % str( v ) )
     if len( dataString ) + baseLength > self.bufferLimit:
       self.log.error( 'Maximum output buffer length reached' )
       retDict = S_ERROR( 'Reached maximum allowed length (%d bytes) for called '
@@ -245,7 +245,7 @@ class Subprocess:
     else: # buffer size limit reached killing process (see comment on __readFromFile)
       exitStatus = self.killChild()
 
-      return self.__generateSystemCommandError(
+      return self.__generateSystemCommandError( 
                   exitStatus,
                   "%s for '%s' call" % ( retDict['Message'], self.cmdSeq ) )
 
@@ -262,11 +262,11 @@ class Subprocess:
                                       stdout = subprocess.PIPE,
                                       stderr = subprocess.PIPE,
                                       close_fds = closefd,
-                                      env=env )
+                                      env = env )
       self.childPID = self.child.pid
     except OSError, v:
       retDict = S_ERROR( v )
-      retDict['Value'] = ( -1, '' , str(v) )
+      retDict['Value'] = ( -1, '' , str( v ) )
       return retDict
     except Exception, v:
       try:
@@ -275,18 +275,16 @@ class Subprocess:
       except:
         pass
       retDict = S_ERROR( v )
-      retDict['Value'] = ( -1, '' , str(v) )
+      retDict['Value'] = ( -1, '' , str( v ) )
       return retDict
 
     try:
       self.bufferList = [ [ "", 0 ], [ "", 0 ] ]
       initialTime = time.time()
-      exitStatus = self.child.poll()
 
-      # while exitStatus == None:
-      exitStatus = self.__poll(self.child.pid)
+      exitStatus = self.__poll( self.child.pid )
 
-      while (0,0) == exitStatus:
+      while ( 0, 0 ) == exitStatus or None == exitStatus:
         retDict = self.__readFromCommand()
         if not retDict[ 'OK' ]:
           return retDict
@@ -294,12 +292,12 @@ class Subprocess:
         if self.timeout and time.time() - initialTime > self.timeout:
           exitStatus = self.killChild()
           self.__readFromCommand()
-          return self.__generateSystemCommandError(
+          return self.__generateSystemCommandError( 
                       exitStatus,
                       "Timeout (%d seconds) for '%s' call" %
                       ( self.timeout, cmdSeq ) )
-
-        exitStatus = self.__poll(self.child.pid)
+        time.sleep( 0.01 )
+        exitStatus = self.__poll( self.child.pid )
 
       self.__readFromCommand()
 
@@ -353,7 +351,7 @@ class Subprocess:
         self.bufferList[ bufferIndex ][1] = 0
       except Exception, v:
         self.log.exception( 'Exception while calling callback function',
-                           '%s' % self.callback.__name__, lException=v )
+                           '%s' % self.callback.__name__, lException = v )
         self.log.showStack()
 
       return True
