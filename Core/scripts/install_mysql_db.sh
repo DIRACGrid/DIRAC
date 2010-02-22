@@ -61,7 +61,7 @@ Systems
         $DB
         {
           User = Dirac
-          Host = $HOST
+          Host = $HOSTNAME
           Password = $MYSQL_DIRAC_PWD
           DBName = $DB
         }
