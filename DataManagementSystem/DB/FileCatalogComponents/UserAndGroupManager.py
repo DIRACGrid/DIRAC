@@ -9,16 +9,16 @@ __RCSID__ = "$Id:  $"
 
 import time
 from types import *
+from DIRAC.Core.Security import Properties
 from DIRAC import S_OK, S_ERROR
 
 class UserAndGroupManager:
   
   
-  def getUserAndGroupRight(self,user,group):
+  def getUserAndGroupRight(self, credDict):
     """ Evaluate rights for user and group operations
     """
-    
-    if group == "diracAdmin" or group == 0:
+    if Properties.FC_MANAGEMENT in credDict[ 'properties' ]:
       return S_OK(True)
     else:
       return S_OK(False)
@@ -28,11 +28,11 @@ class UserAndGroupManager:
 #  User related methods
 #
 #####################################################################
-  def addUser(self,name,ruser,rgroup):
+  def addUser(self,name,credDict):
     """ Add a new user with a nickname 'name' 
     """
 
-    result = self.getUserAndGroupRight(ruser,rgroup)
+    result = self.getUserAndGroupRight(credDict)
     if not result['Value']:
       return S_ERROR('Permission denied')
 
@@ -67,11 +67,11 @@ class UserAndGroupManager:
     return S_OK(result['Value'])
 
 #####################################################################
-  def deleteUser(self,name,ruser,rgroup,force=True):
+  def deleteUser(self,name,credDict,force=True):
     """ Delete a user specified by its nickname
     """
     
-    result = self.getUserAndGroupRight(ruser,rgroup)
+    result = self.getUserAndGroupRight(credDict)
     if not result['Value']:
       return S_ERROR('Permission denied')
 
@@ -84,11 +84,11 @@ class UserAndGroupManager:
     return resUpdate
 
 #####################################################################
-  def getUsers(self,ruser=0,rgroup=0):
+  def getUsers(self,credDict):
     """ Get the current user IDs and names
     """
 
-    result = self.getUserAndGroupRight(ruser,rgroup)
+    result = self.getUserAndGroupRight(credDict)
     if not result['Value']:
       return S_ERROR('Permission denied')
 
@@ -149,11 +149,11 @@ class UserAndGroupManager:
 #  Group related methods
 #
 #####################################################################
-  def addGroup(self,gname,ruser,rgroup,gid=0):
+  def addGroup(self,gname,credDict,gid=0):
     """ Add a new group with a name 'name'
     """
     
-    result = self.getUserAndGroupRight(ruser,rgroup)
+    result = self.getUserAndGroupRight(credDict)
     if not result['Value']:
       return S_ERROR('Permission denied')
     
@@ -191,11 +191,11 @@ class UserAndGroupManager:
 
 
 #####################################################################
-  def deleteGroup(self,gname,ruser,rgroup):
+  def deleteGroup(self,gname,credDict):
     """ Delete a group specified by its name
     """
 
-    result = self.getUserAndGroupRight(ruser,rgroup)
+    result = self.getUserAndGroupRight(credDict)
     if not result['Value']:
       return S_ERROR('Permission denied')
 
@@ -204,11 +204,11 @@ class UserAndGroupManager:
     return resUpdate
  
 #####################################################################
-  def getGroups(self,ruser=0,rgroup=0):
+  def getGroups(self,credDict):
     """ Get the current group IDs and names
     """
 
-    result = self.getUserAndGroupRight(ruser,rgroup)
+    result = self.getUserAndGroupRight(credDict)
     if not result['Value']:
       return S_ERROR('Permission denied')
 
