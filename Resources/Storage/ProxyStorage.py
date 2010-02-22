@@ -6,6 +6,7 @@ from DIRAC.ConfigurationSystem.Client                   import PathFinder
 from DIRAC.Core.DISET.RPCClient                         import RPCClient
 from DIRAC.Core.DISET.TransferClient                    import TransferClient
 from DIRAC.Core.Utilities.File                          import getSize
+from DIRAC.Core.Utilities.Pfn                           import pfnparse,pfnunparse
 
 import types, os
  
@@ -34,6 +35,24 @@ class ProxyStorage(StorageBase):
   # URL manipulation functionalities
   ######################################   
 
+  def getParameters(self):
+    """ This gets all the storage specific parameters pass when instantiating the storage
+    """
+    parameterDict = {}  
+    parameterDict['StorageName'] = self.name
+    parameterDict['ProtocolName'] = self.protocolName
+    parameterDict['Protocol'] = self.protocol
+    parameterDict['Host'] = self.host
+    parameterDict['Path'] = self.path
+    parameterDict['Port'] = self.port
+    parameterDict['SpaceToken'] = self.spaceToken
+    parameterDict['WSUrl'] = self.wspath
+    return S_OK(parameterDict)
+
+  def getProtocolPfn(self,pfnDict,withPort):
+    """ From the pfn dict construct the SURL to be used
+    """  
+    return pfnunparse(pfnDict)
 
   ######################################
   # File transfer functionalities
@@ -191,7 +210,6 @@ class ProxyStorage(StorageBase):
 
   def putDirectory(self,path):
     return S_ERROR("Not supported")
-
 
   def __checkArgumentFormatDict(self,path):  
     if type(path) in types.StringTypes:
