@@ -15,41 +15,12 @@ import types, re,os,time,sys,string
 
 ISOK = True
 
-try:
-  import lcg_util
-  infoStr = 'Using lcg_util from: %s' % lcg_util.__file__
-  gLogger.debug(infoStr)
-  infoStr = "The version of lcg_utils is %s" % lcg_util.lcg_util_version()
-  gLogger.debug(infoStr)
-except Exception,x:
-  errStr = "SRM2Storage.__init__: Failed to import lcg_util: %s" % (x)
-  gLogger.exception(errStr,'',x)
-  ISOK = False
-
-try:
-  import gfalthr as gfal
-  infoStr = "Using gfalthr from: %s" % gfal.__file__
-  gLogger.debug(infoStr)
-  infoStr = "The version of gfalthr is %s" % gfal.gfal_version()
-  gLogger.debug(infoStr)
-except Exception,x:
-  errStr = "SRM2Storage.__init__: Failed to import gfalthr: %s." % (x)
-  gLogger.warn(errStr)
-  try:
-    import gfal
-    infoStr = "Using gfal from: %s" % gfal.__file__
-    gLogger.debug(infoStr)
-    infoStr = "The version of gfal is %s" % gfal.gfal_version()
-    gLogger.debug(infoStr)
-  except Exception,x:
-    errStr = "SRM2Storage.__init__: Failed to import gfal: %s" % (x)
-    gLogger.exception(errStr,'',x)
-    ISOK = False
-
 class SRM2Storage(StorageBase):
-
+  
   def __init__(self,storageName,protocol,path,host,port,spaceToken,wspath):
     self.isok = ISOK
+    self.gfal = False
+    self.lcg_util = False
 
     self.protocolName = 'SRM2'
     self.name = storageName
@@ -81,6 +52,44 @@ class SRM2Storage(StorageBase):
 
   def isOK(self):
     return self.isok
+
+  def __importExternals(self):
+    if (self.lcg_util) and (self.gfal):
+      return S_OK()
+    try:
+      import lcg_util
+      infoStr = 'Using lcg_util from: %s' % lcg_util.__file__
+      gLogger.debug(infoStr)
+      infoStr = "The version of lcg_utils is %s" % lcg_util.lcg_util_version()
+      gLogger.debug(infoStr)
+    except Exception,x:
+      errStr = "SRM2Storage.__init__: Failed to import lcg_util"
+      gLogger.exception(errStr,'',x)
+      ISOK = False
+      return S_ERROR(errStr)
+    try:
+      import gfalthr as gfal
+      infoStr = "Using gfalthr from: %s" % gfal.__file__
+      gLogger.debug(infoStr)
+      infoStr = "The version of gfalthr is %s" % gfal.gfal_version()
+      gLogger.debug(infoStr)
+    except Exception,x:
+      errStr = "SRM2Storage.__init__: Failed to import gfalthr: %s." % (x)
+      gLogger.warn(errStr)
+      try:
+        import gfal
+        infoStr = "Using gfal from: %s" % gfal.__file__
+        gLogger.debug(infoStr)
+        infoStr = "The version of gfal is %s" % gfal.gfal_version()
+        gLogger.debug(infoStr)
+      except Exception,x:
+        errStr = "SRM2Storage.__init__: Failed to import gfal"
+        gLogger.exception(errStr,'',x)
+        ISOK = False
+        return S_ERROR(errStr)
+    self.lcg_util = True
+    self.gfal = True
+    return S_OK()   
 
 ################################################################################
 #
@@ -1625,7 +1634,10 @@ class SRM2Storage(StorageBase):
 
     # Create an accounting DataOperation record for each operation
     oDataOperation = self.__initialiseAccountingObject(operation,self.name,gfalDict['nbfiles'])
-
+    
+    res = self.__importExternals()
+    if not res['OK']:
+      return res
     res = self.__create_gfal_object(gfalDict)
     if not res['OK']:
       oDataOperation.setValueByKey('TransferOK',0)
