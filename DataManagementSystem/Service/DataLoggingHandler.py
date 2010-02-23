@@ -69,7 +69,7 @@ class DataLoggingHandler( RequestHandler ):
     result = logDB.addFileRecord(lfns,status,minor,date,source)
     return result
 
-  types_addFileRecord = [[ListType,TupleType]]
+  types_addFileRecords = [[ListType,TupleType]]
   def export_addFileRecords(self,fileTuples):
     """ Add a group of logging records
     """
