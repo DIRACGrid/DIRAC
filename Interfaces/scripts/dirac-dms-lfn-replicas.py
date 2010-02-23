@@ -22,16 +22,10 @@ if len(args) < 1:
 
 dirac = Dirac()
 exitCode = 0
-errorList = []
 
-for lfn in args:
-
-  result = dirac.getReplicas(args,printOutput=True)
-  if not result['OK']:
-    errorList.append( (lfn, result['Message']) )
-    exitCode = 2
-
-for error in errorList:
-  print "ERROR %s: %s" % error
+result = dirac.getReplicas(args,printOutput=True)
+if not result['OK']:
+  exitCode = 2
+  print "ERROR:", result['Message']
 
 DIRAC.exit(exitCode)
