@@ -84,13 +84,9 @@ class UserAndGroupManager:
     return resUpdate
 
 #####################################################################
-  def getUsers(self,credDict):
+  def __getUsers(self):
     """ Get the current user IDs and names
     """
-
-    result = self.getUserAndGroupRight(credDict)
-    if not result['Value']:
-      return S_ERROR('Permission denied')
 
     resDict = {}
     query = "SELECT UID,UserName from FC_Users"
@@ -131,7 +127,7 @@ class UserAndGroupManager:
     if uid in self.users:
       return S_OK(self.users[uid])
     else:
-      result = self.getUsers(0,0)
+      result = self.__getUsers()
       uDict = result['Value']
       self.users = {}
       uname = ''
@@ -204,14 +200,9 @@ class UserAndGroupManager:
     return resUpdate
  
 #####################################################################
-  def getGroups(self,credDict):
+  def __getGroups(self):
     """ Get the current group IDs and names
     """
-
-    result = self.getUserAndGroupRight(credDict)
-    if not result['Value']:
-      return S_ERROR('Permission denied')
-
     resDict = {}
     query = "SELECT GID, GroupName from FC_Groups"
     resQuery = self._query(query)
@@ -251,7 +242,7 @@ class UserAndGroupManager:
     if gid in self.groups:
       return S_OK(self.groups[gid])
     else:
-      result = self.getGroups(0,0)
+      result = self.__getGroups()
       gDict = result['Value']
       self.groups = {}
       gname = ''
