@@ -946,6 +946,9 @@ class ReplicaManager(CatalogToStorage):
       return S_ERROR(res['Value']['Failed'][path])
     lfcPerm = res['Value']['Successful'][path]
 
+    if lfcPerm.has_key('Write') and lfcPerm['Write']:
+      return S_OK(True)
+
     groupMatch = False
     for vomsRole in clientInfo['Role']:
       if vomsRole.endswith(lfcPerm['Role']):
