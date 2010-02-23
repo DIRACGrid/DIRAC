@@ -11,7 +11,7 @@ from DIRAC                                               import S_OK, S_ERROR, g
 from DIRAC.AccountingSystem.Client.Types.DataOperation   import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient       import gDataStoreClient
 from DIRAC.Core.Security.Misc                            import getProxyInfo,formatProxyInfoAsString
-from DIRAC.Core.Security.CS                              import getDNForUsername
+from DIRAC.Core.Security.CS                              import getDNForUsername, getVOMSAttributeForGroup
 from DIRAC.Core.Utilities.File                           import makeGuid,getSize
 from DIRAC.Core.Utilities.Adler                          import fileAdler,compareAdler
 from DIRAC.Core.Utilities.List                           import sortList,randomize
@@ -916,7 +916,9 @@ class ReplicaManager(CatalogToStorage):
       errStr = "ReplicaManager.__getClientCertGroup: Proxy information does not contain the group."
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    if not proxyInfo.has_key('VOMS'):
+    if not getVOMSAttributeForGroup(proxyInfo['group']):
+      proxyInfo['VOMS'] = ''
+    elif not proxyInfo.has_key('VOMS'):
       errStr = "ReplicaManager.__getClientCertGroup: Proxy information does not contain the VOMs information."     
       gLogger.error(errStr)
       return S_ERROR(errStr)
