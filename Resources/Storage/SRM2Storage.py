@@ -89,7 +89,6 @@ class SRM2Storage(StorageBase):
         return S_ERROR(errStr)
     self.lcg_util = lcg_util
     self.gfal = gfal
-    print dir(self.gfal)
     return S_OK()   
 
 ################################################################################
