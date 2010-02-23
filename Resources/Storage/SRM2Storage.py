@@ -57,7 +57,7 @@ class SRM2Storage(StorageBase):
     if (self.lcg_util) and (self.gfal):
       return S_OK()
     try:
-      import lcg_util
+      import lcg_util 
       infoStr = 'Using lcg_util from: %s' % lcg_util.__file__
       gLogger.debug(infoStr)
       infoStr = "The version of lcg_utils is %s" % lcg_util.lcg_util_version()
@@ -87,8 +87,9 @@ class SRM2Storage(StorageBase):
         gLogger.exception(errStr,'',x)
         ISOK = False
         return S_ERROR(errStr)
-    self.lcg_util = True
-    self.gfal = True
+    self.lcg_util = lcg_util
+    self.gfal = gfal
+    print dir(self.gfal)
     return S_OK()   
 
 ################################################################################
@@ -682,7 +683,7 @@ class SRM2Storage(StorageBase):
     else:
       nbstreams = 1
     gLogger.info("SRM2Storage.__putFile: Executing transfer of %s to %s" % (src_url, dest_url))
-    errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
+    errCode,errStr = self.lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
     if errCode == 0:
       gLogger.info('SRM2Storage.__putFile: Successfully put file to storage.')
       res = self.__executeOperation(dest_url,'getFileSize')
@@ -747,7 +748,7 @@ class SRM2Storage(StorageBase):
     timeout = int(remoteSize/self.MIN_BANDWIDTH + 300)
     nbstreams = 1
     gLogger.debug("SRM2Storage.__getFile: Executing transfer of %s to %s" % (src_url, dest_url))
-    errCode,errStr = lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose,timeout,src_spacetokendesc,dest_spacetokendesc)
+    errCode,errStr = self.lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose,timeout,src_spacetokendesc,dest_spacetokendesc)
     if errCode == 0:
       gLogger.debug('SRM2Storage.__getFile: Got a file from storage.')
       localSize = getSize(dest_file)
@@ -1725,7 +1726,7 @@ class SRM2Storage(StorageBase):
 
   def __create_gfal_object(self,gfalDict):
     gLogger.debug("SRM2Storage.__create_gfal_object: Performing gfal_init.")
-    errCode,gfalObject,errMessage = gfal.gfal_init(gfalDict)
+    errCode,gfalObject,errMessage = self.gfal.gfal_init(gfalDict)
     if not errCode == 0:
       errStr = "SRM2Storage.__create_gfal_object: Failed to perform gfal_init."
       if not errMessage:
@@ -1738,7 +1739,7 @@ class SRM2Storage(StorageBase):
 
   def __gfal_set_ids(self,gfalObject,srmRequestID):
     gLogger.debug("SRM2Storage.__gfal_set_ids: Performing gfal_set_ids.")
-    errCode,gfalObject,errMessage = gfal.gfal_set_ids(gfalObject,None,0,str(srmRequestID))
+    errCode,gfalObject,errMessage = self.gfal.gfal_set_ids(gfalObject,None,0,str(srmRequestID))
     if not errCode == 0:
       errStr = "SRM2Storage.__gfal_set_ids: Failed to perform gfal_set_ids."
       if not errMessage:
@@ -1753,7 +1754,7 @@ class SRM2Storage(StorageBase):
 
   def __gfal_exec(self,gfalObject,method):
     gLogger.debug("SRM2Storage.__gfal_exec: Performing %s." % method)
-    execString = "errCode,gfalObject,errMessage = gfal.%s(gfalObject)" % method
+    execString = "errCode,gfalObject,errMessage = self.gfal.%s(gfalObject)" % method
     try:
       exec(execString)
       if not errCode == 0:
@@ -1774,7 +1775,7 @@ class SRM2Storage(StorageBase):
 
   def __get_results(self,gfalObject):
     gLogger.debug("SRM2Storage.__get_results: Performing gfal_get_results")
-    numberOfResults,gfalObject,listOfResults = gfal.gfal_get_results(gfalObject)
+    numberOfResults,gfalObject,listOfResults = self.gfal.gfal_get_results(gfalObject)
     if numberOfResults <= 0:
       errStr = "SRM2Storage.__get_results: Did not obtain results with gfal_get_results."
       gLogger.error(errStr)
@@ -1792,7 +1793,7 @@ class SRM2Storage(StorageBase):
 
   def __gfal_get_ids(self,gfalObject):
     gLogger.debug("SRM2Storage.__gfal_get_ids: Performing gfal_get_ids.")
-    numberOfResults,gfalObject,srm1RequestID,srm1FileIDs,srmRequestToken = gfal.gfal_get_ids(gfalObject)
+    numberOfResults,gfalObject,srm1RequestID,srm1FileIDs,srmRequestToken = self.gfal.gfal_get_ids(gfalObject)
     if numberOfResults <= 0:
       errStr = "SRM2Storage.__gfal_get_ids: Did not obtain SRM request ID."
       gLogger.error(errStr)
@@ -1805,6 +1806,6 @@ class SRM2Storage(StorageBase):
 
   def __destroy_gfal_object(self,gfalObject):
     gLogger.debug("SRM2Storage.__destroy_gfal_object: Performing gfal_internal_free.")
-    gfal.gfal_internal_free(gfalObject)
+    self.gfal.gfal_internal_free(gfalObject)
     return S_OK()
 
