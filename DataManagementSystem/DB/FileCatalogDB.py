@@ -664,7 +664,27 @@ class FileCatalogDB(DB,
       result = S_OK()
       result['Exists'] = False
         
-    return result  
+    return result
+  
+  def existsLFNs(self, lfns, credDict):
+    """ Check if the LFNs exists
+    """
+    result = checkArgumentFormat(lfns)
+    if not result['OK']:
+      return result
+    paths = result['Value'].keys()
+    
+    successful = {}
+    failed = {}
+    for path in paths:
+      result = self.exists(path)
+      if not result['OK']:
+        failed[path] = result['Message']
+      else:
+        successful[path] = result['Value']
+        
+    return S_OK({'Successful':successful,'Failed':failed}) 
+      
   
   def __getFileLFN(self,fileID):
     """ Get LFN of the given file
@@ -1540,6 +1560,7 @@ class FileCatalogDB(DB,
         result = pfnunparse(pfnDict)
         if not result['OK']:
           failed[lfn] = result['Message']
+          continue
         if not successful.has_key(lfn):
           successful[lfn] = {}  
         successful[lfn][se] = result['Value']
