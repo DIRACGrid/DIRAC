@@ -258,3 +258,26 @@ class SystemAdministratorClient(Client):
 
     return result        
     
+  def addSystemInstance(self,system,instance):
+    """ Add a new system instance
+    """  
+    
+    setup = gConfig.getValue('/DIRAC/Setup','')
+    if not setup:
+      return S_ERROR('Failed to get setup')
+    cfg = CFG()
+    cfg.createNewSection('DIRAC')
+    cfg.createNewSection('DIRAC/Setups')
+    cfg.createNewSection('DIRAC/Setups/%s' % setup)
+    cfg.setOption('/DIRAC/Setups/%s/%s' % (setup,system),instance)
+    
+    cfgClient = CSAPI()
+    result = cfgClient.downloadCSData()
+    if not result['OK']:
+      return result
+    result = cfgClient.mergeFromCFG(cfg)
+    if not result['OK']:
+      return result
+    result = cfgClient.commit()
+
+    return result

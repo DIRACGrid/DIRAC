@@ -456,24 +456,28 @@ class SystemAdministratorHandler( RequestHandler ):
   def __startComponent(self,system,component,mode):
     """ Start the specified component for running with the runsv daemon
     """
-    template = 'runsvctrl %s '+DIRACROOT+'/startup/%s_%s' 
+    template = 'runsvctrl %s '+DIRACROOT+'/startup/%s_%s'
     result = shellCall(0,template % (mode,system,component) )
     # Check the runsv status
     start = time.time()
-    while (time.time()-10) < start: 
-      result = self.__getRunitComponentStatus(['%s_%s' % (system,component)])
-      if not result['OK']:
-        return S_ERROR('Failed to start the component %s_%s' % (system,component) )
-      if result['Value']['%s_%s' % (system,component)]['RunitStatus'] == "Run":
-        return S_OK("Run")
-      time.sleep(1)
-    
+
+    if system != '*' and component != '*':
+      while (time.time()-10) < start:
+        result = self.__getRunitComponentStatus(['%s_%s' % (system,component)])
+        if not result['OK']:
+          return S_ERROR('Failed to start the component %s_%s' % (system,component) )
+        if result['Value']['%s_%s' % (system,component)]['RunitStatus'] == "Run":
+          break
+        time.sleep(1)
+    else:
+      time.sleep(5)
+
     # Final check
     result = self.__getRunitComponentStatus(['%s_%s' % (system,component)])
     if not result['OK']:
       return S_ERROR('Failed to start the component %s_%s' % (system,component) )
-    
-    return S_OK(result['Value']['%s_%s' % (system,component)]['RunitStatus'])    
+
+    return result  
   
   types_startComponent = [ StringTypes, StringTypes ]
   def export_startComponent(self,system,component):
@@ -483,32 +487,35 @@ class SystemAdministratorHandler( RequestHandler ):
   
   types_restartComponent = [ StringTypes, StringTypes ]
   def export_restartComponent(self,system,component):
-    """ Start the specified component for running with the runsv daemon
+    """ Retart the specified component for running with the runsv daemon
     """ 
     return self.__startComponent(system,component,'t')
   
   types_stopComponent = [ StringTypes, StringTypes ]
   def export_stopComponent(self,system,component):
     """ Start the specified component for running with the runsv daemon
-    """ 
+    """
     result = shellCall(0,'runsvctrl d '+DIRACROOT+'/startup/%s_%s' % (system,component) )
     # Check the runsv status
     start = time.time()
-    while (time.time()-10) < start: 
-      result = self.__getRunitComponentStatus(['%s_%s' % (system,component)])
-      if not result['OK']:
-        return S_ERROR('Failed to stop the component %s_%s' % (system,component) )
-      if result['Value']['%s_%s' % (system,component)]['RunitStatus'] == "Down":
-        return S_OK("Down")
-      time.sleep(1)
-    
+
+    if system != '*' and component != '*':
+      while (time.time()-10) < start:
+        result = self.__getRunitComponentStatus(['%s_%s' % (system,component)])
+        if not result['OK']:
+          return S_ERROR('Failed to start the component %s_%s' % (system,component) )
+        if result['Value']['%s_%s' % (system,component)]['RunitStatus'] == "Down":
+          break
+        time.sleep(1)
+    else:
+      time.sleep(5)
+
     # Final check
     result = self.__getRunitComponentStatus(['%s_%s' % (system,component)])
     if not result['OK']:
-      return S_ERROR('Failed to stop the component %s_%s' % (system,component) )
-    
-    return S_OK(result['Value']['%s_%s' % (system,component)]['RunitStatus']) 
-     
+      return S_ERROR('Failed to start the component %s_%s' % (system,component) )
+
+    return result
      
   types_getLogTail = [ StringTypes, StringTypes ]
   def export_getLogTail(self,system,component,length=100):

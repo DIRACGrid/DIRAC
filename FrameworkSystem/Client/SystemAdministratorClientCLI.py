@@ -178,7 +178,131 @@ class SystemAdministratorClientCLI(cmd.Cmd):
         return
       print "%s %s_%s is installed, runit status: %s" % (compType,system,component,runit)  
     else:
-      print "Unknown option:",option          
+      print "Unknown option:",option    
+      
+  def do_start(self,args):
+    """ Start services or agents or database server    
+      
+        usage:
+        
+          start <system|*> <service|agent|*>
+          start mysql
+    """  
+    argss = args.split()
+    if argss[0] != 'mysql':
+      system = argss[0]
+      if system != '*':
+        component = argss[1]
+      else:
+        component = '*'  
+      client = SystemAdministratorClient(self.host)
+      result = client.startComponent(system,component)
+      if not result['OK']:
+        print "ERROR:",result['Message']
+      else:
+        if system != '*' and component != '*':
+          print "\n%s_%s started successfully, runit status:\n" % (system,component)
+        else:
+          print "\nComponents started successfully, runit status:\n" 
+        for comp in result['Value']:
+          print comp.rjust(32),':',result['Value'][comp]['RunitStatus']
+    else:
+      print "Not yet implemented"  
+      
+  def do_restart(self,args):
+    """ Restart services or agents or database server    
+      
+        usage:
+        
+          restart <system|*> <service|agent|*>
+          restart mysql
+    """  
+    argss = args.split()
+    if argss[0] != 'mysql':
+      system = argss[0]
+      if system != '*':
+        component = argss[1]
+      else:
+        component = '*'  
+      client = SystemAdministratorClient(self.host)
+      result = client.restartComponent(system,component)
+      if not result['OK']:
+        print "ERROR:",result['Message']
+      else:
+        if system != '*' and component != '*':
+          print "\n%s_%s started successfully, runit status:\n" % (system,component)
+        else:
+          print "\nComponents started successfully, runit status:\n" 
+        for comp in result['Value']:
+          print comp.rjust(32),':',result['Value'][comp]['RunitStatus']
+    else:
+      print "Not yet implemented"      
+      
+  def do_stop(self,args):
+    """ Stop services or agents or database server    
+      
+        usage:
+        
+          stop <system|*> <service|agent|*>
+          stop mysql
+    """  
+    argss = args.split()
+    if argss[0] != 'mysql':
+      system = argss[0]
+      if system != '*':
+        component = argss[1]
+      else:
+        component = '*'  
+      client = SystemAdministratorClient(self.host)
+      result = client.stopComponent(system,component)
+      if not result['OK']:
+        print "ERROR:",result['Message']
+      else:
+        if system != '*' and component != '*':
+          print "\n%s_%s stopped successfully, runit status:\n" % (system,component)
+        else:
+          print "\nComponents stopped successfully, runit status:\n" 
+        for comp in result['Value']:
+          print comp.rjust(32),':',result['Value'][comp]['RunitStatus']
+    else:
+      print "Not yet implemented"          
+    
+  def do_update(self,args):
+    """ Update the software on the target host
+    
+        usage:
+          
+          update <version> 
+    """
+    argss = args.split()
+    version = argss[0]
+    client = SystemAdministratorClient(self.host)
+    result = client.updateSoftware(version)    
+    if not result['OK']:
+      print "ERROR:",result['Message']
+    else:
+      print "Software successfully updated"
+    
+  def do_add(self,args):
+    """ 
+        Add new entity to the Configuration Service
+    
+        usage:
+        
+          add instance <system> <instance>
+    """           
+    argss = args.split()
+    option = argss[0]
+    del argss[0]
+    if option == "instance":
+      system = argss[0]
+      instance = argss[1]
+      client = SystemAdministratorClient(self.host)
+      result = client.addSystemInstance(system,instance)
+      if not result['OK']:
+        print "ERROR:",result['Message']
+      else:
+        print "%s system instance %s added successfully" % (system,instance) 
       
   def do_exit(self, args):
     """ Exit the shell.
