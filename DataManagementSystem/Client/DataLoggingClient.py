@@ -32,7 +32,7 @@ class DataLoggingClient:
   def addFileRecord(self,lfn,status,minor,date,source):
     try:
       client = RPCClient(self.url,timeout=120)
-      return client.addFileRecords(lfn,status,minor,date,source)
+      return client.addFileRecord(lfn,status,minor,date,source)
     except Exception, x:
       errStr = "DataLoggingClient.addFileRecord: Exception while adding file record."
       gLogger.exception(errStr,lException=x)
