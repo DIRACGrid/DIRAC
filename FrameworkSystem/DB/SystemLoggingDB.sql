@@ -7,7 +7,7 @@ __RCSID__ = "$Id: SystemLoggingDB.sql,v 1.14 2009/10/14 07:40:33 rgracian Exp $"
 --  from DIRAC services and processes
 -- -
 -- ------------------------------------------------------------------------------
-
+ 
 DROP DATABASE IF EXISTS SystemLoggingDB;
 
 CREATE DATABASE SystemLoggingDB;
