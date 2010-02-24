@@ -52,6 +52,7 @@ class SystemAdministratorClientCLI(cmd.Cmd):
           show status
           show database
           show mysql
+          show log <system> <service|agent>
     """
     
     argss = args.split()
@@ -124,9 +125,29 @@ class SystemAdministratorClientCLI(cmd.Cmd):
         for par,value in result['Value'].items():
           print par.rjust(28),':',value
       else:
-        print "No MySQL database found"              
+        print "No MySQL database found"        
+    elif option == "log":
+      self.getLog(argss)         
     else:
       print "Unknown option:",option          
+      
+  def getLog(self,argss):
+    """ Get the tail of the log file of the given component
+    """    
+    system = argss[0]
+    component = argss[1]
+    client = SystemAdministratorClient(self.host)
+    result = client.getLogTail(system,component,40)
+    if not result['OK']:
+      print "ERROR:",result['Message']  
+    elif result['Value']:  
+      
+      print result['Value']
+      
+      #for line in result['Value'].split('\n'):
+      #  print line.strip()
+    else:
+      print "No logs found"    
       
   def do_install(self,args):
     """ 

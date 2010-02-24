@@ -527,7 +527,7 @@ class SystemAdministratorHandler( RequestHandler ):
       return S_ERROR('No log file found')
     
     logFile = open(logFileName,'r')
-    lines = logFile.readlines()
+    lines = [ l.strip() for l in logFile.readlines() ]
     logFile.close()
     
     if len(lines) < length:
