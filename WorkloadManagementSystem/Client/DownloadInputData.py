@@ -13,7 +13,6 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
-from DIRAC.Resources.Storage.StorageElement                         import StorageElement
 from DIRAC.Core.Utilities.Os                                        import getDiskSpace
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger
 
@@ -32,6 +31,7 @@ class DownloadInputData:
     self.inputData = argumentsDict['InputData']
     self.configuration = argumentsDict['Configuration']
     self.fileCatalogResult = argumentsDict['FileCatalog']
+    print self.fileCatalogResult
     self.jobID = None
     self.rm = ReplicaManager()
     self.counter=1
@@ -221,22 +221,16 @@ class DownloadInputData:
       fileDict = {'turl':'LocalData','protocol':'LocalData','se':se,'pfn':pfn,'guid':guid,'path':'%s/%s' %(os.getcwd(),fileName)}
       return S_OK(fileDict)
 
-    storageElement = StorageElement(se)
-    res = storageElement.isValid()
-    if not res['OK']:
-      return S_ERROR('Failed to instantiate StorageElement for: %s' %(se))
-
     start = os.getcwd()
     downloadDir = tempfile.mkdtemp(prefix='InputData_%s' %(self.counter), dir=start)
     self.counter+=1
-    os.chdir(downloadDir)
-    result = storageElement.getFile(pfn,size)
-    os.chdir(start)
-    if not result['OK']:
-      self.log.warn('Problem getting PFN %s with size %s bytes:\n%s' %(pfn,size,result))
-      return result
 
+    result = self.rm.getStorageFile(pfn,se,localPath=downloadDir,singleFile=True)
+    if not result['OK']:
+      self.log.warn('Problem getting PFN %s:\n%s' %(pfn,result))
+      return result
     self.log.verbose(result)
+
     localFile = '%s/%s' %(downloadDir,fileName)
     if os.path.exists(localFile):
       self.log.verbose('File %s exists in current directory' %(fileName))
