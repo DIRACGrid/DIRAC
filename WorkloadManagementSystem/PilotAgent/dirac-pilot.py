@@ -392,7 +392,7 @@ if cliParams.testVOMSOK:
     sys.exit( -1 )
 
 #
-# Set the lhcb platform
+# Set the local architecture
 #
 
 architectureScriptName = "dirac-architecture"
@@ -402,12 +402,12 @@ if os.path.isfile( candidate ):
   architectureScript = candidate
 
 if architectureScript:
-  retCode, lhcbArchitecture = executeAndGetOutput( architectureScript )
+  retCode, localArchitecture = executeAndGetOutput( architectureScript )
   if not retCode:
-    lhcbArchitecture = lhcbArchitecture.strip()
-    os.environ['CMTCONFIG'] = lhcbArchitecture
-    logINFO( 'Setting CMTCONFIG=%s' % lhcbArchitecture )
-    os.system( "%s -f %s -o '/LocalSite/Architecture=%s'" % ( cacheScript, cfgFile, lhcbArchitecture ) )
+    localArchitecture = localArchitecture.strip()
+    os.environ['CMTCONFIG'] = localArchitecture
+    logINFO( 'Setting CMTCONFIG=%s' % localArchitecture )
+    os.system( "%s -f %s -o '/LocalSite/Architecture=%s'" % ( cacheScript, cfgFile, localArchitecture ) )
   else:
     logERROR( "There was an error calling %s" % architectureScript )
 #
