@@ -1,4 +1,3 @@
-
 # $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/LoggingSystem/DB/SystemLoggingDB.sql,v 1.14 2009/10/14 07:40:33 rgracian Exp $
 __RCSID__ = "$Id: SystemLoggingDB.sql,v 1.14 2009/10/14 07:40:33 rgracian Exp $"
 
