@@ -186,6 +186,11 @@ Registry
       Users = $DIRACADMIN
       Properties = NormalUser
     }
+    ${VO}_pilot
+    {
+      Users = $DIRACADMIN
+      Properties = GenericPilot, LimitedDelegation, Pilot
+    }
   }
   Users
   {
