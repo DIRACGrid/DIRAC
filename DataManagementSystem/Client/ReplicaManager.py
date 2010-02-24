@@ -543,16 +543,16 @@ class StorageFile(StorageBase):
     else:
       return self._executeStorageElementFunction(storageElementName,physicalFile,'getFileSize')
 
-  def getStorageFileAccessUrl(self,physicalFile,storageElementName,singleFile=False):
+  def getStorageFileAccessUrl(self,physicalFile,storageElementName,protocol=[],singleFile=False):
     """ Obtain the access url for a physical file
 
         'physicalFile' is the pfn(s) to access
         'storageElementName' is the Storage Element
     """
     if singleFile:
-      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'getAccessUrl')
+      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'getAccessUrl',argsDict={'protocol':protocol})
     else:
-      return self._executeStorageElementFunction(storageElementName,physicalFile,'getAccessUrl')
+      return self._executeStorageElementFunction(storageElementName,physicalFile,'getAccessUrl',argsDict={'protocol':protocol})
 
   def getStorageFileMetadata(self,physicalFile,storageElementName,singleFile=False):
     """ Obtain the metadata for physical files
