@@ -79,7 +79,7 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
       self.assertEqual(res, None)
 
   def test_removeService(self):
-    res = self.rsDB.removeService('CNAF')
+    res = self.rsDB.removeService('Storage@CNAF')
     self.assertEqual(res, None)
 
   ###############################
@@ -106,9 +106,9 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
   def test_removeResource(self):
     res = self.rsDB.removeResource('XX')
     self.assertEqual(res, None)
-    res = self.rsDB.removeResource('XX', 'xx')
+    res = self.rsDB.removeResource(None, 'Storage@PIPPO.it')
     self.assertEqual(res, None)
-    res = self.rsDB.removeResource('XX', 'x', 'm')
+    res = self.rsDB.removeResource(None, None, 'm')
     self.assertEqual(res, None)
 
 
@@ -146,6 +146,17 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
   ##########################
   ###test general methods###
   ##########################
+
+  def test_addOrModifyPolicyRes(self):
+    for g in ValidRes:
+      for s in ValidStatus:
+        res = self.rsDB.addOrModifyPolicyRes(self, g, 'XXX', 'ppp', s, 'XXX')
+        self.assertEqual(res, None)
+
+  def test_getPolicyRes(self):
+    for g in ValidRes:
+      res = self.rsDB.getPolicyRes(g, 'XX', 'YY')
+      self.assertEqual(res, [])
 
   def test_getMonitoredsList(self):
     for g in ValidRes:

@@ -1958,6 +1958,8 @@ class ResourceStatusDB:
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
     
       :attr:`name`: string - name of the ValidRes
+      
+      :attr:`policyName`: string - the policy name
     
       :attr:`status`: string - a ValidStatus: 
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
@@ -2000,7 +2002,35 @@ class ResourceStatusDB:
       if not resUpdate['OK']:
         raise RSSDBException, where(self, self.addOrModifyPolicyRes) + resUpdate['Message']
     
+#############################################################################
 
+  def getPolicyRes(self, granularity, name, policyName):
+    """ 
+    Get a Policy Result from the PolicyRes table.
+    
+    :params:
+      :attr:`granularity`: string - a ValidRes
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+    
+      :attr:`name`: string - name of the ValidRes
+      
+      :attr:`policyName`: string - the policy name
+    """
+    
+    if granularity not in ValidStatus:
+      raise InvalidStatus, where(self, self.getPolicyRes)
+    
+    req = "SELECT Status, Reason FROM PolicyRes WHERE Granularity = '%s' AND " %(granularity)
+    req = req + "Name = '%s' AND PolicyName = '%s'" %(name, policyName)
+
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.getPolicyRes) + resQuery['Message']
+    if not resQuery['Value']:
+      return []
+    
+    return resQuery['Value'][0]
+    
 
 #############################################################################
 
