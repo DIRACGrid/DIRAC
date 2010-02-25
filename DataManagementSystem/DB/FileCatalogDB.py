@@ -1565,13 +1565,20 @@ class FileCatalogDB(DB,
     lfnDict = {}
     for lfn,id in fileDict['Successful'].items():
       if id:
-        lfnDict[id] = lfn
+        lfnDict[lfn] = id
     
-    fileIDString = ','.join([str(id) for id in lfnDict.keys()])
-    req = "DELETE FROM FC_Replicas WHERE FileID in (%s)" % fileIDString    
-    result = self._update(req)
-    if not result['OK']:
-      failed.update(fileDict["Successful"])
+    for lfn,info in arguments.items():
+      se = info['SE']
+      result = self.findSE(se)
+      if not result['OK']:
+        failed[lfn] = result['Message']
+        continue
+      seID = result['Value']
+      req = "DELETE FROM FC_Replicas WHERE FileID=%d and SEID=%d" % (lfnDict[lfn],seID)    
+      result = self._update(req)
+      if not result['OK']:
+        failed[lfn] = result['Message']
+      successful[lfn]=True  
       
     return S_OK({'Successful':successful,'Failed':failed})
     

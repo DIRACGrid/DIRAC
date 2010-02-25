@@ -99,11 +99,11 @@ class FileCatalogHandler(RequestHandler):
     """
     return fcDB.getReplicas(lfns,self.getRemoteCredentials())
   
-  types_removeReplicas = [[ListType,DictType]+list(StringTypes)]
-  def export_removeReplicas(self,lfns):
+  types_removeReplica = [[ListType,DictType]+list(StringTypes)]
+  def export_removeReplica(self,lfns):
     """ Remove replicas for the given list of LFNs
     """
-    return fcDB.removeReplicas(lfns,self.getRemoteCredentials())
+    return fcDB.removeReplica(lfns,self.getRemoteCredentials())
   
   ########################################################################
   # Directory operations
