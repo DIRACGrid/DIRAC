@@ -8,12 +8,10 @@ The PDP (Policy Decision Point) module is used to:
 #############################################################################
 
 import time
-#import threading
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
-from DIRAC.ResourceStatusSystem.Policy import Configurations
-from DIRAC.ResourceStatusSystem.Policy.PolicyInvoker import PolicyInvoker
+from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
+from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
 
 #############################################################################
 
@@ -118,14 +116,17 @@ class PDP:
     self.policy = policyIn
     self.knownInfo = knownInfo
 
-            
-    EVAL = self._getPolicyToApply(granularity = self.__granularity, 
-                                  status = self.__status, 
-                                  formerStatus = self.__formerStatus, 
-                                  siteType = self.__siteType, 
-                                  serviceType = self.__serviceType,
-                                  resourceType = self.__resourceType)
-
+               
+    ig = InfoGetter()
+    
+    EVAL = ig.getInfoToApply(('policy', 'policyType'), 
+                      granularity = self.__granularity, 
+                      status = self.__status, 
+                      formerStatus = self.__formerStatus,
+                      siteType = self.__siteType, 
+                      serviceType = self.__serviceType,
+                      resourceType = self.__resourceType)
+    
     policyCombinedResultsList = []
       
     for policyGroup in EVAL:
@@ -133,6 +134,7 @@ class PDP:
       self.__policyType = policyGroup['PolicyType']
   
       if self.policy is not None:
+        #TO CHECK!
         singlePolicyResults = self.policy.evaluate(self.policy)
       else:
         if policyGroup['Policies'] is None:
@@ -176,358 +178,24 @@ class PDP:
 
 #############################################################################
 
-  def _getPolicyToApply(self, granularity, status = None, formerStatus = None, 
-                       siteType = None, serviceType = None, resourceType = None ):
-    
-    pol_to_eval = []
-    pol_types = []
-    
-    for p in Configurations.Policies.keys():
-      if granularity in Configurations.Policies[p]['Granularity']:
-        pol_to_eval.append(p)
-        
-        if status is not None:
-          if status not in Configurations.Policies[p]['Status']:
-            pol_to_eval.remove(p)
-        
-        if formerStatus is not None:
-          if formerStatus not in Configurations.Policies[p]['FormerStatus']:
-            try:
-              pol_to_eval.remove(p)
-            except Exception:
-              continue
-            
-        if siteType is not None:
-          if siteType not in Configurations.Policies[p]['SiteType']:
-            try:
-              pol_to_eval.remove(p)
-            except Exception:
-              continue
-            
-        if serviceType is not None:
-          if serviceType not in Configurations.Policies[p]['ServiceType']:
-            try:
-              pol_to_eval.remove(p)
-            except Exception:
-              continue
-            
-        if resourceType is not None:
-          if resourceType not in Configurations.Policies[p]['ResourceType']:
-            try:
-              pol_to_eval.remove(p)
-            except Exception:
-              continue
-            
-     
-    for pt in Configurations.Policy_Types.keys():
-      if granularity in Configurations.Policy_Types[pt]['Granularity']:
-        pol_types.append(pt)  
-    
-        if status is not None:
-          if status not in Configurations.Policy_Types[pt]['Status']:
-            pol_to_eval.remove(pt)
-        
-        if formerStatus is not None:
-          if formerStatus not in Configurations.Policy_Types[pt]['FormerStatus']:
-            try:
-              pol_to_eval.remove(pt)
-            except Exception:
-              continue
-            
-        if siteType is not None:
-          if siteType not in Configurations.Policy_Types[pt]['SiteType']:
-            try:
-              pol_to_eval.remove(pt)
-            except Exception:
-              continue
-            
-        if serviceType is not None:
-          if serviceType not in Configurations.Policy_Types[pt]['ServiceType']:
-            try:
-              pol_to_eval.remove(pt)
-            except Exception:
-              continue
-            
-        if resourceType is not None:
-          if resourceType not in Configurations.Policy_Types[pt]['ResourceType']:
-            try:
-              pol_to_eval.remove(pt)
-            except Exception:
-              continue
-              
-    EVAL = [{'PolicyType':pol_types, 'Policies':pol_to_eval}]    
-    
-    return EVAL
-
-#############################################################################
-
   def _invocation(self, granularity, name, status, policy, args, policies):
     
     policyResults = []
     
+    pi = PolicyCaller()
+    
     for p in policies:
-      res = self._policyInvocation(granularity = granularity, name = name,
-                                   status = status, policy = policy, args = args,
-                                   pol = p)
-      
+      res = pi.policyInvocation(granularity = granularity, name = name,
+                                status = status, policy = policy, args = args,
+                                pol = p)
+
       if res['SAT'] != None:
         policyResults.append(res)
     
     return policyResults
       
-#############################################################################
+##############################################################################
 
-
-  def _policyInvocation(self, granularity = None, name = None, status = None, 
-                        policy = None, args = None, pol = None):
-    
-    if pol == 'DT_Policy_OnGoing_Only':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.DT_Policy import DT_Policy 
-        p = DT_Policy()
-      if args is None:
-        a = (granularity, name, status)
-      res = self.__innerEval(p, a)
-      
-    if pol == 'DT_Policy_Scheduled':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.DT_Policy import DT_Policy 
-        p = DT_Policy()
-      if args is None:
-        a = (granularity, name, status, Configurations.DTinHours)
-      res = self.__innerEval(p, a)
-      
-    if pol == 'AlwaysFalse_Policy':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.AlwaysFalse_Policy import AlwaysFalse_Policy 
-        p = AlwaysFalse_Policy()
-      if args is None:
-        a = (granularity, name, status)
-      res = self.__innerEval(p, a)
-  
-    if pol == 'SAM_Policy':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
-        p = SAMResults_Policy()
-      if args is None:
-        a = (granularity, name, status)
-      res = self.__innerEval(p, a)
-  
-    if pol == 'SAM_CE_Policy':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
-        p = SAMResults_Policy()
-      if args is None:
-        a = (granularity, name, status, None, 
-             ['LHCb CE-lhcb-availability', 'LHCb CE-lhcb-install', 'LHCb CE-lhcb-job-Boole', 
-              'LHCb CE-lhcb-job-Brunel', 'LHCb CE-lhcb-job-DaVinci', 'LHCb CE-lhcb-job-Gauss', 'LHCb CE-lhcb-os', 
-              'LHCb CE-lhcb-queues', 'bi', 'csh', 'js', 'gfal', 'swdir', 'voms'])
-      res = self.__innerEval(p, a)
-  
-    if pol == 'SAM_CREAMCE_Policy':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
-        p = SAMResults_Policy()
-      if args is None:
-        a = (granularity, name, status, None, 
-             ['bi', 'csh', 'gfal', 'swdir', 'creamvoms'])
-      res = self.__innerEval(p, a)
-  
-    if pol == 'SAM_SE_Policy':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
-        p = SAMResults_Policy()
-      if args is None:
-        a = (granularity, name, status, None, 
-             ['DiracTestUSER', 'FileAccessV2'])
-      res = self.__innerEval(p, a)
-  
-    if pol == 'SAM_LFC_C_Policy':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
-        p = SAMResults_Policy()
-      if args is None:
-        a = (granularity, name, status, None, 
-             ['lfcwf', 'lfclr', 'lfcls', 'lfcping'])
-      res = self.__innerEval(p, a)
-  
-    if pol == 'SAM_LFC_L_Policy':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
-        p = SAMResults_Policy()
-      if args is None:
-        a = (granularity, name, status, None, 
-             ['lfcstreams', 'lfclr', 'lfcls', 'lfcping'])
-      res = self.__innerEval(p, a)
-  
-    if pol == 'GGUSTickets_Policy':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.GGUSTickets_Policy import GGUSTickets_Policy 
-        p = GGUSTickets_Policy()
-      if args is None:
-        a = (granularity, name, status)
-      res = self.__innerEval(p, a)
-  
-    if pol == 'PilotsEfficiency_Policy':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.PilotsEfficiency_Policy import PilotsEfficiency_Policy 
-        p = PilotsEfficiency_Policy()
-      if args is None:
-        a = (granularity, name, status)
-      res = self.__innerEval(p, a)
-  
-    if pol == 'PilotsEfficiencySimple_Policy_Service':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.PilotsEfficiency_Simple_Policy import PilotsEfficiency_Simple_Policy 
-        p = PilotsEfficiency_Simple_Policy()
-      if args is None:
-        a = (granularity, name, status)
-      res = self.__innerEval(p, a)
-  
-    if pol == 'PilotsEfficiencySimple_Policy_Resource':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.PilotsEfficiency_Simple_Policy import PilotsEfficiency_Simple_Policy 
-        p = PilotsEfficiency_Simple_Policy()
-      if args is None:
-        a = (granularity, name, status)
-      res = self.__innerEval(p, a)
-  
-    if pol == 'JobsEfficiency_Policy':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.JobsEfficiency_Policy import JobsEfficiency_Policy 
-        p = JobsEfficiency_Policy()
-      if args is None:
-        a = (granularity, name, status)
-      res = self.__innerEval(p, a)
-  
-    if pol == 'JobsEfficiencySimple_Policy':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.JobsEfficiency_Simple_Policy import JobsEfficiency_Simple_Policy 
-        p = JobsEfficiency_Simple_Policy()
-      if args is None:
-        a = (granularity, name, status)
-      res = self.__innerEval(p, a)
-  
-    if pol == 'OnSitePropagation_Policy':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
-        p = Propagation_Policy()
-      if args is None:
-        a = (granularity, name, status, 'Service')
-      res = self.__innerEval(p, a)
-
-    if pol == 'OnComputingServicePropagation_Policy':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
-        p = Propagation_Policy()
-      if args is None:
-        a = (granularity, name, status, 'Resource')
-      res = self.__innerEval(p, a)
-
-    if pol == 'OnStorageServicePropagation_Policy_Resources':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
-        p = Propagation_Policy()
-      if args is None:
-        a = (granularity, name, status, 'Resource')
-      res = self.__innerEval(p, a)
-    
-    if pol == 'OnStorageServicePropagation_Policy_StorageElements':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
-        p = Propagation_Policy()
-      if args is None:
-        a = (granularity, name, status, 'StorageElement')
-      res = self.__innerEval(p, a)
-    
-    if pol == 'OnServicePropagation_Policy':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.OnServicePropagation_Policy import OnServicePropagation_Policy 
-        p = OnServicePropagation_Policy()
-      if args is None:
-        a = (granularity, name, status)
-      res = self.__innerEval(p, a)
-  
-    if pol == 'OnSENodePropagation_Policy':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.OnSENodePropagation_Policy import OnSENodePropagation_Policy 
-        p = OnSENodePropagation_Policy()
-      if args is None:
-        a = (granularity, name, status)
-      res = self.__innerEval(p, a)
-  
-    if pol == 'TransferQuality_Policy':
-      p = policy
-      a = args
-      if policy is None:
-        from DIRAC.ResourceStatusSystem.Policy.TransferQuality_Policy import TransferQuality_Policy 
-        p = TransferQuality_Policy()
-      if args is None:
-        a = (granularity, name, status)
-      res = self.__innerEval(p, a)
-  
-    res['PolicyName'] = pol
-  
-    return res
-
-        
-#############################################################################
-
-  def __innerEval(self, p, a, knownInfo=None):
-    """ policy evaluation
-    """
-    policyInvoker = PolicyInvoker()
-  
-    policyInvoker.setPolicy(p)
-    res = policyInvoker.evaluatePolicy(a, knownInfo = knownInfo)
-    return res 
-      
-#############################################################################
-
-
-    
   def _evaluate(self, policyResults):
     
     if len(policyResults) == 1:

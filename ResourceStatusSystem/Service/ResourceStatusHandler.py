@@ -1327,3 +1327,22 @@ class ResourceStatusHandler(RequestHandler):
       return S_ERROR(errorStr)
 
 #############################################################################
+
+  types_publisher = [StringType, StringType]
+  def export_publisher(self, granularity_view, name):
+    """ get a view
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.publisher: Attempting to get view %s for %s" % (granularity_view, name))
+      try:
+        pass
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.publisher: got view %s for %s" % (granularity_view, name))
+      return S_OK(res)
+    except Exception, x:
+      errorStr = where(self, self.export_publisher)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################

@@ -131,10 +131,11 @@ def convertTime(t, inTo = None):
 
 ValidRes = ['Site', 'Service', 'Resource', 'StorageElement']
 ValidStatus = ['Active', 'Probing', 'Banned']
-PolicyTypes = ['Resource_PolType', 'Alarm_PolType', 'Collective_PolType']
+PolicyTypes = ['Resource_PolType', 'Alarm_PolType', 'Collective_PolType', 'View_PolType']
 ValidSiteType = ['T0', 'T1', 'T2']
 ValidResourceType = ['CE', 'CREAMCE', 'SE', 'LFC_C', 'LFC_L', 'FTS']
 ValidService = ValidServiceType = ['Computing', 'Storage']
+ValidView = ['Site_View', 'Resource_View', 'StorageElement_View']
 #ValidReasons = ['init', 'DT:OUTAGE', 'DT:AT_RISK', 'DT:None']
 
 #############################################################################

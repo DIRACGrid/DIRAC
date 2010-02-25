@@ -142,6 +142,13 @@ class ResourceStatusDB:
   def getStorageElementsStats(self, granularity, name):
     return {}
 
+  def addOrModifyPolicyRes(self, granularity, name, policyName, 
+                           status, reason, dateEffective = None):
+    pass
+  
+  def getPolicyRes(self, granularity, name, policyName):
+    return ()
+  
   def transact2History(self, *args):
     pass
 

@@ -75,9 +75,6 @@ AssigneeGroups = {
    }, 
 }
 
-
-#_setup = gConfig.getValue("DIRAC/Setup")
-
 #############################################################################
 # policies evaluated
 #############################################################################
@@ -98,6 +95,8 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
+      'Site_Panel' : 'DT_link',
+      'Resource_Panel' : 'DT_link'
      },
     'SAM_Policy' : 
     { 'Granularity' : [], 
@@ -114,6 +113,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['CE'],
+      'Resource_Panel' : 'SAM_tests'
      },     
   'SAM_CREAMCE_Policy' : 
     { 'Granularity' : ['Resource'], 
@@ -122,6 +122,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['CREAMCE'],
+      'Resource_Panel' : 'SAM_tests'
      },     
   'SAM_SE_Policy' : 
     { 'Granularity' : ['Resource'], 
@@ -130,6 +131,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['SE'],
+      'Resource_Panel' : 'SAM_tests'
      },     
   'SAM_LFC_C_Policy' : 
     { 'Granularity' : ['Resource'], 
@@ -138,6 +140,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['LFC_C'],
+      'Resource_Panel' : 'SAM_tests'
      },     
   'SAM_LFC_L_Policy' : 
     { 'Granularity' : ['Resource'], 
@@ -146,6 +149,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['LFC_L'],
+      'Resource_Panel' : 'SAM_tests'
      },     
   'JobsEfficiencySimple_Policy' :  
     { 'Granularity' : ['Service'], 
@@ -154,6 +158,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ['Computing'],
       'ResourceType' : ValidResourceType,
+      'Service_Computing_Panel' : ['Jobs_graph', 'Jobs_chart']
      },
   'PilotsEfficiencySimple_Policy_Service' : 
     { 'Granularity' : ['Service'], 
@@ -162,6 +167,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ['Computing'],
       'ResourceType' : ValidResourceType,
+      'Service_Computing_Panel' : 'Pilots_graph_site'
      },
   'PilotsEfficiencySimple_Policy_Resource' : 
     { 'Granularity' : ['Resource'], 
@@ -170,6 +176,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['CE', 'CREAMCE'],
+      'Resource_Panel' : 'Pilots_graph_resource'
      },
   'OnSitePropagation_Policy' :
     { 'Granularity' : ['Site'], 
@@ -178,6 +185,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
+      'Site_Panel' : 'RSS_Services_Status'
      },
   'OnComputingServicePropagation_Policy' :
     { 'Granularity' : ['Service'], 
@@ -186,6 +194,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ['Computing'],
       'ResourceType' : ValidResourceType,
+      'Service_Computing_Panel' : 'RSS_CompRes_Status'
      },
   'OnStorageServicePropagation_Policy_Resources' :
     { 'Granularity' : ['Service'], 
@@ -194,6 +203,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ['Storage'],
       'ResourceType' : ValidResourceType,
+      'Service_Storage_Panel' : 'RSS_StorRes_Status'
      },
   'OnStorageServicePropagation_Policy_StorageElements' :
     { 'Granularity' : ['Service'], 
@@ -202,6 +212,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ['Storage'],
       'ResourceType' : ValidResourceType,
+      'Service_Storage_Panel' : 'RSS_SE_Status'
      },
   'OnServicePropagation_Policy' :
     { 'Granularity' : [], 
@@ -226,6 +237,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
+      'SE_Panel' : 'SE_transfers_graph'
      },
   'AlwaysFalse_Policy' :
     { 'Granularity' : [], 
@@ -255,6 +267,14 @@ Policy_Types = {
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
      },
+#  'View_PolType' : 
+#    { 'Granularity' : ValidRes, 
+#      'Status' : ValidStatus, 
+#      'FormerStatus' : ValidStatus,
+#      'SiteType' : ValidSiteType,
+#      'ServiceType' : ValidServiceType,
+#      'ResourceType' : ValidResourceType,
+#     },
   'Collective_PolType' :
     { 'Granularity' : [], 
       'Status' : ValidStatus, 
@@ -263,6 +283,16 @@ Policy_Types = {
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
      }
+}
+
+#############################################################################
+# Web views 
+#############################################################################
+
+views_panels = {
+  'Site_View' : ['Site_Panel', 'Service_Computing_Panel', 'Service_Storage_Panel', 'OtherServices_Panel'],
+  'Resource_View' : ['Resource_Panel'],
+  'SE_View' : ['SE_Panel']
 }
 
 

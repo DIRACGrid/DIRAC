@@ -1,0 +1,260 @@
+########################################################################
+# $HeadURL:  $
+########################################################################
+
+from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+from DIRAC.ResourceStatusSystem.Policy import Configurations
+
+__RCSID__ = "$Id:  $"
+
+
+class InfoGetter:
+  """ Class InfoGetter is in charge of getting dispersed information,
+      to be published on the web.
+  """
+
+#############################################################################
+
+  def __init__(self):
+    """ Standard constructor
+    """
+    pass
+  
+  
+#############################################################################
+
+  #la sposto dentro al servizio?
+  def getInfo(self, infoType, infoName, resName, rsDBin = None):
+    """
+    :params:
+      :attr:`infoType`: string - 'view' or 'info'
+      
+      :attr:`infoName`: string - name of the info (e.g.: 'DT_Link') or
+      name of the view (e.g.: 'Resource_View')
+      
+      :attr:`resName`: string - name of the res (e.g.: 'LCG.CERN.ch') 
+    """
+    
+    infoGot = {} #da costruire
+    
+    if infoType == 'view':
+      
+      if infoName not in ValidView:
+        raise InvalidRes, where(self, self.getInfo)
+      
+      infoToGet = self._getInfoToApply(infoName)
+      
+      policyRes = infoToGet['Policies']
+      infoExt = infoToGet['Info']
+
+      if rsDBin is not None:
+        rsDB = rsDBin
+      else:
+        # Use standard DIRAC DB
+        from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
+        rsDB = ResourceStatusDB()
+        
+      rsDB.get() #prendi tutto cio' che serve
+      
+    elif infoType == 'info':
+      infoExt = [infoName]
+    
+    else:
+      raise RSSException, where(self, self.getInfo)
+    
+    for info in infoExt:
+       res = self._commandCaller(info)
+    
+       infoGot[''].append(res)
+    
+  
+#############################################################################
+
+  def getInfoToApply(self, args, granularity, status = None, formerStatus = None, 
+                      siteType = None, serviceType = None, resourceType = None, info = None ):
+    """ 
+    """
+    
+    EVAL = {}
+    
+    if 'policy' in args:
+      EVAL['Policies'] = self.__getPolToEval(granularity, status, formerStatus, 
+                                             siteType, serviceType, resourceType)
+    
+    if 'policyType' in args:
+      EVAL['PolicyType'] = self.__getPolTypes(granularity, status, formerStatus, 
+                                              siteType, serviceType, resourceType)
+      
+    if 'panel_info' in args:
+      EVAL['Info'] = self.__getPanelsInfo(granularity, status, formerStatus, 
+                                          siteType, serviceType, resourceType, info)
+    
+    if 'view_info' in args:
+      panels_info_dict = {}
+      
+      view_panels = self.__getViewPanels(info)
+      
+      for panel in view_panels:
+        panel_info = self.__getPanelsInfo(granularity, status, formerStatus, 
+                                          siteType, serviceType, resourceType, panel)
+        panels_info_dict[panel] = panel_info
+      
+      EVAL['Panels'] = panels_info_dict
+    
+    return [EVAL]
+  
+      
+#############################################################################
+    
+  def __getPolToEval(self, granularity, status = None, formerStatus = None, 
+                       siteType = None, serviceType = None, resourceType = None ):
+  
+    pol_to_eval = []
+    
+    for p in Configurations.Policies.keys():
+      if granularity in Configurations.Policies[p]['Granularity']:
+        pol_to_eval.append(p)
+        
+        if status is not None:
+          if status not in Configurations.Policies[p]['Status']:
+            pol_to_eval.remove(p)
+        
+        if formerStatus is not None:
+          if formerStatus not in Configurations.Policies[p]['FormerStatus']:
+            try:
+              pol_to_eval.remove(p)
+            except Exception:
+              continue
+            
+        if siteType is not None:
+          if siteType not in Configurations.Policies[p]['SiteType']:
+            try:
+              pol_to_eval.remove(p)
+            except Exception:
+              continue
+            
+        if serviceType is not None:
+          if serviceType not in Configurations.Policies[p]['ServiceType']:
+            try:
+              pol_to_eval.remove(p)
+            except Exception:
+              continue
+            
+        if resourceType is not None:
+          if resourceType not in Configurations.Policies[p]['ResourceType']:
+            try:
+              pol_to_eval.remove(p)
+            except Exception:
+              continue
+    
+    return pol_to_eval
+  
+  
+#############################################################################
+
+  def __getPolTypes(self, granularity, status = None, formerStatus = None, 
+                       siteType = None, serviceType = None, resourceType = None ):
+          
+    pol_types = [] 
+     
+    for pt in Configurations.Policy_Types.keys():
+      if granularity in Configurations.Policy_Types[pt]['Granularity']:
+        pol_types.append(pt)  
+    
+        if status is not None:
+          if status not in Configurations.Policy_Types[pt]['Status']:
+            pol_to_eval.remove(pt)
+        
+        if formerStatus is not None:
+          if formerStatus not in Configurations.Policy_Types[pt]['FormerStatus']:
+            try:
+              pol_to_eval.remove(pt)
+            except Exception:
+              continue
+            
+        if siteType is not None:
+          if siteType not in Configurations.Policy_Types[pt]['SiteType']:
+            try:
+              pol_to_eval.remove(pt)
+            except Exception:
+              continue
+            
+        if serviceType is not None:
+          if serviceType not in Configurations.Policy_Types[pt]['ServiceType']:
+            try:
+              pol_to_eval.remove(pt)
+            except Exception:
+              continue
+            
+        if resourceType is not None:
+          if resourceType not in Configurations.Policy_Types[pt]['ResourceType']:
+            try:
+              pol_to_eval.remove(pt)
+            except Exception:
+              continue
+              
+    return pol_types
+ 
+#############################################################################
+
+  def __getPanelsInfo(self, granularity, status = None, formerStatus = None, siteType = None,
+                      serviceType = None, resourceType = None, panel_name = None ):
+  
+  
+    info = []
+    
+    for p in Configurations.Policies.keys():
+      if panel_name in Configurations.Policies[p].keys():
+        info.append({p: Configurations.Policies[p][panel_name]})
+        
+        if granularity is not None:
+          if granularity not in Configurations.Policies[p]['Granularity']:
+            try:
+              info.remove({p: Configurations.Policies[p][panel_name]})
+            except Exception:
+              continue
+        
+        if status is not None:
+          if status not in Configurations.Policies[p]['Status']:
+            try:
+              info.remove({p: Configurations.Policies[p][panel_name]})
+            except Exception:
+              continue
+        
+        if formerStatus is not None:
+          if formerStatus not in Configurations.Policies[p]['FormerStatus']:
+            try:
+              info.remove({p: Configurations.Policies[p][panel_name]})
+            except Exception:
+              continue
+            
+        if siteType is not None:
+          if siteType not in Configurations.Policies[p]['SiteType']:
+            try:
+              info.remove({p: Configurations.Policies[p][panel_name]})
+            except Exception:
+              continue
+            
+        if serviceType is not None:
+          if serviceType not in Configurations.Policies[p]['ServiceType']:
+            try:
+              info.remove({p: Configurations.Policies[p][panel_name]})
+            except Exception:
+              continue
+            
+        if resourceType is not None:
+          if resourceType not in Configurations.Policies[p]['ResourceType']:
+            try:
+              info.remove({p: Configurations.Policies[p][panel_name]})
+            except Exception:
+              continue
+    
+    return info
+  
+#############################################################################
+
+  def __getViewPanels(self, view_name):
+    return Configurations.views_panels[view_name]
+
+#############################################################################
+  
