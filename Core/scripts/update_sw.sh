@@ -25,7 +25,10 @@ if [ -z "$DIRACVERSION" ]; then
 fi  
 #
 # Use the following extensions
-EXTENSION=LHCb
+EXTENSION=$2
+if [ -z "$EXTENSION" ]; then
+  EXTENSION=`ls /opt/dirac/pro | grep 'DIRAC$' | sed 's/DIRAC//'`  
+fi  
 #
 # Install Web Portal flag
 INSTALL_WEB=
@@ -34,13 +37,20 @@ if [ -d $DESTDIR/pro/Web ]; then
 fi
 #
 # The binary platform as evaluated by the dirac-platform script 
-DIRACARCH=Linux_x86_64_glibc-2.5
+DIRACARCH=$3
+if [ -z "$DIRACARCH" ]; then
+  DIRACARCH=`dirac-platform`
+fi  
 #
 # The version of the python interpreter
 DIRACPYTHON=25
 #
 # The version of the LCG middleware
-LCGVERSION=2009-08-13
+# A.T. there should be a smarter way to determine it of the previous installation !
+LCGVERSION=$4
+if [ -z "$LCGVERSION" ]; then
+  LCGVERSION=2009-08-13
+fi  
 
 ORACLE_CLIENT=`$DESTDIR/pro/$DIRACARCH/bin/python -c "import cx_Oracle"  > /dev/null 2>&1 ; echo $?`
 
