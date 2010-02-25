@@ -4,7 +4,7 @@ from DIRAC.AccountingSystem.Client.Types.WMSHistory import WMSHistory
 from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
 from DIRAC.Core.Utilities import Time
 
-class WMSHistoryPlotter(BaseReporter):
+class WMSHistoryPlotter( BaseReporter ):
 
   _typeName = "WMSHistory"
   _typeKeyFields = [ dF[0] for dF in WMSHistory().definitionKeyFields ]
@@ -43,7 +43,7 @@ class WMSHistoryPlotter(BaseReporter):
                  'span' : plotInfo[ 'granularity' ],
                  'skipEdgeColor' : True,
                  'ylabel' : "jobs"  }
-    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
+    return self._generateStackedLinePlot( filename, plotInfo[ 'data' ], metadata )
 
 
   def _reportNumberOfReschedules( self, reportRequest ):
@@ -71,10 +71,10 @@ class WMSHistoryPlotter(BaseReporter):
                  'span' : plotInfo[ 'granularity' ],
                  'skipEdgeColor' : True,
                  'ylabel' : "reschedules"  }
-    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
+    return self._generateStackedLinePlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportAverageNumberOfJobs( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", SUM(%s/%s)",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s/%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'Jobs', 'entriesInBucket'
                                    ]
                    )

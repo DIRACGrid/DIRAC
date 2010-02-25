@@ -6,7 +6,7 @@ from DIRAC.AccountingSystem.private.DataCache import gDataCache
 from DIRAC.Core.Utilities import Time
 from DIRAC.AccountingSystem.private.Plots import *
 
-class BaseReporter(DBUtils):
+class BaseReporter( DBUtils ):
 
   _PARAM_CHECK_FOR_NONE = 'checkNone'
   _PARAM_CALCULATE_PROPORTIONAL_GAUGES = 'calculateProportionalGauges'
@@ -28,12 +28,12 @@ class BaseReporter(DBUtils):
 
   def _translateGrouping( self, grouping ):
     return ( "%s", [ grouping ] )
-  
+
   def _averageConsolidation( self, a, b ):
     if b == 0:
       return 0
     else:
-      return float(a)/float(b)
+      return float( a ) / float( b )
 
   def generate( self, reportRequest ):
     reportRequest[ 'groupingFields' ] = self._translateGrouping( reportRequest[ 'grouping' ] )
@@ -122,7 +122,7 @@ class BaseReporter(DBUtils):
       if self._PARAM_CONSOLIDATION_FUNCTION in metadataDict:
         dataDict[ keyField ] = self._executeConsolidation( metadataDict[ self._PARAM_CONSOLIDATION_FUNCTION ], dataDict[ keyField ] )
     if metadataDict[ self._PARAM_CALCULATE_PROPORTIONAL_GAUGES ]:
-      dataDict  = self._calculateProportionalGauges( dataDict )
+      dataDict = self._calculateProportionalGauges( dataDict )
     return S_OK( ( dataDict, coarsestGranularity ) )
 
   def _executeConsolidation( self, functor, dataDict ):
@@ -202,6 +202,8 @@ class BaseReporter(DBUtils):
 
   def __plotData( self, filename, dataDict, metadata, funcToPlot ):
     self.__checkPlotMetadata( metadata )
+    if not dataDict:
+      funcToPlot = generateNoDataPlot
     plotFileName = "%s.png" % filename
     finalResult = funcToPlot( plotFileName, dataDict, metadata )
     if not finalResult[ 'OK' ]:
@@ -226,3 +228,6 @@ class BaseReporter(DBUtils):
 
   def _generatePiePlot( self, filename, dataDict, metadata ):
     return self.__plotData( filename, dataDict, metadata, generatePiePlot )
+
+  def _generateStackedLinePlot( self, filename, dataDict, metadata ):
+    return self.__plotData( filename, dataDict, metadata, generateStackedLinePlot )

@@ -4,7 +4,7 @@ from DIRAC.AccountingSystem.Client.Types.Job import Job
 from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
 from DIRAC.Core.Utilities import Time
 
-class JobPlotter(BaseReporter):
+class JobPlotter( BaseReporter ):
 
   _typeName = "Job"
   _typeKeyFields = [ dF[0] for dF in Job().definitionKeyFields ]
@@ -22,7 +22,7 @@ class JobPlotter(BaseReporter):
     if execTime == 0:
       return 0
     else:
-      return cpuTime/execTime
+      return cpuTime / execTime
 
   def _reportCPUEfficiency( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s), SUM(%s)",
@@ -77,7 +77,7 @@ class JobPlotter(BaseReporter):
     return self._generateQualityPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportCPUUsed( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/86400",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)/86400",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'CPUTime'
                                    ]
@@ -105,7 +105,7 @@ class JobPlotter(BaseReporter):
     return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportCPUUsage( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/86400",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)/86400",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'CPUTime'
                                    ]
@@ -132,7 +132,7 @@ class JobPlotter(BaseReporter):
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportCumulativeNumberOfJobs( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'entriesInBucket'
                                    ]
@@ -160,7 +160,7 @@ class JobPlotter(BaseReporter):
     return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportNumberOfJobs( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'entriesInBucket'
                                    ]
@@ -187,7 +187,7 @@ class JobPlotter(BaseReporter):
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportTotalNumberOfJobs( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", SUM(%s)",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'entriesInBucket'
                                    ]
                    )
@@ -209,7 +209,7 @@ class JobPlotter(BaseReporter):
     return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportProcessingBandwidth( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM((%s/1000000)/(%s))/SUM(%s)",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM((%s/1000000)/(%s))/SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength', 'InputDataSize', 'CPUTime', 'entriesInBucket' ]
                    )
     retVal = self._getTimedData( reportRequest[ 'startTime' ],
@@ -249,7 +249,7 @@ class JobPlotter(BaseReporter):
     return self.__reportFieldSizeinMB( reportRequest, ( "OutputDataSize", "Output data" ) )
 
   def __reportFieldSizeinMB( self, reportRequest, fieldTuple ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/1000000",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)/1000000",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength', fieldTuple[0] ]
                    )
     retVal = self._getTimedData( reportRequest[ 'startTime' ],
@@ -295,7 +295,7 @@ class JobPlotter(BaseReporter):
     return self.__reportDataFiles( reportRequest, ( "OutputDataFiles", "Output files" ) )
 
   def __reportDataFiles( self, reportRequest, fieldTuple ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength', fieldTuple[0] ]
                    )
     retVal = self._getTimedData( reportRequest[ 'startTime' ],
@@ -326,7 +326,7 @@ class JobPlotter(BaseReporter):
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportTotalCPUUsed( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", SUM(%s)/86400",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s)/86400",
                      reportRequest[ 'groupingFields' ][1] + [ 'CPUTime'
                                    ]
                    )

@@ -1,89 +1,65 @@
 import time
+import datetime
 try:
-  from graphtool.graphs.common_graphs import *
-except:
-  raise Exception( "Missing GraphTool" )
+  from DIRAC.Core.Utilities.Graphs import barGraph, lineGraph, pieGraph, cumulativeGraph, qualityGraph, textGraph
+except Exception, e:
+  raise Exception( "Missing plotting lib: %s" % str( e ) )
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, rootPath
 
-def convertUTCToLocal( metadata, data ):
-  """
-  Convert epoch times from utc to local
-  bucketsData must be a list of lists where each list contains
-    - field 0: datetime
-    - field 1: bucketLength
-    - fields 2-n: numericalFields
-  """
-  for mF in ( 'starttime', 'endtime' ):
-    if mF in metadata:
-      metadata[ mF ] = metadata[ mF ] - time.altzone
-  for kF in data:
-    convertedData = {}
-    for iP in data[ kF ]:
-      convertedData[ iP - time.altzone ] = data[kF][iP]
-    data[kF] = convertedData
-  return metadata, data
+gPredefinedPalettes = { 'Status' : { 'Failed'    : '#E66266',
+                                     'Done'      : '#7BEA81',
+                                     'Completed' : '#109000',
+                                     'Waiting'   : '#FFE533',
+                                     'Deleted'   : '#6E6E6E',
+                                     'Running'   : '#7FBAFF',
+                                     'Received'  : '#BACEAC',
+                                     'Stalled'   : '#7D69A3',
+                                     'Killed'    : '#CC99FF',
+                                     'Checking'  : '#FFF4AA',
+                                     'Staging'   : '#3D4E7E',
+                                     'Matched'   : '#0076FF',
+                                    },
+                         'Site'  : { 'LCG.CERN.ch'   : '#7777FF',
+                                     'LCG.RAL.uk'    : '#77FF77',
+                                     'LCG.NIKHEF.nl' : '#FF7777',
+                                     'LCG.GRIDKA.de' : '#FFFF77',
+                                     'LCG.CNAF.it'   : '#FF77FF',
+                                     'LCG.PIC.es'    : '#77FFFF',
+                                     'LCG.IN2P3.fr'  : '#777777',
+                                   }
+                       }
 
-def alignToGranularity( metadata ):
+gCompiledPalettes = dict( [ ( t, gPredefinedPalettes[k][t] ) for k in gPredefinedPalettes for t in gPredefinedPalettes[k] ] )
+
+def checkMetadata( metadata ):
   if 'span' in metadata:
     granularity = metadata[ 'span' ]
     if 'starttime' in metadata:
       metadata[ 'starttime' ] = metadata[ 'starttime' ] - metadata[ 'starttime' ] % granularity
     if 'endtime' in metadata:
-      metadata[ 'endtime' ] = metadata[ 'endtime' ] - metadata[ 'endtime' ] % granularity + granularity
+      metadata[ 'endtime' ] = metadata[ 'endtime' ] - metadata[ 'endtime' ] % granularity
+  if not 'watermark' in metadata:
+    metadata[ 'watermark' ] = "%s/DIRAC/Core/Utilities/Graphs/Dwatermark.png" % rootPath
+  if not 'colors' in metadata:
+    metadata[ 'colors' ] = gCompiledPalettes
 
-class TimeBarGraph( TimeGraph, BarGraph ):
-  pass
-
-class TimeStackedBarGraph( TimeGraph, StackedBarGraph ):
-
-  def make_stacked_bar( self, points, bottom, color ):
-
-    if not 'skipEdgeColor' in self.metadata or not self.metadata[ 'skipEdgeColor' ]:
-      return super( TimeStackedBarGraph, self ).make_stacked_bar( points, bottom, color )
-    else:
-      if bottom == None:
-        bottom = {}
-      tmp_x = []; tmp_y = []; tmp_b = []
-
-      for key in points.keys():
-        if self.is_timestamps:
-          key_date = datetime.datetime.utcfromtimestamp( key )
-          key_val = date2num( key_date )
-        else:
-          key_val = key
-        tmp_x.append( key_val )
-        tmp_y.append( points[key] )
-        if not bottom.has_key( key ):
-          if self.log_yaxis:
-              bottom[key] = 0.001
-          else:
-              bottom[key] = 0
-        tmp_b.append( bottom[key] )
-        bottom[key] += points[key]
-      if len( tmp_x ) == 0:
-        return bottom, None
-      width = float(self.width)
-      if self.is_timestamps:
-          width = float(width) / 86400.0
-      elif self.string_mode:
-          tmp_x = [i + .1*width for i in tmp_x]
-          width = .8 * width
-      bars = self.ax.bar( tmp_x, tmp_y, bottom=tmp_b, width=width, color=color, edgecolor=color )
-      setp( bars, linewidth=0.5 )
-      return bottom, bars
+def generateNoDataPlot( fileName, data, metadata ):
+  try:
+    fn = file( fileName, "wb" )
+  except:
+    return S_ERROR( "Can't open %s" % filename )
+  textGraph( 'No data for this selection', fn, metadata )
+  fn.close()
+  return S_OK()
 
 def generateTimedStackedBarPlot( fileName, data, metadata ):
   try:
     fn = file( fileName, "wb" )
   except:
     return S_ERROR( "Can't open %s" % fileName )
-  #if not data:
-  #  return S_ERROR( "No data for that selection" )
-  metadata, data = convertUTCToLocal( metadata, data )
-  alignToGranularity( metadata )
-  plotter = TimeStackedBarGraph()
-  plotter( data, fn, metadata )
+  checkMetadata( metadata )
+  barGraph( data, fn, **metadata )
   fn.close()
   return S_OK()
 
@@ -92,12 +68,9 @@ def generateQualityPlot( fileName, data, metadata ):
     fn = file( fileName, "wb" )
   except:
     return S_ERROR( "Can't open %s" % fileName )
-  #if not data:
-  #  return S_ERROR( "No data for that selection" )
-  plotter = QualityMap()
-  metadata, data = convertUTCToLocal( metadata, data )
-  alignToGranularity( metadata )
-  plotter( data, fn, metadata )
+  checkMetadata( metadata )
+  metadata[ 'legend' ] = False
+  qualityGraph( data, fn, **metadata )
   fn.close()
   return S_OK()
 
@@ -106,14 +79,18 @@ def generateCumulativePlot( fileName, data, metadata ):
     fn = file( fileName, "wb" )
   except:
     return S_ERROR( "Can't open %s" % fileName )
-  if 'is_cumulative' not in metadata:
-    metadata[ 'is_cumulative' ] = True
-  #if not data:
-  #  return S_ERROR( "No data for that selection" )
-  plotter = CumulativeGraph()
-  metadata, data = convertUTCToLocal( metadata, data )
-  alignToGranularity( metadata )
-  plotter( data, fn, metadata )
+  checkMetadata( metadata )
+  cumulativeGraph( data, fn, **metadata )
+  fn.close()
+  return S_OK()
+
+def generateStackedLinePlot( fileName, data, metadata ):
+  try:
+    fn = file( fileName, "wb" )
+  except:
+    return S_ERROR( "Can't open %s" % filename )
+  checkMetadata( metadata )
+  lineGraph( data, fn, **metadata )
   fn.close()
   return S_OK()
 
@@ -122,7 +99,7 @@ def generatePiePlot( fileName, data, metadata ):
     fn = file( fileName, "wb" )
   except:
     return S_ERROR( "Can't open %s" % fileName )
-  plotter = PieGraph()
-  plotter( data, fn, metadata )
+  checkMetadata( metadata )
+  pieGraph( data, fn, **metadata )
   fn.close()
   return S_OK()
