@@ -177,7 +177,7 @@ class PlotBase:
       plot_line_width = prefs.get('plot_line_width',0.1)
 
       setp( ax.patch, linewidth=pixelToPoint(plot_line_width,dpi) )
-      setp( ax.frame, linewidth=pixelToPoint(frame_line_width,dpi) )
+      setp( ax.spines, linewidth=pixelToPoint(frame_line_width,dpi) )
       #setp( ax.axvline(), linewidth=pixelToPoint(1.0,dpi) ) 
       axis_grid_flag = prefs.get('plot_axis_grid',True)
       if axis_grid_flag:  
