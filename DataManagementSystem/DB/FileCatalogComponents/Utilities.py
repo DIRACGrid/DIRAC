@@ -26,7 +26,7 @@ def checkArgumentFormat(path):
     return S_ERROR("checkArgumentFormat: Supplied path is not of the correct format")
   return S_OK(urls)  
 
-def generateGuid(self,checksum,checksumtype):
+def generateGuid(checksum,checksumtype):
     """ Generate a GUID based on the file checksum
     """
     
