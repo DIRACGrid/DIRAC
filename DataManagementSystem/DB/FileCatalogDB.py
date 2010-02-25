@@ -725,7 +725,6 @@ class FileCatalogDB(DB,
       if not info:
         return S_ERROR( 'Missing Replica information for LFN: %s' % lfn )
       for key in [ 'PFN', 'SE', 'Size', 'GUID', 'Checksum']:
-        print info
         if not key in info:
           return S_ERROR( 'Missing "%s" for LFN: %s' % ( key, lfn ) )      
       pfn = info['PFN']
