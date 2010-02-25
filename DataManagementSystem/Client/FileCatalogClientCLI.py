@@ -207,7 +207,7 @@ File Catalog Client $Revision: 1.17 $Date:
     self.prompt = 'FC:'+self.cwd+'>'
 
   def getPath(self,apath):
-  
+
     if apath.find('/') == 0:
       path = apath
     else:
@@ -475,11 +475,11 @@ File Catalog Client $Revision: 1.17 $Date:
 
         usage: replicas <lfn>
     """
-    apath = args.split()
+    apath = args.split()[0]
     path = self.getPath(apath)
     print "lfn:",path
     try:
-      result =  self.fc.getReplicas(path)            
+      result =  self.fc.getReplicas(path)
       if result['OK']:
         if result['Value']['Successful']:
           for se,entry in result['Value']['Successful'][path].items():
