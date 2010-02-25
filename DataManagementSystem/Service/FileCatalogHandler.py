@@ -87,6 +87,12 @@ class FileCatalogHandler(RequestHandler):
     """
     return fcDB.removeFile(lfns,self.getRemoteCredentials())
   
+  types_isFile = [[ListType,DictType]+list(StringTypes)]
+  def export_isFile(self,lfns):
+    """ Check if the given LFNs are files registered in the catalog
+    """
+    return fcDB.isFile(lfns,self.getRemoteCredentials())
+  
   types_addReplica = [[ListType,DictType]+list(StringTypes)]
   def export_addReplica(self,lfns):
     """ Get replica info for the given list of LFNs
