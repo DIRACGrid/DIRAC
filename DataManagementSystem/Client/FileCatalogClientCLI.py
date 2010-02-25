@@ -236,7 +236,7 @@ File Catalog Client $Revision: 1.17 $Date:
     elif option == 'file':
       return self.addfile(argss)
     elif option == 'pfn':
-      return self.addfile(argss)
+      return self.addpfn(argss)
     else:
       print "Unknown option:",option
          
@@ -661,39 +661,28 @@ File Catalog Client $Revision: 1.17 $Date:
     print "lfn:",lfn
     rmse = args.split()[1]
     try:
-      result =  self.fc.getPfnsByLfn(lfn)
-      if result['Status'] == 'OK':
-        done = 0
-        for se,entry in result['Replicas'].items():
-          if se == rmse:
-            result =  self.fc.removePfn(lfn,entry)
-            done = 1
-            if result['Status'] == 'OK':
-              print "Replica",entry,"removed from the catalog"
-            else:
-              print "Failed to remove replica",entry
-              print result['Message']
-              
-            break    
-        if not done:
-          print "Replica SE",rmse,"not found"      
+      result =  self.fc.removeReplica( {lfn:{'SE':rmse}} )
+      done = 1
+      if result['OK']:
+        print "Replica at",rmse,"removed from the catalog"
       else:
-        print "Failed to get replicas",result['Message']
+        print "Failed to remove replica at",rmse
+        print result['Message']
     except Exception, x:
       print "rmpfn failed: ", x
       
   def do_rm(self,args):
     """ Remove file from the catalog
 
-        usage: rmpfn <lfn> 
+        usage: rm <lfn> 
     """  
     
     path = args.split()[0]
     lfn = self.getPath(path)
     print "lfn:",lfn
     try:
-      result =  self.fc.rmFile(lfn)
-      if result['Status'] == 'OK':
+      result =  self.fc.removeFile(lfn)
+      if result['OK']:
         print "File",lfn,"removed from the catalog"
       else:
         print "Failed to remove file from the catalog"  
