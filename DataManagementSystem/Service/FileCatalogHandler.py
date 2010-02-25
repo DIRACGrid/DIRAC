@@ -114,6 +114,12 @@ class FileCatalogHandler(RequestHandler):
     """
     return fcDB.createDirectory(lfns,self.getRemoteCredentials())
 
+  types_exists = [[ListType,DictType]+list(StringTypes)]
+  def export_exists(self, lfns):
+    """ Check if the path exists
+    """
+    return fcDB.existsLFNs(lfns,self.getRemoteCredentials())
+
   ########################################################################
   # Path operations
   #  
