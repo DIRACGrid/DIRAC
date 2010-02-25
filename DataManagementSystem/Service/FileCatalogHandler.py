@@ -81,6 +81,12 @@ class FileCatalogHandler(RequestHandler):
     """
     return fcDB.addFile(lfns,self.getRemoteCredentials())
   
+  types_removeFile = [[ListType,DictType]+list(StringTypes)]
+  def export_removeFile(self,lfns):
+    """ Remove files for the given list of LFNs
+    """
+    return fcDB.removeFile(lfns,self.getRemoteCredentials())
+  
   types_addReplica = [[ListType,DictType]+list(StringTypes)]
   def export_addReplica(self,lfns):
     """ Get replica info for the given list of LFNs
@@ -92,6 +98,12 @@ class FileCatalogHandler(RequestHandler):
     """ Get replica info for the given list of LFNs
     """
     return fcDB.getReplicas(lfns,self.getRemoteCredentials())
+  
+  types_removeReplicas = [[ListType,DictType]+list(StringTypes)]
+  def export_removeReplicas(self,lfns):
+    """ Remove replicas for the given list of LFNs
+    """
+    return fcDB.removeReplicas(lfns,self.getRemoteCredentials())
   
   ########################################################################
   # Directory operations

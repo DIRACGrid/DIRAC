@@ -884,6 +884,39 @@ class FileCatalogDB(DB,
     
     return S_OK(lfn)
   
+  def removeFile(self,lfns,credDict):
+    """ Bulk file removal method
+    """
+    result = checkArgumentFormat(lfns)
+    if not result['OK']:
+      return result
+    arguments = result['Value']
+    successful = {}
+    failed = {}
+    
+    files = arguments.keys()
+    result = self.findFile(files)     
+    fileDict = result['Value']
+    if not fileDict["Successful"]:
+      return S_OK(fileDict)
+    
+    failed = fileDict['Failed']
+    lfnDict = {}
+    for lfn,id in fileDict['Successful'].items():
+      if id:
+        lfnDict[id] = lfn
+    fileIDString = ','.join([str(id) for id in lfnDict.keys()])
+    for table in ['FC_Files','FC_FileInfo','FC_GUID_To_File']:
+      req = "DELETE FROM %s WHERE FileID in (%s)" % (table,fileIDString)
+      result = self._update(req)
+      if not result['OK']:
+        failed.update(fileDict["Successful"])
+        break
+      if table == "FC_GUID_To_File":
+        successful = fileDict["Successful"]
+        
+    return S_OK({'Successful':successful,'Failed':failed})    
+  
   def setFileOwner(self,fileID,owner):
     """ Set the file owner
     """
@@ -1512,6 +1545,33 @@ class FileCatalogDB(DB,
     
     return S_OK({'Successful':successful,'Failed':failed})
 
-
+  def removeReplica(self,lfns,credDict):
+    """ Bulk replica removal method
+    """
+    result = checkArgumentFormat(lfns)
+    if not result['OK']:
+      return result
+    arguments = result['Value']
     
+    files = arguments.keys()
+    result = self.findFile(files)     
+    fileDict = result['Value']
+    if not fileDict["Successful"]:
+      return S_OK(fileDict)
+    
+    failed = fileDict['Failed']
+    successful = {}
+    
+    lfnDict = {}
+    for lfn,id in fileDict['Successful'].items():
+      if id:
+        lfnDict[id] = lfn
+    
+    fileIDString = ','.join([str(id) for id in lfnDict.keys()])
+    req = "DELETE FROM FC_Replicas WHERE FileID in (%s)" % fileIDString    
+    result = self._update(req)
+    if not result['OK']:
+      failed.update(fileDict["Successful"])
+      
+    return S_OK({'Successful':successful,'Failed':failed})
     
