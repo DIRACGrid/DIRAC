@@ -1154,14 +1154,15 @@ class FileCatalogDB(DB,
   def isFile(self,lfns,s_uid=0,s_gid=0):
     """ Check for the existence of files
     """
-    result = self.findUser(s_uid)
-    if not result['OK']:
-      return result
-    uid = result['Value']
-    result = self.findGroup(s_gid)
-    if not result['OK']:
-      return result
-    gid = result['Value']
+    
+    #result = self.findUser(s_uid)
+    #if not result['OK']:
+    #  return result
+    #uid = result['Value']
+    #result = self.findGroup(s_gid)
+    #if not result['OK']:
+    #  return result
+    #gid = result['Value']
     
     result = self.findFile(lfns)
     return result
