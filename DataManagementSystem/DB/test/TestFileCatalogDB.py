@@ -4,8 +4,9 @@ Script.parseCommandLine()
 import unittest,types,time
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 
-testUser = 'testuser'
+testUser  = 'testuser'
 testGroup = 'testgroup'
+testFile  = '/testdir/testfile'
 
 class FileCatalogDBTestCase(unittest.TestCase):
   """ Base class for the FileCatalogDB test cases
@@ -49,10 +50,26 @@ class DirectoryCase(FileCatalogDBTestCase):
 class FileCase(FileCatalogDBTestCase):
 
   def test_fileOperations(self):
-
-    fname = '/lhcb/user/a/atsareg/first_test'
-    result = self.fc.addFile({fname:{'PFN':'testfile', 'SE':'testSE', 'Size':0, 'GUID':0, 'Checksum':'0'}})
+    """
+      this test requires the SE to be properly defined in the CS
+    """ 
+    from DIRAC import gConfig
+    testSE = 'testSE'
+    result = gConfig.getSections( '/Resources/StorageElements' )
+    if result['OK'] and result['Value']:
+      testSE = result['Value'][0]
+      
+    result = self.fc.addFile( { testFile: { 'PFN': 'testfile', 
+                                         'SE': testSE , 
+                                         'Size':0, 
+                                         'GUID':0, 
+                                         'Checksum':'0' } } )
     self.assert_( result['OK'] )
+    if gConfig.getValue( '/Resources/StorageElements/%s/AccessProtocol.1/Host' % testSE, '' ):
+      result = self.fc.getReplicas( testFile )
+      self.assert_( result['OK'] )
+      self.assert_( testFile in result['Value']['Successful'] )
+      
 
 if __name__ == '__main__':
 
