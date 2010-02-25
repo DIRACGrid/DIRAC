@@ -39,8 +39,6 @@ def checkMetadata( metadata ):
       metadata[ 'starttime' ] = metadata[ 'starttime' ] - metadata[ 'starttime' ] % granularity
     if 'endtime' in metadata:
       metadata[ 'endtime' ] = metadata[ 'endtime' ] - metadata[ 'endtime' ] % granularity
-  if not 'watermark' in metadata:
-    metadata[ 'watermark' ] = "%s/DIRAC/Core/Utilities/Graphs/Dwatermark.png" % rootPath
   if not 'colors' in metadata:
     metadata[ 'colors' ] = gCompiledPalettes
 

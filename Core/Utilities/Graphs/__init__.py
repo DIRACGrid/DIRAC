@@ -11,6 +11,7 @@
 
 __RCSID__ = "$Id$"
 
+import DIRAC
 from DIRAC.Core.Utilities.Graphs.Graph import Graph
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import evalPrefs
 import time
@@ -22,13 +23,13 @@ common_prefs = {
   'plot_padding':0,
   'frame':'On',
   'font' : 'Lucida Grande',
-  'font_family' : 'sans-serif',  
+  'font_family' : 'sans-serif',
   'dpi':100,
   'legend':True,
-  'legend_position':'bottom',    
+  'legend_position':'bottom',
   'legend_max_rows':99,
-  'legend_max_columns':4,   
-  'square_axis':False      
+  'legend_max_columns':4,
+  'square_axis':False
 }
 
 graph_large_prefs = {
@@ -46,7 +47,7 @@ graph_large_prefs = {
   'legend_height':150,
   'legend_padding':20,
   'limit_labels':15,
-  'graph_time_stamp':True                        
+  'graph_time_stamp':True
 }
 
 graph_normal_prefs = {
@@ -64,7 +65,7 @@ graph_normal_prefs = {
   'legend_height':120,
   'legend_padding':20,
   'limit_labels':15,
-  'graph_time_stamp':True                        
+  'graph_time_stamp':True
 }
 
 graph_small_prefs = {
@@ -82,7 +83,7 @@ graph_small_prefs = {
   'legend_height':50,
   'legend_padding':10,
   'limit_labels':15,
-  'graph_time_stamp':True                         
+  'graph_time_stamp':True
 }
 
 graph_thumbnail_prefs = {
@@ -101,59 +102,63 @@ graph_thumbnail_prefs = {
   'plot_axis':False,
   'plot_axis_labels':False,
   'graph_time_stamp':False,
-  'tight_bars':True                        
+  'tight_bars':True
 }
 
-def graph(data,file,*args,**kw):
-  
-  prefs = evalPrefs(*args,**kw)
-  if prefs.has_key('graph_size'):
+def graph( data, file, *args, **kw ):
+
+  prefs = evalPrefs( *args, **kw )
+  if prefs.has_key( 'graph_size' ):
     graph_size = prefs['graph_size']
   else:
     graph_size = "normal"
-     
+
   if graph_size == "normal":
     defaults = graph_normal_prefs
   elif graph_size == "small":
-    defaults = graph_small_prefs  
+    defaults = graph_small_prefs
   elif graph_size == "thumbnail":
-    defaults = graph_thumbnail_prefs   
+    defaults = graph_thumbnail_prefs
   elif graph_size == "large":
-    defaults = graph_large_prefs    
-        
+    defaults = graph_large_prefs
+
   graph = Graph()
   start = time.time()
-  graph.makeGraph(data,common_prefs,defaults,prefs)
+  graph.makeGraph( data, common_prefs, defaults, prefs )
   #print "AT >>>> makeGraph time",time.time()-start
   start = time.time()
-  graph.writeGraph(file,'PNG')
+  graph.writeGraph( file, 'PNG' )
   #print "AT >>>> writeGraph time",time.time()-start
 
-def barGraph(data,file,*args,**kw):
-  
-  graph(data,file,plot_type='BarGraph',*args,**kw)
-  
-def lineGraph(data,file,*args,**kw):
-  
-  graph(data,file,plot_type='LineGraph',*args,**kw)  
-  
-def cumulativeGraph(data,file,*args,**kw):
-  
-  graph(data,file,plot_type='LineGraph',cumulate_data=True,*args,**kw)  
-  
-def pieGraph(data,file,*args,**kw):
-  
-  prefs = {'xticks':False,'yticks':False,'legend_position':'right'}
-  graph(data,file,prefs,plot_type='PieGraph',*args,**kw)  
-  
-def qualityGraph(data,file,*args,**kw):  
-  
+def __checkKW( kw ):
+  if 'watermark' not in kw:
+    kw[ 'watermark' ] = "%s/DIRAC/Core/Utilities/Graphs/Dwatermark.png" % DIRAC.rootPath
+  return kw
+
+def barGraph( data, file, *args, **kw ):
+  kw = __checkKW( kw )
+  graph( data, file, plot_type = 'BarGraph', *args, **kw )
+
+def lineGraph( data, file, *args, **kw ):
+  kw = __checkKW( kw )
+  graph( data, file, plot_type = 'LineGraph', *args, **kw )
+
+def cumulativeGraph( data, file, *args, **kw ):
+  kw = __checkKW( kw )
+  graph( data, file, plot_type = 'LineGraph', cumulate_data = True, *args, **kw )
+
+def pieGraph( data, file, *args, **kw ):
+  kw = __checkKW( kw )
+  prefs = {'xticks':False, 'yticks':False, 'legend_position':'right'}
+  graph( data, file, prefs, plot_type = 'PieGraph', *args, **kw )
+
+def qualityGraph( data, file, *args, **kw ):
+  kw = __checkKW( kw )
   prefs = {'plot_axis_grid':False}
-  graph(data,file,prefs,plot_type='QualityMapGraph',*args,**kw)  
-  
-def textGraph(text,file,*args,**kw):
-  
+  graph( data, file, prefs, plot_type = 'QualityMapGraph', *args, **kw )
+
+def textGraph( text, file, *args, **kw ):
+  kw = __checkKW( kw )
   prefs = {'text_image':text}
-  graph({},file,prefs,*args,**kw)  
-  
-    
+  graph( {}, file, prefs, *args, **kw )
+
