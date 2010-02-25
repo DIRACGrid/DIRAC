@@ -50,7 +50,7 @@ def pfnunparse(pfnDict):
 
   except Exception,x:
     errStr = "Pfn.pfnunparse: Exception while un-parsing pfn dictionary."
-    gLogger.exception(errStr,'',str(x))
+    gLogger.exception(errStr)
     return S_ERROR(errStr)
 
 
