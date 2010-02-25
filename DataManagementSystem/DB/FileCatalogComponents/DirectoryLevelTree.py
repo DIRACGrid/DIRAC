@@ -1,12 +1,12 @@
 ########################################################################
-# $HeadURL:  $
+# $HeadURL$
 ########################################################################
 
 """ DIRAC FileCatalog component representing a directory tree with 
     enumerated paths
 """
 
-__RCSID__ = "$Id:  $"
+__RCSID__ = "$Id$"
 
 import time, os
 from types import *
@@ -248,10 +248,11 @@ class DirectoryLevelTree:
       result = self.findDir(path)
       if not result['OK']:
         return result
+      if not result['Value']:
+        return S_ERROR('Directory does not exists: %s' % path )
       dirID = result['Value']
     else:
       dirID = path
-        
     req = "SELECT DirID FROM FC_DirectoryLevelTree WHERE Parent=%d" % dirID
     result = self.db._query(req)
     if not result['OK']:
