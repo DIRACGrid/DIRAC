@@ -22,6 +22,22 @@ class UserAndGroupManager:
       return S_OK(True)
     else:
       return S_OK(False)
+
+  def getUserAndGroupID(self, credDict):
+    """ Get a uid, gid tuple for the given Credentials
+    """
+    s_uid = credDict['username']
+    s_gid = credDict['group']        
+    result = self.findUser(s_uid)
+    if not result['OK']:
+      return result
+    uid = result['Value']
+    result = self.findGroup(s_gid)
+    if not result['OK']:
+      return result
+    gid = result['Value']
+    return S_OK( ( uid, gid ) )
+    
   
 #####################################################################
 #
@@ -82,12 +98,15 @@ class UserAndGroupManager:
     req = "DELETE FROM FC_Users WHERE UserName='%s'" % name
     resUpdate = self._update(req)
     return resUpdate
+#####################################################################
+  def getUsers(self, credDict):
+    return self.__getUsers()  
+ 
 
 #####################################################################
   def __getUsers(self):
     """ Get the current user IDs and names
     """
-
     resDict = {}
     query = "SELECT UID,UserName from FC_Users"
     resQuery = self._query(query)
@@ -198,6 +217,10 @@ class UserAndGroupManager:
     req = "DELETE FROM FC_Groups WHERE GroupName='%s'" % gname
     resUpdate = self._update(req)
     return resUpdate
+  
+#####################################################################
+  def getGroups(self, credDict):
+    return self.__getGroups()  
  
 #####################################################################
   def __getGroups(self):
