@@ -73,7 +73,7 @@ class FileCatalogDB(DB,
 #  Directories related methods
 #
 #####################################################################
-  def makeDirectory(self,path,uid=0,gid=0,status=0):
+  def makeDirectory(self,path,credDict,status=0):
     """Create a new directory. The return value is the dictionary
        containing all the parameters of the newly created directory
     """
@@ -92,8 +92,10 @@ class FileCatalogDB(DB,
       l_uid = 0
       l_gid = 0
     else:
-      l_uid = uid
-      l_gid = gid
+      result = self.getUserAndGroupID(credDict)
+      if not result['OK']:
+        return result
+      ( l_uid, l_gid ) = result['Value']
 
     dirDict = {}
     result = self.dtree.makeDir(path)
@@ -114,7 +116,7 @@ class FileCatalogDB(DB,
     return S_OK(dirID)
 
 #####################################################################
-  def makeDirectories(self,path,uid=0,gid=0,status=0):
+  def makeDirectories(self,path,credDict):
     """Make all the directories recursively in the path. The return value
        is the dictionary containing all the parameters of the newly created
        directory
@@ -126,7 +128,7 @@ class FileCatalogDB(DB,
       return S_OK(result['Value']) 
 
     if path == '/':
-      result = self.makeDirectory(path)
+      result = self.makeDirectory(path,credDict)
       return result
 
     parentDir = os.path.dirname(path)
@@ -134,12 +136,12 @@ class FileCatalogDB(DB,
     if not result['OK']:
       return result
     if result['Exists']:
-      result = self.makeDirectory(path)
+      result = self.makeDirectory(path,credDict)
     else:
-      result = self.makeDirectories(parentDir)
+      result = self.makeDirectories(parentDir,credDict)
       if not result['OK']:
         return result
-      result = self.makeDirectory(path)
+      result = self.makeDirectory(path,credDict)
 
     return result
 
@@ -159,20 +161,10 @@ class FileCatalogDB(DB,
 
     return result
   
-#####################################################################
+  #####################################################################
   def isDirectory(self,paths,credDict):
     """ Checking for existence of directories
     """
-    s_uid = credDict['username']
-    s_gid = credDict['group']
-    result = self.findUser(s_uid)
-    if not result['OK']:
-      return result
-    uid = result['Value']
-    result = self.findGroup(s_gid)
-    if not result['OK']:
-      return result
-    gid = result['Value']
     
     result = checkArgumentFormat(paths)
     if not result['OK']:
@@ -193,21 +185,10 @@ class FileCatalogDB(DB,
           
     return S_OK({'Successful':successful,'Failed':failed})
   
- #####################################################################
+  #####################################################################
   def createDirectory(self,arguments,credDict):
     """ Checking for existence of directories
     """
-    s_uid = credDict['username']
-    s_gid = credDict['group']
-    result = self.findUser(s_uid)
-    if not result['OK']:
-      return result
-    uid = result['Value']
-    result = self.findGroup(s_gid)
-    if not result['OK']:
-      return result
-    gid = result['Value']
-    
     result = checkArgumentFormat(arguments)
     if not result['OK']:
       return result
@@ -217,7 +198,7 @@ class FileCatalogDB(DB,
     successful = {}
     failed = {}
     for dir in dirs:
-      result = self.makeDirectories(dir)
+      result = self.makeDirectories(dir,credDict)
       if not result['OK']:
         failed[dir] = result['Message']
       else: 
@@ -543,16 +524,6 @@ class FileCatalogDB(DB,
   def listDirectory(self,lfns,credDict,verbose=False):
     """ Get the directory listing
     """
-    s_uid = credDict['username']
-    s_gid = credDict['group']        
-    result = self.findUser(s_uid)
-    if not result['OK']:
-      return result
-    uid = result['Value']
-    result = self.findGroup(s_gid)
-    if not result['OK']:
-      return result
-    gid = result['Value']
     
     result = checkArgumentFormat(lfns)
     if not result['OK']:
@@ -684,8 +655,7 @@ class FileCatalogDB(DB,
         successful[path] = result['Value']
         
     return S_OK({'Successful':successful,'Failed':failed}) 
-      
-  
+
   def __getFileLFN(self,fileID):
     """ Get LFN of the given file
     """
@@ -752,6 +722,9 @@ class FileCatalogDB(DB,
     successful = {}
     failed = {}
     for lfn,info in arguments.items():
+      for key in [ 'PFN', 'SE', 'Size', 'GUID', 'Checksum']:
+        if not key in info:
+          return S_ERROR( 'Missing "%s" for LFN:%s' % ( key, lfn ) )      
       pfn = info['PFN']
       se = info['SE']
       size = int(info['Size'])
@@ -772,16 +745,11 @@ class FileCatalogDB(DB,
     """
 
     start = time.time()
-    s_uid = credDict['username']
-    s_gid = credDict['group']
-    result = self.findUser(s_uid)
+    result = self.getUserAndGroupID(credDict)
     if not result['OK']:
       return result
-    uid = result['Value']
-    result = self.findGroup(s_gid)
-    if not result['OK']:
-      return result
-    gid = result['Value']
+    ( uid, gid ) = result['Value']
+
     # check directory permissions
     lfnDir = os.path.dirname(lfn)
     result = self.getDirectoryPermissions(lfnDir,credDict)
@@ -837,7 +805,7 @@ class FileCatalogDB(DB,
       # Create the file directory if necessary
       dirID = 0
       directory = os.path.dirname(lfn)
-      result = self.makeDirectories(directory)
+      result = self.makeDirectories(directory,credDict)
       if not result['OK']:
         return result
       dirID = result['Value']
@@ -1166,16 +1134,10 @@ class FileCatalogDB(DB,
   def changePathOwner(self,paths,credDict):
     """ Change the owner for the given paths
     """
-    s_uid = credDict['username']
-    s_gid = credDict['group']    
-    result = self.findUser(s_uid)
+    result = self.getUserAndGroupID(credDict)
     if not result['OK']:
       return result
-    uid = result['Value']
-    result = self.findGroup(s_gid)
-    if not result['OK']:
-      return result
-    gid = result['Value']
+    ( uid, gid ) = result['Value']
     
     result = checkArgumentFormat(paths)
     if not result['OK']:
@@ -1224,16 +1186,10 @@ class FileCatalogDB(DB,
   def __changePathFunction(self,paths,credDict,change_function_directory,change_function_file):
     """ A generic function to change Owner, Group or Mode for the given paths
     """
-    s_uid = credDict['username']
-    s_gid = credDict['group']
-    result = self.findUser(s_uid)
+    result = self.getUserAndGroupID(credDict)
     if not result['OK']:
       return result
-    uid = result['Value']
-    result = self.findGroup(s_gid)
-    if not result['OK']:
-      return result
-    gid = result['Value']
+    ( uid, gid ) = result['Value']
     
     result = checkArgumentFormat(paths)
     if not result['OK']:
@@ -1420,16 +1376,6 @@ class FileCatalogDB(DB,
     """ Add replica pfn in storage element se for the file specified by its lfn
         to the catalog. Pass optionally guid for extra verification
     """
-    s_uid = credDict['username']
-    s_gid = credDict['group']      
-    result = self.findUser(s_uid)
-    if not result['OK']:
-      return result
-    uid = result['Value']
-    result = self.findGroup(s_gid)
-    if not result['OK']:
-      return result
-    gid = result['Value']
     
     result = checkArgumentFormat(lfns)
     if not result['OK']:
@@ -1439,6 +1385,9 @@ class FileCatalogDB(DB,
     successful = {}
     failed = {}
     for lfn,info in arguments.items():
+      for key in [ 'PFN', 'SE' ]:
+        if not key in info:
+          return S_ERROR( 'Missing "%s" for LFN:%s' % ( key, lfn ) )
       pfn = info['PFN']
       se = info['SE']
       # check directory permissions
@@ -1497,16 +1446,6 @@ class FileCatalogDB(DB,
   def getReplicas(self,lfns,credDict):
     """ Get Replicas for the given LFNs
     """
-    s_uid = credDict['username']
-    s_gid = credDict['group']     
-    result = self.findUser(s_uid)
-    if not result['OK']:
-      return result
-    uid = result['Value']
-    result = self.findGroup(s_gid)
-    if not result['OK']:
-      return result
-    gid = result['Value']
     
     result = checkArgumentFormat(lfns)
     if not result['OK']:
