@@ -16,7 +16,6 @@ from DIRAC.Core.Utilities.Graphs.BarGraph import BarGraph
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
 from pylab import setp
 from matplotlib.colors import normalize, LinearSegmentedColormap
-from matplotlib.mlab import linspace
 import matplotlib.cm as cm
 from matplotlib.colorbar import make_axes, ColorbarBase
 
