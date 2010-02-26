@@ -656,6 +656,28 @@ class FileCatalogDB(DB,
         
     return S_OK({'Successful':successful,'Failed':failed}) 
 
+  def getLFNSize(self, lfns, credDict):
+    """ Return Size of LFN
+    """
+    result = self.findFile(lfns)
+    if not result['OK']:
+      return result
+    successful = dict( result['Value']['Successful'] )
+    failed = result['Value']['Failed']
+    for lfn,fileID in result['Value']['Successful'].items():
+      req = "SELECT Size FROM FC_FileInfo WHERE FileID=%d" % fileID
+      result = self._query(req)
+      if not result['OK']:
+        successful.pop(lfn)
+        failed.append[lfn] = result['Message']
+      elif not result['Value']:
+        successful.pop(lfn)
+        failed.append[lfn] = 'File not Found'
+      else:        
+        successful[lfn] = result['Value'][0][0]
+      
+    return S_OK({'Successful':successful,'Failed':failed}) 
+
   def __getFileLFN(self,fileID):
     """ Get LFN of the given file
     """
