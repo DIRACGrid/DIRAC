@@ -149,9 +149,11 @@ DIRAC
     }
   }
   $CONFIGEXT
+  VirtualOrganization = $VO
 }
 Registry
 {
+  DefaultGroup = $VO_user
   Hosts
   {
     host-$DIRACHOST
