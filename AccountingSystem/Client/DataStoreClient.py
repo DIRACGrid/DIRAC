@@ -3,7 +3,7 @@ __RCSID__ = "$Id$"
 
 import time
 import random
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
@@ -47,6 +47,8 @@ class DataStoreClient:
     retVal = register.checkValues()
     if not retVal[ 'OK' ]:
       return retVal
+    if gConfig.getValue( '/LocalSite/DisableAccounting', False ):
+      return S_OK()
     self.__registersList.append( register.getValues() )
     return S_OK()
 
