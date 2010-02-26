@@ -68,6 +68,9 @@ def generateQualityPlot( fileName, data, metadata ):
     return S_ERROR( "Can't open %s" % fileName )
   checkMetadata( metadata )
   metadata[ 'legend' ] = False
+  #HACK: Pad a bit to the left until the proper padding is calculated
+  maxKeyLength = max( [ len( key ) for key in data ] )
+  metadata[ 'plot_left_padding' ] = int( maxKeyLength * 2.5 )
   qualityGraph( data, fn, **metadata )
   fn.close()
   return S_OK()
