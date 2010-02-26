@@ -84,7 +84,7 @@ class SystemAdministratorClient(Client):
         loadCfg.loadFromFile(cfgPath)
         try:
           compCfg = loadCfg[sectionName][component]
-        except NameError,x:
+        except KeyError,x:
           gLogger.warn('No %s section found' % componentType)  
           
     if compCfg:
@@ -92,7 +92,7 @@ class SystemAdministratorClient(Client):
         compCfg = baseCfg.mergeWith(compCfg)
       return S_OK(compCfg)
     else:
-      return S_ERROR('No configuration template found')      
+      return S_OK(baseCfg)      
 
   def __addCSOptions(self,system,component,host=None,override=False):
     """ Add the section with the component options to the CS
