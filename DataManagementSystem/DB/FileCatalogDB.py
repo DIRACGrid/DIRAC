@@ -834,7 +834,7 @@ class FileCatalogDB(DB,
       resAdd = self._update(req)            
       if resAdd['OK']:
         req = "INSERT INTO FC_GUID_to_File (GUID,FileID) VALUES ('%s','%s')" % (fileGUID,fileID)        
-        resGuid = self._update(req)        
+        resGuid = self._update(req)
         if resGuid['OK']:
           result = S_OK()
           result['GUID'] = fileGUID
@@ -906,13 +906,13 @@ class FileCatalogDB(DB,
       if id:
         lfnDict[id] = lfn
     fileIDString = ','.join([str(id) for id in lfnDict.keys()])
-    for table in ['FC_Files','FC_FileInfo','FC_GUID_To_File']:
+    for table in ['FC_Files','FC_FileInfo','FC_GUID_to_File']:
       req = "DELETE FROM %s WHERE FileID in (%s)" % (table,fileIDString)
       result = self._update(req)
       if not result['OK']:
         failed.update(fileDict["Successful"])
         break
-      if table == "FC_GUID_To_File":
+      if table == "FC_GUID_to_File":
         successful = fileDict["Successful"]
         
     return S_OK({'Successful':successful,'Failed':failed})    
