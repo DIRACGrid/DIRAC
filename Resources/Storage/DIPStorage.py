@@ -31,6 +31,9 @@ class DIPStorage(StorageBase):
   def __init__(self,storageName,protocol,path,host,port,spaceToken,wspath):
     """
     """
+    if path:
+      wspath = path
+      path = ''
 
     self.protocolName = 'DIP'
     self.name = storageName
@@ -41,7 +44,7 @@ class DIPStorage(StorageBase):
     self.wspath = wspath
     self.spaceToken = spaceToken
 
-    self.url = protocol+"://"+host+":"+port+path
+    self.url = protocol+"://"+host+":"+port+wspath
 
     self.cwd = ''
     self.isok = True
@@ -107,11 +110,34 @@ class DIPStorage(StorageBase):
   def getProtocolPfn(self,pfnDict,withPort):
     """ From the pfn dict construct the pfn to be used
     """
-    pfnDict['Protocol'] = ''
-    pfnDict['Host'] = ''
-    pfnDict['Port'] = ''
-    pfnDict['WSUrl'] = ''
+    # pfnDict['Protocol'] = ''
+    # pfnDict['Host'] = ''
+    # pfnDict['Port'] = ''
+    # pfnDict['WSUrl'] = ''
     res = pfnunparse(pfnDict)
+    return res
+
+  def getTransportURL(self,path,protocols=False):
+    """ Obtain the TURLs for the supplied path and protocols
+    """
+    res = self.exists(path)
+    if res['OK']:
+      for url in res['Value']['Successful']:
+        if protocols and not self.protocols in protocols:
+          res['Value']['Successful'].pop(url)
+          res['Value']['Failed'][url] = 'Protocol not supported'
+          continue
+        if url[0] == '/':
+          nameDict = self.getParameters()['Value']
+          nameDict['FileName'] = url
+          ret = pfnunparse( nameDict )
+          if ret['OK']:
+            res['Value']['Successful'][url] = ret['Value']
+          else:
+            res['Value']['Successful'].pop(url)
+            res['Value']['Failed'][url] = ret['Message']
+        else:
+          res['Value']['Successful'][url] = url
     return res
 
   #############################################################
@@ -159,6 +185,20 @@ class DIPStorage(StorageBase):
     return S_OK(resDict)
 
   def __putFile(self,src_file,dest_url):
+    res = pfnparse(src_file)
+    if not res['OK']:
+      return res
+    localCache = False
+    srcDict = res['Value']
+    if srcDict['Protocol'] in ['dips','dip']:
+      localCache = True
+      srcSEURL = srcDict['Protocol']+'://'+srcDict['Host']+':'+srcDict['Port']+srcDict['WSUrl']
+      transferClient = TransferClient(srcSEURL)
+      res = transferClient.receiveFile(srcDict['FileName'],os.path.join(srcDict['Path'],srcDict['FileName']))
+      if not res['OK']:
+        return res
+      src_file = srcDict['FileName']
+      
     if not os.path.exists(src_file):
       errStr = "DIPStorage.__putFile: The source local file does not exist."
       gLogger.error(errStr,src_file)
@@ -170,6 +210,8 @@ class DIPStorage(StorageBase):
       return S_ERROR(errStr)
     transferClient = TransferClient(self.url)
     res = transferClient.sendFile(src_file,dest_url)
+    if localCache:
+      os.unlink( src_file )
     if res['OK']:
       return S_OK(sourceSize)
     else:
@@ -190,7 +232,7 @@ class DIPStorage(StorageBase):
         dest_file = "%s/%s" % (localPath,fileName)
       else:
         dest_file = "%s/%s" % (os.getcwd(),fileName)
-      gLogger.debug("DIPStorage.putFile: Executing transfer of %s to %s" % (src_url, dest_file))
+      gLogger.debug("DIPStorage.getFile: Executing transfer of %s to %s" % (src_url, dest_file))
       res = self.__getFile(src_url,dest_file)
       if res['OK']:
         successful[src_url] = res['Value']
@@ -300,7 +342,10 @@ class DIPStorage(StorageBase):
     gLogger.debug("DIPStorage.getFileMetadata: Attempting to obtain metadata for %s files." % len(urls))
     serviceClient = RPCClient(self.url)
     for url in urls:
-      res = serviceClient.getMetadata(url)
+      pfn = url
+      if url.find(self.url) == 0:
+        pfn = url[ ( len(self.url) + 2):]
+      res = serviceClient.getMetadata(pfn)
       if res['OK']:
         if res['Value']['Exists']:
           if res['Value']['Type'] == 'File':
