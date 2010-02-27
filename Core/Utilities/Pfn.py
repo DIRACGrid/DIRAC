@@ -8,7 +8,10 @@ def pfnunparse(pfnDict):
   try:
     # All files must have a path and a filename. Or else...
     # fullPath = '/some/path/to/a/file.file'
-    fullPath = "%s/%s" % (pfnDict['Path'],pfnDict['FileName'])
+    if pfnDict['Path']:
+      fullPath = "%s/%s" % (pfnDict['Path'],pfnDict['FileName'])
+    else:
+      fullPath = pfnDict['FileName']
     fullPath = os.path.realpath(fullPath)
 
     # If they have a port they must also have a host...
@@ -17,7 +20,10 @@ def pfnunparse(pfnDict):
       # pfnHost = 'host:port'
       # If there is a port then there may be a web service url
       if pfnDict['WSUrl']:
-        pfnHost = "%s%s" % (pfnHost,pfnDict['WSUrl'])
+        if pfnDict['WSUrl'].find('?=') > -1 :
+          pfnHost = "%s%s" % (pfnHost,pfnDict['WSUrl'])
+        else:
+          pfnHost = "%s%s?=" % (pfnHost,pfnDict['WSUrl'])
         #pfnHost = 'host:port/wsurl'
     else:
       # It is possible that the host is an empty string
@@ -110,11 +116,11 @@ def pfnparse(pfn):
           pfn = pfn.replace(port,'',1)
           #pfn = '/fullPath'
           #pfn = '/wsurl/fullPath'
-          if re.search('\?',pfn):
+          if re.search('\?=',pfn):
             #/wsurl/fullPath'
-            wsurl = '%s=' % pfn.split('=',1)[0]
+            wsurl = '%s' % pfn.split('?=',1)[0]
             pfnDict['WSUrl'] = wsurl
-            pfn = pfn.replace(wsurl,'')
+            pfn = pfn.replace(wsurl+'?=','')
           #pfn = '/fullPath'
           directory = os.path.dirname(pfn)
           pfnDict['Path'] = directory
