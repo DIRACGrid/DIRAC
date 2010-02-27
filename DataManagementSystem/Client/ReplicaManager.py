@@ -897,8 +897,8 @@ class ReplicaManager(CatalogToStorage):
     """
     self.fileCatalogue = FileCatalog()
     self.accountingClient = None
-    self.registrationProtocol = 'SRM2'
-    self.thirdPartyProtocols = ['SRM2']
+    self.registrationProtocol = ['SRM2', 'DIP']
+    self.thirdPartyProtocols = ['SRM2', 'DIP']
 
   def setAccountingClient(self,client):
     """ Set Accounting Client instance
