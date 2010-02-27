@@ -84,6 +84,8 @@ class StorageElementHandler( RequestHandler ):
     """
     while fileID[0] == '/':
       fileID = fileID[1:]
+    if fileID.find(self.serviceInfoDict['serviceName']) == 0:
+      fileID = fileID[ (len(self.serviceInfoDict['serviceName']) + 1): ]
     file_path = os.path.join( base_path, fileID )
     return self.__getFileStat( file_path )
 
@@ -226,6 +228,8 @@ class StorageElementHandler( RequestHandler ):
         fileID is the local file name in the SE.
         token is used for access rights confirmation.
     """
+    if fileID.find('?=') > 0:
+      fileID = fileID[ ( fileID.find('?=')  + 2): ]
     while fileID[0] == '/':
       fileID = fileID[1:]
     file_path = os.path.join( base_path, fileID )
