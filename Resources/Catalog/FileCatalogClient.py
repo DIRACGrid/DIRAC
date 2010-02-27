@@ -23,5 +23,4 @@ class FileCatalogClient(Client):
     self.serverURL = 'DataManagement/FileCatalog'
 
   def getReplicas( self, lfns, allStatus='allStatus' ):
-    print lfns
     return RPCClient(self.serverURL).getReplicas(lfns)
