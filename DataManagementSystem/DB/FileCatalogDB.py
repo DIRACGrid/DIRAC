@@ -678,6 +678,32 @@ class FileCatalogDB(DB,
       
     return S_OK({'Successful':successful,'Failed':failed}) 
 
+  def getLFNMetadata(self, lfns, credDict):
+    """ Return Size, of LFN
+    """
+    result = self.findFile(lfns)
+    if not result['OK']:
+      return result
+    print result
+    successful = dict( result['Value']['Successful'] )
+    failed = result['Value']['Failed']
+    for lfn,fileID in result['Value']['Successful'].items():
+      req = "SELECT Size,CheckSum,CheckSumType FROM FC_FileInfo WHERE FileID=%d" % fileID
+      result = self._query(req)
+      if not result['OK']:
+        successful.pop(lfn)
+        failed[lfn] = result['Message']
+      elif not result['Value']:
+        successful.pop(lfn)
+        failed[lfn] = 'File not Found'
+      else:
+        successful[lfn] = {}
+        successful[lfn]['Size'] = result['Value'][0][0]
+        successful[lfn]['CheckSumValue'] = result['Value'][0][1]
+        successful[lfn]['CheckSumType'] = result['Value'][0][2]
+      
+    return S_OK({'Successful':successful,'Failed':failed}) 
+
   def __getFileLFN(self,fileID):
     """ Get LFN of the given file
     """
@@ -736,7 +762,7 @@ class FileCatalogDB(DB,
   def addFile(self,lfns,credDict):
     """ Add files to the catalog
     """  
-    
+
     result = checkArgumentFormat(lfns)
     if not result['OK']:
       return result
@@ -1396,16 +1422,21 @@ class FileCatalogDB(DB,
     """ Check that the PFN corresponds to the LFN-PFN convention
     """
     # Check if the PFN corresponds to the LFN convention
+    if pfn == lfn:
+      return S_OK()
     lfn_pfn = True   # flag that the lfn is contained in the pfn
     if (len(pfn)<len(lfn)) or (pfn[-len(lfn):] != lfn) :
       return S_ERROR('PFN does not correspond to the LFN convention')
 
     # Check if the pfn corresponds to the SE definition
-    result = self.getStorageElement(se)
+    result = self.__getStorageElement(se)
     if not result['OK']:
       return result
     selement = result['Value']
-    pfnDict = pfnparse(pfn)
+    res = pfnparse(pfn)
+    if not res['OK']:
+      return res
+    pfnDict = res['Value']
     protocol = pfnDict['Protocol']
     pfnpath = pfnDict['Path']
     result = selement.getStorageParameters(protocol)
@@ -1428,6 +1459,15 @@ class FileCatalogDB(DB,
         return S_ERROR('PFN does not correspond to the LFN convention')
 
     return S_OK()
+
+  def __getStorageElement(self, seName):
+    """
+    """
+    from DIRAC.Resources.Storage.StorageElement              import StorageElement
+    storageElement = StorageElement(seName)
+    if not storageElement.valid:
+      return S_ERROR(storageElement.errorReason)
+    return S_OK(storageElement)
     
 #####################################################################
   def addReplica(self,lfns,credDict):
