@@ -276,11 +276,11 @@ class FileCatalog:
       evalString = "catalogModule.%s()" % moduleName
       catalog = eval(evalString)
       if not catalog.isOK():
-        errStr = "FileCatalog._generateCatalogObject: Failed to instatiate catalog plug in."
+        errStr = "FileCatalog._generateCatalogObject: Failed to instantiate catalog plug in."
         gLogger.error(errStr,moduleName)
         return S_ERROR(errStr)
       return S_OK(catalog)
     except Exception, x:
-      errStr = "FileCatalog._generateCatalogObject: Failed to instatiate %s()" % (moduleName)
+      errStr = "FileCatalog._generateCatalogObject: Failed to instantiate %s()" % (moduleName)
       gLogger.exception(errStr,lException=x)
       return S_ERROR(errStr)
