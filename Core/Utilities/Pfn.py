@@ -20,7 +20,7 @@ def pfnunparse(pfnDict):
       # pfnHost = 'host:port'
       # If there is a port then there may be a web service url
       if pfnDict['WSUrl']:
-        if pfnDict['WSUrl'].find('?=') > -1 :
+        if re.search( '\?.*=', pfnDict['WSUrl'] ) :
           pfnHost = "%s%s" % (pfnHost,pfnDict['WSUrl'])
         else:
           pfnHost = "%s%s?=" % (pfnHost,pfnDict['WSUrl'])
@@ -116,11 +116,11 @@ def pfnparse(pfn):
           pfn = pfn.replace(port,'',1)
           #pfn = '/fullPath'
           #pfn = '/wsurl/fullPath'
-          if re.search('\?=',pfn):
+          if re.search('\?',pfn):
             #/wsurl/fullPath'
-            wsurl = '%s' % pfn.split('?=',1)[0]
-            pfnDict['WSUrl'] = wsurl
-            pfn = pfn.replace(wsurl+'?=','')
+            wsurl = '%s' % pfn.split('=',1)[0]
+            pfnDict['WSUrl'] = wsurl+'='
+            pfn = pfn.replace(wsurl+'=','')
           #pfn = '/fullPath'
           directory = os.path.dirname(pfn)
           pfnDict['Path'] = directory
