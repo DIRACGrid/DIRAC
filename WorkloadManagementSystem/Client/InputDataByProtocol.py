@@ -150,8 +150,9 @@ class InputDataByProtocol:
 
     #Can now start to obtain TURLs for files grouped by localSE
     #for requested input data
+    requestedProtocol = self.configuration.get('Protocol','')
     for se,pfnList in seFilesDict.items():
-      result = self.rm.getStorageFileAccessUrl(pfnList,se)
+      result = self.rm.getStorageFileAccessUrl(pfnList,se,protocol=requestedProtocol)
       self.log.debug(result)
       if not result['OK']:
         self.log.warn(result['Message'])
