@@ -31,7 +31,6 @@ class DownloadInputData:
     self.inputData = argumentsDict['InputData']
     self.configuration = argumentsDict['Configuration']
     self.fileCatalogResult = argumentsDict['FileCatalog']
-    print self.fileCatalogResult
     self.jobID = None
     self.rm = ReplicaManager()
     self.counter=1
