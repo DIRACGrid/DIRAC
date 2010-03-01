@@ -35,24 +35,21 @@ class SeSInspectorAgent(AgentModule):
       except RSSException, x:
         gLogger.error(whoRaised(x))
       
-      self.am_setOption( "PollingTime", 180 )
+      self.am_setOption( "PollingTime", 60 )
       self.ServicesToBeChecked = []
       self.ServiceNamesInCheck = []
-      #self.maxNumberOfThreads = gConfig.getValue(self.section+'/NumberOfThreads',1)
-      #self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',1)
       
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
-      #self.threadPool = ThreadPool(1,self.maxNumberOfThreads)
   
-      #vedi taskQueueDirector
       self.threadPool = ThreadPool( self.am_getOption('minThreadsInPool', 1),
-                         self.am_getOption('maxThreadsInPool', 1),
-                         self.am_getOption('totalThreadsInPool', 1) )
+                                    self.maxNumberOfThreads )
       if not self.threadPool:
         self.log.error('Can not create Thread Pool:')
         return S_ERROR('Can not create Thread Pool')
       
+      
       self.lockObj = threading.RLock()
+
       self.setup = gConfig.getValue("DIRAC/Setup")
       
       return S_OK()
@@ -69,21 +66,29 @@ class SeSInspectorAgent(AgentModule):
     """
     
     try:
-      servicesGetter = ThreadedJob(self._getServicesToCheck)
-      self.threadPool.queueJob(servicesGetter)
+
+      self._getServicesToCheck()
+
+      for i in range(self.maxNumberOfThreads):
+        self.lockObj.acquire()
+        try:
+          toBeChecked = self.ServicesToBeChecked.pop()
+        except Exception:
+          break
+        finally:
+          self.lockObj.release()
+        
+        self.threadPool.generateJobAndQueueIt(self._executeCheck, args = (toBeChecked, ) )
+        
       
-      for i in range(self.maxNumberOfThreads - 1):
-        checkExecutor = ThreadedJob(self._executeCheck)
-        self.threadPool.queueJob(checkExecutor)
-    
       self.threadPool.processAllResults()
       return S_OK()
 
     except Exception, x:
       errorStr = where(self, self.execute)
-      gLogger.exception(errorStr,'',x)
+      gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr)
-      
+    
 #############################################################################
 
   def _getServicesToCheck(self):
@@ -93,10 +98,8 @@ class SeSInspectorAgent(AgentModule):
     """
     
     try:
-
       try:
-        res = self.rsDB.getStuffToCheck('Services', Configurations.Services_check_freq, 
-                                        maxN = self.maxNumberOfThreads - 1)
+        res = self.rsDB.getStuffToCheck('Services', Configurations.Services_check_freq)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -126,15 +129,9 @@ class SeSInspectorAgent(AgentModule):
     """
     
     try:
-
-      if len(self.ServicesToBeChecked) > 0:
-          
-        self.lockObj.acquire()
-        try:
-          toBeChecked = self.ServicesToBeChecked.pop()
-        finally:
-          self.lockObj.release()
-        
+    
+      while True:
+      
         granularity = toBeChecked[0]
         serviceName = toBeChecked[1]
         status = toBeChecked[2]
@@ -146,18 +143,32 @@ class SeSInspectorAgent(AgentModule):
         newPEP = PEP(granularity = granularity, name = serviceName, status = status, 
                      formerStatus = formerStatus, siteType = siteType, serviceType = serviceType)
         newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup)
-  
-    except Exception, x:
-      gLogger.exception(whoRaised(x),'',x)
-    finally:
-      try:
+
+        # remove from InCheck list
         self.lockObj.acquire()
         try:
-          self.ServiceNamesInCheck.remove(serviceName)
+          self.ServiceNamesInCheck.remove(toBeChecked[1])
         finally:
           self.lockObj.release()
-      except NameError:
-        pass
 
+        # get new service to be checked 
+        self.lockObj.acquire()
+        try:
+          toBeChecked = self.ServicesToBeChecked.pop()
+        except Exception:
+          break
+        finally:
+          self.lockObj.release()
+        
+    
+    except Exception, x:
+      gLogger.exception(whoRaised(x),'',x)
+      self.lockObj.acquire()
+      try:
+        self.ServiceNamesInCheck.remove(serviceName)
+      except IndexError:
+        pass
+      finally:
+        self.lockObj.release()
 
 #############################################################################

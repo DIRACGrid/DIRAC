@@ -38,16 +38,12 @@ class RSInspectorAgent(AgentModule):
       self.am_setOption( "PollingTime", 60 )
       self.ResToBeChecked = []
       self.ResNamesInCheck = []
-      #self.maxNumberOfThreads = gConfig.getValue(self.section+'/NumberOfThreads',1)
-      #self.threadPoolDepth = gConfig.getValue(self.section+'/ThreadPoolDepth',1)
       
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
-      #self.threadPool = ThreadPool(1,self.maxNumberOfThreads)
   
       #vedi taskQueueDirector
       self.threadPool = ThreadPool( self.am_getOption('minThreadsInPool', 1),
-                         self.am_getOption('maxThreadsInPool', 1),
-                         self.am_getOption('totalThreadsInPool', 1) )
+                                    self.maxNumberOfThreads )
       if not self.threadPool:
         self.log.error('Can not create Thread Pool')
         return S_ERROR('Can not create Thread Pool')
@@ -70,13 +66,21 @@ class RSInspectorAgent(AgentModule):
     """
     
     try:
-      resourcesGetter = ThreadedJob(self._getResourcesToCheck)
-      self.threadPool.queueJob(resourcesGetter)
+
+      self._getResourcesToCheck()
+
+      for i in range(self.maxNumberOfThreads):
+        self.lockObj.acquire()
+        try:
+          toBeChecked = self.ResourcesToBeChecked.pop()
+        except Exception:
+          break
+        finally:
+          self.lockObj.release()
+        
+        self.threadPool.generateJobAndQueueIt(self._executeCheck, args = (toBeChecked, ) )
+        
       
-      for i in range(self.maxNumberOfThreads - 1):
-        checkExecutor = ThreadedJob(self._executeCheck)
-        self.threadPool.queueJob(checkExecutor)
-    
       self.threadPool.processAllResults()
       return S_OK()
 
@@ -96,8 +100,7 @@ class RSInspectorAgent(AgentModule):
     try:
     
       try:
-        res = self.rsDB.getStuffToCheck('Resources', Configurations.Resources_check_freq, 
-                                        self.maxNumberOfThreads - 1)
+        res = self.rsDB.getStuffToCheck('Resources', Configurations.Resources_check_freq) 
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -128,15 +131,9 @@ class RSInspectorAgent(AgentModule):
     """
     
     try:
-
-      if len(self.ResToBeChecked) > 0:
-          
-        self.lockObj.acquire()
-        try:
-          toBeChecked = self.ResToBeChecked.pop()
-        finally:
-          self.lockObj.release()
-        
+    
+      while True:
+      
         granularity = toBeChecked[0]
         resourceName = toBeChecked[1]
         status = toBeChecked[2]
@@ -149,16 +146,32 @@ class RSInspectorAgent(AgentModule):
                      formerStatus = formerStatus, siteType = siteType, 
                      resourceType = resourceType)
         newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup)
-  
-    except Exception, x:
-      gLogger.exception(whoRaised(x),'',x)
-    finally:
-      try:
+    
+        # remove from InCheck list
         self.lockObj.acquire()
         try:
-          self.ResNamesInCheck.remove(resourceName)
+          self.ResourceNamesInCheck.remove(toBeChecked[1])
         finally:
           self.lockObj.release()
-      except NameError:
+
+        # get new site to be checked 
+        self.lockObj.acquire()
+        try:
+          toBeChecked = self.ResourcesToBeChecked.pop()
+        except Exception:
+          break
+        finally:
+          self.lockObj.release()
+        
+    
+    except Exception, x:
+      gLogger.exception(whoRaised(x),'',x)
+      self.lockObj.acquire()
+      try:
+        self.ResourceNamesInCheck.remove(resourceeName)
+      except IndexError:
         pass
-      
+      finally:
+        self.lockObj.release()
+
+#############################################################################    
