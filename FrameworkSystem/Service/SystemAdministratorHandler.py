@@ -40,15 +40,15 @@ class SystemAdministratorHandler( RequestHandler ):
     services = {}
     agents = {}
     
-    systemList = os.listdir(DIRACROOT+'/pro/DIRAC')
+    systemList = os.listdir(DIRACROOT+'/DIRAC')
     for extension in ['DIRAC']+[ x+'DIRAC' for x in extensions]:
       for sys in systemList:
         system = sys.replace('System','')
         try:
-          agentList = os.listdir(DIRACROOT+'/pro/%s/%s/Agent' % (extension,sys) )
+          agentList = os.listdir(DIRACROOT+'/%s/%s/Agent' % (extension,sys) )
           for agent in agentList:
             if agent[-3:] == ".py":
-              afile = open(DIRACROOT+'/pro/%s/%s/Agent/' % (extension,sys)+agent,'r')
+              afile = open(DIRACROOT+'/%s/%s/Agent/' % (extension,sys)+agent,'r')
               body = afile.read()
               afile.close()
               if body.find('AgentModule') != -1 or body.find('OptimizerModuleModule') != -1:
@@ -58,7 +58,7 @@ class SystemAdministratorHandler( RequestHandler ):
         except OSError:
           pass  
         try:
-          serviceList = os.listdir(DIRACROOT+'/pro/%s/%s/Service' % (extension,sys) )
+          serviceList = os.listdir(DIRACROOT+'/%s/%s/Service' % (extension,sys) )
           for service in serviceList:
             if service.find('Handler') != -1 and service[-3:] == '.py':
               if not services.has_key(system):
@@ -614,7 +614,7 @@ class SystemAdministratorHandler( RequestHandler ):
     currentEnv['MYSQL_ROOT_PWD'] = rootpwd
     currentEnv['MYSQL_DIRAC_PWD'] = diracpwd
     host = socket.getfqdn()
-    result = shellCall(0,DIRACROOT+'/pro/DIRAC/Core/scripts/install_mysql.sh %s' % host,env=currentEnv)
+    result = shellCall(0,DIRACROOT+'/DIRAC/Core/scripts/install_mysql.sh %s' % host,env=currentEnv)
     
     # Add the database access info to the local configuration
     cfg = CFG()
@@ -644,7 +644,7 @@ class SystemAdministratorHandler( RequestHandler ):
     if not currentEnv.has_key('HOST'):
       currentEnv['HOST'] = socket.getfqdn()
 
-    result = shellCall(0,DIRACROOT+'/pro/DIRAC/Core/scripts/install_mysql_db.sh %s' % dbname,env=currentEnv)
+    result = shellCall(0,DIRACROOT+'/DIRAC/Core/scripts/install_mysql_db.sh %s' % dbname,env=currentEnv)
     if not result['OK']:
       return result
 
@@ -706,7 +706,7 @@ class SystemAdministratorHandler( RequestHandler ):
   def export_updateSoftware(self,version):
     """ Update the local DIRAC software installation to version
     """
-    result = shellCall(0,DIRACROOT+'/pro/DIRAC/Core/scripts/update_sw.sh %s' % version)
+    result = shellCall(0,DIRACROOT+'/DIRAC/Core/scripts/update_sw.sh %s' % version)
     return result
   
   def __createSection(self,cfg,section):
