@@ -14,7 +14,7 @@ from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 cmDB = None
-DIRACROOT = '/opt/dirac'
+DIRACROOT = rootPath
 
 def initializeSystemAdministratorHandler( serviceInfo ):
 
@@ -222,7 +222,7 @@ class SystemAdministratorHandler( RequestHandler ):
       if not line:
         continue
       cname,routput = line.split(':')
-      cname = cname.replace('/opt/dirac/startup/','')
+      cname = cname.replace(DIRACROOT+'/startup/','')
       run = False
       result = re.search('^ run',routput)
       if result:
@@ -423,7 +423,7 @@ class SystemAdministratorHandler( RequestHandler ):
     if not result['OK']:
       return result
     cfg = result['Value']
-    fname = '/opt/dirac/etc/%s_%s.cfg' % (system,component)
+    fname = DIRACROOT+'/etc/%s_%s.cfg' % (system,component)
     if cfg.writeToFile(fname):
       return S_ERROR('Failed to write out the local component options')
     else:
@@ -614,7 +614,7 @@ class SystemAdministratorHandler( RequestHandler ):
     currentEnv['MYSQL_ROOT_PWD'] = rootpwd
     currentEnv['MYSQL_DIRAC_PWD'] = diracpwd
     host = socket.getfqdn()
-    result = shellCall(0,'/opt/dirac/pro/DIRAC/Core/scripts/install_mysql.sh %s' % host,env=currentEnv)
+    result = shellCall(0,DIRACROOT+'/pro/DIRAC/Core/scripts/install_mysql.sh %s' % host,env=currentEnv)
     
     # Add the database access info to the local configuration
     cfg = CFG()
@@ -624,9 +624,9 @@ class SystemAdministratorHandler( RequestHandler ):
     cfg.setOption('Systems/Databases/Password',diracpwd)
     
     diracCfg = CFG()
-    diracCfg.loadFromFile('/opt/dirac/etc/dirac.cfg')
+    diracCfg.loadFromFile(DIRACROOT+'/etc/dirac.cfg')
     newCfg = diracCfg.mergeWith(cfg)
-    if not newCfg.writeToFile('/opt/dirac/etc/dirac.cfg'):
+    if not newCfg.writeToFile(DIRACROOT+'/etc/dirac.cfg'):
       return S_ERROR('Failed to write out the local component options')
     else:
       return S_OK()
@@ -644,7 +644,7 @@ class SystemAdministratorHandler( RequestHandler ):
     if not currentEnv.has_key('HOST'):
       currentEnv['HOST'] = socket.getfqdn()
 
-    result = shellCall(0,'/opt/dirac/pro/DIRAC/Core/scripts/install_mysql_db.sh %s' % dbname,env=currentEnv)
+    result = shellCall(0,DIRACROOT+'/pro/DIRAC/Core/scripts/install_mysql_db.sh %s' % dbname,env=currentEnv)
     if not result['OK']:
       return result
 
@@ -668,9 +668,9 @@ class SystemAdministratorHandler( RequestHandler ):
       return result
     cfg = result['Value']
     diracCfg = CFG()
-    diracCfg.loadFromFile('/opt/dirac/etc/dirac.cfg')
+    diracCfg.loadFromFile(DIRACROOT+'/etc/dirac.cfg')
     newCfg = diracCfg.mergeWith(cfg)
-    if not newCfg.writeToFile('/opt/dirac/etc/dirac.cfg'):
+    if not newCfg.writeToFile(DIRACROOT+'/etc/dirac.cfg'):
       return S_ERROR('Failed to write out the local component options')
     else:
       return S_OK()
@@ -706,7 +706,7 @@ class SystemAdministratorHandler( RequestHandler ):
   def export_updateSoftware(self,version):
     """ Update the local DIRAC software installation to version
     """
-    result = shellCall(0,'/opt/dirac/pro/DIRAC/Core/scripts/update_sw.sh %s' % version)
+    result = shellCall(0,DIRACROOT+'/pro/DIRAC/Core/scripts/update_sw.sh %s' % version)
     return result
   
   def __createSection(self,cfg,section):
@@ -724,12 +724,12 @@ class SystemAdministratorHandler( RequestHandler ):
     """ Set option in the local configuration file
     """
     localCFG = CFG()
-    localCFG.loadFromFile('/opt/dirac/etc/dirac.cfg') 
+    localCFG.loadFromFile(DIRACROOT+'/etc/dirac.cfg') 
     section = os.path.dirname(option[1:])
     if not localCFG.isSection(section):
       self.__createSection(localCFG,section)
     localCFG.setOption(option,value)
-    cfgfile = open( "/opt/dirac/etc/dirac.cfg", "w" )
+    cfgfile = open( DIRACROOT+'/etc/dirac.cfg', "w" )
     cfgfile.write(str(localCFG))
 
     return S_OK()
