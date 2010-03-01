@@ -1,4 +1,3 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Transformation/TransformationDB.sql,v 1.15 2009/08/26 07:17:46 rgracian Exp $
 -- -------------------------------------------------------------------------------
 --  Schema definition for the TransformationDB database a generic
 --  engine to define input data streams and support dynamic data 
@@ -29,6 +28,9 @@ CREATE TABLE Transformations (
     PRIMARY KEY(TransformationID),
     INDEX(TransformationName)
 ) ENGINE=InnoDB;
+
+-- MaxNumberOfJobs => MaxNumberOfTasks
+-- EventsPerJob => EventsPerTask
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS AdditionalParameters;
@@ -68,19 +70,26 @@ CREATE TABLE TransformationFiles(
     PRIMARY KEY (TransformationID,FileID)
 );
 
+-- JobID => TaskID
+
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS Jobs;
 CREATE TABLE Jobs (
-JobID INTEGER NOT NULL AUTO_INCREMENT,
-TransformationID INTEGER NOT NULL,
-WmsStatus char(16) DEFAULT 'Created',
-JobWmsID char(16) DEFAULT '',
-TargetSE char(255) DEFAULT 'Unknown',
-CreationTime DATETIME NOT NULL,
-LastUpdateTime DATETIME NOT NULL,
-PRIMARY KEY(TransformationID,JobID),
+  JobID INTEGER NOT NULL AUTO_INCREMENT,
+  TransformationID INTEGER NOT NULL,
+  WmsStatus char(16) DEFAULT 'Created',
+  JobWmsID char(16) DEFAULT '',
+  TargetSE char(255) DEFAULT 'Unknown',
+  CreationTime DATETIME NOT NULL,
+  LastUpdateTime DATETIME NOT NULL,
+  PRIMARY KEY(TransformationID,JobID),
 INDEX(WmsStatus)
 );
+
+-- Jobs => TransformationTasks
+-- JobID => TaskID
+-- WmsStatus => ExternalStatus
+-- JobWmsID => ExternalID
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS JobInputs;
@@ -90,6 +99,9 @@ JobID INTEGER NOT NULL,
 InputVector BLOB,
 PRIMARY KEY(TransformationID,JobID)
 );
+
+-- JobInputs => TransformationInputs
+-- JobID => TaskID
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS DataFiles;
