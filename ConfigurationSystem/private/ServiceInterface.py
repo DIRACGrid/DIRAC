@@ -36,9 +36,9 @@ class ServiceInterface( threading.Thread ):
   def isMaster( self ):
     return gConfigurationData.isMaster()
 
-  def __launchCheckSlaves(self):
+  def __launchCheckSlaves( self ):
     gLogger.info( "Starting purge slaves thread" )
-    self.setDaemon(1)
+    self.setDaemon( 1 )
     self.start()
 
   def __loadConfigurationData( self ):
@@ -123,7 +123,7 @@ class ServiceInterface( threading.Thread ):
     #Test that remote and new versions are the same
     sRemoteVersion = oRemoteConfData.getVersion()
     sLocalVersion = gConfigurationData.getVersion()
-    gLogger.info( "Checking versions\nremote: %s\nlocal:  %s" % (  sRemoteVersion, sLocalVersion ) )
+    gLogger.info( "Checking versions\nremote: %s\nlocal:  %s" % ( sRemoteVersion, sLocalVersion ) )
     if sRemoteVersion != sLocalVersion:
       if not gConfigurationData.mergingEnabled():
         return S_ERROR( "Local and remote versions differ (%s vs %s). Cannot commit." % ( sLocalVersion, sRemoteVersion ) )
@@ -181,13 +181,13 @@ class ServiceInterface( threading.Thread ):
       zFile = zipfile.ZipFile( "%s/%s" % ( backupDir, fileName ), "r" )
       cfgName = zFile.namelist()[0]
       #retVal = S_OK( zlib.compress( str( fd.read() ), 9 ) )
-      retVal = S_OK(zlib.compress( zFile.read( cfgName ) , 9 ) )
+      retVal = S_OK( zlib.compress( zFile.read( cfgName ) , 9 ) )
       zFile.close()
       return retVal
     return S_ERROR( "Version %s does not exist" % date )
 
   def __getCfgBackups( self, basePath, date = "", subPath = "" ):
-    rs = re.compile( "^%s\..+@%s.*\.zip$" % ( gConfigurationData.getName(), date ) )
+    rs = re.compile( "^%s\..*%s.*\.zip$" % ( gConfigurationData.getName(), date ) )
     fsEntries = os.listdir( "%s/%s" % ( basePath, subPath ) )
     fsEntries.sort( reverse = True )
     backupsList = []
@@ -199,7 +199,7 @@ class ServiceInterface( threading.Thread ):
         if rs.search( entry ):
           backupsList.append( "%s/%s" % ( subPath, entry ) )
     return backupsList
-  
+
   def __getPreviousCFG( self, oRemoteConfData ):
     remoteExpectedVersion = oRemoteConfData.getVersion()
     backupsList = self.__getCfgBackups( gConfigurationData.getBackupDir(), date = oRemoteConfData.getVersion() )
@@ -212,10 +212,10 @@ class ServiceInterface( threading.Thread ):
     try:
       prevRemoteConfData.loadConfigurationData( backFile )
     except Exception, e:
-      return S_ERROR( "Could not load original commiter's version: %s" % str(e) )
+      return S_ERROR( "Could not load original commiter's version: %s" % str( e ) )
     gLogger.info( "Loaded client original version %s" % prevRemoteConfData.getVersion() )
     return S_OK( prevRemoteConfData.getRemoteCFG() )
-  
+
   def _checkConflictsInModifications( self, realModList, reqModList, parentSection = "" ):
     realModifiedSections = dict( [ ( modAc[1], modAc[3] ) for modAc in realModList if modAc[0].find( 'Sec' ) == len( modAc[0] ) - 3 ] )
     reqOptionsModificationList = dict( [ ( modAc[1], modAc[3] ) for modAc in reqModList if modAc[0].find( 'Opt' ) == len( modAc[0] ) - 3 ] )
@@ -231,17 +231,17 @@ class ServiceInterface( threading.Thread ):
           return S_ERROR( "Section %s/%s cannot be deleted. It has been modified." % ( parentSection, objectName ) )
       elif action == "modSec":
         if objectName in realModifiedSections:
-          result = self._checkConflictsInModifications( realModifiedSections[ objectName ], 
+          result = self._checkConflictsInModifications( realModifiedSections[ objectName ],
                                                          modAc[3], "%s/%s" % ( parentSection, objectName ) )
           if not result[ 'OK' ]:
             return result
     for modAc in realModList:
       action = modAc[0]
       objectName = modAc[1]
-      if action.find( "Opt") == len( action ) - 3:
+      if action.find( "Opt" ) == len( action ) - 3:
         return S_ERROR( "Section %s cannot be merged. Option %s/%s has been modified" % ( parentSection, parentSection, objectName ) )
     return S_OK()
-    
+
   def __mergeIndependentUpdates( self, oRemoteConfData ):
     #return S_ERROR( "AutoMerge is still not finished. Meanwhile... why don't you get the newest conf and update from there?" )
     #Get all the CFGs
@@ -255,7 +255,7 @@ class ServiceInterface( threading.Thread ):
     # prevCli -> curSrv VS prevCli -> curCli
     prevCliToCurCliModList = prevCliCFG.getModifications( curCliCFG )
     prevCliToCurSrvModList = prevCliCFG.getModifications( curSrvCFG )
-    result = self._checkConflictsInModifications( prevCliToCurSrvModList, 
+    result = self._checkConflictsInModifications( prevCliToCurSrvModList,
                                                    prevCliToCurCliModList )
     if not result[ 'OK' ]:
       return S_ERROR( "Cannot AutoMerge: %s" % result[ 'Message' ] )
