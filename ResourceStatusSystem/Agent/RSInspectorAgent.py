@@ -36,8 +36,8 @@ class RSInspectorAgent(AgentModule):
         gLogger.error(whoRaised(x))
       
       self.am_setOption( "PollingTime", 60 )
-      self.ResToBeChecked = []
-      self.ResNamesInCheck = []
+      self.ResourcesToBeChecked = []
+      self.ResourceNamesInCheck = []
       
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
   
@@ -107,15 +107,15 @@ class RSInspectorAgent(AgentModule):
         gLogger.error(whoRaised(x))
    
       for resourceTuple in res:
-        if resourceTuple[0] in self.ResNamesInCheck:
+        if resourceTuple[0] in self.ResourceNamesInCheck:
           break
         resourceL = ['Resource']
         for x in resourceTuple:
           resourceL.append(x)
         self.lockObj.acquire()
         try:
-          self.ResNamesInCheck.insert(0, resourceL[1])
-          self.ResToBeChecked.insert(0, resourceL)
+          self.ResourceNamesInCheck.insert(0, resourceL[1])
+          self.ResourcesToBeChecked.insert(0, resourceL)
         finally:
           self.lockObj.release()
 
@@ -125,7 +125,7 @@ class RSInspectorAgent(AgentModule):
         
 #############################################################################
 
-  def _executeCheck(self):
+  def _executeCheck(self, toBeChecked):
     """ 
     Create instance of a PEP, instantiated popping a resource from lists.
     """

@@ -125,7 +125,7 @@ class StElInspectorAgent(AgentModule):
 
 #############################################################################
 
-  def _executeCheck(self):
+  def _executeCheck(self, toBeChecked):
     """ 
     Create istance of a PEP, instantiated popping a storageElement from lists.
     """

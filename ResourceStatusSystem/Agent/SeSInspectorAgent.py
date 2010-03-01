@@ -123,7 +123,7 @@ class SeSInspectorAgent(AgentModule):
 
 #############################################################################
 
-  def _executeCheck(self):
+  def _executeCheck(self, toBeChecked):
     """ 
     Create instance of a PEP, instantiated popping a service from lists.
     """
