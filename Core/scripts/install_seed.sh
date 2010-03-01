@@ -397,8 +397,6 @@ EOF
 [ -e  $DESTDIR/startup/Configuration_Server ] || ln -s $DESTDIR/runit/Configuration/Server $DESTDIR/startup/Configuration_Server
 [ -e  $DESTDIR/startup/Framework_SystemAdministrator ] || ln -s $DESTDIR/runit/Framework/SystemAdministrator $DESTDIR/startup/Framework_SystemAdministrator
 
-ls -ltr /opt/dirac/pro
-
 #
 # Install Web Portal
 if [ ! -z "$INSTALL_WEB" ]; then
