@@ -166,7 +166,7 @@ class StElInspectorAgent(AgentModule):
       gLogger.exception(whoRaised(x),'',x)
       self.lockObj.acquire()
       try:
-        self.StorageElementNamesInCheck.remove(StorageElementName)
+        self.StorageElementNamesInCheck.remove(storageElementName)
       except IndexError:
         pass
       finally:
