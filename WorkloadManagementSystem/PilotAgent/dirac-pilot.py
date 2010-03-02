@@ -517,7 +517,7 @@ if pilotRef != 'Unknown':
   else:
     logERROR( "There was an error calling dirac-wms-get-queue-normalization" )
 
-  retCode, queueLength = executeAndGetOutput( 'dirac-wms-get-normalized-queue-length %s' % cliParams.ceName )
+  retCode, queueLength = executeAndGetOutput( 'dirac-wms-get-normalized-queue-length %s' % CE )
   if not retCode:
     queueLength = queueLength.strip().split( ' ' )
     if len( queueLength ) == 2:
