@@ -355,8 +355,8 @@ Services_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 10, \
                        'T2_BANNED_CHECK_FREQUENCY' : 30 }
 
 Resources_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 10, \
-                        'T0_PROBING_CHECK_FREQUENCY': 5, \
-                        'T0_BANNED_CHECK_FREQUENCY' : 8, \
+                        'T0_PROBING_CHECK_FREQUENCY': 8, \
+                        'T0_BANNED_CHECK_FREQUENCY' : 10, \
                         'T1_ACTIVE_CHECK_FREQUENCY' : 12, \
                         'T1_PROBING_CHECK_FREQUENCY' : 10, \
                         'T1_BANNED_CHECK_FREQUENCY' : 12, \

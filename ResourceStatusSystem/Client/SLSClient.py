@@ -2,38 +2,43 @@
 """
 
 import urllib2
-#from datetime import datetime
-#from xml.dom import minidom
-
 from DIRAC import gLogger
-#from Exceptions import *
-#from Utils import *
-
 
 class SLSClient:
+
 #############################################################################
 
-  def getStatus(self, arg1):
-    """  return actual SLS status of entity in args[0]
-        - args[0] should be a ValidRes
+  def getStatus(self, granularity, name):
+    """  
+    Return actual SLS status of entity in args[0]
+     
+    :params:
+      :attr:`granularity`: string - should be a ValidRes (totally useless here, 
+      only 'Service' is reasonable)
+      
+      :attr:`name`: string - name of the service
 
-        returns:
-        {
-        'Availability':availability
-        }
+    returns:
+    {
+      'Availability':availability
+    }
 
     """
-    res = self._read_from_url(arg1)
-    return res
-  
+    
+    res = self._read_from_url(name)
 
+    if "ERROR" in res:
+      return {'SLS':None, 'Reason': res}
+    
+    return {'SLS':res}
+  
 #############################################################################
   
   def _read_from_url(self, service):
     #for more information like space occupancy we have to overload this method.
 
-    """ download from SLS PI the value of the availability as returned for 
-the service  
+    """ download from SLS PI the value of the availability as returned for
+        the service  
     """
 
     # Set the SLS URL
@@ -41,15 +46,16 @@ the service
     sls_url= sls_base+service
     opener = urllib2.build_opener()
     try:
-      dtPage = opener.open(sls_url)
+      sls_page = opener.open(sls_url)
     except IOError, errorMsg:
       exceptStr = where(self, self._curlDownload) + " while opening %s." % sls_url
       gLogger.exception(exceptStr,'',errorMsg)
 
-    dt = dtPage.read()
+    sls_res = sls_page.read()
     
     opener.close()
 
-    return dt
+    return sls_res
     
 
+#############################################################################

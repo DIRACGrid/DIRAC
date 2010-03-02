@@ -35,7 +35,6 @@ class SSInspectorAgent(AgentModule):
       except RSSException, x:
         gLogger.error(whoRaised(x))
       
-      self.am_setOption( "PollingTime", 60 )
       self.SitesToBeChecked = []
       self.SiteNamesInCheck = []
       

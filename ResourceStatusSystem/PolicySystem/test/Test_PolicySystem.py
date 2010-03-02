@@ -3,8 +3,10 @@ import sys
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
+from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
 
 import DIRAC.ResourceStatusSystem.test.fake_NotificationClient
 
@@ -25,6 +27,7 @@ class PolicySystemTestCase(unittest.TestCase):
     self.mock_pdp = Mock()
     self.mock_rsDB = Mock()
     self.mock_nc = Mock()
+    self.ig = InfoGetter()
     
 #############################################################################
 
@@ -409,12 +412,30 @@ class PDPFailure(PolicySystemTestCase):
 
 #############################################################################
 
+class PolicyCallerSuccess(PolicySystemTestCase):
+
+  def test_policyInvocation(self):
+    for g in ValidRes:
+      for status in ValidStatus:
+        self.mock_p.evaluate.return_value = {'SAT':True, 'Status':status, 
+                                             'Reason':'testReason', 
+                                             'PolicyName': 'test_P'}
+        pc = PolicyCaller()
+        policies_names = self.ig.getInfoToApply(('policy', ), g)[0]['Policies']
+        for pol_name in policies_names:
+          res = pc.policyInvocation(g, 'XX', status, self.mock_p, 
+                                    (g, 'XX', status), pol_name)
+          self.assert_(res['SAT'])
+  
+#############################################################################
+
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(PolicySystemTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PEPSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PEPFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyCallerSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
   
 #############################################################################

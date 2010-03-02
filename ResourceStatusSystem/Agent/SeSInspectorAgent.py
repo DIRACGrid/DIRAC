@@ -35,7 +35,6 @@ class SeSInspectorAgent(AgentModule):
       except RSSException, x:
         gLogger.error(whoRaised(x))
       
-      self.am_setOption( "PollingTime", 60 )
       self.ServicesToBeChecked = []
       self.ServiceNamesInCheck = []
       

@@ -35,7 +35,6 @@ class RSInspectorAgent(AgentModule):
       except RSSException, x:
         gLogger.error(whoRaised(x))
       
-      self.am_setOption( "PollingTime", 60 )
       self.ResourcesToBeChecked = []
       self.ResourceNamesInCheck = []
       
@@ -154,7 +153,7 @@ class RSInspectorAgent(AgentModule):
         finally:
           self.lockObj.release()
 
-        # get new site to be checked 
+        # get new resource to be checked 
         self.lockObj.acquire()
         try:
           toBeChecked = self.ResourcesToBeChecked.pop()

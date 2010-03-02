@@ -2017,8 +2017,8 @@ class ResourceStatusDB:
       :attr:`policyName`: string - the policy name
     """
     
-    if granularity not in ValidStatus:
-      raise InvalidStatus, where(self, self.getPolicyRes)
+    if granularity not in ValidRes:
+      raise InvalidRes, where(self, self.getPolicyRes)
     
     req = "SELECT Status, Reason FROM PolicyRes WHERE Granularity = '%s' AND " %(granularity)
     req = req + "Name = '%s' AND PolicyName = '%s'" %(name, policyName)

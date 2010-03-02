@@ -4,6 +4,7 @@ import unittest
 from datetime import datetime
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Client.GOCDBClient import GOCDBClient
+from DIRAC.ResourceStatusSystem.Client.SLSClient import SLSClient
 from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient
 from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
@@ -11,6 +12,7 @@ from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import SAMResultsClient
 from DIRAC.ResourceStatusSystem.Client.DataOperationsClient import DataOperationsClient
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+
 
 class ClientsTestCase(unittest.TestCase):
   """ Base class for the clients test cases
@@ -23,6 +25,7 @@ class ClientsTestCase(unittest.TestCase):
     self.mockRSS = Mock()
     
     self.GOCCli = GOCDBClient()
+    self.SLSCli = SLSClient()
     self.RSCli = ResourceStatusClient(serviceIn = self.mockRSS)
     self.SAMCli = SAMResultsClient()
     self.PilotsCli = PilotsClient()
@@ -126,11 +129,11 @@ class PilotsClientSuccess(ClientsTestCase):
   def test_getPilotsSimpleEff(self):
     #self.mockRSS.getPilotsSimpleEff.return_value = {'OK':True, 'Value':{'Records': [['', '', 0, 3L, 0, 0, 0, 283L, 66L, 0, 0, 352L, '1.00', '81.25', 'Fair', 'Yes']]}}
     res = self.PilotsCli.getPilotsSimpleEff('Site', 'LCG.Ferrara.it')
-    self.assertEqual(res['PilotsEff'], 'Idle')
+    self.assertEqual(res['PilotsEff'], 'Good')
     res = self.PilotsCli.getPilotsSimpleEff('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it')
-    self.assertEqual(res['PilotsEff'], 'Idle')
+    self.assertEqual(res['PilotsEff'], 'Good')
     res = self.PilotsCli.getPilotsSimpleEff('Resource', 'grid0.fe.infn.it')
-    self.assertEqual(res['PilotsEff'], 'Idle')
+    self.assertEqual(res['PilotsEff'], 'Good')
     
 class DataOperationsClientSuccess(ClientsTestCase):
 
@@ -138,7 +141,12 @@ class DataOperationsClientSuccess(ClientsTestCase):
     res = self.DOCli.getQualityStats('StorageElement', 'XX')
     self.assertEqual(res['TransferQuality'], None)
    
-     
+class SLSClientSuccess(ClientsTestCase):
+
+  def test_getStatus(self):
+    res = self.SLSCli.getStatus('Service', 'XX')
+    self.assertEqual(res['SLS'], None)
+
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ClientsTestCase)
@@ -149,4 +157,5 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DataOperationsClientSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSClientSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

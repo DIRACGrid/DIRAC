@@ -33,7 +33,6 @@ class StElInspectorAgent(AgentModule):
       except RSSException, x:
         gLogger.error(whoRaised(x))
       
-      self.am_setOption( "PollingTime", 60 )
       self.StorageElementsToBeChecked = []
       self.StorageElementNamesInCheck = []
       
