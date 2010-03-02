@@ -90,7 +90,7 @@ DIRACDIRS="startup runit data work control sbin"
 
 # check if we are called in the right host
 echo Checking the host name
-if [ "`hostname`" != "$DIRACHOST" ] ; then
+if [ "`hostname -f`" != "$DIRACHOST" ] ; then
   echo $0 should be run at $DIRACHOST
 fi
 # check if we are the right user
@@ -153,7 +153,7 @@ DIRAC
 }
 Registry
 {
-  DefaultGroup = $VO_user
+  DefaultGroup = ${VO}_user
   Hosts
   {
     host-$DIRACHOST
