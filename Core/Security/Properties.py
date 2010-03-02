@@ -16,6 +16,8 @@ PILOT = "Pilot"
 GENERIC_PILOT = "GenericPilot"
 # Site Manager
 SITE_MANAGER = "SiteManager"
+# Operator
+OPERATOR = "Operator"
 #Allow getting full delegated proxies
 FULL_DELEGATION = "FullDelegation"
 #Allow getting only limited proxies (ie. pilots)
