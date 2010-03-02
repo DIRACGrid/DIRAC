@@ -168,7 +168,7 @@ class RSInspectorAgent(AgentModule):
       gLogger.exception(whoRaised(x),'',x)
       self.lockObj.acquire()
       try:
-        self.ResourceNamesInCheck.remove(resourceeName)
+        self.ResourceNamesInCheck.remove(resourceName)
       except IndexError:
         pass
       finally:
