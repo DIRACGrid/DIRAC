@@ -22,13 +22,13 @@ export HOME=$HOME
 PYTHONPATH=""
 LD_LIBRARY_PATH=""
 
-export X509_CERT_DIR=/opt/dirac/etc/grid-security/certificates
-export X509_VOMS_DIR=/opt/dirac/etc/grid-security/vomsdir
-
 DIRAC=$DESTDIR/pro
 DIRACBIN=$DESTDIR/pro/$ARCH/bin
 DIRACSCRIPTS=$DESTDIR/pro/scripts
 DIRACLIB=$DESTDIR/pro/$ARCH/lib
+
+export X509_CERT_DIR=${DESTDIR}/etc/grid-security/certificates
+export X509_VOMS_DIR=${DESTDIR}/etc/grid-security/vomsdir
 
 sDIRACBIN="`echo $DESTDIR/pro/$ARCH/bin | sed 's/\//\\\\\//g'`"
 sDIRACSCRIPTS="`echo $DESTDIR/pro/scripts | sed 's/\//\\\\\//g'`"
@@ -47,7 +47,6 @@ PATH=\`echo \$PATH | sed "s/\$sDIRACSCRIPTS://g"\`
 ( echo \$PATH | grep -q /usr/local/bin ) || export PATH=\$PATH:/usr/local/bin
 
 EOF
-
 
 source bashrc
 echo PATH=$PATH
