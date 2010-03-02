@@ -3,7 +3,7 @@ __RCSID__ = "$Id$"
 
 import zlib
 import difflib
-from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities import List, Time
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
@@ -15,11 +15,13 @@ class Modificator:
     if rpcClient:
       self.setRPCClient( rpcClient )
 
-  def getCredentials(self):
+  def getCredentials( self ):
     retVal = self.rpcClient.getCredentials()
     if retVal[ 'OK' ]:
       credDict = retVal[ 'Value' ]
-      self.commiterId = "%s@%s - %s" % ( credDict[ 'username' ], credDict[ 'group' ], credDict[ 'DN' ] )
+      self.commiterId = "%s@%s - %s" % ( credDict[ 'username' ],
+                                         credDict[ 'group' ],
+                                         Time.dateTime().strftime( "%Y-%m-%d %H:%M:%S" ) )
       return retVal
     return retVal
 
@@ -116,7 +118,7 @@ class Modificator:
       return False
 
   def existsOption( self, optionPath ):
-    sectionList =  List.fromChar( optionPath, "/" )
+    sectionList = List.fromChar( optionPath, "/" )
     cfg = self.cfgData
     try:
       for section in sectionList[:-1]:
@@ -180,9 +182,9 @@ class Modificator:
     cfg = CFG()
     cfg.loadFromFile( filename )
     self.cfgData = self.cfgData.mergeWith( cfg )
-    
-  def mergeFromCFG(self, cfg):
-    self.cfgData = self.cfgData.mergeWith( cfg )  
+
+  def mergeFromCFG( self, cfg ):
+    self.cfgData = self.cfgData.mergeWith( cfg )
 
   def __str__( self ):
     return str( self.cfgData )
@@ -226,5 +228,5 @@ class Modificator:
   def rollbackToVersion( self, version ):
     return self.rpcClient.rollbackToVersion( version )
 
-  def updateGConfigurationData(self):
+  def updateGConfigurationData( self ):
     gConfigurationData.setRemoteCFG( self.cfgData )
