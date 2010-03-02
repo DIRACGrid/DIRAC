@@ -9,12 +9,12 @@
 [ -z "$DIRACROOT" ] && export DIRACROOT=`python -c "import os,sys ; print os.path.dirname(os.path.dirname( os.path.realpath( sys.argv[1] ) ))" $0`
 [ -z "$DIRACPLAT" ] && export DIRACPLAT=`$DIRACROOT/scripts/dirac-platform`
 
-export PATH=$DIRACROOT/$DIRACPLAT/bin:$PATH
+export PATH=$DIRACROOT/$DIRACPLAT/bin:$DIRACROOT/scripts:$PATH
 if [ -z "$LD_LIBRARY_PATH" ] ; then
   export LD_LIBRARY_PATH=$DIRACROOT/$DIRACPLAT/lib:$DIRACROOT/$DIRACPLAT/lib/mysql
 else
   export LD_LIBRARY_PATH=$DIRACROOT/$DIRACPLAT/lib:$DIRACROOT/$DIRACPLAT/lib/mysql:$LD_LIBRARY_PATH
 fi
-export PYTHONPATH=$DIRACROOT/scripts:$DIRACROOT
+export PYTHONPATH=$DIRACROOT
 
 /bin/bash -p
