@@ -25,12 +25,25 @@ class LcgFileCatalogClient(FileCatalogueBase):
     else:
       self.valid = False
 
+    if not infosys:
+      # if not provided, take if from CS
+      infosys = gConfig.getValue( '/Resources/FileCatalogs/LcgFileCatalog/LcgGfalInfosys', '')
+    if not infosys and 'LCG_GFAL_INFOSYS' in os.environ:
+      # if not in CS take from environ
+      infosys = os.environ['LCG_GFAL_INFOSYS']
+
+    if not host:
+      # if not provided, take if from CS
+      host = gConfig.getValue( '/Resources/FileCatalogs/LcgFileCatalog/MasterHost', '')
+    if not host and 'LFC_HOST' in os.environ:
+      # if not in CS take from environ
+      host = os.environ['LFC_HOST']
+    
     self.host = host
     result = gConfig.getOption('/DIRAC/Setup')
     if not result['OK']:
       gLogger.fatal('Failed to get the /DIRAC/Setup')
       return
-    setup = result['Value']
 
     if host:
       os.environ['LFC_HOST'] = host
