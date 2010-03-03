@@ -694,12 +694,12 @@ class TransformationDB(DB):
   
   ###########################################################################
   #
-  # These methods manipulate the Jobs table
+  # These methods manipulate the TransformationTasks table
   #
   
   def getTransformationTasks(self,condDict={},older=None, newer=None, timeStamp='CreationTime', orderAttribute=None, limit=None, inputVector=False, connection=False):
     connection = self.__getConnection(connection)
-    req = "SELECT %s FROM Jobs %s" % (intListToString(self.TASKSPARAMS),self.buildCondition(condDict, older, newer, timeStamp,orderAttribute,limit))
+    req = "SELECT %s FROM TransformationTasks %s" % (intListToString(self.TASKSPARAMS),self.buildCondition(condDict, older, newer, timeStamp,orderAttribute,limit))
     res = self._query(req,connection)
     if not res['OK']:
       return res
@@ -804,7 +804,7 @@ class TransformationDB(DB):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']    
-    res = self.__checkUpdate("Jobs","WmsStatus","Reserved",{"TransformationID":transID,"TaskID":taskID},connection=connection)
+    res = self.__checkUpdate("TransformationTasks","WmsStatus","Reserved",{"TransformationID":transID,"TaskID":taskID},connection=connection)
     if not res['OK']:
       return res
     if not res['Value']:
@@ -854,9 +854,9 @@ class TransformationDB(DB):
       if not res['OK']:
         gLogger.error("Failed to get ID for transformation",res['Message'])
         return res
-      res = self.getCounters('Jobs',['WmsStatus'],{'TransformationID':res['Value']},connection=connection)
+      res = self.getCounters('TransformationTasks',['WmsStatus'],{'TransformationID':res['Value']},connection=connection)
     else:
-      res = self.getCounters('Jobs',['WmsStatus','TransformationID'],{},connection=connection)
+      res = self.getCounters('TransformationTasks',['WmsStatus','TransformationID'],{},connection=connection)
     if not res['OK']:
       return res
     if not res['Value']:
@@ -868,17 +868,17 @@ class TransformationDB(DB):
     return S_OK(statusDict)
 
   def __setTaskParameterValue(self,transID,taskID,paramName,paramValue,connection=False):
-    req = "UPDATE Jobs SET %s='%s', LastUpdateTime=UTC_TIMESTAMP() WHERE TransformationID=%d AND TaskID=%d;" % (paramName,paramValue,transID,taskID)
+    req = "UPDATE TransformationTasks SET %s='%s', LastUpdateTime=UTC_TIMESTAMP() WHERE TransformationID=%d AND TaskID=%d;" % (paramName,paramValue,transID,taskID)
     return self._update(req,connection)
 
   def __deleteTransformationTasks(self,transID,connection=False):
-    """ Delete all the tasks from the Jobs table for transformation with TransformationID """
-    req = "DELETE FROM Jobs WHERE TransformationID=%d" % transID
+    """ Delete all the tasks from the TransformationTasks table for transformation with TransformationID """
+    req = "DELETE FROM TransformationTasks WHERE TransformationID=%d" % transID
     return self._update(req,connection)
 
   def __deleteTransformationTask(self,transID,taskID,connection=False):
-    """ Delete the task from the Jobs table for transformation with TransformationID """
-    req = "DELETE FROM Jobs WHERE TransformationID=%d AND TaskID=%d" % (transID,taskID)
+    """ Delete the task from the TransformationTasks table for transformation with TransformationID """
+    req = "DELETE FROM TransformationTasks WHERE TransformationID=%d AND TaskID=%d" % (transID,taskID)
     return self._update(req,connection)
   
   ###########################################################################
@@ -916,7 +916,7 @@ class TransformationDB(DB):
     return res
 
   def __deleteTransformationTaskInputs(self,transID,taskID=0,connection=False):
-    """ Delete all the tasks inputs from the JobsInputs table for transformation with TransformationID """
+    """ Delete all the tasks inputs from the TaskInputs table for transformation with TransformationID """
     req = "DELETE FROM TaskInputs WHERE TransformationID=%d" % transID
     if taskID:
       req = "%s AND TaskID=%d" % (req,int(taskID))
@@ -1141,7 +1141,7 @@ class TransformationDB(DB):
 
     # Insert the task into the jobs table and retrieve the taskID
     self.lock.acquire()
-    req = "INSERT INTO Jobs (TransformationID, WmsStatus, JobWmsID, TargetSE, CreationTime, LastUpdateTime) VALUES\
+    req = "INSERT INTO TransformationTasks(TransformationID, WmsStatus, JobWmsID, TargetSE, CreationTime, LastUpdateTime) VALUES\
      (%s,'%s','%d','%s', UTC_TIMESTAMP(), UTC_TIMESTAMP());" % (transID,'Created', 0, se)
     res = self._update(req,connection)
     if not res['OK']:

@@ -138,7 +138,7 @@ class TransformationHandler(RequestHandler):
   
   ####################################################################
   #
-  # These are the methods to manipulate the Tasks (Jobs) table
+  # These are the methods to manipulate the TransformationTasks table
   #
   
   types_getTransformationTasks = []

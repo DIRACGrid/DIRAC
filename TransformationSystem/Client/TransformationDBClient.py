@@ -36,7 +36,7 @@ class TransformationDBClient(Client,FileCatalogueBase):
           setFileUsedSEForTransformation(transName,usedSE,lfns)  
           getTransformationStats(transName)
           
-      Jobs table manipulation 
+      TransformationTasks table manipulation 
           
           setTaskStatus(transName, taskID, status) 
           setTaskStatusAndWmsID(transName, taskID, status, taskWmsID) 

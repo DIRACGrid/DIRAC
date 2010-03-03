@@ -68,8 +68,8 @@ CREATE TABLE TransformationFiles(
 );
 
 -- -------------------------------------------------------------------------------
-DROP TABLE IF EXISTS Jobs;
-CREATE TABLE Jobs (
+DROP TABLE IF EXISTS TransformationTasks;
+CREATE TABLE TransformationTasks (
   TaskID INTEGER NOT NULL AUTO_INCREMENT,
   TransformationID INTEGER NOT NULL,
   WmsStatus char(16) DEFAULT 'Created',
@@ -81,7 +81,6 @@ CREATE TABLE Jobs (
 INDEX(WmsStatus)
 );
 
--- Jobs => TransformationTasks
 -- WmsStatus => ExternalStatus
 -- JobWmsID => ExternalID
 
