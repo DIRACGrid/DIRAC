@@ -154,12 +154,12 @@ class TransformationDB(DB):
         return res
       message = 'Status changed to "Stopped" due to creation of the derived transformation (%d)' % transID
       self.__updateTransformationLogging(originalID,message,authorDN,connection=connection)
-      res = self.__getTransformationFiles(originalID,connection=connection)
+      res = self.getTransformationFiles(condDict={'TransformationID':originalID},connection=connection)
       if not res['OK']:
         self.deleteTransformation(transID,connection=connection)
         return res
-      if res['Value']:
-        res = self.__insertExistingTransformationFiles(transID, res['Value'])
+      if res['Records']:
+        res = self.__insertExistingTransformationFiles(transID, res['Records'])
         if not res['OK']:
           self.deleteTransformation(transID,connection=connection)
           return res
@@ -491,19 +491,10 @@ class TransformationDB(DB):
     result['ParameterNames'] = ['LFN'] + self.TRANSFILEPARAMS
     return result
 
-  #TODO Update to supply lfns to getTransformationFiles
   def getFileSummary(self,lfns,connection=False):
     """ Get file status summary in all the transformations """
     connection = self.__getConnection(connection)
-    res = self.__getFileIDsForLfns(lfns,connection=connection)
-    if not res['OK']:
-      return res   
-    fileIDs,lfnFilesIDs = res['Value']
-    failedDict = {}
-    for lfn in lfns:
-      if lfn not in fileIDs.values():
-        failedDict[lfn] = 'Did not exist in the Transformation database'
-    condDict = {'FileID':fileIDs.keys()}
+    condDict = {'LFN':lfns}
     res = self.getTransformationFiles(self,condDict=condDict,connection=connection)
     if not res['OK']:
       return res
@@ -516,6 +507,10 @@ class TransformationDB(DB):
       if not resDict[lfn].has_key(transID):
         resDict[lfn][transID] = {}
       resDict[lfn][transID] = fileDict
+    failedDict = {}
+    for lfn in lfns:
+      if not resDict.has_key(lfn):
+        failedDict[lfn] = 'Did not exist in the Transformation database'
     return S_OK({'Successful':resDict,'Failed':failedDict})
 
   def setFileUsedSEForTransformation(self,transName,usedSE,lfns,connection=False):
@@ -541,7 +536,6 @@ class TransformationDB(DB):
       print self.__setTransformationFileUsedSE(updateUsedSE,usedSE,connection=connection)
     return S_OK(resDict)
   
-  #TODO update to supply LFNs to getTransformationFiles
   def setFileStatusForTransformation(self,transName,status,lfns,force=False,connection=False):
     """ Set file status for the given transformation """
     res = self._getConnectionTransID(connection,transName)
@@ -549,16 +543,14 @@ class TransformationDB(DB):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
+    
     res = self.__getFileIDsForLfns(lfns,connection=connection)
     if not res['OK']:
       return res   
     fileIDs,lfnFilesIDs = res['Value']
     successful = {}
     failed = {}
-    for lfn in lfns:
-      if lfn not in fileIDs.values():
-        failed[lfn] = 'File not found in the Transformation Database'
-    res = self.getTransformationFiles(condDict={'TransformationID':transID,'FileID':fileIDs.keys()},connection=connection)
+    res = self.getTransformationFiles(condDict={'TransformationID':transID,'LFN':lfns},connection=connection)
     if not res['OK']:
       return res
     transFiles = res['Value']    
@@ -589,6 +581,9 @@ class TransformationDB(DB):
         failed[lfn] = res['Message']
       else:
         successful[lfn] = 'Status updated to %s' % status
+    for lfn in lfns:
+      if (not failed.has_key(lfn)) and (not successful.has_key(lfn)):
+        failed[lfn] = 'File not found in the Transformation Database'
     return S_OK({"Successful":successful,"Failed":failed})
   
   def getTransformationStats(self,transName,connection=False):
@@ -648,11 +643,16 @@ class TransformationDB(DB):
   
   def __insertExistingTransformationFiles(self,transID,fileTuples):
     req = "INSERT INTO TransformationFiles (TransformationID,Status,JobID,FileID,TargetSE,UsedSE,LastUpdate) VALUES"
-    for fileID,status,taskID,targetSE,usedSE in res['Value']:
-      if taskID:
-        taskID = str(int(originalID)).zfill(8)+'_'+str(int(taskID)).zfill(8)
-      req = "%s (%d,'%s','%s',%d,'%s','%s',UTC_TIMESTAMP())," % (req,transID,status,taskID,fileID,targetSE,usedSE)
+    candidates = False
+    for lfn,transID,fileID,status,taskID,targetSE,usedSE,errorCount,lastUpdate,insertTime in fileTuples:
+      if status != 'Unused':
+        candidates = True  
+        if taskID:
+          taskID = str(int(originalID)).zfill(8)+'_'+str(int(taskID)).zfill(8)
+        req = "%s (%d,'%s','%s',%d,'%s','%s',UTC_TIMESTAMP())," % (req,transID,status,taskID,fileID,targetSE,usedSE)
     req = req.rstrip(",")
+    if not candidates:
+      return S_OK()
     return self._update(req,connection)
 
   def __assignTransformationFile(self,transID,taskID,se,fileIDs,connection=False):
@@ -682,14 +682,6 @@ class TransformationDB(DB):
     res = self._update(req,connection)
     if not res['OK']:
       gLogger.error("Failed to reset transformation file",res['Message'])
-    return res
-
-  #TODO USE THE GENERAL METHOD
-  def __getTransformationFiles(self,transID,connection=False):
-    req = "SELECT FileID,Status,JobID,TargetSE,UsedSE from TransformationFiles WHERE TransformationID = %d AND Status != 'Unused';" % (transID)
-    res = self._query(req,connection)
-    if not res['OK']:
-      gLogger.error("Failed to get transformation files",res['Message'])                                                                
     return res
 
   def __deleteTransformationFiles(self,transID,connection=False):
@@ -1122,30 +1114,31 @@ class TransformationDB(DB):
   def addTaskForTransformation(self,transID,lfns=[],se='Unknown',connection=False):
     """ Create a new task with the supplied files for a transformation.
     """
-    #TODO IF LFNS SUPPLIED ARE NOT UNUSED IT SHOULD NOT ALLOW A TASK TO BE CREATED
-    connection = self.__getConnection(connection)
-    # Be sure the all the supplied LFNs are known to the databse
+    res = self._getConnectionTransID(connection,transName)
+    if not res['OK']:
+      return res
+    connection = res['Value']['Connection']
+    transID = res['Value']['TransformationID']
+    # Be sure the all the supplied LFNs are known to the database for the supplied transformation
     if lfns:
-      res = self.__getFileIDsForLfns(lfns,connection=connection)
+      res = self.getTransformationFiles(condDict={'TransformationID':transID,'LFN':lfns},connection=connection)
       if not res['OK']:
         return res   
-      fileIDs,lfnFilesIDs = res['Value']
-      if not fileIDs:
-        gLogger.error("All files not found in the transformation database")
-        return S_ERROR("All files not found in the transformation database")
-      allFound = True
+      foundLfns = []
+      allAvailable = True
+      for fileDict in res['Value']:
+        lfn = fileDict['LFN']
+        foundLfns.append(lfn)
+        if fileDict['Status'] != 'Unused':
+          allAvailable = False
+          gLogger.error("Supplied file not in Unused status but %s" % fileDict['Status'],lfn)
       for lfn in lfns:
-        if lfn not in fileIDs.values():
-          gLogger.error("Supplied file does not exist in the transformation database",lfn)
-          allFound = False
-      if not allFound:
-        return S_ERROR("Not all file found in the transformation database")
-    # Get the transformation ID if we have a transformation name
-    res  = self._getTransformationID(transID,connection=connection)
-    if not res['OK']:
-      gLogger.error("Failed to get ID for transformation",res['Message'])
-      return res
-    transID = res['Value']
+        if not lfn in foundLfns:
+          allAvailable = False
+          gLogger.error("Supplied file not found for transformation" % lfn)
+      if not allAvailable:
+        return S_ERROR("Not all supplied files available in the transformation database")
+
     # Insert the task into the jobs table and retrieve the taskID
     self.lock.acquire()
     req = "INSERT INTO Jobs (TransformationID, WmsStatus, JobWmsID, TargetSE, CreationTime, LastUpdateTime) VALUES\
