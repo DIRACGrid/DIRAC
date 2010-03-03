@@ -11,7 +11,9 @@ import new, sys, os
 
 #try: # this part to import as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
-from DIRAC.Core.Workflow.Step import *
+
+#RICARDO PLEASE DO NOT CHANGE THIS BACK. IT BREAKS THE EXECUTION OF WORKFLOWS!
+#from DIRAC.Core.Workflow.Step import *
 #except: # this part is to import code without DIRAC
 #  from Parameter import *
 
