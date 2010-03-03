@@ -196,7 +196,7 @@ class JobAgent( AgentModule ):
       self.__reportPilotInfo( jobID )
       result = self.__setupProxy( ownerDN, jobGroup )
       if not result[ 'OK' ]:
-        return self.__rescheduleFailedJob( jobID, retVal[ 'Message' ] )
+        return self.__rescheduleFailedJob( jobID, result[ 'Message' ] )
       if 'Value' in result and result[ 'Value' ]:
         proxyChain = result[ 'Value' ]
 
@@ -269,7 +269,7 @@ class JobAgent( AgentModule ):
       proxyResult = self.__requestProxyFromProxyManager( ownerDN, ownerGroup )
       if not proxyResult['OK']:
         self.log.error( 'Invalid Proxy', proxyResult['Message'] )
-        return S_ERROR( 'Failed to setup proxy: %s' % result[ 'Value' ] )
+        return S_ERROR( 'Failed to setup proxy: %s' % proxyResult[ 'Value' ] )
       return S_OK( proxyResult['Value'] )
     else:
       ret = getProxyInfo( disableVOMS = True )
@@ -288,7 +288,7 @@ class JobAgent( AgentModule ):
         proxyResult = self.__requestProxyFromProxyManager( ownerDN, ownerGroup )
         if not proxyResult['OK']:
           self.log.error( 'Invalid Proxy', proxyResult['Message'] )
-          return S_ERROR( 'Failed to setup proxy: %s' % result[ 'Value' ] )
+          return S_ERROR( 'Failed to setup proxy: %s' % proxyResult[ 'Value' ] )
         proxyChain = proxyResult['Value']
 
     return S_OK( proxyChain )
