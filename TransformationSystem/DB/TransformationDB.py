@@ -883,7 +883,7 @@ class TransformationDB(DB):
   
   ###########################################################################
   #
-  # These methods manipulate the JobInputs table
+  # These methods manipulate the TaskInputs table
   #
 
   def getTaskInputVector(self,transName,taskID,connection=False):
@@ -898,7 +898,7 @@ class TransformationDB(DB):
     else:
       taskIDList = list(taskID)
     taskString = ','.join(["'"+str(x)+"'" for x in taskIDList])      
-    req = "SELECT TaskID,InputVector FROM JobInputs WHERE TaskID in (%s) AND TransformationID='%d';" % (taskString,transID)
+    req = "SELECT TaskID,InputVector FROM TaskInputs WHERE TaskID in (%s) AND TransformationID='%d';" % (taskString,transID)
     res = self._query(req)
     inputVectorDict = {}
     if res['OK'] and res['Value']:
@@ -910,14 +910,14 @@ class TransformationDB(DB):
     vector= str.join(';',lfns)
     fields = ['TransformationID','TaskID','InputVector']
     values = [transID,taskID,vector]
-    res = self._insert('JobInputs',fields,values,connection)
+    res = self._insert('TaskInputs',fields,values,connection)
     if not res['OK']:
       gLogger.error("Failed to add input vector to task %d" % taskID)
     return res
 
   def __deleteTransformationTaskInputs(self,transID,taskID=0,connection=False):
     """ Delete all the tasks inputs from the JobsInputs table for transformation with TransformationID """
-    req = "DELETE FROM JobInputs WHERE TransformationID=%d" % transID
+    req = "DELETE FROM TaskInputs WHERE TransformationID=%d" % transID
     if taskID:
       req = "%s AND TaskID=%d" % (req,int(taskID))
     return self._update(req,connection)

@@ -86,15 +86,13 @@ INDEX(WmsStatus)
 -- JobWmsID => ExternalID
 
 -- -------------------------------------------------------------------------------
-DROP TABLE IF EXISTS JobInputs;
-CREATE TABLE JobInputs (
+DROP TABLE IF EXISTS TaskInputs;
+CREATE TABLE TaskInputs (
 TransformationID INTEGER NOT NULL,
 TaskID INTEGER NOT NULL,
 InputVector BLOB,
 PRIMARY KEY(TransformationID,TaskID)
 );
-
--- JobInputs => TransformationInputs
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS DataFiles;
