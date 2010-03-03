@@ -495,20 +495,6 @@ class TransformationDB(DB):
     result['ParameterNames'] = ['LFN'] + self.TRANSFILEPARAMS
     return result
 
-  #TODO Get rid of this
-  def getTransformationFileInfo(self,transID,lfns,connection=False):
-    """ Get the file status for given transformation files """
-    res = self._getConnectionTransID(connection,transName)
-    if not res['OK']:
-      return res
-    connection = res['Value']['Connection']
-    transID = res['Value']['TransformationID']
-    res = self.__getFileIDsForLfns(lfns,connection=connection)
-    if not res['OK']:
-      return res
-    fileIDs,lfnFilesIDs = res['Value']
-    return self.getTransformationFiles(condDict={'TransformationID':transID,'FileID':fileIDs.keys()},connection=connection)
-
   #TODO Update to supply lfns to getTransformationFiles
   def getFileSummary(self,lfns,connection=False):
     """ Get file status summary in all the transformations """
@@ -654,7 +640,7 @@ class TransformationDB(DB):
         break
     if not filters:
       return S_ERROR('No filters defined for transformation %d' % transID)
-    res = self.__getFileIDsForLfns(lfns=[],connection=connection)
+    res = self.__getAllFileIDs(connection=connection)
     if not res['OK']:
       return res   
     fileIDs,lfnFilesIDs = res['Value']
@@ -998,12 +984,22 @@ class TransformationDB(DB):
   #
   # These methods manipulate the DataFiles table
   #
-
-  def __getFileIDsForLfns(self,lfns=[],connection=False):
+  def __getAllFileIDs(self,connection=False):
+    """ Get all the fileIDs for the supplied list of lfns """
+    req = "SELECT LFN,FileID FROM DataFiles;"
+    res = self._query(req,connection)
+    if not res['OK']:
+      return res
+    fids = {}
+    lfns = {}
+    for lfn,fileID in res['Value']:
+      fids[fileID] = lfn
+      lfns[lfn] = fileID
+    return S_OK((fids,lfns))
+ 
+  def __getFileIDsForLfns(self,lfns,connection=False):
     """ Get file IDs for the given list of lfns """
-    req = "SELECT LFN,FileID FROM DataFiles"
-    if lfns:
-      req = "%s WHERE LFN in (%s);" % (req,stringListToString(lfns))
+    req = "SELECT LFN,FileID FROM DataFiles WHERE LFN in (%s);" % (req,stringListToString(lfns))
     res = self._query(req,connection)
     if not res['OK']:
       return res
