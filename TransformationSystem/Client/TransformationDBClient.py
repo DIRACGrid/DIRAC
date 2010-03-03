@@ -77,12 +77,12 @@ class TransformationDBClient(Client,FileCatalogueBase):
                             groupSize           = 1,
                             inheritedFrom       = 0,
                             body                = '', 
-                            maxJobs             = 0,
+                            maxTasks            = 0,
                             eventsPerJob        = 0,
                             addFiles            = True,
                             rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
-    return rpcClient.addTransformation(transName,description,longDescription,type,plugin,agentType,fileMask,transformationGroup,groupSize,inheritedFrom,body,maxJobs,eventsPerJob,addFiles)    
+    return rpcClient.addTransformation(transName,description,longDescription,type,plugin,agentType,fileMask,transformationGroup,groupSize,inheritedFrom,body,maxTasks,eventsPerJob,addFiles)    
 
   def getTransformations(self,condDict={},older=None, newer=None, timeStamp='CreationDate', orderAttribute=None, limit=None, extraParams=False,rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)

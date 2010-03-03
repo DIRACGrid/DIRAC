@@ -30,7 +30,7 @@ class Transformation(API):
                           'GroupSize'             : [types.IntType,types.LongType],
                           'InheritedFrom'         : [types.IntType,types.LongType],
                           'Body'                  : types.StringTypes,
-                          'MaxNumberOfJobs'       : [types.IntType,types.LongType],
+                          'MaxNumberOfTasks'       : [types.IntType,types.LongType],
                           'EventsPerJob'          : [types.IntType,types.LongType]}
     self.paramValues =  { 'TransformationID'      : 0,
                           'TransformationName'    : '',
@@ -45,7 +45,7 @@ class Transformation(API):
                           'GroupSize'             : 1,
                           'InheritedFrom'         : 0,
                           'Body'                  : '',
-                          'MaxNumberOfJobs'       : 0,
+                          'MaxNumberOfTasks'       : 0,
                           'EventsPerJob'          : 0}
 
     self.supportedPlugins = ['Broadcast','Standard','BySize','ByShare']
@@ -306,7 +306,7 @@ class Transformation(API):
                                              groupSize           = self.paramValues['GroupSize'],
                                              inheritedFrom       = self.paramValues['InheritedFrom'],
                                              body                = self.paramValues['Body'],
-                                             maxJobs             = self.paramValues['MaxNumberOfJobs'],
+                                             maxTasks            = self.paramValues['MaxNumberOfTasks'],
                                              eventsPerJob        = self.paramValues['EventsPerJob'],
                                              addFiles            = addFiles)
     if not res['OK']:

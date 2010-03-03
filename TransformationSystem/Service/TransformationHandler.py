@@ -34,7 +34,7 @@ class TransformationHandler(RequestHandler):
                                     groupSize           = 1,
                                     inheritedFrom       = 0,
                                     body                = '', 
-                                    maxJobs             = 0,
+                                    maxTasks            = 0,
                                     eventsPerJob        = 0,
                                     addFiles            = True):    
     authorDN = self._clientTransport.peerCredentials['DN']
@@ -44,7 +44,7 @@ class TransformationHandler(RequestHandler):
                                     groupSize           = groupSize,
                                     inheritedFrom       = inheritedFrom,
                                     body                = body, 
-                                    maxJobs             = maxJobs,
+                                    maxTasks            = maxTasks,
                                     eventsPerJob        = eventsPerJob,
                                     addFiles            = addFiles)    
     if res['OK']:

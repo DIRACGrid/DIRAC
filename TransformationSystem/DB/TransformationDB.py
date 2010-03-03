@@ -58,15 +58,15 @@ class TransformationDB(DB):
                           'GroupSize',
                           'InheritedFrom',
                           'Body',
-                          'MaxNumberOfJobs',
-                          'EventsPerJob']
+                          'MaxNumberOfTasks',
+                          'EventsPerTask']
 
     self.mutable = [      'TransformationName',
                           'Description',
                           'LongDescription',
                           'AgentType',
                           'Status',
-                          'MaxNumberOfJobs']
+                          'MaxNumberOfTasks']
 
     self.TRANSFILEPARAMS = ['TransformationID',
                             'FileID',
@@ -101,8 +101,8 @@ class TransformationDB(DB):
                         groupSize           = 1,
                         inheritedFrom       = 0,
                         body                = '', 
-                        maxJobs             = 0,
-                        eventsPerJob        = 0,
+                        maxTasks             = 0,
+                        eventsPerTask       = 0,
                         addFiles            = True,
                         connection          = False):
     """ Add new transformation definition including its input streams
@@ -121,7 +121,7 @@ class TransformationDB(DB):
     req = "INSERT INTO Transformations (TransformationName,Description,LongDescription, \
                                         CreationDate,LastUpdate,AuthorDN,AuthorGroup,Type,Plugin,AgentType,\
                                         FileMask,Status,TransformationGroup,GroupSize,\
-                                        InheritedFrom,Body,MaxNumberOfJobs,EventsPerJob)\
+                                        InheritedFrom,Body,MaxNumberOfTasks,EventsPerTask)\
                                 VALUES ('%s','%s','%s',\
                                         UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s','%s','%s','%s','%s',\
                                         '%s','New','%s',%d,\
@@ -129,7 +129,7 @@ class TransformationDB(DB):
                                       (transName, description, longDescription,
                                        authorDN, authorGroup, transType, plugin, agentType,
                                        fileMask,transformationGroup,groupSize,
-                                       inheritedFrom,body,maxJobs,eventsPerJob)
+                                       inheritedFrom,body,maxTasks,eventsPerTask)
     res = self._update(req,connection)
     if not res['OK']:
       self.lock.release()

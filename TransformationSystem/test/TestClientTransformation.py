@@ -229,7 +229,7 @@ class TestClientTransformationTestCase(unittest.TestCase):
     oTrans = Transformation()
     res = oTrans.getTransformations()
     self.assert_(res['OK'])
-    parameters = ['TransformationID', 'TransformationName', 'Description', 'LongDescription', 'CreationDate', 'LastUpdate', 'AuthorDN', 'AuthorGroup', 'Type', 'Plugin', 'AgentType', 'Status', 'FileMask', 'TransformationGroup', 'GroupSize', 'InheritedFrom', 'Body', 'MaxNumberOfJobs', 'EventsPerJob']
+    parameters = ['TransformationID', 'TransformationName', 'Description', 'LongDescription', 'CreationDate', 'LastUpdate', 'AuthorDN', 'AuthorGroup', 'Type', 'Plugin', 'AgentType', 'Status', 'FileMask', 'TransformationGroup', 'GroupSize', 'InheritedFrom', 'Body', 'MaxNumberOfTasks', 'EventsPerJob']
     self.assertEqual(sortList(res['ParameterNames']),sortList(parameters))
     self.assertEqual(sortList(res['Value'][0].keys()),sortList(parameters))
     self.assertEqual(len(res['Value']),len(res['Records']))

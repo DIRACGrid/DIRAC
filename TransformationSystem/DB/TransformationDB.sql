@@ -23,7 +23,7 @@ CREATE TABLE Transformations (
     GroupSize INT NOT NULL DEFAULT 1,
     InheritedFrom INTEGER DEFAULT 0,
     Body LONGBLOB,
-    MaxNumberOfJobs INT NOT NULL DEFAULT 0,
+    MaxNumberOfTasks INT NOT NULL DEFAULT 0,
     EventsPerJob INT NOT NULL DEFAULT 0,
     PRIMARY KEY(TransformationID),
     INDEX(TransformationName)
