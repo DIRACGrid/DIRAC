@@ -245,10 +245,10 @@ class Transformation(API):
         self._printFormattedDictList(res['Value'],outputFields,'FileID',orderBy)
     return res
 
-  def getTransformationTasks(self,taskStatus=[],taskIDs=[],outputFields=['TransformationID','TaskID','WmsStatus','JobWmsID','TargetSE','CreationTime','LastUpdateTime'],orderBy='TaskID',printOutput=False):
+  def getTransformationTasks(self,taskStatus=[],taskIDs=[],outputFields=['TransformationID','TaskID','ExternalStatus','JobWmsID','TargetSE','CreationTime','LastUpdateTime'],orderBy='TaskID',printOutput=False):
     condDict = {'TransformationID':self.paramValues['TransformationID']}
     if taskStatus:
-      condDict['WmsStatus'] = taskStatus
+      condDict['ExternalStatus'] = taskStatus
     if taskIDs:
       condDict['TaskID'] = taskIDs
     res = self.transClient.getTransformationTasks(condDict=condDict)

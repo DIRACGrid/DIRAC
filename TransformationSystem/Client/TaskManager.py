@@ -142,7 +142,7 @@ class RequestTasks(TaskBase):
     for taskDict in taskDicts:
       transID = taskDict['TransformationID']
       taskID = taskDict['TaskID']
-      oldStatus = taskDict['WmsStatus']
+      oldStatus = taskDict['ExternalStatus']
       taskName = str(transID).zfill(8)+'_'+str(taskID).zfill(8)
       res = self.requestClient.getRequestStatus(taskName,'RequestManagement/centralURL')
       newStatus = ''
@@ -333,7 +333,7 @@ class WorkflowTasks(TaskBase):
       wmsID = int(taskDict['JobWmsID'])
       if not wmsID:
         continue
-      oldStatus = taskDict['WmsStatus']
+      oldStatus = taskDict['ExternalStatus']
       newStatus = "Removed"
       if wmsID in statusDict.keys():
         newStatus = statusDict[wmsID]['Status']

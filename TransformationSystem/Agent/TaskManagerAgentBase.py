@@ -98,7 +98,7 @@ class TaskManagerAgentBase(AgentModule):
       transID = transformation['TransformationID']
       # Get the tasks which are in a UPDATE state
       updateStatus = self.am_getOption('TaskUpdateStatus',['Created','Submitted','Received','Waiting','Running'])
-      condDict = {"TransformationID":transID,"WmsStatus":updateStatus}
+      condDict = {"TransformationID":transID,"ExternalStatus":updateStatus}
       timeStamp = str(datetime.datetime.utcnow() - datetime.timedelta(minutes=10))
       res = self.transClient.getTransformationTasks(condDict=condDict,older=timeStamp, timeStamp='LastUpdateTime')
       if not res['OK']:
@@ -172,7 +172,7 @@ class TaskManagerAgentBase(AgentModule):
     for transformation in res['Value']:
       transID = transformation['TransformationID']
       # Select the tasks which have been in Reserved status for more than 1 hour for selected transformations
-      condDict = {"TransformationID":transID,"WmsStatus":'Reserved'}
+      condDict = {"TransformationID":transID,"ExternalStatus":'Reserved'}
       time_stamp_older = str(datetime.datetime.utcnow() - datetime.timedelta(hours=1))
       time_stamp_newer = str(datetime.datetime.utcnow() - datetime.timedelta(days=7))
       res = self.transClient.getTransformationTasks(condDict=condDict,older=time_stamp_older,newer=time_stamp_newer, timeStamp='LastUpdateTime')

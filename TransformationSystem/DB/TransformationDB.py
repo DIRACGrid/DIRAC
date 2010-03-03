@@ -80,7 +80,7 @@ class TransformationDB(DB):
 
     self.TASKSPARAMS = [  'TaskID',
                           'TransformationID',
-                          'WmsStatus',
+                          'ExternalStatus',
                           'JobWmsID',
                           'TargetSE',
                           'CreationTime',
@@ -741,7 +741,7 @@ class TransformationDB(DB):
     transID = res['Value']['TransformationID']
     condDict = {"TransformationID":transID}
     if statusList:
-      condDict["WmsStatus"] = statusList
+      condDict["ExternalStatus"] = statusList
     if site:
       numTasks=0
     res = self.getTransformationTasks(condDict=condDict,older=older, newer=newer, timeStamp='CreationTime', orderAttribute=None, limit=numTasks,inputVector=True,connection=connection)
@@ -762,7 +762,7 @@ class TransformationDB(DB):
         break
       taskID = taskDict['TaskID']
       se = taskDict['TargetSE']
-      status = taskDict['WmsStatus']
+      status = taskDict['ExternalStatus']
       inputVector = taskDict['InputVector']
       transID = taskDict['TransformationID']
       if not site:
@@ -804,7 +804,7 @@ class TransformationDB(DB):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']    
-    res = self.__checkUpdate("TransformationTasks","WmsStatus","Reserved",{"TransformationID":transID,"TaskID":taskID},connection=connection)
+    res = self.__checkUpdate("TransformationTasks","ExternalStatus","Reserved",{"TransformationID":transID,"TaskID":taskID},connection=connection)
     if not res['OK']:
       return res
     if not res['Value']:
@@ -823,7 +823,7 @@ class TransformationDB(DB):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    res = self.__setTaskParameterValue(transID,taskID,'WmsStatus',status,connection=connection)
+    res = self.__setTaskParameterValue(transID,taskID,'ExternalStatus',status,connection=connection)
     if not res['OK']:
       return res
     return self.__setTaskParameterValue(transID, taskID, 'JobWmsID', taskWmsID, connection=connection)
@@ -840,7 +840,7 @@ class TransformationDB(DB):
     else:
       taskIDList = list(taskID)
     for taskID in taskIDList:
-      res = self.__setTaskParameterValue(transID, taskID, 'WmsStatus', status, connection=connection)
+      res = self.__setTaskParameterValue(transID, taskID, 'ExternalStatus', status, connection=connection)
       if not res['OK']:
         return res
     return S_OK()  
@@ -854,16 +854,16 @@ class TransformationDB(DB):
       if not res['OK']:
         gLogger.error("Failed to get ID for transformation",res['Message'])
         return res
-      res = self.getCounters('TransformationTasks',['WmsStatus'],{'TransformationID':res['Value']},connection=connection)
+      res = self.getCounters('TransformationTasks',['ExternalStatus'],{'TransformationID':res['Value']},connection=connection)
     else:
-      res = self.getCounters('TransformationTasks',['WmsStatus','TransformationID'],{},connection=connection)
+      res = self.getCounters('TransformationTasks',['ExternalStatus','TransformationID'],{},connection=connection)
     if not res['OK']:
       return res
     if not res['Value']:
       return S_ERROR('No records found')
     statusDict = {}
     for attrDict,count in res['Value']:
-      status = attrDict['WmsStatus']
+      status = attrDict['ExternalStatus']
       statusDict[status] = count
     return S_OK(statusDict)
 
@@ -1141,7 +1141,7 @@ class TransformationDB(DB):
 
     # Insert the task into the jobs table and retrieve the taskID
     self.lock.acquire()
-    req = "INSERT INTO TransformationTasks(TransformationID, WmsStatus, JobWmsID, TargetSE, CreationTime, LastUpdateTime) VALUES\
+    req = "INSERT INTO TransformationTasks(TransformationID, ExternalStatus, JobWmsID, TargetSE, CreationTime, LastUpdateTime) VALUES\
      (%s,'%s','%d','%s', UTC_TIMESTAMP(), UTC_TIMESTAMP());" % (transID,'Created', 0, se)
     res = self._update(req,connection)
     if not res['OK']:
