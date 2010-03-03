@@ -928,9 +928,9 @@ class JobWrapper:
       lfns = [fname.replace( 'LFN:', '' ).replace( 'lfn:', '' ) for fname in lfns]
       download = self.rm.getFile( lfns )
       if not download['OK']:
-        self.log.warn( result )
+        self.log.warn( download )
         self.__report( 'Running', 'Failed Downloading InputSandbox LFN(s)' )
-        return S_ERROR( result['Message'] )
+        return S_ERROR( download['Message'] )
       failed = download['Value']['Failed']
       if failed:
         self.log.warn( 'Could not download InputSandbox LFN(s)' )
