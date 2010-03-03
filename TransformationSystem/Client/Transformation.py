@@ -30,8 +30,8 @@ class Transformation(API):
                           'GroupSize'             : [types.IntType,types.LongType],
                           'InheritedFrom'         : [types.IntType,types.LongType],
                           'Body'                  : types.StringTypes,
-                          'MaxNumberOfTasks'       : [types.IntType,types.LongType],
-                          'EventsPerJob'          : [types.IntType,types.LongType]}
+                          'MaxNumberOfTasks'      : [types.IntType,types.LongType],
+                          'EventsPerTask'         : [types.IntType,types.LongType]}
     self.paramValues =  { 'TransformationID'      : 0,
                           'TransformationName'    : '',
                           'Status'                : 'New',
@@ -46,7 +46,7 @@ class Transformation(API):
                           'InheritedFrom'         : 0,
                           'Body'                  : '',
                           'MaxNumberOfTasks'       : 0,
-                          'EventsPerJob'          : 0}
+                          'EventsPerTask'          : 0}
 
     self.supportedPlugins = ['Broadcast','Standard','BySize','ByShare']
     if not transClient:
@@ -307,7 +307,7 @@ class Transformation(API):
                                              inheritedFrom       = self.paramValues['InheritedFrom'],
                                              body                = self.paramValues['Body'],
                                              maxTasks            = self.paramValues['MaxNumberOfTasks'],
-                                             eventsPerJob        = self.paramValues['EventsPerJob'],
+                                             eventsPerTask       = self.paramValues['EventsPerTask'],
                                              addFiles            = addFiles)
     if not res['OK']:
       if printOutput:

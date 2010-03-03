@@ -24,13 +24,10 @@ CREATE TABLE Transformations (
     InheritedFrom INTEGER DEFAULT 0,
     Body LONGBLOB,
     MaxNumberOfTasks INT NOT NULL DEFAULT 0,
-    EventsPerJob INT NOT NULL DEFAULT 0,
+    EventsPerTask INT NOT NULL DEFAULT 0,
     PRIMARY KEY(TransformationID),
     INDEX(TransformationName)
 ) ENGINE=InnoDB;
-
--- MaxNumberOfJobs => MaxNumberOfTasks
--- EventsPerJob => EventsPerTask
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS AdditionalParameters;

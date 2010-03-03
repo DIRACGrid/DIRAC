@@ -35,7 +35,7 @@ class TransformationHandler(RequestHandler):
                                     inheritedFrom       = 0,
                                     body                = '', 
                                     maxTasks            = 0,
-                                    eventsPerJob        = 0,
+                                    eventsPerTask       = 0,
                                     addFiles            = True):    
     authorDN = self._clientTransport.peerCredentials['DN']
     authorGroup = self._clientTransport.peerCredentials['group']
@@ -45,7 +45,7 @@ class TransformationHandler(RequestHandler):
                                     inheritedFrom       = inheritedFrom,
                                     body                = body, 
                                     maxTasks            = maxTasks,
-                                    eventsPerJob        = eventsPerJob,
+                                    eventsPerTask       = eventsPerTask,
                                     addFiles            = addFiles)    
     if res['OK']:
       gLogger.info("Added transformation %d" % res['Value'])  
