@@ -225,7 +225,7 @@ class Transformation(API):
       self._prettyPrint(res)
     return res
   
-  def getTransformationFiles(self,fileStatus=[],lfns=[],outputFields=['FileID','LFN','Status','JobID','TargetSE','UsedSE','ErrorCount','InsertedTime','LastUpdate'], orderBy='FileID', printOutput=False):
+  def getTransformationFiles(self,fileStatus=[],lfns=[],outputFields=['FileID','LFN','Status','TaskID','TargetSE','UsedSE','ErrorCount','InsertedTime','LastUpdate'], orderBy='FileID', printOutput=False):
     condDict = {'TransformationID':self.paramValues['TransformationID']}
     if fileStatus:
       condDict['Status'] = fileStatus
@@ -245,12 +245,12 @@ class Transformation(API):
         self._printFormattedDictList(res['Value'],outputFields,'FileID',orderBy)
     return res
 
-  def getTransformationTasks(self,taskStatus=[],taskIDs=[],outputFields=['TransformationID','JobID','WmsStatus','JobWmsID','TargetSE','CreationTime','LastUpdateTime'],orderBy='JobID',printOutput=False):
+  def getTransformationTasks(self,taskStatus=[],taskIDs=[],outputFields=['TransformationID','TaskID','WmsStatus','JobWmsID','TargetSE','CreationTime','LastUpdateTime'],orderBy='TaskID',printOutput=False):
     condDict = {'TransformationID':self.paramValues['TransformationID']}
     if taskStatus:
       condDict['WmsStatus'] = taskStatus
     if taskIDs:
-      condDict['JobID'] = taskIDs
+      condDict['TaskID'] = taskIDs
     res = self.transClient.getTransformationTasks(condDict=condDict)
     if not res['OK']:
       if printOutput:
@@ -262,7 +262,7 @@ class Transformation(API):
       elif not res['Value']:
         gLogger.info("No tasks found for selection")
       else:
-        self._printFormattedDictList(res['Value'],outputFields,'JobID',orderBy)
+        self._printFormattedDictList(res['Value'],outputFields,'TaskID',orderBy)
     return res
 
   #############################################################################

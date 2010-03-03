@@ -71,14 +71,14 @@ class TransformationDB(DB):
     self.TRANSFILEPARAMS = ['TransformationID',
                             'FileID',
                             'Status',
-                            'JobID',
+                            'TaskID',
                             'TargetSE',
                             'UsedSE',
                             'ErrorCount',
                             'LastUpdate',
                             'InsertedTime']
 
-    self.TASKSPARAMS = [  'JobID',
+    self.TASKSPARAMS = [  'TaskID',
                           'TransformationID',
                           'WmsStatus',
                           'JobWmsID',
@@ -642,7 +642,7 @@ class TransformationDB(DB):
     return self.__addFilesToTransformation(transID, passFilter,connection=connection)
   
   def __insertExistingTransformationFiles(self,transID,fileTuples):
-    req = "INSERT INTO TransformationFiles (TransformationID,Status,JobID,FileID,TargetSE,UsedSE,LastUpdate) VALUES"
+    req = "INSERT INTO TransformationFiles (TransformationID,Status,TaskID,FileID,TargetSE,UsedSE,LastUpdate) VALUES"
     candidates = False
     for lfn,transID,fileID,status,taskID,targetSE,usedSE,errorCount,lastUpdate,insertTime in fileTuples:
       if status != 'Unused':
@@ -657,7 +657,7 @@ class TransformationDB(DB):
 
   def __assignTransformationFile(self,transID,taskID,se,fileIDs,connection=False):
     """ Make necessary updates to the TransformationFiles table for the newly created task """
-    req = "UPDATE TransformationFiles SET JobID='%d',UsedSE='%s',Status='Assigned',LastUpdate=UTC_TIMESTAMP() WHERE TransformationID = %d AND FileID IN (%s);" % (taskID,se,transID,intListToString(fileIDs.keys()))
+    req = "UPDATE TransformationFiles SET TaskID='%d',UsedSE='%s',Status='Assigned',LastUpdate=UTC_TIMESTAMP() WHERE TransformationID = %d AND FileID IN (%s);" % (taskID,se,transID,intListToString(fileIDs.keys()))
     res = self._update(req,connection)
     if not res['OK']:
       gLogger.error("Failed to assign file to task",res['Message'])
@@ -678,7 +678,7 @@ class TransformationDB(DB):
     return res
 
   def __resetTransformationFile(self,transID,taskID,connection=False):	
-    req = "UPDATE TransformationFiles SET JobID=NULL, UsedSE='Unknown', Status='Unused' WHERE TransformationID = %d AND JobID=%d;" % (transID,taskID)
+    req = "UPDATE TransformationFiles SET TaskID=NULL, UsedSE='Unknown', Status='Unused' WHERE TransformationID = %d AND TaskID=%d;" % (transID,taskID)
     res = self._update(req,connection)
     if not res['OK']:
       gLogger.error("Failed to reset transformation file",res['Message'])
@@ -720,7 +720,7 @@ class TransformationDB(DB):
       webList.append(rList)
       if inputVector:
         taskDict['InputVector'] = ''
-        taskID = taskDict['JobID']
+        taskID = taskDict['TaskID']
         transID = taskDict['TransformationID']
         res = self.getTaskInputVector(transID,taskID)
         if res['OK']:
@@ -760,7 +760,7 @@ class TransformationDB(DB):
     for taskDict in tasks:
       if len(resultDict) >= numTasks:
         break
-      taskID = taskDict['JobID']
+      taskID = taskDict['TaskID']
       se = taskDict['TargetSE']
       status = taskDict['WmsStatus']
       inputVector = taskDict['InputVector']
@@ -804,7 +804,7 @@ class TransformationDB(DB):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']    
-    res = self.__checkUpdate("Jobs","WmsStatus","Reserved",{"TransformationID":transID,"JobID":taskID},connection=connection)
+    res = self.__checkUpdate("Jobs","WmsStatus","Reserved",{"TransformationID":transID,"TaskID":taskID},connection=connection)
     if not res['OK']:
       return res
     if not res['Value']:
@@ -816,7 +816,7 @@ class TransformationDB(DB):
     return S_OK()
 
   def setTaskStatusAndWmsID(self,transName,taskID,status,taskWmsID,connection=False):
-    """ Set status and JobWmsID for job with jobID in production with transformationID
+    """ Set status and JobWmsID for job with taskID in production with transformationID
     """
     res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
@@ -829,7 +829,7 @@ class TransformationDB(DB):
     return self.__setTaskParameterValue(transID, taskID, 'JobWmsID', taskWmsID, connection=connection)
 
   def setTaskStatus(self,transName,taskID,status,connection=False):
-    """ Set status for job with jobID in production with transformationID """
+    """ Set status for job with taskID in production with transformationID """
     res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
@@ -868,7 +868,7 @@ class TransformationDB(DB):
     return S_OK(statusDict)
 
   def __setTaskParameterValue(self,transID,taskID,paramName,paramValue,connection=False):
-    req = "UPDATE Jobs SET %s='%s', LastUpdateTime=UTC_TIMESTAMP() WHERE TransformationID=%d AND JobID=%d;" % (paramName,paramValue,transID,taskID)
+    req = "UPDATE Jobs SET %s='%s', LastUpdateTime=UTC_TIMESTAMP() WHERE TransformationID=%d AND TaskID=%d;" % (paramName,paramValue,transID,taskID)
     return self._update(req,connection)
 
   def __deleteTransformationTasks(self,transID,connection=False):
@@ -878,7 +878,7 @@ class TransformationDB(DB):
 
   def __deleteTransformationTask(self,transID,taskID,connection=False):
     """ Delete the task from the Jobs table for transformation with TransformationID """
-    req = "DELETE FROM Jobs WHERE TransformationID=%d AND JobID=%d" % (transID,taskID)
+    req = "DELETE FROM Jobs WHERE TransformationID=%d AND TaskID=%d" % (transID,taskID)
     return self._update(req,connection)
   
   ###########################################################################
@@ -898,7 +898,7 @@ class TransformationDB(DB):
     else:
       taskIDList = list(taskID)
     taskString = ','.join(["'"+str(x)+"'" for x in taskIDList])      
-    req = "SELECT JobID,InputVector FROM JobInputs WHERE JobID in (%s) AND TransformationID='%d';" % (taskString,transID)
+    req = "SELECT TaskID,InputVector FROM JobInputs WHERE TaskID in (%s) AND TransformationID='%d';" % (taskString,transID)
     res = self._query(req)
     inputVectorDict = {}
     if res['OK'] and res['Value']:
@@ -908,7 +908,7 @@ class TransformationDB(DB):
 
   def __insertTaskInputs(self,transID,taskID,lfns,connection=False):      
     vector= str.join(';',lfns)
-    fields = ['TransformationID','JobID','InputVector']
+    fields = ['TransformationID','TaskID','InputVector']
     values = [transID,taskID,vector]
     res = self._insert('JobInputs',fields,values,connection)
     if not res['OK']:
@@ -919,7 +919,7 @@ class TransformationDB(DB):
     """ Delete all the tasks inputs from the JobsInputs table for transformation with TransformationID """
     req = "DELETE FROM JobInputs WHERE TransformationID=%d" % transID
     if taskID:
-      req = "%s AND JobID=%d" % (req,int(taskID))
+      req = "%s AND TaskID=%d" % (req,int(taskID))
     return self._update(req,connection)
 
   ###########################################################################

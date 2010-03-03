@@ -59,7 +59,7 @@ CREATE TABLE TransformationFiles(
     Status VARCHAR(32) DEFAULT "Unused",
     INDEX (Status),
     ErrorCount INT(4) NOT NULL DEFAULT 0,
-    JobID VARCHAR(32),
+    TaskID VARCHAR(32),
     TargetSE VARCHAR(255) DEFAULT "Unknown",
     UsedSE VARCHAR(255) DEFAULT "Unknown",
     LastUpdate DATETIME,
@@ -67,24 +67,21 @@ CREATE TABLE TransformationFiles(
     PRIMARY KEY (TransformationID,FileID)
 );
 
--- JobID => TaskID
-
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS Jobs;
 CREATE TABLE Jobs (
-  JobID INTEGER NOT NULL AUTO_INCREMENT,
+  TaskID INTEGER NOT NULL AUTO_INCREMENT,
   TransformationID INTEGER NOT NULL,
   WmsStatus char(16) DEFAULT 'Created',
   JobWmsID char(16) DEFAULT '',
   TargetSE char(255) DEFAULT 'Unknown',
   CreationTime DATETIME NOT NULL,
   LastUpdateTime DATETIME NOT NULL,
-  PRIMARY KEY(TransformationID,JobID),
+  PRIMARY KEY(TransformationID,TaskID),
 INDEX(WmsStatus)
 );
 
 -- Jobs => TransformationTasks
--- JobID => TaskID
 -- WmsStatus => ExternalStatus
 -- JobWmsID => ExternalID
 
@@ -92,13 +89,12 @@ INDEX(WmsStatus)
 DROP TABLE IF EXISTS JobInputs;
 CREATE TABLE JobInputs (
 TransformationID INTEGER NOT NULL,
-JobID INTEGER NOT NULL,
+TaskID INTEGER NOT NULL,
 InputVector BLOB,
-PRIMARY KEY(TransformationID,JobID)
+PRIMARY KEY(TransformationID,TaskID)
 );
 
 -- JobInputs => TransformationInputs
--- JobID => TaskID
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS DataFiles;

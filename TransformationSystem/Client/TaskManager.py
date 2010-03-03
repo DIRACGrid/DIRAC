@@ -126,7 +126,7 @@ class RequestTasks(TaskBase):
     noTasks = []
     for taskDict in taskDicts:
       transID = taskDict['TransformationID']
-      taskID = taskDict['JobID']
+      taskID = taskDict['TaskID']
       taskName = str(transID).zfill(8)+'_'+str(taskID).zfill(8)
       res = self.requestClient.getRequestInfo(taskName,'RequestManagement/centralURL')
       if res['OK']:
@@ -141,7 +141,7 @@ class RequestTasks(TaskBase):
     updateDict = {}
     for taskDict in taskDicts:
       transID = taskDict['TransformationID']
-      taskID = taskDict['JobID']
+      taskID = taskDict['TaskID']
       oldStatus = taskDict['WmsStatus']
       taskName = str(transID).zfill(8)+'_'+str(taskID).zfill(8)
       res = self.requestClient.getRequestStatus(taskName,'RequestManagement/centralURL')
@@ -162,7 +162,7 @@ class RequestTasks(TaskBase):
     taskFiles = {}
     for fileDict in fileDicts:
       transID = fileDict['TransformationID']
-      taskID = fileDict['JobID']
+      taskID = fileDict['TaskID']
       taskName = str(transID).zfill(8)+'_'+str(taskID).zfill(8) 
       if not taskFiles.has_key(taskName):
         taskFiles[taskName] = {}
@@ -292,7 +292,7 @@ class WorkflowTasks(TaskBase):
     taskNames = []
     for taskDict in taskDicts:
       transID = taskDict['TransformationID']
-      taskID = taskDict['JobID']
+      taskID = taskDict['TaskID']
       taskName = str(transID).zfill(8)+'_'+str(taskID).zfill(8)
       taskNames.append(taskName)
     res = self.jobMonitoringClient.getJobs({'JobName':taskNames})
@@ -329,7 +329,7 @@ class WorkflowTasks(TaskBase):
     statusDict = res['Value']
     for taskDict in taskDicts:
       transID = taskDict['TransformationID']
-      taskID = taskDict['JobID']
+      taskID = taskDict['TaskID']
       wmsID = int(taskDict['JobWmsID'])
       if not wmsID:
         continue
@@ -352,7 +352,7 @@ class WorkflowTasks(TaskBase):
     taskFiles = {}
     for fileDict in fileDicts:
       transID = fileDict['TransformationID']
-      taskID = fileDict['JobID']
+      taskID = fileDict['TaskID']
       taskName = str(transID).zfill(8)+'_'+str(taskID).zfill(8) 
       if not taskFiles.has_key(taskName):
         taskFiles[taskName] = {}
