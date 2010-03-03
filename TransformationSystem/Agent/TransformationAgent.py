@@ -76,7 +76,7 @@ class TransformationAgent(AgentModule):
     if not lfns:
       gLogger.info("%s.processTransformation: No 'Unused' files found for transformation." % AGENT_NAME)
       if transDict['Status'] == 'Flush':
-        res = self.transDB.setTransformationStatus(transID, 'Active')
+        res = self.transDB.setTransformationParameter(transID,'Status','Active')
         if not res['OK']:
           gLogger.error("%s.execute: Failed to update transformation status to 'Active'." % AGENT_NAME, res['Message'])
         else:
@@ -123,7 +123,7 @@ class TransformationAgent(AgentModule):
 
     # If this production is to Flush
     if transDict['Status'] == 'Flush' and allCreated:
-      res = self.transDB.setTransformationStatus(transID, 'Active')
+      res = self.transDB.setTransformationParameter(transID,'Status','Active')
       if not res['OK']:
         gLogger.error("%s.execute: Failed to update transformation status to 'Active'." % AGENT_NAME, res['Message'])
       else:

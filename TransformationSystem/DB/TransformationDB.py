@@ -147,7 +147,7 @@ class TransformationDB(DB):
         self.deleteTransformation(transID,connection=connection)
         return res
       originalID = res['Value']
-      res = self.setTransformationStatus(originalID,'Stopped',author=authorDN,connection=connection)
+      res = self.setTransformationParameter(originalID,'Status','Stopped',author=authorDN,connection=connection)
       if not res['OK']:
         gLogger.error("Failed to update parent transformation status",res['Message'])
         self.deleteTransformation(transID,connection=connection)
@@ -319,10 +319,6 @@ class TransformationDB(DB):
           result.append(transID)
     return result
   
-  def setTransformationStatus(self,transName,status,author='',connection=False):
-    #TODO: Update where used
-    return self.setTransformationParameter(transName,'Status',status,author=author,connection=connection)
-
   ###########################################################################
   #
   # These methods manipulate the AdditionalParameters tables

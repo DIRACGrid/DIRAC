@@ -23,7 +23,6 @@ class TransformationDBClient(Client,FileCatalogueBase):
 
           deleteTransformation(transName)
           cleanTransformation(transName)
-          setTransformationStatus(transName,status)
           getTransformationParameters(transName,paramNames)
           getTransformationWithStatus(status)
           setTransformationParameter(transName,paramName,paramValue)

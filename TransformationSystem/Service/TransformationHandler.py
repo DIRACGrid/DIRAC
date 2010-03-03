@@ -75,12 +75,6 @@ class TransformationHandler(RequestHandler):
     res = self.database.deleteTransformationParameter(transName,paramName)
     return self.__parseRes(res)  
   
-  types_setTransformationStatus = [transTypes,StringTypes]
-  def export_setTransformationStatus(self,transName,status):
-    authorDN = self._clientTransport.peerCredentials['DN']
-    res = self.database.setTransformationStatus(transName,status,author=authorDN)
-    return self.__parseRes(res)
-
   types_getTransformations = []
   def export_getTransformations(self,condDict={},older=None, newer=None, timeStamp='CreationDate', orderAttribute=None, limit=None, extraParams=False):
     res = self.database.getTransformations(condDict=condDict,
