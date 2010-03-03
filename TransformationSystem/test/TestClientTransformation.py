@@ -127,12 +127,12 @@ class TestClientTransformationTestCase(unittest.TestCase):
     self.assertEqual(len(taskIDs),nTasks)
     res = oTrans.getTransformationTasks()
     self.assert_(res['OK'])
-    parameters = ['TargetSE', 'TransformationID', 'LastUpdateTime', 'JobWmsID', 'CreationTime', 'TaskID', 'ExternalStatus']
+    parameters = ['TargetSE', 'TransformationID', 'LastUpdateTime', 'ExternalID', 'CreationTime', 'TaskID', 'ExternalStatus']
     self.assertEqual(sortList(res['ParameterNames']),sortList(parameters))
     self.assertEqual(sortList(res['Value'][0].keys()),sortList(parameters))
     self.assertEqual(res['Value'][0]['TargetSE'],'Unknown')
     self.assertEqual(res['Value'][0]['TransformationID'],self.transID)
-    self.assertEqual(res['Value'][0]['JobWmsID'],'0')
+    self.assertEqual(res['Value'][0]['ExternalID'],'0')
     self.assertEqual(res['Value'][0]['TaskID'],1)
     self.assertEqual(res['Value'][0]['ExternalStatus'],'Created')
     self.assertEqual(res['Records'][0][0],1)

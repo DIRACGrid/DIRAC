@@ -319,7 +319,7 @@ class WorkflowTasks(TaskBase):
   def getSubmittedTaskStatus(self,taskDicts):
     wmsIDs = []
     for taskDict in taskDicts:
-      wmsID = int(taskDict['JobWmsID'])
+      wmsID = int(taskDict['ExternalID'])
       wmsIDs.append(wmsID)
     res = self.jobMonitoringClient.getJobsStatus(wmsIDs)
     if not res['OK']:
@@ -330,7 +330,7 @@ class WorkflowTasks(TaskBase):
     for taskDict in taskDicts:
       transID = taskDict['TransformationID']
       taskID = taskDict['TaskID']
-      wmsID = int(taskDict['JobWmsID'])
+      wmsID = int(taskDict['ExternalID'])
       if not wmsID:
         continue
       oldStatus = taskDict['ExternalStatus']

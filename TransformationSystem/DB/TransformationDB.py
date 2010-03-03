@@ -81,7 +81,7 @@ class TransformationDB(DB):
     self.TASKSPARAMS = [  'TaskID',
                           'TransformationID',
                           'ExternalStatus',
-                          'JobWmsID',
+                          'ExternalID',
                           'TargetSE',
                           'CreationTime',
                           'LastUpdateTime']
@@ -816,7 +816,7 @@ class TransformationDB(DB):
     return S_OK()
 
   def setTaskStatusAndWmsID(self,transName,taskID,status,taskWmsID,connection=False):
-    """ Set status and JobWmsID for job with taskID in production with transformationID
+    """ Set status and ExternalID for job with taskID in production with transformationID
     """
     res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
@@ -826,7 +826,7 @@ class TransformationDB(DB):
     res = self.__setTaskParameterValue(transID,taskID,'ExternalStatus',status,connection=connection)
     if not res['OK']:
       return res
-    return self.__setTaskParameterValue(transID, taskID, 'JobWmsID', taskWmsID, connection=connection)
+    return self.__setTaskParameterValue(transID, taskID, 'ExternalID', taskWmsID, connection=connection)
 
   def setTaskStatus(self,transName,taskID,status,connection=False):
     """ Set status for job with taskID in production with transformationID """
@@ -1141,7 +1141,7 @@ class TransformationDB(DB):
 
     # Insert the task into the jobs table and retrieve the taskID
     self.lock.acquire()
-    req = "INSERT INTO TransformationTasks(TransformationID, ExternalStatus, JobWmsID, TargetSE, CreationTime, LastUpdateTime) VALUES\
+    req = "INSERT INTO TransformationTasks(TransformationID, ExternalStatus, ExternalID, TargetSE, CreationTime, LastUpdateTime) VALUES\
      (%s,'%s','%d','%s', UTC_TIMESTAMP(), UTC_TIMESTAMP());" % (transID,'Created', 0, se)
     res = self._update(req,connection)
     if not res['OK']:

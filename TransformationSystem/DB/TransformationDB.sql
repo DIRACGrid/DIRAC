@@ -73,15 +73,13 @@ CREATE TABLE TransformationTasks (
   TaskID INTEGER NOT NULL AUTO_INCREMENT,
   TransformationID INTEGER NOT NULL,
   ExternalStatus char(16) DEFAULT 'Created',
-  JobWmsID char(16) DEFAULT '',
+  ExternalID char(16) DEFAULT '',
   TargetSE char(255) DEFAULT 'Unknown',
   CreationTime DATETIME NOT NULL,
   LastUpdateTime DATETIME NOT NULL,
   PRIMARY KEY(TransformationID,TaskID),
 INDEX(ExternalStatus)
 );
-
--- JobWmsID => ExternalID
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TaskInputs;
