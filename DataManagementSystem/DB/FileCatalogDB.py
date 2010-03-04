@@ -1593,7 +1593,8 @@ class FileCatalogDB(DB,
         se = resSE['Value']['SEName']
         # Construct PFN
         pfnDict = dict(seDict)
-        pfnDict['FileName'] = lfn      
+        pfnDict['Path'] = os.path.dirname(lfn)
+        pfnDict['FileName'] = os.path.basename(lfn)    
         result = pfnunparse(pfnDict)
         if not result['OK']:
           failed[lfn] = result['Message']
