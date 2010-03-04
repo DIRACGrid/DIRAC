@@ -160,7 +160,8 @@ cmdOpts = ( ( 'd:', 'destination=', 'Destination where to build the externals' )
             ( 'v:', 'version=', 'Version of the externals to compile (default will be trunk)' ),
             ( 'h', 'help', 'Show this help' ),
             ( 'i:', 'pythonVersion=', 'Python version to compile (25/24)' ),
-            ( 'f', 'fixLinksOnly', 'Only fix absolute soft links' )
+            ( 'f', 'fixLinksOnly', 'Only fix absolute soft links' ),
+            ( 'j:', 'makeJobs=', 'Number of make jobs, by default is 1' )
           )
 
 compExtVersion = False
@@ -168,6 +169,7 @@ compType = 'client'
 compDest = False
 compExtSource = False
 onlyFixLinks = False
+makeArgs = []
 compVersionDict = { 'PYTHONVERSION' : '2.5' }
 
 optList, args = getopt.getopt( sys.argv[1:],
@@ -191,6 +193,16 @@ for o, v in optList:
     compVersionDict[ 'PYTHONVERSION' ] = ".".join( [ c for c in v ] )
   elif o in ( '-f', '--fixLinksOnly' ):
     onlyFixLinks = True
+  elif o in ( '-j', '--makeJobs' ):
+    try:
+      v = int( v )
+    except:
+      print "Value for makeJobs is not an integer (%s)" % v
+      sys.exit( 1 )
+    if v < 1:
+      print "Value for makeJobs mas to be greater than 0 (%s)" % v
+      sys.exit( 1 )
+    makeArgs.append( "-j %d" % int( v ) )
 
 if not compDest:
   basePath = os.path.dirname( os.path.realpath( __file__ ) )
@@ -255,10 +267,9 @@ if compType not in buildCFG.listSections():
 
 packagesToBuild = resolvePackagesToBuild( compType, buildCFG )
 
+
 if compDest:
-  makeArgs = os.path.realpath( compDest )
-else:
-  makeArgs = ""
+  makeArgs .append( "-p '%s'" % os.path.realpath( compDest ) )
 
 #Substitution of versions 
 finalPackages = []
@@ -266,14 +277,15 @@ for prog in packagesToBuild:
   for k in compVersionDict:
     finalPackages.append( prog.replace( "$%s$" % k, compVersionDict[k] ) )
 
+makeArgs = " ".join( makeArgs )
 print "Building %s" % ", ".join ( finalPackages )
 for prog in finalPackages:
   print "== BUILDING %s == " % prog
   progDir = os.path.join( externalsDir, prog )
-  makePath = os.path.join( progDir, "dirac-make" )
+  makePath = os.path.join( progDir, "dirac-make.py" )
   buildOutPath = os.path.join( progDir, "build.out" )
   os.chmod( makePath, executablePerms )
-  instCmd = "'%s' '%s'" % ( makePath, makeArgs )
+  instCmd = "'%s' %s" % ( makePath, makeArgs )
   print " - Executing %s" % instCmd
   ret = os.system( "%s  > '%s' 2>&1" % ( instCmd, buildOutPath ) )
   if ret:
