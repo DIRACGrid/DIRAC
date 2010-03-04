@@ -1,7 +1,5 @@
 #!/bin/bash -x
 
-[ -z "$DIRACINSTANCE" ] && DIRACINSTANCE=Development
-
 DESTDIR=$1
 if [ -z "$DESTDIR" ]
 then
