@@ -12,8 +12,7 @@ from DIRAC.Core.Security.Misc                         import getProxyInfo
 from DIRAC import systemCall, shellCall, S_OK, S_ERROR
 
 def executeGridCommand(proxy, cmd, gridEnvScript=None ):
-    """
-     Execute cmd tuple after sourcing GridEnv
+    """ Execute cmd tuple after sourcing GridEnv
     """
     currentEnv = dict(os.environ)
     if gridEnvScript:
@@ -21,10 +20,16 @@ def executeGridCommand(proxy, cmd, gridEnvScript=None ):
       if not ret['OK']:
         return S_ERROR( 'Failed sourcing GridEnv' )
       gridEnv = ret['outputEnv']
+      #
+      # Preserve some current settings if they are there
+      #
+      if currentEnv.has_key('X509_VOMS_DIR'):
+        gridEnv['X509_VOMS_DIR'] = currentEnv['X509_VOMS_DIR']
+      if currentEnv.has_key('X509_CERT_DIR'):
+        gridEnv['X509_CERT_DIR'] = currentEnv['X509_CERT_DIR']
     else:
       gridEnv = currentEnv
-
-
+      
     if not proxy:
       res = getProxyInfo()      
       if not res['OK']:
@@ -40,7 +45,7 @@ def executeGridCommand(proxy, cmd, gridEnvScript=None ):
       if not ret['OK']:
         return ret
       gridEnv[ 'X509_USER_PROXY' ] = ret['Value']
-   
+
     return systemCall( 120, cmd, env = gridEnv )
   
 def ldapsearchBDII( filt=None, attr=None, host=None, base = None ):
