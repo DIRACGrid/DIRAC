@@ -595,7 +595,7 @@ class SystemAdministratorHandler( RequestHandler ):
     extensions = [ x+'DIRAC' for x in gConfig.getValue('/DIRAC/Extensions',[]) ]
     dbList = []
     for extension in extensions+['DIRAC']:
-      result = shellCall(0,'find /opt/dirac/pro/%s -name "*.sql"' % extension)
+      result = shellCall(0,'find %s/%s -name "*.sql"' % (DIRACROOT,extension) )
       if not result['OK']:
         return result
       outputs = result['Value'][1].strip().split()
@@ -644,7 +644,7 @@ class SystemAdministratorHandler( RequestHandler ):
     if not currentEnv.has_key('HOST'):
       currentEnv['HOST'] = socket.getfqdn()
 
-    result = shellCall(0,DIRACROOT+'/DIRAC/Core/scripts/install_mysql_db.sh %s' % dbname,env=currentEnv)
+    result = shellCall(0,DIRACROOT+'/DIRAC/Core/scripts/install_db.sh %s' % dbname,env=currentEnv)
     if not result['OK']:
       return result
 
