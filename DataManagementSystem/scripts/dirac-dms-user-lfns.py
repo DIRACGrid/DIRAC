@@ -76,7 +76,7 @@ if not res['OK']:
   DIRAC.exit(2)
 proxyInfo = res['Value']
 username = proxyInfo['username']
-userBase = '/%s/user/%s/%s' % (vi, username[0], username)
+userBase = '/%s/user/%s/%s' % (vo, username[0], username)
 if not baseDir:
   baseDir = userBase
 elif not baseDir.startswith(userBase):
