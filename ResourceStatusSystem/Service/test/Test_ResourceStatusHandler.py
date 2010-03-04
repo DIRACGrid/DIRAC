@@ -225,13 +225,6 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
       for g_2 in ValidRes:
         res = self.rsh.export_getGeneralName(g_1, 'XX', g_2)
         
-    
-  def test_export_publisher(self):
-    self.mock_command.doCommand.return_value = 'a fake link'
-    for (g, v) in ( ('Site', 'Site_View'), ('Resource', 'Resource_View'), ('StorageElement', 'SE_View') ):
-      res = self.rsh.export_publisher(g, 'XX', v, self.mock_command)
-      self.assert_(res['OK'])
-
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusHandlerTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusHandlerSuccess))

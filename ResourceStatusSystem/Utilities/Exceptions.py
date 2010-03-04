@@ -31,3 +31,6 @@ class InvalidPolicyType(RSSException):
 class InvalidService(RSSException):
   pass
 
+class InvalidView(RSSException):
+  pass
+

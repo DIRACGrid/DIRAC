@@ -20,9 +20,7 @@ from DIRAC.Core.Utilities import Time
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
-#from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
 from DIRAC.ResourceStatusSystem.Utilities.Publisher import Publisher 
-from DIRAC.ResourceStatusSystem.Client.Command.CommandCaller import CommandCaller
 
 rsDB = False
 
@@ -1342,8 +1340,8 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
-  types_publisher = [StringType, StringType, StringType, NoneType]
-  def export_publisher(self, granularity, name, view, commandIn = None):
+  types_publisher = [StringType, StringType, StringType]
+  def export_publisher(self, granularity, name, view):
     """ get a view
     
     :params:
@@ -1356,18 +1354,20 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.publisher: Attempting to get view %s for %s" % (view, name))
       try:
-        if view not in Configurations.views_panels.keys():
-          return S_ERROR("Possible views are: %s" %Configurations.views_panels.keys())
-        
-        if granularity not in ValidRes:
-          return S_ERROR("Granularity should be in %" %ValidRes)
-        
-        infoToGet_res = publisher.getInfo(granularity, name, view, commandIn, rsDB)
-            
+        res = publisher.getInfo(granularity, name, view, rsDBIn = rsDB)
+      except InvalidRes, x:
+        errorStr = "Invalid granularity"
+        gLogger.exception(whoRaised(x) + errorStr)
+        return S_ERROR(errorStr)
+      except InvalidView, x:
+        errorStr = "Invalid view"
+        gLogger.exception(whoRaised(x) + errorStr)
+        return S_ERROR(errorStr)
       except RSSException, x:
-        gLogger.error(whoRaised(x))
+        errorStr = "RSSException"
+        gLogger.exception(whoRaised(x) + errorStr)
       gLogger.info("ResourceStatusHandler.publisher: got view %s for %s" % (view, name))
-      return S_OK(infoToGet_res)
+      return S_OK(res)
     except Exception, x:
       errorStr = where(self, self.export_publisher)
       gLogger.exception(errorStr,lException=x)
