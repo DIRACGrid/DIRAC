@@ -73,7 +73,7 @@ scaleFactor = scaleDict[unit]
 
 rpc = RPCClient('DataManagement/StorageUsage')
 res = rpc.getStorageSummary(dir,fileType,prod,ses)
-if not res['Value']:
+if not res['OK']:
   print 'No usage found'
   DIRAC.exit(2)
 
