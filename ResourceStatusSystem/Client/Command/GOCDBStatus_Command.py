@@ -6,6 +6,8 @@ from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
+#############################################################################
+
 class GOCDBStatus_Command(Command):
   
   def doCommand(self, args, clientIn=None):
@@ -40,3 +42,35 @@ class GOCDBStatus_Command(Command):
       res = c.getStatus(args[0], args[1], None, args[2])
 
     return res[0]
+
+#############################################################################
+
+class GOCDBInfo_Command(Command):
+  
+  def doCommand(self, args, clientIn=None):
+    """ Return getInfo from GOC DB Client
+    
+       :params:
+         :attr:`args`: 
+           - args[0]: string: should be a ValidRes
+      
+           - args[1]: string: should be the name of the ValidRes
+    """
+
+    if not isinstance(args, tuple):
+      raise TypeError, where(self, self.doCommand)
+    
+    if args[0] not in ValidRes:
+      raise InvalidRes, where(self, self.doCommand)
+    
+    if clientIn is not None:
+      c = clientIn
+    else:
+      # use standard GOC DB Client
+      from DIRAC.ResourceStatusSystem.Client.GOCDBClient import GOCDBClient   
+      c = GOCDBClient()
+      
+    res = c.getInfo(args[0], args[1])
+
+    return res
+    

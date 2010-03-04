@@ -20,54 +20,6 @@ class InfoGetter:
     """
     pass
   
-  
-#############################################################################
-
-  #la sposto dentro al servizio?
-  def getInfo(self, infoType, infoName, resName, rsDBin = None):
-    """
-    :params:
-      :attr:`infoType`: string - 'view' or 'info'
-      
-      :attr:`infoName`: string - name of the info (e.g.: 'DT_Link') or
-      name of the view (e.g.: 'Resource_View')
-      
-      :attr:`resName`: string - name of the res (e.g.: 'LCG.CERN.ch') 
-    """
-    
-    infoGot = {} #da costruire
-    
-    if infoType == 'view':
-      
-      if infoName not in ValidView:
-        raise InvalidRes, where(self, self.getInfo)
-      
-      infoToGet = self._getInfoToApply(infoName)
-      
-      policyRes = infoToGet['Policies']
-      infoExt = infoToGet['Info']
-
-      if rsDBin is not None:
-        rsDB = rsDBin
-      else:
-        # Use standard DIRAC DB
-        from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
-        rsDB = ResourceStatusDB()
-        
-      rsDB.get() #prendi tutto cio' che serve
-      
-    elif infoType == 'info':
-      infoExt = [infoName]
-    
-    else:
-      raise RSSException, where(self, self.getInfo)
-    
-    for info in infoExt:
-       res = self._commandCaller(info)
-    
-       infoGot[''].append(res)
-    
-  
 #############################################################################
 
   def getInfoToApply(self, args, granularity, status = None, formerStatus = None, 

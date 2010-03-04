@@ -6,7 +6,7 @@ from datetime import datetime
 
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Client.Command.ClientsInvoker import ClientsInvoker
-from DIRAC.ResourceStatusSystem.Client.Command.GOCDBStatus_Command import GOCDBStatus_Command
+from DIRAC.ResourceStatusSystem.Client.Command.GOCDBStatus_Command import *
 #from DIRAC.ResourceStatusSystem.Client.Command.Res2SiteStatus_Command import Res2SiteStatus_Command
 from DIRAC.ResourceStatusSystem.Client.Command.Pilots_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.Jobs_Command import *
@@ -16,6 +16,8 @@ from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.DataOperations_Command import TransferQuality_Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+
+#############################################################################
 
 class ClientsCommandsTestCase(unittest.TestCase):
   """ Base class for the ClientsCommands test cases
@@ -28,6 +30,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.mock_command = Mock()
     self.ci = ClientsInvoker()
     self.GOCDBS_C = GOCDBStatus_Command()
+    self.GOCDBI_C = GOCDBInfo_Command()
     self.mock_client = Mock()
     self.mock_client_2 = Mock()
 #    self.R2SS_C = Res2SiteStatus_Command()
@@ -46,6 +49,8 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.StElSt_C = StorageElementsStats_Command()
     self.MS_C = MonitoredStatus_Command()
     self.DQ_C = TransferQuality_Command()
+
+#############################################################################
 
 class ClientsInvokerSuccess(ClientsCommandsTestCase):
 
@@ -71,12 +76,15 @@ class ClientsInvokerSuccess(ClientsCommandsTestCase):
       self.assertEqual(res, None)
         
 
+#############################################################################
+
 class ClientsInvokerFailure(ClientsCommandsTestCase):
   
   def test_badArgs(self):
     self.failUnlessRaises(Exception, self.ci.doCommand, [''])
     self.failUnlessRaises(Exception, self.ci.doCommand, None)
      
+#############################################################################
 
 class GOCDBStatus_CommandSuccess(ClientsCommandsTestCase):
   
@@ -94,7 +102,7 @@ class GOCDBStatus_CommandSuccess(ClientsCommandsTestCase):
       res = self.GOCDBS_C.doCommand(args, clientIn = self.mock_client)
       self.assertEqual(res['DT'], 'None')
 
-    
+#############################################################################
 
 class GOCDBStatus_CommandFailure(ClientsCommandsTestCase):
 
@@ -102,6 +110,27 @@ class GOCDBStatus_CommandFailure(ClientsCommandsTestCase):
     self.failUnlessRaises(InvalidRes, self.GOCDBS_C.doCommand, ('sites', ''))
     self.failUnlessRaises(TypeError, self.GOCDBS_C.doCommand, None)
      
+#############################################################################
+
+class GOCDBInfo_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+
+    for granularity in ValidRes:
+      args = (granularity, 'XX')
+      self.mock_client.getInfo.return_value =  ['XXXX', 'YYYYYYYYY']
+      res = self.GOCDBI_C.doCommand(args, clientIn = self.mock_client)
+      self.assertEqual(res, ['XXXX', 'YYYYYYYYY'])
+
+#############################################################################
+
+class GOCDBInfo_CommandFailure(ClientsCommandsTestCase):
+
+  def test_badArgs(self):
+    self.failUnlessRaises(InvalidRes, self.GOCDBI_C.doCommand, ('sites', ''))
+    self.failUnlessRaises(TypeError, self.GOCDBI_C.doCommand, None)
+     
+#############################################################################
 
 class Res2SiteStatus_CommandSuccess(ClientsCommandsTestCase):
   
@@ -119,6 +148,7 @@ class Res2SiteStatus_CommandSuccess(ClientsCommandsTestCase):
       res = self.R2SS_C.doCommand(args, clientIn = self.mock_client)
       self.assertEqual(res, None)
 
+#############################################################################
     
 
 class Res2SiteStatus_CommandFailure(ClientsCommandsTestCase):
@@ -126,6 +156,7 @@ class Res2SiteStatus_CommandFailure(ClientsCommandsTestCase):
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.R2SS_C.doCommand, None)
      
+#############################################################################
 
 class PilotsEff_CommandSuccess(ClientsCommandsTestCase):
   
@@ -138,6 +169,7 @@ class PilotsEff_CommandSuccess(ClientsCommandsTestCase):
         res = self.PE_C.doCommand(args, clientIn = self.mock_client)
         self.assertEqual(res['PilotsEff'], pe)
 
+#############################################################################
     
 
 class PilotsEff_CommandFailure(ClientsCommandsTestCase):
@@ -146,6 +178,7 @@ class PilotsEff_CommandFailure(ClientsCommandsTestCase):
     self.failUnlessRaises(InvalidRes, self.PE_C.doCommand, ('sites', '', []))
     self.failUnlessRaises(TypeError, self.PE_C.doCommand, None)
      
+#############################################################################
 
 class PilotsStats_CommandSuccess(ClientsCommandsTestCase):
   
@@ -158,7 +191,7 @@ class PilotsStats_CommandSuccess(ClientsCommandsTestCase):
         res = self.PS_C.doCommand(args, clientIn = self.mock_client)
         self.assertEqual(res['PilotsEff'], pe)
 
-    
+#############################################################################
 
 class PilotsStats_CommandFailure(ClientsCommandsTestCase):
   
@@ -166,6 +199,7 @@ class PilotsStats_CommandFailure(ClientsCommandsTestCase):
     self.failUnlessRaises(InvalidRes, self.PS_C.doCommand, ('sites', '', []))
     self.failUnlessRaises(TypeError, self.PS_C.doCommand, None)
      
+#############################################################################
 
 class PilotsEffSimple_CommandSuccess(ClientsCommandsTestCase):
   
@@ -178,15 +212,15 @@ class PilotsEffSimple_CommandSuccess(ClientsCommandsTestCase):
         res = self.PES_C.doCommand(args, clientIn = self.mock_client)
         self.assertEqual(res['PilotsEff'], pe)
 
+#############################################################################
     
-
 class PilotsEffSimple_CommandFailure(ClientsCommandsTestCase):
   
   def test_badArgs(self):
     self.failUnlessRaises(InvalidRes, self.PES_C.doCommand, ('sites', ''))
     self.failUnlessRaises(TypeError, self.PES_C.doCommand, None)
      
-
+#############################################################################
 
 class JobsEff_CommandSuccess(ClientsCommandsTestCase):
   
@@ -199,14 +233,15 @@ class JobsEff_CommandSuccess(ClientsCommandsTestCase):
         res = self.JE_C.doCommand(args, clientIn = self.mock_client)
         self.assertEqual(res['JobsEff'], pe)
 
+#############################################################################
     
-
 class JobsEff_CommandFailure(ClientsCommandsTestCase):
   
   def test_badArgs(self):
     self.failUnlessRaises(InvalidRes, self.JE_C.doCommand, ('sites', '', []))
     self.failUnlessRaises(TypeError, self.JE_C.doCommand, None)
      
+#############################################################################
 
 class JobsStats_CommandSuccess(ClientsCommandsTestCase):
   
@@ -219,14 +254,15 @@ class JobsStats_CommandSuccess(ClientsCommandsTestCase):
         res = self.JS_C.doCommand(args, clientIn = self.mock_client)
         self.assertEqual(res['MeanProcessedJobs'], pe)
 
+#############################################################################
     
-
 class JobsStats_CommandFailure(ClientsCommandsTestCase):
   
   def test_badArgs(self):
     self.failUnlessRaises(InvalidRes, self.JS_C.doCommand, ('sites', '', []))
     self.failUnlessRaises(TypeError, self.JS_C.doCommand, None)
      
+#############################################################################
 
 class SystemCharge_CommandSuccess(ClientsCommandsTestCase):
   
@@ -237,6 +273,7 @@ class SystemCharge_CommandSuccess(ClientsCommandsTestCase):
     self.assertEqual(res['LastHour'], 50)
     self.assertEqual(res['anHourBefore'], 30)
     
+#############################################################################
 
 class JobsEffSimple_CommandSuccess(ClientsCommandsTestCase):
   
@@ -249,15 +286,15 @@ class JobsEffSimple_CommandSuccess(ClientsCommandsTestCase):
         res = self.JES_C.doCommand(args, clientIn = self.mock_client)
         self.assertEqual(res['JobsEff'], pe)
 
-    
-
+#############################################################################
+   
 class JobsEffSimple_CommandFailure(ClientsCommandsTestCase):
   
   def test_badArgs(self):
     self.failUnlessRaises(InvalidRes, self.JES_C.doCommand, ('sites', ''))
     self.failUnlessRaises(TypeError, self.JES_C.doCommand, None)
      
-
+#############################################################################
 
 class SAMResults_CommandSuccess(ClientsCommandsTestCase):
   
@@ -268,14 +305,15 @@ class SAMResults_CommandSuccess(ClientsCommandsTestCase):
       self.mock_client.getStatus.return_value =  {'Status':status}
       res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
       self.assertEqual(res['Status'], status)
-    
+
+#############################################################################
 
 class SAMResults_CommandFailure(ClientsCommandsTestCase):
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.SAMR_C.doCommand, None)
      
-
+#############################################################################
 
 class GGUSTickets_CommandSuccess(ClientsCommandsTestCase):
   
@@ -286,13 +324,14 @@ class GGUSTickets_CommandSuccess(ClientsCommandsTestCase):
       res = self.GGUS_C.doCommand(('XX', ), clientIn = self.mock_client)
       self.assertEqual(res['GGUSTickets'], n)
     
+#############################################################################
 
 class GGUSTickets_CommandFailure(ClientsCommandsTestCase):
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.GGUS_C.doCommand, None)
      
-
+#############################################################################
 
 class RSPeriods_CommandSuccess(ClientsCommandsTestCase):
   
@@ -304,6 +343,7 @@ class RSPeriods_CommandSuccess(ClientsCommandsTestCase):
       res = self.RSP_C.doCommand(args, clientIn = self.mock_client)
       self.assertEqual(res['Periods'], [])
     
+#############################################################################
 
 class RSPeriods_CommandFailure(ClientsCommandsTestCase):
 
@@ -311,6 +351,7 @@ class RSPeriods_CommandFailure(ClientsCommandsTestCase):
     self.failUnlessRaises(InvalidRes, self.RSP_C.doCommand, ('sites', '', ''), 20)
     self.failUnlessRaises(TypeError, self.RSP_C.doCommand, None, 20)
      
+#############################################################################
 
 class ServiceStats_CommandSuccess(ClientsCommandsTestCase):
   
@@ -321,12 +362,14 @@ class ServiceStats_CommandSuccess(ClientsCommandsTestCase):
       res = self.SeSt_C.doCommand((g, ''), clientIn = self.mock_client)
       self.assertEqual(res, {'stats':{}})
       
+#############################################################################
 
 class ServiceStats_CommandFailure(ClientsCommandsTestCase):
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.SeSt_C.doCommand, None)
      
+#############################################################################
 
 class ResourceStats_CommandSuccess(ClientsCommandsTestCase):
   
@@ -338,12 +381,14 @@ class ResourceStats_CommandSuccess(ClientsCommandsTestCase):
     res = self.ReSt_C.doCommand(('Service', ''), clientIn = self.mock_client)
     self.assertEqual(res, {'stats':{}})
       
+#############################################################################
 
 class ResourceStats_CommandFailure(ClientsCommandsTestCase):
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.ReSt_C.doCommand, None)
      
+#############################################################################
 
 class StorageElementsStats_CommandSuccess(ClientsCommandsTestCase):
   
@@ -355,12 +400,14 @@ class StorageElementsStats_CommandSuccess(ClientsCommandsTestCase):
     res = self.StElSt_C.doCommand(('Resource', ''), clientIn = self.mock_client)
     self.assertEqual(res, {'stats': {}})
       
+#############################################################################
 
 class StorageElementsStats_CommandFailure(ClientsCommandsTestCase):
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.StElSt_C.doCommand, None)
      
+#############################################################################
 
 class MonitoredStatus_CommandSuccess(ClientsCommandsTestCase):
   
@@ -371,12 +418,14 @@ class MonitoredStatus_CommandSuccess(ClientsCommandsTestCase):
       res = self.MS_C.doCommand((g, ''), clientIn = self.mock_client)
       self.assertEqual(res, {'MonitoredStatus':'Active'})
       
+#############################################################################
 
 class MonitoredStatus_CommandFailure(ClientsCommandsTestCase):
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.MS_C.doCommand, None)
      
+#############################################################################
 
 class TransferOperations_CommandSuccess(ClientsCommandsTestCase):
   
@@ -392,12 +441,14 @@ class TransferOperations_CommandSuccess(ClientsCommandsTestCase):
                                datetime.utcnow()), clientIn = self.mock_client)
     self.assertEqual(res, {})
       
+#############################################################################
 
 class TransferOperations_CommandFailure(ClientsCommandsTestCase):
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.DQ_C.doCommand, None)
      
+#############################################################################
 
 #class Macros_CommandSuccess(ClientsCommandsTestCase):
 #  
@@ -408,16 +459,16 @@ class TransferOperations_CommandFailure(ClientsCommandsTestCase):
 #    
 #    macroC = MacroCommand()
     
+#############################################################################
     
-
-
-
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ClientsCommandsTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ClientsInvokerSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ClientsInvokerFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBStatus_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBStatus_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBInfo_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBInfo_CommandFailure))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Res2SiteStatus_CommandSuccess))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Res2SiteStatus_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEff_CommandSuccess))

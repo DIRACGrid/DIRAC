@@ -19,6 +19,9 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+from DIRAC.ResourceStatusSystem.Policy import Configurations
+from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
+from DIRAC.ResourceStatusSystem.Client.Command.CommandCaller import CommandCaller
 
 rsDB = False
 
@@ -160,7 +163,8 @@ class ResourceStatusHandler(RequestHandler):
 #############################################################################
 
   #ok
-  types_addOrModifySite = [StringType, StringType, StringType, StringType, Time._dateTimeType, StringType, Time._dateTimeType]
+  types_addOrModifySite = [StringType, StringType, StringType, StringType, Time._dateTimeType, 
+                           StringType, Time._dateTimeType]
   def export_addOrModifySite(self, siteName, siteType, status, reason, dateEffective, 
                              operatorCode, dateEnd):
     """ 
@@ -343,7 +347,8 @@ class ResourceStatusHandler(RequestHandler):
       :attr:`maxItems`
       
     :return: { 
-      :attr:`ParameterNames`: ['ServiceName', 'ServiceType', 'Site', 'GridType', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'], 
+      :attr:`ParameterNames`: ['ServiceName', 'ServiceType', 'Site', 'GridType', 'Country', 
+      'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'], 
       
       :attr:'Records': [[], [], ...], 
       
@@ -628,7 +633,8 @@ class ResourceStatusHandler(RequestHandler):
           
         Output: { 'OK': XX, 'rpcStub': XX, 'getSitesStatusWeb', ({}, [], X, X)), 
         
-        Value': { 'ParameterNames': ['ResourceName', 'SiteName', 'ServiceExposed', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'], 
+        Value': { 'ParameterNames': ['ResourceName', 'SiteName', 'ServiceExposed', 'Country', 
+        'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'], 
             
         'Records': [[], [], ...]
             
@@ -689,7 +695,8 @@ class ResourceStatusHandler(RequestHandler):
 #############################################################################
 
   #ok
-  types_addOrModifyResource = [StringType, StringType, StringType, StringType, StringType, StringType, Time._dateTimeType, StringType, Time._dateTimeType]
+  types_addOrModifyResource = [StringType, StringType, StringType, StringType, StringType, 
+                               StringType, Time._dateTimeType, StringType, Time._dateTimeType]
   def export_addOrModifyResource(self, resourceName, resourceType, serviceName, siteName, 
                                  status, reason, dateEffective, operatorCode, 
                                  dateEnd=datetime(9999, 12, 31, 23, 59, 59)):
@@ -1059,9 +1066,10 @@ class ResourceStatusHandler(RequestHandler):
 #############################################################################
 
   #ok
-  types_addOrModifyStorageElement = [StringType, StringType, StringType, StringType, StringType, Time._dateTimeType, StringType, Time._dateTimeType]
-  def export_addOrModifyStorageElement(self, seName, resourceName, siteName, status, reason, dateEffective, 
-                             operatorCode, dateEnd):
+  types_addOrModifyStorageElement = [StringType, StringType, StringType, StringType, StringType, 
+                                     Time._dateTimeType, StringType, Time._dateTimeType]
+  def export_addOrModifyStorageElement(self, seName, resourceName, siteName, status, reason, 
+                                       dateEffective, operatorCode, dateEnd):
     """ 
     Add or modify a site to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifyStorageElement`
@@ -1086,7 +1094,8 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.addOrModifyStorageElement: Attempting to add or modify se %s" % seName)
       try:
-        rsDB.addOrModifyStorageElement(seName, resourceName, siteName, status, reason, dateEffective, operatorCode, dateEnd)
+        rsDB.addOrModifyStorageElement(seName, resourceName, siteName, status, reason, 
+                                       dateEffective, operatorCode, dateEnd)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -1293,7 +1302,6 @@ class ResourceStatusHandler(RequestHandler):
       gLogger.info("ResourceStatusHandler.syncWithCS: Attempting to sync DB with CS")
       try:
         res = rsDB.syncWithCS(p1, p2)
-#        res = rsDB.getPeriods(granularity)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -1322,24 +1330,107 @@ class ResourceStatusHandler(RequestHandler):
       gLogger.info("ResourceStatusHandler.getGeneralName: got %s general name" % (name))
       return S_OK(res)
     except Exception, x:
-      errorStr = where(self, self.export_getPeriods)
+      errorStr = where(self, self.export_getGeneralName)
       gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr)
 
 #############################################################################
 
-  types_publisher = [StringType, StringType]
-  def export_publisher(self, granularity_view, name):
+  types_publisher = [StringType, StringType, StringType, ObjectType]
+  def export_publisher(self, granularity, name, view, commandIn = None):
     """ get a view
+    
+    :params:
+      :attr:`granularity`: string - a ValidRes
+    
+      :attr:`name`: string - name of the res
+
+      :attr:`view`: string - name of the view
     """
     try:
-      gLogger.info("ResourceStatusHandler.publisher: Attempting to get view %s for %s" % (granularity_view, name))
+      gLogger.info("ResourceStatusHandler.publisher: Attempting to get view %s for %s" % (view, name))
       try:
-        pass
+        if view not in Configurations.views_panels.keys():
+          return S_ERROR("Possible views are: %s" %Configurations.views_panels.keys())
+        
+        if granularity not in ValidRes:
+          return S_ERROR("Granularity should be in %" %ValidRes)
+        
+        resType = None        
+        if granularity in ('Resource', 'Resources'):
+          resType = rsDB.getMonitoredsStatusWeb(granularity, 
+                                                {'ResourceName':name}, [], 0, 1)['Records'][0][3]
+                                                
+        ig = InfoGetter()
+        infoToGet = ig.getInfoToApply(('view_info', ), None, None, None, 
+                                      None, None, resType, view)[0]['Panels']
+        
+        cc = CommandCaller() 
+        
+        infoToGet_res = []
+        
+        for panel in infoToGet.keys():
+          infoForPanel = infoToGet[panel]
+          
+          infoForPanel_res = []
+          
+          for info in infoForPanel:
+            policyResToGet = info.keys()[0]
+            pol_res = rsDB.getPolicyRes(name, policyResToGet)
+            
+            othersInfo = info.values()[0]
+            if not isinstance(othersInfo, list):
+              othersInfo = [othersInfo]
+            
+            extra = None
+            
+            info_res = []
+            
+            for oi in othersInfo:
+              
+              format = oi.keys()[0]
+              what = oi.values()[0]
+              
+              if format == 'RSS':
+                
+                paramsL = ['Status']
+
+                siteName = None
+                serviceName = None
+                
+                if what == 'ServiceOfSite':
+                  gran = 'Service'
+                  siteName = name
+                elif what == 'ResOfCompService':
+                  gran = 'Resources'
+                  serviceName = 'Computing@' + name
+                elif what == 'ResOfStorService':
+                  gran = 'Resources'
+                  serviceName = 'Storage@' + name
+                elif what == 'StorageElementsOfSite':
+                  gran = 'StorageElements'
+                  siteName = name
+
+                info_bit_got = rsDB.getMonitoredsList(gran, paramsList = paramsL, siteName = siteName, 
+                                                      serviceName = serviceName)
+                
+                info_bit_got = [x[0] for x in info_bit_got]
+                
+              else:
+                info_bit_got = cc.commandInvocation(granularity, name, extra, commandIn, 
+                                                    None, what)
+              
+              info_res.append( { format: info_bit_got } )
+              
+            infoForPanel_res.append( {'policy': {policyResToGet: pol_res}, 
+                                      'infos': info_res } )
+            
+          infoToGet_res.append( {panel: infoForPanel_res} )
+            
       except RSSException, x:
         gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.publisher: got view %s for %s" % (granularity_view, name))
-      return S_OK(res)
+      gLogger.info("ResourceStatusHandler.publisher: got view %s for %s" % (view, name))
+      return S_OK(infoToGet_res)
     except Exception, x:
       errorStr = where(self, self.export_publisher)
       gLogger.exception(errorStr,lException=x)

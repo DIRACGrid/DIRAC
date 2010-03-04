@@ -154,9 +154,8 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
         self.assertEqual(res, None)
 
   def test_getPolicyRes(self):
-    for g in ValidRes:
-      res = self.rsDB.getPolicyRes(g, 'XX', 'YY')
-      self.assertEqual(res, [])
+    res = self.rsDB.getPolicyRes('XX', 'YY')
+    self.assertEqual(res, [])
 
   def test_getMonitoredsList(self):
     for g in ValidRes:
@@ -385,9 +384,6 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
     self.assertRaises(InvalidStatus, self.rsDB._addServiceRow, 'Computing@CERN', 'Computing', 'CERN', 'Actives', 'reasons', datetime.utcnow(), datetime.utcnow(), datetime.utcnow() + timedelta(minutes=10), 'Federico')
     self.assertRaises(InvalidStatus, self.rsDB.addOrModifyResource, 'CE01', 'CE', 'Computing@CERN', 'CNAF', 'BadStatus', 'test reason', datetime.utcnow(), 'testOP', datetime.utcnow() + timedelta(minutes=10))
     self.assertRaises(InvalidStatus, self.rsDB._addResourcesRow, 'CE01', 'CE', 'Computing@CERN', 'Ferrara', 'Actives', 'reasons', datetime.utcnow(), datetime.utcnow(), datetime.utcnow() + timedelta(minutes=10), 'Federico')
-
-  def test_InvalidRes(self):
-    self.assertRaises(InvalidRes, self.rsDB.getPolicyRes, 'Sittt', 'XX', 'XX')
 
   def test_NotAllowedDate(self):
     self.assertRaises(NotAllowedDate, self.rsDB.addOrModifySite, 'CNAF', 'T1', 'Active', 'test reason', datetime.utcnow(), 'testOP', datetime.utcnow() - timedelta(minutes=10))

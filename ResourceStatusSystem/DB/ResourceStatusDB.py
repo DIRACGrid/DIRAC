@@ -2004,23 +2004,17 @@ class ResourceStatusDB:
     
 #############################################################################
 
-  def getPolicyRes(self, granularity, name, policyName):
+  def getPolicyRes(self, name, policyName):
     """ 
     Get a Policy Result from the PolicyRes table.
     
     :params:
-      :attr:`granularity`: string - a ValidRes
-      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
-    
       :attr:`name`: string - name of the ValidRes
       
       :attr:`policyName`: string - the policy name
     """
     
-    if granularity not in ValidRes:
-      raise InvalidRes, where(self, self.getPolicyRes)
-    
-    req = "SELECT Status, Reason FROM PolicyRes WHERE Granularity = '%s' AND " %(granularity)
+    req = "SELECT Status, Reason FROM PolicyRes WHERE "
     req = req + "Name = '%s' AND PolicyName = '%s'" %(name, policyName)
 
     resQuery = self.db._query(req)

@@ -24,14 +24,26 @@ class ResourceStatusDB:
   def __init__(self, *args, **kwargs):
     pass
 
-  def getMonitoredsList(self, granularity, paramsList = None, siteName = None, serviceName = None, resourceName = None, storageElementName = None, status = None, siteType = None, resourceType = None, serviceType = None):
-    return []
+  def getMonitoredsList(self, granularity, paramsList = None, siteName = None, 
+                        serviceName = None, resourceName = None, storageElementName = None,
+                        status = None, siteType = None, resourceType = None, serviceType = None):
+    return [('Banned',), ('Active',)]
   
   def getMonitoredsStatusWeb(self, granularity, selectDict, sortList, startItem, maxItems):
-    return {'TotalRecords': 1, 
-            'ParameterNames': ['SiteName', 'Tier', 'GridType', 'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason'], 
-            'Extras': None, 
-            'Records': [['LCG.Ferrara.it', 'T2', 'LCG', 'it', 'Active', '2009-12-15 12:47:31', 'Banned', 'DT:None|PilotsEff:Good']]}
+    if granularity in ('Resource', 'Resources'):
+      return {'TotalRecords': 1, 
+              'ParameterNames': ['ResourceName', 'Status', 'SiteName', 'ResourceType', 'Country', 
+                                 'DateEffective', 'FormerStatus', 'Reason'], 
+              'Extras': None, 
+              'Records': [['grid0.fe.infn.it', 'Active', 'LCG.Ferrara.it', 'CE', 'it', 
+                           '2009-12-15 12:47:31', 'Banned', 'DT:None|PilotsEff:Good']]}
+    else:
+      return {'TotalRecords': 1, 
+              'ParameterNames': ['SiteName', 'Tier', 'GridType', 'Country', 'Status', 
+                                 'DateEffective', 'FormerStatus', 'Reason'], 
+              'Extras': None, 
+              'Records': [['LCG.Ferrara.it', 'T2', 'LCG', 'it', 'Active', 
+                           '2009-12-15 12:47:31', 'Banned', 'DT:None|PilotsEff:Good']]}
   
   def getMonitoredsHistory(self, granularity, paramsList = None, name = None):
     return []
@@ -60,13 +72,16 @@ class ResourceStatusDB:
   def setResourceStatus(self, resourceName, status, reason, operatorCode):
     pass
   
-  def addOrModifyResource(self, resourceName, resourceType, serviceName, siteName, status, reason, dateEffective, operatorCode, dateEnd):
+  def addOrModifyResource(self, resourceName, resourceType, serviceName, siteName, status, 
+                          reason, dateEffective, operatorCode, dateEnd):
     pass
   
-  def _addResourcesRow(self, resourceName, resourceType, serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+  def _addResourcesRow(self, resourceName, resourceType, serviceName, siteName, status, 
+                       reason, dateCreated, dateEffective, dateEnd, operatorCode):
     pass
   
-  def _addResourcesHistoryRow(self, resourceName, serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+  def _addResourcesHistoryRow(self, resourceName, serviceName, siteName, status, reason, 
+                              dateCreated, dateEffective, dateEnd, operatorCode):
     pass
   
   def addType(self, granularity, type, description=''):
@@ -78,13 +93,16 @@ class ResourceStatusDB:
   def setServiceStatus(self, serviceName, status, reason, operatorCode):
     pass
   
-  def addOrModifyService(self, serviceName, serviceType, siteName, status, reason, dateEffective, operatorCode, dateEnd):
+  def addOrModifyService(self, serviceName, serviceType, siteName, status, reason, 
+                         dateEffective, operatorCode, dateEnd):
     pass
   
-  def _addServiceRow(self, serviceName, serviceType, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+  def _addServiceRow(self, serviceName, serviceType, siteName, status, reason, 
+                     dateCreated, dateEffective, dateEnd, operatorCode):
     pass
   
-  def _addServiceHistoryRow(self, serviceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+  def _addServiceHistoryRow(self, serviceName, siteName, status, reason, dateCreated, 
+                            dateEffective, dateEnd, operatorCode):
     pass
 
   def removeService(self, serviceName = None, siteName = None):
@@ -99,13 +117,16 @@ class ResourceStatusDB:
   def setStorageElementStatus(self, storageElementName, status, reason, operatorCode):
     pass
 
-  def addOrModifyStorageElement(self, storageElementName, resourceName, siteName, status, reason, dateEffective, operatorCode, dateEnd):
+  def addOrModifyStorageElement(self, storageElementName, resourceName, siteName, 
+                                status, reason, dateEffective, operatorCode, dateEnd):
     pass
 
-  def _addStorageElementRow(self, storageElementName, resourceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+  def _addStorageElementRow(self, storageElementName, resourceName, siteName, status, 
+                            reason, dateCreated, dateEffective, dateEnd, operatorCode):
     pass
 
-  def _addStorageElementHistoryRow(self, storageElementName, resourceName, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+  def _addStorageElementHistoryRow(self, storageElementName, resourceName, siteName,
+                                    status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
     pass
 
   def removeStorageElement(self, storageElementName = None, resourceName = None, siteName = None):
@@ -146,8 +167,8 @@ class ResourceStatusDB:
                            status, reason, dateEffective = None):
     pass
   
-  def getPolicyRes(self, granularity, name, policyName):
-    return ()
+  def getPolicyRes(self, name, policyName):
+    return ('Active', 'DT:None')
   
   def transact2History(self, *args):
     pass

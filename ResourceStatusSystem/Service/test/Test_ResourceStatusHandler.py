@@ -7,6 +7,7 @@ import DIRAC.ResourceStatusSystem.test.fake_rsDB
 import DIRAC.ResourceStatusSystem.test.fake_Logger
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+from DIRAC.ResourceStatusSystem.Policy import Configurations
 
 class ResourceStatusHandlerTestCase(unittest.TestCase):
   """ Base class for the RS2history test cases
@@ -22,6 +23,8 @@ class ResourceStatusHandlerTestCase(unittest.TestCase):
     a = Mock()
     initializeResourceStatusHandler(a)
     self.rsh = ResourceStatusHandler('', '', '')
+    
+    self.mock_command = Mock()
             
 class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
   
@@ -221,8 +224,13 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     for g_1 in ValidRes:
       for g_2 in ValidRes:
         res = self.rsh.export_getGeneralName(g_1, 'XX', g_2)
-        self.assert_(res['OK'])
+        
     
+  def test_export_publisher(self):
+    self.mock_command.doCommand.return_value = 'a fake link'
+    for (g, v) in ( ('Site', 'Site_View'), ('Resource', 'Resource_View'), ('StorageElement', 'SE_View') ):
+      res = self.rsh.export_publisher(g, 'XX', v, self.mock_command)
+      self.assert_(res['OK'])
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusHandlerTestCase)
