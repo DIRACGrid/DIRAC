@@ -151,7 +151,7 @@ class ResourceStatusDB:
     elif granularity in ('Resource', 'Resources'):
       DBname = 'ResourceName'
       DBtable = 'PresentResources'
-      getInfo = getInfo + ['SiteName', 'ResourceName', 'ResourceType']
+      getInfo = getInfo + ['SiteName', 'ServiceName', 'ResourceName', 'ResourceType']
     elif granularity in ('StorageElement', 'StorageElements'):
       DBname = 'StorageElementName'
       DBtable = 'PresentStorageElements'

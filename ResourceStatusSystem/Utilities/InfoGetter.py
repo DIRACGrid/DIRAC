@@ -9,8 +9,7 @@ __RCSID__ = "$Id:  $"
 
 
 class InfoGetter:
-  """ Class InfoGetter is in charge of getting dispersed information,
-      to be published on the web.
+  """ Class InfoGetter is in charge of getting information from the RSS Configurations
   """
 
 #############################################################################

@@ -20,14 +20,20 @@ from DIRAC.Core.Utilities import Time
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
-from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
+#from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
+from DIRAC.ResourceStatusSystem.Utilities.Publisher import Publisher 
 from DIRAC.ResourceStatusSystem.Client.Command.CommandCaller import CommandCaller
 
 rsDB = False
 
 def initializeResourceStatusHandler(serviceInfo):
+  
   global rsDB
   rsDB = ResourceStatusDB()
+
+  global publisher
+  publisher = Publisher()
+
   gConfig.addListenerToNewVersionEvent( rsDB.syncWithCS )
   return S_OK()
 
@@ -1336,7 +1342,7 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
-  types_publisher = [StringType, StringType, StringType, ObjectType]
+  types_publisher = [StringType, StringType, StringType, NoneType]
   def export_publisher(self, granularity, name, view, commandIn = None):
     """ get a view
     
@@ -1356,76 +1362,7 @@ class ResourceStatusHandler(RequestHandler):
         if granularity not in ValidRes:
           return S_ERROR("Granularity should be in %" %ValidRes)
         
-        resType = None        
-        if granularity in ('Resource', 'Resources'):
-          resType = rsDB.getMonitoredsStatusWeb(granularity, 
-                                                {'ResourceName':name}, [], 0, 1)['Records'][0][3]
-                                                
-        ig = InfoGetter()
-        infoToGet = ig.getInfoToApply(('view_info', ), None, None, None, 
-                                      None, None, resType, view)[0]['Panels']
-        
-        cc = CommandCaller() 
-        
-        infoToGet_res = []
-        
-        for panel in infoToGet.keys():
-          infoForPanel = infoToGet[panel]
-          
-          infoForPanel_res = []
-          
-          for info in infoForPanel:
-            policyResToGet = info.keys()[0]
-            pol_res = rsDB.getPolicyRes(name, policyResToGet)
-            
-            othersInfo = info.values()[0]
-            if not isinstance(othersInfo, list):
-              othersInfo = [othersInfo]
-            
-            extra = None
-            
-            info_res = []
-            
-            for oi in othersInfo:
-              
-              format = oi.keys()[0]
-              what = oi.values()[0]
-              
-              if format == 'RSS':
-                
-                paramsL = ['Status']
-
-                siteName = None
-                serviceName = None
-                
-                if what == 'ServiceOfSite':
-                  gran = 'Service'
-                  siteName = name
-                elif what == 'ResOfCompService':
-                  gran = 'Resources'
-                  serviceName = 'Computing@' + name
-                elif what == 'ResOfStorService':
-                  gran = 'Resources'
-                  serviceName = 'Storage@' + name
-                elif what == 'StorageElementsOfSite':
-                  gran = 'StorageElements'
-                  siteName = name
-
-                info_bit_got = rsDB.getMonitoredsList(gran, paramsList = paramsL, siteName = siteName, 
-                                                      serviceName = serviceName)
-                
-                info_bit_got = [x[0] for x in info_bit_got]
-                
-              else:
-                info_bit_got = cc.commandInvocation(granularity, name, extra, commandIn, 
-                                                    None, what)
-              
-              info_res.append( { format: info_bit_got } )
-              
-            infoForPanel_res.append( {'policy': {policyResToGet: pol_res}, 
-                                      'infos': info_res } )
-            
-          infoToGet_res.append( {panel: infoForPanel_res} )
+        infoToGet_res = publisher.getInfo(granularity, name, view, commandIn, rsDB)
             
       except RSSException, x:
         gLogger.error(whoRaised(x))
