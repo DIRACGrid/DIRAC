@@ -916,12 +916,10 @@ class ReplicaManager(CatalogToStorage):
       errStr = "ReplicaManager.__getClientCertGroup: Proxy information does not contain the group."
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    if not getVOMSAttributeForGroup(proxyInfo['group']):
-      proxyInfo['VOMS'] = ''
-    elif not proxyInfo.has_key('VOMS'):
+    if not proxyInfo.has_key('VOMS'):
+      proxyInfo['VOMS'] = getVOMSAttributeForGroup(proxyInfo['group'])
       errStr = "ReplicaManager.__getClientCertGroup: Proxy information does not contain the VOMs information."     
-      gLogger.error(errStr)
-      return S_ERROR(errStr)
+      gLogger.warn(errStr)
     res = getDNForUsername(proxyInfo['username'])
     if not res['OK']:
       errStr = "ReplicaManager.__getClientCertGroup: Error getting known proxies for user."
