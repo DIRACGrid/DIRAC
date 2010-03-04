@@ -18,10 +18,8 @@ proxyInfo = res['Value']
 username = proxyInfo['username']
 
 try:
-  quota = gConfig.getValue('/Registry/Users/%s/Quota' % username,0)
-  if not quota:
-    quota = gConfig.getValue('/Registry/DefaultStorageQuota')
-  quota = float(quota)
+  quota = gConfig.getValue('/Registry/DefaultStorageQuota', 0. )
+  quota = gConfig.getValue('/Registry/Users/%s/Quota' % username, quota )
   gLogger.info('Current quota found to be %.1f GB' % quota)
   DIRAC.exit(0)
 except Exception,x:
