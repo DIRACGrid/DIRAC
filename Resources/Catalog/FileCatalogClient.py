@@ -24,3 +24,6 @@ class FileCatalogClient(Client):
 
   def getReplicas( self, lfns, allStatus='allStatus' ):
     return RPCClient(self.serverURL).getReplicas(lfns)
+
+  def listDirectory(self, lfn, verbose=False ):
+    return RPCClient(self.serverURL).listDirectory(lfn,verbose)
