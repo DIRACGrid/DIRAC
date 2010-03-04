@@ -14,23 +14,21 @@ def pfnunparse(pfnDict):
       fullPath = pfnDict['FileName']
     fullPath = os.path.realpath(fullPath)
 
+    port = pfnDict.get('Port')
+    wsUrl = pfnDict.get('WSUrl')
+    pfnHost = pfnDict['Host']
     # If they have a port they must also have a host...
-    if pfnDict['Port']:
-      pfnHost ="%s:%s" % (pfnDict['Host'],pfnDict['Port'])
+    if port:
+      pfnHost ="%s:%s" % (pfnHost,port)
       # pfnHost = 'host:port'
       # If there is a port then there may be a web service url
-      if pfnDict['WSUrl']:
-        if re.search( '\?.*=', pfnDict['WSUrl'] ) :
-          pfnHost = "%s%s" % (pfnHost,pfnDict['WSUrl'])
+      if wsUrl:
+        if re.search( '\?.*=', wsUrl ) :
+          pfnHost = "%s%s" % (pfnHost,wsUrl)
         else:
-          pfnHost = "%s%s?=" % (pfnHost,pfnDict['WSUrl'])
+          pfnHost = "%s%s?=" % (pfnHost,wsUrl)
         #pfnHost = 'host:port/wsurl'
-    else:
-      # It is possible that the host is an empty string
-      pfnHost = pfnDict['Host']
-      #pfnHost = 'host'
-      #pfnHost = ''
-
+      
     # But, if the host is not an empty string we must put a protocol infront of it...
     if pfnHost:
       pfnHost = "%s://%s" % (pfnDict['Protocol'],pfnHost)
