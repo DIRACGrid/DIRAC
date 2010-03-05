@@ -19,10 +19,10 @@ DIRACROOT = rootPath
 def initializeSystemAdministratorHandler( serviceInfo ):
 
   global cmDB
-  try:
-    cmDB = ComponentMonitoringDB()
-  except Exception,x:
-    gLogger.warn('Failed to create an instance of ComponentMonitoringDB ')
+  #try:
+  #  cmDB = ComponentMonitoringDB()
+  #except Exception,x:
+  #  gLogger.warn('Failed to create an instance of ComponentMonitoringDB ')
   return S_OK()
 
 
