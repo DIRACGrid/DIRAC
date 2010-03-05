@@ -9,7 +9,6 @@ __RCSID__ = "$Id$"
 
 from tempfile import mkdtemp
 import shutil, os
-from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 
@@ -72,7 +71,13 @@ def getPilotOutput( proxy, grid, pilotRef ):
 
   # LCG always creates an unique sub-directory
   # gLite does it too now
-  tmp_dir = os.path.join(tmp_dir,os.listdir(tmp_dir)[0])
+  result = executeGridCommand( proxy, ['glite-version'], gridEnv )  
+  if not result['OK']:
+    shutil.rmtree(tmp_dir)
+    return result
+  status,output,error = result['Value']
+  if output.find('3.2') != -1:
+    tmp_dir = os.path.join(tmp_dir,os.listdir(tmp_dir)[0])
 
   result = S_OK()
   result['FileList'] = outputSandboxFiles
