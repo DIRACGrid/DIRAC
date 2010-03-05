@@ -10,11 +10,10 @@ __RCSID__ = "$Id$"
 import time
 from types import *
 from DIRAC.Core.Security import Properties
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gConfig
 
-class UserAndGroupManager:
-  
-  
+class UserAndGroupManagerBase:
+
   def getUserAndGroupRight(self, credDict):
     """ Evaluate rights for user and group operations
     """
@@ -22,6 +21,8 @@ class UserAndGroupManager:
       return S_OK(True)
     else:
       return S_OK(False)
+
+class UserAndGroupManagerDB(UserAndGroupManagerBase):
 
   def getUserAndGroupID(self, credDict):
     """ Get a uid, gid tuple for the given Credentials
@@ -101,7 +102,6 @@ class UserAndGroupManager:
 #####################################################################
   def getUsers(self, credDict):
     return self.__getUsers()  
- 
 
 #####################################################################
   def __getUsers(self):
@@ -261,7 +261,6 @@ class UserAndGroupManager:
   def getGroupName(self,gid):
     """ Get group name for the given id
     """   
-    
     if gid in self.groups:
       return S_OK(self.groups[gid])
     else:
@@ -277,3 +276,83 @@ class UserAndGroupManager:
       return S_OK(gname)
     else:
       return S_ERROR('Group id %d not found' % gid)  
+
+class UserAndGroupManagerCS(UserAndGroupManagerBase):
+
+  def getUserAndGroupID(self,credDict):
+    user = credDict.get('username','') 
+    group = credDict.get('group','')
+    return S_OK((user,group))
+
+  #####################################################################
+  #
+  #  User related methods
+  #
+  #####################################################################
+
+  def addUser(self,name,credDict):
+    result = self.getUserAndGroupRight(credDict)
+    if not result['Value']:
+      return S_ERROR('Permission denied')    
+    return S_OK(name)
+
+  def deleteUser(self,name,credDict,force=True):
+    result = self.getUserAndGroupRight(credDict)
+    if not result['Value']:
+      return S_ERROR('Permission denied')
+    return S_OK()
+
+  def getUsers(self, credDict):
+    res = gConfig.getSections('/Registry/Users')    
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      return S_ERROR("No users defined")
+    userDict = {}
+    for user in res['Value']:
+      userDict[user] = user
+    return S_OK(userDict)
+
+  def getUserName(self,uid):
+    return S_OK(uid)
+
+  def findUser(self,user):
+    return S_OK(user)
+
+  #####################################################################
+  #
+  #  Group related methods
+  #
+  #####################################################################
+
+  def addGroup(self,gname,credDict,gid=0):
+    result = self.getUserAndGroupRight(credDict)
+    if not result['Value']:
+      return S_ERROR('Permission denied')
+    return S_OK(gname)
+
+  def deleteGroup(self,gname,credDict):
+    result = self.getUserAndGroupRight(credDict)
+    if not result['Value']:
+      return S_ERROR('Permission denied')
+    return S_OK()
+
+  def getGroups(self, credDict):
+    res = gConfig.getSections('/Registry/Groups')
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      return S_ERROR("No groups defined")
+    groupDict = {}
+    for group in res['Value']: 
+      groupDict[group] = group
+    return S_OK(groupDict)
+
+  def getGroupName(self,gid):
+    return S_OK(gid)
+
+  def findGroup(self,group):
+    return S_OK(group)
+
+class UserAndGroupManager(UserAndGroupManagerDB):
+  pass
