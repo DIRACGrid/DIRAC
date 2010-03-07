@@ -20,12 +20,12 @@ from DIRAC.DataManagementSystem.Client.FileCatalogClientCLI import FileCatalogCl
 
 if fcType == "LFC":
   from DIRAC.Resources.Catalog.LcgFileCatalogClient import LcgFileCatalogClient
+  cli = FileCatalogClientCLI(LcgFileCatalogClient())
   try:
     host = os.environ['LFC_HOST']
   except Exception,x:
     print "LFC_HOST environment variable not defined"
     sys.exit(1)
-  cli = FileCatalogClientCLI(LcgFileCatalogClient(host=host))
   print "Starting LFC FileCatalog client"
   cli.cmdloop()
 elif fcType == "LFCProxy":
