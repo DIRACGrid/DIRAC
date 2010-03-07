@@ -719,7 +719,7 @@ class SystemAdministratorHandler( RequestHandler ):
   def export_updateSoftware(self,version):
     """ Update the local DIRAC software installation to version
     """
-    result = shellCall(0,DIRACROOT+'/DIRAC/Core/scripts/update_sw.sh %s' % version)
+    result = shellCall(0,DIRACROOT+'/scripts/update_sw.sh %s' % version)
     return result
   
   def __createSection(self,cfg,section):
