@@ -14,9 +14,6 @@
 # User allowed to execute the script
 DIRACUSER=dirac
 #
-# Location of the installation
-DESTDIR=/opt/dirac
-#
 # DIRAC software version
 DIRACVERSION=$1
 if [ -z "$DIRACVERSION" ]; then
@@ -24,10 +21,16 @@ if [ -z "$DIRACVERSION" ]; then
   exit 1
 fi  
 #
+# Location of the installation
+script=`which update_sw.sh`
+script=`dirname $script`
+script=`dirname $script`
+DESTDIR=`dirname $script` 
+#
 # Use the following extensions
 EXTENSION=$2
 if [ -z "$EXTENSION" ]; then
-  EXTENSION=`ls /opt/dirac/pro | grep 'DIRAC$' | sed 's/DIRAC//'`  
+  EXTENSION=`ls ${DESTDIR}/pro | grep 'DIRAC$' | sed 's/DIRAC//'`  
 fi  
 #
 # Install Web Portal flag
@@ -156,6 +159,6 @@ done
 #
 # Fix mysql.server to make it point to the actual db directory
 #
-sed -i "s:^datadir=.*:datadir=/opt/dirac/mysql/db:" /opt/dirac/pro/mysql/share/mysql/mysql.server
+sed -i "s:^datadir=.*:datadir=${DESTDIR}/mysql/db:" ${DESTDIR}/pro/mysql/share/mysql/mysql.server
 
 [ $ORACLE_CLIENT -eq 0 ] && $DESTDIR/pro/scripts/install_oracle-client.sh
