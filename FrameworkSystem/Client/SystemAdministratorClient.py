@@ -163,7 +163,9 @@ class SystemAdministratorClient(Client):
     else:
       pword = password  
     server = RPCClient(self.serverURL)
-    return server.getDatabases(pword)    
+    result = server.getDatabases(pword)
+    result['MySQLPassword'] = pword    
+    return result
   
   def installMySQL(self,rootpwd=None,diracpwd=None):
     """ Install the MySQL database on the server side
@@ -178,7 +180,9 @@ class SystemAdministratorClient(Client):
       dpword = diracpwd
       
     server = RPCClient(self.serverURL)
-    return server.installMySQL(rpword,dpword)
+    result = server.installMySQL(rpword,dpword)
+    result['MySQLPassword'] = rpword    
+    return result
   
   def installDatabase(self,database,rootpwd=None):
     """ Install the MySQL database on the server side
@@ -189,7 +193,9 @@ class SystemAdministratorClient(Client):
       rpword = rootpwd
       
     server = RPCClient(self.serverURL)
-    return server.installDatabase(rpword,database)      
+    result = server.installDatabase(rpword,database)      
+    result['MySQLPassword'] = rpword    
+    return result
   
   def __getInstance(self,system):
     """ Get the name of the local instance of the given system

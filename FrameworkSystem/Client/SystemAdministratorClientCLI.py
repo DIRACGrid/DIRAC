@@ -25,6 +25,7 @@ class SystemAdministratorClientCLI(cmd.Cmd):
     self.prompt = 'nohost >'
     if self.host:
       self.prompt = '%s >' % self.host
+    self.rootPwd = ''  
     
   def do_set(self,args):
     """ Set the host to be managed
@@ -53,6 +54,7 @@ class SystemAdministratorClientCLI(cmd.Cmd):
           show database
           show mysql
           show log <system> <service|agent>
+          show info    - show version of software and setup
     """
     
     argss = args.split()
@@ -99,12 +101,16 @@ class SystemAdministratorClientCLI(cmd.Cmd):
               print  
     elif option == 'database' or option == 'databases':
       client = SystemAdministratorClient(self.host)
-      result = client.getDatabases()
+      result = client.getDatabases(self.rootPwd)
       if not result['OK']:
         print "ERROR:",result['Message']
+        return
+      if result.has_key('MySQLPassword'):
+        self.rootPwd = result['MySQLPassword']  
       resultSW = client.getSoftwareDatabases()
       if not resultSW['OK']:
         print "ERROR:",resultSW['Message']
+        return
         
       sw = resultSW['Value']
       installed = result['Value']
@@ -128,6 +134,16 @@ class SystemAdministratorClientCLI(cmd.Cmd):
         print "No MySQL database found"        
     elif option == "log":
       self.getLog(argss)         
+    elif option == "info":
+      client = SystemAdministratorClient(self.host)
+      result = client.getInfo()
+      if not result['OK']:
+        print "ERROR:",result['Message']
+      print "Setup:", result['Value']['Setup'] 
+      print "DIRAC version:",result['Value']['DIRAC']
+      if result['Value']['Extensions']:
+        for e,v in result['Value']['Extensions'].items():
+          print "%s version" % e,v
     else:
       print "Unknown option:",option          
       
@@ -165,18 +181,22 @@ class SystemAdministratorClientCLI(cmd.Cmd):
     del argss[0]
     if option == "mysql":
       client = SystemAdministratorClient(self.host)
-      result = client.installMySQL()
+      result = client.installMySQL(self.rootPwd)
       if not result['OK']:
         print "ERROR:",result['Message']
       else:
         print "MySQL installed successfully"  
+        if result.has_key('MySQLPassword'):
+          self.rootPwd = result['MySQLPassword']  
     elif option == "db":
       database = argss[0]
       client = SystemAdministratorClient(self.host)
-      result = client.installDatabase(database)
+      result = client.installDatabase(database,self.rootPwd)
       if not result['OK']:
         print "ERROR:",result['Message']
         return
+      if result.has_key('MySQLPassword'):
+        self.rootPwd = result['MySQLPassword'] 
       extension,system = result['Value']
       result = client.addCSDatabaseOptions(system,database,self.host)
       if not result['OK']:
