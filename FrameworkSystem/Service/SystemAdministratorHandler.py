@@ -73,7 +73,7 @@ class SystemAdministratorHandler( RequestHandler ):
     resultDict['Agents'] = agents   
     return S_OK(resultDict)    
   
-  types_getVersion = [ ]
+  types_getInfo = [ ]
   def export_getInfo(self):
     """  Get versions of the installed DIRAC software and extensions, setup of the
          local installation
