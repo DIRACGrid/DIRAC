@@ -37,7 +37,7 @@ def getVersion():
   for e in extensions['Value']:
     try: 
       exec "import %sDIRAC" % e
-      version = "%sDIRAC " % e + eval('%sDIRAC.version' % e) +'; '+ version
+      version = eval('%sDIRAC.version' % e)
       vDict['Extensions'][e] = version
     except ImportError:
       pass
