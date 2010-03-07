@@ -82,7 +82,7 @@ class SystemAdministratorHandler( RequestHandler ):
     if not result['OK']:
       return result
     rDict = result['Value']
-    rDict['Setup'] = gLogger.getValue('/DIRAC/Setup','Unknown')
+    rDict['Setup'] = gConfig.getValue('/DIRAC/Setup','Unknown')
     return S_OK(rDict)
 
   types_getSoftwareComponents = [ ]
