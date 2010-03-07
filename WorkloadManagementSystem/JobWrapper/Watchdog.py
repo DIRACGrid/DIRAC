@@ -101,7 +101,7 @@ class Watchdog:
       self.log.info( 'Requested CheckingTime of %s setting to %s seconds (minimum)' % ( self.checkingTime, self.minCheckingTime ) )
       self.checkingTime = self.minCheckingTime
 
-    # The time left is returned in seconds @ 500 SI00,
+    # The time left is returned in seconds @ 250 SI00 = 1 HS09,
     # the self.checkingTime and self.pollingTime are in seconds,
     # thus they need to be multiplied by a large enough factor
     self.grossTimeLeftLimit = 10 * self.checkingTime
@@ -253,7 +253,7 @@ class Watchdog:
           border += '='
         cpuTotal = 'Last reported CPU consumed for job is %s (h:m:s)' % ( hmsCPU )
         if self.timeLeft:
-          cpuTotal += ', Batch Queue Time Left %s (s @ 500 SI00)' % self.timeLeft
+          cpuTotal += ', Batch Queue Time Left %s (s @ HS09)' % self.timeLeft
         recentStdOut = '\n%s\n%s\n%s\n%s\n' % ( border, recentStdOut, cpuTotal, border )
         self.log.info( recentStdOut )
         for line in outputList:

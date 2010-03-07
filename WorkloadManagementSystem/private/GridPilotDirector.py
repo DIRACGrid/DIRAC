@@ -16,7 +16,7 @@ __RCSID__ = "$Id$"
 
 
 GRIDENV                = ''
-TIME_POLICY            = 'TimeRef * 500 / other.GlueHostBenchmarkSI00 / 60'
+TIME_POLICY            = 'TimeRef * 250 / other.GlueHostBenchmarkSI00 / 60'
 REQUIREMENTS           = ['Rank > -2']
 RANK                   = '( other.GlueCEStateWaitingJobs == 0 ? other.GlueCEStateFreeCPUs * 10 / other.GlueCEInfoTotalCPUs : -other.GlueCEStateWaitingJobs * 4 / (other.GlueCEStateRunningJobs + 1 ) - 1 )'
 FUZZY_RANK             = 'true'

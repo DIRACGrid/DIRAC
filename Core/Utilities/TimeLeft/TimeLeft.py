@@ -29,14 +29,14 @@ class TimeLeft:
     self.log = gLogger.getSubLogger('TimeLeft')
     # FIXME: Why do we need to load any .cfg file here????
     self.__loadLocalCFGFiles()
-    # This is the ratio SpecInt published by the site over 500 (the reference used for Matching)
+    # This is the ratio SpecInt published by the site over 250 (the reference used for Matching)
     self.scaleFactor = gConfig.getValue('/LocalSite/CPUScalingFactor',0.0)
     if not self.scaleFactor:
       self.log.warn( '/LocalSite/CPUScalingFactor not defined for site %s' % DIRAC.siteName() )
     self.cpuMargin = gConfig.getValue('/LocalSite/CPUMargin',10) #percent
 
   def getScaledCPU(self):
-    """Returns the current CPU Time spend (accoriding to batch system) scaled according 
+    """Returns the current CPU Time spend (according to batch system) scaled according 
        to /LocalSite/CPUScalingFactor
     """
     #Quit if no scale factor available

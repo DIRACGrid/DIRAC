@@ -61,7 +61,7 @@ for ceUniqueID in args:
   
   if maxCPUTime and benchmarkSI00:
     # To get to the Current LHCb 
-    normCPUTime = 60. / 500. * maxCPUTime * benchmarkSI00
+    normCPUTime = 60. / 250. * maxCPUTime * benchmarkSI00
     resultList[ceUniqueID] = normCPUTime
     print ceUniqueID, normCPUTime
   else:
