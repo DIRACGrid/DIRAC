@@ -11,6 +11,7 @@ from DIRAC import S_OK, S_ERROR, gConfig, gLogger, shellCall, rootPath
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.FrameworkSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
 from DIRAC.Core.Utilities.CFG import CFG
+from DIRAC.Core.Utilities.Version import getVersion
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 cmDB = None
@@ -71,6 +72,13 @@ class SystemAdministratorHandler( RequestHandler ):
     resultDict['Services'] = services
     resultDict['Agents'] = agents   
     return S_OK(resultDict)    
+  
+  types_getVersion = [ ]
+  def export_getVersion(self):
+    """  Get versions of the installed DIRAC software and extensions
+    """     
+    result = getVersion()
+    return result
 
   types_getSoftwareComponents = [ ]
   def export_getSoftwareComponents(self):
