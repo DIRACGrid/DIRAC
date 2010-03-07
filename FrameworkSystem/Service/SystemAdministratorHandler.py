@@ -74,11 +74,16 @@ class SystemAdministratorHandler( RequestHandler ):
     return S_OK(resultDict)    
   
   types_getVersion = [ ]
-  def export_getVersion(self):
-    """  Get versions of the installed DIRAC software and extensions
+  def export_getInfo(self):
+    """  Get versions of the installed DIRAC software and extensions, setup of the
+         local installation
     """     
     result = getVersion()
-    return result
+    if not result['OK']:
+      return result
+    rDict = result['Value']
+    rDict['Setup'] = gLogger.getValue('/DIRAC/Setup','Unknown')
+    return S_OK(rDict)
 
   types_getSoftwareComponents = [ ]
   def export_getSoftwareComponents(self):
