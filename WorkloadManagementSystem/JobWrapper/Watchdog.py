@@ -421,7 +421,7 @@ class Watchdog:
 
       self.log.info( "CPU/Wallclock ratio is %.2f%%" % ratio )
       # in case of error cpuTime might be 0, exclude this
-      if ratio and ratio < self.minCPUWallClockRatio:
+      if wallClockTime and ratio < self.minCPUWallClockRatio:
         self.log.info( "Job is stalled!" )
         return S_ERROR( 'Watchdog identified this job as stalled' )
     except Exception, e:
