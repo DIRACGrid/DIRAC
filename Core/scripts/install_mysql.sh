@@ -1,6 +1,5 @@
 #!/bin/bash -x
 
-DESTDIR=$1
 if [ -z "$DESTDIR" ]
 then
   DESTDIR=/opt/dirac
