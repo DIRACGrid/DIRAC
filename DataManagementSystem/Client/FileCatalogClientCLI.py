@@ -433,7 +433,11 @@ File Catalog Client $Revision: 1.17 $Date:
         path = argss[0]       
         if path[0] != '/':
           path = self.cwd+'/'+path      
-    path = path.replace(r'//','/')  
+    path = path.replace(r'//','/')
+
+    # remove last character if it is "/"    
+    if path[-1] == '/':
+      path = path[:-1]
     
     # Get directory contents now
     try:
@@ -443,7 +447,9 @@ File Catalog Client $Revision: 1.17 $Date:
       if result['OK']:
         if result['Value']['Successful']:
           for entry in result['Value']['Successful'][path]['Files']:
-            fname = entry.replace(self.cwd,'').replace('/','')
+            fname = entry.split('/')[-1]
+            # print entry, fname
+            # fname = entry.replace(self.cwd,'').replace('/','')
             if long:
               fileDict = result['Value']['Successful'][path]['Files'][entry]
               if fileDict:
@@ -451,7 +457,9 @@ File Catalog Client $Revision: 1.17 $Date:
             else:  
               print fname
           for entry in result['Value']['Successful'][path]['SubDirs']:
-            dname = entry.replace(self.cwd,'').replace('/','')  
+            dname = entry.split('/')[-1]
+            # print entry, dname
+            # dname = entry.replace(self.cwd,'').replace('/','')  
             if long:
               dirDict = result['Value']['Successful'][path]['SubDirs'][entry]
               if dirDict:
@@ -719,4 +727,3 @@ if __name__ == "__main__":
         cli.cmdloop()  
       else:
         print "Unknown catalog type", catype
-        
