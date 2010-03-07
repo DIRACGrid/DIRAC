@@ -512,6 +512,7 @@ if pilotRef != 'Unknown':
         # Update the local normalization factor: We are using seconds @ 250 SI00 = 1 HS09
         # This is the ratio SpecInt published by the site over 250 (the reference used for Matching)
         os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
+        os.system( "%s -f %s -o /LocalSite/CPUNormalizationFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
     else:
       logERROR( 'Fail to get Normalization of the Queue' )
   else:

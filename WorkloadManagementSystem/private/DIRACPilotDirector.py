@@ -189,6 +189,9 @@ class DIRACPilotDirector(PilotDirector):
       if 'CPUScalingFactor' in ceConfigDict:
         pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % ceConfigDict['CPUScalingFactor'] )
 
+      if 'CPUNormalizationFactor' in ceConfigDict:
+        pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % ceConfigDict['CPUNormalizationFactor'] )
+
         self.log.info( "pilotOptions: ", ' '.join(pilotOptions))
 
       httpProxy = ''
