@@ -63,7 +63,7 @@ class TransformationDBClient(Client,FileCatalogueBase):
   """
 
   def __init__(self,name='TransformationDBClient'):
-    self.setServer('Transformation/TransformationHandler')
+    self.setServer('Transformation/TransformationManager')
 
   def setServer(self,url):
     self.serverURL = url

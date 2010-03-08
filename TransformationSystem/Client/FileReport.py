@@ -12,7 +12,7 @@ import copy
 
 class FileReport:
 
-  def __init__(self,server='TransformationSystem/TransformationManager'):
+  def __init__(self,server='Transformation/TransformationManager'):
     self.client = TransformationDBClient()
     self.client.setServer(server)
     self.statusDict = {}
