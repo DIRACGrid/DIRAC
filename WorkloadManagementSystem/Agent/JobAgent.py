@@ -445,7 +445,9 @@ class JobAgent( AgentModule ):
     if not systemConfig or systemConfig.lower() == 'any':
       systemConfig = gConfig.getValue( '/LocalSite/Architecture', '' )
       if not systemConfig:
-        return S_ERROR( 'Could not establish SystemConfig' )
+        #return S_ERROR( 'Could not establish SystemConfig' )
+        self.log.warn( 'Could not establish SystemConfig' )
+
 
     logLevel = self.defaultLogLevel
     if jobParams.has_key( 'LogLevel' ):
