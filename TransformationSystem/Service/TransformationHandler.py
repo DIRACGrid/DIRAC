@@ -315,6 +315,62 @@ class TransformationHandler(RequestHandler):
       resultDict[transID] = transDict
     return S_OK(resultDict)
 
+  def __getTableSummaryWeb(self,table,statusColumn,selectDict,sortList,startItem,maxItems):
+
+    fromDate = selectDict.get('FromDate',None)    
+    if fromDate:
+      del selectDict['FromDate']
+    if not fromDate:
+      fromDate = last_update  
+    toDate = selectDict.get('ToDate',None)    
+    if toDate:
+      del selectDict['ToDate']  
+    # Sorting instructions. Only one for the moment.
+    if sortList:
+      orderAttribute = sortList[0][0]+":"+sortList[0][1]
+    else:
+      orderAttribute = None
+    # Get the columns that match the selection
+    eval("res = self.database.get%s(condDict=selectDict,older=toDate, newer=fromDate, orderAttribute=orderAttribute)" % table)
+    if not res['OK']:
+      return self.__parseRes(res)
+
+    # The full list of columns in contained here
+    allRows = res['Records']
+    # Prepare the standard structure now within the resultDict dictionary
+    resultDict = {}
+    # Create the total records entry
+    resultDict['TotalRecords'] = len(allRows)
+    # Create the ParameterNames entry
+    resultDict['ParameterNames'] = res['ParameterNames']
+    # Find which element in the tuple contains the requested status
+    if not statusColumn in resultDict['ParameterNames']:
+      return S_ERROR("Provided status column not present")
+    statusColumnIndex = resultDict['ParameterNames'].index()
+
+    # Get the rows which are within the selected window
+    if resultDict['TotalRecords'] == 0:
+      return S_OK(resultDict)
+    ini = startItem
+    last = ini + maxItems
+    if ini >= resultDict['TotalRecords']:
+      return S_ERROR('Item number out of range')
+    if last > resultDict['TotalRecords']:
+      last = resultDict['TotalRecords']
+    selectedRows = allRows[ini:last]
+    resultDict['Records'] = selectedRows
+    
+    # Generate the status dictionary
+    statusDict = {}
+    for row in selectedRows:
+      status = row[statusColumnIndex]
+      if not statusDict.has_key(status):
+        statusDict[status]= 0
+      statusDict[status] += 1 
+    resultDict['Extras'] = statusDict
+
+    return S_OK(resultDict)
+
   types_getTransformationSummaryWeb = [DictType, ListType, IntType, IntType]
   def export_getTransformationSummaryWeb(self, selectDict, sortList, startItem, maxItems):
     """ Get the summary of the transformation information for a given page in the generic format """
