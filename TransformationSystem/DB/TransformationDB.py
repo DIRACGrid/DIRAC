@@ -249,20 +249,20 @@ class TransformationDB(DB):
       transIDs.append(tuple[0])
     return S_OK(transIDs)
 
-  def getTableDistinctAttributeValues(self,table,attributes,selectDict,connection=False):
+  def getTableDistinctAttributeValues(self,table,attributes,selectDict,older=None,newer=None,timeStamp=None,connection=False):
     tableFields = { 'Transformations'      : self.TRANSPARAMS,
                     'TransformationTasks'  : self.TASKSPARAMS,
                     'TransformationFiles'  : self.TRANSFILEPARAMS}
     possibleFields = tableFields.get(table,[])
-    return self.__getTableDistinctAttributeValues(table,possibleFields,attributes,selectDict,connection=connection)
+    return self.__getTableDistinctAttributeValues(table,possibleFields,attributes,selectDict,older,newer,timeStamp,connection=connection)
 
-  def __getTableDistinctAttributeValues(self,table,possible,attributes,selectDict,connection=False):
+  def __getTableDistinctAttributeValues(self,table,possible,attributes,selectDict,older,newer,timeStamp,connection=False):
     connection = self.__getConnection(connection)
     attributeValues = {}
     for attribute in attributes:
       if possible and (not attribute in  possible):
         return S_ERROR('Requested attribute (%s) does not exist in table %s' % (attribute,table))
-      res = self.getDistinctAttributeValues(table,attribute,condDict=selectDict,connection=connection)
+      res = self.getDistinctAttributeValues(table,attribute,condDict=selectDict,older=older,newer=newer,timeStamp=timeStamp,connection=connection)
       if not res['OK']:
         return S_ERROR('Failed to serve values for attribute %s in table %s' % (attribute,table))
       attributeValues[attribute] = res['Value']
