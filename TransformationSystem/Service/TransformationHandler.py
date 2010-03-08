@@ -271,15 +271,22 @@ class TransformationHandler(RequestHandler):
     res = self.database.setReplicaHost(replicaTuples)
     return self.__parseRes(res)
 
-
   ####################################################################
   #
   # These are the methods used for web monitoring
   #
     
+  #TODO Get rid of this (talk to Matvey)
   types_getDistinctAttributeValues = [StringTypes, DictType]
   def export_getDistinctAttributeValues(self, attribute, selectDict):
-    res = self.database.getDistinctAttributeValue(attribute,selectDict)
+    res = self.database.getTableDistinctAttributeValues('Transformations',[attribute],selectDict)
+    if not res['OK']:
+      return self.__parseRes(res)
+    return S_OK(res['Value'][attribute])
+
+  types_getTableDistinctAttributeValues = [StringTypes,ListType, DictType]
+  def export_getTableDistinctAttributeValues(self, table, attributes, selectDict):   
+    res = self.database.getTableDistinctAttributeValues(table,attributes,selectDict)
     return self.__parseRes(res)
 
   types_getTransformationStatusCounters = []
@@ -315,13 +322,24 @@ class TransformationHandler(RequestHandler):
       resultDict[transID] = transDict
     return S_OK(resultDict)
 
-  def __getTableSummaryWeb(self,table,statusColumn,selectDict,sortList,startItem,maxItems):
+  types_getTransformationsSummaryWeb = [DictType, ListType, IntType, IntType]
+  def export_getTransformationsSummaryWeb(self,selectDict,sortList,startItem,maxItems):
+    return self.__getTableSummaryWeb('Transformations','Status',selectDict,sortList,startItem,maxItems,selectColumns=['TransformationID','AgentType','Type','Group','Plugin'],timeStamp='CreationDate')
 
+  types_getTransformationTasksSummaryWeb = [DictType, ListType, IntType, IntType]
+  def export_getTransformationTasksSummaryWeb(self,selectDict,sortList,startItem,maxItems):
+    return self.__getTableSummaryWeb('TransformationTasks','ExternalStatus',selectDict,sortList,startItem,maxItems,selectColumns=['TransformationID','ExternalStatus','TargetSE'],timeStamp='CreationTime')
+ 
+  types_getTransformationFilesSummaryWeb = [DictType, ListType, IntType, IntType]
+  def export_getTransformationFilesSummaryWeb(self,selectDict,sortList,startItem,maxItems):
+    return self.__getTableSummaryWeb('TransformationFiles','Status',selectDict,sortList,startItem,maxItems,selectColumns=['TransformationID','Status','UsedSE','TargetSE'],timeStamp='LastUpdate')  
+
+  def __getTableSummaryWeb(self,table,statusColumn,selectDict,sortList,startItem,maxItems,selectColumns=[],timeStamp=None):
     fromDate = selectDict.get('FromDate',None)    
     if fromDate:
       del selectDict['FromDate']
-    if not fromDate:
-      fromDate = last_update  
+    #if not fromDate:
+    #  fromDate = last_update  
     toDate = selectDict.get('ToDate',None)    
     if toDate:
       del selectDict['ToDate']  
@@ -331,7 +349,8 @@ class TransformationHandler(RequestHandler):
     else:
       orderAttribute = None
     # Get the columns that match the selection
-    eval("res = self.database.get%s(condDict=selectDict,older=toDate, newer=fromDate, orderAttribute=orderAttribute)" % table)
+    execString = "res = self.database.get%s(condDict=selectDict,older=toDate, newer=fromDate, timeStamp=timeStamp, orderAttribute=orderAttribute)" % table
+    exec(execString)
     if not res['OK']:
       return self.__parseRes(res)
 
@@ -346,7 +365,7 @@ class TransformationHandler(RequestHandler):
     # Find which element in the tuple contains the requested status
     if not statusColumn in resultDict['ParameterNames']:
       return S_ERROR("Provided status column not present")
-    statusColumnIndex = resultDict['ParameterNames'].index()
+    statusColumnIndex = resultDict['ParameterNames'].index(statusColumn)
 
     # Get the rows which are within the selected window
     if resultDict['TotalRecords'] == 0:
@@ -368,6 +387,13 @@ class TransformationHandler(RequestHandler):
         statusDict[status]= 0
       statusDict[status] += 1 
     resultDict['Extras'] = statusDict
+
+    # Obtain the distinct values of the selection parameters
+    res = self.database.getTableDistinctAttributeValues(table,selectColumns,selectDict,older=toDate,newer=fromDate)
+    distinctSelections = zip(selectColumns,[])
+    if res['OK']:
+      distinctSelections = res['Value']
+    resultDict['Selections'] = distinctSelections
 
     return S_OK(resultDict)
 
