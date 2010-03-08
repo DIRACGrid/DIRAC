@@ -168,10 +168,9 @@ class DB(MySQL):
   def getDistinctAttributeValues(self,table,attribute,condDict = {}, older = None, newer=None, timeStamp=None, connection=False):
     """ Get distinct values of a table attribute under specified conditions
     """
-
-    cmd = 'SELECT  DISTINCT(%s) FROM %s ORDER BY %s' % (attribute,table,attribute)
     cond = self.buildCondition( condDict, older=older, newer=newer, timeStamp=timeStamp )
-    result = self._query( cmd + cond , connection)
+    cmd = 'SELECT  DISTINCT(%s) FROM %s %s ORDER BY %s' % (attribute,table,cond,attribute)
+    result = self._query(cmd, connection)
     if not result['OK']:
       return result
     attr_list = [ x[0] for x in result['Value'] ]
