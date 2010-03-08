@@ -1068,7 +1068,12 @@ class JobWrapper:
     else:
       result = self.sendWMSAccounting( status, minorStatus )
       if not result['OK']:
-        request.setDISETRequest( result['rpcStub'] )
+        self.log.warn('Could not send WMS accounting with result: \n%s' %result)
+        if result.has_key('rpcStub'):
+          self.log.verbose('Adding accounting report to failover request object')
+          request.setDISETRequest( result['rpcStub'] )
+        else:
+          self.log.warn('No rpcStub found to construct failover request for WMS accounting report')  
 
     # Any other requests in the current directory
     rfiles = self.__getRequestFiles()
