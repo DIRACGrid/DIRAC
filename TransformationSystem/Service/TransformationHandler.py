@@ -322,26 +322,7 @@ class TransformationHandler(RequestHandler):
       resultDict[transID] = transDict
     return S_OK(resultDict)
 
-  """
-  types_getTabbedSummaryWeb = [StringTypes, DictType, ListType, IntType, IntType]
-  def export_getTabbedSummaryWeb(self,tabSelectList):
-
-    for tableDict in tabSelectList:
-      tableName = tableDict['TableName']
-      selectDict = tableDict['SelectDict']
-      sortItem = tableDict['SortItem']
-      startItem = tableDict['StartItem']
-      maxItems = tableDict['MaxItem']
-      statsColumn = tableDict.get('StatsColumn',tableStatusColumn[tableName])
-      timeStamp = tableDict.get('TimeStamp',tableTimeStamps[tableName])
-      selectColumns = tableDict.get('SelectColumns',tableSelections[tableName])
-      res = self.__getTableSummaryWeb(tableName,selectDict,sortItem,startItem,maxItems,selectColumns=tableSelections[tableName],timeStamp=timeStamp,statusColumn=statsColumn)
-      if not res['OK']:
-        gLogger.error("Failed to get Summary for table","%s %s" % (table,res['Message']))
-        return self.__parseRes(res)
-  """
-
-  types_getTabbedSummaryWeb = [StringTypes,ListType,DictType, ListType, IntType, IntType]
+  types_getTabbedSummaryWeb = [StringTypes,DictType,DictType, ListType, IntType, IntType]
   def export_getTabbedSummaryWeb(self,table,requestedTables,selectDict,sortList,startItem,maxItems):
     tableDestinations = {  'Transformations'      : { 'TransformationFiles' : ['TransformationID'],
                                                       'TransformationTasks' : ['TransformationID']           },
@@ -377,8 +358,11 @@ class TransformationHandler(RequestHandler):
       for parameter in tableDestinations[table][destination]:
         tableSelection[destination][parameter] = selections.get(parameter,[])
 
-    for table in requestedTables:
-      res = self.__getTableSummaryWeb(table,tableSelection[table],'',0,50,selectColumns=tableSelections[table],timeStamp=tableTimeStamps[table],statusColumn=tableStatusColumn[table])
+    for table,paramDict in requestedTables.items():
+      sortList = paramDict.get('SortList',[])
+      startItem = paramDict.get('StartItem',0)
+      maxItems = paramDict.get('MaxItems',50)
+      res = self.__getTableSummaryWeb(table,tableSelection[table],sortList,startItem,maxItems,selectColumns=tableSelections[table],timeStamp=tableTimeStamps[table],statusColumn=tableStatusColumn[table])
       if not res['OK']:
         gLogger.error("Failed to get Summary for table","%s %s" % (table,res['Message']))
         return self.__parseRes(res)
