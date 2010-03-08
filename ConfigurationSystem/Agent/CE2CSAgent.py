@@ -21,17 +21,13 @@ import sys, os
 class CE2CSAgent(AgentModule):
 
   def initialize( self ):
-    self.vo = self.am_getOption("/DIRAC/VirtualOrganization")
-    if not self.vo:
-      gLogger.fatal("No /DIRAC/VirtualOrganization option defined")
-      return S_ERROR()
 
     self.name = self.am_getModuleParam("fullName")
     self.logLevel = self.am_getOption('LogLevel','INFO')
     gLogger.info("LogLevel",self.logLevel)
     gLogger.setLevel(self.logLevel)
     self.pollingTime = self.am_getOption('PollingTime',120)
-    gLogger.info("PollingTime %d hours" %(int(self.pollingTime)/3600))
+    gLogger.info("PollingTime %d hours" %(int(self.pollingTime)/3600.0))
 
     # TODO: Have no default and if no mail is found then use the diracAdmin group and resolve all associated mail addresses.
     self.addressTo = self.am_getOption('MailTo','lhcb-SAM@cern.ch')
@@ -40,7 +36,12 @@ class CE2CSAgent(AgentModule):
     gLogger.info("MailFrom",self.addressFrom)
     self.subject = "CE2CSAgent"
 
-    self.am_setModuleParam( "shifterProxy", "SAMManager" )
+    self.am_setModuleParam( "shifterProxy", "Admin" )
+
+    self.vo = self.am_getOption('VO','')
+    if not self.vo:
+      gLogger.fatal("VO option not defined for agent")
+      return S_ERROR()
     return S_OK()
 
   def execute(self):
@@ -56,7 +57,7 @@ class CE2CSAgent(AgentModule):
   
     sites = gConfig.getSections('/Resources/Sites/LCG')['Value']
 
-    bannedCEs = gConfig.getValue(self.section+'/BannedCEs','')
+    bannedCEs = self.am_getOption('/BannedCEs','')
     if bannedCEs:
       knownces = List.fromChar( bannedCEs)
     else:
@@ -87,7 +88,7 @@ class CE2CSAgent(AgentModule):
         gLogger.debug("newce",cename)
 
     body = ""
-    
+    possibleNewSites = []    
     for ce in newces.iterkeys():
       response = ldapCluster(ce)
       if not response['OK']:
@@ -152,9 +153,12 @@ class CE2CSAgent(AgentModule):
           usefull = True
       if usefull:
         body += newcestring
+        possibleNewSites.append('dirac-admin-add-site DIRACSiteName %s %s' % (nameBDII,ce))
     if body:
       body = "We are glade to inform You about new CE(s) possibly suitable for LHCb:\n" + body
-      body += "\n\nTo suppress information about CE add its name to %s/BannedCEs list."%self.section
+      body += "\n\nTo suppress information about CE add its name to BannedCEs list."
+      for  possibleNewSite in  possibleNewSites:
+         body = "%s\n%s" % (body,possibleNewSite)
       gLogger.info(body)
       notification = NotificationClient()
       result = notification.sendMail(self.addressTo,self.subject,body,self.addressFrom,localAttempt=False)
