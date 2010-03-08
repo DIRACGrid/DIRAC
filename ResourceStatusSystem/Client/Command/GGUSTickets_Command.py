@@ -7,11 +7,14 @@
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
-class GGUSTickets_Command(Command):
+class GGUSTickets_Open(Command):
   
   def doCommand(self, args, clientIn=None):
     """ Return getStatus from GGUSTickets Client  
-        - args[0] should be the name of the Site
+
+       :params:
+         :attr:`args`: 
+           - args[0]: string: should be the name of the site
     """
 
     if not isinstance(args, tuple):
@@ -24,4 +27,10 @@ class GGUSTickets_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.GGUSTicketsClient import GGUSTicketsClient   
       c = GGUSTicketsClient()
       
-    return c.getTicketsNumber(args)
+    name = args[0]
+    
+    name = getSiteRealName(name)
+    
+    openTickets = c.getTicketsList(name, ticketStatus = 'open')
+        
+    return {'GGUS_Info': openTickets, 'OpenT': len(openTickets)} 

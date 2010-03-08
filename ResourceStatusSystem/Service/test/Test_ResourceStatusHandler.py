@@ -10,7 +10,7 @@ from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
 
 class ResourceStatusHandlerTestCase(unittest.TestCase):
-  """ Base class for the RS2history test cases
+  """ Base class for the ResourceStatusHandlerTestCase test cases
   """
   def setUp(self):
     from DIRAC.Core.Base import Script

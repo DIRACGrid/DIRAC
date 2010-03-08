@@ -7,11 +7,10 @@ from datetime import datetime
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Client.Command.ClientsInvoker import ClientsInvoker
 from DIRAC.ResourceStatusSystem.Client.Command.GOCDBStatus_Command import *
-#from DIRAC.ResourceStatusSystem.Client.Command.Res2SiteStatus_Command import Res2SiteStatus_Command
 from DIRAC.ResourceStatusSystem.Client.Command.Pilots_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.Jobs_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.SAMResults_Command import SAMResults_Command
-from DIRAC.ResourceStatusSystem.Client.Command.GGUSTickets_Command import GGUSTickets_Command
+from DIRAC.ResourceStatusSystem.Client.Command.GGUSTickets_Command import GGUSTickets_Open
 from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.DataOperations_Command import TransferQuality_Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
@@ -33,7 +32,6 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.GOCDBI_C = GOCDBInfo_Command()
     self.mock_client = Mock()
     self.mock_client_2 = Mock()
-#    self.R2SS_C = Res2SiteStatus_Command()
     self.PE_C = PilotsEff_Command()
     self.PS_C = PilotsStats_Command()
     self.JE_C = JobsEff_Command()
@@ -43,7 +41,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.PES_C = PilotsEffSimple_Command()
     self.SAMR_C = SAMResults_Command()
     self.RSP_C = RSPeriods_Command()
-    self.GGUS_C = GGUSTickets_Command()
+    self.GGUS_C = GGUSTickets_Open()
     self.SeSt_C = ServiceStats_Command()
     self.ReSt_C = ResourceStats_Command()
     self.StElSt_C = StorageElementsStats_Command()
@@ -319,10 +317,10 @@ class GGUSTickets_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
 
-    for n in [1,3]:
-      self.mock_client.getTicketsNumber.return_value =  {'GGUSTickets':n}
-      res = self.GGUS_C.doCommand(('XX', ), clientIn = self.mock_client)
-      self.assertEqual(res['GGUSTickets'], n)
+    self.mock_client.getTicketsList.return_value = ["solved", "solved"]
+    res = self.GGUS_C.doCommand(('XX', ), clientIn = self.mock_client)
+    self.assertEqual(res['GGUS_Info'], ["solved", "solved"])
+    self.assertEqual(res['OpenT'], 2)
     
 #############################################################################
 

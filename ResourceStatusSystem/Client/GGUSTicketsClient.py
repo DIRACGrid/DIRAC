@@ -4,31 +4,25 @@
 
 from suds.client import Client
 from DIRAC import gLogger
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
 class GGUSTicketsClient:
   
 #############################################################################
 
-  def getTicketsNumber(self, granularity, name, startDate = None, endDate = None, ticketStatus = 'all'):
-    """  return opened tickets of entity in args
-        - args[0] should be Site or Sites
-        - args[1] should be the name of the site
-        - args[2] starting date (optional)
-        - args[3] end date (optional)  
-        - args[4] ticket status (default is all)  
+  def getTicketsList(self, name, startDate = None, endDate = None, ticketStatus = 'all'):
+    """  Return tickets of entity in name
 
-        returns the list :
-          {
-            'GGUSTickets': n'
-          }
+       :params:
+         :attr:`name`: should be the name of the site
+
+         :attr:`startDate`: starting date (optional)
+          
+        :attr:`endDate`: end date (optional)  
+          
+        :attr:`ticketStatus`: ticket status (default is all)  
     """
-    # check granularity is valid:
-    if granularity in ('Site', 'Sites'):
-      self.siteName = name
-    else:
-      raise InvalidRes, where(self, self.getTicketsNumber)
+    self.siteName = name
     
     # create client instance using test GGUS wsdl
     self.gclient = Client( "https://iwrgustrain.fzk.de/arsys/WSDL/public/iwrgustrain/Grid_HelpDesk" )
@@ -38,7 +32,6 @@ class GGUSTicketsClient:
     self.gclient.set_options(soapheaders=authInfo)
     # prepare the query string:
     self.query = '\'GHD_Affected Site\'=\"'+ self.siteName + '\"'
-    print 'the query string is ', self.query
     self.startDate = startDate
     if self.startDate is not None:
       print 'set the starting date as ', self.startDate
@@ -48,7 +41,7 @@ class GGUSTicketsClient:
       print 'set the end date as ', self.endDate
       self.query = self.query + ' AND \'GHD_Date Of Creation\'<' + str(self.endDate)
 
-    print 'the query string is ', self.query
+#    print 'the query string is ', self.query
     # the query must be into a try block. Empty queries, though formally correct, raise an exception
 
     try: 
@@ -62,7 +55,7 @@ class GGUSTicketsClient:
       return ticket_list
     elif self.ticketStatus == 'open':
       print 'return only open tickets (to be implemented..)'
-    elif self.ticketStatus == 'soved':
+    elif self.ticketStatus == 'solved':
       print 'return only solved tickets (to be implemented..)'
     elif self.ticketStatus == 'assigned':
       print 'return only assigned tickets (to be implemented..)'
@@ -70,4 +63,5 @@ class GGUSTicketsClient:
       print 'ticket unknown status'
       return
 
+#############################################################################
 

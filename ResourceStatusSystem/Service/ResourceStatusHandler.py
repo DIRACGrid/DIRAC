@@ -21,6 +21,7 @@ from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
 from DIRAC.ResourceStatusSystem.Utilities.Publisher import Publisher 
+from DIRAC.ResourceStatusSystem.Client.Command.CommandCaller import CommandCaller
 
 rsDB = False
 
@@ -29,8 +30,10 @@ def initializeResourceStatusHandler(serviceInfo):
   global rsDB
   rsDB = ResourceStatusDB()
 
+  cc = CommandCaller()
+
   global publisher
-  publisher = Publisher()
+  publisher = Publisher(rsDBIn = rsDB, commandCallerIn = cc)
 
   gConfig.addListenerToNewVersionEvent( rsDB.syncWithCS )
   return S_OK()
@@ -69,6 +72,32 @@ class ResourceStatusHandler(RequestHandler):
       except RSSException, x:
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getSitesList: got sites list")
+      return S_OK(res)
+    except Exception, x:
+      errorStr = where(self, self.export_getSitesList)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  types_getSitesStatusList = []
+  def export_getSitesStatusList(self):
+    """
+    Get sites list from the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getSitesList: Attempting to get sites list")
+      try:
+        r = rsDB.getMonitoredsList('Site', paramsList = ['SiteName', 'Status'])
+        res = []
+        for x in r:
+          res.append(x)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getSitesList: got sites and status list")
       return S_OK(res)
     except Exception, x:
       errorStr = where(self, self.export_getSitesList)
@@ -1354,7 +1383,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.publisher: Attempting to get view %s for %s" % (view, name))
       try:
-        res = publisher.getInfo(granularity, name, view, rsDBIn = rsDB)
+        res = publisher.getInfo(granularity, name, view)
       except InvalidRes, x:
         errorStr = "Invalid granularity"
         gLogger.exception(whoRaised(x) + errorStr)

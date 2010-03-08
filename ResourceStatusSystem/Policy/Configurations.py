@@ -100,7 +100,16 @@ Policies = {
 #      'Site_Panel' : {'WebLink':'DT_link'},
 #      'Resource_Panel' : {'WebLink':'DT_link'}
      },
-    'SAM_Policy' : 
+  'GGUS_Policy' : 
+    { 'Granularity' : [], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ValidResourceType,
+      'Site_Panel' : [{'WebLink':'GGUS_info'}, {'WebLink':'GGUS_link'}]
+     },
+  'SAM_Policy' : 
     { 'Granularity' : [], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,

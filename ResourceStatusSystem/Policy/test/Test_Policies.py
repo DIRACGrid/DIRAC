@@ -488,18 +488,15 @@ class SAMResults_Policy_Failure(PoliciesTestCase):
 class GGUSTickets_PolicySuccess(PoliciesTestCase):
   
   def test_evaluate(self):
-    for status in ValidStatus:
-      args = ('XX', status)
-      for resCl in [1, 3]:
-        res = self.GGUS_P.evaluate(args, commandIn = self.mock_command, knownInfo={'GGUSTickets':resCl})
-        self.assert_(res.has_key('SAT'))
-        if status != 'Banned':
-          self.assert_(res.has_key('Reason'))
-        self.mock_command.doCommand.return_value =  {'GGUSTickets':resCl}
-        res = self.GGUS_P.evaluate(args, commandIn = self.mock_command)
-        self.assert_(res.has_key('SAT'))
-        if status != 'Banned':
-          self.assert_(res.has_key('Reason'))
+    for g in ValidRes:
+      for status in ValidStatus:
+        args = (g, 'XX', status)
+        for resCl in [0, 1, 3]:
+          res = self.GGUS_P.evaluate(args, commandIn = self.mock_command, knownInfo={'OpenT':resCl})
+          self.assert_(res.has_key('SAT'))
+          self.mock_command.doCommand.return_value =  {'OpenT':resCl}
+          res = self.GGUS_P.evaluate(args, commandIn = self.mock_command)
+          self.assert_(res.has_key('SAT'))
       
 #############################################################################
 

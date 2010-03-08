@@ -15,7 +15,9 @@ class DT_Policy(PolicyBase):
         :params:
           :attr:`args`: a tuple 
             - `args[0]` should be a ValidRes
+
             - `args[1]` should be the name of the ValidRes
+
             - `args[2]` should be the present status
           
           :attr:`commandIn`: optional command object
