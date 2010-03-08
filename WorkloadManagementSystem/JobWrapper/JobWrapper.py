@@ -732,6 +732,9 @@ class JobWrapper:
       else:
         outputPath = self.defaultOutputPath
 
+      if not outputSE and not self.defaultFailoverSE:
+        return S_ERROR('No output SEs defined in VO configuration')
+
       result = self.__transferOutputDataFiles( owner, outputData, outputSE, outputPath )
       if not result['OK']:
         return result
