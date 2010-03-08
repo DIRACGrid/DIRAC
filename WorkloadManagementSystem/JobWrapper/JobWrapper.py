@@ -91,7 +91,7 @@ class JobWrapper:
     self.defaultOutputPath = ''
     self.rm = ReplicaManager()
     self.log.verbose( '===========================================================================' )
-    self.log.verbose( 'CVS version %s' % ( __RCSID__ ) )
+    self.log.verbose( 'SVN version %s' % ( __RCSID__ ) )
     self.log.verbose( self.diracVersion )
     self.log.verbose( 'Developer tag: 2' )
     self.currentPID = os.getpid()
