@@ -322,20 +322,83 @@ class TransformationHandler(RequestHandler):
       resultDict[transID] = transDict
     return S_OK(resultDict)
 
+  """
+  types_getTabbedSummaryWeb = [StringTypes, DictType, ListType, IntType, IntType]
+  def export_getTabbedSummaryWeb(self,tabSelectList):
+
+    for tableDict in tabSelectList:
+      tableName = tableDict['TableName']
+      selectDict = tableDict['SelectDict']
+      sortItem = tableDict['SortItem']
+      startItem = tableDict['StartItem']
+      maxItems = tableDict['MaxItem']
+      statsColumn = tableDict.get('StatsColumn',tableStatusColumn[tableName])
+      timeStamp = tableDict.get('TimeStamp',tableTimeStamps[tableName])
+      selectColumns = tableDict.get('SelectColumns',tableSelections[tableName])
+      res = self.__getTableSummaryWeb(tableName,selectDict,sortItem,startItem,maxItems,selectColumns=tableSelections[tableName],timeStamp=timeStamp,statusColumn=statsColumn)
+      if not res['OK']:
+        gLogger.error("Failed to get Summary for table","%s %s" % (table,res['Message']))
+        return self.__parseRes(res)
+  """
+
+  types_getTabbedSummaryWeb = [StringTypes,ListType,DictType, ListType, IntType, IntType]
+  def export_getTabbedSummaryWeb(self,table,requestedTables,selectDict,sortList,startItem,maxItems):
+    tableDestinations = {  'Transformations'      : { 'TransformationFiles' : ['TransformationID'],
+                                                      'TransformationTasks' : ['TransformationID']           },
+
+                           'TransformationFiles'  : { 'Transformations'     : ['TransformationID'],
+                                                      'TransformationTasks' : ['TransformationID','TaskID']  },
+
+                           'TransformationTasks'  : { 'Transformations'     : ['TransformationID'],
+                                                      'TransformationFiles' : ['TransformationID','TaskID']  } }
+
+    tableSelections = {    'Transformations'      : ['TransformationID','AgentType','Type','TransformationGroup','Plugin'],
+                           'TransformationFiles'  : ['TransformationID','TaskID','Status','UsedSE','TargetSE'], 
+                           'TransformationTasks'  : ['TransformationID','TaskID','ExternalStatus','TargetSE'] } 
+
+    tableTimeStamps = {    'Transformations'      : 'CreationDate',
+                           'TransformationFiles'  : 'LastUpdate',
+                           'TransformationTasks'  : 'CreationTime' }
+   
+    tableStatusColumn= {   'Transformations'      : 'Status',
+                           'TransformationFiles'  : 'Status',
+                           'TransformationTasks'  : 'ExternalStatus' }
+
+    resDict = {}
+    res = self.__getTableSummaryWeb(table,selectDict,sortList,startItem,maxItems,selectColumns=tableSelections[table],timeStamp=tableTimeStamps[table],statusColumn=tableStatusColumn[table])
+    if not res['OK']:
+      gLogger.error("Failed to get Summary for table","%s %s" % (table,res['Message']))
+      return self.__parseRes(res)
+    resDict[table] = res['Value']
+    selections = res['Value']['Selections']
+    tableSelection = {}
+    for destination in tableDestinations[table].keys():
+      tableSelection[destination] = {}
+      for parameter in tableDestinations[table][destination]:
+        tableSelection[destination][parameter] = selections.get(parameter,[])
+
+    for table in requestedTables:
+      res = self.__getTableSummaryWeb(table,tableSelection[table],'',0,50,selectColumns=tableSelections[table],timeStamp=tableTimeStamps[table],statusColumn=tableStatusColumn[table])
+      if not res['OK']:
+        gLogger.error("Failed to get Summary for table","%s %s" % (table,res['Message']))
+        return self.__parseRes(res)
+      resDict[table] = res['Value']
+    return S_OK(resDict)
+             
   types_getTransformationsSummaryWeb = [DictType, ListType, IntType, IntType]
   def export_getTransformationsSummaryWeb(self,selectDict,sortList,startItem,maxItems):
-    return self.__getTableSummaryWeb('Transformations','Status',selectDict,sortList,startItem,maxItems,selectColumns=['TransformationID','AgentType','Type','Group','Plugin'],timeStamp='CreationDate')
+    return self.__getTableSummaryWeb('Transformations',selectDict,sortList,startItem,maxItems,selectColumns=['TransformationID','AgentType','Type','Group','Plugin'],timeStamp='CreationDate',statusColumn='Status')
 
   types_getTransformationTasksSummaryWeb = [DictType, ListType, IntType, IntType]
   def export_getTransformationTasksSummaryWeb(self,selectDict,sortList,startItem,maxItems):
-    return self.__getTableSummaryWeb('TransformationTasks','ExternalStatus',selectDict,sortList,startItem,maxItems,selectColumns=['TransformationID','ExternalStatus','TargetSE'],timeStamp='CreationTime')
+    return self.__getTableSummaryWeb('TransformationTasks',selectDict,sortList,startItem,maxItems,selectColumns=['TransformationID','ExternalStatus','TargetSE'],timeStamp='CreationTime',statusColumn='ExternalStatus')
  
   types_getTransformationFilesSummaryWeb = [DictType, ListType, IntType, IntType]
   def export_getTransformationFilesSummaryWeb(self,selectDict,sortList,startItem,maxItems):
-    return self.__getTableSummaryWeb('TransformationFiles','Status',selectDict,sortList,startItem,maxItems,selectColumns=['TransformationID','Status','UsedSE','TargetSE'],timeStamp='LastUpdate')  
+    return self.__getTableSummaryWeb('TransformationFiles',selectDict,sortList,startItem,maxItems,selectColumns=['TransformationID','Status','UsedSE','TargetSE'],timeStamp='LastUpdate',statusColumn='Status')  
 
-  def __getTableSummaryWeb(self,table,statusColumn,selectDict,sortList,startItem,maxItems,selectColumns=[],timeStamp=None):
-    fromDate = selectDict.get('FromDate',None)    
+  def __getTableSummaryWeb(self,table,selectDict,sortList,startItem,maxItems,selectColumns=[],timeStamp=None,statusColumn='Status'):
+    fromDate = selectDict.get('FromDate',None)
     if fromDate:
       del selectDict['FromDate']
     #if not fromDate:
