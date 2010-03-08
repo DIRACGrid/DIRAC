@@ -249,11 +249,24 @@ class TransformationDB(DB):
       transIDs.append(tuple[0])
     return S_OK(transIDs)
 
-  def getDistinctAttributeValue(self, attribute, selectDict, connection=False):
-    """ Get distinct values of the given transformation attribute """
-    if not attribute in self.TRANSPARAMS:
-      return S_ERROR('Can not serve values for attribute %s' % attribute) 
-    return self.getDistinctAttributeValues('Transformations',attribute,condDict=selectDict,connection=connection)
+  def getTableDistinctAttributeValues(self,table,attributes,selectDict,connection=False):
+    tableFields = { 'Transformations'      : self.TRANSPARAMS,
+                    'TransformationTasks'  : self.TASKSPARAMS,
+                    'TransformationFiles'  : self.TRANSFILEPARAMS}
+    possibleFields = tableFields.get(table,[])
+    return self.__getTableDistinctAttributeValues(table,possibleFields,attributes,selectDict,connection=connection)
+
+  def __getTableDistinctAttributeValues(self,table,possible,attributes,selectDict,connection=False):
+    connection = self.__getConnection(connection)
+    attributeValues = {}
+    for attribute in attributes:
+      if possible and (not attribute in  possible):
+        return S_ERROR('Requested attribute (%s) does not exist in table %s' % (attribute,table))
+      res = self.getDistinctAttributeValues(table,attribute,condDict=selectDict,connection=connection)
+      if not res['OK']:
+        return S_ERROR('Failed to serve values for attribute %s in table %s' % (attribute,table))
+      attributeValues[attribute] = res['Value']
+    return S_OK(attributeValues)  
 
   def __updateTransformationParameter(self,transID,paramName,paramValue,connection=False):
     if not (paramName in self.mutable):
@@ -657,7 +670,7 @@ class TransformationDB(DB):
 
   def __assignTransformationFile(self,transID,taskID,se,fileIDs,connection=False):
     """ Make necessary updates to the TransformationFiles table for the newly created task """
-    req = "UPDATE TransformationFiles SET TaskID='%d',UsedSE='%s',Status='Assigned',LastUpdate=UTC_TIMESTAMP() WHERE TransformationID = %d AND FileID IN (%s);" % (taskID,se,transID,intListToString(fileIDs.keys()))
+    req = "UPDATE TransformationFiles SET TaskID='%d',UsedSE='%s',Status='Assigned',LastUpdate=UTC_TIMESTAMP() WHERE TransformationID = %d AND FileID IN (%s);" % (taskID,se,transID,intListToString(fileIDs))
     res = self._update(req,connection)
     if not res['OK']:
       gLogger.error("Failed to assign file to task",res['Message'])
@@ -987,7 +1000,7 @@ class TransformationDB(DB):
  
   def __getFileIDsForLfns(self,lfns,connection=False):
     """ Get file IDs for the given list of lfns """
-    req = "SELECT LFN,FileID FROM DataFiles WHERE LFN in (%s);" % (req,stringListToString(lfns))
+    req = "SELECT LFN,FileID FROM DataFiles WHERE LFN in (%s);" % (stringListToString(lfns))
     res = self._query(req,connection)
     if not res['OK']:
       return res
@@ -1114,12 +1127,13 @@ class TransformationDB(DB):
   def addTaskForTransformation(self,transID,lfns=[],se='Unknown',connection=False):
     """ Create a new task with the supplied files for a transformation.
     """
-    res = self._getConnectionTransID(connection,transName)
+    res = self._getConnectionTransID(connection,transID)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
     # Be sure the all the supplied LFNs are known to the database for the supplied transformation
+    fileIDs = []
     if lfns:
       res = self.getTransformationFiles(condDict={'TransformationID':transID,'LFN':lfns},connection=connection)
       if not res['OK']:
@@ -1127,6 +1141,7 @@ class TransformationDB(DB):
       foundLfns = []
       allAvailable = True
       for fileDict in res['Value']:
+        fileIDs.append(fileDict['FileID'])
         lfn = fileDict['LFN']
         foundLfns.append(lfn)
         if fileDict['Status'] != 'Unused':
