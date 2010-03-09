@@ -9,7 +9,7 @@ __RCSID__ = "$Id:  $"
 import time
 from DIRAC import S_OK, S_ERROR, gConfig
 
-class SEManager:
+class SEManagerDB:
 
   def findSE(self,se):
     """ Find the ID of the given SE, add it to the catalog if it is not yet there
@@ -97,3 +97,17 @@ class SEManager:
     self.seDefinitions[seID]['LastUpdate'] = time.time()
     
     return S_OK(self.seDefinitions[seID])
+  
+class SEManagerCS:
+
+  def findSE(self,se):
+    return S_OK(se)
+
+  def addSE(self,se):
+    return S_OK(se)
+  
+  def getSEDefinition(self,se):
+    return gConfig.getOptionsDict('/Resources/StorageElements/%s/AccessProtocol.1' % se)
+
+class SEManager(SEManagerDB):
+  pass
