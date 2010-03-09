@@ -117,10 +117,10 @@ class FileCatalogHandler(RequestHandler):
     return fcDB.addReplica(lfns,self.getRemoteCredentials())
   
   types_getReplicas = [[ListType,DictType]+list(StringTypes)]
-  def export_getReplicas(self,lfns):
+  def export_getReplicas(self,lfns,allStatus=False):
     """ Get replica info for the given list of LFNs
     """
-    return fcDB.getReplicas(lfns,self.getRemoteCredentials())
+    return fcDB.getReplicas(lfns,allStatus,self.getRemoteCredentials())
   
   types_removeReplica = [[ListType,DictType]+list(StringTypes)]
   def export_removeReplica(self,lfns):
