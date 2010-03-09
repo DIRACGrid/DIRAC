@@ -107,6 +107,7 @@ class SEManagerCS:
     return S_OK(se)
   
   def getSEDefinition(self,se):
+    #TODO Think about using a cache for this information
     return gConfig.getOptionsDict('/Resources/StorageElements/%s/AccessProtocol.1' % se)
 
 class SEManager(SEManagerDB):
