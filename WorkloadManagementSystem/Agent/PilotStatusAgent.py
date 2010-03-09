@@ -266,33 +266,43 @@ class PilotStatusAgent( AgentModule ):
 
   def accountPilots( self, pilotsToAccount, connection ):
 
+    accountingFlag = False
+    pae = self.am_getOption( 'PilotAccountingEnabled', 'yes' )
+    if pae.lower() == "yes":
+      accountingFlag = True
+
     if not pilotsToAccount:
       self.log.info( 'No pilots to Account' )
       return S_OK()
 
-    retVal = self.pilotDB.getPilotInfo( pilotsToAccount.keys(), conn = connection )
-    if not retVal['OK']:
-      self.log.error( 'Fail to retrieve Info for pilots', retVal['Message'] )
-      return retVal
-    dbData = retVal[ 'Value' ]
-    for pref in dbData:
-      if pref in pilotsToAccount:
-        if dbData[pref][ 'Status' ] not in self.finalStateList:
-          dbData[pref][ 'Status' ] = pilotsToAccount[pref][ 'Status' ]
-          dbData[pref][ 'DestinationSite' ] = pilotsToAccount[pref][ 'DestinationSite' ]
-          dbData[pref][ 'LastUpdateTime' ] = Time.fromString( pilotsToAccount[pref][ 'StatusDate' ] )
-
-    retVal = self.__addPilotsAccountingReport( dbData )
-    if not retVal['OK']:
-      self.log.error( 'Fail to retrieve Info for pilots', retVal['Message'] )
-      return retVal
-
-    self.log.info( "Sending accounting records..." )
-    retVal = gDataStoreClient.commit()
-    if not retVal[ 'OK' ]:
-      self.log.error( "Can't send accounting repots", retVal[ 'Message' ] )
-    else:
-      self.log.info( "Accounting sent for %s pilots" % len( pilotsToAccount ) )
+    accountingSent = False
+    if accountingFlag:
+      retVal = self.pilotDB.getPilotInfo( pilotsToAccount.keys(), conn = connection )
+      if not retVal['OK']:
+        self.log.error( 'Fail to retrieve Info for pilots', retVal['Message'] )
+        return retVal
+      dbData = retVal[ 'Value' ]
+      for pref in dbData:
+        if pref in pilotsToAccount:
+          if dbData[pref][ 'Status' ] not in self.finalStateList:
+            dbData[pref][ 'Status' ] = pilotsToAccount[pref][ 'Status' ]
+            dbData[pref][ 'DestinationSite' ] = pilotsToAccount[pref][ 'DestinationSite' ]
+            dbData[pref][ 'LastUpdateTime' ] = Time.fromString( pilotsToAccount[pref][ 'StatusDate' ] )
+  
+      retVal = self.__addPilotsAccountingReport( dbData )
+      if not retVal['OK']:
+        self.log.error( 'Fail to retrieve Info for pilots', retVal['Message'] )
+        return retVal
+  
+      self.log.info( "Sending accounting records..." )
+      retVal = gDataStoreClient.commit()
+      if not retVal[ 'OK' ]:
+        self.log.error( "Can't send accounting repots", retVal[ 'Message' ] )
+      else:
+        self.log.info( "Accounting sent for %s pilots" % len( pilotsToAccount ) )
+        accountingSent = True
+    
+    if not accountingFlag or accountingSent:     
       for pRef in pilotsToAccount:
         pDict = pilotsToAccount[pRef]
         self.log.verbose( 'Setting Status for %s to %s' % ( pRef, pDict['Status'] ) )
@@ -302,7 +312,7 @@ class PilotStatusAgent( AgentModule ):
                                      pDict['StatusDate'],
                                      conn = connection )
 
-    return retVal
+    return S_OK()
 
   #############################################################################
   def getPilotStatus( self, proxy, gridType, pilotRefList ):
