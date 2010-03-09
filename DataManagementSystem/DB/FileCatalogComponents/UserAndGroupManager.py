@@ -11,6 +11,7 @@ import time
 from types import *
 from DIRAC.Core.Security import Properties
 from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 class UserAndGroupManagerBase:
 
@@ -45,6 +46,22 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 #  User related methods
 #
 #####################################################################
+
+  def registerUsersAndGroupsFromCS(self, credDict ):
+    """ Query the CS and create in DB entries for all users and groups register there
+    """
+    
+    csAPI = CSAPI()
+    users = csAPI.listUsers()
+    if users['OK']:
+      for user in users['Value']:
+        self.addUser( user, credDict )
+    groups = csAPI.listGroups()
+    if groups['OK']:
+      for group in groups['Value']:
+        self.addGroup( group, credDict )
+    return S_OK()
+
   def addUser(self,name,credDict):
     """ Add a new user with a nickname 'name' 
     """
@@ -164,7 +181,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 #  Group related methods
 #
 #####################################################################
-  def addGroup(self,gname,credDict,gid=0):
+  def addGroup(self,gname,credDict):
     """ Add a new group with a name 'name'
     """
     
@@ -325,7 +342,7 @@ class UserAndGroupManagerCS(UserAndGroupManagerBase):
   #
   #####################################################################
 
-  def addGroup(self,gname,credDict,gid=0):
+  def addGroup(self,gname,credDict):
     result = self.getUserAndGroupRight(credDict)
     if not result['Value']:
       return S_ERROR('Permission denied')

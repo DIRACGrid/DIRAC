@@ -8,8 +8,10 @@ __RCSID__   = "$Id$"
 
 from types import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Security import Properties
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 import time,os
 # This is a global instance of the DataIntegrityDB class
 fcDB = False
@@ -18,6 +20,9 @@ def initializeFileCatalogHandler(serviceInfo):
 
   global fcDB
   fcDB = FileCatalogDB()
+  credDict = { 'properties': Properties.FC_MANAGEMENT }
+  fcDB.registerUsersAndGroupsFromCS( credDict )
+  gThreadScheduler.addPeriodicTask( 6 * 60 * 60,  fcDB.registerUsersAndGroupsFromCS, ( credDict ) )
   return S_OK()
 
 class FileCatalogHandler(RequestHandler):
