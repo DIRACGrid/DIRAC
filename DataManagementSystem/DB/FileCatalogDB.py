@@ -1541,7 +1541,7 @@ class FileCatalogDB(DB,
     return S_OK({'Successful':successful,'Failed':failed})
   
 #####################################################################  
-  def getReplicas(self,lfns,credDict):
+  def getReplicas(self,lfns,allStatus,credDict):
     """ Get Replicas for the given LFNs
     """
     
