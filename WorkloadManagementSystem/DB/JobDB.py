@@ -1830,9 +1830,13 @@ class JobDB(DB):
         req = "SELECT Status Site,Status,LastUpdateTime,Author,Comment FROM SiteMask WHERE Site=%s" % e_site
         resSite = self._query(req)
         if resSite['OK']:
-          s,status,lastUpdate,author,comment = resSite['Value'][0]
-          resultDict[site] = [(status,str(lastUpdate),author,comment)]
-
+          if resSite['Value']:
+            s,status,lastUpdate,author,comment = resSite['Value'][0]
+            resultDict[site] = [(status,str(lastUpdate),author,comment)]
+          else:
+            resultDict[site] = [('Unknown','','','Site not present in logging table')]
+            
+            
     for row in result['Value']:
       site,status,utime,author,comment = row
       if not resultDict.has_key(site):
