@@ -78,17 +78,15 @@ class StorageElementHandler( RequestHandler ):
     maxStorageSizeBytes = max_storage_size * 1024 * 1024
     return ( min( dsize, maxStorageSizeBytes ) > size )
 
-  types_getMetadata = [StringType]
-  def export_getMetadata( self, fileID ):
-    """ Get metadata for the file or directory specified by fileID
-    """
-    while fileID[0] == '/':
-      fileID = fileID[1:]
+  def __resolveFileID(self,fileID):
     if fileID.find(self.serviceInfoDict['serviceName']) == 0:
       fileID = fileID[ (len(self.serviceInfoDict['serviceName']) + 1): ]
-    file_path = os.path.join( base_path, fileID )
-    return self.__getFileStat( file_path )
-
+    if fileID.find('?=') > 0:
+      fileID = fileID[ ( fileID.find('?=')  + 2): ]
+    while fileID[0] == '/':
+      fileID = fileID[1:]
+    return os.path.join( base_path, fileID )
+    
   def __getFileStat( self, path ):
     """ Get the file stat information
     """
@@ -116,23 +114,22 @@ class StorageElementHandler( RequestHandler ):
 
   types_exists = [StringTypes]
   def export_exists( self, path ):
-    """ Check existnce of the path
+    """ Check existnce of the path """
+    if os.path.exists(self.__resolveFileID(fileID)):
+      return S_OK(True)
+    return S_OK(False)
+
+  types_getMetadata = [StringType]
+  def export_getMetadata( self, fileID ):
+    """ Get metadata for the file or directory specified by fileID
     """
-    while path[0] == '/':
-      path = path[1:]
-    fpath = os.path.join( base_path, path )
-    if os.path.exists( fpath ):
-      return S_OK( True )
-    else:
-      return S_OK( False )
+    return self.__getFileStat(self.__resolveFileID(fileID))
 
   types_createDirectory = [StringType]
   def export_createDirectory( self, dir_path ):
     """ Creates the directory on the storage
     """
-    while dir_path[0] == '/':
-      dir_path = dir_path[1:]
-    path = os.path.join( base_path, dir_path )
+    path = self.__resolveFileID(dir_path)
     gLogger.info( "StorageElementHandler.createDirectory: Attempting to create %s." % path )
     if os.path.exists( path ):
       if os.path.isfile( path ):
@@ -156,9 +153,7 @@ class StorageElementHandler( RequestHandler ):
     """ Return the dir_path directory listing
     """
     is_file = False
-    while dir_path[0] == '/':
-      dir_path = dir_path[1:]
-    path = os.path.join( base_path, dir_path )
+    path = self.__resolveFileID(dir_path)
     if not os.path.exists( path ):
       return S_ERROR( 'Directory %s does not exist' % dir_path )
     elif os.path.isfile( path ):
@@ -208,9 +203,7 @@ class StorageElementHandler( RequestHandler ):
     """
     if not self.__checkForDiskSpace( base_path, fileSize ):
       return S_ERROR( 'Not enough disk space' )
-    while fileID[0] == '/':
-      fileID = fileID[1:]
-    file_path = os.path.join( base_path, fileID )
+    file_path = self.__resolveFileID(fileID)
     if not os.path.exists( os.path.dirname( file_path ) ):
       os.makedirs( os.path.dirname( file_path ) )
     try:
@@ -228,11 +221,7 @@ class StorageElementHandler( RequestHandler ):
         fileID is the local file name in the SE.
         token is used for access rights confirmation.
     """
-    if fileID.find('?=') > 0:
-      fileID = fileID[ ( fileID.find('?=')  + 2): ]
-    while fileID[0] == '/':
-      fileID = fileID[1:]
-    file_path = os.path.join( base_path, fileID )
+    file_path = self.__resolveFileID(fileID)
     result = fileHelper.getFileDescriptor( file_path, 'r' )
     if not result['OK']:
       result = fileHelper.sendEOF()
@@ -256,8 +245,8 @@ class StorageElementHandler( RequestHandler ):
     """
     if not self.__checkForDiskSpace( base_path, 10 * 1024 * 1024 ):
       return S_ERROR( 'Less than 10MB remaining' )
-    dirName = fileID.replace( '.bz2', '' ).replace( '.tar', '' ).lstrip( '/' )
-    dir_path = os.path.join( base_path, dirName )
+    dirName = fileID.replace( '.bz2', '' ).replace( '.tar', '' )
+    dir_path = self.__resolveFileID(dirName)
     res = fileHelper.networkToBulk( dir_path )
     if not res['OK']:
       errStr = 'Failed to receive network to bulk.'
@@ -286,7 +275,7 @@ class StorageElementHandler( RequestHandler ):
         fileID = fileID.replace( '.bz2', '' )
         compress = True
       fileID = fileID.replace( '.tar', '' )
-      strippedFiles.append( fileID )
+      strippedFiles.append(self.__resolveFileID(fileID))
     res = fileHelper.bulkToNetwork( strippedFiles, compress = compress )
     if not res['OK']:
       gLogger.error( 'Failed to send bulk to network', res['Message'] )
@@ -294,21 +283,15 @@ class StorageElementHandler( RequestHandler ):
 
   types_remove = [StringType, StringType]
   def export_remove( self, fileID, token ):
-    """ Remove fileID from the storage.
-        token is used for access rights confirmation.
-    """
-
-    return self.__removeFile( fileID, token )
+    """ Remove fileID from the storage. token is used for access rights confirmation. """
+    return self.__removeFile(self.__resolveFileID(fileID),token)
 
   def __removeFile( self, fileID, token ):
     """ Remove one file with fileID name from the storage
     """
-    while fileID[0] == '/':
-      fileID = fileID[1:]
-    file_path = os.path.join( base_path, fileID )
     if self.__confirmToken( token, fileID, 'x' ):
       try:
-        os.remove( file_path )
+        os.remove(fileID)
         return S_OK()
       except OSError, x:
         if str( x ).find( 'No such file' ) >= 0:
@@ -323,9 +306,7 @@ class StorageElementHandler( RequestHandler ):
   def export_getDirectorySize( self, fileID ):
     """ Get the size occupied by the given directory
     """
-    while fileID[0] == '/':
-      fileID = fileID[1:]
-    dir_path = os.path.join( base_path, fileID )
+    dir_path = self.__resolveFileID(fileID)
     if os.path.exists( dir_path ):
       try:
         space = self.__getDirectorySize( dir_path )
@@ -340,9 +321,7 @@ class StorageElementHandler( RequestHandler ):
   def export_removeDirectory( self, fileID, token ):
     """ Remove the given directory from the storage
     """
-    while fileID[0] == '/':
-      fileID = fileID[1:]
-    dir_path = os.path.join( base_path, fileID )
+    dir_path = self.__resolveFileID(fileID)
     if not self.__confirmToken( token, fileID, 'x' ):
       return S_ERROR( 'Directory removal %s not authorized' % fileID )
     else:
