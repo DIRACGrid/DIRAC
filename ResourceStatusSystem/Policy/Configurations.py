@@ -166,8 +166,12 @@ Policies = {
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
       'args' : None,  
-      'Site_Panel' : {'WebLink':'DT_link'},
-      'Resource_Panel' : {'WebLink':'DT_link'}
+      'Site_Panel' : [ {'WebLink': {'Command': 'DT_link', 
+                                    'args': None}}
+                      ], 
+      'Resource_Panel' : [ {'WebLink': {'Command': 'DT_link', 
+                                        'args': None}}
+                      ]
      },
   'DT_Policy_Scheduled' : 
     { 'Granularity' : [], 
@@ -188,7 +192,9 @@ Policies = {
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
       'args' : None,  
-      'Site_Panel' : {'WebLink':'GGUS_link'}
+      'Site_Panel' : [ {'WebLink': {'Command': 'GGUS_link', 
+                                    'args': None}}
+                      ]
      },
   'SAM_Policy' : 
     { 'Granularity' : [], 
@@ -209,7 +215,15 @@ Policies = {
       'args' : ( None, ['LHCb CE-lhcb-availability', 'LHCb CE-lhcb-install', 'LHCb CE-lhcb-job-Boole', 
               'LHCb CE-lhcb-job-Brunel', 'LHCb CE-lhcb-job-DaVinci', 'LHCb CE-lhcb-job-Gauss', 'LHCb CE-lhcb-os', 
               'LHCb CE-lhcb-queues', 'bi', 'csh', 'js', 'gfal', 'swdir', 'voms'] ), 
-      'Resource_Panel' : {'WebLink':{'Command':'SAM_tests'}}
+      'Resource_Panel' : [ {'SAM': {'Command':'SAM_tests', 
+                                    'args': ( None, ['LHCb CE-lhcb-availability', 'LHCb CE-lhcb-install', 
+                                                     'LHCb CE-lhcb-job-Boole', 'LHCb CE-lhcb-job-Brunel', 
+                                                     'LHCb CE-lhcb-job-DaVinci', 'LHCb CE-lhcb-job-Gauss', 
+                                                     'LHCb CE-lhcb-os', 'LHCb CE-lhcb-queues', 
+                                                     'bi', 'csh', 'js', 'gfal', 'swdir', 'voms'] ) }},
+                           {'WebLink': {'Command':'SAM_link',
+                                        'args': None}}
+                         ]
      },     
   'SAM_CREAMCE_Policy' : 
     { 'Granularity' : ['Resource'], 
@@ -219,7 +233,11 @@ Policies = {
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['CREAMCE'],
       'args' : ( None, ['bi', 'csh', 'gfal', 'swdir', 'creamvoms'] ), 
-      'Resource_Panel' : {'WebLink':{'Command':'SAM_tests'}}
+      'Resource_Panel' : [ {'SAM': {'Command':'SAM_tests', 
+                                    'args': ( None, ['bi', 'csh', 'gfal', 'swdir', 'creamvoms'] ) }},
+                           {'WebLink': {'Command':'SAM_link',
+                                        'args': None}}
+                         ]
      },     
   'SAM_SE_Policy' : 
     { 'Granularity' : ['Resource'], 
@@ -229,7 +247,11 @@ Policies = {
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['SE'],
       'args' : ( None, ['DiracTestUSER', 'FileAccessV2'] ), 
-      'Resource_Panel' : {'WebLink':{'Command':'SAM_tests'}}
+      'Resource_Panel' : [ {'SAM': {'Command':'SAM_tests', 
+                                    'args': ( None, ['DiracTestUSER', 'FileAccessV2'] ) }},
+                           {'WebLink': {'Command':'SAM_link',
+                                        'args': None}}
+                         ]
      },     
   'SAM_LFC_C_Policy' : 
     { 'Granularity' : ['Resource'], 
@@ -239,7 +261,11 @@ Policies = {
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['LFC_C'],
       'args' : ( None, ['lfcwf', 'lfclr', 'lfcls', 'lfcping'] ),
-      'Resource_Panel' : {'WebLink':{'Command':'SAM_tests'}}
+      'Resource_Panel' : [ {'SAM': {'Command':'SAM_tests', 
+                                    'args': ( None, ['lfcwf', 'lfclr', 'lfcls', 'lfcping'] ) }},
+                           {'WebLink': {'Command':'SAM_link',
+                                        'args': None}}
+                          ]
      },     
   'SAM_LFC_L_Policy' : 
     { 'Granularity' : ['Resource'], 
@@ -249,7 +275,11 @@ Policies = {
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['LFC_L'],
       'args' : ( None, ['lfcstreams', 'lfclr', 'lfcls', 'lfcping'] ),
-      'Resource_Panel' : {'WebLink':{'Command':'SAM_tests'}}
+      'Resource_Panel' : [ {'SAM': {'Command':'SAM_tests', 
+                                    'args': ( None, ['lfcstreams', 'lfclr', 'lfcls', 'lfcping'] ) }},
+                           {'WebLink': {'Command':'SAM_link',
+                                        'args': None}}
+                          ]
      },     
   'JobsEfficiencySimple_Policy' :  
     { 'Granularity' : ['Service'], 

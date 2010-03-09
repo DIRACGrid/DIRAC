@@ -34,6 +34,11 @@ class CommandCaller:
         from DIRAC.ResourceStatusSystem.Client.Command.DIRACAccounting_Command import DIRACAccounting_Command 
         c = DIRACAccounting_Command()
 
+    if comm == 'SAM_tests':
+      if c is None:
+        from DIRAC.ResourceStatusSystem.Client.Command.SAMResults_Command import SAMResults_Command 
+        c = SAMResults_Command()
+
     else:
       if c is None:
         from DIRAC.ResourceStatusSystem.Client.Command.Command import Command 

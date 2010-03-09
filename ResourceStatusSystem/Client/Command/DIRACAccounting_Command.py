@@ -45,8 +45,6 @@ class DIRACAccounting_Command(Command):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       rc = ReportsClient()
 
-    print args
-
     granularity = args[0]
     name = args[1]
     accounting = args[2]
@@ -79,10 +77,7 @@ class DIRACAccounting_Command(Command):
       conditions['Destination'] = [name]
           
     res = rc.getReport(accounting, plot, fromT, toT, conditions, grouping)
-    
-    print res
-    
-    
+        
     if res['OK']:
       return res['Value']
     else:
