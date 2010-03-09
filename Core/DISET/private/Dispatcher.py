@@ -45,6 +45,7 @@ class Dispatcher:
                         'URL' : serviceCfg.getURL(),
                         'systemSectionPath' : serviceCfg.getSystemPath(),
                         'serviceSectionPath' : serviceCfg.getServicePath(),
+                        'Port' : serviceCfg.getPort(),
                   }
     self.servicesDict[ serviceName ][ 'serviceInfo' ] = serviceInfoDict
     self.servicesDict[ serviceName ][ 'authManager' ] = AuthManager( "%s/Authorization" % serviceCfg.getServicePath() )
