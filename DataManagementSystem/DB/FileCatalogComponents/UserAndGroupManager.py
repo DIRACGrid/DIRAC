@@ -370,6 +370,9 @@ class UserAndGroupManagerCS(UserAndGroupManagerBase):
 
   def findGroup(self,group):
     return S_OK(group)
+  
+  def registerUsersAndGroupsFromCS(self,ignore):
+    return S_OK()
 
 class UserAndGroupManager(UserAndGroupManagerDB):
   pass
