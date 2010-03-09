@@ -273,7 +273,7 @@ class JobAgent( AgentModule ):
       proxyResult = self.__requestProxyFromProxyManager( ownerDN, ownerGroup )
       if not proxyResult['OK']:
         self.log.error( 'Invalid Proxy', proxyResult['Message'] )
-        return S_ERROR( 'Failed to setup proxy: %s' % proxyResult[ 'Value' ] )
+        return S_ERROR( 'Failed to setup proxy: %s' % proxyResult[ 'Message' ] )
       return S_OK( proxyResult['Value'] )
     else:
       ret = getProxyInfo( disableVOMS = True )
@@ -445,9 +445,7 @@ class JobAgent( AgentModule ):
     if not systemConfig or systemConfig.lower() == 'any':
       systemConfig = gConfig.getValue( '/LocalSite/Architecture', '' )
       if not systemConfig:
-        #return S_ERROR( 'Could not establish SystemConfig' )
-        self.log.warn( 'Could not establish SystemConfig' )
-
+        return S_ERROR( 'Could not establish SystemConfig' )
 
     logLevel = self.defaultLogLevel
     if jobParams.has_key( 'LogLevel' ):
