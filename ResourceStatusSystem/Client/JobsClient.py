@@ -14,17 +14,17 @@ class JobsClient:
 #    self.rc = ReportsClient()
 
 #############################################################################
-
-  def getJobsStats(self, granularity, name, periods):
+  def getJobsStats(self, name, periods = None):
+#forse qua non ho bisogno di un client... ce l'ho gia' in self.rc! Basta fare un buon command
+    
     """  
-    Return jobs stats of entity in args
+    Return jobs stats of entity in name
     
     :params:
-      :attr:`granularity`: string - a ValidRes
-    
       :attr:`name`: should be the name of the ValidRes
     
-      :attr:`periods`: list - contains the periods to consider in the query
+      :attr:`periods`: optional list - contains the periods to consider in the query.
+      If not given, takes the last 24h
 
     :return:
       {
@@ -33,17 +33,7 @@ class JobsClient:
         'LastProcessedJobs': X'
       }
     """
-    
-    if granularity.capitalize() not in ValidRes:
-      raise InvalidRes, where(self, self.getJobStats)
-    
-    if granularity == 'Site':
-      entity = getSiteRealName(name)
-      _granularity = 'Site'
-    else:
-      entity = name
-      _granularity = 'GridCE'
-    
+   
     #######TODO
 #    numberOfJobsLash2Hours = self.rc.getReport('Job', 'NumberOfJobs', 
 #                                               datetime.utcnow()-timedelta(hours = 2), 

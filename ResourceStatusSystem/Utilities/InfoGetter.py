@@ -98,7 +98,13 @@ class InfoGetter:
             except Exception:
               continue
     
-    return pol_to_eval
+    polToEval_Args = []
+    
+    for p in pol_to_eval:
+      args = Configurations.Policies[p]['args']
+      polToEval_Args.append({'Name' : p, 'args' : args})
+    
+    return polToEval_Args
   
   
 #############################################################################

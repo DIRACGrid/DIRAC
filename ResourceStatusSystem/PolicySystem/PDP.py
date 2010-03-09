@@ -120,12 +120,12 @@ class PDP:
     ig = InfoGetter()
     
     EVAL = ig.getInfoToApply(('policy', 'policyType'), 
-                      granularity = self.__granularity, 
-                      status = self.__status, 
-                      formerStatus = self.__formerStatus,
-                      siteType = self.__siteType, 
-                      serviceType = self.__serviceType,
-                      resourceType = self.__resourceType)
+                             granularity = self.__granularity, 
+                             status = self.__status, 
+                             formerStatus = self.__formerStatus,
+                             siteType = self.__siteType, 
+                             serviceType = self.__serviceType,
+                             resourceType = self.__resourceType)
     
     policyCombinedResultsList = []
       
@@ -182,12 +182,14 @@ class PDP:
     
     policyResults = []
     
-    pi = PolicyCaller()
+    pc = PolicyCaller()
     
     for p in policies:
-      res = pi.policyInvocation(granularity = granularity, name = name,
+      pName = p['Name']
+      extraArgs = p['args']
+      res = pc.policyInvocation(granularity = granularity, name = name,
                                 status = status, policy = policy, args = args,
-                                pol = p)
+                                pol = pName, extraArgs = extraArgs)
 
       if res['SAT'] != None:
         policyResults.append(res)

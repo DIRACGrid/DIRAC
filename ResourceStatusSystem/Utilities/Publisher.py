@@ -150,8 +150,15 @@ class Publisher:
     if format == 'RSS':
       info_bit_got = self._getInfoFromRSSDB(name, what)
     else:
-      info_bit_got = self.cc.commandInvocation(granularity, name, None, None, 
-                                               None, what)
+      if isinstance(what, dict):
+        command = what['Command']
+        extraArgs = what['args']
+      else:
+        command = what
+        extraArgs = None
+      
+      info_bit_got = self.cc.commandInvocation(granularity, name, None, 
+                                               None, command, extraArgs)
 
     return info_bit_got
 

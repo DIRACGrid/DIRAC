@@ -34,7 +34,6 @@ class RS2HistoryAgent(AgentModule):
       except RSSException, x:
         gLogger.error(whoRaised(x))
       
-      self.am_setOption( "PollingTime", 120 )
       return S_OK()
 
     except Exception, x:

@@ -7,6 +7,84 @@ from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC import gConfig
 
 #############################################################################
+# policies parameters
+#############################################################################
+
+DTinHours = 12
+
+# --- Pilots Efficiency policy --- #
+HIGH_PILOTS_NUMBER = 60
+MEDIUM_PILOTS_NUMBER = 20
+GOOD_PILOTS_EFFICIENCY = 90
+MEDIUM_PILOTS_EFFICIENCY = 30
+MAX_PILOTS_PERIOD_WINDOW = 720
+SHORT_PILOTS_PERIOD_WINDOW = 2
+MEDIUM_PILOTS_PERIOD_WINDOW = 8
+LARGE_PILOTS_PERIOD_WINDOW = 48
+
+# --- Jobs Efficiency policy --- #
+HIGH_JOBS_NUMBER = 60
+MEDIUM_JOBS_NUMBER = 20
+GOOD_JOBS_EFFICIENCY = 90
+MEDIUM_JOBS_EFFICIENCY = 30
+MAX_JOBS_PERIOD_WINDOW = 720
+SHORT_JOBS_PERIOD_WINDOW = 2
+MEDIUM_JOBS_PERIOD_WINDOW = 8
+LARGE_JOBS_PERIOD_WINDOW = 48
+
+# --- GGUS Tickets policy --- #
+HIGH_TICKTES_NUMBER = 2
+
+# --- SE transfer quality --- #
+Transfer_QUALITY_LOW = 0.60
+Transfer_QUALITY_HIGH = 0.90
+
+
+#############################################################################
+# site/services/resource checking frequency
+#############################################################################
+
+Sites_check_freq = {  'T0_ACTIVE_CHECK_FREQUENCY': 5, \
+                      'T0_PROBING_CHECK_FREQUENCY': 5, \
+                      'T0_BANNED_CHECK_FREQUENCY' : 5, \
+                      'T1_ACTIVE_CHECK_FREQUENCY' : 8, \
+                      'T1_PROBING_CHECK_FREQUENCY' : 5, \
+                      'T1_BANNED_CHECK_FREQUENCY' : 8, \
+                      'T2_ACTIVE_CHECK_FREQUENCY' : 30, \
+                      'T2_PROBING_CHECK_FREQUENCY' : 20, \
+                      'T2_BANNED_CHECK_FREQUENCY' : 30 }
+
+Services_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 10, \
+                       'T0_PROBING_CHECK_FREQUENCY': 5, \
+                       'T0_BANNED_CHECK_FREQUENCY' : 8, \
+                       'T1_ACTIVE_CHECK_FREQUENCY' : 12, \
+                       'T1_PROBING_CHECK_FREQUENCY' : 10, \
+                       'T1_BANNED_CHECK_FREQUENCY' : 12, \
+                       'T2_ACTIVE_CHECK_FREQUENCY' : 30, \
+                       'T2_PROBING_CHECK_FREQUENCY' : 20, \
+                       'T2_BANNED_CHECK_FREQUENCY' : 30 }
+
+Resources_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 10, \
+                        'T0_PROBING_CHECK_FREQUENCY': 8, \
+                        'T0_BANNED_CHECK_FREQUENCY' : 10, \
+                        'T1_ACTIVE_CHECK_FREQUENCY' : 12, \
+                        'T1_PROBING_CHECK_FREQUENCY' : 10, \
+                        'T1_BANNED_CHECK_FREQUENCY' : 12, \
+                        'T2_ACTIVE_CHECK_FREQUENCY' : 30, \
+                        'T2_PROBING_CHECK_FREQUENCY' : 20, \
+                        'T2_BANNED_CHECK_FREQUENCY' : 30 }
+
+StorageElements_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 10, \
+                              'T0_PROBING_CHECK_FREQUENCY': 8, \
+                              'T0_BANNED_CHECK_FREQUENCY' : 10, \
+                              'T1_ACTIVE_CHECK_FREQUENCY' : 12, \
+                              'T1_PROBING_CHECK_FREQUENCY' : 10, \
+                              'T1_BANNED_CHECK_FREQUENCY' : 12, \
+                              'T2_ACTIVE_CHECK_FREQUENCY' : 30, \
+                              'T2_PROBING_CHECK_FREQUENCY' : 20, \
+                              'T2_BANNED_CHECK_FREQUENCY' : 30 }
+
+#############################################################################
 # alarms and notifications
 #############################################################################
 
@@ -87,6 +165,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
+      'args' : None,  
       'Site_Panel' : {'WebLink':'DT_link'},
       'Resource_Panel' : {'WebLink':'DT_link'}
      },
@@ -97,6 +176,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
+      'args' : (DTinHours, )
 #      'Site_Panel' : {'WebLink':'DT_link'},
 #      'Resource_Panel' : {'WebLink':'DT_link'}
      },
@@ -107,7 +187,8 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
-      'Site_Panel' : [{'WebLink':'GGUS_info'}, {'WebLink':'GGUS_link'}]
+      'args' : None,  
+      'Site_Panel' : {'WebLink':'GGUS_link'}
      },
   'SAM_Policy' : 
     { 'Granularity' : [], 
@@ -116,6 +197,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['SE', 'LFC'],
+      'args' : None,  
      },
   'SAM_CE_Policy' : 
     { 'Granularity' : ['Resource'], 
@@ -124,7 +206,10 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['CE'],
-      'Resource_Panel' : {'WebLink':'SAM_tests'}
+      'args' : ( None, ['LHCb CE-lhcb-availability', 'LHCb CE-lhcb-install', 'LHCb CE-lhcb-job-Boole', 
+              'LHCb CE-lhcb-job-Brunel', 'LHCb CE-lhcb-job-DaVinci', 'LHCb CE-lhcb-job-Gauss', 'LHCb CE-lhcb-os', 
+              'LHCb CE-lhcb-queues', 'bi', 'csh', 'js', 'gfal', 'swdir', 'voms'] ), 
+      'Resource_Panel' : {'WebLink':{'Command':'SAM_tests'}}
      },     
   'SAM_CREAMCE_Policy' : 
     { 'Granularity' : ['Resource'], 
@@ -133,7 +218,8 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['CREAMCE'],
-      'Resource_Panel' : {'WebLink':'SAM_tests'}
+      'args' : ( None, ['bi', 'csh', 'gfal', 'swdir', 'creamvoms'] ), 
+      'Resource_Panel' : {'WebLink':{'Command':'SAM_tests'}}
      },     
   'SAM_SE_Policy' : 
     { 'Granularity' : ['Resource'], 
@@ -142,7 +228,8 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['SE'],
-      'Resource_Panel' : {'WebLink':'SAM_tests'}
+      'args' : ( None, ['DiracTestUSER', 'FileAccessV2'] ), 
+      'Resource_Panel' : {'WebLink':{'Command':'SAM_tests'}}
      },     
   'SAM_LFC_C_Policy' : 
     { 'Granularity' : ['Resource'], 
@@ -151,7 +238,8 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['LFC_C'],
-      'Resource_Panel' : {'WebLink':'SAM_tests'}
+      'args' : ( None, ['lfcwf', 'lfclr', 'lfcls', 'lfcping'] ),
+      'Resource_Panel' : {'WebLink':{'Command':'SAM_tests'}}
      },     
   'SAM_LFC_L_Policy' : 
     { 'Granularity' : ['Resource'], 
@@ -160,7 +248,8 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['LFC_L'],
-      'Resource_Panel' : {'WebLink':'SAM_tests'}
+      'args' : ( None, ['lfcstreams', 'lfclr', 'lfcls', 'lfcping'] ),
+      'Resource_Panel' : {'WebLink':{'Command':'SAM_tests'}}
      },     
   'JobsEfficiencySimple_Policy' :  
     { 'Granularity' : ['Service'], 
@@ -169,8 +258,17 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ['Computing'],
       'ResourceType' : ValidResourceType,
-      'Service_Computing_Panel' : [{'Graph':'Jobs_graph'}, {'Graph':'Jobs_chart'}]
-     },
+      'args' : None,  
+      'Service_Computing_Panel' : [ {'Graph': {'Command': 'DiracAccountingGraph', 
+                                               'args': ('Job', 'CumulativeNumberOfJobs', 
+                                                        {'Format': 'LastHours', 'hours': 24}, 
+                                                        'FinalMajorStatus', None)}},
+                                    {'Graph': {'Command': 'DiracAccountingGraph', 
+                                               'args': ('Job', 'TotalNumberOfJobs', 
+                                                        {'Format': 'LastHours', 'hours': 24}, 
+                                                        'JobType', {'FinalMajorStatus':'Failed'})}}
+                                    ]                                  
+   },
   'PilotsEfficiencySimple_Policy_Service' : 
     { 'Granularity' : ['Service'], 
       'Status' : ValidStatus, 
@@ -178,7 +276,16 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ['Computing'],
       'ResourceType' : ValidResourceType,
-      'Service_Computing_Panel' : {'Graph':'Pilots_graph_site'}
+      'args' : None,  
+      'Service_Computing_Panel' : [ {'Graph': {'Command' : 'DiracAccountingGraph', 
+                                               'args': ('Pilot', 'CumulativeNumberOfPilots', 
+                                                         {'Format': 'LastHours', 'hours': 24}, 
+                                                         'GridStatus', None)}},
+                                    {'Graph': {'Command':  'DiracAccountingGraph',
+                                               'args': ('Pilot', 'TotalNumberOfPilots', 
+                                                        {'Format': 'LastHours', 'hours': 24}, 
+                                                        'GridCE', None)}}
+                                    ]
      },
   'PilotsEfficiencySimple_Policy_Resource' : 
     { 'Granularity' : ['Resource'], 
@@ -187,7 +294,12 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['CE', 'CREAMCE'],
-      'Resource_Panel' : {'Graph':'Pilots_graph_resource'}
+      'args' : None,  
+      'Resource_Panel' : [ {'Graph': {'Command': 'DiracAccountingGraph',
+                                      'args': ('Pilot', 'CumulativeNumberOfPilots', 
+                                               {'Format': 'LastHours', 'hours': 24}, 
+                                               'GridStatus', None)}}
+                          ]
      },
   'OnSitePropagation_Policy' :
     { 'Granularity' : ['Site'], 
@@ -196,6 +308,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
+      'args' : ('Service', ),
       'Site_Panel' : {'RSS':'ServiceOfSite'}
      },
   'OnComputingServicePropagation_Policy' :
@@ -205,6 +318,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ['Computing'],
       'ResourceType' : ValidResourceType,
+      'args' : ('Resource', ),
       'Service_Computing_Panel' : {'RSS':'ResOfCompService'}
      },
   'OnStorageServicePropagation_Policy_Resources' :
@@ -214,6 +328,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ['Storage'],
       'ResourceType' : ValidResourceType,
+      'args' : ('Resource', ),
       'Service_Storage_Panel' : {'RSS':'ResOfStorService'}
      },
   'OnStorageServicePropagation_Policy_StorageElements' :
@@ -223,6 +338,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ['Storage'],
       'ResourceType' : ValidResourceType,
+      'args' : ('StorageElement', ),
       'Service_Storage_Panel' : {'RSS':'StorageElementsOfSite'}
      },
   'OnServicePropagation_Policy' :
@@ -232,6 +348,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
+      'args' : None,  
      },
   'OnSENodePropagation_Policy' :
     { 'Granularity' : [], 
@@ -239,6 +356,7 @@ Policies = {
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
+      'args' : None,  
       'ResourceType' : ['SE'],
      },
   'TransferQuality_Policy' :
@@ -248,7 +366,12 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
-      'SE_Panel' : {'Graph':'SE_transfers_graph'}
+      'args' : None,  
+      'SE_Panel' : [ {'Graph': {'Command':'DiracAccountingGraph', 
+                                'args': ('DataOperation', 'Quality', 
+                                         {'Format': 'LastHours', 'hours': 24}, 
+                                         'Channel', {'OperationType':'putAndRegister'})}}
+                      ]
      },
   'AlwaysFalse_Policy' :
     { 'Granularity' : [], 
@@ -256,6 +379,7 @@ Policies = {
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
+      'args' : None,  
       'ResourceType' : ValidResourceType,
      }
 }
@@ -306,82 +430,4 @@ views_panels = {
   'SE_View' : ['SE_Panel']
 }
 
-
-#############################################################################
-# policies parameters
-#############################################################################
-
-DTinHours = 12
-
-# --- Pilots Efficiency policy --- #
-HIGH_PILOTS_NUMBER = 60
-MEDIUM_PILOTS_NUMBER = 20
-GOOD_PILOTS_EFFICIENCY = 90
-MEDIUM_PILOTS_EFFICIENCY = 30
-MAX_PILOTS_PERIOD_WINDOW = 720
-SHORT_PILOTS_PERIOD_WINDOW = 2
-MEDIUM_PILOTS_PERIOD_WINDOW = 8
-LARGE_PILOTS_PERIOD_WINDOW = 48
-
-# --- Jobs Efficiency policy --- #
-HIGH_JOBS_NUMBER = 60
-MEDIUM_JOBS_NUMBER = 20
-GOOD_JOBS_EFFICIENCY = 90
-MEDIUM_JOBS_EFFICIENCY = 30
-MAX_JOBS_PERIOD_WINDOW = 720
-SHORT_JOBS_PERIOD_WINDOW = 2
-MEDIUM_JOBS_PERIOD_WINDOW = 8
-LARGE_JOBS_PERIOD_WINDOW = 48
-
-# --- GGUS Tickets policy --- #
-HIGH_TICKTES_NUMBER = 2
-
-# --- SE transfer quality --- #
-Transfer_QUALITY_LOW = 0.60
-Transfer_QUALITY_HIGH = 0.90
-
-
-#############################################################################
-# site/services/resource checking frequency
-#############################################################################
-
-Sites_check_freq = {  'T0_ACTIVE_CHECK_FREQUENCY': 5, \
-                      'T0_PROBING_CHECK_FREQUENCY': 5, \
-                      'T0_BANNED_CHECK_FREQUENCY' : 5, \
-                      'T1_ACTIVE_CHECK_FREQUENCY' : 8, \
-                      'T1_PROBING_CHECK_FREQUENCY' : 5, \
-                      'T1_BANNED_CHECK_FREQUENCY' : 8, \
-                      'T2_ACTIVE_CHECK_FREQUENCY' : 30, \
-                      'T2_PROBING_CHECK_FREQUENCY' : 20, \
-                      'T2_BANNED_CHECK_FREQUENCY' : 30 }
-
-Services_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 10, \
-                       'T0_PROBING_CHECK_FREQUENCY': 5, \
-                       'T0_BANNED_CHECK_FREQUENCY' : 8, \
-                       'T1_ACTIVE_CHECK_FREQUENCY' : 12, \
-                       'T1_PROBING_CHECK_FREQUENCY' : 10, \
-                       'T1_BANNED_CHECK_FREQUENCY' : 12, \
-                       'T2_ACTIVE_CHECK_FREQUENCY' : 30, \
-                       'T2_PROBING_CHECK_FREQUENCY' : 20, \
-                       'T2_BANNED_CHECK_FREQUENCY' : 30 }
-
-Resources_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 10, \
-                        'T0_PROBING_CHECK_FREQUENCY': 8, \
-                        'T0_BANNED_CHECK_FREQUENCY' : 10, \
-                        'T1_ACTIVE_CHECK_FREQUENCY' : 12, \
-                        'T1_PROBING_CHECK_FREQUENCY' : 10, \
-                        'T1_BANNED_CHECK_FREQUENCY' : 12, \
-                        'T2_ACTIVE_CHECK_FREQUENCY' : 30, \
-                        'T2_PROBING_CHECK_FREQUENCY' : 20, \
-                        'T2_BANNED_CHECK_FREQUENCY' : 30 }
-
-StorageElements_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 10, \
-                              'T0_PROBING_CHECK_FREQUENCY': 8, \
-                              'T0_BANNED_CHECK_FREQUENCY' : 10, \
-                              'T1_ACTIVE_CHECK_FREQUENCY' : 12, \
-                              'T1_PROBING_CHECK_FREQUENCY' : 10, \
-                              'T1_BANNED_CHECK_FREQUENCY' : 12, \
-                              'T2_ACTIVE_CHECK_FREQUENCY' : 30, \
-                              'T2_PROBING_CHECK_FREQUENCY' : 20, \
-                              'T2_BANNED_CHECK_FREQUENCY' : 30 }
 

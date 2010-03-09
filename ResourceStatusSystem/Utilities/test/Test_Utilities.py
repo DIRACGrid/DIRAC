@@ -30,7 +30,7 @@ class UtilitiesTestCase(unittest.TestCase):
 class PublisherSuccess(UtilitiesTestCase):
   
   def test_getInfo(self):
-    comb = ( ('Site', 'LCG.Ferrara.it', 'Site_View'), 
+    comb = ( ('Site', 'LCG.CERN.ch', 'Site_View'), 
              ('Resource', 'grid0.fe.infn.it', 'Resource_View'), 
              ('StorageElement', 'CERN-RAW', 'SE_View') )
     for (g, n, v) in comb: 

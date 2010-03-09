@@ -13,8 +13,10 @@ from DIRAC.ResourceStatusSystem.Client.Command.SAMResults_Command import SAMResu
 from DIRAC.ResourceStatusSystem.Client.Command.GGUSTickets_Command import GGUSTickets_Open
 from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.DataOperations_Command import TransferQuality_Command
+from DIRAC.ResourceStatusSystem.Client.Command.DIRACAccounting_Command import DIRACAccounting_Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+
 
 #############################################################################
 
@@ -47,6 +49,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.StElSt_C = StorageElementsStats_Command()
     self.MS_C = MonitoredStatus_Command()
     self.DQ_C = TransferQuality_Command()
+    self.DA_C = DIRACAccounting_Command()
 
 #############################################################################
 
@@ -430,7 +433,8 @@ class TransferOperations_CommandSuccess(ClientsCommandsTestCase):
   def test_doCommand(self):
 
     self.mock_client.getQualityStats.return_value = {}
-    res = self.DQ_C.doCommand(('StorageElement', 'XXX'), clientIn = self.mock_client)
+    res = self.DQ_C.doCommand(('StorageElement', 'XXX'), 
+                              clientIn = self.mock_client)
     self.assertEqual(res, {})
     res = self.DQ_C.doCommand(('StorageElement', 'XXX', datetime.utcnow()), 
                               clientIn = self.mock_client)
@@ -445,6 +449,23 @@ class TransferOperations_CommandFailure(ClientsCommandsTestCase):
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.DQ_C.doCommand, None)
+
+#############################################################################
+
+class DIRACAccounting_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+    
+    self.mock_client.getReport.return_value = {'OK': True, 
+                                               'Value': {'data': 
+                                                         {'SAM': 
+                                                          {1268053200L: 0.011889755732000001, 
+                                                           1268056800L: 0.011889755731900001}}, 
+                                                           'granularity': 3600}}
+    res = self.DA_C.doCommand(('Site', 'LCG.CERN.ch', 'Job', 'CPUEfficiency', 
+                               {'Format': 'LastHours', 'hours': 24}, 
+                               'JobType'), clientIn = self.mock_client)
+    self.assertEqual(res['data']['SAM'], {1268053200L: 0.011889755732000001, 1268056800L: 0.011889755731900001})
      
 #############################################################################
 
@@ -467,8 +488,6 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBStatus_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBInfo_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBInfo_CommandFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Res2SiteStatus_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Res2SiteStatus_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEff_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEff_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsStats_CommandSuccess))
@@ -498,4 +517,5 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoredStatus_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferOperations_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferOperations_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DIRACAccounting_CommandSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
