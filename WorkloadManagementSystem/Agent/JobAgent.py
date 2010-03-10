@@ -174,12 +174,18 @@ class JobAgent( AgentModule ):
     if not params.has_key( 'SystemConfig' ):
       self.log.warn( 'Job has no system configuration defined in JDL parameters' )
       systemConfig = gConfig.getValue( '/LocalSite/Architecture', '' )
-      self.log.info('Setting system config to /LocalSite/Architecture = %s' %systemConfig)
+      self.log.info('Setting system config to /LocalSite/Architecture = %s since it was not specified' %systemConfig)
+      if not systemConfig:
+        return S_ERROR('/LocalSite/Architecture is not defined')
+      params['SystemConfig']=systemConfig
     else:
       systemConfig = params['SystemConfig']
       if systemConfig.lower() == 'any':
         systemConfig = gConfig.getValue( '/LocalSite/Architecture', '' )
-        self.log.info('Setting system config to /LocalSite/Architecture = %s' %systemConfig)        
+        self.log.info('Setting system config to /LocalSite/Architecture = %s since it was set to "ANY" in the job description' %systemConfig)      
+        if not systemConfig:
+          return S_ERROR('/LocalSite/Architecture is not defined')
+        params['SystemConfig']=systemConfig
 
     if not params.has_key( 'MaxCPUTime' ):
       self.log.warn( 'Job has no CPU requirement defined in JDL parameters' )
