@@ -231,7 +231,7 @@ class SRM2Storage(StorageBase):
     dfile = open(srcFile,'w')
     dfile.write(" ")
     dfile.close()
-    destFile = '%s/%s' % (path,'dirac_directory')
+    destFile = '%s/%s' % (path,'dirac_directory.%s' % time.time())
     directoryDict = {destFile:srcFile}
     res = self.__putFile(srcFile,destFile,0)
     if os.path.exists(srcFile):
@@ -255,6 +255,8 @@ class SRM2Storage(StorageBase):
       res = self.__makeDir(path)
     else:
       res = self.__makeDirs(dir)
+      if not res['OK']:
+        return res
       res = self.__makeDir(path)
     return res
 
@@ -546,8 +548,7 @@ class SRM2Storage(StorageBase):
     return S_OK(resDict)
 
   def exists(self,path):
-    """ Check if the given path exists.
-    """
+    """ Check if the given path exists. """
     res = self.checkArgumentFormat(path)
     if not res['OK']:
       return res
