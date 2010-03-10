@@ -176,7 +176,7 @@ class JobAgent( AgentModule ):
       systemConfig = gConfig.getValue( '/LocalSite/Architecture', '' )
       self.log.info('Setting system config to /LocalSite/Architecture = %s since it was not specified' %systemConfig)
       if not systemConfig:
-        return S_ERROR('/LocalSite/Architecture is not defined')
+        self.log.warn('/LocalSite/Architecture is not defined')
       params['SystemConfig']=systemConfig
     else:
       systemConfig = params['SystemConfig']
@@ -184,7 +184,7 @@ class JobAgent( AgentModule ):
         systemConfig = gConfig.getValue( '/LocalSite/Architecture', '' )
         self.log.info('Setting system config to /LocalSite/Architecture = %s since it was set to "ANY" in the job description' %systemConfig)      
         if not systemConfig:
-          return S_ERROR('/LocalSite/Architecture is not defined')
+          self.log.warn('/LocalSite/Architecture is not defined')
         params['SystemConfig']=systemConfig
 
     if not params.has_key( 'MaxCPUTime' ):
