@@ -166,17 +166,18 @@ class SRM2Storage(StorageBase):
   def getUrl(self,path,withPort=True):
     """ This gets the URL for path supplied. With port is optional.
     """
-    # If the filename supplied already contains the storage base path then do not add it again
-    if re.search(self.path,path):
-      if withPort:
-        url = 'srm://%s:%s%s%s' % (self.host,self.port,self.wspath,path)
-      else:
-        url = 'srm://%s%s' % (self.host,path)
-    # If it is not prepend it to the file name
-    else:
-      pfnBase = self.getPFNBase(withPort)['Value']
-      url = '%s%s' % (pfnBase,path)
-    return S_OK(url)
+    pfnDict = pfnparse(path)['Value']
+    if not re.search(self.path,path):
+      pfnDict['Path'] = "%s/%s" % (self.path,pfnDict['Path'])
+
+    pfnDict['Protocol'] = 'srm'
+    pfnDict['Host'] = self.host
+    pfnDict['Port'] = self.port
+    pfnDict['WSUrl'] = self.wspath
+    if not withPort:
+      pfnDict['Port'] = '' 
+      pfnDict['WSUrl'] = ''
+    return pfnunparse(pfnDict)
 
   def getParameters(self):
     """ This gets all the storage specific parameters pass when instantiating the storage
@@ -270,15 +271,14 @@ class SRM2Storage(StorageBase):
     if not res['OK']:
       return res
     urls = res['Value']
-
     gLogger.debug("SRM2Storage.removeFile: Performing the removal of %s file(s)" % len(urls))
     resDict = self.__gfaldeletesurls_wrapper(urls)['Value']
     failed = resDict['Failed']
     allResults = resDict['AllResults']
     successful = {}
     for urlDict in allResults:
-      if urlDict.has_key('surl'):
-        pathSURL = urlDict['surl']
+      if urlDict.has_key('surl') and urlDict['surl']:
+        pathSURL = self.getUrl(urlDict['surl'])['Value']
         if urlDict['status'] == 0:
           infoStr = 'SRM2Storage.removeFile: Successfully removed file: %s' % pathSURL
           gLogger.debug(infoStr)
@@ -322,8 +322,8 @@ class SRM2Storage(StorageBase):
     allResults = resDict['AllResults']
     successful = {}
     for urlDict in allResults:
-      if urlDict.has_key('surl'):
-        pathSURL = urlDict['surl']
+      if urlDict.has_key('surl') and urlDict['surl']:
+        pathSURL = self.getUrl(urlDict['surl'])['Value']
         if urlDict['status'] == 0:
           gLogger.debug("SRM2Storage.getTransportURL: Obtained tURL for file. %s" % pathSURL)
           successful[pathSURL] = urlDict['turl']
@@ -353,8 +353,8 @@ class SRM2Storage(StorageBase):
     allResults = resDict['AllResults']
     successful = {}
     for urlDict in allResults:
-      if urlDict.has_key('surl'):
-        pathSURL = urlDict['surl']
+      if urlDict.has_key('surl') and urlDict['surl']:
+        pathSURL = self.getUrl(urlDict['surl'])['Value']
         if urlDict['status'] == 0:
           gLogger.debug("SRM2Storage.prestageFile: Issued stage request for file %s." % pathSURL)
           successful[pathSURL] = urlDict['SRMReqID']
@@ -384,8 +384,8 @@ class SRM2Storage(StorageBase):
     allResults = resDict['AllResults']
     successful = {}
     for urlDict in allResults:
-      if urlDict.has_key('surl'):
-        pathSURL = urlDict['surl']
+      if urlDict.has_key('surl') and urlDict['surl']:
+        pathSURL = self.getUrl(urlDict['surl'])['Value']
         if urlDict['status'] == 1:
           gLogger.debug("SRM2Storage.prestageFileStatus: File found to be staged %s." % pathSURL)
           successful[pathSURL] = True
@@ -497,8 +497,8 @@ class SRM2Storage(StorageBase):
     allResults = resDict['AllResults']
     successful = {}
     for urlDict in allResults:
-      if urlDict.has_key('surl'):
-        pathSURL = urlDict['surl']
+      if urlDict.has_key('surl') and urlDict['surl']:
+        pathSURL = self.getUrl(urlDict['surl'])['Value']
         if urlDict['status'] == 0:
           gLogger.debug("SRM2Storage.pinFile: Issued pin request for file %s." % pathSURL)
           successful[pathSURL] = urlDict['SRMReqID']
@@ -528,8 +528,8 @@ class SRM2Storage(StorageBase):
     allResults = resDict['AllResults']
     successful = {}
     for urlDict in allResults:
-      if urlDict.has_key('surl'):
-        pathSURL = urlDict['surl']
+      if urlDict.has_key('surl') and urlDict['surl']:
+        pathSURL = self.getUrl(urlDict['surl'])['Value']
         if urlDict['status'] == 0:
           gLogger.debug("SRM2Storage.releaseFile: Issued release request for file %s." % pathSURL)
           successful[pathSURL] = urlDict['SRMReqID']
@@ -932,7 +932,6 @@ class SRM2Storage(StorageBase):
     for urlDict in listOfResults:
       if urlDict.has_key('surl') and urlDict['surl']:
         pathSURL = self.getUrl(urlDict['surl'])['Value']
-        pathSURL = urlDict['surl']
         if urlDict['status'] == 0:
           successful[pathSURL] = {}
           gLogger.debug("SRM2Storage.listDirectory: Successfully listed directory %s" % pathSURL)
