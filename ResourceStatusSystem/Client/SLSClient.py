@@ -8,9 +8,32 @@ class SLSClient:
 
 #############################################################################
 
+  def getInfo(self, name):
+    """  
+    Use getStatus to return actual SLS status of entity in name 
+    and return link to SLS page
+     
+    :params:
+      :attr:`name`: string - name of the service
+
+    returns:
+    {
+      'SLS':availability
+      'WebLink':link
+    }
+
+    """
+    
+    status = self.getStatus(name)
+    status['Weblink'] = self.getLink(name)['WebLink']
+    
+    return status
+
+#############################################################################
+
   def getStatus(self, name):
     """  
-    Return actual SLS status of entity in args[0]
+    Return actual SLS status of entity in name
      
     :params:
       :attr:`name`: string - name of the service
@@ -31,6 +54,13 @@ class SLSClient:
   
 #############################################################################
   
+
+  def getLink(self, name):
+
+    return {'WebLink':'https://sls.cern.ch/sls/service.php?id=' + name}
+  
+#############################################################################
+ 
   def _read_from_url(self, service):
     #for more information like space occupancy we have to overload this method.
 

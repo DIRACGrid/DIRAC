@@ -17,27 +17,32 @@ class CommandCaller:
     c = command
     a = args
     
-    if comm == 'DT_link':
+    if comm == 'DT_Link':
       if c is None:
         from DIRAC.ResourceStatusSystem.Client.Command.GOCDBStatus_Command import GOCDBInfo_Command 
         c = GOCDBInfo_Command()
 
-    if comm == 'GGUS_Link':
+    elif comm == 'GGUS_Link':
       if c is None:
         from DIRAC.ResourceStatusSystem.Client.Command.GGUSTickets_Command import GGUSTickets_Link 
         c = GGUSTickets_Link()
       if a is None:
         a = (name, )
 
-    if comm == 'DiracAccountingGraph':
+    elif comm == 'DiracAccountingGraph':
       if c is None:
         from DIRAC.ResourceStatusSystem.Client.Command.DIRACAccounting_Command import DIRACAccounting_Command 
         c = DIRACAccounting_Command()
 
-    if comm == 'SAM_tests':
+    elif comm == 'SAM_Tests':
       if c is None:
         from DIRAC.ResourceStatusSystem.Client.Command.SAMResults_Command import SAMResults_Command 
         c = SAMResults_Command()
+
+    elif comm == 'SLS_Link':
+      if c is None:
+        from DIRAC.ResourceStatusSystem.Client.Command.SLS_Command import SLSLink_Command 
+        c = SLSLink_Command()
 
     else:
       if c is None:
