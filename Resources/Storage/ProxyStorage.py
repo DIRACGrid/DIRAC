@@ -119,7 +119,6 @@ class ProxyStorage(StorageBase):
         failed[dest_url] = res['Message']
       else:
         res = client.uploadFile(storageElementName,pfn)
-        print res,'!!!!!!!!!!!'
         if not res['OK']:
           gLogger.error("ProxyStorage.putFile: Failed to upload file to storage element from proxy server.", res['Message'])
           failed[dest_url] = res['Message']
