@@ -1,6 +1,10 @@
+########################################################################
+# $HeadURL$
+########################################################################
 """  LemonAgent reports the state of all installed and set up services and agents. This output is then 
      used in lemon sensors.                                                                            
 """                                                                                                    
+__RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
