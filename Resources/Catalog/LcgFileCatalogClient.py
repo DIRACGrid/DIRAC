@@ -1282,7 +1282,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR('LcgFileCatalogClient.__getDirectoryContents: The supplied path does not exist')
+      return S_ERROR('No such file or directory')
 
     res = self.__getPathStat(path)
     if not res['OK']:
@@ -1353,7 +1353,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR('LcgFileCatalogClient.__getDirectorySize: The supplied path does not exist')
+      return S_ERROR('No such file or directory')
 
     res = self.__getPathStat(path) 
     if not res['OK']:
