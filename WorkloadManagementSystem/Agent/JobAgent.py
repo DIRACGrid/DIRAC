@@ -58,7 +58,7 @@ class JobAgent( AgentModule ):
     self.siteRoot = gConfig.getValue( '/LocalSite/Root', os.getcwd() )
     self.siteName = gConfig.getValue( '/LocalSite/Site', 'Unknown' )
     self.pilotReference = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
-    self.defaultProxyLength = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400 * 5 )
+    self.defaultProxyLength = gConfig.getValue( '/Registry/DefaultProxyLifeTime', 86400 * 5 )
     #Agent options
     # This is the factor to convert raw CPU to Normalized units (based on the CPU Model)
     self.cpuFactor = gConfig.getValue( '/LocalSite/CPUNormalizationFactor', 0.0 )
