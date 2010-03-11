@@ -298,7 +298,7 @@ class JobAgent( AgentModule ):
         proxyResult = self.__requestProxyFromProxyManager( ownerDN, ownerGroup )
         if not proxyResult['OK']:
           self.log.error( 'Invalid Proxy', proxyResult['Message'] )
-          return S_ERROR( 'Failed to setup proxy: %s' % proxyResult[ 'Value' ] )
+          return S_ERROR( 'Failed to setup proxy: %s' % proxyResult[ 'Message' ] )
         proxyChain = proxyResult['Value']
 
     return S_OK( proxyChain )
