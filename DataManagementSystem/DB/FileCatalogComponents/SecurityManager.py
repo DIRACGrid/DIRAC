@@ -15,6 +15,7 @@ class SecurityManagerBase:
     self.globalRead = True
 
   def hasAccess(self,opType,paths,credDict):
+    successful = {}
     if not opType.lower() in ['read','write']:
       return S_ERROR("Operation type not known")
     for path in paths:
@@ -25,6 +26,7 @@ class SecurityManagerBase:
 class NoSecurityManager(SecurityManagerBase):
 
   def hasAccess(self,opType,paths,credDict):
+    successful = {}
     for path in paths:
       successful[path] = True
     resDict = {'Successful':successful,'Failed':{}}
