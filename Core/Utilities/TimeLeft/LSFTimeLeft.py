@@ -32,6 +32,32 @@ class LSFTimeLeft:
     self.year = time.strftime('%Y',time.gmtime())
     self.log.verbose('LSB_JOBID=%s, LSB_QUEUE=%s, LSF_BINDIR=%s' %(self.jobID,self.queue,self.bin))
 
+    self.cpuLimit = None
+    self.wallClockLimit = None
+
+    cmd = '%s/bqueues -l %s' %(self.bin,self.queue)
+    result = self.__runCommand(cmd)
+    if not result['OK']:
+      return result
+
+    self.log.debug(result['Value'])
+    lines = result['Value'].split('\n')
+    for i in xrange(len(lines)):
+      if re.search('.*CPULIMIT.*',lines[i]):
+        info = lines[i+1].split()
+        if len(info)>=1:
+          self.cpuLimit = float(info[0])*60
+        else:
+          self.log.warn('Problem parsing "%s" for CPU limit' % lines[i+1])
+          self.cpuLimit = -1
+      if re.search('.*RUNLIMIT.*',lines[i]):
+        info = lines[i+1].split()
+        if len(info)>=1:
+          self.wallClockLimit = float(info[0])*60
+        else:
+          self.log.warn('Problem parsing "%s" for wall clock limit' % lines[i+1])
+
+
   #############################################################################
   def getResourceUsage(self):
     """Returns a dictionary containing CPUConsumed, CPULimit, WallClockConsumed
@@ -69,28 +95,7 @@ class LSFTimeLeft:
         else:
           self.log.warn('Problem parsing "%s" for CPU consumed' %line)
 
-    cmd = '%s/bqueues -l %s' %(self.bin,self.queue)
-    result = self.__runCommand(cmd)
-    if not result['OK']:
-      return result
-
-    self.log.debug(result['Value'])
-    lines = result['Value'].split('\n')
-    for i in xrange(len(lines)):
-      if re.search('.*CPULIMIT.*',lines[i]):
-        info = lines[i+1].split()
-        if len(info)>=1:
-          cpuLimit = float(info[0])*60
-        else:
-          self.log.warn('Problem parsing "%s" for CPU limit' %line)
-      if re.search('.*RUNLIMIT.*',lines[i]):
-        info = lines[i+1].split()
-        if len(info)>=1:
-          wallClockLimit = float(info[0])*60
-        else:
-          self.log.warn('Problem parsing "%s" for wall clock limit' %line)
-
-    consumed = {'CPU':cpu,'CPULimit':cpuLimit,'WallClock':wallClock,'WallClockLimit':wallClockLimit}
+    consumed = {'CPU':cpu,'CPULimit':self.cpuLimit,'WallClock':wallClock,'WallClockLimit':self.wallClockLimit}
     self.log.debug(consumed)
     failed = False
     for k,v in consumed.items():
