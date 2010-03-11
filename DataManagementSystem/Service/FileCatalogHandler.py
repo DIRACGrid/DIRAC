@@ -184,3 +184,54 @@ class FileCatalogHandler(RequestHandler):
     """ Determine the ACL information for a supplied path
     """
     return fcDB.getPathPermissions(lfns,self.getRemoteCredentials())
+  
+  ########################################################################
+  # Metadata Catalog Operations
+  #
+  types_addMetadataField = [ StringTypes, StringTypes ]
+  def export_addMetadataField(self, fieldName, fieldType ):
+    """ Add a new metadata field of the given type
+    """
+    return fcDB.addMetadataField( fieldName, fieldType )
+
+  types_deleteMetadataField = [ StringTypes ]
+  def export_deleteMetadataField(self, fieldName ):
+    """ Delete the metadata field 
+    """
+    return fcDB.deleteMetadataField( fieldName )
+  
+  types_getMetadataFields = [ ]
+  def export_getMetadataFields(self):
+    """ Get all the metadata fields
+    """
+    return fcDB.getMetadataFields()
+  
+  types_setMetadata = [ StringTypes, StringTypes ]
+  def export_setMetadata(self, path, fieldName, fieldValue ):
+    """ Set metadata parameter for the given path
+    """
+    return fcDB.setMetadata( path, fieldName, fieldValue )
+  
+  types_getDirectoryMetadata = [ StringTypes ]
+  def export_getDirectoryMetadata(self,path):
+    """ Get all the metadata valid for the given directory path
+    """
+    return fcDB.getDirectoryMetadata(path)
+  
+  types_findDirectoriesByMetadata = [ DictType ]
+  def export_findDirectoriesByMetadata(self,metaDict):
+    """ Find all the directories satisfying the given metadata set
+    """
+    return fcDB.findDirectoriesByMetadata(metaDict)
+  
+  types_findFilesByMetadata = [ DictType ]
+  def export_findFilesByMetadata(self,metaDict):
+    """ Find all the files satisfying the given metadata set
+    """
+    return fcDB.findFilesByMetadata(metaDict)
+  
+  types_getCompatibleMetadata = [ DictType ]
+  def export_getCompatibleMetadata(self,metaDict):
+    """ Get metadata values compatible with the given metadata subset
+    """
+    return fcDB.getCompatibleMetadata(metaDict)

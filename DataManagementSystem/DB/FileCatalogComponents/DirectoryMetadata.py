@@ -172,6 +172,25 @@ class DirectoryMetadata:
         
     return S_OK(dirList)  
   
+  def findFilesByMetadata(self,metaDict):
+    """ Find Files satisfying the given metadata
+    """
+    
+    result = self.findDirectoriesByMetadata(metaDict)
+    if not result['OK']:
+      return result
+    
+    fileList = []
+    result = self.listDirectory(dirList)
+    if not result['OK']:
+      return result
+    
+    for dir in result['Value']['Successful']:
+      for fname in result['Value']['Successful'][dir]['Files']:
+        fileList.append(dir+'/'+fname)
+        
+    return S_OK(fileList)    
+  
 ################################################################################################
 #
 # Find metadata compatible with other metadata in order to organize dynamically updated
@@ -257,3 +276,4 @@ class DirectoryMetadata:
       
     result = self.__findDistinctMetadata(comFields,cdirList)
     return result  
+  
