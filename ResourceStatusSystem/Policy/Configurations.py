@@ -403,6 +403,18 @@ Policies = {
                                          'Channel', {'OperationType':'putAndRegister'})}}
                       ]
      },
+  'SEOccupancy_Policy' :
+    { 'Granularity' : ['StorageElement'], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ValidResourceType,
+      'args' : None,  
+      'SE_Panel' : [ {'WebLink': {'Command':'SLS_link',
+                                  'args': None}}
+                      ]
+     },
   'AlwaysFalse_Policy' :
     { 'Granularity' : [], 
       'Status' : ValidStatus, 

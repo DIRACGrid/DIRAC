@@ -122,6 +122,11 @@ class PolicyCaller:
         from DIRAC.ResourceStatusSystem.Policy.TransferQuality_Policy import TransferQuality_Policy 
         p = TransferQuality_Policy()
     
+    elif pol == 'SEOccupancy_Policy':
+      if p is None:
+        from DIRAC.ResourceStatusSystem.Policy.SEOccupancy_Policy import SEOccupancy_Policy 
+        p = SEOccupancy_Policy()
+    
     else:
       if p is None:
         from DIRAC.ResourceStatusSystem.Policy.AlwaysFalse_Policy import AlwaysFalse_Policy 

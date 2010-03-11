@@ -37,18 +37,21 @@ class GOCDBStatus_Command(Command):
       c = GOCDBClient()
       
     if len(args) == 2:
-      res = c.getStatus(args[0], args[1])
+      res = c.getStatus(args[0], args[1])[0]
     elif len(args) == 3:
-      res = c.getStatus(args[0], args[1], None, args[2])
+      res = c.getStatus(args[0], args[1], None, args[2])[0]
 
-    return res[0]
+    if 'url' in res.keys():
+      del res['url']
+
+    return res
 
 #############################################################################
 
 class GOCDBInfo_Command(Command):
   
   def doCommand(self, args, clientIn=None):
-    """ Return getInfo from GOC DB Client
+    """ Return all info from GOC DB Client
     
        :params:
          :attr:`args`: 
@@ -70,7 +73,12 @@ class GOCDBInfo_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.GOCDBClient import GOCDBClient   
       c = GOCDBClient()
       
-    res = c.getInfo(args[0], args[1])
+    if len(args) == 2:
+      res = c.getStatus(args[0], args[1])[0]
+    elif len(args) == 3:
+      res = c.getStatus(args[0], args[1], None, args[2])[0]
 
     return res
+
+#############################################################################
     

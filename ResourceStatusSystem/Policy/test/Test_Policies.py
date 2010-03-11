@@ -19,6 +19,7 @@ from DIRAC.ResourceStatusSystem.Policy.OnServicePropagation_Policy import OnServ
 from DIRAC.ResourceStatusSystem.Policy.OnSENodePropagation_Policy import OnSENodePropagation_Policy 
 from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
 from DIRAC.ResourceStatusSystem.Policy.TransferQuality_Policy import TransferQuality_Policy 
+from DIRAC.ResourceStatusSystem.Policy.SEOccupancy_Policy import SEOccupancy_Policy 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
@@ -49,6 +50,7 @@ class PoliciesTestCase(unittest.TestCase):
     self.OSENP_P = OnSENodePropagation_Policy()
     self.P_P = Propagation_Policy()
     self.TQ_P = TransferQuality_Policy()
+    self.SEO_P = SEOccupancy_Policy()
     self.mock_command = Mock()
     self.mock_commandPeriods = Mock()
     self.mock_commandStats = Mock()
@@ -679,6 +681,38 @@ class TransferQuality_Policy_Failure(PoliciesTestCase):
 
 #############################################################################
 
+class SEOccupancy_PolicySuccess(PoliciesTestCase):
+  
+  def test_evaluate(self):
+    for status in ValidStatus:
+      args = ('StorageElement', 'XX', status)
+      for resCl in [100, 10, 1, None]:
+        res = self.SEO_P.evaluate(args, commandIn = self.mock_command, knownInfo={'SLS':resCl})
+        self.assert_(res.has_key('SAT'))
+        if resCl is not None:
+          self.assert_(res.has_key('Reason'))
+        self.mock_command.doCommand.return_value =  {'SLS':resCl}
+        res = self.SEO_P.evaluate(args, commandIn = self.mock_command)
+        self.assert_(res.has_key('SAT'))
+        if resCl is not None:
+          self.assert_(res.has_key('Reason'))
+      res = self.SEO_P.evaluate(args, commandIn = self.mock_command)
+      self.assert_(res.has_key('SAT'))
+      
+#############################################################################
+
+class SEOccupancy_Policy_Failure(PoliciesTestCase):
+  
+#  def test_commandFail(self):
+#    self.mock_command.doCommand.sideEffect = RSSException
+#    for status in ValidStatus:
+#      self.failUnlessRaises(Exception, self.TQ_P.evaluate, ('XX', status), self.mock_command)
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.SEO_P.evaluate, None )
+     
+
+#############################################################################
 
 
 
@@ -711,4 +745,6 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Propagation_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQuality_PolicySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQuality_Policy_Failure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SEOccupancy_PolicySuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SEOccupancy_Policy_Failure))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

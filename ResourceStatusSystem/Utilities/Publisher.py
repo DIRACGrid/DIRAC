@@ -188,7 +188,10 @@ class Publisher:
     elif what == 'StorageElementsOfSite':
       gran = 'StorageElements'
       paramsL.insert(0, 'StorageElementName')
-      siteName = name
+      if '@' in name:
+        siteName = name.split('@').pop()
+      else:
+        siteName = name
     elif what == 'Site_Panel':
       gran = 'Site'
       paramsL.insert(0, 'SiteName')

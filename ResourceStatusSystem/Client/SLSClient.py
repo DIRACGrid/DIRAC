@@ -8,19 +8,16 @@ class SLSClient:
 
 #############################################################################
 
-  def getStatus(self, granularity, name):
+  def getStatus(self, name):
     """  
     Return actual SLS status of entity in args[0]
      
     :params:
-      :attr:`granularity`: string - should be a ValidRes (totally useless here, 
-      only 'Service' is reasonable)
-      
       :attr:`name`: string - name of the service
 
     returns:
     {
-      'Availability':availability
+      'SLS':availability
     }
 
     """
@@ -30,7 +27,7 @@ class SLSClient:
     if "ERROR" in res:
       return {'SLS':None, 'Reason': res}
     
-    return {'SLS':res}
+    return {'SLS':int(res)}
   
 #############################################################################
   

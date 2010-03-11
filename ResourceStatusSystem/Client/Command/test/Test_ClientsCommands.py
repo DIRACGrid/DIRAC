@@ -14,6 +14,7 @@ from DIRAC.ResourceStatusSystem.Client.Command.GGUSTickets_Command import GGUSTi
 from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.DataOperations_Command import TransferQuality_Command
 from DIRAC.ResourceStatusSystem.Client.Command.DIRACAccounting_Command import DIRACAccounting_Command
+from DIRAC.ResourceStatusSystem.Client.Command.SLS_Command import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
@@ -50,6 +51,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.MS_C = MonitoredStatus_Command()
     self.DQ_C = TransferQuality_Command()
     self.DA_C = DIRACAccounting_Command()
+    self.SLSS_C = SLSStatus_Command()
 
 #############################################################################
 
@@ -469,6 +471,31 @@ class DIRACAccounting_CommandSuccess(ClientsCommandsTestCase):
      
 #############################################################################
 
+
+class SLSStatus_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+    
+    for ret in (80, 10, 1, None):
+      self.mock_client.getStatus.return_value = {'SLS':ret}
+      for SE in ('CNAF-RAW', 'CNAF_MC_M-DST'):
+        res = self.SLSS_C.doCommand(('StorageElement', SE), clientIn = self.mock_client)
+        self.assertEqual(res['SLS'], ret)
+      res = self.SLSS_C.doCommand(('Service', 'XX'), clientIn = self.mock_client)
+      self.assertEqual(res['SLS'], ret) 
+
+#############################################################################
+
+class SLSStatus_CommandFailure(ClientsCommandsTestCase):
+  
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.SLSS_C.doCommand, None)
+    self.failUnlessRaises(InvalidRes, self.SLSS_C.doCommand, ('sites', ''))
+
+#############################################################################
+
+
+
 #class Macros_CommandSuccess(ClientsCommandsTestCase):
 #  
 #  def test_doCommand(self):
@@ -486,8 +513,8 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ClientsInvokerFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBStatus_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBStatus_CommandFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBInfo_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBInfo_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBInfo_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBInfo_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEff_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEff_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsStats_CommandSuccess))
@@ -518,4 +545,6 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferOperations_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferOperations_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DIRACAccounting_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSStatus_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSStatus_CommandFailure))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

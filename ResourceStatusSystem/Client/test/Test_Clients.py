@@ -148,7 +148,7 @@ class DataOperationsClientSuccess(ClientsTestCase):
 class SLSClientSuccess(ClientsTestCase):
 
   def test_getStatus(self):
-    res = self.SLSCli.getStatus('Service', 'XX')
+    res = self.SLSCli.getStatus('XX')
     self.assertEqual(res['SLS'], None)
 
 
