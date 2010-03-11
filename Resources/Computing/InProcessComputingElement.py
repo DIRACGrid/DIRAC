@@ -29,9 +29,9 @@ class InProcessComputingElement( ComputingElement ):
     """ Standard constructor.
     """
     ComputingElement.__init__( self, ceUniqueID )
-    self.minProxyTime = gConfig.getValue( '/Security/MinProxyLifeTime', 10800 ) #secs
-    self.defaultProxyTime = gConfig.getValue( '/Security/DefaultProxyLifeTime', 86400 ) #secs
-    self.proxyCheckPeriod = gConfig.getValue('/Security/ProxyCheckingPeriod',3600) #secs
+    self.minProxyTime = gConfig.getValue( '/Registry/MinProxyLifeTime', 10800 ) #secs
+    self.defaultProxyTime = gConfig.getValue( '/Registry/DefaultProxyLifeTime', 86400 ) #secs
+    self.proxyCheckPeriod = gConfig.getValue('/Registry/ProxyCheckingPeriod',3600) #secs
     self.submittedJobs = 0
 
   #############################################################################
