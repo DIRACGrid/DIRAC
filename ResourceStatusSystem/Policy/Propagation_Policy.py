@@ -86,70 +86,39 @@ class Propagation_Policy(PolicyBase):
       if status == 'Active':
         result['SAT'] = False
         result['Status'] = 'Active'
-        result['Reason'] =  'Stats %s: A:%d/P:%d/B:%d' %(args[3], 
-                                                        stats['Active'], 
-                                                        stats['Probing'], 
-                                                        stats['Banned'])
       if status == 'Probing':
         result['SAT'] = True
         result['Status'] = 'Probing'
-        result['Reason'] =  'Stats %s: A:%d/P:%d/B:%d' %(args[3], 
-                                                        stats['Active'], 
-                                                        stats['Probing'], 
-                                                        stats['Banned'])
       if status == 'Banned':
         result['SAT'] = True
         result['Status'] = 'Banned'
-        result['Reason'] =  'Stats %s: A:%d/P:%d/B:%d' %(args[3], 
-                                                        stats['Active'], 
-                                                        stats['Probing'], 
-                                                        stats['Banned'])
        
     elif args[2] == 'Probing':
       if status == 'Active':
         result['SAT'] = True
         result['Status'] = 'Active'
-        result['Reason'] =  'Stats %s: A:%d/P:%d/B:%d' %(args[3], 
-                                                        stats['Active'], 
-                                                        stats['Probing'], 
-                                                        stats['Banned'])
       if status == 'Probing':
         result['SAT'] = False
         result['Status'] = 'Probing'
-        result['Reason'] =  'Stats %s: A:%d/P:%d/B:%d' %(args[3], 
-                                                        stats['Active'], 
-                                                        stats['Probing'], 
-                                                        stats['Banned'])
       if status == 'Banned':
         result['SAT'] = True
         result['Status'] = 'Banned'
-        result['Reason'] =  'Stats %s: A:%d/P:%d/B:%d' %(args[3], 
-                                                        stats['Active'], 
-                                                        stats['Probing'], 
-                                                        stats['Banned'])
         
     elif args[2] == 'Banned':
       if status == 'Active':
         result['SAT'] = True
         result['Status'] = 'Active'
-        result['Reason'] =  'Stats %s: A:%d/P:%d/B:%d' %(args[3], 
-                                                        stats['Active'], 
-                                                        stats['Probing'], 
-                                                        stats['Banned'])
       if status == 'Probing':
         result['SAT'] = True
         result['Status'] = 'Probing'
-        result['Reason'] =  'Stats %s: A:%d/P:%d/B:%d' %(args[3], 
-                                                        stats['Active'], 
-                                                        stats['Probing'], 
-                                                        stats['Banned'])
       if status == 'Banned':
         result['SAT'] = False
         result['Status'] = 'Banned'
-        result['Reason'] =  'Stats %s: A:%d/P:%d/B:%d' %(args[3], 
-                                                        stats['Active'], 
-                                                        stats['Probing'], 
-                                                        stats['Banned'])
-        
     
+    
+    result['Reason'] =  'Stats %s: Active:%d, Probing :%d, Banned:%d' %(args[3], 
+                                                                        stats['Active'], 
+                                                                        stats['Probing'], 
+                                                                        stats['Banned'])
+            
     return result

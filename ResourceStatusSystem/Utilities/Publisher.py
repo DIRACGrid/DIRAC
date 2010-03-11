@@ -82,6 +82,9 @@ class Publisher:
         policyResToGet = info.keys()[0]
         pol_res = self.rsDB.getPolicyRes(nameForPanel, policyResToGet)
         
+        #get policy description
+        desc = self._getPolicyDesc(policyResToGet)
+        
         #get other info
         othersInfo = info.values()[0]
         if not isinstance(othersInfo, list):
@@ -100,7 +103,8 @@ class Publisher:
           
         
         infoForPanel_res.append( {'policy': {policyResToGet: pol_res}, 
-                                  'infos': info_res } )
+                                  'infos': info_res, 
+                                  'desc': desc } )
         
       completeInfoForPanel_res = {panel: 
                                    (
@@ -222,6 +226,12 @@ class Publisher:
                                                storageElementName = storageElementName)
     
     return info_bit_got
+
+#############################################################################
+
+  def _getPolicyDesc(self, policyName):
+    
+    return Configurations.Policies[policyName]['Description']
 
 #############################################################################
 

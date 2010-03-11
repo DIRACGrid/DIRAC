@@ -19,7 +19,9 @@ class UtilitiesTestCase(unittest.TestCase):
     from DIRAC.ResourceStatusSystem.test.fake_rsDB import ResourceStatusDB
     self.rsDB = ResourceStatusDB()
     
-    self.p = Publisher(self.rsDB)
+    mockCC = Mock()
+    
+    self.p = Publisher(self.rsDB, mockCC)
     
     self.ig = InfoGetter()
     

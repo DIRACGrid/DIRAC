@@ -60,62 +60,57 @@ class PilotsEfficiency_Simple_Policy(PolicyBase):
     
     result = {}
     
+    result['Reason'] = 'Simple pilots Efficiency: '
+    
     if args[2] == 'Active':
       if status == 'Good':
         result['SAT'] = False
         result['Status'] = 'Active'
-        result['Reason'] = 'PilotsEff:Good'
       elif status == 'Fair':
         result['SAT'] = True
         result['Status'] = 'Probing'
-        result['Reason'] = 'PilotsEff:Fair'
       elif status == 'Poor':
         result['SAT'] = True
         result['Status'] = 'Probing'
-        result['Reason'] = 'PilotsEff:Poor'
       elif status == 'Idle':
         result['SAT'] = None
       elif status == 'Bad':
         result['SAT'] = True
         result['Status'] = 'Banned'
-        result['Reason'] = 'PilotsEff:Bad'
+
     elif args[2] == 'Probing':
       if status == 'Good':
         result['SAT'] = True
         result['Status'] = 'Active'
-        result['Reason'] = 'PilotsEff:Good'
       elif status == 'Fair':
         result['SAT'] = False
         result['Status'] = 'Probing'
-        result['Reason'] = 'PilotsEff:Fair'
       elif status == 'Poor':
         result['SAT'] = False
         result['Status'] = 'Probing'
-        result['Reason'] = 'PilotsEff:Poor'
       elif status == 'Idle':
         result['SAT'] = None
       elif status == 'Bad':
         result['SAT'] = True
         result['Status'] = 'Banned'
-        result['Reason'] = 'PilotsEff:Bad'
+
     elif args[2] == 'Banned':
       if status == 'Good':
         result['SAT'] = True
         result['Status'] = 'Active'
-        result['Reason'] = 'PilotsEff:Good'
       elif status == 'Fair':
         result['SAT'] = True
         result['Status'] = 'Probing'
-        result['Reason'] = 'PilotsEff:Fair'
       elif status == 'Poor':
         result['SAT'] = True
         result['Status'] = 'Probing'
-        result['Reason'] = 'PilotsEff:Poor'
       elif status == 'Idle':
         result['SAT'] = None
       elif status == 'Bad':
         result['SAT'] = False
         result['Status'] = 'Banned'
-        result['Reason'] = 'PilotsEff:Bad'
-
+    
+    if status != 'Idle':
+      result['Reason'] = result['Reason'] + status
+    
     return result

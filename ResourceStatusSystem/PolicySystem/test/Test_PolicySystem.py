@@ -267,7 +267,7 @@ class PDPSuccess(PolicySystemTestCase):
               res = pdp._policyCombination(polResF, polResF)
               self.assertFalse(res['SAT'])
               self.assertEqual(res['Status'], newStatus2)
-              self.assertEqual(res['Reason'], '-Reason2-|-Reason2-')
+              self.assertEqual(res['Reason'], '-Reason2- |###| -Reason2-')
               # FALSE, TRUE
 #              polResF = {'SAT':False, 'Status':newStatus2, 'Reason':'-Reason2-'}
               if newStatus1 == newStatusF2 or newStatusF1 == newStatus2:
@@ -349,7 +349,7 @@ class PDPSuccess(PolicySystemTestCase):
                 self.assertEqual(res['Status'], newStatus1)
                 self.assertEqual(res['Status'], newStatus2)
                 self.assertEqual(res['Status'], newStatus3)
-                self.assertEqual(res['Reason'], '-ReasonTrue-|-ReasonTrue2-|-ReasonTrue3-')
+                self.assertEqual(res['Reason'], '-ReasonTrue- |###| -ReasonTrue2- |###| -ReasonTrue3-')
               # etc...
               # TRUE, TRUE, FALSE
               if newStatusF3 == newStatus1 or newStatusF3 == newStatus2:

@@ -63,6 +63,13 @@ class SAMResultsClient:
     
 #############################################################################
 
+#  def getLink(self, name, tests):
+#
+#    link = 'http://dashb-lhcb-sam.cern.ch/dashboard/request.py/latestresultssmry?siteSelect3=500&serviceTypeSelect3=0&sites=LCG.Bologna.it&services=CE&tests=37535&tests=398&tests=404&tests=405&tests=406&tests=403&tests=407&tests=37624&tests=399&tests=2&tests=5&tests=7&tests=14&tests=25&tests=37732&exitStatus=all'
+
+#############################################################################
+
+  
   def _curlDownload(self, granularity, site, tests):
     """ Download SAM status for entity using the SAM DB programmatic interface
     """

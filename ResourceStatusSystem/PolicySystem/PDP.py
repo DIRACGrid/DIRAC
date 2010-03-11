@@ -224,7 +224,7 @@ class PDP:
     elif len(args) == 2:
     
       if ( ( not args[0]['SAT'] ) and ( not args[1]['SAT'] ) ):
-        compReason = args[0]['Reason'] + '|' + args[1]['Reason']
+        compReason = args[0]['Reason'] + ' |###| ' + args[1]['Reason']
         pcr = args[0]
 
       # only one of the two is SAT
@@ -249,7 +249,7 @@ class PDP:
           pcr = args[1]
         else:
           pcr = args[0]
-          compReason = args[0]['Reason'] + '|' + args[1]['Reason']
+          compReason = args[0]['Reason'] + ' |###| ' + args[1]['Reason']
 
       # if there's an EndDate
       if args[0].has_key('EndDate') and args[1].has_key('EndDate'):

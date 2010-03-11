@@ -56,58 +56,62 @@ class SEOccupancy_Policy(PolicyBase):
       clientsInvoker = ClientsInvoker()
       clientsInvoker.setCommand(command)
       status = clientsInvoker.doCommand((args[0], args[1]))
+      
+      status = status['SLS']
     
     result = {}
     
+    result['Reason'] = "Occupancy on the SE: " 
+    
     if args[2] == 'Active':
-      if status['SLS'] is None:
+      if status is None:
         result['SAT'] = None
       else:
-        if status['SLS'] > 15:
+        if status > 15:
           result['SAT'] = False
           result['Status'] = 'Active'
-          result['Reason'] = 'SE_Occupancy:Low'
-        elif status['SLS'] <= 2:
+        elif status <= 2:
           result['SAT'] = True
           result['Status'] = 'Banned'
-          result['Reason'] = 'SE_Occupancy:High'
         else:
           result['SAT'] = True
           result['Status'] = 'Probing'
-          result['Reason'] = 'SE_Occupancy:Mid-High'
           
     elif args[2] == 'Probing':
-      if status['SLS'] is None:
+      if status is None:
         result['SAT'] = None
       else:
-        if status['SLS'] > 15:
+        if status > 15:
           result['SAT'] = True
           result['Status'] = 'Active'
-          result['Reason'] = 'SE_Occupancy:Low'
-        elif status['SLS'] <= 2:
+        elif status <= 2:
           result['SAT'] = True
           result['Status'] = 'Banned'
-          result['Reason'] = 'SE_Occupancy:High'
         else:
           result['SAT'] = False
           result['Status'] = 'Probing'
-          result['Reason'] = 'SE_Occupancy:Mid-High'
       
     elif args[2] == 'Banned':
-      if status['SLS'] is None:
+      if status is None:
         result['SAT'] = None
       else:
-        if status['SLS'] > 15:
+        if status > 15:
           result['SAT'] = True
           result['Status'] = 'Active'
-          result['Reason'] = 'SE_Occupancy:Low'
-        elif status['SLS'] <= 2:
+        elif status <= 2:
           result['SAT'] = False
           result['Status'] = 'Banned'
-          result['Reason'] = 'SE_Occupancy:High'
         else:
           result['SAT'] = True
           result['Status'] = 'Probing'
-          result['Reason'] = 'SE_Occupancy:Mid-High'
     
+    if status is not None:
+      if status > 15:
+        str = 'Low'
+      elif status <= 2:
+        str = 'High'
+      else:
+        str = 'Mid-High'
+      result['Reason'] = result['Reason'] + str
+      
     return result

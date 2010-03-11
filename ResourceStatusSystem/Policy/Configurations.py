@@ -159,7 +159,8 @@ AssigneeGroups = {
 
 Policies = { 
   'DT_Policy_OnGoing_Only' : 
-    { 'Granularity' : ['Site', 'Resource'], 
+    { 'Description' : "Evaluates eventual ongoing downtimes", 
+      'Granularity' : ['Site', 'Resource'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
@@ -174,7 +175,8 @@ Policies = {
                       ]
      },
   'DT_Policy_Scheduled' : 
-    { 'Granularity' : [], 
+    { 'Description' : "Evaluates eventual ongoing and scheduled downtimes", 
+      'Granularity' : [], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
@@ -185,7 +187,8 @@ Policies = {
 #      'Resource_Panel' : {'WebLink':'DT_link'}
      },
   'GGUS_Policy' : 
-    { 'Granularity' : [], 
+    { 'Description' : "Evaluates the number of open GGUS tickets", 
+      'Granularity' : [], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
@@ -197,16 +200,18 @@ Policies = {
                       ]
      },
   'SAM_Policy' : 
-    { 'Granularity' : [], 
+    { 'Description' : "Evaluates latest SAM results", 
+      'Granularity' : [], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
-      'ResourceType' : ['SE', 'LFC'],
+      'ResourceType' : [],
       'args' : None,  
      },
   'SAM_CE_Policy' : 
-    { 'Granularity' : ['Resource'], 
+    { 'Description' : "Evaluates latest SAM results on the LCG Computing Element", 
+      'Granularity' : ['Resource'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
@@ -221,12 +226,13 @@ Policies = {
                                                      'LHCb CE-lhcb-job-DaVinci', 'LHCb CE-lhcb-job-Gauss', 
                                                      'LHCb CE-lhcb-os', 'LHCb CE-lhcb-queues', 
                                                      'bi', 'csh', 'js', 'gfal', 'swdir', 'voms'] ) }},
-                           {'WebLink': {'Command':'SAM_Link',
-                                        'args': None}}
+#                           {'WebLink': {'Command':'SAM_Link',
+#                                        'args': None}}
                          ]
      },     
   'SAM_CREAMCE_Policy' : 
-    { 'Granularity' : ['Resource'], 
+    { 'Description' : "Evaluates latest SAM results on the CREAM Computing Element", 
+      'Granularity' : ['Resource'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
@@ -235,12 +241,13 @@ Policies = {
       'args' : ( None, ['bi', 'csh', 'gfal', 'swdir', 'creamvoms'] ), 
       'Resource_Panel' : [ {'SAM': {'Command':'SAM_Tests', 
                                     'args': ( None, ['bi', 'csh', 'gfal', 'swdir', 'creamvoms'] ) }},
-                           {'WebLink': {'Command':'SAM_Link',
-                                        'args': None}}
+#                           {'WebLink': {'Command':'SAM_Link',
+#                                        'args': None}}
                          ]
      },     
   'SAM_SE_Policy' : 
-    { 'Granularity' : ['Resource'], 
+    { 'Description' : "Evaluates latest SAM results on the SRM nodes", 
+      'Granularity' : ['Resource'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
@@ -249,12 +256,13 @@ Policies = {
       'args' : ( None, ['DiracTestUSER', 'FileAccessV2'] ), 
       'Resource_Panel' : [ {'SAM': {'Command':'SAM_Tests', 
                                     'args': ( None, ['DiracTestUSER', 'FileAccessV2'] ) }},
-                           {'WebLink': {'Command':'SAM_Link',
-                                        'args': None}}
+#                           {'WebLink': {'Command':'SAM_Link',
+#                                        'args': None}}
                          ]
      },     
   'SAM_LFC_C_Policy' : 
-    { 'Granularity' : ['Resource'], 
+    { 'Description' : "Evaluates latest SAM results on the central LFC nodes", 
+      'Granularity' : ['Resource'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
@@ -263,12 +271,13 @@ Policies = {
       'args' : ( None, ['lfcwf', 'lfclr', 'lfcls', 'lfcping'] ),
       'Resource_Panel' : [ {'SAM': {'Command':'SAM_Tests', 
                                     'args': ( None, ['lfcwf', 'lfclr', 'lfcls', 'lfcping'] ) }},
-                           {'WebLink': {'Command':'SAM_Link',
-                                        'args': None}}
+#                           {'WebLink': {'Command':'SAM_Link',
+#                                        'args': None}}
                           ]
      },     
   'SAM_LFC_L_Policy' : 
-    { 'Granularity' : ['Resource'], 
+    { 'Description' : "Evaluates latest SAM results on the slave LFC nodes", 
+      'Granularity' : ['Resource'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
@@ -282,57 +291,61 @@ Policies = {
                           ]
      },     
   'JobsEfficiencySimple_Policy' :  
-    { 'Granularity' : ['Service'], 
+    { 'Description' : "Evaluates a simple jobs efficiency", 
+      'Granularity' : ['Service'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
       'ServiceType' : ['Computing'],
       'ResourceType' : ValidResourceType,
       'args' : None,  
-      'Service_Computing_Panel' : [ {'Graph': {'Command': 'DiracAccountingGraph', 
-                                               'args': ('Job', 'CumulativeNumberOfJobs', 
-                                                        {'Format': 'LastHours', 'hours': 24}, 
-                                                        'FinalMajorStatus', None)}},
-                                    {'Graph': {'Command': 'DiracAccountingGraph', 
-                                               'args': ('Job', 'TotalNumberOfJobs', 
-                                                        {'Format': 'LastHours', 'hours': 24}, 
-                                                        'JobType', {'FinalMajorStatus':'Failed'})}}
+      'Service_Computing_Panel' : [ {'FillChart': {'Command': 'DiracAccountingGraph', 
+                                                   'args': ('Job', 'CumulativeNumberOfJobs', 
+                                                            {'Format': 'LastHours', 'hours': 24}, 
+                                                            'FinalMajorStatus', None)}},
+                                    {'PieChart': {'Command': 'DiracAccountingGraph', 
+                                                  'args': ('Job', 'TotalNumberOfJobs', 
+                                                           {'Format': 'LastHours', 'hours': 24}, 
+                                                           'JobType', {'FinalMajorStatus':'Failed'})}}
                                     ]                                  
    },
   'PilotsEfficiencySimple_Policy_Service' : 
-    { 'Granularity' : ['Service'], 
+    { 'Description' : "Evaluates a simple pilots efficiency", 
+      'Granularity' : ['Service'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
       'ServiceType' : ['Computing'],
       'ResourceType' : ValidResourceType,
       'args' : None,  
-      'Service_Computing_Panel' : [ {'Graph': {'Command' : 'DiracAccountingGraph', 
-                                               'args': ('Pilot', 'CumulativeNumberOfPilots', 
-                                                         {'Format': 'LastHours', 'hours': 24}, 
-                                                         'GridStatus', None)}},
-                                    {'Graph': {'Command':  'DiracAccountingGraph',
-                                               'args': ('Pilot', 'TotalNumberOfPilots', 
-                                                        {'Format': 'LastHours', 'hours': 24}, 
-                                                        'GridCE', None)}}
+      'Service_Computing_Panel' : [ {'FillChart': {'Command' : 'DiracAccountingGraph', 
+                                                   'args': ('Pilot', 'CumulativeNumberOfPilots', 
+                                                            {'Format': 'LastHours', 'hours': 24}, 
+                                                            'GridStatus', None)}},
+                                    {'PieChart': {'Command':  'DiracAccountingGraph',
+                                                  'args': ('Pilot', 'TotalNumberOfPilots', 
+                                                           {'Format': 'LastHours', 'hours': 24}, 
+                                                           'GridCE', None)}}
                                     ]
      },
   'PilotsEfficiencySimple_Policy_Resource' : 
-    { 'Granularity' : ['Resource'], 
+    { 'Description' : "Evaluates a simple pilots efficiency", 
+      'Granularity' : ['Resource'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ['CE', 'CREAMCE'],
       'args' : None,  
-      'Resource_Panel' : [ {'Graph': {'Command': 'DiracAccountingGraph',
-                                      'args': ('Pilot', 'CumulativeNumberOfPilots', 
-                                               {'Format': 'LastHours', 'hours': 24}, 
-                                               'GridStatus', None)}}
+      'Resource_Panel' : [ {'FillChart': {'Command': 'DiracAccountingGraph',
+                                          'args': ('Pilot', 'CumulativeNumberOfPilots', 
+                                                   {'Format': 'LastHours', 'hours': 24}, 
+                                                   'GridStatus', None)}}
                           ]
      },
   'OnSitePropagation_Policy' :
-    { 'Granularity' : ['Site'], 
+    { 'Description' : "Evaluates how the site's services are behaving in the RSS", 
+      'Granularity' : ['Site'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
@@ -342,7 +355,8 @@ Policies = {
       'Site_Panel' : {'RSS':'ServiceOfSite'}
      },
   'OnComputingServicePropagation_Policy' :
-    { 'Granularity' : ['Service'], 
+    { 'Description' : "Evaluates how the service's computing resources are behaving in the RSS", 
+      'Granularity' : ['Service'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
@@ -352,7 +366,8 @@ Policies = {
       'Service_Computing_Panel' : {'RSS':'ResOfCompService'}
      },
   'OnStorageServicePropagation_Policy_Resources' :
-    { 'Granularity' : ['Service'], 
+    { 'Description' : "Evaluates how the service's storage nodes are behaving in the RSS", 
+      'Granularity' : ['Service'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
@@ -362,7 +377,8 @@ Policies = {
       'Service_Storage_Panel' : {'RSS':'ResOfStorService'}
      },
   'OnStorageServicePropagation_Policy_StorageElements' :
-    { 'Granularity' : ['Service'], 
+    { 'Description' : "Evaluates how the service's storage elements are behaving in the RSS", 
+      'Granularity' : ['Service'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
@@ -390,21 +406,23 @@ Policies = {
       'ResourceType' : ['SE'],
      },
   'TransferQuality_Policy' :
-    { 'Granularity' : ['StorageElement'], 
+    { 'Description' : "Evaluates the SE transfer quality", 
+      'Granularity' : ['StorageElement'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
       'args' : None,  
-      'SE_Panel' : [ {'Graph': {'Command':'DiracAccountingGraph', 
-                                'args': ('DataOperation', 'Quality', 
-                                         {'Format': 'LastHours', 'hours': 24}, 
-                                         'Channel', {'OperationType':'putAndRegister'})}}
+      'SE_Panel' : [ {'FillChart': {'Command':'DiracAccountingGraph', 
+                                    'args': ('DataOperation', 'Quality', 
+                                             {'Format': 'LastHours', 'hours': 24}, 
+                                             'Channel', {'OperationType':'putAndRegister'})}}
                       ]
      },
   'SEOccupancy_Policy' :
-    { 'Granularity' : ['StorageElement'], 
+    { 'Description' : "Evaluates the SE occupancy", 
+      'Granularity' : ['StorageElement'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
@@ -444,14 +462,6 @@ Policy_Types = {
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
      },
-#  'View_PolType' : 
-#    { 'Granularity' : ValidRes, 
-#      'Status' : ValidStatus, 
-#      'FormerStatus' : ValidStatus,
-#      'SiteType' : ValidSiteType,
-#      'ServiceType' : ValidServiceType,
-#      'ResourceType' : ValidResourceType,
-#     },
   'Collective_PolType' :
     { 'Granularity' : [], 
       'Status' : ValidStatus, 

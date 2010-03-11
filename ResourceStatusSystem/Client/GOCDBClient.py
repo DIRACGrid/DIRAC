@@ -66,7 +66,6 @@ class GOCDBClient:
         startDate = datetime(*time.strptime(startDate, "%Y-%m-%d")[0:3])
       elif isinstance(startDate, datetime):
         startDate_STR = startDate.isoformat(' ')[0:10]
-    print 'startDate_STR is ', startDate_STR
     resCDL = self._curlDownload(self._entity, startDate_STR)
     if resCDL is None:
       return [{'DT':'None'}]

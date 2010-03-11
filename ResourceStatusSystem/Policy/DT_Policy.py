@@ -72,58 +72,47 @@ class DT_Policy(PolicyBase):
       if status['DT'] == 'None':
         result['SAT'] = False
         result['Status'] = 'Active'
-        result['Reason'] = 'DT:%s' %status['DT']
       else:
         if 'OUTAGE' in status['DT']:
           result['SAT'] = True
           result['Status'] = 'Banned'
-          result['Reason'] = 'DT:%s' %status['DT']
           result['EndDate'] = status['EndDate']
         elif 'AT_RISK' in status['DT']:
           result['SAT'] = True
           result['Status'] = 'Probing'
-          result['Reason'] = 'DT:%s' %status['DT']
           result['EndDate'] = status['EndDate']
-#        elif status['DT'] == 'No Info':
-#          result['SAT'] = None
     
     elif args[2] == 'Probing':
       if status['DT'] == 'None':
         result['SAT'] = True
         result['Status'] = 'Active'
-        result['Reason'] = 'DT:%s' %status['DT']
       else:
         if 'OUTAGE' in status['DT']:
           result['SAT'] = True
           result['Status'] = 'Banned'
-          result['Reason'] = 'DT:%s' %status['DT']
           result['EndDate'] = status['EndDate']
         elif 'AT_RISK' in status['DT']:
           result['SAT'] = False
           result['Status'] = 'Probing'
-          result['Reason'] = 'DT:%s' %status['DT']
           result['EndDate'] = status['EndDate']
-#        elif status['DT'] == 'No Info':
-#          result['SAT'] = None
       
     elif args[2] == 'Banned':
       if status['DT'] == 'None':
         result['SAT'] = True
         result['Status'] = 'Active'
-        result['Reason'] = 'DT:%s' %status['DT']
       else:
         if 'OUTAGE' in status['DT']:
           result['SAT'] = False
           result['Status'] = 'Banned'
-          result['Reason'] = 'DT:%s' %status['DT']
           result['EndDate'] = status['EndDate']
         elif 'AT_RISK' in status['DT']:
           result['SAT'] = True
           result['Status'] = 'Probing'
-          result['Reason'] = 'DT:%s' %status['DT']
           result['EndDate'] = status['EndDate']
-#        elif status['DT'] == 'No Info':
-#          result['SAT'] = None
    
+    if status['DT'] == 'None':
+      result['Reason'] = 'No DownTime announced'
+    else:
+      result['Reason'] = 'DownTime found: %s' %status['DT']
     
     return result

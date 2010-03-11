@@ -89,9 +89,9 @@ class SAMResults_Policy(PolicyBase):
       status = 'na'
     else:
       mean = sum(values)/len(values)
-      if mean >= 80:
+      if mean >= 90:
         status = 'ok'
-      elif mean >= 70:
+      elif mean >= 60:
         status = 'degraded'
       elif mean >= 30:
         status = 'partial'
@@ -102,76 +102,66 @@ class SAMResults_Policy(PolicyBase):
     
     result = {}
     
+    result['Reason'] = 'SAM status (Mean): '
+    
     if args[2] == 'Active':
       if status == 'ok':
         result['SAT'] = False
         result['Status'] = 'Active'
-        result['Reason'] = 'SAM:ok'
       elif status == 'down':
         result['SAT'] = True
         result['Status'] = 'Banned'
-        result['Reason'] = 'SAM:down'
       elif status == 'na':
         result['SAT'] = None
       elif status == 'degraded':
         result['SAT'] = True
         result['Status'] = 'Probing'
-        result['Reason'] = 'SAM:degraded'
       elif status == 'partial':
         result['SAT'] = True
         result['Status'] = 'Probing'
-        result['Reason'] = 'SAM:partial'
       elif status == 'maint':
         result['SAT'] = True
         result['Status'] = 'Banned'
-        result['Reason'] = 'SAM:maint'
       
     elif args[2] == 'Probing':
       if status == 'ok':
         result['SAT'] = True
         result['Status'] = 'Active'
-        result['Reason'] = 'SAM:ok'
       elif status == 'down':
         result['SAT'] = True
         result['Status'] = 'Banned'
-        result['Reason'] = 'SAM:down'
       elif status == 'na':
         result['SAT'] = None
       elif status == 'degraded':
         result['SAT'] = False
         result['Status'] = 'Probing'
-        result['Reason'] = 'SAM:degraded'
       elif status == 'partial':
         result['SAT'] = False
         result['Status'] = 'Probing'
-        result['Reason'] = 'SAM:partial'
       elif status == 'maint':
         result['SAT'] = True
         result['Status'] = 'Banned'
-        result['Reason'] = 'SAM:maint'
       
     elif args[2] == 'Banned':
       if status == 'ok':
         result['SAT'] = True
         result['Status'] = 'Active'
-        result['Reason'] = 'SAM:ok'
       elif status == 'down':
         result['SAT'] = False
         result['Status'] = 'Banned'
-        result['Reason'] = 'SAM:down'
       elif status == 'na':
         result['SAT'] = None
       elif status == 'degraded':
         result['SAT'] = True
         result['Status'] = 'Probing'
-        result['Reason'] = 'SAM:degraded'
       elif status == 'partial':
         result['SAT'] = False
         result['Status'] = 'Banned'
-        result['Reason'] = 'SAM:partial'
       elif status == 'maint':
         result['SAT'] = False
         result['Status'] = 'Banned'
-        result['Reason'] = 'SAM:maint'
       
+    if status != 'na':
+      result['Reason'] = result['Reason'] + status
+    
     return result
