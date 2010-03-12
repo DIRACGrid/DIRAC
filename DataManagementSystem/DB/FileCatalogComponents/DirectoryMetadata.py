@@ -182,7 +182,7 @@ class DirectoryMetadata:
     """ Find Files satisfying the given metadata
     """
     
-    result = self.findDirectoriesByMetadata(metaDict)
+    result = self.findDirectoriesByMetadata(metaDict,credDict)
     if not result['OK']:
       return result
     
