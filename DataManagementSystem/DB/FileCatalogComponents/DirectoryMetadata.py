@@ -77,7 +77,6 @@ class DirectoryMetadata:
       return result
     if metaName in result['Value']:
       return S_ERROR('Metadata conflict detected for %s for directory %s' % (metaName,dpath) )
-
     result = self._insert('FC_Meta_%s' % metaName,['DirID','Value'],[dirID,metaValue])
     if not result['OK']:
       if result['Message'].find('Duplicate') != -1:
@@ -118,7 +117,8 @@ class DirectoryMetadata:
         return result
       if len(result['Value']) > 1:
         return S_ERROR('Metadata conflict for directory %s' % path)
-      metaDict[meta] = result['Value'][0][0]
+      if result['Value']:
+        metaDict[meta] = result['Value'][0][0]
       
     return S_OK(metaDict)  
 
