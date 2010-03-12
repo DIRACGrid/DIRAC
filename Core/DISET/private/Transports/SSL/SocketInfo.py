@@ -216,7 +216,7 @@ class SocketInfo:
         #gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
         gLogger.warn( "Error while handshaking", v )
         return S_ERROR( "Error while handshaking" )
-      except Exception, e:
+      except Exception, v:
         gLogger.warn( "Error while handshaking", v )
         return S_ERROR( "Error while handshaking" )
     credentialsDict = self.gatherPeerCredentials()
