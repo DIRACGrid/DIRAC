@@ -99,7 +99,7 @@ class DirectoryMetadata:
       return result
     pathIDs = result['Value']
     
-    result = self.getMetadataFields()
+    result = self.getMetadataFields(credDict)
     if not result['OK']:
       return result
     metaFields = result['Value']
