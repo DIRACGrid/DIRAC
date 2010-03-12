@@ -209,9 +209,9 @@ g_dDecodeFunctions[ "t" ] = decodeTuple
 #Encode and decode a dictionary
 def encodeDict( dValue, eList ):
   eList.append( "d" )
-  for key, value in dValue.items():
+  for key in sorted( dValue ):
     g_dEncodeFunctions[ type( key ) ]( key, eList )
-    g_dEncodeFunctions[ type( value ) ]( value, eList )
+    g_dEncodeFunctions[ type( dValue[key] ) ]( dValue[key], eList )
   eList.append( "e" )
 
 def decodeDict( buffer, i ):
