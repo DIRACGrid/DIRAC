@@ -224,6 +224,7 @@ File Catalog Client $Revision: 1.17 $Date:
           add group <group_name>
           add file <lfn> <pfn> <size> <SE> [<guid>]
           add pfn <lfn> <pfn> <SE> 
+          add meta <metaname> <metatype>
     """
     
     argss = args.split()
@@ -237,9 +238,23 @@ File Catalog Client $Revision: 1.17 $Date:
       return self.addfile(argss)
     elif option == 'pfn':
       return self.addpfn(argss)
+    elif option == 'meta':
+      return self.addmeta(argss)
     else:
       print "Unknown option:",option
          
+  def addmeta(self,argss):
+    """ Add metadata field
+    """
+ 
+    mname = argss[0] 
+    mtype = argss[1]
+    
+    result =  self.fc.addMetadataField(mname,mtype)
+    if not result['OK']:
+      print ("Error: %s" % result['Message'])
+    else:
+      print "Added metadata field %s of type %s" % (mname,mtype)        
   
   def do_delete(self,args):
     """ Delete records from the File Catalog
@@ -319,28 +334,46 @@ File Catalog Client $Revision: 1.17 $Date:
         
         options:
           users - show all the users defined in the catalog
-          groups -  how all the groups defined in the catalog
+          groups -  show all the groups defined in the catalog
+          meta - show available metadata fields
     """
     
     argss = args.split()
     option = argss[0] 
     
     if option == 'users':
-      result =  self.fc.getUsers()
+      result = self.fc.getUsers()
+      if not result['OK']:
+        print ("Error: %s" % result['Message'])            
+      else:  
+        if not result['Value']:
+          print "No entries found"
+        else:  
+          for user,id in result['Value'].items():
+            print user.rjust(20),':',id
     elif option == 'groups':
-      result =  self.fc.getGroups()
+      result = self.fc.getGroups()
+      if not result['OK']:
+        print ("Error: %s" % result['Message'])            
+      else:  
+        if not result['Value']:
+          print "No entries found"
+        else:  
+          for user,id in result['Value'].items():
+            print user.rjust(20),':',id
+    elif option == 'meta':
+      result = self.fc.getMetadataFields()  
+      if not result['OK']:
+        print ("Error: %s" % result['Message'])            
+      else:
+        if not result['Value']:
+          print "No entries found"
+        else:  
+          for meta,type in result['Value'].items():
+            print meta.rjust(20),':',type
     else:
       print ('Unknown option: %s' % option)
       return
-        
-    if not result['OK']:
-      print ("Error: %s" % result['Message'])            
-    else:  
-      if not result['Value']:
-        print "No entries found"
-      else:  
-        for user,id in result['Value'].items():
-          print user.rjust(20),':',id
          
   def do_mkdir(self,args):
     """ Make directory
@@ -656,7 +689,49 @@ File Catalog Client $Revision: 1.17 $Date:
       else:
         print "GUID: failed",result['Message']
     except Exception, x:
-      print "guid failed: ", x    
+      print "guid failed: ", x   
+      
+  def do_set(self,args):
+    """ Set metadata value for a directory
+
+        usage: set <directory> <metaname> <metavalue>
+    """      
+    
+    argss = args.split()
+    if len(argss) != 3:
+      print "Command requires 3 arguments"
+    path = argss[0]
+    if path == '.':
+      path = self.cwd
+    elif path[0] != '/':
+      path = self.cwd+'/'+path  
+    meta = argss[1]
+    value = argss[2]
+    print path,meta,value
+    result = self.fc.setMetadata(path,meta,value)
+    if not result['OK']:
+      print ("Error: %s" % result['Message'])              
+      
+  def do_get(self,args):
+    """ Get metadata for the directory
+
+        usage: get <directory>
+    """         
+    path = args.split()[0]
+    if path == '.':
+      path = self.cwd
+    elif path[0] != '/':
+      path = self.cwd+'/'+path  
+    result = self.fc.getDirectoryMetadata(path)
+    if not result['OK']:
+      print ("Error: %s" % result['Message']) 
+      return
+    if result['Value']:
+      for meta,value in result['Value'].items():
+        print meta.rjust(20),':',value  
+    else:
+      print "No metadata defined for directory"    
+    
       
   def do_rmpfn(self,args):
     """ Remove replica from the catalog
