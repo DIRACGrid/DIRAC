@@ -72,21 +72,6 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 #
 #####################################################################
 
-  def registerUsersAndGroupsFromCS(self):
-    """ Query the CS and create in DB entries for all users and groups register there
-    """
-    
-    csAPI = CSAPI()
-    users = csAPI.listUsers()
-    if users['OK']:
-      for user in users['Value']:
-        self.addUser( user )
-    groups = csAPI.listGroups()
-    if groups['OK']:
-      for group in groups['Value']:
-        self.addGroup( group )
-    return S_OK()
-
   def addUser(self,name):
     """ Add a new user with a nickname 'name'  """
     userID = 0
@@ -358,8 +343,5 @@ class UserAndGroupManagerCS(UserAndGroupManagerBase):
   def findGroup(self,group):
     return S_OK(group)
   
-  def registerUsersAndGroupsFromCS(self,ignore):
-    return S_OK()
-
 class UserAndGroupManager(UserAndGroupManagerDB):
   pass
