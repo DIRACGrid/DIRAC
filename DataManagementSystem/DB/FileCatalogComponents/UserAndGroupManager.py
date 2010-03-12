@@ -40,19 +40,31 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
   def getUserAndGroupID(self, credDict):
     """ Get a uid, gid tuple for the given Credentials
     """
-    #return S_OK((0,0))
-    s_uid = credDict['username']
-    s_gid = credDict['group']        
-    result = self.findUser(s_uid)
-    if not result['OK']:
-      return result
-    uid = result['Value']
-    result = self.findGroup(s_gid)
-    if not result['OK']:
-      return result
-    gid = result['Value']
+    s_uid = credDict.get('username','anon')
+    s_gid = credDict.get('group','anon') 
+    # Get the user (create it if it doesn't exist)      
+    res = self.findUser(s_uid)
+    if not res['OK']:
+      if res['Message'] != 'User not found':
+        return res
+      res = self.addUser(s_uid)
+      if not res['OK']:
+        return res
+      uid = res['Value']
+    else:
+      uid = res['Value']
+    # Get the group (create it if it doesn't exist)      
+    res = self.findGroup(s_gid)
+    if not res['OK']:
+      if res['Message'] != 'Group not found':
+        return res
+      res = self.addGroup(s_gid)
+      if not res['OK']:
+        return res
+      gid = res['Value']
+    else:
+      gid = res['Value']
     return S_OK( ( uid, gid ) )
-    
   
 #####################################################################
 #
@@ -60,7 +72,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 #
 #####################################################################
 
-  def registerUsersAndGroupsFromCS(self, credDict ):
+  def registerUsersAndGroupsFromCS(self):
     """ Query the CS and create in DB entries for all users and groups register there
     """
     
@@ -68,11 +80,11 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     users = csAPI.listUsers()
     if users['OK']:
       for user in users['Value']:
-        self.addUser( user, credDict )
+        self.addUser( user )
     groups = csAPI.listGroups()
     if groups['OK']:
       for group in groups['Value']:
-        self.addGroup( group, credDict )
+        self.addGroup( group )
     return S_OK()
 
   def addUser(self,name):
@@ -149,14 +161,12 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 
     query = "SELECT UID from FC_Users WHERE UserName='%s'" % user
     resQuery = self.db._query(query)
-    if resQuery['OK']:
-      if resQuery['Value']:
-        return S_OK(resQuery['Value'][0][0])
-      else:
-        return S_ERROR('User %s not found' % user)
-    else:
+    if not resQuery['OK']:
       return resQuery
-    
+    if not resQuery['Value']:
+      return S_ERROR('User not found')
+    return S_OK(resQuery['Value'][0][0])
+
 #####################################################################
   def getUserName(self,uid):
     """ Get user name for the given id
@@ -251,20 +261,17 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 
 #####################################################################
   def findGroup(self,group):
-    """ Get ID for a group specified by its name
-    """
+    """ Get ID for a group specified by its name """
     if type(group) in [IntType,LongType]:
       return S_OK(group)
     
     query = "SELECT GID from FC_Groups WHERE GroupName='%s'" % group
     resQuery = self.db._query(query)
-    if resQuery['OK']:
-      if resQuery['Value']:
-        return S_OK(resQuery['Value'][0][0])
-      else:
-        return S_ERROR('Group %s not found' % group)
-    else:
+    if not resQuery['OK']:
       return resQuery
+    if not resQuery['Value']:
+      return S_ERROR('Group not found')
+    return S_OK(resQuery['Value'][0][0])
 
 #####################################################################
   def getGroupName(self,gid):
