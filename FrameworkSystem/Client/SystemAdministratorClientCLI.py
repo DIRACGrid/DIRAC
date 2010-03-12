@@ -268,7 +268,10 @@ class SystemAdministratorClientCLI(cmd.Cmd):
       client = SystemAdministratorClient(self.host)
       result = client.restartComponent(system,component)
       if not result['OK']:
-        print "ERROR:",result['Message']
+        if system == '*':
+          print "All systems are restarted, connection to SystemAdministrator is lost"
+        else:  
+          print "ERROR:",result['Message']
       else:
         if system != '*' and component != '*':
           print "\n%s_%s started successfully, runit status:\n" % (system,component)
