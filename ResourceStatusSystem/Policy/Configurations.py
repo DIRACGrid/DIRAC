@@ -159,7 +159,7 @@ AssigneeGroups = {
 
 Policies = { 
   'DT_Policy_OnGoing_Only' : 
-    { 'Description' : "Evaluates eventual ongoing downtimes", 
+    { 'Description' : "Evaluates on possible ongoing down-times", 
       'Granularity' : ['Site', 'Resource'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
@@ -175,7 +175,7 @@ Policies = {
                       ]
      },
   'DT_Policy_Scheduled' : 
-    { 'Description' : "Evaluates eventual ongoing and scheduled downtimes", 
+    { 'Description' : "Evaluates on possible ongoing and scheduled down-times", 
       'Granularity' : [], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,

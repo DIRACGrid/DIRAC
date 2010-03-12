@@ -25,8 +25,6 @@ class UtilitiesTestCase(unittest.TestCase):
     
     self.ig = InfoGetter()
     
-    #self.mock_command = Mock()
-
 #############################################################################
             
 class PublisherSuccess(UtilitiesTestCase):
