@@ -17,7 +17,7 @@ class DirectoryMetadata:
 #  Manage Metadata fields
 #
 ##############################################################################  
-  def addMetadataField(self,pname,ptype):
+  def addMetadataField(self,pname,ptype,credDict):
     """ Add a new metadata parameter to the Metadata Database.
         pname - parameter name, ptype - parameter type in the MySQL notation
     """
@@ -33,7 +33,7 @@ class DirectoryMetadata:
     
     return S_OK(result['lastRowId']) 
   
-  def deleteMetadataField(self,pname):
+  def deleteMetadataField(self,pname,credDict):
     """ Remove metadata field
     """
     
@@ -41,7 +41,7 @@ class DirectoryMetadata:
     result = self._update(req)
     return result
   
-  def getMetadataFields(self):
+  def getMetadataFields(self,credDict):
     """ Get all the defined metadata fields
     """
     
@@ -61,7 +61,7 @@ class DirectoryMetadata:
 # Set and get directory metadata
 #
 #############################################################################################  
-  def setMetadata(self,dpath,metaName,metaValue):
+  def setMetadata(self,dpath,metaName,metaValue,credDict):
     """ Set the value of a given metadata field for the the given directory path
     """
     result = self.dtree.findDir(dpath)
@@ -89,7 +89,7 @@ class DirectoryMetadata:
         
     return S_OK() 
   
-  def getDirectoryMetadata(self,path,inherited=True,owndata=True):
+  def getDirectoryMetadata(self,path,credDict,inherited=True,owndata=True):
     """ Get metadata for the given directory aggregating metadata for the directory itself
         and for all the parent directories if inherited flag is True
     """
@@ -149,7 +149,7 @@ class DirectoryMetadata:
       
     return S_OK(dirList)  
   
-  def findDirectoriesByMetadata(self,metaDict):
+  def findDirectoriesByMetadata(self,metaDict,credDict):
     """ Find Directories satisfying the given metadata
     """
     
@@ -170,9 +170,15 @@ class DirectoryMetadata:
             newList.append(d)
         dirList = newList
         
-    return S_OK(dirList)  
+    dirNameList = [ ]  
+    for dir in dirList:
+      result = self.dtree.getDirectoryPath(dir)  
+      if not result['OK']:
+        return result
+      dirNameList.append(result['Value'])
+    return S_OK(dirNameList)  
   
-  def findFilesByMetadata(self,metaDict):
+  def findFilesByMetadata(self,metaDict,credDict):
     """ Find Files satisfying the given metadata
     """
     
@@ -180,8 +186,9 @@ class DirectoryMetadata:
     if not result['OK']:
       return result
     
+    dirList = result['Value']
     fileList = []
-    result = self.listDirectory(dirList)
+    result = self.listDirectory(dirList,credDict)
     if not result['OK']:
       return result
     
@@ -252,7 +259,7 @@ class DirectoryMetadata:
       
     return S_OK(metaDict)
           
-  def getCompatibleMetadata(self,metaDict):
+  def getCompatibleMetadata(self,metaDict,credDict):
     """ Get distinct metadata values compatible with the given already defined metadata
     """    
     
