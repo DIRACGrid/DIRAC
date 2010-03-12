@@ -6,29 +6,20 @@
     enumerated paths
 """
 
+
 __RCSID__ = "$Id$"
 
 import time, os
 from types import *
 from DIRAC import S_OK, S_ERROR
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase     import DirectoryTreeBase
 
 MAX_LEVELS = 10
 
-class DirectoryLevelTree:
-  """ Class managing Directory Tree as a simple self-linked structure with full
-      directory path stored in each node
-  """
-  def __init__(self, database=None):
-    """ Constructor
-    """
-    self.db = database
-    
-  def setDatabase(self,database):
-    
-    self.db = database  
-    
+class DirectoryLevelTree(DirectoryTreeBase):
+  """ Class managing Directory Tree as a simple self-linked structure with full directory path stored in each node """
+
   def findDir(self,path):
-    
     req = "SELECT DirID,Level from FC_DirectoryLevelTree WHERE DirName='%s'" % path
     result = self.db._query(req)
     if not result['OK']:
