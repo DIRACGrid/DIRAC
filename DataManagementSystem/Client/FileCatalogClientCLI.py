@@ -220,11 +220,11 @@ File Catalog Client $Revision: 1.17 $Date:
     
         usage:
         
-          add user <user_name>
-          add group <group_name>
-          add file <lfn> <pfn> <size> <SE> [<guid>]
-          add pfn <lfn> <pfn> <SE> 
-          add meta <metaname> <metatype>
+          add user <user_name>  - add new user
+          add group <group_name>  - add new group
+          add file <lfn> <pfn> <size> <SE> [<guid>]  - add new file
+          add pfn <lfn> <pfn> <SE>   - add new replica
+          add metadata <metaname> <metatype>  - add new metadata field
     """
     
     argss = args.split()
@@ -238,7 +238,7 @@ File Catalog Client $Revision: 1.17 $Date:
       return self.addfile(argss)
     elif option == 'pfn':
       return self.addpfn(argss)
-    elif option == 'meta':
+    elif option == 'metadata':
       return self.addmeta(argss)
     else:
       print "Unknown option:",option
@@ -333,9 +333,9 @@ File Catalog Client $Revision: 1.17 $Date:
         usage: show <option>
         
         options:
-          users - show all the users defined in the catalog
-          groups -  show all the groups defined in the catalog
-          meta - show available metadata fields
+          users    - show all the users defined in the catalog
+          groups   -  show all the groups defined in the catalog
+          metadata - show available metadata fields
     """
     
     argss = args.split()
@@ -361,7 +361,7 @@ File Catalog Client $Revision: 1.17 $Date:
         else:  
           for user,id in result['Value'].items():
             print user.rjust(20),':',id
-    elif option == 'meta':
+    elif option == 'metadata':
       result = self.fc.getMetadataFields()  
       if not result['OK']:
         print ("Error: %s" % result['Message'])            
@@ -694,45 +694,101 @@ File Catalog Client $Revision: 1.17 $Date:
   def do_set(self,args):
     """ Set metadata value for a directory
 
-        usage: set <directory> <metaname> <metavalue>
+        usage: set metadata <directory> <metaname> <metavalue>
     """      
     
     argss = args.split()
-    if len(argss) != 3:
-      print "Command requires 3 arguments"
-    path = argss[0]
-    if path == '.':
-      path = self.cwd
-    elif path[0] != '/':
-      path = self.cwd+'/'+path  
-    meta = argss[1]
-    value = argss[2]
-    print path,meta,value
-    result = self.fc.setMetadata(path,meta,value)
-    if not result['OK']:
-      print ("Error: %s" % result['Message'])              
+    option = argss[0]
+    del argss[0]
+    if option == 'metadata':
+      if len(argss) != 3:
+        print "Command requires 3 arguments"
+      path = argss[0]
+      if path == '.':
+        path = self.cwd
+      elif path[0] != '/':
+        path = self.cwd+'/'+path  
+      meta = argss[1]
+      value = argss[2]
+      print path,meta,value
+      result = self.fc.setMetadata(path,meta,value)
+      if not result['OK']:
+        print ("Error: %s" % result['Message'])              
       
   def do_get(self,args):
     """ Get metadata for the directory
 
-        usage: get <directory>
+        usage: get metadata <directory>
     """         
-    path = args.split()[0]
-    if path == '.':
-      path = self.cwd
-    elif path[0] != '/':
-      path = self.cwd+'/'+path  
-    result = self.fc.getDirectoryMetadata(path)
+    argss = args.split()
+    option = argss[0]
+    del argss[0]
+    if option == 'metadata':
+      path = argss[0]
+      if path == '.':
+        path = self.cwd
+      elif path[0] != '/':
+        path = self.cwd+'/'+path  
+      result = self.fc.getDirectoryMetadata(path)
+      if not result['OK']:
+        print ("Error: %s" % result['Message']) 
+        return
+      pmetaDict = {}
+      if path != '/':
+        resultParent = self.fc.getDirectoryMetadata(os.path.dirname(path))
+        if resultParent['OK']:
+          pmetaDict = resultParent['Value']
+      if result['Value']:
+        for meta,value in result['Value'].items():
+          if meta in pmetaDict:
+            print ('*'+meta).rjust(20),':',value 
+          else:
+            print meta.rjust(20),':',value   
+      else:
+        print "No metadata defined for directory"    
+    
+  def do_find(self,args):
+    """ Find all files satisfying the given metadata information 
+    
+        usage: find <meta_name>:<meta_value> [<meta_name>:<meta_value>]
+    """   
+    
+    argss = args.split()
+    
+    result = self.fc.getMetadataFields()
     if not result['OK']:
       print ("Error: %s" % result['Message']) 
       return
-    if result['Value']:
-      for meta,value in result['Value'].items():
-        print meta.rjust(20),':',value  
-    else:
-      print "No metadata defined for directory"    
+    if not result['Value']:
+      print "Error: no metadata fields defined"
+      return
     
+    typeDict = result['Value']
+    metaDict = {}
+    for arg in argss:
+      try:
+        name,value = arg.split(':')
+        if not name in typeDict:
+          print "Error: metadata field %s not defined" % name
+          return
+        mtype = typeDict[name]
+        mvalue = value
+        if mtype[0:3].lower() == 'int':
+          mvalue = int(value)
+        if mtype[0:5].lower() == 'float':
+          mvalue = float(value)
+        metaDict[name] = mvalue
+      except Exception,x:
+        print "Error:",str(x)
+        return  
       
+    result = self.fc.findFilesByMetadata(metaDict)
+    if not result['OK']:
+      print ("Error: %s" % result['Message']) 
+      return 
+    for dir in result['Value']:
+      print dir  
+          
   def do_rmpfn(self,args):
     """ Remove replica from the catalog
 
