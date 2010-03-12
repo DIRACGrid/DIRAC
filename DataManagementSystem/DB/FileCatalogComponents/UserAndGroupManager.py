@@ -15,6 +15,18 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 class UserAndGroupManagerBase:
 
+  def __init__(self,database=None):
+    self.db = database
+    
+  def setDatabase(self,database):
+    self.db = database  
+
+  def setUsers(self,users):
+    self.users = users
+
+  def setGroups(self,groups):
+    self.groups = groups
+
   def getUserAndGroupRight(self, credDict):
     """ Evaluate rights for user and group operations
     """
@@ -28,6 +40,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
   def getUserAndGroupID(self, credDict):
     """ Get a uid, gid tuple for the given Credentials
     """
+    #return S_OK((0,0))
     s_uid = credDict['username']
     s_gid = credDict['group']        
     result = self.findUser(s_uid)
@@ -62,14 +75,8 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
         self.addGroup( group, credDict )
     return S_OK()
 
-  def addUser(self,name,credDict):
-    """ Add a new user with a nickname 'name' 
-    """
-
-    result = self.getUserAndGroupRight(credDict)
-    if not result['Value']:
-      return S_ERROR('Permission denied')
-
+  def addUser(self,name):
+    """ Add a new user with a nickname 'name'  """
     userID = 0
     result = self.findUser(name)
     if not result['OK']:
@@ -83,7 +90,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     
     # Get the user ID
     req = "SELECT MAX(UID) FROM FC_Users"
-    result = self._query(req)
+    result = self.db._query(req)
     if not result['OK']:
       return result
     if result['Value'] and result['Value'][0][0]:
@@ -91,7 +98,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     else:
       uid = 1
     
-    result = self._insert('FC_Users',['UserName','UID'],[name,uid])
+    result = self.db._insert('FC_Users',['UserName','UID'],[name,uid])
     if not result['OK']:
       return result
     
@@ -101,23 +108,18 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     return S_OK(result['Value'])
 
 #####################################################################
-  def deleteUser(self,name,credDict,force=True):
+  def deleteUser(self,name,force=True):
     """ Delete a user specified by its nickname
     """
-    
-    result = self.getUserAndGroupRight(credDict)
-    if not result['Value']:
-      return S_ERROR('Permission denied')
-
     if not force:
       # ToDo: Check first if there are files belonging to the user
       pass
-
     req = "DELETE FROM FC_Users WHERE UserName='%s'" % name
-    resUpdate = self._update(req)
+    resUpdate = self.db._update(req)
     return resUpdate
+
 #####################################################################
-  def getUsers(self, credDict):
+  def getUsers(self):
     return self.__getUsers()  
 
 #####################################################################
@@ -126,7 +128,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     """
     resDict = {}
     query = "SELECT UID,UserName from FC_Users"
-    resQuery = self._query(query)
+    resQuery = self.db._query(query)
     if resQuery['OK']:
       if resQuery['Value']:
         for uid,name in resQuery['Value']:
@@ -146,7 +148,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
       return S_OK(user)
 
     query = "SELECT UID from FC_Users WHERE UserName='%s'" % user
-    resQuery = self._query(query)
+    resQuery = self.db._query(query)
     if resQuery['OK']:
       if resQuery['Value']:
         return S_OK(resQuery['Value'][0][0])
@@ -181,14 +183,9 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 #  Group related methods
 #
 #####################################################################
-  def addGroup(self,gname,credDict):
+  def addGroup(self,gname):
     """ Add a new group with a name 'name'
     """
-    
-    result = self.getUserAndGroupRight(credDict)
-    if not result['Value']:
-      return S_ERROR('Permission denied')
-    
     groupID = 0
     result = self.findGroup(gname)
     if not result['OK']:
@@ -204,7 +201,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 
     # Get the new group ID
     req = "SELECT MAX(GID) FROM FC_Groups"
-    result = self._query(req)
+    result = self.db._query(req)
     if not result['OK']:
       return result
     if result['Value'] and result['Value'][0][0]:
@@ -212,7 +209,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     else:
       gid = 1
 
-    result = self._insert('FC_Groups',['GroupName','GID'],[gname,gid])
+    result = self.db._insert('FC_Groups',['GroupName','GID'],[gname,gid])
     if not result['OK']:
       return result
     
@@ -223,20 +220,15 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 
 
 #####################################################################
-  def deleteGroup(self,gname,credDict):
+  def deleteGroup(self,gname):
     """ Delete a group specified by its name
     """
-
-    result = self.getUserAndGroupRight(credDict)
-    if not result['Value']:
-      return S_ERROR('Permission denied')
-
     req = "DELETE FROM FC_Groups WHERE GroupName='%s'" % gname
-    resUpdate = self._update(req)
+    resUpdate = self.db._update(req)
     return resUpdate
   
 #####################################################################
-  def getGroups(self, credDict):
+  def getGroups(self):
     return self.__getGroups()  
  
 #####################################################################
@@ -245,7 +237,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     """
     resDict = {}
     query = "SELECT GID, GroupName from FC_Groups"
-    resQuery = self._query(query)
+    resQuery = self.db._query(query)
     if resQuery['OK']:
       if resQuery['Value']:
         for gid,gname in resQuery['Value']:
@@ -265,7 +257,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
       return S_OK(group)
     
     query = "SELECT GID from FC_Groups WHERE GroupName='%s'" % group
-    resQuery = self._query(query)
+    resQuery = self.db._query(query)
     if resQuery['OK']:
       if resQuery['Value']:
         return S_OK(resQuery['Value'][0][0])
@@ -307,19 +299,13 @@ class UserAndGroupManagerCS(UserAndGroupManagerBase):
   #
   #####################################################################
 
-  def addUser(self,name,credDict):
-    result = self.getUserAndGroupRight(credDict)
-    if not result['Value']:
-      return S_ERROR('Permission denied')    
+  def addUser(self,name):
     return S_OK(name)
 
-  def deleteUser(self,name,credDict,force=True):
-    result = self.getUserAndGroupRight(credDict)
-    if not result['Value']:
-      return S_ERROR('Permission denied')
+  def deleteUser(self,name,force=True):
     return S_OK()
 
-  def getUsers(self, credDict):
+  def getUsers(self):
     res = gConfig.getSections('/Registry/Users')    
     if not res['OK']:
       return res
@@ -342,19 +328,13 @@ class UserAndGroupManagerCS(UserAndGroupManagerBase):
   #
   #####################################################################
 
-  def addGroup(self,gname,credDict):
-    result = self.getUserAndGroupRight(credDict)
-    if not result['Value']:
-      return S_ERROR('Permission denied')
+  def addGroup(self,gname):
     return S_OK(gname)
 
-  def deleteGroup(self,gname,credDict):
-    result = self.getUserAndGroupRight(credDict)
-    if not result['Value']:
-      return S_ERROR('Permission denied')
+  def deleteGroup(self,gname):
     return S_OK()
 
-  def getGroups(self, credDict):
+  def getGroups(self):
     res = gConfig.getSections('/Registry/Groups')
     if not res['OK']:
       return res
