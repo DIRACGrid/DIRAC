@@ -3,16 +3,15 @@
 ########################################################################
 __RCSID__   = "$Id$"
 
-""" FileCatalogHandler is a simple Replica and Metadata Catalog service 
-"""
+""" FileCatalogHandler is a simple Replica and Metadata Catalog service  """
 
-from types import *
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Security import Properties
-from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
-from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
-from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.DISET.RequestHandler                import RequestHandler
+from DIRAC                                          import gLogger, gConfig, rootPath, S_OK, S_ERROR
+from DIRAC.DataManagementSystem.DB.FileCatalogDB    import FileCatalogDB
+
 import time,os
+from types import *
+
 # This is a global instance of the DataIntegrityDB class
 fcDB = False
 
@@ -20,143 +19,12 @@ def initializeFileCatalogHandler(serviceInfo):
 
   global fcDB
   fcDB = FileCatalogDB()
-  credDict = { 'properties': Properties.FC_MANAGEMENT }
-  fcDB.registerUsersAndGroupsFromCS( credDict )
-  gThreadScheduler.addPeriodicTask( 6 * 60 * 60,  fcDB.registerUsersAndGroupsFromCS, ( credDict ) )
   return S_OK()
 
 class FileCatalogHandler(RequestHandler):
   
-  ###################################################################
-  #  isOK
-  #
-  types_isOK = []
-  def export_isOK(self):
-    """ returns S_OK if DB is connected
-    """
-    if fcDB and fcDB._connected:
-      return S_OK()
-    return S_ERROR( 'Server not connected to DB' )
-  
-  ###################################################################
-  #  User and Group operations
-  #
-  types_addUser = [StringTypes]
-  def export_addUser(self,userName):
-    """ Add a new user to the File Catalog
-    """
-    return fcDB.addUser(userName,self.getRemoteCredentials())
-  
-  types_deleteUser = [StringTypes]
-  def export_deleteUser(self,userName):
-    """ Delete user from the File Catalog
-    """
-    return fcDB.deleteUser(userName,self.getRemoteCredentials())
-  
-  types_getUsers = []
-  def export_getUsers(self):
-    """ Get all the users defined in the File Catalog
-    """
-    return fcDB.getUsers(self.getRemoteCredentials())
-  
-  types_addGroup = [StringTypes]
-  def export_addGroup(self,groupName):
-    """ Add a new group to the File Catalog
-    """
-    return fcDB.addGroup(groupName,self.getRemoteCredentials())
-  
-  types_deleteGroup = [StringTypes]
-  def export_deleteGroup(self,groupName):
-    """ Delete group from the File Catalog
-    """
-    return fcDB.deleteGroup(groupName,self.getRemoteCredentials())
-  
-  types_getGroups = []
-  def export_getGroups(self):
-    """ Get all the groups defined in the File Catalog
-    """
-    return fcDB.getGroups(self.getRemoteCredentials())
-  
   ########################################################################
-  # File operations
-  #
-  types_addFile = [[ListType,DictType]+list(StringTypes)]
-  def export_addFile(self,lfns):
-    """ Get replica info for the given list of LFNs
-    """
-    return fcDB.addFile(lfns,self.getRemoteCredentials())
-  
-  types_removeFile = [[ListType,DictType]+list(StringTypes)]
-  def export_removeFile(self,lfns):
-    """ Remove files for the given list of LFNs
-    """
-    return fcDB.removeFile(lfns,self.getRemoteCredentials())
-  
-  types_isFile = [[ListType,DictType]+list(StringTypes)]
-  def export_isFile(self,lfns):
-    """ Check if the given LFNs are files registered in the catalog
-    """
-    return fcDB.isFile(lfns,self.getRemoteCredentials())
-  
-  types_getFileSize = [[ListType,DictType]+list(StringTypes)]
-  def export_getFileSize(self,lfns):
-    """ Check if the given LFNs are files registered in the catalog
-    """
-    return fcDB.getLFNSize(lfns,self.getRemoteCredentials())  
-  
-  types_getFileMetadata = [[ListType,DictType]+list(StringTypes)]
-  def export_getFileMetadata(self,lfns):
-    """ Check if the given LFNs are files registered in the catalog
-    """
-    return fcDB.getLFNMetadata(lfns,self.getRemoteCredentials())  
-  
-  types_addReplica = [[ListType,DictType]+list(StringTypes)]
-  def export_addReplica(self,lfns):
-    """ Get replica info for the given list of LFNs
-    """
-    return fcDB.addReplica(lfns,self.getRemoteCredentials())
-  
-  types_getReplicas = [[ListType,DictType]+list(StringTypes)]
-  def export_getReplicas(self,lfns,allStatus=False):
-    """ Get replica info for the given list of LFNs
-    """
-    return fcDB.getReplicas(lfns,allStatus,self.getRemoteCredentials())
-  
-  types_removeReplica = [[ListType,DictType]+list(StringTypes)]
-  def export_removeReplica(self,lfns):
-    """ Remove replicas for the given list of LFNs
-    """
-    return fcDB.removeReplica(lfns,self.getRemoteCredentials())
-  
-  ########################################################################
-  # Directory operations
-  #
-  types_listDirectory = [[ListType,DictType]+list(StringTypes),BooleanType]
-  def export_listDirectory(self,lfns,verbose):
-    """ Get replica info for the given list of LFNs
-    """
-    return fcDB.listDirectory(lfns,self.getRemoteCredentials(),verbose=verbose)
-  
-  types_isDirectory = [[ListType,DictType]+list(StringTypes)]
-  def export_isDirectory(self,lfns):
-    """ Get replica info for the given list of LFNs
-    """
-    return fcDB.isDirectory(lfns,self.getRemoteCredentials())
-  
-  types_createDirectory = [[ListType,DictType]+list(StringTypes)]
-  def export_createDirectory(self,lfns):
-    """ Get replica info for the given list of LFNs
-    """
-    return fcDB.createDirectory(lfns,self.getRemoteCredentials())
-
-  types_exists = [[ListType,DictType]+list(StringTypes)]
-  def export_exists(self, lfns):
-    """ Check if the path exists
-    """
-    return fcDB.existsLFNs(lfns,self.getRemoteCredentials())
-
-  ########################################################################
-  # Path operations
+  # Path operations (not updated)
   #  
   types_changePathOwner = [[ListType,DictType]+list(StringTypes)]
   def export_changePathOwner(self,lfns):
@@ -184,7 +52,181 @@ class FileCatalogHandler(RequestHandler):
     """ Determine the ACL information for a supplied path
     """
     return fcDB.getPathPermissions(lfns,self.getRemoteCredentials())
+
+  ###################################################################
+  #
+  #  isOK
+  #
+
+  types_isOK = []
+  def export_isOK(self):
+    """ returns S_OK if DB is connected
+    """
+    if fcDB and fcDB._connected:
+      return S_OK()
+    return S_ERROR( 'Server not connected to DB' )
   
+  ###################################################################
+  #
+  #  User/Group write operations
+  #
+
+  types_addUser = [StringTypes]
+  def export_addUser(self,userName):
+    """ Add a new user to the File Catalog """
+    return fcDB.addUser(userName,self.getRemoteCredentials())
+  
+  types_deleteUser = [StringTypes]
+  def export_deleteUser(self,userName):
+    """ Delete user from the File Catalog """
+    return fcDB.deleteUser(userName,self.getRemoteCredentials())
+  
+  types_addGroup = [StringTypes]
+  def export_addGroup(self,groupName):
+    """ Add a new group to the File Catalog """
+    return fcDB.addGroup(groupName,self.getRemoteCredentials())
+  
+  types_deleteGroup = [StringTypes]
+  def export_deleteGroup(self,groupName):
+    """ Delete group from the File Catalog """
+    return fcDB.deleteGroup(groupName,self.getRemoteCredentials())
+  
+  ###################################################################
+  #
+  #  User/Group read operations
+  #
+
+  types_getUsers = []
+  def export_getUsers(self):
+    """ Get all the users defined in the File Catalog """
+    return fcDB.getUsers(self.getRemoteCredentials())
+  
+  types_getGroups = []
+  def export_getGroups(self):
+    """ Get all the groups defined in the File Catalog """
+    return fcDB.getGroups(self.getRemoteCredentials())
+
+  ########################################################################
+  #
+  # Path read operations
+  #
+
+  types_exists = [[ListType,DictType]+list(StringTypes)]
+  def export_exists(self, lfns):
+    """ Check whether the supplied paths exists """
+    return fcDB.exists(lfns,self.getRemoteCredentials())
+
+  ########################################################################
+  #
+  # File write operations
+  #
+
+  types_addFile = [[ListType,DictType]+list(StringTypes)]
+  def export_addFile(self,lfns):
+    """ Register supplied files """
+    return fcDB.addFile(lfns,self.getRemoteCredentials())
+  
+  types_removeFile = [[ListType,DictType]+list(StringTypes)]
+  def export_removeFile(self,lfns):
+    """ Remove the supplied lfns """
+    return fcDB.removeFile(lfns,self.getRemoteCredentials())
+  
+  types_addReplica = [[ListType,DictType]+list(StringTypes)]
+  def export_addReplica(self,lfns):
+    """ Register supplied replicas """
+    return fcDB.addReplica(lfns,self.getRemoteCredentials())
+
+  types_removeReplica = [[ListType,DictType]+list(StringTypes)]
+  def export_removeReplica(self,lfns):
+    """ Remove the supplied replicas """
+    return fcDB.removeReplica(lfns,self.getRemoteCredentials())
+
+  types_setReplicaStatus = [[ListType,DictType]+list(StringTypes)]
+  def export_setReplicaStatus(self,lfns):
+    """ Set the status for the supplied replicas """
+    return fcDB.setReplicaStatus(lfns,self.getRemoteCredentials())
+
+  types_setReplicaHost = [[ListType,DictType]+list(StringTypes)]
+  def export_setReplicaHost(self,lfns):
+    """ Change the registered SE for the supplied replicas """
+    return fcDB.setReplicaHost(lfns,self.getRemoteCredentials())
+
+  ########################################################################
+  #
+  # File read operations
+  #
+
+  types_isFile = [[ListType,DictType]+list(StringTypes)]
+  def export_isFile(self,lfns):
+    """ Check whether the supplied lfns are files """
+    return fcDB.isFile(lfns,self.getRemoteCredentials())
+  
+  types_getFileSize = [[ListType,DictType]+list(StringTypes)]
+  def export_getFileSize(self,lfns):
+    """ Get the size associated to supplied lfns """
+    return fcDB.getFileSize(lfns,self.getRemoteCredentials())  
+  
+  types_getFileMetadata = [[ListType,DictType]+list(StringTypes)]
+  def export_getFileMetadata(self,lfns):
+    """ Get the metadata associated to supplied lfns """
+    return fcDB.getFileMetadata(lfns,self.getRemoteCredentials())  
+  
+  types_getReplicas = [[ListType,DictType]+list(StringTypes)]
+  def export_getReplicas(self,lfns,allStatus=False):
+    """ Get replicas for supplied lfns """
+    return fcDB.getReplicas(lfns,allStatus,self.getRemoteCredentials())
+  
+  types_getReplicaStatus = [[ListType,DictType]+list(StringTypes)]
+  def export_getReplicaStatus(self,lfns):
+    """ Get the status for the supplied replicas """
+    return fcDB.getReplicaStatus(lfns,self.getRemoteCredentials())
+
+  
+  ########################################################################
+  #
+  # Directory write operations
+  #
+
+  types_createDirectory = [[ListType,DictType]+list(StringTypes)]
+  def export_createDirectory(self,lfns):
+    """ Create the supplied directories """
+    return fcDB.createDirectory(lfns,self.getRemoteCredentials())
+
+  types_removeDirectory = [[ListType,DictType]+list(StringTypes)]
+  def export_removeDirectory(self,lfns):
+    """ Remove the supplied directories """
+    return fcDB.removeDirectory(lfns,self.getRemoteCredentials())
+
+  ########################################################################
+  #
+  # Directory read operations
+  #
+
+  types_listDirectory = [[ListType,DictType]+list(StringTypes),BooleanType]
+  def export_listDirectory(self,lfns,verbose):
+    """ List the contents of supplied directories """
+    return fcDB.listDirectory(lfns,self.getRemoteCredentials(),verbose=verbose)
+  
+  types_isDirectory = [[ListType,DictType]+list(StringTypes)]
+  def export_isDirectory(self,lfns):
+    """ Determine whether supplied path is a directory """
+    return fcDB.isDirectory(lfns,self.getRemoteCredentials())
+  
+  types_getDirectorySize = [[ListType,DictType]+list(StringTypes)]
+  def export_getDirectorySize(self,lfns):
+    """ Get the size of the supplied directory """
+    return fcDB.getDirectorySize(lfns,self.getRemoteCredentials())
+
+  types_getDirectoryReplicas = [[ListType,DictType]+list(StringTypes)]
+  def export_getDirectoryReplicas(self,lfns,allStatus=False):
+    """ Get the replicas for file in the supplied directory """
+    return fcDB.getDirectoryReplicas(lfns,allStatus,self.getRemoteCredentials())
+
+  types_getDirectoryMetadata = [[ListType,DictType]+list(StringTypes)]
+  def export_getDirectoryMetadata(self,lfns):
+    """ Get the metadata for a supplied directory """
+    return fcDB.getDirectoryMetadata(lfns,self.getRemoteCredentials())
+
   ########################################################################
   # Metadata Catalog Operations
   #
