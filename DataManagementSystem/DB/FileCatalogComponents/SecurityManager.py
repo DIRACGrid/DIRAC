@@ -11,9 +11,11 @@ from DIRAC import S_OK, S_ERROR, gConfig
 
 class SecurityManagerBase:
   
-  def __init__(self,globalReadAccess=False):
-    self.globalRead = True
-
+  def __init__(self,directoryTree,fileManager,globalReadAccess=False):
+    self.dtree = directoryTree
+    self.fileManager = fileManager
+    self.globalReadAccess = globalReadAccess
+    
   def hasAccess(self,opType,paths,credDict):
     successful = {}
     if not opType.lower() in ['read','write']:
