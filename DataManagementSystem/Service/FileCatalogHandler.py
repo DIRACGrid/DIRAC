@@ -192,46 +192,46 @@ class FileCatalogHandler(RequestHandler):
   def export_addMetadataField(self, fieldName, fieldType ):
     """ Add a new metadata field of the given type
     """
-    return fcDB.addMetadataField( fieldName, fieldType )
+    return fcDB.addMetadataField( fieldName, fieldType, self.getRemoteCredentials() )
 
   types_deleteMetadataField = [ StringTypes ]
   def export_deleteMetadataField(self, fieldName ):
     """ Delete the metadata field 
     """
-    return fcDB.deleteMetadataField( fieldName )
+    return fcDB.deleteMetadataField( fieldName, self.getRemoteCredentials() )
   
   types_getMetadataFields = [ ]
   def export_getMetadataFields(self):
     """ Get all the metadata fields
     """
-    return fcDB.getMetadataFields()
+    return fcDB.getMetadataFields(self.getRemoteCredentials())
   
   types_setMetadata = [ StringTypes, StringTypes ]
   def export_setMetadata(self, path, fieldName, fieldValue ):
     """ Set metadata parameter for the given path
     """
-    return fcDB.setMetadata( path, fieldName, fieldValue )
+    return fcDB.setMetadata( path, fieldName, fieldValue, self.getRemoteCredentials() )
   
   types_getDirectoryMetadata = [ StringTypes ]
   def export_getDirectoryMetadata(self,path):
     """ Get all the metadata valid for the given directory path
     """
-    return fcDB.getDirectoryMetadata(path)
+    return fcDB.getDirectoryMetadata(path, self.getRemoteCredentials())
   
   types_findDirectoriesByMetadata = [ DictType ]
   def export_findDirectoriesByMetadata(self,metaDict):
     """ Find all the directories satisfying the given metadata set
     """
-    return fcDB.findDirectoriesByMetadata(metaDict)
+    return fcDB.findDirectoriesByMetadata(metaDict, self.getRemoteCredentials())
   
   types_findFilesByMetadata = [ DictType ]
   def export_findFilesByMetadata(self,metaDict):
     """ Find all the files satisfying the given metadata set
     """
-    return fcDB.findFilesByMetadata(metaDict)
+    return fcDB.findFilesByMetadata(metaDict, self.getRemoteCredentials())
   
   types_getCompatibleMetadata = [ DictType ]
   def export_getCompatibleMetadata(self,metaDict):
     """ Get metadata values compatible with the given metadata subset
     """
-    return fcDB.getCompatibleMetadata(metaDict)
+    return fcDB.getCompatibleMetadata(metaDict, self.getRemoteCredentials())
