@@ -14,15 +14,7 @@ class DirectorySimpleTree:
   """ Class managing Directory Tree as a simple self-linked structure with full
       directory path stored in each node
   """
-  def __init__(self, database=None):
-    """ Constructor
-    """
-    self.db = database
-    
-  def setDatabase(self,database):
-    
-    self.db = database  
-    
+
   def findDir(self,path):
     
     req = "SELECT DirID from FC_DirectoryTree WHERE DirName='%s'" % path

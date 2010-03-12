@@ -16,15 +16,6 @@ class DirectoryNodeTree:
       names stored in each node
   """
   
-  def __init__(self, database=None):
-    """ Constructor
-    """
-    self.db = database
-    
-  def setDatabase(self,database):
-    
-    self.db = database   
-    
   def findDir(self,path):
     """ Find the identifier of a directory specified by its path
     """
