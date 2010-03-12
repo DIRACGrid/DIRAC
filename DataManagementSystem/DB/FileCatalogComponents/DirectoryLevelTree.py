@@ -219,7 +219,7 @@ class DirectoryLevelTree:
       pelements.append(dPath)
       
     pathString = [ "'"+p+"'" for p in pelements ]
-    req = "SELECT DirID FROM FC_DirectoryLevelTree WHERE DirName in (%s) ORDER BY DirID" % pathString
+    req = "SELECT DirID FROM FC_DirectoryLevelTree WHERE DirName in (%s) ORDER BY DirID" % ','.join(pathString)
     result = self.db._query(req)
     if not result['OK']:
       return result
