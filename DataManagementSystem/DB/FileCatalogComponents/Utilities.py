@@ -12,8 +12,22 @@ from types import *
 from DIRAC import S_OK, S_ERROR
 
 def checkArgumentFormat(path):
-  """ Check and process format of the arguments to FileCatalog methods
-  """
+  return self.checkArgumentDict()
+
+def checkArgumentList(path):
+  """ Check and process format of the arguments to FileCatalog methods """
+  if type(path) in StringTypes:
+    urls = [path]
+  elif type(path) == ListType:
+    urls = path
+  elif type(path) == DictType:
+    urls = path.keys()
+  else:
+    return S_ERROR("checkArgumentList: Supplied path is not of the correct format")
+  return S_OK(urls)  
+
+def checkArgumentDict(path):
+  """ Check and process format of the arguments to FileCatalog methods """
   if type(path) in StringTypes:
     urls = {path:False}
   elif type(path) == ListType:
@@ -21,9 +35,9 @@ def checkArgumentFormat(path):
     for url in path:
       urls[url] = False
   elif type(path) == DictType:
-   urls = path
+    urls = path
   else:
-    return S_ERROR("checkArgumentFormat: Supplied path is not of the correct format")
+    return S_ERROR("checkArgumentDict: Supplied path is not of the correct format")
   return S_OK(urls)  
 
 def generateGuid(checksum,checksumtype):
