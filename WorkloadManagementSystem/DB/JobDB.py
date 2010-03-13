@@ -1224,7 +1224,6 @@ class JobDB(DB):
     result = jDesc.checkDescription()
     if not result['OK']:
       return result
-
     jobAttrNames  = []
     jobAttrValues = []
     descVars = {}
@@ -1293,11 +1292,19 @@ class JobDB(DB):
     jobAttrNames.append( 'UserPriority' )
     jobAttrValues.append( priority )
 
-    for jdlName in 'JobName', 'JobType', 'JobGroup', 'Site':
+    for jdlName in 'JobName', 'JobType', 'JobGroup':
       # Defaults are set by the DB.
       jdlValue = classAdJob.getAttributeString( jdlName )
       if jdlValue:
         jobAttrNames.append( jdlName )
+        jobAttrValues.append( jdlValue )
+
+    jdlValue = classAdJob.getAttributeString('Site')
+    if jdlValue:
+      jobAttrNames.append( jdlName )
+      if jdlValue.find(',') != -1:
+        jobAttrValues.append( 'Multiple' )
+      else:
         jobAttrValues.append( jdlValue )
 
     jobAttrNames.append('VerifiedFlag')
