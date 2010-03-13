@@ -55,6 +55,7 @@ class Subprocess:
       self.log.exception( 'Failed initialisation of Subprocess object' )
       raise v
     self.childPID = 0
+    self.childKilled = False
 
   def changeTimeout( self, timeout ):
     self.timeout = int( timeout )
@@ -125,6 +126,8 @@ class Subprocess:
     try:
       return os.waitpid( pid, os.WNOHANG )
     except os.error:
+      if self.childKilled:
+        return False
       return None
 
   def killChild( self, recursive = True ):
@@ -153,6 +156,7 @@ class Subprocess:
       exitStatus = os.waitpid( self.childPID, 0 )
     except os.error:
       pass
+    self.childKilled = True
     if exitStatus == None:
       return exitStatus
     return exitStatus[1]
