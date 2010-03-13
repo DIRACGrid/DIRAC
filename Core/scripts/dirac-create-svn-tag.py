@@ -59,12 +59,17 @@ if not svnVersions:
 def generateAndUploadReleaseNotes( projectName, svnPath, versionReleased ):
     tmpDir = tempfile.mkdtemp()
     gLogger.info( "Generating release notes for %s under %s" % ( projectName, tmpDir ) )
-    filesToUpload = []
     for suffix, singleVersion in ( ( "history", False ), ( "notes", True ) ):
       gLogger.info( "Generating %s rst" % suffix )
       rstHistory = os.path.join( tmpDir, "release%s.rst" % suffix )
+      htmlHistory = os.path.join( tmpDir, "release%s.html" % suffix )
       Distribution.generateReleaseNotes( projectName, rstHistory, versionReleased, singleVersion )
-      filesToUpload.append( rstHistory )
+      try:
+        Distribution.generateHTMLReleaseNotesFromRST(rstHistory,htmlHistory)
+      except Exception,x:
+        print "Failed to generate html version of the notes:", str(x)  
+      # Attempt to generate pdf as well  
+      os.system('rst2pdf %s' % rstHistory)  
 
     svnCmd = "svn import '%s' '%s' -m 'Release notes for version %s'" % ( tmpDir, svnPath, versionReleased )
     if os.system( svnCmd ):
