@@ -438,8 +438,8 @@ class Watchdog:
     """
     cpuValue = 0
     cpuHMS = cputime.split( ':' )
-    for i in xrange( len( cpuHMS ) ):
-      cpuHMS[i] = cpuHMS[i].replace( '00', '0' )
+    # for i in xrange( len( cpuHMS ) ):
+    #   cpuHMS[i] = cpuHMS[i].replace( '00', '0' )
 
     try:
       hours = float( cpuHMS[0] ) * 60 * 60
