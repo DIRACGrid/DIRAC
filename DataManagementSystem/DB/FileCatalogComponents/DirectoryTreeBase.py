@@ -448,7 +448,7 @@ class DirectoryTreeBase:
     # Get subdirectories
     dirIDList = result['Value']
     for dirID in dirIDList:
-      result = self.db.getDirectoryName(dirID)
+      result = self.getDirectoryName(dirID)
       if not result['OK']:
         return result
       dirName = result['Value']

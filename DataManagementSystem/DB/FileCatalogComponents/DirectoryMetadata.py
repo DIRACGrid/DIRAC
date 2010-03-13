@@ -72,7 +72,7 @@ class DirectoryMetadata:
       return S_ERROR('%s: directory not found' % dpath)
     
     # Check that the metadata is not defined for the parent directories
-    result = self.getDirectoryMetadata(dpath,owndata=False)
+    result = self.getDirectoryMetadata(dpath,credDict,owndata=False)
     if not result['OK']:
       return result
     if metaName in result['Value']:

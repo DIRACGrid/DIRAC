@@ -347,12 +347,12 @@ class FileCatalogDB(DB, DirectoryMetadata):
   #  Directory based read methods
   #
 
-  def listDirectory(self,lfns,credDict,verbose):
+  def listDirectory(self,lfns,credDict,verbose=False):
     res = self._checkPathPermissions('read', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.listDirectory(res['Value']['Successful'],credDict)
+    res = self.dtree.listDirectory(res['Value']['Successful'],credDict,verbose=verbose)
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
@@ -389,18 +389,6 @@ class FileCatalogDB(DB, DirectoryMetadata):
       return res
     failed = res['Value']['Failed']
     res = self.dtree.getDirectorySize(res['Value']['Successful'],credDict)
-    if not res['OK']:
-      return res
-    failed.update(res['Value']['Failed'])
-    successful = res['Value']['Successful']
-    return S_OK( {'Successful':successful,'Failed':failed} )
-
-  def getDirectoryMetadata(self,lfns,credDict):
-    res = self._checkPathPermissions('read', lfns, credDict)
-    if not res['OK']:
-      return res
-    failed = res['Value']['Failed']
-    res = self.dtree.getDirectoryMetadata(res['Value']['Successful'],credDict)
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
