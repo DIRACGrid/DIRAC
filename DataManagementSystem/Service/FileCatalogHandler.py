@@ -222,11 +222,6 @@ class FileCatalogHandler(RequestHandler):
     """ Get the replicas for file in the supplied directory """
     return fcDB.getDirectoryReplicas(lfns,allStatus,self.getRemoteCredentials())
 
-  types_getDirectoryMetadata = [[ListType,DictType]+list(StringTypes)]
-  def export_getDirectoryMetadata(self,lfns):
-    """ Get the metadata for a supplied directory """
-    return fcDB.getDirectoryMetadata(lfns,self.getRemoteCredentials())
-
   ########################################################################
   # Metadata Catalog Operations
   #
