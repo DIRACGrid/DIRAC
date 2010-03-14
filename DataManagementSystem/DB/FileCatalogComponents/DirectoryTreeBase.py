@@ -494,12 +494,15 @@ class DirectoryTreeBase:
       if not result['OK']:
         failed[path] = "Directory not found"
         continue
+      if not result['Value']:
+        failed[path] = "Directory not found"
+        continue
       dirID = result['Value']
-      result = self.getChildren(path)
+      result = self.getSubdirectoriesByID(dirID)
       if not result['OK']:
         failed[path] = result['Message']
       else:
-        dirList = result['Value']
+        dirList = result['Value'].keys()
         dirList.append(dirID)
         dirString = ','.join([ str(x) for x in dirList ])
         req = "SELECT SUM(I.Size) FROM FC_FileInfo as I, FC_Files as F WHERE I.FileID=F.FileID AND F.DirID IN (%s)" % dirString
@@ -509,6 +512,6 @@ class DirectoryTreeBase:
         elif not result['Value']:
           successful[path] = 0
         else:
-          successful[path] = result['Value'][0][0]
+          successful[path] = int(result['Value'][0][0])
           
-    return S_OK({'Successful':successful,'Failed':failed})                    
+    return S_OK({'Successful':successful,'Failed':failed})          
