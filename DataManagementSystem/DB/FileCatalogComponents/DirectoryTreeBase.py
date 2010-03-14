@@ -482,3 +482,33 @@ class DirectoryTreeBase:
         successful[path] = result['Value']
         
     return S_OK({'Successful':successful,'Failed':failed})      
+  
+  def getDirectorySize(self,lfns,credDict):
+    """ Get the total size of the requested directories
+    """
+    paths = lfns.keys()
+    successful = {}
+    failed = {}
+    for path in paths:
+      result = self.findDir(path)
+      if not result['OK']:
+        failed[path] = "Directory not found"
+        continue
+      dirID = result['Value']
+      result = self.getChildren(path)
+      if not result['OK']:
+        failed[path] = result['Message']
+      else:
+        dirList = result['Value']
+        dirList.append(dirID)
+        dirString = ','.join([ str(x) for x in dirList ])
+        req = "SELECT SUM(I.Size) FROM FC_FileInfo as I, FC_Files as F WHERE I.FileID=F.FileID AND F.DirID IN (%s)" % dirString
+        result = self.db._query(req)
+        if not result['OK']:
+          failed[path] = result['Message']
+        elif not result['Value']:
+          successful[path] = 0
+        else:
+          successful[path] = result['Value'][0][0]
+          
+    return S_OK({'Successful':successful,'Failed':failed})                    
