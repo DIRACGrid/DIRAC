@@ -285,7 +285,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     if not result['OK']:
       return result
     if not result['Value']:
-      return S_OK([])
+      return S_OK({})
     
     resDict = {}
     for row in result['Value']:
