@@ -469,13 +469,12 @@ File Catalog Client $Revision: 1.17 $Date:
     path = path.replace(r'//','/')
 
     # remove last character if it is "/"    
-    if path[-1] == '/':
+    if path[-1] == '/' and path != '/':
       path = path[:-1]
     
     # Get directory contents now
     try:
-    #while 1:  
-      result =  self.fc.listDirectory(path,long)     
+      result =  self.fc.listDirectory(path,long)          
       dList = DirectoryListing()
       if result['OK']:
         if result['Value']['Successful']:
@@ -505,11 +504,9 @@ File Catalog Client $Revision: 1.17 $Date:
           if long:
             dList.printListing(reverse,timeorder)      
       else:
-        print "ls failed: ",result['Message']
-        
-    #  break  
+        print "Error:",result['Message']
     except Exception, x:
-      print "ls failed: ", x
+      print "Error:", str(x)
       
   def do_replicas(self,args):
     """ Get replicas for the given file specified by its LFN
@@ -745,7 +742,21 @@ File Catalog Client $Revision: 1.17 $Date:
           else:
             print meta.rjust(20),':',value   
       else:
-        print "No metadata defined for directory"    
+        print "No metadata defined for directory"   
+    elif option == 'size': 
+      path = argss[0]
+      if path == '.':
+        path = self.cwd
+      elif path[0] != '/':
+        path = self.cwd+'/'+path  
+      result = self.fc.getDirectorySize(path)
+      if not result['OK']:
+        print ("Error: %s" % result['Message']) 
+        return
+      if result['Value']['Successful']:
+        print result['Value']['Successful'][path]
+      else:
+        print "Error:",result['Value']['Failed'][path]     
     
   def do_find(self,args):
     """ Find all files satisfying the given metadata information 
