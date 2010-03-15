@@ -279,10 +279,12 @@ for o, v in optList:
     cliParams.release = v
   elif o in ( '-e', '--extraPackages' ):
     for pkg in [ p.strip() for p in v.split( "," ) if p.strip() ]:
-      if pkg != 'Web':
-        iPos = pkg.find( "DIRAC" )
-        if iPos == -1 or iPos != len( pkg ) - 5:
-          pkg = "%sDIRAC" % pkg
+      pl = pkg.split( '@' )
+      if pl[0] != 'Web':
+        iPos = pl[0].find( "DIRAC" )
+        if iPos == -1 or iPos != len( pl[0] ) - 5:
+          pl[0] = "%sDIRAC" % pl[0]
+      pkg = "@".join( pl )
     if pkg not in cliParams.packagesToInstall:
       cliParams.packagesToInstall.append( pkg )
   elif o in ( '-t', '--installType' ):
@@ -351,10 +353,18 @@ moduleDIRACRe = re.compile( "^.*DIRAC$" )
 
 releaseCFG = mainCFG[ 'Releases' ][ cliParams.release ]
 for package in cliParams.packagesToInstall:
-  if package not in releaseCFG.listOptions():
-    logERROR( " Package %s is not defined for the release" % package )
-    sys.exit( 1 )
-  packageVersion = releaseCFG.getOption( package, "trunk" )
+  pl = package.split( '@' )
+  packageVersion = False
+  #Explicit version can be defined for packages using pkgName@version
+  if len( pl ) > 1 :
+    package = pl[0]
+    packageVersion = "@".join( pl[1:] )
+  else:
+    #Try to get the defined package version
+    if package not in releaseCFG.listOptions():
+      logERROR( " Package %s is not defined for the release" % package )
+      sys.exit( 1 )
+    packageVersion = releaseCFG.getOption( package, "trunk" )
   packageTar = "%s-%s.tar.gz" % ( package, packageVersion )
   if packageTar not in availableTars:
     logERROR( "%s is not registered" % packageTar )
