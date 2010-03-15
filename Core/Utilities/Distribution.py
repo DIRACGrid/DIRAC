@@ -1,68 +1,218 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-import urllib2, re, tarfile, os, types, sys, subprocess
+import urllib2, re, tarfile, os, types, sys, subprocess, urlparse
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import CFG, File, List
 
-def execAndGetOutput( cmd ):
-  p = subprocess.Popen( cmd,
-                        shell = True, stdout = subprocess.PIPE,
-                        stderr = subprocess.PIPE, close_fds = True )
-  stdData = p.stdout.read()
-  p.wait()
-  return ( p.returncode, stdData )
+class Distribution:
 
-def getRepositoryVersions( package = False ):
-  if package:
-    webLocation = 'http://svnweb.cern.ch/guest/dirac/%s/tags/%s' % ( package, package )
-  else:
-    webLocation = 'http://svnweb.cern.ch/guest/dirac/tags'
-    package = "global release"
-  try:
-    remoteFile = urllib2.urlopen( webLocation )
-  except urllib2.URLError:
-    gLogger.exception()
-    sys.exit( 2 )
-  remoteData = remoteFile.read()
-  remoteFile.close()
-  if not remoteData:
-    gLogger.error( "Could not retrieve versions for package %s" % package )
-    sys.exit( 1 )
-  versions = []
-  rePackage = ".*"
-  versionRE = re.compile( "<li> *<a *href=.*> *(%s)/ *</a> *</li>" % rePackage )
-  for line in remoteData.split( "\n" ):
-    res = versionRE.search( line )
-    if res:
-      versions.append( res.groups()[0] )
-  return versions
+  cernAnonRoot = 'http://svnweb.cern.ch/guest/dirac'
+  googleAnonRoot = 'http://dirac-grid.googlecode.com/svn'
 
-def getSVNFileContents( svnPath ):
-  import urllib2, stat
-  gLogger.info( "Reading %s" % ( svnPath ) )
-  viewSVNLocation = "http://svnweb.cern.ch/world/wsvn/dirac/%s?op=dl&rev=0" % ( svnPath )
-  anonymousLocation = 'http://svnweb.cern.ch/guest/dirac/%s' % ( svnPath )
-  for remoteLocation in ( viewSVNLocation, anonymousLocation ):
+  cernDevRoot = 'svn+ssh://svn.cern.ch/reps/dirac'
+  googleDevRoot = 'https://dirac-grid.googlecode.com/svn'
+
+  anonymousSVNRoot = { 'global' : cernAnonRoot,
+                       'DIRAC' : cernAnonRoot,
+                       'LHCbDIRAC' : cernAnonRoot,
+                       'BelleDIRAC' : googleAnonRoot,
+                       'EELADIRAC' : googleAnonRoot
+                     }
+
+  devSVNRoot = { 'global' : cernDevRoot,
+                 'DIRAC' : cernDevRoot,
+                 'LHCbDIRAC' : cernDevRoot,
+                 'BelleDIRAC' : googleDevRoot,
+                 'EELADIRAC' : googleDevRoot
+               }
+
+  def __init__( self, package = False ):
+    if not package:
+      package = 'global'
+    if package not in Distribution.anonymousSVNRoot:
+      raise Exception( "Package %s does not have a registered svn root" % package )
+    self.package = package
+    self.svnRoot = Distribution.anonymousSVNRoot[ package ]
+    self.svnPass = False
+    self.svnUser = False
+    self.cmdQueue = []
+
+  def getSVNPathForPackage( self, package, path ):
+    return "%s/%s" % ( self.anonymousSVNRoot[ package ], path )
+
+  def getPackageName( self ):
+    return self.package
+
+  def getDevPath( self, path = False ):
+    devPath = Distribution.devSVNRoot[ self.package ]
+    if path:
+      devPath += "/%s" % path
+    return devPath
+
+  def setSVNPassword( self, password ):
+    self.svnPass = password
+
+  def setSVNUser( self, user ):
+    self.svnUser = user
+
+  def addCommandToQueue( self, cmd ):
+    self.cmdQueue.append( cmd )
+
+  def executeCommandQueue( self ):
+    while self.cmdQueue:
+      if not self.executeCommand( self.cmdQueue.pop( 0 ), getOutput = False ):
+        return False
+    return True
+
+  def emptyQueue( self ):
+    return len( self.cmdQueue ) == 0
+
+  def getRepositoryVersions( self ):
+    if self.package == 'global' :
+      webLocation = "%s/tags" % self.svnRoot
+    else:
+      webLocation = '%s/%s/tags/%s' % ( self.svnRoot, package, package )
     try:
-      remoteFile = urllib2.urlopen( remoteLocation )
+      remoteFile = urllib2.urlopen( webLocation )
     except urllib2.URLError:
-      continue
+      gLogger.exception()
+      sys.exit( 2 )
     remoteData = remoteFile.read()
     remoteFile.close()
-    if remoteData:
-      return remoteData
-  #Web cat failed. Try directly with svn
-  exitStatus, remoteData = execAndGetOutput( "svn cat 'http://svnweb.cern.ch/guest/dirac/%s" % ( svnPath ) )
-  if exitStatus:
-    print "Error: Could not retrieve %s from the web nor via SVN. Aborting..." % svnPath
-    sys.exit( 1 )
-  return remoteData
+    if not remoteData:
+      gLogger.error( "Could not retrieve versions for package %s" % package )
+      sys.exit( 1 )
+    versions = []
+    rePackage = ".*"
+    versionRE = re.compile( "<li> *<a *href=.*> *(%s)/ *</a> *</li>" % rePackage )
+    for line in remoteData.split( "\n" ):
+      res = versionRE.search( line )
+      if res:
+        versions.append( res.groups()[0] )
+    return versions
 
-def loadCFGFromRepository( svnPath ):
-  remoteData = getSVNFileContents( svnPath )
-  return CFG.CFG().loadFromBuffer( remoteData )
+  def getSVNFileContents( self, svnPath ):
+    import urllib2, stat
+    gLogger.info( "Reading %s" % ( svnPath ) )
+    remoteLocation = "%s/%s" % ( self.svnRoot, svnPath )
+    try:
+      remoteFile = urllib2.urlopen( remoteLocation )
+    finally:
+      remoteData = remoteFile.read()
+      remoteFile.close()
+      if remoteData:
+        return remoteData
+    #Web cat failed. Try directly with svn
+    exitStatus, remoteData = execAndGetOutput( "svn cat '%s" % remoteLocation )
+    if exitStatus:
+      print "Error: Could not retrieve %s from the web nor via SVN. Aborting..." % svnPath
+      sys.exit( 1 )
+    return remoteData
+
+  def loadCFGFromRepository( self, svnPath ):
+    remoteData = self.getSVNFileContents( svnPath )
+    return CFG.CFG().loadFromBuffer( remoteData )
+
+  def getVersionsCFG( self ):
+    return self.loadCFGFromRepository( '%s/trunk/%s/versions.cfg' % ( self.package, self.package ) )
+
+  def executeCommand( self, cmd, getOutput = True ):
+    env = dict( os.environ )
+    if self.svnPass:
+      env[ 'SVN_PASSWORD' ] = self.svnPass
+    print "Executing %s" % cmd
+    if not getOutput:
+      return subprocess.Popen( cmd, shell = True, env = env ).wait() == 0
+    #Get output
+    p = subprocess.Popen( cmd,
+                          shell = True, stdout = subprocess.PIPE,
+                          stderr = subprocess.PIPE, close_fds = True, env = env )
+    stdData = p.stdout.read()
+    p.wait()
+    return ( p.returncode, stdData )
+
+  def __getDevCmdBase( self, path ):
+    devRoot = self.getDevPath( path )
+    isHTTPS = False
+    urlRes = urlparse.urlparse( devRoot )
+    args = []
+    if urlRes.scheme == "https":
+      isHTTPS = True
+
+    if self.svnUser:
+      if isHTTPS:
+        args.append( "--username '%s'" % self.svnUser )
+      else:
+        urlRes = urlparse.urlparse( devRoot )
+        devRoot = urlparse.urlunparse( ( urlRes.scheme,
+                                         "%s@%s" % ( self.svnUser, urlRes.netloc ),
+                                         urlRes.path,
+                                         urlRes.params,
+                                         urlRes.query, urlRes.fragment ) )
+
+    if self.svnPass and isHTTPS:
+      args.append( "--password '%s'" % self.svnPass )
+
+    return ( " ".join( args ), devRoot )
+
+
+  def doLS( self, path ):
+    t = self.__getDevCmdBase( path )
+    cmd = "svn ls %s %s" % t
+    return self.executeCommand( cmd, True )
+
+  def __cmdImport( self, origin, dest, comment ):
+    destT = self.__getDevCmdBase( dest )
+    cmd = "svn import -m '%s' %s %s %s" % ( comment, destT[0], origin, destT[1] )
+    self.addCommandToQueue( cmd )
+
+  def queueImport( self, origin, dest, comment ):
+    self.addCommandToQueue( self.__cmdImport( origin, dest, comment ) )
+
+  def doImport( self, origin, dest, comment ):
+    return self.executeCommand( self.__cmdImport( origin, dest, comment ), False )
+
+  def __cmdCopy( self, origin, dest, comment ):
+    destT = self.__getDevCmdBase( dest )
+    orT = self.__getDevCmdBase( origin )
+    cmd = "svn copy -m '%s' %s %s %s" % ( comment, destT[0], orT[1], destT[1] )
+    self.addCommandToQueue( cmd )
+
+  def queueCopy( self, origin, dest, comment ):
+    self.addCommandToQueue( self.__cmdCopy( origin, dest, comment ) )
+
+  def doCopy( self, path, comment ):
+    return self.executeCommand( self.__cmdCopy( origin, dest, comment ), False )
+
+  def __cmdMakeDir( self, path, comment ):
+    t = self.__getDevCmdBase( path )
+    return "svn mkdir -m '%s' %s %s" % ( comment, t[0], t[1] )
+
+  def queueMakeDir( self, path, comment ):
+    self.addCommandToQueue( self.__cmdMakeDir( path, comment ) )
+
+  def doMakeDir( self, path, comment ):
+    return self.executeCommand( self.__cmdMakeDir( path, comment ), False )
+
+  def doCheckout( self, path, location ):
+    t = self.__getDevCmdBase( dest )
+    cmd = "svn co %s '%s' '%s'" % ( t[0], t[1], location )
+    return self.executeCommand( cmd, False )
+
+  def doCommit( self, location, comment ):
+    t = self.__getDevCmdBase( "" )
+    cmd = "svn ci -m '%s' %s '%s'" % ( location, t[0], location )
+    return self.executeCommand( cmd, False )
+
+
+
+
+
+#End of Distribution class
+
+
 
 def createTarball( tarballPath, directoryToTar, additionalDirectoriesToTar = [] ):
   tf = tarfile.open( tarballPath, "w:gz" )
@@ -87,6 +237,8 @@ def createTarball( tarballPath, directoryToTar, additionalDirectoriesToTar = [] 
   fd.close()
   return S_OK()
 
+#Start of release notes
+
 allowedNoteTypes = ( "NEW", "CHANGE", "BUGFIX", 'FIX' )
 noteTypeAlias = { 'FIX' : 'BUGFIX' }
 
@@ -96,7 +248,7 @@ def retrieveReleaseNotes( packages ):
   packageCFGDict = {}
   #Get the versions.cfg
   for package in packages:
-    packageCFGDict[ package ] = loadCFGFromRepository( "%s/trunk/%s/versions.cfg" % ( package, package ) )
+    packageCFGDict[ package ] = Distribution( package ).getVersionsCFG()
   #Parse the release notes
   pkgNotesDict = {}
   for package in packageCFGDict:

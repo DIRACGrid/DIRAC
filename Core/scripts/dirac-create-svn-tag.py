@@ -10,21 +10,19 @@ from DIRAC.Core.Utilities import List, Distribution
 
 import sys, os, tempfile, shutil, getpass
 
-svnProjects = 'DIRAC'
+svnPackages = 'DIRAC'
 svnVersions = ""
 svnUsername = ""
 onlyReleaseNotes = False
-
-svnSshRoot = "svn+ssh://%s@svn.cern.ch/reps/dirac/%s"
 
 def setVersion( optionValue ):
   global svnVersions
   svnVersions = optionValue
   return S_OK()
 
-def setProject( optionValue ):
-  global svnProjects
-  svnProjects = optionValue
+def setPackage( optionValue ):
+  global svnPackages
+  svnPackages = optionValue
   return S_OK()
 
 def setUsername( optionValue ):
@@ -41,7 +39,7 @@ def setOnlyReleaseNotes( optionValue ):
 Script.disableCS()
 
 Script.registerSwitch( "v:", "version=", "versions to tag comma separated (mandatory)", setVersion )
-Script.registerSwitch( "p:", "project=", "projects to tag comma separated (default = DIRAC)", setProject )
+Script.registerSwitch( "p:", "package=", "packages to tag comma separated (default = DIRAC)", setPackage )
 Script.registerSwitch( "u:", "username=", "svn username to use", setUsername )
 Script.registerSwitch( "n", "releaseNotes", "Only refresh release notes", setOnlyReleaseNotes )
 
@@ -56,23 +54,24 @@ def usage():
 if not svnVersions:
   usage()
 
-def generateAndUploadReleaseNotes( projectName, svnPath, versionReleased ):
+def generateAndUploadReleaseNotes( packageDistribution, svnPath, versionReleased ):
     tmpDir = tempfile.mkdtemp()
-    gLogger.info( "Generating release notes for %s under %s" % ( projectName, tmpDir ) )
+    packageName = packageDistribution.getPackageName()
+    gLogger.info( "Generating release notes for %s under %s" % ( packageName, tmpDir ) )
     for suffix, singleVersion in ( ( "history", False ), ( "notes", True ) ):
       gLogger.info( "Generating %s rst" % suffix )
       rstHistory = os.path.join( tmpDir, "release%s.rst" % suffix )
       htmlHistory = os.path.join( tmpDir, "release%s.html" % suffix )
-      Distribution.generateReleaseNotes( projectName, rstHistory, versionReleased, singleVersion )
+      Distribution.generateReleaseNotes( packageName, rstHistory, versionReleased, singleVersion )
       try:
-        Distribution.generateHTMLReleaseNotesFromRST(rstHistory,htmlHistory)
-      except Exception,x:
-        print "Failed to generate html version of the notes:", str(x)  
+        Distribution.generateHTMLReleaseNotesFromRST( rstHistory, htmlHistory )
+      except Exception, x:
+        print "Failed to generate html version of the notes:", str( x )
       # Attempt to generate pdf as well  
-      os.system('rst2pdf %s' % rstHistory)  
+      os.system( 'rst2pdf %s' % rstHistory )
 
-    svnCmd = "svn import '%s' '%s' -m 'Release notes for version %s'" % ( tmpDir, svnPath, versionReleased )
-    if os.system( svnCmd ):
+    packageDistribution.queueImport( tmpDir, svnPath, 'Release notes for version %s' % versionReleased )
+    if not packageDistribution.executeCommandQueue():
       gLogger.error( "Could not upload release notes" )
       sys.exit( 1 )
 
@@ -89,16 +88,23 @@ if not svnUsername:
 gLogger.info( "Using %s as username" % svnUsername )
 
 #Start the magic!
-for svnProject in List.fromChar( svnProjects ):
+for svnPackage in List.fromChar( svnPackages ):
 
-  buildCFG = Distribution.loadCFGFromRepository( "%s/trunk/%s/versions.cfg" % ( svnProject, svnProject ) )
+  packageDistribution = Distribution.Distribution( svnPackage )
+  packageDistribution.setSVNUser( svnUsername )
+  buildCFG = packageDistribution.getVersionsCFG()
 
   if 'Versions' not in buildCFG.listSections():
-    gLogger.error( "versions.cfg file in project %s does not contain a Versions top section" % svnProject )
+    gLogger.error( "versions.cfg file in package %s does not contain a Versions top section" % svnPackage )
     continue
 
-  versionsRoot = svnSshRoot % ( svnUsername, '%s/tags/%s' % ( svnProject, svnProject ) )
-  exitStatus, data = Distribution.execAndGetOutput( "svn ls '%s'" % ( versionsRoot ) )
+  versionsRoot = '%s/tags/%s' % ( svnPackage, svnPackage )
+
+  if packageDistribution.getDevPath().find( "https" ) == 0:
+    password = getpass.getpass( "Insert password for %s: " % versionsRoot )
+    packageDistribution.setSVNPassword( password )
+
+  exitStatus, data = packageDistribution.doLS( '%s/tags/%s' % ( svnPackage, svnPackage ) )
   if exitStatus:
     createdVersions = []
   else:
@@ -106,21 +112,21 @@ for svnProject in List.fromChar( svnProjects ):
 
   for svnVersion in List.fromChar( svnVersions ):
 
-    gLogger.info( "Start tagging for project %s version %s " % ( svnProject, svnVersion ) )
+    gLogger.info( "Start tags for package %s version %s " % ( svnPackage, svnVersion ) )
 
     if svnVersion in createdVersions:
       if not onlyReleaseNotes:
-        gLogger.error( "Version %s is already there for package %s :P" % ( svnVersion, svnProject ) )
+        gLogger.error( "Version %s is already there for package %s :P" % ( svnVersion, svnPackage ) )
         continue
       else:
         gLogger.info( "Generating release notes for version %s" % svnVersion )
-        generateAndUploadReleaseNotes( svnProject,
+        generateAndUploadReleaseNotes( packageDistribution,
                                        "%s/%s" % ( versionsRoot, svnVersion ),
                                        svnVersion )
         continue
 
     if onlyReleaseNotes:
-      gLogger.error( "Version %s is not tagged for %s. Can't refresh the release notes" % ( svnVersion, svnProject ) )
+      gLogger.error( "Version %s is not tagged for %s. Can't refresh the release notes" % ( svnVersion, svnPackage ) )
       continue
 
     if not svnVersion in buildCFG[ 'Versions' ].listSections():
@@ -131,33 +137,27 @@ for svnProject in List.fromChar( svnProjects ):
     versionCFG = buildCFG[ 'Versions' ][svnVersion]
     packageList = versionCFG.listOptions()
     gLogger.info( "Tagging packages: %s" % ", ".join( packageList ) )
-    msg = '"Release %s"' % svnVersion
+    msg = 'Release %s' % svnVersion
     versionPath = "%s/%s" % ( versionsRoot, svnVersion )
-    mkdirCmd = "svn -m %s mkdir '%s'" % ( msg, versionPath )
-    cpCmds = []
+    packageDistribution.queueMakeDir( versionPath, msg )
     for extra in buildCFG.getOption( 'packageExtraFiles', [ '__init__.py', 'versions.cfg' ] ):
-      source = svnSshRoot % ( svnUsername, '%s/trunk/%s/%s' % ( svnProject, svnProject, extra ) )
-      cpCmds.append( "svn -m '%s' copy '%s' '%s/%s'" % ( msg, source, versionPath, extra ) )
+      packageDistribution.queueCopy( '%s/trunk/%s/%s' % ( svnPackage, svnPackage, extra ),
+                                     '%s/%s' % ( versionPath, extra ),
+                                     msg )
     for pack in packageList:
       packVer = versionCFG.getOption( pack, '' )
       if packVer.lower() in ( 'trunk', '', 'head' ):
-        source = svnSshRoot % ( svnUsername, '%s/trunk/%s/%s' % ( svnProject, svnProject, pack ) )
+        source = '%s/trunk/%s/%s' % ( svnPackage, svnPackage, pack )
       else:
-        source = svnSshRoot % ( svnUsername, '%s/tags/%s/%s/%s' % ( svnProject, svnProject, pack, packVer ) )
-      cpCmds.append( "svn -m '%s' copy '%s' '%s/%s'" % ( msg, source, versionPath, pack ) )
-    if not cpCmds:
+        source = '%s/tags/%s/%s/%s' % ( svnPackage, svnPackage, pack, packVer )
+      packageDistribution.queueCopy( source, '%s/%s' % ( versionPath, pack ), msg )
+    if packageDistribution.emptyQueue():
       gLogger.error( 'No packages to be included' )
       exit( -1 )
-    gLogger.info( 'Creating SVN Dir:', versionPath )
-    ret = os.system( mkdirCmd )
-    if ret:
-      exit( -1 )
     gLogger.info( 'Copying packages: %s' % ", ".join( packageList ) )
-    for cpCmd in cpCmds:
-      ret = os.system( cpCmd )
-      if ret:
-        gLogger.error( 'Failed to create tag' )
+    if not packageDistribution.executeCommandQueue():
+      gLogger.error( 'Failed to create tag' )
 
     #Generate release notes for version
-    generateAndUploadReleaseNotes( svnProject, versionPath, svnVersion )
+    generateAndUploadReleaseNotes( packageDistribution, versionPath, svnVersion )
 

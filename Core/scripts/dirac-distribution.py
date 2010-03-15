@@ -8,6 +8,8 @@ from DIRAC.Core.Utilities import List, File, Distribution, Platform, Subprocess
 
 import sys, os, re, urllib2, tempfile, getpass
 
+globalDistribution = Distribution.Distribution()
+
 class Params:
 
   def __init__( self ):
@@ -21,7 +23,6 @@ class Params:
     self.ignoreExternals = False
     self.ignorePackages = False
     self.externalsPython = '25'
-    self.svnRoot = "svn+ssh://svn.cern.ch/reps/dirac"
     self.destination = ""
 
   def setReleases( self, optionValue ):
@@ -30,7 +31,7 @@ class Params:
 
   def setUserName( self, optionValue ):
     self.userName = optionValue
-    self.svnRoot = "svn+ssh://%s@svn.cern.ch/reps/dirac" % optionValue
+    globalDistribution.setSVNUser( optionValue )
     return S_OK()
 
   def setForceSVNLink( self, optionValue ):
@@ -120,13 +121,11 @@ def tagSVNReleases( mainCFG, taggedReleases ):
     if releaseVersion not in releasesCFG.listSections():
       gLogger.error( "Release %s not defined in releases.cfg" % releaseVersion )
       continue
-    releaseSVNPath = "%s/tags/%s" % ( cliParams.svnRoot, releaseVersion )
+    releaseSVNPath = "tags/%s" % releaseVersion
     if releaseVersion not in taggedReleases:
       gLogger.info( "Creating global release dir %s" % releaseVersion )
-      svnCmd = "svn -m 'Release %s' mkdir '%s'" % ( releaseVersion, releaseSVNPath )
-      result = Subprocess.shellCall( 300, svnCmd )
-      if not result[ 'OK' ]:
-        gLogger.error( "Error while generating release tag", result[ 'Message' ] )
+      if not globalDistribution.doMakeDir( releaseSVNPath, "Release %s" % releaseVersion ):
+        gLogger.error( "Error while generating release tag" )
         sys.exit( 1 )
       exitStatus, stdData, errData = result[ 'Value' ]
       if exitStatus:
@@ -140,23 +139,27 @@ def tagSVNReleases( mainCFG, taggedReleases ):
         continue
       version = releasesCFG[ releaseVersion ].getOption( p, "" )
       versionPath = getVersionPath( p, version )
-      svnLinks.append( "%s http://svnweb.cern.ch/guest/dirac/%s" % ( p, versionPath ) )
+      svnLinks.append( "%s %s" % ( p, globalDistribution.getSVNPathForPackage( versionPath ) ) )
     tmpPath = tempfile.mkdtemp()
     fd = open( os.path.join( tmpPath, "extProp" ), "wb" )
     fd.write( "%s\n" % "\n".join( svnLinks ) )
     fd.close()
-    svnCmds = []
     checkOutPath = os.path.join( tmpPath, "svnco" )
     releasesFilePath = os.path.join( tmpPath, "releases.cfg" )
     releasesTmpFilePath = os.path.join( tmpPath, "releases.cfg" )
     releasesFinalFilePath = os.path.join( checkOutPath, "releases.cfg" )
     if not mainCFG.writeToFile( releasesTmpFilePath ):
       gLogger.error( "Could not write releases.cfg file to %s" % releasesTmpFilePath )
-    svnCmds.append( "svn co -N '%s' '%s'" % ( releaseSVNPath, checkOutPath ) )
+      sys.exit( 1 )
+    if not glocalDistribution.doCheckout( releaseSVNPath, checkOutPath ):
+      gLogger.error( "Could not check out %s to  %s" % ( releaseSVNPath, checkOutPath ) )
+      sys.exit( 1 )
+    svnCmds = []
+    #svnCmds.append( "svn co -N '%s' '%s'" % ( releaseSVNPath, checkOutPath ) )
     svnCmds.append( "mv '%s' '%s'" % ( releasesTmpFilePath, releasesFinalFilePath ) )
     svnCmds.append( "svn add '%s'" % releasesFinalFilePath )
     svnCmds.append( "svn propset svn:externals -F '%s/extProp' '%s'" % ( tmpPath, checkOutPath ) )
-    svnCmds.append( "svn ci -m 'Release %s svn:externals' '%s'" % ( releaseVersion, checkOutPath ) )
+    #svnCmds.append( "svn ci -m 'Release %s svn:externals' '%s'" % ( releaseVersion, checkOutPath ) )
     gLogger.info( "Creating svn:externals in %s..." % releaseVersion )
     for cmd in svnCmds:
       result = Subprocess.shellCall( 900, cmd )
@@ -167,6 +170,9 @@ def tagSVNReleases( mainCFG, taggedReleases ):
       if exitStatus:
         gLogger.error( "Error while adding externals to tag", "\n".join( [ stdData, errData ] ) )
         sys.exit( 1 )
+    if not globalDistribution.doCommit( checkOutPath, "Release %s svn:externals" % releaseVersion ):
+      gLogger.error( "Could not commit %s to  %s" % ( releaseSVNPath, checkOutPath ) )
+      sys.exit( 1 )
     os.system( "rm -rf '%s'" % tmpPath )
 
 def autoTarPackages( mainCFG, targetDir ):
@@ -183,7 +189,7 @@ def autoTarPackages( mainCFG, targetDir ):
         continue
       version = releasesCFG[ releaseVersion ].getOption( package, "" )
       versionPath = getVersionPath( package, version )
-      pkgSVNPath = "http://svnweb.cern.ch/guest/dirac/%s" % ( versionPath )
+      pkgSVNPath = globalDistribution.getSVNPathForPackage( versionPath )
       pkgHDPath = os.path.join( releaseTMPPath, package )
       gLogger.info( " Getting %s" % pkgSVNPath )
       svnCmd = "svn export '%s' '%s'" % ( pkgSVNPath, pkgHDPath )
@@ -257,7 +263,7 @@ def tarExternals( mainCFG, targetDir ):
         sys.exit( 1 )
       os.system( "rm -rf '%s'" % compileTarget )
 
-mainCFG = Distribution.loadCFGFromRepository( "/trunk/releases.cfg" )
+mainCFG = globalDistribution.loadCFGFromRepository( "/trunk/releases.cfg" )
 if 'Releases' not in mainCFG.listSections():
   gLogger.fatal( "releases.cfg file does not have a Releases section" )
   exit( 1 )
@@ -269,7 +275,7 @@ for release in cliParams.releasesToBuild:
     sys.exit( 1 )
 
 if not cliParams.destination:
-  targetPath = tempfile.mkdtemp()
+  targetPath = tempfile.mkdtemp( 'DiracDist' )
 else:
   targetPath = cliParams.destination
   try:
@@ -281,7 +287,7 @@ gLogger.info( "Will generate tarballs in %s" % targetPath )
 doneSomeTars = False
 
 if not cliParams.ignoreSVNLinks:
-  taggedReleases = Distribution.getRepositoryVersions()
+  taggedReleases = globalDistribution.getRepositoryVersions()
   tagSVNReleases( mainCFG, taggedReleases )
   doneSomeTars = True
 
