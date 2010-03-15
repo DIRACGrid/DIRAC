@@ -347,6 +347,25 @@ class SystemAdministratorClientCLI(cmd.Cmd):
         print "ERROR:",result['Message']
       else:
         print "%s system instance %s added successfully" % (system,instance) 
+        
+  def do_exec(self,args ):
+    """ Execute a shell command on the remote host and get back the output
+    
+        usage:
+        
+          exec <cmd> [<arguments>]
+    """         
+    client = SystemAdministratorClient(self.host)
+    result = client.executeCommand(args)    
+    if not result['OK']:
+      print "ERROR:",result['Message']
+    status,output,error = result['Value']  
+    for line in output.split('\n'):
+      print line  
+    if error:
+      print "Error:", status
+      for line in error.split('\n'):
+        print line    
       
   def do_exit(self, args):
     """ Exit the shell.
