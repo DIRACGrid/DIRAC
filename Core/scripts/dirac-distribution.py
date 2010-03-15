@@ -127,10 +127,6 @@ def tagSVNReleases( mainCFG, taggedReleases ):
       if not globalDistribution.doMakeDir( releaseSVNPath, "Release %s" % releaseVersion ):
         gLogger.error( "Error while generating release tag" )
         sys.exit( 1 )
-      exitStatus, stdData, errData = result[ 'Value' ]
-      if exitStatus:
-        gLogger.error( "Error while generating release tag", "\n".join( [ stdData, errData ] ) )
-        sys.exit( 1 )
     svnLinks = []
     packages = releasesCFG[ releaseVersion ].listOptions()
     packages.sort()
@@ -139,7 +135,7 @@ def tagSVNReleases( mainCFG, taggedReleases ):
         continue
       version = releasesCFG[ releaseVersion ].getOption( p, "" )
       versionPath = getVersionPath( p, version )
-      svnLinks.append( "%s %s" % ( p, globalDistribution.getSVNPathForPackage( versionPath ) ) )
+      svnLinks.append( "%s %s" % ( p, globalDistribution.getSVNPathForPackage( p, versionPath ) ) )
     tmpPath = tempfile.mkdtemp()
     fd = open( os.path.join( tmpPath, "extProp" ), "wb" )
     fd.write( "%s\n" % "\n".join( svnLinks ) )
@@ -151,7 +147,7 @@ def tagSVNReleases( mainCFG, taggedReleases ):
     if not mainCFG.writeToFile( releasesTmpFilePath ):
       gLogger.error( "Could not write releases.cfg file to %s" % releasesTmpFilePath )
       sys.exit( 1 )
-    if not glocalDistribution.doCheckout( releaseSVNPath, checkOutPath ):
+    if not globalDistribution.doCheckout( releaseSVNPath, checkOutPath ):
       gLogger.error( "Could not check out %s to  %s" % ( releaseSVNPath, checkOutPath ) )
       sys.exit( 1 )
     svnCmds = []
@@ -189,7 +185,7 @@ def autoTarPackages( mainCFG, targetDir ):
         continue
       version = releasesCFG[ releaseVersion ].getOption( package, "" )
       versionPath = getVersionPath( package, version )
-      pkgSVNPath = globalDistribution.getSVNPathForPackage( versionPath )
+      pkgSVNPath = globalDistribution.getSVNPathForPackage( package, versionPath )
       pkgHDPath = os.path.join( releaseTMPPath, package )
       gLogger.info( " Getting %s" % pkgSVNPath )
       svnCmd = "svn export '%s' '%s'" % ( pkgSVNPath, pkgHDPath )

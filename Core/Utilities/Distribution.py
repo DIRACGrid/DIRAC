@@ -40,6 +40,8 @@ class Distribution:
     self.cmdQueue = []
 
   def getSVNPathForPackage( self, package, path ):
+    if package not in self.anonymousSVNRoot:
+      return "%s/%s" % ( Distribution.cernAnonRoot, path )
     return "%s/%s" % ( self.anonymousSVNRoot[ package ], path )
 
   def getPackageName( self ):
@@ -197,13 +199,13 @@ class Distribution:
     return self.executeCommand( self.__cmdMakeDir( path, comment ), False )
 
   def doCheckout( self, path, location ):
-    t = self.__getDevCmdBase( dest )
+    t = self.__getDevCmdBase( path )
     cmd = "svn co %s '%s' '%s'" % ( t[0], t[1], location )
     return self.executeCommand( cmd, False )
 
   def doCommit( self, location, comment ):
     t = self.__getDevCmdBase( "" )
-    cmd = "svn ci -m '%s' %s '%s'" % ( location, t[0], location )
+    cmd = "svn ci -m '%s' %s '%s'" % ( comment, t[0], location )
     return self.executeCommand( cmd, False )
 
 
