@@ -761,7 +761,7 @@ File Catalog Client $Revision: 1.17 $Date:
   def do_find(self,args):
     """ Find all files satisfying the given metadata information 
     
-        usage: find <meta_name>:<meta_value> [<meta_name>:<meta_value>]
+        usage: find <meta_name>=<meta_value> [<meta_name>=<meta_value>]
     """   
     
     argss = args.split()
@@ -778,7 +778,7 @@ File Catalog Client $Revision: 1.17 $Date:
     metaDict = {}
     for arg in argss:
       try:
-        name,value = arg.split(':')
+        name,value = arg.split('=')
         if not name in typeDict:
           print "Error: metadata field %s not defined" % name
           return
