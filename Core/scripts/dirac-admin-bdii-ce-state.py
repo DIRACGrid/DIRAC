@@ -30,7 +30,7 @@ for unprocSw in Script.getUnprocessedSwitches():
 
 diracAdmin = DiracAdmin()
 
-result = diracAdmin.getBDIICEState(ce, vo=vo, host=host)
+result = diracAdmin.getBDIICEState(ce, useVO=vo, host=host)
 if not result['OK']:
   print test['Message']
   DIRAC.exit(2)
