@@ -9,8 +9,9 @@ __RCSID__ = "$Id:  $"
 
 import time, os, types
 from DIRAC import S_OK, S_ERROR
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase     import DirectoryTreeBase
 
-class DirectorySimpleTree:
+class DirectorySimpleTree(DirectoryTreeBase):
   """ Class managing Directory Tree as a simple self-linked structure with full
       directory path stored in each node
   """
