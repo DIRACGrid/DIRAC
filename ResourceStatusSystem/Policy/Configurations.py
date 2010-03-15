@@ -186,7 +186,7 @@ Policies = {
 #      'Site_Panel' : {'WebLink':'DT_link'},
 #      'Resource_Panel' : {'WebLink':'DT_link'}
      },
-  'GGUS_Policy' : 
+  'GGUSTickets_Policy' : 
     { 'Description' : "Evaluates the number of open GGUS tickets", 
       'Granularity' : [], 
       'Status' : ValidStatus, 
@@ -196,7 +196,7 @@ Policies = {
       'ResourceType' : ValidResourceType,
       'args' : None,  
       'Site_Panel' : [ {'WebLink': {'Command': 'GGUS_Link', 
-                                    'args': None}}
+                                    'args': None}}, 
                       ]
      },
   'SAM_Policy' : 

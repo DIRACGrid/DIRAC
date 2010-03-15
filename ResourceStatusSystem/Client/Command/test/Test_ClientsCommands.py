@@ -10,7 +10,7 @@ from DIRAC.ResourceStatusSystem.Client.Command.GOCDBStatus_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.Pilots_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.Jobs_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.SAMResults_Command import SAMResults_Command
-from DIRAC.ResourceStatusSystem.Client.Command.GGUSTickets_Command import GGUSTickets_Open
+from DIRAC.ResourceStatusSystem.Client.Command.GGUSTickets_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.DataOperations_Command import TransferQuality_Command
 from DIRAC.ResourceStatusSystem.Client.Command.DIRACAccounting_Command import DIRACAccounting_Command
@@ -44,7 +44,8 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.PES_C = PilotsEffSimple_Command()
     self.SAMR_C = SAMResults_Command()
     self.RSP_C = RSPeriods_Command()
-    self.GGUS_C = GGUSTickets_Open()
+    self.GGUS_O_C = GGUSTickets_Open()
+    self.GGUS_L_C = GGUSTickets_Link()
     self.SeSt_C = ServiceStats_Command()
     self.ReSt_C = ResourceStats_Command()
     self.StElSt_C = StorageElementsStats_Command()
@@ -318,21 +319,39 @@ class SAMResults_CommandFailure(ClientsCommandsTestCase):
      
 #############################################################################
 
-class GGUSTickets_CommandSuccess(ClientsCommandsTestCase):
+class GGUSTickets_Open_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
 
-    self.mock_client.getTicketsList.return_value = ["solved", "solved"]
-    res = self.GGUS_C.doCommand(('XX', ), clientIn = self.mock_client)
-    self.assertEqual(res['GGUS_Info'], ["solved", "solved"])
+    self.mock_client.getTicketsList.return_value = ({'terminal': 211, 'open': 2}, 
+                                                    'https://gus.fzk.de/ws/ticket_search.php?')
+    res = self.GGUS_O_C.doCommand(('XX', ), clientIn = self.mock_client)
     self.assertEqual(res['OpenT'], 2)
     
 #############################################################################
 
-class GGUSTickets_CommandFailure(ClientsCommandsTestCase):
+class GGUSTickets_Open_CommandFailure(ClientsCommandsTestCase):
 
   def test_badArgs(self):
-    self.failUnlessRaises(TypeError, self.GGUS_C.doCommand, None)
+    self.failUnlessRaises(TypeError, self.GGUS_O_C.doCommand, None)
+     
+#############################################################################
+
+class GGUSTickets_Link_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+
+    self.mock_client.getTicketsList.return_value = ({'terminal': 211, 'open': 2}, 
+                                                    'https://gus.fzk.de/ws/ticket_search.php?')
+    res = self.GGUS_L_C.doCommand(('XX', ), clientIn = self.mock_client)
+    self.assertEqual(res['GGUS_Link'], 'https://gus.fzk.de/ws/ticket_search.php?')
+    
+#############################################################################
+
+class GGUSTickets_Link_CommandFailure(ClientsCommandsTestCase):
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.GGUS_L_C.doCommand, None)
      
 #############################################################################
 
@@ -530,8 +549,10 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimple_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResults_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResults_CommandFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Open_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Open_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Link_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Link_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RSPeriods_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RSPeriods_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ServiceStats_CommandSuccess))

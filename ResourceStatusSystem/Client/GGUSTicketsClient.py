@@ -10,7 +10,7 @@ class GGUSTicketsClient:
   
 #############################################################################
 
-  def getTicketsList(self, name, startDate = None, endDate = None, ticketStatus = 'open'):
+  def getTicketsList(self, name, startDate = None, endDate = None):
     """  Return tickets of entity in name
 
        :params:
@@ -19,8 +19,6 @@ class GGUSTicketsClient:
          :attr:`startDate`: starting date (optional)
           
         :attr:`endDate`: end date (optional)  
-          
-        :attr:`ticketStatus`: ticket status (default is open)  
     """
     self.siteName = name
     
@@ -34,18 +32,21 @@ class GGUSTicketsClient:
     self.query = '\'GHD_Affected Site\'=\"'+ self.siteName + '\"'
     self.startDate = startDate
     if self.startDate is not None:
-      print 'set the starting date as ', self.startDate
+      st = 'set the starting date as ', self.startDate
+      gLogger.info(st)
       self.query = self.query + ' AND \'GHD_Date Of Creation\'>' + str(self.startDate) 
     self.endDate = endDate
     if self.endDate is not None:
-      print 'set the end date as ', self.endDate
+      st = 'set the end date as ', self.endDate
+      gLogger.info(st)
       self.query = self.query + ' AND \'GHD_Date Of Creation\'<' + str(self.endDate)
 
     # the query must be into a try block. Empty queries, though formally correct, raise an exception
     try: 
       self.ticketList = self.gclient.service.TicketGetList( self.query )
     except:
-      print 'ERROR querying tickets for site ' , self.siteName
+      st = 'ERROR querying tickets for site ' , self.siteName
+      gLogger.error(st)
       return
     self.globalStatistics()
     # create the URL to get tickets relative to the site:
@@ -64,7 +65,7 @@ class GGUSTicketsClient:
         self.selectedTickets[id]['shortDescription'] = str(ticket[1])
         self.selectedTickets[id]['responsibleUnit'] = str(ticket[2])
         self.selectedTickets[id]['site'] = str(ticket[4])
-    print 'total number of tickets: ', len(self.selectedTickets.keys()) 
+#    print 'total number of tickets: ', len(self.selectedTickets.keys()) 
     self.count = {}
     # group tickets in only 2 categories: open and terminal states   
     openStates = ['assigned', 'in progress', 'new', 'on hold', 'reopened', 'waiting for reply']
@@ -82,10 +83,12 @@ class GGUSTicketsClient:
       elif status in openStates:
         self.statusCount['open'] +=1
       else:
-        print 'ERROR! status unknown: ', status
+        st = 'ERROR! status unknown: ', status
+        gLogger.error(st)
+        
       
-    for status in self.count.keys():
-      print 'in status ', status, '->', self.count[status]
+#    for status in self.count.keys():
+#      print 'in status ', status, '->', self.count[status]
     
     
     return

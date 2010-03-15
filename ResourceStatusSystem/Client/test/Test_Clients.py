@@ -10,9 +10,11 @@ from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import SAMResultsClient
 from DIRAC.ResourceStatusSystem.Client.DataOperationsClient import DataOperationsClient
+from DIRAC.ResourceStatusSystem.Client.GGUSTicketsClient import GGUSTicketsClient
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
+#############################################################################
 
 class ClientsTestCase(unittest.TestCase):
   """ Base class for the clients test cases
@@ -31,6 +33,9 @@ class ClientsTestCase(unittest.TestCase):
     self.PilotsCli = PilotsClient()
     self.JobsCli = JobsClient()
     self.DOCli = DataOperationsClient()
+    self.GGUSCli = GGUSTicketsClient()
+
+#############################################################################
 
 class GOCDBClientSuccess(ClientsTestCase):
 
@@ -51,12 +56,14 @@ class GOCDBClientSuccess(ClientsTestCase):
       res = self.GOCCli.getInfo(granularity, 'XX')
       self.assertEqual(res, None)
   
+#############################################################################
+
 class GOCDBClient_Failure(ClientsTestCase):
     
   def test_badArgs(self):
     self.failUnlessRaises(InvalidRes, self.GOCCli.getStatus, 'sitess', '')
      
-
+#############################################################################
 
 class ResourceStatusClientSuccess(ClientsTestCase):
 
@@ -94,7 +101,9 @@ class ResourceStatusClientSuccess(ClientsTestCase):
     for g in ValidRes:
       res = self.RSCli.getMonitoredStatus(g, '')
       self.assertEqual(res, 'Active')
-  
+ 
+#############################################################################
+
 class SAMResultsClientSuccess(ClientsTestCase):
 
   def test_getStatus(self):
@@ -114,12 +123,15 @@ class SAMResultsClientSuccess(ClientsTestCase):
     res = self.SAMCli.getStatus('Site', 'LCG.Ferrara.it')
     self.assertEqual(res['SAM-Status'], {'SiteStatus':'ok'})
       
+#############################################################################
 
 class JobsClientSuccess(ClientsTestCase):
 
   def test_getJobsSimpleEff(self):
     for granularity in ValidRes:
       self.JobsCli.getJobsSimpleEff(granularity, 'XX')
+
+#############################################################################
 
 class PilotsClientSuccess(ClientsTestCase):
 
@@ -139,18 +151,32 @@ class PilotsClientSuccess(ClientsTestCase):
     res = self.PilotsCli.getPilotsSimpleEff('Resource', 'grid0.fe.infn.it')
     self.assertEqual(res['PilotsEff'], 'Good')
     
+#############################################################################
+
 class DataOperationsClientSuccess(ClientsTestCase):
 
   def test_getQualityStats(self):
     res = self.DOCli.getQualityStats('StorageElement', 'XX')
     self.assertEqual(res['TransferQuality'], None)
    
+#############################################################################
+
 class SLSClientSuccess(ClientsTestCase):
 
   def test_getStatus(self):
     res = self.SLSCli.getStatus('XX')
     self.assertEqual(res['SLS'], None)
 
+#############################################################################
+
+class GGUSTicketsClientSuccess(ClientsTestCase):
+  
+  def test_getTicketsList(self):
+    res = self.GGUSCli.getTicketsList('SARA-MATRIX')
+    self.assertEqual(res[0]['open'], 2)
+
+
+#############################################################################
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ClientsTestCase)
@@ -162,4 +188,5 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DataOperationsClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSClientSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTicketsClientSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

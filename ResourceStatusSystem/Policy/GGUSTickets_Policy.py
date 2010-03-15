@@ -51,7 +51,7 @@ class GGUSTickets_Policy(PolicyBase):
         
       clientsInvoker = ClientsInvoker()
       clientsInvoker.setCommand(command)
-      GGUS_N = clientsInvoker.doCommand((args[1]))['OpenT']
+      GGUS_N = clientsInvoker.doCommand((args[1], ))['OpenT']
     
     result = {}
     

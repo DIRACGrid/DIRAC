@@ -2,11 +2,26 @@
     the number of active present opened tickets
 """
 
-#TODO
-
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
+def callClient(args, clientIn = None):
+
+  if clientIn is not None:
+    c = clientIn
+  else:
+    # use standard GGUSTickets Client
+    from DIRAC.ResourceStatusSystem.Client.GGUSTicketsClient import GGUSTicketsClient   
+    c = GGUSTicketsClient()
+    
+  name = args[0]
+  
+  name = getSiteRealName(name)
+  
+  openTickets = c.getTicketsList(name)
+  
+  return openTickets
+        
 #############################################################################
 
 class GGUSTickets_Open(Command):
@@ -21,21 +36,10 @@ class GGUSTickets_Open(Command):
 
     if not isinstance(args, tuple):
       raise TypeError, where(self, self.doCommand)
+  
+    openTickets = callClient(args, clientIn)
     
-    if clientIn is not None:
-      c = clientIn
-    else:
-      # use standard GGUSTickets Client
-      from DIRAC.ResourceStatusSystem.Client.GGUSTicketsClient import GGUSTicketsClient   
-      c = GGUSTicketsClient()
-      
-    name = args[0]
-    
-    name = getSiteRealName(name)
-    
-    openTickets = c.getTicketsList(name, ticketStatus = 'open')
-        
-    return {'GGUS_Info': openTickets, 'OpenT': len(openTickets), 'GGUS_Link': None} 
+    return {'OpenT': openTickets[0]['open']} 
 
 #############################################################################
 
@@ -49,9 +53,11 @@ class GGUSTickets_Link(Command):
            - args[0]: string: should be the name of the site
     """
 
-    c = GGUSTickets_Open()
-    res = c.doCommand(args, clientIn)
+    if not isinstance(args, tuple):
+      raise TypeError, where(self, self.doCommand)
+  
+    openTickets = callClient(args, clientIn)
     
-    return res['GGUS_Link']
+    return {'GGUS_Link': openTickets[1]}
 
 #############################################################################
