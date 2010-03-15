@@ -10,8 +10,9 @@ __RCSID__ = "$Id:  $"
 
 import time, os, types
 from DIRAC import S_OK, S_ERROR
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase     import DirectoryTreeBase
 
-class DirectoryNodeTree:
+class DirectoryNodeTree(DirectoryTreeBase):
   """ Class managing Directory Tree as a self-linked structure with directory 
       names stored in each node
   """
