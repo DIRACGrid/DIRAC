@@ -21,7 +21,7 @@ if not len(args)==1:
 ce = args[0]
 
 host = None
-vo = gConfig.getValue('/DIRAC/VirtualOrganization', 'lhcb')
+vo = DIRAC.gConfig.getValue('/DIRAC/VirtualOrganization', 'lhcb')
 for unprocSw in Script.getUnprocessedSwitches():
   if unprocSw[0] in ( "H", "host" ):
         host = unprocSw[1]
@@ -30,7 +30,7 @@ for unprocSw in Script.getUnprocessedSwitches():
 
 diracAdmin = DiracAdmin()
 
-result = diracAdmin.getBDIICEVOView(ce, vo=vo, host=host)
+result = diracAdmin.getBDIICEVOView(ce, useVO=vo, host=host)
 if not ['OK']:
   print test['Message']
   DIRAC.exit(2)
