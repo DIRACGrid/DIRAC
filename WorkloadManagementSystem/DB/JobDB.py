@@ -1301,7 +1301,7 @@ class JobDB(DB):
 
     jdlValue = classAdJob.getAttributeString('Site')
     if jdlValue:
-      jobAttrNames.append( jdlName )
+      jobAttrNames.append( 'Site' )
       if jdlValue.find(',') != -1:
         jobAttrValues.append( 'Multiple' )
       else:
