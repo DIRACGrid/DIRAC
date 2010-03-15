@@ -67,12 +67,12 @@ class SEOccupancy_Policy(PolicyBase):
       if status is None:
         result['SAT'] = None
       else:
-        if status > 15:
+        if status > 2:
           result['SAT'] = False
           result['Status'] = 'Active'
-        elif status <= 2:
-          result['SAT'] = True
-          result['Status'] = 'Banned'
+#        elif status <= 2:
+#          result['SAT'] = True
+#          result['Status'] = 'Banned'
         else:
           result['SAT'] = True
           result['Status'] = 'Probing'
@@ -81,12 +81,12 @@ class SEOccupancy_Policy(PolicyBase):
       if status is None:
         result['SAT'] = None
       else:
-        if status > 15:
+        if status > 2:
           result['SAT'] = True
           result['Status'] = 'Active'
-        elif status <= 2:
-          result['SAT'] = True
-          result['Status'] = 'Banned'
+#        elif status <= 2:
+#          result['SAT'] = True
+#          result['Status'] = 'Banned'
         else:
           result['SAT'] = False
           result['Status'] = 'Probing'
@@ -95,18 +95,18 @@ class SEOccupancy_Policy(PolicyBase):
       if status is None:
         result['SAT'] = None
       else:
-        if status > 15:
+        if status > 2:
           result['SAT'] = True
           result['Status'] = 'Active'
-        elif status <= 2:
-          result['SAT'] = False
-          result['Status'] = 'Banned'
+#        elif status <= 2:
+#          result['SAT'] = False
+#          result['Status'] = 'Banned'
         else:
           result['SAT'] = True
           result['Status'] = 'Probing'
     
     if status is not None:
-      if status > 15:
+      if status > 10:
         str = 'Low'
       elif status <= 2:
         str = 'High'

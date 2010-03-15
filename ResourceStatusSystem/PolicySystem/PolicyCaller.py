@@ -117,6 +117,11 @@ class PolicyCaller:
         from DIRAC.ResourceStatusSystem.Policy.OnSENodePropagation_Policy import OnSENodePropagation_Policy 
         p = OnSENodePropagation_Policy()
   
+    elif pol == 'OnStorageElementPropagation_Policy':
+      if p is None:
+        from DIRAC.ResourceStatusSystem.Policy.OnStorageElementPropagation_Policy import OnStorageElementPropagation_Policy 
+        p = OnStorageElementPropagation_Policy()
+      
     elif pol == 'TransferQuality_Policy':
       if p is None:
         from DIRAC.ResourceStatusSystem.Policy.TransferQuality_Policy import TransferQuality_Policy 

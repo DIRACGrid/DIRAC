@@ -116,5 +116,12 @@ class TransferQuality_Policy(PolicyBase):
         result['Status'] = 'Probing'
         result['Reason'] = 'TransferQuality:Mean'
         
+      #policy "correction" for failover"
+      if 'FAILOVER'.lower() in args[1].lower():
+        if result['Status'] == 'Probing':
+          result['Status'] = 'Active'
+        elif result['Status'] == 'Banned':
+          result['Status'] = 'Probing'
+        
     return result
 

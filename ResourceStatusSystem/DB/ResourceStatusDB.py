@@ -1484,7 +1484,7 @@ class ResourceStatusDB:
     Set LastCheckTime to 0 to monitored(s)
     
     :params:
-      :attr:`monitored`: string, or a list of strings where each is a ValidRes:
+      :attr:`monitoreds`: string, or a list of strings where each is a ValidRes:
       which granularity has to be set to be checked
     
       :attr:`granularity`: string, a ValidRes: from who this set comes 
@@ -1513,7 +1513,7 @@ class ResourceStatusDB:
           if type(serviceName) is not list:
             serviceName = [serviceName]
           if serviceName == []:
-            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + "No services for site %s" %name
+            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + " No services for site %s" %name
           else:  
             serviceName = [x[0] for x in serviceName]
             serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName])
@@ -1534,7 +1534,7 @@ class ResourceStatusDB:
           if type(resourceName) is not list:
             resourceName = [resourceName]
           if resourceName == []:
-            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + "No resources for site %s" %name
+            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + " No resources for site %s" %name
           else:
             resourceName = [x[0] for x in resourceName]  
             resourceName = ','.join(['"'+x.strip()+'"' for x in resourceName])
@@ -1548,7 +1548,7 @@ class ResourceStatusDB:
           if type(resourceName) is not list:
             resourceName = [resourceName]
           if resourceName == []:
-            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + "No resources for service %s" %name
+            raise RSSDBException, where(self, self.setMonitoredToBeChecked) + " No resources for service %s" %name
           else:  
             resourceName = [x[0] for x in resourceName]
             resourceName = ','.join(['"'+x.strip()+'"' for x in resourceName])

@@ -396,6 +396,16 @@ Policies = {
       'ResourceType' : ValidResourceType,
       'args' : None,  
      },
+  'OnStorageElementPropagation_Policy' :
+    { 'Description' : "Evaluates how the storage elements' nodes are behaving in the RSS", 
+      'Granularity' : ['StorageElement'], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'args' : None,
+      'ResourceType' : ValidResourceType,
+     },
   'OnSENodePropagation_Policy' :
     { 'Granularity' : [], 
       'Status' : ValidStatus, 

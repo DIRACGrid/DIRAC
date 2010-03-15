@@ -18,6 +18,7 @@ from DIRAC.ResourceStatusSystem.Policy.GGUSTickets_Policy import GGUSTickets_Pol
 from DIRAC.ResourceStatusSystem.Policy.OnServicePropagation_Policy import OnServicePropagation_Policy 
 from DIRAC.ResourceStatusSystem.Policy.OnSENodePropagation_Policy import OnSENodePropagation_Policy 
 from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
+from DIRAC.ResourceStatusSystem.Policy.OnStorageElementPropagation_Policy import OnStorageElementPropagation_Policy 
 from DIRAC.ResourceStatusSystem.Policy.TransferQuality_Policy import TransferQuality_Policy 
 from DIRAC.ResourceStatusSystem.Policy.SEOccupancy_Policy import SEOccupancy_Policy 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
@@ -51,6 +52,7 @@ class PoliciesTestCase(unittest.TestCase):
     self.P_P = Propagation_Policy()
     self.TQ_P = TransferQuality_Policy()
     self.SEO_P = SEOccupancy_Policy()
+    self.OSEP_P = OnStorageElementPropagation_Policy()
     self.mock_command = Mock()
     self.mock_commandPeriods = Mock()
     self.mock_commandStats = Mock()
@@ -668,6 +670,36 @@ class TransferQuality_PolicySuccess(PoliciesTestCase):
       
 #############################################################################
 
+class OnStorageElementPropagation_PolicySuccess(PoliciesTestCase):
+  
+  def test_evaluate(self):
+    for status in ValidStatus:
+      args = ('Resource', 'XX', status)
+      for resCl in ValidRes :
+        res = self.OSEP_P.evaluate(args, knownInfo = {'MonitoredStatus':resCl})
+        self.assert_(res.has_key('SAT'))
+        self.assert_(res.has_key('Status'))
+        self.assert_(res.has_key('Reason'))
+        
+        self.mock_command.doCommand.return_value = {'MonitoredStatus':  resCl}
+        res = self.OSEP_P.evaluate(args, commandIn = self.mock_command)
+        self.assert_(res.has_key('SAT'))
+        self.assert_(res.has_key('Status'))
+        self.assert_(res.has_key('Reason'))
+          
+        
+class OnStorageElementPropagation_Policy_Failure(PoliciesTestCase):
+  
+  def test_commandFail(self):
+    self.mock_command.doCommand.sideEffect = RSSException
+    for status in ValidStatus:
+      self.failUnlessRaises(Exception, self.OSEP_P.evaluate, ('XX', status), self.mock_command)
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.OSEP_P.evaluate, None )
+  
+#############################################################################
+
 class TransferQuality_Policy_Failure(PoliciesTestCase):
   
 #  def test_commandFail(self):
@@ -743,6 +775,8 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnSENodePropagation_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Propagation_PolicySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Propagation_Policy_Failure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnStorageElementPropagation_PolicySuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnStorageElementPropagation_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQuality_PolicySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQuality_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SEOccupancy_PolicySuccess))

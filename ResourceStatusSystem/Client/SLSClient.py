@@ -3,6 +3,7 @@
 
 import urllib2
 from DIRAC import gLogger
+from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
 class SLSClient:
 

@@ -105,26 +105,6 @@ def convertTime(t, inTo = None):
     
     return hour
     
-#############################################################################    
-
-#def getGeneralName(res, from_g, to_g):
-#  """ 
-#  get name of res, of granularity from_g, to the name of res with granularity to_g
-#    
-#  For a Resource, get the Site name, or the Service name.
-#  For a Service name, get the Site name
-#  
-#  :params:
-#    :attr:`res`: a string
-#    :attr:`from_g`: a string
-#    :attr:`to_g`: a string
-#  """
-#  from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
-#  rsDB = ResourceStatusDB()
-#  if from_g == 'Service':
-#    if to_g is None or to_g == 'Site': 
-#      return rsDB.get
-
 #############################################################################
 # general parameters
 #############################################################################
@@ -136,6 +116,5 @@ ValidSiteType = ['T0', 'T1', 'T2']
 ValidResourceType = ['CE', 'CREAMCE', 'SE', 'LFC_C', 'LFC_L', 'FTS']
 ValidService = ValidServiceType = ['Computing', 'Storage']
 ValidView = ['Site_View', 'Resource_View', 'StorageElement_View']
-#ValidReasons = ['init', 'DT:OUTAGE', 'DT:AT_RISK', 'DT:None']
 
 #############################################################################
