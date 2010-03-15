@@ -21,9 +21,12 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryMetadata     i
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectorySimpleTree   import DirectorySimpleTree 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryNodeTree     import DirectoryNodeTree 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryLevelTree    import DirectoryLevelTree 
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryFlatTree     import DirectoryFlatTree
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import * 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager           import FileManager
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SimpleFileManager     import SimpleFileManager
+
 
 DEBUG = 0
      
@@ -58,13 +61,13 @@ class FileCatalogDB(DB, DirectoryMetadata):
     self.seManager.setUpdatePeriod(self.seUpdatePeriod)
 
     # Directory Tree instance
-    self.dtree = DirectoryLevelTree()
+    self.dtree = DirectoryFlatTree()
     self.dtree.setDatabase(self)
     self.dtree.setUmask(self.umask)
     self.dtree.setUserGroupManager(self.ugManager)
 
     # File Manager instance
-    self.fileManager = FileManager(self.dtree,self.seManager,self.ugManager)
+    self.fileManager = SimpleFileManager(self.dtree,self.seManager,self.ugManager)
     self.fileManager.setDatabase(self)
     self.fileManager.setUmask(self.umask)
     self.lfnConvention = False
@@ -264,7 +267,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
     return S_OK( {'Successful':successful,'Failed':failed} )
-  
+
   def getFileSize(self, lfns, credDict):
     res = self._checkPathPermissions('read', lfns, credDict)
     if not res['OK']:
@@ -288,7 +291,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
     return S_OK( {'Successful':successful,'Failed':failed} )
-  
+
   def getReplicas(self, lfns, allStatus, credDict):
     res = self._checkPathPermissions('read', lfns, credDict)
     if not res['OK']:
@@ -352,7 +355,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.listDirectory(res['Value']['Successful'],credDict,verbose=verbose)
+    res = self.dtree.listDirectory(res['Value']['Successful'],verbose=verbose)
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
@@ -364,7 +367,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.isDirectory(res['Value']['Successful'],credDict)
+    res = self.dtree.isDirectory(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
@@ -376,7 +379,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.getDirectoryReplicas(res['Value']['Successful'],credDict)
+    res = self.dtree.getDirectoryReplicas(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
@@ -388,7 +391,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.getDirectorySize(res['Value']['Successful'],credDict)
+    res = self.dtree.getDirectorySize(res['Value']['Successful'])
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
