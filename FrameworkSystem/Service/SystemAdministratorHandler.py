@@ -628,6 +628,10 @@ class SystemAdministratorHandler( RequestHandler ):
     currentEnv['MYSQL_DIRAC_PWD'] = diracpwd
     host = socket.getfqdn()
     result = shellCall(0,DIRACROOT+'/DIRAC/Core/scripts/install_mysql.sh %s' % host,env=currentEnv)
+    status,output,error = result['Value']
+    already_installed = False
+    if output.find('Existing directory') != -1:
+      already_installed = True
     
     # Add the database access info to the local configuration
     cfg = CFG()
@@ -641,8 +645,11 @@ class SystemAdministratorHandler( RequestHandler ):
     newCfg = diracCfg.mergeWith(cfg)
     if not newCfg.writeToFile(DIRACROOT+'/etc/dirac.cfg'):
       return S_ERROR('Failed to write out the local component options')
+    
+    if already_installed:
+      return S_OK('Already installed')
     else:
-      return S_OK()
+      return S_OK('Successfully installed')
         
   types_installDatabase = [ StringTypes ]
   def export_installDatabase(self,rootpwd,dbname):
