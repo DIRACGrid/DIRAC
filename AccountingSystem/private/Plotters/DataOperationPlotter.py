@@ -4,7 +4,7 @@ from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
 from DIRAC.Core.Utilities import Time
 
-class DataOperationPlotter(BaseReporter):
+class DataOperationPlotter( BaseReporter ):
 
   _typeName = "DataOperation"
   _typeKeyFields = [ dF[0] for dF in DataOperation().definitionKeyFields ]
@@ -22,7 +22,7 @@ class DataOperationPlotter(BaseReporter):
     return self.__reportTransfers( reportRequest, 'Failed', ( 'Suceeded', 1 ) )
 
   def __reportTransfers( self, reportRequest, titleType, togetherFieldsToPlot ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s), SUM(%s)-SUM(%s)",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s), SUM(%s)-SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                        'TransferOK', 'TransferTotal', 'TransferOK',
                       ]
@@ -57,7 +57,7 @@ class DataOperationPlotter(BaseReporter):
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportQuality( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s), SUM(%s)",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s), SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'TransferOK', 'TransferTotal'
                                    ]
@@ -70,7 +70,7 @@ class DataOperationPlotter(BaseReporter):
                                 { 'checkNone' : True,
                                   'convertToGranularity' : 'sum',
                                   'calculateProportionalGauges' : False,
-                                  'consolidationFunction' : lambda x, y: x/y } )
+                                  'consolidationFunction' : lambda x, y: x / y } )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
@@ -90,7 +90,7 @@ class DataOperationPlotter(BaseReporter):
                                   { 'checkNone' : True,
                                     'convertToGranularity' : 'sum',
                                     'calculateProportionalGauges' : False,
-                                    'consolidationFunction' : lambda x,y: x/y } )
+                                    'consolidationFunction' : lambda x, y: x / y } )
       if not retVal[ 'OK' ]:
         return retVal
       totalDict = retVal[ 'Value' ][0]
@@ -107,7 +107,7 @@ class DataOperationPlotter(BaseReporter):
     return self._generateQualityPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportTransferedData( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/1000000000",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)/1000000000",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'TransferSize'
                                    ]
@@ -122,7 +122,7 @@ class DataOperationPlotter(BaseReporter):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    #dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotTransferedData( self, reportRequest, plotInfo, filename ):
@@ -131,11 +131,11 @@ class DataOperationPlotter(BaseReporter):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "Gbyte",
-                 'is_cumulative' : True }
+                 'sort_labels' : 'last_value' }
     return self._generateCumulativePlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportThroughput( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)/1000000",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)/1000000",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                        'TransferSize'
                       ]
@@ -163,7 +163,7 @@ class DataOperationPlotter(BaseReporter):
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportDataTransfered( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", SUM(%s)",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'TransferSize'
                                    ]
                    )

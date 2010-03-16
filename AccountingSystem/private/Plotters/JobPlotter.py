@@ -92,7 +92,7 @@ class JobPlotter( BaseReporter ):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    #dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotCPUUsed( self, reportRequest, plotInfo, filename ):
@@ -101,7 +101,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "days",
-                 'is_cumulative' : True }
+                 'sort_labels' : 'last_value' }
     return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportCPUUsage( self, reportRequest ):
@@ -147,7 +147,7 @@ class JobPlotter( BaseReporter ):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    #dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotCumulativeNumberOfJobs( self, reportRequest, plotInfo, filename ):
@@ -156,7 +156,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "jobs",
-                 'is_cumulative' : True }
+                 'sort_labels' : 'last_value' }
     return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportNumberOfJobs( self, reportRequest ):

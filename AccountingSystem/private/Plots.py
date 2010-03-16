@@ -81,6 +81,8 @@ def generateCumulativePlot( fileName, data, metadata ):
   except:
     return S_ERROR( "Can't open %s" % fileName )
   checkMetadata( metadata )
+  if 'sort_labels' not in metadata:
+    metadata[ 'sort_labels' ] = 'last_value'
   cumulativeGraph( data, fn, **metadata )
   fn.close()
   return S_OK()

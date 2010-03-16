@@ -4,7 +4,7 @@ from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot
 from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
 from DIRAC.Core.Utilities import Time
 
-class PilotPlotter(BaseReporter):
+class PilotPlotter( BaseReporter ):
 
   _typeName = "Pilot"
   _typeKeyFields = [ dF[0] for dF in Pilot().definitionKeyFields ]
@@ -25,7 +25,7 @@ class PilotPlotter(BaseReporter):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    #dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotCumulativeNumberOfJobs( self, reportRequest, plotInfo, filename ):
@@ -34,7 +34,7 @@ class PilotPlotter(BaseReporter):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "jobs",
-                 'is_cumulative' : True }
+                 'sort_labels' : 'last_value' }
     return self._generateCumulativePlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportNumberOfJobs( self, reportRequest ):
@@ -65,7 +65,7 @@ class PilotPlotter(BaseReporter):
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportCumulativeNumberOfPilots( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'entriesInBucket'
                                    ]
@@ -80,7 +80,7 @@ class PilotPlotter(BaseReporter):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
-    dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    #dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotCumulativeNumberOfPilots( self, reportRequest, plotInfo, filename ):
@@ -89,11 +89,11 @@ class PilotPlotter(BaseReporter):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "pilots",
-                 'is_cumulative' : True }
+                 'sort_labels' : 'last_value' }
     return self._generateCumulativePlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportNumberOfPilots( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s)",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'entriesInBucket'
                                    ]
@@ -120,7 +120,7 @@ class PilotPlotter(BaseReporter):
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportJobsPerPilot( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", %s, %s, SUM(%s), SUM(%s)",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s), SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'Jobs', 'entriesInBucket'
                                    ]
@@ -132,7 +132,7 @@ class PilotPlotter(BaseReporter):
                                 reportRequest[ 'groupingFields' ],
                                 { 'checkNone' : True,
                                   'convertToGranularity' : 'sum',
-                                  'calculateProportionalGauges' : True }  )
+                                  'calculateProportionalGauges' : True } )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
@@ -147,9 +147,9 @@ class PilotPlotter(BaseReporter):
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "jobs/pilot" }
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
-  
+
   def _reportTotalNumberOfPilots( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ]) + ", SUM(%s)",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'entriesInBucket'
                                    ]
                    )
