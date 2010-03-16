@@ -164,7 +164,8 @@ def textGraph( text, file, *args, **kw ):
   graph( {}, file, prefs, *args, **kw )
 
 def histogram( data, file, bins, *args, **kw ):
-  values,bins,patches = hist(data,bins)
-  histo = dict(zip(bins,values))
+  values,vbins,patches = hist(data,bins)
+  histo = dict(zip(vbins,values))
+  span = (max(data)-min(data))/float(bins)*0.98 
   kw = __checkKW( kw )
-  graph( histo, file, plot_type = 'BarGraph', *args, **kw )
+  graph( histo, file, plot_type = 'BarGraph', span=span, *args, **kw )
