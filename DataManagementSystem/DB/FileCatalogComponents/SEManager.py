@@ -1,10 +1,9 @@
 ########################################################################
-# $HeadURL:  $
+# $Id: SEManager.py 22623 2010-03-09 19:54:25Z acsmith $
 ########################################################################
-""" DIRAC FileCatalog Storage Element Manager mix-in class
-"""
+""" DIRAC FileCatalog Storage Element Manager mix-in class """
 
-__RCSID__ = "$Id:  $"
+__RCSID__ = "$Id: SEManager.py 22623 2010-03-09 19:54:25Z acsmith $"
 
 import time
 from DIRAC import S_OK, S_ERROR, gConfig
