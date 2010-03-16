@@ -41,6 +41,8 @@ def checkMetadata( metadata ):
       metadata[ 'endtime' ] = metadata[ 'endtime' ] - metadata[ 'endtime' ] % granularity
   if not 'colors' in metadata:
     metadata[ 'colors' ] = gCompiledPalettes
+  if 'limit_labels' not in metadata:
+    metadata[ 'limit_labels' ] = 30
 
 def generateNoDataPlot( fileName, data, metadata ):
   try:
