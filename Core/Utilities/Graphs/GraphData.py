@@ -118,7 +118,7 @@ class GraphData:
           max_value - by max value of the subplot
           sum - by the sum of values of the subplot
     """
-     
+   
     if self.plotdata:      
       if self.key_type == "string":        
         if sort_type in ['max_value','sum']:
@@ -134,10 +134,10 @@ class GraphData:
         self.labels = [ x[0] for x in pairs ]
         self.label_values = [ x[1].max_value for x in pairs ]
       elif sort_type == 'last_value':
-        pairs = zip(self.subplots.keys(),self.subplots.values())
+        pairs = zip(self.subplots.keys(),self.subplots.values())       
         pairs.sort(key = lambda x: x[1].last_value,reverse=True)
         self.labels = [ x[0] for x in pairs ]
-        self.label_values = [ x[1].last_value for x in pairs ]  
+        self.label_values = [ x[1].last_value for x in pairs ]         
       elif sort_type == 'sum':
         pairs = []
         for key in self.subplots:
@@ -197,7 +197,7 @@ class GraphData:
       for label in self.subplots:
         self.subplots[label].makeCumulativePlot()   
         
-    self.sortLabels()       
+    self.sortLabels(sort_type='last_value')       
       
   def getLabels(self,use_plotdata=False):
     """ Get the graph labels together with the numeric values used for the label 
@@ -468,7 +468,8 @@ class PlotData:
     for i in range(1,len(self.values)):
       cum_values.append(cum_values[i-1]+self.values[i])
       
-    self.values = cum_values        
+    self.values = cum_values       
+    self.last_value = float(self.values[-1])     
            
   def getPlotData(self):
   
