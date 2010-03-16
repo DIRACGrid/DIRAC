@@ -138,7 +138,7 @@ def __checkKW( kw ):
 
 def barGraph( data, file, *args, **kw ):
   kw = __checkKW( kw )
-  graph( data, file, plot_type = 'BarGraph', *args, **kw )
+  graph( data, file, plot_type = 'BarGraph', statistics_line=True, *args, **kw )
 
 def lineGraph( data, file, *args, **kw ):
   kw = __checkKW( kw )
@@ -168,4 +168,4 @@ def histogram( data, file, bins, *args, **kw ):
   histo = dict(zip(vbins,values))
   span = (max(data)-min(data))/float(bins)*0.98 
   kw = __checkKW( kw )
-  graph( histo, file, plot_type = 'BarGraph', span=span, *args, **kw )
+  graph( histo, file, plot_type = 'BarGraph', span=span, statistics_line=True, *args, **kw )

@@ -11,7 +11,7 @@
 __RCSID__ = "$Id$"
 
 import types, datetime, numpy, time
-from DIRAC.Core.Utilities.Graphs.GraphUtilities import convert_to_datetime, to_timestamp
+from DIRAC.Core.Utilities.Graphs.GraphUtilities import convert_to_datetime, to_timestamp, pretty_float
 from matplotlib.dates import date2num
 
 DEBUG = 0
@@ -244,7 +244,10 @@ class GraphData:
   def getPlotNumData(self,label=None,zipFlag=True):
   
     if self.plotdata:
-      return zip(self.plotdata.getNumKeys(),self.plotdata.getValues())
+      if zipFlag:
+        return zip(self.plotdata.getNumKeys(),self.plotdata.getValues())
+      else:
+        return self.plotdata.getValues()
     elif label:
       if label == "Others":
         return self.otherPlot.getPlotDataForNumKeys(self.all_num_keys)     
@@ -256,7 +259,7 @@ class GraphData:
       for label in self.subplots:
         arrays.append(numpy.array([ x[1] for x in self.subplots[label].getPlotDataForNumKeys(self.all_num_keys)]))
       sum_array = sum(arrays)
-      if zip:
+      if zipFlag:
         return zip(self.all_num_keys,list(sum_array))
       else:
         return sum_array
@@ -289,18 +292,22 @@ class GraphData:
     numData = self.getPlotNumData(zipFlag=False)
     if not len(numData):
       return 0,0,0,0
+    
+    numData = numpy.array(numData)    
     min_value = numData.min()
     max_value = numData.max()
     average = float(numData.sum())/len(numData)
-    current = numData[-1]
+    current = numData[-1]   
     return min_value,max_value,average,current  
   
   def getStatString(self,unit=None):
     """  Get a string summarizing the graph data statistics
     """
-    min_value,max_value,average,current = self.getStats()
+    min_value,max_value,average,current = self.getStats()    
     tmpList = []
-    unitString = str(unit)
+    unitString = ''
+    if unit:
+      unitString = str(unit)
     if max_value:
       try:
         s = "Max: " + pretty_float(max_value) + " " + unitString

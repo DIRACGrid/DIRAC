@@ -81,6 +81,15 @@ class PlotBase:
       plot_title_size = prefs.get('plot_title_size',text_size)
       plot_title_padding = prefs.get('plot_text_padding',text_padding)  
     plot_title_size_point = pixelToPoint(plot_title_size,dpi)
+    
+    stats_flag = prefs.get('statistics_line',False)
+    stats_line = ''
+    stats_line_space = 0.
+    if stats_flag:
+      stats_line = self.gdata.getStatString() 
+      stats_line_size = label_text_size
+      stats_line_padding = label_text_size*2.
+      stats_line_space = stats_line_size+stats_line_padding
 
     plot_padding = prefs['plot_padding']
     plot_left_padding = prefs.get('plot_left_padding',plot_padding)
@@ -106,10 +115,10 @@ class PlotBase:
       y_label_space += label_text_size*1.5  
         
     ax_plot_rect = (float(plot_left_padding+left+y_label_space)/f_width,
-                    float(plot_bottom_padding+bottom+x_label_space)/f_height,
+                    float(plot_bottom_padding+bottom+x_label_space+stats_line_space)/f_height,
                     float(width-plot_left_padding-plot_right_padding-y_label_space)/f_width,
                     float(height-plot_bottom_padding-plot_top_padding-x_label_space- \
-                          plot_title_size-2*plot_title_padding)/f_height)
+                          plot_title_size-2*plot_title_padding-stats_line_space)/f_height)
     ax = Axes(self.figure,ax_plot_rect)                
     if prefs['square_axis']:
       l,b,a_width,a_height = ax.get_window_extent().bounds
@@ -215,5 +224,13 @@ class PlotBase:
       self.ax.title.set_transform(self.ax.transAxes)                                                  
       self.ax.title.set_family( prefs['font_family'] )
       self.ax.title.set_fontname( prefs['font'] )
+    if stats_line:
+      self.ax.stats = self.ax.text(0.5,(-stats_line_space)/height,
+                      stats_line,
+                      verticalalignment='top', 
+                      horizontalalignment='center',
+                      size = pixelToPoint(stats_line_size,dpi))  
+      
+      self.ax.stats.set_transform(self.ax.transAxes) 
                                               
      
