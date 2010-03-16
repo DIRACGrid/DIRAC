@@ -104,7 +104,11 @@ class GraphData:
       for sub in self.subplots.values():
         for key in sub.getKeys():
           tmpset.add(key)
-      self.all_keys = list(tmpset)          
+      self.all_keys = list(tmpset)       
+      
+    if not self.plotdata:
+      for sub in self.subplots:
+        self.subplots[sub].expandKeys(self.all_keys)     
           
     self.key_type = get_key_type(self.all_keys)
     self.sortKeys()   
@@ -386,6 +390,16 @@ class PlotData:
     self.max_key = self.keys[-1] 
     self.sum_value = float(sum(self.values))    
     self.last_value = float(self.values[-1])    
+    
+  def expandKeys(self,all_keys):
+    
+    for k in all_keys:
+      if not self.parsed_data.has_key(k):
+        self.parsed_data[k] = 0.
+ 
+    self.sorted_keys = []  
+    self.keys = self.parsed_data.keys()
+    self.initialize()       
               
   def sortKeys(self,sort_type='alpha'):
     """ Sort keys according to the specified method :
@@ -470,7 +484,7 @@ class PlotData:
       
     self.values = cum_values       
     self.last_value = float(self.values[-1])     
-           
+          
   def getPlotData(self):
   
     return self.parsed_data
