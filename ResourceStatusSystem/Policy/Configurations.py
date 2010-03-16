@@ -160,13 +160,29 @@ AssigneeGroups = {
 Policies = { 
   'DT_Policy_OnGoing_Only' : 
     { 'Description' : "Evaluates on possible ongoing down-times", 
-      'Granularity' : ['Site', 'Resource'], 
+      'Granularity' : [], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
       'args' : None,  
+#      'Site_Panel' : [ {'WebLink': {'Command': 'DT_Link', 
+#                                    'args': None}}
+#                      ], 
+#      'Resource_Panel' : [ {'WebLink': {'Command': 'DT_Link', 
+#                                        'args': None}}
+#                      ]
+     },
+  'DT_Policy_Scheduled' : 
+    { 'Description' : "Evaluates on possible ongoing and scheduled down-times", 
+      'Granularity' : ['Site', 'Resource'], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ValidResourceType,
+      'args' : (DTinHours, ),
       'Site_Panel' : [ {'WebLink': {'Command': 'DT_Link', 
                                     'args': None}}
                       ], 
@@ -174,21 +190,9 @@ Policies = {
                                         'args': None}}
                       ]
      },
-  'DT_Policy_Scheduled' : 
-    { 'Description' : "Evaluates on possible ongoing and scheduled down-times", 
-      'Granularity' : [], 
-      'Status' : ValidStatus, 
-      'FormerStatus' : ValidStatus,
-      'SiteType' : ValidSiteType,
-      'ServiceType' : ValidServiceType,
-      'ResourceType' : ValidResourceType,
-      'args' : (DTinHours, )
-#      'Site_Panel' : {'WebLink':'DT_link'},
-#      'Resource_Panel' : {'WebLink':'DT_link'}
-     },
   'GGUSTickets_Policy' : 
     { 'Description' : "Evaluates the number of open GGUS tickets", 
-      'Granularity' : [], 
+      'Granularity' : ['Site'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
@@ -197,7 +201,9 @@ Policies = {
       'args' : None,  
       'Site_Panel' : [ {'WebLink': {'Command': 'GGUS_Link', 
                                     'args': None}}, 
-                      ]
+                       {'Info': {'Command': 'GGUS_Info', 
+                                    'args': None}},
+                     ]
      },
   'SAM_Policy' : 
     { 'Description' : "Evaluates latest SAM results", 

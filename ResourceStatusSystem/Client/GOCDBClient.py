@@ -52,36 +52,83 @@ class GOCDBClient:
     startDate_STR = None
     startDateMax = None
     startDateMax_STR = None
-
-    # set the max. starting date for the DT    
+    
     if startingInHours is not None:
       startDate = datetime.utcnow()
       startDateMax = startDate + timedelta(hours = startingInHours)
       startDateMax_STR = startDateMax.isoformat(' ')[0:10]
         
-    # 
     if startDate is not None:
       if isinstance(startDate, basestring):
         startDate_STR = startDate
         startDate = datetime(*time.strptime(startDate, "%Y-%m-%d")[0:3])
       elif isinstance(startDate, datetime):
         startDate_STR = startDate.isoformat(' ')[0:10]
-    resCDL = self._curlDownload(self._entity, startDate_STR)
-    if resCDL is None:
-      return [{'DT':'None'}]
     
-    res = self._xmlParsing(resCDL, granularity, startDate, startDateMax)
+    if startingInHours is not None:
+    # make 2 queries and later merge the results
+      # first call: pass the startDate argument as None, so the curlDownload method will search for only ongoing DTs
+      resCDL_ongoing = self._curlDownload(self._entity)
+      if resCDL_ongoing is None:
+#        print 'no result for ongoing DTs'
+        res_ongoing = 'None'
+      else:
+        res_ongoing = self._xmlParsing(resCDL_ongoing, granularity, startDate, startDateMax)
+        if res_ongoing == []:
+          res_ongoing = 'None'
+      resCDL_startDate = self._curlDownload(self._entity, startDate_STR)
+      if resCDL_startDate is None:
+#        print 'no result for DT starting from this date'
+        res_startDate = 'None'
+      else:
+        res_startDate = self._xmlParsing(resCDL_startDate, granularity, startDate, startDateMax)
+        if res_startDate == []:
+          res_startDate = 'None'
+      # merge the results of the 2 queries:
+      if res_startDate is not 'None' and res_ongoing is not 'None':
+#        print 'merge the results of 2 queries'
+#        print 'res_startDate ', res_startDate
+#        print 'res_ongoing ', res_ongoing
+        res = []
+        for dt in res_startDate:
+          res.append(dt)
+        for dt in res_ongoing:
+          if dt in res:
+#            print 'DT already appended'
+            pass
+          else:
+            res.append(dt)
+
+      elif res_startDate is not 'None' and res_ongoing is 'None':
+        res = res_startDate
+      elif res_startDate is 'None' and res_ongoing is not 'None':
+        res = res_ongoing
+      else:
+        return [{'DT':'None'}]
+         
+    else:
+      resCDL = self._curlDownload(self._entity, startDate_STR)
+      if resCDL is None:
+        return [{'DT':'None'}]
     
+      res = self._xmlParsing(resCDL, granularity, startDate, startDateMax)
+    
+    self.buildURL(res)
+
     if res is None or res == []:
       return [{'DT':'None'}]
       
     return res
   
-#############################################################################
 
-  def getInfo(self, granularity, name):
-    
-    pass
+#############################################################################
+  def buildURL(self, DTList):
+    '''build the URL relative to the DT '''
+    baseURL = "https://goc.gridops.org/downtime/list?id="
+    for dt in DTList:
+      id = str(dt['id'])
+      url = baseURL + id
+      dt['URL'] = url
 
 #############################################################################
   
@@ -142,6 +189,7 @@ class GOCDBClient:
       DTList = []  
       
       for dt in downtimes:
+        DTtype = 'None' # can be a site or a resource DT
         handler = {}  
         if dt.getAttributeNode("CLASSIFICATION"):
           attrs_class = dt.attributes["CLASSIFICATION"]
@@ -151,6 +199,7 @@ class GOCDBClient:
           for elements in dom_elements:
             if siteOrRes == 'Site':
               if elements.nodeName == "HOSTNAME":
+                DTtype = 'Resource'
                 break
             if elements.nodeName == "SEVERITY":
               for element in elements.childNodes:
@@ -186,6 +235,17 @@ class GOCDBClient:
           except NameError:
             pass
         
+        # get the DT ID:
+        if dt.getAttributeNode("ID"):
+          attrs_id = dt.attributes["ID"]
+          id=attrs_id.nodeValue.replace("u","")
+          if siteOrRes == 'Site' and DTtype == 'Resource': 
+#            print 'it is a resource DT, do not store the ID'
+            pass
+          else: 
+            handler['id'] = id
+
+
         if handler != {}:
           DTList.append(handler)
           

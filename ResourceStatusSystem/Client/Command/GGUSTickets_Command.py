@@ -46,7 +46,7 @@ class GGUSTickets_Open(Command):
 class GGUSTickets_Link(Command):
   
   def doCommand(self, args, clientIn=None):
-    """ Use GGUSTickets_Open to get GGUS link  
+    """ Use CallClient to get GGUS link  
 
        :params:
          :attr:`args`: 
@@ -59,5 +59,24 @@ class GGUSTickets_Link(Command):
     openTickets = callClient(args, clientIn)
     
     return {'GGUS_Link': openTickets[1]}
+
+#############################################################################
+
+class GGUSTickets_Info(Command):
+  
+  def doCommand(self, args, clientIn=None):
+    """ Use callClient to get GGUS info  
+
+       :params:
+         :attr:`args`: 
+           - args[0]: string: should be the name of the site
+    """
+
+    if not isinstance(args, tuple):
+      raise TypeError, where(self, self.doCommand)
+  
+    openTickets = callClient(args, clientIn)
+    
+    return {'GGUS_Info': openTickets[2]}
 
 #############################################################################

@@ -29,6 +29,13 @@ class CommandCaller:
       if a is None:
         a = (name, )
 
+    elif comm == 'GGUS_Info':
+      if c is None:
+        from DIRAC.ResourceStatusSystem.Client.Command.GGUSTickets_Command import GGUSTickets_Info 
+        c = GGUSTickets_Info()
+      if a is None:
+        a = (name, )
+
     elif comm == 'DiracAccountingGraph':
       if c is None:
         from DIRAC.ResourceStatusSystem.Client.Command.DIRACAccounting_Command import DIRACAccounting_Command 

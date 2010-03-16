@@ -51,10 +51,10 @@ class GOCDBClientSuccess(ClientsTestCase):
 #    res = self.GOCCli.getStatus(('Site', 'pic'))
 #    self.assertEqual(res, None)
     
-  def test_getInfo(self):
-    for granularity in ('Site', 'Resource'):
-      res = self.GOCCli.getInfo(granularity, 'XX')
-      self.assertEqual(res, None)
+#  def test_getInfo(self):
+#    for granularity in ('Site', 'Resource'):
+#      res = self.GOCCli.getInfo(granularity, 'XX')
+#      self.assertEqual(res, None)
   
 #############################################################################
 

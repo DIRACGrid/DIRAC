@@ -41,8 +41,11 @@ class GOCDBStatus_Command(Command):
     elif len(args) == 3:
       res = c.getStatus(args[0], args[1], None, args[2])[0]
 
-    if 'url' in res.keys():
-      del res['url']
+    if 'URL' in res.keys():
+      del res['URL']
+
+    if 'id' in res.keys():
+      del res['id']
 
     return res
 
@@ -78,7 +81,10 @@ class GOCDBInfo_Command(Command):
     elif len(args) == 3:
       res = c.getStatus(args[0], args[1], None, args[2])[0]
 
-    return res
+    try:
+      return res['URL']
+    except:
+      return None
 
 #############################################################################
     

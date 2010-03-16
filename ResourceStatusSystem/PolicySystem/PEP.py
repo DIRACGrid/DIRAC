@@ -239,10 +239,10 @@ class PEP:
               if 'Web' in notification['Notifications']:
                 nc.addNotificationForUser(user, notif)
               if 'Mail' in notification['Notifications']:
-                mailMessage = "Granularity: %s \n" %self.__granularity
-                mailMessage = mailMessage + "Name: %s\n" %self.__name
-                mailMessage = mailMessage + "New perceived status: %s\n" %res['Status']
-                mailMessage = mailMessage + "Reason for status change: %s\n" %res['Reason']
+                mailMessage = "Granularity = %s \n" %self.__granularity
+                mailMessage = mailMessage + "Name = %s\n" %self.__name
+                mailMessage = mailMessage + "New perceived status = %s\n" %res['Status']
+                mailMessage = mailMessage + "Reason for status change = %s\n" %res['Reason']
                 nc.sendMail(gConfig.getValue("Security/Users/%s/email" %user), 
                             '%s: %s' %(self.__name, res['Status']), mailMessage)
           

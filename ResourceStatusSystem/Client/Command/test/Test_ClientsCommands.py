@@ -46,6 +46,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.RSP_C = RSPeriods_Command()
     self.GGUS_O_C = GGUSTickets_Open()
     self.GGUS_L_C = GGUSTickets_Link()
+    self.GGUS_I_C = GGUSTickets_Info()
     self.SeSt_C = ServiceStats_Command()
     self.ReSt_C = ResourceStats_Command()
     self.StElSt_C = StorageElementsStats_Command()
@@ -330,10 +331,12 @@ class GGUSTickets_Open_CommandSuccess(ClientsCommandsTestCase):
     
 #############################################################################
 
-class GGUSTickets_Open_CommandFailure(ClientsCommandsTestCase):
+class GGUSTickets_All_CommandFailure(ClientsCommandsTestCase):
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.GGUS_O_C.doCommand, None)
+    self.failUnlessRaises(TypeError, self.GGUS_L_C.doCommand, None)
+    self.failUnlessRaises(TypeError, self.GGUS_I_C.doCommand, None)
      
 #############################################################################
 
@@ -342,18 +345,28 @@ class GGUSTickets_Link_CommandSuccess(ClientsCommandsTestCase):
   def test_doCommand(self):
 
     self.mock_client.getTicketsList.return_value = ({'terminal': 211, 'open': 2}, 
-                                                    'https://gus.fzk.de/ws/ticket_search.php?')
+                                                    'https://gus.fzk.de/ws/ticket_search.php?', 
+                                                    {56220: 'jobs failed at gridce2.pi.infn.it INFN-PISA', 
+                                                     55948: 'Jobs Failed at INFN-PISA'})
     res = self.GGUS_L_C.doCommand(('XX', ), clientIn = self.mock_client)
     self.assertEqual(res['GGUS_Link'], 'https://gus.fzk.de/ws/ticket_search.php?')
     
 #############################################################################
 
-class GGUSTickets_Link_CommandFailure(ClientsCommandsTestCase):
+class GGUSTickets_Info_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
 
-  def test_badArgs(self):
-    self.failUnlessRaises(TypeError, self.GGUS_L_C.doCommand, None)
-     
+    self.mock_client.getTicketsList.return_value = ({'terminal': 211, 'open': 2}, 
+                                                    'https://gus.fzk.de/ws/ticket_search.php?', 
+                                                    {56220: 'jobs failed at gridce2.pi.infn.it INFN-PISA', 
+                                                     55948: 'Jobs Failed at INFN-PISA'})
+    res = self.GGUS_I_C.doCommand(('XX', ), clientIn = self.mock_client)
+    self.assertEqual(res['GGUS_Info'], {56220: 'jobs failed at gridce2.pi.infn.it INFN-PISA', 
+                                                     55948: 'Jobs Failed at INFN-PISA'})
+    
 #############################################################################
+
 
 class RSPeriods_CommandSuccess(ClientsCommandsTestCase):
   
@@ -550,9 +563,9 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResults_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResults_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Open_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Open_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Link_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Link_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Info_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_All_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RSPeriods_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RSPeriods_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ServiceStats_CommandSuccess))

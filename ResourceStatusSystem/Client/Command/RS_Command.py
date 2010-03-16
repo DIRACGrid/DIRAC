@@ -190,7 +190,7 @@ class MonitoredStatus_Command(Command):
       if ValidRes.index(args[2]) >= ValidRes.index(args[0]):
         raise InvalidRes, where(self, self.doCommand)
       generalName = c.getGeneralName(args[0], args[1], args[2])
-      print generalName
+
       res = c.getMonitoredStatus(args[2], generalName)
     else:
       res = c.getMonitoredStatus(args[0], args[1])
