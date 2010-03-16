@@ -237,7 +237,7 @@ class GraphData:
     else: 
       return len(self.labels)
     
-  def getPlotNumData(self,label=None,zip=True):
+  def getPlotNumData(self,label=None,zipFlag=True):
   
     if self.plotdata:
       return zip(self.plotdata.getNumKeys(),self.plotdata.getValues())
@@ -282,7 +282,7 @@ class GraphData:
     """ Get statistics of the graph data
     """    
     
-    numData = self.getPlotNumData(zip=False)
+    numData = self.getPlotNumData(zipFlag=False)
     if not len(numData):
       return 0,0,0,0
     min_value = numData.min()

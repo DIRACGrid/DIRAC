@@ -21,8 +21,8 @@ import types
 
 class Legend:
 
-  def __init__(self,data=None,axes=None,*aw,**kw):
-  
+  def __init__(self,data=None,axes=None,*aw,**kw): 
+
     self.labels = {}
     if type(data) == types.DictType:
       for label,ddict in data.items():
@@ -41,10 +41,11 @@ class Legend:
     self.prefs = evalPrefs(*aw,**kw)
     self.palette = Palette()
     
-    percent_flag = self.prefs.get('legend_unit','')
-    if percent_flag == "%":
-      sum_value = sum(data.label_values)
-      self.labels = [(l,'%.2f'%(v/sum_value*100.)) for l,v in self.labels ]
+    if self.labels and self.labels[0][0] != 'NoLabels':
+      percent_flag = self.prefs.get('legend_unit','')
+      if percent_flag == "%":       
+        sum_value = sum(data.label_values)
+        self.labels = [(l,'%.2f'%(v/sum_value*100.)) for l,v in self.labels ]
     self.__get_column_width()
     
   def dumpPrefs(self):
