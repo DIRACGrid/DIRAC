@@ -343,5 +343,3 @@ class UserAndGroupManagerCS(UserAndGroupManagerBase):
   def findGroup(self,group):
     return S_OK(group)
   
-class UserAndGroupManager(UserAndGroupManagerDB):
-  pass
