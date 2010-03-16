@@ -15,17 +15,17 @@ from DIRAC.Core.Base.DB                     import DB
 from DIRAC.Core.Utilities.Pfn               import pfnparse, pfnunparse
 from DIRAC.Core.Utilities.List              import intListToString,stringListToString
 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager             import SEManager
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserAndGroupManager   import UserAndGroupManager
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager             import SEManagerCS,SEManagerDB
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserAndGroupManager   import UserAndGroupManagerCS,UserAndGroupManagerDB
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryMetadata     import DirectoryMetadata
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectorySimpleTree   import DirectorySimpleTree 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryNodeTree     import DirectoryNodeTree 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryLevelTree    import DirectoryLevelTree 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryFlatTree     import DirectoryFlatTree
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import * 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager           import FileManager
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SimpleFileManager     import SimpleFileManager
+
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryFlatTree     import DirectoryFlatTree
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerFlat       import FileManagerFlat
 
 
 DEBUG = 0
@@ -45,7 +45,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     self.umask = 0775
 
     # User/group manager
-    self.ugManager = UserAndGroupManager()
+    self.ugManager = UserAndGroupManagerCS()
     self.ugManager.setDatabase(self)
     self.users = {}
     self.ugManager.setUsers(self.users)
@@ -55,7 +55,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     # SEManager 
     self.seDefinitions = {}
     self.seUpdatePeriod = 600
-    self.seManager = SEManager()
+    self.seManager = SEManagerCS()
     self.seManager.setDatabase(self)
     self.seManager.setSEDefinitions(self.seDefinitions)
     self.seManager.setUpdatePeriod(self.seUpdatePeriod)
@@ -67,7 +67,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     self.dtree.setUserGroupManager(self.ugManager)
 
     # File Manager instance
-    self.fileManager = SimpleFileManager(self.dtree,self.seManager,self.ugManager)
+    self.fileManager = FileManagerFlat(self.dtree,self.seManager,self.ugManager)
     self.fileManager.setDatabase(self)
     self.fileManager.setUmask(self.umask)
     self.lfnConvention = False
