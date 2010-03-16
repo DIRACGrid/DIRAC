@@ -1048,8 +1048,9 @@ class JobWrapper:
     if self.jobArgs.has_key('JobName'):
       #To make the request names more appealing for users
       jobName = self.jobArgs['JobName']
-      jobName = jobName.replace(' ','').replace('(','').replace(')','').replace('.','').replace('{','').replace('}','').replace(':','')
-      requestName = '%s_%s' %(jobName,requestName)
+      if type(jobName)==type(' ') and jobName:
+        jobName = jobName.replace(' ','').replace('(','').replace(')','').replace('.','').replace('{','').replace('}','').replace(':','')
+        requestName = '%s_%s' %(jobName,requestName)
       
     request.setRequestName( requestName )
     request.setJobID( self.jobID )
