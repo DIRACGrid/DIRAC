@@ -9,7 +9,27 @@ __RCSID__ = "$Id:  $"
 import time
 from DIRAC import S_OK, S_ERROR, gConfig
 
-class SEManagerDB:
+class SEManagerBase:
+
+  def __init__(self,database=None):
+    self.db = database
+    self.seDefinitions = {}
+    self.seNames = {}
+    
+  def setUpdatePeriod(self,period): 
+    self.seUpdatePeriod = period
+    
+  def setSEDefinitions(self,seDefinitions):
+    self.seDefinitions = seDefinitions
+    self.seNames= {}
+    for seID,seDef in self.seDefinitions.items():
+      seName = seDef['SEName']
+      self.seNames[seName] = seID
+
+  def setDatabase(self,database):
+    self.db = database  
+    
+class SEManagerDB(SEManagerBase):
 
   def findSE(self,se):
     """ Find the ID of the given SE, add it to the catalog if it is not yet there
@@ -98,7 +118,7 @@ class SEManagerDB:
     
     return S_OK(self.seDefinitions[seID])
   
-class SEManagerCS:
+class SEManagerCS(SEManagerBase):
 
   def findSE(self,se):
     return S_OK(se)
@@ -110,22 +130,3 @@ class SEManagerCS:
     #TODO Think about using a cache for this information
     return gConfig.getOptionsDict('/Resources/StorageElements/%s/AccessProtocol.1' % se)
 
-class SEManager(SEManagerDB):
-
-  def __init__(self,database=None):
-    self.db = database
-    self.seDefinitions = {}
-    self.seNames = {}
-    
-  def setUpdatePeriod(self,period): 
-    self.seUpdatePeriod = period
-    
-  def setSEDefinitions(self,seDefinitions):
-    self.seDefinitions = seDefinitions
-    self.seNames= {}
-    for seID,seDef in self.seDefinitions.items():
-      seName = seDef['SEName']
-      self.seNames[seName] = seID
-
-  def setDatabase(self,database):
-    self.db = database  
