@@ -201,7 +201,7 @@ Policies = {
       'args' : None,  
       'Site_Panel' : [ {'WebLink': {'Command': 'GGUS_Link', 
                                     'args': None}}, 
-                       {'Info': {'Command': 'GGUS_Info', 
+                       {'TextInfo': {'Command': 'GGUS_Info', 
                                     'args': None}},
                      ]
      },
@@ -411,6 +411,7 @@ Policies = {
       'ServiceType' : ValidServiceType,
       'args' : None,
       'ResourceType' : ValidResourceType,
+      'SE_Panel' : {'RSS':'ResOfStorEl'}
      },
   'OnSENodePropagation_Policy' :
     { 'Granularity' : [], 

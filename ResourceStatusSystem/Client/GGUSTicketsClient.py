@@ -11,7 +11,7 @@ class GGUSTicketsClient:
 #############################################################################
 
   def getTicketsList(self, name, startDate = None, endDate = None):
-    """  Return tickets of entity in name
+    """ Return tickets of entity in name
 
        :params:
          :attr:`name`: should be the name of the site
@@ -51,12 +51,15 @@ class GGUSTicketsClient:
       return
     self.globalStatistics()
     # create the URL to get tickets relative to the site:
-    GGUSURL = "https://gus.fzk.de/ws/ticket_search.php?show_columns_check[]=REQUEST_ID&show_columns_check[]=TICKET_TYPE&show_columns_check[]=AFFECTED_VO&show_columns_check[]=AFFECTED_SITE&show_columns_check[]=RESPONSIBLE_UNIT&show_columns_check[]=STATUS&show_columns_check[]=DATE_OF_CREATION&show_columns_check[]=LAST_UPDATE&show_columns_check[]=SHORT_DESCRIPTION&ticket=&supportunit=all&vo=all&user=&keyword=&involvedsupporter=&assignto=&affectedsite=" + self.siteName + "&specattrib=0&status=open&priority=all&typeofproblem=all&mouarea=&radiotf=1&timeframe=lastweek&tf_date_day_s=&tf_date_month_s=&tf_date_year_s=&tf_date_day_e=&tf_date_month_e=&tf_date_year_e=&lm_date_day=12&lm_date_month=2&lm_date_year=2010&orderticketsby=GHD_INT_REQUEST_ID&orderhow=descending"
+    GGUSURL = "https://gus.fzk.de/ws/ticket_search.php?show_columns_check[]=REQUEST_ID&show_columns_check[]=TICKET_TYPE&show_columns_check[]=AFFECTED_VO&show_columns_check[]=AFFECTED_SITE&show_columns_check[]=RESPONSIBLE_UNIT&show_columns_check[]=STATUS&show_columns_check[]=DATE_OF_CREATION&show_columns_check[]=LAST_UPDATE&show_columns_check[]=SHORT_DESCRIPTION&ticket=&supportunit=all&vo=lhcb&user=&keyword=&involvedsupporter=&assignto=&affectedsite=" + self.siteName + "&specattrib=0&status=open&priority=all&typeofproblem=all&mouarea=&radiotf=1&timeframe=any&tf_date_day_s=&tf_date_month_s=&tf_date_year_s=&tf_date_day_e=&tf_date_month_e=&tf_date_year_e=&lm_date_day=12&lm_date_month=2&lm_date_year=2010&orderticketsby=GHD_INT_REQUEST_ID&orderhow=descending"
     return self.statusCount, GGUSURL, self.shortDescription
 
 #############################################################################
   def globalStatistics(self):
-    '''print some statistics about the tickets for the site: total number of tickets and number of ticket in different status'''
+    '''
+        Print some statistics about the tickets for the site: total number 
+        of tickets and number of ticket in different status
+    '''
     self.selectedTickets = {} # initialize the dictionary of tickets to return
     for ticket in self.ticketList:
       id = ticket[3]

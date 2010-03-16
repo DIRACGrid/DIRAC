@@ -189,6 +189,10 @@ class Publisher:
       gran = 'Resources'
       paramsL.insert(0, 'ResourceName')
       serviceName = name
+    elif what == 'ResOfStorEl':
+      gran = 'StorageElements'
+      paramsL.insert(0, 'ResourceName')
+      storageElementName = name
     elif what == 'StorageElementsOfSite':
       gran = 'StorageElements'
       paramsL.insert(0, 'StorageElementName')
