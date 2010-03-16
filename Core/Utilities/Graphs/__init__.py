@@ -14,6 +14,7 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Utilities.Graphs.Graph import Graph
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import evalPrefs
+from pylab import hist
 import time
 
 common_prefs = {
@@ -162,3 +163,8 @@ def textGraph( text, file, *args, **kw ):
   prefs = {'text_image':text}
   graph( {}, file, prefs, *args, **kw )
 
+def histogram( data, file, bins, *args, **kw ):
+  values,bins,patches = hist(data,bins)
+  histo = dict(zip(bins,values))
+  kw = __checkKW( kw )
+  graph( histo, file, plot_type = 'BarGraph', *args, **kw )
