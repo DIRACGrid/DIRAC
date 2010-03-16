@@ -468,7 +468,7 @@ class DirectoryTreeBase:
     pathDict = {'Files': files,'SubDirs':directories,'Links':links}    
     return S_OK(pathDict)           
 
-  def listDirectory(self,lfns,credDict,verbose=False):
+  def listDirectory(self,lfns,verbose=False):
     """ Get the directory listing
     """
     paths = lfns.keys()
