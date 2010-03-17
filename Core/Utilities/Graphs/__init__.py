@@ -14,7 +14,6 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Utilities.Graphs.Graph import Graph
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import evalPrefs
-from pylab import hist
 import time
 
 common_prefs = {
@@ -164,6 +163,12 @@ def textGraph( text, file, *args, **kw ):
   graph( {}, file, prefs, *args, **kw )
 
 def histogram( data, file, bins, *args, **kw ):
+  try:
+    from pylab import hist
+  except:
+    print "No pylab module available"  
+    return 
+  kw = __checkKW( kw )
   values,vbins,patches = hist(data,bins)
   histo = dict(zip(vbins,values))
   span = (max(data)-min(data))/float(bins)*0.98 
