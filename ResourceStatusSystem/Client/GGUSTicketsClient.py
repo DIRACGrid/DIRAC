@@ -1,7 +1,7 @@
 """ GGUSTicketsClient class is a client for the GGUS Tickets DB.
 """
 
-
+from suds import WebFault
 from suds.client import Client
 from DIRAC import gLogger
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
@@ -21,6 +21,8 @@ class GGUSTicketsClient:
         :attr:`endDate`: end date (optional)  
     """
     self.siteName = name
+    self.statusCount = {}
+    self.shortDescription = {}
     
     # create client instance using GGUS wsdl:
     self.gclient = Client( "https://gusiwr.fzk.de/arsys/WSDL/public/gusiwr/Grid_HelpDesk" )
@@ -42,22 +44,23 @@ class GGUSTicketsClient:
       gLogger.info(st)
       self.query = self.query + ' AND \'GHD_Date Of Creation\'<' + str(self.endDate)
 
+    # create the URL to get tickets relative to the site:
+    GGUSURL = "https://gus.fzk.de/ws/ticket_search.php?show_columns_check[]=REQUEST_ID&show_columns_check[]=TICKET_TYPE&show_columns_check[]=AFFECTED_VO&show_columns_check[]=AFFECTED_SITE&show_columns_check[]=RESPONSIBLE_UNIT&show_columns_check[]=STATUS&show_columns_check[]=DATE_OF_CREATION&show_columns_check[]=LAST_UPDATE&show_columns_check[]=SHORT_DESCRIPTION&ticket=&supportunit=all&vo=lhcb&user=&keyword=&involvedsupporter=&assignto=&affectedsite=" + self.siteName + "&specattrib=0&status=open&priority=all&typeofproblem=all&mouarea=&radiotf=1&timeframe=any&tf_date_day_s=&tf_date_month_s=&tf_date_year_s=&tf_date_day_e=&tf_date_month_e=&tf_date_year_e=&lm_date_day=12&lm_date_month=2&lm_date_year=2010&orderticketsby=GHD_INT_REQUEST_ID&orderhow=descending"
+    
     # the query must be into a try block. Empty queries, though formally correct, raise an exception
     try: 
       self.ticketList = self.gclient.service.TicketGetList( self.query )
-    except:
-      st = 'ERROR querying tickets for site ' , self.siteName
-      gLogger.error(st)
-      return
-    self.globalStatistics()
-    # create the URL to get tickets relative to the site:
-    GGUSURL = "https://gus.fzk.de/ws/ticket_search.php?show_columns_check[]=REQUEST_ID&show_columns_check[]=TICKET_TYPE&show_columns_check[]=AFFECTED_VO&show_columns_check[]=AFFECTED_SITE&show_columns_check[]=RESPONSIBLE_UNIT&show_columns_check[]=STATUS&show_columns_check[]=DATE_OF_CREATION&show_columns_check[]=LAST_UPDATE&show_columns_check[]=SHORT_DESCRIPTION&ticket=&supportunit=all&vo=lhcb&user=&keyword=&involvedsupporter=&assignto=&affectedsite=" + self.siteName + "&specattrib=0&status=open&priority=all&typeofproblem=all&mouarea=&radiotf=1&timeframe=any&tf_date_day_s=&tf_date_month_s=&tf_date_year_s=&tf_date_day_e=&tf_date_month_e=&tf_date_year_e=&lm_date_day=12&lm_date_month=2&lm_date_year=2010&orderticketsby=GHD_INT_REQUEST_ID&orderhow=descending"
+      self.globalStatistics()
+    except WebFault:
+      self.statusCount['terminal'] = 0
+      self.statusCount['open'] = 0
+    
     return self.statusCount, GGUSURL, self.shortDescription
 
 #############################################################################
   def globalStatistics(self):
     '''
-        Print some statistics about the tickets for the site: total number 
+        Get some statistics about the tickets for the site: total number 
         of tickets and number of ticket in different status
     '''
     self.selectedTickets = {} # initialize the dictionary of tickets to return
@@ -73,10 +76,9 @@ class GGUSTicketsClient:
     self.count = {}
     # group tickets in only 2 categories: open and terminal states   
     # create a dictionary to store the short description only for tickets in open states:
-    self.shortDescription = {}
-    openStates = ['assigned', 'in progress', 'new', 'on hold', 'reopened', 'waiting for reply']
+    openStates = ['assigned', 'in progress', 'new', 'on hold', 
+                  'reopened', 'waiting for reply']
     terminalStates = ['solved', 'unsolved', 'verified']
-    self.statusCount = {}
     self.statusCount['open'] = 0
     self.statusCount['terminal'] = 0
     for id in self.selectedTickets.keys():
@@ -89,20 +91,10 @@ class GGUSTicketsClient:
       elif status in openStates:
         self.statusCount['open'] +=1
         if id not in self.shortDescription.keys():
-          #print 'new ticket! ', id
-          descr = self.selectedTickets[id]['shortDescription']
-          #print 'description = ', descr
-          self.shortDescription[id] = self.selectedTickets[id]['shortDescription'] 
+          self.shortDescription[str(id)] = self.selectedTickets[id]['shortDescription'] 
       else:
-        st = 'ERROR! status unknown: ', status
+        st = 'ERROR! GGUS status unknown: ', status
         gLogger.error(st)
-        
-      
-#    for status in self.count.keys():
-#      print 'in status ', status, '->', self.count[status]
-   
-    
-    return
 
 #############################################################################
 

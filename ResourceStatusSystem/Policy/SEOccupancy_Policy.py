@@ -70,9 +70,6 @@ class SEOccupancy_Policy(PolicyBase):
         if status > 2:
           result['SAT'] = False
           result['Status'] = 'Active'
-#        elif status <= 2:
-#          result['SAT'] = True
-#          result['Status'] = 'Banned'
         else:
           result['SAT'] = True
           result['Status'] = 'Probing'
@@ -84,9 +81,6 @@ class SEOccupancy_Policy(PolicyBase):
         if status > 2:
           result['SAT'] = True
           result['Status'] = 'Active'
-#        elif status <= 2:
-#          result['SAT'] = True
-#          result['Status'] = 'Banned'
         else:
           result['SAT'] = False
           result['Status'] = 'Probing'
@@ -98,9 +92,6 @@ class SEOccupancy_Policy(PolicyBase):
         if status > 2:
           result['SAT'] = True
           result['Status'] = 'Active'
-#        elif status <= 2:
-#          result['SAT'] = False
-#          result['Status'] = 'Banned'
         else:
           result['SAT'] = True
           result['Status'] = 'Probing'

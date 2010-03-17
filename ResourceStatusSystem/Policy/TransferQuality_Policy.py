@@ -70,58 +70,60 @@ class TransferQuality_Policy(PolicyBase):
 
     result = {}
 
-    if args[2] == 'Active':
-      if quality == None:
-        result['SAT'] = None
-      elif quality <= Configurations.Transfer_QUALITY_LOW :
+    if quality == None:
+      result['SAT'] = None
+      return result
+
+    if 'FAILOVER'.lower() in args[1].lower():
+      if args[2] == 'Active':
+        if quality >= Configurations.Transfer_QUALITY_LOW :
+          result['SAT'] = False
+        else:   
+          result['SAT'] = True
+      elif args[2] == 'Probing':
+        if quality < Configurations.Transfer_QUALITY_LOW:
+          result['SAT'] = False
+        else:
+          result['SAT'] = True
+      elif args[2] == 'Banned':
         result['SAT'] = True
-        result['Status'] = 'Banned'
-        result['Reason'] = 'TransferQuality:Low'
-      elif quality >= Configurations.Transfer_QUALITY_HIGH :
-        result['SAT'] = False
-        result['Status'] = 'Active'
-        result['Reason'] = 'TransferQuality:High'
-      elif quality > Configurations.Transfer_QUALITY_LOW and quality < Configurations.Transfer_QUALITY_HIGH:   
-        result['SAT'] = True
-        result['Status'] = 'Probing'
-        result['Reason'] = 'TransferQuality:Mean'
-    elif args[2] == 'Probing':
-      if quality == None:
-        result['SAT'] = None
-      elif quality <= Configurations.Transfer_QUALITY_LOW :
-        result['SAT'] = True
-        result['Status'] = 'Banned'
-        result['Reason'] = 'TransferQuality:Low'
-      elif quality >= Configurations.Transfer_QUALITY_HIGH :
-        result['SAT'] = True
-        result['Status'] = 'Active'
-        result['Reason'] = 'TransferQuality:High'
-      elif quality > Configurations.Transfer_QUALITY_LOW and quality < Configurations.Transfer_QUALITY_HIGH:   
-        result['SAT'] = False
-        result['Status'] = 'Probing'
-        result['Reason'] = 'TransferQuality:Mean'
-    elif args[2] == 'Banned':
-      if quality == None:
-        result['SAT'] = None
-      elif quality <= Configurations.Transfer_QUALITY_LOW :
-        result['SAT'] = False
-        result['Status'] = 'Banned'
-        result['Reason'] = 'TransferQuality:Low'
-      elif quality >= Configurations.Transfer_QUALITY_HIGH :
-        result['SAT'] = True
-        result['Status'] = 'Active'
-        result['Reason'] = 'TransferQuality:High'
-      elif quality > Configurations.Transfer_QUALITY_LOW and quality < Configurations.Transfer_QUALITY_HIGH:   
-        result['SAT'] = True
-        result['Status'] = 'Probing'
-        result['Reason'] = 'TransferQuality:Mean'
         
-      #policy "correction" for failover"
-      if 'FAILOVER'.lower() in args[1].lower():
-        if result['Status'] == 'Probing':
-          result['Status'] = 'Active'
-        elif result['Status'] == 'Banned':
-          result['Status'] = 'Probing'
+      if quality < Configurations.Transfer_QUALITY_LOW :
+        result['Status'] = 'Probing'
+        result['Reason'] = 'TransferQuality:Low'
+      elif quality >= Configurations.Transfer_QUALITY_HIGH :
+        result['Status'] = 'Active'
+        result['Reason'] = 'TransferQuality:High'
+      else:   
+        result['Status'] = 'Active'
+        result['Reason'] = 'TransferQuality:Mean'
+
+    else:
+      if args[2] == 'Active':
+        if quality >= Configurations.Transfer_QUALITY_HIGH :
+          result['SAT'] = False
+        else:   
+          result['SAT'] = True
+      elif args[2] == 'Probing':
+        if quality >= Configurations.Transfer_QUALITY_LOW and quality < Configurations.Transfer_QUALITY_HIGH:
+          result['SAT'] = False
+        else:
+          result['SAT'] = True
+      elif args[2] == 'Banned':
+        if quality < Configurations.Transfer_QUALITY_LOW :
+          result['SAT'] = False
+        else:   
+          result['SAT'] = True
+        
+      if quality < Configurations.Transfer_QUALITY_LOW :
+        result['Status'] = 'Banned'
+        result['Reason'] = 'TransferQuality:Low'
+      elif quality >= Configurations.Transfer_QUALITY_HIGH :
+        result['Status'] = 'Active'
+        result['Reason'] = 'TransferQuality:High'
+      elif quality >= Configurations.Transfer_QUALITY_LOW and quality < Configurations.Transfer_QUALITY_HIGH:   
+        result['Status'] = 'Probing'
+        result['Reason'] = 'TransferQuality:Mean'
         
     return result
 

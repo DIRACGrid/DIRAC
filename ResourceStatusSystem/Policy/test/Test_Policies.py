@@ -632,41 +632,48 @@ class TransferQuality_PolicySuccess(PoliciesTestCase):
   def test_evaluate(self):
     for status in ValidStatus:
       for g in ('StorageElement'):
-        args = (g, 'XX', status)
-        for resCl in [1, 0.91, 0.50, 0]:
-          res = self.TQ_P.evaluate(args, commandIn = self.mock_command, knownInfo={'TransferQuality':resCl})
-          self.assert_(res.has_key('SAT'))
-          self.assert_(res.has_key('Reason'))
-          self.mock_command.doCommand.return_value =  {'TransferQuality':resCl}
+        for SE in ('CNAF-RAW', 'CNAF-FAILOVER'):
+          args = (g, SE, status)
+          for resCl in [1, 0.91, 0.50, 0, None]:
+            res = self.TQ_P.evaluate(args, commandIn = self.mock_command, knownInfo={'TransferQuality':resCl})
+            self.assert_(res.has_key('SAT'))
+            if resCl is not None:
+              self.assert_(res.has_key('Reason'))
+            self.mock_command.doCommand.return_value =  {'TransferQuality':resCl}
+            res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
+            self.assert_(res.has_key('SAT'))
+            if resCl is not None:
+              self.assert_(res.has_key('Reason'))
           res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
           self.assert_(res.has_key('SAT'))
-          self.assert_(res.has_key('Reason'))
-        res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
-        self.assert_(res.has_key('SAT'))
+          
+          args = (g, 'XX', status, datetime.utcnow())
+          for resCl in [1, 0.91, 0.50, 0]:
+            res = self.TQ_P.evaluate(args, commandIn = self.mock_command, knownInfo={'TransferQuality':resCl})
+            self.assert_(res.has_key('SAT'))
+            if resCl is not None:
+              self.assert_(res.has_key('Reason'))
+            self.mock_command.doCommand.return_value =  {'TransferQuality':resCl}
+            res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
+            self.assert_(res.has_key('SAT'))
+            if resCl is not None:
+              self.assert_(res.has_key('Reason'))
+          res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
+          self.assert_(res.has_key('SAT'))
         
-        args = (g, 'XX', status, datetime.utcnow())
-        for resCl in [1, 0.91, 0.50, 0]:
-          res = self.TQ_P.evaluate(args, commandIn = self.mock_command, knownInfo={'TransferQuality':resCl})
-          self.assert_(res.has_key('SAT'))
-          self.assert_(res.has_key('Reason'))
-          self.mock_command.doCommand.return_value =  {'TransferQuality':resCl}
+          args = (g, 'XX', status, datetime.utcnow(), datetime.utcnow())
+          for resCl in [1, 0.91, 0.50, 0]:
+            res = self.TQ_P.evaluate(args, commandIn = self.mock_command, knownInfo={'TransferQuality':resCl})
+            self.assert_(res.has_key('SAT'))
+            if resCl is not None:
+              self.assert_(res.has_key('Reason'))
+            self.mock_command.doCommand.return_value =  {'TransferQuality':resCl}
+            res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
+            self.assert_(res.has_key('SAT'))
+            if resCl is not None:
+              self.assert_(res.has_key('Reason'))
           res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
           self.assert_(res.has_key('SAT'))
-          self.assert_(res.has_key('Reason'))
-        res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
-        self.assert_(res.has_key('SAT'))
-      
-        args = (g, 'XX', status, datetime.utcnow(), datetime.utcnow())
-        for resCl in [1, 0.91, 0.50, 0]:
-          res = self.TQ_P.evaluate(args, commandIn = self.mock_command, knownInfo={'TransferQuality':resCl})
-          self.assert_(res.has_key('SAT'))
-          self.assert_(res.has_key('Reason'))
-          self.mock_command.doCommand.return_value =  {'TransferQuality':resCl}
-          res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
-          self.assert_(res.has_key('SAT'))
-          self.assert_(res.has_key('Reason'))
-        res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
-        self.assert_(res.has_key('SAT'))
       
 #############################################################################
 
