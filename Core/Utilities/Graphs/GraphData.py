@@ -242,6 +242,8 @@ class GraphData:
       return len(self.labels)
     
   def getPlotNumData(self,label=None,zipFlag=True):
+    """ Get the plot data in a numeric form
+    """
   
     if self.plotdata:
       if zipFlag:
@@ -265,7 +267,12 @@ class GraphData:
         return sum_array
       
   def truncateLabels(self,limit=10):
+    """ Truncate the number of labels to the limit, leave the most important
+        ones, accumulate the rest in the 'Others' label 
+    """
   
+    if self.plotdata:
+      return
     nLabels = len(self.labels)
     if nLabels <= limit:
       return
