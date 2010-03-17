@@ -24,12 +24,10 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryLevelTree    i
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import * 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager
 
+
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryFlatTree     import DirectoryFlatTree
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerFlat       import FileManagerFlat
 
-
-DEBUG = 0
-     
 #############################################################################
 class FileCatalogDB(DB, DirectoryMetadata):
 
@@ -37,6 +35,13 @@ class FileCatalogDB(DB, DirectoryMetadata):
     """ Standard Constructor
     """
     DB.__init__(self,'FileCatalogDB','DataManagement/FileCatalogDB',maxQueueSize)
+
+    # Directory Tree instance
+    self.dtree = DirectoryFlatTree()
+    self.dtree.setDatabase(self)
+    # File Manager instance
+    self.fileManager = FileManagerFlat()
+    self.fileManager.setDatabase(self)
 
     # In memory storage of the directory parameters
     self.directories = {}
@@ -60,33 +65,12 @@ class FileCatalogDB(DB, DirectoryMetadata):
     self.seManager.setSEDefinitions(self.seDefinitions)
     self.seManager.setUpdatePeriod(self.seUpdatePeriod)
 
-    # Directory Tree instance
-    self.dtree = DirectoryFlatTree()
-    self.dtree.setDatabase(self)
-    self.dtree.setUmask(self.umask)
-    self.dtree.setUserGroupManager(self.ugManager)
-
-    # File Manager instance
-    self.fileManager = FileManagerFlat(self.dtree,self.seManager,self.ugManager)
-    self.fileManager.setDatabase(self)
-    self.fileManager.setUmask(self.umask)
-    self.lfnConvention = False
-    self.fileManager.setLFNConvention(self.lfnConvention)
-    self.resolvePFN = False
-    self.fileManager.setResolvePFN(self.resolvePFN)
-    
-    # So that the directory manager knows of the file manager
-    self.dtree.setFileManager(self.fileManager)
-
     # Security module instance
     self.globalReadAccess = True
     self.securityManager = NoSecurityManager(self.dtree,self.fileManager,globalReadAccess=self.globalReadAccess)
 
   def setUmask(self,umask):
     self.umask = umask
-    self.fileManager.setUmask(self.umask)
-    self.dtree.setUmask(self.umask)
-
 
   ########################################################################
   #

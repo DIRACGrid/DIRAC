@@ -17,23 +17,12 @@ DEBUG = 0
 #############################################################################
 class DirectoryTreeBase:
 
-  def __init__(self, database=None,fileManager=None,userGroupManager=None):
+  def __init__(self, database=None):
     self.db = database
-    self.fileManager = fileManager 
-    self.ugManager = userGroupManager
     
   def setDatabase(self,database):
     self.db = database  
 
-  def setFileManager(self,fileManager):
-    self.fileManager = fileManager
-    
-  def setUserGroupManager(self,userGroupManager):
-    self.ugManager = userGroupManager
-    
-  def setUmask(self,umask):
-    self.umask = umask
-  
   def makeDirectory(self,path,credDict,status=0):
     """Create a new directory. The return value is the dictionary
        containing all the parameters of the newly created directory
@@ -53,7 +42,7 @@ class DirectoryTreeBase:
       l_uid = 0
       l_gid = 0
     else:
-      result = self.ugManager.getUserAndGroupID(credDict)
+      result = self.db.ugManager.getUserAndGroupID(credDict)
       if not result['OK']:
         return result
       ( l_uid, l_gid ) = result['Value']
@@ -72,7 +61,7 @@ class DirectoryTreeBase:
         dirDict = resGet['Value']
 
     if not dirDict:
-      result = self.db.removeDir(path)
+      result = self.removeDir(path)
       return S_ERROR('Failed to create directory %s' % path)
     return S_OK(dirID)
 
@@ -223,14 +212,14 @@ class DirectoryTreeBase:
     uid = int(resQuery['Value'][0][1])
     dirDict['UID'] = uid
     owner = 'unknown'
-    result = self.ugManager.getUserName(uid)
+    result = self.db.ugManager.getUserName(uid)
     if result['OK']:
       owner = result['Value'] 
     dirDict['Owner'] = owner
     gid = int(resQuery['Value'][0][2])
     dirDict['GID'] = int(resQuery['Value'][0][2])
     group = 'unknown'
-    result = self.ugManager.getGroupName(gid)
+    result = self.db.ugManager.getGroupName(gid)
     if result['OK']:
       group = result['Value']  
     dirDict['OwnerGroup'] = group
@@ -461,7 +450,7 @@ class DirectoryTreeBase:
       else:    
         directories[dirName] = True
 
-    res = self.fileManager.getFilesInDirectory(directoryID,path,verbose=details)
+    res = self.db.fileManager.getFilesInDirectory(directoryID,path,verbose=details)
     if not res['OK']:
       return res
     files = res['Value']

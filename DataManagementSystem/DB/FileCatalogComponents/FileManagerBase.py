@@ -14,27 +14,12 @@ from types import *
 
 class FileManagerBase:
 
-  def __init__(self,directoryTree,seManager,userGroupManager,database=None):
+  def __init__(self,database=None):
     self.db = database
-    self.dtree = directoryTree
-    self.seManager = seManager
-    self.ugManager = userGroupManager
 
-  def setUserGroupManager(self,userGroupManager):
-    self.ugManager = userGroupManager
-  
-  def setLFNConvention(self,convention):  
-    self.lfnConvention = convention
-    
-  def setResolvePFN(self,resolve):
-    self.resolvePFN = resolve
-    
   def setDatabase(self,database):
     self.db = database  
-    
-  def setUmask(self,umask):
-    self.umask = umask
-    
+
   def exists(self,lfns):
     return S_ERROR("Not implemented")
 
