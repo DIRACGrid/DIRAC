@@ -180,12 +180,14 @@ class SystemAdministratorClientCLI(cmd.Cmd):
     option = argss[0]
     del argss[0]
     if option == "mysql":
+      print "Installing MySQL database, this can take a while ..."
       client = SystemAdministratorClient(self.host)
       result = client.installMySQL(self.rootPwd)
       if not result['OK']:
         print "ERROR:",result['Message']
       else:
-        print "MySQL installed successfully"  
+        print "MySQL:", result['Value']  
+        print "You might need to restart SystemAdministrator service to take new settings into account"
         if result.has_key('MySQLPassword'):
           self.rootPwd = result['MySQLPassword']  
     elif option == "db":
