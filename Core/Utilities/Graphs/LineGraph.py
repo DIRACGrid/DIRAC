@@ -60,6 +60,17 @@ class LineGraph( PlotBase ):
       zorder = 0.0      
       labels = self.gdata.getLabels()
       labels.reverse()
+      
+      # If it is a simple plot, no labels are used
+      # Evaluate the most appropriate color in this case
+      if self.gdata.isSimplePlot():
+        labels = [('SimplePlot',0.)]
+        color = self.prefs.get('plot_color','Default')
+        if color.find('#') != -1:
+          self.palette.setColor('SimplePlot',color)
+        else:
+          labels = [(color,0.)]
+        
       for label,num in labels:  
       
         color = self.palette.getColor(label)

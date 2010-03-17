@@ -96,7 +96,6 @@ class GraphData:
     if DEBUG:  
       print "Time: plot data", time.time() - start, len(self.subplots)  
       
-      
     if self.plotdata:
       self.all_keys = self.plotdata.getKeys()
     else:
@@ -115,6 +114,10 @@ class GraphData:
     self.makeNumKeys()      
           
     self.sortLabels()   
+    
+  def isSimplePlot(self):
+    
+    return not self.plotdata is None  
           
   def sortLabels(self,sort_type='max_value'):
     """ Sort labels with a specified method:

@@ -142,7 +142,7 @@ def barGraph( data, file, *args, **kw ):
 
 def lineGraph( data, file, *args, **kw ):
   kw = __checkKW( kw )
-  graph( data, file, plot_type = 'LineGraph', *args, **kw )
+  graph( data, file, plot_type = 'LineGraph', statistics_line=True, *args, **kw )
 
 def cumulativeGraph( data, file, *args, **kw ):
   kw = __checkKW( kw )

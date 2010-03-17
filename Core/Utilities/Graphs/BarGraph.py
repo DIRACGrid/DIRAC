@@ -80,6 +80,17 @@ class BarGraph( PlotBase ):
       self.lines = []
       labels = self.gdata.getLabels()
       labels.reverse()
+      
+      # If it is a simple plot, no labels are used
+      # Evaluate the most appropriate color in this case
+      if self.gdata.isSimplePlot():
+        labels = [('SimplePlot',0.)]
+        color = self.prefs.get('plot_color','Default')
+        if color.find('#') != -1:
+          self.palette.setColor('SimplePlot',color)
+        else:
+          labels = [(color,0.)]
+          
       seq_b = [(self.gdata.max_num_key+width,0.0),(self.gdata.min_num_key,0.0)]    
       zorder = 0.0 
       dpi = self.prefs.get('dpi',100)

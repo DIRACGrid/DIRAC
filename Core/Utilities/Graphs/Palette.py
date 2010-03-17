@@ -30,7 +30,8 @@ job_status_palette = {
 miscelaneous_pallette = {
    'Others':    '#666666',
    'NoLabels':  '#0025AD',
-   'Total':     '#00FFDC'
+   'Total':     '#00FFDC',
+   'Default':   '#FDEE65'
 }
 
 country_palette = {
@@ -56,15 +57,11 @@ class Palette:
     self.palette.update(job_status_palette)
     self.palette.update(miscelaneous_pallette)
     
-    # extra generic colors
-    self.colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
-    if colors:
-      self.colors = colors
-    self.cindex = 0
-    self.ncolors = len(self.colors)
-    
   def setPalette(self,palette):
     self.palette = palette  
+    
+  def setColor(self,label,color):
+    self.palette[label] = color  
     
   def addPalette(self,palette):
     self.palette.update(palette)  
@@ -73,10 +70,7 @@ class Palette:
   
     if label in self.palette.keys():
       return self.palette[label]  
-    else:
-      #ind = self.cindex % self.ncolors
-      #self.cindex += 1
-      #return self.colors[ind]  
+    else:  
       return self.generateColor(label)
       
   def generateColor(self,label):
