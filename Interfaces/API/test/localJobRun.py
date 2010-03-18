@@ -41,7 +41,7 @@ class JobTests:
     j.setOutputData(['my.dst','myfile.log'])
     j.setDestination('LCG.CERN.ch')
     j.setPlatform('LCG')
-    j.setSystemConfig('slc4_ia32_gcc34')
+    j.setSystemConfig('x86_64-slc5-gcc43-opt')
     j.setSoftwareTags(['VO-lhcb-Brunel-v30r17','VO-lhcb-Boole-v12r10'])
     #print j._toJDL()
     #print j.printObj()
