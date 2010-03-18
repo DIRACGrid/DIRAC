@@ -116,9 +116,8 @@ class Propagation_Policy(PolicyBase):
         result['Status'] = 'Banned'
     
     
-    result['Reason'] =  'Stats %s: Active:%d, Probing :%d, Banned:%d' %(args[3], 
-                                                                        stats['Active'], 
-                                                                        stats['Probing'], 
-                                                                        stats['Banned'])
+    result['Reason'] =  'Active:%d, Probing :%d, Banned:%d' %( stats['Active'], 
+                                                               stats['Probing'], 
+                                                               stats['Banned'])
             
     return result

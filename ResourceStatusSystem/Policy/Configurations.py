@@ -158,7 +158,7 @@ AssigneeGroups = {
 #############################################################################
 
 Policies = { 
-  'DT_Policy_OnGoing_Only' : 
+  'DT_OnGoing_Only' : 
     { 'Description' : "Evaluates on possible ongoing down-times", 
       'Granularity' : [], 
       'Status' : ValidStatus, 
@@ -174,7 +174,7 @@ Policies = {
 #                                        'args': None}}
 #                      ]
      },
-  'DT_Policy_Scheduled' : 
+  'DT_Scheduled' : 
     { 'Description' : "Evaluates on possible ongoing and scheduled down-times", 
       'Granularity' : ['Site', 'Resource'], 
       'Status' : ValidStatus, 
@@ -190,7 +190,7 @@ Policies = {
                                         'args': None}}
                       ]
      },
-  'GGUSTickets_Policy' : 
+  'GGUSTickets' : 
     { 'Description' : "Evaluates the number of open GGUS tickets", 
       'Granularity' : ['Site'], 
       'Status' : ValidStatus, 
@@ -205,7 +205,7 @@ Policies = {
                                     'args': None}},
                      ]
      },
-  'SAM_Policy' : 
+  'SAM' : 
     { 'Description' : "Evaluates latest SAM results", 
       'Granularity' : [], 
       'Status' : ValidStatus, 
@@ -215,7 +215,7 @@ Policies = {
       'ResourceType' : [],
       'args' : None,  
      },
-  'SAM_CE_Policy' : 
+  'SAM_CE' : 
     { 'Description' : "Evaluates latest SAM results on the LCG Computing Element", 
       'Granularity' : ['Resource'], 
       'Status' : ValidStatus, 
@@ -236,7 +236,7 @@ Policies = {
 #                                        'args': None}}
                          ]
      },     
-  'SAM_CREAMCE_Policy' : 
+  'SAM_CREAMCE' : 
     { 'Description' : "Evaluates latest SAM results on the CREAM Computing Element", 
       'Granularity' : ['Resource'], 
       'Status' : ValidStatus, 
@@ -251,7 +251,7 @@ Policies = {
 #                                        'args': None}}
                          ]
      },     
-  'SAM_SE_Policy' : 
+  'SAM_SE' : 
     { 'Description' : "Evaluates latest SAM results on the SRM nodes", 
       'Granularity' : ['Resource'], 
       'Status' : ValidStatus, 
@@ -266,7 +266,7 @@ Policies = {
 #                                        'args': None}}
                          ]
      },     
-  'SAM_LFC_C_Policy' : 
+  'SAM_LFC_C' : 
     { 'Description' : "Evaluates latest SAM results on the central LFC nodes", 
       'Granularity' : ['Resource'], 
       'Status' : ValidStatus, 
@@ -281,7 +281,7 @@ Policies = {
 #                                        'args': None}}
                           ]
      },     
-  'SAM_LFC_L_Policy' : 
+  'SAM_LFC_L' : 
     { 'Description' : "Evaluates latest SAM results on the slave LFC nodes", 
       'Granularity' : ['Resource'], 
       'Status' : ValidStatus, 
@@ -296,7 +296,7 @@ Policies = {
                                         'args': None}}
                           ]
      },     
-  'JobsEfficiencySimple_Policy' :  
+  'JobsEfficiencySimple' :  
     { 'Description' : "Evaluates a simple jobs efficiency", 
       'Granularity' : ['Service'], 
       'Status' : ValidStatus, 
@@ -315,7 +315,7 @@ Policies = {
                                                            'JobType', {'FinalMajorStatus':'Failed'})}}
                                     ]                                  
    },
-  'PilotsEfficiencySimple_Policy_Service' : 
+  'PilotsEfficiencySimple_Service' : 
     { 'Description' : "Evaluates a simple pilots efficiency", 
       'Granularity' : ['Service'], 
       'Status' : ValidStatus, 
@@ -334,7 +334,7 @@ Policies = {
                                                            'GridCE', None)}}
                                     ]
      },
-  'PilotsEfficiencySimple_Policy_Resource' : 
+  'PilotsEfficiencySimple_Resource' : 
     { 'Description' : "Evaluates a simple pilots efficiency", 
       'Granularity' : ['Resource'], 
       'Status' : ValidStatus, 
@@ -349,7 +349,7 @@ Policies = {
                                                    'GridStatus', None)}}
                           ]
      },
-  'OnSitePropagation_Policy' :
+  'OnSitePropagation' :
     { 'Description' : "Evaluates how the site's services are behaving in the RSS", 
       'Granularity' : ['Site'], 
       'Status' : ValidStatus, 
@@ -360,7 +360,7 @@ Policies = {
       'args' : ('Service', ),
       'Site_Panel' : {'RSS':'ServiceOfSite'}
      },
-  'OnComputingServicePropagation_Policy' :
+  'OnComputingServicePropagation' :
     { 'Description' : "Evaluates how the service's computing resources are behaving in the RSS", 
       'Granularity' : ['Service'], 
       'Status' : ValidStatus, 
@@ -371,7 +371,7 @@ Policies = {
       'args' : ('Resource', ),
       'Service_Computing_Panel' : {'RSS':'ResOfCompService'}
      },
-  'OnStorageServicePropagation_Policy_Resources' :
+  'OnStorageServicePropagation_Res' :
     { 'Description' : "Evaluates how the service's storage nodes are behaving in the RSS", 
       'Granularity' : ['Service'], 
       'Status' : ValidStatus, 
@@ -382,7 +382,7 @@ Policies = {
       'args' : ('Resource', ),
       'Service_Storage_Panel' : {'RSS':'ResOfStorService'}
      },
-  'OnStorageServicePropagation_Policy_StorageElements' :
+  'OnStorageServicePropagation_SE' :
     { 'Description' : "Evaluates how the service's storage elements are behaving in the RSS", 
       'Granularity' : ['Service'], 
       'Status' : ValidStatus, 
@@ -393,7 +393,7 @@ Policies = {
       'args' : ('StorageElement', ),
       'Service_Storage_Panel' : {'RSS':'StorageElementsOfSite'}
      },
-  'OnServicePropagation_Policy' :
+  'OnServicePropagation' :
     { 'Granularity' : [], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
@@ -402,7 +402,7 @@ Policies = {
       'ResourceType' : ValidResourceType,
       'args' : None,  
      },
-  'OnStorageElementPropagation_Policy' :
+  'OnStorageElementPropagation' :
     { 'Description' : "Evaluates how the storage elements' nodes are behaving in the RSS", 
       'Granularity' : ['StorageElement'], 
       'Status' : ValidStatus, 
@@ -413,7 +413,7 @@ Policies = {
       'ResourceType' : ValidResourceType,
       'SE_Panel' : {'RSS':'ResOfStorEl'}
      },
-  'OnSENodePropagation_Policy' :
+  'OnSENodePropagation' :
     { 'Granularity' : [], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
@@ -422,7 +422,7 @@ Policies = {
       'args' : None,  
       'ResourceType' : ['SE'],
      },
-  'TransferQuality_Policy' :
+  'TransferQuality' :
     { 'Description' : "Evaluates the SE transfer quality", 
       'Granularity' : ['StorageElement'], 
       'Status' : ValidStatus, 
@@ -437,7 +437,7 @@ Policies = {
                                              'Channel', {'OperationType':'putAndRegister'})}}
                       ]
      },
-  'SEOccupancy_Policy' :
+  'SEOccupancy' :
     { 'Description' : "Evaluates the SE occupancy", 
       'Granularity' : ['StorageElement'], 
       'Status' : ValidStatus, 
@@ -450,7 +450,7 @@ Policies = {
                                   'args': None}}
                       ]
      },
-  'AlwaysFalse_Policy' :
+  'AlwaysFalse' :
     { 'Granularity' : [], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
