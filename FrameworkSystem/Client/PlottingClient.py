@@ -84,7 +84,7 @@ class PlottingClient:
   def barGraph( self, data, file, *args, **kw ):
     return self.graph( data, file, plot_type = 'BarGraph', statistics_line=True, *args, **kw )
   
-  def lineGraph( data, file, *args, **kw ):
+  def lineGraph(self, data, file, *args, **kw ):
     return self.graph( data, file, plot_type = 'LineGraph', statistics_line=True, *args, **kw )
   
   def cumulativeGraph( self, data, file, *args, **kw ):
