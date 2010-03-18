@@ -121,9 +121,6 @@ class Distribution:
     return self.loadCFGFromRepository( '%s/trunk/%s/versions.cfg' % ( self.package, self.package ) )
 
   def executeCommand( self, cmd, getOutput = True ):
-    print "=" * 20
-    print cmd
-    print "=" * 20
     env = dict( os.environ )
     if self.svnPass:
       env[ 'SVN_PASSWORD' ] = self.svnPass
