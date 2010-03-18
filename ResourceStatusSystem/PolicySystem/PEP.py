@@ -243,6 +243,7 @@ class PEP:
                 mailMessage = mailMessage + "Name = %s\n" %self.__name
                 mailMessage = mailMessage + "New perceived status = %s\n" %res['Status']
                 mailMessage = mailMessage + "Reason for status change = %s\n" %res['Reason']
+                mailMessage = mailMessage + "Setup = %s\n" %setupIn
                 nc.sendMail(gConfig.getValue("Security/Users/%s/email" %user), 
                             '%s: %s' %(self.__name, res['Status']), mailMessage)
           

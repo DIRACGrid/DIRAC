@@ -180,22 +180,27 @@ class Publisher:
     if what == 'ServiceOfSite':
       gran = 'Service'
       paramsL.insert(0, 'ServiceName')
+      paramsL.append('Reason')
       siteName = name
     elif what == 'ResOfCompService':
       gran = 'Resources'
       paramsL.insert(0, 'ResourceName')
+      paramsL.append('Reason')
       serviceName = name
     elif what == 'ResOfStorService':
       gran = 'Resources'
       paramsL.insert(0, 'ResourceName')
+      paramsL.append('Reason')
       serviceName = name
     elif what == 'ResOfStorEl':
       gran = 'StorageElements'
       paramsL.insert(0, 'ResourceName')
+      paramsL.append('Reason')
       storageElementName = name
     elif what == 'StorageElementsOfSite':
       gran = 'StorageElements'
       paramsL.insert(0, 'StorageElementName')
+      paramsL.append('Reason')
       if '@' in name:
         siteName = name.split('@').pop()
       else:

@@ -147,11 +147,11 @@ class ResourceStatusDB:
     elif granularity in ('Service', 'Services'):
       DBname = 'ServiceName'
       DBtable = 'PresentServices'
-      getInfo = getInfo + ['SiteName', 'ServiceName', 'ServiceType']
+      getInfo = getInfo + ['SiteName', 'SiteType', 'ServiceName', 'ServiceType']
     elif granularity in ('Resource', 'Resources'):
       DBname = 'ResourceName'
       DBtable = 'PresentResources'
-      getInfo = getInfo + ['SiteName', 'ServiceName', 'ResourceName', 'ResourceType']
+      getInfo = getInfo + ['SiteName', 'SiteType', 'ServiceName', 'ResourceName', 'ResourceType']
     elif granularity in ('StorageElement', 'StorageElements'):
       DBname = 'StorageElementName'
       DBtable = 'PresentStorageElements'
@@ -266,6 +266,15 @@ class ResourceStatusDB:
           resourceType = [resourceType]
       resourceType = ','.join(['"'+x.strip()+'"' for x in resourceType])
 
+    #storageElementType
+#    if 'StorageElementType' in getInfo:
+#      if (storageElementType == None or storageElementType == []):
+#        storageElementType = ValidStorageElementType
+#      else:
+#        if type(storageElementType) is not type([]):
+#          storageElementType = [storageElementType]
+#      storageElementType = ','.join(['"'+x.strip()+'"' for x in storageElementType])
+
     #query construction
     #base
     req = "SELECT %s FROM %s WHERE" %(params, DBtable)
@@ -291,6 +300,8 @@ class ResourceStatusDB:
       req = req + " AND ServiceType in (%s)" % (serviceType)
     if 'ResourceType' in getInfo:
       req = req + " AND ResourceType IN (%s)" % (resourceType)
+#    if 'StorageElementType' in getInfo:
+#      req = req + " WHERE StorageElementName LIKE \'%" + "%s\'" %(storageElementType)
 
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -539,6 +550,7 @@ class ResourceStatusDB:
         servicesList = self.getMonitoredsList(granularity, paramsList = paramsList, 
                                               serviceName = services_select, 
                                               siteName = sites_select, status = status_select, 
+                                              siteType = siteType_select,
                                               serviceType = serviceType_select)
         for service in servicesList:
           record = []
@@ -558,6 +570,7 @@ class ResourceStatusDB:
                                                resourceName = resources_select, 
                                                siteName = sites_select, 
                                                status = status_select, 
+                                               siteType = siteType_select,
                                                resourceType = resourceType_select)
         for resource in resourcesList:
           record = []
