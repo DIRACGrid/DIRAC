@@ -5,7 +5,7 @@
 __RCSID__ = "$Id: FileManager.py 22623 2010-03-09 19:54:25Z acsmith $"
 
 from DIRAC                                  import S_OK,S_ERROR,gLogger
-from DIRAC.Core.Utilities.List              import stringListToString,intListToString
+from DIRAC.Core.Utilities.List              import stringListToString,intListToString,sortList
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase import FileManagerBase
 
 import time,os
@@ -146,17 +146,14 @@ class FileManagerFlat(FileManagerBase):
       res = self.__checkInfo(info,['PFN','SE','Size', 'GUID', 'Checksum'])
       if not res['OK']:
         failed[lfn] = res['Message']
-        continue
-      pfn = info['PFN']
-      se = info['SE']
-      size = int(info['Size'])
-      guid = info['GUID']
-      checksum = info['Checksum']
-      res = self.__addFile(lfn,credDict,size,se,guid=guid,pfn=pfn,checksum=checksum,checksumtype='Adler')
-      if not res['OK']:
+        lfns.pop(lfn)
+    res = self.__addFiles(lfns,credDict)
+    if not res['OK']:
+      for lfn in lfns.keys():
         failed[lfn] = res['Message']
-      else:
-        successful[lfn] = True
+    else:
+      failed.update(res['Value']['Failed'])    
+      successful.update(res['Value']['Successful'])
     return S_OK({'Successful':successful,'Failed':failed})   
   
   def addReplica(self,lfns):
@@ -299,6 +296,150 @@ class FileManagerFlat(FileManagerBase):
       return S_ERROR('GUID not found')
     return S_OK(result['Value'][0])
     
+  def __getGUIDFiles(self,guids):
+    req = "SELECT FileID,GUID FROM FileInfo WHERE GUID IN (%s)" % stringListToString(guids)
+    res = self.db._query(req)
+    if not res['OK']:
+      return res
+    guidFiles = {}
+    for fileID,guid in res['Value']:
+      guidFiles[guid]=fileID
+    return S_OK(guidFiles)
+    
+  def __addFiles(self,lfns,credDict):
+    successful = {}
+    result = self.db.ugManager.getUserAndGroupID(credDict)
+    if not result['OK']:
+      return result
+    uid, gid = result['Value']
+    # Check whether the files already exist
+    res = self._findFiles(lfns.keys(),['FileID','Size','Checksum','GUID'])
+    failed = res['Value']['Failed']
+    for lfn,error in res['Value']['Failed'].items():
+      if error == 'No such file or directory':
+        failed.pop(lfn)
+      else:
+        lfns.pop(lfn)
+    # For those that exist get the replicas to determine whether they are already registered
+    existingMetadata = res['Value']['Successful']
+    if existingMetadata:
+      fileIDLFNs = {}
+      for lfn,fileDict in existingMetadata.items():
+        fileIDLFNs[fileDict['FileID']] = lfn
+      res = self.__getFileReplicas(fileIDLFNs.keys())  
+      if not res['OK']:
+        for lfn in fileIDLFNs.values():
+          failed[lfn] = 'Failed checking pre-existing replicas'
+          lfns.pop(lfn)
+      else:
+        for fileID,lfn in fileIDLFNs.items():
+          fileMetadata = existingMetadata[lfn]
+          existingGuid = fileMetadata['GUID']
+          existingSize = fileMetadata['Size']
+          existingChecksum = fileMetadata['Checksum']
+          newGuid = lfns[lfn]['GUID']
+          newSize = lfns[lfn]['Size']
+          newChecksum = lfns[lfn]['Checksum']
+          # If the DB does not have replicas for this file return an error
+          if not res['Value'].has_key(fileID):
+            failed[lfn] = "File already registered with alternative replicas"
+            lfns.pop(lfn)
+          # If the supplied SE is not in the existing replicas return an error
+          elif not lfns[lfn]['SE'] in res['Value'][fileID].keys():
+            failed[lfn] = "File already registered with alternative replicas"
+            lfns.pop(lfn)
+          # Ensure that the key file metadata is the same
+          elif (existingGuid != newGuid) or (existingSize != newSize) or (existingChecksum != newChecksum):
+            failed[lfn] = "File already registered with alternative metadata"
+            lfns.pop(lfn)
+          # If we get here the file being registered already exists exactly in the DB
+          else:
+            successful[lfn] = True  
+            lfns.pop(lfn)
+    # If GUIDs are supposed to be unique check their pre-existance 
+    if self.db.UNIQUE_GUID:
+      guidLFNs = {}
+      for lfn,fileDict in lfns.keys():
+        guidLFNs[fileDict['GUID']] = lfn
+      res = self.__getGUIDFiles(guidLFNs.keys())
+      if not res['OK']:
+        return res
+      for guid,fileID in res['Value']:
+        failed[guidLFNs[guid]] = "GUID already registered for another file %s" % fileID # resolve this to LFN
+        lfns.pop(lfn)
+    # If we have files left to register
+    if lfns:
+      directoryIDs = {}
+      # Create the directories for the supplied files and store their IDs
+      directories = self._getFileDirectories(lfns.keys())
+      for directory,fileNames in directories.items():
+        res = self.db.dtree.makeDirectories(directory,credDict)
+        if not res['OK']:
+          for fileName in filesNames:
+            lfn = "%s/%s" % (directory,fileName)
+            failed[lfn] = "Failed to create directory for file"
+            lfns.pop(lfn)
+        else:
+          directoryIDs[directory] = res['Value']
+    # If we still have files left to register
+    if lfns:
+      # Add the files
+      directoryFiles = {}
+      insertTuples = []
+      for lfn in sortList(lfns.keys()):
+        fileInfo = lfns[lfn]
+        size = fileInfo['Size']
+        guid = fileInfo['GUID']
+        checksum = fileInfo['Checksum']
+        checksumtype = fileInfo.get('ChecksumType','Adler')
+        dirName = os.path.dirname(lfn)
+        dirID = directoryIDs[dirName]
+        fileName = os.path.basename(lfn)
+        if not directoryFiles.has_key(dirName):
+          directoryFiles[dirName] = []
+        directoryFiles[dirName].append(fileName)  
+        insertTuples.append("(%d,'%s',%d,'%s','%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,0)" % (dirID,fileName,size,guid,checksum,checksumtype,uid,gid,self.db.umask))
+      req = "INSERT INTO FileInfo (DirID,FileName,Size,GUID,Checksum,ChecksumType,UID,GID,CreationDate,ModificationDate,Mode,Status) VALUES %s" % ','.join(insertTuples)
+      res = self.db._update(req)
+      if not res['OK']:
+        print res['Message']
+        return res # Perhaps could gracefully fail these files.
+      # Get the fileIDs for the inserted files
+      print res['Value']
+      lfnFileIDs = {}
+      for dirName,fileNames in directoryFiles.items():
+        dirID =  directoryIDs[dirName]
+        res = self.__getDirectoryFiles(dirID,fileNames,['FileID'])
+        if (not res['OK']) or (not res['Value']):
+          error = res.get('Message','Failed post insert check')
+          for fileName in fileNames:
+            lfn = '%s/%s' % (dirName,fileName)
+            failed[lfn] = error
+            lfns.pop(lfn)
+        else:    
+          for fileName,fileDict in res['Value'].items():
+            lfnFileIDs["%s/%s" % (dirName,fileName)] = fileDict['FileID']
+      # Register the replicas for the inserted files
+      if lfnFileIDs:
+        insertTuples = []
+        for lfn in sortList(lfnFileIDs.keys()):
+          fileID = lfnFileIDs[lfn]
+          se = lfns[lfn]['SE']
+          pfn = lfns[lfn]['PFN']
+          rtype = lfns[lfn].get('Type','Master')
+          insertTuples.append("(%d,'%s','%s','U',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s')" % (fileID,se,rtype,pfn))
+        req = "INSERT INTO ReplicaInfo (FileID,SEName,RepType,Status,CreationDate,ModificationDate,PFN) VALUES %s" % ','.join(insertTuples)
+        res = self.db._update(req)
+        if not res['OK']:
+          print res['Message']
+          for lfn in lfnFileIDs.keys():
+            failed[lfn] = "Failed while registering replica"
+          self.__purgeFiles(lfnFileIDs.values())
+        else:
+          for lfn in lfnFileIDs.keys():
+            successful[lfn] = True
+    return S_OK({'Successful':successful,'Failed':failed})
+    
   def __addFile(self,lfn,credDict,size,se,guid='',pfn='',checksum='',checksumtype=''):
     """ Add (register) a file to the catalog."""
     start = time.time()
@@ -387,6 +528,15 @@ class FileManagerFlat(FileManagerBase):
     if not result['Value']:
       return S_OK(False)
     return S_OK(True)
+
+  def __purgeFiles(self,fileIDs):
+    replicaPurge = self.__deleteReplicas(fileIDs)
+    filePurge = self.__deleteFiles(fileIDs)
+    if not replicaPurge['OK']:
+      return replicaPurge
+    if not filePurge['OK']:
+      return filePurge
+    return S_OK()
 
   def __deleteReplicas(self,fileIDs):
     if not fileIDs:
