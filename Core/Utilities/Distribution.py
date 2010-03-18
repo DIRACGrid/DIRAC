@@ -121,6 +121,9 @@ class Distribution:
     return self.loadCFGFromRepository( '%s/trunk/%s/versions.cfg' % ( self.package, self.package ) )
 
   def executeCommand( self, cmd, getOutput = True ):
+    print "=" * 20
+    print cmd
+    print "=" * 20
     env = dict( os.environ )
     if self.svnPass:
       env[ 'SVN_PASSWORD' ] = self.svnPass
@@ -168,7 +171,7 @@ class Distribution:
   def __cmdImport( self, origin, dest, comment ):
     destT = self.__getDevCmdBase( dest )
     cmd = "svn import -m '%s' %s %s %s" % ( comment, destT[0], origin, destT[1] )
-    self.addCommandToQueue( cmd )
+    return cmd
 
   def queueImport( self, origin, dest, comment ):
     self.addCommandToQueue( self.__cmdImport( origin, dest, comment ) )
@@ -180,7 +183,7 @@ class Distribution:
     destT = self.__getDevCmdBase( dest )
     orT = self.__getDevCmdBase( origin )
     cmd = "svn copy -m '%s' %s %s %s" % ( comment, destT[0], orT[1], destT[1] )
-    self.addCommandToQueue( cmd )
+    return cmd
 
   def queueCopy( self, origin, dest, comment ):
     self.addCommandToQueue( self.__cmdCopy( origin, dest, comment ) )
