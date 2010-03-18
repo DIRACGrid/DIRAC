@@ -243,7 +243,7 @@ workflow1.removeParameter(step2_prefix+"outputData")
 workflow1.removeParameter(step2_prefix+"systemConfig")
 #add syspem config which common for all modules
 #workflow1.appendParameter(Parameter("systemConfig","slc4_ia32_gcc34","string","","",True, False, "Application Name"))
-workflow1.appendParameter(Parameter("SystemConfig","slc4_ia32_gcc34","JDLReqt","","",True, False, "Application Name"))
+workflow1.appendParameter(Parameter("SystemConfig","x86_64-slc5-gcc43-opt","JDLReqt","","",True, False, "Application Name"))
 
 workflow1.appendParameter(Parameter("InputData",indata,"JDL","","",True, False, "Application Name"))
 workflow1.appendParameter(Parameter("JobType","test","JDL","","",True, False, "Job TYpe"))
