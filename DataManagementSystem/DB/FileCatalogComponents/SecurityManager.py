@@ -25,6 +25,11 @@ class SecurityManagerBase:
     resDict = {'Successful':successful,'Failed':{}}
     return S_OK(resDict)
 
+  def hasAdminAccess(self,credDict):
+    if credDict.get('username','') == 'diracAdmin':
+      return S_OK(True)
+    return S_OK(False)
+
 class NoSecurityManager(SecurityManagerBase):
 
   def hasAccess(self,opType,paths,credDict):
@@ -33,6 +38,9 @@ class NoSecurityManager(SecurityManagerBase):
       successful[path] = True
     resDict = {'Successful':successful,'Failed':{}}
     return S_OK(resDict)
+
+  def hasAdminAccess(self,credDict):
+    return S_OK(True)
 
 class DirectorySecurityManager(SecurityManagerBase):
   pass
