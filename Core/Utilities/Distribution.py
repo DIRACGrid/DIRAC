@@ -124,7 +124,6 @@ class Distribution:
     env = dict( os.environ )
     if self.svnPass:
       env[ 'SVN_PASSWORD' ] = self.svnPass
-    print "Executing %s" % cmd
     if not getOutput:
       return subprocess.Popen( cmd, shell = True, env = env ).wait() == 0
     #Get output
