@@ -158,6 +158,20 @@ class FileCatalogDB(DB, DirectoryMetadata):
       failed.update(res['Value']['Failed'])
       successful.update(res['Value']['Successful'])
     return S_OK( {'Successful':successful,'Failed':failed} )
+  
+  def getPathPermissions(self, lfns, credDict):
+    """ Get permissions for the given user/group to manipulate the given lfns 
+    """
+    res = self._checkPathPermissions('read', lfns, credDict)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    res = self.dtree.getPathPermissions(res['Value']['Successful'])
+    if not res['OK']:
+      return res
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']   
+    return S_OK({'Successful':successful,'Failed':failed}) 
 
   ########################################################################
   #
