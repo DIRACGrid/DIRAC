@@ -189,7 +189,6 @@ class TaskQueueDirector(AgentModule):
     self.__checkSubmitPools()
 
     self.directorDict = getResourceDict()
-    print self.directorDict
 
     result = taskQueueDB.getMatchingTaskQueues( self.directorDict )
     if not result['OK']:
