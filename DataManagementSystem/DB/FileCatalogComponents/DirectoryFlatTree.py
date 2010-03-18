@@ -56,7 +56,7 @@ class DirectoryFlatTree(DirectoryTreeBase):
     if result['Value']:
       return S_OK(result['Value'])
 
-    result = self.ugManager.getUserAndGroupID(credDict)
+    result = self.db.ugManager.getUserAndGroupID(credDict)
     if not result['OK']:
       return result
     uid,gid = result['Value']
@@ -67,7 +67,7 @@ class DirectoryFlatTree(DirectoryTreeBase):
     parentID = res['Value']
     
     req = "INSERT INTO DirectoryInfo (Parent,Status,DirName,UID,GID,Mode,CreationDate,ModificationDate)\
-    VALUES (%d,%d,'%s','%s','%s',%d,UTC_TIMESTAMP(),UTC_TIMESTAMP());" % (parentID,status,path,uid,gid,self.umask)
+    VALUES (%d,%d,'%s','%s','%s',%d,UTC_TIMESTAMP(),UTC_TIMESTAMP());" % (parentID,status,path,uid,gid,self.db.umask)
     result = self.db._update(req)
     if not result['OK']:
       self.removeDir(path)
