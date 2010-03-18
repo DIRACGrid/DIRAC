@@ -48,6 +48,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     self.users = {}
     self.groups = {}
     self.umask = 0775
+    self.UNIQUE_GUID = False
 
     # User/group manager
     self.ugManager = UserAndGroupManagerCS()
