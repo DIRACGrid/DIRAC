@@ -223,8 +223,19 @@ class FileCatalogHandler(RequestHandler):
     return fcDB.getDirectoryReplicas(lfns,allStatus,self.getRemoteCredentials())
 
   ########################################################################
+  #
+  # Adinistrative database operations
+  #
+
+  types_getCatalogContents = []
+  def export_getCatalogContents(self):
+    """ Get the number of registered directories, files and replicas in various tables """
+    return fcDB.getCatalogContents(self.getRemoteCredentials())
+
+  ########################################################################
   # Metadata Catalog Operations
   #
+
   types_addMetadataField = [ StringTypes, StringTypes ]
   def export_addMetadataField(self, fieldName, fieldType ):
     """ Add a new metadata field of the given type

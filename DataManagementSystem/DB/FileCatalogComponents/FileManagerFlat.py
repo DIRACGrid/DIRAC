@@ -13,6 +13,20 @@ from types import *
 
 class FileManagerFlat(FileManagerBase):
 
+  def getFileCounters(self):
+    req = "SELECT COUNT(*) FROM FileInfo;"
+    res = self.db._query(req)
+    if not res['OK']:
+      return res
+    return S_OK({'FileInfo':res['Value'][0][0]})
+  
+  def getReplicaCounters(self):
+    req = "SELECT COUNT(*) FROM ReplicaInfo;"
+    res = self.db._query(req)
+    if not res['OK']:
+      return res
+    return S_OK({'ReplicaInfo':res['Value'][0][0]})
+
   def exists(self,lfns):
     res = self._findFiles(lfns)
     successful = dict.fromkeys(res['Value']['Successful'],True)

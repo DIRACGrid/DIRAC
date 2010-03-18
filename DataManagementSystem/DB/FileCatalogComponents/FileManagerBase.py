@@ -56,6 +56,12 @@ class FileManagerBase:
   def setReplicaHost(self,lfns):
     return S_ERROR("Not implemented")
   
+  def getFileCounters(self):
+    return S_ERROR("Not implemented")
+
+  def getReplicaCounters(self):
+    return S_ERROR("Not implemented") 
+
   def _getFileDirectories(self,lfns):
     dirDict = {}
     for lfn in lfns:

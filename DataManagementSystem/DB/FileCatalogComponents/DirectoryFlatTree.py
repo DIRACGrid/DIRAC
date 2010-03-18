@@ -12,6 +12,13 @@ from DIRAC.Core.Utilities.List                                                 i
 
 class DirectoryFlatTree(DirectoryTreeBase):
 
+  def getDirectoryCounters(self):
+    req = "SELECT COUNT(*) FROM DirectoryInfo"
+    res = self.db._query(req)
+    if not res['OK']:
+      return res
+    return S_OK({'DirectoryInfo':res['Value'][0][0]})
+
   def __findDirs(self,paths,metadata=['DirName']):
     dirs = {}
     req = "SELECT DirID,%s FROM DirectoryInfo WHERE DirName IN (%s)" % (intListToString(metadata),stringListToString(paths))
