@@ -256,7 +256,7 @@ workflow1.removeParameter(step2_prefix+"systemConfig")
 
 #add syspem config which common for all modules
 #workflow1.addParameter(Parameter("systemConfig","slc4_ia32_gcc34","string","","",True, False, "Application Name"))
-workflow1.addParameter(Parameter("SystemConfig","slc4_ia32_gcc34","JDLReqt","","",True, False, "Application Name"))
+workflow1.addParameter(Parameter("SystemConfig","x86_64-slc5-gcc43-opt","JDLReqt","","",True, False, "Application Name"))
 
 # Now lets define parameters on the top
 #indata = "LFN:/lhcb/production/DC06/phys-v2-lumi2/00001820/SIM/0000/00001820_00000001_1.sim;LFN:/lhcb/production/DC06/phys-v2-lumi2/00001820/SIM/0000/00001820_00000001_2.sim;LFN:/lhcb/production/DC06/phys-v2-lumi2/00001820/SIM/0000/00001820_00000001_3.sim"
