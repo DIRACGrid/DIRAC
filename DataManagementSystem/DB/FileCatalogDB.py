@@ -397,6 +397,30 @@ class FileCatalogDB(DB, DirectoryMetadata):
     successful = res['Value']['Successful']
     return S_OK( {'Successful':successful,'Failed':failed} )
 
+  #######################################################################
+  #
+  #  Catalog admin methods
+  #
+  def getCatalogContents(self,credDict):
+    res = self._checkAdminPermission(credDict)
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      return S_ERROR("Permission denied")
+    res = self.dtree.getDirectoryCounters()
+    if not res['OK']:
+      return res
+    counterDict = res['Value']
+    res = self.fileManager.getFileCounters()
+    if not res['OK']:
+      return res
+    counterDict.update(res['Value'])
+    res = self.fileManager.getReplicaCounters() 
+    if not res['OK']:
+      return res
+    counterDict.update(res['Value'])
+    return S_OK(counterDict)
+
   ########################################################################
   #
   #  Security based methods
