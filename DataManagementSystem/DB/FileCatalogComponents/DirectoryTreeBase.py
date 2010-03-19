@@ -127,7 +127,7 @@ class DirectoryTreeBase:
     return result
   
   #####################################################################
-  def isDirectory(self,paths,credDict):
+  def isDirectory(self,paths):
     """ Checking for existence of directories
     """
     dirs = paths.keys()
@@ -400,7 +400,7 @@ class DirectoryTreeBase:
     """ 
     
     resultDict = {}
-    if self.globalReadAccess:
+    if self.db.globalReadAccess:
       resultDict['Read'] = True
       
     resultDict['Write'] = True
