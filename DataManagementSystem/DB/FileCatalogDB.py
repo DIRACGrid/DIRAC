@@ -24,9 +24,9 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryLevelTree    i
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import * 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager
 
-
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryFlatTree     import DirectoryFlatTree
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerFlat       import FileManagerFlat
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager       import FileManager
 
 #############################################################################
 class FileCatalogDB(DB, DirectoryMetadata):
@@ -36,40 +36,31 @@ class FileCatalogDB(DB, DirectoryMetadata):
     """
     DB.__init__(self,'FileCatalogDB','DataManagement/FileCatalogDB',maxQueueSize)
 
-    # Directory Tree instance
-    self.dtree = DirectoryLevelTree()
-    self.dtree.setDatabase(self)
+  def setConfig(self,databaseConfig):
+    # Obtain some general configuration of the database
+    self.uniqueGUID = databaseConfig['UniqueGUID']
+    self.globalRead = databaseConfig['GlobalRead']
+    self.lfnPfnConvention = databaseConfig['LFNPFNConvention']
+    self.resolvePfn = databaseConfig['ResolvePFN']
+    self.umask = databaseConfig['DefaultUmask']
 
-    # In memory storage of the directory parameters
+    try:
+      # Obtain the plugins to be used for DB interaction
+      self.ugManager = eval("%s(self)" % databaseConfig['UserGroupManager'])
+      self.seManager = eval("%s(self)" % databaseConfig['SEManager'])
+      self.securityManager = eval("%s(self)" % databaseConfig['SecurityManager'])
+      self.dtree = eval("%s(self)" % databaseConfig['DirectoryManager'])
+      self.fileManager = eval("%s(self)" % databaseConfig['FileManager'])
+    except Exception, x:
+      gLogger.fatal("Failed to create database objects",x)
+      return S_ERROR("Failed to create database objects")
+
+    # In memory storage of the various parameters
     self.directories = {}
     self.users = {}
     self.groups = {}
-    self.umask = 0775
-    self.UNIQUE_GUID = False
-
-    # User/group manager
-    self.ugManager = UserAndGroupManagerCS()
-    self.ugManager.setDatabase(self)
-    self.users = {}
-    self.ugManager.setUsers(self.users)
-    self.groups = {}
-    self.ugManager.setGroups(self.groups)
-
-    # SEManager
     self.seDefinitions = {}
-    self.seUpdatePeriod = 600
-    self.seManager = SEManagerCS()
-    self.seManager.setDatabase(self)
-    self.seManager.setSEDefinitions(self.seDefinitions)
-    self.seManager.setUpdatePeriod(self.seUpdatePeriod)
-
-    # File Manager instance
-    self.fileManager = FileManager(self.dtree,self.seManager,self.ugManager)
-    self.fileManager.setDatabase(self)
-
-    # Security module instance
-    self.globalReadAccess = True
-    self.securityManager = NoSecurityManager(self.dtree,self.fileManager,globalReadAccess=self.globalReadAccess)
+    return S_OK()
     
   def setUmask(self,umask):
     self.umask = umask
