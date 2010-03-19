@@ -22,6 +22,7 @@ class FileManager:
     self.seManager = seManager
     self.ugManager = userGroupManager
     self.resolvePFN = True
+    self.umask = 0775
 
   def setUserGroupManager(self,userGroupManager):
     self.ugManager = userGroupManager
@@ -74,7 +75,7 @@ class FileManager:
     return S_OK({"Successful":successful,"Failed":failed})
 
   def getFileSize(self, lfns):
-    res = self._getMetadaForLFNs(lfns, ['Size'])
+    res = self._getMetadataForLFNs(lfns, ['Size'])
     if not res['OK']:
       return res
     for lfn in res['Value']['Successful'].keys():
@@ -83,7 +84,7 @@ class FileManager:
     return res
     
   def getFileMetadata(self, lfns):
-    return self._getMetadaForLFNs(lfns,['Size','CheckSum','CheckSumType','UID','GID','CreationDate','ModificationDate','Mode','Status'])
+    return self._getMetadataForLFNs(lfns,['Size','CheckSum','CheckSumType','UID','GID','CreationDate','ModificationDate','Mode','Status'])
 
   def __getFileIDForDirectoryFiles(self,dirID,fileNames):
     req = "SELECT FileID,FileName FROM FC_Files WHERE DirID=%d AND FileName IN (%s)" % (dirID,stringListToString(fileNames))            
@@ -136,7 +137,7 @@ class FileManager:
     req = "SELECT FileID,%s FROM FC_FileInfo WHERE FileID IN (%s)" % (intListToString(fields),intListToString(fileIDs))
     return self.db._query(req)
 
-  def _getMetadaForLFNs(self,lfns,requestedFields):
+  def _getMetadataForLFNs(self,lfns,requestedFields):
     # Get the fileIDs for the supplied files
     result = self.findFile(lfns.keys())
     if not result['OK']:
