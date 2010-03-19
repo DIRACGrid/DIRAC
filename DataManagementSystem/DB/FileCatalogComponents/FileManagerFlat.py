@@ -357,7 +357,7 @@ class FileManagerFlat(FileManagerBase):
             successful[lfn] = True  
             lfns.pop(lfn)
     # If GUIDs are supposed to be unique check their pre-existance 
-    if self.db.UNIQUE_GUID:
+    if self.db.uniqueGUID:
       guidLFNs = {}
       for lfn,fileDict in lfns.keys():
         guidLFNs[fileDict['GUID']] = lfn
