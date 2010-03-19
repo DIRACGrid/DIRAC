@@ -14,7 +14,7 @@ from types import *
 class FileManagerFlat(FileManagerBase):
 
   def getFileCounters(self):
-    req = "SELECT COUNT(*) FROM FileInfo;"
+    req = "SELECT COUNT(*) FROM FC_FileInfo;"
     res = self.db._query(req)
     if not res['OK']:
       return res
@@ -259,7 +259,7 @@ class FileManagerFlat(FileManagerBase):
 
   def __getDirectoryFiles(self,dirID,fileNames,metadata):
     # metadata can be any of ['FileID','Size','GUID','Checksum','ChecksumType','Type','UID','GID','CreationDate','ModificationDate','Mode','Status']
-    req = "SELECT FileName,%s FROM FileInfo WHERE DirID=%d" % (intListToString(metadata),dirID)
+    req = "SELECT FileName,%s FROM FC_FileInfo WHERE DirID=%d" % (intListToString(metadata),dirID)
     if fileNames:
       req = "%s AND FileName IN (%s)" % (req,stringListToString(fileNames))
     res = self.db._query(req)
@@ -288,7 +288,7 @@ class FileManagerFlat(FileManagerBase):
     return S_OK(replicas)
 
   def __getFileFromGUID(self,guid):
-    req = "SELECT FileName,DirID FROM FileInfo WHERE GUID='%s'" % guid
+    req = "SELECT FileName,DirID FROM FC_FileInfo WHERE GUID='%s'" % guid
     result = self.db._query(req)
     if not result['OK']:
       return result
@@ -493,7 +493,7 @@ class FileManagerFlat(FileManagerBase):
     if not dirID:
       return S_ERROR('Failed to create (or find) the file directory')
     
-    req = "INSERT INTO FileInfo (DirID,FileName,Size,GUID,Checksum,ChecksumType,UID,GID,CreationDate,ModificationDate,Mode,Status) VALUES\
+    req = "INSERT INTO FC_FileInfo (DirID,FileName,Size,GUID,Checksum,ChecksumType,UID,GID,CreationDate,ModificationDate,Mode,Status) VALUES\
           (%d,'%s',%d,'%s','%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,0)" % (dirID,os.path.basename(lfn),size,guid,checksum,checksumtype,uid,gid,self.db.umask)                        
     res = self.db._update(req)            
     if not res['OK']:
@@ -551,7 +551,7 @@ class FileManagerFlat(FileManagerBase):
   def __deleteFiles(self,fileIDs):
     if not fileIDs:
       return S_OK()
-    req = "DELETE FROM FileInfo WHERE FileID in (%s)" % (intListToString(fileIDs))
+    req = "DELETE FROM FC_FileInfo WHERE FileID in (%s)" % (intListToString(fileIDs))
     return self.db._update(req)
 
   def __setReplicaParameter(self,fileID,se,paramName,paramValue):
