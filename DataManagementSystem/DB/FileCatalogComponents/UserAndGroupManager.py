@@ -17,6 +17,8 @@ class UserAndGroupManagerBase:
 
   def __init__(self,database=None):
     self.db = database
+    self.users = {}
+    self.groups = {}
     
   def setDatabase(self,database):
     self.db = database  
