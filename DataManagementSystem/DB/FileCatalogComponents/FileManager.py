@@ -493,7 +493,7 @@ class FileManager:
     if uid == 0:
       owner = 'root'
     else:  
-      resGet = self.ugManager.getUserName(uid)
+      resGet = self.db.ugManager.getUserName(uid)
       if resGet['OK']:
         owner = resGet['Value'] 
     resultDict['Owner'] = owner
@@ -503,7 +503,7 @@ class FileManager:
     if gid == 0:
       group = 'root'
     else:  
-      resGet = self.ugManager.getGroupName(gid)      
+      resGet = self.db.ugManager.getGroupName(gid)      
       if resGet['OK']:
         group = resGet['Value']  
     resultDict['OwnerGroup'] = group
