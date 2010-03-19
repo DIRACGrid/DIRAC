@@ -129,11 +129,8 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     query = "SELECT UID,UserName from FC_Users"
     resQuery = self.db._query(query)
     if resQuery['OK']:
-      if resQuery['Value']:
-        for uid,name in resQuery['Value']:
-          resDict[name] = (uid)
-      else:
-        return S_ERROR('No users defined')
+      for uid,name in resQuery['Value']:
+        resDict[name] = (uid)
     else:
       return resQuery  
 
@@ -163,6 +160,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
       return S_OK(self.users[uid])
     else:
       result = self.__getUsers()
+      print result
       uDict = result['Value']
       self.users = {}
       uname = ''
@@ -236,14 +234,10 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     query = "SELECT GID, GroupName from FC_Groups"
     resQuery = self.db._query(query)
     if resQuery['OK']:
-      if resQuery['Value']:
-        for gid,gname in resQuery['Value']:
-          resDict[gname] = gid
-      else:
-        return S_ERROR('No groups defined')
+      for gid,gname in resQuery['Value']:
+        resDict[gname] = gid
     else:
       return resQuery  
-
     return S_OK(resDict)
 
 #####################################################################
@@ -303,8 +297,6 @@ class UserAndGroupManagerCS(UserAndGroupManagerBase):
     res = gConfig.getSections('/Registry/Users')    
     if not res['OK']:
       return res
-    if not res['Value']:
-      return S_ERROR("No users defined")
     userDict = {}
     for user in res['Value']:
       userDict[user] = user
@@ -332,8 +324,6 @@ class UserAndGroupManagerCS(UserAndGroupManagerBase):
     res = gConfig.getSections('/Registry/Groups')
     if not res['OK']:
       return res
-    if not res['Value']:
-      return S_ERROR("No groups defined")
     groupDict = {}
     for group in res['Value']: 
       groupDict[group] = group
