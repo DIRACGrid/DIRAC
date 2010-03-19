@@ -37,11 +37,8 @@ class FileCatalogDB(DB, DirectoryMetadata):
     DB.__init__(self,'FileCatalogDB','DataManagement/FileCatalogDB',maxQueueSize)
 
     # Directory Tree instance
-    self.dtree = DirectoryFlatTree()
+    self.dtree = DirectoryLevelTree()
     self.dtree.setDatabase(self)
-    # File Manager instance
-    self.fileManager = FileManagerFlat()
-    self.fileManager.setDatabase(self)
 
     # In memory storage of the directory parameters
     self.directories = {}
@@ -58,7 +55,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     self.groups = {}
     self.ugManager.setGroups(self.groups)
 
-    # SEManager 
+    # SEManager
     self.seDefinitions = {}
     self.seUpdatePeriod = 600
     self.seManager = SEManagerCS()
@@ -66,10 +63,14 @@ class FileCatalogDB(DB, DirectoryMetadata):
     self.seManager.setSEDefinitions(self.seDefinitions)
     self.seManager.setUpdatePeriod(self.seUpdatePeriod)
 
+    # File Manager instance
+    self.fileManager = FileManager(self.dtree,self.seManager,self.ugManager)
+    self.fileManager.setDatabase(self)
+
     # Security module instance
     self.globalReadAccess = True
     self.securityManager = NoSecurityManager(self.dtree,self.fileManager,globalReadAccess=self.globalReadAccess)
-
+    
   def setUmask(self,umask):
     self.umask = umask
 
