@@ -34,7 +34,7 @@ def initializeFileCatalogHandler(serviceInfo):
   # If true this option ensures that all GUIDs associated to files are unique
   databaseConfig['UniqueGUID'] = gConfig.getValue('%s/%s' % (serviceCS,'UniqueGUID'),False)
   # If true this option allows global read access to all files/directories
-  databaseConfig['GlobalRead'] = gConfig.getValue('%s/%s' % (serviceCS,'GlobalRead'),True)
+  databaseConfig['GlobalReadAccess'] = gConfig.getValue('%s/%s' % (serviceCS,'GlobalRead'),True)
   # If true this option will ensure that all replicas being registered conform to the LFN->PFN convention
   databaseConfig['LFNPFNConvention'] = gConfig.getValue('%s/%s' % (serviceCS,'LFNPFNConvention'),True)
   # If true this option not store PFNs in the replica table but rather resolve it at read time
