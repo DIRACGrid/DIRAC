@@ -146,6 +146,8 @@ class FileManager:
       for tuple in res['Value']:
         fileID = tuple[0]
         metadata = dict(zip(requestedFields,tuple[1:]))
+        # A.T. Hack to be consistent with the LcgFileCatalogClient
+        metadata['CheckSumValue'] = metadata['CheckSum']
         successful[fileIDLFNs[fileID]] = metadata  
     
     # Ensure all the files are in the result
