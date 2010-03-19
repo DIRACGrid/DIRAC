@@ -21,6 +21,7 @@ class FileManager:
     self.dtree = directoryTree
     self.seManager = seManager
     self.ugManager = userGroupManager
+    self.resolvePFN = True
 
   def setUserGroupManager(self,userGroupManager):
     self.ugManager = userGroupManager
@@ -502,7 +503,7 @@ class FileManager:
     if uid == 0:
       owner = 'root'
     else:  
-      resGet = self.getUserName(uid)
+      resGet = self.ugManager.getUserName(uid)
       if resGet['OK']:
         owner = resGet['Value'] 
     resultDict['Owner'] = owner
@@ -512,7 +513,7 @@ class FileManager:
     if gid == 0:
       group = 'root'
     else:  
-      resGet = self.getGroupName(gid)      
+      resGet = self.ugManager.getGroupName(gid)      
       if resGet['OK']:
         group = resGet['Value']  
     resultDict['OwnerGroup'] = group
