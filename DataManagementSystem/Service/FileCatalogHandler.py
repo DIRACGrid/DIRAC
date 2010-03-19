@@ -37,8 +37,10 @@ def initializeFileCatalogHandler(serviceInfo):
   databaseConfig['GlobalRead'] = gConfig.getOption('%s/%s' % (serviceCS,'GlobalRead'),True)
   # If true this option will ensure that all replicas being registered conform to the LFN->PFN convention
   databaseConfig['LFNPFNConvention'] = gConfig.getOption('%s/%s' % (serviceCS,'LFNPFNConvention'),True)
-  # IF true this option not store PFNs in the replica table but rather resolve it at read time
+  # If true this option not store PFNs in the replica table but rather resolve it at read time
   databaseConfig['ResolvePFN'] = gConfig.getOption('%s/%s' % (serviceCS,'ResolvePFN'),True)
+  # Default umask
+  databaseConfig['DefaultUmask'] = gConfig.getOption('%s/%s' % (serviceCS,'DefaultUmask'),503)
   
   fcDB.setConfig(databaseConfig)
   return S_OK()
