@@ -14,6 +14,7 @@ class SEManagerBase:
     self.db = database
     self.seDefinitions = {}
     self.seNames = {}
+    self.seUpdatePeriod = 600
     
   def setUpdatePeriod(self,period): 
     self.seUpdatePeriod = period
