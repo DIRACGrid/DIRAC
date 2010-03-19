@@ -24,6 +24,8 @@ class Params:
     self.ignorePackages = False
     self.externalsPython = '25'
     self.destination = ""
+    self.externalsLocation = ""
+    self.makeJobs = 1
 
   def setReleases( self, optionValue ):
     self.releasesToBuild = List.fromChar( optionValue )
@@ -70,6 +72,14 @@ class Params:
     self.ignorePackages = True
     return S_OK()
 
+  def setExternalsLocation( self, optionValue ):
+    self.externalsLocation = optionValue
+    return S_OK()
+
+  def setMakeJobs( self, optionValue ):
+    self.makeJobs = max( 1, int( optionValue ) )
+    return S_OK()
+
 cliParams = Params()
 
 Script.disableCS()
@@ -85,6 +95,9 @@ Script.registerSwitch( "E", "ignoreExternals", "Do not compile externals", cliPa
 Script.registerSwitch( "d:", "destination", "Destination where to build the tar files", cliParams.setDestination )
 Script.registerSwitch( "i:", "pythonVersion", "Python version to use (24/25)", cliParams.setPythonVersion )
 Script.registerSwitch( "P", "ignorePackages", "Do not make tars of python packages", cliParams.setIgnorePackages )
+Script.registerSwitch( "x:", "externalsLocation=", "Use externals location instead of downloading them", cliParams.setExternalsLocation )
+Script.registerSwitch( "j:", "makeJobs=", "Make jobs (default is 1)", cliParams.setMakeJobs )
+
 
 Script.parseCommandLine( ignoreErrors = False )
 
@@ -243,9 +256,16 @@ def tarExternals( mainCFG, targetDir ):
         continue
       compileScript = os.path.join( os.path.dirname( __file__ ), "dirac-compile-externals.py" )
       compileTarget = os.path.join( targetDir, platform )
-      compileCmd = "%s -d '%s' -t '%s' -v '%s' -i '%s'" % ( compileScript, compileTarget,
-                                                            externalType,
-                                                            externalsVersion, cliParams.externalsPython )
+      cmdArgs = []
+      cmdArgs.append( "-d '%s'" % compileTarget )
+      cmdArgs.append( "-t '%s'" % externalType )
+      cmdArgs.append( "-v '%s'" % externalsVersion )
+      cmdArgs.append( "-i '%s'" % cliParams.externalsPython )
+      if cliParams.externalsLocation:
+        cmdArgs.append( "-e '%s'" % cliParams.externalsLocation )
+      if cliParams.makeJobs:
+        cmdArgs.append( "-j '%s'" % cliParams.makeJobs )
+      compileCmd = "%s %s" % ( compileScript, " ".join( cmdArgs ) )
       gLogger.debug( compileCmd )
       if os.system( compileCmd ):
         gLogger.error( "Error while compiling externals!" )
