@@ -39,7 +39,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
   def setConfig(self,databaseConfig):
     # Obtain some general configuration of the database
     self.uniqueGUID = databaseConfig['UniqueGUID']
-    self.globalRead = databaseConfig['GlobalRead']
+    self.globalReadAccess = databaseConfig['GlobalReadAccess']
     self.lfnPfnConvention = databaseConfig['LFNPFNConvention']
     self.resolvePfn = databaseConfig['ResolvePFN']
     self.umask = databaseConfig['DefaultUmask']
