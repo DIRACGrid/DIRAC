@@ -53,7 +53,7 @@ class DirectoryTreeBase:
       return result
     dirID = result['Value']
     req = "INSERT INTO FC_DirectoryInfo (DirID,UID,GID,CreationDate,ModificationDate,Mode,Status) Values "
-    req = req + "(%d,%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (dirID,l_uid,l_gid,self.umask,status)            
+    req = req + "(%d,%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (dirID,l_uid,l_gid,self.db.umask,status)            
     result = self.db._update(req)            
     if result['OK']:
       resGet = self.getDirectoryParameters(dirID)            
