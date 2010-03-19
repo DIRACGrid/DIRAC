@@ -16,9 +16,31 @@ from types import *
 fcDB = False
 
 def initializeFileCatalogHandler(serviceInfo):
-
   global fcDB
   fcDB = FileCatalogDB()
+  serviceCS = serviceInfo ['serviceSectionPath']
+
+  databaseConfig = {}
+
+  # Obtain the plugins to be used for DB interaction
+  databaseConfig['UserGroupManager'] = gConfig.getOption('%s/%s' % (serviceCS,'UserGroupManager'),'UserAndGroupManagerDB')
+  databaseConfig['SEManager'] = gConfig.getOption('%s/%s' % (serviceCS,'SEManager'),'SEManagerDB')
+  databaseConfig['SecurityManager'] = gConfig.getOption('%s/%s' % (serviceCS,'SecurityManager'),'NoSecurityManager')
+  databaseConfig['DirectoryManager'] = gConfig.getOption('%s/%s' % (serviceCS,'DirectoryManager'),'DirectoryLevelTree')
+  databaseConfig['FileManager'] = gConfig.getOption('%s/%s' % (serviceCS,'FileManager'),'FileManager')
+
+  # Obtain some general configuration of the database
+
+  # If true this option ensures that all GUIDs associated to files are unique
+  databaseConfig['UniqueGUID'] = gConfig.getOption('%s/%s' % (serviceCS,'UniqueGUID'),False)
+  # If true this option allows global read access to all files/directories
+  databaseConfig['GlobalRead'] = gConfig.getOption('%s/%s' % (serviceCS,'GlobalRead'),True)
+  # If true this option will ensure that all replicas being registered conform to the LFN->PFN convention
+  databaseConfig['LFNPFNConvention'] = gConfig.getOption('%s/%s' % (serviceCS,'LFNPFNConvention'),True)
+  # IF true this option not store PFNs in the replica table but rather resolve it at read time
+  databaseConfig['ResolvePFN'] = gConfig.getOption('%s/%s' % (serviceCS,'ResolvePFN'),True)
+  
+  fcDB.setConfig(databaseConfig)
   return S_OK()
 
 class FileCatalogHandler(RequestHandler):
