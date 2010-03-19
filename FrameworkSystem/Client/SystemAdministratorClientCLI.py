@@ -327,7 +327,8 @@ class SystemAdministratorClientCLI(cmd.Cmd):
     if not result['OK']:
       print "ERROR:",result['Message']
     else:
-      print "Software successfully updated"
+      print "Software successfully updated." 
+      print "You should restart the services to use the new software version."
     
   def do_add(self,args):
     """ 
