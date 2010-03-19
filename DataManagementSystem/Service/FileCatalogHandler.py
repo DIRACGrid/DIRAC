@@ -42,8 +42,8 @@ def initializeFileCatalogHandler(serviceInfo):
   # Default umask
   databaseConfig['DefaultUmask'] = gConfig.getValue('%s/%s' % (serviceCS,'DefaultUmask'),0775)
   
-  fcDB.setConfig(databaseConfig)
-  return S_OK()
+  res = fcDB.setConfig(databaseConfig)
+  return res
 
 class FileCatalogHandler(RequestHandler):
   
