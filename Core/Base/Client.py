@@ -16,6 +16,9 @@ class Client:
   def setServer(self,url):
     self.serverURL = url
 
+  def setTimeout(self,timeout):
+    self.timeout = timeout
+
   def getServer(self):
     return self.serverURL
 
