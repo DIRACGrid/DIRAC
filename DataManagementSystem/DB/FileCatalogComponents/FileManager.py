@@ -16,29 +16,18 @@ from types import *
 
 class FileManager:
 
-  def __init__(self,directoryTree,seManager,userGroupManager,database=None):
+  def __init__(self,database=None):
     self.db = database
-    self.dtree = directoryTree
-    self.seManager = seManager
-    self.ugManager = userGroupManager
-    self.resolvePFN = True
-    self.umask = 0775
-
-  def setUserGroupManager(self,userGroupManager):
-    self.ugManager = userGroupManager
-  
-  def setLFNConvention(self,convention):  
-    self.lfnConvention = convention
-    
-  def setResolvePFN(self,resolve):
-    self.resolvePFN = resolve
     
   def setDatabase(self,database):
     self.db = database  
-    
-  def setUmask(self,umask):
-    self.umask = umask
+    self.resolvePFN = True
+    self.umask = 0775
 
+    self.lfnConvention = convention
+    self.resolvePFN = resolve
+    
+    
 #####################################################################
 #
 #  File and replica related methods
@@ -52,7 +41,7 @@ class FileManager:
     failed = {}
     directoryIDs = {}
     for dirPath in dirDict.keys():
-      res = self.dtree.findDir(dirPath)
+      res = self.db.dtree.findDir(dirPath)
       if (not res['OK']) or (not res['Value']):
         error = res.get('Message','No such file or directory')
         for fileName in dirDict[dirPath]:
@@ -214,7 +203,7 @@ class FileManager:
     """ Check if a replica already exists """    
     seID = se
     if type(se) in StringTypes:
-      result = self.seManager.findSE(se)
+      result = self.db.seManager.findSE(se)
       if not result['OK']:
         return result
       seID = result['Value']      
@@ -244,7 +233,7 @@ class FileManager:
 
     seID = se
     if type(se) in StringTypes:
-      result = self.seManager.findSE(se)
+      result = self.db.seManager.findSE(se)
       if not result['OK']:
         return result
       seID = result['Value']
@@ -322,7 +311,7 @@ class FileManager:
           failed[lfn] = res['Message']
         else:
           pfn = res['Value']
-          res = self.seManager.getSEName(seID)
+          res = self.db.seManager.getSEName(seID)
           if not res['OK']:
             failed[lfn] = res['Message']
           else:  
@@ -330,7 +319,7 @@ class FileManager:
               successful[lfn] = {}  
             successful[lfn][res['Value']] = pfn
       else:
-        resSE = self.seManager.getSEDefinition(seID)     
+        resSE = self.db.seManager.getSEDefinition(seID)     
         if resSE['OK']:
           seDict = resSE['Value']['SEDict']
           se = resSE['Value']['SEName']
@@ -364,7 +353,7 @@ class FileManager:
 
     if not dirID:
       dirPath = os.path.dirname(lfn)
-      result = self.dtree.findDir(dirPath)      
+      result = self.db.dtree.findDir(dirPath)      
       if not result['OK']:
         return result
       dID = result['Value']
@@ -387,7 +376,7 @@ class FileManager:
     """
 
     start = time.time()
-    result = self.ugManager.getUserAndGroupID(credDict)
+    result = self.db.ugManager.getUserAndGroupID(credDict)
     if not result['OK']:
       return result
     ( uid, gid ) = result['Value']
@@ -434,7 +423,7 @@ class FileManager:
       # Create the file directory if necessary
       dirID = 0
       directory = os.path.dirname(lfn)
-      result = self.dtree.makeDirectories(directory,credDict)
+      result = self.db.dtree.makeDirectories(directory,credDict)
       if not result['OK']:
         return result
       dirID = result['Value']
@@ -454,7 +443,7 @@ class FileManager:
       start = time.time()      
       req = "INSERT INTO FC_FileInfo (FileID,Size,CheckSum,CheckSumType,UID,GID,CreationDate," 
       req = req + "ModificationDate,Mode,Status) VALUES "
-      req = req + "(%d,%d,'%s','%s',%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,0)" % (fileID,size,checksum,checksumtype,uid,gid,self.umask)                        
+      req = req + "(%d,%d,'%s','%s',%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,0)" % (fileID,size,checksum,checksumtype,uid,gid,self.db.umask)                        
       resAdd = self.db._update(req)            
       if resAdd['OK']:
         req = "INSERT INTO FC_GUID_to_File (GUID,FileID) VALUES ('%s','%s')" % (fileGUID,fileID)        
@@ -537,7 +526,7 @@ class FileManager:
     resultDict['NumberOfLinks'] = 0
     
     dirID = resultDict['DirID']
-    result = self.dtree.getDirectoryPath(dirID)
+    result = self.db.dtree.getDirectoryPath(dirID)
     if not result['OK']:
       return result
     if not result['Value']:
@@ -601,7 +590,7 @@ class FileManager:
       return S_ERROR('File %d not found' % fileID)
     dirID = result['Value']['DirID']
     fname = result['Value']['FileName']
-    result = self.dtree.getDirectoryPath(dirID)
+    result = self.db.dtree.getDirectoryPath(dirID)
     if not result['OK']:
       return result
     if not result['Value']:
@@ -645,7 +634,7 @@ class FileManager:
     dirID = result['Value'][0][0]
     fname = result['Value'][0][1]
     
-    result = self.dtree.getDirectoryPath(dirID)
+    result = self.db.dtree.getDirectoryPath(dirID)
     if not result['OK']:
       return result
     if not result['Value']:
@@ -817,7 +806,7 @@ class FileManager:
   def changePathOwner(self,paths,credDict):
     """ Change the owner for the given paths
     """
-    result = self.ugManager.getUserAndGroupID(credDict)
+    result = self.db.ugManager.getUserAndGroupID(credDict)
     if not result['OK']:
       return result
     ( uid, gid ) = result['Value']
@@ -869,7 +858,7 @@ class FileManager:
   def __changePathFunction(self,paths,credDict,change_function_directory,change_function_file):
     """ A generic function to change Owner, Group or Mode for the given paths
     """
-    result = self.ugManager.getUserAndGroupID(credDict)
+    result = self.db.ugManager.getUserAndGroupID(credDict)
     if not result['OK']:
       return result
     ( uid, gid ) = result['Value']
@@ -1076,7 +1065,7 @@ class FileManager:
     
     for lfn,info in lfns.items():
       se = info['SE']
-      result = self.seManager.findSE(se)
+      result = self.db.seManager.findSE(se)
       if not result['OK']:
         failed[lfn] = result['Message']
         continue
