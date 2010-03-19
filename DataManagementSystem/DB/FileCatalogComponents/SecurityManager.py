@@ -11,10 +11,11 @@ from DIRAC import S_OK, S_ERROR, gConfig
 
 class SecurityManagerBase:
   
-  def __init__(self,directoryTree,fileManager,globalReadAccess=False):
-    self.dtree = directoryTree
-    self.fileManager = fileManager
-    self.globalReadAccess = globalReadAccess
+  def __init__(self,database=False):
+    self.db = database
+    
+  def setDatabase(self,database):
+    self.db = database
     
   def hasAccess(self,opType,paths,credDict):
     successful = {}
