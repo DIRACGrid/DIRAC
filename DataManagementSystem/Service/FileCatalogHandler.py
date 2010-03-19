@@ -40,7 +40,7 @@ def initializeFileCatalogHandler(serviceInfo):
   # If true this option not store PFNs in the replica table but rather resolve it at read time
   databaseConfig['ResolvePFN'] = gConfig.getOption('%s/%s' % (serviceCS,'ResolvePFN'),True)
   # Default umask
-  databaseConfig['DefaultUmask'] = gConfig.getOption('%s/%s' % (serviceCS,'DefaultUmask'),503)
+  databaseConfig['DefaultUmask'] = gConfig.getOption('%s/%s' % (serviceCS,'DefaultUmask'),0775)
   
   fcDB.setConfig(databaseConfig)
   return S_OK()
