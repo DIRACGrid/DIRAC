@@ -305,7 +305,7 @@ class FileManager:
     for row in result['Value']:
       repID,fileID,seID = row
       lfn = lfnDict[fileID]
-      if not self.resolvePFN:
+      if not self.db.resolvePfn:
         res = self.__getReplicaPFN(repID)
         if not res['OK']:
           failed[lfn] = res['Message']
