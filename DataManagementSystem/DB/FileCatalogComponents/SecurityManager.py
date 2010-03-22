@@ -27,7 +27,7 @@ class SecurityManagerBase:
     return S_OK(resDict)
 
   def hasAdminAccess(self,credDict):
-    if credDict.get('username','') == 'diracAdmin':
+    if credDict.get('group','') == 'diracAdmin':
       return S_OK(True)
     return S_OK(False)
 
