@@ -58,7 +58,9 @@ class FileCatalogDB(DB, DirectoryMetadata):
     # In memory storage of the various parameters
     self.directories = {}
     self.users = {}
+    self.uids = {}
     self.groups = {}
+    self.gids = {}
     self.seDefinitions = {}
     return S_OK()
     
