@@ -398,7 +398,7 @@ class FileManagerFlat(FileManagerBase):
         if not directoryFiles.has_key(dirName):
           directoryFiles[dirName] = []
         directoryFiles[dirName].append(fileName)  
-        insertTuples.append("(%d,'%s',%d,'%s','%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,0)" % (dirID,fileName,size,guid,checksum,checksumtype,uid,gid,self.db.umask))
+        insertTuples.append("(%d,'%s',%d,'%s','%s','%s',%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,0)" % (dirID,fileName,size,guid,checksum,checksumtype,uid,gid,self.db.umask))
       req = "INSERT INTO FileInfo (DirID,FileName,Size,GUID,Checksum,ChecksumType,UID,GID,CreationDate,ModificationDate,Mode,Status) VALUES %s" % ','.join(insertTuples)
       res = self.db._update(req)
       if not res['OK']:
@@ -494,7 +494,7 @@ class FileManagerFlat(FileManagerBase):
       return S_ERROR('Failed to create (or find) the file directory')
     
     req = "INSERT INTO FileInfo (DirID,FileName,Size,GUID,Checksum,ChecksumType,UID,GID,CreationDate,ModificationDate,Mode,Status) VALUES\
-          (%d,'%s',%d,'%s','%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,0)" % (dirID,os.path.basename(lfn),size,guid,checksum,checksumtype,uid,gid,self.db.umask)                        
+          (%d,'%s',%d,'%s','%s','%s',%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,0)" % (dirID,os.path.basename(lfn),size,guid,checksum,checksumtype,uid,gid,self.db.umask)                        
     res = self.db._update(req)            
     if not res['OK']:
       return res
