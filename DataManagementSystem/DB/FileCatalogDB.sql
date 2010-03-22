@@ -59,7 +59,7 @@ CREATE TABLE FC_DirMeta (
 
 drop table if exists FC_Groups;
 CREATE TABLE FC_Groups (
-    GID INTEGER NOT NULL default -1,
+    GID INTEGER NOT NULL AUTO_INCREMENT,
     GroupName VARCHAR(127) NOT NULL default 'Noname',
     PRIMARY KEY (GID),
     UNIQUE KEY (GroupName)
@@ -68,7 +68,7 @@ CREATE TABLE FC_Groups (
 
 drop table if exists FC_Users;
 CREATE TABLE FC_Users (
-    UID INTEGER NOT NULL default -1,
+    UID INTEGER NOT NULL AUTO_INCREMENT,
     UserName VARCHAR(127) NOT NULL default 'Noname',
     PRIMARY KEY (UID),
     UNIQUE KEY (UserName)
