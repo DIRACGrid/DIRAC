@@ -5,7 +5,7 @@ __RCSID__ = "$Id: DirectoryFlatTree.py 23183 2010-03-16 13:12:11Z acsmith $"
 
 """ DIRAC FileCatalog component representing a flat directory tree """
 
-import time, os, types
+import time, os, types,stat
 from DIRAC                                                                     import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase     import DirectoryTreeBase
 from DIRAC.Core.Utilities.List                                                 import stringListToString,intListToString
@@ -19,6 +19,29 @@ class DirectoryFlatTree(DirectoryTreeBase):
       return res
     return S_OK({'DirectoryInfo':res['Value'][0][0]})
 
+  def _findDirectories(self,paths,metadata=[]):
+    """ Find file ID if it exists for the given list of LFNs """
+    startTime = time.time()
+    successful = {}
+    failed = {}
+    req = "SELECT DirName,DirID" 
+    if metadata:
+      req = "%s,%s" % (req,intListToString(metadata)) 
+    req = "%s FROM DirectoryInfo WHERE DirName IN (%s)" % (req,stringListToString(paths))
+    res = self.db._query(req)
+    if not res['OK']:
+      return res
+    for tuple in res['Value']:
+      dirName = tuple[0]
+      dirID = tuple[1]
+      metaDict = {'DirID':dirID}
+      metaDict.update(dict(zip(metadata,tuple[2:])))
+      successful[dirName] = metaDict
+    for path in paths:
+      if not successful.has_key(path):
+        failed[path] = 'No such file or directory'
+    return S_OK({"Successful":successful,"Failed":failed})
+
   def __findDirs(self,paths,metadata=['DirName']):
     dirs = {}
     req = "SELECT DirID,%s FROM DirectoryInfo WHERE DirName IN (%s)" % (intListToString(metadata),stringListToString(paths))
@@ -31,6 +54,35 @@ class DirectoryFlatTree(DirectoryTreeBase):
       dirID = tuple[0]
       dirs[dirID] = dict(zip(metadata,tuple[1:]))
     return S_OK(dirs)
+
+  def getPathPermissions(self,paths,credDict):
+    """ Get the permissions for the supplied paths """
+    res = self.db.ugManager.getUserAndGroupID(credDict)
+    if not res['OK']:
+      return res
+    uid,gid = res['Value']
+    res = self._findDirectories(paths,metadata=['Mode','UID','GID'])
+    if not res['OK']:
+      return res
+    successful = {}
+    for dirName,dirDict in res['Value']['Successful'].items():
+      mode = dirDict['Mode']
+      p_uid = dirDict['UID']
+      p_gid = dirDict['GID']
+      successful[dirName] = {}
+      if p_uid == uid:
+        successful[dirName]['Read'] = mode & stat.S_IRUSR
+        successful[dirName]['Write'] = mode & stat.S_IWUSR
+        successful[dirName]['Execute'] = mode & stat.S_IXUSR
+      elif p_gid == gid:
+        successful[dirName]['Read'] = mode & stat.S_IRGRP
+        successful[dirName]['Write'] = mode & stat.S_IWGRP
+        successful[dirName]['Execute'] = mode & stat.S_IXGRP
+      else:
+        successful[dirName]['Read'] = mode & stat.S_IROTH
+        successful[dirName]['Write'] = mode & stat.S_IWOTH
+        successful[dirName]['Execute'] = mode & stat.S_IXOTH
+    return S_OK({'Successful':successful,'Failed':res['Value']['Failed']})
 
   def findDir(self,path):
     res = self.__findDirs([path])
@@ -51,6 +103,9 @@ class DirectoryFlatTree(DirectoryTreeBase):
     req = "DELETE FROM DirectoryInfo WHERE DirID=%d" % dirID
     return self.db._update(req)
 
+
+ 
+    
   def makeDirectory(self,path,credDict,status=0):
     """Create a new directory. The return value is the dictionary containing all the parameters of the newly created directory """
 
@@ -74,7 +129,7 @@ class DirectoryFlatTree(DirectoryTreeBase):
     parentID = res['Value']
     
     req = "INSERT INTO DirectoryInfo (Parent,Status,DirName,UID,GID,Mode,CreationDate,ModificationDate)\
-    VALUES (%d,%d,'%s','%s','%s',%d,UTC_TIMESTAMP(),UTC_TIMESTAMP());" % (parentID,status,path,uid,gid,self.db.umask)
+    VALUES (%d,%d,'%s',%d,%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP());" % (parentID,status,path,uid,gid,self.db.umask)
     result = self.db._update(req)
     if not result['OK']:
       self.removeDir(path)
