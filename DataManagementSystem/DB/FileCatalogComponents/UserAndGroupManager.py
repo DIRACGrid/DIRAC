@@ -17,54 +17,44 @@ class UserAndGroupManagerBase:
 
   def __init__(self,database=None):
     self.db = database
-    self.users = {}
-    self.groups = {}
     
   def setDatabase(self,database):
-    self.db = database  
-
-  def setUsers(self,users):
-    self.users = users
-
-  def setGroups(self,groups):
-    self.groups = groups
+    self.db = database
 
   def getUserAndGroupRight(self, credDict):
-    """ Evaluate rights for user and group operations
-    """
+    """ Evaluate rights for user and group operations """
     if Properties.FC_MANAGEMENT in credDict[ 'properties' ]:
       return S_OK(True)
-    else:
-      return S_OK(False)
+    return S_OK(False)
 
 class UserAndGroupManagerDB(UserAndGroupManagerBase):
 
   def getUserAndGroupID(self, credDict):
-    """ Get a uid, gid tuple for the given Credentials
-    """
+    """ Get a uid, gid tuple for the given Credentials """
     s_uid = credDict.get('username','anon')
     s_gid = credDict.get('group','anon') 
     # Get the user (create it if it doesn't exist)      
-    res = self.findUser(s_uid)
-    if not res['OK']:
-      if res['Message'] != 'User not found':
-        return res
+    res = self.getUserID(s_uid)
+    if res['OK']:
+      uid = res['Value']
+    elif res['Message'] != 'User not found':
+      return res
+    else:
       res = self.addUser(s_uid)
       if not res['OK']:
         return res
       uid = res['Value']
-    else:
-      uid = res['Value']
+
     # Get the group (create it if it doesn't exist)      
-    res = self.findGroup(s_gid)
-    if not res['OK']:
-      if res['Message'] != 'Group not found':
-        return res
+    res = self.getGroupID(s_gid)
+    if res['OK']:
+      gid = res['Value']
+    elif res['Message'] != 'Group not found':
+      return res
+    else:
       res = self.addGroup(s_gid)
       if not res['OK']:
         return res
-      gid = res['Value']
-    else:
       gid = res['Value']
     return S_OK( ( uid, gid ) )
   
@@ -74,211 +64,144 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 #
 #####################################################################
 
-  def addUser(self,name):
-    """ Add a new user with a nickname 'name'  """
-    userID = 0
-    result = self.findUser(name)
-    if not result['OK']:
-      if result['Message'].find('not found') == -1:
-        return result
-    else:  
-      userID = result['Value']
-      
-    if userID:
-      return S_OK(userID)
-    
-    # Get the user ID
-    req = "SELECT MAX(UID) FROM FC_Users"
-    result = self.db._query(req)
-    if not result['OK']:
-      return result
-    if result['Value'] and result['Value'][0][0]:
-      uid = result['Value'][0][0]+1
-    else:
-      uid = 1
-    
-    result = self.db._insert('FC_Users',['UserName','UID'],[name,uid])
-    if not result['OK']:
-      return result
-    
-    result = self.findUser(name)
-    if not result['OK']:
-      return result
-    return S_OK(result['Value'])
+  def addUser(self,uname):
+    """ Add a new user with a name 'name' """
+    res = self.getUserID(uname)
+    if res['OK']:
+      return res
+    if res['Message'] != 'User not found':
+      return res
+    res = self.db._insert('FC_Users',['UserName'],[uname])
+    if not res['OK']:
+      return res
+    uid = res['Value']
+    self.db.uids[uid] = uname
+    self.db.users[uname] = uid
+    return S_OK(uid)
 
-#####################################################################
-  def deleteUser(self,name,force=True):
-    """ Delete a user specified by its nickname
-    """
+  def deleteUser(self,uname,force=True):
+    """ Delete a user specified by its name """
     if not force:
       # ToDo: Check first if there are files belonging to the user
       pass
-    req = "DELETE FROM FC_Users WHERE UserName='%s'" % name
-    resUpdate = self.db._update(req)
-    return resUpdate
-
-#####################################################################
+    req = "DELETE FROM FC_Users WHERE UserName='%s'" % uname
+    return self.db._update(req)
+  
   def getUsers(self):
     return self.__getUsers()  
 
-#####################################################################
-  def __getUsers(self):
-    """ Get the current user IDs and names
-    """
-    resDict = {}
-    query = "SELECT UID,UserName from FC_Users"
-    resQuery = self.db._query(query)
-    if resQuery['OK']:
-      for uid,name in resQuery['Value']:
-        resDict[name] = (uid)
-    else:
-      return resQuery  
-
-    return S_OK(resDict)
-
-#####################################################################
   def findUser(self,user):
-    """ Get ID for a user specified by his name
-    """
+    return self.getUserID(user)
+
+  def getUserID(self,user):
+    """ Get ID for a user specified by its name """
     if type(user) in [IntType,LongType]:
       return S_OK(user)
-
-    query = "SELECT UID from FC_Users WHERE UserName='%s'" % user
-    resQuery = self.db._query(query)
-    if not resQuery['OK']:
-      return resQuery
-    if not resQuery['Value']:
+    if user in self.db.users.keys():
+      return S_OK(self.db.users[user])
+    res = self.__getUsers()
+    if not res['OK']:
+      return res
+    if not user in self.db.users.keys():
       return S_ERROR('User not found')
-    return S_OK(resQuery['Value'][0][0])
+    return S_OK(self.db.users[user])
 
-#####################################################################
   def getUserName(self,uid):
-    """ Get user name for the given id
-    """   
-    
-    if uid in self.users:
-      return S_OK(self.users[uid])
-    else:
-      result = self.__getUsers()
-      print result
-      uDict = result['Value']
-      self.users = {}
-      uname = ''
-      for name,id in uDict.items():
-        self.users[id] = name
-        if id == uid:
-          uname = name
-    if uname:
-      return S_OK(uname)
-    else:
-      return S_ERROR('User id %d not found' % uid)    
+    """ Get user name for the given id """   
+    if uid in self.db.uids.keys():
+      return S_OK(self.db.uids[uid])
+    res = self.__getUsers()
+    if not res['OK']:
+      return res
+    if not uid in self.db.uids.keys():
+      return S_ERROR('User id %d not found' % uid)
+    return S_OK(self.db.uids[uid])
 
+  def __getUsers(self):
+    """ Get the current user IDs and names """
+    req = "SELECT UID,UserName from FC_Users"
+    res = self.db._query(req)
+    if not res['OK']:
+      return res
+    for uid,uname in res['Value']:
+      self.db.users[uname] = uid
+      self.db.uids[uid] = uname
+    return S_OK()
+  
 #####################################################################
 #
 #  Group related methods
 #
-#####################################################################
+
   def addGroup(self,gname):
-    """ Add a new group with a name 'name'
-    """
-    groupID = 0
-    result = self.findGroup(gname)
-    if not result['OK']:
-      if result['Message'].find('not found') == -1:
-        return result
-    else:  
-      groupID = result['Value']
-    
-    if groupID:
-      result = S_OK(groupID)
-      result['Message'] = "Group "+gname+" already exists"
-      return result
+    """ Add a new group with a name 'name' """
+    res = self.getGroupID(gname)
+    if res['OK']:
+      return res
+    if res['Message'] != 'Group not found':
+      return res
+    res = self.db._insert('FC_Groups',['GroupName'],[gname])
+    if not res['OK']:
+      return res
+    gid = res['Value']
+    self.db.groups[gname] = gid
+    self.db.gids[gid] = gname
+    return S_OK(gid)
 
-    # Get the new group ID
-    req = "SELECT MAX(GID) FROM FC_Groups"
-    result = self.db._query(req)
-    if not result['OK']:
-      return result
-    if result['Value'] and result['Value'][0][0]:
-      gid = result['Value'][0][0]+1
-    else:
-      gid = 1
-
-    result = self.db._insert('FC_Groups',['GroupName','GID'],[gname,gid])
-    if not result['OK']:
-      return result
-    
-    result = self.findGroup(gname)
-    if not result['OK']:
-      return result
-    return S_OK(result['Value'])
-
-
-#####################################################################
-  def deleteGroup(self,gname):
-    """ Delete a group specified by its name
-    """
+  def deleteGroup(self,gname,force=True):
+    """ Delete a group specified by its name """
+    if not force:
+      # ToDo: Check first if there are files belonging to the group
+      pass
     req = "DELETE FROM FC_Groups WHERE GroupName='%s'" % gname
-    resUpdate = self.db._update(req)
-    return resUpdate
+    return self.db._update(req)
   
-#####################################################################
   def getGroups(self):
     return self.__getGroups()  
- 
-#####################################################################
-  def __getGroups(self):
-    """ Get the current group IDs and names
-    """
-    resDict = {}
-    query = "SELECT GID, GroupName from FC_Groups"
-    resQuery = self.db._query(query)
-    if resQuery['OK']:
-      for gid,gname in resQuery['Value']:
-        resDict[gname] = gid
-    else:
-      return resQuery  
-    return S_OK(resDict)
 
-#####################################################################
   def findGroup(self,group):
+    return self.getGroupID(group)
+
+  def getGroupID(self,group):
     """ Get ID for a group specified by its name """
     if type(group) in [IntType,LongType]:
       return S_OK(group)
-    
-    query = "SELECT GID from FC_Groups WHERE GroupName='%s'" % group
-    resQuery = self.db._query(query)
-    if not resQuery['OK']:
-      return resQuery
-    if not resQuery['Value']:
+    if group in self.db.groups.keys():
+      return S_OK(self.db.groups[group])
+    res = self.__getGroups()
+    if not res['OK']:
+      return res
+    if not group in self.db.groups.keys():
       return S_ERROR('Group not found')
-    return S_OK(resQuery['Value'][0][0])
+    return S_OK(self.db.groups[group])
 
-#####################################################################
   def getGroupName(self,gid):
-    """ Get group name for the given id
-    """   
-    if gid in self.groups:
-      return S_OK(self.groups[gid])
-    else:
-      result = self.__getGroups()
-      gDict = result['Value']
-      self.groups = {}
-      gname = ''
-      for name,id in gDict.items():
-        self.groups[id] = name
-        if id == gid:
-          gname = name
-    if gname:
-      return S_OK(gname)
-    else:
-      return S_ERROR('Group id %d not found' % gid)  
+    """ Get group name for the given id """   
+    if gid in self.db.gids.keys():
+      return S_OK(self.db.gids[gid])
+    res = self.__getGroups()
+    if not res['OK']:
+      return res
+    if not gid in self.db.gids.keys():
+      return S_ERROR('Group id %d not found' % gid)
+    return S_OK(self.db.gids[gid])
+
+  def __getGroups(self):
+    """ Get the current group IDs and names """
+    req = "SELECT GID,GroupName from FC_Groups"
+    res = self.db._query(req)
+    if not res['OK']:
+      return res
+    for gid,gname in res['Value']:
+      self.db.groups[gname] = gid
+      self.db.gids[gid] = gname
+    return S_OK()
 
 class UserAndGroupManagerCS(UserAndGroupManagerBase):
 
   def getUserAndGroupID(self,credDict):
-    user = credDict.get('username','') 
-    group = credDict.get('group','')
+    user = credDict.get('username','anon') 
+    group = credDict.get('group','anon')
     return S_OK((user,group))
 
   #####################################################################
@@ -317,7 +240,7 @@ class UserAndGroupManagerCS(UserAndGroupManagerBase):
   def addGroup(self,gname):
     return S_OK(gname)
 
-  def deleteGroup(self,gname):
+  def deleteGroup(self,gname,force=True):
     return S_OK()
 
   def getGroups(self):
