@@ -22,7 +22,7 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectorySimpleTree   i
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryNodeTree     import DirectoryNodeTree 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryLevelTree    import DirectoryLevelTree 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import * 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager,DirectorySecurityManager
 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryFlatTree     import DirectoryFlatTree
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerFlat       import FileManagerFlat
@@ -129,7 +129,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
   #
 
   def exists(self, lfns, credDict):
-    res = self._checkPathPermissions('read', lfns, credDict)
+    res = self._checkPathPermissions('Read', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -154,7 +154,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
   def getPathPermissions(self, lfns, credDict):
     """ Get permissions for the given user/group to manipulate the given lfns 
     """
-    res = self._checkPathPermissions('read', lfns, credDict)
+    res = self._checkPathPermissions('Read', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -171,7 +171,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
   #
 
   def addFile(self, lfns, credDict):
-    res = self._checkPathPermissions('write', lfns, credDict)
+    res = self._checkPathPermissions('Write', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -183,7 +183,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     return S_OK( {'Successful':successful,'Failed':failed} )
   
   def removeFile(self, lfns, credDict):
-    res = self._checkPathPermissions('write', lfns, credDict)
+    res = self._checkPathPermissions('Write', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -195,7 +195,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     return S_OK( {'Successful':successful,'Failed':failed} )
   
   def addReplica(self, lfns, credDict):
-    res = self._checkPathPermissions('write', lfns, credDict)
+    res = self._checkPathPermissions('Write', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -207,7 +207,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     return S_OK( {'Successful':successful,'Failed':failed} )
   
   def removeReplica(self, lfns, credDict):
-    res = self._checkPathPermissions('write', lfns, credDict)
+    res = self._checkPathPermissions('Write', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -219,7 +219,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     return S_OK( {'Successful':successful,'Failed':failed} )
 
   def setReplicaStatus(self, lfns, credDict):
-    res = self._checkPathPermissions('write', lfns, credDict)
+    res = self._checkPathPermissions('Write', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -231,7 +231,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     return S_OK( {'Successful':successful,'Failed':failed} )
 
   def setReplicaHost(self, lfns, credDict):
-    res = self._checkPathPermissions('write', lfns, credDict)
+    res = self._checkPathPermissions('Write', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -248,7 +248,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
   #
 
   def isFile(self, lfns, credDict):
-    res = self._checkPathPermissions('read', lfns, credDict)
+    res = self._checkPathPermissions('Read', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -260,7 +260,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     return S_OK( {'Successful':successful,'Failed':failed} )
 
   def getFileSize(self, lfns, credDict):
-    res = self._checkPathPermissions('read', lfns, credDict)
+    res = self._checkPathPermissions('Read', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -272,7 +272,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     return S_OK( {'Successful':successful,'Failed':failed} )
   
   def getFileMetadata(self, lfns, credDict):
-    res = self._checkPathPermissions('read', lfns, credDict)
+    res = self._checkPathPermissions('Read', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -284,7 +284,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     return S_OK( {'Successful':successful,'Failed':failed} )
 
   def getReplicas(self, lfns, allStatus, credDict):
-    res = self._checkPathPermissions('read', lfns, credDict)
+    res = self._checkPathPermissions('Read', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -296,7 +296,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     return S_OK( {'Successful':successful,'Failed':failed} )
 
   def getReplicaStatus(self, lfns, credDict):
-    res = self._checkPathPermissions('read', lfns, credDict)
+    res = self._checkPathPermissions('Read', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -309,11 +309,11 @@ class FileCatalogDB(DB, DirectoryMetadata):
 
   ########################################################################
   #
-  #  Directory based write methods
+  #  Directory based Write methods
   #
 
   def createDirectory(self,lfns,credDict):
-    res = self._checkPathPermissions('write', lfns, credDict)
+    res = self._checkPathPermissions('Write', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -325,7 +325,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     return S_OK( {'Successful':successful,'Failed':failed} )
 
   def removeDirectory(self,lfns,credDict):
-    res = self._checkPathPermissions('write', lfns, credDict)
+    res = self._checkPathPermissions('Write', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -342,7 +342,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
   #
 
   def listDirectory(self,lfns,credDict,verbose=False):
-    res = self._checkPathPermissions('read', lfns, credDict)
+    res = self._checkPathPermissions('Read', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -354,7 +354,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     return S_OK( {'Successful':successful,'Failed':failed} )
   
   def isDirectory(self,lfns,credDict):
-    res = self._checkPathPermissions('read', lfns, credDict)
+    res = self._checkPathPermissions('Read', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -366,7 +366,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     return S_OK( {'Successful':successful,'Failed':failed} )
 
   def getDirectoryReplicas(self,lfns,allStatus,credDict):
-    res = self._checkPathPermissions('read', lfns, credDict)
+    res = self._checkPathPermissions('Read', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -378,7 +378,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     return S_OK( {'Successful':successful,'Failed':failed} )
 
   def getDirectorySize(self,lfns,credDict):
-    res = self._checkPathPermissions('read', lfns, credDict)
+    res = self._checkPathPermissions('Read', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -421,12 +421,12 @@ class FileCatalogDB(DB, DirectoryMetadata):
   def _checkAdminPermission(self,credDict):
     return self.securityManager.hasAdminAccess(credDict)
 
-  def _checkPathPermissions(self,opType,lfns,credDict):
+  def _checkPathPermissions(self,operation,lfns,credDict):
     res = checkArgumentDict(lfns)
     if not res['OK']:
       return res
     lfns = res['Value']
-    res = self.securityManager.hasAccess(opType,lfns.keys(),credDict)
+    res = self.securityManager.hasAccess(operation,lfns.keys(),credDict)
     if not res['OK']:
       return res
     # Do not consider those paths for which we failed to determine access
