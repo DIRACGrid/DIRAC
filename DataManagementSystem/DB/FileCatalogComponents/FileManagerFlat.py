@@ -222,6 +222,35 @@ class FileManagerFlat(FileManagerBase):
         failed[lfn] = res['Message']
     return S_OK({'Successful':successful,'Failed':failed})
 
+  def getPathPermissions(self,paths,credDict):
+    """ Get the permissions for the supplied paths """
+    res = self.db.ugManager.getUserAndGroupID(credDict)
+    if not res['OK']:
+      return res
+    uid,gid = res['Value']
+    res = self._findFiles(paths,metadata=['Mode','UID','GID'])
+    if not res['OK']:
+      return res
+    successful = {}
+    for dirName,dirDict in res['Value']['Successful'].items():
+      mode = dirDict['Mode']
+      p_uid = dirDict['UID']
+      p_gid = dirDict['GID']
+      successful[dirName] = {}
+      if p_uid == uid:
+        successful[dirName]['Read'] = mode & stat.S_IRUSR
+        successful[dirName]['Write'] = mode & stat.S_IWUSR
+        successful[dirName]['Execute'] = mode & stat.S_IXUSR
+      elif p_gid == gid:
+        successful[dirName]['Read'] = mode & stat.S_IRGRP
+        successful[dirName]['Write'] = mode & stat.S_IWGRP
+        successful[dirName]['Execute'] = mode & stat.S_IXGRP
+      else:
+        successful[dirName]['Read'] = mode & stat.S_IROTH
+        successful[dirName]['Write'] = mode & stat.S_IWOTH
+        successful[dirName]['Execute'] = mode & stat.S_IXOTH
+    return S_OK({'Successful':successful,'Failed':res['Value']['Failed']})
+
   def _findFiles(self,lfns,metadata=['FileID']):
     """ Find file ID if it exists for the given list of LFNs """
     startTime = time.time()
