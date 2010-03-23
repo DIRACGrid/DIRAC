@@ -70,7 +70,7 @@ class DataOperationPlotter( BaseReporter ):
                                 { 'checkNone' : True,
                                   'convertToGranularity' : 'sum',
                                   'calculateProportionalGauges' : False,
-                                  'consolidationFunction' : lambda x, y: x / y } )
+                                  'consolidationFunction' : self._efficiencyConsolidation } )
     if not retVal[ 'OK' ]:
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
@@ -90,7 +90,7 @@ class DataOperationPlotter( BaseReporter ):
                                   { 'checkNone' : True,
                                     'convertToGranularity' : 'sum',
                                     'calculateProportionalGauges' : False,
-                                    'consolidationFunction' : lambda x, y: x / y } )
+                                    'consolidationFunction' : self._efficiencyConsolidation } )
       if not retVal[ 'OK' ]:
         return retVal
       totalDict = retVal[ 'Value' ][0]

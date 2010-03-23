@@ -35,6 +35,12 @@ class BaseReporter( DBUtils ):
     else:
       return float( a ) / float( b )
 
+  def _efficiencyConsolidation( self, a, b ):
+    if b == 0:
+      return 0
+    else:
+      return ( float( a ) / float( b ) ) * 100.0
+
   def generate( self, reportRequest ):
     reportRequest[ 'groupingFields' ] = self._translateGrouping( reportRequest[ 'grouping' ] )
     reportHash = reportRequest[ 'hash' ]
