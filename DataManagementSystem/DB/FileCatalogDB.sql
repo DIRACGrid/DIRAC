@@ -23,7 +23,7 @@ CREATE TABLE FC_DirectoryInfo (
     GID SMALLINT UNSIGNED NOT NULL default 0,
     CreationDate DATETIME,
     ModificationDate DATETIME,
-    Mode SMALLINT UNSIGNED NOT NULL default 509,
+    Mode SMALLINT UNSIGNED NOT NULL default 775,
     Status SMALLINT UNSIGNED NOT NULL default 0,
     PRIMARY KEY (DirID)
 );
@@ -41,7 +41,7 @@ CREATE TABLE FC_FileInfo (
     Type ENUM('File','Link') NOT NULL default 'File',
     CreationDate DATETIME,
     ModificationDate DATETIME,
-    Mode SMALLINT UNSIGNED NOT NULL default 509,
+    Mode SMALLINT UNSIGNED NOT NULL default 775,
     Status SMALLINT UNSIGNED NOT NULL default 0,
     PRIMARY KEY (FileID)
 );
@@ -189,7 +189,7 @@ CREATE TABLE DirectoryInfo(
   ModificationDate DATETIME,
   UID CHAR(8) NOT NULL,
   GID CHAR(8) NOT NULL,
-  Mode SMALLINT UNSIGNED NOT NULL DEFAULT 509,
+  Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
   INDEX(Parent),
   INDEX(Status),
   INDEX(DirName)
@@ -209,7 +209,7 @@ CREATE TABLE FileInfo(
   GID CHAR(8) NOT NULL,
   CreationDate DATETIME,
   ModificationDate DATETIME,
-  Mode SMALLINT UNSIGNED NOT NULL DEFAULT 509,
+  Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
   Status SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   INDEX(DirID),
   INDEX(FileName),
