@@ -94,7 +94,6 @@ def intListToString(list):
   str = ','.join(str_list)
   return str
 
-
 def breakListIntoChunks(list,numberOfFilesInChunk):
   """ This method takes a list as input and breaks it into list of size 'chunkSize'
       It returns a list of lists.
@@ -106,3 +105,13 @@ def breakListIntoChunks(list,numberOfFilesInChunk):
     listOfLists.append(list[count:count+numberOfFilesInChunk])
     count += numberOfFilesInChunk
   return listOfLists
+
+def removeEmptyElements(list):
+  """ Remove empty elements from a list ( [''] ), preserve the order of the non-null elements.
+  """
+  tmpList = []
+  for element in list:
+    if element:
+      tmpList.append(element)
+
+  return tmpList  
