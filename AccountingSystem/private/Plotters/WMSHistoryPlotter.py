@@ -43,6 +43,7 @@ class WMSHistoryPlotter( BaseReporter ):
                  'span' : plotInfo[ 'granularity' ],
                  'skipEdgeColor' : True,
                  'ylabel' : "jobs"  }
+    plotInfo[ 'data' ] = self._fillWithZero( plotInfo[ 'granularity' ], reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], plotInfo[ 'data' ] )
     return self._generateStackedLinePlot( filename, plotInfo[ 'data' ], metadata )
 
 
@@ -71,6 +72,7 @@ class WMSHistoryPlotter( BaseReporter ):
                  'span' : plotInfo[ 'granularity' ],
                  'skipEdgeColor' : True,
                  'ylabel' : "reschedules"  }
+    plotInfo[ 'data' ] = self._fillWithZero( plotInfo[ 'granularity' ], reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], plotInfo[ 'data' ] )
     return self._generateStackedLinePlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportAverageNumberOfJobs( self, reportRequest ):
