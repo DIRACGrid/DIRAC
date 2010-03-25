@@ -846,7 +846,7 @@ class ResourceStatusDB:
       else:
         self.setDateEnd('Site', siteName, dateEffective)
     else:
-      if status in ('Active', 'Probing'):
+      if status in ('Active', 'Probing', 'Bad'):
         oldStatus = 'Banned'
       else:
         oldStatus = 'Active'
@@ -1056,7 +1056,7 @@ class ResourceStatusDB:
       else:
         self.setDateEnd('Resource', resourceName, dateEffective)
     else:
-      if status in ('Active', 'Probing'):
+      if status in ('Active', 'Probing', 'Bad'):
         oldStatus = 'Banned'
       else:
         oldStatus = 'Active'
@@ -1340,7 +1340,7 @@ class ResourceStatusDB:
       else:
         self.setDateEnd('Service', serviceName, dateEffective)
     else:
-      if status in ('Active', 'Probing'):
+      if status in ('Active', 'Probing', 'Bad'):
         oldStatus = 'Banned'
       else:
         oldStatus = 'Active'
@@ -1631,7 +1631,7 @@ class ResourceStatusDB:
 
   def getResourceStats(self, granularity, name):
     """ 
-    Returns simple statistics of active, probing and banned resources of a site or service;
+    Returns simple statistics of active, probing, bad and banned resources of a site or service;
         
     :params:
       :attr:`granularity`: string: site or service
@@ -1639,10 +1639,10 @@ class ResourceStatusDB:
       :attr:`name`: string - name of site or service
     
     :returns:
-      { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
+      { 'Active':xx, 'Probing':yy, 'Bad':vv 'Banned':zz, 'Total':xyvz }
     """
     
-    res = {'Active':0, 'Probing':0, 'Banned':0, 'Total':0}
+    res = {'Active':0, 'Probing':0, 'Bad':0, 'Banned':0, 'Total':0}
     
     if granularity in ('Site', 'Sites'): 
       req = "SELECT Status, COUNT(*)" 
@@ -1665,7 +1665,7 @@ class ResourceStatusDB:
 
   def getStorageElementsStats(self, granularity, name):
     """ 
-    Returns simple statistics of active, probing and banned resources of a site or resource;
+    Returns simple statistics of active, probing, bad and banned resources of a site or resource;
         
     :params:
       :attr:`granularity`: string: site or resource
@@ -1676,7 +1676,7 @@ class ResourceStatusDB:
       { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
     """
     
-    res = {'Active':0, 'Probing':0, 'Banned':0, 'Total':0}
+    res = {'Active':0, 'Probing':0, 'Bad':0, 'Banned':0, 'Total':0}
     
     if granularity in ('Site', 'Sites'): 
       req = "SELECT Status, COUNT(*)" 
@@ -1786,7 +1786,7 @@ class ResourceStatusDB:
       else:
         self.setDateEnd('StorageElement', storageElementName, dateEffective)
     else:
-      if status in ('Active', 'Probing'):
+      if status in ('Active', 'Probing', 'Bad'):
         oldStatus = 'Banned'
       else:
         oldStatus = 'Active'
@@ -2363,16 +2363,16 @@ class ResourceStatusDB:
 
   def getServiceStats(self, siteName):
     """ 
-    Returns simple statistics of active, probing and banned services of a site;
+    Returns simple statistics of active, probing, bad and banned services of a site;
         
     :params:
       :attr:`siteName`: string - a site name
     
     :returns:
-      { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
+      { 'Active':xx, 'Probing':yy, 'Bad':vv, 'Banned':zz, 'Total':xyz }
     """
     
-    res = {'Active':0, 'Probing':0, 'Banned':0, 'Total':0}
+    res = {'Active':0, 'Probing':0, 'Bad':0,'Banned':0, 'Total':0}
     
     req = "SELECT Status, COUNT(*) FROM Services WHERE SiteName = '%s' GROUP BY Status" %siteName
     resQuery = self.db._query(req)
@@ -3100,42 +3100,30 @@ class ResourceStatusDB:
       :attr:`maxN`: integer - maximum number of lines in output
     """
     
-#    if granularity in ('Service', 'Services'):
-#      req = "SELECT ServiceName, Status, FormerStatus, ServiceType FROM"
-#      req = req + " PresentServices WHERE LastCheckTime = '0000-00-00 00:00:00'"
-#      if maxN != None:
-#        req = req + " LIMIT %d" %maxN
-#      
-#      resQuery = self.db._query(req)
-#      if not resQuery['OK']:
-#        raise RSSDBException, where(self, self.getStuffToCheck) + resQuery['Message']
-#      if not resQuery['Value']:
-#        return []
-#      stuffList = []
-#      stuffList = [ x for x in resQuery['Value']]
-#  
-#      return stuffList
-#    
-#    else:
-
     T0activeCheckFrequecy = checkFrequency['T0_ACTIVE_CHECK_FREQUENCY']
     T0probingCheckFrequecy = checkFrequency['T0_PROBING_CHECK_FREQUENCY']
+    T0badCheckFrequecy = checkFrequency['T0_BAD_CHECK_FREQUENCY']
     T0bannedCheckFrequecy = checkFrequency['T0_BANNED_CHECK_FREQUENCY']
     T1activeCheckFrequecy = checkFrequency['T1_ACTIVE_CHECK_FREQUENCY']
     T1probingCheckFrequecy = checkFrequency['T1_PROBING_CHECK_FREQUENCY']
+    T1badCheckFrequecy = checkFrequency['T1_BAD_CHECK_FREQUENCY']
     T1bannedCheckFrequecy = checkFrequency['T1_BANNED_CHECK_FREQUENCY']
     T2activeCheckFrequecy = checkFrequency['T2_ACTIVE_CHECK_FREQUENCY']
     T2probingCheckFrequecy = checkFrequency['T2_PROBING_CHECK_FREQUENCY']
+    T2badCheckFrequecy = checkFrequency['T2_BAD_CHECK_FREQUENCY']
     T2bannedCheckFrequecy = checkFrequency['T2_BANNED_CHECK_FREQUENCY']
 
     T0dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0activeCheckFrequecy)).isoformat(' ')
     T0dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0probingCheckFrequecy)).isoformat(' ')
+    T0dateToCheckFromBad = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0badCheckFrequecy)).isoformat(' ')
     T0dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0bannedCheckFrequecy)).isoformat(' ')
     T1dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1activeCheckFrequecy)).isoformat(' ')
     T1dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1probingCheckFrequecy)).isoformat(' ')
+    T1dateToCheckFromBad = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1badCheckFrequecy)).isoformat(' ')
     T1dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1bannedCheckFrequecy)).isoformat(' ')
     T2dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2activeCheckFrequecy)).isoformat(' ')
     T2dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2probingCheckFrequecy)).isoformat(' ')
+    T2dateToCheckFromBad = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2badCheckFrequecy)).isoformat(' ')
     T2dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2bannedCheckFrequecy)).isoformat(' ')
 
     if granularity in ('Site', 'Sites'):
@@ -3150,12 +3138,15 @@ class ResourceStatusDB:
       raise InvalidRes, where(self, self.getStuffToCheck)
     req = req + " (Status = 'Active' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromActive )
     req = req + " (Status = 'Probing' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromProbing )
+    req = req + " (Status = 'Bad' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromBad )
     req = req + " (Status = 'Banned' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromBanned )
     req = req + " (Status = 'Active' AND SiteType = 'T1' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T1dateToCheckFromActive )
     req = req + " (Status = 'Probing' AND SiteType = 'T1' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T1dateToCheckFromProbing )
+    req = req + " (Status = 'Bad' AND SiteType = 'T1' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T1dateToCheckFromBad )
     req = req + " (Status = 'Banned' AND SiteType = 'T1' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T1dateToCheckFromBanned )
     req = req + " (Status = 'Active' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T2dateToCheckFromActive )
     req = req + " (Status = 'Probing' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T2dateToCheckFromProbing )
+    req = req + " (Status = 'Bad' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC')" %( T2dateToCheckFromBad )
     req = req + " (Status = 'Banned' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC')" %( T2dateToCheckFromBanned )
     req = req + " ORDER BY LastCheckTime"
     if maxN != None:
@@ -3175,7 +3166,7 @@ class ResourceStatusDB:
 
   def rankRes(self, granularity, days, startingDate = None):
     """
-    Construct the rank of a ValidRes, based on the time it's been Active, Probing 
+    Construct the rank of a ValidRes, based on the time it's been Active, Probing, Bad 
     (see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`)
     
     :params:
@@ -3209,6 +3200,7 @@ class ResourceStatusDB:
     rankList = []
     activeRankList = []
     probingRankList = []
+    badRankList = []
     
     for res in resList:
 
@@ -3244,12 +3236,33 @@ class ResourceStatusDB:
     
       rankList.append( ( res[0], sum(activePeriodsLength) + sum(probingPeriodsLength)/2 ) )
       
+
+      
+      periodsBad = self.getPeriods(granularity, res[0], 'Bad', None, days)
+      periodsBad = [ [ datetime.strptime(period[0], '%Y-%m-%d %H:%M:%S'), 
+                      datetime.strptime(period[1], '%Y-%m-%d %H:%M:%S') ] for period in periodsBad ]
+
+      for p in periodsBad:
+        if p[1] < dateToCheckFrom:
+          periodsBad.remove(p)
+        elif p[0] < dateToCheckFrom:
+          p[0] = dateToCheckFrom
+      
+      badPeriodsLength = [ x[1]-x[0] for x in periodsBad ]
+      badPeriodsLength = [convertTime(x) for x in badPeriodsLength]
+      badRankList.append((res, sum(badPeriodsLength)))
+    
+      rankList.append( ( res[0], 
+                         sum(activePeriodsLength) + sum(probingPeriodsLength) + sum(badPeriodsLength)/2 ) )
+      
     activeRankList = sorted(activeRankList, key=lambda x:(x[1], x[0]))
     probingRankList = sorted(probingRankList, key=lambda x:(x[1], x[0]))
-    rankList =sorted(rankList, key=lambda x:(x[1], x[0]))
+    badRankList = sorted(badRankList, key=lambda x:(x[1], x[0]))
+    rankList = sorted(rankList, key=lambda x:(x[1], x[0]))
 
     rank = {'WeightedRank':rankList, 'ActivesRank':activeRankList, 
-            'ProbingsRank':probingRankList}
+            'ProbingsRank':probingRankList,
+            'BadsRank':badRankList}
 
     return rank
 

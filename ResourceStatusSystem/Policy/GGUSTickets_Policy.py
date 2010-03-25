@@ -24,7 +24,7 @@ class GGUSTickets_Policy(PolicyBase):
         returns:
             { 
               'SAT':True|False, 
-              'Status':Active|Probing|Banned, 
+              'Status':Active|Probing, 
               'Reason':'GGUSTickets: n unsolved',
             }
     """ 
@@ -58,29 +58,25 @@ class GGUSTickets_Policy(PolicyBase):
     if args[2] == 'Active':
       if GGUS_N >= 1:
         result['SAT'] = True
-        result['Status'] = 'Probing'
-        result['Reason'] = 'GGUSTickets unsolved: %d' %(GGUS_N)
       else:
         result['SAT'] = False
-        result['Status'] = 'Active'
-        result['Reason'] = 'NO GGUSTickets unsolved'
     elif args[2] == 'Probing':
       if GGUS_N >= 1:
         result['SAT'] = False
-        result['Status'] = 'Probing'
-        result['Reason'] = 'GGUSTickets unsolved: %d' %(GGUS_N)
       else:
         result['SAT'] = True
-        result['Status'] = 'Active'
-        result['Reason'] = 'NO GGUSTickets unsolved'
-    elif args[2] == 'Banned':
+    else:
       if GGUS_N >= 1:
-        result['SAT'] = False
-        result['Status'] = 'Banned'
-        result['Reason'] = 'GGUSTickets unsolved: %d' %(GGUS_N)
+        result['SAT'] = True
       else:
         result['SAT'] = True
-        result['Status'] = 'Active'
-        result['Reason'] = 'NO GGUSTickets unsolved'
-
+    
+    if GGUS_N >= 1:
+      result['Status'] = 'Probing'
+      result['Reason'] = 'GGUSTickets unsolved: %d' %(GGUS_N)
+    else:
+      result['Status'] = 'Active'
+      result['Reason'] = 'NO GGUSTickets unsolved'
+  
+    
     return result

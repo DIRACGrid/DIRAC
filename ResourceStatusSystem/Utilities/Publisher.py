@@ -59,7 +59,7 @@ class Publisher:
     infoToGet = self.ig.getInfoToApply(('view_info', ), None, None, None, 
                                        None, None, resType, view)[0]['Panels']
     
-    infoToGet_res = []
+    infoToGet_res = {}
     
     for panel in infoToGet.keys():
       
@@ -74,13 +74,20 @@ class Publisher:
       #take info that goes into the panel
       infoForPanel = infoToGet[panel]
       
-      infoForPanel_res = []
+      infoForPanel_res = {}
       
       for info in infoForPanel:
         
         #get single RSS policy results
         policyResToGet = info.keys()[0]
         pol_res = self.rsDB.getPolicyRes(nameForPanel, policyResToGet)
+        if pol_res != []:
+          pol_res_dict = {'Status' : pol_res[0], 'Reason' : pol_res[1]}
+        else:
+          pol_res_dict = {'Status' : 'Unknown', 'Reason' : 'Unknown'}
+        infoForPanel_res[policyResToGet] = pol_res_dict
+#        infoForPanel_res[policyResToGet]['Status'] = pol_res[0]
+#        infoForPanel_res[policyResToGet]['Reason'] = pol_res[1]
         
         #get policy description
         desc = self._getPolicyDesc(policyResToGet)
@@ -90,7 +97,7 @@ class Publisher:
         if not isinstance(othersInfo, list):
           othersInfo = [othersInfo]
         
-        info_res = []
+        info_res = {}
         
         for oi in othersInfo:
           
@@ -99,22 +106,22 @@ class Publisher:
           
           info_bit_got = self._getInfo(granularityForPanel, nameForPanel, format, what)
                     
-          info_res.append( { format: info_bit_got } )
+          info_res[format] = info_bit_got
           
         
-        infoForPanel_res.append( {'policy': {policyResToGet: pol_res}, 
-                                  'infos': info_res, 
-                                  'desc': desc } )
+#        infoForPanel_res.append( {'policy': {policyResToGet: pol_res}, 
+#                                  'infos': info_res, 
+#                                  'desc': desc } )
         
-      completeInfoForPanel_res = {panel: 
-                                   (
-                                    {'Res': nameStatus_res},
-                                    {'InfoForPanel': infoForPanel_res}
-                                   ) 
-                                  }
+        infoForPanel_res[policyResToGet]['infos'] = info_res 
+        infoForPanel_res[policyResToGet]['desc'] = desc 
+
+      completeInfoForPanel_res = {'Res': nameStatus_res, 'InfoForPanel': infoForPanel_res}
       
-      
-      infoToGet_res.append( completeInfoForPanel_res )
+#      panel_info_res_dict = {'Res': nameStatus_res, 'InfoForPanel': infoForPanel_res} 
+#      completeInfoForPanel_res[panel] = panel_info_res_dict 
+
+      infoToGet_res[panel] = completeInfoForPanel_res
     
     return infoToGet_res
 

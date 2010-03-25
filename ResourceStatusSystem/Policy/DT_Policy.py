@@ -28,7 +28,7 @@ class DT_Policy(PolicyBase):
         :returns:
             { 
               'SAT':True|False, 
-              'Status':Active|Probing|Banned, 
+              'Status':Active|Probing|Bad|Banned, 
               'Reason':'DT:None'|'DT:OUTAGE|'DT:AT_RISK',
               'EndDate':datetime (if needed)
             }
@@ -94,6 +94,20 @@ class DT_Policy(PolicyBase):
         elif 'AT_RISK' in status['DT']:
           result['SAT'] = False
           result['Status'] = 'Probing'
+          result['EndDate'] = status['EndDate']
+      
+    elif args[2] == 'Bad':
+      if status['DT'] == 'None':
+        result['SAT'] = True
+        result['Status'] = 'Active'
+      else:
+        if 'OUTAGE' in status['DT']:
+          result['SAT'] = True
+          result['Status'] = 'Banned'
+          result['EndDate'] = status['EndDate']
+        elif 'AT_RISK' in status['DT']:
+          result['SAT'] = False
+          result['Status'] = 'Bad'
           result['EndDate'] = status['EndDate']
       
     elif args[2] == 'Banned':

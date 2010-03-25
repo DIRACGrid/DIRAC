@@ -45,7 +45,7 @@ class SAMResults_Policy(PolicyBase):
 
     if knownInfo is not None:
       if 'SAM-Status' in knownInfo.keys():
-        status = knownInfo['SAM-Status']
+        SAMstatus = knownInfo['SAM-Status']
     else:
       if commandIn is not None:
         command = commandIn
@@ -63,46 +63,71 @@ class SAMResults_Policy(PolicyBase):
       elif len(args) == 5:
         status = clientsInvoker.doCommand((args[0], args[1], args[3], args[4]))
       
-      status = status['SAM-Status']
+      SAMstatus = status['SAM-Status']
     
-    if status is None:
+    if SAMstatus is None:
       return {'SAT':None}
     
-    values = []
-    for s in status.values():
-      if s == 'ok':
-        values.append(100)
-      elif s == 'down':
-        values.append(0)
-      elif s == 'na':
-        continue
-      elif s == 'degraded':
-        values.append(70)
-      elif s == 'partial':
-        values.append(30)
-      elif s == 'maint':
-        values.append(0)
-      elif s == 'error':
-        values.append(0)
+#    values = []
+#    for s in status.values():
+#      if s == 'ok':
+#        values.append(100)
+#      elif s == 'down':
+#        values.append(0)
+#      elif s == 'na':
+#        continue
+#      elif s == 'degraded':
+#        values.append(70)
+#      elif s == 'partial':
+#        values.append(30)
+#      elif s == 'maint':
+#        values.append(0)
+#      elif s == 'error':
+#        values.append(0)
+#    
+#    if len(values) == 0:
+#      status = 'na'
+#    else:
+#      mean = sum(values)/len(values)
+#      if mean >= 90:
+#        status = 'ok'
+#      elif mean >= 60:
+#        status = 'degraded'
+#      elif mean >= 30:
+#        status = 'partial'
+#      elif mean >= 10:
+#        status = 'maint'
+#      else:
+#        status = 'down'
     
-    if len(values) == 0:
-      status = 'na'
-    else:
-      mean = sum(values)/len(values)
-      if mean >= 90:
-        status = 'ok'
-      elif mean >= 60:
-        status = 'degraded'
-      elif mean >= 30:
-        status = 'partial'
-      elif mean >= 10:
-        status = 'maint'
-      else:
+    status = 'ok'
+    
+    for s in SAMstatus.values():
+      if s == 'error':
         status = 'down'
+        break
+      elif s == 'down':
+        status = 'down'
+        break
+      elif s == 'warn':
+        status = 'degraded'
+        break
+      elif s == 'maint':
+        status = 'maint'
+        break
+    
+    if status == 'ok': 
+      na = True
+      for s in SAMstatus.values():
+        if s != 'na':
+          na = False
+          break
+      if na == True:
+        status = 'na'
     
     result = {}
     
-    result['Reason'] = 'SAM status (Mean): '
+    result['Reason'] = 'SAM status: '
     
     if args[2] == 'Active':
       if status == 'ok':
@@ -110,18 +135,15 @@ class SAMResults_Policy(PolicyBase):
         result['Status'] = 'Active'
       elif status == 'down':
         result['SAT'] = True
-        result['Status'] = 'Banned'
+        result['Status'] = 'Bad'
       elif status == 'na':
         result['SAT'] = None
       elif status == 'degraded':
         result['SAT'] = True
         result['Status'] = 'Probing'
-      elif status == 'partial':
-        result['SAT'] = True
-        result['Status'] = 'Probing'
       elif status == 'maint':
         result['SAT'] = True
-        result['Status'] = 'Banned'
+        result['Status'] = 'Bad'
       
     elif args[2] == 'Probing':
       if status == 'ok':
@@ -129,37 +151,47 @@ class SAMResults_Policy(PolicyBase):
         result['Status'] = 'Active'
       elif status == 'down':
         result['SAT'] = True
-        result['Status'] = 'Banned'
+        result['Status'] = 'Bad'
       elif status == 'na':
         result['SAT'] = None
       elif status == 'degraded':
         result['SAT'] = False
         result['Status'] = 'Probing'
-      elif status == 'partial':
-        result['SAT'] = False
-        result['Status'] = 'Probing'
       elif status == 'maint':
         result['SAT'] = True
-        result['Status'] = 'Banned'
+        result['Status'] = 'Bad'
+      
+    elif args[2] == 'Bad':
+      if status == 'ok':
+        result['SAT'] = True
+        result['Status'] = 'Active'
+      elif status == 'down':
+        result['SAT'] = False
+        result['Status'] = 'Bad'
+      elif status == 'na':
+        result['SAT'] = None
+      elif status == 'degraded':
+        result['SAT'] = True
+        result['Status'] = 'Probing'
+      elif status == 'maint':
+        result['SAT'] = False
+        result['Status'] = 'Bad'
       
     elif args[2] == 'Banned':
       if status == 'ok':
         result['SAT'] = True
         result['Status'] = 'Active'
       elif status == 'down':
-        result['SAT'] = False
-        result['Status'] = 'Banned'
+        result['SAT'] = True
+        result['Status'] = 'Bad'
       elif status == 'na':
         result['SAT'] = None
       elif status == 'degraded':
         result['SAT'] = True
         result['Status'] = 'Probing'
-      elif status == 'partial':
-        result['SAT'] = False
-        result['Status'] = 'Banned'
       elif status == 'maint':
-        result['SAT'] = False
-        result['Status'] = 'Banned'
+        result['SAT'] = True
+        result['Status'] = 'Bad'
       
     if status != 'na':
       result['Reason'] = result['Reason'] + status

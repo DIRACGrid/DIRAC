@@ -338,19 +338,19 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
 
   def test_getResourceStats(self):
     res = self.rsDB.getResourceStats('Site', 'XX')
-    self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Banned': 0, 'Total': 0})
+    self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Bad': 0, 'Banned': 0, 'Total': 0})
     res = self.rsDB.getResourceStats('Service', 'XX')
-    self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Banned': 0, 'Total': 0})
+    self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Bad': 0, 'Banned': 0, 'Total': 0})
 
   def test_getServiceStats(self):
     res = self.rsDB.getServiceStats('XX')
-    self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Banned': 0, 'Total': 0})
+    self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Bad': 0, 'Banned': 0, 'Total': 0})
     
   def test_getStorageElementsStats(self):
     res = self.rsDB.getStorageElementsStats('Resource', 'XX')
-    self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Banned': 0, 'Total': 0})
+    self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Bad': 0, 'Banned': 0, 'Total': 0})
     res = self.rsDB.getStorageElementsStats('Site', 'XX')
-    self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Banned': 0, 'Total': 0})
+    self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Bad': 0, 'Banned': 0, 'Total': 0})
 
   def test_getStuffToCheck(self):
     for g in ValidRes:
@@ -368,7 +368,7 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
   def test_rankRes(self):
     for granularity in ValidRes:
       res = self.rsDB.rankRes(granularity, 30)
-      self.assertEqual(res, {'WeightedRank':[], 'ActivesRank':[], 'ProbingsRank':[]})
+      self.assertEqual(res, {'WeightedRank':[], 'ActivesRank':[], 'ProbingsRank':[], 'BadsRank':[]})
 
 #  def test_syncWithCS(self):
 #    res = self.rsDB.syncWithCS()

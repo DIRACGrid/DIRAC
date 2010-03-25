@@ -108,7 +108,7 @@ class DT_PolicySuccess(PoliciesTestCase):
           res = self.DT_P.evaluate(args, commandIn = self.mock_command, knownInfo=clientRes)
           if clientRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}) and status == 'Active':
             self.assert_(res['SAT'])
-          elif clientRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'None'}) and status == 'Probing':
+          elif clientRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'None'}) and status in ('Probing', 'Bad'):
             self.assert_(res['SAT'])
           elif clientRes in ({'DT':'AT_RISK', 'EndDate':''}, {'DT':'None'}) and status == 'Banned':
             self.assert_(res['SAT'])
@@ -118,7 +118,7 @@ class DT_PolicySuccess(PoliciesTestCase):
           res = self.DT_P.evaluate(args, commandIn = self.mock_command)
           if clientRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}) and status == 'Active':
             self.assert_(res['SAT'])
-          elif clientRes in ({'DT':'OUTAGE', 'EndDate':''},  {'DT':'None'}) and status == 'Probing':
+          elif clientRes in ({'DT':'OUTAGE', 'EndDate':''},  {'DT':'None'}) and status in ('Probing', 'Bad'):
             self.assert_(res['SAT'])
           elif clientRes in ({'DT':'AT_RISK', 'EndDate':''},  {'DT':'None'}) and status == 'Banned':
             self.assert_(res['SAT'])
@@ -458,7 +458,7 @@ class SAMResults_PolicySuccess(PoliciesTestCase):
     for status in ValidStatus:
       for g in ('Site', 'Resource'):
         args = (g, 'XX', status)
-        for resCl in ['ok', 'down', 'degraded', 'partial', 'maint']:
+        for resCl in ['ok', 'error', 'down', 'warn', 'maint']:
           res = self.SAMR_P.evaluate(args, commandIn = self.mock_command, 
                                      knownInfo={'SAM-Status':{'SS':resCl, 'js':'ok'}})
           self.assert_(res.has_key('SAT'))
@@ -597,12 +597,12 @@ class Propagation_PolicySuccess(PoliciesTestCase):
       for g in ('Site', 'Service'):
         for g2 in ('Service', 'Resource', 'StorageElement'):
           args = (g, 'XX', status, g2)
-          for resCl in [{'Active':0, 'Probing':0, 'Banned':2, 'Total':2},
-                        {'Active':2, 'Probing':2, 'Banned':0, 'Total':2}, 
-                        {'Active':0, 'Probing':0, 'Banned':0, 'Total':2},
-                        {'Active':1, 'Probing':1, 'Banned':0, 'Total':2}, 
-                        {'Active':1, 'Probing':0, 'Banned':1, 'Total':2},
-                        {'Active':0, 'Probing':1, 'Banned':1, 'Total':2} ] :
+          for resCl in [{'Active':0, 'Probing':0, 'Bad':0, 'Banned':4, 'Total':4},
+                        {'Active':2, 'Probing':2, 'Bad':0, 'Banned':0, 'Total':4}, 
+                        {'Active':0, 'Probing':0, 'Bad':4, 'Banned':0, 'Total':4},
+                        {'Active':1, 'Probing':1, 'Bad':0, 'Banned':0, 'Total':2}, 
+                        {'Active':1, 'Probing':0, 'Bad':2, 'Banned':1, 'Total':4},
+                        {'Active':0, 'Probing':1, 'Bad':0, 'Banned':1, 'Total':2} ] :
             res = self.P_P.evaluate(args, knownInfo = {'stats':resCl})
             self.assert_(res.has_key('SAT'))
             self.assert_(res.has_key('Status'))
@@ -764,22 +764,22 @@ if __name__ == '__main__':
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Res2SiteStatus_PolicySuccess))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Res2SiteStatus_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(AlwaysFalse_PolicySuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEfficiency_PolicySuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEfficiency_Policy_Failure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEfficiency_PolicySuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEfficiency_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEfficiency_Simple_PolicySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEfficiency_Simple_Policy_Failure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEfficiency_PolicySuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEfficiency_Policy_Failure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEfficiency_PolicySuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEfficiency_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEfficiency_Simple_PolicySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEfficiency_Simple_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResults_PolicySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResults_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_PolicySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Policy_Failure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnservicePropagation_PolicySuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnservicePropagation_Policy_Failure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnSENodePropagation_PolicySuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnSENodePropagation_Policy_Failure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnservicePropagation_PolicySuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnservicePropagation_Policy_Failure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnSENodePropagation_PolicySuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnSENodePropagation_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Propagation_PolicySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Propagation_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnStorageElementPropagation_PolicySuccess))

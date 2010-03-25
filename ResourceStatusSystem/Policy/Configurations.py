@@ -44,44 +44,56 @@ Transfer_QUALITY_HIGH = 0.90
 # site/services/resource checking frequency
 #############################################################################
 
-Sites_check_freq = {  'T0_ACTIVE_CHECK_FREQUENCY': 5, \
+Sites_check_freq = {  'T0_ACTIVE_CHECK_FREQUENCY': 6, \
                       'T0_PROBING_CHECK_FREQUENCY': 5, \
+                      'T0_BAD_CHECK_FREQUENCY' : 5, \
                       'T0_BANNED_CHECK_FREQUENCY' : 5, \
                       'T1_ACTIVE_CHECK_FREQUENCY' : 8, \
-                      'T1_PROBING_CHECK_FREQUENCY' : 5, \
+                      'T1_PROBING_CHECK_FREQUENCY' : 7, \
+                      'T1_BAD_CHECK_FREQUENCY' : 7, \
                       'T1_BANNED_CHECK_FREQUENCY' : 8, \
                       'T2_ACTIVE_CHECK_FREQUENCY' : 30, \
-                      'T2_PROBING_CHECK_FREQUENCY' : 20, \
+                      'T2_PROBING_CHECK_FREQUENCY' : 25, \
+                      'T2_BAD_CHECK_FREQUENCY' : 20 , \
                       'T2_BANNED_CHECK_FREQUENCY' : 30 }
 
 Services_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 10, \
-                       'T0_PROBING_CHECK_FREQUENCY': 5, \
+                       'T0_PROBING_CHECK_FREQUENCY': 7, \
+                       'T0_BAD_CHECK_FREQUENCY' : 7, \
                        'T0_BANNED_CHECK_FREQUENCY' : 8, \
                        'T1_ACTIVE_CHECK_FREQUENCY' : 12, \
                        'T1_PROBING_CHECK_FREQUENCY' : 10, \
+                       'T1_BAD_CHECK_FREQUENCY' : 10, \
                        'T1_BANNED_CHECK_FREQUENCY' : 12, \
                        'T2_ACTIVE_CHECK_FREQUENCY' : 30, \
                        'T2_PROBING_CHECK_FREQUENCY' : 20, \
+                       'T2_BAD_CHECK_FREQUENCY' : 20, \
                        'T2_BANNED_CHECK_FREQUENCY' : 30 }
 
 Resources_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 10, \
                         'T0_PROBING_CHECK_FREQUENCY': 8, \
+                        'T0_BAD_CHECK_FREQUENCY' : 8, \
                         'T0_BANNED_CHECK_FREQUENCY' : 10, \
                         'T1_ACTIVE_CHECK_FREQUENCY' : 12, \
                         'T1_PROBING_CHECK_FREQUENCY' : 10, \
+                        'T1_BAD_CHECK_FREQUENCY' : 10, \
                         'T1_BANNED_CHECK_FREQUENCY' : 12, \
                         'T2_ACTIVE_CHECK_FREQUENCY' : 30, \
                         'T2_PROBING_CHECK_FREQUENCY' : 20, \
+                        'T2_BAD_CHECK_FREQUENCY' : 20, \
                         'T2_BANNED_CHECK_FREQUENCY' : 30 }
 
 StorageElements_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 10, \
                               'T0_PROBING_CHECK_FREQUENCY': 8, \
+                              'T0_BAD_CHECK_FREQUENCY' : 8, \
                               'T0_BANNED_CHECK_FREQUENCY' : 10, \
                               'T1_ACTIVE_CHECK_FREQUENCY' : 12, \
                               'T1_PROBING_CHECK_FREQUENCY' : 10, \
+                              'T1_BAD_CHECK_FREQUENCY' : 10, \
                               'T1_BANNED_CHECK_FREQUENCY' : 12, \
                               'T2_ACTIVE_CHECK_FREQUENCY' : 30, \
                               'T2_PROBING_CHECK_FREQUENCY' : 20, \
+                              'T2_BAD_CHECK_FREQUENCY' : 20, \
                               'T2_BANNED_CHECK_FREQUENCY' : 30 }
 
 #############################################################################

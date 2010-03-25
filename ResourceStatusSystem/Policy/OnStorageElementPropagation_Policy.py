@@ -69,5 +69,4 @@ class OnStorageElementPropagation_Policy(PolicyBase):
     result['Reason'] = 'Node status: ' + resourceStatus
     
     return result
-    
-    
+  

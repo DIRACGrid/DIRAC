@@ -24,7 +24,7 @@ class JobsEfficiency_Simple_Policy(PolicyBase):
         returns:
             { 
               'SAT':True|False, 
-              'Status':Active|Probing|Banned, 
+              'Status':Active|Probing|Bad, 
               'Reason':'JobsEff:Good|JobsEff:Fair|JobsEff:Poor|JobsEff:Bad|JobsEff:Idle',
             }
     """ 
@@ -73,7 +73,7 @@ class JobsEfficiency_Simple_Policy(PolicyBase):
         result['SAT'] = None
       elif status == 'Bad':
         result['SAT'] = True
-        result['Status'] = 'Banned'
+        result['Status'] = 'Bad'
 
     elif args[2] == 'Probing':
       if status == 'Good':
@@ -89,9 +89,9 @@ class JobsEfficiency_Simple_Policy(PolicyBase):
         result['SAT'] = None
       elif status == 'Bad':
         result['SAT'] = True
-        result['Status'] = 'Banned'
+        result['Status'] = 'Bad'
     
-    elif args[2] == 'Banned':
+    elif args[2] == 'Bad':
       if status == 'Good':
         result['SAT'] = True
         result['Status'] = 'Active'
@@ -105,7 +105,23 @@ class JobsEfficiency_Simple_Policy(PolicyBase):
         result['SAT'] = None
       elif status == 'Bad':
         result['SAT'] = False
-        result['Status'] = 'Banned'
+        result['Status'] = 'Bad'
+
+    elif args[2] == 'Banned':
+      if status == 'Good':
+        result['SAT'] = True
+        result['Status'] = 'Active'
+      elif status == 'Fair':
+        result['SAT'] = True
+        result['Status'] = 'Probing'
+      elif status == 'Poor':
+        result['SAT'] = True
+        result['Status'] = 'Probing'
+      elif status == 'Idle':
+        result['SAT'] = None
+      elif status == 'Bad':
+        result['SAT'] = True
+        result['Status'] = 'Bad'
 
     if status != 'Idle':
       result['Reason'] = result['Reason'] + status

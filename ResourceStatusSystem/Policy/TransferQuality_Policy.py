@@ -85,7 +85,7 @@ class TransferQuality_Policy(PolicyBase):
           result['SAT'] = False
         else:
           result['SAT'] = True
-      elif args[2] == 'Banned':
+      else:
         result['SAT'] = True
         
       if quality < Configurations.Transfer_QUALITY_LOW :
@@ -109,14 +109,16 @@ class TransferQuality_Policy(PolicyBase):
           result['SAT'] = False
         else:
           result['SAT'] = True
-      elif args[2] == 'Banned':
+      elif args[2] == 'Bad':
         if quality < Configurations.Transfer_QUALITY_LOW :
           result['SAT'] = False
         else:   
           result['SAT'] = True
+      elif args[2] == 'Banned':
+        result['SAT'] = True
         
       if quality < Configurations.Transfer_QUALITY_LOW :
-        result['Status'] = 'Banned'
+        result['Status'] = 'Bad'
         result['Reason'] = 'TransferQuality:Low'
       elif quality >= Configurations.Transfer_QUALITY_HIGH :
         result['Status'] = 'Active'

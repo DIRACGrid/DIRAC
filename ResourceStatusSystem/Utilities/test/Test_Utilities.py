@@ -41,7 +41,7 @@ class PublisherSuccess(UtilitiesTestCase):
       i = 0
       
       for k in info[0]['Panels'].keys():
-        l.append((k, res[i]))
+        k in res.keys()
         i = i + 1
       
       for (panel, res) in l:

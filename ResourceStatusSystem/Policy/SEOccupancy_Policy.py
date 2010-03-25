@@ -63,33 +63,47 @@ class SEOccupancy_Policy(PolicyBase):
     
     result['Reason'] = "Occupancy on the SE: " 
     
-    if args[2] == 'Active':
-      if status is None:
-        result['SAT'] = None
-      else:
-        if status > 2:
+    if status is None:
+      result['SAT'] = None
+    else:
+      if args[2] == 'Active':
+        if status == 0:
+          result['SAT'] = True
+          result['Status'] = 'Banned'
+        elif status > 2:
           result['SAT'] = False
           result['Status'] = 'Active'
         else:
           result['SAT'] = True
           result['Status'] = 'Probing'
           
-    elif args[2] == 'Probing':
-      if status is None:
-        result['SAT'] = None
-      else:
-        if status > 2:
+      elif args[2] == 'Probing':
+        if status == 0:
+          result['SAT'] = True
+          result['Status'] = 'Banned'
+        elif status > 2:
           result['SAT'] = True
           result['Status'] = 'Active'
         else:
           result['SAT'] = False
           result['Status'] = 'Probing'
       
-    elif args[2] == 'Banned':
-      if status is None:
-        result['SAT'] = None
-      else:
-        if status > 2:
+      elif args[2] == 'Bad':
+        if status == 0:
+          result['SAT'] = True
+          result['Status'] = 'Banned'
+        elif status > 2:
+          result['SAT'] = True
+          result['Status'] = 'Active'
+        else:
+          result['SAT'] = True
+          result['Status'] = 'Probing'
+    
+      elif args[2] == 'Banned':
+        if status == 0:
+          result['SAT'] = False
+          result['Status'] = 'Banned'
+        elif status > 2:
           result['SAT'] = True
           result['Status'] = 'Active'
         else:
@@ -97,12 +111,15 @@ class SEOccupancy_Policy(PolicyBase):
           result['Status'] = 'Probing'
     
     if status is not None:
-      if status > 10:
-        str = 'Low'
-      elif status <= 2:
-        str = 'High'
+      if status == 0:
+        str = 'FULL!'
       else:
-        str = 'Mid-High'
-      result['Reason'] = result['Reason'] + str
+        if status > 10:
+          str = 'Low'
+        elif status <= 2:
+          str = 'High'
+        else:
+          str = 'Mid-High'
+        result['Reason'] = result['Reason'] + str
       
     return result

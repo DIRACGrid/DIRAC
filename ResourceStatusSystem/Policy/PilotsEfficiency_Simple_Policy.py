@@ -25,7 +25,7 @@ class PilotsEfficiency_Simple_Policy(PolicyBase):
             { 
               'SAT':True|False,
                
-              'Status':Active|Probing|Banned, 
+              'Status':Active|Probing|Bad, 
               
               'Reason':'PilotsEff:low|PilotsEff:med|PilotsEff:good',
             }
@@ -67,8 +67,8 @@ class PilotsEfficiency_Simple_Policy(PolicyBase):
         result['SAT'] = False
         result['Status'] = 'Active'
       elif status == 'Fair':
-        result['SAT'] = True
-        result['Status'] = 'Probing'
+        result['SAT'] = False
+        result['Status'] = 'Active'
       elif status == 'Poor':
         result['SAT'] = True
         result['Status'] = 'Probing'
@@ -76,15 +76,15 @@ class PilotsEfficiency_Simple_Policy(PolicyBase):
         result['SAT'] = None
       elif status == 'Bad':
         result['SAT'] = True
-        result['Status'] = 'Banned'
+        result['Status'] = 'Bad'
 
     elif args[2] == 'Probing':
       if status == 'Good':
         result['SAT'] = True
         result['Status'] = 'Active'
       elif status == 'Fair':
-        result['SAT'] = False
-        result['Status'] = 'Probing'
+        result['SAT'] = True
+        result['Status'] = 'Active'
       elif status == 'Poor':
         result['SAT'] = False
         result['Status'] = 'Probing'
@@ -92,7 +92,23 @@ class PilotsEfficiency_Simple_Policy(PolicyBase):
         result['SAT'] = None
       elif status == 'Bad':
         result['SAT'] = True
-        result['Status'] = 'Banned'
+        result['Status'] = 'Bad'
+
+    elif args[2] == 'Bad':
+      if status == 'Good':
+        result['SAT'] = True
+        result['Status'] = 'Active'
+      elif status == 'Fair':
+        result['SAT'] = True
+        result['Status'] = 'Active'
+      elif status == 'Poor':
+        result['SAT'] = True
+        result['Status'] = 'Probing'
+      elif status == 'Idle':
+        result['SAT'] = None
+      elif status == 'Bad':
+        result['SAT'] = False
+        result['Status'] = 'Bad'
 
     elif args[2] == 'Banned':
       if status == 'Good':
@@ -100,15 +116,15 @@ class PilotsEfficiency_Simple_Policy(PolicyBase):
         result['Status'] = 'Active'
       elif status == 'Fair':
         result['SAT'] = True
-        result['Status'] = 'Probing'
+        result['Status'] = 'Active'
       elif status == 'Poor':
         result['SAT'] = True
         result['Status'] = 'Probing'
       elif status == 'Idle':
         result['SAT'] = None
       elif status == 'Bad':
-        result['SAT'] = False
-        result['Status'] = 'Banned'
+        result['SAT'] = True
+        result['Status'] = 'Bad'
     
     if status != 'Idle':
       result['Reason'] = result['Reason'] + status

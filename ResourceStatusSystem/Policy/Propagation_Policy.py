@@ -71,53 +71,28 @@ class Propagation_Policy(PolicyBase):
       return {'SAT':None}
     
     values = []
-    val = (100 * stats['Active'] + 50 * stats['Probing']) / stats['Total']
+    val = (100 * stats['Active'] + 70 * stats['Probing'] + 30 * stats['Bad']) / stats['Total']
     
     if val == 100:
       status = 'Active'
     elif val == 0:
       status = 'Banned'
     else:
-      status = 'Probing'
+      if val >= 70:
+        status = 'Probing'
+      else:
+        status = 'Bad'
       
     result = {}
     
-    if args[2] == 'Active':
-      if status == 'Active':
-        result['SAT'] = False
-        result['Status'] = 'Active'
-      if status == 'Probing':
-        result['SAT'] = True
-        result['Status'] = 'Probing'
-      if status == 'Banned':
-        result['SAT'] = True
-        result['Status'] = 'Banned'
-       
-    elif args[2] == 'Probing':
-      if status == 'Active':
-        result['SAT'] = True
-        result['Status'] = 'Active'
-      if status == 'Probing':
-        result['SAT'] = False
-        result['Status'] = 'Probing'
-      if status == 'Banned':
-        result['SAT'] = True
-        result['Status'] = 'Banned'
-        
-    elif args[2] == 'Banned':
-      if status == 'Active':
-        result['SAT'] = True
-        result['Status'] = 'Active'
-      if status == 'Probing':
-        result['SAT'] = True
-        result['Status'] = 'Probing'
-      if status == 'Banned':
-        result['SAT'] = False
-        result['Status'] = 'Banned'
-    
-    
-    result['Reason'] =  'Active:%d, Probing :%d, Banned:%d' %( stats['Active'], 
-                                                               stats['Probing'], 
-                                                               stats['Banned'])
+    if args[2] == status:
+      result['SAT'] = False
+    else:
+      result['SAT'] = True
+    result['Status'] = status
+    result['Reason'] =  'Active:%d, Probing :%d, Bad: %d, Banned:%d' %( stats['Active'], 
+                                                                        stats['Probing'], 
+                                                                        stats['Bad'], 
+                                                                        stats['Banned'])
             
     return result

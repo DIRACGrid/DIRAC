@@ -21,8 +21,8 @@ risorsa = {'name':'ce111.cern.ch', 'siteType':'T0', 'resourceType':'CE'} #OK
 risorsa2 = {'name':'ccsrm.in2p3.fr', 'siteType':'T1', 'resourceType':'SE'} #OK
 risorsa3 = {'name':'lfclhcb.pic.es', 'siteType':'T1', 'resourceType':'LFC_L'} #OK
 #risorsa3 = {'name':'prod-lfc-lhcb-central.cern.ch', 'siteType':'T1', 'resourceType':'LFC_C'} #OK
-#se = {'name':'NIKHEF_M-DST', 'siteType':'T0'} #OK
-se = {'name':'NIKHEF-USER', 'siteType':'T1'} #OK
+se = {'name':'NIKHEF_RDST', 'siteType':'T0'} #OK
+#se = {'name':'NIKHEF-USER', 'siteType':'T1'} #OK
 
 
 #sito = {'name':'LCG.CERN2.ch', 'siteType':'T0'} #WRONG
