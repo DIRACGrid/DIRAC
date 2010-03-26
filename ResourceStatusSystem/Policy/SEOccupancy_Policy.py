@@ -58,6 +58,9 @@ class SEOccupancy_Policy(PolicyBase):
       status = clientsInvoker.doCommand((args[0], args[1]))
       
       status = status['SLS']
+      
+    if status == -1:
+      return {'SAT':None} 
     
     result = {}
     

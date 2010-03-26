@@ -4,7 +4,6 @@
 """
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC import gConfig
 
 #############################################################################
 # policies parameters

@@ -645,46 +645,75 @@ class ResourceStatusDB:
       if (paramsList == None or paramsList == []):
         params = 'SiteName, Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode '
       DBtable = 'SitesHistory'
+      DBtableP = 'Sites'
       DBname = 'SiteName'
       DBid = 'SitesHistoryID'
     elif granularity in ('Service', 'Services'):
       if (paramsList == None or paramsList == []):
         params = 'ServiceName, Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode '
       DBtable = 'ServicesHistory'
+      DBtableP = 'Services'
       DBname = 'ServiceName'
       DBid = 'ServicesHistoryID'
     elif granularity in ('Resource', 'Resources'):
       if (paramsList == None or paramsList == []):
         params = 'ResourceName, Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode '
       DBtable = 'ResourcesHistory'
+      DBtableP = 'Resources'
       DBname = 'ResourceName'
       DBid = 'ResourcesHistoryID'
     elif granularity in ('StorageElement', 'StorageElements'):
       if (paramsList == None or paramsList == []):
         params = 'StorageElementName, Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode '
       DBtable = 'StorageElementsHistory'
+      DBtableP = 'StorageElements'
       DBname = 'StorageElementName'
       DBid = 'StorageElementsHistoryID'
     else:
       raise InvalidRes, where(self, self.getMonitoredsHistory)
       
 
+    #take history data
     if (name == None or name == []): 
       req = "SELECT %s FROM %s ORDER BY %s, %s" %(params, DBtable, DBname, DBid)
     else:
       if type(name) is not type([]):
-        name = [name]
-      name = ','.join(['"'+x.strip()+'"' for x in name])
+        nameM = [name]
+      else:
+        nameM = name
+      nameM = ','.join(['"'+x.strip()+'"' for x in nameM])
       req = "SELECT %s FROM %s WHERE %s IN (%s) ORDER BY %s" % (params, DBtable, DBname, 
-                                                                name, DBid)
+                                                                nameM, DBid)
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.getMonitoredsHistory)+resQuery['Message']
+    if not resQuery['Value']:
+      return []
+    list_h = []
+    list_h = [ x for x in resQuery['Value']]
+    
+
+    #take present data
+    if (name == None or name == []): 
+      req = "SELECT %s FROM %s ORDER BY %s" %(params, DBtableP, DBname)
+    else:
+      if type(name) is not type([]):
+        nameM = [name]
+      else:
+        nameM = name
+      nameM = ','.join(['"'+x.strip()+'"' for x in nameM])
+      req = "SELECT %s FROM %s WHERE %s IN (%s)" % (params, DBtableP, DBname, nameM)
     
     resQuery = self.db._query(req)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.getMonitoredsHistory)+resQuery['Message']
     if not resQuery['Value']:
       return []
-    list = []
-    list = [ x for x in resQuery['Value']]
+    list_p = []
+    list_p = [ x for x in resQuery['Value']]
+
+    list = list_h + list_p
+    
     return list
  
 #############################################################################
@@ -3146,7 +3175,7 @@ class ResourceStatusDB:
     req = req + " (Status = 'Banned' AND SiteType = 'T1' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T1dateToCheckFromBanned )
     req = req + " (Status = 'Active' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T2dateToCheckFromActive )
     req = req + " (Status = 'Probing' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T2dateToCheckFromProbing )
-    req = req + " (Status = 'Bad' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC')" %( T2dateToCheckFromBad )
+    req = req + " (Status = 'Bad' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T2dateToCheckFromBad )
     req = req + " (Status = 'Banned' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC')" %( T2dateToCheckFromBanned )
     req = req + " ORDER BY LastCheckTime"
     if maxN != None:
