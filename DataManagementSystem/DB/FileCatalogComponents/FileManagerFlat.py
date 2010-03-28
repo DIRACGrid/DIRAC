@@ -476,11 +476,11 @@ class FileManagerFlat(FileManagerBase):
           for lfn,fileID in lfnFileIDs.items():
             guid = lfns[lfn]['GUID']
             fileIDGuids.append((fileID,guid))
-            res = self.__insertGUIDFiles(fileIDGuids)
-            if not res['OK']:
-              for lfn in lfnFileIDs.keys():
-                failed[lfn] = "Failed while registering replica"
-              self.__purgeFiles(lfnFileIDs.values())
+          res = self.__insertGUIDFiles(fileIDGuids)
+          if not res['OK']:
+            for lfn in lfnFileIDs.keys():
+              failed[lfn] = "Failed while registering file GUIDs"
+            self.__purgeFiles(lfnFileIDs.values())
       # Register the replicas for the inserted files
       if lfnFileIDs:
         insertTuples = []
@@ -501,7 +501,7 @@ class FileManagerFlat(FileManagerBase):
           for lfn in lfnFileIDs.keys():
             successful[lfn] = True
     return S_OK({'Successful':successful,'Failed':failed})
-    
+   
   def __addReplica(self,fileID,se,pfn='',rtype='Master'):
     """ Add a replica to the file catalog
     """
