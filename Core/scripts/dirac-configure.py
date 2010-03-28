@@ -182,6 +182,7 @@ if useServerCert:
   Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
 
 if ceName or siteName:
+  # This is used in the pilot context, we should have a proxy and access to CS
   Script.enableCS()
   # Get the site resource section
   gridSections = DIRAC.gConfig.getSections( '/Resources/Sites/' )
@@ -225,10 +226,12 @@ if gatewayServer:
   DIRAC.gLogger.debug( '/DIRAC/GateWay/%s =' % DIRAC.siteName(), gatewayServer )
   Script.localCfg.addDefaultEntry( '/DIRAC/GateWay/%s' % DIRAC.siteName(), gatewayServer )
 
-configDir = os.path.dirname(DIRAC.gConfig.diracConfigFilePath)
-if not os.path.exists(configDir):
-  os.makedirs(configDir)
-DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
+# Create the local dirac.cfg if it is not yet there
+if not os.path.exists(DIRAC.gConfig.diracConfigFilePath):
+  configDir = os.path.dirname(DIRAC.gConfig.diracConfigFilePath)
+  if not os.path.exists(configDir):
+    os.makedirs(configDir)
+  DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
 Script.enableCS()
 
 #Do the vomsdir magic
