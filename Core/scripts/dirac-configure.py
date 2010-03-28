@@ -125,7 +125,7 @@ Script.registerSwitch( "W:", "gateway=", "Configure <gateway> as DIRAC Gateway f
 Script.registerSwitch( "", "UseServerCertificate", "Configure to use Server Certificate", setServerCert )
 Script.registerSwitch( "", "SkipCAChecks", "Configure to skip check of CAs", setSkipCAChecks )
 
-Script.registerSwitch( "", "Architecture=", "Configure LocalSite/Architecture=<architecture>", setArchitecture )
+Script.registerSwitch( "", "Architecture=", "Configure /Architecture=<architecture>", setArchitecture )
 Script.registerSwitch( "", "LocalSE=", "Configure LocalSite/LocalSE=<localse>", setLocalSE )
 
 Script.registerSwitch( "d", "debug", "Set debug flag", setDebug )
@@ -153,7 +153,6 @@ else:
 if skipCAChecks:
   DIRAC.gLogger.debug( '/DIRAC/Security/SkipCAChecks =', 'yes' )
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/SkipCAChecks', 'yes' )
-  Script.enableCS()
 else:
   # Necessary to allow initial download of CA's
   DIRAC.gConfig.setOptionValue( '/DIRAC/Security/SkipCAChecks', 'yes' )
@@ -182,14 +181,15 @@ if useServerCert:
   # When using Server Certs CA's will be checked, the flag only disables initial download
   Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
 
-gridSections = DIRAC.gConfig.getSections( '/Resources/Sites/' )
-if not gridSections['OK']:
-  DIRAC.gLogger.error( 'Could not get grid sections list' )
-  grids = []
-else:
-  grids = gridSections['Value']
-
 if ceName or siteName:
+  Script.enableCS()
+  # Get the site resource section
+  gridSections = DIRAC.gConfig.getSections( '/Resources/Sites/' )
+  if not gridSections['OK']:
+    DIRAC.gLogger.error( 'Could not get grid sections list' )
+    grids = []
+  else:
+    grids = gridSections['Value']
   # try to get siteName from ceName or Local SE from siteName using Remote Configuration
   for grid in grids:
     siteSections = DIRAC.gConfig.getSections( '/Resources/Sites/%s/' % grid )
@@ -225,7 +225,11 @@ if gatewayServer:
   DIRAC.gLogger.debug( '/DIRAC/GateWay/%s =' % DIRAC.siteName(), gatewayServer )
   Script.localCfg.addDefaultEntry( '/DIRAC/GateWay/%s' % DIRAC.siteName(), gatewayServer )
 
+configDir = os.path.dirname(DIRAC.gConfig.diracConfigFilePath)
+if not os.path.exists(configDir):
+  os.makedirs(configDir)
 DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
+Script.enableCS()
 
 #Do the vomsdir magic
 voName = DIRAC.gConfig.getValue( "/DIRAC/VirtualOrganization", "" )
