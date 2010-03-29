@@ -6,6 +6,10 @@ import threading
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
+from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
@@ -50,7 +54,13 @@ class RSInspectorAgent(AgentModule):
       self.lockObj = threading.RLock()
       
       self.setup = gConfig.getValue("DIRAC/Setup")
-      
+
+      self.nc = NotificationClient()
+
+      self.diracAdmin = DiracAdmin()
+
+      self.csAPI = CSAPI()      
+    
       return S_OK()
     
     except Exception, x:
@@ -142,10 +152,13 @@ class RSInspectorAgent(AgentModule):
         operatorCode = toBeChecked[6]
         
         gLogger.info("Checking Resource %s, with status %s" % (resourceName, status))
+        
         newPEP = PEP(granularity = granularity, name = resourceName, status = status, 
                      formerStatus = formerStatus, siteType = siteType, 
                      resourceType = resourceType, operatorCode = operatorCode)
-        newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup)
+        
+        newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup, ncIn = self.nc, 
+                       daIn = self.diracAdmin, csAPIIn = self.csAPI)
     
         # remove from InCheck list
         self.lockObj.acquire()

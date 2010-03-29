@@ -34,44 +34,47 @@ se = {'name':'NIKHEF_RDST', 'siteType':'T0'} #OK
 print "\n\n ~~~~~~~ SITO ~~~~~~~ %s \n" %(sito)
 
 for status in ValidStatus:
-  for oldStatus in ValidStatus:
-    if status == oldStatus:
-      continue
-    print "############################"
-    print " "
-    print 'nel test:', status, oldStatus
-    pdp = PDP(granularity = 'Site', name = sito['name'], status = status, 
-              formerStatus = oldStatus, reason = 'XXXXX', siteType = sito['siteType']) 
-    res = pdp.takeDecision()
-    print res
+#  for oldStatus in ValidStatus:
+#    if status == oldStatus:
+#      continue
+  print "############################"
+  print " "
+  print 'nel test:', status#, oldStatus
+  pdp = PDP(granularity = 'Site', name = sito['name'], status = status, 
+#            formerStatus = oldStatus, 
+            reason = 'XXXXX', siteType = sito['siteType']) 
+  res = pdp.takeDecision()
+  print res
 
 print "\n\n ~~~~~~~ SERVICE 1 ~~~~~~~ : %s \n " %servizio
 
 for status in ValidStatus:
-  for oldStatus in ValidStatus:
-    if status == oldStatus:
-      continue
-    print "############################"
-    print " "
-    print 'nel test:', status, oldStatus
-    pdp = PDP(granularity = 'Service', name = servizio['name'], status = status, 
-              formerStatus = oldStatus, reason = 'XXXXX', siteType = servizio['siteType'],
-              serviceType = servizio['serviceType']) 
-    res = pdp.takeDecision()
-    print res
+#  for oldStatus in ValidStatus:
+#    if status == oldStatus:
+#      continue
+  print "############################"
+  print " "
+  print 'nel test:', status#, oldStatus
+  pdp = PDP(granularity = 'Service', name = servizio['name'], status = status, 
+#            formerStatus = oldStatus, 
+            reason = 'XXXXX', siteType = servizio['siteType'],
+            serviceType = servizio['serviceType']) 
+  res = pdp.takeDecision()
+  print res
 
 
 print "\n\n ~~~~~~~ SERVICE 2 ~~~~~~~ : %s \n " %servizio2
 
 for status in ValidStatus:
-  for oldStatus in ValidStatus:
-    if status == oldStatus:
-      continue
+#  for oldStatus in ValidStatus:
+#    if status == oldStatus:
+#      continue
     print "############################"
     print " "
-    print 'nel test:', status, oldStatus
+    print 'nel test:', status#, oldStatus
     pdp = PDP(granularity = 'Service', name = servizio2['name'], status = status, 
-              formerStatus = oldStatus, reason = 'XXXXX', siteType = servizio2['siteType'],
+#              formerStatus = oldStatus, 
+              reason = 'XXXXX', siteType = servizio2['siteType'],
               serviceType = servizio2['serviceType']) 
     res = pdp.takeDecision()
     print res
@@ -81,59 +84,63 @@ for status in ValidStatus:
 print "\n\n ~~~~~~~ RISORSA 1 ~~~~~~~ : %s \n " %risorsa
 
 for status in ValidStatus:
-  for oldStatus in ValidStatus:
-    if status == oldStatus:
-      continue
-    print "############################"
-    print " "
-    print status, oldStatus
-    pdp = PDP(granularity = 'Resource', name = risorsa['name'], status = status, 
-              formerStatus = oldStatus, reason = 'XXXXX', siteType = risorsa['siteType'], 
-              resourceType = risorsa['resourceType'])
-    res = pdp.takeDecision()
-    print res
+#  for oldStatus in ValidStatus:
+#    if status == oldStatus:
+#      continue
+  print "############################"
+  print " "
+  print status#, oldStatus
+  pdp = PDP(granularity = 'Resource', name = risorsa['name'], status = status, 
+#            formerStatus = oldStatus, 
+            reason = 'XXXXX', siteType = risorsa['siteType'], 
+            resourceType = risorsa['resourceType'])
+  res = pdp.takeDecision()
+  print res
 
 print "\n\n ~~~~~~~ RISORSA 2 ~~~~~~~ : %s \n " %risorsa2
 
 for status in ValidStatus:
-  for oldStatus in ValidStatus:
-    if status == oldStatus:
-      continue
-    print "############################"
-    print " "
-    print status, oldStatus
-    pdp = PDP(granularity = 'Resource', name = risorsa2['name'], status = status, 
-              formerStatus = oldStatus, reason = 'XXXXX', siteType = risorsa2['siteType'], 
-              resourceType = risorsa2['resourceType'])
-    res = pdp.takeDecision()
-    print res
+#  for oldStatus in ValidStatus:
+#    if status == oldStatus:
+#      continue
+  print "############################"
+  print " "
+  print status#, oldStatus
+  pdp = PDP(granularity = 'Resource', name = risorsa2['name'], status = status, 
+#              formerStatus = oldStatus, 
+            reason = 'XXXXX', siteType = risorsa2['siteType'], 
+            resourceType = risorsa2['resourceType'])
+  res = pdp.takeDecision()
+  print res
 
 print "\n\n ~~~~~~~ RISORSA 3 ~~~~~~~ : %s \n " %risorsa3
 
 for status in ValidStatus:
-  for oldStatus in ValidStatus:
-    if status == oldStatus:
-      continue
-    print "############################"
-    print " "
-    print status, oldStatus
-    pdp = PDP(granularity = 'Resource', name = risorsa3['name'], status = status, 
-              formerStatus = oldStatus, reason = 'XXXXX', siteType = risorsa3['siteType'], 
-              resourceType = risorsa3['resourceType'])
-    res = pdp.takeDecision()
-    print res
+#  for oldStatus in ValidStatus:
+#    if status == oldStatus:
+#      continue
+  print "############################"
+  print " "
+  print status#, oldStatus
+  pdp = PDP(granularity = 'Resource', name = risorsa3['name'], status = status, 
+#            formerStatus = oldStatus, 
+            reason = 'XXXXX', siteType = risorsa3['siteType'], 
+            resourceType = risorsa3['resourceType'])
+  res = pdp.takeDecision()
+  print res
 
 print "\n\n ~~~~~~~ StorageElement ~~~~~~~ : %s \n " %se
 
 for status in ValidStatus:
-  for oldStatus in ValidStatus:
-    if status == oldStatus:
-      continue
-    print "############################"
-    print " "
-    print status, oldStatus
-    pdp = PDP(granularity = 'StorageElement', name = se['name'], status = status, 
-              formerStatus = oldStatus, reason = 'XXXXX', siteType = risorsa['siteType'], 
-              resourceType = risorsa['resourceType']) 
-    res = pdp.takeDecision()
-    print res
+#  for oldStatus in ValidStatus:
+#    if status == oldStatus:
+#      continue
+  print "############################"
+  print " "
+  print status#, oldStatus
+  pdp = PDP(granularity = 'StorageElement', name = se['name'], status = status, 
+#            formerStatus = oldStatus, 
+            reason = 'XXXXX', siteType = risorsa['siteType'], 
+            resourceType = risorsa['resourceType']) 
+  res = pdp.takeDecision()
+  print res

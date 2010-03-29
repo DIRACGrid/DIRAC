@@ -17,8 +17,6 @@ from DIRAC import gConfig
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 import time
 
@@ -96,9 +94,6 @@ class PEP:
       if self.__resourceType not in ValidResourceType:
         raise InvalidResourceType, where(self, self.__init__)
 
-    self.diracAdmin = DiracAdmin()
-    self.csAPI = CSAPI()      
-    
     self.__realBan = False
     if operatorCode is not None:
       if operatorCode == 'RS_SVC':
@@ -116,8 +111,8 @@ class PEP:
       
 #############################################################################
     
-  def enforce(self, pdpIn = None, rsDBIn = None, knownInfo = None,
-              ncIn = None, setupIn = None):
+  def enforce(self, pdpIn = None, rsDBIn = None, ncIn = None, setupIn = None, 
+              daIn = None, csAPIIn = None, knownInfo = None):
     """ 
     enforce policies, using a PDP  (Policy Decision Point), based on
 
@@ -135,7 +130,9 @@ class PEP:
   
      self.__serviceType (optional)
   
-     self.__resourceType (optional)
+     self.__realBan (optional)
+  
+     self.__user (optional)
   
      self.__futurePolicyType (optional)
   
@@ -146,11 +143,18 @@ class PEP:
   
        :attr:`rsDBIn`: a custom database object (optional)
      
-       :attr:`knownInfo`: a string of known provided information (optional)
+       :attr:`setupIn`: a string with the present setup (optional)
 
        :attr:`ncIn`: a custom notification client object (optional)
+
+       :attr:`daIn`: a custom DiracAdmin object (optional)
+
+       :attr:`csAPIIn`: a custom CSAPI object (optional)
+
+       :attr:`knownInfo`: a string of known provided information (optional)
     """
 
+    #PDP
     if pdpIn is not None:
       pdp = pdpIn
     else:
@@ -161,12 +165,43 @@ class PEP:
                 siteType = self.__siteType, serviceType = self.__serviceType, 
                 resourceType = self.__resourceType)
 
+    #DB
     if rsDBIn is not None:
       rsDB = rsDBIn
     else:
       # Use standard DIRAC DB
       from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
       rsDB = ResourceStatusDB()
+    
+    #setup
+    if setupIn is not None:
+      setup = setupIn
+    else:
+      # get present setup
+      from DIRAC import gConfig
+      setup = gConfig.getValue("DIRAC/Setup")
+          
+    #notification client
+    if ncIn is not None:
+      nc = ncIn
+    else:
+      from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+      nc = NotificationClient()
+          
+    #DiracAdmin
+    if daIn is not None:
+      da = daIn
+    else:
+      from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+      da = DiracAdmin()
+
+    #CSAPI
+    if csAPIIn is not None:
+      csAPI = csAPIIn
+    else:
+      from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+      csAPI = CSAPI()
+  
     
     # policy decision
     resDecisions = pdp.takeDecision(knownInfo=knownInfo)
@@ -176,203 +211,217 @@ class PEP:
       self.__policyType = res['PolicyType']
 
       if 'Resource_PolType' in self.__policyType:
-      # Update the DB
-        if self.__granularity == 'Site':
-          if res['Action']:
-            rsDB.setSiteStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
-            rsDB.setMonitoredToBeChecked(['Service', 'Resource', 'StorageElement'], 'Site', self.__name)
-          else:
-            rsDB.setMonitoredReason(self.__granularity, self.__name, res['Reason'], 'RS_SVC')
-        
-        elif self.__granularity == 'Service':
-          if res['Action']:
-            rsDB.setServiceStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
-          else:
-            rsDB.setMonitoredReason(self.__granularity, self.__name, res['Reason'], 'RS_SVC')
-    
-        elif self.__granularity == 'Resource':
-          if res['Action']:
-            rsDB.setResourceStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
-            rsDB.setMonitoredToBeChecked(['Site', 'Service', 'StorageElement'], 'Resource', self.__name)
-          else:
-            rsDB.setMonitoredReason(self.__granularity, self.__name, res['Reason'], 'RS_SVC')
-
-        elif self.__granularity == 'StorageElement':
-          if res['Action']:
-            rsDB.setStorageElementStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
-            rsDB.setMonitoredToBeChecked(['Site', 'Service', 'Resource'], 'StorageElement', self.__name)
-          else:
-            rsDB.setMonitoredReason(self.__granularity, self.__name, res['Reason'], 'RS_SVC')
-    
-        rsDB.setLastMonitoredCheckTime(self.__granularity, self.__name)
-        for resP in resDecisions['SinglePolicyResults']:
-          rsDB.addOrModifyPolicyRes(self.__granularity, self.__name, 
-                                    resP['PolicyName'], resP['Status'], resP['Reason'])
-        
-        if res.has_key('EndDate'):
-          rsDB.setDateEnd(self.__granularity, self.__name, res['EndDate']) 
-  
-        if res['Action']:
-          try:
-            if self.__futureGranularity != self.__granularity:
-              self.__name = rsDB.getGeneralName(self.__name, self.__granularity, 
-                                                self.__futureGranularity)
-            newPEP = PEP(granularity = self.__futureGranularity, name = self.__name, 
-                         status = self.__status, formerStatus = self.__formerStatus, 
-                         reason = self.__reason)
-            newPEP.enforce(pdpIn = pdp, rsDBIn = rsDB) 
-          except AttributeError:
-            pass
+        self._ResourcePolTypeActions(resDecisions, res, rsDB)
+      
       
       if 'Alarm_PolType' in self.__policyType:
-        # raise alarm, right now makes a simple notification
-        
-        if res['Action']:
-
-          if ncIn is not None:
-            nc = ncIn
-          else:
-            from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
-            nc = NotificationClient()
-          
-          notif = "%s %s is perceived as" %(self.__granularity, self.__name) 
-          notif = notif + " %s. Reason: %s." %(res['Status'], res['Reason'])
-          
-          if setupIn is None:
-            setupIn = gConfig.getValue("DIRAC/Setup")
-          
-          NOTIF_D = self._getUsersToNotify(self.__granularity, 
-                                           setupIn, self.__siteType)
-          
-          for notification in NOTIF_D:
-            for user in notification['Users']:
-              if 'Web' in notification['Notifications']:
-                nc.addNotificationForUser(user, notif)
-              if 'Mail' in notification['Notifications']:
-                mailMessage = "Granularity = %s \n" %self.__granularity
-                mailMessage = mailMessage + "Name = %s\n" %self.__name
-                mailMessage = mailMessage + "New perceived status = %s\n" %res['Status']
-                mailMessage = mailMessage + "Reason for status change = %s\n" %res['Reason']
-                mailMessage = mailMessage + "Setup = %s\n" %setupIn
-                nc.sendMail(gConfig.getValue("Security/Users/%s/email" %user), 
-                            '%s: %s' %(self.__name, res['Status']), mailMessage)
-          
-#          for alarm in Configurations.alarms_list:
-#            nc.updateAlarm(alarmKey = alarm, comment = notif) 
+        self._AlarmPolTypeActions(res, nc, setup)
           
       if 'RealBan_PolType' in self.__policyType and self.__realBan == True:
-        # implement real ban
-
-        if self.__granularity == 'Site':
-
-          banList = self.diracAdmin.getBannedSites()
-          if not res['OK']:
-            raise RSSException, where(self, self.enforce), banList['Message']
-          else:
-            banList = banList['Value']
-          
-          if res['Action']:
-            
-            if res['Status'] == 'Banned': 
-            
-              if self.__name not in banList:
-                banSite = self.diracAdmin.banSiteFromMask(self.__name, res['Reason'])
-                if not banSite['OK']:
-                  raise RSSException, where(self, self.enforce), banSite['Message']
-                if setupIn == 'LHCb-Production':
-                  address = gConfig.getValue('/Operations/EMail/Production','')
-                else:
-                  address = 'fstagni@cern.ch'
-                
-                subject = '%s is banned for %s setup' %(self.__name, setupIn)
-                body = 'Site %s is removed from site mask for %s' %(self.__name, setupIn)
-                body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
-                body += 'Comment:\n%s' %res['Reason']
-                diracAdmin.sendMail(address,subject,body)
-            
-            else:
-              if self.__name in banList:
-                addSite = self.diracAdmin.addSiteInMask(self.__name, res['Reason'])
-                if not addSite['OK']:
-                  raise RSSException, where(self, self.enforce), addSite['Message']
-                if setupIn == 'LHCb-Production':
-                  address = gConfig.getValue('/Operations/EMail/Production','')
-                else:
-                  address = 'fstagni@cern.ch'
-                
-                subject = '%s is added in site mask for %s setup' %(self.__name, setupIn)
-                body = 'Site %s is added to the site mask for %s' %(self.__name, setupIn)
-                body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
-                body += 'Comment:\n%s' %res['Reason']
-                diracAdmin.sendMail(address,subject,body)
-                  
-        
-        elif self.__granularity == 'StorageElement':
-        
-          gConfig.getValue("/Resources/StorageElements/%s/ReadAccess", self.__name)
-          
-          if res['Action']:
-            
-            presentReadStatus = gConfig.getValue("/Resources/StorageElements/CNAF-RAW/ReadAccess")
-            presentWriteStatus = gConfig.getValue("/Resources/StorageElements/CNAF-RAW/WriteAccess")
-
-            if res['Status'] == 'Banned':
-              
-              if presentReadStatus != 'InActive':
-                banSE = self.csAPI.setOption("/Resources/StorageElements/%s/ReadAccess" %(self.__name), "InActive")
-                if not banSE['OK']:
-                  raise RSSException, where(self, self.enforce), banSE['Message']
-                banSE = self.csAPI.setOption("/Resources/StorageElements/%s/WriteAccess" %(self.__name), "InActive")
-                if not banSE['OK']:
-                  raise RSSException, where(self, self.enforce), banSE['Message']
-                commit = csAPI.commit()
-                if not commit['OK']:
-                  raise RSSException, where(self, self.enforce), commit['Message']
-                if setupIn == 'LHCb-Production':
-                  address = gConfig.getValue('/Operations/EMail/Production','')
-                else:
-                  address = 'fstagni@cern.ch'
-                
-                subject = '%s is banned for %s setup' %(self.__name, setupIn)
-                body = 'SE %s is removed from mask for %s' %(self.__name, setupIn)
-                body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
-                body += 'Comment:\n%s' %res['Reason']
-                diracAdmin.sendMail(address,subject,body)
-            
-            else:
-
-              if presentReadStatus == 'InActive':
-
-                allowSE = self.csAPI.setOption("/Resources/StorageElements/%s/ReadAccess" %(self.__name), "Active")
-                if not allowSE['OK']:
-                  raise RSSException, where(self, self.enforce), allowSE['Message']
-                allowSE = self.csAPI.setOption("/Resources/StorageElements/%s/WriteAccess" %(self.__name), "Active")
-                if not allowSE['OK']:
-                  raise RSSException, where(self, self.enforce), allowSE['Message']
-                commit = csAPI.commit()
-                if not commit['OK']:
-                  raise RSSException, where(self, self.enforce), commit['Message']
-                if setupIn == 'LHCb-Production':
-                  address = gConfig.getValue('/Operations/EMail/Production','')
-                else:
-                  address = 'fstagni@cern.ch'
-                
-                subject = '%s is banned for %s setup' %(self.__name, setupIn)
-                body = 'SE %s is removed from mask for %s' %(self.__name, setupIn)
-                body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
-                body += 'Comment:\n%s' %res['Reason']
-                diracAdmin.sendMail(address,subject,body)
-                  
-        
-
+        self._RealBanPolTypeActions(res, da, csAPI, setup)
       
       if 'Collective_PolType' in self.__policyType:
         # do something
         pass
+
+
+
+      if res['Action']:
+        try:
+          if self.__futureGranularity != self.__granularity:
+            self.__name = rsDB.getGeneralName(self.__name, self.__granularity, 
+                                              self.__futureGranularity)
+          newPEP = PEP(granularity = self.__futureGranularity, name = self.__name, 
+                       status = self.__status, formerStatus = self.__formerStatus, 
+                       reason = self.__reason)
+          newPEP.enforce(pdpIn = pdp, rsDBIn = rsDB) 
+        except AttributeError:
+          pass
+    
+
+
     
 #############################################################################
 
-  def _getUsersToNotify(self, granularity, setup, siteType = None):
+  def _ResourcePolTypeActions(self, resDecisions, res, rsDB):
+    # Update the DB
+  
+    if res['Action']:
+      if self.__granularity == 'Site':
+        rsDB.setSiteStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
+        rsDB.setMonitoredToBeChecked(['Service', 'Resource', 'StorageElement'], 'Site', self.__name)
+      
+      elif self.__granularity == 'Service':
+        rsDB.setServiceStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
+        rsDB.setMonitoredToBeChecked(['Site', 'Resource', 'StorageElement'], 'Service', self.__name)
+      
+      elif self.__granularity == 'Resource':
+        rsDB.setResourceStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
+        rsDB.setMonitoredToBeChecked(['Site', 'Service', 'StorageElement'], 'Resource', self.__name)
+
+      elif self.__granularity == 'StorageElement':
+        rsDB.setStorageElementStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
+        rsDB.setMonitoredToBeChecked(['Site', 'Service', 'Resource'], 'StorageElement', self.__name)
+
+    else:
+      rsDB.setMonitoredReason(self.__granularity, self.__name, res['Reason'], 'RS_SVC')
+
+    rsDB.setLastMonitoredCheckTime(self.__granularity, self.__name)
+    
+    for resP in resDecisions['SinglePolicyResults']:
+      rsDB.addOrModifyPolicyRes(self.__granularity, self.__name, 
+                                resP['PolicyName'], resP['Status'], resP['Reason'])
+    
+    if res.has_key('EndDate'):
+      rsDB.setDateEnd(self.__granularity, self.__name, res['EndDate']) 
+  
+  
+#############################################################################
+
+  def _AlarmPolTypeActions(self, res, nc, setup):
+        # raise alarms, right now makes a simple notification
+        
+    if res['Action']:
+
+      notif = "%s %s is perceived as" %(self.__granularity, self.__name) 
+      notif = notif + " %s. Reason: %s." %(res['Status'], res['Reason'])
+      
+      NOTIF_D = self.__getUsersToNotify(self.__granularity, 
+                                        setup, self.__siteType)
+      
+      for notification in NOTIF_D:
+        for user in notification['Users']:
+          if 'Web' in notification['Notifications']:
+            nc.addNotificationForUser(user, notif)
+          if 'Mail' in notification['Notifications']:
+            mailMessage = "Granularity = %s \n" %self.__granularity
+            mailMessage = mailMessage + "Name = %s\n" %self.__name
+            mailMessage = mailMessage + "New perceived status = %s\n" %res['Status']
+            mailMessage = mailMessage + "Reason for status change = %s\n" %res['Reason']
+            mailMessage = mailMessage + "Setup = %s\n" %setup
+            nc.sendMail(gConfig.getValue("Security/Users/%s/email" %user), 
+                        '%s: %s' %(self.__name, res['Status']), mailMessage)
+      
+#          for alarm in Configurations.alarms_list:
+#            nc.updateAlarm(alarmKey = alarm, comment = notif) 
+  
+  
+#############################################################################
+  
+  def _RealBanPolTypeActions(self, res, da, csAPI, setup):
+    # implement real ban
+  
+    if res['Action']:
+      
+      if self.__granularity == 'Site':
+  
+        banList = da.getBannedSites()
+        if not banList['OK']:
+          raise RSSException, where(self, self.enforce), banList['Message']
+        else:
+          banList = banList['Value']
+        
+        
+        if res['Status'] == 'Banned': 
+        
+          if self.__name not in banList:
+            banSite = da.banSiteFromMask(self.__name, res['Reason'])
+            if not banSite['OK']:
+              raise RSSException, where(self, self.enforce), banSite['Message']
+            if setup == 'LHCb-Production':
+              address = gConfig.getValue('/Operations/EMail/Production','')
+            else:
+              address = 'fstagni@cern.ch'
+            
+            subject = '%s is banned for %s setup' %(self.__name, setup)
+            body = 'Site %s is removed from site mask for %s' %(self.__name, setup)
+            body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
+            body += 'Comment:\n%s' %res['Reason']
+            sendMail = da.sendMail(address,subject,body)
+            if not sendMail['OK']:
+              raise RSSException, where(self, self.enforce), sendMail['Message']
+        
+        else:
+          if self.__name in banList:
+            addSite = self.da.addSiteInMask(self.__name, res['Reason'])
+            if not addSite['OK']:
+              raise RSSException, where(self, self.enforce), addSite['Message']
+            if setup == 'LHCb-Production':
+              address = gConfig.getValue('/Operations/EMail/Production','')
+            else:
+              address = 'fstagni@cern.ch'
+            
+            subject = '%s is added in site mask for %s setup' %(self.__name, setup)
+            body = 'Site %s is added to the site mask for %s' %(self.__name, setup)
+            body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
+            body += 'Comment:\n%s' %res['Reason']
+            sendMail = da.sendMail(address,subject,body)
+            if not sendMail['OK']:
+              raise RSSException, where(self, self.enforce), sendMail['Message']
+              
+    
+      elif self.__granularity == 'StorageElement':
+      
+        presentReadStatus = gConfig.getValue("/Resources/StorageElements/%s/ReadAccess" %(self.__name) )
+        presentWriteStatus = gConfig.getValue("/Resources/StorageElements/%s/WriteAccess" %(self.__name) )
+  
+        if res['Status'] == 'Banned':
+          
+          if presentReadStatus != 'InActive':
+            banSE = csAPI.setOption("/Resources/StorageElements/%s/ReadAccess" %(self.__name), "InActive")
+            if not banSE['OK']:
+              raise RSSException, where(self, self.enforce), banSE['Message']
+            banSE = csAPI.setOption("/Resources/StorageElements/%s/WriteAccess" %(self.__name), "InActive")
+            if not banSE['OK']:
+              raise RSSException, where(self, self.enforce), banSE['Message']
+            commit = csAPI.commit()
+            if not commit['OK']:
+              raise RSSException, where(self, self.enforce), commit['Message']
+            if setup == 'LHCb-Production':
+              address = gConfig.getValue('/Operations/EMail/Production','')
+            else:
+              address = 'fstagni@cern.ch'
+            
+            subject = '%s is banned for %s setup' %(self.__name, setup)
+            body = 'SE %s is removed from mask for %s' %(self.__name, setup)
+            body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
+            body += 'Comment:\n%s' %res['Reason']
+            sendMail = da.sendMail(address,subject,body)
+            if not sendMail['OK']:
+              raise RSSException, where(self, self.enforce), sendMail['Message']
+        
+        else:
+  
+          if presentReadStatus == 'InActive':
+  
+            allowSE = csAPI.setOption("/Resources/StorageElements/%s/ReadAccess" %(self.__name), "Active")
+            if not allowSE['OK']:
+              raise RSSException, where(self, self.enforce), allowSE['Message']
+            allowSE = csAPI.setOption("/Resources/StorageElements/%s/WriteAccess" %(self.__name), "Active")
+            if not allowSE['OK']:
+              raise RSSException, where(self, self.enforce), allowSE['Message']
+            commit = csAPI.commit()
+            if not commit['OK']:
+              raise RSSException, where(self, self.enforce), commit['Message']
+            if setup == 'LHCb-Production':
+              address = gConfig.getValue('/Operations/EMail/Production','')
+            else:
+              address = 'fstagni@cern.ch'
+            
+            subject = '%s is banned for %s setup' %(self.__name, setup)
+            body = 'SE %s is removed from mask for %s' %(self.__name, setup)
+            body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
+            body += 'Comment:\n%s' %res['Reason']
+            sendMail = da.sendMail(address,subject,body)
+            if not sendMail['OK']:
+              raise RSSException, where(self, self.enforce), sendMail['Message']
+                  
+        
+
+#############################################################################
+  
+  
+  def __getUsersToNotify(self, granularity, setup, siteType = None):
     
     users = []
     notifications = []
@@ -391,3 +440,4 @@ class PEP:
     return NOTIF
 
 #############################################################################
+
