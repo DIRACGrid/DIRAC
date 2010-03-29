@@ -19,23 +19,29 @@ class SandboxStoreClient:
 
   __validSandboxTypes = ( 'Input', 'Output' )
 
-  def __init__( self, useCertificates = False, rpcClient = False, transferClient = False ):
+  def __init__( self, useCertificates = False, rpcClient = False, transferClient = False, 
+                delegatedDN = None, delegatedGroup = None, setup = None ):
     self.__serviceName = "WorkloadManagement/SandboxStore"
     self.__rpcClient = rpcClient
     self.__transferClient = transferClient
     self.__useCertificates = useCertificates
+    self.__delegatedDN = delegatedDN
+    self.__delegatedGroup = delegatedGroup
+    self.__setup = setup
 
   def __getRPCClient( self ):
     if self.__rpcClient:
       return self.__rpcClient
     else:
-      return RPCClient( self.__serviceName, useCertificates = self.__useCertificates )
+      return RPCClient( self.__serviceName, useCertificates = self.__useCertificates, 
+                        delegatedGroup=self.__delegatedGroup, delegatedDN=self.__delegatedDN, setup=self.__setup )
 
   def __getTransferClient( self ):
     if self.__transferClient:
       return self.__transferClient
     else:
-      return TransferClient( self.__serviceName, useCertificates = self.__useCertificates )
+      return TransferClient( self.__serviceName, useCertificates = self.__useCertificates, 
+                             delegatedGroup=self.__delegatedGroup, delegatedDN=self.__delegatedDN, setup=self.__setup )
 
   #Upload sandbox to jobs and pilots
 
@@ -117,7 +123,7 @@ class SandboxStoreClient:
   ##############
   # Download sandbox
 
-  def downloadSandbox( self, sbLocation, destinationDir = "" ):
+  def downloadSandbox( self, sbLocation, destinationDir = "", inMemory = False ):
     """
     Download a sandbox file and keep it in bundled form
     """
@@ -152,6 +158,18 @@ class SandboxStoreClient:
 
     result = S_OK()
     tarFileName = os.path.join( tmpSBDir, sbFileName )
+    
+    if inMemory:
+      try:
+        tfile = open(tarFileName,'r')
+        data = tfile.read()
+        tfile.close()
+        os.unlink(tarFileName)
+      except Exception, e:
+        os.unlink(tarFileName)
+        return S_ERROR('Failed to read the sandbox archive: %s' % str(e))
+      return S_OK(data)    
+
     try:
       sandboxSize = 0
       tf = tarfile.open( name = tarFileName, mode = "r" )
@@ -191,7 +209,7 @@ class SandboxStoreClient:
       entitiesList.append( "Job:%s" % jobId )
     return self.__unassignEntities( entitiesList )
 
-  def downloadSandboxForJob( self, jobId, sbType, destinationPath = "" ):
+  def downloadSandboxForJob( self, jobId, sbType, destinationPath = "", inMemory=False ):
     result = self.__getSandboxesForEntity( "Job:%s" % jobId )
     if not result[ 'OK' ]:
       return result
@@ -199,8 +217,10 @@ class SandboxStoreClient:
     if sbType not in sbDict:
       return S_ERROR( "No %s sandbox registered for job %s" % ( sbType, jobId ) )
     for sbLocation in sbDict[ sbType ]:
-      result = self.downloadSandbox( sbLocation, destinationPath )
+      result = self.downloadSandbox( sbLocation, destinationPath, inMemory )
       if not result[ 'OK' ]:
+        return result
+      if inMemory:
         return result
     return S_OK()
 
