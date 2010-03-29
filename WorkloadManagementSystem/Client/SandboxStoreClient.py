@@ -165,8 +165,10 @@ class SandboxStoreClient:
         data = tfile.read()
         tfile.close()
         os.unlink(tarFileName)
+        os.rmdir( tmpSBDir )  
       except Exception, e:
         os.unlink(tarFileName)
+        os.rmdir( tmpSBDir )
         return S_ERROR('Failed to read the sandbox archive: %s' % str(e))
       return S_OK(data)    
 
