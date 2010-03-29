@@ -490,6 +490,14 @@ Policy_Types = {
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
      },
+  'RealBan_PolType' : 
+    { 'Granularity' : [], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ValidResourceType,
+     },
   'Collective_PolType' :
     { 'Granularity' : [], 
       'Status' : ValidStatus, 

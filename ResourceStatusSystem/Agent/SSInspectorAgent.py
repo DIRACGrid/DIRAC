@@ -136,10 +136,11 @@ class SSInspectorAgent(AgentModule):
         status = toBeChecked[2]
         formerStatus = toBeChecked[3]
         siteType = toBeChecked[4]
+        operatorCode = toBeChecked[5]
         
         gLogger.info("Checking Site %s, with status %s" % (siteName, status))
         newPEP = PEP(granularity = granularity, name = siteName, status = status, 
-                     formerStatus = formerStatus, siteType = siteType)
+                     formerStatus = formerStatus, siteType = siteType, operatorCode = operatorCode)
         newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup)
     
         # remove from InCheck list

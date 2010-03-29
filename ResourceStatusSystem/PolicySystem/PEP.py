@@ -17,7 +17,10 @@ from DIRAC import gConfig
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
+from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
+import time
 
 class PEP: 
 #############################################################################
@@ -53,7 +56,7 @@ class PEP:
  
   def __init__(self, granularity = None, name = None, status = None, formerStatus = None, 
                reason = None, siteType = None, serviceType = None, resourceType = None, 
-               futureEnforcement = None):
+               operatorCode = None, futureEnforcement = None):
     
     try:
 #      granularity = presentEnforcement['Granularity']
@@ -93,7 +96,14 @@ class PEP:
       if self.__resourceType not in ValidResourceType:
         raise InvalidResourceType, where(self, self.__init__)
 
-      
+    self.diracAdmin = DiracAdmin()
+    self.csAPI = CSAPI()      
+    
+    self.__realBan = False
+    if operatorCode is not None:
+      if operatorCode == 'RS_SVC':
+        self.__realBan = True
+    
     if futureEnforcement is not None:
       try:
         futureGranularity = futureEnforcement['Granularity']
@@ -250,6 +260,112 @@ class PEP:
 #          for alarm in Configurations.alarms_list:
 #            nc.updateAlarm(alarmKey = alarm, comment = notif) 
           
+      if 'RealBan_PolType' in self.__policyType and self.__realBan == True:
+        # implement real ban
+
+        if self.__granularity == 'Site':
+
+          banList = self.diracAdmin.getBannedSites()
+          if not res['OK']:
+            raise RSSException, where(self, self.enforce), banList['Message']
+          else:
+            banList = banList['Value']
+          
+          if res['Action']:
+            
+            if res['Status'] == 'Banned': 
+            
+              if self.__name not in banList:
+                banSite = self.diracAdmin.banSiteFromMask(self.__name, res['Reason'])
+                if not banSite['OK']:
+                  raise RSSException, where(self, self.enforce), banSite['Message']
+                if setupIn == 'LHCb-Production':
+                  address = gConfig.getValue('/Operations/EMail/Production','')
+                else:
+                  address = 'fstagni@cern.ch'
+                
+                subject = '%s is banned for %s setup' %(self.__name, setupIn)
+                body = 'Site %s is removed from site mask for %s' %(self.__name, setupIn)
+                body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
+                body += 'Comment:\n%s' %res['Reason']
+                diracAdmin.sendMail(address,subject,body)
+            
+            else:
+              if self.__name in banList:
+                addSite = self.diracAdmin.addSiteInMask(self.__name, res['Reason'])
+                if not addSite['OK']:
+                  raise RSSException, where(self, self.enforce), addSite['Message']
+                if setupIn == 'LHCb-Production':
+                  address = gConfig.getValue('/Operations/EMail/Production','')
+                else:
+                  address = 'fstagni@cern.ch'
+                
+                subject = '%s is added in site mask for %s setup' %(self.__name, setupIn)
+                body = 'Site %s is added to the site mask for %s' %(self.__name, setupIn)
+                body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
+                body += 'Comment:\n%s' %res['Reason']
+                diracAdmin.sendMail(address,subject,body)
+                  
+        
+        elif self.__granularity == 'StorageElement':
+        
+          gConfig.getValue("/Resources/StorageElements/%s/ReadAccess", self.__name)
+          
+          if res['Action']:
+            
+            presentReadStatus = gConfig.getValue("/Resources/StorageElements/CNAF-RAW/ReadAccess")
+            presentWriteStatus = gConfig.getValue("/Resources/StorageElements/CNAF-RAW/WriteAccess")
+
+            if res['Status'] == 'Banned':
+              
+              if presentReadStatus != 'InActive':
+                banSE = self.csAPI.setOption("/Resources/StorageElements/%s/ReadAccess" %(self.__name), "InActive")
+                if not banSE['OK']:
+                  raise RSSException, where(self, self.enforce), banSE['Message']
+                banSE = self.csAPI.setOption("/Resources/StorageElements/%s/WriteAccess" %(self.__name), "InActive")
+                if not banSE['OK']:
+                  raise RSSException, where(self, self.enforce), banSE['Message']
+                commit = csAPI.commit()
+                if not commit['OK']:
+                  raise RSSException, where(self, self.enforce), commit['Message']
+                if setupIn == 'LHCb-Production':
+                  address = gConfig.getValue('/Operations/EMail/Production','')
+                else:
+                  address = 'fstagni@cern.ch'
+                
+                subject = '%s is banned for %s setup' %(self.__name, setupIn)
+                body = 'SE %s is removed from mask for %s' %(self.__name, setupIn)
+                body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
+                body += 'Comment:\n%s' %res['Reason']
+                diracAdmin.sendMail(address,subject,body)
+            
+            else:
+
+              if presentReadStatus == 'InActive':
+
+                allowSE = self.csAPI.setOption("/Resources/StorageElements/%s/ReadAccess" %(self.__name), "Active")
+                if not allowSE['OK']:
+                  raise RSSException, where(self, self.enforce), allowSE['Message']
+                allowSE = self.csAPI.setOption("/Resources/StorageElements/%s/WriteAccess" %(self.__name), "Active")
+                if not allowSE['OK']:
+                  raise RSSException, where(self, self.enforce), allowSE['Message']
+                commit = csAPI.commit()
+                if not commit['OK']:
+                  raise RSSException, where(self, self.enforce), commit['Message']
+                if setupIn == 'LHCb-Production':
+                  address = gConfig.getValue('/Operations/EMail/Production','')
+                else:
+                  address = 'fstagni@cern.ch'
+                
+                subject = '%s is banned for %s setup' %(self.__name, setupIn)
+                body = 'SE %s is removed from mask for %s' %(self.__name, setupIn)
+                body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
+                body += 'Comment:\n%s' %res['Reason']
+                diracAdmin.sendMail(address,subject,body)
+                  
+        
+
+      
       if 'Collective_PolType' in self.__policyType:
         # do something
         pass

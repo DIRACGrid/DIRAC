@@ -137,10 +137,12 @@ class SeSInspectorAgent(AgentModule):
         formerStatus = toBeChecked[3]
         siteType = toBeChecked[4]
         serviceType = toBeChecked[5]
+        operatorCode = toBeChecked[6]
         
         gLogger.info("Checking Service %s, with status %s" % (serviceName, status))
         newPEP = PEP(granularity = granularity, name = serviceName, status = status, 
-                     formerStatus = formerStatus, siteType = siteType, serviceType = serviceType)
+                     formerStatus = formerStatus, siteType = siteType, 
+                     serviceType = serviceType, operatorCode = operatorCode)
         newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup)
 
         # remove from InCheck list

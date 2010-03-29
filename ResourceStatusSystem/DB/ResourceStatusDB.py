@@ -3156,27 +3156,27 @@ class ResourceStatusDB:
     T2dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2bannedCheckFrequecy)).isoformat(' ')
 
     if granularity in ('Site', 'Sites'):
-      req = "SELECT SiteName, Status, FormerStatus, SiteType FROM PresentSites WHERE"
+      req = "SELECT SiteName, Status, FormerStatus, SiteType, OperatorCode FROM PresentSites WHERE"
     elif granularity in ('Service', 'Services'):
-      req = "SELECT ServiceName, Status, FormerStatus, SiteType, ServiceType FROM PresentServices WHERE"
+      req = "SELECT ServiceName, Status, FormerStatus, SiteType, ServiceType, OperatorCode FROM PresentServices WHERE"
     elif granularity in ('Resource', 'Resources'):
-      req = "SELECT ResourceName, Status, FormerStatus, SiteType, ResourceType FROM PresentResources WHERE"
+      req = "SELECT ResourceName, Status, FormerStatus, SiteType, ResourceType, OperatorCode FROM PresentResources WHERE"
     elif granularity in ('StorageElement', 'StorageElements'):
-      req = "SELECT StorageElementName, Status, FormerStatus, SiteType FROM PresentStorageElements WHERE"
+      req = "SELECT StorageElementName, Status, FormerStatus, SiteType, OperatorCode FROM PresentStorageElements WHERE"
     else:
       raise InvalidRes, where(self, self.getStuffToCheck)
-    req = req + " (Status = 'Active' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromActive )
-    req = req + " (Status = 'Probing' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromProbing )
-    req = req + " (Status = 'Bad' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromBad )
-    req = req + " (Status = 'Banned' AND SiteType = 'T0' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T0dateToCheckFromBanned )
-    req = req + " (Status = 'Active' AND SiteType = 'T1' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T1dateToCheckFromActive )
-    req = req + " (Status = 'Probing' AND SiteType = 'T1' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T1dateToCheckFromProbing )
-    req = req + " (Status = 'Bad' AND SiteType = 'T1' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T1dateToCheckFromBad )
-    req = req + " (Status = 'Banned' AND SiteType = 'T1' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T1dateToCheckFromBanned )
-    req = req + " (Status = 'Active' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T2dateToCheckFromActive )
-    req = req + " (Status = 'Probing' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T2dateToCheckFromProbing )
-    req = req + " (Status = 'Bad' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC') OR" %( T2dateToCheckFromBad )
-    req = req + " (Status = 'Banned' AND SiteType = 'T2' AND LastCheckTime < '%s' AND OperatorCode = 'RS_SVC')" %( T2dateToCheckFromBanned )
+    req = req + " (Status = 'Active' AND SiteType = 'T0' AND LastCheckTime < '%s') OR" %( T0dateToCheckFromActive )
+    req = req + " (Status = 'Probing' AND SiteType = 'T0' AND LastCheckTime < '%s') OR" %( T0dateToCheckFromProbing )
+    req = req + " (Status = 'Bad' AND SiteType = 'T0' AND LastCheckTime < '%s') OR" %( T0dateToCheckFromBad )
+    req = req + " (Status = 'Banned' AND SiteType = 'T0' AND LastCheckTime < '%s') OR" %( T0dateToCheckFromBanned )
+    req = req + " (Status = 'Active' AND SiteType = 'T1' AND LastCheckTime < '%s') OR" %( T1dateToCheckFromActive )
+    req = req + " (Status = 'Probing' AND SiteType = 'T1' AND LastCheckTime < '%s') OR" %( T1dateToCheckFromProbing )
+    req = req + " (Status = 'Bad' AND SiteType = 'T1' AND LastCheckTime < '%s') OR" %( T1dateToCheckFromBad )
+    req = req + " (Status = 'Banned' AND SiteType = 'T1' AND LastCheckTime < '%s') OR" %( T1dateToCheckFromBanned )
+    req = req + " (Status = 'Active' AND SiteType = 'T2' AND LastCheckTime < '%s') OR" %( T2dateToCheckFromActive )
+    req = req + " (Status = 'Probing' AND SiteType = 'T2' AND LastCheckTime < '%s') OR" %( T2dateToCheckFromProbing )
+    req = req + " (Status = 'Bad' AND SiteType = 'T2' AND LastCheckTime < '%s') OR" %( T2dateToCheckFromBad )
+    req = req + " (Status = 'Banned' AND SiteType = 'T2' AND LastCheckTime < '%s')" %( T2dateToCheckFromBanned )
     req = req + " ORDER BY LastCheckTime"
     if maxN != None:
       req = req + " LIMIT %d" %maxN

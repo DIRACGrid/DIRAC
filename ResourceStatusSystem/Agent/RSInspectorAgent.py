@@ -139,11 +139,12 @@ class RSInspectorAgent(AgentModule):
         formerStatus = toBeChecked[3]
         siteType = toBeChecked[4]
         resourceType = toBeChecked[5]
+        operatorCode = toBeChecked[6]
         
         gLogger.info("Checking Resource %s, with status %s" % (resourceName, status))
         newPEP = PEP(granularity = granularity, name = resourceName, status = status, 
                      formerStatus = formerStatus, siteType = siteType, 
-                     resourceType = resourceType)
+                     resourceType = resourceType, operatorCode = operatorCode)
         newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup)
     
         # remove from InCheck list

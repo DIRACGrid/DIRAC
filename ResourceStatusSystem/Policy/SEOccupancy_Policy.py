@@ -59,14 +59,9 @@ class SEOccupancy_Policy(PolicyBase):
       
       status = status['SLS']
       
-    if status == -1:
-      return {'SAT':None} 
-    
     result = {}
     
-    result['Reason'] = "Occupancy on the SE: " 
-    
-    if status is None:
+    if status is None or status == -1:
       result['SAT'] = None
     else:
       if args[2] == 'Active':
@@ -113,7 +108,11 @@ class SEOccupancy_Policy(PolicyBase):
           result['SAT'] = True
           result['Status'] = 'Probing'
     
-    if status is not None:
+    
+    if status is not None and status != -1:
+    
+      result['Reason'] = "Occupancy on the SE: " 
+    
       if status == 0:
         str = 'FULL!'
       else:
@@ -125,4 +124,5 @@ class SEOccupancy_Policy(PolicyBase):
           str = 'Mid-High'
         result['Reason'] = result['Reason'] + str
       
+    
     return result
