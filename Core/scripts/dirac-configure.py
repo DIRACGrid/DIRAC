@@ -21,7 +21,8 @@
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base                                         import Script
+from DIRAC.Core.Base import Script
+from DIRAC.Core.Security.Misc import getProxyInfo
 
 import sys, os
 
@@ -232,7 +233,17 @@ if not os.path.exists(DIRAC.gConfig.diracConfigFilePath):
   if not os.path.exists(configDir):
     os.makedirs(configDir)
   DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
-Script.enableCS()
+  
+# We need user proxy or server certificate to continue
+if not useServerCert: 
+  result = getProxyInfo()
+  if not result['OK']:
+    DIRAC.gLogger.info('No user proxy available')
+    sys.exit(0)
+  else:
+    Script.enableCS()  
+else:
+  Script.enableCS()      
 
 #Do the vomsdir magic
 voName = DIRAC.gConfig.getValue( "/DIRAC/VirtualOrganization", "" )
