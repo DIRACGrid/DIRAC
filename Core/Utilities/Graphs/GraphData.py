@@ -103,17 +103,19 @@ class GraphData:
       for sub in self.subplots.values():
         for key in sub.getKeys():
           tmpset.add(key)
-      self.all_keys = list(tmpset)       
-      
-    if not self.plotdata:
-      for sub in self.subplots:
-        self.subplots[sub].expandKeys(self.all_keys)     
+      self.all_keys = list(tmpset)           
           
     self.key_type = get_key_type(self.all_keys)
     self.sortKeys()   
     self.makeNumKeys()      
           
     self.sortLabels()   
+    
+  def expandKeys(self):
+    
+    if not self.plotdata:
+      for sub in self.subplots:
+        self.subplots[sub].expandKeys(self.all_keys)       
     
   def isSimplePlot(self):
     
@@ -196,6 +198,8 @@ class GraphData:
     """ Prepare data for the cumulative graph
     """
   
+    self.expandKeys()
+  
     if self.plotdata:
       self.plotdata.makeCumulativePlot()
     if self.truncated:
@@ -206,7 +210,7 @@ class GraphData:
         
     self.sortLabels(sort_type='last_value')       
       
-  def getLabels(self,use_plotdata=False):
+  def getLabels(self):
     """ Get the graph labels together with the numeric values used for the label 
         sorting
     """
@@ -260,6 +264,7 @@ class GraphData:
         return self.subplots[label].getPlotDataForNumKeys(self.all_num_keys)    
     else:
       # Get the sum of all the subplots
+      self.expandKeys()
       arrays = []
       for label in self.subplots:
         arrays.append(numpy.array([ x[1] for x in self.subplots[label].getPlotDataForNumKeys(self.all_num_keys)]))
@@ -409,6 +414,8 @@ class PlotData:
     self.last_value = float(self.values[-1])    
     
   def expandKeys(self,all_keys):
+    """ Fill zero values into the missing keys 
+    """
     
     for k in all_keys:
       if not self.parsed_data.has_key(k):

@@ -171,6 +171,6 @@ def histogram( data, file, bins, *args, **kw ):
   kw = __checkKW( kw )
   values,vbins,patches = hist(data,bins)
   histo = dict(zip(vbins,values))
-  span = (max(data)-min(data))/float(bins)*0.98 
+  span = (max(data)-min(data))/float(bins)*0.95
   kw = __checkKW( kw )
   graph( histo, file, plot_type = 'BarGraph', span=span, statistics_line=True, *args, **kw )
