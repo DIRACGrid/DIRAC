@@ -10,6 +10,7 @@ import socket
 import struct
 import array
 import os
+import fcntl
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 def discoverInterfaces():
