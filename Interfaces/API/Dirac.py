@@ -1315,6 +1315,52 @@ class Dirac:
     print self.pPrint.pformat( result['Value'] )
     return result
 
+  def replicate( self, lfn, destinationSE, sourceSE = '', printOutput = False ):
+    """Replicate an existing file to another Grid SE. lfn is the desired logical file name
+       for the file to be replicated, destinationSE is the DIRAC Storage Element to create a
+       replica of the file at.  Optionally the source storage element and local cache for storing
+       the retrieved file for the new upload can be specified.
+
+       Example Usage:
+
+       >>> print dirac.replicate('/lhcb/user/p/paterson/myFile.tar.gz','CNAF-USER')
+       {'OK': True, 'Value':{'Failed': {},
+       'Successful': {'/lhcb/user/p/paterson/test/myFile.tar.gz': {'register': 0.44766902923583984}}}}
+
+       @param lfn: Logical File Name (LFN)
+       @type lfn: string
+       @param destinationSE: Destination DIRAC SE name e.g. CERN-USER
+       @type destinationSE: string
+       @param sourceSE: Optional source SE
+       @type sourceSE: string
+       @param printOutput: Optional flag to print result
+       @type printOutput: boolean
+       @return: S_OK,S_ERROR
+    """
+    if type( lfn ) == type( " " ):
+      lfn = lfn.replace( 'LFN:', '' )
+    else:
+      return self.__errorReport( 'Expected single string or list of strings for LFN(s)' )
+
+    if not sourceSE:
+      sourceSE = ''
+    if not localCache:
+      localCache = ''
+    if not type( sourceSE ) == type( " " ):
+      return self.__errorReport( 'Expected string for source SE name' )
+    if not type( localCache ) == type( " " ):
+      return self.__errorReport( 'Expected string for path to local cache' )
+
+    rm = ReplicaManager()
+    result = rm.replicate( lfn, destinationSE, sourceSE, '')
+    if not result['OK']:
+      return self.__errorReport( 'Problem during replicate call', result['Message'] )
+    if not printOutput:
+      return result
+
+    print self.pPrint.pformat( result['Value'] )
+    return result
+
   #############################################################################
   def getAccessURL( self, lfn, storageElement, printOutput = False ):
     """Allows to retrieve an access URL for an LFN replica given a valid DIRAC SE
