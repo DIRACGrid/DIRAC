@@ -133,12 +133,12 @@ class DB(MySQL):
       if orderAttribute.find(':') != -1:
         orderField = orderAttribute.split(':')[0]
         orderType = orderAttribute.split(':')[1].upper()
-      req = "%s ORDER BY %s" % (condition,orderField)
+      condition = "%s ORDER BY %s" % (condition,orderField)
       if orderType:
-        req = "%s %s" % (condition,orderType)
+        condition = "%s %s" % (condition,orderType)
         
     if limit:
-      req = "%s LIMIT %d" % (condition,limit)
+      condition = "%s LIMIT %d" % (condition,limit)
 
     return condition
 
