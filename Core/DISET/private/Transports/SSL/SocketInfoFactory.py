@@ -55,10 +55,10 @@ class SocketInfoFactory:
       sslSocket.set_session( gSessionManager.get( sessionId ) )
     #sslSocket.setblocking( 0 )
     if socketInfo.infoDict[ 'timeout' ]:
-      sslSocket.settimeout( socketInfo.infoDict[ 'timeout' ] )
+      sslSocket.settimeout( 5 )
     try:
       sslSocket.connect( hostAddress )
-    except socket.error ,e:
+    except socket.error , e:
       if e.args[0] != 115:
         return S_ERROR( "Can't connect: %s" % str( e ) )
       #Connect in progress
@@ -69,6 +69,8 @@ class SocketInfoFactory:
       errno = sslSocket.getsockopt( socket.SOL_SOCKET, socket.SO_ERROR )
       if errno != 0:
         return S_ERROR( "Can't connect: %s" % str( ( errno, os.strerror( errno ) ) ) )
+    if socketInfo.infoDict[ 'timeout' ]:
+      sslSocket.settimeout( socketInfo.infoDict[ 'timeout' ] )
     #Connected!
     return S_OK( sslSocket )
 
