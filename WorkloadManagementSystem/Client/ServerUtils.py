@@ -21,7 +21,7 @@ def getDBOrClient( DB, serverName ):
   except:
     pass
 
-  gLogger.info('Can not connect to PilotAgentsDB will use %s' % serverName )
+  gLogger.info( 'Can not connect to DB will use %s' % serverName )
   return RPCClient( serverName )
 
 def getPilotAgentsDB():
@@ -51,6 +51,6 @@ def getJobDB():
     pass
   return getDBOrClient( JobDB, serverName )
 
-pilotAgentsDB     = getPilotAgentsDB()
-taskQueueDB       = getTaskQueueDB()
-jobDB             = getJobDB()
+pilotAgentsDB = getPilotAgentsDB()
+taskQueueDB = getTaskQueueDB()
+jobDB = getJobDB()
