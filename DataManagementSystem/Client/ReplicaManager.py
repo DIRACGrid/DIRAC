@@ -1106,6 +1106,8 @@ class ReplicaManager( CatalogToStorage ):
         subdirs = dirContents['SubDirs']
         for subdir, metadata in subdirs.items():
           if ( not days ) or self.__isOlderThan( metadata['CreationTime'], days ):
+            if subdir[0] <> '/':
+              subdir = currentDir + '/' + subdir
             activeDirs.append( subdir )
         for filename, fileInfo in dirContents['Files'].items():
           if fileInfo.has_key( 'MetaData' ):
