@@ -288,6 +288,7 @@ class JobWrapper:
 
     # Make the full path since . is not always in the PATH
     executable = os.path.abspath(executable)
+    os.chmod(executable,0775)
 
     exeEnv = dict( os.environ )
     if self.jobArgs.has_key( 'ExecutionEnvironment' ):
