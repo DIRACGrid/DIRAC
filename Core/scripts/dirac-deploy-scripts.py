@@ -30,7 +30,7 @@ def logINFO( msg ):
 
 moduleSuffix = "DIRAC"
 defaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
-excludeMask = [ '__init__.py' ]  
+excludeMask = [ '__init__.py' ]
 simpleCopyMask = [ os.path.basename( __file__ ), 'dirac-compile-externals.py', 'dirac-install.py' ]
 
 wrapperTemplate = """#!/usr/bin/env python
@@ -55,10 +55,11 @@ DiracPythonPath  = '%s' % ( DiracRoot, )
 
 os.environ['PATH'] = '%s:%s' % ( DiracPath, os.environ['PATH'] )
 
-if 'LD_LIBRARY_PATH' not in os.environ:
-  os.environ['LD_LIBRARY_PATH'] = DiracLibraryPath
-else:
-  os.environ['LD_LIBRARY_PATH'] = '%s:%s' % ( DiracLibraryPath, os.environ['LD_LIBRARY_PATH'] )
+for varName in ( 'LD_LIBRARY_PATH', 'DYLD_LIBRARY_PATH' ):
+  if varName not in os.environ:
+    os.environ[varName] = DiracLibraryPath
+  else:
+    os.environ[varName] = '%s:%s' % ( DiracLibraryPath, os.environ[varName] )
 
 if 'PYTHONPATH' not in os.environ:
   os.environ['PYTHONPATH'] = DiracPythonPath
@@ -99,7 +100,7 @@ def findDIRACRoot( path ):
 rootPath = findDIRACRoot( os.path.dirname( os.path.realpath( __file__ ) ) )
 if not rootPath:
   logERROR( "Error: Cannot find DIRAC root!" )
-  sys.exit(1)
+  sys.exit( 1 )
 
 targetScriptsPath = os.path.join( rootPath, "scripts" )
 pythonScriptRE = re.compile( "(.*/)*([a-z]+-[a-zA-Z0-9-]+).py" )
