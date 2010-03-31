@@ -286,6 +286,9 @@ class JobWrapper:
       executable = executable.replace( '$DIRACROOT', self.localSiteRoot )
       self.log.verbose( 'Replaced $DIRACROOT for executable as %s' % ( self.localSiteRoot ) )
 
+    # Make the full path since . is not always in the PATH
+    executable = os.path.abspath(executable)
+
     exeEnv = dict( os.environ )
     if self.jobArgs.has_key( 'ExecutionEnvironment' ):
       self.log.verbose( 'Adding variables to execution environment' )
