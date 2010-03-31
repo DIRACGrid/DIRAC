@@ -10,21 +10,19 @@ import DIRAC
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule         
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
+from socket import gethostname;
 
 class LemonAgent( AgentModule ):
                                 
   def initialize( self ):       
-    self.NON_CRITICAL = "INFO_ONLY"
-    self.CRITICAL = "CRITICAL"
+    self.NON_CRITICAL = "NonCritical"
+    self.CRITICAL = "Critical"
     self.FAILURE = "FAILURE"
     self.OK = "OK"
 
+    self.setup = gConfig.getValue('/DIRAC/Setup','LHCb-Development')
     self.outputNonCritical = True
-    #all components not present here will be threated as non critical
-    self.criticality = { "Stager/Stager" : self.CRITICAL,
-                         "WorkloadManagement/PilotMonitor" : self.NON_CRITICAL,
-                         "WorkloadManagement/OutputSandbox" : self.CRITICAL,
-                         "WorkloadManagement/SandboxStore" : self.CRITICAL }
+    #all components not present here will be treated as non critical
 
     self.admClient = SystemAdministratorClient('localhost')
 
@@ -34,16 +32,28 @@ class LemonAgent( AgentModule ):
     """ Main execution method
     """
 
+    monitoredSetups = gConfig.getValue('/Operations/lhcb/Lemon/MonitoredSetups', ['LHCb-Production'])
+    self.monitoringEnabled = self.setup in monitoredSetups
+
+    if not self.monitoringEnabled:
+      self._log("Framewok/LemonAgent", self.NON_CRITICAL, self.OK, "Monitoring not enabled for this setup: " + self.setup +". Exiting.");
+      return S_OK()
+    
+    hostsInMaintenance = gConfig.getValue('/Operations/lhcb/Lemon/HostsInMaintenance',[]);
+    if gethostname() in hostsInMaintenance:
+      self._log("Framewok/LemonAgent", self.NON_CRITICAL, self.OK, "I am in maintenance mode, exiting.");
+      return S_OK()
+
     result = self.admClient.getOverallStatus()
 
     if not result or not result['OK']:
-      self._log("None/None", self.CRITICAL, self.FAILURE, "Can not obtain result!!");
+      self._log("Framework/LemonAgent", self.CRITICAL, self.FAILURE, "Can not obtain result!!");
+      return S_OK()	
 
     services = result[ 'Value' ][ 'Services' ]
     agents = result[ 'Value' ][ 'Agents' ]
     self._processResults(services);
     self._processResults(agents);
-
 
     return S_OK()
 
@@ -65,10 +75,11 @@ class LemonAgent( AgentModule ):
     #        print componentName + " is installed but not set up"
 
   def _getCriticality(self, component):
-    if component not in self.criticality.keys():
-       return self.NON_CRITICAL
-    else:
-       return self.criticality[component]
+    #lets try to retrieve common criticality first
+    criticality = gConfig.getValue('/Operations/lhcb/Lemon/Criticalities/' + component, self.NON_CRITICAL)
+    #maybe it got redefined in <setup> subtree:
+    criticality = gConfig.getValue('/Operations/lhcb/' + self.setup + '/Lemon/Criticalities/' + component, criticality)
+    return criticality
 
   def _log( self, component, criticality, status, string ):
     gLogger.info( "LEMON " + criticality + " " + status + " " + component + ": " +string + "\n")
