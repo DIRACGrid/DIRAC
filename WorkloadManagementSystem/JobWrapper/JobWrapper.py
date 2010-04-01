@@ -288,7 +288,11 @@ class JobWrapper:
 
     # Make the full path since . is not always in the PATH
     executable = os.path.abspath(executable)
-    os.chmod(executable,0775)
+    if not os.access(executable,os.X_OK):
+      try:
+        os.chmod(executable,0775)
+      except Exception,x:
+        self.log.warn('Failed to change mode to 775 for the executable',executable)  
 
     exeEnv = dict( os.environ )
     if self.jobArgs.has_key( 'ExecutionEnvironment' ):
