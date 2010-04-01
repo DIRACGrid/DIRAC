@@ -1114,6 +1114,8 @@ class ReplicaManager( CatalogToStorage ):
             fileInfo = fileInfo['MetaData']
           if ( not days ) or self.__isOlderThan( fileInfo['CreationTime'], days ):
             if fnmatch.fnmatch( filename, wildcard ):
+              if fileInfo.has_key( 'LFN' ):
+                filename = fileInfo['LFN']
               allFiles.append( filename )
         files = dirContents['Files'].keys()
         gLogger.info( "%s: %d files, %d sub-directories" % ( currentDir, len( files ), len( subdirs ) ) )
