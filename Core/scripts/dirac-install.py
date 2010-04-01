@@ -32,7 +32,8 @@ class Params:
 
 cliParams = Params()
 
-platformAlias = { 'Darwin_i386_10.6' : 'Darwin_i386_10.5' }
+#platformAlias = { 'Darwin_i386_10.6' : 'Darwin_i386_10.5' }
+platformAlias = {}
 
 ####
 # Start of helper functions
