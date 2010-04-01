@@ -175,8 +175,8 @@ class JobManagerHandler( RequestHandler ):
       gLogger.debug( str( result ) )
       if not result['OK']:
           return result
-      gJobLoggingDB.addLoggingRecord( result['JobID'], result['Status'], result['MinorStatus'], source = 'JobManager' )
-
+      gJobLoggingDB.addLoggingRecord( result['JobID'], result['Status'], result['MinorStatus'], 
+                                      application = 'Unknown', source = 'JobManager' )
 
     if invalidJobList or nonauthJobList:
       result = S_ERROR('Some jobs failed deletion')
@@ -307,6 +307,8 @@ class JobManagerHandler( RequestHandler ):
           bad_ids.append(jobID)
         else:
           good_ids.append(jobID)
+        gJobLoggingDB.addLoggingRecord( result['JobID'], result['Status'], result['MinorStatus'], 
+                                        application = 'Unknown', source = 'JobManager' )  
 
     if invalidJobList or nonauthJobList or bad_ids:
       result = S_ERROR('Some jobs failed resetting')
