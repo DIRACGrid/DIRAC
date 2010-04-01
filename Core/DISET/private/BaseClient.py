@@ -112,8 +112,8 @@ class BaseClient:
     if self.KW_EXTRA_CREDENTIALS in self.kwargs:
       self.__extraCredentials = self.kwargs[ self.KW_EXTRA_CREDENTIALS ]
     #Are we delegating something?
-    if self.KW_DELEGATED_DN in self.kwargs:
-      if self.KW_DELEGATED_GROUP in self.kwargs:
+    if self.KW_DELEGATED_DN in self.kwargs and self.kwargs[ self.KW_DELEGATED_DN ]:
+      if self.KW_DELEGATED_GROUP in self.kwargs and self.kwargs[ self.KW_DELEGATED_GROUP ]:
         self.__extraCredentials = self.kwargs[ self.KW_DELEGATED_GROUP ]
       else:
         self.__extraCredentials = CS.getDefaultUserGroup()
