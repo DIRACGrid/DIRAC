@@ -1344,13 +1344,10 @@ class Dirac:
 
     if not sourceSE:
       sourceSE = ''
-    if not localCache:
-      localCache = ''
+ 
     if not type( sourceSE ) == type( " " ):
       return self.__errorReport( 'Expected string for source SE name' )
-    if not type( localCache ) == type( " " ):
-      return self.__errorReport( 'Expected string for path to local cache' )
-
+ 
     rm = ReplicaManager()
     result = rm.replicate( lfn, destinationSE, sourceSE, '')
     if not result['OK']:
