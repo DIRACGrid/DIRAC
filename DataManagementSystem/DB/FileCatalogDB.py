@@ -73,7 +73,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
   #
 
   def addUser(self,userName,credDict):
-    res = self._checkAdminPermission()
+    res = self._checkAdminPermission(credDict)
     if not res['OK']:
       return res
     if not res['Value']:
@@ -81,7 +81,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     return self.ugManager.addUser(userName)
 
   def deleteUser(self,userName,credDict):
-    res = self._checkAdminPermission()
+    res = self._checkAdminPermission(credDict)
     if not res['OK']:
       return res
     if not res['Value']:
@@ -89,7 +89,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     return self.ugManager.deleteUser(userName)
 
   def addGroup(self,groupName,credDict):
-    res = self._checkAdminPermission()
+    res = self._checkAdminPermission(credDict)
     if not res['OK']:
       return res
     if not res['Value']:
@@ -97,7 +97,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     return self.ugManager.addGroup(userName)
   
   def deleteGroup(self,groupName,credDict):
-    res = self._checkAdminPermission()
+    res = self._checkAdminPermission(credDict)
     if not res['OK']:
       return res
     if not res['Value']:
@@ -110,7 +110,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
   #
 
   def getUsers(self,credDict):
-    res = self._checkAdminPermission()
+    res = self._checkAdminPermission(credDict)
     if not res['OK']:
       return res
     if not res['Value']:
@@ -118,7 +118,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     return self.ugManager.getUsers(userName)
 
   def getGroups(self,credDict):
-    res = self._checkAdminPermission()
+    res = self._checkAdminPermission(credDict)
     if not res['OK']:
       return res
     if not res['Value']:
