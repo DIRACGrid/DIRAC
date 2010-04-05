@@ -9,8 +9,8 @@ import re, os, sys, md5, random
 import string, time, datetime
 import threading
 from types import *
-
-from DIRAC                                  import S_OK, S_ERROR
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import * 
+from DIRAC import S_OK, S_ERROR
 
 DEBUG = 0
      

@@ -12,7 +12,7 @@ from types import *
 from DIRAC import S_OK, S_ERROR
 
 def checkArgumentFormat(path):
-  return self.checkArgumentDict()
+  return checkArgumentDict(path)
 
 def checkArgumentList(path):
   """ Check and process format of the arguments to FileCatalog methods """

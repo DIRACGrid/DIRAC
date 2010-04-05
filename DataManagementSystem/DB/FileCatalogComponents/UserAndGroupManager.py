@@ -74,7 +74,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     res = self.db._insert('FC_Users',['UserName'],[uname])
     if not res['OK']:
       return res
-    uid = res['Value']
+    uid = res['lastRowId']
     self.db.uids[uid] = uname
     self.db.users[uname] = uid
     return S_OK(uid)
@@ -88,7 +88,8 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     return self.db._update(req)
   
   def getUsers(self):
-    return self.__getUsers()  
+    self.__getUsers()  
+    return S_OK(self.db.users)
 
   def findUser(self,user):
     return self.getUserID(user)
@@ -143,7 +144,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     res = self.db._insert('FC_Groups',['GroupName'],[gname])
     if not res['OK']:
       return res
-    gid = res['Value']
+    gid = res['lastRowId']
     self.db.groups[gname] = gid
     self.db.gids[gid] = gname
     return S_OK(gid)
@@ -157,7 +158,8 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     return self.db._update(req)
   
   def getGroups(self):
-    return self.__getGroups()  
+    self.__getGroups()
+    return S_OK(self.db.groups)  
 
   def findGroup(self,group):
     return self.getGroupID(group)

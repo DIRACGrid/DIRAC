@@ -106,7 +106,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
   
   ########################################################################
   #
-  #  User/groups based write methods
+  #  User/groups based read methods
   #
 
   def getUsers(self,credDict):
@@ -161,6 +161,53 @@ class FileCatalogDB(DB, DirectoryMetadata):
       return res
     failed = res['Value']['Failed']
     res = self.dtree.getPathPermissions(res['Value']['Successful'],credDict)
+    if not res['OK']:
+      return res
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']   
+    return S_OK({'Successful':successful,'Failed':failed}) 
+  
+  ########################################################################
+  #
+  #  Path based read methods
+  #
+
+  def changePathOwner(self, lfns, credDict):
+    """ Change the owner of the given list of paths
+    """
+    res = self._checkPathPermissions('Write', lfns, credDict)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    res = self.fileManager.changePathOwner(res['Value']['Successful'],credDict)
+    if not res['OK']:
+      return res
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']   
+    return S_OK({'Successful':successful,'Failed':failed}) 
+  
+  def changePathGroup(self, lfns, credDict):
+    """ Change the group of the given list of paths
+    """
+    res = self._checkPathPermissions('Write', lfns, credDict)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    res = self.fileManager.changePathGroup(res['Value']['Successful'],credDict)
+    if not res['OK']:
+      return res
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']   
+    return S_OK({'Successful':successful,'Failed':failed}) 
+
+  def changePathMode(self, lfns, credDict):
+    """ Change the mode of the given list of paths
+    """
+    res = self._checkPathPermissions('Write', lfns, credDict)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    res = self.fileManager.changePathMode(res['Value']['Successful'],credDict)
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])

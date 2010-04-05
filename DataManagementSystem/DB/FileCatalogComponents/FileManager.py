@@ -6,6 +6,7 @@ __RCSID__ = "$Id: FileManager.py 22623 2010-03-09 19:54:25Z acsmith $"
 
 from DIRAC import S_OK,S_ERROR,gLogger
 from DIRAC.Core.Utilities.List import stringListToString,intListToString
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import * 
 from DIRAC.Core.Utilities.Pfn               import pfnparse, pfnunparse
 
 
@@ -101,7 +102,7 @@ class FileManager:
 
   def __setFileOwner(self,fileID,owner):
     """ Set the file owner """
-    result = self.findUser(owner)
+    result = self.db.ugManager.findUser(owner)
     if not result['OK']:
       return result
     userID = result['Value']
@@ -110,7 +111,7 @@ class FileManager:
 
   def __setFileGroup(self,fileID,group):
     """ Set the file group """
-    result = self.findGroup(group)
+    result = self.db.ugManager.findGroup(group)
     if not result['OK']:
       return result
     groupID = result['Value']
@@ -689,11 +690,11 @@ class FileManager:
   def changeFileOwner(self,lfns,s_uid=0,s_gid=0):
     """ Bulk method to set the file owner
     """
-    result = self.findUser(s_uid)
+    result = self.db.ugManager.findUser(s_uid)
     if not result['OK']:
       return result
     uid = result['Value']
-    result = self.findGroup(s_gid)
+    result = self.db.ugManager.findGroup(s_gid)
     if not result['OK']:
       return result
     gid = result['Value']
@@ -726,11 +727,11 @@ class FileManager:
   def changeFileGroup(self,lfns,s_uid=0,s_gid=0):
     """ Bulk method to set the file owner
     """
-    result = self.findUser(s_uid)
+    result = self.db.ugManager.findUser(s_uid)
     if not result['OK']:
       return result
     uid = result['Value']
-    result = self.findGroup(s_gid)
+    result = self.db.ugManager.findGroup(s_gid)
     if not result['OK']:
       return result
     gid = result['Value']
@@ -763,11 +764,11 @@ class FileManager:
   def changeFileMode(self,lfns,s_uid=0,s_gid=0):
     """ Bulk method to set the file owner
     """
-    result = self.findUser(s_uid)
+    result = self.db.ugManager.findUser(s_uid)
     if not result['OK']:
       return result
     uid = result['Value']
-    result = self.findGroup(s_gid)
+    result = self.db.ugManager.findGroup(s_gid)
     if not result['OK']:
       return result
     gid = result['Value']
@@ -803,59 +804,7 @@ class FileManager:
 ##################################################################### 
   def isFile(self,lfns,s_uid=0,s_gid=0):
     """ Check for the existence of files """
-    return self.findFile(lfns)
-  
-  def changePathOwner(self,paths,credDict):
-    """ Change the owner for the given paths
-    """
-    result = self.db.ugManager.getUserAndGroupID(credDict)
-    if not result['OK']:
-      return result
-    ( uid, gid ) = result['Value']
-    
-    result = checkArgumentFormat(paths)
-    if not result['OK']:
-      return result
-    arguments = result['Value']
-    
-    result = self.isDirectory(paths,credDict)
-    if not result['OK']:
-      return result
-    dirList = result['Value']['Successful'].keys()
-    fileList = []
-    if len(dirList) < len(paths):
-      result = self.isFile(paths,uid,gid)
-      if not result['OK']:
-        return result
-      fileList = result['Value']['Successful'].keys()
-    
-    successful = {}
-    failed = {}
-    
-    dirArgs = {}
-    fileArgs = {}
-    
-    for path in arguments:
-      if not path in dirList and not path in fileList:
-        failed[path] = 'Path not found'
-      if path in dirList:
-        dirArgs[path] = arguments[path]
-      elif path in fileList:
-        fileArgs[path] = arguments[path]
-        
-    result = self.changeDirectoryOwner(dirArgs,uid,gid)
-    if not result['OK']:
-      return result
-    successful.update(result['Value']['Successful'])
-    failed.update(result['Value']['Successful'])
-    
-    result = self.changeFileOwner(fileArgs,uid,gid)
-    if not result['OK']:
-      return result
-    successful.update(result['Value']['Successful'])
-    failed.update(result['Value']['Successful'])    
-    
-    return S_OK({'Successful':successful,'Failed':failed})    
+    return self.findFile(lfns)   
   
   def __changePathFunction(self,paths,credDict,change_function_directory,change_function_file):
     """ A generic function to change Owner, Group or Mode for the given paths
@@ -871,7 +820,7 @@ class FileManager:
     arguments = result['Value']
     
     dirList = []
-    result = self.isDirectory(paths,credDict)    
+    result = self.db.isDirectory(paths,credDict)    
     if not result['OK']:
       return result
     for p in result['Value']['Successful']:
@@ -915,17 +864,17 @@ class FileManager:
   def changePathOwner(self,paths,credDict):  
     """ Bulk method to change Owner for the given paths
     """
-    return self.__changePathFunction(paths,credDict,self.changeDirectoryOwner,self.changeFileOwner)
+    return self.__changePathFunction(paths,credDict,self.db.dtree.changeDirectoryOwner,self.changeFileOwner)
   
   def changePathGroup(self,paths,credDict):  
     """ Bulk method to change Owner for the given paths
     """
-    return self.__changePathFunction(paths,credDict,self.changeDirectoryGroup,self.changeFileGroup)
+    return self.__changePathFunction(paths,credDict,self.db.dtree.changeDirectoryGroup,self.changeFileGroup)
   
   def changePathMode(self,paths,credDict):  
     """ Bulk method to change Owner for the given paths
     """
-    return self.__changePathFunction(paths,credDict,self.changeDirectoryMode,self.changeFileMode)
+    return self.__changePathFunction(paths,credDict,self.db.dtree.changeDirectoryMode,self.changeFileMode)
 
 #########################################################################
 #
