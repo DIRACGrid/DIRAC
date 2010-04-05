@@ -94,7 +94,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
       return res
     if not res['Value']:
       return S_ERROR("Permission denied")
-    return self.ugManager.addGroup(userName)
+    return self.ugManager.addGroup(groupName)
   
   def deleteGroup(self,groupName,credDict):
     res = self._checkAdminPermission(credDict)
@@ -102,7 +102,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
       return res
     if not res['Value']:
       return S_ERROR("Permission denied")
-    return self.ugManager.deleteGroup(userName)
+    return self.ugManager.deleteGroup(groupName)
   
   ########################################################################
   #
@@ -115,7 +115,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
       return res
     if not res['Value']:
       return S_ERROR("Permission denied")
-    return self.ugManager.getUsers(userName)
+    return self.ugManager.getUsers()
 
   def getGroups(self,credDict):
     res = self._checkAdminPermission(credDict)
@@ -123,7 +123,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
       return res
     if not res['Value']:
       return S_ERROR("Permission denied")
-    return self.ugManager.getGroups(userName)
+    return self.ugManager.getGroups()
 
   ########################################################################
   #
