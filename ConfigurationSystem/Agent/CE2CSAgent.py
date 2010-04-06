@@ -47,17 +47,17 @@ class CE2CSAgent(AgentModule):
   def execute(self):
     gLogger.info("Executing %s"%(self.name))
     os.system('dirac-proxy-info')
-    self.csAPI = CSAPI()      
+    self.csAPI = CSAPI()
     self._lookForCE()
     self._infoFromCE()
     gLogger.info("Executing %s finished"%(self.name) )
     return S_OK()
 
   def _lookForCE(self):
-  
+
     sites = gConfig.getSections('/Resources/Sites/LCG')['Value']
 
-    bannedCEs = self.am_getOption('/BannedCEs','')
+    bannedCEs = self.am_getOption('BannedCEs','')
     if bannedCEs:
       knownces = List.fromChar( bannedCEs)
     else:
@@ -81,14 +81,14 @@ class CE2CSAgent(AgentModule):
         queuename = queue['GlueCEUniqueID']
       except:
         continue
-    
+
       cename = queuename.split(":")[0]
       if not cename in knownces:
         newces[cename] = None
         gLogger.debug("newce",cename)
 
     body = ""
-    possibleNewSites = []    
+    possibleNewSites = []
     for ce in newces.iterkeys():
       response = ldapCluster(ce)
       if not response['OK']:
@@ -110,10 +110,10 @@ class CE2CSAgent(AgentModule):
           break
       if not nameBDII:
         continue
-      
-      cestring = "CE: %s, GOCDB Name: %s"%(ce,nameBDII) 
+
+      cestring = "CE: %s, GOCDB Name: %s"%(ce,nameBDII)
       gLogger.info(cestring)
-  
+
       response = ldapCE(ce)
       if not response['OK']:
         gLogger.warn("Error during BDII request",response['Message'])
@@ -121,7 +121,7 @@ class CE2CSAgent(AgentModule):
 
       ceinfos = response['Value']
       if len(ceinfos):
-        ceinfo = ceinfos[0] 
+        ceinfo = ceinfos[0]
         SystemName = ceinfo.get('GlueHostOperatingSystemName','Unknown')
         SystemVersion = ceinfo.get('GlueHostOperatingSystemVersion','Unknown')
         SystemRelease = ceinfo.get('GlueHostOperatingSystemRelease','Unknown')
@@ -138,14 +138,14 @@ class CE2CSAgent(AgentModule):
       if not response['OK']:
         gLogger.warn("Error during BDII request",response['Message'])
         continue
-       
+
       newcestring =  "\n\n%s\n%s"%(cestring, osstring)
       usefull = False
       cestates = response['Value']
       for cestate in cestates:
         queuename = cestate.get('GlueCEUniqueID','UnknownName')
         queuestatus = cestate.get('GlueCEStateStatus','UnknownStatus')
-        
+
         queuestring = "%s %s"%(queuename,queuestatus)
         gLogger.info(queuestring)
         newcestring += "\n%s"%queuestring
@@ -166,7 +166,7 @@ class CE2CSAgent(AgentModule):
     return S_OK()
 
   def _infoFromCE(self):
-  
+
     sites = gConfig.getSections('/Resources/Sites/LCG')['Value']
 
     changed = False
@@ -180,7 +180,7 @@ class CE2CSAgent(AgentModule):
       if name:
         coor = opt.get('Coordinates','Unknown')
         mail = opt.get('Mail','Unknown')
-    
+
         result = ldapSite(name)
         if not result['OK']:
           gLogger.warn("BDII site",result['Message'])
@@ -191,7 +191,7 @@ class CE2CSAgent(AgentModule):
           else:
             if not len(bdiisites)==1:
               gLogger.warn(name, "Warning in bdii: leng = %d"%len(bdiisites))
-      
+
             bdiisite = bdiisites[0]
 
             try:
@@ -227,17 +227,17 @@ class CE2CSAgent(AgentModule):
               else:
                 self.csAPI.modifyValue(section,newmail)
               changed = True
-      
+
       celist = List.fromChar( opt.get('CE',''))
 
       if not celist:
         gLogger.warn(site,'Empty site list')
         continue
-    
+
 #      result = gConfig.getSections('/Resources/Sites/LCG/%s/CEs'%site)
 #      if not result['OK']:
 #        gLogger.debug("Section CEs:",result['Message'])
-      
+
       for ce in celist:
         result = gConfig.getOptionsDict('/Resources/Sites/LCG/%s/CEs/%s'%(site,ce))
         if not result['OK']:
@@ -323,7 +323,7 @@ class CE2CSAgent(AgentModule):
             if 'VO-lhcb-pilot' in rte:
               newpilot = 'True'
             else:
-              newpilot = 'False'        
+              newpilot = 'False'
           except:
             newpilot = 'Unknown'
           if pilot != newpilot and newpilot != 'Unknown':
@@ -344,7 +344,7 @@ class CE2CSAgent(AgentModule):
         except:
           gLogger.warn('Error in bdii for queue %s'%ce, result['Massage'])
           continue
-      
+
         queueSectionString = '/Resources/Sites/LCG/%s/CEs/%s/Queues'%(site,ce)
         for queue in queues:
           try:
@@ -353,7 +353,7 @@ class CE2CSAgent(AgentModule):
           except:
             gLogger.warn('error in queue',queue)
             continue
-        
+
           result = gConfig.getOptionsDict(queueSectionString+'/%s'%(queueName))
           if not result['OK']:
             gLogger.warn("Section Queues",result['Message'])
@@ -372,12 +372,12 @@ class CE2CSAgent(AgentModule):
             changed = True
 
     if changed:
-      gLogger.info(body)      
+      gLogger.info(body)
       if body:
         notification = NotificationClient()
         result = notification.sendMail(self.addressTo,self.subject,body,self.addressFrom,localAttempt=False)
-        
+
       return self.csAPI.commitChanges(sortUsers=False)
     else:
-      gLogger.info("No changes found")      
+      gLogger.info("No changes found")
       return S_OK()
