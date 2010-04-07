@@ -82,7 +82,7 @@ class JobWrapper:
     self.sandboxSizeLimit = gConfig.getValue( self.section + '/OutputSandboxLimit', 1024 * 1024 * 10 )
     self.cleanUpFlag = gConfig.getValue( self.section + '/CleanUpFlag', False )
     self.pilotRef = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
-    self.cpuNormalizationFactor = gConfig.getValue ( "/LocalSite/CPUNomalizationFactor", 0.0 )
+    self.cpuNormalizationFactor = gConfig.getValue ( "/LocalSite/CPUNormalizationFactor", 0.0 )
     self.vo = gConfig.getValue( '/DIRAC/VirtualOrganization', 'lhcb' )
     self.bufferLimit = gConfig.getValue( self.section + '/BufferLimit', 10485760 )
     self.defaultOutputSE = gConfig.getValue( '/Resources/StorageElementGroups/Tier1-USER', [] )
