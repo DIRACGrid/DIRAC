@@ -11,14 +11,20 @@ localCfg = LocalConfiguration()
 
 scriptName = False
 
-def initAsScript( script = False  ):
+def initAsScript( script = False ):
   scriptName = script
   if not scriptName:
     scriptName = os.path.basename( sys.argv[0] )
   scriptSection = localCfg.setConfigurationForScript( scriptName )
 
 def parseCommandLine( script = False, ignoreErrors = False, initializeMonitor = True ):
+  initialize( script, ignoreErrors, initializeMonitor, False )
+
+def initialize( script = False, ignoreErrors = False, initializeMonitor = False, enableCommandLine = True ):
   global localCfg, scriptName
+
+  if not enableCommandLine:
+    localCfg.disableParsingCommandLine()
 
   if not scriptName:
     scriptName = script
@@ -30,13 +36,15 @@ def parseCommandLine( script = False, ignoreErrors = False, initializeMonitor = 
   resultDict = localCfg.loadUserData()
   if not ignoreErrors and not resultDict[ 'OK' ]:
     gLogger.error( "There were errors when loading configuration", resultDict[ 'Message' ] )
-    sys.exit(1)
+    sys.exit( 1 )
 
   if initializeMonitor:
     gMonitor.setComponentType( gMonitor.COMPONENT_SCRIPT )
     gMonitor.setComponentName( scriptName )
     gMonitor.setComponentLocation( "script" )
     gMonitor.initialize()
+  else:
+    gMonitor.disable()
 
 def registerSwitch( showKey, longKey, helpString, callback = False ):
   global localCfg
