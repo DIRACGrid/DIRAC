@@ -24,6 +24,7 @@ class LocalConfiguration:
     self.unprocessedSwitches = []
     self.additionalCFGFiles = []
     self.parsedOptionList = []
+    self.cliAdditionalCFGFiles = []
     self.__registerBasicOptions()
     self.isParsed = False
     self.componentName = "Unknown"
@@ -32,6 +33,9 @@ class LocalConfiguration:
     self.initialized = False
     self.csDisabled = False
     self.csDisabledServers = ""
+
+  def disableParsingCommandLine( self ):
+      self.isParsed = True
 
   def __getAbsolutePath( self, optionPath ):
     if optionPath[0] == "/":
@@ -58,7 +62,7 @@ class LocalConfiguration:
 
   def __registerBasicOptions( self ):
     self.registerCmdOpt( "o:", "option=", "Option=value to add",
-                         self.__setOptionByCmd  )
+                         self.__setOptionByCmd )
     self.registerCmdOpt( "s:", "section=", "Set base section for relative parsed options",
                          self.__setSectionByCmd )
     self.registerCmdOpt( "c:", "cert=", "Use server certificate to connect to Core Services",
@@ -66,7 +70,7 @@ class LocalConfiguration:
     self.registerCmdOpt( "h", "help", "Shows this help",
                          self.__showHelp )
 
-  def registerCmdOpt( self, shortOption, longOption, helpString, function = False):
+  def registerCmdOpt( self, shortOption, longOption, helpString, function = False ):
     #TODO: Can't overwrite switches (FATAL)
     self.commandOptionList.append( ( shortOption, longOption, helpString, function ) )
 
@@ -122,7 +126,7 @@ class LocalConfiguration:
       return S_ERROR( str( e ) )
     return S_OK()
 
-  def loadUserData(self):
+  def loadUserData( self ):
     if self.initialized:
       return S_OK()
     self.initialized = True
@@ -168,14 +172,14 @@ class LocalConfiguration:
       # print help information and exit
       gLogger.fatal( "Error when parsing command line arguments: %s" % str( v ) )
       self.__showHelp()
-      sys.exit(2)
+      sys.exit( 2 )
 
     self.cliAdditionalCFGFiles = [ arg for arg in args if arg[-4:] == ".cfg" ]
     self.commandArgList = [ arg for arg in args if not arg[-4:] == ".cfg" ]
     self.parsedOptionList = opts
     self.isParsed = True
 
-  def __loadCFGFiles(self):
+  def __loadCFGFiles( self ):
     """
     Load ~/.dirac.cfg
     Load cfg files specified in addCFGFile calls
@@ -232,7 +236,7 @@ class LocalConfiguration:
       else:
         self.__setDefaultSection( "/" )
     except Exception, e:
-      errorsList.append( str(e) )
+      errorsList.append( str( e ) )
 
     self.unprocessedSwitches = []
 
@@ -253,17 +257,17 @@ class LocalConfiguration:
     if self.csDisabled:
       newDisabledServers = gConfigurationData.extractOptionFromCFG( "/DIRAC/Configuration/Servers" )
       if newDisabledServers and not newDisabledServers == self.csDisabledServers:
-        self.csDisabledServers = "%s, %s" %( self.csDisabledServers, newDisabledServers )
+        self.csDisabledServers = "%s, %s" % ( self.csDisabledServers, newDisabledServers )
       gConfigurationData.deleteLocalOption( "/DIRAC/Configuration/Servers" )
 
     if len( errorsList ) > 0:
       return S_ERROR( "\n%s" % "\n".join( errorsList ) )
     return S_OK()
 
-  def disableCS(self):
+  def disableCS( self ):
     self.csDisabled = True
 
-  def enableCS(self):
+  def enableCS( self ):
     self.csDisabled = False
     if self.csDisabledServers:
       gConfigurationData.setOptionInCFG( "/DIRAC/Configuration/Servers", self.csDisabledServers )
@@ -307,8 +311,8 @@ class LocalConfiguration:
     return S_OK()
 
   def __setOptionByCmd( self, value ):
-    valueList = value.split("=")
-    if len( valueList ) <  2:
+    valueList = value.split( "=" )
+    if len( valueList ) < 2:
       # FIXME: in the method above an exception is raised, check consitency
       return S_ERROR( "-o expects a option=value argument.\nFor example %s -o Port=1234" % sys.argv[0] )
     self.__setOptionValue( valueList[0] , "=".join( valueList[1:] ) )
@@ -321,7 +325,7 @@ class LocalConfiguration:
     self.__setOptionValue( "/DIRAC/Security/UseServerCertificate", useCert )
     return S_OK()
 
-  def __showHelp( self, dummy = False):
+  def __showHelp( self, dummy = False ):
     gLogger.info( "Usage:" )
     gLogger.info( "  %s (<options>|<cfgFile>)*" % sys.argv[0] )
     gLogger.info( "Options:" )
