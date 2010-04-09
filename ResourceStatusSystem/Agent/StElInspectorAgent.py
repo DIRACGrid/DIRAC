@@ -60,10 +60,16 @@ class StElInspectorAgent(AgentModule):
     
       return S_OK()
     
-    except Exception, x:
-      errorStr = where(self, self.execute)
-      gLogger.exception(errorStr,lException=x)
+#    except Exception, x:
+#      errorStr = where(self, self.execute)
+#      gLogger.exception(errorStr,lException=x)
+#      return S_ERROR(errorStr)
+
+    except Exception:
+      errorStr = "StElInspectorAgent initialization"
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
+
 
 #############################################################################
 
@@ -128,8 +134,11 @@ class StElInspectorAgent(AgentModule):
         finally:
           self.lockObj.release()
 
-    except Exception, x:
-      gLogger.exception(whoRaised(x),'',x)
+#    except Exception, x:
+#      gLogger.exception(whoRaised(x),'',x)
+    except Exception:
+      errorStr = "StElInspectorAgent _getResourcesToCheck"
+      gLogger.exception(errorStr)
 
 
 #############################################################################
@@ -176,7 +185,7 @@ class StElInspectorAgent(AgentModule):
         
     
     except Exception, x:
-      gLogger.exception(whoRaised(x),'',x)
+      gLogger.exception('StElInspector._executeCheck')
       self.lockObj.acquire()
       try:
         self.StorageElementNamesInCheck.remove(storageElementName)

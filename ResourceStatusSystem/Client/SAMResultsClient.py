@@ -4,10 +4,7 @@
 import urllib2
 from datetime import datetime
 from xml.dom import minidom
-
-from DIRAC import gLogger
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+import socket
 
 class SAMResultsClient:
   
@@ -18,11 +15,12 @@ class SAMResultsClient:
     Return stats of entity in args
     
     :params:
-      :attr:`site`: string: the name of the site
+      :attr:`granularity`: string: 'Site'  or 'Resource'
       
-      :attr:`resource`: string: the name of the resource
+      :attr:`name`: string: the name of the site or of the resource
       
-      :attr:`siteName`: optional (string) for the sitename
+      :attr:`siteName`: optional (string) for the sitename, 
+      in case you're looking for a resource status 
 
       :attr:`tests`: optional (list of) tests. 
       If omitted, takes only the service status metrics
@@ -34,32 +32,24 @@ class SAMResultsClient:
     """
 
     if granularity in ('Site', 'Sites'):
-      siteName = getSiteRealName(name)
+      siteName = name
     elif granularity in ('Resource', 'Resources'):
-      if siteName is None:
-        from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-        rsc = ResourceStatusClient()
-        siteName = rsc.getGeneralName(granularity, name, 'Site')
-        if siteName is None or siteName == []:
-          gLogger.info('%s is not a resource in DIRAC' %name)
-          return {'SAM-Status':None}
-        siteName = getSiteRealName(siteName)
-      else:
-        siteName = getSiteRealName(siteName)
-    else:
-      raise InvalidStatus, where(self, self.getStatus)
+      siteName = siteName
     
     sam = self._curlDownload(granularity, site = siteName, tests = tests)
     
     if sam is None:
-      return {'SAM-Status':None}
+      return None
+#      return {'SAM-Status':None}
     
     samStatus = self._xmlParsing(granularity, sam, name, tests)
     
     if samStatus is None or samStatus == {}:
-      return {'SAM-Status':None} 
+      return None
+#      return {'SAM-Status':None} 
     
-    return {'SAM-Status': samStatus}
+    return samStatus
+#    return {'SAM-Status': samStatus}
     
 #############################################################################
 
@@ -73,6 +63,8 @@ class SAMResultsClient:
   def _curlDownload(self, granularity, site, tests):
     """ Download SAM status for entity using the SAM DB programmatic interface
     """
+
+    socket.setdefaulttimeout(10)
 
     samdbpi_url = "http://lcg-sam.cern.ch:8080/same-pi/"
     # Set your method
@@ -93,21 +85,27 @@ class SAMResultsClient:
     # SAMDB-PI to query
     samdb_ep = samdbpi_url + samdbpi_method + "VO_name=LHCb" + "&Site_name=" + samdbpi_site + samdbpi_test
     
-    try:
-      opener = urllib2.build_opener()
-      samPage = opener.open(samdb_ep)
-    except IOError, errorMsg:
-      exceptStr = where(self, self._curlDownload) + " while opening %s." % samdb_ep
-      gLogger.exception(exceptStr,'',errorMsg)
-      return None
-    except:
-      exceptStr = where(self, self._curlDownload) + " while opening %s." % samdb_ep
-      gLogger.exception(exceptStr,'',errorMsg)
-      return None
+#    try:
+    #ADDDED NOW!!!
+    req = urllib2.Request(samdb_ep)
+    samPage = urllib2.urlopen(req)
+    #ADDDED NOW!!!
+#      opener = urllib2.build_opener()
+#      samPage = opener.open(samdb_ep)
+#    except IOError, errorMsg:
+#      exceptStr = where(self, self._curlDownload) + " while opening %s." % samdb_ep
+#      gLogger.exception(exceptStr,'',errorMsg)
+#      return None
+#    except Exception, errorMsg:
+#      exceptStr = where(self, self._curlDownload) + " while opening %s." % samdb_ep
+#      gLogger.exception(exceptStr,'',errorMsg)
+#      return None
 
     sam = samPage.read()
     
-    opener.close()
+    #Commented NOW!!!
+#    opener.close()
+    #Commented NOW!!!
 
     return sam
     
@@ -120,58 +118,61 @@ class SAMResultsClient:
 
     status = {}
 
-    try:
-      doc = minidom.parseString(sam)
-    
-      if granularity in ('Site', 'Sites'):
+#    try:
+    doc = minidom.parseString(sam)
+  
+    if granularity in ('Site', 'Sites'):
+        try:
           s = doc.getElementsByTagName("status")[0].childNodes
           status['SiteStatus'] = str(s[0].nodeValue)
+        except IndexError:
+          return None
+      
+    elif granularity in ('Resource', 'Resources'):
+      
+      services = doc.getElementsByTagName("Service") 
+      
+      serviceToCheck = None
+      for service in services:
+        if service.getAttributeNode("endpoint"):
+          endpoint = service.attributes["endpoint"]
+          res = str(endpoint.value)
+          if res == entity:
+            serviceToCheck = service
+            break
+      
+      if serviceToCheck is None:
+        return None
+      
+      
+      if tests is None or tests == []:
+        tests = ['SS']
+      
+      for test in tests:
         
-      elif granularity in ('Resource', 'Resources'):
+        metrics = serviceToCheck.getElementsByTagName("ServiceMetric")
+        metricToCheck = None
         
-        services = doc.getElementsByTagName("Service") 
-        
-        serviceToCheck = None
-        for service in services:
-          if service.getAttributeNode("endpoint"):
-            endpoint = service.attributes["endpoint"]
-            res = str(endpoint.value)
-            if res == entity:
-              serviceToCheck = service
+        for metric in metrics:
+          if metric.getAttributeNode("abbreviation"):
+            metricName = metric.attributes["abbreviation"]
+            res = str(metricName.value)
+            if res == test:
+              metricToCheck = metric
               break
         
-        if serviceToCheck is None:
-          return None
-        
-        
-        if tests is None or tests == []:
-          tests = ['SS']
-        
-        for test in tests:
-          
-          metrics = serviceToCheck.getElementsByTagName("ServiceMetric")
-          metricToCheck = None
-          
-          for metric in metrics:
-            if metric.getAttributeNode("abbreviation"):
-              metricName = metric.attributes["abbreviation"]
-              res = str(metricName.value)
-              if res == test:
-                metricToCheck = metric
-                break
-          
-          if metricToCheck is None:
-            continue
+        if metricToCheck is None:
+          continue
 
-          s = metricToCheck.getElementsByTagName("status")[0].childNodes
-          status[test] = str(s[0].nodeValue)
-      
-      return status
+        s = metricToCheck.getElementsByTagName("status")[0].childNodes
+        status[test] = str(s[0].nodeValue)
     
-    except Exception, errorMsg:
-      exceptStr = where(self, self._xmlParsing)
-      gLogger.exception(exceptStr,'',errorMsg)
-      return None
+    return status
+  
+#    except Exception, errorMsg:
+#      exceptStr = where(self, self._xmlParsing)
+#      gLogger.exception(exceptStr,'',errorMsg)
+#      return None
     
     
 #############################################################################

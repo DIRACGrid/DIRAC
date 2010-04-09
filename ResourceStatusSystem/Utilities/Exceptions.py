@@ -3,34 +3,94 @@
       - exceptions
 """
 
-#############################################################################
-# exceptions
+from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+
 #############################################################################
 
 class RSSException(Exception):
-  pass
+  
+  def __init__(self, message = ""):
+    self.message = message
+    Exception.__init__(self, message)
+  
+  def __str__(self):
+    return "Generic Exception in the RSS: \n" + repr(self.message)
+    
+#############################################################################
 
 class InvalidRes(RSSException):
-  pass
+
+  def __init__(self, message = ""):
+    self.message = message
+    RSSException.__init__(self, message)
+  
+  def __str__(self):
+    return "Invalid resource type: \nshould be in " + repr(ValidRes) + repr(self.message)
+
+#############################################################################
 
 class InvalidStatus(RSSException):
-  pass
+
+  def __init__(self, message = ""):
+    self.message = message
+    RSSException.__init__(self, message)
+  
+  def __str__(self):
+    return "Invalid status type: \nshould be in " + repr(ValidStatus) + repr(self.message)
+
+#############################################################################
 
 class InvalidSiteType(RSSException):
-  pass
+
+  def __init__(self, message = ""):
+    self.message = message
+    RSSException.__init__(self, message)
+  
+  def __str__(self):
+    return "Invalid resource type: \nshould be in " + repr(ValidSiteType) + repr(self.message)
+
+#############################################################################
 
 class InvalidServiceType(RSSException):
-  pass
+
+  def __init__(self, message = ""):
+    self.message = message
+    RSSException.__init__(self, message)
+  
+  def __str__(self):
+    return "Invalid service type: \nshould be in " + repr(ValidServiceType) + repr(self.message)
+
+#############################################################################
 
 class InvalidResourceType(RSSException):
-  pass
+  
+  def __init__(self, message = ""):
+    self.message = message
+    RSSException.__init__(self, message)
+  
+  def __str__(self):
+    return "Invalid resource type: \nshould be in " + repr(ValidResourceType) + repr(self.message)
+
+#############################################################################
 
 class InvalidPolicyType(RSSException):
-  pass
 
-class InvalidService(RSSException):
-  pass
+  def __init__(self, message = ""):
+    self.message = message
+    RSSException.__init__(self, message)
+  
+  def __str__(self):
+    return "Invalid policy type: \nshould be in " + repr(PolicyTypes) + repr(self.message)
+
+#############################################################################
 
 class InvalidView(RSSException):
-  pass
 
+  def __init__(self, message = ""):
+    self.message = message
+    RSSException.__init__(self, message)
+  
+  def __str__(self):
+    return "Invalid view type: \nshould be in " + repr(ValidView) + repr(self.message)
+
+#############################################################################

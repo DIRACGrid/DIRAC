@@ -305,11 +305,27 @@ class SAMResults_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
 
-    args = ('XX', 'XX')
-    for status in ['ok', 'down', 'na', 'degraded', 'partial', 'maint']:
-      self.mock_client.getStatus.return_value =  {'Status':status}
-      res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
-      self.assertEqual(res['Status'], status)
+    for g in ('Site', 'Resource'):
+      args = (g, 'XX')
+      for status in ['ok', 'down', 'na', 'degraded', 'partial', 'maint']:
+        self.mock_client.getStatus.return_value =  {'Status':status}
+        res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
+        self.assertEqual(res['SAM-Status']['Status'], status)
+      args = (g, 'XX', 'XXX')
+      for status in ['ok', 'down', 'na', 'degraded', 'partial', 'maint']:
+        self.mock_client.getStatus.return_value =  {'Status':status}
+        res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
+        self.assertEqual(res['SAM-Status']['Status'], status)
+      args = (g, 'XX', None, ['aa', 'bbb'])
+      for status in ['ok', 'down', 'na', 'degraded', 'partial', 'maint']:
+        self.mock_client.getStatus.return_value =  {'Status':status}
+        res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
+        self.assertEqual(res['SAM-Status']['Status'], status)
+      args = (g, 'XX', 'sss', ['aa', 'bbb'])
+      for status in ['ok', 'down', 'na', 'degraded', 'partial', 'maint']:
+        self.mock_client.getStatus.return_value =  {'Status':status}
+        res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
+        self.assertEqual(res['SAM-Status']['Status'], status)
 
 #############################################################################
 

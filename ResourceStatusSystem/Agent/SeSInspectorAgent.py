@@ -63,10 +63,16 @@ class SeSInspectorAgent(AgentModule):
     
       return S_OK()
     
-    except Exception, x:
-      errorStr = where(self, self.execute)
-      gLogger.exception(errorStr,'',x)
+#    except Exception, x:
+#      errorStr = where(self, self.execute)
+#      gLogger.exception(errorStr,'',x)
+#      return S_ERROR(errorStr)
+
+    except Exception:
+      errorStr = "SeSInspectorAgent initialization"
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
+
 
 #############################################################################
 
@@ -127,8 +133,11 @@ class SeSInspectorAgent(AgentModule):
         finally:
           self.lockObj.release()
 
-    except Exception, x:
-      gLogger.exception(whoRaised(x),'',x)
+#    except Exception, x:
+#      gLogger.exception(whoRaised(x),'',x)
+    except Exception:
+      errorStr = "SeSInspectorAgent _getResourcesToCheck"
+      gLogger.exception(errorStr)
 
 #############################################################################
 
@@ -177,7 +186,7 @@ class SeSInspectorAgent(AgentModule):
         
     
     except Exception, x:
-      gLogger.exception(whoRaised(x),'',x)
+      gLogger.exception('SeSInspector._executeCheck')
       self.lockObj.acquire()
       try:
         self.ServiceNamesInCheck.remove(serviceName)

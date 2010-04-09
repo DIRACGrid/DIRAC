@@ -63,10 +63,16 @@ class SSInspectorAgent(AgentModule):
     
       return S_OK()
     
-    except Exception, x:
-      errorStr = where(self, self.execute)
-      gLogger.exception(errorStr,'',x)
+#    except Exception, x:
+#      errorStr = where(self, self.execute)
+#      gLogger.exception(errorStr,'',x)
+#      return S_ERROR(errorStr)
+
+    except Exception:
+      errorStr = "SSInspectorAgent initialization"
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
+
 
 #############################################################################
 
@@ -127,8 +133,11 @@ class SSInspectorAgent(AgentModule):
         finally:
           self.lockObj.release()
     
-    except Exception, x:
-      gLogger.exception(whoRaised(x),'',x)
+#    except Exception, x:
+#      gLogger.exception(whoRaised(x),'',x)
+    except Exception:
+      errorStr = "SSInspectorAgent _getResourcesToCheck"
+      gLogger.exception(errorStr)
 
 #############################################################################
 
@@ -174,7 +183,7 @@ class SSInspectorAgent(AgentModule):
         
     
     except Exception, x:
-      gLogger.exception(whoRaised(x),'',x)
+      gLogger.exception('SSInspector._executeCheck')
       self.lockObj.acquire()
       try:
         self.SiteNamesInCheck.remove(siteName)

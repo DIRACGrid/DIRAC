@@ -317,7 +317,7 @@ class PEP:
   
         banList = da.getBannedSites()
         if not banList['OK']:
-          raise RSSException, where(self, self.enforce), banList['Message']
+          raise RSSException, where(self, self.enforce) + banList['Message']
         else:
           banList = banList['Value']
         
@@ -327,7 +327,7 @@ class PEP:
           if self.__name not in banList:
             banSite = da.banSiteFromMask(self.__name, res['Reason'])
             if not banSite['OK']:
-              raise RSSException, where(self, self.enforce), banSite['Message']
+              raise RSSException, where(self, self.enforce) + banSite['Message']
             if setup == 'LHCb-Production':
               address = gConfig.getValue('/Operations/EMail/Production','')
             else:
@@ -339,13 +339,13 @@ class PEP:
             body += 'Comment:\n%s' %res['Reason']
             sendMail = da.sendMail(address,subject,body)
             if not sendMail['OK']:
-              raise RSSException, where(self, self.enforce), sendMail['Message']
+              raise RSSException, where(self, self.enforce) + sendMail['Message']
         
         else:
           if self.__name in banList:
             addSite = self.da.addSiteInMask(self.__name, res['Reason'])
             if not addSite['OK']:
-              raise RSSException, where(self, self.enforce), addSite['Message']
+              raise RSSException, where(self, self.enforce) + addSite['Message']
             if setup == 'LHCb-Production':
               address = gConfig.getValue('/Operations/EMail/Production','')
             else:
@@ -357,7 +357,7 @@ class PEP:
             body += 'Comment:\n%s' %res['Reason']
             sendMail = da.sendMail(address,subject,body)
             if not sendMail['OK']:
-              raise RSSException, where(self, self.enforce), sendMail['Message']
+              raise RSSException, where(self, self.enforce) + sendMail['Message']
               
     
       elif self.__granularity == 'StorageElement':
@@ -370,13 +370,13 @@ class PEP:
           if presentReadStatus != 'InActive':
             banSE = csAPI.setOption("/Resources/StorageElements/%s/ReadAccess" %(self.__name), "InActive")
             if not banSE['OK']:
-              raise RSSException, where(self, self.enforce), banSE['Message']
+              raise RSSException, where(self, self.enforce) + banSE['Message']
             banSE = csAPI.setOption("/Resources/StorageElements/%s/WriteAccess" %(self.__name), "InActive")
             if not banSE['OK']:
-              raise RSSException, where(self, self.enforce), banSE['Message']
+              raise RSSException, where(self, self.enforce) + banSE['Message']
             commit = csAPI.commit()
             if not commit['OK']:
-              raise RSSException, where(self, self.enforce), commit['Message']
+              raise RSSException, where(self, self.enforce) + commit['Message']
             if setup == 'LHCb-Production':
               address = gConfig.getValue('/Operations/EMail/Production','')
             else:
@@ -388,7 +388,7 @@ class PEP:
             body += 'Comment:\n%s' %res['Reason']
             sendMail = da.sendMail(address,subject,body)
             if not sendMail['OK']:
-              raise RSSException, where(self, self.enforce), sendMail['Message']
+              raise RSSException, where(self, self.enforce) + sendMail['Message']
         
         else:
   
@@ -396,13 +396,13 @@ class PEP:
   
             allowSE = csAPI.setOption("/Resources/StorageElements/%s/ReadAccess" %(self.__name), "Active")
             if not allowSE['OK']:
-              raise RSSException, where(self, self.enforce), allowSE['Message']
+              raise RSSException, where(self, self.enforce) + allowSE['Message']
             allowSE = csAPI.setOption("/Resources/StorageElements/%s/WriteAccess" %(self.__name), "Active")
             if not allowSE['OK']:
-              raise RSSException, where(self, self.enforce), allowSE['Message']
+              raise RSSException, where(self, self.enforce) + allowSE['Message']
             commit = csAPI.commit()
             if not commit['OK']:
-              raise RSSException, where(self, self.enforce), commit['Message']
+              raise RSSException, where(self, self.enforce) + commit['Message']
             if setup == 'LHCb-Production':
               address = gConfig.getValue('/Operations/EMail/Production','')
             else:
@@ -414,7 +414,7 @@ class PEP:
             body += 'Comment:\n%s' %res['Reason']
             sendMail = da.sendMail(address,subject,body)
             if not sendMail['OK']:
-              raise RSSException, where(self, self.enforce), sendMail['Message']
+              raise RSSException, where(self, self.enforce) + sendMail['Message']
                   
         
 

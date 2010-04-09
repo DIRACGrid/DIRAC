@@ -16,7 +16,13 @@ class RSSDBException(RSSException):
   """ 
   DB exception 
   """
-  pass
+  
+  def __init__(self, message = ""):
+    self.message = message
+    RSSException.__init__(self, message)
+  
+  def __str__(self):
+    return "Exception in the RSS DB: " + repr(self.message)
 
 #############################################################################
 
@@ -24,7 +30,13 @@ class NotAllowedDate(RSSException):
   """ 
   Exception that signals a not allowed date 
   """
-  pass
+
+  def __init__(self, message = ""):
+    self.message = message
+    RSSException.__init__(self, message)
+
+  def __str__(self):
+    return "Not allowed date in the RSS DB: " + repr(self.message)
 
 #############################################################################
 
@@ -521,7 +533,7 @@ class ResourceStatusDB:
         record.append(None) #ResourceName
         record.append(None) #SiteName
         record.append(None) #Country
-        record.append(storageElement[1]) #Status
+	record.append(storageElement[1]) #Status
         record.append(storageElement[3].isoformat(' ')) #DateEffective
         record.append(None) #FormerStatus
         record.append(storageElement[2]) #Reason

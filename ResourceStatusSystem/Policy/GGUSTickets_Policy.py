@@ -66,10 +66,7 @@ class GGUSTickets_Policy(PolicyBase):
       else:
         result['SAT'] = True
     else:
-      if GGUS_N >= 1:
-        result['SAT'] = True
-      else:
-        result['SAT'] = True
+      result['SAT'] = True
     
     if GGUS_N >= 1:
       result['Status'] = 'Probing'

@@ -73,9 +73,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getSitesList: got sites list")
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getSitesList)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -99,9 +99,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getSitesList: got sites and status list")
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getSitesList)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -155,9 +155,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getSitesStatusWeb: got sites list")
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getSitesStatusWeb)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -188,9 +188,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.setSiteStatus: Set site %s status." % (siteName))
       return S_OK()
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_setSiteStatus)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -229,9 +229,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.addOrModifySite: Added (or modified) site %s." % (siteName))
       return S_OK()
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_addOrModifySite)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -253,9 +253,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.removeSite: removed site %s." % (siteName))
       return S_OK()
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_removeSite)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -276,9 +276,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getSitesHistory: got site %s history" % (site))
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getSitesHistory)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -300,9 +300,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getSiteTypeList: got SiteType list")
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getSiteTypeList)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -323,9 +323,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.removeSiteType: Removed site type %s" % (siteType))
       return S_OK()
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_removeSiteType)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -356,9 +356,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getServicesList: got services list")
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getServicesList)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -401,9 +401,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getServicesStatusWeb: got services list")
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getServicesStatusWeb)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -434,9 +434,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.setServiceStatus: Set service %s status." % (serviceName))
       return S_OK()
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_setServiceStatus)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -478,9 +478,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.addOrModifyService: Added (or modified) service %s." % (serviceName))
       return S_OK()
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_addOrModifyService)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -502,9 +502,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.removeService: removed service %s." % (serviceName))
       return S_OK()
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_removeService)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -525,9 +525,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getServicesHistory: got service %s history" % (service))
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getServicesHistory)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -579,9 +579,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getServiceTypeList: got ServiceType list")
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getServiceTypeList)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 
@@ -610,9 +610,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getServiceStats: got service stats")
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getServiceStats)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -633,9 +633,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.removeServiceType: Removed service type %s" % (serviceType))
       return S_OK()
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_removeServiceType)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -685,9 +685,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getResourcesStatusWeb: got resources list")
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getResourcesStatusWeb)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 
@@ -720,9 +720,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.setResourceStatus: Set resource %s status." % (resourceName))
       return S_OK()
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_setResourceStatus)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -763,9 +763,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.addOrModifyResource: Added (or modified) resource %s of site %s" % (resourceName, siteName))
       return S_OK()
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_addOrModifyResource)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -786,9 +786,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.Resource: removed Resource %s." % (resourceName))
       return S_OK()
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_removeResource)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -838,9 +838,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getResourceTypeList: got ResourceType list")
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getResourceTypeList)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -860,9 +860,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.removeResourceType: Removed resource type %s" % (resourceType))
       return S_OK()
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_removeResourceType)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -887,9 +887,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getResourcesList: got resources list")
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getResourcesList)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -909,9 +909,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getResourcesHistory: got resource %s history" % (resource))
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getResourcesHistory)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -942,9 +942,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getResourceStats: got resource stats")
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getResourceStats)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -975,9 +975,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getSESitesList: got SE sites list")
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getSitesList)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -1001,9 +1001,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getStorageElementsList: got sites list")
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getStorageElementsList)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -1058,9 +1058,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getStorageElementsStatusWeb: got SEs list")
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getStorageElementsStatusWeb)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -1091,9 +1091,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.setStorageElementStatus: Set SE %s status." % (seName))
       return S_OK()
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_setStorageElementStatus)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -1135,9 +1135,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.addOrModifyStorageElement: Added (or modified) SE %s." % (seName))
       return S_OK()
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_addOrModifyStorageElement)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -1159,9 +1159,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.removeStorageElement: removed SE %s." % (seName))
       return S_OK()
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_removeStorageElement)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -1182,9 +1182,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getStorageElementsHistory: got SE %s history" % (se))
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getStorageElementsHistory)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -1215,9 +1215,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("StorageElementsStatusHandler.getStorageElementsStats: got storageElements stats")
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getStorageElementsStats)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -1249,9 +1249,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.addStatus: Added status %s" % (status))
       return S_OK()
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_addStatus)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -1273,9 +1273,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getStatusList: got status list")
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getStatusList)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -1296,9 +1296,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.removeStatus: Removed status %s" % (status))
       return S_OK()
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_addStatus)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -1318,9 +1318,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getPeriods: got %s periods" % (name))
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getPeriods)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -1341,9 +1341,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.syncWithCS: DB sync-ed")
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_syncWithCS)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -1362,9 +1362,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getGeneralName: got %s general name" % (name))
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_getGeneralName)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -1397,9 +1397,9 @@ class ResourceStatusHandler(RequestHandler):
         gLogger.exception(whoRaised(x) + errorStr)
       gLogger.info("ResourceStatusHandler.publisher: got view %s for %s" % (view, name))
       return S_OK(res)
-    except Exception, x:
+    except Exception:
       errorStr = where(self, self.export_publisher)
-      gLogger.exception(errorStr,lException=x)
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################

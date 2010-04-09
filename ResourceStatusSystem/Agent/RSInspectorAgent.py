@@ -63,9 +63,14 @@ class RSInspectorAgent(AgentModule):
     
       return S_OK()
     
-    except Exception, x:
-      errorStr = where(self, self.execute)
-      gLogger.exception(errorStr,'',x)
+#    except Exception, x:
+#      errorStr = where(self, self.execute)
+#      gLogger.exception(errorStr,'',x)
+#      return S_ERROR(errorStr)
+
+    except Exception:
+      errorStr = "RSInspectorAgent initialization"
+      gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
 #############################################################################
@@ -128,8 +133,12 @@ class RSInspectorAgent(AgentModule):
         finally:
           self.lockObj.release()
 
-    except Exception, x:
-      gLogger.exception(whoRaised(x),'',x)
+#    except Exception, x:
+#      gLogger.exception(whoRaised(x),'',x)
+    except Exception:
+      errorStr = "RSInspectorAgent _getResourcesToCheck"
+      gLogger.exception(errorStr)
+
 
         
 #############################################################################
@@ -177,8 +186,8 @@ class RSInspectorAgent(AgentModule):
           self.lockObj.release()
         
     
-    except Exception, x:
-      gLogger.exception(whoRaised(x),'',x)
+    except Exception:
+      gLogger.exception('RSInspector._executeCheck')
       self.lockObj.acquire()
       try:
         self.ResourceNamesInCheck.remove(resourceName)

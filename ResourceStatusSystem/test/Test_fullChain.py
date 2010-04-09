@@ -9,8 +9,8 @@ import DIRAC.ResourceStatusSystem.test.fake_rsDB
 from DIRAC.Core.Base import Script
 Script.parseCommandLine() 
 
-#sito = {'name':'LCG.IFJ-PAN.pl', 'siteType':'T2'} #OK
-sito = {'name':'LCG.CERN.ch', 'siteType':'T0'} #OK
+sito = {'name':'LCG.CAGLIARI.it', 'siteType':'T2'} #OK
+#sito = {'name':'LCG.CERN.ch', 'siteType':'T0'} #OK
 #sito = {'name':'LCG.ITEP.ru', 'siteType':'T1'} #OK
 servizio = {'name':'Storage@LCG.GRIDKA.de', 'siteType':'T2', 'serviceType':'Storage'} #OK
 servizio2 = {'name':'Computing@LCG.DORTMUND.de', 'siteType':'T2', 'serviceType':'Computing'} #OK

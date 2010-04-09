@@ -107,21 +107,21 @@ class ResourceStatusClientSuccess(ClientsTestCase):
 class SAMResultsClientSuccess(ClientsTestCase):
 
   def test_getStatus(self):
-    res = self.SAMCli.getStatus('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it')
-    self.assertEqual(res['SAM-Status'], {'SS':'ok'})
-    res = self.SAMCli.getStatus('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it', ['ver'])
-    self.assertEqual(res['SAM-Status'], {'ver':'ok'})
-    res = self.SAMCli.getStatus('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it', ['LHCb CE-lhcb-os', 'PilotRole'])
-    self.assertEqual(res['SAM-Status'], {'PilotRole':'ok', 'LHCb CE-lhcb-os':'ok'})
-    res = self.SAMCli.getStatus('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it', ['wrong'])
-    self.assertEqual(res['SAM-Status'], None)
-    res = self.SAMCli.getStatus('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it', ['ver', 'wrong'])
-    self.assertEqual(res['SAM-Status'], {'ver':'ok'})
-    res = self.SAMCli.getStatus('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it')
-    self.assertEqual(res['SAM-Status'], {'SS':'ok'})
+    res = self.SAMCli.getStatus('Resource', 'grid0.fe.infn.it', 'INFN-FERRARA')
+    self.assertEqual(res, {'SS':'ok'})
+    res = self.SAMCli.getStatus('Resource', 'grid0.fe.infn.it', 'INFN-FERRARA', ['ver'])
+    self.assertEqual(res, {'ver':'ok'})
+    res = self.SAMCli.getStatus('Resource', 'grid0.fe.infn.it', 'INFN-FERRARA', ['LHCb CE-lhcb-os', 'PilotRole'])
+    self.assertEqual(res, {'PilotRole':'ok', 'LHCb CE-lhcb-os':'ok'})
+    res = self.SAMCli.getStatus('Resource', 'grid0.fe.infn.it', 'INFN-FERRARA', ['wrong'])
+    self.assertEqual(res, None)
+    res = self.SAMCli.getStatus('Resource', 'grid0.fe.infn.it', 'INFN-FERRARA', ['ver', 'wrong'])
+    self.assertEqual(res, {'ver':'ok'})
+    res = self.SAMCli.getStatus('Resource', 'grid0.fe.infn.it', 'INFN-FERRARA')
+    self.assertEqual(res, {'SS':'ok'})
 
-    res = self.SAMCli.getStatus('Site', 'LCG.Ferrara.it')
-    self.assertEqual(res['SAM-Status'], {'SiteStatus':'ok'})
+    res = self.SAMCli.getStatus('Site', 'INFN-FERRARA')
+    self.assertEqual(res, {'SiteStatus':'ok'})
       
 #############################################################################
 
