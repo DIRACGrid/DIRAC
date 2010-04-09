@@ -149,6 +149,8 @@ class TransformationPlugin:
     if not res['Value']:
       return S_ERROR("/Resources/Shares/%s option contains no shares" % type)
     shares = res['Value']
+    for site,value in shares.items():
+      shares[site] = float(value)
     if normalise:
       shares = self._normaliseShares(shares)
     if not shares:
