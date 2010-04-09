@@ -84,21 +84,22 @@ class SocketInfoFactory:
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not resolve %s: %s" % ( hostName, retVal[ 'Message' ] ) )
     ipList = List.randomize( retVal[ 'Value' ] )
-    connected = False
-    errorsList = []
-    for ip in ipList :
-      ipAddress = ( ip, hostAddress[1] )
-      retVal = self.__connect( socketInfo, ipAddress )
-      if retVal[ 'OK' ]:
-        sslSocket = retVal[ 'Value' ]
-        connected = True
-        break
-      errorsList.append( "%s: %s" % ( ipAddress, retVal[ 'Message' ] ) )
-    if not connected:
-      return S_ERROR( "Could not connect to %s: %s" % ( hostAddress, "," .join( [ e for e in errorsList ] ) ) )
-    retVal = socketInfo.doClientHandshake()
-    if not retVal[ 'OK' ]:
-      return retVal
+    for i in range( 3 ):
+      connected = False
+      errorsList = []
+      for ip in ipList :
+        ipAddress = ( ip, hostAddress[1] )
+        retVal = self.__connect( socketInfo, ipAddress )
+        if retVal[ 'OK' ]:
+          sslSocket = retVal[ 'Value' ]
+          connected = True
+          break
+        errorsList.append( "%s: %s" % ( ipAddress, retVal[ 'Message' ] ) )
+      if not connected:
+        return S_ERROR( "Could not connect to %s: %s" % ( hostAddress, "," .join( [ e for e in errorsList ] ) ) )
+      retVal = socketInfo.doClientHandshake()
+      if not retVal[ 'OK' ]:
+        continue
     if 'enableSessions' in kwargs and kwargs[ 'enableSessions' ]:
       sessionId = hash( hostAddress )
       gSessionManager.set( sessionId, sslSocket.get_session() )
