@@ -100,12 +100,15 @@ class SocketInfoFactory:
       retVal = socketInfo.doClientHandshake()
       if not retVal[ 'OK' ]:
         continue
+      break
+    if not retVal['OK']:
+      return retVal
     if 'enableSessions' in kwargs and kwargs[ 'enableSessions' ]:
       sessionId = hash( hostAddress )
       gSessionManager.set( sessionId, sslSocket.get_session() )
     return S_OK( socketInfo )
 
-  def getListeningSocket( self, hostAddress, listeningQueueSize = 5, reuseAddress = True, **kwargs ):
+  def getListeningSocket( self, hostAddress, listeningQueueSize=5, reuseAddress=True, **kwargs ):
     osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
     if reuseAddress:
       osSocket.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
