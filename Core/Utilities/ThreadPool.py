@@ -19,14 +19,14 @@ class WorkingThread( threading.Thread ):
 
   def __init__( self, oPendingQueue, oResultsQueue, **kwargs ):
     threading.Thread.__init__( self, **kwargs )
-    self.setDaemon(1)
+    self.setDaemon( 1 )
     self.__pendingQueue = oPendingQueue
     self.__resultsQueue = oResultsQueue
     self.__threadAlive = True
     self.__working = False
     self.start()
 
-  def isWorking(self):
+  def isWorking( self ):
     return self.__working
 
   def kill( self ):
@@ -87,13 +87,13 @@ class ThreadedJob:
   def process( self ):
     self.__done = True
     try:
-      self.__jobResult = self.__jobFunction( *self.__jobArgs, **self.__jobKwArgs)
+      self.__jobResult = self.__jobFunction( *self.__jobArgs, **self.__jobKwArgs )
     except:
+      self.__exceptionRaised = True
       if not self.__exceptionCallback:
         if gLogger:
           gLogger.exception( "Exception in thread" )
       else:
-        self.__exceptionRaised = True
         self.__jobException = sys.exc_info()
 
 class ThreadPool( threading.Thread ):
@@ -141,14 +141,14 @@ class ThreadPool( threading.Thread ):
       self.__workingThreadsList[0].kill()
       del( self.__workingThreadsList[0] )
 
-  def __countWaitingThreads(self ):
+  def __countWaitingThreads( self ):
     iWaitingThreads = 0
     for oWT in self.__workingThreadsList:
       if not oWT.isWorking():
         iWaitingThreads += 1
     return iWaitingThreads
 
-  def __countWorkingThreads(self ):
+  def __countWorkingThreads( self ):
     iWorkingThreads = 0
     for oWT in self.__workingThreadsList:
       if oWT.isWorking():
@@ -166,7 +166,7 @@ class ThreadPool( threading.Thread ):
     threadsToKill = len( self.__workingThreadsList ) - self.__maxThreads
     for i in range ( max( threadsToKill, 0 ) ):
       self.__killWorkingThread()
-    threadsToKill = self.__countWaitingThreads() - self.__minThreads    
+    threadsToKill = self.__countWaitingThreads() - self.__minThreads
     for i in range ( max( threadsToKill, 0 ) ):
       self.__killWorkingThread()
 
@@ -221,7 +221,7 @@ class ThreadPool( threading.Thread ):
     self.processResults()
 
   def daemonize( self ):
-    self.setDaemon(1)
+    self.setDaemon( 1 )
     self.start()
 
   #This is the ThreadPool threaded function. YOU ARE NOT SUPPOSED TO CALL THIS FUNCTION!!!
@@ -231,7 +231,7 @@ class ThreadPool( threading.Thread ):
       self.processResults()
       time.sleep( 1 )
 
-if __name__=="__main__":
+if __name__ == "__main__":
   import random
   import time
 
@@ -251,7 +251,7 @@ if __name__=="__main__":
   oTP = ThreadPool( 5, 10 )
 
   def generateWork( iWorkUnits ):
-    for iNumber in [ random.randint( 1,20 ) for uNothing in range( iWorkUnits ) ]:
+    for iNumber in [ random.randint( 1, 20 ) for uNothing in range( iWorkUnits ) ]:
       oTJ = ThreadedJob( doSomething,
                        args = ( iNumber, ),
                        oCallback = showResult,
@@ -263,9 +263,9 @@ if __name__=="__main__":
 
   generateWork( 30 )
   while True:
-    time.sleep(1)
+    time.sleep( 1 )
     iResult = oTP.processResults()
-    iNew = iResult + random.randint(-3,2)
+    iNew = iResult + random.randint( -3, 2 )
     print "Processed %s, generating %s.." % ( iResult, iNew )
     generateWork( iNew )
     print "Threads %s" % oTP.numWorkingThreads(), oTP.pendingJobs()
