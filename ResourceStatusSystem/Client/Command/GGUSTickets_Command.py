@@ -20,8 +20,6 @@ def callClient(args, clientIn = None):
   
   openTickets = c.getTicketsList(name)
   
-  print openTickets
-  
   return openTickets
         
 #############################################################################

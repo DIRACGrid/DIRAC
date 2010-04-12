@@ -146,7 +146,7 @@ AssigneeGroups = {
    'Setup': ['LHCb-Development', 'LHCb-Certification'], 
    'Granularity': ValidRes,
    'SiteType': ValidSiteType, 
-   'Notifications': ['Web']
+   'Notifications': ['Mail']
    }, 
   'Andrew_PROD': 
   {'Users': ['acsmith'],
@@ -242,7 +242,8 @@ Policies = {
                                                      'LHCb CE-lhcb-job-Boole', 'LHCb CE-lhcb-job-Brunel', 
                                                      'LHCb CE-lhcb-job-DaVinci', 'LHCb CE-lhcb-job-Gauss', 
                                                      'LHCb CE-lhcb-os', 'LHCb CE-lhcb-queues', 
-                                                     'bi', 'csh', 'js', 'gfal', 'swdir', 'voms'] ) }},
+                                                     'LHCb CE-lhcb-queues', 'bi', 'csh', 'js', 'gfal', 
+                                                     'swdir', 'voms'] ) }},
 #                           {'WebLink': {'Command':'SAM_Link',
 #                                        'args': None}}
                          ]
@@ -484,7 +485,7 @@ Policy_Types = {
      },
   'Alarm_PolType' : 
     { 'Granularity' : ValidRes, 
-      'Status' : ValidStatus, 
+      'Status' : ['Active', 'Banned'], 
       'FormerStatus' : ValidStatus,
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,

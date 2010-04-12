@@ -120,33 +120,33 @@ class InfoGetter:
     
         if status is not None:
           if status not in Configurations.Policy_Types[pt]['Status']:
-            pol_to_eval.remove(pt)
+            pol_types.remove(pt)
         
         if formerStatus is not None:
           if formerStatus not in Configurations.Policy_Types[pt]['FormerStatus']:
             try:
-              pol_to_eval.remove(pt)
+              pol_types.remove(pt)
             except Exception:
               continue
             
         if siteType is not None:
           if siteType not in Configurations.Policy_Types[pt]['SiteType']:
             try:
-              pol_to_eval.remove(pt)
+              pol_types.remove(pt)
             except Exception:
               continue
             
         if serviceType is not None:
           if serviceType not in Configurations.Policy_Types[pt]['ServiceType']:
             try:
-              pol_to_eval.remove(pt)
+              pol_types.remove(pt)
             except Exception:
               continue
             
         if resourceType is not None:
           if resourceType not in Configurations.Policy_Types[pt]['ResourceType']:
             try:
-              pol_to_eval.remove(pt)
+              pol_types.remove(pt)
             except Exception:
               continue
               

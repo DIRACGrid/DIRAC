@@ -64,8 +64,8 @@ class JobsEfficiency_Simple_Policy(PolicyBase):
         result['SAT'] = False
         result['Status'] = 'Active'
       elif status == 'Fair':
-        result['SAT'] = True
-        result['Status'] = 'Probing'
+        result['SAT'] = False
+        result['Status'] = 'Active'
       elif status == 'Poor':
         result['SAT'] = True
         result['Status'] = 'Probing'
@@ -80,8 +80,8 @@ class JobsEfficiency_Simple_Policy(PolicyBase):
         result['SAT'] = True
         result['Status'] = 'Active'
       elif status == 'Fair':
-        result['SAT'] = False
-        result['Status'] = 'Probing'
+        result['SAT'] = True
+        result['Status'] = 'Active'
       elif status == 'Poor':
         result['SAT'] = False
         result['Status'] = 'Probing'
@@ -97,7 +97,7 @@ class JobsEfficiency_Simple_Policy(PolicyBase):
         result['Status'] = 'Active'
       elif status == 'Fair':
         result['SAT'] = True
-        result['Status'] = 'Probing'
+        result['Status'] = 'Active'
       elif status == 'Poor':
         result['SAT'] = True
         result['Status'] = 'Probing'
@@ -113,7 +113,7 @@ class JobsEfficiency_Simple_Policy(PolicyBase):
         result['Status'] = 'Active'
       elif status == 'Fair':
         result['SAT'] = True
-        result['Status'] = 'Probing'
+        result['Status'] = 'Active'
       elif status == 'Poor':
         result['SAT'] = True
         result['Status'] = 'Probing'
