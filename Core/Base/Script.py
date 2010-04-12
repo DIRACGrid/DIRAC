@@ -18,7 +18,7 @@ def initAsScript( script = False ):
   scriptSection = localCfg.setConfigurationForScript( scriptName )
 
 def parseCommandLine( script = False, ignoreErrors = False, initializeMonitor = True ):
-  initialize( script, ignoreErrors, initializeMonitor, False )
+  initialize( script, ignoreErrors, initializeMonitor, True )
 
 def initialize( script = False, ignoreErrors = False, initializeMonitor = False, enableCommandLine = True ):
   global localCfg, scriptName
