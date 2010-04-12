@@ -60,11 +60,6 @@ class StElInspectorAgent(AgentModule):
     
       return S_OK()
     
-#    except Exception, x:
-#      errorStr = where(self, self.execute)
-#      gLogger.exception(errorStr,lException=x)
-#      return S_ERROR(errorStr)
-
     except Exception:
       errorStr = "StElInspectorAgent initialization"
       gLogger.exception(errorStr)
@@ -134,8 +129,6 @@ class StElInspectorAgent(AgentModule):
         finally:
           self.lockObj.release()
 
-#    except Exception, x:
-#      gLogger.exception(whoRaised(x),'',x)
     except Exception:
       errorStr = "StElInspectorAgent _getResourcesToCheck"
       gLogger.exception(errorStr)

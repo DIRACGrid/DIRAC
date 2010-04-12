@@ -1,9 +1,8 @@
 """ SLSClient class is a client for the SLS DB, looking for Status of a given Service.
 """
 
+import socket
 import urllib2
-from DIRAC import gLogger
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
 class SLSClient:
 
@@ -69,19 +68,16 @@ class SLSClient:
         the service  
     """
 
+    socket.setdefaulttimeout(10)
+    
     # Set the SLS URL
     sls_base = "http://sls.cern.ch/sls/getServiceAvailability.php?id="
     sls_url= sls_base+service
-    opener = urllib2.build_opener()
-    try:
-      sls_page = opener.open(sls_url)
-    except IOError, errorMsg:
-      exceptStr = where(self, self._curlDownload) + " while opening %s." % sls_url
-      gLogger.exception(exceptStr,'',errorMsg)
 
-    sls_res = sls_page.read()
-    
-    opener.close()
+    req = urllib2.Request(sls_url)
+    slsPage = urllib2.urlopen(req)
+
+    sls_res = slsPage.read()
 
     return sls_res
     

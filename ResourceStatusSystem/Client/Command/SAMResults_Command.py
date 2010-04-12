@@ -28,14 +28,15 @@ class SAMResults_Command(Command):
 
     granularity = args[0]
     name = args[1]
+    try:  
+      siteName = args[2]
+    except IndexError:
+      siteName = None
 
     if granularity in ('Site', 'Sites'):
       siteName = getSiteRealName(name)
     elif granularity in ('Resource', 'Resources'):
-      try:
-        siteName = args[2]
-        siteName = getSiteRealName(siteName)
-      except IndexError:
+      if siteName is None:
         from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
         rsc = ResourceStatusClient()
         siteName = rsc.getGeneralName(granularity, name, 'Site')
@@ -43,17 +44,12 @@ class SAMResults_Command(Command):
           gLogger.info('%s is not a resource in DIRAC' %name)
           return {'SAM-Status':None}
         siteName = getSiteRealName(siteName)
+      else:
+        siteName = getSiteRealName(siteName)
     else:
       raise InvalidRes, where(self, self.doCommand)
     
-    
     try:  
-#      if len(args) == 2:
-#        res = c.getStatus(granularity, args[1])
-#      elif len(args) == 3:
-#        res = c.getStatus(granularity, args[1], siteName)
-#      elif len(args) == 4:
-#        res = c.getStatus(granularity, args[1], siteName, args[3])
       tests = args[3]
     except IndexError:
       tests = None
@@ -61,10 +57,10 @@ class SAMResults_Command(Command):
       try:
         res = c.getStatus(granularity, name, siteName, tests)
       except urllib2.URLError:
-        gLogger.error("SAM timed out")
+        gLogger.error("SAM timed out for " + granularity + " " + name )
         return  {'SAM-Status':None}      
       except:
-        gLogger.exception("Exception in SAMResultsClient")
+        gLogger.exception("Exception when calling SAMResultsClient")
         return  {'SAM-Status':None}
 
     return {'SAM-Status':res}

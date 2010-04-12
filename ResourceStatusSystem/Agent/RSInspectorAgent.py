@@ -44,7 +44,6 @@ class RSInspectorAgent(AgentModule):
       
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
   
-      #vedi taskQueueDirector
       self.threadPool = ThreadPool( self.am_getOption('minThreadsInPool', 1),
                                     self.maxNumberOfThreads )
       if not self.threadPool:
@@ -62,11 +61,6 @@ class RSInspectorAgent(AgentModule):
       self.csAPI = CSAPI()      
     
       return S_OK()
-    
-#    except Exception, x:
-#      errorStr = where(self, self.execute)
-#      gLogger.exception(errorStr,'',x)
-#      return S_ERROR(errorStr)
 
     except Exception:
       errorStr = "RSInspectorAgent initialization"
@@ -133,8 +127,6 @@ class RSInspectorAgent(AgentModule):
         finally:
           self.lockObj.release()
 
-#    except Exception, x:
-#      gLogger.exception(whoRaised(x),'',x)
     except Exception:
       errorStr = "RSInspectorAgent _getResourcesToCheck"
       gLogger.exception(errorStr)

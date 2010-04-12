@@ -36,11 +36,6 @@ class RS2HistoryAgent(AgentModule):
       
       return S_OK()
 
-#    except Exception, x:
-#      errorStr = where(self, self.execute)
-#      gLogger.exception(errorStr,lException=x)
-#      return S_ERROR(errorStr)
-
     except Exception:
       errorStr = "RS2HistoryAgent initialization"
       gLogger.exception(errorStr)
@@ -80,11 +75,6 @@ class RS2HistoryAgent(AgentModule):
         
       return S_OK()
     
-#    except Exception, x:
-#      errorStr = where(self, self.execute)
-#      gLogger.exception(errorStr,lException=x)
-#      return S_ERROR(errorStr)
-  
     except Exception:
       errorStr = "RS2HistoryAgent execution"
       gLogger.exception(errorStr)

@@ -69,7 +69,7 @@ class DT_Policy(PolicyBase):
     result = {}
     
     if args[2] == 'Active':
-      if status['DT'] == 'None':
+      if status['DT'] == None:
         result['SAT'] = False
         result['Status'] = 'Active'
       else:
@@ -83,7 +83,7 @@ class DT_Policy(PolicyBase):
           result['EndDate'] = status['EndDate']
     
     elif args[2] == 'Probing':
-      if status['DT'] == 'None':
+      if status['DT'] == None:
         result['SAT'] = True
         result['Status'] = 'Active'
       else:
@@ -97,7 +97,7 @@ class DT_Policy(PolicyBase):
           result['EndDate'] = status['EndDate']
       
     elif args[2] == 'Bad':
-      if status['DT'] == 'None':
+      if status['DT'] == None:
         result['SAT'] = True
         result['Status'] = 'Active'
       else:
@@ -111,7 +111,7 @@ class DT_Policy(PolicyBase):
           result['EndDate'] = status['EndDate']
       
     elif args[2] == 'Banned':
-      if status['DT'] == 'None':
+      if status['DT'] == None:
         result['SAT'] = True
         result['Status'] = 'Active'
       else:
@@ -124,7 +124,7 @@ class DT_Policy(PolicyBase):
           result['Status'] = 'Probing'
           result['EndDate'] = status['EndDate']
    
-    if status['DT'] == 'None':
+    if status['DT'] == None:
       result['Reason'] = 'No DownTime announced'
     else:
       result['Reason'] = 'DownTime found: %s' %status['DT']

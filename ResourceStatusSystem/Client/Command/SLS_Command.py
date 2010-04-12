@@ -1,6 +1,8 @@
 """ The SLS_Command class is a command class to properly interrogate the SLS
 """
 
+from DIRAC import gLogger
+
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
@@ -71,7 +73,16 @@ class SLSStatus_Command(Command):
     else:
       raise InvalidRes, where(self, self.doCommand)
     
-    res = c.getStatus(SLSName)
+    try:
+      res = c.getStatus(SLSName)
+      return res
+    
+    except urllib2.URLError:
+      gLogger.error("SLS timed out for " + granularity + " " + name )
+      return  {'SLS':None}
+    except:
+      gLogger.exception("Exception when calling SLSClient")
+      return {'SLS':None}
     
     return res
 
@@ -113,9 +124,16 @@ class SLSLink_Command(Command):
     else:
       raise InvalidRes, where(self, self.doCommand)
     
-    res = c.getLink(SLSName)
+    try:
+      res = c.getLink(SLSName)
+      return res
     
-    return res
+    except urllib2.URLError:
+      gLogger.error("SLS timed out for " + granularity + " " + name )
+      return  {'SLS':None}
+    except:
+      gLogger.exception("Exception when calling SLSClient")
+      return {'SLS':None}
 
 #############################################################################
 

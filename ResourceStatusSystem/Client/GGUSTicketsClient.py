@@ -3,8 +3,6 @@
 
 from suds import WebFault
 from suds.client import Client
-from DIRAC import gLogger
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
 class GGUSTicketsClient:
   
@@ -35,13 +33,13 @@ class GGUSTicketsClient:
     #self.query = '\'GHD_Affected Site\'=\"'+ self.siteName + '\"'
     self.startDate = startDate
     if self.startDate is not None:
-      st = 'set the starting date as ', self.startDate
-      gLogger.info(st)
+#      st = 'set the starting date as ', self.startDate
+#      gLogger.info(st)
       self.query = self.query + ' AND \'GHD_Date Of Creation\'>' + str(self.startDate) 
     self.endDate = endDate
     if self.endDate is not None:
-      st = 'set the end date as ', self.endDate
-      gLogger.info(st)
+#      st = 'set the end date as ', self.endDate
+#      gLogger.info(st)
       self.query = self.query + ' AND \'GHD_Date Of Creation\'<' + str(self.endDate)
 
     # create the URL to get tickets relative to the site:
@@ -93,8 +91,9 @@ class GGUSTicketsClient:
         if id not in self.shortDescription.keys():
           self.shortDescription[str(id)] = self.selectedTickets[id]['shortDescription'] 
       else:
-        st = 'ERROR! GGUS status unknown: ', status
-        gLogger.error(st)
+        pass
+#        st = 'ERROR! GGUS status unknown: ', status
+#        gLogger.error(st)
 
 #############################################################################
 

@@ -42,14 +42,14 @@ class GOCDBClientSuccess(ClientsTestCase):
   def test_getStatus(self):
     for granularity in ('Site', 'Resource'):
       res = self.GOCCli.getStatus(granularity, 'XX')
-      self.assertEqual(res, [{'DT':'None'}])
+      self.assertEqual(res, None)
       res = self.GOCCli.getStatus(granularity, 'XX', datetime.utcnow())
-      self.assertEqual(res, [{'DT':'None'}])
+      self.assertEqual(res, None)
       res = self.GOCCli.getStatus(granularity, 'XX', datetime.utcnow(), 12)
-      self.assertEqual(res, [{'DT':'None'}])
+      self.assertEqual(res, None)
       
-#    res = self.GOCCli.getStatus(('Site', 'pic'))
-#    self.assertEqual(res, None)
+    res = self.GOCCli.getStatus('Site', 'pic')
+    self.assertEqual(res, None)
     
 #  def test_getInfo(self):
 #    for granularity in ('Site', 'Resource'):
@@ -58,12 +58,6 @@ class GOCDBClientSuccess(ClientsTestCase):
   
 #############################################################################
 
-class GOCDBClient_Failure(ClientsTestCase):
-    
-  def test_badArgs(self):
-    self.failUnlessRaises(InvalidRes, self.GOCCli.getStatus, 'sitess', '')
-     
-#############################################################################
 
 class ResourceStatusClientSuccess(ClientsTestCase):
 
@@ -181,7 +175,7 @@ class GGUSTicketsClientSuccess(ClientsTestCase):
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ClientsTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBClientSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBClient_Failure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBClient_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResultsClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsClientSuccess))

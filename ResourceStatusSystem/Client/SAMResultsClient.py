@@ -79,33 +79,13 @@ class SAMResultsClient:
     if tests is None:
       samdbpi_test = "&only_ss"
       
-    # Set your service type
-    #samdbpi_service = service
-     
     # SAMDB-PI to query
     samdb_ep = samdbpi_url + samdbpi_method + "VO_name=LHCb" + "&Site_name=" + samdbpi_site + samdbpi_test
     
-#    try:
-    #ADDDED NOW!!!
     req = urllib2.Request(samdb_ep)
     samPage = urllib2.urlopen(req)
-    #ADDDED NOW!!!
-#      opener = urllib2.build_opener()
-#      samPage = opener.open(samdb_ep)
-#    except IOError, errorMsg:
-#      exceptStr = where(self, self._curlDownload) + " while opening %s." % samdb_ep
-#      gLogger.exception(exceptStr,'',errorMsg)
-#      return None
-#    except Exception, errorMsg:
-#      exceptStr = where(self, self._curlDownload) + " while opening %s." % samdb_ep
-#      gLogger.exception(exceptStr,'',errorMsg)
-#      return None
 
     sam = samPage.read()
-    
-    #Commented NOW!!!
-#    opener.close()
-    #Commented NOW!!!
 
     return sam
     

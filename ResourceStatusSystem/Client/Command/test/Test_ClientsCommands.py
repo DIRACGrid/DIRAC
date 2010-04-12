@@ -97,15 +97,22 @@ class GOCDBStatus_CommandSuccess(ClientsCommandsTestCase):
 
     for granularity in ValidRes:
       args = (granularity, 'XX')
-      self.mock_client.getStatus.return_value =  [{'DT':'OUTAGE in 8 hours', 'Enddate':''}]
+      for retVal in ({'DT':'OUTAGE', 'Enddate':'', 'Type': 'OnGoing'}, 
+                     [{'DT':'OUTAGE', 'Enddate':'', 'Type': 'Programmed', 'InHours' : 8}, 
+                      {'DT':'OUTAGE', 'Enddate':'', 'Type': 'OnGoing'}]):
+        self.mock_client.getStatus.return_value = retVal  
+        res = self.GOCDBS_C.doCommand(args, clientIn = self.mock_client)
+        self.assertEqual(res['DT'], 'OUTAGE')
+      self.mock_client.getStatus.return_value = {'DT':'OUTAGE', 'Enddate':'', 
+                                                 'Type': 'Programmed', 'InHours' : 8}
       res = self.GOCDBS_C.doCommand(args, clientIn = self.mock_client)
       self.assertEqual(res['DT'], 'OUTAGE in 8 hours')
-      self.mock_client.getStatus.return_value = [{'DT':'AT_RISK', 'Enddate':''}]
+      self.mock_client.getStatus.return_value = {'DT':'AT_RISK', 'Enddate':'', 'Type': 'OnGoing'}
       res = self.GOCDBS_C.doCommand(args, clientIn = self.mock_client)
       self.assertEqual(res['DT'], 'AT_RISK')
-      self.mock_client.getStatus.return_value =  [{'DT':'None'}]
+      self.mock_client.getStatus.return_value =  None
       res = self.GOCDBS_C.doCommand(args, clientIn = self.mock_client)
-      self.assertEqual(res['DT'], 'None')
+      self.assertEqual(res['DT'], None)
 
 #############################################################################
 
@@ -305,27 +312,32 @@ class SAMResults_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
 
-    for g in ('Site', 'Resource'):
-      args = (g, 'XX')
-      for status in ['ok', 'down', 'na', 'degraded', 'partial', 'maint']:
-        self.mock_client.getStatus.return_value =  {'Status':status}
-        res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
-        self.assertEqual(res['SAM-Status']['Status'], status)
-      args = (g, 'XX', 'XXX')
-      for status in ['ok', 'down', 'na', 'degraded', 'partial', 'maint']:
-        self.mock_client.getStatus.return_value =  {'Status':status}
-        res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
-        self.assertEqual(res['SAM-Status']['Status'], status)
-      args = (g, 'XX', None, ['aa', 'bbb'])
-      for status in ['ok', 'down', 'na', 'degraded', 'partial', 'maint']:
-        self.mock_client.getStatus.return_value =  {'Status':status}
-        res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
-        self.assertEqual(res['SAM-Status']['Status'], status)
-      args = (g, 'XX', 'sss', ['aa', 'bbb'])
-      for status in ['ok', 'down', 'na', 'degraded', 'partial', 'maint']:
-        self.mock_client.getStatus.return_value =  {'Status':status}
-        res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
-        self.assertEqual(res['SAM-Status']['Status'], status)
+    args = ('Site', 'XX')
+    self.mock_client.getStatus.return_value =  {'Status':None}
+    res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
+    self.assertEqual(res['SAM-Status'], {'Status': None})
+    args = ('Site', 'XX', 'XXX')
+    res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
+    self.assertEqual(res['SAM-Status'], {'Status':None})
+
+    args = ('Resource', 'XX')
+    self.mock_client.getStatus.return_value =  {'Status':None}
+    res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
+    args = ('Resource', 'XX', 'XXX')
+    res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
+    self.assertEqual(res['SAM-Status'], {'Status':None})
+    self.assertEqual(res['SAM-Status'], {'Status': None})
+
+    args = ('Resource', 'grid0.fe.infn.it', None, ['aa', 'bbb'])
+    for status in ['ok', 'down', 'na', 'degraded', 'partial', 'maint']:
+      self.mock_client.getStatus.return_value =  {'Status':status}
+      res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
+      self.assertEqual(res['SAM-Status']['Status'], status)
+    args = ('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it', ['aa', 'bbb'])
+    for status in ['ok', 'down', 'na', 'degraded', 'partial', 'maint']:
+      self.mock_client.getStatus.return_value =  {'Status':status}
+      res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
+      self.assertEqual(res['SAM-Status']['Status'], status)
 
 #############################################################################
 
