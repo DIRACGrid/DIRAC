@@ -98,9 +98,10 @@ class SocketInfoFactory:
       if not connected:
         return S_ERROR( "Could not connect to %s: %s" % ( hostAddress, "," .join( [ e for e in errorsList ] ) ) )
       retVal = socketInfo.doClientHandshake()
-      if not retVal[ 'OK' ]:
-        continue
-      break
+      if retVal[ 'OK' ]:
+        #Everything went ok. Don't need to retry
+        break
+    #Did the auth or the connection fail?
     if not retVal['OK']:
       return retVal
     if 'enableSessions' in kwargs and kwargs[ 'enableSessions' ]:
@@ -108,7 +109,7 @@ class SocketInfoFactory:
       gSessionManager.set( sessionId, sslSocket.get_session() )
     return S_OK( socketInfo )
 
-  def getListeningSocket( self, hostAddress, listeningQueueSize=5, reuseAddress=True, **kwargs ):
+  def getListeningSocket( self, hostAddress, listeningQueueSize = 5, reuseAddress = True, **kwargs ):
     osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
     if reuseAddress:
       osSocket.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
