@@ -167,7 +167,7 @@ class ResourceStatusDB:
                            status, reason, dateEffective = None):
     pass
   
-  def getPolicyRes(self, name, policyName):
+  def getPolicyRes(self, name, policyName, lastCheckTime = False):
     return ('Active', 'DT:None')
   
   def transact2History(self, *args):

@@ -1,4 +1,4 @@
-""" DIRAC.ResourceStatusSystem.Policy.Configuration Module
+""" DIRAC.ResourceStatusSystem.Policy.Configurations Module
 
     collects everything needed to configure policies
 """
@@ -82,18 +82,18 @@ Resources_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 10, \
                         'T2_BAD_CHECK_FREQUENCY' : 20, \
                         'T2_BANNED_CHECK_FREQUENCY' : 30 }
 
-StorageElements_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 10, \
-                              'T0_PROBING_CHECK_FREQUENCY': 8, \
-                              'T0_BAD_CHECK_FREQUENCY' : 8, \
-                              'T0_BANNED_CHECK_FREQUENCY' : 10, \
-                              'T1_ACTIVE_CHECK_FREQUENCY' : 12, \
-                              'T1_PROBING_CHECK_FREQUENCY' : 10, \
-                              'T1_BAD_CHECK_FREQUENCY' : 10, \
-                              'T1_BANNED_CHECK_FREQUENCY' : 12, \
-                              'T2_ACTIVE_CHECK_FREQUENCY' : 30, \
-                              'T2_PROBING_CHECK_FREQUENCY' : 20, \
-                              'T2_BAD_CHECK_FREQUENCY' : 20, \
-                              'T2_BANNED_CHECK_FREQUENCY' : 30 }
+StorageElements_check_freq = {'T0_ACTIVE_CHECK_FREQUENCY': 12, \
+                              'T0_PROBING_CHECK_FREQUENCY': 10, \
+                              'T0_BAD_CHECK_FREQUENCY' : 10, \
+                              'T0_BANNED_CHECK_FREQUENCY' : 12, \
+                              'T1_ACTIVE_CHECK_FREQUENCY' : 15, \
+                              'T1_PROBING_CHECK_FREQUENCY' : 12, \
+                              'T1_BAD_CHECK_FREQUENCY' : 12, \
+                              'T1_BANNED_CHECK_FREQUENCY' : 15, \
+                              'T2_ACTIVE_CHECK_FREQUENCY' : 40, \
+                              'T2_PROBING_CHECK_FREQUENCY' : 30, \
+                              'T2_BAD_CHECK_FREQUENCY' : 30, \
+                              'T2_BANNED_CHECK_FREQUENCY' : 40 }
 
 #############################################################################
 # alarms and notifications
@@ -486,9 +486,9 @@ Policy_Types = {
      },
   'Alarm_PolType' : 
     { 'Granularity' : ValidRes, 
-      'Status' : ValidRes, 
+      'Status' : ['Banned'],
       'FormerStatus' : ValidStatus,
-      'NewStatus' : ['Active', 'Banned'],
+      'NewStatus' : ['Banned'],
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,

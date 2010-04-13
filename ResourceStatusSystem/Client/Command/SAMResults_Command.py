@@ -58,12 +58,12 @@ class SAMResults_Command(Command):
         res = c.getStatus(granularity, name, siteName, tests)
       except urllib2.URLError:
         gLogger.error("SAM timed out for " + granularity + " " + name )
-        return  {'SAM-Status':None}      
+        return  {'SAM-Status':'Unknown'}      
       except httplib.BadStatusLine:
         gLogger.error("httplib.BadStatusLine: could not read" + granularity + " " + name )
-        return  {'SAM-Status':None}
+        return  {'SAM-Status':'Unknown'}
       except:
         gLogger.exception("Exception when calling SAMResultsClient")
-        return  {'SAM-Status':None}
+        return  {'SAM-Status':'Unknown'}
 
     return {'SAM-Status':res}

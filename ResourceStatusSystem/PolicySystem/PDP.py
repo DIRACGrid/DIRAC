@@ -8,6 +8,8 @@ The PDP (Policy Decision Point) module is used to:
 #############################################################################
 
 import time
+from datetime import datetime, timedelta
+
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
@@ -159,7 +161,10 @@ class PDP:
       if policyCombinedResults['SAT']:
         newstatus = policyCombinedResults['Status']
         reason = policyCombinedResults['Reason']
-        policyType = ig.getNewPolicyType(self.__granularity, newstatus)
+        newPolicyType = ig.getNewPolicyType(self.__granularity, newstatus)
+        for npt in newPolicyType:
+          if npt not in policyType:
+            policyType.append(npt)
         decision = {'PolicyType': policyType, 'Action': True, 'Status':'%s'%newstatus, 
                     'Reason':'%s'%reason}
         if policyCombinedResults.has_key('EndDate'):
@@ -191,6 +196,12 @@ class PDP:
       res = pc.policyInvocation(granularity = granularity, name = name,
                                 status = status, policy = policy, args = args,
                                 pol = pName, extraArgs = extraArgs)
+
+      if res['SAT'] == 'Unknown':
+        res = self.__useOldPolicyRes(name = name, policyName = pName, 
+                                     status = status)
+
+      print 'res', res
 
       if res['SAT'] != None:
         policyResults.append(res)
@@ -288,4 +299,47 @@ class PDP:
       resThirdCombination = self._policyCombination(resSecondCombination, args[3])
       return resThirdCombination
 
+#############################################################################
+
+  def __useOldPolicyRes(self, name, policyName, status):
+    
+    print "\n getting old policy res\n"
+    print name, policyName, status
+    
+    from DIRAC.Core.DISET.RPCClient import RPCClient
+    rsS = RPCClient("ResourceStatus/ResourceStatus")
+    
+    res = rsS.getPolicyRes(name, policyName, True)
+    if not res['OK']:
+      raise RSSException, where(self, self.__useOldPolicyRes) + 'Could not get a policy result'
+    
+    print 'policyRes', res 
+    
+    res = res['Value']
+    
+    
+    if res == []:
+      return {'SAT':None}
+      
+    oldStatus = res[0]
+    oldReason = res[1]
+    lastCheckTime = res[2]
+    
+    if ( lastCheckTime + timedelta(hours = 2) ) < datetime.utcnow():
+      return {'SAT':None}
+    
+    result = {}
+    
+    if status == oldStatus:
+      result['SAT'] = False
+    else:
+      result['SAT'] = True
+    
+    result['Status'] = oldStatus
+    result['Reason'] = oldReason
+    result['OLD'] = True
+    result['PolicyName'] = policyName
+    
+    return result
+    
 #############################################################################

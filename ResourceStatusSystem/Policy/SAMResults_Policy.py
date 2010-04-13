@@ -68,6 +68,9 @@ class SAMResults_Policy(PolicyBase):
     if SAMstatus is None:
       return {'SAT':None}
     
+    if SAMstatus == 'Unknown':
+      return {'SAT':'Unknown'}
+    
 #    values = []
 #    for s in status.values():
 #      if s == 'ok':

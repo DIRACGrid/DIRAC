@@ -269,8 +269,9 @@ class PEP:
     rsDB.setLastMonitoredCheckTime(self.__granularity, self.__name)
     
     for resP in resDecisions['SinglePolicyResults']:
-      rsDB.addOrModifyPolicyRes(self.__granularity, self.__name, 
-                                resP['PolicyName'], resP['Status'], resP['Reason'])
+      if not resP.has_key('OLD'):
+        rsDB.addOrModifyPolicyRes(self.__granularity, self.__name, 
+                                  resP['PolicyName'], resP['Status'], resP['Reason'])
     
     if res.has_key('EndDate'):
       rsDB.setDateEnd(self.__granularity, self.__name, res['EndDate']) 

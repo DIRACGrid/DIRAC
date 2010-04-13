@@ -103,24 +103,24 @@ class DT_PolicySuccess(PoliciesTestCase):
     for granularity in ValidRes:
       for status in ValidStatus:
         args = (granularity, 'XX', status)
-        for clientRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}, {'DT':'None'}):
-          self.mock_command.doCommand.return_value = clientRes
-          res = self.DT_P.evaluate(args, commandIn = self.mock_command, knownInfo=clientRes)
-          if clientRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}) and status == 'Active':
+        for commandRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}, {'DT':None}):
+          self.mock_command.doCommand.return_value = commandRes
+          res = self.DT_P.evaluate(args, commandIn = self.mock_command, knownInfo=commandRes)
+          if commandRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}) and status == 'Active':
             self.assert_(res['SAT'])
-          elif clientRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'None'}) and status in ('Probing', 'Bad'):
+          elif commandRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':None}) and status in ('Probing', 'Bad'):
             self.assert_(res['SAT'])
-          elif clientRes in ({'DT':'AT_RISK', 'EndDate':''}, {'DT':'None'}) and status == 'Banned':
+          elif commandRes in ({'DT':'AT_RISK', 'EndDate':''}, {'DT':None}) and status == 'Banned':
             self.assert_(res['SAT'])
           else:
             self.assertFalse(res['SAT'])
           
           res = self.DT_P.evaluate(args, commandIn = self.mock_command)
-          if clientRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}) and status == 'Active':
+          if commandRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}) and status == 'Active':
             self.assert_(res['SAT'])
-          elif clientRes in ({'DT':'OUTAGE', 'EndDate':''},  {'DT':'None'}) and status in ('Probing', 'Bad'):
+          elif commandRes in ({'DT':'OUTAGE', 'EndDate':''},  {'DT':None}) and status in ('Probing', 'Bad'):
             self.assert_(res['SAT'])
-          elif clientRes in ({'DT':'AT_RISK', 'EndDate':''},  {'DT':'None'}) and status == 'Banned':
+          elif commandRes in ({'DT':'AT_RISK', 'EndDate':''},  {'DT':None}) and status == 'Banned':
             self.assert_(res['SAT'])
           else:
             self.assertFalse(res['SAT'])

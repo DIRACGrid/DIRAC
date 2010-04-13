@@ -216,6 +216,10 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
         res = self.rsh.export_getPeriods(granularity, 'XX', status, 20)
         self.assert_(res['OK'])
     
+  def test_export_getPolicyRes(self):
+    res = self.rsh.export_getPolicyRes('XX', 'XX', False)
+    self.assert_(res['OK'])
+        
   def test_export_getServiceStats(self):
     res = self.rsh.export_getServiceStats('')
     self.assert_(res['OK'])

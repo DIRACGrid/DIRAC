@@ -2058,7 +2058,7 @@ class ResourceStatusDB:
     
 #############################################################################
 
-  def getPolicyRes(self, name, policyName):
+  def getPolicyRes(self, name, policyName, lastCheckTime = False):
     """ 
     Get a Policy Result from the PolicyRes table.
     
@@ -2066,10 +2066,16 @@ class ResourceStatusDB:
       :attr:`name`: string - name of the ValidRes
       
       :attr:`policyName`: string - the policy name
+      
+      :attr:`lastCheckTime`: optional - if TRUE, it will get also the 
+      LastCheckTime 
     """
     
-    req = "SELECT Status, Reason FROM PolicyRes WHERE "
-    req = req + "Name = '%s' AND PolicyName = '%s'" %(name, policyName)
+    req = "SELECT Status, Reason"
+    if lastCheckTime:
+      req = req + ", LastCheckTime"  
+    req = req + " FROM PolicyRes WHERE"
+    req = req + " Name = '%s' AND PolicyName = '%s'" %(name, policyName)
 
     resQuery = self.db._query(req)
     if not resQuery['OK']:

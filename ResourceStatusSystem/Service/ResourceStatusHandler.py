@@ -1348,6 +1348,27 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
+  types_getPolicyRes = [StringType, StringType, BooleanType]
+  def export_getPolicyRes(self, name, policyName, lastCheckTime):
+    """ get Policy Result
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getPolicyRes: Attempting to get result of %s for %s" % (policyName, name))
+      try:
+        res = rsDB.getPolicyRes(name, policyName, lastCheckTime)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getPolicyRes: got result of %s for %s" % (policyName, name))
+      return S_OK(res)
+    except Exception:
+      errorStr = where(self, self.export_getPolicyRes)
+      gLogger.exception(errorStr)
+      return S_ERROR(errorStr)
+    
+#############################################################################
+
   types_getGeneralName = [StringType, StringType, StringType]
   def export_getGeneralName(self, granularity, name, toGranularity):
     """ get General Name
