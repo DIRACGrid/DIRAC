@@ -131,7 +131,7 @@ class PDP:
       
     for policyGroup in EVAL:
           
-      self.__policyType = policyGroup['PolicyType']
+      policyType = policyGroup['PolicyType']
   
       if self.policy is not None:
         #TO CHECK!
@@ -139,7 +139,7 @@ class PDP:
       else:
         if policyGroup['Policies'] is None:
           return {'SinglePolicyResults' : [], 
-                  'PolicyCombinedResult' : [{'PolicyType': self.__policyType, 
+                  'PolicyCombinedResult' : [{'PolicyType': policyType, 
                                              'Action': False, 
                                              'Reason':'No policy results'}]}
                   
@@ -151,7 +151,7 @@ class PDP:
     
       if policyCombinedResults == None:
           return {'SinglePolicyResults' : singlePolicyResults, 
-                  'PolicyCombinedResult' : [{'PolicyType': self.__policyType, 
+                  'PolicyCombinedResult' : [{'PolicyType': policyType, 
                                              'Action': False, 
                                              'Reason':'No policy results'}]}
       
@@ -159,14 +159,15 @@ class PDP:
       if policyCombinedResults['SAT']:
         newstatus = policyCombinedResults['Status']
         reason = policyCombinedResults['Reason']
-        decision = {'PolicyType': self.__policyType, 'Action': True, 'Status':'%s'%newstatus, 
+        policyType = ig.getNewPolicyType(self.__granularity, newstatus)
+        decision = {'PolicyType': policyType, 'Action': True, 'Status':'%s'%newstatus, 
                     'Reason':'%s'%reason}
         if policyCombinedResults.has_key('EndDate'):
           decision['EndDate'] = policyCombinedResults['EndDate']
         policyCombinedResultsList.append(decision)
       elif not policyCombinedResults['SAT']:
         reason = policyCombinedResults['Reason']
-        decision = {'PolicyType': self.__policyType, 'Action': False, 'Reason':'%s'%reason}
+        decision = {'PolicyType': policyType, 'Action': False, 'Reason':'%s'%reason}
         if policyCombinedResults.has_key('EndDate'):
           decision['EndDate'] = policyCombinedResults['EndDate']
         policyCombinedResultsList.append(decision)

@@ -2,7 +2,7 @@
     present SAM status
 """
 
-import urllib2
+import urllib2, httplib
 
 from DIRAC import gLogger
 
@@ -59,6 +59,9 @@ class SAMResults_Command(Command):
       except urllib2.URLError:
         gLogger.error("SAM timed out for " + granularity + " " + name )
         return  {'SAM-Status':None}      
+      except httplib.BadStatusLine:
+        gLogger.error("httplib.BadStatusLine: could not read" + granularity + " " + name )
+        return  {'SAM-Status':None}
       except:
         gLogger.exception("Exception when calling SAMResultsClient")
         return  {'SAM-Status':None}

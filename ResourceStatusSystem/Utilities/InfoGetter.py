@@ -29,16 +29,20 @@ class InfoGetter:
     EVAL = {}
     
     if 'policy' in args:
-      EVAL['Policies'] = self.__getPolToEval(granularity, status, formerStatus, 
-                                             siteType, serviceType, resourceType)
+      EVAL['Policies'] = self.__getPolToEval(granularity = granularity, status = status, 
+                                             formerStatus = formerStatus, siteType = siteType, 
+                                             serviceType = serviceType, resourceType = resourceType)
     
     if 'policyType' in args:
-      EVAL['PolicyType'] = self.__getPolTypes(granularity, status, formerStatus, 
-                                              siteType, serviceType, resourceType)
+      EVAL['PolicyType'] = self.__getPolTypes(granularity = granularity, status = status, 
+                                              formerStatus = formerStatus, siteType = siteType,
+                                              serviceType = serviceType, resourceType = resourceType)
       
     if 'panel_info' in args:
-      EVAL['Info'] = self.__getPanelsInfo(granularity, status, formerStatus, 
-                                          siteType, serviceType, resourceType, info)
+      EVAL['Info'] = self.__getPanelsInfo(granularity = granularity, status = status,
+                                          formerStatus = formerStatus, siteType = siteType,
+                                          serviceType = serviceType, resourceType = resourceType,
+                                          info = info)
     
     if 'view_info' in args:
       panels_info_dict = {}
@@ -46,8 +50,10 @@ class InfoGetter:
       view_panels = self.__getViewPanels(info)
       
       for panel in view_panels:
-        panel_info = self.__getPanelsInfo(granularity, status, formerStatus, 
-                                          siteType, serviceType, resourceType, panel)
+        panel_info = self.__getPanelsInfo(granularity = granularity, status = status,
+                                          formerStatus = formerStatus, siteType = siteType,
+                                          serviceType = serviceType, resourceType = resourceType,
+                                          panel = panel)
         panels_info_dict[panel] = panel_info
       
       EVAL['Panels'] = panels_info_dict
@@ -56,7 +62,12 @@ class InfoGetter:
   
       
 #############################################################################
+  
+  def getNewPolicyType(self, granularity, newStatus):
+    return self.__getPolTypes(granularity = granularity, newStatus = newStatus)
     
+#############################################################################
+
   def __getPolToEval(self, granularity, status = None, formerStatus = None, 
                        siteType = None, serviceType = None, resourceType = None ):
   
@@ -109,8 +120,8 @@ class InfoGetter:
   
 #############################################################################
 
-  def __getPolTypes(self, granularity, status = None, formerStatus = None, 
-                       siteType = None, serviceType = None, resourceType = None ):
+  def __getPolTypes(self, granularity, status = None, formerStatus = None, newStatus = None,  
+                    siteType = None, serviceType = None, resourceType = None ):
           
     pol_types = [] 
      
@@ -124,6 +135,13 @@ class InfoGetter:
         
         if formerStatus is not None:
           if formerStatus not in Configurations.Policy_Types[pt]['FormerStatus']:
+            try:
+              pol_types.remove(pt)
+            except Exception:
+              continue
+            
+        if newStatus is not None:
+          if newStatus not in Configurations.Policy_Types[pt]['NewStatus']:
             try:
               pol_types.remove(pt)
             except Exception:
