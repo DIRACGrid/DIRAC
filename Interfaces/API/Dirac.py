@@ -268,24 +268,18 @@ class Dirac:
     self.__printInfo()
 
     cleanPath = ''
-
     jobDescription = ''
 
     if type( job ) in types.StringTypes:
       if os.path.exists( job ):
         self.log.verbose( 'Found job JDL file %s' % ( job ) )
         jdl = job
-        # subResult = self._sendJob( job )
-        # return subResult
       else:
         ( fd, jdl ) = tempfile.mkstemp( prefix = 'DIRAC_', suffix = '.jdl', text = True )
         self.log.verbose( 'Job is a JDL string' )
         os.write( fd, job )
         os.close( fd )
         cleanPath = jdl
-        # jobID = self._sendJob( name )
-        # os.unlink(name)
-        # return jobID
     else:
       try:
         formulationErrors = job._getErrors()
@@ -297,6 +291,18 @@ class Dirac:
         for method, errorList in formulationErrors.items():
           self.log.error( '>>>> Error in %s() <<<<\n%s' % ( method, string.join( errorList, '\n' ) ) )
         return S_ERROR( formulationErrors )
+
+      #Run any VO specific checks if desired prior to submission, this may or may not be overidden 
+      #in a derived class for example
+      try:
+        result = self.preSubmissionChecks(job,mode)
+        if not result['OK']:
+          self.log.error('Pre-submission checks failed for job with message: "%s"' %(result['Message']))
+          return result
+      except Exception,x:
+        msg = 'Error in VO specific function preSubmissionChecks: "%s"' %(x)
+        self.log.error(msg)
+        return S_ERROR(msg)
 
       tmpdir = tempfile.mkdtemp( prefix = 'DIRAC_' )
       self.log.verbose( 'Created temporary directory for submission %s' % ( tmpdir ) )
@@ -343,6 +349,7 @@ class Dirac:
     self.__cleanTmp( cleanPath )
     return result
 
+  #############################################################################
   def __cleanTmp( self, cleanPath ):
     """Remove tmp file or directory
     """
@@ -356,6 +363,14 @@ class Dirac:
       return
     self.__printOutput( sys.stdout, 'Could not remove %s' % str( cleanPath ) )
     return
+
+  #############################################################################
+  def preSubmissionChecks(self,job,mode):
+    """Internal function.  The pre-submission checks method allows VOs to 
+       make their own checks before job submission. To make use of this the
+       method should be overridden in a derived VO-specific Dirac class. 
+    """
+    return S_OK('Nothing to do')
 
   #############################################################################
   def runLocalAgent( self, jdl, jobDescription ):
