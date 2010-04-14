@@ -53,7 +53,7 @@ class InfoGetter:
         panel_info = self.__getPanelsInfo(granularity = granularity, status = status,
                                           formerStatus = formerStatus, siteType = siteType,
                                           serviceType = serviceType, resourceType = resourceType,
-                                          panel = panel)
+                                          panel_name = panel)
         panels_info_dict[panel] = panel_info
       
       EVAL['Panels'] = panels_info_dict

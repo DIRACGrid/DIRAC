@@ -48,16 +48,16 @@ class SLSClient:
     res = self._read_from_url(name)
 
     if "ERROR" in res:
-      return {'SLS':None, 'Reason': res}
+      raise Exception, res
     
-    return {'SLS':int(res)}
+    return int(res)
   
 #############################################################################
   
 
   def getLink(self, name):
 
-    return {'WebLink':'https://sls.cern.ch/sls/service.php?id=' + name}
+    return 'https://sls.cern.ch/sls/service.php?id='
   
 #############################################################################
  

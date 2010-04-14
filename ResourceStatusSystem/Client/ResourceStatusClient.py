@@ -1,11 +1,10 @@
 """ 
 ResourceStatusClient class is a client for requesting info from the ResourceStatusService.
 """
-from DIRAC import gLogger
+
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-
 
 class ResourceStatusClient:
   
@@ -34,8 +33,6 @@ class ResourceStatusClient:
       { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
     """
 
-#    try:
-#    
     if granularity not in ('Site', 'Sites'):
       raise InvalidRes, where(self, self.getServiceStats)
 
@@ -44,11 +41,6 @@ class ResourceStatusClient:
       raise RSSException, where(self, self.getServiceStats) + " " + res['Message'] 
 
     return res['Value']
-
-#    except Exception, errorMsg:
-#      exceptStr = where(self, self.getServiceStats)
-#      gLogger.exception(exceptStr,'',errorMsg)
-#      return None    
 
 #############################################################################
 
@@ -65,18 +57,11 @@ class ResourceStatusClient:
       { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
     """
 
-    try:
-
-      res = self.rsS.getResourceStats(granularity, name)
-      if not res['OK']:
-        raise RSSException, where(self, self.getResourceStats) + " " + res['Message'] 
-    
-      return res['Value']
-
-    except Exception, errorMsg:
-      exceptStr = where(self, self.getResourceStats)
-      gLogger.exception(exceptStr,'',errorMsg)
-      return None    
+    res = self.rsS.getResourceStats(granularity, name)
+    if not res['OK']:
+      raise RSSException, where(self, self.getResourceStats) + " " + res['Message'] 
+  
+    return res['Value']
 
 #############################################################################
 
@@ -93,19 +78,12 @@ class ResourceStatusClient:
       { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
     """
 
-    try:
-      
-      res = self.rsS.getStorageElementsStats(granularity, name)
-      if not res['OK']:
-        raise RSSException, where(self, self.getStorageElementsStats) + " " + res['Message'] 
-  
-      return res['Value']
-    
-    except Exception, errorMsg:
-      exceptStr = where(self, self.getStorageElementsStats)
-      gLogger.exception(exceptStr,'', errorMsg)
-      return None
+    res = self.rsS.getStorageElementsStats(granularity, name)
+    if not res['OK']:
+      raise RSSException, where(self, self.getStorageElementsStats) + " " + res['Message'] 
 
+    return res['Value']
+    
 #############################################################################
 
   
@@ -120,20 +98,14 @@ class ResourceStatusClient:
     """
     #da migliorare!
     
-    try:
-      if granularity not in ValidRes:
-        raise InvalidRes, where(self, self.getPeriods)
-      
-      res = self.rsS.getPeriods(granularity, name, status, hours)
-      if not res['OK']:
-        raise RSSException, where(self, self.getPeriods) + " " + res['Message'] 
+    if granularity not in ValidRes:
+      raise InvalidRes, where(self, self.getPeriods)
     
-      return {'Periods':res['Value']}
-
-    except Exception, x:
-      exceptStr = where(self, self.getPeriods)
-      gLogger.exception(exceptStr,'', x)
-      return {'Periods': None}
+    res = self.rsS.getPeriods(granularity, name, status, hours)
+    if not res['OK']:
+      raise RSSException, where(self, self.getPeriods) + " " + res['Message'] 
+  
+    return {'Periods':res['Value']}
 
 #############################################################################
 
@@ -152,19 +124,12 @@ class ResourceStatusClient:
       { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
     """
 
-    try:
-      
-      res = self.rsS.getGeneralName(granularity, name, toGranularity)
-      if not res['OK']:
-        raise RSSException, where(self, self.getGeneralName) + " " + res['Message'] 
-        return None
-    
-      return res['Value']
+    res = self.rsS.getGeneralName(granularity, name, toGranularity)
+    if not res['OK']:
+      raise RSSException, where(self, self.getGeneralName) + " " + res['Message'] 
   
-    except Exception, errorMsg:
-      exceptStr = where(self, self.getGeneralName)
-      gLogger.exception(exceptStr,'', errorMsg)
-      return None
+    return res['Value']
+  
   
 #############################################################################
 
@@ -181,34 +146,28 @@ class ResourceStatusClient:
       'Active'|'Probing'|'Banned'|None
     """
 
-    try:
-      if granularity in ('Site', 'Sites'):
-        res = self.rsS.getSitesStatusWeb({'SiteName':name}, [], 0, 1)
-      elif granularity in ('Service', 'Services'):
-        res = self.rsS.getServicesStatusWeb({'ServiceName':name}, [], 0, 1)
-      elif granularity in ('Resource', 'Resources'):
-        res = self.rsS.getResourcesStatusWeb({'ResourceName':name}, [], 0, 1)
-      elif granularity in ('StorageElement', 'StorageElements'):
-        res = self.rsS.getStorageElementsStatusWeb({'StorageElementName':name}, [], 0, 1)
-      else:
-        raise InvalidRes, where(self, self.getMonitoredStatus)
-      
-      if not res['OK']:
-        raise RSSException, where(self, self.getMonitoredStatus) + " " + res['Message'] 
-      else:
-        try:
-          if granularity in ('Resource', 'Resources'):
-            return res['Value']['Records'][0][5]
-          else:
-            return res['Value']['Records'][0][4]
-        except IndexError:
-          return None
+    if granularity in ('Site', 'Sites'):
+      res = self.rsS.getSitesStatusWeb({'SiteName':name}, [], 0, 1)
+    elif granularity in ('Service', 'Services'):
+      res = self.rsS.getServicesStatusWeb({'ServiceName':name}, [], 0, 1)
+    elif granularity in ('Resource', 'Resources'):
+      res = self.rsS.getResourcesStatusWeb({'ResourceName':name}, [], 0, 1)
+    elif granularity in ('StorageElement', 'StorageElements'):
+      res = self.rsS.getStorageElementsStatusWeb({'StorageElementName':name}, [], 0, 1)
+    else:
+      raise InvalidRes, where(self, self.getMonitoredStatus)
     
-    except Exception, errorMsg:
-      exceptStr = where(self, self.getMonitoredStatus)
-      gLogger.exception(exceptStr,'', errorMsg)
-      return None
-
+    if not res['OK']:
+      raise RSSException, where(self, self.getMonitoredStatus) + " " + res['Message'] 
+    else:
+      try:
+        if granularity in ('Resource', 'Resources'):
+          return res['Value']['Records'][0][5]
+        else:
+          return res['Value']['Records'][0][4]
+      except IndexError:
+        return None
+    
 
 #############################################################################
 

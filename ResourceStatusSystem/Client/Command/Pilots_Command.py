@@ -2,6 +2,8 @@
     present pilots efficiency
 """
 
+from DIRAC import gLogger
+
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
@@ -26,7 +28,13 @@ class PilotsStats_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient   
       c = PilotsClient()
       
-    return c.getPilotsStats(args[0], args[1], args[2])
+    try:
+      res = c.getPilotsStats(args[0], args[1], args[2])
+    except:
+      gLogger.exception("Exception when calling PilotsClient")
+      return {'PilotsStats':'Unknown'}
+  
+    return {'PilotsStats':res}
 
 
 #############################################################################
@@ -48,8 +56,14 @@ class PilotsEff_Command(Command):
     else:
       from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient   
       c = PilotsClient()
-      
-    return c.getPilotsEff(args[0], args[1], args[2])
+    
+    try:  
+      res = c.getPilotsEff(args[0], args[1], args[2])
+    except:
+      gLogger.exception("Exception when calling PilotsClient")
+      return {'PilotsEff':'Unknown'}
+  
+    return {'PilotsEff':res}
 
 #############################################################################
 
@@ -73,7 +87,11 @@ class PilotsEffSimple_Command(Command):
     if args[0] in ('Service', 'Services'):
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
       c = ResourceStatusClient()
-      name = c.getGeneralName(args[0], args[1], 'Site')
+      try:
+        name = c.getGeneralName(args[0], args[1], 'Site')
+      except:
+        gLogger.error("Can't get a general name for %s %s" %(args[0], args[1]))
+        return {'PilotsEff':'Unknown'}      
       granularity = 'Site'
     elif args[0] in ('Site', 'Sites', 'Resource', 'Resources'):
       name = args[1]
@@ -90,6 +108,12 @@ class PilotsEffSimple_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient   
       c = PilotsClient()
       
-    return c.getPilotsSimpleEff(granularity, name)
+    try:
+      res = c.getPilotsSimpleEff(granularity, name)
+    except:
+      gLogger.exception("Exception when calling PilotsClient")
+      return {'PilotsEff':'Unknown'}
+    
+    return {'PilotsEff':res} 
 
 #############################################################################

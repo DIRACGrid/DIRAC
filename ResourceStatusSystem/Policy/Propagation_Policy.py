@@ -67,6 +67,9 @@ class Propagation_Policy(PolicyBase):
       
       stats = res['stats']
     
+    if stats == 'Unknown':
+      return {'SAT':'Unknown'}
+    
     if stats is None:
       return {'SAT':None}
     

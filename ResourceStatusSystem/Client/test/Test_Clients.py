@@ -123,7 +123,8 @@ class JobsClientSuccess(ClientsTestCase):
 
   def test_getJobsSimpleEff(self):
     for granularity in ValidRes:
-      self.JobsCli.getJobsSimpleEff(granularity, 'XX')
+      res = self.JobsCli.getJobsSimpleEff(granularity, 'XX')
+      self.assertEqual(res, 'Idle')
 
 #############################################################################
 
@@ -139,11 +140,11 @@ class PilotsClientSuccess(ClientsTestCase):
   def test_getPilotsSimpleEff(self):
     #self.mockRSS.getPilotsSimpleEff.return_value = {'OK':True, 'Value':{'Records': [['', '', 0, 3L, 0, 0, 0, 283L, 66L, 0, 0, 352L, '1.00', '81.25', 'Fair', 'Yes']]}}
     res = self.PilotsCli.getPilotsSimpleEff('Site', 'LCG.Ferrara.it')
-    self.assertEqual(res['PilotsEff'], 'Good')
+    self.assertEqual(res, None)
     res = self.PilotsCli.getPilotsSimpleEff('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it')
-    self.assertEqual(res['PilotsEff'], 'Good')
+    self.assertEqual(res, None)
     res = self.PilotsCli.getPilotsSimpleEff('Resource', 'grid0.fe.infn.it')
-    self.assertEqual(res['PilotsEff'], 'Good')
+    self.assertEqual(res, None)
     
 #############################################################################
 
@@ -151,7 +152,7 @@ class DataOperationsClientSuccess(ClientsTestCase):
 
   def test_getQualityStats(self):
     res = self.DOCli.getQualityStats('StorageElement', 'XX')
-    self.assertEqual(res['TransferQuality'], None)
+    self.assertEqual(res, None)
    
 #############################################################################
 
@@ -159,15 +160,15 @@ class SLSClientSuccess(ClientsTestCase):
 
   def test_getStatus(self):
     res = self.SLSCli.getStatus('XX')
-    self.assertEqual(res['SLS'], None)
+    self.assertEqual(res, None)
 
 #############################################################################
 
 class GGUSTicketsClientSuccess(ClientsTestCase):
   
   def test_getTicketsList(self):
-    res = self.GGUSCli.getTicketsList('SARA-MATRIX')
-    self.assertEqual(res[0]['open'], 2)
+    res = self.GGUSCli.getTicketsList('INFN-CAGLIARI')
+    self.assertEqual(res[0]['open'], 1)
 
 
 #############################################################################

@@ -103,7 +103,8 @@ class DT_PolicySuccess(PoliciesTestCase):
     for granularity in ValidRes:
       for status in ValidStatus:
         args = (granularity, 'XX', status)
-        for commandRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}, {'DT':None}):
+        for commandRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}, 
+                           {'DT':None}, {'DT':'Unknown'}):
           self.mock_command.doCommand.return_value = commandRes
           res = self.DT_P.evaluate(args, commandIn = self.mock_command, knownInfo=commandRes)
           if commandRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}) and status == 'Active':
@@ -112,6 +113,8 @@ class DT_PolicySuccess(PoliciesTestCase):
             self.assert_(res['SAT'])
           elif commandRes in ({'DT':'AT_RISK', 'EndDate':''}, {'DT':None}) and status == 'Banned':
             self.assert_(res['SAT'])
+          elif commandRes == {'DT':'Unknown'}:
+            self.assertEqual(res['SAT'], 'Unknown')
           else:
             self.assertFalse(res['SAT'])
           
@@ -122,6 +125,8 @@ class DT_PolicySuccess(PoliciesTestCase):
             self.assert_(res['SAT'])
           elif commandRes in ({'DT':'AT_RISK', 'EndDate':''},  {'DT':None}) and status == 'Banned':
             self.assert_(res['SAT'])
+          elif commandRes == {'DT':'Unknown'}:
+            self.assertEqual(res['SAT'], 'Unknown')
           else:
             self.assertFalse(res['SAT'])
           
@@ -290,6 +295,11 @@ class PilotsEfficiency_Simple_PolicySuccess(PoliciesTestCase):
         res = self.PES_P.evaluate(args, commandIn = self.mock_commandEff)
         self.assertEqual(res['SAT'], None)
           
+        clientRes = {'PilotsEff':'Unknown'}
+        self.mock_commandEff.doCommand.return_value = clientRes
+        res = self.PES_P.evaluate(args, commandIn = self.mock_commandEff)
+        self.assertEqual(res['SAT'], 'Unknown')
+          
 
 #############################################################################
 
@@ -422,6 +432,11 @@ class JobsEfficiency_Simple_PolicySuccess(PoliciesTestCase):
         res = self.JES_P.evaluate(args, commandIn = self.mock_commandEff)
         self.assertEqual(res['SAT'], None)
           
+        clientRes = {'JobsEff':'Unknown'}
+        self.mock_commandEff.doCommand.return_value = clientRes
+        res = self.JES_P.evaluate(args, commandIn = self.mock_commandEff)
+        self.assertEqual(res['SAT'], 'Unknown')
+          
 
 #############################################################################
 
@@ -470,9 +485,14 @@ class SAMResults_PolicySuccess(PoliciesTestCase):
         res = self.SAMR_P.evaluate(args, commandIn = self.mock_command, 
                                    knownInfo={'SAM-Status':{'SS':'na'}})
         self.assert_(res.has_key('SAT'))
+
         self.mock_command.doCommand.return_value =  {'SAM-Status':{'SS':'na'}}
         res = self.SAMR_P.evaluate(args, commandIn = self.mock_command)
         self.assert_(res.has_key('SAT'))
+      
+        self.mock_command.doCommand.return_value =  {'SAM-Status':'Unknown'}
+        res = self.SAMR_P.evaluate(args, commandIn = self.mock_command)
+        self.assertEqual(res['SAT'], 'Unknown')
       
 #############################################################################
 
@@ -501,6 +521,10 @@ class GGUSTickets_PolicySuccess(PoliciesTestCase):
           self.mock_command.doCommand.return_value =  {'OpenT':resCl}
           res = self.GGUS_P.evaluate(args, commandIn = self.mock_command)
           self.assert_(res.has_key('SAT'))
+
+        self.mock_command.doCommand.return_value =  {'OpenT':'Unknown'}
+        res = self.GGUS_P.evaluate(args, commandIn = self.mock_command)
+        self.assertEqual(res['SAT'], 'Unknown')
       
 #############################################################################
 
@@ -614,6 +638,9 @@ class Propagation_PolicySuccess(PoliciesTestCase):
             self.assert_(res.has_key('Status'))
             self.assert_(res.has_key('Reason'))
           
+          self.mock_propCommand.doCommand.return_value = {'stats': 'Unknown'}
+          res = self.P_P.evaluate(args, commandIn = self.mock_propCommand)
+          self.assertEqual(res['SAT'], 'Unknown')
         
 class Propagation_Policy_Failure(PoliciesTestCase):
   
@@ -674,6 +701,11 @@ class TransferQuality_PolicySuccess(PoliciesTestCase):
               self.assert_(res.has_key('Reason'))
           res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
           self.assert_(res.has_key('SAT'))
+
+        self.mock_command.doCommand.return_value =  {'TransferQuality':'Unknown'}
+        res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
+        self.assertEqual(res['SAT'], 'Unknown')
+
       
 #############################################################################
 
@@ -737,6 +769,10 @@ class SEOccupancy_PolicySuccess(PoliciesTestCase):
           self.assert_(res.has_key('Reason'))
       res = self.SEO_P.evaluate(args, commandIn = self.mock_command)
       self.assert_(res.has_key('SAT'))
+
+    self.mock_command.doCommand.return_value =  {'SLS':'Unknown'}
+    res = self.SEO_P.evaluate(args, commandIn = self.mock_command)
+    self.assert_(res['SAT'], 'Unknown')
       
 #############################################################################
 

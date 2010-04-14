@@ -1,6 +1,8 @@
 """ The SLS_Command class is a command class to properly interrogate the SLS
 """
 
+import urllib2
+
 from DIRAC import gLogger
 
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
@@ -65,26 +67,21 @@ class SLSStatus_Command(Command):
     if args[0] == 'StorageElement':
       #know the SLS name of the SE
       SLSName = _getSESLSName(args[1])
-      
     elif args[0] == 'Service':
       #know the SLS name of the VO BOX - TBD
       SLSName = _getServiceSLSName(args[1])
-    
     else:
       raise InvalidRes, where(self, self.doCommand)
     
     try:
       res = c.getStatus(SLSName)
-      return res
-    
+      return {'SLS':res}
     except urllib2.URLError:
-      gLogger.error("SLS timed out for " + granularity + " " + name )
-      return  {'SLS':None}
+      gLogger.error("SLS timed out for " + args[0] + " " + args[1] )
+      return  {'SLS':'Unknown'}
     except:
       gLogger.exception("Exception when calling SLSClient")
-      return {'SLS':None}
-    
-    return res
+      return {'SLS':'Unknown'}
 
 #############################################################################
 
@@ -116,24 +113,21 @@ class SLSLink_Command(Command):
     if args[0] == 'StorageElement':
       #know the SLS name of the SE
       SLSName = _getSESLSName(args[1])
-      
     elif args[0] == 'Service':
       #know the SLS name of the VO BOX - TBD
       SLSName = _getServiceSLSName(args[1])
-    
     else:
       raise InvalidRes, where(self, self.doCommand)
     
     try:
       res = c.getLink(SLSName)
-      return res
-    
+      return {'Weblink':res}
     except urllib2.URLError:
-      gLogger.error("SLS timed out for " + granularity + " " + name )
-      return  {'SLS':None}
+      gLogger.error("SLS timed out for " + args[0] + " " + args[1] )
+      return  {'Weblink':'Unknown'}
     except:
       gLogger.exception("Exception when calling SLSClient")
-      return {'SLS':None}
+      return {'Weblink':'Unknown'}
 
 #############################################################################
 

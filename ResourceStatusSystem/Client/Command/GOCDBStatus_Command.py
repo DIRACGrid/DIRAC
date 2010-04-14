@@ -53,6 +53,7 @@ class GOCDBStatus_Command(Command):
 
     try:
       res = c.getStatus(granularity, name, None, hours)
+      
       if res is None or res == []:
         return {'DT':None}
       
@@ -88,10 +89,10 @@ class GOCDBStatus_Command(Command):
         
     except urllib2.URLError:
       gLogger.error("GOCDB timed out for " + granularity + " " + name )
-      return  {'DT':None}      
+      return  {'DT':'Unknown'}      
     except:
       gLogger.exception("Exception when calling GOCDBClient")
-      return {'DT':None}
+      return {'DT':'Unknown'}
 
     
 #############################################################################
@@ -160,10 +161,10 @@ class GOCDBInfo_Command(Command):
         
     except urllib2.URLError:
       gLogger.error("GOCDB timed out for " + granularity + " " + name )
-      return  {'DT':None}      
+      return {'DT':'Unknown'}      
     except:
       gLogger.exception("Exception when calling GOCDBClient")
-      return None
+      return {'DT':'Unknown'}
 
     try:
       return res['URL']

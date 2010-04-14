@@ -2,6 +2,8 @@
     present pilots efficiency
 """
 
+from DIRAC import gLogger
+
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
@@ -32,7 +34,13 @@ class RSPeriods_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
       c = ResourceStatusClient()
       
-    return c.getPeriods(args[0], args[1], args[2], args[3])
+    try:
+      res = c.getPeriods(args[0], args[1], args[2], args[3])
+    except:
+      gLogger.exception("Exception when calling ResourceStatusClient")
+      return {'Periods':'Unknown'}
+    
+    return {'Periods':res}
 
 
 #############################################################################
@@ -66,7 +74,12 @@ class ServiceStats_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
       c = ResourceStatusClient()
       
-    res = c.getServiceStats(args[0], args[1])
+    try:
+      res = c.getServiceStats(args[0], args[1])
+    except:
+      gLogger.exception("Exception when calling ResourceStatusClient")
+      return {'stats':'Unknown'}
+            
     return {'stats':res}
   
 #############################################################################
@@ -103,7 +116,12 @@ class ResourceStats_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
       c = ResourceStatusClient()
       
-    res = c.getResourceStats(args[0], args[1])
+    try:
+      res = c.getResourceStats(args[0], args[1])
+    except:
+      gLogger.exception("Exception when calling ResourceStatusClient")
+      return {'stats':'Unknown'}
+      
     return {'stats':res}
 
 #############################################################################
@@ -146,7 +164,12 @@ class StorageElementsStats_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
       c = ResourceStatusClient()
       
-    res = c.getStorageElementsStats(granularity, name)
+    try:
+      res = c.getStorageElementsStats(granularity, name)
+    except:
+      gLogger.exception("Exception when calling ResourceStatusClient")
+      return {'stats':'Unknown'}
+    
     return {'stats':res}
 
 #############################################################################
@@ -186,14 +209,18 @@ class MonitoredStatus_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
       c = ResourceStatusClient()
       
-    if len(args) == 3:
-      if ValidRes.index(args[2]) >= ValidRes.index(args[0]):
-        raise InvalidRes, where(self, self.doCommand)
-      generalName = c.getGeneralName(args[0], args[1], args[2])
-
-      res = c.getMonitoredStatus(args[2], generalName)
-    else:
-      res = c.getMonitoredStatus(args[0], args[1])
+    try:
+      if len(args) == 3:
+        if ValidRes.index(args[2]) >= ValidRes.index(args[0]):
+          raise InvalidRes, where(self, self.doCommand)
+        generalName = c.getGeneralName(args[0], args[1], args[2])
+  
+        res = c.getMonitoredStatus(args[2], generalName)
+      else:
+        res = c.getMonitoredStatus(args[0], args[1])
+    except:
+      gLogger.exception("Exception when calling ResourceStatusClient")
+      return {'MonitoredStatus':'Unknown'}
     
     return {'MonitoredStatus':res}
 

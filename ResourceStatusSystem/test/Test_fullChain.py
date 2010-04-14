@@ -1,6 +1,5 @@
 import sys
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
 
 import DIRAC.ResourceStatusSystem.test.fake_rsDB
@@ -30,53 +29,53 @@ se = {'name':'CERN-RAW', 'siteType':'T0'} #OK
 #risorsa2 = {'name':'srm-lhcb.cern.ch#', 'siteType':'T0', 'resourceType':'SE'} #WRONG
 #se = {'name':'CERN_MC_M-DST#', 'siteType':'T0'} #WRONG
 
-#print "\n\n ~~~~~~~ SITO ~~~~~~~ %s \n" %(sito)
+print "\n\n ~~~~~~~ SITO ~~~~~~~ %s \n" %(sito)
+
+for status in ValidStatus:
+#  for oldStatus in ValidStatus:
+#    if status == oldStatus:
+#      continue
+  print "############################"
+  print " "
+  print 'nel test:', status#, oldStatus
+  pdp = PDP(granularity = 'Site', name = sito['name'], status = status, 
+#            formerStatus = oldStatus, 
+            reason = 'XXXXX', siteType = sito['siteType']) 
+  res = pdp.takeDecision()
+  print res
 #
-#for status in ValidStatus:
-##  for oldStatus in ValidStatus:
-##    if status == oldStatus:
-##      continue
-#  print "############################"
-#  print " "
-#  print 'nel test:', status#, oldStatus
-#  pdp = PDP(granularity = 'Site', name = sito['name'], status = status, 
-##            formerStatus = oldStatus, 
-#            reason = 'XXXXX', siteType = sito['siteType']) 
-#  res = pdp.takeDecision()
-#  print res
-##
-#print "\n\n ~~~~~~~ SERVICE 1 ~~~~~~~ : %s \n " %servizio
-#
-#for status in ValidStatus:
-##  for oldStatus in ValidStatus:
-##    if status == oldStatus:
-##      continue
-#  print "############################"
-#  print " "
-#  print 'nel test:', status#, oldStatus
-#  pdp = PDP(granularity = 'Service', name = servizio['name'], status = status, 
-##            formerStatus = oldStatus, 
-#            reason = 'XXXXX', siteType = servizio['siteType'],
-#            serviceType = servizio['serviceType']) 
-#  res = pdp.takeDecision()
-#  print res
-#
-#
-#print "\n\n ~~~~~~~ SERVICE 2 ~~~~~~~ : %s \n " %servizio2
-#
-#for status in ValidStatus:
-##  for oldStatus in ValidStatus:
-##    if status == oldStatus:
-##      continue
-#    print "############################"
-#    print " "
-#    print 'nel test:', status#, oldStatus
-#    pdp = PDP(granularity = 'Service', name = servizio2['name'], status = status, 
-##              formerStatus = oldStatus, 
-#              reason = 'XXXXX', siteType = servizio2['siteType'],
-#              serviceType = servizio2['serviceType']) 
-#    res = pdp.takeDecision()
-#    print res
+print "\n\n ~~~~~~~ SERVICE 1 ~~~~~~~ : %s \n " %servizio
+
+for status in ValidStatus:
+#  for oldStatus in ValidStatus:
+#    if status == oldStatus:
+#      continue
+  print "############################"
+  print " "
+  print 'nel test:', status#, oldStatus
+  pdp = PDP(granularity = 'Service', name = servizio['name'], status = status, 
+#            formerStatus = oldStatus, 
+            reason = 'XXXXX', siteType = servizio['siteType'],
+            serviceType = servizio['serviceType']) 
+  res = pdp.takeDecision()
+  print res
+
+
+print "\n\n ~~~~~~~ SERVICE 2 ~~~~~~~ : %s \n " %servizio2
+
+for status in ValidStatus:
+#  for oldStatus in ValidStatus:
+#    if status == oldStatus:
+#      continue
+    print "############################"
+    print " "
+    print 'nel test:', status#, oldStatus
+    pdp = PDP(granularity = 'Service', name = servizio2['name'], status = status, 
+#              formerStatus = oldStatus, 
+              reason = 'XXXXX', siteType = servizio2['siteType'],
+              serviceType = servizio2['serviceType']) 
+    res = pdp.takeDecision()
+    print res
 
 
 
@@ -128,18 +127,17 @@ for status in ValidStatus:
   res = pdp.takeDecision()
   print res
 
-#print "\n\n ~~~~~~~ StorageElement ~~~~~~~ : %s \n " %se
-#
-#for status in ValidStatus:
-##  for oldStatus in ValidStatus:
-##    if status == oldStatus:
-##      continue
-#  print "############################"
-#  print " "
-#  print status#, oldStatus
-#  pdp = PDP(granularity = 'StorageElement', name = se['name'], status = status, 
-##            formerStatus = oldStatus, 
-#            reason = 'XXXXX', siteType = risorsa['siteType'], 
-#            resourceType = risorsa['resourceType']) 
-#  res = pdp.takeDecision()
-#  print res
+print "\n\n ~~~~~~~ StorageElement ~~~~~~~ : %s \n " %se
+
+for status in ValidStatus:
+#  for oldStatus in ValidStatus:
+#    if status == oldStatus:
+#      continue
+  print "############################"
+  print " "
+  print status#, oldStatus
+  pdp = PDP(granularity = 'StorageElement', name = se['name'], status = status, 
+#            formerStatus = oldStatus, 
+            reason = 'XXXXX', siteType = se['siteType'])
+  res = pdp.takeDecision()
+  print res

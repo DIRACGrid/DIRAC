@@ -66,6 +66,9 @@ class DT_Policy(PolicyBase):
 #    elif len(args) == 4:
 #      when = 'Scheduled'
 
+    if status['DT'] == 'Unknown':
+      return {'SAT':'Unknown'}
+
     result = {}
     
     if args[2] == 'Active':

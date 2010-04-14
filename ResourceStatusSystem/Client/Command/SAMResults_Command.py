@@ -39,7 +39,11 @@ class SAMResults_Command(Command):
       if siteName is None:
         from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
         rsc = ResourceStatusClient()
-        siteName = rsc.getGeneralName(granularity, name, 'Site')
+        try:
+          siteName = rsc.getGeneralName(granularity, name, 'Site')
+        except:
+          gLogger.error("Can't get a general name for %s %s" %(granularity, name))
+          return {'SAM-Status':'Unknown'}      
         if siteName is None or siteName == []:
           gLogger.info('%s is not a resource in DIRAC' %name)
           return {'SAM-Status':None}

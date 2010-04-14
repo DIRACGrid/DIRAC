@@ -53,6 +53,9 @@ class GGUSTickets_Policy(PolicyBase):
       clientsInvoker.setCommand(command)
       GGUS_N = clientsInvoker.doCommand((args[1], ))['OpenT']
     
+    if GGUS_N == 'Unknown':
+      return {'SAT':'Unknown'}
+          
     result = {}
     
     if args[2] == 'Active':

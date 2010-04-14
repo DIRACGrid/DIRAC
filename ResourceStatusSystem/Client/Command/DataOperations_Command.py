@@ -1,6 +1,8 @@
 """ The DataOperations_Command module is a module to know about data operations stats
 """
 
+from DIRAC import gLogger
+
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
@@ -34,7 +36,7 @@ class TransferQuality_Command(Command):
     elif len(args) == 4:
       pass
     else:
-      raise RSSException, where(self, self.doCommand)
+      raise RSSException, where(self, self.doCommand) + " args should have 2, 3 or 4 params"
     
     if clientIn is not None:
       doc = clientIn
@@ -43,4 +45,11 @@ class TransferQuality_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.DataOperationsClient import DataOperationsClient   
       doc = DataOperationsClient()
       
-    return doc.getQualityStats(args[0], args[1], args[2], args[3])
+    try:
+      res = doc.getQualityStats(args[0], args[1], args[2], args[3])
+    except:
+      gLogger.exception("Exception when calling DataOperationsClient")
+      return {'TransferQuality':'Unknown'}
+      
+    
+    return {'TransferQuality': res}

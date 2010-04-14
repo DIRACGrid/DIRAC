@@ -73,6 +73,8 @@ class TransferQuality_Policy(PolicyBase):
     if quality == None:
       result['SAT'] = None
       return result
+    elif quality == 'Unknown':
+      return {'SAT':'Unknown'}
 
     if 'FAILOVER'.lower() in args[1].lower():
       if args[2] == 'Active':

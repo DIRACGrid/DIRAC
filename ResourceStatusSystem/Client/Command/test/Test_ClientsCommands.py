@@ -54,6 +54,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.DQ_C = TransferQuality_Command()
     self.DA_C = DIRACAccounting_Command()
     self.SLSS_C = SLSStatus_Command()
+    self.SLSL_C = SLSLink_Command()
 
 #############################################################################
 
@@ -113,6 +114,11 @@ class GOCDBStatus_CommandSuccess(ClientsCommandsTestCase):
       self.mock_client.getStatus.return_value =  None
       res = self.GOCDBS_C.doCommand(args, clientIn = self.mock_client)
       self.assertEqual(res['DT'], None)
+      
+#      self.mock_client.getStatus.sideEffect = RSSException
+#      res = self.GOCDBS_C.doCommand(args, clientIn = self.mock_client)
+#      self.assertEqual(res['DT'], 'Unknown')
+      
 
 #############################################################################
 
@@ -177,7 +183,7 @@ class PilotsEff_CommandSuccess(ClientsCommandsTestCase):
     for granularity in ValidRes:
       args = (granularity, 'XX', ['', ''] )
       for pe in (0, 20, 40, 60, 80):
-        self.mock_client.getPilotsEff.return_value =  {'PilotsEff':pe}
+        self.mock_client.getPilotsEff.return_value =  pe
         res = self.PE_C.doCommand(args, clientIn = self.mock_client)
         self.assertEqual(res['PilotsEff'], pe)
 
@@ -199,9 +205,9 @@ class PilotsStats_CommandSuccess(ClientsCommandsTestCase):
     for granularity in ValidRes:
       args = (granularity, 'XX', [])
       for pe in (0, 20, 40, 60, 80):
-        self.mock_client.getPilotsStats.return_value =  {'PilotsEff':pe}
+        self.mock_client.getPilotsStats.return_value =  pe
         res = self.PS_C.doCommand(args, clientIn = self.mock_client)
-        self.assertEqual(res['PilotsEff'], pe)
+        self.assertEqual(res['PilotsStats'], pe)
 
 #############################################################################
 
@@ -220,7 +226,7 @@ class PilotsEffSimple_CommandSuccess(ClientsCommandsTestCase):
     for granularity in ('Site', 'Service', 'Resource'):
       args = (granularity, 'XX')
       for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
-        self.mock_client.getPilotsSimpleEff.return_value =  {'PilotsEff':pe}
+        self.mock_client.getPilotsSimpleEff.return_value =  pe
         res = self.PES_C.doCommand(args, clientIn = self.mock_client)
         self.assertEqual(res['PilotsEff'], pe)
 
@@ -241,7 +247,7 @@ class JobsEff_CommandSuccess(ClientsCommandsTestCase):
     for granularity in ValidRes:
       args = (granularity, 'XX', ['', ''] )
       for pe in (0, 20, 40, 60, 80):
-        self.mock_client.getJobsEff.return_value =  {'JobsEff':pe}
+        self.mock_client.getJobsEff.return_value = pe
         res = self.JE_C.doCommand(args, clientIn = self.mock_client)
         self.assertEqual(res['JobsEff'], pe)
 
@@ -262,7 +268,7 @@ class JobsStats_CommandSuccess(ClientsCommandsTestCase):
     for granularity in ValidRes:
       args = (granularity, 'XX', [])
       for pe in (0, 20, 40, 60, 80):
-        self.mock_client.getJobsStats.return_value =  {'MeanProcessedJobs': pe}
+        self.mock_client.getJobsStats.return_value = pe
         res = self.JS_C.doCommand(args, clientIn = self.mock_client)
         self.assertEqual(res['MeanProcessedJobs'], pe)
 
@@ -276,14 +282,14 @@ class JobsStats_CommandFailure(ClientsCommandsTestCase):
      
 #############################################################################
 
-class SystemCharge_CommandSuccess(ClientsCommandsTestCase):
-  
-  def test_doCommand(self):
-
-    self.mock_client.getSystemCharge.return_value =  {'LastHour': 50, 'anHourBefore': 30}
-    res = self.SC_C.doCommand(clientIn = self.mock_client)
-    self.assertEqual(res['LastHour'], 50)
-    self.assertEqual(res['anHourBefore'], 30)
+#class SystemCharge_CommandSuccess(ClientsCommandsTestCase):
+#  
+#  def test_doCommand(self):
+#
+#    self.mock_client.getSystemCharge.return_value =  {'LastHour': 50, 'anHourBefore': 30}
+#    res = self.SC_C.doCommand(clientIn = self.mock_client)
+#    self.assertEqual(res['LastHour'], 50)
+#    self.assertEqual(res['anHourBefore'], 30)
     
 #############################################################################
 
@@ -294,7 +300,7 @@ class JobsEffSimple_CommandSuccess(ClientsCommandsTestCase):
     for granularity in ('Site', 'Service'):
       args = (granularity, 'XX')
       for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
-        self.mock_client.getJobsSimpleEff.return_value =  {'JobsEff':pe}
+        self.mock_client.getJobsSimpleEff.return_value = pe
         res = self.JES_C.doCommand(args, clientIn = self.mock_client)
         self.assertEqual(res['JobsEff'], pe)
 
@@ -320,6 +326,10 @@ class SAMResults_CommandSuccess(ClientsCommandsTestCase):
     res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
     self.assertEqual(res['SAM-Status'], {'Status':None})
 
+#    self.mock_client.getStatus.sideEffect = RSSException
+#    res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
+#    self.assertEqual(res['SAM-Status'], 'Unknown')
+    
     args = ('Resource', 'XX')
     self.mock_client.getStatus.return_value =  {'Status':None}
     res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
@@ -402,7 +412,7 @@ class RSPeriods_CommandSuccess(ClientsCommandsTestCase):
 
     for granularity in ValidRes:
       args = (granularity, 'XX', 'XX', 20)
-      self.mock_client.getPeriods.return_value =  {'Periods':[]}
+      self.mock_client.getPeriods.return_value = []
       res = self.RSP_C.doCommand(args, clientIn = self.mock_client)
       self.assertEqual(res['Periods'], [])
     
@@ -497,13 +507,13 @@ class TransferOperations_CommandSuccess(ClientsCommandsTestCase):
     self.mock_client.getQualityStats.return_value = {}
     res = self.DQ_C.doCommand(('StorageElement', 'XXX'), 
                               clientIn = self.mock_client)
-    self.assertEqual(res, {})
+    self.assertEqual(res['TransferQuality'], {})
     res = self.DQ_C.doCommand(('StorageElement', 'XXX', datetime.utcnow()), 
                               clientIn = self.mock_client)
-    self.assertEqual(res, {})
+    self.assertEqual(res['TransferQuality'], {})
     res = self.DQ_C.doCommand(('StorageElement', 'XXX', datetime.utcnow(), 
                                datetime.utcnow()), clientIn = self.mock_client)
-    self.assertEqual(res, {})
+    self.assertEqual(res['TransferQuality'], {})
       
 #############################################################################
 
@@ -537,7 +547,7 @@ class SLSStatus_CommandSuccess(ClientsCommandsTestCase):
   def test_doCommand(self):
     
     for ret in (80, 10, 1, None):
-      self.mock_client.getStatus.return_value = {'SLS':ret}
+      self.mock_client.getStatus.return_value = ret
       for SE in ('CNAF-RAW', 'CNAF_MC_M-DST'):
         res = self.SLSS_C.doCommand(('StorageElement', SE), clientIn = self.mock_client)
         self.assertEqual(res['SLS'], ret)
@@ -551,6 +561,27 @@ class SLSStatus_CommandFailure(ClientsCommandsTestCase):
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.SLSS_C.doCommand, None)
     self.failUnlessRaises(InvalidRes, self.SLSS_C.doCommand, ('sites', ''))
+
+#############################################################################
+
+
+class SLSLink_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+    
+    ret = 'https://sls.cern.ch/sls/service.php?id=CERN-LHCb_RAW'
+    self.mock_client.getLink.return_value = ret
+    SE = 'CNAF-RAW'
+    res = self.SLSL_C.doCommand(('StorageElement', SE), clientIn = self.mock_client)
+    self.assertEqual(res['Weblink'], ret)
+
+#############################################################################
+
+class SLSLink_CommandFailure(ClientsCommandsTestCase):
+  
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.SLSL_C.doCommand, None)
+    self.failUnlessRaises(InvalidRes, self.SLSL_C.doCommand, ('sites', ''))
 
 #############################################################################
 
@@ -585,7 +616,7 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEff_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsStats_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsStats_CommandFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SystemCharge_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SystemCharge_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimple_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimple_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResults_CommandSuccess))
@@ -609,4 +640,6 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DIRACAccounting_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSStatus_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSStatus_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSLink_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSLink_CommandFailure))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

@@ -55,6 +55,9 @@ class PilotsEfficiency_Simple_Policy(PolicyBase):
       clientsInvoker.setCommand(command)
       status = clientsInvoker.doCommand(args)['PilotsEff']
     
+    if status == 'Unknown':
+      return {'SAT':'Unknown'}
+
     if status == None:
       return {'SAT':None}
     

@@ -53,8 +53,11 @@ class OnStorageElementPropagation_Policy(PolicyBase):
       
       resourceStatus = res['MonitoredStatus']
       
-      if resourceStatus is None:
-        return {'SAT':None}
+    if resourceStatus is None:
+      return {'SAT':None}
+
+    if resourceStatus == 'Unknown':
+      return {'SAT':'Unknown'}
       
     resourcesStatus = 'Active'
     

@@ -61,6 +61,9 @@ class SEOccupancy_Policy(PolicyBase):
       
     result = {}
     
+    if status == 'Unknown':
+      return {'SAT':'Unknown'}
+    
     if status is None or status == -1:
       result['SAT'] = None
     else:

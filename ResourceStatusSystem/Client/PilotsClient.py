@@ -2,7 +2,6 @@
 """
 
 from datetime import datetime, timedelta
-from DIRAC import gLogger
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 #from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
@@ -137,16 +136,16 @@ class PilotsClient:
     RPC = RPCClient("WorkloadManagement/WMSAdministrator")
     if granularity in ('Site', 'Sites'):
       res = RPC.getPilotSummaryWeb({'GridSite':name},[],0,1)
-    elif granularity in ('Resource', 'Resources'):
+    elif granularity in ('Resource', 'Resources', 'Service', 'Services'):
       if siteName is None:
         from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
         rsc = ResourceStatusClient()
         siteName = rsc.getGeneralName(granularity, name, 'Site')
         if siteName is None or siteName == []:
           gLogger.info('%s is not a resource in DIRAC' %name)
-          return {'PilotsEff':None}
+          return None
         
-      res = RPC.getPilotSummaryWeb({'ExpandSite':siteName},[],0,100)
+      res = RPC.getPilotSummaryWeb({'ExpandSite':siteName},[],0,50)
     else:
       raise InvalidRes, where(self, self.getPilotSimpleEff)
     
@@ -156,23 +155,18 @@ class PilotsClient:
     try:
       if granularity in ('Site', 'Sites'):
         eff = res['Value']['Records'][0][14]
-        return {'PilotsEff':eff}
+        return eff
       elif granularity in ('Resource', 'Resources'):
         for x in res['Value']['Records']:
           if x[1] == name:
             eff = x[14]
         try:
           eff
-          return {'PilotsEff':eff}
+          return eff
         except NameError:
-          return {'PilotsEff':None} 
+          return None
         
     except IndexError:
-      return {'PilotsEff':None}
-    
-#    except Exception, x:
-#      exceptStr = where(self, self.getPilotsSimpleEff)
-#      gLogger.exception(exceptStr,'', x)
-#      return {'PilotsEff': None}
+      return None
     
 #############################################################################

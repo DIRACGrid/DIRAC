@@ -2,6 +2,8 @@
     present jobs efficiency
 """
 
+from DIRAC import gLogger
+
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
@@ -26,7 +28,13 @@ class JobsStats_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient   
       c = JobsClient()
       
-    return c.getJobsStats(args[0], args[1], args[2])
+    try:
+      res = c.getJobsStats(args[0], args[1], args[2])
+    except:
+      gLogger.exception("Exception when calling JobsClient")
+      return {'MeanProcessedJobs':'Unknown'}
+    
+    return {'MeanProcessedJobs':res}
 
 
 #############################################################################
@@ -49,7 +57,13 @@ class JobsEff_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient   
       c = JobsClient()
       
-    return c.getJobsEff(args[0], args[1], args[2])
+    try:
+      res = c.getJobsEff(args[0], args[1], args[2])
+    except:
+      gLogger.exception("Exception when calling JobsClient")
+      return {'JobsEff':'Unknown'}
+    
+    return {'JobsEff':res}
 
 
 #############################################################################
@@ -72,7 +86,13 @@ class SystemCharge_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient   
       c = JobsClient()
       
-    return c.getSystemCharge()
+    try:
+      res = c.getSystemCharge()
+    except:
+      gLogger.exception("Exception when calling JobsClient")
+      return {'SystemCharge':'Unknown'}
+    
+    return {'SystemCharge':res}
 
 #############################################################################
 
@@ -99,7 +119,11 @@ class JobsEffSimple_Command(Command):
     if args[0] in ('Service', 'Services'):
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
       c = ResourceStatusClient()
-      name = c.getGeneralName(args[0], args[1], 'Site')
+      try:
+        name = c.getGeneralName(args[0], args[1], 'Site')
+      except:
+        gLogger.error("Can't get a general name for %s %s" %(args[0], args[1]))
+        return {'JobsEff':'Unknown'}      
       granularity = 'Site'
     elif args[0] in ('Site', 'Sites'):
       name = args[1]
@@ -113,6 +137,12 @@ class JobsEffSimple_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient   
       c = JobsClient()
       
-    return c.getJobsSimpleEff(granularity, name)
+    try:
+      res = c.getJobsSimpleEff(granularity, name)
+    except:
+      gLogger.exception("Exception when calling JobsClient")
+      return {'JobsEff':'Unknown'}
+    
+    return {'JobsEff':res}
 
 #############################################################################

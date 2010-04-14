@@ -55,6 +55,9 @@ class JobsEfficiency_Simple_Policy(PolicyBase):
 
       status = status['JobsEff']
     
+    if status == 'Unknown':
+      return {'SAT':'Unknown'}
+    
     result = {}
 
     result['Reason'] = 'Simple Jobs Efficiency: '

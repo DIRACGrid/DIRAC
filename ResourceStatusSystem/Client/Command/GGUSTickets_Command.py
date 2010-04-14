@@ -2,6 +2,8 @@
     the number of active present opened tickets
 """
 
+from DIRAC import gLogger
+
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
@@ -18,8 +20,12 @@ def callClient(args, clientIn = None):
   
   name = getSiteRealName(name)
   
-  openTickets = c.getTicketsList(name)
-  
+  try:
+    openTickets = c.getTicketsList(name)
+  except:
+    gLogger.exception("Exception when calling GGUSTicketsClient")
+    return 'Unknown'
+    
   return openTickets
         
 #############################################################################
@@ -38,6 +44,8 @@ class GGUSTickets_Open(Command):
       raise TypeError, where(self, self.doCommand)
   
     openTickets = callClient(args, clientIn)
+    if openTickets == 'Unknown':
+      return {'OpenT':'Unknown'}
     
     return {'OpenT': openTickets[0]['open']} 
 
@@ -57,6 +65,8 @@ class GGUSTickets_Link(Command):
       raise TypeError, where(self, self.doCommand)
   
     openTickets = callClient(args, clientIn)
+    if openTickets == 'Unknown':
+      return {'GGUS_Link':'Unknown'}
     
     return {'GGUS_Link': openTickets[1]}
 
@@ -76,6 +86,8 @@ class GGUSTickets_Info(Command):
       raise TypeError, where(self, self.doCommand)
   
     openTickets = callClient(args, clientIn)
+    if openTickets == 'Unknown':
+      return {'GGUS_Info':'Unknown'}
     
     return {'GGUS_Info': openTickets[2]}
 
