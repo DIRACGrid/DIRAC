@@ -47,8 +47,10 @@ class SLSClient:
     
     res = self._read_from_url(name)
 
-    if "ERROR" in res:
-      raise Exception, res
+    if "ERROR: Couldn't find service" in res:
+      raise NoServiceException
+    elif "ERROR:" in res:
+      raise Exception
     
     return int(res)
   
@@ -82,4 +84,15 @@ class SLSClient:
     return sls_res
     
 
+#############################################################################
+
+class NoServiceException(Exception):
+  
+  def __init__(self, message = ""):
+    self.message = message
+    Exception.__init__(self, message)
+  
+  def __str__(self):
+    return "The service is not instrumented with SLS sensors \n" + repr(self.message)
+  
 #############################################################################

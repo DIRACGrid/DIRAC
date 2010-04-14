@@ -40,16 +40,13 @@ class SAMResultsClient:
     
     if sam is None:
       return None
-#      return {'SAM-Status':None}
     
     samStatus = self._xmlParsing(granularity, sam, name, tests)
     
     if samStatus is None or samStatus == {}:
       return None
-#      return {'SAM-Status':None} 
     
     return samStatus
-#    return {'SAM-Status': samStatus}
     
 #############################################################################
 
@@ -98,7 +95,6 @@ class SAMResultsClient:
 
     status = {}
 
-#    try:
     doc = minidom.parseString(sam)
   
     if granularity in ('Site', 'Sites'):
@@ -122,8 +118,7 @@ class SAMResultsClient:
             break
       
       if serviceToCheck is None:
-        return None
-      
+        raise NoSAMTests
       
       if tests is None or tests == []:
         tests = ['SS']
@@ -148,11 +143,16 @@ class SAMResultsClient:
         status[test] = str(s[0].nodeValue)
     
     return status
+    
+#############################################################################
+
+class NoSAMTests(Exception):
   
-#    except Exception, errorMsg:
-#      exceptStr = where(self, self._xmlParsing)
-#      gLogger.exception(exceptStr,'',errorMsg)
-#      return None
-    
-    
+  def __init__(self, message = ""):
+    self.message = message
+    Exception.__init__(self, message)
+  
+  def __str__(self):
+    return "There are no SAM tests for this service \n" + repr(self.message)
+  
 #############################################################################

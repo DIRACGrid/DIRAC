@@ -61,7 +61,7 @@ class SLSStatus_Command(Command):
       c = clientIn
     else:
       # use standard GOC DB Client
-      from DIRAC.ResourceStatusSystem.Client.SLSClient import SLSClient   
+      from DIRAC.ResourceStatusSystem.Client.SLSClient import SLSClient, NoServiceException   
       c = SLSClient()
       
     if args[0] == 'StorageElement':
@@ -76,6 +76,9 @@ class SLSStatus_Command(Command):
     try:
       res = c.getStatus(SLSName)
       return {'SLS':res}
+    except NoServiceException:
+      gLogger.error("No SLS sensors for " + args[0] + " " + args[1] )
+      return  {'SLS':None}
     except urllib2.URLError:
       gLogger.error("SLS timed out for " + args[0] + " " + args[1] )
       return  {'SLS':'Unknown'}
@@ -107,7 +110,7 @@ class SLSLink_Command(Command):
       c = clientIn
     else:
       # use standard GOC DB Client
-      from DIRAC.ResourceStatusSystem.Client.SLSClient import SLSClient   
+      from DIRAC.ResourceStatusSystem.Client.SLSClient import SLSClient, NoServiceException   
       c = SLSClient()
       
     if args[0] == 'StorageElement':

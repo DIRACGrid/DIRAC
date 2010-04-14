@@ -23,7 +23,7 @@ class SAMResults_Command(Command):
       c = clientIn
     else:
       # use standard GOC DB Client
-      from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import SAMResultsClient   
+      from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import SAMResultsClient, NoSAMTests
       c = SAMResultsClient()
 
     granularity = args[0]
@@ -60,6 +60,9 @@ class SAMResults_Command(Command):
     finally:
       try:
         res = c.getStatus(granularity, name, siteName, tests)
+      except NoSAMTests:
+        gLogger.error("There are no SAM tests for " + granularity + " " + name )
+        return  {'SAM-Status':None}   
       except urllib2.URLError:
         gLogger.error("SAM timed out for " + granularity + " " + name )
         return  {'SAM-Status':'Unknown'}      

@@ -4,11 +4,11 @@ import unittest
 from datetime import datetime
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Client.GOCDBClient import GOCDBClient
-from DIRAC.ResourceStatusSystem.Client.SLSClient import SLSClient
+from DIRAC.ResourceStatusSystem.Client.SLSClient import *
 from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient
 from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import SAMResultsClient
+from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import *
 from DIRAC.ResourceStatusSystem.Client.DataOperationsClient import DataOperationsClient
 from DIRAC.ResourceStatusSystem.Client.GGUSTicketsClient import GGUSTicketsClient
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
@@ -119,6 +119,13 @@ class SAMResultsClientSuccess(ClientsTestCase):
       
 #############################################################################
 
+class SAMResultsClientFailure(ClientsTestCase):
+
+  def test_getStatus(self):
+    self.failUnlessRaises(NoSAMTests, self.SAMCli.getStatus, 'Resource', 'XX', 'INFN-FERRARA')
+
+#############################################################################
+
 class JobsClientSuccess(ClientsTestCase):
 
   def test_getJobsSimpleEff(self):
@@ -159,8 +166,15 @@ class DataOperationsClientSuccess(ClientsTestCase):
 class SLSClientSuccess(ClientsTestCase):
 
   def test_getStatus(self):
-    res = self.SLSCli.getStatus('XX')
-    self.assertEqual(res, None)
+    res = self.SLSCli.getStatus('RAL-LHCb_FAILOVER')
+    self.assertEqual(res, 100)
+
+#############################################################################
+
+class SLSClientFailure(ClientsTestCase):
+
+  def test_getStatus(self):
+    self.failUnlessRaises(NoServiceException, self.SLSCli.getStatus, 'XX')
 
 #############################################################################
 
@@ -179,9 +193,11 @@ if __name__ == '__main__':
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBClient_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResultsClientSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResultsClientFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DataOperationsClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSClientSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSClientFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTicketsClientSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

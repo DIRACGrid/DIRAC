@@ -142,7 +142,7 @@ class PilotsClient:
         rsc = ResourceStatusClient()
         siteName = rsc.getGeneralName(granularity, name, 'Site')
         if siteName is None or siteName == []:
-          gLogger.info('%s is not a resource in DIRAC' %name)
+#          gLogger.info('%s is not a resource in DIRAC' %name)
           return None
         
       res = RPC.getPilotSummaryWeb({'ExpandSite':siteName},[],0,50)
