@@ -14,6 +14,16 @@ class SAMResults_Command(Command):
   
   def doCommand(self, args, clientIn=None):
     """ Return getStatus from SAM Results Client  
+    
+       :params:
+         :attr:`args`: 
+           - args[0]: string: should be a ValidRes
+      
+           - args[1]: string: should be the (DIRAC) name of the ValidRes
+           
+           - args[2]: string: optional - should be the (DIRAC) site name of the ValidRes
+           
+           - args[3]: list: list of tests
     """
 
     if not isinstance(args, tuple):

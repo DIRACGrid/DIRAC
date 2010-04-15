@@ -165,16 +165,20 @@ class DataOperationsClientSuccess(ClientsTestCase):
 
 class SLSClientSuccess(ClientsTestCase):
 
-  def test_getStatus(self):
-    res = self.SLSCli.getStatus('RAL-LHCb_FAILOVER')
+  def test_getAvailabilityStatus(self):
+    res = self.SLSCli.getAvailabilityStatus('RAL-LHCb_FAILOVER')
     self.assertEqual(res, 100)
+
+  def test_getServiceInfo(self):
+    res = self.SLSCli.getServiceInfo('CASTORLHCB_LHCBMDST', ["Volume to be recallled GB"])
+    self.assertEqual(res["Volume to be recallled GB"], 0.0)
 
 #############################################################################
 
 class SLSClientFailure(ClientsTestCase):
 
   def test_getStatus(self):
-    self.failUnlessRaises(NoServiceException, self.SLSCli.getStatus, 'XX')
+    self.failUnlessRaises(NoServiceException, self.SLSCli.getAvailabilityStatus, 'XX')
 
 #############################################################################
 

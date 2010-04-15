@@ -54,6 +54,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.DQ_C = TransferQuality_Command()
     self.DA_C = DIRACAccounting_Command()
     self.SLSS_C = SLSStatus_Command()
+    self.SLSSI_C = SLSServiceInfo_Command()
     self.SLSL_C = SLSLink_Command()
 
 #############################################################################
@@ -547,7 +548,7 @@ class SLSStatus_CommandSuccess(ClientsCommandsTestCase):
   def test_doCommand(self):
     
     for ret in (80, 10, 1, None):
-      self.mock_client.getStatus.return_value = ret
+      self.mock_client.getAvailabilityStatus.return_value = ret
       for SE in ('CNAF-RAW', 'CNAF_MC_M-DST'):
         res = self.SLSS_C.doCommand(('StorageElement', SE), clientIn = self.mock_client)
         self.assertEqual(res['SLS'], ret)
@@ -561,6 +562,29 @@ class SLSStatus_CommandFailure(ClientsCommandsTestCase):
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.SLSS_C.doCommand, None)
     self.failUnlessRaises(InvalidRes, self.SLSS_C.doCommand, ('sites', ''))
+
+#############################################################################
+
+
+class SLSServiceInfo_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+    
+    ret = {'Free space': 33.0}
+    self.mock_client.getServiceInfo.return_value = ret
+    for SE in ('CNAF-RAW', 'CNAF_MC_M-DST'):
+      res = self.SLSSI_C.doCommand(('StorageElement', SE, ['Free space']), clientIn = self.mock_client)
+      self.assertEqual(res['SLSInfo'], ret)
+    res = self.SLSSI_C.doCommand(('Service', 'XX', ['Free space']), clientIn = self.mock_client)
+    self.assertEqual(res['SLSInfo'], ret) 
+
+#############################################################################
+
+class SLSServiceInfo_CommandFailure(ClientsCommandsTestCase):
+  
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.SLSSI_C.doCommand, None)
+    self.failUnlessRaises(InvalidRes, self.SLSSI_C.doCommand, ('sites', ''))
 
 #############################################################################
 
@@ -640,6 +664,8 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DIRACAccounting_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSStatus_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSStatus_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSServiceInfo_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSServiceInfo_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSLink_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSLink_CommandFailure))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

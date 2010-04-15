@@ -94,6 +94,7 @@ class PEPSuccess(PolicySystemTestCase):
         #                                                                                     'SAT': True}] }
           #                pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', {'PolicyType':newPolicyType, 'Granularity':newGranularity})
         #                pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', user)
+                        self.mock_rsDB.getMonitoredsHistory.return_value = ('Active', 'Reason', '2010-04-09 09:54:52')
                         res = pep.enforce(pdpIn = self.mock_pdp, rsDBIn = self.mock_rsDB, ncIn = self.mock_nc, 
                                           setupIn = setup, daIn = self.mock_da, csAPIIn = self.mock_csAPI)
                         self.assertEqual(res, None)

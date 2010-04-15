@@ -132,6 +132,11 @@ class PolicyCaller:
         from DIRAC.ResourceStatusSystem.Policy.SEOccupancy_Policy import SEOccupancy_Policy 
         p = SEOccupancy_Policy()
     
+    elif pol == 'SEQueuedTransfers':
+      if p is None:
+        from DIRAC.ResourceStatusSystem.Policy.SEQueuedTransfers_Policy import SEQueuedTransfers_Policy 
+        p = SEQueuedTransfers_Policy()
+    
     else:
       if p is None:
         from DIRAC.ResourceStatusSystem.Policy.AlwaysFalse_Policy import AlwaysFalse_Policy 

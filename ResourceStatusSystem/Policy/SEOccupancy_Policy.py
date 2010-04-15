@@ -1,5 +1,4 @@
-""" The SEOccupancy_Policy class is a policy class satisfied when a site is in downtime, 
-    or when a downtime is revoked
+""" The SEOccupancy_Policy class is a policy class satisfied when a SE has a high occupancy
 """
 
 from DIRAC.ResourceStatusSystem.Policy.PolicyBase import PolicyBase

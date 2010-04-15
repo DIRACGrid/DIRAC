@@ -215,7 +215,7 @@ class PEP:
       
       
       if 'Alarm_PolType' in self.__policyType:
-        self._AlarmPolTypeActions(res, nc, setup)
+        self._AlarmPolTypeActions(res, nc, setup, rsDB)
           
       if 'RealBan_PolType' in self.__policyType and self.__realBan == True:
         self._RealBanPolTypeActions(res, da, csAPI, setup)
@@ -279,7 +279,7 @@ class PEP:
   
 #############################################################################
 
-  def _AlarmPolTypeActions(self, res, nc, setup):
+  def _AlarmPolTypeActions(self, res, nc, setup, rsDB):
         # raise alarms, right now makes a simple notification
         
     if res['Action']:
@@ -299,7 +299,16 @@ class PEP:
             mailMessage = mailMessage + "Name = %s\n" %self.__name
             mailMessage = mailMessage + "New perceived status = %s\n" %res['Status']
             mailMessage = mailMessage + "Reason for status change = %s\n" %res['Reason']
+            
+            was = rsDB.getMonitoredsHistory(self.__granularity, 
+                                            ['Status', 'Reason', 'DateEffective'], 
+                                            self.__name, False, 'DESC', 1)
+            
+            mailMessage = mailMessage + "Was in status %s, " %(was[0])
+            mailMessage = mailMessage + "with reason %s, since %s\n" %(was[1], was[2])
+            
             mailMessage = mailMessage + "Setup = %s\n" %setup
+
             nc.sendMail(gConfig.getValue("Security/Users/%s/email" %user), 
                         '%s: %s' %(self.__name, res['Status']), mailMessage)
       

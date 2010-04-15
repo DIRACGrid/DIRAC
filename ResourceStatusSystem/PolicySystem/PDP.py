@@ -201,8 +201,6 @@ class PDP:
         res = self.__useOldPolicyRes(name = name, policyName = pName, 
                                      status = status)
 
-      print 'res', res
-
       if res['SAT'] != None:
         policyResults.append(res)
     
@@ -303,9 +301,6 @@ class PDP:
 
   def __useOldPolicyRes(self, name, policyName, status):
     
-    print "\n getting old policy res\n"
-    print name, policyName, status
-    
     from DIRAC.Core.DISET.RPCClient import RPCClient
     rsS = RPCClient("ResourceStatus/ResourceStatus")
     
@@ -313,10 +308,7 @@ class PDP:
     if not res['OK']:
       raise RSSException, where(self, self.__useOldPolicyRes) + 'Could not get a policy result'
     
-    print 'policyRes', res 
-    
     res = res['Value']
-    
     
     if res == []:
       return {'SAT':None}

@@ -635,7 +635,8 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def getMonitoredsHistory(self, granularity, paramsList = None, name = None):
+  def getMonitoredsHistory(self, granularity, paramsList = None, name = None, 
+                           presentAlso = True, order = 'ASC', limit = None):
     """ 
     Get history of sites/services/resources/storageElements in a list 
     (a site name can be specified)
@@ -696,6 +697,10 @@ class ResourceStatusDB:
       nameM = ','.join(['"'+x.strip()+'"' for x in nameM])
       req = "SELECT %s FROM %s WHERE %s IN (%s) ORDER BY %s" % (params, DBtable, DBname, 
                                                                 nameM, DBid)
+      if order == 'DESC':
+        req = req + " DESC"
+      if limit is not None:
+        req = req + " LIMIT %s" %str(limit)
     resQuery = self.db._query(req)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.getMonitoredsHistory)+resQuery['Message']
@@ -704,27 +709,29 @@ class ResourceStatusDB:
     list_h = []
     list_h = [ x for x in resQuery['Value']]
     
-
-    #take present data
-    if (name == None or name == []): 
-      req = "SELECT %s FROM %s ORDER BY %s" %(params, DBtableP, DBname)
-    else:
-      if type(name) is not type([]):
-        nameM = [name]
+    if presentAlso:
+      #take present data
+      if (name == None or name == []): 
+        req = "SELECT %s FROM %s ORDER BY %s" %(params, DBtableP, DBname)
       else:
-        nameM = name
-      nameM = ','.join(['"'+x.strip()+'"' for x in nameM])
-      req = "SELECT %s FROM %s WHERE %s IN (%s)" % (params, DBtableP, DBname, nameM)
-    
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getMonitoredsHistory)+resQuery['Message']
-    if not resQuery['Value']:
-      return []
-    list_p = []
-    list_p = [ x for x in resQuery['Value']]
-
-    list = list_h + list_p
+        if type(name) is not type([]):
+          nameM = [name]
+        else:
+          nameM = name
+        nameM = ','.join(['"'+x.strip()+'"' for x in nameM])
+        req = "SELECT %s FROM %s WHERE %s IN (%s)" % (params, DBtableP, DBname, nameM)
+      
+      resQuery = self.db._query(req)
+      if not resQuery['OK']:
+        raise RSSDBException, where(self, self.getMonitoredsHistory)+resQuery['Message']
+      if not resQuery['Value']:
+        return []
+      list_p = []
+      list_p = [ x for x in resQuery['Value']]
+  
+      list = list_h + list_p
+    else:
+      list = list_h
     
     return list
  

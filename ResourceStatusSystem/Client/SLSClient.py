@@ -3,6 +3,7 @@
 
 import socket
 import urllib2
+from xml.dom import minidom
 
 class SLSClient:
 
@@ -24,28 +25,22 @@ class SLSClient:
 
     """
     
-    status = self.getStatus(name)
+    status = self.getAvailabilityStatus(name)
     status['Weblink'] = self.getLink(name)['WebLink']
     
     return status
 
 #############################################################################
 
-  def getStatus(self, name):
+  def getAvailabilityStatus(self, name):
     """  
-    Return actual SLS status of entity in name
+    Return actual SLS availability status of entity in name
      
     :params:
       :attr:`name`: string - name of the service
-
-    returns:
-    {
-      'SLS':availability
-    }
-
     """
     
-    res = self._read_from_url(name)
+    res = self._read_availability_from_url(name)
 
     if "ERROR: Couldn't find service" in res:
       raise NoServiceException
@@ -55,17 +50,43 @@ class SLSClient:
     return int(res)
   
 #############################################################################
-  
 
+  def getServiceInfo(self, name, infos):
+    """  
+    Return actual SLS "additional service information"
+     
+    :params:
+      :attr:`name` : string - name of the service
+      
+      :attr:`infos` : list - list of info names
+
+    returns:
+    {
+      'info_name_1':info_1, 'info_name_2':info_2, 'info_name_3':info_3, ...   
+    }
+
+    """
+    
+    sls = self._urlDownload(name)
+
+#    if "ERROR: Couldn't find service" in res:
+#      raise NoServiceException
+#    elif "ERROR:" in res:
+#      raise Exception
+    
+    res = self._xmlParsing(sls, infos)
+    
+    return res
+  
+#############################################################################
+  
   def getLink(self, name):
 
     return 'https://sls.cern.ch/sls/service.php?id='
   
 #############################################################################
  
-  def _read_from_url(self, service):
-    #for more information like space occupancy we have to overload this method.
-
+  def _read_availability_from_url(self, service):
     """ download from SLS PI the value of the availability as returned for
         the service  
     """
@@ -83,6 +104,63 @@ class SLSClient:
 
     return sls_res
     
+
+#############################################################################
+
+  def _urlDownload(self, service):
+    """ download from SLS the XML of info regarding service
+    """
+
+    socket.setdefaulttimeout(10)
+    
+    # Set the SLS URL
+    sls_base = "http://sls.cern.ch/sls/update/"
+    sls_url= sls_base + service + '.xml'
+
+    req = urllib2.Request(sls_url)
+    slsPage = urllib2.urlopen(req)
+
+    sls_res = slsPage.read()
+
+    return sls_res
+    
+#############################################################################
+
+  def _xmlParsing(self, sls, infos):
+    """ Performs xml parsing from the sls string 
+        Returns a dictionary containing infos
+    """
+
+    status = {}
+
+    doc = minidom.parseString(sls)
+    numericValues = doc.getElementsByTagName("numericvalue")
+  
+#    data = doc.getElementsByTagName("data") 
+    
+#    if infos is None or infos == []:
+#      tests = ['SS']
+    
+    for info in infos:
+      
+      infoToCheck = None
+      
+      for nv in numericValues:
+        if nv.getAttributeNode("name"):
+          nv_name = nv.attributes["name"]
+          res = str(nv_name.value)
+          if res == info:
+            infoToCheck = nv
+            break
+      
+      if infoToCheck is None:
+        continue
+      
+      res = infoToCheck.childNodes[0].nodeValue.strip()
+      status[info] = float(res)
+
+    return status
+
 
 #############################################################################
 

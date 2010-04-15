@@ -31,9 +31,6 @@ SHORT_JOBS_PERIOD_WINDOW = 2
 MEDIUM_JOBS_PERIOD_WINDOW = 8
 LARGE_JOBS_PERIOD_WINDOW = 48
 
-# --- GGUS Tickets policy --- #
-HIGH_TICKTES_NUMBER = 2
-
 # --- SE transfer quality --- #
 Transfer_QUALITY_LOW = 0.60
 Transfer_QUALITY_HIGH = 0.90
@@ -106,15 +103,15 @@ notified_users = ['fstagni', 'roma']
 #notified_users = nc.getAssigneeGroups()['Value']['RSS_alarms']
 
 AssigneeGroups = {
-  'VladRob_PROD-Mail': 
-  {'Users': ['roma', 'santinel'],
+  'VladRobGreigJoel_PROD-Mail': 
+  {'Users': ['roma', 'santinel', 'gcowan', 'joel'],
    'Setup': ['LHCb-Production'],
    'Granularity': ValidRes,
-   'SiteType': ['T0', 'T1'], 
+   'SiteType': ValidSiteType, 
    'Notifications': ['Mail']
    }, 
-  'VladRob_PROD-Web': 
-  {'Users': ['roma', 'santinel'],
+  'VladRobGreigJoel_PROD-Web': 
+  {'Users': ['roma', 'santinel', 'gcowan', 'joel'],
    'Setup': ['LHCb-Production'],
    'Granularity': ValidRes,
    'SiteType': ValidSiteType, 
@@ -131,7 +128,7 @@ AssigneeGroups = {
   {'Users': ['fstagni'],
    'Setup': ['LHCb-Production'],
    'Granularity': ValidRes,
-   'SiteType': ['T0', 'T1'],
+   'SiteType': ValidSiteType,
    'Notifications': ['Mail']
    }, 
   'me_PROD-Web': 
@@ -458,6 +455,19 @@ Policies = {
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
       'args' : None,  
+      'SE_Panel' : [ {'WebLink': {'Command':'SLS_Link',
+                                  'args': None}}
+                      ]
+     },
+  'SEQueuedTransfers' :
+    { 'Description' : "Evaluates the queued transfers on the SE", 
+      'Granularity' : ['StorageElement'], 
+      'Status' : ValidStatus, 
+      'FormerStatus' : ValidStatus,
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ValidResourceType,
+      'args' : (['Queued transfers']),
       'SE_Panel' : [ {'WebLink': {'Command':'SLS_Link',
                                   'args': None}}
                       ]
