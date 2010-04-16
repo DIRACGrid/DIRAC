@@ -89,7 +89,7 @@ class PolicyInvokerSuccess(PoliciesTestCase):
 class PolicyInvokerFailure(PoliciesTestCase):
   
   def test_policyFail(self):
-    self.mock_policy.evaluate.sideEffect = RSSException
+    self.mock_policy.evaluate.side_effect = RSSException()
     for granularity in ValidRes:
       self.failUnlessRaises(Exception, self.pi.evaluatePolicy, (granularity, 'XX'))
     
@@ -138,7 +138,7 @@ class DT_PolicySuccess(PoliciesTestCase):
 class DT_Policy_Failure(PoliciesTestCase):
   
   def test_commandFail(self):
-    self.mock_command.doCommand.sideEffect = RSSException
+    self.mock_command.doCommand.side_effect = RSSException()
     for granularity in ValidRes:
       for status in ValidStatus:
         self.failUnlessRaises(Exception, self.DT_P.evaluate, (granularity, 'XX', status), self.mock_command)
@@ -183,10 +183,10 @@ class Res2SiteStatus_PolicySuccess(PoliciesTestCase):
 
 class Res2SiteStatus_Policy_Failure(PoliciesTestCase):
   
-#  def test_commandFail(self):
-#    self.mock_command.doCommand.sideEffect = RSSException
-#    for status in ValidStatus:
-#      self.failUnlessRaises(Exception, self.Res2SiteStatus_P.evaluate, ('XX', status), self.mock_command)
+  def test_commandFail(self):
+    self.mock_command.doCommand.side_effect = RSSException()
+    for status in ValidStatus:
+      self.failUnlessRaises(Exception, self.Res2SiteStatus_P.evaluate, ('XX', status), self.mock_command)
 
   def test_badArgs(self):
     self.failUnlessRaises(InvalidStatus, self.Res2SiteStatus_P.evaluate, ('XX', ''))
@@ -265,7 +265,7 @@ class PilotsEfficiency_PolicySuccess(PoliciesTestCase):
 class PilotsEfficiency_Policy_Failure(PoliciesTestCase):
   
   def test_commandFail(self):
-    self.mock_command.doCommand.sideEffect = RSSException
+    self.mock_command.doCommand.side_effect = RSSException()
     for granularity in ValidRes:
       for status in ValidStatus:
         self.failUnlessRaises(Exception, self.PE_P.evaluate, (granularity, 'XX', status), self.mock_command)
@@ -307,11 +307,11 @@ class PilotsEfficiency_Simple_PolicySuccess(PoliciesTestCase):
 
 class PilotsEfficiency_Simple_Policy_Failure(PoliciesTestCase):
   
-#  def test_commandFail(self):
-#    self.mock_command.doCommand.sideEffect = RSSException
-#    for granularity in ValidRes:
-#      for status in ValidStatus:
-#        self.failUnlessRaises(Exception, self.PES_P.evaluate, (granularity, 'XX', status), self.mock_command)
+  def test_commandFail(self):
+    self.mock_command.doCommand.side_effect = RSSException()
+    for granularity in ValidRes:
+      for status in ValidStatus:
+        self.failUnlessRaises(Exception, self.PES_P.evaluate, (granularity, 'XX', status), self.mock_command)
 
   def test_badArgs(self):
     for status in ValidStatus:
@@ -401,7 +401,7 @@ class JobsEfficiency_PolicySuccess(PoliciesTestCase):
 class JobsEfficiency_Policy_Failure(PoliciesTestCase):
   
   def test_commandFail(self):
-    self.mock_command.doCommand.sideEffect = RSSException
+    self.mock_command.doCommand.side_effect = RSSException()
     for granularity in ValidRes:
       for status in ValidStatus:
         self.failUnlessRaises(Exception, self.JE_P.evaluate, (granularity, 'XX', status), self.mock_command)
@@ -444,11 +444,11 @@ class JobsEfficiency_Simple_PolicySuccess(PoliciesTestCase):
 
 class JobsEfficiency_Simple_Policy_Failure(PoliciesTestCase):
   
-#  def test_commandFail(self):
-#    self.mock_command.doCommand.sideEffect = RSSException
-#    for granularity in ValidRes:
-#      for status in ValidStatus:
-#        self.failUnlessRaises(Exception, self.JES_P.evaluate, (granularity, 'XX', status), self.mock_command)
+  def test_commandFail(self):
+    self.mock_command.doCommand.side_effect = RSSException()
+    for granularity in ValidRes:
+      for status in ValidStatus:
+        self.failUnlessRaises(Exception, self.JES_P.evaluate, (granularity, 'XX', status), self.mock_command)
 
   def test_badArgs(self):
     for status in ValidStatus:
@@ -501,7 +501,7 @@ class SAMResults_PolicySuccess(PoliciesTestCase):
 class SAMResults_Policy_Failure(PoliciesTestCase):
   
   def test_commandFail(self):
-    self.mock_command.doCommand.sideEffect = RSSException
+    self.mock_command.doCommand.side_effect = RSSException()
     for status in ValidStatus:
       self.failUnlessRaises(Exception, self.SAMR_P.evaluate, ('XX', 'XX', status), self.mock_command)
 
@@ -533,7 +533,7 @@ class GGUSTickets_PolicySuccess(PoliciesTestCase):
 class GGUSTickets_Policy_Failure(PoliciesTestCase):
   
   def test_commandFail(self):
-    self.mock_command.doCommand.sideEffect = RSSException
+    self.mock_command.doCommand.side_effect = RSSException()
     for status in ValidStatus:
       self.failUnlessRaises(Exception, self.GGUS_P.evaluate, ('XX', status), self.mock_command)
 
@@ -572,7 +572,7 @@ class OnservicePropagation_PolicySuccess(PoliciesTestCase):
 class OnservicePropagation_Policy_Failure(PoliciesTestCase):
   
   def test_commandFail(self):
-    self.mock_command.doCommand.sideEffect = RSSException
+    self.mock_command.doCommand.side_effect = RSSException()
     for status in ValidStatus:
       self.failUnlessRaises(Exception, self.OSP_P.evaluate, ('Service', 'XX', status), self.mock_command)
 
@@ -647,7 +647,7 @@ class Propagation_PolicySuccess(PoliciesTestCase):
 class Propagation_Policy_Failure(PoliciesTestCase):
   
   def test_commandFail(self):
-    self.mock_command.doCommand.sideEffect = RSSException
+    self.mock_command.doCommand.side_effect = RSSException()
     for status in ValidStatus:
       self.failUnlessRaises(Exception, self.P_P.evaluate, ('XX', status), self.mock_command)
 
@@ -732,7 +732,7 @@ class OnStorageElementPropagation_PolicySuccess(PoliciesTestCase):
 class OnStorageElementPropagation_Policy_Failure(PoliciesTestCase):
   
   def test_commandFail(self):
-    self.mock_command.doCommand.sideEffect = RSSException
+    self.mock_command.doCommand.side_effect = RSSException()
     for status in ValidStatus:
       self.failUnlessRaises(Exception, self.OSEP_P.evaluate, ('XX', status), self.mock_command)
 
@@ -743,10 +743,10 @@ class OnStorageElementPropagation_Policy_Failure(PoliciesTestCase):
 
 class TransferQuality_Policy_Failure(PoliciesTestCase):
   
-#  def test_commandFail(self):
-#    self.mock_command.doCommand.sideEffect = RSSException
-#    for status in ValidStatus:
-#      self.failUnlessRaises(Exception, self.TQ_P.evaluate, ('XX', status), self.mock_command)
+  def test_commandFail(self):
+    self.mock_command.doCommand.side_effect = RSSException()
+    for status in ValidStatus:
+      self.failUnlessRaises(Exception, self.TQ_P.evaluate, ('XX', status), self.mock_command)
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.TQ_P.evaluate, None )
@@ -780,10 +780,10 @@ class SEOccupancy_PolicySuccess(PoliciesTestCase):
 
 class SEOccupancy_Policy_Failure(PoliciesTestCase):
   
-#  def test_commandFail(self):
-#    self.mock_command.doCommand.sideEffect = RSSException
-#    for status in ValidStatus:
-#      self.failUnlessRaises(Exception, self.TQ_P.evaluate, ('XX', status), self.mock_command)
+  def test_commandFail(self):
+    self.mock_command.doCommand.side_effect = RSSException()
+    for status in ValidStatus:
+      self.failUnlessRaises(Exception, self.TQ_P.evaluate, ('XX', status), self.mock_command)
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.SEO_P.evaluate, None )
@@ -818,10 +818,10 @@ class SEQueuedTransfers_PolicySuccess(PoliciesTestCase):
 
 class SEQueuedTransfers_Policy_Failure(PoliciesTestCase):
   
-#  def test_commandFail(self):
-#    self.mock_command.doCommand.sideEffect = RSSException
-#    for status in ValidStatus:
-#      self.failUnlessRaises(Exception, self.TQ_P.evaluate, ('XX', status), self.mock_command)
+  def test_commandFail(self):
+    self.mock_command.doCommand.side_effect = RSSException()
+    for status in ValidStatus:
+      self.failUnlessRaises(Exception, self.TQ_P.evaluate, ('XX', status), self.mock_command)
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.SEQT_P.evaluate, None )

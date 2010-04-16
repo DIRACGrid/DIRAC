@@ -23,7 +23,25 @@ class InfoGetter:
 
   def getInfoToApply(self, args, granularity, status = None, formerStatus = None, 
                       siteType = None, serviceType = None, resourceType = None, info = None ):
-    """ 
+    """ Main method. Use internal methods to parse information regarding:
+        policies to be applied, policy types, panel and view info.
+        
+        :params:
+          :attr:`args`: a tuple. Can contain: 'policy', 'policyType', 'panel_info', 'view_info'
+          
+          :attr:`granularity`: a ValidRes
+          
+          :attr:`status`: a ValidStatus
+          
+          :attr:`formerStatus`: a ValidStatus
+          
+          :attr:`siteType`: a ValidSiteType
+
+          :attr:`serviceType`: a ValidServiceType
+
+          :attr:`resourceType`: a ValidSiteType
+          
+          :attr:`info`: info only valid for the panels (panel name)
     """
     
     EVAL = {}
@@ -42,7 +60,7 @@ class InfoGetter:
       EVAL['Info'] = self.__getPanelsInfo(granularity = granularity, status = status,
                                           formerStatus = formerStatus, siteType = siteType,
                                           serviceType = serviceType, resourceType = resourceType,
-                                          info = info)
+                                          panel_name = info)
     
     if 'view_info' in args:
       panels_info_dict = {}
@@ -168,6 +186,12 @@ class InfoGetter:
             except Exception:
               continue
               
+    for pt_name in pol_types:
+      if 'Alarm_PolType' in pt_name:
+        pol_types.remove(pt_name)
+        pol_types.append('Alarm_PolType')
+
+    
     return pol_types
  
 #############################################################################

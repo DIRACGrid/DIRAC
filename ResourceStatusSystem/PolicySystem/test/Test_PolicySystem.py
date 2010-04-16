@@ -182,7 +182,7 @@ class PEPFailure(PolicySystemTestCase):
 
   def test_PEPFail(self):
 
-    self.mock_pdp.takeDecision.sideEffect = RSSException
+    self.mock_pdp.takeDecision.side_effect = RSSException()
     for policyType in PolicyTypes:
       for granularity in ValidRes:
         for status in ValidStatus:
@@ -415,7 +415,7 @@ class PDPFailure(PolicySystemTestCase):
 #############################################################################
 
   def test_PolicyFail(self):
-    self.mock_p.evaluate.sideEffect = RSSException
+    self.mock_p.evaluate.side_effect = RSSException()
     for granularity in ValidRes:
       for status in ValidStatus:
         for oldStatus in ValidStatus:

@@ -3,7 +3,7 @@
 # Copyright (C) 2007-2009 Michael Foord
 # E-mail: fuzzyman AT voidspace DOT org DOT uk
 
-# mock 0.5.0
+# mock 0.6.0
 # http://www.voidspace.org.uk/python/mock/
 
 # Released subject to the BSD License
@@ -21,8 +21,7 @@ __all__ = (
     'DEFAULT'
 )
 
-__version__ = '0.5.0'
-
+__version__ = '0.6.0'
 
 class SentinelObject(object):
     def __init__(self, name):
@@ -75,7 +74,6 @@ class Mock(object):
         self.reset_mock()
         
 
-        
     def reset_mock(self):
         self.called = False
         self.call_args = None
@@ -114,14 +112,21 @@ class Mock(object):
             name = parent._name + '.' + name
             parent = parent._parent
         
-        ret_val = self.return_value
+        ret_val = DEFAULT
         if self.side_effect is not None:
+            if (isinstance(self.side_effect, Exception) or 
+                isinstance(self.side_effect, (type, ClassType)) and
+                issubclass(self.side_effect, Exception)):
+                raise self.side_effect
+            
             ret_val = self.side_effect(*args, **kwargs)
             if ret_val is DEFAULT:
                 ret_val = self.return_value
-            
-        if self._wraps is not None:
+        
+        if self._wraps is not None and self._return_value is DEFAULT:
             return self._wraps(*args, **kwargs)
+        if ret_val is DEFAULT:
+            ret_val = self.return_value
         return ret_val
     
     
@@ -171,6 +176,7 @@ class _patch(object):
         self.new = new
         self.spec = spec
         self.create = create
+        self.has_local = False
 
 
     def __call__(self, func):
@@ -200,18 +206,27 @@ class _patch(object):
 
 
     def get_original(self):
-        try:
-            return getattr(self.target, self.attribute)
-        except AttributeError:
-            if not self.create:
-                raise
-            return DEFAULT 
+        target = self.target
+        name = self.attribute
+        create = self.create
+        
+        original = DEFAULT
+        if _has_local_attr(target, name):
+            try:
+                original = target.__dict__[name]
+            except AttributeError:
+                # for instances of classes with slots, they have no __dict__
+                original = getattr(target, name)
+        elif not create and not hasattr(target, name):
+            raise AttributeError("%s does not have the attribute %r" % (target, name))
+        return original
 
-
+    
     def __enter__(self):
         new, spec, = self.new, self.spec
         original = self.get_original()
         if new is DEFAULT:
+            # XXXX what if original is DEFAULT - shouldn't use it as a spec
             inherit = False
             if spec == True:
                 # set spec to the object we are replacing
@@ -246,3 +261,11 @@ def patch(target, new=DEFAULT, spec=None, create=False):
     target = _importer(target)
     return _patch(target, attribute, new, spec, create)
 
+
+
+def _has_local_attr(obj, name):
+    try:
+        return name in vars(obj)
+    except TypeError:
+        # objects without a __dict__
+        return hasattr(obj, name)

@@ -55,17 +55,17 @@ class SEQueuedTransfers_Policy(PolicyBase):
         
       clientsInvoker = ClientsInvoker()
       clientsInvoker.setCommand(command)
-      status = clientsInvoker.doCommand((args[0], args[1], args[2]))['SLSInfo']
+      status = clientsInvoker.doCommand((args[0], args[1], args[3]))['SLSInfo']
       
     if status == 'Unknown':
       return {'SAT':'Unknown'}
+    
+    result = {}
     
     if status is None or status == -1:
       result['SAT'] = None
 
     status = status['Queued transfers']
-    
-    result = {}
     
     if args[2] == 'Active':
       if status > 100:

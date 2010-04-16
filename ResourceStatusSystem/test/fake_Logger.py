@@ -2,9 +2,11 @@
     Every function can simply return S_OK() (or nothing)
 """
 
-from DIRAC import S_OK, S_ERROR
+#import sys
+#import DIRAC.ResourceStatusSystem.test.fake_Logger
 
-#from DIRAC import gConfig
+from DIRAC import S_OK, S_ERROR
+#sys.modules["DIRAC.Interfaces.API.DiracAdmin"] = "."
 
 class Logger:
   

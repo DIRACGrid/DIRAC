@@ -2,6 +2,8 @@
     the number of active present opened tickets
 """
 
+import urllib2
+
 from DIRAC import gLogger
 
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
@@ -22,8 +24,11 @@ def callClient(args, clientIn = None):
   
   try:
     openTickets = c.getTicketsList(name)
+  except urllib2.URLError:
+    gLogger.error("GGUSTicketsClient timed out for " + name)
+    return 'Unknown'
   except:
-    gLogger.exception("Exception when calling GGUSTicketsClient")
+    gLogger.exception("Exception when calling GGUSTicketsClient for " + name)
     return 'Unknown'
     
   return openTickets

@@ -66,13 +66,8 @@ class SLSClient:
     }
 
     """
-    
-    sls = self._urlDownload(name)
 
-#    if "ERROR: Couldn't find service" in res:
-#      raise NoServiceException
-#    elif "ERROR:" in res:
-#      raise Exception
+    sls = self._urlDownload(name)
     
     res = self._xmlParsing(sls, infos)
     
@@ -135,11 +130,6 @@ class SLSClient:
 
     doc = minidom.parseString(sls)
     numericValues = doc.getElementsByTagName("numericvalue")
-  
-#    data = doc.getElementsByTagName("data") 
-    
-#    if infos is None or infos == []:
-#      tests = ['SS']
     
     for info in infos:
       
@@ -154,7 +144,7 @@ class SLSClient:
             break
       
       if infoToCheck is None:
-        continue
+        raise NoServiceException
       
       res = infoToCheck.childNodes[0].nodeValue.strip()
       status[info] = float(res)

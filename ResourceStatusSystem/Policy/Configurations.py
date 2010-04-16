@@ -464,10 +464,10 @@ Policies = {
       'Granularity' : ['StorageElement'], 
       'Status' : ValidStatus, 
       'FormerStatus' : ValidStatus,
-      'SiteType' : ValidSiteType,
+      'SiteType' : ['T0'],
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
-      'args' : (['Queued transfers']),
+      'args' : (["Queued transfers"], ),
       'SE_Panel' : [ {'WebLink': {'Command':'SLS_Link',
                                   'args': None}}
                       ]
@@ -495,10 +495,19 @@ Policy_Types = {
       'ResourceType' : ValidResourceType,
      },
   'Alarm_PolType' : 
-    { 'Granularity' : ValidRes, 
+    { 'Granularity' : ['Site', 'Service', 'Resource'], 
       'Status' : ['Banned'],
       'FormerStatus' : ValidStatus,
       'NewStatus' : ['Banned'],
+      'SiteType' : ValidSiteType,
+      'ServiceType' : ValidServiceType,
+      'ResourceType' : ValidResourceType,
+     },
+  'Alarm_PolType_SE' : 
+    { 'Granularity' : ['StorageElement'], 
+      'Status' : ['Bad', 'Banned'],
+      'FormerStatus' : ValidStatus,
+      'NewStatus' : ['Bad, Banned'],
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,

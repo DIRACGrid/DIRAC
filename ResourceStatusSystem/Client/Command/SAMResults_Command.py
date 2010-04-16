@@ -10,9 +10,11 @@ from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
+from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import NoSAMTests
+
 class SAMResults_Command(Command):
   
-  def doCommand(self, args, clientIn=None):
+  def doCommand(self, args, clientIn=None, rsClientIn=None):
     """ Return getStatus from SAM Results Client  
     
        :params:
@@ -33,8 +35,15 @@ class SAMResults_Command(Command):
       c = clientIn
     else:
       # use standard GOC DB Client
-      from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import SAMResultsClient, NoSAMTests
+      from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import SAMResultsClient
       c = SAMResultsClient()
+
+    if rsClientIn is not None:
+      rsc = rsClientIn
+    else:
+      # use standard RS Client
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      rsc = ResourceStatusClient()
 
     granularity = args[0]
     name = args[1]
@@ -47,8 +56,6 @@ class SAMResults_Command(Command):
       siteName = getSiteRealName(name)
     elif granularity in ('Resource', 'Resources'):
       if siteName is None:
-        from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-        rsc = ResourceStatusClient()
         try:
           siteName = rsc.getGeneralName(granularity, name, 'Site')
         except:
@@ -72,7 +79,7 @@ class SAMResults_Command(Command):
         res = c.getStatus(granularity, name, siteName, tests)
       except NoSAMTests:
         gLogger.error("There are no SAM tests for " + granularity + " " + name )
-        return  {'SAM-Status':None}   
+        return  {'SAM-Status':None}
       except urllib2.URLError:
         gLogger.error("SAM timed out for " + granularity + " " + name )
         return  {'SAM-Status':'Unknown'}      

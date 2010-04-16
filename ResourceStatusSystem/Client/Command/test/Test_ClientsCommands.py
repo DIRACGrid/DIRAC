@@ -1,8 +1,12 @@
 """ UnitTest class for Client Commands classes
 """
 
+import sys
 import unittest
 from datetime import datetime 
+
+import DIRAC.ResourceStatusSystem.test.fake_Logger
+import DIRAC.ResourceStatusSystem.test.fake_Admin
 
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Client.Command.ClientsInvoker import ClientsInvoker
@@ -15,6 +19,8 @@ from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.DataOperations_Command import TransferQuality_Command
 from DIRAC.ResourceStatusSystem.Client.Command.DIRACAccounting_Command import DIRACAccounting_Command
 from DIRAC.ResourceStatusSystem.Client.Command.SLS_Command import *
+from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import NoSAMTests
+from DIRAC.ResourceStatusSystem.Client.SLSClient import NoServiceException
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
@@ -28,8 +34,14 @@ class ClientsCommandsTestCase(unittest.TestCase):
     
     from DIRAC.Core.Base.Script import parseCommandLine
     parseCommandLine()
+
+    sys.modules["DIRAC.Interfaces.API.DiracAdmin"] = DIRAC.ResourceStatusSystem.test.fake_Admin
+#    sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     
     self.mock_command = Mock()
+    self.mock_rsClient = Mock()
+    self.mock_rsClient.getGeneralName.return_value = "YYY"
+    
     self.ci = ClientsInvoker()
     self.GOCDBS_C = GOCDBStatus_Command()
     self.GOCDBI_C = GOCDBInfo_Command()
@@ -116,15 +128,16 @@ class GOCDBStatus_CommandSuccess(ClientsCommandsTestCase):
       res = self.GOCDBS_C.doCommand(args, clientIn = self.mock_client)
       self.assertEqual(res['DT'], None)
       
-#      self.mock_client.getStatus.sideEffect = RSSException
-#      res = self.GOCDBS_C.doCommand(args, clientIn = self.mock_client)
-#      self.assertEqual(res['DT'], 'Unknown')
-      
 
 #############################################################################
 
 class GOCDBStatus_CommandFailure(ClientsCommandsTestCase):
 
+  def test_badArgs(self):
+    self.mock_client.getStatus.side_effect = RSSException
+    res = self.GOCDBS_C.doCommand(args, clientIn = self.mock_client)
+    self.assertEqual(res['DT'], 'Unknown')
+      
   def test_badArgs(self):
     self.failUnlessRaises(InvalidRes, self.GOCDBS_C.doCommand, ('sites', ''))
     self.failUnlessRaises(TypeError, self.GOCDBS_C.doCommand, None)
@@ -172,6 +185,12 @@ class Res2SiteStatus_CommandSuccess(ClientsCommandsTestCase):
 
 class Res2SiteStatus_CommandFailure(ClientsCommandsTestCase):
 
+#  def test_clientFail(self):
+#    self.mock_client.getStatus.side_effect = Exception()
+#    for g in ValidRes:
+#      res = self.PE_C.doCommand((g, 'XX', ['', '']), clientIn = self.mock_client)
+#      self.assertEqual(res['PilotsEff'], 'Unknown')
+
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.R2SS_C.doCommand, None)
      
@@ -193,6 +212,13 @@ class PilotsEff_CommandSuccess(ClientsCommandsTestCase):
 
 class PilotsEff_CommandFailure(ClientsCommandsTestCase):
   
+  def test_clientFail(self):
+    self.mock_client.getPilotsEff.side_effect = Exception()
+    for g in ValidRes:
+      for pe in (0, 20, 40, 60, 80):
+        res = self.PE_C.doCommand((g, 'XX', ['', '']), clientIn = self.mock_client)
+        self.assertEqual(res['PilotsEff'], 'Unknown')
+
   def test_badArgs(self):
     self.failUnlessRaises(InvalidRes, self.PE_C.doCommand, ('sites', '', []))
     self.failUnlessRaises(TypeError, self.PE_C.doCommand, None)
@@ -214,6 +240,13 @@ class PilotsStats_CommandSuccess(ClientsCommandsTestCase):
 
 class PilotsStats_CommandFailure(ClientsCommandsTestCase):
   
+  def test_clientFail(self):
+    self.mock_client.getPilotsStats .side_effect = Exception()
+    for g in ValidRes:
+      for pe in (0, 20, 40, 60, 80):
+        res = self.PS_C.doCommand((g, 'XX', []), clientIn = self.mock_client)
+        self.assertEqual(res['PilotsStats'], 'Unknown')
+
   def test_badArgs(self):
     self.failUnlessRaises(InvalidRes, self.PS_C.doCommand, ('sites', '', []))
     self.failUnlessRaises(TypeError, self.PS_C.doCommand, None)
@@ -235,6 +268,13 @@ class PilotsEffSimple_CommandSuccess(ClientsCommandsTestCase):
     
 class PilotsEffSimple_CommandFailure(ClientsCommandsTestCase):
   
+  def test_clientFail(self):
+    self.mock_client.getPilotsSimpleEff .side_effect = Exception()
+    for g in ('Site', 'Service', 'Resource'):
+      for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
+        res = self.PES_C.doCommand((g, 'XX'), clientIn = self.mock_client)
+        self.assertEqual(res['PilotsEff'], 'Unknown')
+
   def test_badArgs(self):
     self.failUnlessRaises(InvalidRes, self.PES_C.doCommand, ('sites', ''))
     self.failUnlessRaises(TypeError, self.PES_C.doCommand, None)
@@ -256,6 +296,13 @@ class JobsEff_CommandSuccess(ClientsCommandsTestCase):
     
 class JobsEff_CommandFailure(ClientsCommandsTestCase):
   
+  def test_clientFail(self):
+    self.mock_client.getJobsEff .side_effect = Exception()
+    for g in ValidRes:
+      for pe in (0, 20, 40, 60, 80):
+        res = self.JE_C.doCommand((g, 'XX', ['', '']), clientIn = self.mock_client)
+        self.assertEqual(res['JobsEff'], 'Unknown')
+
   def test_badArgs(self):
     self.failUnlessRaises(InvalidRes, self.JE_C.doCommand, ('sites', '', []))
     self.failUnlessRaises(TypeError, self.JE_C.doCommand, None)
@@ -277,6 +324,13 @@ class JobsStats_CommandSuccess(ClientsCommandsTestCase):
     
 class JobsStats_CommandFailure(ClientsCommandsTestCase):
   
+  def test_clientFail(self):
+    self.mock_client.getJobsStats .side_effect = Exception()
+    for g in ValidRes:
+      for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
+        res = self.JS_C.doCommand((g, 'XX'), clientIn = self.mock_client)
+        self.assertEqual(res['MeanProcessedJobs'], 'Unknown')
+    
   def test_badArgs(self):
     self.failUnlessRaises(InvalidRes, self.JS_C.doCommand, ('sites', '', []))
     self.failUnlessRaises(TypeError, self.JS_C.doCommand, None)
@@ -309,6 +363,13 @@ class JobsEffSimple_CommandSuccess(ClientsCommandsTestCase):
    
 class JobsEffSimple_CommandFailure(ClientsCommandsTestCase):
   
+  def test_clientFail(self):
+    self.mock_client.getJobsSimpleEff.side_effect = Exception()
+    for g in ('Site', 'Service'):
+      for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
+        res = self.JES_C.doCommand((g, 'XX'), clientIn = self.mock_client)
+        self.assertEqual(res['JobsEff'], 'Unknown')
+    
   def test_badArgs(self):
     self.failUnlessRaises(InvalidRes, self.JES_C.doCommand, ('sites', ''))
     self.failUnlessRaises(TypeError, self.JES_C.doCommand, None)
@@ -319,41 +380,51 @@ class SAMResults_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
 
-    args = ('Site', 'XX')
-    self.mock_client.getStatus.return_value =  {'Status':None}
-    res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
-    self.assertEqual(res['SAM-Status'], {'Status': None})
-    args = ('Site', 'XX', 'XXX')
-    res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
-    self.assertEqual(res['SAM-Status'], {'Status':None})
-
-#    self.mock_client.getStatus.sideEffect = RSSException
-#    res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
-#    self.assertEqual(res['SAM-Status'], 'Unknown')
-    
-    args = ('Resource', 'XX')
-    self.mock_client.getStatus.return_value =  {'Status':None}
-    res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
-    args = ('Resource', 'XX', 'XXX')
-    res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
-    self.assertEqual(res['SAM-Status'], {'Status':None})
-    self.assertEqual(res['SAM-Status'], {'Status': None})
-
+    for args in (('Site', 'XX'), ('Site', 'XX', 'XXX'), ('Resource', 'XX'), 
+                 ('Resource', 'XX', 'XXX'), 
+                 ('Resource', 'grid0.fe.infn.it', None, ['aa', 'bbb']), 
+                 ('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it', ['aa', 'bbb'])):
+      self.mock_client.getStatus.return_value =  {'Status':None}
+      res = self.SAMR_C.doCommand(args, clientIn = self.mock_client, 
+                                  rsClientIn = self.mock_rsClient)
+      self.assertEqual(res['SAM-Status'], {'Status':None})
+      
     args = ('Resource', 'grid0.fe.infn.it', None, ['aa', 'bbb'])
     for status in ['ok', 'down', 'na', 'degraded', 'partial', 'maint']:
       self.mock_client.getStatus.return_value =  {'Status':status}
-      res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
+      res = self.SAMR_C.doCommand(args, clientIn = self.mock_client, 
+                                rsClientIn = self.mock_rsClient)
       self.assertEqual(res['SAM-Status']['Status'], status)
     args = ('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it', ['aa', 'bbb'])
     for status in ['ok', 'down', 'na', 'degraded', 'partial', 'maint']:
       self.mock_client.getStatus.return_value =  {'Status':status}
-      res = self.SAMR_C.doCommand(args, clientIn = self.mock_client)
+      res = self.SAMR_C.doCommand(args, clientIn = self.mock_client, 
+                                rsClientIn = self.mock_rsClient)
       self.assertEqual(res['SAM-Status']['Status'], status)
 
 #############################################################################
 
 class SAMResults_CommandFailure(ClientsCommandsTestCase):
 
+  def test_clientFail(self):
+    self.mock_client.getStatus.side_effect = RSSException()
+    for args in (('Site', 'XX'), ('Site', 'XX', 'XXX'), 
+                 ('Resource', 'XX'), ('Resource', 'XX', 'XXX'), 
+                 ('Resource', 'grid0.fe.infn.it', None, ['aa', 'bbb']), 
+                 ('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it', ['aa', 'bbb'])):
+      res = self.SAMR_C.doCommand(args, clientIn = self.mock_client, 
+                                  rsClientIn = self.mock_rsClient)
+      self.assertEqual(res['SAM-Status'], 'Unknown')
+    
+    self.mock_client.getStatus.side_effect = NoSAMTests()
+    for args in (('Site', 'XX'), ('Site', 'XX', 'XXX'), 
+                 ('Resource', 'XX'), ('Resource', 'XX', 'XXX'), 
+                 ('Resource', 'grid0.fe.infn.it', None, ['aa', 'bbb']), 
+                 ('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it', ['aa', 'bbb'])):
+      res = self.SAMR_C.doCommand(args, clientIn = self.mock_client, 
+                                  rsClientIn = self.mock_rsClient)
+      self.assertEqual(res['SAM-Status'], None)
+    
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.SAMR_C.doCommand, None)
      
@@ -371,6 +442,11 @@ class GGUSTickets_Open_CommandSuccess(ClientsCommandsTestCase):
 #############################################################################
 
 class GGUSTickets_All_CommandFailure(ClientsCommandsTestCase):
+
+  def test_clientFail(self):
+    self.mock_client.getTicketsList.side_effect = Exception()
+    res = self.GGUS_O_C.doCommand(('XX', ), clientIn = self.mock_client)
+    self.assertEqual(res['OpenT'], 'Unknown')
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.GGUS_O_C.doCommand, None)
@@ -421,6 +497,13 @@ class RSPeriods_CommandSuccess(ClientsCommandsTestCase):
 
 class RSPeriods_CommandFailure(ClientsCommandsTestCase):
 
+  def test_clientFail(self):
+    for granularity in ValidRes:
+      args = (granularity, 'XX', 'XX', 20)
+      self.mock_client.getPeriods.side_effect = Exception()
+      res = self.RSP_C.doCommand(args, clientIn = self.mock_client)
+      self.assertEqual(res['Periods'], 'Unknown')
+
   def test_badArgs(self):
     self.failUnlessRaises(InvalidRes, self.RSP_C.doCommand, ('sites', '', ''), 20)
     self.failUnlessRaises(TypeError, self.RSP_C.doCommand, None, 20)
@@ -440,6 +523,12 @@ class ServiceStats_CommandSuccess(ClientsCommandsTestCase):
 
 class ServiceStats_CommandFailure(ClientsCommandsTestCase):
 
+  def test_clientFail(self):
+    self.mock_client.getServiceStats.side_effect = Exception()
+    for g in ValidRes:
+      res = self.SeSt_C.doCommand((g, ''), clientIn = self.mock_client)
+      self.assertEqual(res['stats'], 'Unknown')
+    
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.SeSt_C.doCommand, None)
      
@@ -459,6 +548,11 @@ class ResourceStats_CommandSuccess(ClientsCommandsTestCase):
 
 class ResourceStats_CommandFailure(ClientsCommandsTestCase):
 
+  def test_clientFail(self):
+    self.mock_client.getResourceStats.side_effect = Exception()
+    res = self.ReSt_C.doCommand(('Site', ''), clientIn = self.mock_client)
+    self.assertEqual(res['stats'], 'Unknown')
+
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.ReSt_C.doCommand, None)
      
@@ -477,6 +571,11 @@ class StorageElementsStats_CommandSuccess(ClientsCommandsTestCase):
 #############################################################################
 
 class StorageElementsStats_CommandFailure(ClientsCommandsTestCase):
+
+  def test_clientFail(self):
+    self.mock_client.getStorageElementsStats.side_effect = Exception()
+    res = self.StElSt_C.doCommand(('Site', ''), clientIn = self.mock_client)
+    self.assertEqual(res['stats'], 'Unknown')
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.StElSt_C.doCommand, None)
@@ -559,6 +658,17 @@ class SLSStatus_CommandSuccess(ClientsCommandsTestCase):
 
 class SLSStatus_CommandFailure(ClientsCommandsTestCase):
   
+  def test_clientFail(self):
+    self.mock_client.getAvailabilityStatus.side_effect = NoServiceException()
+    SE = 'CNAF-RAW'
+    res = self.SLSS_C.doCommand(('StorageElement', SE), clientIn = self.mock_client)
+    self.assertEqual(res['SLS'], None)
+    
+    self.mock_client.getAvailabilityStatus.side_effect = Exception()
+    SE = 'CNAF-RAW'
+    res = self.SLSS_C.doCommand(('StorageElement', SE), clientIn = self.mock_client)
+    self.assertEqual(res['SLS'], 'Unknown')
+    
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.SLSS_C.doCommand, None)
     self.failUnlessRaises(InvalidRes, self.SLSS_C.doCommand, ('sites', ''))
@@ -582,6 +692,17 @@ class SLSServiceInfo_CommandSuccess(ClientsCommandsTestCase):
 
 class SLSServiceInfo_CommandFailure(ClientsCommandsTestCase):
   
+  def test_clientFail(self):
+    self.mock_client.getServiceInfo.side_effect = NoServiceException()
+    SE = 'CNAF-RAW'
+    res = self.SLSSI_C.doCommand(('StorageElement', SE, ['Free space']), clientIn = self.mock_client)
+    self.assertEqual(res['SLSInfo'], None)
+    
+    self.mock_client.getServiceInfo.side_effect = Exception()
+    SE = 'CNAF-RAW'
+    res = self.SLSSI_C.doCommand(('StorageElement', SE, ['Free space']), clientIn = self.mock_client)
+    self.assertEqual(res['SLSInfo'], 'Unknown')
+    
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.SLSSI_C.doCommand, None)
     self.failUnlessRaises(InvalidRes, self.SLSSI_C.doCommand, ('sites', ''))
@@ -603,6 +724,12 @@ class SLSLink_CommandSuccess(ClientsCommandsTestCase):
 
 class SLSLink_CommandFailure(ClientsCommandsTestCase):
   
+  def test_clientFail(self):
+    self.mock_client.getLink.side_effect = NoServiceException()
+    SE = 'CNAF-RAW'
+    res = self.SLSL_C.doCommand(('StorageElement', SE), clientIn = self.mock_client)
+    self.assertEqual(res['Weblink'], 'Unknown')
+    
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.SLSL_C.doCommand, None)
     self.failUnlessRaises(InvalidRes, self.SLSL_C.doCommand, ('sites', ''))
