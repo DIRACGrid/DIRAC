@@ -90,7 +90,7 @@ class AgentReactor:
 
   def runNumCycles( self, agentName = None, numCycles = 1 ):
     if agentName:
-      self.loadAgentModule(agentName)
+      self.loadAgentModule( agentName )
     for agentName in self.__agentModules:
       self.setAgentModuleCyclesToExecute( agentName, numCycles )
     self.go()
@@ -110,7 +110,7 @@ class AgentReactor:
         time.sleep( min( max( timeToNext, 0.5 ), 5 ) )
     finally:
       self.__running = False
-      
+
   def setAgentModuleCyclesToExecute( self, agentName, maxCycles ):
     if not agentName in self.__agentModules:
       return S_ERROR( "%s has not been loaded" % agentName )
@@ -139,4 +139,7 @@ class AgentReactor:
         del( self.__tasks[ self.__agentModules[ agentName ][ 'taskId' ] ] )
         self.__agentModules[ agentName ][ 'running' ] = False
         if os.path.isfile( stopAgentFile ):
-          os.unlink( stopAgentFile )
+          try:
+            os.unlink( stopAgentFile )
+          except:
+            pass
