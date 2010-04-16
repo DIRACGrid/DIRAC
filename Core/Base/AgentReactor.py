@@ -130,7 +130,7 @@ class AgentReactor:
       alive = agent.am_getModuleParam( 'alive' )
       if alive:
         if os.path.isfile( stopAgentFile ):
-          gLogger.info( "Found control file %s for agent" % ( stopAgentFile, agentName ) )
+          gLogger.info( "Found control file %s for agent %s" % ( stopAgentFile, agentName ) )
           alive = False
 
       if not alive:
