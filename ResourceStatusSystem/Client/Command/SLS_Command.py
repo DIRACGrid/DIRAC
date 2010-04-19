@@ -23,12 +23,15 @@ def _getSESLSName(name):
   else:
     shortSiteName = splitted[0]
     tokenName = splitted[1]
-  
+ 
+  if tokenName == 'MC-DST':
+    tokenName = 'MC_DST'
+ 
   if shortSiteName == 'NIKHEF':
     shortSiteName = 'SARA'
   
   SLSName = shortSiteName + '-' + 'LHCb_' + tokenName
-  
+
   return SLSName
       
 #############################################################################

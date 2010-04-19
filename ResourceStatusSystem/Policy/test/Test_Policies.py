@@ -795,7 +795,7 @@ class SEQueuedTransfers_PolicySuccess(PoliciesTestCase):
   
   def test_evaluate(self):
     for status in ValidStatus:
-      args = ('StorageElement', 'XX', status)
+      args = ('StorageElement', 'XX', status, ["Queued transfers"])
       for resCl in [110.0, 10.0, 1.0, None]:
         res = self.SEQT_P.evaluate(args, commandIn = self.mock_command, 
                                    knownInfo={'SLSInfo':{'Queued transfers':resCl}})

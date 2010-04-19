@@ -302,10 +302,10 @@ class PEP:
             
             was = rsDB.getMonitoredsHistory(self.__granularity, 
                                             ['Status', 'Reason', 'DateEffective'], 
-                                            self.__name, False, 'DESC', 1)
+                                            self.__name, False, 'DESC', 1)[0]
             
-            mailMessage = mailMessage + "Was in status %s, " %(was[0])
-            mailMessage = mailMessage + "with reason %s, since %s\n" %(was[1], was[2])
+            mailMessage = mailMessage + "Was in status \"%s\", " %(was[0])
+            mailMessage = mailMessage + "with reason \"%s\", since %s\n" %(was[1], was[2])
             
             mailMessage = mailMessage + "Setup = %s\n" %setup
 

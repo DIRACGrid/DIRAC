@@ -63,7 +63,7 @@ class SEQueuedTransfers_Policy(PolicyBase):
     result = {}
     
     if status is None or status == -1:
-      result['SAT'] = None
+      return {'SAT': None}
 
     status = status['Queued transfers']
     
