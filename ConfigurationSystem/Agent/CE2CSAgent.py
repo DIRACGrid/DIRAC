@@ -36,9 +36,11 @@ class CE2CSAgent(AgentModule):
     gLogger.info("MailFrom",self.addressFrom)
     self.subject = "CE2CSAgent"
 
-    self.am_setModuleParam( "shifterProxy", "Admin" )
+    self.am_setModuleParam( "shifterProxy", "SAMManager" )
+#    self.am_setModuleParam( "shifterProxy", "Admin" )
 
-    self.vo = self.am_getOption('VO','')
+    self.vo = self.am_getOption('/DIRAC/VirtualOrganization','')
+#    self.vo = self.am_getOption('VO','')
     if not self.vo:
       gLogger.fatal("VO option not defined for agent")
       return S_ERROR()
