@@ -182,8 +182,10 @@ class Subprocess:
 
           #HACK to avoid python bug
           # self.wait()
-          while os.waitpid( pid, 0 ) == -1:
-            time.sleep( 0.000001 )
+          retries = 10000
+          while os.waitpid( pid, 0 ) == -1 and retries > 0:
+            time.sleep( 0.001 )
+            retries -= 1
 
           return S_ERROR( '%d seconds timeout for "%s" call' % ( self.timeout, function.__name__ ) )
         elif readSeq[0] == readFD:
