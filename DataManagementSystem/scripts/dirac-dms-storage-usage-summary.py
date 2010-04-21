@@ -13,6 +13,7 @@ prod = ''
 sites = []
 ses = []
 lcg = False
+full = False
 Script.registerSwitch( "u:", "Unit=","   Unit to use [%s] (MB,GB,TB,PB)" % unit)
 Script.registerSwitch( "d:", "Dir=", "   Dir to search [ALL]")
 Script.registerSwitch( "t:", "Type=", "   File type to search [ALL]")
@@ -20,6 +21,7 @@ Script.registerSwitch( "p:", "Prod=", "   Production ID to search [ALL]")
 Script.registerSwitch( "g:", "Sites=", "  Sites to consider [ALL] (space or comma seperated list)")
 Script.registerSwitch( "c:", "SEs=", "  SEs to consider [ALL] (space or comma seperated list)")
 Script.registerSwitch( "l", "LCG", "  Group results by tape and disk")
+Script.registerSwitch( "f", "Full", "  Output the directories matching selection")
 
 Script.parseCommandLine( ignoreErrors = False )
 
@@ -52,6 +54,8 @@ for switch in Script.getUnprocessedSwitches():
     ses = switch[1].replace(',',' ').split()
   if switch[0].lower() == "l" or switch[0].lower() == "lcg":
     lcg = True
+  if switch[0].lower() == "f" or switch[0].lower() == "full":
+    full = True
 
 if not type(ses) == type([]):
   usage()
@@ -72,6 +76,15 @@ if not unit in scaleDict.keys():
 scaleFactor = scaleDict[unit]
 
 rpc = RPCClient('DataManagement/StorageUsage')
+
+if full:
+  res = rpc.getStorageDirectories(dir,fileType,prod,ses)
+  if not res['OK']:
+    print 'Failed to get directories',res['Message']
+    DIRAC.exit(2)
+  for found in sortList(res['Value']):
+    print found
+
 res = rpc.getStorageSummary(dir,fileType,prod,ses)
 if not res['OK']:
   print 'No usage found'
