@@ -178,8 +178,8 @@ class Job:
        >>> job=Job()
        >>> job.setName("myJobName")
 
-       @param jobname: Name of job
-       @type jobname: string
+       @param jobName: Name of job
+       @type jobName: string
     """
     kwargs = {'jobname':jobName} 
     if not type(jobName) == type(' '):
