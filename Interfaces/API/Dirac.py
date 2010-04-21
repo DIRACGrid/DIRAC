@@ -228,8 +228,6 @@ class Dirac:
        >>> print dirac.resetRepository(jobIDs = [1111,2222,'3333'])
        {'OK': True, 'Value': ''}
 
-       @param requestedStates: List of jobs IDs to reset. If not supplied all jobs will be reset.
-       @type resetRepository: list of (strings or ints)
        @return: S_OK,S_ERROR
     """
     if not self.jobRepo:
