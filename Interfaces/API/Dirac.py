@@ -2480,21 +2480,18 @@ class Dirac:
        'JobSanityCheck': 'Job: 768 JDL: OK, InputData: 2 LFNs OK, ','LocalBatchID': 'dc768'}
 
        @param jobID: JobID
-       @type jobID: int, string or list
+       @type jobID: int or string 
        @param printOutput: Flag to print to stdOut
        @type printOutput: Boolean
        @return: S_OK,S_ERROR
     """
-    if type( jobID ) == type( " " ):
+    if type( jobID ) == type(" "):
       try:
-        jobID = [int( jobID )]
+        jobID = int(jobID)
       except Exception, x:
         return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
     elif type( jobID ) == type( [] ):
-      try:
-        jobID = [int( job ) for job in jobID]
-      except Exception, x:
-        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
+      return self.__errorReport('Expected integer or string for jobID' )
 
     monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
     result = monitoring.getJobParameters( jobID )
