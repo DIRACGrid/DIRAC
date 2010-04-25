@@ -19,7 +19,6 @@ USERCERT_PEM=$GLOBUS/usercert.pem
 USERKEY_PEM=$GLOBUS/userkey.pem
 OPENSSL=`which openssl`
 DATE=`/bin/date +%F-%k:%M`
-ANSWER=nv
 
 if [ -z "$USERCERT_P12_ORIG" ]; then
   echo User Certificate P12 is not given. 
