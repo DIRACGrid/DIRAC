@@ -2,6 +2,7 @@
 ##################################################################################
 #
 # $HeadURL$ 
+# $Id$
 #
 # dirac-cert-convert.sh script converts the user certificate in the p12 format
 # into a standard .globus usercert.pem and userkey.pem files
