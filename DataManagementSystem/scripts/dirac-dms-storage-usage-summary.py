@@ -78,7 +78,7 @@ scaleFactor = scaleDict[unit]
 rpc = RPCClient('DataManagement/StorageUsage')
 
 if full:
-  res = rpc.getStorageDirectories(dir,fileType,prod,ses)
+  res = rpc.getStorageDirectorySummary(dir,fileType,prod,ses)
   if not res['OK']:
     print 'Failed to get directories',res['Message']
     DIRAC.exit(2)
