@@ -3,12 +3,11 @@ __RCSID__ = "$Id: StageRequest.py,v 1.2 2009/10/30 22:03:03 acsmith Exp $"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.List import sortList
-
-from DIRAC.DataManagementSystem.Client.DataIntegrityClient import DataIntegrityClient
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.Core.Base.AgentModule                                  import AgentModule
+from DIRAC.StorageManagementSystem.Client.StorageManagerClient    import StorageManagerClient
+from DIRAC.Core.Utilities.List                                    import sortList
+from DIRAC.DataManagementSystem.Client.DataIntegrityClient        import DataIntegrityClient
+from DIRAC.DataManagementSystem.Client.ReplicaManager             import ReplicaManager
 
 import time,os,sys,re
 from types import *
@@ -19,7 +18,7 @@ class StageRequestAgent(AgentModule):
 
   def initialize(self):
     self.replicaManager = ReplicaManager()
-    self.stagerClient = RPCClient('StorageManagement/StorageManagerHandler')
+    self.stagerClient = StorageManagerClient()
     self.dataIntegrityClient = DataIntegrityClient()
     
     proxyLocation = self.am_getOption('ProxyLocation', '' )

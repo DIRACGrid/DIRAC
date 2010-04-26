@@ -4,9 +4,9 @@ __RCSID__ = "$Id: PinRequest.py,v 1.2 2009/10/30 22:03:03 acsmith Exp $"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
-from DIRAC.Core.Base.AgentModule                      import AgentModule
-from DIRAC.Core.DISET.RPCClient                       import RPCClient
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.Core.Base.AgentModule                               import AgentModule
+from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
+from DIRAC.DataManagementSystem.Client.ReplicaManager          import ReplicaManager
 
 import time,os,sys,re
 from types import *
@@ -17,13 +17,12 @@ class PinRequestAgent(AgentModule):
 
   def initialize(self):
     self.replicaManager = ReplicaManager()
-    self.stagerClient = RPCClient('StorageManagement/Stager')
+    self.stagerClient = StorageManagerClient()
     self.pinLifeTime = 60*60*24*7 # 7 days
     
     self.proxyLocation = self.am_getOption('ProxyLocation', '' )
     if not self.proxyLocation:
       self.proxyLocation = False
-
     self.am_setModuleParam('shifterProxy','DataManager')
     self.am_setModuleParam('shifterProxyLocation',self.proxyLocation)
     

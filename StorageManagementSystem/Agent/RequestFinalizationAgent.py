@@ -4,8 +4,9 @@ __RCSID__ = "$Id: RequestFinalization.py,v 1.2 2009/10/30 22:03:03 acsmith Exp $
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
-from DIRAC.Core.Base.AgentModule             import AgentModule
-from DIRAC.Core.DISET.RPCClient              import RPCClient
+from DIRAC.Core.Base.AgentModule                                import AgentModule
+from DIRAC.StorageManagementSystem.Client.StorageManagerClient  import StorageManagerClient
+from DIRAC.Core.Base.DISET.RPCClient                            import RPCClient
 import time,os,sys,re
 from types import *
 
@@ -14,7 +15,7 @@ AGENT_NAME = 'StorageManagement/RequestFinalizationAgent'
 class RequestFinalizationAgent(AgentModule):
 
   def initialize(self):
-    self.stagerClient = RPCClient('StorageManagement/StorageManagerHandler')
+    self.stagerClient = StorageManagerClient()
     return S_OK()
 
   def execute(self):
