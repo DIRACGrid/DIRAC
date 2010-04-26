@@ -3,24 +3,24 @@
 ########################################################################
 
 """
-    StagerHandler is the implementation of the StagerDB in the DISET framework
+    StagerHandler is the implementation of the StorageDB in the DISET framework
 """
 
 __RCSID__ = "$Id: StagerHandler.py,v 1.1 2009/10/30 19:38:56 acsmith Exp $"
 
 from types import *
-from DIRAC                                             import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
-from DIRAC.StorageManagementSystem.DB.StagerDB         import StagerDB
-# This is a global instance of the StagerDB class
-stagerDB = False
+from DIRAC                                                 import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.DISET.RequestHandler                       import RequestHandler
+from DIRAC.StorageManagementSystem.DB.StorageManagementDB  import StorageManagementDB
+# This is a global instance of the StorageDB
+storageDB = False
 
-def initializeStagerHandler(serviceInfo):
-  global stagerDB
-  stagerDB = StagerDB()
+def initializeStorageManagerHandler(serviceInfo):
+  global storageDB
+  storageDB = StorageManagementDB()
   return S_OK()
 
-class StagerHandler(RequestHandler):
+class StorageManagerHandler(RequestHandler):
 
   ######################################################################
   #
@@ -51,7 +51,7 @@ class StagerHandler(RequestHandler):
   def export_getTaskStatus(self,taskID):
     """ Obtain the status of the stage task from the DB. """
     try:
-      res = stagerDB.getTaskStatus(taskID)
+      res = storageDB.getTaskStatus(taskID)
       if res['OK']:
         gLogger.info('StagerHandler.getTaskStatus: Successfully obtained task status')
       else:
@@ -66,7 +66,7 @@ class StagerHandler(RequestHandler):
   def export_getTaskInfo(self,taskID):
     """ Obtain the metadata of the stage task from the DB. """
     try:
-      res = stagerDB.getTaskInfo(taskID)
+      res = storageDB.getTaskInfo(taskID)
       if res['OK']:
         gLogger.info('StagerHandler.getTaskInfo: Successfully obtained task metadata')
       else:
@@ -81,7 +81,7 @@ class StagerHandler(RequestHandler):
   def export_getTaskSummary(self,taskID):
     """ Obtain the summary of the stage task from the DB. """
     try:
-      res = stagerDB.getTaskSummary(taskID)
+      res = storageDB.getTaskSummary(taskID)
       if res['OK']:
         gLogger.info('StagerHandler.getTaskSummary: Successfully obtained task summary')
       else:
@@ -103,7 +103,7 @@ class StagerHandler(RequestHandler):
         This method allows stage requests to be set into the StagerDB
     """
     try:
-      res = stagerDB.setRequest(lfns,storageElement,source,callbackMethod,taskID)
+      res = storageDB.setRequest(lfns,storageElement,source,callbackMethod,taskID)
       if res['OK']:
         gLogger.info('StagerHandler.setRequest: Successfully set stage request')
       else:
@@ -125,7 +125,7 @@ class StagerHandler(RequestHandler):
         This method sets the pfn and size for the supplied replicas
     """
     try:
-      res = stagerDB.updateReplicaInformation(replicaTuples)
+      res = storageDB.updateReplicaInformation(replicaTuples)
       if res['OK']:
         gLogger.info('StagerHandler.updateReplicaInformation: Successfully updated replica information')
       else:
@@ -147,7 +147,7 @@ class StagerHandler(RequestHandler):
         This method obtains the replicas for which all replicas in the task are Waiting
     """
     try:
-      res = stagerDB.getWaitingReplicas()
+      res = storageDB.getWaitingReplicas()
       if res['OK']:
         gLogger.info('StagerHandler.getWaitingReplicas: Successfully obtained Waiting replicas')
       else:
@@ -164,7 +164,7 @@ class StagerHandler(RequestHandler):
         This method obtains the number of files and size of the requests submitted for each storage element
     """
     try:
-      res = stagerDB.getSubmittedStagePins()
+      res = storageDB.getSubmittedStagePins()
       if res['OK']:
         gLogger.info('StagerHandler.getSubmittedStagePins: Successfully obtained submitted request summary')
       else:
@@ -181,7 +181,7 @@ class StagerHandler(RequestHandler):
         This method inserts the stage request ID assocaited to supplied replicaIDs
     """
     try:
-      res = stagerDB.insertStageRequest(requestReplicas)
+      res = storageDB.insertStageRequest(requestReplicas)
       if res['OK']:
         gLogger.info('StagerHandler.insertStageRequest: Successfully inserted stage request information')
       else:
@@ -203,7 +203,7 @@ class StagerHandler(RequestHandler):
         This method obtains the replica metadata and the stage requestID for the replicas in StageSubmitted status
     """
     try:
-      res = stagerDB.getStageSubmittedReplicas()
+      res = storageDB.getStageSubmittedReplicas()
       if res['OK']:
         gLogger.info('StagerHandler.getStageSubmittedReplicas: Successfully obtained StageSubmitted replicas')
       else:
@@ -220,7 +220,7 @@ class StagerHandler(RequestHandler):
         This method updates the status of the stage request for the supplied replica IDs
     """
     try:
-      res = stagerDB.setStageComplete(replicaIDs)
+      res = storageDB.setStageComplete(replicaIDs)
       if res['OK']:
         gLogger.info('StagerHandler.setStageComplete: Successfully set StageRequest complete')
       else:
@@ -242,7 +242,7 @@ class StagerHandler(RequestHandler):
         This method obtains the replicas and SRM request information which are in the Staged status
     """
     try:
-      res = stagerDB.getStagedReplicas()
+      res = storageDB.getStagedReplicas()
       if res['OK']:
         gLogger.info('StagerHandler.getStagedReplicas: Successfully obtained Staged replicas')
       else:
@@ -259,7 +259,7 @@ class StagerHandler(RequestHandler):
         This method inserts pins for the supplied replicaIDs with the supplied lifetime
     """
     try:
-      res = stagerDB.insertPinRequest(requestReplicas,pinLifeTime)
+      res = storageDB.insertPinRequest(requestReplicas,pinLifeTime)
       if res['OK']:
         gLogger.info('StagerHandler.insertPinRequest: Successfully inserted pin information')
       else:
@@ -281,7 +281,7 @@ class StagerHandler(RequestHandler):
         This method checks whether the file for Tasks in 'StageCompleting' status are all Staged and updates the Task status to Staged
     """
     try:
-      res = stagerDB.updateStageCompletingTasks()
+      res = storageDB.updateStageCompletingTasks()
       if res['OK']:
         gLogger.info('StagerHandler.updateStageCompletingTasks: Successfully updated %s StageCompleting tasks.' % len(res['Value']))
       else:
@@ -298,7 +298,7 @@ class StagerHandler(RequestHandler):
         This method sets the status in the Tasks table to Done for the list of supplied task IDs.
     """
     try:
-      res = stagerDB.setTasksDone(taskIDs)
+      res = storageDB.setTasksDone(taskIDs)
       if res['OK']:
         gLogger.info('StagerHandler.setTasksDone: Successfully set status of tasks to Done')
       else:
@@ -315,7 +315,7 @@ class StagerHandler(RequestHandler):
         This method removes the entries from TaskReplicas and Tasks with the supplied task IDs
     """
     try:
-      res = stagerDB.removeTasks(taskIDs)
+      res = storageDB.removeTasks(taskIDs)
       if res['OK']:
         gLogger.info('StagerHandler.removeTasks: Successfully removed Tasks')
       else:
@@ -332,7 +332,7 @@ class StagerHandler(RequestHandler):
         This method removes Replicas which have no associated Tasks
     """
     try:
-      res = stagerDB.removeUnlinkedReplicas()
+      res = storageDB.removeUnlinkedReplicas()
       if res['OK']:
         gLogger.info('StagerHandler.removeUnlinkedReplicas: Successfully removed unlinked Replicas')
       else:
@@ -354,7 +354,7 @@ class StagerHandler(RequestHandler):
         This method sets the status of the replica to failed with the supplied reason
     """
     try:
-      res = stagerDB.updateReplicaFailure(replicaFailures)
+      res = storageDB.updateReplicaFailure(replicaFailures)
       if res['OK']:
         gLogger.info('StagerHandler.updateReplicaFailure: Successfully updated replica failure information')
       else:
@@ -376,7 +376,7 @@ class StagerHandler(RequestHandler):
         This method allows to retrieve Tasks with the supplied status
     """
     try:
-      res = stagerDB.getTasksWithStatus(status)
+      res = storageDB.getTasksWithStatus(status)
       if res['OK']:
         gLogger.info('StagerHandler.getTasksWithStatus: Successfully got tasks with %s status' % status)
       else:
@@ -393,7 +393,7 @@ class StagerHandler(RequestHandler):
         This method allows to retrieve replicas with the supplied status
     """
     try:
-      res = stagerDB.getReplicasWithStatus(status)
+      res = storageDB.getReplicasWithStatus(status)
       if res['OK']:
         gLogger.info('StagerHandler.getReplicasWithStatus: Successfully got replicas with %s status' % status)
       else:
