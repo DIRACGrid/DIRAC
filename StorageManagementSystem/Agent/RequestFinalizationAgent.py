@@ -14,7 +14,7 @@ AGENT_NAME = 'StorageManagement/RequestFinalizationAgent'
 class RequestFinalizationAgent(AgentModule):
 
   def initialize(self):
-    self.stagerClient = RPCClient('StorageManagement/Stager')
+    self.stagerClient = RPCClient('StorageManagement/StorageManagerHandler')
     return S_OK()
 
   def execute(self):

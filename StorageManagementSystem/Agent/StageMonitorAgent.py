@@ -5,7 +5,6 @@ from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient import DataIntegrityClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
@@ -19,14 +18,13 @@ class StageMonitorAgent(AgentModule):
 
   def initialize(self):
     self.replicaManager = ReplicaManager()
-    self.stagerClient = RPCClient('StorageManagement/Stager')
+    self.stagerClient = RPCClient('StorageManagement/StorageManagerHandler')
     self.dataIntegrityClient = DataIntegrityClient()
     
     self.proxyLocation = self.am_getOption('ProxyLocation', '' )
     if not self.proxyLocation:
       self.proxyLocation = False
-
-    self.am_setModuleParam('shifter','DataManager')
+    self.am_setModuleParam('shifterProxy','DataManager')
     self.am_setModuleParam('shifterProxyLocation',self.proxyLocation)
     
     return S_OK()

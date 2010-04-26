@@ -6,7 +6,6 @@ from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
 
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
@@ -21,15 +20,17 @@ class RequestPreparationAgent(AgentModule):
 
   def initialize(self):
     self.fileCatalog = FileCatalog()
-    self.stagerClient = RPCClient('StorageManagement/Stager')
+    self.stagerClient = RPCClient('StorageManagement/StorageManagerHandler')
     self.dataIntegrityClient = DataIntegrityClient()
+
+    proxyLocation = self.am_getOption('ProxyLocation', '' )
+    if not proxyLocation:
+      proxyLocation = False
+    self.am_setModuleParam('shifterProxy','DataManager')
+    self.am_setModuleParam('shifterProxyLocation',proxyLocation)
     return S_OK()
 
   def execute(self):
-    res = setupShifterProxyInEnv('DataManager','%s/runit/%s/proxy' % (rootPath,AGENT_NAME))
-    if not res['OK']:
-      gLogger.fatal("RequestPreparation.execute: Failed to setup data manager proxy.", res['Message'])
-      return res
     res = self.prepareNewReplicas()
     return res
 
