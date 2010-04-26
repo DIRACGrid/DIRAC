@@ -70,7 +70,8 @@ class RequestFinalizationAgent(AgentModule):
     if not stagedTasks:
       gLogger.info("RequestFinalization.callbackStagedTasks: No tasks to update to Done.")
       return S_OK()
-    res = self.stagerClient.setTasksDone(stagedTasks.keys())
+    #res = self.stagerClient.setTasksDone(stagedTasks.keys())
+    res = self.stagerClient.removeTasks(stagedTasks.keys())
     if not res['OK']:
       gLogger.fatal("RequestFinalization.callbackStagedTasks: Failed to set status of Tasks to Done.", res['Message'])
     return res
