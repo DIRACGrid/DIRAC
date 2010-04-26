@@ -14,6 +14,7 @@ from DIRAC.FrameworkSystem.Client.NotificationClient  import NotificationClient
 from DIRAC.Core.Security.Misc                         import getProxyInfo
 from DIRAC                                            import gConfig,gLogger
 from DIRAC.Core.Utilities.List                        import intListToString
+from DIRAC.Core.Security.CS                           import getPropertiesForGroup
 csAPI = CSAPI()
 
 def usage():
@@ -40,10 +41,11 @@ if not res['OK']:
   DIRAC.exit(2)
 userName = res['Value']['username']
 group = res['Value']['group']
-if group != 'diracAdmin':
-  gLogger.error("You must be diracAdmin to execute this script")
-  gLogger.info("Please issue 'dirac-proxy-init -g diracAdmin'")
-  DIRAC.exit(2)
+
+if not 'CSAdministrator' in getPropertiesForGroup( group ):
+   gLogger.error("You must be CSAdministrator user to execute this script")
+   gLogger.info("Please issue 'dirac-proxy-init -g [group with CSAdministrator Property]'")
+   DIRAC.exit(2)
 
 cfgBase = "/Resources/Sites/%s/%s" % (diracGridType,diracSiteName)
 res = gConfig.getOptionsDict(cfgBase)
