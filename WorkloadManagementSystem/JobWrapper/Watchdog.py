@@ -101,11 +101,11 @@ class Watchdog:
       self.log.info( 'Requested CheckingTime of %s setting to %s seconds (minimum)' % ( self.checkingTime, self.minCheckingTime ) )
       self.checkingTime = self.minCheckingTime
 
-    # The time left is returned in seconds @ 250 SI00 = 1 HS09,
+    # The time left is returned in seconds @ 250 SI00 = 1 HS06,
     # the self.checkingTime and self.pollingTime are in seconds,
     # thus they need to be multiplied by a large enough factor
     self.grossTimeLeftLimit = 10 * self.checkingTime
-    self.fineTimeLeftLimit = gConfig.getValue( self.section + '/TimeLeftLimit', 60 * self.pollingTime )
+    self.fineTimeLeftLimit = gConfig.getValue( self.section + '/TimeLeftLimit', 150 * self.pollingTime )
 
     self.timeLeftUtil = TimeLeft()
     self.timeLeft = 0
@@ -161,7 +161,7 @@ class Watchdog:
         self.__getUsageSummary()
         return S_OK()
       else:
-        self.littleTimeLeftCount -= self.littleTimeLeftCount - 1
+        self.littleTimeLeftCount -= 1
 
 
     #Note: need to poll regularly to see if the thread is alive
@@ -253,7 +253,7 @@ class Watchdog:
           border += '='
         cpuTotal = 'Last reported CPU consumed for job is %s (h:m:s)' % ( hmsCPU )
         if self.timeLeft:
-          cpuTotal += ', Batch Queue Time Left %s (s @ HS09)' % self.timeLeft
+          cpuTotal += ', Batch Queue Time Left %s (s @ HS06)' % self.timeLeft
         recentStdOut = '\n%s\n%s\n%s\n%s\n' % ( border, recentStdOut, cpuTotal, border )
         self.log.info( recentStdOut )
         for line in outputList:
