@@ -22,6 +22,7 @@ from DIRAC.Core.Utilities.SiteSEMapping                    import getSEsForSite
 from DIRAC.ConfigurationSystem.Client.PathFinder           import getAgentSection
 from DIRAC.Core.Utilities.List                             import uniqueElements
 from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
+from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC                                                 import gConfig,S_OK,S_ERROR,List
 
 import random,string,re, types
@@ -37,6 +38,7 @@ class JobSchedulingAgent(OptimizerModule):
     self.dataAgentName        = self.am_getOption('InputDataAgent','InputData')
     self.stagingStatus        = self.am_getOption('StagingStatus','Staging')
     self.stagingMinorStatus   = self.am_getOption('StagingMinorStatus','Request Sent')
+    self.newStaging           = self.am_getOption('NewStaging',False)
     self.stagerClient = StagerClient(True)
 
     return S_OK()
@@ -270,7 +272,8 @@ class JobSchedulingAgent(OptimizerModule):
       return S_ERROR('No LocalSEs For Site')
 
     self.log.verbose('Site tape SEs: %s' % (string.join(destinationSEs,', ')))
-    stageSURLs = {}
+    stageSURLs = {} # OLD WAY
+    stageLfns = {} # NEW WAY
     inputData = inputDataDict['Value']['Value']['Successful']
     for lfn,reps in inputData.items():
       for se,surl in reps.items():
@@ -279,8 +282,18 @@ class JobSchedulingAgent(OptimizerModule):
             if not lfn in stageSURLs.keys():
               stageSURLs[lfn]={}
               stageSURLs[lfn].update({se:surl})
+              if not stageLfns.has_key(se): # NEW WAY
+                stageLfns[se] = []          # NEW WAY
+              stageLfns[se].append(lfn)     # NEW WAY
 
-    request = self.stagerClient.stageFiles(str(job),destination,stageSURLs,'WorkloadManagement')
+    if self.newStaging:
+      stagerClient = StorageManagerClient()
+      request = stagerClient.setRequest(stageLfns,'WorkloadManagement','updateJobFromStager@WorkloadManagement/JobStateUpdate',job)
+      if request['OK']:
+        self.jobDB.setJobParameter(int(job),'StageRequest',str(request['Value']))
+    else:
+      request = self.stagerClient.stageFiles(str(job),destination,stageSURLs,'WorkloadManagement')
+
     if not request['OK']:
       self.log.error('Problem sending Staging request:')
       self.log.error(request)
