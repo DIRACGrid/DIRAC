@@ -509,7 +509,7 @@ if pilotRef != 'Unknown':
       queueNorm = float( queueNormList[1] )
       logINFO( 'Queue Normalization = %s SI00' % queueNorm )
       if queueNorm:
-        # Update the local normalization factor: We are using seconds @ 250 SI00 = 1 HS09
+        # Update the local normalization factor: We are using seconds @ 250 SI00 = 1 HS06
         # This is the ratio SpecInt published by the site over 250 (the reference used for Matching)
         os.system( "%s -f %s -o /LocalSite/CPUScalingFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
         os.system( "%s -f %s -o /LocalSite/CPUNormalizationFactor=%s" % ( cacheScript, cfgFile, queueNorm / 250. ) )
