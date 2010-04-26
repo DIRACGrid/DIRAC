@@ -2,13 +2,13 @@
 # $Header: /tmp/libdirac/tmp.FKduyw2449/dirac/DIRAC3/DIRAC/StorageManagementSystem/DB/StagerDB.py,v 1.3 2009/11/03 16:06:29 acsmith Exp $
 ########################################################################
 
-""" StagerDB is a front end to the Stager Database.
+""" StorageManagementDB is a front end to the Stager Database.
 
-    There are five tables in the StagerDB: Tasks, Replicas, TaskReplicas, StageRequests and Pins.
+    There are five tables in the StorageManagementDB: Tasks, CacheReplicas, TaskReplicas, StageRequests and Pins.
 
     The Tasks table is the place holder for the tasks that have requested files to be staged. These can be from different systems and have different associated call back methods.
-    The StagingReplicas table keeps the information on all the StagingReplicas in the system. It maps all the file information LFN, PFN, SE to an assigned ReplicaID.
-    The TaskReplicas table maps the TaskIDs from the Tasks table to the ReplicaID from the StagingReplicas table.
+    The CacheReplicas table keeps the information on all the CacheReplicas in the system. It maps all the file information LFN, PFN, SE to an assigned ReplicaID.
+    The TaskReplicas table maps the TaskIDs from the Tasks table to the ReplicaID from the CacheReplicas table.
     The StageRequests table contains each of the prestage request IDs for each of the replicas.
     The Pins table keeps the pinning request ID along with when it was issued and for how long for each of the replicas.
 """
@@ -21,10 +21,10 @@ from DIRAC.Core.Utilities.List                    import intListToString,stringL
 from DIRAC.Core.Utilities.Time                    import toString
 import string,threading
 
-class StagerDB(DB):
+class StorageManagementDB(DB):
 
   def __init__(self, systemInstance='Default', maxQueueSize=10 ):
-    DB.__init__(self,'StagerDB','StorageManagement/StagerDB',maxQueueSize)
+    DB.__init__(self,'StorageManagementDB','StorageManagement/StorageManagementDB',maxQueueSize)
     self.lock = threading.Lock()
 
   ####################################################################
@@ -40,17 +40,17 @@ class StagerDB(DB):
     if not res['OK']:
       return res
     taskID = res['Value']
-    # Get the Replicas which already exist in the StagingReplicas table
+    # Get the Replicas which already exist in the CacheReplicas table
     res = self._getExistingReplicas(storageElement,lfns)
     if not res['OK']:
       return res
     existingReplicas = res['Value']
-    # Insert the StagingReplicas that do not already exist
+    # Insert the CacheReplicas that do not already exist
     for lfn in lfns:
       if lfn in existingReplicas.keys():
-        gLogger.verbose('StagerDB.setRequest: Replica already exists in StagingReplicas table %s @ %s' % (lfn,storageElement))
+        gLogger.verbose('StagerDB.setRequest: Replica already exists in CacheReplicas table %s @ %s' % (lfn,storageElement))
       else:
-        res = self._insertReplicaInformation(lfn,storageElement)
+        res = self._insertReplicaInformation(lfn,storageElement,'Stage')
         if not res['OK']:
           gLogger.warn("Perform roll back")
         else:
@@ -76,8 +76,8 @@ class StagerDB(DB):
     return S_OK(taskID)
 
   def _getExistingReplicas(self,storageElement,lfns):
-    """ Obtains the ReplicasIDs for the replicas already entered in the StagingReplicas table """
-    req = "SELECT ReplicaID,LFN,Status FROM StagingReplicas WHERE StorageElement = '%s' AND LFN IN (%s);" % (storageElement,stringListToString(lfns))
+    """ Obtains the ReplicasIDs for the replicas already entered in the CacheReplicas table """
+    req = "SELECT ReplicaID,LFN,Status FROM CacheReplicas WHERE SE = '%s' AND LFN IN (%s);" % (storageElement,stringListToString(lfns))
     res = self._query(req)
     if not res['OK']:
       gLogger.error('StagerDB._getExistingReplicas: Failed to get existing replicas.', res['Message'])
@@ -87,14 +87,15 @@ class StagerDB(DB):
       existingReplicas[lfn] = (replicaID,status)
     return S_OK(existingReplicas)
 
-  def _insertReplicaInformation(self,lfn,storageElement):
-    """ Enter the replica into the StagingReplicas table """
-    res = self._insert('Replicas',['LFN','StorageElement'],[lfn,storageElement])
+  def _insertReplicaInformation(self,lfn,storageElement,type):
+    """ Enter the replica into the CacheReplicas table """
+    req = "INSERT INTO CacheReplicas (Type,SE,LFN,PFN,Size,FileChecksum,GUID,SubmitTime,LastUpdate) VALUES ('%s','%s','%s','',0,'','',UTC_TIMESTAMP(),UTC_TIMESTAMP());" % (type,storageElement,lfn)
+    res = self._update(req)
     if not res['OK']:
-      gLogger.error('StagerDB._insertReplicaInformation: Failed to insert to StagingReplicas table.',res['Message'])
+      gLogger.error("_insertReplicaInformation: Failed to insert to CacheReplicas table.",res['Message'])
       return res
     replicaID = res['lastRowId']
-    gLogger.verbose("StagerDB._insertReplicaInformation: Inserted Replica ('%s','%s') and obtained ReplicaID %s" % (lfn,storageElement,replicaID))
+    gLogger.verbose("_insertReplicaInformation: Inserted Replica ('%s','%s') and obtained ReplicaID %s" % (lfn,storageElement,replicaID))
     return S_OK(replicaID)
 
   def _insertTaskReplicaInformation(self,taskID,replicaIDs):
@@ -108,14 +109,14 @@ class StagerDB(DB):
     if not res['OK']:
       gLogger.error('StagerDB._insertTaskReplicaInformation: Failed to insert to TaskReplicas table.',res['Message'])
       return res
-    gLogger.info("StagerDB._insertTaskReplicaInformation: Successfully added %s StagingReplicas to Task %s." % (res['Value'],taskID))
+    gLogger.info("StagerDB._insertTaskReplicaInformation: Successfully added %s CacheReplicas to Task %s." % (res['Value'],taskID))
     return S_OK()
 
   ####################################################################
 
   def getReplicasWithStatus(self,status):
-    """ This method retrieves the ReplicaID and LFN from the StagingReplicas table with the supplied Status. """
-    req = "SELECT ReplicaID,LFN,StorageElement,FileSize,PFN from StagingReplicas WHERE Status = '%s';" % status
+    """ This method retrieves the ReplicaID and LFN from the CacheReplicas table with the supplied Status. """
+    req = "SELECT ReplicaID,LFN,SE,Size,PFN from CacheReplicas WHERE Status = '%s';" % status
     res = self._query(req)
     if not res['OK']:
       gLogger.error('StagerDB.getReplicasWithStatus: Failed to get replicas for %s status' % status,res['Message'])
@@ -138,13 +139,13 @@ class StagerDB(DB):
 
   ####################################################################
   #
-  # The state transition of the StagingReplicas from *->Failed
+  # The state transition of the CacheReplicas from *->Failed
   #
 
   def updateReplicaFailure(self,terminalReplicaIDs):
     """ This method sets the status to Failure with the failure reason for the supplied Replicas. """
     for replicaID,reason in terminalReplicaIDs.items():
-      req = "UPDATE StagingReplicas SET Status = 'Failed',Reason = '%s' WHERE ReplicaID = %s;" % (reason,replicaID)
+      req = "UPDATE CacheReplicas SET Status = 'Failed',Reason = '%s' WHERE ReplicaID = %s;" % (reason,replicaID)
       res = self._update(req)
       if not res['OK']:
         gLogger.error('StagerDB.updateReplicaFailure: Failed to update replica to failed.',res['Message'])
@@ -152,13 +153,13 @@ class StagerDB(DB):
 
   ####################################################################
   #
-  # The state transition of the StagingReplicas from New->Waiting
+  # The state transition of the CacheReplicas from New->Waiting
   #
 
   def updateReplicaInformation(self,replicaTuples):
     """ This method set the replica size information and pfn for the requested storage element.  """
     for replicaID,pfn,size in replicaTuples:
-      req = "UPDATE StagingReplicas SET PFN = '%s', FileSize = %s, Status = 'Waiting' WHERE ReplicaID = %s and Status != 'Cancelled';" % (pfn,size,replicaID)
+      req = "UPDATE CacheReplicas SET PFN = '%s', Size = %s, Status = 'Waiting' WHERE ReplicaID = %s and Status != 'Cancelled';" % (pfn,size,replicaID)
       res = self._update(req)
       if not res['OK']:
         gLogger.error('StagerDB.updateReplicaInformation: Failed to insert replica information.', res['Message'])
@@ -166,11 +167,11 @@ class StagerDB(DB):
 
   ####################################################################
   #
-  # The state transition of the StagingReplicas from Waiting->StageSubmitted
+  # The state transition of the CacheReplicas from Waiting->StageSubmitted
   #
 
   def getSubmittedStagePins(self):
-    req = "SELECT StorageElement,COUNT(*),SUM(FileSize) from StagingReplicas WHERE Status NOT IN ('New','Waiting','Failed') GROUP BY StorageElement;"
+    req = "SELECT SE,COUNT(*),SUM(Size) from CacheReplicas WHERE Status NOT IN ('New','Waiting','Failed') GROUP BY SE;"
     res = self._query(req)
     if not res['OK']:
       gLogger.error('StagerDB.getSubmittedStagePins: Failed to obtain submitted requests.',res['Message'])
@@ -181,7 +182,7 @@ class StagerDB(DB):
     return S_OK(storageRequests)
 
   def getWaitingReplicas(self):
-    req = "SELECT TR.TaskID, R.Status, COUNT(*) from TaskReplicas as TR, StagingReplicas as R where TR.ReplicaID=R.ReplicaID GROUP BY TR.TaskID,R.Status;"
+    req = "SELECT TR.TaskID, R.Status, COUNT(*) from TaskReplicas as TR, CacheReplicas as R where TR.ReplicaID=R.ReplicaID GROUP BY TR.TaskID,R.Status;"
     res = self._query(req)
     if not res['OK']:
       gLogger.error('StagerDB.getWaitingReplicas: Failed to get eligible TaskReplicas',res['Message'])
@@ -198,7 +199,7 @@ class StagerDB(DB):
     replicas = {}
     if not goodTasks:
       return S_OK(replicas)
-    req = "SELECT R.ReplicaID,R.LFN,R.StorageElement,R.FileSize,R.PFN from StagingReplicas as R, TaskReplicas as TR WHERE R.Status = 'Waiting' AND TR.TaskID in (%s) AND TR.ReplicaID=R.ReplicaID;" % intListToString(goodTasks)
+    req = "SELECT R.ReplicaID,R.LFN,R.SE,R.Size,R.PFN from CacheReplicas as R, TaskReplicas as TR WHERE R.Status = 'Waiting' AND TR.TaskID in (%s) AND TR.ReplicaID=R.ReplicaID;" % intListToString(goodTasks)
     res = self._query(req)
     if not res['OK']:
       gLogger.error('StagerDB.getWaitingReplicas: Failed to get Waiting replicas',res['Message'])
@@ -223,11 +224,11 @@ class StagerDB(DB):
 
   ####################################################################
   #
-  # The state transition of the StagingReplicas from StageSubmitted->Staged
+  # The state transition of the CacheReplicas from StageSubmitted->Staged
   #
 
   def getStageSubmittedReplicas(self):
-    req = "SELECT R.ReplicaID,R.StorageElement,R.LFN,R.PFN,R.FileSize,SR.RequestID from StagingReplicas as R, StageRequests as SR WHERE R.Status = 'StageSubmitted' and R.ReplicaID=SR.ReplicaID;"
+    req = "SELECT R.ReplicaID,R.SE,R.LFN,R.PFN,R.Size,SR.RequestID from CacheReplicas as R, StageRequests as SR WHERE R.Status = 'StageSubmitted' and R.ReplicaID=SR.ReplicaID;"
     res = self._query(req)
     if not res['OK']:
       gLogger.error('StagerDB.getStageSubmittedReplicas: Failed to obtain submitted requests.',res['Message'])
@@ -247,11 +248,11 @@ class StagerDB(DB):
 
   ####################################################################
   #
-  # The state transition of the StagingReplicas from Staged->Pinned
+  # The state transition of the CacheReplicas from Staged->Pinned
   #
 
   def getStagedReplicas(self):
-    req = "SELECT R.ReplicaID, R.LFN, R.StorageElement, R.FileSize, R.PFN, SR.RequestID FROM StagingReplicas AS R, StageRequests AS SR WHERE R.Status = 'Staged' AND R.ReplicaID=SR.ReplicaID;"
+    req = "SELECT R.ReplicaID, R.LFN, R.SE, R.Size, R.PFN, SR.RequestID FROM CacheReplicas AS R, StageRequests AS SR WHERE R.Status = 'Staged' AND R.ReplicaID=SR.ReplicaID;"
     res = self._query(req)
     if not res['OK']:
       gLogger.error('StagerDB.getStagedReplicas: Failed to get replicas for Staged status',res['Message'])
@@ -282,7 +283,7 @@ class StagerDB(DB):
 
   def updateStageCompletingTasks(self):
     """ This will select all the Tasks in StageCompleting status and check whether all the associated files are Staged. """
-    req = "SELECT TR.TaskID,COUNT(if(R.Status NOT IN ('Staged'),1,NULL)) FROM Tasks AS T, TaskReplicas AS TR, StagingReplicas AS R WHERE T.Status='StageCompleting' AND T.TaskID=TR.TaskID AND TR.ReplicaID=R.ReplicaID GROUP BY TR.TaskID;"
+    req = "SELECT TR.TaskID,COUNT(if(R.Status NOT IN ('Staged'),1,NULL)) FROM Tasks AS T, TaskReplicas AS TR, CacheReplicas AS R WHERE T.Status='StageCompleting' AND T.TaskID=TR.TaskID AND TR.ReplicaID=R.ReplicaID GROUP BY TR.TaskID;"
     res = self._query(req)
     if not res['OK']:
       return res
@@ -315,9 +316,9 @@ class StagerDB(DB):
     return res
 
   def removeUnlinkedReplicas(self):
-    """ This will remove from the StagingReplicas tables where there are no associated links. """
+    """ This will remove from the CacheReplicas tables where there are no associated links. """
     #TODO: If there are entries in the Pins tables these need to be released
-    req = "SELECT ReplicaID from StagingReplicas WHERE Links = 0;"
+    req = "SELECT ReplicaID from CacheReplicas WHERE Links = 0;"
     res = self._query(req)
     if not res['OK']:
       return res
@@ -330,7 +331,7 @@ class StagerDB(DB):
     res = self._update(req)
     if not res['OK']:
       return res
-    req = "DELETE FROM StagingReplicas WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
+    req = "DELETE FROM CacheReplicas WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
     res = self._update(req)
     return res
 
@@ -368,7 +369,7 @@ class StagerDB(DB):
     if not res['OK']:
       return res
     taskInfo = res['Value']
-    req = "SELECT R.LFN,R.StorageElement,R.PFN,R.FileSize,R.Status,R.Reason FROM StagingReplicas AS R, TaskReplicas AS TR WHERE TR.TaskID = %s AND TR.ReplicaID=R.ReplicaID;" % taskID
+    req = "SELECT R.LFN,R.SE,R.PFN,R.Size,R.Status,R.Reason FROM CacheReplicas AS R, TaskReplicas AS TR WHERE TR.TaskID = %s AND TR.ReplicaID=R.ReplicaID;" % taskID
     res = self._query(req)
     if not res['OK']:
       gLogger.error('StagerDB.getTaskSummary: Failed to get Replica summary for task.',res['Message'])
