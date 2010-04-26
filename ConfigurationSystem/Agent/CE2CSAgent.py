@@ -26,14 +26,15 @@ class CE2CSAgent(AgentModule):
     self.logLevel = self.am_getOption('LogLevel','INFO')
     gLogger.info("LogLevel",self.logLevel)
     gLogger.setLevel(self.logLevel)
-    self.pollingTime = self.am_getOption('PollingTime',120)
+    self.pollingTime = self.am_getOption('PollingTime',86400)
     gLogger.info("PollingTime %d hours" %(int(self.pollingTime)/3600.0))
 
     # TODO: Have no default and if no mail is found then use the diracAdmin group and resolve all associated mail addresses.
-    self.addressTo = self.am_getOption('MailTo','lhcb-SAM@cern.ch')
-    self.addressFrom =  self.am_getOption('MailFrom','lhcb-SAM@cern.ch')
-    gLogger.info("MailTo",self.addressTo)
-    gLogger.info("MailFrom",self.addressFrom)
+    self.addressTo = self.am_getOption('MailTo','')
+    self.addressFrom =  self.am_getOption('MailFrom','')
+    if self.addressTo and self.addressFrom:
+      gLogger.info("MailTo",self.addressTo)
+      gLogger.info("MailFrom",self.addressFrom)
     self.subject = "CE2CSAgent"
 
     self.am_setModuleParam( "shifterProxy", "SAMManager" )
@@ -157,13 +158,14 @@ class CE2CSAgent(AgentModule):
         body += newcestring
         possibleNewSites.append('dirac-admin-add-site DIRACSiteName %s %s' % (nameBDII,ce))
     if body:
-      body = "We are glade to inform You about new CE(s) possibly suitable for LHCb:\n" + body
+      body = "We are glade to inform You about new CE(s) possibly suitable for %s:\n"  % self.vo + body
       body += "\n\nTo suppress information about CE add its name to BannedCEs list."
       for  possibleNewSite in  possibleNewSites:
-         body = "%s\n%s" % (body,possibleNewSite)
+        body = "%s\n%s" % (body,possibleNewSite)
       gLogger.info(body)
-      notification = NotificationClient()
-      result = notification.sendMail(self.addressTo,self.subject,body,self.addressFrom,localAttempt=False)
+      if self.addressTo and self.addressFrom:
+        notification = NotificationClient()
+        result = notification.sendMail(self.addressTo,self.subject,body,self.addressFrom,localAttempt=False)
 
     return S_OK()
 
@@ -375,7 +377,7 @@ class CE2CSAgent(AgentModule):
 
     if changed:
       gLogger.info(body)
-      if body:
+      if body and self.addressTo and self.addressFrom:
         notification = NotificationClient()
         result = notification.sendMail(self.addressTo,self.subject,body,self.addressFrom,localAttempt=False)
 
