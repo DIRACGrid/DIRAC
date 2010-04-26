@@ -12,31 +12,17 @@ FLUSH PRIVILEGES;
 
 use StorageManagementDB;
 
-DROP TABLE IF EXISTS MigratingReplicas;
-CREATE TABLE MigratingReplicas(
+DROP TABLE IF EXISTS CacheReplicas;
+CREATE TABLE CacheReplicas(
   ReplicaID INTEGER AUTO_INCREMENT,
-  Status VARCHAR(32) NOT NULL DEFAULT 'New',
-  SE VARCHAR(32) NOT NULL,
-  LFN VARCHAR(255) NOT NULL,
-  PFN VARCHAR(255) NOT NULL,
-  Size INTEGER NOT NULL,
-  FileChecksum VARCHAR(255) NOT NULL,
-  GUID VARCHAR(255) NOT NULL,
-  SubmitTime DATETIME NOT NULL,
-  LastUpdate DATETIME,
-  PRIMARY KEY(ReplicaID,LFN,SE),
-  INDEX (ReplicaID,Status,SE)
-);
-
-DROP TABLE IF EXISTS StagingReplicas;
-CREATE TABLE StagingReplicas(
-  ReplicaID INTEGER AUTO_INCREMENT,
+  Type VARCHAR(32) NOT NULL,
   Status VARCHAR(32) DEFAULT 'New',
   SE VARCHAR(32) NOT NULL,
   LFN VARCHAR(255) NOT NULL,
   PFN VARCHAR(255),
   Size INTEGER(32) DEFAULT 0,
   FileChecksum VARCHAR(255) NOT NULL,
+  GUID VARCHAR(255) NOT NULL,
   SubmitTime DATETIME NOT NULL,
   LastUpdate DATETIME,
   Reason VARCHAR(255),
@@ -45,7 +31,7 @@ CREATE TABLE StagingReplicas(
   INDEX(ReplicaID,Status,SE)
 )ENGINE=INNODB;
 delimiter //
-CREATE TRIGGER replicasAfterUpdate AFTER UPDATE ON StagingReplicas
+CREATE TRIGGER replicasAfterUpdate AFTER UPDATE ON CacheReplicas
 FOR EACH ROW
 BEGIN
   IF NEW.Status = 'Failed' THEN
@@ -79,35 +65,35 @@ CREATE TABLE Tasks(
 DROP TABLE IF EXISTS StagingTaskReplicas;
 CREATE TABLE TaskReplicas(
   TaskID INTEGER(8) NOT NULL REFERENCES Tasks(TaskID),
-  ReplicaID INTEGER(8) NOT NULL REFERENCES StagingReplicas(ReplicaID),
+  ReplicaID INTEGER(8) NOT NULL REFERENCES CacheReplicas(ReplicaID),
   PRIMARY KEY (TaskID,ReplicaID),
   INDEX(TaskID,ReplicaID)
 )ENGINE=INNODB;
-CREATE TRIGGER taskreplicasAfterInsert AFTER INSERT ON TaskReplicas FOR EACH ROW UPDATE StagingReplicas SET StagingReplicas.Links=StagingReplicas.Links+1 WHERE StagingReplicas.ReplicaID=NEW.ReplicaID;
-CREATE TRIGGER taskreplicasAfterDelete AFTER DELETE ON TaskReplicas FOR EACH ROW UPDATE StagingReplicas SET StagingReplicas.Links=StagingReplicas.Links-1 WHERE StagingReplicas.ReplicaID=OLD.ReplicaID;
+CREATE TRIGGER taskreplicasAfterInsert AFTER INSERT ON TaskReplicas FOR EACH ROW UPDATE CacheReplicas SET CacheReplicas.Links=CacheReplicas.Links+1 WHERE CacheReplicas.ReplicaID=NEW.ReplicaID;
+CREATE TRIGGER taskreplicasAfterDelete AFTER DELETE ON TaskReplicas FOR EACH ROW UPDATE CacheReplicas SET CacheReplicas.Links=CacheReplicas.Links-1 WHERE CacheReplicas.ReplicaID=OLD.ReplicaID;
 
 DROP TABLE IF EXISTS StageRequests;
 CREATE TABLE StageRequests(
-  ReplicaID INTEGER(8) NOT NULL REFERENCES StagingReplicas(ReplicaID),
+  ReplicaID INTEGER(8) NOT NULL REFERENCES CacheReplicas(ReplicaID),
   StageStatus VARCHAR(32) DEFAULT 'StageSubmitted',
   RequestID INTEGER(32),
   StageRequestSubmitTime DATETIME NOT NULL,
   StageRequestCompletedTime DATETIME,
   INDEX (StageStatus),
-  FOREIGN KEY (ReplicaID) REFERENCES StagingReplicas(ReplicaID)
+  FOREIGN KEY (ReplicaID) REFERENCES CacheReplicas(ReplicaID)
 )ENGINE=INNODB;
-CREATE TRIGGER stageAfterInsert AFTER INSERT ON StageRequests FOR EACH ROW UPDATE StagingReplicas SET StagingReplicas.Status = NEW.StageStatus WHERE NEW.ReplicaID=StagingReplicas.ReplicaID;
-CREATE TRIGGER stageAfterUpdate AFTER UPDATE ON StageRequests FOR EACH ROW UPDATE StagingReplicas SET StagingReplicas.Status = NEW.StageStatus WHERE NEW.ReplicaID=StagingReplicas.ReplicaID;
+CREATE TRIGGER stageAfterInsert AFTER INSERT ON StageRequests FOR EACH ROW UPDATE CacheReplicas SET CacheReplicas.Status = NEW.StageStatus WHERE NEW.ReplicaID=CacheReplicas.ReplicaID;
+CREATE TRIGGER stageAfterUpdate AFTER UPDATE ON StageRequests FOR EACH ROW UPDATE CacheReplicas SET CacheReplicas.Status = NEW.StageStatus WHERE NEW.ReplicaID=CacheReplicas.ReplicaID;
 
 DROP TABLE IF EXISTS Pins;
 CREATE TABLE Pins(
-  ReplicaID INTEGER(8) NOT NULL REFERENCES StagingReplicas(ReplicaID),
+  ReplicaID INTEGER(8) NOT NULL REFERENCES CacheReplicas(ReplicaID),
   PinStatus VARCHAR(32) DEFAULT 'PinCreated',
   RequestID INTEGER(32),
   PinCreationTime DATETIME NOT NULL,
   PinExpiryTime DATETIME NOT NULL,
   INDEX(PinStatus),
-  FOREIGN KEY (ReplicaID) REFERENCES StagingReplicas(ReplicaID)
+  FOREIGN KEY (ReplicaID) REFERENCES CacheReplicas(ReplicaID)
 )ENGINE=INNODB;
-CREATE TRIGGER pinsAfterInsert AFTER INSERT ON Pins FOR EACH ROW UPDATE StagingReplicas SET StagingReplicas.Status = NEW.PinStatus WHERE NEW.ReplicaID=StagingReplicas.ReplicaID;
-CREATE TRIGGER pinsAfterUpdate AFTER UPDATE ON Pins FOR EACH ROW UPDATE StagingReplicas SET StagingReplicas.Status = NEW.PinStatus WHERE NEW.ReplicaID=StagingReplicas.ReplicaID;
+CREATE TRIGGER pinsAfterInsert AFTER INSERT ON Pins FOR EACH ROW UPDATE CacheReplicas SET CacheReplicas.Status = NEW.PinStatus WHERE NEW.ReplicaID=CacheReplicas.ReplicaID;
+CREATE TRIGGER pinsAfterUpdate AFTER UPDATE ON Pins FOR EACH ROW UPDATE CacheReplicas SET CacheReplicas.Status = NEW.PinStatus WHERE NEW.ReplicaID=CacheReplicas.ReplicaID;
