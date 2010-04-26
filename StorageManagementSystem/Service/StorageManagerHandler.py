@@ -97,13 +97,13 @@ class StorageManagerHandler(RequestHandler):
   # setRequest is used to initially insert tasks and their associated files. Leaves files in New status.
   #
 
-  types_setRequest = [ListType,StringType,StringType,StringType,IntType]
-  def export_setRequest(self,lfns,storageElement,source,callbackMethod,taskID):
+  types_setRequest = [DictType,StringType,StringType,IntType]
+  def export_setRequest(self,lfnDict,source,callbackMethod,taskID):
     """
         This method allows stage requests to be set into the StagerDB
     """
     try:
-      res = storageDB.setRequest(lfns,storageElement,source,callbackMethod,taskID)
+      res = storageDB.setRequest(lfnDict,source,callbackMethod,taskID)
       if res['OK']:
         gLogger.info('StagerHandler.setRequest: Successfully set stage request')
       else:

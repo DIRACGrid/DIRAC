@@ -32,7 +32,7 @@ class StorageManagementDB(DB):
   # The setRequest method is used to initially insert tasks and their associated files.
   # TODO: Implement a rollback in case of a failure at any step
 
-  def setRequest(self,lfns,storageElement,source,callbackMethod,sourceTaskID):
+  def setRequest(self,lfnDict,source,callbackMethod,sourceTaskID):
     """ This method populates the StagerDB Files and Tasks tables with the requested files.
     """
     # The first step is to create the task in the Tasks table
@@ -41,22 +41,25 @@ class StorageManagementDB(DB):
       return res
     taskID = res['Value']
     # Get the Replicas which already exist in the CacheReplicas table
-    res = self._getExistingReplicas(storageElement,lfns)
-    if not res['OK']:
-      return res
-    existingReplicas = res['Value']
-    # Insert the CacheReplicas that do not already exist
-    for lfn in lfns:
-      if lfn in existingReplicas.keys():
-        gLogger.verbose('StagerDB.setRequest: Replica already exists in CacheReplicas table %s @ %s' % (lfn,storageElement))
-      else:
-        res = self._insertReplicaInformation(lfn,storageElement,'Stage')
-        if not res['OK']:
-          gLogger.warn("Perform roll back")
+    allReplicaIDs = []
+    for se,lfns in lfnDict.items():    
+      res = self._getExistingReplicas(se,lfns)
+      if not res['OK']:
+        return res
+      existingReplicas = res['Value']
+      # Insert the CacheReplicas that do not already exist
+      for lfn in lfns:
+        if lfn in existingReplicas.keys():
+          gLogger.verbose('StagerDB.setRequest: Replica already exists in CacheReplicas table %s @ %s' % (lfn,se))
         else:
-          existingReplicas[lfn] = (res['Value'],'New')
+          res = self._insertReplicaInformation(lfn,se,'Stage')
+          if not res['OK']:
+            gLogger.warn("Perform roll back")
+          else:
+            existingReplicas[lfn] = (res['Value'],'New')
+      allReplicaIDs.extend(existingReplicas.values())
     # Insert all the replicas into the TaskReplicas table
-    res = self._insertTaskReplicaInformation(taskID,existingReplicas.values())
+    res = self._insertTaskReplicaInformation(taskID,allReplicaIDs)
     if not res['OK']:
       gLogger.error("Perform roll back")
       return res
