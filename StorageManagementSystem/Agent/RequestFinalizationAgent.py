@@ -6,7 +6,7 @@ from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
 from DIRAC.Core.Base.AgentModule                                import AgentModule
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient  import StorageManagerClient
-from DIRAC.Core.Base.DISET.RPCClient                            import RPCClient
+from DIRAC.Core.DISET.RPCClient                                 import RPCClient
 import time,os,sys,re
 from types import *
 
