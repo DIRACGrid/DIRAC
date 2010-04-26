@@ -353,7 +353,7 @@ class PEP:
         
         else:
           if self.__name in banList:
-            addSite = self.da.addSiteInMask(self.__name, res['Reason'])
+            addSite = da.addSiteInMask(self.__name, res['Reason'])
             if not addSite['OK']:
               raise RSSException, where(self, self.enforce) + addSite['Message']
             if setup == 'LHCb-Production':

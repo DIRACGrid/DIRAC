@@ -48,7 +48,7 @@ class TransferQuality_Command(Command):
     try:
       res = doc.getQualityStats(args[0], args[1], args[2], args[3])
     except:
-      gLogger.exception("Exception when calling DataOperationsClient")
+      gLogger.exception("Exception when calling DataOperationsClient for %s %s" %(args[0], args[1]))
       return {'TransferQuality':'Unknown'}
       
     

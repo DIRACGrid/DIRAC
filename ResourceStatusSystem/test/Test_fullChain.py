@@ -9,7 +9,7 @@ Script.parseCommandLine()
 
 #sito = {'name':'LCG.Cagliari.it', 'siteType':'T2'} #OK
 #sito = {'name':'LCG.CERN.ch', 'siteType':'T0'} #OK
-sito = {'name':'LCG.Poznan.pl', 'siteType':'T2'} #OK
+sito = {'name':'LCG.SARA.nl', 'siteType':'T2'} #OK
 servizio = {'name':'Storage@LCG.GRIDKA.de', 'siteType':'T2', 'serviceType':'Storage'} #OK
 servizio2 = {'name':'Computing@LCG.DORTMUND.de', 'siteType':'T2', 'serviceType':'Computing'} #OK
 #risorsa = {'name':'gazon.nikhef.nl', 'siteType':'T2', 'resourceType':'CE'} #OK

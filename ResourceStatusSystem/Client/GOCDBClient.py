@@ -163,7 +163,6 @@ class GOCDBClient:
   def _xmlParsing(self, dt, siteOrRes, startDate = None, startDateMax = None):
     """ Performs xml parsing from the dt string (returns a dictionary)
     """
-
     doc = minidom.parseString(dt)
 
     downtimes = doc.getElementsByTagName("DOWNTIME")
@@ -203,15 +202,17 @@ class GOCDBClient:
               end_date = datetime.utcfromtimestamp(edate)
               end_date_STR = end_date.isoformat(' ')
               handler['EndDate'] = end_date_STR
-      
-        try:
+        
+	
+	try:
+	  if start_date is None or end_date is None:
+    	    continue
           if startDate is not None:
             if end_date < startDate:
               continue
           if startDateMax is not None:
             if start_date > startDateMax:
               continue
-          
           if start_date > datetime.utcnow():
             hoursTo = self.__convertTime(start_date - datetime.utcnow())
             handler['Type'] = 'Programmed'
@@ -219,8 +220,11 @@ class GOCDBClient:
           else:
             handler['Type'] = 'OnGoing'
 
-        except NameError:
+        except NameError, UnboundLocalError:
           pass
+      
+      start_date = None
+      end_date = None
       
       # get the DT ID:
       if dt.getAttributeNode("ID"):

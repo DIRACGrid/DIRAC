@@ -14,6 +14,17 @@ class JobsStats_Command(Command):
   
   def doCommand(self, args, clientIn=None):
     """ Return getJobStats from Jobs Client  
+    
+       :params:
+         :attr:`args`: 
+           - args[0]: string: should be a ValidRes
+      
+           - args[1]: string: should be the name of the ValidRes
+    
+        returns:
+          {
+            'MeanProcessedJobs': X
+          }
     """
 
     if not isinstance(args, tuple):
@@ -31,7 +42,7 @@ class JobsStats_Command(Command):
     try:
       res = c.getJobsStats(args[0], args[1], args[2])
     except:
-      gLogger.exception("Exception when calling JobsClient")
+      gLogger.exception("Exception when calling JobsClient for %s %s" %(args[0], args[1]))
       return {'MeanProcessedJobs':'Unknown'}
     
     return {'MeanProcessedJobs':res}
@@ -43,6 +54,17 @@ class JobsEff_Command(Command):
   
   def doCommand(self, args, clientIn=None):
     """ Return getJobsEff from Jobs Client  
+    
+       :params:
+         :attr:`args`: 
+           - args[0]: string: should be a ValidRes
+      
+           - args[1]: string: should be the name of the ValidRes
+    
+        returns:
+          {
+            'JobsEff': X
+          }
     """
 
     if not isinstance(args, tuple):
@@ -140,7 +162,7 @@ class JobsEffSimple_Command(Command):
     try:
       res = c.getJobsSimpleEff(granularity, name)
     except:
-      gLogger.exception("Exception when calling JobsClient")
+      gLogger.exception("Exception when calling JobsClient for %s %s" %(granularity, name))
       return {'JobsEff':'Unknown'}
     
     return {'JobsEff':res}

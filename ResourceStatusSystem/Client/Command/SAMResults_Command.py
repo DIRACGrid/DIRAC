@@ -87,7 +87,7 @@ class SAMResults_Command(Command):
         gLogger.error("httplib.BadStatusLine: could not read" + granularity + " " + name )
         return  {'SAM-Status':'Unknown'}
       except:
-        gLogger.exception("Exception when calling SAMResultsClient")
+        gLogger.exception("Exception when calling SAMResultsClient for %s %s" %(granularity, name))
         return  {'SAM-Status':'Unknown'}
 
     return {'SAM-Status':res}

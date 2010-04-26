@@ -37,7 +37,7 @@ class RSPeriods_Command(Command):
     try:
       res = c.getPeriods(args[0], args[1], args[2], args[3])
     except:
-      gLogger.exception("Exception when calling ResourceStatusClient")
+      gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(args[0], args[1]))
       return {'Periods':'Unknown'}
     
     return {'Periods':res}
@@ -77,7 +77,7 @@ class ServiceStats_Command(Command):
     try:
       res = c.getServiceStats(args[0], args[1])
     except:
-      gLogger.exception("Exception when calling ResourceStatusClient")
+      gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(args[0], args[1]))
       return {'stats':'Unknown'}
             
     return {'stats':res}
@@ -119,7 +119,7 @@ class ResourceStats_Command(Command):
     try:
       res = c.getResourceStats(args[0], args[1])
     except:
-      gLogger.exception("Exception when calling ResourceStatusClient")
+      gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(args[0], args[1]))
       return {'stats':'Unknown'}
       
     return {'stats':res}
@@ -167,7 +167,7 @@ class StorageElementsStats_Command(Command):
     try:
       res = c.getStorageElementsStats(granularity, name)
     except:
-      gLogger.exception("Exception when calling ResourceStatusClient")
+      gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(granularity, name))
       return {'stats':'Unknown'}
     
     return {'stats':res}
@@ -218,7 +218,7 @@ class MonitoredStatus_Command(Command):
       else:
         res = c.getMonitoredStatus(args[0], args[1])
     except:
-      gLogger.exception("Exception when calling ResourceStatusClient")
+      gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(args[0], args[1]))
       return {'MonitoredStatus':'Unknown'}
     
     return {'MonitoredStatus':res}

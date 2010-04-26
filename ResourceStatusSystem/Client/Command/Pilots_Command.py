@@ -31,7 +31,7 @@ class PilotsStats_Command(Command):
     try:
       res = c.getPilotsStats(args[0], args[1], args[2])
     except:
-      gLogger.exception("Exception when calling PilotsClient")
+      gLogger.exception("Exception when calling PilotsClient for %s %s" %(args[0], args[1]))
       return {'PilotsStats':'Unknown'}
   
     return {'PilotsStats':res}
@@ -60,7 +60,7 @@ class PilotsEff_Command(Command):
     try:  
       res = c.getPilotsEff(args[0], args[1], args[2])
     except:
-      gLogger.exception("Exception when calling PilotsClient")
+      gLogger.exception("Exception when calling PilotsClient for %s %s" %(args[0], args[1]))
       return {'PilotsEff':'Unknown'}
   
     return {'PilotsEff':res}
@@ -111,7 +111,7 @@ class PilotsEffSimple_Command(Command):
     try:
       res = c.getPilotsSimpleEff(granularity, name)
     except:
-      gLogger.exception("Exception when calling PilotsClient")
+      gLogger.exception("Exception when calling PilotsClient for %s %s" %(granularity, name))
       return {'PilotsEff':'Unknown'}
     
     return {'PilotsEff':res} 

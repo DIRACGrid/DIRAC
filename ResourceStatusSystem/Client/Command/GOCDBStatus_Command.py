@@ -91,7 +91,7 @@ class GOCDBStatus_Command(Command):
       gLogger.error("GOCDB timed out for " + granularity + " " + name )
       return  {'DT':'Unknown'}      
     except:
-      gLogger.exception("Exception when calling GOCDBClient")
+      gLogger.exception("Exception when calling GOCDBClient for " + granularity + " " + name )
       return {'DT':'Unknown'}
 
     
@@ -163,7 +163,7 @@ class GOCDBInfo_Command(Command):
       gLogger.error("GOCDB timed out for " + granularity + " " + name )
       return {'DT':'Unknown'}      
     except:
-      gLogger.exception("Exception when calling GOCDBClient")
+      gLogger.exception("Exception when calling GOCDBClient for " + granularity + " " + name )
       return {'DT':'Unknown'}
 
     try:
