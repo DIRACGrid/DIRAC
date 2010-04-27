@@ -576,16 +576,16 @@ class StorageFile( StorageBase ):
     else:
       return self._executeStorageElementFunction( storageElementName, physicalFile, 'removeFile' )
 
-  def prestageStorageFile( self, physicalFile, storageElementName, singleFile=False ):
+  def prestageStorageFile(self,physicalFile,storageElementName,lifetime=60*60*24,singleFile=False):
     """ Prestage physical files 
   
         'physicalFile' is the pfn(s) to be pre-staged
         'storageElementName' is the Storage Element
     """
     if singleFile:
-      return self._executeSingleStorageElementFunction( storageElementName, physicalFile, 'prestageFile' )
+      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'prestageFile',{'lifetime':lifetime})
     else:
-      return self._executeStorageElementFunction( storageElementName, physicalFile, 'prestageFile' )
+      return self._executeStorageElementFunction(storageElementName,physicalFile,'prestageFile',{'lifetime':lifetime})
 
   def getPrestageStorageFileStatus( self, physicalFile, storageElementName, singleFile=False ):
     """ Obtain the status of a pre-stage request
@@ -598,16 +598,16 @@ class StorageFile( StorageBase ):
     else:
       return self._executeStorageElementFunction( storageElementName, physicalFile, 'prestageFileStatus' )
 
-  def pinStorageFile( self, physicalFile, storageElementName, lifetime=60 * 60 * 24, singleFile=False ):
+  def pinStorageFile( self, physicalFile, storageElementName, lifetime=60*60*24, singleFile=False ):
     """ Pin physical files with a given lifetime
     
         'physicalFile' is the pfn(s) to pin
         'storageElementName' is the Storage Element
     """
     if singleFile:
-      return self._executeSingleStorageElementFunction( storageElementName, physicalFile, 'pinFile' )
+      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'pinFile',{'lifetime':lifetime})
     else:
-      return self._executeStorageElementFunction( storageElementName, physicalFile, 'pinFile' )
+      return self._executeStorageElementFunction(storageElementName,physicalFile,'pinFile',{'lifetime':lifetime})
 
   def releaseStorageFile( self, physicalFile, storageElementName, singleFile=False ):
     """ Release the pin on physical files
@@ -793,16 +793,16 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     else:
       return self.__executeReplicaStorageElementOperation( storageElementName, lfn, 'getFileMetadata' )
 
-  def prestageReplica( self, lfn, storageElementName, singleFile=False ):
+  def prestageReplica(self,lfn,storageElementName,lifetime=60*60*24,singleFile=False):
     """ Issue prestage requests for the lfns at the supplied StorageElement
 
         'lfn' is the file(s) for which to issue prestage requests
         'storageElementName' is the target Storage Element
     """
     if singleFile:
-      return self.__executeSingleReplicaStorageElementOperation( storageElementName, lfn, 'prestageFile' )
+      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'prestageFile',{'lifetime':lifetime})
     else:
-      return self.__executeReplicaStorageElementOperation( storageElementName, lfn, 'prestageFile' )
+      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'prestageFile',{'lifetime':lifetime})
 
   def getPrestageReplicaStatus( self, lfn, storageElementName, singleFile=False ):
     """ This functionality is not supported.
