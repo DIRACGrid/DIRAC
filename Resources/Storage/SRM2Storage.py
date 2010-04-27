@@ -341,7 +341,7 @@ class SRM2Storage(StorageBase):
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
-  def prestageFile(self,path):
+  def prestageFile(self,path,lifetime=60*60*24):
     """ Issue prestage request for file
     """
     res = self.checkArgumentFormat(path)
@@ -350,7 +350,7 @@ class SRM2Storage(StorageBase):
     urls = res['Value']
 
     gLogger.debug("SRM2Storage.prestageFile: Attempting to issue stage requests for %s file(s)." % len(urls))
-    resDict = self.__gfalprestage_wrapper(urls)['Value']
+    resDict = self.__gfalprestage_wrapper(urls,lifetime)['Value']
     failed = resDict['Failed']
     allResults = resDict['AllResults']
     successful = {}
@@ -1407,14 +1407,14 @@ class SRM2Storage(StorageBase):
     resDict['Failed'] = failed
     return S_OK(resDict)
 
-  def __gfalprestage_wrapper(self,urls):
+  def __gfalprestage_wrapper(self,urls,lifetime):
     """ This is a function that can be reused everywhere to perform the gfal_prestage
     """
     gfalDict = {}
     gfalDict['defaultsetype'] = 'srmv2'
     gfalDict['no_bdii_check'] = 1
     gfalDict['srmv2_spacetokendesc'] = self.spaceToken
-    gfalDict['srmv2_desiredpintime'] = 60*60*24
+    gfalDict['srmv2_desiredpintime'] = lifetime
     gfalDict['protocols'] = self.defaultLocalProtocols
     allResults = []
     failed = {}

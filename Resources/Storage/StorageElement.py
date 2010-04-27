@@ -360,7 +360,7 @@ class StorageElement:
     else:
       return self.__executeFunction(pfn,'removeFile')
 
-  def prestageFile(self,pfn,singleFile=False):
+  def prestageFile(self,pfn,lifetime=60*60*24,singleFile=False):
     if singleFile:
       return self.__executeSingleFile(pfn,'prestageFile')
     else:
