@@ -213,7 +213,6 @@ class PEP:
       if 'Resource_PolType' in self.__policyType:
         self._ResourcePolTypeActions(resDecisions, res, rsDB)
       
-      
       if 'Alarm_PolType' in self.__policyType:
         self._AlarmPolTypeActions(res, nc, setup, rsDB)
           
@@ -344,7 +343,7 @@ class PEP:
               address = 'fstagni@cern.ch'
             
             subject = '%s is banned for %s setup' %(self.__name, setup)
-            body = 'Site %s is removed from site mask for %s' %(self.__name, setup)
+            body = 'Site %s is removed from site mask for %s ' %(self.__name, setup)
             body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
             body += 'Comment:\n%s' %res['Reason']
             sendMail = da.sendMail(address,subject,body)
@@ -362,7 +361,7 @@ class PEP:
               address = 'fstagni@cern.ch'
             
             subject = '%s is added in site mask for %s setup' %(self.__name, setup)
-            body = 'Site %s is added to the site mask for %s' %(self.__name, setup)
+            body = 'Site %s is added to the site mask for %s ' %(self.__name, setup)
             body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
             body += 'Comment:\n%s' %res['Reason']
             sendMail = da.sendMail(address,subject,body)
@@ -393,7 +392,7 @@ class PEP:
               address = 'fstagni@cern.ch'
             
             subject = '%s is banned for %s setup' %(self.__name, setup)
-            body = 'SE %s is removed from mask for %s' %(self.__name, setup)
+            body = 'SE %s is removed from mask for %s ' %(self.__name, setup)
             body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
             body += 'Comment:\n%s' %res['Reason']
             sendMail = da.sendMail(address,subject,body)
@@ -418,8 +417,8 @@ class PEP:
             else:
               address = 'fstagni@cern.ch'
             
-            subject = '%s is banned for %s setup' %(self.__name, setup)
-            body = 'SE %s is removed from mask for %s' %(self.__name, setup)
+            subject = '%s is allowed for %s setup' %(self.__name, setup)
+            body = 'SE %s is added to the mask for %s ' %(self.__name, setup)
             body += 'setup by the DIRAC RSS on %s.\n\n' %(time.asctime())
             body += 'Comment:\n%s' %res['Reason']
             sendMail = da.sendMail(address,subject,body)

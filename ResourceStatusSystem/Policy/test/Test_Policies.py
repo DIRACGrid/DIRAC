@@ -644,6 +644,11 @@ class Propagation_PolicySuccess(PoliciesTestCase):
           res = self.P_P.evaluate(args, commandIn = self.mock_propCommand)
           self.assertEqual(res['SAT'], 'Unknown')
         
+          self.mock_propCommand.doCommand.return_value = {'stats': {'Active':0, 'Probing':0, 
+                                                                    'Bad':0, 'Banned':0, 'Total':0}}
+          res = self.P_P.evaluate(args, commandIn = self.mock_propCommand)
+          self.assertEqual(res['SAT'], None)
+        
 class Propagation_Policy_Failure(PoliciesTestCase):
   
   def test_commandFail(self):
@@ -719,14 +724,16 @@ class OnStorageElementPropagation_PolicySuccess(PoliciesTestCase):
       for resCl in ValidRes :
         res = self.OSEP_P.evaluate(args, knownInfo = {'MonitoredStatus':resCl})
         self.assert_(res.has_key('SAT'))
-        self.assert_(res.has_key('Status'))
-        self.assert_(res.has_key('Reason'))
+        if resCl == 'Banned':
+          self.assert_(res.has_key('Status'))
+          self.assert_(res.has_key('Reason'))
         
         self.mock_command.doCommand.return_value = {'MonitoredStatus':  resCl}
         res = self.OSEP_P.evaluate(args, commandIn = self.mock_command)
         self.assert_(res.has_key('SAT'))
-        self.assert_(res.has_key('Status'))
-        self.assert_(res.has_key('Reason'))
+        if resCl == 'Banned':
+          self.assert_(res.has_key('Status'))
+          self.assert_(res.has_key('Reason'))
           
         
 class OnStorageElementPropagation_Policy_Failure(PoliciesTestCase):
@@ -759,7 +766,7 @@ class SEOccupancy_PolicySuccess(PoliciesTestCase):
   def test_evaluate(self):
     for status in ValidStatus:
       args = ('StorageElement', 'XX', status)
-      for resCl in [100, 10, 1, None]:
+      for resCl in [100, 10, 1, 0, None]:
         res = self.SEO_P.evaluate(args, commandIn = self.mock_command, knownInfo={'SLS':resCl})
         self.assert_(res.has_key('SAT'))
         if resCl is not None:

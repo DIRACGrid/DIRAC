@@ -112,7 +112,6 @@ class SEOccupancy_Policy(PolicyBase):
     
     
     if status is not None and status != -1:
-    
       result['Reason'] = "Occupancy on the SE: " 
     
       if status == 0:
@@ -124,7 +123,8 @@ class SEOccupancy_Policy(PolicyBase):
           str = 'High'
         else:
           str = 'Mid-High'
-        result['Reason'] = result['Reason'] + str
+      
+      result['Reason'] = result['Reason'] + str
       
     
     return result

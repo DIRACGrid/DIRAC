@@ -507,7 +507,7 @@ Policy_Types = {
     { 'Granularity' : ['StorageElement'], 
       'Status' : ['Bad', 'Banned'],
       'FormerStatus' : ValidStatus,
-      'NewStatus' : ['Bad, Banned'],
+      'NewStatus' : ['Bad', 'Banned'],
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,

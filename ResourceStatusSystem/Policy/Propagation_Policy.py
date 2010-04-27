@@ -74,7 +74,10 @@ class Propagation_Policy(PolicyBase):
       return {'SAT':None}
     
     values = []
-    val = (100 * stats['Active'] + 70 * stats['Probing'] + 30 * stats['Bad']) / stats['Total']
+    try:
+      val = (100 * stats['Active'] + 70 * stats['Probing'] + 30 * stats['Bad']) / stats['Total']
+    except ZeroDivisionError:
+      return {'SAT':None}
     
     if val == 100:
       status = 'Active'
@@ -93,9 +96,10 @@ class Propagation_Policy(PolicyBase):
     else:
       result['SAT'] = True
     result['Status'] = status
-    result['Reason'] =  'Active:%d, Probing :%d, Bad: %d, Banned:%d' %( stats['Active'], 
-                                                                        stats['Probing'], 
-                                                                        stats['Bad'], 
-                                                                        stats['Banned'])
+    result['Reason'] =  '%s: Active:%d, Probing :%d, Bad: %d, Banned:%d' %(args[3], 
+                                                                           stats['Active'], 
+                                                                           stats['Probing'], 
+                                                                           stats['Bad'], 
+                                                                           stats['Banned'])
             
     return result

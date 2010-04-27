@@ -59,17 +59,18 @@ class OnStorageElementPropagation_Policy(PolicyBase):
     if resourceStatus == 'Unknown':
       return {'SAT':'Unknown'}
       
-    resourcesStatus = 'Active'
-    
     result = {}
     
-    if resourceStatus != args[2]:
-      result['SAT'] = True
+    if resourceStatus == 'Banned':
+      if resourceStatus != args[2]:
+        result['SAT'] = True
+      else:
+        result['SAT'] = False
+  
+      result['Status'] = resourceStatus
+      result['Reason'] = 'Node status: ' + resourceStatus
     else:
-      result['SAT'] = False
-
-    result['Status'] = resourceStatus
-    result['Reason'] = 'Node status: ' + resourceStatus
+      result['SAT'] = None
     
     return result
   
