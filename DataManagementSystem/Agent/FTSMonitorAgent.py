@@ -176,9 +176,9 @@ class FTSMonitorAgent(AgentModule):
         completedFileIDs.append(fileID)
         fileToFTSUpdates.append((fileID,'Completed',ftsReq.getFailReason(lfn),ftsReq.getRetries(lfn),ftsReq.getTransferTime(lfn)))
 
-      if filesToReschedule:
+      for fileID in filesToReschedule:
         gLogger.info('Updating the Channel table for files to reschedule')
-        res = self.TransferDB.setFileChannelStatus(channelID,filesToReschedule,'Failed')
+        res = self.TransferDB.setFileChannelStatus(channelID,fileID,'Failed')
         if not res['OK']:
           gLogger.error('Failed to update Channel table for failed files.', res['Message'])
 
@@ -293,7 +293,7 @@ class FTSMonitorAgent(AgentModule):
     return 0
 
   def missingSource(self,failReason):
-    missingSourceErrors = ['SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed','SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] No such file or directory','SOURCE error during PREPARATION phase: \[INVALID_PATH\] Failed','SOURCE error during PREPARATION phase: \[INVALID_PATH\] The requested file either does not exist','TRANSFER error during TRANSFER phase: \[INVALID_PATH\] the server sent an error response: 500 500 Command failed. : open error: No such file or directory']
+    missingSourceErrors = ['SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed','SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] No such file or directory','SOURCE error during PREPARATION phase: \[INVALID_PATH\] Failed','SOURCE error during PREPARATION phase: \[INVALID_PATH\] The requested file either does not exist','TRANSFER error during TRANSFER phase: \[INVALID_PATH\] the server sent an error response: 500 500 Command failed. : open error: No such file or directory','SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist']
     for error in missingSourceErrors:
       if re.search(error,failReason):
         return 1
