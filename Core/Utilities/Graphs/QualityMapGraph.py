@@ -60,7 +60,8 @@ class QualityMapGraph( PlotBase ):
       else:  
         self.width = 1.0
         if self.gdata.key_type == "time":
-          self.width = time_interval(min(self.gdata.all_keys),max(self.gdata.all_keys))
+          nKeys = self.gdata.getNumberOfKeys()
+          self.width = (max(self.gdata.all_keys) - min(self.gdata.all_keys))/nKeys
   
       # Setup the colormapper to get the right colors
       self.cmap = LinearSegmentedColormap('quality_colormap',cdict,256)
@@ -87,7 +88,6 @@ class QualityMapGraph( PlotBase ):
       width = float(self.width)
       offset = 0.
       if self.gdata.key_type == 'time':
-          #width = (1 - self.bar_graph_space) * width / 86400.0
           width = width / 86400.0
           
       labels = self.gdata.getLabels()  
@@ -104,10 +104,13 @@ class QualityMapGraph( PlotBase ):
       for label,num in labels:
         labelNames.append(label)  
         for key, value in self.gdata.getPlotNumData(label):
-          colors.append(self.getQualityColor(value))
-          tmp_x.append( key + offset )
-          tmp_y.append( float(nLabel+1) )
-          tmp_b.append( float(nLabel) )
+          
+          if value:
+            colors.append(self.getQualityColor(value))
+            tmp_x.append( key + offset )
+            tmp_y.append( float(nLabel+1) )
+            tmp_b.append( float(nLabel) )
+            
         nLabel += 1  
                     
       self.bars += self.ax.bar( tmp_x, tmp_y, bottom=tmp_b, width=width, color=colors )

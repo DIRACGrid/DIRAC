@@ -267,7 +267,7 @@ class GraphData:
       self.expandKeys()
       arrays = []
       for label in self.subplots:
-        arrays.append(numpy.array([ x[1] for x in self.subplots[label].getPlotDataForNumKeys(self.all_num_keys)]))
+        arrays.append(numpy.array([ x[1] for x in self.subplots[label].getPlotDataForNumKeys(self.all_num_keys,True)]))
       sum_array = sum(arrays)
       if zipFlag:
         return zip(self.all_num_keys,list(sum_array))
@@ -389,7 +389,14 @@ class PlotData:
       self.keys = self.sortKeys()  
             
     self.values = [ self.parsed_data[k] for k in self.keys ]
-    self.values_sum = float(sum(self.values))
+    values_to_sum = [ self.parsed_data[k] for k in self.keys if k != '' ]
+    
+    self.real_values = []
+    for k in self.keys:
+      if self.parsed_data[k] is not None:
+        self.real_values.append(self.parsed_data[k])
+    
+    self.values_sum = float(sum(self.real_values))
 
     # Prepare numerical representation of keys for plotting
     self.num_keys = []
@@ -406,12 +413,12 @@ class PlotData:
       self.num_keys = [ float(key) for key in self.keys ] 
        
        
-    self.min_value = float(min(self.values))
-    self.max_value = float(max(self.values))    
+    self.min_value = float(min(self.real_values))
+    self.max_value = float(max(self.real_values))    
     self.min_key = self.keys[0]
     self.max_key = self.keys[-1] 
-    self.sum_value = float(sum(self.values))    
-    self.last_value = float(self.values[-1])    
+    self.sum_value = float(sum(self.real_values))    
+    self.last_value = float(self.real_values[-1])    
     
   def expandKeys(self,all_keys):
     """ Fill zero values into the missing keys 
@@ -475,7 +482,13 @@ class PlotData:
       """
       Parse the specific data value; this is the identity.
       """
-      return float(data)
+      
+      try:
+        result = float(data)
+      except:
+        result = None
+        
+      return result  
 
   def parseData( self ):
       """
@@ -490,8 +503,8 @@ class PlotData:
       for key, data in self.data.items():
           new_key = self.parseKey( key )
           data = self.parseDatum( data )
-          if data != None:
-              new_parsed_data[ new_key ] = data
+          #if data != None:
+          new_parsed_data[ new_key ] = data
       self.parsed_data = new_parsed_data  
       
       self.keys = self.parsed_data.keys()
@@ -502,9 +515,15 @@ class PlotData:
       self.sortKeys()
       
     cum_values = []
-    cum_values.append(self.values[0])
+    if self.values[0] is None:
+      cum_values.append(0.)
+    else:  
+      cum_values.append(self.values[0])
     for i in range(1,len(self.values)):
-      cum_values.append(cum_values[i-1]+self.values[i])
+      if self.values[i] is None:
+        cum_values.append(cum_values[i-1])
+      else:  
+        cum_values.append(cum_values[i-1]+self.values[i])
       
     self.values = cum_values       
     self.last_value = float(self.values[-1])     
@@ -528,15 +547,21 @@ class PlotData:
         
     return result_pairs
     
-  def getPlotDataForNumKeys(self,num_keys):
+  def getPlotDataForNumKeys(self,num_keys,zeroes=False):
   
     result_pairs = []
     for num_key in num_keys:
       try:
         ind = self.num_keys.index(num_key)
-        result_pairs.append((self.num_keys[ind],self.values[ind]))
+        if self.values[ind] is None and zeroes:
+          result_pairs.append((self.num_keys[ind],0.))
+        else:  
+          result_pairs.append((self.num_keys[ind],self.values[ind]))
       except ValueError:
-        result_pairs.append((num_key,None))        
+        if zeroes:
+          result_pairs.append((num_key,0.))    
+        else:  
+          result_pairs.append((num_key,None))        
         
     return result_pairs      
       

@@ -421,11 +421,11 @@ def makeDataFromCSV(csv):
       for line in flines:
         values = line.split(',')
         value = values[index].strip()
-        if value:
-          plot_data[values[0]] = values[index]
-        else:
+        #if value:
+        plot_data[values[0]] = values[index]
+        #else:
           #plot_data[values[0]] = '0.'
-          pass  
+          #pass  
       graph_data[label] = dict(plot_data)         
 
   return graph_data

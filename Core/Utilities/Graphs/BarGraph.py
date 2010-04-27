@@ -38,10 +38,9 @@ class BarGraph( PlotBase ):
       else:  
         self.width = 1.0
         if self.gdata.key_type == "time":
-          #self.width = time_interval(min(self.gdata.all_keys),max(self.gdata.all_keys))
           # Try to guess the time bin span
           nKeys = self.gdata.getNumberOfKeys()
-          self.width = (max(self.gdata.all_keys)-min(self.gdata.all_keys))/nKeys
+          self.width = (max(self.gdata.all_keys)-min(self.gdata.all_keys))/(nKeys-1)
 
     def draw( self ):
     
