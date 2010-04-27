@@ -25,40 +25,40 @@ class RequestAgentMixIn:
       if subrequestStatus == "Done":
         result = self.RequestDBClient.setRequestStatus(requestName,'Done',server)
         if not result['OK']:
-          gLogger.error(self.name+".checkRequest: Failed to set request status", self.central)
+          gLogger.error(".checkRequest: Failed to set request status", self.central)
         # The request is completed, update the corresponding job status
         if jobID:
           monitorServer = RPCClient('WorkloadManagement/JobMonitoring',useCertificates=True)
           result = monitorServer.getJobPrimarySummary(int(jobID))
           if not result['OK']:
-            gLogger.error(self.name+".checkRequest: Failed to get job status")
+            gLogger.error(".checkRequest: Failed to get job status")
           else:
             jobStatus = result['Value']['Status']
             jobMinorStatus = result['Value']['MinorStatus']
             if jobMinorStatus == "Pending Requests":
               if jobStatus == "Completed":
-                gLogger.info(self.name+'.checkRequest: Updating job status for %d to Done/Requests done' % jobID)
-                result = stateServer.setJobStatus(jobID,'Done','Requests done',self.name)
+                gLogger.info('.checkRequest: Updating job status for %d to Done/Requests done' % jobID)
+                result = stateServer.setJobStatus(jobID,'Done','Requests done','')
                 if not result['OK']:
-                  gLogger.error(self.name+".checkRequest: Failed to set job status")
+                  gLogger.error(".checkRequest: Failed to set job status")
               elif jobStatus == "Failed":
-                gLogger.info(self.name+'Updating job minor status for %d to Requests done' % jobID)
-                result = stateServer.setJobStatus(jobID,'','Requests done',self.name)
+                gLogger.info('Updating job minor status for %d to Requests done' % jobID)
+                result = stateServer.setJobStatus(jobID,'','Requests done','')
                 if not result['OK']:
-                  gLogger.error(self.name+".checkRequest: Failed to set job status")
+                  gLogger.error(".checkRequest: Failed to set job status")
     else:
       gLogger.error("Failed to get request status at", self.central)
 
     # Update the job pending request digest in any case since it is modified
-    gLogger.info(self.name+'.checkRequest: Updating request digest for job %d' % jobID)
+    gLogger.info('.checkRequest: Updating request digest for job %d' % jobID)
     result = self.RequestDBClient.getDigest(requestName,server)
     if result['OK']:
       digest = result['Value']
       gLogger.verbose(digest)
       result = stateServer.setJobParameter(jobID,'PendingRequest',digest)
       if not result['OK']:
-        gLogger.error(self.name+".checkRequest: Failed to set job parameter")
+        gLogger.error(".checkRequest: Failed to set job parameter")
     else:
-      gLogger.error(self.name+'.checkRequest: Failed to get request digest for %s' % requestName, result['Message'])
+      gLogger.error('.checkRequest: Failed to get request digest for %s' % requestName, result['Message'])
 
     return S_OK()
