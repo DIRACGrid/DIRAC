@@ -49,7 +49,7 @@ BEGIN
 END;//
 delimiter ;
 
-DROP TABLE IF EXISTS StagingTasks;
+DROP TABLE IF EXISTS Tasks;
 CREATE TABLE Tasks(
   TaskID INTEGER AUTO_INCREMENT,
   Status VARCHAR(32) DEFAULT 'New',
@@ -62,7 +62,7 @@ CREATE TABLE Tasks(
   INDEX(TaskID,Status)
 )ENGINE=INNODB;
 
-DROP TABLE IF EXISTS StagingTaskReplicas;
+DROP TABLE IF EXISTS TaskReplicas;
 CREATE TABLE TaskReplicas(
   TaskID INTEGER(8) NOT NULL REFERENCES Tasks(TaskID),
   ReplicaID INTEGER(8) NOT NULL REFERENCES CacheReplicas(ReplicaID),
@@ -79,21 +79,10 @@ CREATE TABLE StageRequests(
   RequestID INTEGER(32),
   StageRequestSubmitTime DATETIME NOT NULL,
   StageRequestCompletedTime DATETIME,
+  PinLength INTEGER(8),
+  PinExpiryTime DATETIME,
   INDEX (StageStatus),
   FOREIGN KEY (ReplicaID) REFERENCES CacheReplicas(ReplicaID)
 )ENGINE=INNODB;
 CREATE TRIGGER stageAfterInsert AFTER INSERT ON StageRequests FOR EACH ROW UPDATE CacheReplicas SET CacheReplicas.Status = NEW.StageStatus WHERE NEW.ReplicaID=CacheReplicas.ReplicaID;
 CREATE TRIGGER stageAfterUpdate AFTER UPDATE ON StageRequests FOR EACH ROW UPDATE CacheReplicas SET CacheReplicas.Status = NEW.StageStatus WHERE NEW.ReplicaID=CacheReplicas.ReplicaID;
-
-DROP TABLE IF EXISTS Pins;
-CREATE TABLE Pins(
-  ReplicaID INTEGER(8) NOT NULL REFERENCES CacheReplicas(ReplicaID),
-  PinStatus VARCHAR(32) DEFAULT 'PinCreated',
-  RequestID INTEGER(32),
-  PinCreationTime DATETIME NOT NULL,
-  PinExpiryTime DATETIME NOT NULL,
-  INDEX(PinStatus),
-  FOREIGN KEY (ReplicaID) REFERENCES CacheReplicas(ReplicaID)
-)ENGINE=INNODB;
-CREATE TRIGGER pinsAfterInsert AFTER INSERT ON Pins FOR EACH ROW UPDATE CacheReplicas SET CacheReplicas.Status = NEW.PinStatus WHERE NEW.ReplicaID=CacheReplicas.ReplicaID;
-CREATE TRIGGER pinsAfterUpdate AFTER UPDATE ON Pins FOR EACH ROW UPDATE CacheReplicas SET CacheReplicas.Status = NEW.PinStatus WHERE NEW.ReplicaID=CacheReplicas.ReplicaID;

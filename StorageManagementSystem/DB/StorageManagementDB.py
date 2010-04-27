@@ -26,11 +26,12 @@ class StorageManagementDB(DB):
   def __init__(self, systemInstance='Default', maxQueueSize=10 ):
     DB.__init__(self,'StorageManagementDB','StorageManagement/StorageManagementDB',maxQueueSize)
     self.lock = threading.Lock()
+    self.REPLICAPARAMS = ['ReplicaID','Type','Status','SE','LFN','PFN','Size','FileChecksum','GUID','SubmitTime','LastUpdate','Reason','Links']
 
   ####################################################################
   #
   # The setRequest method is used to initially insert tasks and their associated files.
-  # TODO: Implement a rollback in case of a failure at any step
+  #
 
   def setRequest(self,lfnDict,source,callbackMethod,sourceTaskID):
     """ This method populates the StagerDB Files and Tasks tables with the requested files.
@@ -117,17 +118,58 @@ class StorageManagementDB(DB):
 
   ####################################################################
 
+  def __getConnection(self,connection):
+    if connection:
+      return connection
+    res = self._getConnection()
+    if res['OK']:
+      return res['Value']
+    gLogger.warn("Failed to get MySQL connection",res['Message'])
+    return connection
+
+  def _getTaskReplicaIDs(self,taskIDs,connection=False):
+    req = "SELECT ReplicaID FROM TaskReplicas WHERE TaskID IN (%s);" % intListToString(taskIDs)
+    res = self._query(req,connection)
+    if not res['OK']:
+      return res
+    replicaIDs = []
+    for tuple in res['Value']:
+      replicaIDs.append(tuple[0])
+    return S_OK(replicaIDs)
+
+  def getCacheReplicas(self,condDict={}, older=None, newer=None, timeStamp='LastUpdate', orderAttribute=None, limit=None,connection=False):
+    """ Get cache replicas for the supplied selection with support for the web standard structure """
+    connection = self.__getConnection(connection)
+    req = "SELECT %s FROM CacheReplicas" % (intListToString(self.REPLICAPARAMS))
+    originalFileIDs = {}
+    if condDict or older or newer:
+      if condDict.has_key('TaskID'):
+        taskIDs = condDict.pop('TaskID')
+        if type(taskIDs) not in (ListType,TupleType):
+          taskIDs = [taskIDs]
+        res = self._getTaskReplicaIDs(taskIDs,connection=connection)
+        if not res['OK']:
+          return res
+        condDict['ReplicaID'] = res['Value']
+      req = "%s %s" % (req,self.buildCondition(condDict, older, newer, timeStamp,orderAttribute,limit))
+    res = self._query(req,connection)
+    if not res['OK']:
+      return res
+    cacheReplicas = res['Value']
+    resultDict = {}
+    for row in cacheReplicas:
+      resultDict[row[0]] = dict(zip(self.REPLICAPARAMS[1:],row[1:]))
+    result = S_OK(resultDict)
+    result['Records'] = cacheReplicas
+    result['ParameterNames'] = self.REPLICAPARAMS
+    return result
+
+  # TODO: Purge
   def getReplicasWithStatus(self,status):
     """ This method retrieves the ReplicaID and LFN from the CacheReplicas table with the supplied Status. """
-    req = "SELECT ReplicaID,LFN,SE,Size,PFN from CacheReplicas WHERE Status = '%s';" % status
-    res = self._query(req)
-    if not res['OK']:
-      gLogger.error('StagerDB.getReplicasWithStatus: Failed to get replicas for %s status' % status,res['Message'])
-      return res
-    replicas = {}
-    for replicaID,lfn,storageElement,fileSize,pfn in res['Value']:
-      replicas[replicaID] = (lfn,storageElement,fileSize,pfn)
-    return S_OK(replicas)
+    return self.getCacheReplicas({'Status':status})
+
+  ####################################################################
 
   def getTasksWithStatus(self,status):
     """ This method retrieves the TaskID from the Tasks table with the supplied Status. """
@@ -211,11 +253,11 @@ class StorageManagementDB(DB):
       replicas[replicaID] = (lfn,storageElement,fileSize,pfn)
     return S_OK(replicas)
 
-  def insertStageRequest(self,requestDict):
-    req = "INSERT INTO StageRequests (ReplicaID,RequestID,StageRequestSubmitTime) VALUES "
+  def insertStageRequest(self,requestDict,pinLifeTime):
+    req = "INSERT INTO StageRequests (ReplicaID,RequestID,StageRequestSubmitTime,PinLength) VALUES "
     for requestID,replicaIDs in requestDict.items():
       for replicaID in replicaIDs:
-        replicaString = "(%s,%s,UTC_TIMESTAMP())," % (replicaID,requestID)
+        replicaString = "(%s,%s,UTC_TIMESTAMP(),%d)," % (replicaID,requestID,pinLifeTime)
         req = "%s %s" % (req,replicaString)
     req = req.rstrip(',')
     res = self._update(req)
@@ -242,7 +284,7 @@ class StorageManagementDB(DB):
     return S_OK(replicas)
 
   def setStageComplete(self,replicaIDs):
-    req = "UPDATE StageRequests SET StageStatus='Staged',StageRequestCompletedTime = UTC_TIMESTAMP() WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
+    req = "UPDATE StageRequests SET StageStatus='Staged',StageRequestCompletedTime = UTC_TIMESTAMP(),PinExpiryTime = DATE_ADD(UTC_TIMESTAMP(),INTERVAL 84000 SECOND) WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
     res = self._update(req)
     if not res['OK']:
       gLogger.error("StagerDB.setStageComplete: Failed to set StageRequest completed.", res['Message'])

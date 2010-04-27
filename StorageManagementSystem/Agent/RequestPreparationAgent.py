@@ -140,7 +140,8 @@ class RequestPreparationAgent(AgentModule):
     replicas = {}
     replicaIDs = {}
     for replicaID,info in res['Value'].items():
-      lfn,storageElement,size,pfn = info
+      lfn = info['LFN']
+      storageElement = info['SE']
       if not replicas.has_key(lfn):
         replicas[lfn] = {}
       replicas[lfn][storageElement] = replicaID

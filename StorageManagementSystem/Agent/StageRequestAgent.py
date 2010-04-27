@@ -21,6 +21,7 @@ class StageRequestAgent(AgentModule):
     self.stagerClient = StorageManagerClient()
     self.dataIntegrityClient = DataIntegrityClient()
     
+    self.pinLifetime = self.am_getOption('PinLifetime', 60*60*24)
     proxyLocation = self.am_getOption('ProxyLocation', '' )
     if not proxyLocation:
       proxyLocation = False
@@ -96,7 +97,7 @@ class StageRequestAgent(AgentModule):
     stageRequestMetadata = {}
     if pfnRepIDs:
       gLogger.info("StageRequest.__issuePrestageRequests: Submitting %s stage requests for %s." % (len(pfnRepIDs),storageElement))
-      res = self.replicaManager.prestageStorageFile(pfnRepIDs.keys(),storageElement)
+      res = self.replicaManager.prestageStorageFile(pfnRepIDs.keys(),storageElement,lifetime=self.pinLifetime)
       if not res['OK']:
         gLogger.error("StageRequest.__issuePrestageRequests: Completely failed to sumbmit stage requests for replicas.",res['Message'])
       else:
@@ -106,7 +107,7 @@ class StageRequestAgent(AgentModule):
           stageRequestMetadata[requestID].append(pfnRepIDs[pfn])
     if stageRequestMetadata:
       gLogger.info("StageRequest.__issuePrestageRequests: %s stage request metadata to be updated." % len(stageRequestMetadata))
-      res = self.stagerClient.insertStageRequest(stageRequestMetadata)
+      res = self.stagerClient.insertStageRequest(stageRequestMetadata,self.pinLifetime)
       if not res['OK']:
         gLogger.error("StageRequest.__issuePrestageRequests: Failed to insert stage request metadata.", res['Message'])
     return
