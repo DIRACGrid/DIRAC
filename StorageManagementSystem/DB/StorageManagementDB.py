@@ -4,13 +4,12 @@
 
 """ StorageManagementDB is a front end to the Stager Database.
 
-    There are five tables in the StorageManagementDB: Tasks, CacheReplicas, TaskReplicas, StageRequests and Pins.
+    There are five tables in the StorageManagementDB: Tasks, CacheReplicas, TaskReplicas, StageRequests.
 
     The Tasks table is the place holder for the tasks that have requested files to be staged. These can be from different systems and have different associated call back methods.
     The CacheReplicas table keeps the information on all the CacheReplicas in the system. It maps all the file information LFN, PFN, SE to an assigned ReplicaID.
     The TaskReplicas table maps the TaskIDs from the Tasks table to the ReplicaID from the CacheReplicas table.
     The StageRequests table contains each of the prestage request IDs for each of the replicas.
-    The Pins table keeps the pinning request ID along with when it was issued and for how long for each of the replicas.
 """
 
 __RCSID__ = "$Id: StagerDB.py,v 1.3 2009/11/03 16:06:29 acsmith Exp $"
@@ -307,20 +306,6 @@ class StorageManagementDB(DB):
       replicas[replicaID] = (lfn,storageElement,fileSize,pfn,requestID)
     return S_OK(replicas)
 
-  def insertPinRequest(self,requestDict,pinLifeTime):
-    req = "INSERT INTO Pins (ReplicaID,RequestID,PinCreationTime,PinExpiryTime) VALUES "
-    for requestID,replicaIDs in requestDict.items():
-      for replicaID in replicaIDs:
-        replicaString = "(%s,%s,UTC_TIMESTAMP(),DATE_ADD(UTC_TIMESTAMP(),INTERVAL %s SECOND))," % (replicaID,requestID,pinLifeTime)
-        req = "%s %s" % (req,replicaString)
-    req = req.rstrip(',')
-    res = self._update(req)
-    if not res['OK']:
-      gLogger.error('StagerDB.insertPinRequest: Failed to insert to Pins table.',res['Message'])
-      return res
-    gLogger.info("StagerDB.insertPinRequest: Successfully added %s Pins with RequestID %s." % (res['Value'],requestID))
-    return S_OK()
-
   ####################################################################
   #
   # This code handles the finalization of stage tasks
@@ -362,7 +347,6 @@ class StorageManagementDB(DB):
 
   def removeUnlinkedReplicas(self):
     """ This will remove from the CacheReplicas tables where there are no associated links. """
-    #TODO: If there are entries in the Pins tables these need to be released
     req = "SELECT ReplicaID from CacheReplicas WHERE Links = 0;"
     res = self._query(req)
     if not res['OK']:

@@ -156,14 +156,6 @@ class StorageManagerHandler(RequestHandler):
       gLogger.error('getStagedReplicas: Failed to obtain Staged replicas',res['Message'])
     return res
 
-  types_insertPinRequest = [DictType,IntType]
-  def export_insertPinRequest(self,requestReplicas,pinLifeTime):
-    """ This method inserts pins for the supplied replicaIDs with the supplied lifetime """
-    res = storageDB.insertPinRequest(requestReplicas,pinLifeTime)
-    if not res['OK']:
-      gLogger.error('insertPinRequest: Failed to insert pin information',res['Message'])
-    return res
-
   ####################################################################
   #
   # The methods for finalization of tasks
