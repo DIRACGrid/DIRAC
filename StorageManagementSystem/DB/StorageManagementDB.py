@@ -27,6 +27,207 @@ class StorageManagementDB(DB):
     self.lock = threading.Lock()
     self.REPLICAPARAMS = ['ReplicaID','Type','Status','SE','LFN','PFN','Size','FileChecksum','GUID','SubmitTime','LastUpdate','Reason','Links']
 
+  ################################################################
+  #
+  # State machine management
+  # 
+  def updateTaskStatus(self,taskIDs,newTaskStatus):
+    if not taskIDs:
+      return S_OK(taskIDs)
+    toUpdate = self._checkTaskUpdate(taskIDs,newTaskStatus)
+    if not toUpdate:
+      return S_OK(toUpdate)
+    req = "UPDATE Tasks SET Status='%s',LastUpdate=UTC_TIMESTAMP() WHERE TaskID IN (%s) AND Status != '%s';" % (newTaskStatus,intListToString(toUpdate),newTaskStatus)
+    res = self._update(req)
+    if not res['OK']:
+      return res
+    return S_OK(toUpdate)
+
+  def _checkTaskUpdate(self,taskIDs,newTaskState):
+    if not taskIDs:
+      return S_OK(taskIDs)
+    # * -> Failed
+    if newTaskState == 'Failed':
+      oldTaskState = []
+    # StageCompleting -> Done
+    elif newTaskState == 'Done':
+      oldTaskState = ['StageCompleting']
+    # StageSubmitted -> StageCompleting
+    elif newTaskState == 'StageCompleting':
+      oldTaskState = ['StageSubmitted']
+    # Waiting -> StageSubmitted
+    elif newTaskState == 'StageSubmitted':
+      oldTaskState = ['Waiting']
+    # New -> Waiting
+    elif newTaskState == 'Waiting':
+      oldTaskState = ['New']
+    else:
+      return S_ERROR("Task status not recognized")
+    if not oldTaskState:
+      toUpdate = taskIDs
+    else:
+      req = "SELECT TaskID FROM Tasks WHERE Status = '%s' AND TaskID IN (%s)" % (oldTaskState,intListToString(newTaskState))
+      res = self._query(req)
+      if not res['OK']:
+        return res
+      toUpdate = [row[0] for row in res['Value']]
+    return S_OK(toUpdate)
+
+  def updateReplicaStatus(self,replicaIDs,newReplicaStatus):
+    if not replicaIDs:
+      return S_OK(replicaIDs)
+    toUpdate = self._checkReplicaUpdate(replicaIDs,newReplicaStatus)
+    if not toUpdate:
+      return S_OK(toUpdate)
+    req = "UPDATE CacheReplicas SET Status='%s',LastUpdate=UTC_TIMESTAMP() WHERE ReplicaID IN (%s) AND Status != '%s';" % (newReplicaStatus,intListToString(toUpdate),newReplicaStatus)
+    res = self._update(req)
+    if not res['OK']:
+      return res
+    # Now update the tasks associated to the replicaIDs
+    newTaskStatus = self.__getTaskStateFromReplicaState(newReplicaStatus)
+    res = self._getReplicaTasks(toUpdate)
+    if not res['OK']:
+      return res
+    taskIDs = res['Value']
+    if taskIDs:
+      res = self.updateTaskStatus(taskIDs,newTaskStatus)
+      if not res['OK']:
+        gLogger.warn("Failed to update tasks associated to replicas",res['Message'])
+    return S_OK(toUpdate)
+
+  def _getReplicaTasks(self,replicaIDs):
+    req = "SELECT DISTINCT(TaskID) FROM TaskReplicas WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
+    res = self._query(req)
+    if not res['OK']:
+      return res
+    taskIDs = [row[0] for row in res['Value']]
+    return S_OK(taskIDs)
+
+  def _checkReplicaUpdate(self,replicaIDs,newReplicaState):
+    if not replicaIDs:
+      return S_OK(replicaIDs)
+    # * -> Failed
+    if newReplicaState == 'Failed':
+      oldReplicaState = []
+    # New -> Waiting 
+    elif newReplicaState == 'Waiting':
+      oldReplicaState = ['New']
+    # Waiting -> StageSubmitted
+    elif newReplicaState == 'StageSubmitted':
+      oldReplicaState = ['Waiting']
+    # StageSubmitted -> Staged
+    elif newReplicaState == 'Staged':
+      oldReplicaState = ['StageSubmitted']
+    else:
+      return S_ERROR("Replica status not recognized")
+    if not oldReplicaState:
+      toUpdate = replicaIDs
+    else:
+      req = "SELECT ReplicaID FROM CacheReplicas WHERE Status = '%s' AND ReplicaID IN (%s)" % (oldReplicaState,intListToString(replicaIDs))
+      res = self._query(req)
+      if not res['OK']:
+        return res
+      toUpdate = [row[0] for row in res['Value']]
+    return S_OK(toUpdate)
+
+  def __getTaskStateFromReplicaState(self,replicaState):
+    # For the moment the task state just references to the replicaState
+    return replicaState
+
+  def updateStageRequestStatus(self,replicaIDs,newStageStatus):
+    if not replicaIDs:
+      return S_OK(replicaIDs)
+    toUpdate = self._checkStageUpdate(replicaIDs,newStageStatus)
+    if not toUpdate:
+      return S_OK(toUpdate)
+    req = "UPDATE CacheReplicas SET Status='%s',LastUpdate=UTC_TIMESTAMP() WHERE ReplicaID IN (%s) AND Status != '%s';" % (newStageStatus,intListToString(toUpdate),newStageStatus)
+    res = self._update(req)
+    if not res['OK']:
+      return res
+    # Now update the replicas associated to the replicaIDs
+    newReplicaStatus = self.__getReplicaStateFromStageState(newStageStatus)
+    res = self.updateReplicaStatus(toUpdate,newReplicaStatus)
+    if not res['OK']:
+      gLogger.warn("Failed to update cache replicas associated to stage requests",res['Message'])
+    return S_OK(toUpdate)
+
+  def _checkStageUpdate(self,replicaIDs,newStageState):
+    if not replicaIDs:
+      return S_OK(replicaIDs)
+    # * -> Failed
+    if newStageState == 'Failed':
+      oldStageState = []
+    elif newStageState == 'Staged':
+      oldStageState = ['StageSubmitted']
+    else:
+      return S_ERROR("StageRequest status not recognized")
+    if not oldStageState:
+      toUpdate = replicaIDs
+    else:
+      req = "SELECT ReplicaID FROM StageRequests WHERE StageStatus = '%s' AND ReplicaID IN (%s)" % (oldStageState,intListToString(replicaIDs))
+      res = self._query(req)
+      if not res['OK']:
+        return res
+      toUpdate = [row[0] for row in res['Value']]
+    return S_OK(toUpdate)
+
+  def __getReplicaStateFromStageState(self,stageState):
+    # For the moment the replica state just references to the stage state
+    return stageState
+
+  #
+  #                               End of state machine management
+  #
+  ################################################################
+
+  ################################################################
+  #
+  # Monitoring of stage tasks
+  #
+  def getTaskStatus(self,taskID):
+    """ Obtain the task status from the Tasks table. """
+    res = self.getTaskInfo(taskID)
+    if not res['OK']:
+      return res
+    taskInfo = res['Value'][taskID]
+    return S_OK(taskInfo['Status'])
+
+  def getTaskInfo(self,taskID):
+    """ Obtain all the information from the Tasks table for a supplied task. """
+    req = "SELECT TaskID,Status,Source,SubmitTime,CompleteTime,CallBackMethod,SourceTaskID from Tasks WHERE TaskID = %s;" % taskID
+    res = self._query(req)
+    if not res['OK']:
+      gLogger.error('StagerDB.getTaskInfo: Failed to get task information.', res['Message'])
+      return res
+    resDict = {}
+    for taskID,status,source,submitTime,completeTime,callBackMethod,sourceTaskID in res['Value']:
+      resDict[taskID] = {'Status':status,'Source':source,'SubmitTime':submitTime,'CompleteTime':completeTime,'CallBackMethod':callBackMethod,'SourceTaskID':sourceTaskID}
+    if not resDict:
+      gLogger.error('StagerDB.getTaskInfo: The supplied task did not exist')
+      return S_ERROR('The supplied task did not exist')
+    return S_OK(resDict)
+
+  def getTaskSummary(self,taskID):
+    """ Obtain the task summary from the database. """
+    res = self.getTaskInfo(taskID)
+    if not res['OK']:
+      return res
+    taskInfo = res['Value']
+    req = "SELECT R.LFN,R.SE,R.PFN,R.Size,R.Status,R.Reason FROM CacheReplicas AS R, TaskReplicas AS TR WHERE TR.TaskID = %s AND TR.ReplicaID=R.ReplicaID;" % taskID
+    res = self._query(req)
+    if not res['OK']:
+      gLogger.error('StagerDB.getTaskSummary: Failed to get Replica summary for task.',res['Message'])
+      return res
+    replicaInfo = {}
+    for lfn,storageElement,pfn,fileSize,status,reason in res['Value']:
+      replicaInfo[lfn] = {'StorageElement':storageElement,'PFN':pfn,'FileSize':fileSize,'Status':status,'Reason':reason}
+    resDict = {'TaskInfo':taskInfo,'ReplicaInfo':replicaInfo}
+    return S_OK(resDict)
+  #
+  #                               End of monitoring of stage tasks
+  #
+  ################################################################
+
   ####################################################################
   #
   # The setRequest method is used to initially insert tasks and their associated files.
@@ -167,6 +368,7 @@ class StorageManagementDB(DB):
   def getReplicasWithStatus(self,status):
     """ This method retrieves the ReplicaID and LFN from the CacheReplicas table with the supplied Status. """
     return self.getCacheReplicas({'Status':status})
+
 
   ####################################################################
 
@@ -364,47 +566,3 @@ class StorageManagementDB(DB):
     res = self._update(req)
     return res
 
-  ####################################################################
-  #
-  # This code allows the monitoring of the stage tasks
-  #
-
-  def getTaskStatus(self,taskID):
-    """ Obtain the task status from the Tasks table. """
-    res = self.getTaskInfo(taskID)
-    if not res['OK']:
-      return res
-    taskInfo = res['Value'][taskID]
-    return S_OK(taskInfo['Status'])
-
-  def getTaskInfo(self,taskID):
-    """ Obtain all the information from the Tasks table for a supplied task. """
-    req = "SELECT TaskID,Status,Source,SubmitTime,CompleteTime,CallBackMethod,SourceTaskID from Tasks WHERE TaskID = %s;" % taskID
-    res = self._query(req)
-    if not res['OK']:
-      gLogger.error('StagerDB.getTaskInfo: Failed to get task information.', res['Message'])
-      return res
-    resDict = {}
-    for taskID,status,source,submitTime,completeTime,callBackMethod,sourceTaskID in res['Value']:
-      resDict[taskID] = {'Status':status,'Source':source,'SubmitTime':submitTime,'CompleteTime':completeTime,'CallBackMethod':callBackMethod,'SourceTaskID':sourceTaskID}
-    if not resDict:
-      gLogger.error('StagerDB.getTaskInfo: The supplied task did not exist')
-      return S_ERROR('The supplied task did not exist')
-    return S_OK(resDict)
-
-  def getTaskSummary(self,taskID):
-    """ Obtain the task summary from the database. """
-    res = self.getTaskInfo(taskID)
-    if not res['OK']:
-      return res
-    taskInfo = res['Value']
-    req = "SELECT R.LFN,R.SE,R.PFN,R.Size,R.Status,R.Reason FROM CacheReplicas AS R, TaskReplicas AS TR WHERE TR.TaskID = %s AND TR.ReplicaID=R.ReplicaID;" % taskID
-    res = self._query(req)
-    if not res['OK']:
-      gLogger.error('StagerDB.getTaskSummary: Failed to get Replica summary for task.',res['Message'])
-      return res
-    replicaInfo = {}
-    for lfn,storageElement,pfn,fileSize,status,reason in res['Value']:
-      replicaInfo[lfn] = {'StorageElement':storageElement,'PFN':pfn,'FileSize':fileSize,'Status':status,'Reason':reason}
-    resDict = {'TaskInfo':taskInfo,'ReplicaInfo':replicaInfo}
-    return S_OK(resDict)
