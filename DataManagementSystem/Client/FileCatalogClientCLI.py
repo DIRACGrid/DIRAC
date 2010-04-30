@@ -205,6 +205,7 @@ File Catalog Client $Revision: 1.17 $Date:
     self.fc = client
     self.cwd = '/'
     self.prompt = 'FC:'+self.cwd+'>'
+    self.previous_cwd = '/'
 
   def getPath(self,apath):
 
@@ -405,10 +406,21 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Change directory to <path>
     
         usage: cd <path>
+               cd -
+               cd ..
     """
  
     argss = args.split()
-    path = argss[0] 
+    if len(argss) == 0:
+      path = '/'
+    else:  
+      path = argss[0] 
+      
+    if path == '-':
+      path = self.previous_cwd
+    elif path.find('..') == 0:
+      path = path.replace('..',os.path.dirname(self.cwd))
+        
     if path.find('/') == 0:
       newcwd = path
     else:
@@ -420,6 +432,7 @@ File Catalog Client $Revision: 1.17 $Date:
       if result['Value']['Successful']:
         if result['Value']['Successful'][newcwd]:
         #if result['Type'] == "Directory":
+          self.previous_cwd = self.cwd
           self.cwd = newcwd
           self.prompt = 'FC:'+self.cwd+'>'
         else:
