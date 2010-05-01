@@ -95,6 +95,12 @@ def getDefaultVOMSAttribute():
 def getVOMSAttributeForGroup( group ):
   return gConfig.getValue( "%s/Groups/%s/VOMSRole" % ( g_BaseSecuritySection, group ), getDefaultVOMSAttribute() )
 
+def getDefaultVOMSVO():
+  return gConfig.getValue( "%s/DefaultVOMSVO" % g_BaseSecuritySection, "" )
+
+def getVOMSVOForGroup( group ):
+  return gConfig.getValue( "%s/Groups/%s/VOMSVO" % ( g_BaseSecuritySection, group ), getDefaultVOMSVO() )
+
 def getGroupsWithVOMSAttribute( vomsAttr ):
   retVal = gConfig.getSections( "%s/Groups" % ( g_BaseSecuritySection ) )
   if not retVal[ 'OK' ]:
