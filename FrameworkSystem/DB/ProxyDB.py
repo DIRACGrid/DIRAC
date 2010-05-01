@@ -447,12 +447,21 @@ class ProxyDB(DB):
     return S_OK( ( chain, timeLeft ) )
 
   def __getVOMSAttribute( self, userGroup, requiredVOMSAttribute = False ):
+
     if requiredVOMSAttribute:
-      return S_OK( requiredVOMSAttribute )
+      result = S_OK( requiredVOMSAttribute )
+      csVOMSVO = CS.getVOMSVOForGroup( userGroup )
+      result['VO'] = csVOMSVO
+      return result
+    
     csVOMSMapping = CS.getVOMSAttributeForGroup( userGroup )
     if not csVOMSMapping:
       return S_ERROR( "No mapping defined for group %s in the CS" % userGroup )
-    return S_OK( csVOMSMapping )
+    
+    result = S_OK( csVOMSMapping )
+    csVOMSVO = CS.getVOMSVOForGroup( userGroup )
+    result['VO'] = csVOMSVO  
+    return result
 
   def getVOMSProxy( self, userDN, userGroup, requiredLifeTime = False, requestedVOMSAttr = False ):
     """ Get proxy string from the Proxy Repository for use with userDN
@@ -462,6 +471,7 @@ class ProxyDB(DB):
     if not retVal[ 'OK' ]:
       return retVal
     vomsAttr = retVal[ 'Value' ]
+    vomsVO = retVal[ 'VO' ]
 
     #Look in the cache
     retVal = self.__getPemAndTimeLeft( userDN, userGroup, vomsAttr )
@@ -502,7 +512,7 @@ class ProxyDB(DB):
             return S_OK( ( chain, secsLeft ) )
           return S_ERROR( "Stored proxy has already a different VOMS attribute and is not long lived enough" )
 
-    retVal = vomsMgr.setVOMSAttributes( chain , vomsAttr )
+    retVal = vomsMgr.setVOMSAttributes( chain , vomsAttr, vo = vomsVO )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Cannot append voms extension: %s" % retVal[ 'Message' ] )
     chain = retVal[ 'Value' ]
