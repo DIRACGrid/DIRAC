@@ -143,9 +143,10 @@ if not success and cliParams.strict:
 finalChain = proxyInfo[ 'chain' ]
 
 vomsMapping = CS.getVOMSAttributeForGroup( proxyInfo[ 'group' ] )
+vo = CS.getVOMSVOForGroup( proxyInfo[ 'group' ] )
 if vomsMapping:
   voms = VOMS()
-  retVal = voms.setVOMSAttributes( finalChain, vomsMapping, False )
+  retVal = voms.setVOMSAttributes( finalChain, vomsMapping, vo )
   if not retVal[ 'OK' ]:
     #print "Cannot add voms attribute %s to proxy %s: %s" % ( attr, proxyInfo[ 'path' ], retVal[ 'Message' ] )
     print "Warning : Cannot add voms attribute %s to proxy" % ( vomsMapping )
