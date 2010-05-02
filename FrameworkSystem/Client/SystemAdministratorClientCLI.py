@@ -323,6 +323,7 @@ class SystemAdministratorClientCLI(cmd.Cmd):
     argss = args.split()
     version = argss[0]
     client = SystemAdministratorClient(self.host)
+    print "Software update can take a while, please wait ..."
     result = client.updateSoftware(version)    
     if not result['OK']:
       print "ERROR:",result['Message']
