@@ -52,7 +52,7 @@ class SystemAdministratorHandler( RequestHandler ):
               afile = open(DIRACROOT+'/%s/%s/Agent/' % (extension,sys)+agent,'r')
               body = afile.read()
               afile.close()
-              if body.find('AgentModule') != -1 or body.find('OptimizerModuleModule') != -1:
+              if body.find('AgentModule') != -1 or body.find('OptimizerModule') != -1:
                 if not agents.has_key(system):
                   agents[system] = []
                 agents[system].append(agent.replace('.py',''))  
