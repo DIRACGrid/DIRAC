@@ -131,7 +131,8 @@ class InfoGetter:
     
     for p in pol_to_eval:
       args = Configurations.Policies[p]['args']
-      polToEval_Args.append({'Name' : p, 'args' : args})
+      commandIn = Configurations.Policies[p]['commandIn']
+      polToEval_Args.append({'Name' : p, 'args' : args, 'commandIn' : commandIn})
     
     return polToEval_Args
   

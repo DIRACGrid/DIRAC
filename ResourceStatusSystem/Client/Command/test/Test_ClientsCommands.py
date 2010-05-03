@@ -16,8 +16,7 @@ from DIRAC.ResourceStatusSystem.Client.Command.Jobs_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.SAMResults_Command import SAMResults_Command
 from DIRAC.ResourceStatusSystem.Client.Command.GGUSTickets_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import *
-from DIRAC.ResourceStatusSystem.Client.Command.DataOperations_Command import TransferQuality_Command
-from DIRAC.ResourceStatusSystem.Client.Command.DIRACAccounting_Command import DIRACAccounting_Command
+from DIRAC.ResourceStatusSystem.Client.Command.DIRACAccounting_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.SLS_Command import *
 from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import NoSAMTests
 from DIRAC.ResourceStatusSystem.Client.SLSClient import NoServiceException
@@ -607,13 +606,13 @@ class TransferOperations_CommandSuccess(ClientsCommandsTestCase):
     self.mock_client.getQualityStats.return_value = {}
     res = self.DQ_C.doCommand(('StorageElement', 'XXX'), 
                               clientIn = self.mock_client)
-    self.assertEqual(res['TransferQuality'], {})
+    self.assertEqual(res['TransferQuality'], 'Unknown')
     res = self.DQ_C.doCommand(('StorageElement', 'XXX', datetime.utcnow()), 
                               clientIn = self.mock_client)
-    self.assertEqual(res['TransferQuality'], {})
+    self.assertEqual(res['TransferQuality'], 'Unknown')
     res = self.DQ_C.doCommand(('StorageElement', 'XXX', datetime.utcnow(), 
                                datetime.utcnow()), clientIn = self.mock_client)
-    self.assertEqual(res['TransferQuality'], {})
+    self.assertEqual(res['TransferQuality'], 'Unknown')
       
 #############################################################################
 
@@ -637,7 +636,8 @@ class DIRACAccounting_CommandSuccess(ClientsCommandsTestCase):
     res = self.DA_C.doCommand(('Site', 'LCG.CERN.ch', 'Job', 'CPUEfficiency', 
                                {'Format': 'LastHours', 'hours': 24}, 
                                'JobType'), clientIn = self.mock_client)
-    self.assertEqual(res['data']['SAM'], {1268053200L: 0.011889755732000001, 1268056800L: 0.011889755731900001})
+    print res
+    self.assertEqual(res['CPUEfficiency']['data']['SAM'], {1268053200L: 0.011889755732000001, 1268056800L: 0.011889755731900001})
      
 #############################################################################
 

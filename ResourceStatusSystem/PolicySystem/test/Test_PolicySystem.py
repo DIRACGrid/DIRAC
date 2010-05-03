@@ -446,12 +446,14 @@ class PDPFailure(PolicySystemTestCase):
 class PolicyCallerSuccess(PolicySystemTestCase):
 
   def test_policyInvocation(self):
+    cc = Mock()
+
     for g in ValidRes:
       for status in ValidStatus:
         self.mock_p.evaluate.return_value = {'SAT':True, 'Status':status, 
                                              'Reason':'testReason', 
                                              'PolicyName': 'test_P'}
-        pc = PolicyCaller()
+        pc = PolicyCaller(commandCallerIn = cc)
         policies_names = self.ig.getInfoToApply(('policy', ), g)[0]['Policies']
         for pol_name in policies_names:
           res = pc.policyInvocation(g, 'XX', status, self.mock_p, 

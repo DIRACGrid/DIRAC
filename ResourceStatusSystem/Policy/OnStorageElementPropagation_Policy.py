@@ -61,7 +61,7 @@ class OnStorageElementPropagation_Policy(PolicyBase):
       
     result = {}
     
-    if resourceStatus == 'Banned':
+    if resourceStatus == 'Banned' or args[2] == 'Banned':
       if resourceStatus != args[2]:
         result['SAT'] = True
       else:

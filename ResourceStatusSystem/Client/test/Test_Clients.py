@@ -155,14 +155,6 @@ class PilotsClientSuccess(ClientsTestCase):
     
 #############################################################################
 
-class DataOperationsClientSuccess(ClientsTestCase):
-
-  def test_getQualityStats(self):
-    res = self.DOCli.getQualityStats('StorageElement', 'XX')
-    self.assertEqual(res, None)
-   
-#############################################################################
-
 class SLSClientSuccess(ClientsTestCase):
 
   def test_getAvailabilityStatus(self):
@@ -200,7 +192,6 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResultsClientFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsClientSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DataOperationsClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSClientFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTicketsClientSuccess))

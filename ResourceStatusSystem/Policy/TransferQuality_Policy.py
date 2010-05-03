@@ -51,7 +51,7 @@ class TransferQuality_Policy(PolicyBase):
         command = commandIn
       else:
         # use standard Command
-        from DIRAC.ResourceStatusSystem.Client.Command.DataOperations_Command import TransferQuality_Command
+        from DIRAC.ResourceStatusSystem.Client.Command.DIRACAccounting_Command import TransferQuality_Command
         command = TransferQuality_Command()
         
       clientsInvoker = ClientsInvoker()

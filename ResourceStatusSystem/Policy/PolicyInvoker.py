@@ -3,6 +3,8 @@
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
+#############################################################################
+
 class PolicyInvoker:
   
   def setPolicy(self, p):
@@ -10,10 +12,13 @@ class PolicyInvoker:
     """
     self.policy = p
     
-  def evaluatePolicy(self, args, knownInfo=None):
+  def evaluatePolicy(self, args, commandIn = None, knownInfo=None):
     """ call policy.evaluate()
     """
     
     if not isinstance(args, tuple):
       raise TypeError, where(self, self.evaluatePolicy)
-    return self.policy.evaluate(args, knownInfo = knownInfo)
+    
+    return self.policy.evaluate(args, commandIn = commandIn, knownInfo = knownInfo)
+  
+#############################################################################

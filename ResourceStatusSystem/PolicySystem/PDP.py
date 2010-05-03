@@ -14,6 +14,7 @@ from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
+from DIRAC.ResourceStatusSystem.Client.Command.CommandCaller import CommandCaller
 
 #############################################################################
 
@@ -78,6 +79,9 @@ class PDP:
       if self.__resourceType not in ValidResourceType:
         raise InvalidResourceType, where(self, self.__init__)
 
+    cc = CommandCaller()
+    self.pc = PolicyCaller(cc)
+    
 
 #    self.lockObj = threading.RLock()
     
@@ -144,7 +148,7 @@ class PDP:
                   'PolicyCombinedResult' : [{'PolicyType': policyType, 
                                              'Action': False, 
                                              'Reason':'No policy results'}]}
-                  
+
         singlePolicyResults = self._invocation(self.__granularity, self.__name,
                                                self.__status, self.policy, 
                                                self.args, policyGroup['Policies'])
@@ -185,17 +189,20 @@ class PDP:
 #############################################################################
 
   def _invocation(self, granularity, name, status, policy, args, policies):
+    """ One by one, use the PolicyCaller to invoke the policies, and putting
+        their results in `policyResults`. When the status is `Unknown`, invokes
+        `self.__useOldPolicyRes`. 
+    """
     
     policyResults = []
-    
-    pc = PolicyCaller()
     
     for p in policies:
       pName = p['Name']
       extraArgs = p['args']
-      res = pc.policyInvocation(granularity = granularity, name = name,
-                                status = status, policy = policy, args = args,
-                                pol = pName, extraArgs = extraArgs)
+      commandIn = p['commandIn']
+      res = self.pc.policyInvocation(granularity = granularity, name = name, status = status, 
+                                     policy = policy, args = args, pol = pName, 
+                                     extraArgs = extraArgs, commandIn = commandIn)
 
       if res['SAT'] == 'Unknown':
         res = self.__useOldPolicyRes(name = name, policyName = pName, 
@@ -209,6 +216,9 @@ class PDP:
 ##############################################################################
 
   def _evaluate(self, policyResults):
+    """ Just makes a proper invocation of policyCombination
+    """
+    
     
     if len(policyResults) == 1:
       return self._policyCombination(policyResults[0])
@@ -224,6 +234,8 @@ class PDP:
 #############################################################################
  
   def _policyCombination(self, *args):
+    """ Combination of single policy results: determines 'SAT' and combines 'Reason' 
+    """
     
     if len(args) == 1:
       res = {}
@@ -300,6 +312,9 @@ class PDP:
 #############################################################################
 
   def __useOldPolicyRes(self, name, policyName, status):
+    """ Use the RSS Service to get an old policy result. 
+        If such result is older than 2 hours, it returns {'SAT':None}
+    """
     
     from DIRAC.Core.DISET.RPCClient import RPCClient
     rsS = RPCClient("ResourceStatus/ResourceStatus")
