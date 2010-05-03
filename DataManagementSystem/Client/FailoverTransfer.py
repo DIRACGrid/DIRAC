@@ -75,7 +75,7 @@ class FailoverTransfer:
 
       fileDict = errorDict['register']
       #Therefore the registration failed but the upload was successful
-      result = self.__setRegistrationRequest(fileDict['LFN'],se,'')
+      result = self.__setRegistrationRequest(fileDict['LFN'],se,'',fileDict)
       if not result['OK']:
         self.log.error('Failed to set registration request for: SE %s and metadata: \n%s' %(se,fileDict))
         errorList.append('Failed to set registration request for: SE %s and metadata: \n%s' %(se,fileDict))
@@ -141,7 +141,7 @@ class FailoverTransfer:
     return S_OK()
 
   #############################################################################
-  def __setRegistrationRequest(self,lfn,se,catalog):
+  def __setRegistrationRequest(self,lfn,se,catalog,fileDict):
     """ Sets a registration request.
     """
     self.log.info('Setting registration request for %s at %s.' % (lfn,se))
@@ -151,7 +151,8 @@ class FailoverTransfer:
       return result
 
     index = result['Value']
-    fileDict = {'LFN':lfn,'Status':'Waiting'}
+    if not fileDict.has_key('Status'):
+      fileDict['Status']='Waiting'
     self.request.setSubRequestFiles(index,'register',[fileDict])
 
     return S_OK()
