@@ -72,7 +72,8 @@ def generateQualityPlot( fileName, data, metadata ):
   metadata[ 'legend' ] = False
   #HACK: Pad a bit to the left until the proper padding is calculated
   maxKeyLength = max( [ len( key ) for key in data ] )
-  metadata[ 'plot_left_padding' ] = int( maxKeyLength * 2.5 )
+  metadata[ 'limit_labels' ] = 9999
+  metadata[ 'sort_labels' ] = 'alpha'
   qualityGraph( data, fn, **metadata )
   fn.close()
   return S_OK()
