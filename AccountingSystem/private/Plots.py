@@ -74,6 +74,7 @@ def generateQualityPlot( fileName, data, metadata ):
   maxKeyLength = max( [ len( key ) for key in data ] )
   metadata[ 'limit_labels' ] = 9999
   metadata[ 'sort_labels' ] = 'alpha'
+  metadata[ 'plot_left_padding' ] = int( maxKeyLength * 2.5 )
   qualityGraph( data, fn, **metadata )
   fn.close()
   return S_OK()
