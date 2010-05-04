@@ -324,10 +324,12 @@ class JobSchedulingAgent(OptimizerModule):
     bannedSites = string.replace( string.replace( bannedSites, '{', '' ), '}', '' )
     bannedSites = List.fromChar( bannedSites )
 
-    if not 'ANY' in site and not 'Unknown' in site:
+    if not 'ANY' in site and not 'Unknown' in site and not 'Multiple' in site:
       if len(site)==1:
         self.log.info('Job %s has single chosen site %s specified in JDL' %(job,site[0]))
       result['Sites']=site
+    elif 'Multiple' in site:
+      result['Sites'] = classAdJob.getListFromExpression( 'Site' )
     else:
       result['Sites']= []
 
