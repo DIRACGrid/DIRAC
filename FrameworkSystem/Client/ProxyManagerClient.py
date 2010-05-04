@@ -431,12 +431,12 @@ class ProxyManagerClient:
 
     return S_OK( proxyToRenewDict[ 'chain' ] )
 
-  def getDBContents( self ):
+  def getDBContents( self, condDict = {} ):
     """
     Get the contents of the db
     """
     rpcClient = RPCClient( "Framework/ProxyManager", timeout = 120 )
-    return rpcClient.getContents( {}, [ [ 'UserDN', 'DESC' ] ], 0, 0 )
+    return rpcClient.getContents( condDict, [ [ 'UserDN', 'DESC' ] ], 0, 0 )
 
   def getVOMSAttributes( self, chain ):
     """
