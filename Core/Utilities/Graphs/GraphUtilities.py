@@ -419,9 +419,9 @@ def makeDataFromCSV(csv):
       plot_data = {}
       index = labels.index(label)+1
       for line in flines:
-        values = line.split(',')
+        values = line.strip().split(',')
         value = values[index].strip()
-        #if value:
+        #if value:        
         plot_data[values[0]] = values[index]
         #else:
           #plot_data[values[0]] = '0.'

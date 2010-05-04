@@ -101,14 +101,21 @@ class QualityMapGraph( PlotBase ):
       nLabel = 0
       labelNames = []
       colors = []
+      xmin = None
+      xmax = None
       for label,num in labels:
         labelNames.append(label)  
         for key, value in self.gdata.getPlotNumData(label):
           
-          if value:
+          if xmin is None or xmin > (key + offset):
+            xmin = key + offset
+          if xmax is None or xmax < (key + offset):
+            xmax = key + offset
+          
+          if value is not None:            
             colors.append(self.getQualityColor(value))
             tmp_x.append( key + offset )
-            tmp_y.append( float(nLabel+1) )
+            tmp_y.append( 1. )
             tmp_b.append( float(nLabel) )
             
         nLabel += 1  
@@ -123,10 +130,10 @@ class QualityMapGraph( PlotBase ):
       #    self.coords[ pivots[idx] ] = self.bars[idx]
       
       ymax = float(nLabel)
-      self.ax.set_xlim( xmin=0., xmax=max(tmp_x)+width+offset )
+      self.ax.set_xlim( xmin=0., xmax=xmax+width+offset )
       self.ax.set_ylim( ymin=0., ymax=ymax )
       if self.gdata.key_type == 'time':
-          self.ax.set_xlim( xmin=min(tmp_x), xmax=max(tmp_x)+width )
+          self.ax.set_xlim( xmin=xmin, xmax=xmax+width )
       self.ax.set_yticks([ i+0.5 for i in range(nLabel) ])
       self.ax.set_yticklabels(labelNames)  
       setp(self.ax.get_xticklines(),markersize=0. )

@@ -218,7 +218,8 @@ class Graph(object):
       if plot_prefs[i].has_key('sort_labels'):      
         gdata.sortLabels(plot_prefs[i]['sort_labels'])      
       if plot_prefs[i].has_key('limit_labels'):
-        gdata.truncateLabels(plot_prefs[i]['limit_labels'])
+        if plot_prefs[i]['limit_labels'] > 0:
+          gdata.truncateLabels(plot_prefs[i]['limit_labels'])
       if plot_prefs[i].has_key('cumulate_data'):  
         gdata.makeCumulativeGraph()
       plot_title = plot_prefs[i].get('plot_title','')
