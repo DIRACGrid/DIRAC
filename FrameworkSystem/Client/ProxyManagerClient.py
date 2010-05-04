@@ -444,4 +444,50 @@ class ProxyManagerClient:
     """
     return VOMS().getVOMSAttributes( chain )
 
+
+    File.deleteMultiProxy( proxyToConnectDict )
+
+    if not retVal[ 'OK' ]:
+      return retVal
+
+    if not proxyToRenewDict[ 'tempFile' ]:
+      return proxyToRenewDict[ 'chain' ].dumpAllToFile( proxyToRenewDict[ 'file' ] )
+
+    return S_OK( proxyToRenewDict[ 'chain' ] )
+
+  def getDBContents( self, condDict = {} ):
+    """
+    Get the contents of the db
+    """
+    rpcClient = RPCClient( "Framework/ProxyManager", timeout = 120 )
+    return rpcClient.getContents( condDict, [ [ 'UserDN', 'DESC' ] ], 0, 0 )
+
+  def getVOMSAttributes( self, chain ):
+    """
+    Get the voms attributes for a chain
+    """
+    return VOMS().getVOMSAttributes( chain )
+
+  def getUploadedProxyLifeTime( self, DN, group ):
+    """
+    Get the remaining seconds for an uploaded proxy
+    """
+    result = self.getDBContents( { 'UserDN' : [ DN ], 'UserGroup' : [ group ] } )
+    if not result[ 'OK' ]:
+      return result
+    data = result[ 'Value' ]
+    if len( data[ 'Records' ] ) == 0:
+      return S_OK( 0 )
+    pNames = list( data[ 'ParameterNames' ] )
+    dnPos = pNames.index( 'UserDN' )
+    groupPos = pNames.index( 'UserGroup' )
+    expiryPos = pNames.index( 'ExpirationTime' )
+    for row in data[ 'Records' ]:
+      if DN == row[ dnPos ] and group == row[ groupPos ]:
+        td = row[ expiryPos ] - datetime.datetime.utcnow()
+        secondsLeft = td.days * 86400 + td.seconds
+        return S_OK( max( 0, secondsLeft ) )
+    return S_OK( 0 )
+
+
 gProxyManager = ProxyManagerClient()
