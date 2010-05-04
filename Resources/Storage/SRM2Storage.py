@@ -683,7 +683,10 @@ class SRM2Storage(StorageBase):
     else:
       nbstreams = 1
     gLogger.info("SRM2Storage.__putFile: Executing transfer of %s to %s" % (src_url, dest_url))
-    errCode,errStr = self.lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
+    res = pythonCall((timeout+10),self.lcg_util.lcg_cp3,src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
+    if not res['OK']:
+      return res
+    errCode,errStr = res['Value']
     if errCode == 0:
       gLogger.info('SRM2Storage.__putFile: Successfully put file to storage.')
       res = self.__executeOperation(dest_url,'getFileSize')
@@ -748,7 +751,10 @@ class SRM2Storage(StorageBase):
     timeout = int(remoteSize/self.MIN_BANDWIDTH + 300)
     nbstreams = 1
     gLogger.debug("SRM2Storage.__getFile: Executing transfer of %s to %s" % (src_url, dest_url))
-    errCode,errStr = self.lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose,timeout,src_spacetokendesc,dest_spacetokendesc)
+    res = pythonCall((timeout+10),self.lcg_util.lcg_cp3,src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose,timeout,src_spacetokendesc,dest_spacetokendesc)
+    if not res['OK']:
+      return res
+    errCode,errStr = res['Value']
     if errCode == 0:
       gLogger.debug('SRM2Storage.__getFile: Got a file from storage.')
       localSize = getSize(dest_file)
