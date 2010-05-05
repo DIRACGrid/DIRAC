@@ -4,8 +4,6 @@
 """
 
 from DIRAC.ResourceStatusSystem.Client.Command.ClientsInvoker import ClientsInvoker
-#from DIRAC.ResourceStatusSystem.Policy import Configurations
-
 
 class CommandCaller:
 

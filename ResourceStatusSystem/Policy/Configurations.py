@@ -108,6 +108,8 @@ AssigneeGroups = {
    'Setup': ['LHCb-Production'],
    'Granularity': ValidRes,
    'SiteType': ValidSiteType, 
+   'ServiceType': ValidServiceType, 
+   'ResourceType': ValidResourceType, 
    'Notifications': ['Mail']
    }, 
   'VladRobGreigJoel_PROD-Web': 
@@ -115,6 +117,8 @@ AssigneeGroups = {
    'Setup': ['LHCb-Production'],
    'Granularity': ValidRes,
    'SiteType': ValidSiteType, 
+   'ServiceType': ValidServiceType, 
+   'ResourceType': ValidResourceType, 
    'Notifications': ['Web']
    }, 
   'VladRob_DEV': 
@@ -122,6 +126,8 @@ AssigneeGroups = {
    'Setup': ['LHCb-Development', 'LHCb-Certification'], 
    'Granularity': ValidRes,
    'SiteType': [], 
+   'ServiceType': ValidServiceType, 
+   'ResourceType': ValidResourceType, 
    'Notifications': ['Web']
    }, 
   'me_PROD-Mail': 
@@ -129,6 +135,8 @@ AssigneeGroups = {
    'Setup': ['LHCb-Production'],
    'Granularity': ValidRes,
    'SiteType': ValidSiteType,
+   'ServiceType': ValidServiceType, 
+   'ResourceType': ValidResourceType, 
    'Notifications': ['Mail']
    }, 
   'me_PROD-Web': 
@@ -136,6 +144,8 @@ AssigneeGroups = {
    'Setup': ['LHCb-Production'],
    'Granularity': ValidRes,
    'SiteType': ValidSiteType, 
+   'ServiceType': ValidServiceType, 
+   'ResourceType': ValidResourceType, 
    'Notifications': ['Web']
    }, 
   'me_DEV': 
@@ -143,13 +153,26 @@ AssigneeGroups = {
    'Setup': ['LHCb-Development', 'LHCb-Certification'], 
    'Granularity': ValidRes,
    'SiteType': ValidSiteType, 
+   'ServiceType': ValidServiceType, 
+   'ResourceType': ValidResourceType, 
    'Notifications': ['Mail']
    }, 
-  'Andrew_PROD': 
+  'Andrew_PROD_SE': 
   {'Users': ['acsmith'],
    'Setup': ['LHCb-Production'],
    'Granularity': ['StorageElement'],
    'SiteType': ValidSiteType, 
+   'ServiceType': ValidServiceType, 
+   'ResourceType': ValidResourceType, 
+   'Notifications': ['Web', 'Mail']
+   }, 
+  'Andrew_PROD_Res': 
+  {'Users': ['acsmith'],
+   'Setup': ['LHCb-Production'],
+   'Granularity': ['Resource'],
+   'SiteType': ValidSiteType, 
+   'ServiceType': ValidServiceType, 
+   'ResourceType': ['SE', 'LFC_C', 'LFC_L', 'FTS'], 
    'Notifications': ['Web', 'Mail']
    }, 
   'Andrew_DEV': 
@@ -157,6 +180,8 @@ AssigneeGroups = {
    'Setup': ['LHCb-Development', 'LHCb-Certification'], 
    'Granularity': ['StorageElement'],
    'SiteType': ValidSiteType, 
+   'ServiceType': ValidServiceType, 
+   'ResourceType': ValidResourceType, 
    'Notifications': ['Web']
    }, 
 }

@@ -6,7 +6,6 @@ from DIRAC import gLogger
 
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-#from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
 #############################################################################
 

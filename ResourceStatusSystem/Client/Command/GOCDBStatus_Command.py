@@ -7,7 +7,7 @@ import urllib2
 from DIRAC import gLogger
 
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+from DIRAC.ResourceStatusSystem.Utilities.Utils import getSiteRealName
 
 #############################################################################
 
@@ -44,7 +44,7 @@ class GOCDBStatus_Command(Command):
     try:
       res = self.client.getStatus(granularity, name, None, hours)
       if res is None or res == []:
-        return {'Result':None}
+        return {'Result':{'DT':None}}
       
       if isinstance(res, list):
         #there's more than one DT

@@ -287,7 +287,9 @@ class PEP:
       notif = notif + " %s. Reason: %s." %(res['Status'], res['Reason'])
       
       NOTIF_D = self.__getUsersToNotify(self.__granularity, 
-                                        setup, self.__siteType)
+                                        setup, self.__siteType, 
+                                        self.__serviceType,
+                                        self.__resourceType)
       
       for notification in NOTIF_D:
         for user in notification['Users']:
@@ -430,18 +432,22 @@ class PEP:
 #############################################################################
   
   
-  def __getUsersToNotify(self, granularity, setup, siteType = None):
+#  def __getUsersToNotify(self, granularity, setup, siteType = None, serviceType = None,
+#                         resourceType = None):
+  def _getUsersToNotify(self, granularity, setup, siteType = None, serviceType = None,
+                         resourceType = None):
     
-    users = []
-    notifications = []
-    
-    NOTIFinfo = {}
     NOTIF = []
     
     for ag in Configurations.AssigneeGroups.keys():
       
-      if setup in Configurations.AssigneeGroups[ag]['Setup'] and granularity in Configurations.AssigneeGroups[ag]['Granularity']:
+      if setup in Configurations.AssigneeGroups[ag]['Setup'] \
+      and granularity in Configurations.AssigneeGroups[ag]['Granularity']:
         if siteType is not None and siteType not in Configurations.AssigneeGroups[ag]['SiteType']:
+          continue
+        if serviceType is not None and serviceType not in Configurations.AssigneeGroups[ag]['ServiceType']:
+          continue
+        if resourceType is not None and resourceType not in Configurations.AssigneeGroups[ag]['ResourceType']:
           continue
         NOTIF.append( {'Users':Configurations.AssigneeGroups[ag]['Users'], 
                        'Notifications':Configurations.AssigneeGroups[ag]['Notifications']} )
