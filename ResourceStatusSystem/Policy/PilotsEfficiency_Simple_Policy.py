@@ -3,57 +3,24 @@
 """
 
 from DIRAC.ResourceStatusSystem.Policy.PolicyBase import PolicyBase
-from DIRAC.ResourceStatusSystem.Client.Command.ClientsInvoker import ClientsInvoker
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC.ResourceStatusSystem.Policy import Configurations
 
 class PilotsEfficiency_Simple_Policy(PolicyBase):
   
-  def evaluate(self, args, knownInfo=None, commandIn=None):
-    """ evaluate policy on pilots stats, using args (tuple). 
-        
-        :params:
-          :attr:`args`
-            - args[0]: string - should be a ValidRes
-        
-            - args[1]: string - should be the name of the ValidRes
-            
-            - args[2]: string - should be the present status
-        
-        returns:
-            { 
-              'SAT':True|False,
-               
-              'Status':Active|Probing|Bad, 
-              
-              'Reason':'PilotsEff:low|PilotsEff:med|PilotsEff:good',
-            }
+  def evaluate(self):
     """ 
-
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.evaluate)
-    
-    if args[0] not in ValidRes:
-      raise InvalidRes, where(self, self.evaluate)
-    
-    if args[2] not in ValidStatus:
-      raise InvalidStatus, where(self, self.evaluate)
-
-    if knownInfo is not None:
-      if 'PilotsEff' in knownInfo.keys():
-        status = knownInfo['PilotsEff']
-    else:
-      if commandIn is not None:
-        command = commandIn
-      else:
-        # use standard command
-        from DIRAC.ResourceStatusSystem.Client.Command.Pilots_Command import PilotsEffSimple_Command
-        command = PilotsEffSimple_Command()
+    Evaluate policy on pilots stats, using args (tuple). 
         
-      clientsInvoker = ClientsInvoker()
-      clientsInvoker.setCommand(command)
-      status = clientsInvoker.doCommand(args)['PilotsEff']
+    returns:
+        { 
+          'SAT':True|False,
+           
+          'Status':Active|Probing|Bad, 
+          
+          'Reason':'PilotsEff:low|PilotsEff:med|PilotsEff:good',
+        }
+    """ 
+    
+    status = super(PilotsEfficiency_Simple_Policy, self).evaluate()
     
     if status == 'Unknown':
       return {'SAT':'Unknown'}
@@ -61,75 +28,75 @@ class PilotsEfficiency_Simple_Policy(PolicyBase):
     if status == None:
       return {'SAT':None}
     
-    result = {}
+    self.result['Reason'] = 'Simple pilots Efficiency: '
     
-    result['Reason'] = 'Simple pilots Efficiency: '
-    
-    if args[2] == 'Active':
+    if self.oldStatus == 'Active':
       if status == 'Good':
-        result['SAT'] = False
-        result['Status'] = 'Active'
+        self.result['SAT'] = False
+        self.result['Status'] = 'Active'
       elif status == 'Fair':
-        result['SAT'] = False
-        result['Status'] = 'Active'
+        self.result['SAT'] = False
+        self.result['Status'] = 'Active'
       elif status == 'Poor':
-        result['SAT'] = True
-        result['Status'] = 'Probing'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Probing'
       elif status == 'Idle':
-        result['SAT'] = None
+        self.result['SAT'] = None
       elif status == 'Bad':
-        result['SAT'] = True
-        result['Status'] = 'Bad'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Bad'
 
-    elif args[2] == 'Probing':
+    elif self.oldStatus == 'Probing':
       if status == 'Good':
-        result['SAT'] = True
-        result['Status'] = 'Active'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Active'
       elif status == 'Fair':
-        result['SAT'] = True
-        result['Status'] = 'Active'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Active'
       elif status == 'Poor':
-        result['SAT'] = False
-        result['Status'] = 'Probing'
+        self.result['SAT'] = False
+        self.result['Status'] = 'Probing'
       elif status == 'Idle':
-        result['SAT'] = None
+        self.result['SAT'] = None
       elif status == 'Bad':
-        result['SAT'] = True
-        result['Status'] = 'Bad'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Bad'
 
-    elif args[2] == 'Bad':
+    elif self.oldStatus == 'Bad':
       if status == 'Good':
-        result['SAT'] = True
-        result['Status'] = 'Active'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Active'
       elif status == 'Fair':
-        result['SAT'] = True
-        result['Status'] = 'Active'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Active'
       elif status == 'Poor':
-        result['SAT'] = True
-        result['Status'] = 'Probing'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Probing'
       elif status == 'Idle':
-        result['SAT'] = None
+        self.result['SAT'] = None
       elif status == 'Bad':
-        result['SAT'] = False
-        result['Status'] = 'Bad'
+        self.result['SAT'] = False
+        self.result['Status'] = 'Bad'
 
-    elif args[2] == 'Banned':
+    elif self.oldStatus == 'Banned':
       if status == 'Good':
-        result['SAT'] = True
-        result['Status'] = 'Active'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Active'
       elif status == 'Fair':
-        result['SAT'] = True
-        result['Status'] = 'Active'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Active'
       elif status == 'Poor':
-        result['SAT'] = True
-        result['Status'] = 'Probing'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Probing'
       elif status == 'Idle':
-        result['SAT'] = None
+        self.result['SAT'] = None
       elif status == 'Bad':
-        result['SAT'] = True
-        result['Status'] = 'Bad'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Bad'
     
     if status != 'Idle':
-      result['Reason'] = result['Reason'] + status
+      self.result['Reason'] = self.result['Reason'] + status
     
-    return result
+    return self.result
+  
+  evaluate.__doc__ = PolicyBase.evaluate.__doc__ + evaluate.__doc__

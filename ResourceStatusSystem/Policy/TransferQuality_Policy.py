@@ -2,132 +2,83 @@
 """
 
 from DIRAC.ResourceStatusSystem.Policy.PolicyBase import PolicyBase
-from DIRAC.ResourceStatusSystem.Client.Command.ClientsInvoker import ClientsInvoker
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
 
 class TransferQuality_Policy(PolicyBase):
   
-  def evaluate(self, args, commandIn=None, knownInfo=None):
-    """ evaluate policy on Data quality, using args (tuple). 
+  def evaluate(self):
+    """ 
+    Evaluate policy on Data quality. 
         
-        :params:
-          :attr:`args`: a tuple 
-            - `args[0]`: string - a ValidRes ('Site', 'Resource', 'StorageElements')
-
-            - `args[1]`: string - should be the name of the SE
-
-            - `args[2]`: string - should be the present status
-          
-            - args[3]: optional dateTime object: a "from" date
-          
-            - args[4]: optional dateTime object: a "to" date
-          
-          :attr:`commandIn`: optional command object
-          
-          :attr:`knownInfo`: optional information dictionary
-        
-        
-        :returns:
-            { 
-              'SAT':True|False, 
-              'Status':Active|Probing|Banned, 
-              'Reason':'TransferQuality:None'|'TransferQuality:xx%',
-            }
+    :returns:
+        { 
+          'SAT':True|False, 
+          'Status':Active|Probing|Banned, 
+          'Reason':'TransferQuality:None'|'TransferQuality:xx%',
+        }
     """ 
 
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.evaluate)
-    
-    if args[2] not in ValidStatus:
-      raise InvalidStatus, where(self, self.evaluate)
-
-    if knownInfo is not None:
-      if 'TransferQuality' in knownInfo.keys():
-        quality = knownInfo['TransferQuality']
-    else:
-      if commandIn is not None:
-        command = commandIn
-      else:
-        # use standard Command
-        from DIRAC.ResourceStatusSystem.Client.Command.DIRACAccounting_Command import TransferQuality_Command
-        command = TransferQuality_Command()
-        
-      clientsInvoker = ClientsInvoker()
-      clientsInvoker.setCommand(command)
-      
-      if len(args) == 3:
-        quality = clientsInvoker.doCommand((args[0], args[1]))
-      elif len(args) == 4:
-        quality = clientsInvoker.doCommand((args[0], args[1], args[3]))
-      elif len(args) == 5:
-        quality = clientsInvoker.doCommand((args[0], args[1], args[3], args[4]))
-      else:
-        raise RSSException, where(self, self.evaluate)
-    
-      quality = quality['TransferQuality']
-
-    result = {}
+    quality = super(TransferQuality_Policy, self).evaluate()
 
     if quality == None:
-      result['SAT'] = None
-      return result
+      self.result['SAT'] = None
+      return self.result
     elif quality == 'Unknown':
       return {'SAT':'Unknown'}
 
-    if 'FAILOVER'.lower() in args[1].lower():
-      if args[2] == 'Active':
+    if 'FAILOVER'.lower() in self.args[1].lower():
+      if self.oldStatus == 'Active':
         if quality >= Configurations.Transfer_QUALITY_LOW :
-          result['SAT'] = False
+          self.result['SAT'] = False
         else:   
-          result['SAT'] = True
-      elif args[2] == 'Probing':
+          self.result['SAT'] = True
+      elif self.oldStatus == 'Probing':
         if quality < Configurations.Transfer_QUALITY_LOW:
-          result['SAT'] = False
+          self.result['SAT'] = False
         else:
-          result['SAT'] = True
+          self.result['SAT'] = True
       else:
-        result['SAT'] = True
+        self.result['SAT'] = True
         
       if quality < Configurations.Transfer_QUALITY_LOW :
-        result['Status'] = 'Probing'
-        result['Reason'] = 'TransferQuality:Low'
+        self.result['Status'] = 'Probing'
+        self.result['Reason'] = 'TransferQuality:Low'
       elif quality >= Configurations.Transfer_QUALITY_HIGH :
-        result['Status'] = 'Active'
-        result['Reason'] = 'TransferQuality:High'
+        self.result['Status'] = 'Active'
+        self.result['Reason'] = 'TransferQuality:High'
       else:   
-        result['Status'] = 'Active'
-        result['Reason'] = 'TransferQuality:Mean'
+        self.result['Status'] = 'Active'
+        self.result['Reason'] = 'TransferQuality:Mean'
 
     else:
-      if args[2] == 'Active':
+      if self.oldStatus == 'Active':
         if quality >= Configurations.Transfer_QUALITY_HIGH :
-          result['SAT'] = False
+          self.result['SAT'] = False
         else:   
-          result['SAT'] = True
-      elif args[2] == 'Probing':
+          self.result['SAT'] = True
+      elif self.oldStatus == 'Probing':
         if quality >= Configurations.Transfer_QUALITY_LOW and quality < Configurations.Transfer_QUALITY_HIGH:
-          result['SAT'] = False
+          self.result['SAT'] = False
         else:
-          result['SAT'] = True
-      elif args[2] == 'Bad':
+          self.result['SAT'] = True
+      elif self.oldStatus == 'Bad':
         if quality < Configurations.Transfer_QUALITY_LOW :
-          result['SAT'] = False
+          self.result['SAT'] = False
         else:   
-          result['SAT'] = True
-      elif args[2] == 'Banned':
-        result['SAT'] = True
+          self.result['SAT'] = True
+      elif self.oldStatus == 'Banned':
+        self.result['SAT'] = True
         
       if quality < Configurations.Transfer_QUALITY_LOW :
-        result['Status'] = 'Bad'
-        result['Reason'] = 'TransferQuality:Low'
+        self.result['Status'] = 'Bad'
+        self.result['Reason'] = 'TransferQuality:Low'
       elif quality >= Configurations.Transfer_QUALITY_HIGH :
-        result['Status'] = 'Active'
-        result['Reason'] = 'TransferQuality:High'
+        self.result['Status'] = 'Active'
+        self.result['Reason'] = 'TransferQuality:High'
       elif quality >= Configurations.Transfer_QUALITY_LOW and quality < Configurations.Transfer_QUALITY_HIGH:   
-        result['Status'] = 'Probing'
-        result['Reason'] = 'TransferQuality:Mean'
+        self.result['Status'] = 'Probing'
+        self.result['Reason'] = 'TransferQuality:Mean'
         
-    return result
+    return self.result
 
+  evaluate.__doc__ = PolicyBase.evaluate.__doc__ + evaluate.__doc__

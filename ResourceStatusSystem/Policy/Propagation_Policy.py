@@ -4,68 +4,23 @@
 """
 
 from DIRAC.ResourceStatusSystem.Policy.PolicyBase import PolicyBase
-from DIRAC.ResourceStatusSystem.Client.Command.MacroCommand import MacroCommand
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
 class Propagation_Policy(PolicyBase):
   
-  def evaluate(self, args, commandIn=None, knownInfo=None):
-    """ Propagation policy on Site or Service, using args (tuple).
-        It will get Services or nodes or SE stats. 
-        
-        :params:
-          :attr:`args`: a tuple
-            `args[0]` string, should be a ValidRes
-           
-            `args[1]` string, should be the name of the ValidRes
-
-            `args[2]` string, should be the present status
-          
-            `args[3]` string, should be a ValidRes from which 
-            I want to propagate from (Service, Resource or StorageElement)
-
-          :attr:`commandIn`: optional command object
-          
-          :attr:`knownInfo`: optional information dictionary
-        
-        :returns:
-            { 
-              `SAT`:True|False, 
-              `Status`:Active|Probing|Banned, 
-              `Reason`:'A:X/P:Y/B:Z'
-            }
+  def evaluate(self):
     """ 
-
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.evaluate)
+    Propagation policy on Site or Service, using args (tuple).
+    It will get Services or nodes or SE stats. 
+  
+    :returns:
+      { 
+      `SAT`:True|False, 
+      `Status`:Active|Probing|Banned, 
+      `Reason`:'A:X/P:Y/B:Z'
+      }
+    """ 
     
-    if args[2] not in ValidStatus:
-      raise InvalidStatus, where(self, self.evaluate)
-
-    #get stats
-    if knownInfo is not None and 'stats' in knownInfo.keys():
-      stats = knownInfo['stats']
-    else:
-      if commandIn is not None:
-        command = commandIn
-      else:
-        # use standard Commands 
-        if args[3] in ('Service', 'Services'):
-          from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import ServiceStats_Command
-          command = ServiceStats_Command()
-        elif args[3] in ('Resource', 'Resources'):
-          from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import ResourceStats_Command
-          command = ResourceStats_Command()
-        elif args[3] in ('StorageElement', 'StorageElements'):
-          from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import StorageElementsStats_Command
-          command = StorageElementsStats_Command()
-        else:
-          raise InvalidRes, where(self, self.evaluate)
-    
-      res = command.doCommand((args[0], args[1]))
-      
-      stats = res['stats']
+    stats = super(Propagation_Policy, self).evaluate()
     
     if stats == 'Unknown':
       return {'SAT':'Unknown'}
@@ -89,17 +44,18 @@ class Propagation_Policy(PolicyBase):
       else:
         status = 'Bad'
       
-    result = {}
     
-    if args[2] == status:
-      result['SAT'] = False
+    if self.args[2] == status:
+      self.result['SAT'] = False
     else:
-      result['SAT'] = True
-    result['Status'] = status
-    result['Reason'] =  '%s: Active:%d, Probing :%d, Bad: %d, Banned:%d' %(args[3], 
+      self.result['SAT'] = True
+    self.result['Status'] = status
+    self.result['Reason'] =  '%s: Active:%d, Probing :%d, Bad: %d, Banned:%d' %(self.args[3], 
                                                                            stats['Active'], 
                                                                            stats['Probing'], 
                                                                            stats['Bad'], 
                                                                            stats['Banned'])
             
-    return result
+    return self.result
+
+  evaluate.__doc__ = PolicyBase.evaluate.__doc__ + evaluate.__doc__

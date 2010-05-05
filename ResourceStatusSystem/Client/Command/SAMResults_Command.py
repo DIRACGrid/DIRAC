@@ -8,35 +8,29 @@ from DIRAC import gLogger
 
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+from DIRAC.ResourceStatusSystem.Utilities.Utils import getSiteRealName
 
 from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import NoSAMTests
 
 class SAMResults_Command(Command):
   
-  def doCommand(self, args, clientIn=None, rsClientIn=None):
-    """ Return getStatus from SAM Results Client  
+  def doCommand(self, rsClientIn=None):
+    """ 
+    Return getStatus from SAM Results Client  
     
-       :params:
-         :attr:`args`: 
-           - args[0]: string: should be a ValidRes
-      
-           - args[1]: string: should be the (DIRAC) name of the ValidRes
-           
-           - args[2]: string: optional - should be the (DIRAC) site name of the ValidRes
-           
-           - args[3]: list: list of tests
-    """
+   :attr:`args`: 
+     - args[0]: string: should be a ValidRes
 
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.doCommand)
+     - args[1]: string: should be the (DIRAC) name of the ValidRes
+     
+     - args[2]: string: optional - should be the (DIRAC) site name of the ValidRes
+     
+     - args[3]: list: list of tests
+    """
     
-    if clientIn is not None:
-      c = clientIn
-    else:
-      # use standard GOC DB Client
+    if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import SAMResultsClient
-      c = SAMResultsClient()
+      self.client = SAMResultsClient()
 
     if rsClientIn is not None:
       rsc = rsClientIn
@@ -45,10 +39,10 @@ class SAMResults_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
       rsc = ResourceStatusClient()
 
-    granularity = args[0]
-    name = args[1]
+    granularity = self.args[0]
+    name = self.args[1]
     try:  
-      siteName = args[2]
+      siteName = self.args[2]
     except IndexError:
       siteName = None
 
@@ -60,10 +54,10 @@ class SAMResults_Command(Command):
           siteName = rsc.getGeneralName(granularity, name, 'Site')
         except:
           gLogger.error("Can't get a general name for %s %s" %(granularity, name))
-          return {'SAM-Status':'Unknown'}      
+          return {'Result':'Unknown'}      
         if siteName is None or siteName == []:
           gLogger.info('%s is not a resource in DIRAC' %name)
-          return {'SAM-Status':None}
+          return {'Result':None}
         siteName = getSiteRealName(siteName)
       else:
         siteName = getSiteRealName(siteName)
@@ -71,23 +65,25 @@ class SAMResults_Command(Command):
       raise InvalidRes, where(self, self.doCommand)
     
     try:  
-      tests = args[3]
+      tests = self.args[3]
     except IndexError:
       tests = None
     finally:
       try:
-        res = c.getStatus(granularity, name, siteName, tests)
+        res = self.client.getStatus(granularity, name, siteName, tests)
       except NoSAMTests:
         gLogger.error("There are no SAM tests for " + granularity + " " + name )
-        return  {'SAM-Status':None}
+        return  {'Result':None}
       except urllib2.URLError:
         gLogger.error("SAM timed out for " + granularity + " " + name )
-        return  {'SAM-Status':'Unknown'}      
+        return  {'Result':'Unknown'}      
       except httplib.BadStatusLine:
         gLogger.error("httplib.BadStatusLine: could not read" + granularity + " " + name )
-        return  {'SAM-Status':'Unknown'}
+        return  {'Result':'Unknown'}
       except:
         gLogger.exception("Exception when calling SAMResultsClient for %s %s" %(granularity, name))
-        return  {'SAM-Status':'Unknown'}
+        return  {'Result':'Unknown'}
 
-    return {'SAM-Status':res}
+    return {'Result':res}
+  
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__

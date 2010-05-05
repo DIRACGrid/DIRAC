@@ -7,7 +7,7 @@ from DIRAC import gLogger
 
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+#from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Client.SLSClient import NoServiceException
 
 #############################################################################
@@ -61,150 +61,129 @@ def _getServiceSLSName(name):
 
 class SLSStatus_Command(Command):
   
-  def doCommand(self, args, clientIn=None):
-    """ Return getStatus from SLS Client
+  def doCommand(self):
+    """ 
+    Return getStatus from SLS Client
     
-       :params:
-         :attr:`args`: 
-           - args[0]: string: should be a ValidRes
-      
-           - args[1]: string: should be the (DIRAC) name of the ValidRes
+    :attr:`args`: 
+     - args[0]: string: should be a ValidRes
+
+     - args[1]: string: should be the (DIRAC) name of the ValidRes
     """
 
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.doCommand)
-    
-    if args[0] not in ValidRes:
-      raise InvalidRes, where(self, self.doCommand)
-    
-    if clientIn is not None:
-      c = clientIn
-    else:
-      # use standard GOC DB Client
+    if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.SLSClient import SLSClient   
-      c = SLSClient()
+      self.client = SLSClient()
       
-    if args[0] == 'StorageElement':
+    if self.args[0] == 'StorageElement':
       #know the SLS name of the SE
-      SLSName = _getSESLSName(args[1])
-    elif args[0] == 'Service':
+      SLSName = _getSESLSName(self.args[1])
+    elif self.args[0] == 'Service':
       #know the SLS name of the VO BOX - TBD
-      SLSName = _getServiceSLSName(args[1])
+      SLSName = _getServiceSLSName(self.args[1])
     else:
       raise InvalidRes, where(self, self.doCommand)
     
     try:
-      res = c.getAvailabilityStatus(SLSName)
-      return {'SLS':res}
+      res = self.client.getAvailabilityStatus(SLSName)
+      return {'Result':res}
     except NoServiceException:
-      gLogger.error("No SLS sensors for " + args[0] + " " + args[1] )
-      return  {'SLS':None}
+      gLogger.error("No SLS sensors for " + self.args[0] + " " + self.args[1] )
+      return  {'Result':None}
     except urllib2.URLError:
-      gLogger.error("SLS timed out for " + args[0] + " " + args[1] )
-      return  {'SLS':'Unknown'}
+      gLogger.error("SLS timed out for " + self.args[0] + " " + self.args[1] )
+      return  {'Result':'Unknown'}
     except:
       gLogger.exception("Exception when calling SLSClient")
-      return {'SLS':'Unknown'}
+      return {'Result':'Unknown'}
 
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    
 #############################################################################
 
 class SLSServiceInfo_Command(Command):
   
-  def doCommand(self, args, clientIn=None):
-    """ Return getServiceInfo from SLS Client
+  def doCommand(self):
+    """ 
+    Return getServiceInfo from SLS Client
     
-       :params:
-         :attr:`args`: 
-           - args[0]: string: should be a ValidRes
-      
-           - args[1]: string: should be the (DIRAC) name of the ValidRes
+    :attr:`args`: 
+     - args[0]: string: should be a ValidRes
 
-           - args[2]: list: list of info requested
+     - args[1]: string: should be the (DIRAC) name of the ValidRes
+
+     - args[2]: list: list of info requested
     """
 
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.doCommand)
-    
-    if args[0] not in ValidRes:
-      raise InvalidRes, where(self, self.doCommand)
-    
-    if clientIn is not None:
-      c = clientIn
-    else:
-      # use standard GOC DB Client
+    if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.SLSClient import SLSClient   
-      c = SLSClient()
+      self.client = SLSClient()
       
-    if args[0] == 'StorageElement':
+    if self.args[0] == 'StorageElement':
       #know the SLS name of the SE
-      SLSName = _getCastorSESLSName(args[1])
-    elif args[0] == 'Service':
+      SLSName = _getCastorSESLSName(self.args[1])
+    elif self.args[0] == 'Service':
       #know the SLS name of the VO BOX - TBD
-      SLSName = _getServiceSLSName(args[1])
+      SLSName = _getServiceSLSName(self.args[1])
     else:
       raise InvalidRes, where(self, self.doCommand)
     
     try:
-      res = c.getServiceInfo(SLSName, args[2])
-      return {'SLSInfo':res}
+      res = self.client.getServiceInfo(SLSName, self.args[2])
+      return {'Result':res}
     except NoServiceException:
-      gLogger.error("No (not all) SLS sensors for " + args[0] + " " + args[1])
-      return  {'SLSInfo':None}
+      gLogger.error("No (not all) SLS sensors for " + self.args[0] + " " + self.args[1])
+      return  {'Result':None}
     except urllib2.HTTPError:
-      gLogger.error("No SLS sensors for " + args[0] + " " + args[1] )
-      return  {'SLSInfo':None}
+      gLogger.error("No SLS sensors for " + self.args[0] + " " + self.args[1] )
+      return  {'Result':None}
     except urllib2.URLError:
-      gLogger.error("SLS timed out for " + args[0] + " " + args[1] )
-      return  {'SLSInfo':'Unknown'}
+      gLogger.error("SLS timed out for " + self.args[0] + " " + self.args[1] )
+      return  {'Result':'Unknown'}
     except:
       gLogger.exception("Exception when calling SLSClient")
-      return {'SLSInfo':'Unknown'}
+      return {'Result':'Unknown'}
 
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    
 #############################################################################
 
 class SLSLink_Command(Command):
   
-  def doCommand(self, args, clientIn=None):
-    """ Return getLink from SLS Client
+  def doCommand(self):
+    """ 
+    Return getLink from SLS Client
     
-       :params:
-         :attr:`args`: 
-           - args[0]: string: should be a ValidRes
-      
-           - args[1]: string: should be the (DIRAC) name of the ValidRes
+    :attr:`args`: 
+      - args[0]: string: should be a ValidRes
+
+      - args[1]: string: should be the (DIRAC) name of the ValidRes
     """
 
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.doCommand)
-    
-    if args[0] not in ValidRes:
-      raise InvalidRes, where(self, self.doCommand)
-    
-    if clientIn is not None:
-      c = clientIn
-    else:
-      # use standard GOC DB Client
+    if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.SLSClient import SLSClient   
-      c = SLSClient()
+      self.client = SLSClient()
       
-    if args[0] == 'StorageElement':
+    if self.args[0] == 'StorageElement':
       #know the SLS name of the SE
-      SLSName = _getSESLSName(args[1])
-    elif args[0] == 'Service':
+      SLSName = _getSESLSName(self.args[1])
+    elif self.args[0] == 'Service':
       #know the SLS name of the VO BOX - TBD
-      SLSName = _getServiceSLSName(args[1])
+      SLSName = _getServiceSLSName(self.args[1])
     else:
       raise InvalidRes, where(self, self.doCommand)
     
     try:
-      res = c.getLink(SLSName)
-      return {'Weblink':res}
+      res = self.client.getLink(SLSName)
+      return {'Result':res}
     except urllib2.URLError:
-      gLogger.error("SLS timed out for " + args[0] + " " + args[1] )
-      return  {'Weblink':'Unknown'}
+      gLogger.error("SLS timed out for " + self.args[0] + " " + self.args[1] )
+      return  {'Result':'Unknown'}
     except:
       gLogger.exception("Exception when calling SLSClient")
-      return {'Weblink':'Unknown'}
+      return {'Result':'Unknown'}
 
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+  
 #############################################################################
 

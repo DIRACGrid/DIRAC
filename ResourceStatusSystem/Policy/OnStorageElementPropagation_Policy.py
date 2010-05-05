@@ -3,55 +3,23 @@
 """
 
 from DIRAC.ResourceStatusSystem.Policy.PolicyBase import PolicyBase
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
 class OnStorageElementPropagation_Policy(PolicyBase):
   
-  def evaluate(self, args, commandIn=None, knownInfo=None):
-    """ Evaluate policy on SE Status, using args (tuple).
-        Get Resources Site status. It is simply propagated.
-        
-        :params:
-          :attr:`args`: a tuple
-            `args[0]` should be a ValidRes (just 'StorageElement' - is ignored!)
-           
-            `args[1]` should be the name of the SE
+  def evaluate(self):
+    """ 
+    Evaluate policy on SE Status, using args (tuple).
+    Get Resources Site status. It is simply propagated.
 
-            `args[2]` should be the present status
-          
-          :attr:`commandIn`: optional command object
-          
-          :attr:`knownInfo`: optional information dictionary
-        
-        :returns:
-            { 
-              `SAT`:True|False, 
-              `Status`:Active|Probing|Banned, 
-              `Reason`:'SRM interface is Active|Probing|Banned'
-            }
+    :returns:
+        { 
+          `SAT`:True|False, 
+          `Status`:Active|Probing|Banned, 
+          `Reason`:'SRM interface is Active|Probing|Banned'
+        }
     """ 
 
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.evaluate)
-    
-    if args[2] not in ValidStatus:
-      raise InvalidStatus, where(self, self.evaluate)
-
-    #get resources stats
-    if knownInfo is not None and 'Monitoredtatus' in knownInfo.keys():
-      resourceStatus = knownInfo['MonitoredStatus']
-    else:
-      if commandIn is not None:
-        command = commandIn
-      else:
-        # use standard Commands 
-        from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import MonitoredStatus_Command
-        command = MonitoredStatus_Command()
-        
-      res = command.doCommand(('StorageElement', args[1], 'Resource'))
-      
-      resourceStatus = res['MonitoredStatus']
+    resourceStatus = super(OnStorageElementPropagation_Policy, self).evaluate()
       
     if resourceStatus is None:
       return {'SAT':None}
@@ -59,18 +27,18 @@ class OnStorageElementPropagation_Policy(PolicyBase):
     if resourceStatus == 'Unknown':
       return {'SAT':'Unknown'}
       
-    result = {}
     
-    if resourceStatus == 'Banned' or args[2] == 'Banned':
-      if resourceStatus != args[2]:
-        result['SAT'] = True
+    if resourceStatus == 'Banned' or self.oldStatus == 'Banned':
+      if resourceStatus != self.oldStatus:
+        self.result['SAT'] = True
       else:
-        result['SAT'] = False
+        self.result['SAT'] = False
   
-      result['Status'] = resourceStatus
-      result['Reason'] = 'Node status: ' + resourceStatus
+      self.result['Status'] = resourceStatus
+      self.result['Reason'] = 'Node status: ' + resourceStatus
     else:
-      result['SAT'] = None
+      self.result['SAT'] = None
     
-    return result
+    return self.result
   
+  evaluate.__doc__ = PolicyBase.evaluate.__doc__ + evaluate.__doc__  

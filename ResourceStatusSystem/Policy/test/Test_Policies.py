@@ -43,8 +43,6 @@ class PoliciesTestCase(unittest.TestCase):
     self.AF_P = AlwaysFalse_Policy()
 #    self.Res2SiteStatus_P = Res2SiteStatus_Policy()
     self.PE_P = PilotsEfficiency_Policy()
-    self.PES_P = PilotsEfficiency_Simple_Policy()
-    self.JE_P = JobsEfficiency_Policy()
     self.JES_P = JobsEfficiency_Simple_Policy()
     self.SAMR_P = SAMResults_Policy()
     self.GGUS_P = GGUSTickets_Policy()
@@ -76,12 +74,12 @@ class PolicyInvokerSuccess(PoliciesTestCase):
     self.mock_policy.evaluate.return_value = {'Result':'Satisfied', 'Status':'Banned', 'Reason':"reason"}
     self.pi.setPolicy(self.mock_policy)
     for granularity in ValidRes:
-      res = self.pi.evaluatePolicy((granularity, 'XX'))
+      res = self.pi.evaluatePolicy()
       self.assertEqual(res['Result'], 'Satisfied')
     self.mock_policy.evaluate.return_value = {'Result':'Un-Satisfied'}
     self.pi.setPolicy(self.mock_policy)
     for granularity in ValidRes:
-      res = self.pi.evaluatePolicy((granularity, 'XX'))
+      res = self.pi.evaluatePolicy()
       self.assertEqual(res['Result'], 'Un-Satisfied')
     
 #############################################################################
@@ -91,11 +89,7 @@ class PolicyInvokerFailure(PoliciesTestCase):
   def test_policyFail(self):
     self.mock_policy.evaluate.side_effect = RSSException()
     for granularity in ValidRes:
-      self.failUnlessRaises(Exception, self.pi.evaluatePolicy, (granularity, 'XX'))
-    
-  def test_badArgs(self):
-    self.failUnlessRaises(TypeError, self.pi.evaluatePolicy, [''])
-     
+      self.failUnlessRaises(Exception, self.pi.evaluatePolicy)
         
 #############################################################################
 
@@ -105,29 +99,44 @@ class DT_PolicySuccess(PoliciesTestCase):
     for granularity in ValidRes:
       for status in ValidStatus:
         args = (granularity, 'XX', status)
-        for commandRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}, 
-                           {'DT':None}, {'DT':'Unknown'}):
+        for commandRes in ({'Result':{'DT':'OUTAGE', 'EndDate':''}}, 
+                           {'Result':{'DT':'AT_RISK', 'EndDate':''}}, 
+                           {'Result':{'DT':None}}, 
+                           {'Result':'Unknown'}):
           self.mock_command.doCommand.return_value = commandRes
-          res = self.DT_P.evaluate(args, commandIn = self.mock_command, knownInfo=commandRes)
-          if commandRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}) and status == 'Active':
+          self.DT_P.setArgs(args)
+          self.DT_P.setCommand(self.mock_command)
+          self.DT_P.setKnownInfo(commandRes)
+          self.DT_P.setInfoName('Result')
+          res = self.DT_P.evaluate()
+          if commandRes in ({'Result':{'DT':'OUTAGE', 'EndDate':''}}, 
+                            {'Result':{'DT':'AT_RISK', 'EndDate':''}}) and status == 'Active':
             self.assert_(res['SAT'])
-          elif commandRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':None}) and status in ('Probing', 'Bad'):
+          elif commandRes in ({'Result':{'DT':'OUTAGE', 'EndDate':''}}, 
+                              {'Result':{'DT':None}}) and status in ('Probing', 'Bad'):
             self.assert_(res['SAT'])
-          elif commandRes in ({'DT':'AT_RISK', 'EndDate':''}, {'DT':None}) and status == 'Banned':
+          elif commandRes in ({'Result':{'DT':'AT_RISK', 'EndDate':''}}, 
+                              {'Result':{'DT':None}}) and status == 'Banned':
             self.assert_(res['SAT'])
-          elif commandRes == {'DT':'Unknown'}:
+          elif commandRes == {'Result':'Unknown'}:
             self.assertEqual(res['SAT'], 'Unknown')
           else:
             self.assertFalse(res['SAT'])
           
-          res = self.DT_P.evaluate(args, commandIn = self.mock_command)
-          if commandRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}) and status == 'Active':
+          self.DT_P = DT_Policy()
+          self.DT_P.setArgs(args)
+          self.DT_P.setCommand(self.mock_command)
+          res = self.DT_P.evaluate()
+          if commandRes in ({'Result':{'DT':'OUTAGE', 'EndDate':''}}, 
+                            {'Result':{'DT':'AT_RISK', 'EndDate':''}}) and status == 'Active':
             self.assert_(res['SAT'])
-          elif commandRes in ({'DT':'OUTAGE', 'EndDate':''},  {'DT':None}) and status in ('Probing', 'Bad'):
+          elif commandRes in ({'Result':{'DT':'OUTAGE', 'EndDate':''}}, 
+                              {'Result':{'DT':None}}) and status in ('Probing', 'Bad'):
             self.assert_(res['SAT'])
-          elif commandRes in ({'DT':'AT_RISK', 'EndDate':''},  {'DT':None}) and status == 'Banned':
+          elif commandRes in ({'Result':{'DT':'AT_RISK', 'EndDate':''}}, 
+                              {'Result':{'DT':None}}) and status == 'Banned':
             self.assert_(res['SAT'])
-          elif commandRes == {'DT':'Unknown'}:
+          elif commandRes == {'Result':'Unknown'}:
             self.assertEqual(res['SAT'], 'Unknown')
           else:
             self.assertFalse(res['SAT'])
@@ -141,12 +150,12 @@ class DT_Policy_Failure(PoliciesTestCase):
     self.mock_command.doCommand.side_effect = RSSException()
     for granularity in ValidRes:
       for status in ValidStatus:
-        self.failUnlessRaises(Exception, self.DT_P.evaluate, (granularity, 'XX', status), self.mock_command)
+        self.failUnlessRaises(Exception, self.DT_P.evaluate)
 
   def test_badArgs(self):
     for status in ValidStatus:
-      self.failUnlessRaises(InvalidRes, self.DT_P.evaluate, ('sites', '', status))
-    self.failUnlessRaises(TypeError, self.DT_P.evaluate, None )
+      self.failUnlessRaises(InvalidRes, self.DT_P.setArgs, ('sites', '', status))
+    self.failUnlessRaises(TypeError, self.DT_P.setArgs, None )
      
 
 #############################################################################
@@ -158,7 +167,11 @@ class Res2SiteStatus_PolicySuccess(PoliciesTestCase):
       args = ('XX', status)
       for clientRes in ():
         self.mock_command.doCommand.return_value = clientRes
-        res = self.Res2SiteStatus_P.evaluate(args, commandIn = self.mock_command, knownInfo=clientRes)
+        self.Res2SiteStatus_P.setArgs(args)
+        self.Res2SiteStatus_P.setCommand(self.mock_command)
+        self.Res2SiteStatus_P.setKnownInfo(commandRes)
+        self.Res2SiteStatus_P.setInfoName('Result')
+        res = self.DT_P.evaluate()
         if clientRes in ({'DT':'OUTAGE', 'EndDate':''}, {'DT':'AT_RISK', 'EndDate':''}) and status == 'Active':
           self.assert_(res['SAT'])
         elif clientRes in ({'DT':'OUTAGE', 'EndDate':''}, None) and status == 'Probing':
@@ -284,22 +297,37 @@ class PilotsEfficiency_Simple_PolicySuccess(PoliciesTestCase):
       for status in ValidStatus:
         args = (granularity, 'XX', status)
         for i in ['Good', 'Fair', 'Poor', 'Bad']:
-          clientRes = {'PilotsEff':i}
-          res = self.PES_P.evaluate(args, knownInfo=clientRes)
+          clientRes = {'Result':i}
+          PES_P = PilotsEfficiency_Simple_Policy()
+          PES_P.setArgs(args)
+          PES_P.setKnownInfo(clientRes)
+          res = PES_P.evaluate()
           self.assert_(res.has_key('SAT'))
-          
+
+          PES_P = PilotsEfficiency_Simple_Policy()
           self.mock_commandEff.doCommand.return_value = clientRes
-          res = self.PES_P.evaluate(args, commandIn = self.mock_commandEff)
+          PES_P.setCommand(self.mock_commandEff)
+          PES_P.setArgs(args)
+          res = PES_P.evaluate()
+          self.assert_(res.has_key('SAT'))
+          PES_P.setCommand(self.mock_commandEff)
+          res = PES_P.evaluate()
           self.assert_(res.has_key('SAT'))
         
-        clientRes = {'PilotsEff':'Idle'}
+        clientRes = {'Result':'Idle'}
         self.mock_commandEff.doCommand.return_value = clientRes
-        res = self.PES_P.evaluate(args, commandIn = self.mock_commandEff)
+        PES_P = PilotsEfficiency_Simple_Policy()
+        PES_P.setCommand(self.mock_commandEff)
+        PES_P.setArgs(args)
+        res = PES_P.evaluate()
         self.assertEqual(res['SAT'], None)
           
-        clientRes = {'PilotsEff':'Unknown'}
+        clientRes = {'Result':'Unknown'}
+        PES_P = PilotsEfficiency_Simple_Policy()
         self.mock_commandEff.doCommand.return_value = clientRes
-        res = self.PES_P.evaluate(args, commandIn = self.mock_commandEff)
+        PES_P.setCommand(self.mock_commandEff)
+        PES_P.setArgs(args)
+        res = PES_P.evaluate()
         self.assertEqual(res['SAT'], 'Unknown')
           
 
@@ -309,14 +337,17 @@ class PilotsEfficiency_Simple_Policy_Failure(PoliciesTestCase):
   
   def test_commandFail(self):
     self.mock_command.doCommand.side_effect = RSSException()
+    PES_P = PilotsEfficiency_Simple_Policy()
+    PES_P.setCommand(self.mock_command)
     for granularity in ValidRes:
       for status in ValidStatus:
-        self.failUnlessRaises(Exception, self.PES_P.evaluate, (granularity, 'XX', status), self.mock_command)
+        self.failUnlessRaises(Exception, PES_P.evaluate)
 
   def test_badArgs(self):
+    PES_P = PilotsEfficiency_Simple_Policy()
     for status in ValidStatus:
-      self.failUnlessRaises(InvalidRes, self.PES_P.evaluate, ('sites', '', status))
-    self.failUnlessRaises(TypeError, self.PES_P.evaluate, None )
+      self.failUnlessRaises(InvalidRes, PES_P.setArgs, ('sites', '', status))
+    self.failUnlessRaises(TypeError, PES_P.setArgs, None )
      
 
 #############################################################################
@@ -417,26 +448,39 @@ class JobsEfficiency_Policy_Failure(PoliciesTestCase):
 class JobsEfficiency_Simple_PolicySuccess(PoliciesTestCase):
   
   def test_evaluate(self):
+    mock_commandEff = Mock()
     for granularity in ValidRes:
       for status in ValidStatus:
         args = (granularity, 'XX', status)
         for i in ['Good', 'Fair', 'Poor', 'Bad']:
-          clientRes = {'JobsEff':i}
-          res = self.JES_P.evaluate(args, knownInfo=clientRes)
+          clientRes = {'Result':i}
+          JES_P = JobsEfficiency_Simple_Policy()
+          JES_P.setKnownInfo(clientRes)
+          JES_P.setArgs(args)
+          res = JES_P.evaluate()
           self.assert_(res.has_key('SAT'))
           
-          self.mock_commandEff.doCommand.return_value = clientRes
-          res = self.JES_P.evaluate(args, commandIn = self.mock_commandEff)
+          mock_commandEff.doCommand.return_value = clientRes
+          JES_P = JobsEfficiency_Simple_Policy()
+          JES_P.setArgs(args)
+          JES_P.setCommand(mock_commandEff)
+          res = JES_P.evaluate()
           self.assert_(res.has_key('SAT'))
         
-        clientRes = {'JobsEff':'Idle'}
-        self.mock_commandEff.doCommand.return_value = clientRes
-        res = self.JES_P.evaluate(args, commandIn = self.mock_commandEff)
+        clientRes = {'Result':'Idle'}
+        mock_commandEff.doCommand.return_value = clientRes
+        JES_P = JobsEfficiency_Simple_Policy()
+        JES_P.setArgs(args)
+        JES_P.setCommand(mock_commandEff)
+        res = JES_P.evaluate()
         self.assertEqual(res['SAT'], None)
           
-        clientRes = {'JobsEff':'Unknown'}
-        self.mock_commandEff.doCommand.return_value = clientRes
-        res = self.JES_P.evaluate(args, commandIn = self.mock_commandEff)
+        clientRes = {'Result':'Unknown'}
+        mock_commandEff.doCommand.return_value = clientRes
+        JES_P = JobsEfficiency_Simple_Policy()
+        JES_P.setArgs(args)
+        JES_P.setCommand(mock_commandEff)
+        res = JES_P.evaluate()
         self.assertEqual(res['SAT'], 'Unknown')
           
 
@@ -445,15 +489,19 @@ class JobsEfficiency_Simple_PolicySuccess(PoliciesTestCase):
 class JobsEfficiency_Simple_Policy_Failure(PoliciesTestCase):
   
   def test_commandFail(self):
-    self.mock_command.doCommand.side_effect = RSSException()
+    mock_command = Mock()
+    mock_command.doCommand.side_effect = RSSException()
+    JES_P = JobsEfficiency_Policy()
+    JES_P.setCommand(mock_command)
     for granularity in ValidRes:
       for status in ValidStatus:
-        self.failUnlessRaises(Exception, self.JES_P.evaluate, (granularity, 'XX', status), self.mock_command)
+        self.failUnlessRaises(Exception, JES_P.evaluate)
 
   def test_badArgs(self):
+    JES_P = JobsEfficiency_Policy()
     for status in ValidStatus:
-      self.failUnlessRaises(InvalidRes, self.JES_P.evaluate, ('sites', '', status))
-    self.failUnlessRaises(TypeError, self.JES_P.evaluate, None )
+      self.failUnlessRaises(InvalidRes, JES_P.setArgs, ('sites', '', status))
+    self.failUnlessRaises(TypeError, JES_P.setArgs, None )
      
 
 #############################################################################
@@ -476,25 +524,31 @@ class SAMResults_PolicySuccess(PoliciesTestCase):
       for g in ('Site', 'Resource'):
         args = (g, 'XX', status)
         for resCl in ['ok', 'error', 'down', 'warn', 'maint']:
-          res = self.SAMR_P.evaluate(args, commandIn = self.mock_command, 
-                                     knownInfo={'SAM-Status':{'SS':resCl, 'js':'ok'}})
+          self.SAMR_P.setArgs(args)
+          self.SAMR_P.setKnownInfo({'Result':{'SS':resCl, 'js':'ok'}})
+          res = self.SAMR_P.evaluate()
           self.assert_(res.has_key('SAT'))
           self.assert_(res.has_key('Reason'))
-          self.mock_command.doCommand.return_value =  {'SAM-Status':{'SS':resCl}}
-          res = self.SAMR_P.evaluate(args, commandIn = self.mock_command)
+          self.mock_command.doCommand.return_value =  {'Result':{'SS':resCl}}
+          SAMR_P = SAMResults_Policy()
+          SAMR_P.setArgs(args)
+          SAMR_P.setCommand(self.mock_command)
+          res = SAMR_P.evaluate()
           self.assert_(res.has_key('SAT'))
           self.assert_(res.has_key('Reason'))
-        res = self.SAMR_P.evaluate(args, commandIn = self.mock_command, 
-                                   knownInfo={'SAM-Status':{'SS':'na'}})
+        SAMR_P = SAMResults_Policy()
+        SAMR_P.setArgs(args)
+        SAMR_P.setKnownInfo({'Result':{'SS':'na'}})
+        res = self.SAMR_P.evaluate()
         self.assert_(res.has_key('SAT'))
 
-        self.mock_command.doCommand.return_value =  {'SAM-Status':{'SS':'na'}}
-        res = self.SAMR_P.evaluate(args, commandIn = self.mock_command)
-        self.assert_(res.has_key('SAT'))
-      
-        self.mock_command.doCommand.return_value =  {'SAM-Status':'Unknown'}
-        res = self.SAMR_P.evaluate(args, commandIn = self.mock_command)
-        self.assertEqual(res['SAT'], 'Unknown')
+#        self.mock_command.doCommand.return_value =  {'SAM-Status':{'SS':'na'}}
+#        res = self.SAMR_P.evaluate(args, commandIn = self.mock_command)
+#        self.assert_(res.has_key('SAT'))
+#      
+#        self.mock_command.doCommand.return_value =  {'SAM-Status':'Unknown'}
+#        res = self.SAMR_P.evaluate(args, commandIn = self.mock_command)
+#        self.assertEqual(res['SAT'], 'Unknown')
       
 #############################################################################
 
@@ -502,11 +556,14 @@ class SAMResults_Policy_Failure(PoliciesTestCase):
   
   def test_commandFail(self):
     self.mock_command.doCommand.side_effect = RSSException()
-    for status in ValidStatus:
-      self.failUnlessRaises(Exception, self.SAMR_P.evaluate, ('XX', 'XX', status), self.mock_command)
+    SAMR_P = SAMResults_Policy()
+    SAMR_P.setArgs(('Site', 'XX', 'Active'))
+    SAMR_P.setCommand(self.mock_command)
+    self.failUnlessRaises(Exception, SAMR_P.evaluate)
 
   def test_badArgs(self):
-    self.failUnlessRaises(TypeError, self.SAMR_P.evaluate, None )
+    SAMR_P = SAMResults_Policy()
+    self.failUnlessRaises(TypeError, SAMR_P.setArgs, None )
      
 
 #############################################################################
@@ -518,14 +575,22 @@ class GGUSTickets_PolicySuccess(PoliciesTestCase):
       for status in ValidStatus:
         args = (g, 'XX', status)
         for resCl in [0, 1, 3]:
-          res = self.GGUS_P.evaluate(args, commandIn = self.mock_command, knownInfo={'OpenT':resCl})
+          self.GGUS_P.setArgs(args)
+          self.GGUS_P.setKnownInfo({'Result':resCl})
+          res = self.GGUS_P.evaluate()
           self.assert_(res.has_key('SAT'))
-          self.mock_command.doCommand.return_value =  {'OpenT':resCl}
-          res = self.GGUS_P.evaluate(args, commandIn = self.mock_command)
+          self.mock_command.doCommand.return_value =  {'Result':resCl}
+          GGUS_P = GGUSTickets_Policy()
+          GGUS_P.setArgs(args)
+          GGUS_P.setCommand(self.mock_command)
+          res = GGUS_P.evaluate()
           self.assert_(res.has_key('SAT'))
 
-        self.mock_command.doCommand.return_value =  {'OpenT':'Unknown'}
-        res = self.GGUS_P.evaluate(args, commandIn = self.mock_command)
+        self.mock_command.doCommand.return_value =  {'Result':'Unknown'}
+        GGUS_P = GGUSTickets_Policy()
+        GGUS_P.setArgs(args)
+        GGUS_P.setCommand(self.mock_command)
+        res = GGUS_P.evaluate()
         self.assertEqual(res['SAT'], 'Unknown')
       
 #############################################################################
@@ -533,12 +598,15 @@ class GGUSTickets_PolicySuccess(PoliciesTestCase):
 class GGUSTickets_Policy_Failure(PoliciesTestCase):
   
   def test_commandFail(self):
+    GGUS_P = GGUSTickets_Policy()
     self.mock_command.doCommand.side_effect = RSSException()
-    for status in ValidStatus:
-      self.failUnlessRaises(Exception, self.GGUS_P.evaluate, ('XX', status), self.mock_command)
+    GGUS_P.setArgs(('Site', 'XX', 'Active'))
+    GGUS_P.setCommand(self.mock_command)
+    self.failUnlessRaises(Exception, GGUS_P.evaluate)
 
   def test_badArgs(self):
-    self.failUnlessRaises(TypeError, self.GGUS_P.evaluate, None )
+    GGUS_P = GGUSTickets_Policy()
+    self.failUnlessRaises(TypeError, GGUS_P.setArgs, None )
      
 
 #############################################################################
@@ -629,35 +697,48 @@ class Propagation_PolicySuccess(PoliciesTestCase):
                         {'Active':1, 'Probing':1, 'Bad':0, 'Banned':0, 'Total':2}, 
                         {'Active':1, 'Probing':0, 'Bad':2, 'Banned':1, 'Total':4},
                         {'Active':0, 'Probing':1, 'Bad':0, 'Banned':1, 'Total':2} ] :
-            res = self.P_P.evaluate(args, knownInfo = {'stats':resCl})
+            self.P_P.setArgs(args)
+            self.P_P.setKnownInfo({'Result':resCl})
+            res = self.P_P.evaluate()
             self.assert_(res.has_key('SAT'))
             self.assert_(res.has_key('Status'))
             self.assert_(res.has_key('Reason'))
             
-            self.mock_propCommand.doCommand.return_value = {'stats': resCl}
-            res = self.P_P.evaluate(args, commandIn = self.mock_propCommand)
+            self.mock_propCommand.doCommand.return_value = {'Result': resCl}
+            P_P = Propagation_Policy()
+            P_P.setArgs(args)
+            P_P.setCommand(self.mock_propCommand)
+            res = P_P.evaluate()
             self.assert_(res.has_key('SAT'))
             self.assert_(res.has_key('Status'))
             self.assert_(res.has_key('Reason'))
           
-          self.mock_propCommand.doCommand.return_value = {'stats': 'Unknown'}
-          res = self.P_P.evaluate(args, commandIn = self.mock_propCommand)
+          self.mock_propCommand.doCommand.return_value = {'Result': 'Unknown'}
+          P_P = Propagation_Policy()
+          P_P.setArgs(args)
+          P_P.setCommand(self.mock_propCommand)
+          res = P_P.evaluate()
           self.assertEqual(res['SAT'], 'Unknown')
         
-          self.mock_propCommand.doCommand.return_value = {'stats': {'Active':0, 'Probing':0, 
+          self.mock_propCommand.doCommand.return_value = {'Result': {'Active':0, 'Probing':0, 
                                                                     'Bad':0, 'Banned':0, 'Total':0}}
-          res = self.P_P.evaluate(args, commandIn = self.mock_propCommand)
+          P_P = Propagation_Policy()
+          P_P.setArgs(args)
+          P_P.setCommand(self.mock_propCommand)
+          res = P_P.evaluate()
           self.assertEqual(res['SAT'], None)
         
 class Propagation_Policy_Failure(PoliciesTestCase):
   
   def test_commandFail(self):
     self.mock_command.doCommand.side_effect = RSSException()
-    for status in ValidStatus:
-      self.failUnlessRaises(Exception, self.P_P.evaluate, ('XX', status), self.mock_command)
+    P_P = Propagation_Policy()
+    P_P.setArgs(('Site', 'XX', 'Active'))
+    P_P.setCommand(self.mock_command)
+    self.failUnlessRaises(Exception, self.P_P.evaluate)
 
   def test_badArgs(self):
-    self.failUnlessRaises(TypeError, self.P_P.evaluate, None )
+    self.failUnlessRaises(TypeError, self.P_P.setArgs, None )
   
 #############################################################################
 
@@ -665,54 +746,83 @@ class TransferQuality_PolicySuccess(PoliciesTestCase):
   
   def test_evaluate(self):
     for status in ValidStatus:
-      for g in ('StorageElement'):
-        for SE in ('CNAF-RAW', 'CNAF-FAILOVER'):
-          args = (g, SE, status)
-          for resCl in [1, 0.91, 0.50, 0, None]:
-            res = self.TQ_P.evaluate(args, commandIn = self.mock_command, knownInfo={'TransferQuality':resCl})
-            self.assert_(res.has_key('SAT'))
-            if resCl is not None:
-              self.assert_(res.has_key('Reason'))
-            self.mock_command.doCommand.return_value =  {'TransferQuality':resCl}
-            res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
-            self.assert_(res.has_key('SAT'))
-            if resCl is not None:
-              self.assert_(res.has_key('Reason'))
-          res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
+      for SE in ('CNAF-RAW', 'CNAF-FAILOVER'):
+        args = ('StorageElement', SE, status)
+        for resCl in [1, 0.91, 0.50, 0, None]:
+          self.TQ_P.setArgs(args)
+          self.TQ_P.setKnownInfo({'Result':resCl})
+          res = self.TQ_P.evaluate()
           self.assert_(res.has_key('SAT'))
-          
-          args = (g, 'XX', status, datetime.utcnow())
-          for resCl in [1, 0.91, 0.50, 0]:
-            res = self.TQ_P.evaluate(args, commandIn = self.mock_command, knownInfo={'TransferQuality':resCl})
-            self.assert_(res.has_key('SAT'))
-            if resCl is not None:
-              self.assert_(res.has_key('Reason'))
-            self.mock_command.doCommand.return_value =  {'TransferQuality':resCl}
-            res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
-            self.assert_(res.has_key('SAT'))
-            if resCl is not None:
-              self.assert_(res.has_key('Reason'))
-          res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
+          if resCl is not None:
+            self.assert_(res.has_key('Reason'))
+          self.mock_command.doCommand.return_value =  {'Result':resCl}
+          TQ_P = TransferQuality_Policy()
+          TQ_P.setArgs(args)
+          TQ_P.setCommand(self.mock_command)
+          res = TQ_P.evaluate()
           self.assert_(res.has_key('SAT'))
+          if resCl is not None:
+            self.assert_(res.has_key('Reason'))
         
-          args = (g, 'XX', status, datetime.utcnow(), datetime.utcnow())
-          for resCl in [1, 0.91, 0.50, 0]:
-            res = self.TQ_P.evaluate(args, commandIn = self.mock_command, knownInfo={'TransferQuality':resCl})
-            self.assert_(res.has_key('SAT'))
-            if resCl is not None:
-              self.assert_(res.has_key('Reason'))
-            self.mock_command.doCommand.return_value =  {'TransferQuality':resCl}
-            res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
-            self.assert_(res.has_key('SAT'))
-            if resCl is not None:
-              self.assert_(res.has_key('Reason'))
-          res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
+        args = ('StorageElement', 'XX', status, datetime.utcnow())
+        for resCl in [1, 0.91, 0.50, 0]:
+          TQ_P = TransferQuality_Policy()
+          TQ_P.setArgs(args)
+          TQ_P.setKnownInfo({'Result':resCl})
+          res = TQ_P.evaluate()
           self.assert_(res.has_key('SAT'))
+          if resCl is not None:
+            self.assert_(res.has_key('Reason'))
+          self.mock_command.doCommand.return_value =  {'Result':resCl}
+          TQ_P = TransferQuality_Policy()
+          TQ_P.setArgs(args)
+          TQ_P.setCommand(self.mock_command)
+          res = TQ_P.evaluate()
+          self.assert_(res.has_key('SAT'))
+          if resCl is not None:
+            self.assert_(res.has_key('Reason'))
+        res = self.TQ_P.evaluate()
+        self.assert_(res.has_key('SAT'))
+      
+        args = ('StorageElement', 'XX', status, datetime.utcnow(), datetime.utcnow())
+        for resCl in [1, 0.91, 0.50, 0]:
+          TQ_P = TransferQuality_Policy()
+          TQ_P.setArgs(args)
+          TQ_P.setKnownInfo({'Result':resCl})
+          res = self.TQ_P.evaluate()
+          self.assert_(res.has_key('SAT'))
+          if resCl is not None:
+            self.assert_(res.has_key('Reason'))
+          self.mock_command.doCommand.return_value =  {'Result':resCl}
+          TQ_P = TransferQuality_Policy()
+          TQ_P.setArgs(args)
+          TQ_P.setCommand(self.mock_command)
+          res = self.TQ_P.evaluate()
+          self.assert_(res.has_key('SAT'))
+          if resCl is not None:
+            self.assert_(res.has_key('Reason'))
+        res = self.TQ_P.evaluate()
+        self.assert_(res.has_key('SAT'))
 
-        self.mock_command.doCommand.return_value =  {'TransferQuality':'Unknown'}
-        res = self.TQ_P.evaluate(args, commandIn = self.mock_command)
-        self.assertEqual(res['SAT'], 'Unknown')
+      self.mock_command.doCommand.return_value =  {'Result':'Unknown'}
+      TQ_P = TransferQuality_Policy()
+      TQ_P.setArgs(args)
+      TQ_P.setCommand(self.mock_command)
+      res = TQ_P.evaluate()
+      self.assertEqual(res['SAT'], 'Unknown')
 
+
+class TransferQuality_Policy_Failure(PoliciesTestCase):
+  
+  def test_commandFail(self):
+    TQ_P = TransferQuality_Policy()
+    TQ_P.setArgs(('Site', 'XX', 'Active'))
+    self.mock_command.doCommand.side_effect = RSSException()
+    TQ_P.setCommand(self.mock_command)    
+    self.failUnlessRaises(Exception, self.TQ_P.evaluate)
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.TQ_P.setArgs, None )
       
 #############################################################################
 
@@ -722,14 +832,19 @@ class OnStorageElementPropagation_PolicySuccess(PoliciesTestCase):
     for status in ValidStatus:
       args = ('Resource', 'XX', status)
       for resCl in ValidRes :
-        res = self.OSEP_P.evaluate(args, knownInfo = {'MonitoredStatus':resCl})
+        self.OSEP_P.setArgs(args)
+        self.OSEP_P.setKnownInfo({'Result':resCl})
+        res = self.OSEP_P.evaluate()
         self.assert_(res.has_key('SAT'))
         if resCl == 'Banned':
           self.assert_(res.has_key('Status'))
           self.assert_(res.has_key('Reason'))
         
-        self.mock_command.doCommand.return_value = {'MonitoredStatus':  resCl}
-        res = self.OSEP_P.evaluate(args, commandIn = self.mock_command)
+        self.mock_command.doCommand.return_value = {'Result':  resCl}
+        OSEP_P = OnStorageElementPropagation_Policy()
+        OSEP_P.setArgs(args)
+        OSEP_P.setCommand(self.mock_command)
+        res = OSEP_P.evaluate()
         self.assert_(res.has_key('SAT'))
         if resCl == 'Banned':
           self.assert_(res.has_key('Status'))
@@ -740,25 +855,13 @@ class OnStorageElementPropagation_Policy_Failure(PoliciesTestCase):
   
   def test_commandFail(self):
     self.mock_command.doCommand.side_effect = RSSException()
-    for status in ValidStatus:
-      self.failUnlessRaises(Exception, self.OSEP_P.evaluate, ('XX', status), self.mock_command)
+    OSEP_P = OnStorageElementPropagation_Policy()
+    OSEP_P.setCommand(self.mock_command)
+    self.failUnlessRaises(Exception, self.OSEP_P.evaluate)
 
   def test_badArgs(self):
-    self.failUnlessRaises(TypeError, self.OSEP_P.evaluate, None )
+    self.failUnlessRaises(TypeError, self.OSEP_P.setArgs, None )
   
-#############################################################################
-
-class TransferQuality_Policy_Failure(PoliciesTestCase):
-  
-  def test_commandFail(self):
-    self.mock_command.doCommand.side_effect = RSSException()
-    for status in ValidStatus:
-      self.failUnlessRaises(Exception, self.TQ_P.evaluate, ('XX', status), self.mock_command)
-
-  def test_badArgs(self):
-    self.failUnlessRaises(TypeError, self.TQ_P.evaluate, None )
-     
-
 #############################################################################
 
 class SEOccupancy_PolicySuccess(PoliciesTestCase):
@@ -767,21 +870,20 @@ class SEOccupancy_PolicySuccess(PoliciesTestCase):
     for status in ValidStatus:
       args = ('StorageElement', 'XX', status)
       for resCl in [100, 10, 1, 0, None]:
-        res = self.SEO_P.evaluate(args, commandIn = self.mock_command, knownInfo={'SLS':resCl})
+        self.SEO_P.setArgs(args)
+        self.SEO_P.setKnownInfo({'Result':resCl})
+        res = self.SEO_P.evaluate()
         self.assert_(res.has_key('SAT'))
         if resCl is not None:
           self.assert_(res.has_key('Reason'))
-        self.mock_command.doCommand.return_value =  {'SLS':resCl}
-        res = self.SEO_P.evaluate(args, commandIn = self.mock_command)
+        self.mock_command.doCommand.return_value =  {'Result':resCl}
+        SEO_P = SEOccupancy_Policy()
+        SEO_P.setArgs(args)
+        SEO_P.setCommand(self.mock_command)
+        res = SEO_P.evaluate()
         self.assert_(res.has_key('SAT'))
         if resCl is not None:
           self.assert_(res.has_key('Reason'))
-      res = self.SEO_P.evaluate(args, commandIn = self.mock_command)
-      self.assert_(res.has_key('SAT'))
-
-    self.mock_command.doCommand.return_value =  {'SLS':'Unknown'}
-    res = self.SEO_P.evaluate(args, commandIn = self.mock_command)
-    self.assert_(res['SAT'], 'Unknown')
       
 #############################################################################
 
@@ -790,10 +892,10 @@ class SEOccupancy_Policy_Failure(PoliciesTestCase):
   def test_commandFail(self):
     self.mock_command.doCommand.side_effect = RSSException()
     for status in ValidStatus:
-      self.failUnlessRaises(Exception, self.TQ_P.evaluate, ('XX', status), self.mock_command)
+      self.failUnlessRaises(Exception, self.TQ_P.evaluate)
 
   def test_badArgs(self):
-    self.failUnlessRaises(TypeError, self.SEO_P.evaluate, None )
+    self.failUnlessRaises(TypeError, self.SEO_P.setArgs, None )
      
 
 #############################################################################
@@ -804,21 +906,26 @@ class SEQueuedTransfers_PolicySuccess(PoliciesTestCase):
     for status in ValidStatus:
       args = ('StorageElement', 'XX', status, ["Queued transfers"])
       for resCl in [110.0, 10.0, 1.0, None]:
-        res = self.SEQT_P.evaluate(args, commandIn = self.mock_command, 
-                                   knownInfo={'SLSInfo':{'Queued transfers':resCl}})
+        self.SEQT_P.setArgs(args)
+        self.SEQT_P.setKnownInfo({'Result':{'Queued transfers':resCl}})
+        res = self.SEQT_P.evaluate()
         self.assert_(res.has_key('SAT'))
         if resCl is not None:
           self.assert_(res.has_key('Reason'))
-        self.mock_command.doCommand.return_value =  {'SLSInfo':{'Queued transfers':resCl}}
-        res = self.SEQT_P.evaluate(args, commandIn = self.mock_command)
+        self.mock_command.doCommand.return_value =  {'Result':{'Queued transfers':resCl}}
+        SEQT_P = SEQueuedTransfers_Policy()
+        SEQT_P.setArgs(args)
+        SEQT_P.setCommand(self.mock_command)
+        res = SEQT_P.evaluate()
         self.assert_(res.has_key('SAT'))
         if resCl is not None:
           self.assert_(res.has_key('Reason'))
-      res = self.SEQT_P.evaluate(args, commandIn = self.mock_command)
-      self.assert_(res.has_key('SAT'))
 
-    self.mock_command.doCommand.return_value =  {'SLSInfo':'Unknown'}
-    res = self.SEQT_P.evaluate(args, commandIn = self.mock_command)
+    self.mock_command.doCommand.return_value =  {'Result':'Unknown'}
+    SEQT_P = SEQueuedTransfers_Policy()
+    SEQT_P.setArgs(args)
+    SEQT_P.setCommand(self.mock_command)
+    res = self.SEQT_P.evaluate()
     self.assert_(res['SAT'], 'Unknown')
       
 #############################################################################
@@ -828,10 +935,10 @@ class SEQueuedTransfers_Policy_Failure(PoliciesTestCase):
   def test_commandFail(self):
     self.mock_command.doCommand.side_effect = RSSException()
     for status in ValidStatus:
-      self.failUnlessRaises(Exception, self.TQ_P.evaluate, ('XX', status), self.mock_command)
+      self.failUnlessRaises(Exception, self.TQ_P.evaluate)
 
   def test_badArgs(self):
-    self.failUnlessRaises(TypeError, self.SEQT_P.evaluate, None )
+    self.failUnlessRaises(TypeError, self.SEQT_P.setArgs, None )
      
 
 #############################################################################
@@ -865,10 +972,10 @@ if __name__ == '__main__':
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnSENodePropagation_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Propagation_PolicySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Propagation_Policy_Failure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnStorageElementPropagation_PolicySuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnStorageElementPropagation_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQuality_PolicySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQuality_Policy_Failure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnStorageElementPropagation_PolicySuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(OnStorageElementPropagation_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SEOccupancy_PolicySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SEOccupancy_Policy_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SEQueuedTransfers_PolicySuccess))

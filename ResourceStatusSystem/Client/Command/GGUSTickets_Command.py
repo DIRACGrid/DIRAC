@@ -7,7 +7,7 @@ import urllib2
 from DIRAC import gLogger
 
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+from DIRAC.ResourceStatusSystem.Utilities.Utils import getSiteRealName
 
 def callClient(args, clientIn = None):
 
@@ -18,7 +18,7 @@ def callClient(args, clientIn = None):
     from DIRAC.ResourceStatusSystem.Client.GGUSTicketsClient import GGUSTicketsClient   
     c = GGUSTicketsClient()
     
-  name = args[0]
+  name = args[1]
   
   name = getSiteRealName(name)
   
@@ -37,63 +37,59 @@ def callClient(args, clientIn = None):
 
 class GGUSTickets_Open(Command):
   
-  def doCommand(self, args, clientIn=None):
-    """ Return getTicketsList from GGUSTickets Client  
-
-       :params:
-         :attr:`args`: 
-           - args[0]: string: should be the name of the site
+  def doCommand(self):
+    """ 
+    Return getTicketsList from GGUSTickets Client  
+    `args`: 
+      - args[0]: string: should be the name of the site
     """
 
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.doCommand)
-  
-    openTickets = callClient(args, clientIn)
+    openTickets = callClient(self.args, self.client)
     if openTickets == 'Unknown':
-      return {'OpenT':'Unknown'}
+      return {'Result':'Unknown'}
     
-    return {'OpenT': openTickets[0]['open']} 
+    return {'Result': openTickets[0]['open']} 
 
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    
 #############################################################################
 
 class GGUSTickets_Link(Command):
   
-  def doCommand(self, args, clientIn=None):
-    """ Use CallClient to get GGUS link  
+  def doCommand(self):
+    """ 
+    Use CallClient to get GGUS link  
 
-       :params:
-         :attr:`args`: 
-           - args[0]: string: should be the name of the site
+   :attr:`args`: 
+     - args[0]: string: should be the name of the site
     """
 
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.doCommand)
-  
-    openTickets = callClient(args, clientIn)
+    openTickets = callClient(self.args, self.client)
     if openTickets == 'Unknown':
       return {'GGUS_Link':'Unknown'}
     
-    return {'GGUS_Link': openTickets[1]}
+    return {'Result': openTickets[1]}
 
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    
 #############################################################################
 
 class GGUSTickets_Info(Command):
   
-  def doCommand(self, args, clientIn=None):
-    """ Use callClient to get GGUS info  
+  def doCommand(self):
+    """ 
+    Use callClient to get GGUS info  
 
-       :params:
-         :attr:`args`: 
-           - args[0]: string: should be the name of the site
+   :attr:`args`: 
+     - args[0]: string: should be the name of the site
     """
 
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.doCommand)
-  
-    openTickets = callClient(args, clientIn)
+    openTickets = callClient(self.args, self.client)
     if openTickets == 'Unknown':
       return {'GGUS_Info':'Unknown'}
     
-    return {'GGUS_Info': openTickets[2]}
+    return {'Result': openTickets[2]}
 
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    
 #############################################################################

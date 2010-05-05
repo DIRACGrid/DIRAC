@@ -4,8 +4,6 @@
 """
 
 from DIRAC.ResourceStatusSystem.Policy.PolicyInvoker import PolicyInvoker
-from DIRAC.ResourceStatusSystem.Policy import Configurations
-
 
 class PolicyCaller:
 
@@ -154,7 +152,11 @@ class PolicyCaller:
 
     self.policyInvoker.setPolicy(p)
     
-    res = self.policyInvoker.evaluatePolicy(a, commandIn = commandIn, knownInfo = knownInfo)
+    p.setArgs(a)
+    p.setCommand(commandIn)
+#    p.setInfoName('Result')
+    
+    res = self.policyInvoker.evaluatePolicy()
     return res 
       
 #############################################################################

@@ -6,41 +6,36 @@ from DIRAC import gLogger
 
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+#from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
 #############################################################################
 
 class RSPeriods_Command(Command):
   
-  def doCommand(self, args, clientIn=None):
-    """ Return getPeriods from ResourceStatus Client
+  def doCommand(self):
+    """ 
+    Return getPeriods from ResourceStatus Client
     
-        - args[0] should be a ValidRes
-        - args[1] should be the name of the ValidRes
-        - args[2] should be the present status
-        - args[3] are the number of hours requested
+    - args[0] should be a ValidRes
 
+    - args[1] should be the name of the ValidRes
+
+    - args[2] should be the present status
+
+    - args[3] are the number of hours requested
     """
 
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.doCommand)
-    
-    if args[0] not in ValidRes:
-      raise InvalidRes, where(self, self.doCommand)
-    
-    if clientIn is not None:
-      c = clientIn
-    else:
+    if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
-      c = ResourceStatusClient()
+      self.client = ResourceStatusClient()
       
     try:
-      res = c.getPeriods(args[0], args[1], args[2], args[3])
+      res = self.client.getPeriods(self.args[0], self.args[1], self.args[2], self.args[3])
     except:
-      gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(args[0], args[1]))
-      return {'Periods':'Unknown'}
+      gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(self.args[0], self.args[1]))
+      return {'Result':'Unknown'}
     
-    return {'Periods':res}
+    return {'Result':res}
 
 
 #############################################################################
@@ -51,7 +46,7 @@ class ServiceStats_Command(Command):
   present services stats
   """
   
-  def doCommand(self, args, clientIn=None):
+  def doCommand(self):
     """ 
     Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusClient.getServiceStats`  
 
@@ -65,23 +60,19 @@ class ServiceStats_Command(Command):
       {'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz}
     """
 
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.doCommand)
-    
-    if clientIn is not None:
-      c = clientIn
-    else:
+    if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
-      c = ResourceStatusClient()
+      self.client = ResourceStatusClient()
       
     try:
-      res = c.getServiceStats(args[0], args[1])
+      res = self.client.getServiceStats(self.args[0], self.args[1])
     except:
-      gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(args[0], args[1]))
-      return {'stats':'Unknown'}
+      gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(self.args[0], self.args[1]))
+      return {'Result':'Unknown'}
             
-    return {'stats':res}
-  
+    return {'Result':res}
+    doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    
 #############################################################################
 
 class ResourceStats_Command(Command):
@@ -90,7 +81,7 @@ class ResourceStats_Command(Command):
   present resources stats
   """
   
-  def doCommand(self, args, clientIn=None):
+  def doCommand(self):
     """ 
     Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusClient.getResourceStats`  
 
@@ -104,25 +95,18 @@ class ResourceStats_Command(Command):
     
     """
 
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.doCommand)
-    
-    if args[0] not in ('Site', 'Service'):
-      raise InvalidRes, where(self, self.doCommand)
-    
-    if clientIn is not None:
-      c = clientIn
-    else:
+    if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
-      c = ResourceStatusClient()
+      self.client = ResourceStatusClient()
       
     try:
-      res = c.getResourceStats(args[0], args[1])
+      res = self.client.getResourceStats(self.args[0], self.args[1])
     except:
-      gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(args[0], args[1]))
-      return {'stats':'Unknown'}
+      gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(self.args[0], self.args[1]))
+      return {'Result':'Unknown'}
       
-    return {'stats':res}
+    return {'Result':res}
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 #############################################################################
 
@@ -132,7 +116,7 @@ class StorageElementsStats_Command(Command):
   present storageElementss stats
   """
   
-  def doCommand(self, args, clientIn=None):
+  def doCommand(self):
     """ 
     Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusClient.getStorageElementsStats`  
 
@@ -145,32 +129,28 @@ class StorageElementsStats_Command(Command):
     :returns:
     
     """
-
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.doCommand)
     
-    if args[0] in ('Service', 'Services'):
+    if self.args[0] in ('Service', 'Services'):
       granularity = 'Site'
-      name = args[1].split('@')[1]
-    elif args[0] in ('Site', 'Sites', 'Resource', 'Resources'):
-      granularity = args[0]
-      name = args[1]
+      name = self.args[1].split('@')[1]
+    elif self.args[0] in ('Site', 'Sites', 'Resource', 'Resources'):
+      granularity = self.args[0]
+      name = self.args[1]
     else:
       raise InvalidRes, where(self, self.doCommand)
     
-    if clientIn is not None:
-      c = clientIn
-    else:
+    if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
-      c = ResourceStatusClient()
+      self.client = ResourceStatusClient()
       
     try:
-      res = c.getStorageElementsStats(granularity, name)
+      res = self.client.getStorageElementsStats(granularity, name)
     except:
       gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(granularity, name))
-      return {'stats':'Unknown'}
+      return {'Result':'Unknown'}
     
-    return {'stats':res}
+    return {'Result':res}
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 #############################################################################
 
@@ -180,7 +160,7 @@ class MonitoredStatus_Command(Command):
   monitored status
   """
   
-  def doCommand(self, args, clientIn=None):
+  def doCommand(self):
     """ 
     Uses :meth:`DIRAC.ResourceStatusSystem.Client.ResourceStatusClient.getMonitoredStatus`  
 
@@ -196,31 +176,25 @@ class MonitoredStatus_Command(Command):
     :returns:
       {'MonitoredStatus': 'Active'|'Probing'|'Banned'}
     """
-
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.doCommand)
     
-    if args[0] not in ValidRes:
-      raise InvalidRes, where(self, self.doCommand)
-    
-    if clientIn is not None:
-      c = clientIn
-    else:
+    if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
-      c = ResourceStatusClient()
+      self.client = ResourceStatusClient()
       
     try:
-      if len(args) == 3:
-        if ValidRes.index(args[2]) >= ValidRes.index(args[0]):
+      if len(self.args) == 3:
+        if ValidRes.index(self.args[2]) >= ValidRes.index(self.args[0]):
           raise InvalidRes, where(self, self.doCommand)
-        generalName = c.getGeneralName(args[0], args[1], args[2])
-        res = c.getMonitoredStatus(args[2], generalName)
+        generalName = self.client.getGeneralName(self.args[0], self.args[1], self.args[2])
+        res = self.client.getMonitoredStatus(self.args[2], generalName)
       else:
-        res = c.getMonitoredStatus(args[0], args[1])
+        res = self.client.getMonitoredStatus(self.args[0], self.args[1])
     except:
-      gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(args[0], args[1]))
-      return {'MonitoredStatus':'Unknown'}
+      gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(self.args[0], self.args[1]))
+      return {'Result':'Unknown'}
     
-    return {'MonitoredStatus':res}
+    return {'Result':res}
+  
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 #############################################################################

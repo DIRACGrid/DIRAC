@@ -12,13 +12,10 @@ class PolicyInvoker:
     """
     self.policy = p
     
-  def evaluatePolicy(self, args, commandIn = None, knownInfo=None):
+  def evaluatePolicy(self):
     """ call policy.evaluate()
     """
     
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.evaluatePolicy)
-    
-    return self.policy.evaluate(args, commandIn = commandIn, knownInfo = knownInfo)
+    return self.policy.evaluate()
   
 #############################################################################

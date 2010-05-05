@@ -6,114 +6,99 @@ from DIRAC import gLogger
 
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
 #############################################################################
 
 class PilotsStats_Command(Command):
   
-  def doCommand(self, args, clientIn=None):
-    """ Return getPilotStats from Pilots Client  
+  def doCommand(self):
+    """ 
+    Return getPilotStats from Pilots Client  
     """
 
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.doCommand)
-    
-    if args[0] not in ValidRes:
-      raise InvalidRes, where(self, self.doCommand)
-    
-    if clientIn is not None:
-      c = clientIn
-    else:
+    if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient   
-      c = PilotsClient()
+      self.client = PilotsClient()
       
     try:
-      res = c.getPilotsStats(args[0], args[1], args[2])
+      res = self.client.getPilotsStats(self.args[0], self.args[1], self.args[2])
     except:
-      gLogger.exception("Exception when calling PilotsClient for %s %s" %(args[0], args[1]))
-      return {'PilotsStats':'Unknown'}
+      gLogger.exception("Exception when calling PilotsClient for %s %s" %(self.args[0], self.args[1]))
+      return {'Result':'Unknown'}
   
-    return {'PilotsStats':res}
+    return {'Result':res}
 
-
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    
 #############################################################################
 
 class PilotsEff_Command(Command):
   
-  def doCommand(self, args, clientIn=None):
-    """ Return getPilotsEff from Pilots Client  
+  def doCommand(self):
+    """ 
+    Return getPilotsEff from Pilots Client  
     """
-
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.doCommand)
     
-    if args[0] not in ValidRes:
-      raise InvalidRes, where(self, self.doCommand)
-    
-    if clientIn is not None:
-      c = clientIn
-    else:
+    if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient   
-      c = PilotsClient()
+      self.client = PilotsClient()
     
     try:  
-      res = c.getPilotsEff(args[0], args[1], args[2])
+      res = self.client.getPilotsEff(self.args[0], self.args[1], self.args[2])
     except:
-      gLogger.exception("Exception when calling PilotsClient for %s %s" %(args[0], args[1]))
-      return {'PilotsEff':'Unknown'}
+      gLogger.exception("Exception when calling PilotsClient for %s %s" %(self.args[0], self.args[1]))
+      return {'Result':'Unknown'}
   
-    return {'PilotsEff':res}
+    return {'Result':res}
 
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    
 #############################################################################
 
 class PilotsEffSimple_Command(Command):
   
-  def doCommand(self, args, clientIn=None):
-    """ Returns simple pilots efficiency
+  def doCommand(self):
+    """ 
+    Returns simple pilots efficiency
     
-        :params:
-          :attr:`args`:
-            - args[0]: string - should be a ValidRes
-            
-            - args[1]: string - should be the name of the ValidRes
+    :attr:`args`:
+        - args[0]: string - should be a ValidRes
+        
+        - args[1]: string - should be the name of the ValidRes
 
-        returns:
-          {
-            'pilotsEff': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
-          }
+    returns:
+      {
+        'pilotsEff': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
+      }
     """
 
-    if args[0] in ('Service', 'Services'):
+    if self.args[0] in ('Service', 'Services'):
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
-      c = ResourceStatusClient()
+      rsc = ResourceStatusClient()
       try:
-        name = c.getGeneralName(args[0], args[1], 'Site')
+        name = rsc.getGeneralName(self.args[0], self.args[1], 'Site')
       except:
-        gLogger.error("Can't get a general name for %s %s" %(args[0], args[1]))
+        gLogger.error("Can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'PilotsEff':'Unknown'}      
       granularity = 'Site'
-    elif args[0] in ('Site', 'Sites', 'Resource', 'Resources'):
-      name = args[1]
-      granularity = args[0]
+    elif self.args[0] in ('Site', 'Sites', 'Resource', 'Resources'):
+      name = self.args[1]
+      granularity = self.args[0]
     else:
       raise InvalidRes, where(self, self.doCommand)
     
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.doCommand)
-    
-    if clientIn is not None:
-      c = clientIn
-    else:
+    if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient   
-      c = PilotsClient()
+      self.client = PilotsClient()
       
     try:
-      res = c.getPilotsSimpleEff(granularity, name)
+      res = self.client.getPilotsSimpleEff(granularity, name)
     except:
       gLogger.exception("Exception when calling PilotsClient for %s %s" %(granularity, name))
-      return {'PilotsEff':'Unknown'}
+      return {'Result':'Unknown'}
     
-    return {'PilotsEff':res} 
+    return {'Result':res} 
 
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    
 #############################################################################

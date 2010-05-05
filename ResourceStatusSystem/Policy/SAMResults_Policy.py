@@ -1,107 +1,30 @@
-""" The SAMResults_Policy class is a policy class that checks 
-    the SAM job results
+""" The SAMself.results_Policy class is a policy class that checks 
+    the SAM job self.results
 """
 
 from DIRAC.ResourceStatusSystem.Policy.PolicyBase import PolicyBase
-from DIRAC.ResourceStatusSystem.Client.Command.ClientsInvoker import ClientsInvoker
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
 class SAMResults_Policy(PolicyBase):
   
-  def evaluate(self, args, commandIn=None, knownInfo=None):
-    """ evaluate policy on SAM jobs results, using args (tuple). 
-        
-        :params:
-          :attr:`args`:
-
-          - args[0]: string - should be the name granularity ('Site' or 'Resource')
-
-          - args[1]: string - should be the name of the entity in check
-
-          - args[2]: string - should be the present status: a ValidStatus
-        
-          - args[3]: string - Only for resource, optional name of the site (if known)
-        
-          - args[4]: list - Only for resource, optional list of tests
-        
-          :attr:`commandIn`: an optional custom command object
-          
-          :attr:`knownInfo`: an optional dictionary with known infos 
-      
-        :return:
-            { 
-              'SAT':True|False|None, 
-              'Status':Active|Probing|Banned, 
-              'Reason':'SAMRes:ok|down|na|degraded|partial|maint',
-            }
+  def evaluate(self):
     """ 
-   
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.evaluate)
-    
-    if args[2] not in ValidStatus:
-      raise InvalidStatus, where(self, self.evaluate)
-
-    if knownInfo is not None:
-      if 'SAM-Status' in knownInfo.keys():
-        SAMstatus = knownInfo['SAM-Status']
-    else:
-      if commandIn is not None:
-        command = commandIn
-      else:
-        # use standard Command
-        from DIRAC.ResourceStatusSystem.Client.Command.SAMResults_Command import SAMResults_Command
-        command = SAMResults_Command()
+    Evaluate policy on SAM jobs self.results. 
         
-      clientsInvoker = ClientsInvoker()
-      clientsInvoker.setCommand(command)
-      if len(args) == 3:
-        status = clientsInvoker.doCommand((args[0], args[1]))
-      elif len(args) == 4:
-        status = clientsInvoker.doCommand((args[0], args[1], args[3]))
-      elif len(args) == 5:
-        status = clientsInvoker.doCommand((args[0], args[1], args[3], args[4]))
-      
-      SAMstatus = status['SAM-Status']
+    :return:
+        { 
+          'SAT':True|False|None, 
+          'Status':Active|Probing|Banned, 
+          'Reason':'SAMRes:ok|down|na|degraded|partial|maint',
+        }
+    """ 
+    
+    SAMstatus = super(SAMResults_Policy, self).evaluate()
     
     if SAMstatus is None:
       return {'SAT':None}
     
     if SAMstatus == 'Unknown':
       return {'SAT':'Unknown'}
-    
-#    values = []
-#    for s in status.values():
-#      if s == 'ok':
-#        values.append(100)
-#      elif s == 'down':
-#        values.append(0)
-#      elif s == 'na':
-#        continue
-#      elif s == 'degraded':
-#        values.append(70)
-#      elif s == 'partial':
-#        values.append(30)
-#      elif s == 'maint':
-#        values.append(0)
-#      elif s == 'error':
-#        values.append(0)
-#    
-#    if len(values) == 0:
-#      status = 'na'
-#    else:
-#      mean = sum(values)/len(values)
-#      if mean >= 90:
-#        status = 'ok'
-#      elif mean >= 60:
-#        status = 'degraded'
-#      elif mean >= 30:
-#        status = 'partial'
-#      elif mean >= 10:
-#        status = 'maint'
-#      else:
-#        status = 'down'
     
     status = 'ok'
     
@@ -128,75 +51,75 @@ class SAMResults_Policy(PolicyBase):
       if na == True:
         status = 'na'
     
-    result = {}
+    self.result['Reason'] = 'SAM status: '
     
-    result['Reason'] = 'SAM status: '
-    
-    if args[2] == 'Active':
+    if self.oldStatus == 'Active':
       if status == 'ok':
-        result['SAT'] = False
-        result['Status'] = 'Active'
+        self.result['SAT'] = False
+        self.result['Status'] = 'Active'
       elif status == 'down':
-        result['SAT'] = True
-        result['Status'] = 'Bad'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Bad'
       elif status == 'na':
-        result['SAT'] = None
+        self.result['SAT'] = None
       elif status == 'degraded':
-        result['SAT'] = True
-        result['Status'] = 'Probing'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Probing'
       elif status == 'maint':
-        result['SAT'] = True
-        result['Status'] = 'Bad'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Bad'
       
-    elif args[2] == 'Probing':
+    elif self.oldStatus == 'Probing':
       if status == 'ok':
-        result['SAT'] = True
-        result['Status'] = 'Active'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Active'
       elif status == 'down':
-        result['SAT'] = True
-        result['Status'] = 'Bad'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Bad'
       elif status == 'na':
-        result['SAT'] = None
+        self.result['SAT'] = None
       elif status == 'degraded':
-        result['SAT'] = False
-        result['Status'] = 'Probing'
+        self.result['SAT'] = False
+        self.result['Status'] = 'Probing'
       elif status == 'maint':
-        result['SAT'] = True
-        result['Status'] = 'Bad'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Bad'
       
-    elif args[2] == 'Bad':
+    elif self.oldStatus == 'Bad':
       if status == 'ok':
-        result['SAT'] = True
-        result['Status'] = 'Active'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Active'
       elif status == 'down':
-        result['SAT'] = False
-        result['Status'] = 'Bad'
+        self.result['SAT'] = False
+        self.result['Status'] = 'Bad'
       elif status == 'na':
-        result['SAT'] = None
+        self.result['SAT'] = None
       elif status == 'degraded':
-        result['SAT'] = True
-        result['Status'] = 'Probing'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Probing'
       elif status == 'maint':
-        result['SAT'] = False
-        result['Status'] = 'Bad'
+        self.result['SAT'] = False
+        self.result['Status'] = 'Bad'
       
-    elif args[2] == 'Banned':
+    elif self.oldStatus == 'Banned':
       if status == 'ok':
-        result['SAT'] = True
-        result['Status'] = 'Active'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Active'
       elif status == 'down':
-        result['SAT'] = True
-        result['Status'] = 'Bad'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Bad'
       elif status == 'na':
-        result['SAT'] = None
+        self.result['SAT'] = None
       elif status == 'degraded':
-        result['SAT'] = True
-        result['Status'] = 'Probing'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Probing'
       elif status == 'maint':
-        result['SAT'] = True
-        result['Status'] = 'Bad'
+        self.result['SAT'] = True
+        self.result['Status'] = 'Bad'
       
     if status != 'na':
-      result['Reason'] = result['Reason'] + status
+      self.result['Reason'] = self.result['Reason'] + status
     
-    return result
+    return self.result
+  
+  evaluate.__doc__ = PolicyBase.evaluate.__doc__ + evaluate.__doc__

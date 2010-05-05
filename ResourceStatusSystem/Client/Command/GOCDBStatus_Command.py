@@ -8,43 +8,33 @@ from DIRAC import gLogger
 
 from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-
 
 #############################################################################
 
 class GOCDBStatus_Command(Command):
   
-  def doCommand(self, args, clientIn=None):
-    """ Return getStatus from GOC DB Client
+  def doCommand(self):
+    """ 
+    Return getStatus from GOC DB Client
     
-       :params:
-         :attr:`args`: 
-           - args[0]: string: should be a ValidRes
-      
-           - args[1]: string: should be the name of the ValidRes
+    :attr:`args`: 
+     - args[0]: string: should be a ValidRes
 
-           - args[2]: string: optional, number of hours in which 
-           the down time is starting
+     - args[1]: string: should be the name of the ValidRes
+
+     - args[2]: string: optional, number of hours in which 
+     the down time is starting
     """
 
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.doCommand)
-    
-    if args[0] not in ValidRes:
-      raise InvalidRes, where(self, self.doCommand)
-    
-    if clientIn is not None:
-      c = clientIn
-    else:
+    if self.client is None:
       # use standard GOC DB Client
       from DIRAC.ResourceStatusSystem.Client.GOCDBClient import GOCDBClient   
-      c = GOCDBClient()
+      self.client = GOCDBClient()
     
-    granularity = args[0]
-    name = args[1]  
+    granularity = self.args[0]
+    name = self.args[1]  
     try:  
-      hours = args[2]
+      hours = self.args[2]
     except IndexError:
       hours = None
 
@@ -52,10 +42,9 @@ class GOCDBStatus_Command(Command):
       name = getSiteRealName(name)
 
     try:
-      res = c.getStatus(granularity, name, None, hours)
-      
+      res = self.client.getStatus(granularity, name, None, hours)
       if res is None or res == []:
-        return {'DT':None}
+        return {'Result':None}
       
       if isinstance(res, list):
         #there's more than one DT
@@ -71,9 +60,11 @@ class GOCDBStatus_Command(Command):
 
       else:
         resDT = res
-
+      
       if resDT['Type'] == 'Programmed':
         resDT['DT'] = resDT['DT'] + " in " + str(resDT['InHours']) + ' hours'
+      else:
+        resDT['DT'] = resDT['DT']
       if 'Type' in resDT.keys():
         del resDT['Type']
       if 'InHours' in resDT.keys():
@@ -84,48 +75,40 @@ class GOCDBStatus_Command(Command):
         del resDT['id']
       if 'StartDate' in resDT.keys():
         del resDT['StartDate']
-
-      return resDT
+      
+      return {'Result':resDT}
         
     except urllib2.URLError:
       gLogger.error("GOCDB timed out for " + granularity + " " + name )
-      return  {'DT':'Unknown'}      
+      return  {'Result':'Unknown'}      
     except:
       gLogger.exception("Exception when calling GOCDBClient for " + granularity + " " + name )
-      return {'DT':'Unknown'}
+      return {'Result':'Unknown'}
 
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 #############################################################################
 
 class GOCDBInfo_Command(Command):
   
-  def doCommand(self, args, clientIn=None):
+  def doCommand(self):
     """ Return all info from GOC DB Client
     
-       :params:
          :attr:`args`: 
            - args[0]: string: should be a ValidRes
       
            - args[1]: string: should be the name of the ValidRes
     """
 
-    if not isinstance(args, tuple):
-      raise TypeError, where(self, self.doCommand)
-    
-    if args[0] not in ValidRes:
-      raise InvalidRes, where(self, self.doCommand)
-    
-    if clientIn is not None:
-      c = clientIn
-    else:
+    if self.client is None:
       # use standard GOC DB Client
       from DIRAC.ResourceStatusSystem.Client.GOCDBClient import GOCDBClient   
-      c = GOCDBClient()
+      self.client = GOCDBClient()
       
-    granularity = args[0]
-    name = args[1]  
+    granularity = self.args[0]
+    name = self.args[1]  
     try:  
-      hours = args[2]
+      hours = self.args[2]
     except IndexError:
       hours = None
 
@@ -134,7 +117,7 @@ class GOCDBInfo_Command(Command):
 
     try:
 
-      res = c.getStatus(granularity, name, None, hours)
+      res = self.client.getStatus(granularity, name, None, hours)
 
       if res is None or res == []:
         return {'DT':'None'}
@@ -171,5 +154,7 @@ class GOCDBInfo_Command(Command):
     except:
       return None
 
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    
 #############################################################################
     

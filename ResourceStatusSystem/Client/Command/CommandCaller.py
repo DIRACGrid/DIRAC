@@ -20,10 +20,11 @@ class CommandCaller:
     if c is None: 
       c = self.setCommandObject(comm)
 
-    if a is None:
-      a = self.setCommandArgs(comm)
-      if a is None:
-        a = (granularity, name)
+    a = (granularity, name)
+#    if a is None:
+#      a = self.setCommandArgs(comm)
+#      if a is None:
+#        a = (granularity, name)
 
     if extraArgs is not None:
       a = a + extraArgs
@@ -116,7 +117,7 @@ class CommandCaller:
   def setCommandArgs(self, comm):
 
     if comm == 'GGUS_Link' or comm == 'GGUS_Info':
-      a = (name, )
+      return (name, )
 
     else:
       return None
@@ -129,7 +130,10 @@ class CommandCaller:
     clientsInvoker = ClientsInvoker()
   
     clientsInvoker.setCommand(c)
-    res = clientsInvoker.doCommand(a, clientIn = clientIn)
+    clientsInvoker.setArgs(a)
+    clientsInvoker.setClient(clientIn)
+    
+    res = clientsInvoker.doCommand()
     return res 
       
 #############################################################################
