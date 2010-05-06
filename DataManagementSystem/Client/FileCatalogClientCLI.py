@@ -425,7 +425,7 @@ File Catalog Client $Revision: 1.17 $Date:
       newcwd = path
     else:
       newcwd = self.cwd + '/' + path
-    newcwd = newcwd.replace(r'//','/')
+    newcwd = newcwd.replace(r'//','/').rstrip("/")
     
     result =  self.fc.isDirectory(newcwd)        
     if result['OK']:
