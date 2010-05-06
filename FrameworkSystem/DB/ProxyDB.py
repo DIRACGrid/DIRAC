@@ -17,12 +17,12 @@ from DIRAC.Core.Security.MyProxy import MyProxy
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security import CS
 
-class ProxyDB(DB):
+class ProxyDB( DB ):
 
-  def __init__(self, requireVoms = False,
+  def __init__( self, requireVoms = False,
                useMyProxy = False,
                maxQueueSize = 10 ):
-    DB.__init__(self,'ProxyDB','Framework/ProxyDB',maxQueueSize)
+    DB.__init__( self, 'ProxyDB', 'Framework/ProxyDB', maxQueueSize )
     random.seed()
     self.__defaultRequestLifetime = 300 # 5min
     self.__defaultTokenLifetime = 86400 * 7 # 1 week
@@ -32,15 +32,15 @@ class ProxyDB(DB):
     self._minSecsToAllowStore = 3600
     retVal = self.__initializeDB()
     if not retVal[ 'OK' ]:
-      raise Exception( "Can't create tables: %s" % retVal[ 'Message' ])
+      raise Exception( "Can't create tables: %s" % retVal[ 'Message' ] )
 
-  def getMyProxyServer(self):
+  def getMyProxyServer( self ):
     return gConfig.getValue( "/DIRAC/VOPolicy/MyProxyServer" , "myproxy.cern.ch" )
 
-  def getMyProxyMaxLifeTime(self):
+  def getMyProxyMaxLifeTime( self ):
     return gConfig.getValue( "/DIRAC/VOPolicy/MyProxyMaxDelegationTime", 168 ) * 3600
 
-  def __initializeDB(self):
+  def __initializeDB( self ):
     """
     Create the tables
     """
@@ -149,7 +149,7 @@ class ProxyDB(DB):
     """
     cmd = "SELECT Pem FROM `ProxyDB_Requests` WHERE Id = %s AND UserDN = '%s'" % ( requestId,
                                                                                    userDN )
-    retVal = self._query( cmd)
+    retVal = self._query( cmd )
     if not retVal[ 'OK' ]:
       return retVal
     data = retVal[ 'Value' ]
@@ -247,7 +247,7 @@ class ProxyDB(DB):
       return retVal
     return S_OK()
 
-  def storeProxy(self, userDN, userGroup, chain ):
+  def storeProxy( self, userDN, userGroup, chain ):
     """ Store user proxy into the Proxy repository for a user specified by his
         DN and group.
     """
@@ -257,7 +257,7 @@ class ProxyDB(DB):
       return retVal
     remainingSecs = retVal[ 'Value' ]
     if remainingSecs < self._minSecsToAllowStore:
-      return S_ERROR( "Cannot store proxy, remaining secs %s is less than %s" %( remainingSecs, self._minSecsToAllowStore ) )
+      return S_ERROR( "Cannot store proxy, remaining secs %s is less than %s" % ( remainingSecs, self._minSecsToAllowStore ) )
 
     #Compare the DNs
     retVal = chain.getIssuerCert()
@@ -268,7 +268,7 @@ class ProxyDB(DB):
       msg = "Mismatch in the user DN"
       vMsg = "Proxy says %s and credentials are %s" % ( proxyIdentityDN, userDN )
       self.log.error( msg, vMsg )
-      return S_ERROR(  "%s. %s" % ( msg, vMsg ) )
+      return S_ERROR( "%s. %s" % ( msg, vMsg ) )
     #Check the groups
     retVal = chain.getDIRACGroup()
     if not retVal[ 'OK' ]:
@@ -280,15 +280,15 @@ class ProxyDB(DB):
       msg = "Mismatch in the user group"
       vMsg = "Proxy says %s and credentials are %s" % ( proxyGroup, userGroup )
       self.log.error( msg, vMsg )
-      return S_ERROR(  "%s. %s" % ( msg, vMsg ) )
+      return S_ERROR( "%s. %s" % ( msg, vMsg ) )
     #Check if its limited
     if chain.isLimitedProxy()['Value']:
       return S_ERROR( "Limited proxies are not allowed to be stored" )
-    self.log.info( "Storing proxy for credentials %s (%s secs)" %( proxyIdentityDN,remainingSecs ) )
+    self.log.info( "Storing proxy for credentials %s (%s secs)" % ( proxyIdentityDN, remainingSecs ) )
 
     # Check what we have already got in the repository
     cmd = "SELECT TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ), Pem FROM `ProxyDB_Proxies` WHERE UserDN='%s' AND UserGroup='%s'" % ( userDN,
-                                                                                                               userGroup)
+                                                                                                               userGroup )
     result = self._query( cmd )
     if not result['OK']:
       return result
@@ -301,7 +301,7 @@ class ProxyDB(DB):
       if pem:
         remainingSecsInDB = data[0][0]
         if remainingSecs <= remainingSecsInDB:
-          self.log.info( "Proxy stored is longer than uploaded, omitting.", "%s in uploaded, %s in db" % (remainingSecs, remainingSecsInDB ) )
+          self.log.info( "Proxy stored is longer than uploaded, omitting.", "%s in uploaded, %s in db" % ( remainingSecs, remainingSecsInDB ) )
           return S_OK()
 
     pemChain = chain.dumpAllToString()['Value']
@@ -315,7 +315,7 @@ class ProxyDB(DB):
       cmd = "UPDATE `ProxyDB_Proxies` set Pem='%s', ExpirationTime = TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) WHERE UserDN='%s' AND UserGroup='%s'" % ( pemChain,
                                                                                                                                                 remainingSecs,
                                                                                                                                                 userDN,
-                                                                                                                                                userGroup)
+                                                                                                                                                userGroup )
     self.logAction( "store proxy", userDN, userGroup, userDN, userGroup )
     return self._update( cmd )
 
@@ -332,7 +332,7 @@ class ProxyDB(DB):
 
     req = "DELETE FROM `ProxyDB_Proxies` WHERE UserDN='%s' AND UserGroup='%s'" % ( userDN,
                                                                                    userGroup )
-    return self._update(req)
+    return self._update( req )
 
   def __getPemAndTimeLeft( self, userDN, userGroup = False, vomsAttr = False ):
     if not vomsAttr:
@@ -345,7 +345,7 @@ class ProxyDB(DB):
       cmd += " AND UserGroup='%s'" % userGroup
     if vomsAttr:
       cmd += " AND VOMSAttr='%s'" % vomsAttr
-    retVal = self._query(cmd)
+    retVal = self._query( cmd )
     if not retVal['OK']:
       return retVal
     data = retVal[ 'Value' ]
@@ -449,19 +449,13 @@ class ProxyDB(DB):
   def __getVOMSAttribute( self, userGroup, requiredVOMSAttribute = False ):
 
     if requiredVOMSAttribute:
-      result = S_OK( requiredVOMSAttribute )
-      csVOMSVO = CS.getVOMSVOForGroup( userGroup )
-      result['VO'] = csVOMSVO
-      return result
-    
+      return S_OK( { 'attribute' : requiredVOMSAttribute, 'VOMSVO' : CS.getVOMSVOForGroup( userGroup ) } )
+
     csVOMSMapping = CS.getVOMSAttributeForGroup( userGroup )
     if not csVOMSMapping:
       return S_ERROR( "No mapping defined for group %s in the CS" % userGroup )
-    
-    result = S_OK( csVOMSMapping )
-    csVOMSVO = CS.getVOMSVOForGroup( userGroup )
-    result['VO'] = csVOMSVO  
-    return result
+
+    return S_OK( { 'attribute' : csVOMSMapping, 'VOMSVO' : CS.getVOMSVOForGroup( userGroup ) } )
 
   def getVOMSProxy( self, userDN, userGroup, requiredLifeTime = False, requestedVOMSAttr = False ):
     """ Get proxy string from the Proxy Repository for use with userDN
@@ -470,8 +464,8 @@ class ProxyDB(DB):
     retVal = self.__getVOMSAttribute( userGroup, requestedVOMSAttr )
     if not retVal[ 'OK' ]:
       return retVal
-    vomsAttr = retVal[ 'Value' ]
-    vomsVO = retVal[ 'VO' ]
+    vomsAttr = retVal[ 'Value' ][ 'attribute' ]
+    vomsVO = retVal[ 'Value' ][ 'VOMSVO' ]
 
     #Look in the cache
     retVal = self.__getPemAndTimeLeft( userDN, userGroup, vomsAttr )
@@ -484,17 +478,17 @@ class ProxyDB(DB):
         retVal = chain.getRemainingSecs()
         if retVal[ 'OK' ]:
           remainingSecs = retVal[ 'Value' ]
-          if requiredLifeTime and requiredLifeTime  <= vomsTime and requiredLifeTime <= remainingSecs:
+          if requiredLifeTime and requiredLifeTime <= vomsTime and requiredLifeTime <= remainingSecs:
             return S_OK( ( chain, min( vomsTime, remainingSecs ) ) )
 
     retVal = self.getProxy( userDN, userGroup, requiredLifeTime )
     if not retVal[ 'OK' ]:
       return retVal
     chain, secsLeft = retVal[ 'Value' ]
-    
-    if requiredLifeTime and requiredLifeTime > secsLeft: 
+
+    if requiredLifeTime and requiredLifeTime > secsLeft:
       return S_ERROR( "Stored proxy is not long lived enough" )
-    
+
     vomsMgr = VOMS()
 
     retVal = vomsMgr.getVOMSAttributes( chain )
@@ -502,13 +496,13 @@ class ProxyDB(DB):
       attrs = retVal[ 'Value' ]
       if len( attrs ) > 0:
         if attrs[0] != vomsAttr:
-          return S_ERROR( "Stored proxy has already a different VOMS attribute %s than requested %s" %( vomsAttr, attrs[0] ) )
+          return S_ERROR( "Stored proxy has already a different VOMS attribute %s than requested %s" % ( vomsAttr, attrs[0] ) )
         else:
           result = self.__storeVOMSProxy( userDN, userGroup, vomsAttr, chain )
           if not result[ 'OK' ]:
             return result
           secsLeft = result[ 'Value' ]
-          if requiredLifeTime and requiredLifeTime <= secsLeft: 
+          if requiredLifeTime and requiredLifeTime <= secsLeft:
             return S_OK( ( chain, secsLeft ) )
           return S_ERROR( "Stored proxy has already a different VOMS attribute and is not long lived enough" )
 
@@ -542,7 +536,7 @@ class ProxyDB(DB):
       vomsSecsLeft2 = int( retVal2[ 'Value' ].strip() )
       vomsSecsLeft = min( vomsSecsLeft1, vomsSecsLeft2 )
     except Exception, e:
-      return S_ERROR( "Can't parse VOMS time left: %s" % str(e) )
+      return S_ERROR( "Can't parse VOMS time left: %s" % str( e ) )
     secsLeft = min( vomsSecsLeft, chain.getRemainingSecs()[ 'Value' ] )
     pemData = chain.dumpAllToString()[ 'Value' ]
     cmd = "INSERT INTO `ProxyDB_VOMSProxies` ( UserDN, UserGroup, VOMSAttr, Pem, ExpirationTime ) VALUES "
@@ -610,9 +604,9 @@ class ProxyDB(DB):
     """ Set the proxy PersistentFlag to the flag value
     """
     if persistent:
-      sqlFlag="True"
+      sqlFlag = "True"
     else:
-      sqlFlag="False"
+      sqlFlag = "False"
     retVal = self._query( "SELECT PersistentFlag FROM `ProxyDB_Proxies` WHERE UserDN='%s' AND UserGroup='%s'" % ( userDN, userGroup ) )
     sqlInsert = True
     if retVal[ 'OK' ]:
@@ -632,7 +626,7 @@ class ProxyDB(DB):
                                                                                             userDN,
                                                                                             userGroup )
 
-    retVal = self._update(cmd)
+    retVal = self._update( cmd )
     if not retVal[ 'OK' ]:
       return retVal
     return S_OK()
@@ -744,7 +738,7 @@ class ProxyDB(DB):
     m.update( rndData )
     token = m.hexdigest()
     fieldsSQL = ", ".join( ( "Token", "RequesterDN", "RequesterGroup", "ExpirationTime", "UsesLeft" ) )
-    valuesSQL = ", ".join(  ( self._escapeString( token )['Value'],
+    valuesSQL = ", ".join( ( self._escapeString( token )['Value'],
                               self._escapeString( requesterDN )['Value'],
                               self._escapeString( requesterGroup )['Value'],
                             "TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() )" % lifeTime,
@@ -756,7 +750,7 @@ class ProxyDB(DB):
       return S_OK( ( token, numUses ) )
     if result[ 'Message' ].find( "uplicate entry" ) > -1:
       if retries:
-        return self.generateToken( numUses, lifeTime, retries - 1)
+        return self.generateToken( numUses, lifeTime, retries - 1 )
       return S_ERROR( "Max retries reached for token generation. Aborting" )
     return result
 
