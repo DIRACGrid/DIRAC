@@ -37,10 +37,18 @@ if not res['OK']:
 print '%s %s %s %s %s' % ('FileName'.ljust(100),'Size'.ljust(10),'GUID'.ljust(40),'Status'.ljust(8),'Checksum'.ljust(10))
 for lfn in sortList(res['Value']['Successful'].keys()):
   metadata = res['Value']['Successful'][lfn]
-  checksum = metadata['CheckSumValue']
-  size = str(metadata['Size'])
-  guid = metadata['GUID']
-  status = metadata['Status']
+  checksum = ''
+  if metadata.has_key('CheckSumValue'):
+    checksum = metadata['CheckSumValue']
+  size = ''
+  if metadata.has_key('Size'):
+    size = str(metadata['Size'])
+  guid = ''
+  if metadata.has_key('GUID'):
+    guid = metadata['GUID']
+  status = ''
+  if metadata.has_key('Status'):
+    status = metadata['Status']
   print '%s %s %s %s %s' % (lfn.ljust(100),size.ljust(10),guid.ljust(40),status.ljust(8),checksum.ljust(10))
 
 for lfn in sortList(res['Value']['Failed'].keys()):
