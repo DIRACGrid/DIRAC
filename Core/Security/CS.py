@@ -64,15 +64,15 @@ def getAllUsers():
   return retVal[ 'Value' ]
 
 def getUsersInGroup( groupName, defaultValue = [] ):
-  option = "%s/Groups/%s/Users" %( g_BaseSecuritySection, groupName )
+  option = "%s/Groups/%s/Users" % ( g_BaseSecuritySection, groupName )
   return gConfig.getValue( option, defaultValue )
 
 def getPropertiesForGroup( groupName, defaultValue = [] ):
-  option = "%s/Groups/%s/Properties" %( g_BaseSecuritySection, groupName )
+  option = "%s/Groups/%s/Properties" % ( g_BaseSecuritySection, groupName )
   return gConfig.getValue( option, defaultValue )
 
 def getPropertiesForHost( hostName, defaultValue = [] ):
-  option = "%s/Hosts/%s/Properties" %( g_BaseSecuritySection, hostName )
+  option = "%s/Hosts/%s/Properties" % ( g_BaseSecuritySection, hostName )
   return gConfig.getValue( option, defaultValue )
 
 def getPropertiesForEntity( group, name = "", DN = "", defaultValue = [] ):
@@ -96,7 +96,10 @@ def getVOMSAttributeForGroup( group ):
   return gConfig.getValue( "%s/Groups/%s/VOMSRole" % ( g_BaseSecuritySection, group ), getDefaultVOMSAttribute() )
 
 def getDefaultVOMSVO():
-  return gConfig.getValue( "%s/DefaultVOMSVO" % g_BaseSecuritySection, "" )
+  vomsVO = gConfig.getValue( "%s/DefaultVOMSVO" % g_BaseSecuritySection, "" )
+  if vomsVO:
+    return vomsVO
+  return gConfig.getValue( "/DIRAC/VirtualOrganization", "" )
 
 def getVOMSVOForGroup( group ):
   return gConfig.getValue( "%s/Groups/%s/VOMSVO" % ( g_BaseSecuritySection, group ), getDefaultVOMSVO() )
