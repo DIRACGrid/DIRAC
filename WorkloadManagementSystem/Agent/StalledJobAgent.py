@@ -15,6 +15,7 @@ from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.Core.Base.AgentModule                    import AgentModule
 from DIRAC.Core.Utilities.Time                      import fromString, toEpoch
 from DIRAC                                          import gConfig, S_OK, S_ERROR
+from DIRAC.Core.DISET.RPCClient                     import RPCClient
 import time
 
 class StalledJobAgent( AgentModule ):
@@ -37,9 +38,12 @@ class StalledJobAgent( AgentModule ):
     """
     self.log.verbose( 'Waking up Stalled Job Agent' )
     stalledTime = self.am_getOption( 'StalledTimeHours', 2 )
+    failedTime = self.am_getOption( 'FailedTimeHours', 6 )
     self.log.verbose( 'StalledTime = %s hours' % ( stalledTime ) )
+    self.log.verbose( 'FailedTime = %s hours' % ( failedTime ) )
     try:
       stalledTime = int( stalledTime ) * 60 * 60
+      failedTime = int( failedTime ) * 60 * 60
     except Exception, x:
       self.log.warn( 'Problem while converting stalled time (hours) to seconds' )
       self.log.warn( str( x ) )
@@ -52,6 +56,10 @@ class StalledJobAgent( AgentModule ):
     #Note, jobs will be revived automatically during the heartbeat signal phase and
     #subsequent status changes will result in jobs not being selected by the
     #stalled job agent.
+
+    result = self.__failStalledJobs( failedTime )
+    if not result['OK']:
+      self.log.info( result['Message'] )
 
     return S_OK( 'Stalled Job Agent cycle complete' )
 
@@ -82,6 +90,64 @@ class StalledJobAgent( AgentModule ):
 
     self.log.info( 'Total jobs: %s, Stalled job count: %s, Running job count: %s' % ( len( jobs ), stalledCounter, runningCounter ) )
     return S_OK()
+  
+ #############################################################################
+  def __failStalledJobs( self, failedTime ):
+    """ Changes the Stalled status to Failed for jobs long in the Stalled status
+    """ 
+    
+    result = self.jobDB.selectJobs( {'Status':'Stalled'} )
+    
+    failedCounter = 0
+    
+    if not result['OK'] or not result['Value']:
+      self.log.warn( result )
+      return result
+    else:
+      jobs = result['Value']
+      self.log.info( '%s Stalled jobs will be checked for failure' % ( len( jobs ) ) )
+            
+      for job in jobs:
+        
+        # Check if the job pilot is lost
+        result = self.__getJobPilotStatus(job)
+        if result['OK']:
+          pilotStatus = result['Status']
+          if pilotStatus != "Running":
+            result = self.__updateJobStatus( job, 'Failed', "Pilot stopped after job stalling" )  
+            failedCounter += 1
+            continue          
+          
+        result = self.__getLatestUpdateTime( job )
+        if not result['OK']:
+          return result
+        currentTime = time.mktime( time.gmtime() )
+        lastUpdate = result['Value']
+        elapsedTime = currentTime - lastUpdate
+        if elapsedTime > failedTime:
+          self.__updateJobStatus( job, 'Failed', 'Stalling for more than %d sec' % failedTime )  
+          failedCounter += 1
+          
+    self.log.info('%d jobs set to Failed' % failedCounter)       
+    return S_OK(failedCounter)      
+        
+ #############################################################################
+  def __getJobPilotStatus( self, jobID ):
+    """ Get the job pilot status
+    """       
+    result = self.jobDB.getJobParameter(jobID,'Pilot_Reference')
+    if result['OK']:
+      pilotReference = result['Value']
+      wmsAdminClient = RPCClient('WorkloadManagement/WMSAdministrator')
+      result = wmsAdminClient.getPilotInfo(pilotReference)
+      if result['OK']:
+        pilotStatus = result['Value']['Status']
+        return S_OK(pilotStatus)
+      else:
+        return S_ERROR('Failed to get the pilot status')
+    else:
+      return S_ERROR('Failed to get the pilot reference')
+    
 
  #############################################################################
   def __getStalledJob( self, job, stalledTime ):
