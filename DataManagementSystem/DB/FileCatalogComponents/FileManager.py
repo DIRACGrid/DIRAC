@@ -979,7 +979,7 @@ class FileManager:
         successful[lfn] = 'Replica already exists %d' % repID
         continue  
       if pfn:
-        if self.lfnConvention:
+        if self.db.lfnPfnConvention:
           result = self.__checkLFNPFNConvention(lfn,pfn,se)          
           if not result['OK']:
             failed[lfn] = result['Message']
