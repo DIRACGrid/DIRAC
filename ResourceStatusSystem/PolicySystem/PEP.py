@@ -432,9 +432,7 @@ class PEP:
 #############################################################################
   
   
-#  def __getUsersToNotify(self, granularity, setup, siteType = None, serviceType = None,
-#                         resourceType = None):
-  def _getUsersToNotify(self, granularity, setup, siteType = None, serviceType = None,
+  def __getUsersToNotify(self, granularity, setup, siteType = None, serviceType = None,
                          resourceType = None):
     
     NOTIF = []
