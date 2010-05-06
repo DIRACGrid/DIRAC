@@ -7,7 +7,7 @@
 
 __RCSID__ = "$Id:  $"
 
-import time
+import time, os
 from DIRAC import S_OK, S_ERROR
 
 class DirectoryMetadata:
@@ -194,7 +194,7 @@ class DirectoryMetadata:
     
     for dir in result['Value']['Successful']:
       for fname in result['Value']['Successful'][dir]['Files']:
-        fileList.append(dir+'/'+fname)
+        fileList.append(dir+'/'+os.path.basename(fname))
         
     return S_OK(fileList)    
   
