@@ -112,7 +112,7 @@ class StalledJobAgent( AgentModule ):
         # Check if the job pilot is lost
         result = self.__getJobPilotStatus(job)
         if result['OK']:
-          pilotStatus = result['Status']
+          pilotStatus = result['Value']
           if pilotStatus != "Running":
             result = self.__updateJobStatus( job, 'Failed', "Pilot stopped after job stalling" )  
             failedCounter += 1
@@ -141,7 +141,7 @@ class StalledJobAgent( AgentModule ):
       wmsAdminClient = RPCClient('WorkloadManagement/WMSAdministrator')
       result = wmsAdminClient.getPilotInfo(pilotReference)
       if result['OK']:
-        pilotStatus = result['Value']['Status']
+        pilotStatus = result['Value'][pilotReference]['Status']
         return S_OK(pilotStatus)
       else:
         return S_ERROR('Failed to get the pilot status')
