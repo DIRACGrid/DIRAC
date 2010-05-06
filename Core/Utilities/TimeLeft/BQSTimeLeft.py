@@ -51,7 +51,7 @@ class BQSTimeLeft:
     #BQS has no wallclock limit so will simply return the same as for CPU to the TimeLeft utility
     wallClock = cpu
     wallClockLimit = cpuLimit
-    consumed = {'CPU':cpu,'CPULimit':cpuLimit,'WallClock':wallClock,'WallClockLimit':wallClockLimit}
+    consumed = {'CPU':float(cpu),'CPULimit':float(cpuLimit),'WallClock':float(wallClock),'WallClockLimit':float(wallClockLimit)}
     self.log.debug(consumed)
     failed = False
     for k,v in consumed.items():
