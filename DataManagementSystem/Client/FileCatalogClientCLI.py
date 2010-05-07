@@ -11,6 +11,7 @@ import sys
 import cmd
 import commands
 import os.path
+import string
 from types  import *
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Security import CS
@@ -419,15 +420,26 @@ File Catalog Client $Revision: 1.17 $Date:
     if path == '-':
       path = self.previous_cwd
     elif path.find('..') == 0:
-      path = path.replace('..',os.path.dirname(self.cwd))
+      if path.find('/..') >-1:
+        print "/.. is not allowed"
+      else:
+        ##allow smoother navigation
+        dirs = path.split("/")
+        nb_returns = dirs.count("..")
+        curdir_elems = os.path.dirname(self.cwd).split("/")
+        curdir_elems_fin = curdir_elems[0:len(curdir_elems)-nb_returns]
+        curdir_elems_fin.extend(dirs[nb_returns:])
+        path = string.join(curdir_elems_fin,"/")
+        #path = path.replace('..',os.path.dirname(self.cwd))
+      
         
     if path.find('/') == 0:
       newcwd = path
     else:
       newcwd = self.cwd + '/' + path
     newcwd = newcwd.replace(r'//','/')
-    if len(newcwd)>1:
-      newcwd.rstrip("/")
+    if len(newcwd)>0 and not newcwd.find('..') == 0:
+      newcwd=newcwd.rstrip("/")
     
     result =  self.fc.isDirectory(newcwd)        
     if result['OK']:
