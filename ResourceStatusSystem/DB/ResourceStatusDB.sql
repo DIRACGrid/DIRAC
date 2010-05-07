@@ -288,3 +288,16 @@ CREATE TABLE PolicyRes(
   FOREIGN KEY (Status) REFERENCES Status(Status),
   PRIMARY KEY(prID)
 ) Engine=InnoDB;
+
+DROP TABLE IF EXISTS ClientsCache;
+CREATE TABLE ClientsCache(
+  ccID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  Name VARCHAR(64) NOT NULL,
+  INDEX (Name),
+  CommandName VARCHAR(64) NOT NULL,
+  INDEX (CommandName),
+  Result VARCHAR(8) NOT NULL,
+  DateEffective DATETIME NOT NULL,
+  LastCheckTime DATETIME NOT NULL,
+  PRIMARY KEY(ccID)
+) Engine=InnoDB;

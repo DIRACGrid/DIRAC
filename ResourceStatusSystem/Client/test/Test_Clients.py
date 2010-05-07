@@ -129,9 +129,8 @@ class SAMResultsClientFailure(ClientsTestCase):
 class JobsClientSuccess(ClientsTestCase):
 
   def test_getJobsSimpleEff(self):
-    for granularity in ValidRes:
-      res = self.JobsCli.getJobsSimpleEff(granularity, 'XX')
-      self.assertEqual(res, 'Idle')
+    res = self.JobsCli.getJobsSimpleEff('XX')
+    self.assertEqual(res, None)
 
 #############################################################################
 

@@ -57,7 +57,7 @@ class PilotsEff_Command(Command):
 
 class PilotsEffSimple_Command(Command):
   
-  def doCommand(self):
+  def doCommand(self, RSClientIn = None):
     """ 
     Returns simple pilots efficiency
     
@@ -73,14 +73,19 @@ class PilotsEffSimple_Command(Command):
     """
 
     if self.args[0] in ('Service', 'Services'):
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
-      rsc = ResourceStatusClient()
+      if RSClientIn is not None:
+        rsc = RSClientIn
+      else:
+        from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
+        rsc = ResourceStatusClient()
+
       try:
         name = rsc.getGeneralName(self.args[0], self.args[1], 'Site')
       except:
         gLogger.error("Can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'PilotsEff':'Unknown'}      
       granularity = 'Site'
+    
     elif self.args[0] in ('Site', 'Sites', 'Resource', 'Resources'):
       name = self.args[1]
       granularity = self.args[0]
@@ -97,7 +102,7 @@ class PilotsEffSimple_Command(Command):
       gLogger.exception("Exception when calling PilotsClient for %s %s" %(granularity, name))
       return {'Result':'Unknown'}
     
-    return {'Result':res} 
+    return {'Result':res[name]} 
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     

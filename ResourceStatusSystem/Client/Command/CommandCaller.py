@@ -104,6 +104,14 @@ class CommandCaller:
       from DIRAC.ResourceStatusSystem.Client.Command.SLS_Command import SLSServiceInfo_Command 
       c = SLSServiceInfo_Command()
 
+    elif comm == 'JobsEffSimpleEveryOne':
+      from DIRAC.ResourceStatusSystem.Client.Command.Collective_Command import JobsEffSimpleEveryOne_Command
+      c = JobsEffSimpleEveryOne_Command()
+
+    elif comm == 'PilotsEffSimpleEverySites':
+      from DIRAC.ResourceStatusSystem.Client.Command.Collective_Command import PilotsEffSimpleEverySites_Command
+      c = PilotsEffSimpleEverySites_Command()
+
     else:
       from DIRAC.ResourceStatusSystem.Client.Command.Command import Command 
       c = Command()
@@ -120,6 +128,22 @@ class CommandCaller:
     else:
       return None
   
+#############################################################################
+
+  def setCommandClient(self, comm, cObj, RPCWMSAdmin = None):
+    
+    if comm == 'JobsEffSimpleEveryOne':
+      from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient
+      client = JobsClient()
+      cObj.setRPC(RPCWMSAdmin)
+
+    elif comm == 'PilotsEffSimpleEverySites':
+      from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
+      client = PilotsClient()
+      cObj.setRPC(RPCWMSAdmin)
+      
+    cObj.setClient(client)
+
 #############################################################################
   
   def _innerCall(self, c, a, clientIn = None):

@@ -21,6 +21,9 @@ class AgentsTestCase(unittest.TestCase):
     from DIRAC.ResourceStatusSystem.Agent.RS2HistoryAgent import RS2HistoryAgent
     self.rs2hAgent = RS2HistoryAgent("", "")
 
+    from DIRAC.ResourceStatusSystem.Agent.ClientsCacheFeeder import ClientsCacheFeeder
+    self.ccFeeder = ClientsCacheFeeder("", "")
+
     from DIRAC.ResourceStatusSystem.Agent.RSInspectorAgent import RSInspectorAgent
     self.rsIAgent = RSInspectorAgent("", "")
 
@@ -43,6 +46,18 @@ class RS2HistorySuccess(AgentsTestCase):
   def test_execute(self):
     self.rs2hAgent.initialize()
     res = self.rs2hAgent.execute()
+    self.assert_(res['OK'])
+
+
+class ClientsCacheFeederSuccess(AgentsTestCase):
+
+  def test_initialize(self):
+    res = self.ccFeeder.initialize()
+    self.assert_(res['OK'])
+
+  def test_execute(self):
+    self.ccFeeder.initialize()
+    res = self.ccFeeder.execute()
     self.assert_(res['OK'])
 
 
@@ -98,6 +113,7 @@ class StElInspectorSuccess(AgentsTestCase):
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(AgentsTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RS2HistorySuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ClientsCacheFeederSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RSInspectorSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SSInspectorSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SeSInspectorSuccess))

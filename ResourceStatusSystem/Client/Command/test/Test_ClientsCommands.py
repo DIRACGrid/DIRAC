@@ -18,6 +18,7 @@ from DIRAC.ResourceStatusSystem.Client.Command.GGUSTickets_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.DIRACAccounting_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.SLS_Command import *
+from DIRAC.ResourceStatusSystem.Client.Command.Collective_Command import *
 from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import NoSAMTests
 from DIRAC.ResourceStatusSystem.Client.SLSClient import NoServiceException
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
@@ -67,6 +68,8 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.SLSS_C = SLSStatus_Command()
     self.SLSSI_C = SLSServiceInfo_Command()
     self.SLSL_C = SLSLink_Command()
+    self.JSEO_C = JobsEffSimpleEveryOne_Command()
+    self.PSES_C = PilotsEffSimpleEverySites_Command()
 
 #############################################################################
 
@@ -117,19 +120,19 @@ class GOCDBStatus_CommandSuccess(ClientsCommandsTestCase):
         self.GOCDBS_C.setArgs(args)
         self.GOCDBS_C.setClient(self.mock_client)
         res = self.GOCDBS_C.doCommand()
-        self.assertEqual(res['Result'], 'OUTAGE')
+        self.assertEqual(res['Result']['DT'], 'OUTAGE')
       self.mock_client.getStatus.return_value = {'DT':'OUTAGE', 'Enddate':'', 
                                                  'Type': 'Programmed', 'InHours' : 8}
       self.GOCDBS_C.setArgs(args)
       self.GOCDBS_C.setClient(self.mock_client)
       res = self.GOCDBS_C.doCommand()
-      self.assertEqual(res['Result'], 'OUTAGE in 8 hours')
+      self.assertEqual(res['Result']['DT'], 'OUTAGE in 8 hours')
       self.mock_client.getStatus.return_value = {'DT':'AT_RISK', 'Enddate':'', 'Type': 'OnGoing'}
       res = self.GOCDBS_C.doCommand()
-      self.assertEqual(res['Result'], 'AT_RISK')
+      self.assertEqual(res['Result']['DT'], 'AT_RISK')
       self.mock_client.getStatus.return_value =  None
       res = self.GOCDBS_C.doCommand()
-      self.assertEqual(res['Result'], None)
+      self.assertEqual(res['Result']['DT'], None)
       
 #############################################################################
 
@@ -263,17 +266,36 @@ class PilotsStats_CommandFailure(ClientsCommandsTestCase):
 #############################################################################
 
 class PilotsEffSimple_CommandSuccess(ClientsCommandsTestCase):
-  
+
   def test_doCommand(self):
 
-    for granularity in ('Site', 'Service', 'Resource'):
-      args = (granularity, 'XX')
-      for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
-        self.mock_client.getPilotsSimpleEff.return_value =  pe
-        self.PES_C.setArgs(args)
-        self.PES_C.setClient(self.mock_client)
-        res = self.PES_C.doCommand()
-        self.assertEqual(res['Result'], pe)
+    args = ('Site', 'XX')
+    for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
+      self.mock_client.getPilotsSimpleEff.return_value = {'XX':pe}
+      self.PES_C.setArgs(args)
+      self.PES_C.setClient(self.mock_client)
+      res = self.PES_C.doCommand()
+      self.assertEqual(res['Result'], pe)
+
+    mockRSC = Mock()
+    mockRSC.getGeneralName.return_value = 'XX'
+    args = ('Service', 'XX')
+    for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
+      self.mock_client.getPilotsSimpleEff.return_value = {'XX':pe}
+      self.PES_C.setArgs(args)
+      self.PES_C.setClient(self.mock_client)
+      res = self.PES_C.doCommand(mockRSC)
+      self.assertEqual(res['Result'], pe)
+
+    mockRSC = Mock()
+    mockRSC.getGeneralName.return_value = 'XX'
+    args = ('Resource', 'XX')
+    for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
+      self.mock_client.getPilotsSimpleEff.return_value = {'XX':pe}
+      self.PES_C.setArgs(args)
+      self.PES_C.setClient(self.mock_client)
+      res = self.PES_C.doCommand(mockRSC)
+      self.assertEqual(res['Result'], pe)
 
 #############################################################################
     
@@ -370,14 +392,23 @@ class JobsEffSimple_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
 
-    for granularity in ('Site', 'Service'):
-      args = (granularity, 'XX')
-      for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
-        self.mock_client.getJobsSimpleEff.return_value = pe
-        self.JES_C.setArgs(args)
-        self.JES_C.setClient(self.mock_client)
-        res = self.JES_C.doCommand()
-        self.assertEqual(res['Result'], pe)
+    args = ('Site', 'XX')
+    for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
+      self.mock_client.getJobsSimpleEff.return_value = {'XX':pe}
+      self.JES_C.setArgs(args)
+      self.JES_C.setClient(self.mock_client)
+      res = self.JES_C.doCommand()
+      self.assertEqual(res['Result'], pe)
+
+    mockRSC = Mock()
+    mockRSC.getGeneralName.return_value = 'XX'
+    args = ('Service', 'XX')
+    for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
+      self.mock_client.getJobsSimpleEff.return_value = {'XX':pe}
+      self.JES_C.setArgs(args)
+      self.JES_C.setClient(self.mock_client)
+      res = self.JES_C.doCommand(mockRSC)
+      self.assertEqual(res['Result'], pe)
 
 #############################################################################
    
@@ -813,7 +844,61 @@ class SLSLink_CommandFailure(ClientsCommandsTestCase):
 
 #############################################################################
 
+class JobsEffSimpleEveryOne_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+    self.mock_client.getJobsSimpleEff.return_value = {'XX':'Fair', 'YY':'Bad'}
+    self.JSEO_C.setClient(self.mock_client)
+    res = self.JSEO_C.doCommand(['XX', 'YY'])
+    self.assertEqual(res, {'XX':'Fair', 'YY':'Bad'})
+    res = self.JSEO_C.doCommand()
+    self.assertEqual(res, {'XX':'Fair', 'YY':'Bad'})
 
+#############################################################################
+
+class JobsEffSimpleEveryOne_CommandFailure(ClientsCommandsTestCase):
+  
+  def test_clientFail(self):
+    self.mock_client.getJobsSimpleEff.side_effect = Exception()
+    self.JSEO_C.setClient(self.mock_client)
+    res = self.JSEO_C.doCommand(['XX', 'YY'])
+    self.assertEqual(res['Result'], 'Unknown')
+    res = self.JSEO_C.doCommand()
+    self.assertEqual(res['Result'], 'Unknown')
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.JSEO_C.setArgs, None)
+    self.failUnlessRaises(InvalidRes, self.JSEO_C.setArgs, ('sites', ''))
+
+#############################################################################
+
+class PilotsEffSimpleEverySites_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+    self.mock_client.getPilotsSimpleEff.return_value = {'XX':'Fair', 'YY':'Bad'}
+    self.PSES_C.setClient(self.mock_client)
+    res = self.PSES_C.doCommand(['XX', 'YY'])
+    self.assertEqual(res, {'XX':'Fair', 'YY':'Bad'})
+    res = self.PSES_C.doCommand()
+    self.assertEqual(res, {'XX':'Fair', 'YY':'Bad'})
+
+#############################################################################
+
+class PilotsEffSimpleEverySites_CommandFailure(ClientsCommandsTestCase):
+  
+  def test_clientFail(self):
+    self.mock_client.getPilotsSimpleEff.side_effect = Exception()
+    self.PSES_C.setClient(self.mock_client)
+    res = self.PSES_C.doCommand(['XX', 'YY'])
+    self.assertEqual(res['Result'], 'Unknown')
+    res = self.PSES_C.doCommand()
+    self.assertEqual(res['Result'], 'Unknown')
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.PSES_C.setArgs, None)
+    self.failUnlessRaises(InvalidRes, self.PSES_C.setArgs, ('sites', ''))
+
+#############################################################################
 
 #class Macros_CommandSuccess(ClientsCommandsTestCase):
 #  
@@ -828,48 +913,52 @@ class SLSLink_CommandFailure(ClientsCommandsTestCase):
     
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ClientsCommandsTestCase)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ClientsInvokerSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ClientsInvokerFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBStatus_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBStatus_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ClientsInvokerSuccess))
+##  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ClientsInvokerFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBStatus_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBStatus_CommandFailure))
 ##  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBInfo_CommandSuccess))
 ##  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBInfo_CommandFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEff_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEff_CommandFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsStats_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsStats_CommandFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimple_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimple_CommandFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEff_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEff_CommandFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsStats_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsStats_CommandFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SystemCharge_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimple_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimple_CommandFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResults_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResults_CommandFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Open_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Link_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Info_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_All_CommandFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RSPeriods_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RSPeriods_CommandFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ServiceStats_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ServiceStats_CommandFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStats_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStats_CommandFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(StorageElementsStats_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(StorageElementsStats_CommandFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoredStatus_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoredStatus_CommandFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferOperations_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferOperations_CommandFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DIRACAccounting_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSStatus_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSStatus_CommandFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSServiceInfo_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSServiceInfo_CommandFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSLink_CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSLink_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEff_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEff_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsStats_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsStats_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimple_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimple_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEff_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEff_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsStats_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsStats_CommandFailure))
+##  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SystemCharge_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimple_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimple_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResults_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResults_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Open_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Link_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Info_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_All_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RSPeriods_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RSPeriods_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ServiceStats_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ServiceStats_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStats_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStats_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(StorageElementsStats_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(StorageElementsStats_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoredStatus_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoredStatus_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferOperations_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferOperations_CommandFailure))
+##  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DIRACAccounting_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSStatus_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSStatus_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSServiceInfo_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSServiceInfo_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSLink_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSLink_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimpleEveryOne_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimpleEveryOne_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimpleEverySites_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimpleEverySites_CommandFailure))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

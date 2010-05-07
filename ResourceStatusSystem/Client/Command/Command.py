@@ -10,6 +10,7 @@ class Command(object):
   def __init__(self):
     self.args = None
     self.client = None
+    self.RPC = None
   
   def setArgs(self, argsIn):
     """
@@ -33,9 +34,18 @@ class Command(object):
     set `self.client`. If not set, a standard client will be instantiated.
     
     :params:
-      :attr:`commandIn`: a command object 
+      :attr:`clientIn`: a client object 
     """
     self.client = clientIn
+  
+  def setRPC(self, RPCIn = None):
+    """
+    set `self.client`. If not set, a standard RPC will be instantiated.
+    
+    :params:
+      :attr:`clientIn`: a client object 
+    """
+    self.RPC = RPCIn
   
   #to be extended by real commands
   def doCommand(self):

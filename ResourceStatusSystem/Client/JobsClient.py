@@ -4,14 +4,9 @@
 from datetime import datetime, timedelta
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-#from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class JobsClient:
   
-#  def __init__(self):
-#    self.rc = ReportsClient()
-
 #############################################################################
   def getJobsStats(self, name, periods = None):
 #forse qua non ho bisogno di un client... ce l'ho gia' in self.rc! Basta fare un buon command
@@ -108,33 +103,42 @@ class JobsClient:
 #############################################################################
 
 
-  def getJobsSimpleEff(self, granularity, name):
+  def getJobsSimpleEff(self, name, RPCWMSAdmin = None):
     """  
     Return simple jobs efficiency
     
     :params:
-      :attr:`granularity`: string - should be a ValidRes
+      :attr:`name`: string or list of string - Site name(s)
     
-      :attr:`name`: string - should be the name of the ValidRes
-    
-    :return: 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
+      :attr:`RPCWMSAdmin`: RPCClient to RPCWMSAdmin
+
+    :return: {'SiteName':'Good'|'Fair'|'Poor'|'Idle'|'Bad'}
     """
 
-    if granularity not in ('Site', 'Sites'):
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient 
-      rsc = ResourceStatusClient()
-      name = rsc.getGeneralName(granularity, name, 'Site')
-    
-    RPC = RPCClient("WorkloadManagement/WMSAdministrator")
+    if RPCWMSAdmin is not None: 
+      RPC = RPCWMSAdmin
+    else:
+      from DIRAC.Core.DISET.RPCClient import RPCClient
+      RPC = RPCClient("WorkloadManagement/WMSAdministrator")
+
     res = RPC.getSiteSummaryWeb({'Site':name},[],0,500)
     if not res['OK']:
       raise RSSException, where(self, self.getJobsSimpleEff) + " " + res['Message'] 
-#      
-    try:
-      eff = res['Value']['Records'][0][16]
-    except IndexError:
-      return 'Idle'
+    else:
+      res = res['Value']['Records']
     
-    return eff
+    effRes = {}
+    
+    if len(res) == 0:
+      return None 
+    for r in res:
+      name = r[0]
+      try:
+        eff = r[16]
+      except IndexError:
+        eff = 'Idle'
+      effRes[name] = eff 
+    
+    return effRes
   
 #############################################################################

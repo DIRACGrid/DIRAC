@@ -2096,6 +2096,82 @@ class ResourceStatusDB:
 #############################################################################
 
   
+  def addOrModifyClientsCacheRes(self, name, commandName, result, dateEffective = None):
+    """
+    Add or modify a Client Result to the ClientCache table.
+    
+    :params:
+      :attr:`name`: string - name of the ValidRes
+      
+      :attr:`commandName`: string - the command name
+    
+      :attr:`result`: string - command result
+      
+      :attr:`dateEffective`: datetime - 
+      date from which the result is effective
+    """
+    
+    now = datetime.utcnow().replace(microsecond = 0).isoformat(' ')
+    
+    if dateEffective is None:
+      dateEffective = now
+    
+    req = "SELECT Name, CommandName, Result FROM ClientsCache "
+    req = req + "WHERE Name = '%s' AND CommandName = '%s'" %(name, commandName)
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.addOrModifyClientCacheRes) + resQuery['Message']
+
+    if resQuery['Value']: 
+      req = "UPDATE ClientsCache SET "
+      if resQuery['Value'][0][3] != result:
+        req = req + "Result = '%s', DateEffective = '%s', " %(result, dateEffective)
+      req = req + "LastCheckTime = '%s' WHERE " %(now)
+      req = req + "Name = '%s' AND CommandName = '%s'" %(name, commandName)
+      
+      resUpdate = self.db._update(req)
+      if not resUpdate['OK']:
+        raise RSSDBException, where(self, self.addOrModifyClientCacheRes) + resUpdate['Message']
+    else:
+      req = "INSERT INTO ClientsCache (Name, CommandName, Result, DateEffective, "
+      req = req + "LastCheckTime) VALUES ('%s', '%s', " %(name, commandName)
+      req = req + "'%s', '%s', '%s')" %(result, dateEffective, now)
+      resUpdate = self.db._update(req)
+      if not resUpdate['OK']:
+        raise RSSDBException, where(self, self.addOrModifyClientCacheRes) + resUpdate['Message']
+    
+#############################################################################
+
+  def getClientsCacheRes(self, name, commandName, lastCheckTime = False):
+    """ 
+    Get a Policy Result from the ClientCache table.
+    
+    :params:
+      :attr:`name`: string - name of the ValidRes
+      
+      :attr:`commandName`: string - the command name
+      
+      :attr:`lastCheckTime`: optional - if TRUE, it will get also the 
+      LastCheckTime 
+    """
+    
+    req = "SELECT Result"
+    if lastCheckTime:
+      req = req + ", LastCheckTime"  
+    req = req + " FROM ClientsCache WHERE"
+    req = req + " Name = '%s' AND CommandName = '%s'" %(name, commandName)
+
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.getClientCacheRes) + resQuery['Message']
+    if not resQuery['Value']:
+      return []
+    
+    return resQuery['Value'][0]
+    
+
+#############################################################################
+
   def removeRow(self, granularity, name, dateEffective):
     """ 
     Remove a row from one of the tables

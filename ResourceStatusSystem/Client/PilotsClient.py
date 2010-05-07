@@ -4,7 +4,6 @@
 from datetime import datetime, timedelta
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-#from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class PilotsClient:
@@ -113,17 +112,19 @@ class PilotsClient:
 #############################################################################
 
 
-  def getPilotsSimpleEff(self, granularity, name, siteName = None):
+  def getPilotsSimpleEff(self, granularity, name, siteName = None, RPCWMSAdmin = None):
     """  
     Return pilots simple efficiency of entity in args for periods
     
     :params:
       :attr:`granularity`: string - should be a ValidRes (Site or Resource)
       
-      :attr:`name`: string - should be the name of the ValidRes
+      :attr:`name`: string or list - names of the ValidRes
       
       :attr:`siteName`: string - optional site name, in case 
       granularity is `Resource`
+
+      :attr:`RPCWMSAdmin`: RPCClient to RPCWMSAdmin
     
     :return:
     {
@@ -131,12 +132,15 @@ class PilotsClient:
     }
     """
     
-#    try:
-    
-    RPC = RPCClient("WorkloadManagement/WMSAdministrator")
+    if RPCWMSAdmin is not None: 
+      RPC = RPCWMSAdmin
+    else:
+      from DIRAC.Core.DISET.RPCClient import RPCClient
+      RPC = RPCClient("WorkloadManagement/WMSAdministrator")
+
     if granularity in ('Site', 'Sites'):
-      res = RPC.getPilotSummaryWeb({'GridSite':name},[],0,1)
-    elif granularity in ('Resource', 'Resources', 'Service', 'Services'):
+      res = RPC.getPilotSummaryWeb({'GridSite':name},[],0,300)
+    elif granularity in ('Resource', 'Resources'):
       if siteName is None:
         from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
         rsc = ResourceStatusClient()
@@ -151,20 +155,34 @@ class PilotsClient:
     
     if not res['OK']:
       raise RSSException, where(self, self.getPilotsSimpleEff) + " " + res['Message'] 
+    else:
+      res = res['Value']['Records']
     
+    if len(res) == 0:
+      return None 
+
+    effRes = {}
+
     try:
       if granularity in ('Site', 'Sites'):
-        eff = res['Value']['Records'][0][14]
-        return eff
+        for r in res:
+          name = r[0]
+          try:
+            eff = r[14]
+          except IndexError:
+            eff = 'Idle'
+          effRes[name] = eff 
+        
       elif granularity in ('Resource', 'Resources'):
-        for x in res['Value']['Records']:
-          if x[1] == name:
-            eff = x[14]
-        try:
-          eff
-          return eff
-        except NameError:
-          return None
+        for r in res:
+          if r[1] == name:
+            try:
+              eff = r[14]
+            except IndexError:
+              eff = 'Idle'
+        effRes[name] = eff 
+
+      return effRes
         
     except IndexError:
       return None

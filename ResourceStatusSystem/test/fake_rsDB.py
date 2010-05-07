@@ -170,6 +170,12 @@ class ResourceStatusDB:
   def getPolicyRes(self, name, policyName, lastCheckTime = False):
     return ('Active', 'DT:None')
   
+  def addOrModifyClientsCacheRes(self, name, commandName, result, dateEffective = None):
+    pass
+  
+  def getClientsCacheRes(self, name, commandName, lastCheckTime = False):
+    return ('Bad', )
+  
   def transact2History(self, *args):
     pass
 

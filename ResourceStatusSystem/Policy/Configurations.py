@@ -591,3 +591,8 @@ views_panels = {
 }
 
 
+#############################################################################
+# Clients cache 
+#############################################################################
+
+Commands_to_use = ['JobsEffSimpleEveryOne', 'PilotsEffSimpleEverySites']

@@ -104,24 +104,27 @@ class SystemCharge_Command(Command):
 
 class JobsEffSimple_Command(Command):
   
-  def doCommand(self):
-    """ Returns simple jobs efficiency
-        
-       :params:
-         :attr:`args`: 
-           - args[0]: string: should be a ValidRes
-      
-           - args[1]: string should be the name of the ValidRes
+  def doCommand(self, RSClientIn = None):
+    """ 
+    Returns simple jobs efficiency
 
-        returns:
-          {
-            'jobsEff': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
-          }
+    :attr:`args`: 
+       - args[0]: string: should be a ValidRes
+  
+       - args[1]: string should be the name of the ValidRes
+
+    returns:
+      {
+        'jobsEff': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
+      }
     """
 
     if self.args[0] in ('Service', 'Services'):
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
-      rsc = ResourceStatusClient()
+      if RSClientIn is not None:
+        rsc = RSClientIn
+      else:
+        from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
+        rsc = ResourceStatusClient()
       try:
         name = rsc.getGeneralName(self.args[0], self.args[1], 'Site')
       except:
@@ -139,12 +142,14 @@ class JobsEffSimple_Command(Command):
       self.client = JobsClient()
       
     try:
-      res = self.client.getJobsSimpleEff(granularity, name)
+      res = self.client.getJobsSimpleEff(name)
+      if res == None:
+        return {'Result':'Idle'}
     except:
       gLogger.exception("Exception when calling JobsClient for %s %s" %(granularity, name))
       return {'Result':'Unknown'}
     
-    return {'Result':res}
+    return {'Result':res[name]}
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
