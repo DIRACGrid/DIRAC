@@ -137,8 +137,6 @@ class PolicyCaller:
     if commandIn is not None:
       commandIn = self.cc.setCommandObject(commandIn)
 
-    print commandIn
-
     res = self._innerEval(p, a, commandIn = commandIn)
 
     res['PolicyName'] = pol

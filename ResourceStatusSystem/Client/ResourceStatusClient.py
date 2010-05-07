@@ -183,7 +183,7 @@ class ResourceStatusClient:
       (result, )
     """
 
-    res = self.rsS.getClientsCacheRes(name, commandName)
+    res = self.rsS.getCachedResult(name, commandName)
     if not res['OK']:
       raise RSSException, where(self, self.getCachedResult) + " " + res['Message'] 
   

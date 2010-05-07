@@ -195,13 +195,15 @@ class JobsEffSimpleCached_Command(Command):
       res = self.client.getCachedResult(name, 'JobsEffSimpleEveryOne')
       if res == None:
         return {'Result':'Idle'}
+      if res == []:
+        return {'Result':'Unknown'}
     except:
       gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(granularity, name))
       return {'Result':'Unknown'}
     
     print res
     
-    return {'Result':res[name]}
+    return {'Result':res[0]}
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
