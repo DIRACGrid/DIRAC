@@ -41,8 +41,8 @@ class SystemAdministratorHandler( RequestHandler ):
     services = {}
     agents = {}
     
-    systemList = os.listdir(DIRACROOT+'/DIRAC')
     for extension in ['DIRAC']+[ x+'DIRAC' for x in extensions]:
+      systemList = os.listdir(DIRACROOT+'/'+extension)
       for sys in systemList:
         system = sys.replace('System','')
         try:
