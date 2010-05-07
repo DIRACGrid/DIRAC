@@ -1390,6 +1390,27 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
+  types_getCachedResult = [StringType, StringType]
+  def export_getCachedResult(self, name, command):
+    """ get a cached result
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getCachedResulr: Attempting to get %s: %s cached result" % (name, command))
+      try:
+        res = rsDB.getClientsCacheRes(name, command)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getCachedResult: got %s: %s cached result" % (name, command))
+      return S_OK(res)
+    except Exception:
+      errorStr = where(self, self.export_getCachedResult)
+      gLogger.exception(errorStr)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
   types_publisher = [StringType, StringType, StringType]
   def export_publisher(self, granularity, name, view):
     """ get a view

@@ -60,6 +60,10 @@ class CommandCaller:
       from DIRAC.ResourceStatusSystem.Client.Command.Jobs_Command import JobsEffSimple_Command
       c = JobsEffSimple_Command()
 
+    elif comm == 'JE_S_Cached':
+      from DIRAC.ResourceStatusSystem.Client.Command.Jobs_Command import JobsEffSimpleCached_Command
+      c = JobsEffSimpleCached_Command()
+
     elif comm == 'PE_S':
       from DIRAC.ResourceStatusSystem.Client.Command.Pilots_Command import PilotsEffSimple_Command
       c = PilotsEffSimple_Command()

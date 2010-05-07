@@ -224,6 +224,10 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     res = self.rsh.export_getServiceStats('')
     self.assert_(res['OK'])
 
+  def test_export_getCachedResult(self):
+    res = self.rsh.export_getCachedResult('XX', 'YY')
+    self.assert_(res['OK'])
+        
   def test_export_getGeneralName(self):
     for g_1 in ValidRes:
       for g_2 in ValidRes:

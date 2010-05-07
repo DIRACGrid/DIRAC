@@ -154,3 +154,55 @@ class JobsEffSimple_Command(Command):
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 #############################################################################
+
+class JobsEffSimpleCached_Command(Command):
+  
+  def doCommand(self):
+    """ 
+    Returns simple jobs efficiency
+
+    :attr:`args`: 
+       - args[0]: string: should be a ValidRes
+  
+       - args[1]: string should be the name of the ValidRes
+
+    returns:
+      {
+        'jobsEff': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
+      }
+    """
+
+    print "sto usando il vecchio!"
+
+    if self.client is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.client = ResourceStatusClient()
+      
+    if self.args[0] in ('Service', 'Services'):
+      try:
+        name = self.client.getGeneralName(self.args[0], self.args[1], 'Site')
+      except:
+        gLogger.error("Can't get a general name for %s %s" %(self.args[0], self.args[1]))
+        return {'Result':'Unknown'}      
+      granularity = 'Site'
+    elif self.args[0] in ('Site', 'Sites'):
+      name = self.args[1]
+      granularity = self.args[0]
+    else:
+      raise InvalidRes, where(self, self.doCommand)
+    
+    try:
+      res = self.client.getCachedResult(name, 'JobsEffSimpleEveryOne')
+      if res == None:
+        return {'Result':'Idle'}
+    except:
+      gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(granularity, name))
+      return {'Result':'Unknown'}
+    
+    print res
+    
+    return {'Result':res[name]}
+
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    
+#############################################################################

@@ -168,6 +168,27 @@ class ResourceStatusClient:
       except IndexError:
         return None
     
+#############################################################################
+
+  def getCachedResult(self, name, commandName):
+    """ 
+    Returns a cached result;
+        
+    :params:
+      :attr:`name`: string, name of site or resource
+    
+      :attr:`commandName`: string
+      
+    :returns:
+      (result, )
+    """
+
+    res = self.rsS.getClientsCacheRes(name, commandName)
+    if not res['OK']:
+      raise RSSException, where(self, self.getCachedResult) + " " + res['Message'] 
+  
+    return res['Value']
+  
 
 #############################################################################
 

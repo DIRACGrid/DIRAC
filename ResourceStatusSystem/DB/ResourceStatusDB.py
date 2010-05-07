@@ -2124,7 +2124,7 @@ class ResourceStatusDB:
 
     if resQuery['Value']: 
       req = "UPDATE ClientsCache SET "
-      if resQuery['Value'][0][3] != result:
+      if resQuery['Value'][0][2] != result:
         req = req + "Result = '%s', DateEffective = '%s', " %(result, dateEffective)
       req = req + "LastCheckTime = '%s' WHERE " %(now)
       req = req + "Name = '%s' AND CommandName = '%s'" %(name, commandName)

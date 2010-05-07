@@ -53,6 +53,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.JS_C = JobsStats_Command()
     self.SC_C = SystemCharge_Command()
     self.JES_C = JobsEffSimple_Command()
+    self.JESC_C = JobsEffSimpleCached_Command()
     self.PES_C = PilotsEffSimple_Command()
     self.SAMR_C = SAMResults_Command()
     self.RSP_C = RSPeriods_Command()
@@ -425,6 +426,37 @@ class JobsEffSimple_CommandFailure(ClientsCommandsTestCase):
     
   def test_badArgs(self):
     self.failUnlessRaises(InvalidRes, self.JES_C.setArgs, ('sites', ''))
+     
+#############################################################################
+
+class JobsEffSimpleCached_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+
+    args = ('Site', 'XX')
+    self.mock_client.getGeneralName.return_value = 'XX'
+    for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
+      self.mock_client.getCachedResult.return_value = {'XX':pe}
+      self.JESC_C.setArgs(args)
+      self.JESC_C.setClient(self.mock_client)
+      res = self.JESC_C.doCommand()
+      self.assertEqual(res['Result'], pe)
+
+#############################################################################
+   
+class JobsEffSimpleCached_CommandFailure(ClientsCommandsTestCase):
+  
+  def test_clientFail(self):
+    self.mock_client.getCachedResult.side_effect = Exception()
+    for g in ('Site', 'Service'):
+      for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
+        self.JESC_C.setArgs((g, 'XX'))
+        self.JESC_C.setClient(self.mock_client)
+        res = self.JESC_C.doCommand()
+        self.assertEqual(res['Result'], 'Unknown')
+    
+  def test_badArgs(self):
+    self.failUnlessRaises(InvalidRes, self.JESC_C.setArgs, ('sites', ''))
      
 #############################################################################
 
@@ -913,52 +945,54 @@ class PilotsEffSimpleEverySites_CommandFailure(ClientsCommandsTestCase):
     
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ClientsCommandsTestCase)
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ClientsInvokerSuccess))
-##  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ClientsInvokerFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBStatus_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBStatus_CommandFailure))
-##  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBInfo_CommandSuccess))
-##  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBInfo_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ClientsInvokerSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ClientsInvokerFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBStatus_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBStatus_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBInfo_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBInfo_CommandFailure))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEff_CommandSuccess))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEff_CommandFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsStats_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsStats_CommandFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimple_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimple_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsStats_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsStats_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimple_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimple_CommandFailure))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEff_CommandSuccess))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEff_CommandFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsStats_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsStats_CommandFailure))
-##  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SystemCharge_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimple_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimple_CommandFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResults_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResults_CommandFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Open_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Link_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Info_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_All_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsStats_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsStats_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SystemCharge_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimple_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimple_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimpleCached_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimpleCached_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResults_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResults_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Open_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Link_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_Info_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTickets_All_CommandFailure))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RSPeriods_CommandSuccess))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RSPeriods_CommandFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ServiceStats_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ServiceStats_CommandFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStats_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStats_CommandFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(StorageElementsStats_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(StorageElementsStats_CommandFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoredStatus_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoredStatus_CommandFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferOperations_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferOperations_CommandFailure))
-##  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DIRACAccounting_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSStatus_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSStatus_CommandFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSServiceInfo_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSServiceInfo_CommandFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSLink_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSLink_CommandFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimpleEveryOne_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimpleEveryOne_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ServiceStats_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ServiceStats_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStats_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStats_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(StorageElementsStats_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(StorageElementsStats_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoredStatus_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoredStatus_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferOperations_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferOperations_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DIRACAccounting_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSStatus_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSStatus_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSServiceInfo_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSServiceInfo_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSLink_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSLink_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimpleEveryOne_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimpleEveryOne_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimpleEverySites_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimpleEverySites_CommandFailure))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
