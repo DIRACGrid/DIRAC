@@ -174,12 +174,14 @@ class PilotsClient:
           effRes[name] = eff 
         
       elif granularity in ('Resource', 'Resources'):
+        eff = None
         for r in res:
           if r[1] == name:
             try:
               eff = r[14]
             except IndexError:
               eff = 'Idle'
+            break
         effRes[name] = eff 
 
       return effRes

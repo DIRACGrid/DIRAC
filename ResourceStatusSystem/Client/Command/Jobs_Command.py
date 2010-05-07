@@ -172,8 +172,6 @@ class JobsEffSimpleCached_Command(Command):
       }
     """
 
-    print "sto usando il vecchio!"
-
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
       self.client = ResourceStatusClient()
@@ -200,8 +198,6 @@ class JobsEffSimpleCached_Command(Command):
     except:
       gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(granularity, name))
       return {'Result':'Unknown'}
-    
-    print res
     
     return {'Result':res[0]}
 

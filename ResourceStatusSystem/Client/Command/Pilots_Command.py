@@ -98,6 +98,10 @@ class PilotsEffSimple_Command(Command):
       
     try:
       res = self.client.getPilotsSimpleEff(granularity, name)
+      if res[name] is None:
+        return {'Result':'Unknown'}
+      if res is None:
+        return {'Result':None}
     except:
       gLogger.exception("Exception when calling PilotsClient for %s %s" %(granularity, name))
       return {'Result':'Unknown'}
