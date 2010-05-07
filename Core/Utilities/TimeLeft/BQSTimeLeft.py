@@ -42,16 +42,21 @@ class BQSTimeLeft:
     cpu = None
     cpuLimit = None
     try:
-      cpuList = result['Value'].split()[5].split('/')
-      cpu = cpuList[0]
-      cpuLimit = cpuList[1]
+      cpuItems = result['Value'].split()
+      if cpuItems[5][-1] == '/':
+        cpu = float(cpuItems[5][:-1])
+        cpuLimit = float(cpuItems[6])
+      else:
+        cpuList = cpuString.split()[5].split('/')
+        cpu = float(cpuList[0])
+        cpuLimit = float(cpuList[1])
     except Exception, x:
       self.log.warn('Problem parsing "%s" for CPU usage' %(result['Value']))
 
     #BQS has no wallclock limit so will simply return the same as for CPU to the TimeLeft utility
     wallClock = cpu
     wallClockLimit = cpuLimit
-    consumed = {'CPU':float(cpu),'CPULimit':float(cpuLimit),'WallClock':float(wallClock),'WallClockLimit':float(wallClockLimit)}
+    consumed = {'CPU':cpu,'CPULimit':cpuLimit,'WallClock':wallClock,'WallClockLimit':wallClockLimit}
     self.log.debug(consumed)
     failed = False
     for k,v in consumed.items():
