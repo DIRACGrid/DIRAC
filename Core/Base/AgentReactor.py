@@ -1,3 +1,6 @@
+# $HeadURL$
+
+__RCSID__ = "$Id$"
 
 import time
 import os
