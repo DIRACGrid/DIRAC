@@ -488,11 +488,13 @@ class JobWrapper:
       return S_ERROR( msg )
 
     if not self.jobArgs.has_key( 'InputDataModule' ):
-      msg = 'Job has no input data resolution module'
+      msg = 'Job has no input data resolution module specified'
       self.log.warn( msg )
-      return S_ERROR( msg )
-
-    inputDataPolicy = self.jobArgs['InputDataModule']
+      # Use the default one
+      inputDataPolicy = 'DIRAC.WorkloadManagementSystem.Client.InputDataResolution'
+    else:
+      inputDataPolicy = self.jobArgs['InputDataModule']  
+    
     self.log.verbose( 'Job input data requirement is \n%s' % ( string.join( inputData, ',\n' ) ) )
     self.log.verbose( 'Job input data resolution policy module is %s' % ( inputDataPolicy ) )
     self.log.info( 'Site has the following local SEs: %s' % ( string.join( localSEList, ', ' ) ) )
