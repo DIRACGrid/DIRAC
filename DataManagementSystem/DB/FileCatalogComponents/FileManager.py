@@ -74,7 +74,33 @@ class FileManager:
     return res
     
   def getFileMetadata(self, lfns):
-    return self._getMetadataForLFNs(lfns,['Size','CheckSum','CheckSumType','UID','GID','CreationDate','ModificationDate','Mode','Status'])
+    """ Get metadata for the list of LFNS
+    """
+    result = self._getMetadataForLFNs(lfns,['Size','CheckSum','CheckSumType','UID','GID','CreationDate','ModificationDate','Mode','Status'])
+    if not result['OK']:
+      return result
+    
+    if not result['Value']['Successful']:
+      return result
+    
+    successful = result['Value']['Successful']
+    failed = result['Value']['Failed']
+    fileIDDict = result['Value']['FileIDDict']
+    
+    fileIDList = []
+    for id,lfn in fileIDDict.items():
+      if lfn in successful:
+        fileIDList.append(id)
+        
+    result = self.__getGuidFromFileIDs(fileIDList)
+    if not result['OK']:
+      return result
+    
+    guidDict = result['Value']
+    for id,guid in guidDict.items():
+      successful[fileIDDict[id]]['GUID'] = guid    
+        
+    return S_OK({'Successful':successful,'Failed':failed})    
 
   def __getFileIDForDirectoryFiles(self,dirID,fileNames):
     req = "SELECT FileID,FileName FROM FC_Files WHERE DirID=%d AND FileName IN (%s)" % (dirID,stringListToString(fileNames))            
@@ -99,6 +125,28 @@ class FileManager:
     if not result['Value']:
       return S_ERROR('File not found')
     return S_OK(result['Value'][0][0])
+  
+  def __getGuidFromFileIDs(self,fileID):
+    """ Get GUID of the given list of files """
+    
+    if type(fileID) != ListType:
+      fileList = [fileID]
+    else:
+      fileList = fileID  
+    
+    fileString = ','.join([ str(x) for x in fileList])
+    
+    req = "SELECT FileID,GUID FROM FC_GUID_to_File WHERE FileID in (%s)" % fileString
+    result = self.db._query(req)
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      return S_ERROR('File not found')
+    fileDict = {}
+    for row in result['Value']:
+      fileDict[row[0]] = row[1]
+      
+    return S_OK(fileDict)
 
   def __setFileOwner(self,fileID,owner):
     """ Set the file owner """
@@ -157,7 +205,7 @@ class FileManager:
       if (not lfn in failed.keys()) and (not lfn in successful.keys()):
         # must have been removed between findFile and __getSizeForFileIDs (pretty damn unlikely)
         failed[lfn] = 'File not found' 
-    return S_OK({'Successful':successful,'Failed':failed}) 
+    return S_OK({'Successful':successful,'Failed':failed,'FileIDDict':fileIDLFNs}) 
 
   def __getFileDirectories(self,lfns):
     dirDict = {}
