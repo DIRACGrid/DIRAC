@@ -702,13 +702,15 @@ File Catalog Client $Revision: 1.17 $Date:
     
     path = args.split()[0]
     lfn = self.getPath(path)
-    print "lfn:",path
     try:
-      result =  self.fc.getGuidByLfn(path)
-      if result['Status'] == 'OK':
-        print "GUID:",result['GUID']
+      result =  self.fc.getFileMetadata(path)
+      if result['OK']:
+        if result['Value']['Successful']:
+          print "GUID:",result['Value']['Successful'][path]['GUID']
+        else:
+          print "ERROR: getting guid failed"  
       else:
-        print "GUID: failed",result['Message']
+        print "ERROR:",result['Message']
     except Exception, x:
       print "guid failed: ", x   
       
