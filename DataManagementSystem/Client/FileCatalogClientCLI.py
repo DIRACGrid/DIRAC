@@ -420,9 +420,6 @@ File Catalog Client $Revision: 1.17 $Date:
     if path == '-':
       path = self.previous_cwd
     elif path.find('..') == 0:
-      if path.find('/..') >-1:
-        print "/.. is not allowed"
-      else:
         ##allow smoother navigation
         dirs = path.split("/")
         nb_returns = dirs.count("..")
