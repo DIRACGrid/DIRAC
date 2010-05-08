@@ -423,7 +423,7 @@ File Catalog Client $Revision: 1.17 $Date:
         ##allow smoother navigation
         dirs = path.split("/")
         nb_returns = dirs.count("..")
-        curdir_elems = os.path.dirname(self.cwd).split("/")
+        curdir_elems = self.cwd.split("/")
         curdir_elems_fin = curdir_elems[0:len(curdir_elems)-nb_returns]
         curdir_elems_fin.extend(dirs[nb_returns:])
         path = string.join(curdir_elems_fin,"/")
