@@ -31,6 +31,10 @@ class DownloadInputData:
     self.inputData = argumentsDict['InputData']
     self.configuration = argumentsDict['Configuration']
     self.fileCatalogResult = argumentsDict['FileCatalog']
+    # By default put each input data file into a separate directory
+    self.inputDataDirectory = 'PerFile'
+    if argumentsDict.has_key('InputDataDirectory'):
+      self.inputDataDirectory = argumentsDict['InputDataDirectory'] 
     self.jobID = None
     self.rm = ReplicaManager()
     self.counter=1
@@ -193,7 +197,12 @@ class DownloadInputData:
         Manager will perform an LFC lookup to refresh the stored result.
     """
     start = os.getcwd()
-    downloadDir = tempfile.mkdtemp(prefix='InputData_%s' %(self.counter), dir=start)
+    if self.inputDataDirectory == "PerFile":
+      downloadDir = tempfile.mkdtemp(prefix='InputData_%s' %(self.counter), dir=start)
+    elif self.inputDataDirectory == "CWD":
+      downloadDir = start
+    else:
+      downloadDir = self.inputDataDirectory    
     self.counter+=1
     os.chdir(downloadDir)
     self.log.verbose('Attempting to ReplicaManager.getFile for %s in %s' %(lfn,downloadDir))
@@ -221,7 +230,12 @@ class DownloadInputData:
       return S_OK(fileDict)
 
     start = os.getcwd()
-    downloadDir = tempfile.mkdtemp(prefix='InputData_%s' %(self.counter), dir=start)
+    if self.inputDataDirectory == "PerFile":
+      downloadDir = tempfile.mkdtemp(prefix='InputData_%s' %(self.counter), dir=start)
+    elif self.inputDataDirectory == "CWD":
+      downloadDir = start
+    else:
+      downloadDir = self.inputDataDirectory  
     self.counter+=1
 
     result = self.rm.getStorageFile(pfn,se,localPath=downloadDir,singleFile=True)

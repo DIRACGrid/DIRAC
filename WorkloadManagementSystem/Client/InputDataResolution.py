@@ -32,6 +32,9 @@ class InputDataResolution:
     """ Standard constructor
     """
     self.arguments = argumentsDict
+    # By default put input data into the current directory
+    if not self.arguments.has_key('InputDataDirectory'):
+      self.arguments['InputDataDirectory'] = 'CWD'
     self.name = COMPONENT_NAME
     self.log = gLogger.getSubLogger(self.name)
 
