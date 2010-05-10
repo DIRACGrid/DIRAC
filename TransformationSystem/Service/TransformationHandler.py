@@ -182,7 +182,7 @@ class TransformationHandler(RequestHandler):
     transDict = res['Value']
     status = transDict['Status']
     submitDict = {}
-    if status in ['Active','Flush']:
+    if status in ['Active','Completing','Flush']:
       res = self.database.getTasksForSubmission(transName,numTasks=numTasks,site=site,statusList=['Created'])
       if not res['OK']:
         return self.__parseRes(res)
