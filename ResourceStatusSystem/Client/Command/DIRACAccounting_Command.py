@@ -33,9 +33,13 @@ class DIRACAccounting_Command(Command):
        - args[6]: dictionary - optional conditions
     """
     
+    if self.RPC is None:
+      from DIRAC.Core.DISET.RPCClient import RPCClient
+      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
+      
     if self.client is None:
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient()
+      self.client = ReportsClient(rpcClient = self.RPC)
 
     granularity = self.args[0]
     name = self.args[1]
@@ -104,10 +108,13 @@ class TransferQuality_Command(Command):
       {'TransferQuality': None | a number between 0 and 1}
     """
     
+    if self.RPC is None:
+      from DIRAC.Core.DISET.RPCClient import RPCClient
+      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
+      
     if self.client is None:
-      # use standard Client
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-      self.client = ReportsClient()
+      self.client = ReportsClient(rpcClient = self.RPC)
 
     try:
       if self.args[2] is None:
@@ -129,7 +136,7 @@ class TransferQuality_Command(Command):
                                          {'OperationType':'putAndRegister', 
                                           'Destination':[self.args[1]]}, 'Channel')
       if not pr_quality['OK']:
-        raise RSSException, where(self, self.getQualityStats) + " " + pr_quality['Message'] 
+        raise RSSException, where(self, self.doCommand) + " " + pr_quality['Message'] 
 
     except:
       gLogger.exception("Exception when calling ReportsClient for %s %s" %(self.args[0], self.args[1]))

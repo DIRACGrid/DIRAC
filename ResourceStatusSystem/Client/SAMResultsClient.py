@@ -10,7 +10,8 @@ class SAMResultsClient:
   
 #############################################################################
 
-  def getStatus(self, granularity, name, siteName = None, tests = None):
+  def getStatus(self, granularity, name, siteName = None, 
+                tests = None, timeout = None):
     """  
     Return stats of entity in args
     
@@ -36,6 +37,9 @@ class SAMResultsClient:
     elif granularity in ('Resource', 'Resources'):
       siteName = siteName
     
+    if timeout is not None:
+      socket.setdefaulttimeout(timeout)
+    
     sam = self._curlDownload(granularity, site = siteName, tests = tests)
     
     if sam is None:
@@ -60,8 +64,6 @@ class SAMResultsClient:
   def _curlDownload(self, granularity, site, tests):
     """ Download SAM status for entity using the SAM DB programmatic interface
     """
-
-    socket.setdefaulttimeout(10)
 
     samdbpi_url = "http://lcg-sam.cern.ch:8080/same-pi/"
     # Set your method

@@ -9,7 +9,7 @@ class SLSClient:
 
 #############################################################################
 
-  def getInfo(self, name):
+  def getInfo(self, name, timeout = None):
     """  
     Use getStatus to return actual SLS status of entity in name 
     and return link to SLS page
@@ -25,14 +25,14 @@ class SLSClient:
 
     """
     
-    status = self.getAvailabilityStatus(name)
+    status = self.getAvailabilityStatus(name, timeout)
     status['Weblink'] = self.getLink(name)['WebLink']
     
     return status
 
 #############################################################################
 
-  def getAvailabilityStatus(self, name):
+  def getAvailabilityStatus(self, name, timeout = None):
     """  
     Return actual SLS availability status of entity in name
      
@@ -40,7 +40,7 @@ class SLSClient:
       :attr:`name`: string - name of the service
     """
     
-    res = self._read_availability_from_url(name)
+    res = self._read_availability_from_url(name, timeout)
 
     if "ERROR: Couldn't find service" in res:
       raise NoServiceException
@@ -51,7 +51,7 @@ class SLSClient:
   
 #############################################################################
 
-  def getServiceInfo(self, name, infos):
+  def getServiceInfo(self, name, infos, timeout = None):
     """  
     Return actual SLS "additional service information"
      
@@ -67,7 +67,7 @@ class SLSClient:
 
     """
 
-    sls = self._urlDownload(name)
+    sls = self._urlDownload(name, timeout)
     
     res = self._xmlParsing(sls, infos)
     
@@ -81,12 +81,13 @@ class SLSClient:
   
 #############################################################################
  
-  def _read_availability_from_url(self, service):
+  def _read_availability_from_url(self, service, timeout = None):
     """ download from SLS PI the value of the availability as returned for
         the service  
     """
 
-    socket.setdefaulttimeout(10)
+    if timeout is not None:
+      socket.setdefaulttimeout(timeout)
     
     # Set the SLS URL
     sls_base = "http://sls.cern.ch/sls/getServiceAvailability.php?id="
@@ -102,11 +103,12 @@ class SLSClient:
 
 #############################################################################
 
-  def _urlDownload(self, service):
+  def _urlDownload(self, service, timeout = None):
     """ download from SLS the XML of info regarding service
     """
 
-    socket.setdefaulttimeout(10)
+    if timeout is not None:
+      socket.setdefaulttimeout(timeout)
     
     # Set the SLS URL
     sls_base = "http://sls.cern.ch/sls/update/"

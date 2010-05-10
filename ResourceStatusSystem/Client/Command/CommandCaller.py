@@ -68,6 +68,10 @@ class CommandCaller:
       from DIRAC.ResourceStatusSystem.Client.Command.Pilots_Command import PilotsEffSimple_Command
       c = PilotsEffSimple_Command()
 
+    elif comm == 'PE_S_Cached':
+      from DIRAC.ResourceStatusSystem.Client.Command.Pilots_Command import PilotsEffSimpleCached_Command
+      c = PilotsEffSimpleCached_Command()
+
     elif comm == 'ServiceStats':
       from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import ServiceStats_Command 
       c = ServiceStats_Command()
@@ -135,6 +139,8 @@ class CommandCaller:
 #############################################################################
 
   def setCommandClient(self, comm, cObj, RPCWMSAdmin = None):
+    
+    client = None
     
     if comm == 'JobsEffSimpleEveryOne':
       from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient

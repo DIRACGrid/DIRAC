@@ -61,7 +61,7 @@ class ServiceStats_Command(Command):
 
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
-      self.client = ResourceStatusClient()
+      self.client = ResourceStatusClient(timeout = self.timeout)
       
     try:
       res = self.client.getServiceStats(self.args[0], self.args[1])
@@ -96,7 +96,7 @@ class ResourceStats_Command(Command):
 
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
-      self.client = ResourceStatusClient()
+      self.client = ResourceStatusClient(timeout = self.timeout)
       
     try:
       res = self.client.getResourceStats(self.args[0], self.args[1])
@@ -140,7 +140,7 @@ class StorageElementsStats_Command(Command):
     
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
-      self.client = ResourceStatusClient()
+      self.client = ResourceStatusClient(timeout = self.timeout)
       
     try:
       res = self.client.getStorageElementsStats(granularity, name)
@@ -178,7 +178,7 @@ class MonitoredStatus_Command(Command):
     
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
-      self.client = ResourceStatusClient()
+      self.client = ResourceStatusClient(timeout = self.timeout)
       
     try:
       if len(self.args) == 3:

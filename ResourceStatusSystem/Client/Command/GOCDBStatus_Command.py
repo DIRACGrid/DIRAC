@@ -42,7 +42,7 @@ class GOCDBStatus_Command(Command):
       name = getSiteRealName(name)
 
     try:
-      res = self.client.getStatus(granularity, name, None, hours)
+      res = self.client.getStatus(granularity, name, None, hours, self.timeout)
       if res is None or res == []:
         return {'Result':{'DT':None}}
       
@@ -117,7 +117,7 @@ class GOCDBInfo_Command(Command):
 
     try:
 
-      res = self.client.getStatus(granularity, name, None, hours)
+      res = self.client.getStatus(granularity, name, None, hours, self.timeout)
 
       if res is None or res == []:
         return {'DT':'None'}

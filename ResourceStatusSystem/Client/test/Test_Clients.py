@@ -97,7 +97,7 @@ class ResourceStatusClientSuccess(ClientsTestCase):
       self.assertEqual(res, 'Active')
 
   def test_getServiceStats(self):
-    self.mockRSS.getClientsCacheRes.return_value = {'OK':True, 'Value':[]}
+    self.mockRSS.getCachedResult.return_value = {'OK':True, 'Value':[]}
     res = self.RSCli.getCachedResult('XX', 'pippo')
     self.assertEqual(res, [])
   
@@ -184,7 +184,7 @@ class GGUSTicketsClientSuccess(ClientsTestCase):
   
   def test_getTicketsList(self):
     res = self.GGUSCli.getTicketsList('INFN-CAGLIARI')
-    self.assertEqual(res[0]['open'], 1)
+    self.assertEqual(res[0]['open'], 0)
 
 
 #############################################################################

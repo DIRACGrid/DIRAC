@@ -70,7 +70,8 @@ class SAMResults_Command(Command):
       tests = None
     finally:
       try:
-        res = self.client.getStatus(granularity, name, siteName, tests)
+        res = self.client.getStatus(granularity, name, siteName, tests, 
+                                    timeout = self.timeout)
       except NoSAMTests:
         gLogger.error("There are no SAM tests for " + granularity + " " + name )
         return  {'Result':None}

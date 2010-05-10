@@ -55,6 +55,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.JES_C = JobsEffSimple_Command()
     self.JESC_C = JobsEffSimpleCached_Command()
     self.PES_C = PilotsEffSimple_Command()
+    self.PESC_C = PilotsEffSimpleCached_Command()
     self.SAMR_C = SAMResults_Command()
     self.RSP_C = RSPeriods_Command()
     self.GGUS_O_C = GGUSTickets_Open()
@@ -303,7 +304,7 @@ class PilotsEffSimple_CommandSuccess(ClientsCommandsTestCase):
 class PilotsEffSimple_CommandFailure(ClientsCommandsTestCase):
   
   def test_clientFail(self):
-    self.mock_client.getPilotsSimpleEff .side_effect = Exception()
+    self.mock_client.getPilotsSimpleEff.side_effect = Exception()
     for g in ('Site', 'Service', 'Resource'):
       for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
         self.PES_C.setArgs((g, 'XX'))
@@ -436,7 +437,7 @@ class JobsEffSimpleCached_CommandSuccess(ClientsCommandsTestCase):
     args = ('Site', 'XX')
     self.mock_client.getGeneralName.return_value = 'XX'
     for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
-      self.mock_client.getCachedResult.return_value = {'XX':pe}
+      self.mock_client.getCachedResult.return_value = (pe, )
       self.JESC_C.setArgs(args)
       self.JESC_C.setClient(self.mock_client)
       res = self.JESC_C.doCommand()
@@ -453,6 +454,37 @@ class JobsEffSimpleCached_CommandFailure(ClientsCommandsTestCase):
         self.JESC_C.setArgs((g, 'XX'))
         self.JESC_C.setClient(self.mock_client)
         res = self.JESC_C.doCommand()
+        self.assertEqual(res['Result'], 'Unknown')
+    
+  def test_badArgs(self):
+    self.failUnlessRaises(InvalidRes, self.JESC_C.setArgs, ('sites', ''))
+     
+#############################################################################
+
+class PilotsEffSimpleCached_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+
+    args = ('Site', 'XX')
+    self.mock_client.getGeneralName.return_value = 'XX'
+    for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
+      self.mock_client.getCachedResult.return_value = (pe, )
+      self.PESC_C.setArgs(args)
+      self.PESC_C.setClient(self.mock_client)
+      res = self.PESC_C.doCommand()
+      self.assertEqual(res['Result'], pe)
+
+#############################################################################
+   
+class PilotsEffSimpleCached_CommandFailure(ClientsCommandsTestCase):
+  
+  def test_clientFail(self):
+    self.mock_client.getCachedResult.side_effect = Exception()
+    for g in ('Site', 'Service'):
+      for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
+        self.PESC_C.setArgs((g, 'XX'))
+        self.PESC_C.setClient(self.mock_client)
+        res = self.PESC_C.doCommand()
         self.assertEqual(res['Result'], 'Unknown')
     
   def test_badArgs(self):
@@ -957,6 +989,8 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsStats_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimple_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimple_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimpleCached_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimpleCached_CommandFailure))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEff_CommandSuccess))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEff_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsStats_CommandSuccess))

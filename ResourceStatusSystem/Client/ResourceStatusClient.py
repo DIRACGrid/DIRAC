@@ -10,11 +10,11 @@ class ResourceStatusClient:
   
 #############################################################################
 
-  def __init__(self, serviceIn = None):
+  def __init__(self, serviceIn = None, timeout = None):
     """ Constructor of the ResourceStatusClient class
     """
     if serviceIn == None:
-      self.rsS = RPCClient("ResourceStatus/ResourceStatus")
+      self.rsS = RPCClient("ResourceStatus/ResourceStatus", timeout = timeout)
     else:
       self.rsS = serviceIn
 
@@ -182,6 +182,8 @@ class ResourceStatusClient:
     :returns:
       (result, )
     """
+
+    print "CHIAMATA A Cached result " + name + commandName
 
     res = self.rsS.getCachedResult(name, commandName)
     if not res['OK']:

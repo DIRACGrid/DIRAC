@@ -68,7 +68,7 @@ class PilotsEffSimple_Command(Command):
 
     returns:
       {
-        'pilotsEff': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
+        'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
       }
     """
 
@@ -80,10 +80,10 @@ class PilotsEffSimple_Command(Command):
         rsc = ResourceStatusClient()
 
       try:
-        name = rsc.getGeneralName(self.args[0], self.args[1], 'Site')
+        name = rsc.getGeneralName(self.args[0], self.args[1], 'Site', timeout = self.timeout)
       except:
         gLogger.error("Can't get a general name for %s %s" %(self.args[0], self.args[1]))
-        return {'PilotsEff':'Unknown'}      
+        return {'Result':'Unknown'}      
       granularity = 'Site'
     
     elif self.args[0] in ('Site', 'Sites', 'Resource', 'Resources'):
@@ -97,16 +97,66 @@ class PilotsEffSimple_Command(Command):
       self.client = PilotsClient()
       
     try:
-      res = self.client.getPilotsSimpleEff(granularity, name)
-      if res[name] is None:
-        return {'Result':'Unknown'}
+      res = self.client.getPilotsSimpleEff(granularity, name, timeout = self.timeout)
       if res is None:
         return {'Result':None}
+      if res[name] is None:
+        return {'Result':'Unknown'}
     except:
       gLogger.exception("Exception when calling PilotsClient for %s %s" %(granularity, name))
       return {'Result':'Unknown'}
     
     return {'Result':res[name]} 
+
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    
+#############################################################################
+
+class PilotsEffSimpleCached_Command(Command):
+  
+  def doCommand(self):
+    """ 
+    Returns simple pilots efficiency
+
+    :attr:`args`: 
+       - args[0]: string: should be a ValidRes
+  
+       - args[1]: string should be the name of the ValidRes
+
+    returns:
+      {
+        'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
+      }
+    """
+
+    if self.client is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.client = ResourceStatusClient(timeout = self.timeout)
+      
+    if self.args[0] in ('Service', 'Services'):
+      try:
+        name = self.client.getGeneralName(self.args[0], self.args[1], 'Site')
+      except:
+        gLogger.error("Can't get a general name for %s %s" %(self.args[0], self.args[1]))
+        return {'Result':'Unknown'}      
+      granularity = 'Site'
+    elif self.args[0] in ('Site', 'Sites'):
+      name = self.args[1]
+      granularity = self.args[0]
+    else:
+      raise InvalidRes, where(self, self.doCommand)
+    
+    try:
+      res = self.client.getCachedResult(name, 'PilotsEffSimpleEverySites')
+      if res == None:
+        return {'Result':'Idle'}
+      if res == []:
+        return {'Result':'Unknown'}
+    except:
+      gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(granularity, name))
+      return {'Result':'Unknown'}
+    
+    return {'Result':res[0]}
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     

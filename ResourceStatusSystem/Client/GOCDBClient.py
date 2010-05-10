@@ -11,7 +11,8 @@ class GOCDBClient:
   
 #############################################################################
 
-  def getStatus(self, granularity, name, startDate = None, startingInHours = None):
+  def getStatus(self, granularity, name, startDate = None, 
+                startingInHours = None, timeout = None):
     """  
     Return actual GOCDB status of entity in `name`
         
@@ -53,6 +54,9 @@ class GOCDBClient:
       elif isinstance(startDate, datetime):
         startDate_STR = startDate.isoformat(' ')[0:10]
     
+    if timeout is not None:
+      socket.setdefaulttimeout(10)
+
     if startingInHours is not None:
     # make 2 queries and later merge the results
       
@@ -128,8 +132,6 @@ class GOCDBClient:
   def _curlDownload(self, entity, startDate=None):
     """ Download ongoing downtimes for entity using the GOC DB programmatic interface
     """
-
-    socket.setdefaulttimeout(10)
 
     #GOCDB-PI url and method settings
     #

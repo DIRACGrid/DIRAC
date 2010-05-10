@@ -84,7 +84,7 @@ class SLSStatus_Command(Command):
       raise InvalidRes, where(self, self.doCommand)
     
     try:
-      res = self.client.getAvailabilityStatus(SLSName)
+      res = self.client.getAvailabilityStatus(SLSName, timeout = self.timeout)
       return {'Result':res}
     except NoServiceException:
       gLogger.error("No SLS sensors for " + self.args[0] + " " + self.args[1] )
@@ -128,7 +128,7 @@ class SLSServiceInfo_Command(Command):
       raise InvalidRes, where(self, self.doCommand)
     
     try:
-      res = self.client.getServiceInfo(SLSName, self.args[2])
+      res = self.client.getServiceInfo(SLSName, self.args[2], timeout = self.timeout)
       return {'Result':res}
     except NoServiceException:
       gLogger.error("No (not all) SLS sensors for " + self.args[0] + " " + self.args[1])
@@ -173,7 +173,7 @@ class SLSLink_Command(Command):
       raise InvalidRes, where(self, self.doCommand)
     
     try:
-      res = self.client.getLink(SLSName)
+      res = self.client.getLink(SLSName, timeout = self.timeout)
       return {'Result':res}
     except urllib2.URLError:
       gLogger.error("SLS timed out for " + self.args[0] + " " + self.args[1] )

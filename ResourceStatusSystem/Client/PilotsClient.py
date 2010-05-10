@@ -112,7 +112,8 @@ class PilotsClient:
 #############################################################################
 
 
-  def getPilotsSimpleEff(self, granularity, name, siteName = None, RPCWMSAdmin = None):
+  def getPilotsSimpleEff(self, granularity, name, siteName = None, 
+                         RPCWMSAdmin = None, timeout = None):
     """  
     Return pilots simple efficiency of entity in args for periods
     
@@ -136,7 +137,7 @@ class PilotsClient:
       RPC = RPCWMSAdmin
     else:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC = RPCClient("WorkloadManagement/WMSAdministrator")
+      RPC = RPCClient("WorkloadManagement/WMSAdministrator", timeout = timeout)
 
     if granularity in ('Site', 'Sites'):
       res = RPC.getPilotSummaryWeb({'GridSite':name},[],0,300)

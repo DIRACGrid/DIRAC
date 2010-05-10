@@ -103,7 +103,7 @@ class JobsClient:
 #############################################################################
 
 
-  def getJobsSimpleEff(self, name, RPCWMSAdmin = None):
+  def getJobsSimpleEff(self, name, RPCWMSAdmin = None, timeout = None):
     """  
     Return simple jobs efficiency
     
@@ -119,7 +119,7 @@ class JobsClient:
       RPC = RPCWMSAdmin
     else:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC = RPCClient("WorkloadManagement/WMSAdministrator")
+      RPC = RPCClient("WorkloadManagement/WMSAdministrator", timeout = timeout)
 
     res = RPC.getSiteSummaryWeb({'Site':name},[],0,500)
     if not res['OK']:

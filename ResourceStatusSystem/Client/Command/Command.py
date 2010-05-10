@@ -11,6 +11,7 @@ class Command(object):
     self.args = None
     self.client = None
     self.RPC = None
+    self.timeout = 10
   
   def setArgs(self, argsIn):
     """
@@ -46,6 +47,15 @@ class Command(object):
       :attr:`clientIn`: a client object 
     """
     self.RPC = RPCIn
+  
+  def setTimeOut(self, timoeut = None):
+    """
+    set `self.client`. If not set, a standard RPC will be instantiated.
+    
+    :params:
+      :attr:`clientIn`: a client object 
+    """
+    self.timeout = timeout
   
   #to be extended by real commands
   def doCommand(self):

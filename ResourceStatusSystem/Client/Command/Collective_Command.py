@@ -33,7 +33,7 @@ class JobsEffSimpleEveryOne_Command(Command):
       RPC = RPCClient("ResourceStatus/ResourceStatus")
       sites = RPC.getSitesList()
       if not sites['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + res['Message'] 
+        raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:
         sites = sites['Value']
     
