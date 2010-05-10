@@ -72,6 +72,8 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.SLSL_C = SLSLink_Command()
     self.JSEO_C = JobsEffSimpleEveryOne_Command()
     self.PSES_C = PilotsEffSimpleEverySites_Command()
+    self.TQES_C = TransferQualityEverySEs_Command()
+    self.TQC_C = TransferQualityCached_Command()
 
 #############################################################################
 
@@ -466,7 +468,6 @@ class PilotsEffSimpleCached_CommandSuccess(ClientsCommandsTestCase):
   def test_doCommand(self):
 
     args = ('Site', 'XX')
-    self.mock_client.getGeneralName.return_value = 'XX'
     for pe in ('Good', 'Fair', 'Poor', 'Bad', 'Idle'):
       self.mock_client.getCachedResult.return_value = (pe, )
       self.PESC_C.setArgs(args)
@@ -488,7 +489,7 @@ class PilotsEffSimpleCached_CommandFailure(ClientsCommandsTestCase):
         self.assertEqual(res['Result'], 'Unknown')
     
   def test_badArgs(self):
-    self.failUnlessRaises(InvalidRes, self.JESC_C.setArgs, ('sites', ''))
+    self.failUnlessRaises(InvalidRes, self.PESC_C.setArgs, ('sites', ''))
      
 #############################################################################
 
@@ -964,6 +965,73 @@ class PilotsEffSimpleEverySites_CommandFailure(ClientsCommandsTestCase):
 
 #############################################################################
 
+class TransferQualityEverySEs_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+
+    SEs = ['CNAF-USER', 'CERN-USER']
+
+    self.mock_client.getReport.return_value = {'OK': True, 
+                                               'Value': {'data': 
+                                                         {'a -> CNAF-USER': {800L: 100.0, 300L: 50.0}, 
+                                                          'b -> CERN-USER': {800L: 100.0, 700L: 100.0},
+                                                          'pippo -> CNAF-USER': {800L: 100.0, 300L: 50.0}, 
+                                                          'pluto -> CERN-USER': {800L: 100.0, 700L: 100.0}
+                                                          } } }
+    mock_RPC = Mock()
+    self.TQES_C.setRPC(mock_RPC)
+    self.TQES_C.setClient(self.mock_client)
+    res = self.TQES_C.doCommand(SEs)
+    self.assertEqual(res['Result'], {'CNAF-USER': 75.0, 'CERN-USER': 100.0})
+      
+#############################################################################
+
+class TransferQualityEverySEs_CommandFailure(ClientsCommandsTestCase):
+
+  def test_clientFail(self):
+    SEs = ['CNAF-USER', 'CERN-USER']
+    self.mock_client.getReport.side_effect = Exception()
+    mock_RPC = Mock()
+    self.TQES_C.setRPC(mock_RPC)
+    self.TQES_C.setClient(self.mock_client)
+    res = self.TQES_C.doCommand(SEs)
+    self.assertEqual(res['Result'], 'Unknown')
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.TQES_C.setArgs, None)
+
+#############################################################################
+
+class TransferQualityCached_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+
+    args = ('StorageElement', 'XX')
+    for pe in ('100.0', '75.0', '0.0'):
+      self.mock_client.getCachedResult.return_value = (pe, )
+      self.TQC_C.setArgs(args)
+      self.TQC_C.setClient(self.mock_client)
+      res = self.TQC_C.doCommand()
+      self.assertEqual(res['Result'], pe)
+
+#############################################################################
+   
+class TransferQualityCached_CommandFailure(ClientsCommandsTestCase):
+  
+  def test_clientFail(self):
+    self.mock_client.getCachedResult.side_effect = Exception()
+    for pe in ('100.0', '75.0', '0.0'):
+      self.TQC_C.setArgs(('StorageElement', 'XX'))
+      self.TQC_C.setClient(self.mock_client)
+      res = self.TQC_C.doCommand()
+      self.assertEqual(res['Result'], 'Unknown')
+    
+  def test_badArgs(self):
+    self.failUnlessRaises(InvalidRes, self.TQC_C.setArgs, ('sites', ''))
+     
+#############################################################################
+
+
 #class Macros_CommandSuccess(ClientsCommandsTestCase):
 #  
 #  def test_doCommand(self):
@@ -1029,4 +1097,8 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsEffSimpleEveryOne_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimpleEverySites_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimpleEverySites_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQualityEverySEs_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQualityEverySEs_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQualityCached_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQualityCached_CommandFailure))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

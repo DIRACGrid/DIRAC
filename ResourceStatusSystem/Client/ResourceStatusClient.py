@@ -183,8 +183,6 @@ class ResourceStatusClient:
       (result, )
     """
 
-    print "CHIAMATA A Cached result " + name + commandName
-
     res = self.rsS.getCachedResult(name, commandName)
     if not res['OK']:
       raise RSSException, where(self, self.getCachedResult) + " " + res['Message'] 

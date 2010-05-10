@@ -162,3 +162,42 @@ class TransferQuality_Command(Command):
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 #############################################################################
+
+class TransferQualityCached_Command(Command):
+  
+  def doCommand(self):
+    """ 
+    Returns transfer quality as it is cached
+
+    :attr:`args`: 
+       - args[0]: string: should be a ValidRes
+  
+       - args[1]: string should be the name of the ValidRes
+
+    returns:
+      {
+        'Result': '0-100'
+      }
+    """
+
+    if self.client is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.client = ResourceStatusClient(timeout = self.timeout)
+      
+    name = self.args[1]
+    
+    try:
+      res = self.client.getCachedResult(name, 'TransferQualityEveryOne')
+      if res == None:
+        return {'Result':None}
+      if res == []:
+        return {'Result':'Unknown'}
+    except:
+      gLogger.exception("Exception when calling ResourceStatusClient for %s" %(name))
+      return {'Result':'Unknown'}
+    
+    return {'Result':res[0]}
+
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    
+#############################################################################

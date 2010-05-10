@@ -1,6 +1,8 @@
-""" The Jobs_Command class is a command class to know about 
-    present jobs efficiency
+""" The Collective_Command class is a command class to know about collective results 
+    (to be cached)
 """
+
+from datetime import datetime, timedelta
 
 from DIRAC import gLogger
 
@@ -18,8 +20,6 @@ class JobsEffSimpleEveryOne_Command(Command):
     :params:
       :attr:`sites`: list of site names (when not given, take every site)
     
-      :attr:`RPCWMSAdmin`: optional RPCClient to RPCWMSAdmin
-
     :returns:
       {'SiteName': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}
     """
@@ -63,8 +63,6 @@ class PilotsEffSimpleEverySites_Command(Command):
     :params:
       :attr:`sites`: list of site names (when not given, take every site)
     
-      :attr:`RPCWMSAdmin`: optional RPCClient to RPCWMSAdmin
-
     :returns:
       {'SiteName': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}
     """
@@ -96,5 +94,82 @@ class PilotsEffSimpleEverySites_Command(Command):
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
+
+#############################################################################
+
+
+class TransferQualityEverySEs_Command(Command):
+  
+  def doCommand(self, SEs = None):
+    """ 
+    Returns transfer quality using the DIRAC accounting system for every SE 
+        
+    :params:
+      :attr:`SEs`: list of storage elements (when not given, take every SE)
+    
+      :attr:`RPCWMSAdmin`: optional RPCClient to RPCWMSAdmin
+
+    :returns:
+      {'SiteName': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}
+    """
+    
+    if SEs is None:
+      from DIRAC.Core.DISET.RPCClient import RPCClient
+      RPC = RPCClient("ResourceStatus/ResourceStatus")
+      SEs = RPC.getStorageElementsList()
+      if not SEs['OK']:
+        raise RSSException, where(self, self.doCommand) + " " + SEs['Message'] 
+      else:
+        SEs = SEs['Value']
+    
+    if self.RPC is None:
+      from DIRAC.Core.DISET.RPCClient import RPCClient
+      self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
+      
+    if self.client is None:
+      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
+      self.client = ReportsClient(rpcClient = self.RPC)
+
+    fromD = datetime.utcnow()-timedelta(hours = 2)
+    toD = datetime.utcnow()
+
+    try:
+      qualityAll = self.client.getReport('DataOperation', 'Quality', fromD, toD, 
+                                         {'OperationType':'putAndRegister', 
+                                          'Destination':SEs}, 'Channel')
+      if not qualityAll['OK']:
+        raise RSSException, where(self, self.doCommand) + " " + pr_quality['Message'] 
+      else:
+        qualityAll = qualityAll['Value']['data']
+
+    except:
+      gLogger.exception("Exception when calling TransferQualityEverySEs_Command")
+      return {'Result':'Unknown'}
+    
+    listOfDestSEs = []
+    
+    for k in qualityAll.keys():
+      try:
+        key = k.split(' -> ')[1]
+        if key not in listOfDestSEs:
+          listOfDestSEs.append(key)
+      except:
+        continue
+
+    meanQuality = {}
+
+    for destSE in listOfDestSEs:
+      s = 0
+      n = 0
+      for k in qualityAll.keys():
+        try:
+          if k.split(' -> ')[1] == destSE:
+            n = n + len(qualityAll[k])
+            s = s + sum(qualityAll[k].values())
+        except:
+          continue
+      meanQuality[destSE] = s/n
+      
+    return {'Result': meanQuality}
 
 #############################################################################
