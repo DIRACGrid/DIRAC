@@ -50,7 +50,7 @@ class TransformationAgent(AgentModule):
     transName = self.am_getOption('Transformation','All')
     if transName == 'All':
       gLogger.info("%s.getTransformations: Initializing general purpose agent." % AGENT_NAME)
-      res = self.transDB.getTransformations({'Status':['Active','Flush']},extraParams=True)
+      res = self.transDB.getTransformations({'Status':['Active','Completing','Flush']},extraParams=True)
       if not res['OK']:
         gLogger.error("%s.getTransformations: Failed to get transformations." % AGENT_NAME, res['Message'])
         return res
@@ -76,11 +76,11 @@ class TransformationAgent(AgentModule):
     if not lfns:
       gLogger.info("%s.processTransformation: No 'Unused' files found for transformation." % AGENT_NAME)
       if transDict['Status'] == 'Flush':
-        res = self.transDB.setTransformationParameter(transID,'Status','Active')
+        res = self.transDB.setTransformationParameter(transID,'Status','Completing')
         if not res['OK']:
-          gLogger.error("%s.execute: Failed to update transformation status to 'Active'." % AGENT_NAME, res['Message'])
+          gLogger.error("%s.execute: Failed to update transformation status to 'Completing'." % AGENT_NAME, res['Message'])
         else:
-          gLogger.info("%s.execute: Updated transformation status to 'Active'." % AGENT_NAME)
+          gLogger.info("%s.execute: Updated transformation status to 'Completing'." % AGENT_NAME)
       return S_OK()
 
     # Check the data is available with replicas
@@ -123,11 +123,11 @@ class TransformationAgent(AgentModule):
 
     # If this production is to Flush
     if transDict['Status'] == 'Flush' and allCreated:
-      res = self.transDB.setTransformationParameter(transID,'Status','Active')
+      res = self.transDB.setTransformationParameter(transID,'Status','Completing')
       if not res['OK']:
-        gLogger.error("%s.execute: Failed to update transformation status to 'Active'." % AGENT_NAME, res['Message'])
+        gLogger.error("%s.execute: Failed to update transformation status to 'Completing'." % AGENT_NAME, res['Message'])
       else:
-        gLogger.info("%s.execute: Updated transformation status to 'Active'." % AGENT_NAME)
+        gLogger.info("%s.execute: Updated transformation status to 'Completing'." % AGENT_NAME)
     return S_OK()
 
   ######################################################################
