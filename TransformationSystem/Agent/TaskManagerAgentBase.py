@@ -70,7 +70,7 @@ class TaskManagerAgentBase(AgentModule):
 
     return S_OK()
   
-  def _selectTransformations(self,transType=[],status=['Active'],agentType=['Automatic']):
+  def _selectTransformations(self,transType=[],status=['Active','Completing'],agentType=['Automatic']):
     selectCond = {}
     if status:
       selectCond['Status'] = status
@@ -90,7 +90,7 @@ class TaskManagerAgentBase(AgentModule):
   def updateTaskStatus(self):
     gLogger.info("updateTaskStatus: Updating the Status of tasks")
     # Get the transformations to be updated
-    status = self.am_getOption('UpdateTasksStatus',['Active','Stopped'])
+    status = self.am_getOption('UpdateTasksStatus',['Active','Completing','Stopped'])
     res = self._selectTransformations(transType=self.transType,status=status,agentType=[])
     if not res['OK']:
       return res
@@ -125,7 +125,7 @@ class TaskManagerAgentBase(AgentModule):
   def updateFileStatus(self):
     gLogger.info("updateFileStatus: Updating Status of task files")
     #Get the transformations to be updated
-    status = self.am_getOption('UpdateFilesStatus',['Active','Stopped'])
+    status = self.am_getOption('UpdateFilesStatus',['Active','Completing','Stopped'])
     res = self._selectTransformations(transType=self.transType,status=status,agentType=[])
     if not res['OK']:
       return res
@@ -165,7 +165,7 @@ class TaskManagerAgentBase(AgentModule):
   def checkReservedTasks(self):
     gLogger.info("checkReservedTasks: Checking Reserved tasks")
     # Get the transformations which should be checked
-    status = self.am_getOption('CheckReservedStatus',['Active','Stopped'])
+    status = self.am_getOption('CheckReservedStatus',['Active','Completing','Stopped'])
     res = self._selectTransformations(transType=self.transType,status=status,agentType=[])
     if not res['OK']:
       return res
@@ -217,7 +217,7 @@ class TaskManagerAgentBase(AgentModule):
     gLogger.info("submitTasks: Tasks will be submitted with the credentials %s:%s" % (owner,ownerGroup))
     # Get the transformations which should be submitted
     tasksPerLoop = self.am_getOption('TasksPerLoop',50)
-    status = self.am_getOption('SubmitStatus',['Active'])
+    status = self.am_getOption('SubmitStatus',['Active','Completing'])
     res = self._selectTransformations(transType=self.transType,status=status)
     if not res['OK']:
       return res
