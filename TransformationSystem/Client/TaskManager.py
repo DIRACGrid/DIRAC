@@ -222,6 +222,23 @@ class WorkflowTasks(TaskBase):
             self.log.verbose('Setting input data to %s' %paramValue)
             oJob.setInputData(paramValue)
             inputData = paramValue
+            #THIS CODE IS A TEMPORARY HACK AND SHOULD BE REMOVED
+            lfns = inputData.split(';')
+            from LHCbDIRAC.BookkeepingSystem.Client.BookkeepingClient import BookkeepingClient
+            bk = BookkeepingClient()
+            res = bk.getFileMetadata(lfns)
+            runDict = {}
+            for lfn in sortList(res['Value'].keys()):
+              runID = res['Value'][lfn]['RunNumber']
+              if not runDict.has_key(runID):
+                runDict[runID] = []
+              runDict[runID].append(lfn)
+            if len(runDict.keys()) == 1 and runID:
+              oJob._addJDLParameter('RunNumber',runID)
+            # END OF HACK
+            runID = paramsDict.get('RunNumber',False)
+            if runID:
+              oJob._addJDLParameter('RunNumber',runID)
         if paramName=='Site':
           if paramValue:
             self.log.verbose('Setting allocated site to: %s' %(paramValue))
