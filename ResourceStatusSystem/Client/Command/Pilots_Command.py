@@ -99,9 +99,9 @@ class PilotsEffSimple_Command(Command):
     try:
       res = self.client.getPilotsSimpleEff(granularity, name, timeout = self.timeout)
       if res is None:
-        return {'Result':None}
+        return {'Result':'Idle'}
       if res[name] is None:
-        return {'Result':'Unknown'}
+        return {'Result':'Idle'}
     except:
       gLogger.exception("Exception when calling PilotsClient for %s %s" %(granularity, name))
       return {'Result':'Unknown'}
@@ -151,7 +151,7 @@ class PilotsEffSimpleCached_Command(Command):
       if res == None:
         return {'Result':'Idle'}
       if res == []:
-        return {'Result':'Unknown'}
+        return {'Result':'Idle'}
     except:
       gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(granularity, name))
       return {'Result':'Unknown'}

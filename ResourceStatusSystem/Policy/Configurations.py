@@ -485,7 +485,8 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
-      'commandIn' : 'SETransfer',
+#      'commandIn' : 'SETransfer',
+      'commandIn' : 'SETransfer_Cached',
       'args' : None,  
       'SE_Panel' : [ {'FillChart': {'Command':'DiracAccountingGraph', 
                                     'args': ('DataOperation', 'Quality', 
@@ -597,4 +598,4 @@ views_panels = {
 # Clients cache 
 #############################################################################
 
-Commands_to_use = ['JobsEffSimpleEveryOne', 'PilotsEffSimpleEverySites']
+Commands_to_use = ['JobsEffSimpleEveryOne', 'PilotsEffSimpleEverySites', 'TransferQualityEverySEs']

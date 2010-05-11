@@ -188,10 +188,8 @@ class TransferQualityCached_Command(Command):
     
     try:
       res = self.client.getCachedResult(name, 'TransferQualityEveryOne')
-      if res == None:
-        return {'Result':None}
       if res == []:
-        return {'Result':'Unknown'}
+        return {'Result':None}
     except:
       gLogger.exception("Exception when calling ResourceStatusClient for %s" %(name))
       return {'Result':'Unknown'}

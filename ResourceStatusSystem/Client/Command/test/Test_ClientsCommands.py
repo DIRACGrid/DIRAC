@@ -927,9 +927,9 @@ class JobsEffSimpleEveryOne_CommandFailure(ClientsCommandsTestCase):
     self.mock_client.getJobsSimpleEff.side_effect = Exception()
     self.JSEO_C.setClient(self.mock_client)
     res = self.JSEO_C.doCommand(['XX', 'YY'])
-    self.assertEqual(res['Result'], 'Unknown')
+    self.assertEqual(res, {})
     res = self.JSEO_C.doCommand()
-    self.assertEqual(res['Result'], 'Unknown')
+    self.assertEqual(res, {})
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.JSEO_C.setArgs, None)
@@ -955,9 +955,9 @@ class PilotsEffSimpleEverySites_CommandFailure(ClientsCommandsTestCase):
     self.mock_client.getPilotsSimpleEff.side_effect = Exception()
     self.PSES_C.setClient(self.mock_client)
     res = self.PSES_C.doCommand(['XX', 'YY'])
-    self.assertEqual(res['Result'], 'Unknown')
+    self.assertEqual(res, {})
     res = self.PSES_C.doCommand()
-    self.assertEqual(res['Result'], 'Unknown')
+    self.assertEqual(res, {})
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.PSES_C.setArgs, None)
@@ -982,7 +982,7 @@ class TransferQualityEverySEs_CommandSuccess(ClientsCommandsTestCase):
     self.TQES_C.setRPC(mock_RPC)
     self.TQES_C.setClient(self.mock_client)
     res = self.TQES_C.doCommand(SEs)
-    self.assertEqual(res['Result'], {'CNAF-USER': 75.0, 'CERN-USER': 100.0})
+    self.assertEqual(res, {'CNAF-USER': 75.0, 'CERN-USER': 100.0})
       
 #############################################################################
 
@@ -995,7 +995,7 @@ class TransferQualityEverySEs_CommandFailure(ClientsCommandsTestCase):
     self.TQES_C.setRPC(mock_RPC)
     self.TQES_C.setClient(self.mock_client)
     res = self.TQES_C.doCommand(SEs)
-    self.assertEqual(res['Result'], 'Unknown')
+    self.assertEqual(res, {})
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.TQES_C.setArgs, None)

@@ -133,9 +133,6 @@ class SLSServiceInfo_Command(Command):
     except NoServiceException:
       gLogger.error("No (not all) SLS sensors for " + self.args[0] + " " + self.args[1])
       return  {'Result':None}
-    except urllib2.HTTPError:
-      gLogger.error("No SLS sensors for " + self.args[0] + " " + self.args[1] )
-      return  {'Result':None}
     except urllib2.URLError:
       gLogger.error("SLS timed out for " + self.args[0] + " " + self.args[1] )
       return  {'Result':'Unknown'}

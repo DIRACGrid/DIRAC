@@ -194,7 +194,7 @@ class JobsEffSimpleCached_Command(Command):
       if res == None:
         return {'Result':'Idle'}
       if res == []:
-        return {'Result':'Unknown'}
+        return {'Result':'Idle'}
     except:
       gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(granularity, name))
       return {'Result':'Unknown'}

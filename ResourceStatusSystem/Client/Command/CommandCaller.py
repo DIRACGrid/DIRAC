@@ -92,6 +92,10 @@ class CommandCaller:
       from DIRAC.ResourceStatusSystem.Client.Command.DIRACAccounting_Command import TransferQuality_Command
       c = TransferQuality_Command()
 
+    elif comm == 'SETransfer_Cached':
+      from DIRAC.ResourceStatusSystem.Client.Command.DIRACAccounting_Command import TransferQualityCached_Command
+      c = TransferQualityCached_Command()
+
     elif comm == 'DiracAccountingGraph':
       from DIRAC.ResourceStatusSystem.Client.Command.DIRACAccounting_Command import DIRACAccounting_Command 
       c = DIRACAccounting_Command()
@@ -120,6 +124,10 @@ class CommandCaller:
       from DIRAC.ResourceStatusSystem.Client.Command.Collective_Command import PilotsEffSimpleEverySites_Command
       c = PilotsEffSimpleEverySites_Command()
 
+    elif comm == 'TransferQualityEverySEs':
+      from DIRAC.ResourceStatusSystem.Client.Command.Collective_Command import TransferQualityEverySEs_Command
+      c = TransferQualityEverySEs_Command()
+
     else:
       from DIRAC.ResourceStatusSystem.Client.Command.Command import Command 
       c = Command()
@@ -138,7 +146,7 @@ class CommandCaller:
   
 #############################################################################
 
-  def setCommandClient(self, comm, cObj, RPCWMSAdmin = None):
+  def setCommandClient(self, comm, cObj, RPCWMSAdmin = None, RPCAccounting = None):
     
     client = None
     
@@ -151,6 +159,11 @@ class CommandCaller:
       from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
       client = PilotsClient()
       cObj.setRPC(RPCWMSAdmin)
+      
+    elif comm == 'TransferQualityEverySEs':
+      from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
+      client = ReportsClient(rpcClient = RPCAccounting)
+      cObj.setRPC(RPCAccounting)
       
     cObj.setClient(client)
 

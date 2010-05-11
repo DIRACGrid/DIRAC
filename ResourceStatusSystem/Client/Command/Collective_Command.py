@@ -45,7 +45,7 @@ class JobsEffSimpleEveryOne_Command(Command):
       res = self.client.getJobsSimpleEff(sites, self.RPC)
     except:
       gLogger.exception("Exception when calling JobsClient.")
-      return {'Result':'Unknown'}
+      return {}
     
     return res
 
@@ -88,7 +88,7 @@ class PilotsEffSimpleEverySites_Command(Command):
       res = self.client.getPilotsSimpleEff('Site', sites, None, self.RPC)
     except:
       gLogger.exception("Exception when calling PilotsClient.")
-      return {'Result':'Unknown'}
+      return {}
     
     return res
 
@@ -144,7 +144,7 @@ class TransferQualityEverySEs_Command(Command):
 
     except:
       gLogger.exception("Exception when calling TransferQualityEverySEs_Command")
-      return {'Result':'Unknown'}
+      return {}
     
     listOfDestSEs = []
     
@@ -170,6 +170,8 @@ class TransferQualityEverySEs_Command(Command):
           continue
       meanQuality[destSE] = s/n
       
-    return {'Result': meanQuality}
+    return meanQuality
+
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 #############################################################################

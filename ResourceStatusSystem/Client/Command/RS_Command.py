@@ -36,6 +36,7 @@ class RSPeriods_Command(Command):
     
     return {'Result':res}
 
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 #############################################################################
 
@@ -70,7 +71,8 @@ class ServiceStats_Command(Command):
       return {'Result':'Unknown'}
             
     return {'Result':res}
-    doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 #############################################################################
 
@@ -105,6 +107,7 @@ class ResourceStats_Command(Command):
       return {'Result':'Unknown'}
       
     return {'Result':res}
+  
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 #############################################################################
@@ -149,6 +152,7 @@ class StorageElementsStats_Command(Command):
       return {'Result':'Unknown'}
     
     return {'Result':res}
+  
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
 #############################################################################

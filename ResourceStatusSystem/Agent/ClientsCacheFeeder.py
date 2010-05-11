@@ -43,10 +43,12 @@ class ClientsCacheFeeder(AgentModule):
       cc = CommandCaller()
 
       RPCWMSAdmin = RPCClient("WorkloadManagement/WMSAdministrator")
+      RPCAccounting = RPCClient("Accounting/ReportGenerator")
 
       for command in commandsList:
         cObj = cc.setCommandObject(command)
-        cc.setCommandClient(command, cObj, RPCWMSAdmin = RPCWMSAdmin)
+        cc.setCommandClient(command, cObj, RPCWMSAdmin = RPCWMSAdmin, 
+                            RPCAccounting = RPCAccounting)
         self.commandObjectsList.append((command, cObj))
         
       return S_OK()
