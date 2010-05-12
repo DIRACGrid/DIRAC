@@ -13,6 +13,7 @@ from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContain
 import os
 import threading
 import types
+import random,time
 
 class RequestDBMySQL(DB):
 
@@ -150,37 +151,64 @@ class RequestDBMySQL(DB):
     return S_OK(files)
 
   def getRequest(self,requestType=''):
+    """ Get a request of a given type
+    """
+    start = time.time()
     dmRequest = RequestContainer(init=False)
-    self.getIdLock.acquire()
-    req = "SELECT RequestID,SubRequestID FROM SubRequests WHERE Status = 'Waiting' AND RequestType = '%s' ORDER BY LastUpdate ASC LIMIT 1;" % requestType
+    requestID = 0
+    req = "SELECT RequestID,SubRequestID FROM SubRequests WHERE Status = 'Waiting' AND RequestType = '%s' ORDER BY LastUpdate ASC LIMIT 50;" % requestType
     res = self._query(req)
     if not res['OK']:
       err = 'RequestDB._getRequest: Failed to retrieve max RequestID'
-      self.getIdLock.release()
       return S_ERROR('%s\n%s' % (err,res['Message']))
     if not res['Value']:
-      self.getIdLock.release()
       return S_OK()
-    requestID = res['Value'][0][0]
+    
+    reqIDList = [ x[0] for x in res['Value'] ]    
+    random.shuffle(reqIDList)        
+    count = 0
+    for reqID in reqIDList:
+      count += 1
+      if requestType:
+        req = "SELECT SubRequestID,Operation,Arguments,ExecutionOrder,SourceSE,TargetSE,Catalogue,CreationTime,SubmissionTime,LastUpdate \
+        from SubRequests WHERE RequestID=%s AND RequestType='%s' AND Status='%s'" % (reqID,requestType,'Waiting')
+      else:
+        req = "SELECT SubRequestID,Operation,Arguments,ExecutionOrder,SourceSE,TargetSE,Catalogue,CreationTime,SubmissionTime,LastUpdate \
+        from SubRequests WHERE RequestID=%s" % reqID
+      res = self._query(req)
+      if not res['OK']:
+        err = 'RequestDB._getRequest: Failed to retrieve SubRequests for RequestID %s' % reqID
+        return S_ERROR('%s\n%s' % (err,res['Message']))
+  
+      subIDList = []
+      for tuple in res['Value']:
+        subID = tuple[0]
+        req = "UPDATE SubRequests SET Status='Assigned' WHERE RequestID=%s AND SubRequestID=%s;" % (reqID,subID)
+        resAssigned = self._update(req)
+        if not resAssigned['OK']:
+          if subIDList:
+            self.__releaseSubRequests(reqID,subIDList)
+          return S_ERROR('Failed to assign subrequests: %s' % resAssigned['Message'])
+        if resAssigned['Value'] == 0:
+          # Somebody has assigned this request
+          gLogger.warn('Already assigned subrequest %d of request %d' % (subID,reqID) )
+        else:
+          subIDList.append(subID)
+        
+      if subIDList:
+        # We managed to get some requests, can continue now
+        requestID = reqID   
+        break 
+            
+    # Haven't succeeded to get any request        
+    if not requestID:
+      return S_OK()
+       
     dmRequest.setRequestID(requestID)
     subRequestIDs = []
-    if requestType:
-      req = "SELECT SubRequestID,Operation,Arguments,ExecutionOrder,SourceSE,TargetSE,Catalogue,CreationTime,SubmissionTime,LastUpdate \
-      from SubRequests WHERE RequestID=%s AND RequestType='%s' AND Status='%s'" % (requestID,requestType,'Waiting')
-    else:
-      req = "SELECT SubRequestID,Operation,Arguments,ExecutionOrder,SourceSE,TargetSE,Catalogue,CreationTime,SubmissionTime,LastUpdate \
-      from SubRequests WHERE RequestID=%s" % requestID
-    res = self._query(req)
-    if not res['OK']:
-      err = 'RequestDB._getRequest: Failed to retrieve SubRequests for RequestID %s' % requestID
-      self.getIdLock.release()
-      return S_ERROR('%s\n%s' % (err,res['Message']))
-
-    for tuple in res['Value']:
-      self._setSubRequestAttribute(requestID,tuple[0],'Status','Assigned')
-    self.getIdLock.release()
 
     for subRequestID,operation,arguments,executionOrder,sourceSE,targetSE,catalogue,creationTime,submissionTime,lastUpdate in res['Value']:
+      if not subRequestID in subIDList: continue
       subRequestIDs.append(subRequestID)
       res = dmRequest.initiateSubRequest(requestType)
       ind = res['Value']
@@ -871,3 +899,4 @@ class RequestDBMySQL(DB):
     resultDict['TotalRecords'] = nRequests
 
     return S_OK(resultDict)
+  
