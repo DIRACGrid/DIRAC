@@ -170,7 +170,7 @@ class SLSLink_Command(Command):
       raise InvalidRes, where(self, self.doCommand)
     
     try:
-      res = self.client.getLink(SLSName, timeout = self.timeout)
+      res = self.client.getLink(SLSName)
       return {'Result':res}
     except urllib2.URLError:
       gLogger.error("SLS timed out for " + self.args[0] + " " + self.args[1] )

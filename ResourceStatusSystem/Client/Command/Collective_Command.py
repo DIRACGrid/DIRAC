@@ -115,8 +115,8 @@ class TransferQualityEverySEs_Command(Command):
     
     if SEs is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
-      RPC = RPCClient("ResourceStatus/ResourceStatus")
-      SEs = RPC.getStorageElementsList()
+      RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")
+      SEs = RPC_RSS.getStorageElementsList()
       if not SEs['OK']:
         raise RSSException, where(self, self.doCommand) + " " + SEs['Message'] 
       else:
@@ -138,7 +138,7 @@ class TransferQualityEverySEs_Command(Command):
                                          {'OperationType':'putAndRegister', 
                                           'Destination':SEs}, 'Channel')
       if not qualityAll['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + pr_quality['Message'] 
+        raise RSSException, where(self, self.doCommand) + " " + qualityAll['Message'] 
       else:
         qualityAll = qualityAll['Value']['data']
 

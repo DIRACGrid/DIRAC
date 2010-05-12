@@ -23,6 +23,9 @@ class SEQueuedTransfers_Policy(PolicyBase):
     if status is None or status == -1:
       return {'SAT': None}
 
+    if status == 'Unknown':
+      return {'SAT':'Unknown'}
+
     status = status['Queued transfers']
     
     if self.oldStatus == 'Active':

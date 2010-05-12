@@ -77,7 +77,7 @@ class SLSClient:
   
   def getLink(self, name):
 
-    return 'https://sls.cern.ch/sls/service.php?id='
+    return 'https://sls.cern.ch/sls/service.php?id=' + name
   
 #############################################################################
  

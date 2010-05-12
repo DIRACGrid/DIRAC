@@ -174,11 +174,12 @@ class CommandCaller:
     """
     clientsInvoker = ClientsInvoker()
   
+    c.setArgs(a)
+    c.setClient(clientIn)
     clientsInvoker.setCommand(c)
-    clientsInvoker.setArgs(a)
-    clientsInvoker.setClient(clientIn)
     
     res = clientsInvoker.doCommand()
+
     return res 
       
 #############################################################################
