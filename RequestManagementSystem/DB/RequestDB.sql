@@ -33,6 +33,7 @@ CREATE TABLE Requests (
 DROP TABLE IF EXISTS SubRequests;
 CREATE TABLE SubRequests (
    RequestID INTEGER NOT NULL,
+   INDEX(RequestID),
    SubRequestID INTEGER NOT NULL AUTO_INCREMENT,
    Status varchar(32) DEFAULT 'Receiving',
    INDEX(Status),
@@ -48,6 +49,7 @@ CREATE TABLE SubRequests (
    CreationTime DATETIME,
    SubmissionTime DATETIME,
    LastUpdate DATETIME,
+   INDEX(LastUpdate),
    PRIMARY KEY (SubRequestID,Status,RequestType)
 )ENGINE=INNODB;
 
