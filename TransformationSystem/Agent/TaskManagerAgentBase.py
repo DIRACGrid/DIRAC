@@ -115,10 +115,10 @@ class TaskManagerAgentBase(AgentModule):
       for status in sortList(statusDict.keys()):
         taskIDs = statusDict[status]
         gLogger.info("updateTaskStatus: Updating %d task(s) from transformation %d to %s" % (len(taskIDs),transID,status))
-        for taskID in taskIDs:
-          res = self.transClient.setTaskStatus(transID,taskID,status)
-          if not res['OK']:
-            gLogger.error("updateTaskStatus: Failed to update task status for transformation", "%s %s" % (transID,res['Message']))
+        res = self.transClient.setTaskStatus(transID,taskIDs,status)
+        if not res['OK']:
+          gLogger.error("updateTaskStatus: Failed to update task status for transformation", "%s %s" % (transID,res['Message']))
+            
     gLogger.info("updateTaskStatus: Transformation task status update complete")  
     return S_OK()
 
