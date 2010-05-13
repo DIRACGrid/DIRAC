@@ -146,7 +146,7 @@ class TransformationHandler(RequestHandler):
     res = self.database.getTransformationTasks(condDict=condDict,older=older,newer=newer,timeStamp=timeStamp,orderAttribute=orderAttribute,limit=limit,inputVector=inputVector)
     return self.__parseRes(res)
   
-  types_setTaskStatus = [transTypes, [IntType,LongType], StringTypes]
+  types_setTaskStatus = [transTypes, [ListType,IntType,LongType], StringTypes]
   def export_setTaskStatus(self, transName, taskID, status):
     res = self.database.setTaskStatus(transName, taskID, status)    
     return self.__parseRes(res)
