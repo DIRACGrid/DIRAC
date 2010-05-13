@@ -99,7 +99,7 @@ class AgentModule:
     if not self.__moduleProperties[ 'shifterProxyLocation' ]:
       self.__moduleProperties[ 'shifterProxyLocation' ] = os.path.join( self.am_getOption( 'WorkDirectory' ),
                                                                         '.shifterCred' )
-    if self.am_MonitoringEnabled():
+    if self.am_monitoringEnabled():
       self.monitor.enable()
     if len( self.__moduleProperties[ 'executors' ] ) < 1:
       return S_ERROR( "At least one executor method has to be defined" )
@@ -163,8 +163,11 @@ class AgentModule:
     enabled = self.am_getOption( "Enabled" )
     return self.am_getOption( "Enabled" )
 
-  def am_MonitoringEnabled( self ):
-    return self.am_getOption( "MonitoringEnabled", 'true' )
+  def am_disableMonitoring( self ):
+    self.am_setOption( 'MonitoringEnabled' , False )
+
+  def am_monitoringEnabled( self ):
+    return self.am_getOption( "MonitoringEnabled" )
 
   def am_stopExecution( self ):
     self.am_setModuleParam( 'alive', False )
