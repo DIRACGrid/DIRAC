@@ -1,6 +1,6 @@
 # $HeadURL$
 
-"""  DISET Forwarding sends DISET requests to their intented destination
+"""  DISET Forwarding sends DISET requests to their intended destination
 """
 
 __RCSID__ = "$Id$"
@@ -37,9 +37,23 @@ class DISETForwardingAgent(AgentModule,RequestAgentMixIn):
       gLogger.fatal(errStr)
       return S_ERROR(errStr)
     return S_OK()
-
+  
   def execute(self):
-    """ Takes the DISET requests and forwards to destination service
+    """ The main execute method
+    """
+    self.requestsPerCycle = self.am_getOption( '/RequestsPerCycle',10 )
+    count = 0
+    while count < self.requestsPerCycle:
+      gLogger.verbose( 'Executing request #%d in this cycle' % count )
+      result = self.execute_request()
+      if not result['OK']:
+        return result
+      count += 1
+      
+    return S_OK()  
+
+  def execute_request(self):
+    """ Takes one DISET request and forward it to the destination service
     """
     gMonitor.addMark("Iteration",1)
     res = self.RequestDBClient.getRequest('diset',url=self.local)
