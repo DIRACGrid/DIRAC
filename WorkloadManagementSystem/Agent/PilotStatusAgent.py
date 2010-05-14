@@ -18,6 +18,7 @@ from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.Core.Security import CS
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
+from DIRAC.Core.Utilities.Time import *
 from DIRAC import gConfig
 
 
@@ -386,11 +387,14 @@ class PilotStatusAgent( AgentModule ):
 
     statusRE = 'Current Status:\s*(\w*)'
     destinationRE = 'Destination:\s*([\w\.-]*)'
-    statusDateRE = 'reached on:\s*....(.*)'
+    statusDateLCGRE = 'reached on:\s*....(.*)'
+    submittedDateRE = 'Submitted:\s*....(.*)'
 
     status = None
     destination = 'Unknown'
     statusDate = None
+    submittedDate = None
+
     try:
       status = re.search( statusRE, job ).group( 1 )
       if re.search( destinationRE, job ):
@@ -398,6 +402,9 @@ class PilotStatusAgent( AgentModule ):
       if gridType == 'LCG' and re.search( statusDateRE, job ):
         statusDate = re.search( statusDateRE, job ).group( 1 )
         statusDate = time.strftime( '%Y-%m-%d %H:%M:%S', time.strptime( statusDate, '%b %d %H:%M:%S %Y' ) )
+      if gridType == 'gLite' and re.search( submittedDateRE, job ):
+        submittedDate = re.search( submittedDateRE, job ).group(1)
+        submittedDate = time.strftime( '%Y-%m-%d %H:%M:%S', time.strptime( submittedDate, '%b %d %H:%M:%S %Y %Z' ) )
     except Exception, x:
       self.log.error( 'Error parsing %s Job Status output:\n' % gridType, job )
 
@@ -407,6 +414,23 @@ class PilotStatusAgent( AgentModule ):
     isChild = False
     if re.search( 'Parent Job', job ):
       isChild = True
+
+    if status == "Running":
+      # Pilots can be in Running state for too long, due to bugs in the WMS
+      if statusDate:
+        statusTime = fromString(statusDate)
+        delta = dateTime() - statusTime
+        if delta > 4*day:
+          self.log.info('Setting pilot status to Deleted after 4 days in Running')
+          status = "Deleted"
+          statusDate = toString(statusTime+4*day)
+      elif submittedDate:
+        statusTime = fromString(submittedDate)
+        delta = dateTime() - statusTime
+        if delta > 7*day:
+          self.log.info('Setting pilot status to Deleted more than 7 days after submission still in Running')
+          status = "Deleted"
+          statusDate = toString(statusTime+7*day)
 
     childRefs = []
     childDicts = {}
