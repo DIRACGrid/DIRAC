@@ -41,9 +41,8 @@ def rescheduleFailedJob(jobID,message):
       gLogger.info('Creating a new JobReport Object')
       jobReport = JobReport(int(jobID),'JobWrapperTemplate')
 
-    jobReport.setJobStatus( 'Failed', message, sendFlag = False )
     jobReport.setApplicationStatus( 'Failed %s ' % message, sendFlag = False )
-    jobReport.setJobStatus( minor = 'ReschedulingJob', sendFlag = False )
+    jobReport.setJobStatus( 'Rescheduled', message, sendFlag = False )
 
     # We must send Job States and Parameters before it gets reschedule
     jobReport.sendStoredStatusInfo()
