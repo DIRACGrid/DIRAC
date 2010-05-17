@@ -16,65 +16,68 @@ import os, string, re, time
 class BQSTimeLeft:
 
   #############################################################################
-  def __init__(self):
+  def __init__( self ):
     """ Standard constructor
     """
-    self.log = gLogger.getSubLogger('BQSTimeLeft')
+    self.log = gLogger.getSubLogger( 'BQSTimeLeft' )
     self.jobID = None
-    if os.environ.has_key('QSUB_REQNAME'):
+    if os.environ.has_key( 'QSUB_REQNAME' ):
       self.jobID = os.environ['QSUB_REQNAME']
 
-    self.log.verbose('QSUB_REQNAME=%s' %(self.jobID))
+    self.log.verbose( 'QSUB_REQNAME=%s' % ( self.jobID ) )
 
   #############################################################################
-  def getResourceUsage(self):
+  def getResourceUsage( self ):
     """Returns a dictionary containing CPUConsumed, CPULimit, WallClockConsumed
        and WallClockLimit for current slot.  All values returned in seconds.
     """
     if not self.jobID:
-      return S_ERROR('Could not determine batch jobID from QSUB_REQNAME env var.')
+      return S_ERROR( 'Could not determine batch jobID from QSUB_REQNAME env var.' )
 
-    cmd = 'qjob -a -nh -wide %s' %(self.jobID)
-    result = self.__runCommand(cmd)
+    cmd = 'qjob -a -nh -wide %s' % ( self.jobID )
+    result = self.__runCommand( cmd )
     if not result['OK']:
       return result
 
+    self.log.verbose( result['Value'] )
+
     cpu = None
     cpuLimit = None
-    try:
-      cpuItems = result['Value'].split()
-      if cpuItems[5][-1] == '/':
-        cpu = float(cpuItems[5][:-1])
-        cpuLimit = float(cpuItems[6])
-      else:
-        cpuList = cpuString.split()[5].split('/')
-        cpu = float(cpuList[0])
-        cpuLimit = float(cpuList[1])
-    except Exception, x:
-      self.log.warn('Problem parsing "%s" for CPU usage' %(result['Value']))
+    if False:
+      try:
+        cpuItems = result['Value'].split()
+        if cpuItems[5][-1] == '/':
+          cpu = float( cpuItems[5][:-1] )
+          cpuLimit = float( cpuItems[6] )
+        else:
+          cpuList = cpuString.split()[5].split( '/' )
+          cpu = float( cpuList[0] )
+          cpuLimit = float( cpuList[1] )
+      except Exception, x:
+        self.log.warn( 'Problem parsing "%s" for CPU usage' % ( result['Value'] ) )
 
     #BQS has no wallclock limit so will simply return the same as for CPU to the TimeLeft utility
     wallClock = cpu
     wallClockLimit = cpuLimit
-    consumed = {'CPU':cpu,'CPULimit':cpuLimit,'WallClock':wallClock,'WallClockLimit':wallClockLimit}
-    self.log.debug(consumed)
+    consumed = {'CPU':cpu, 'CPULimit':cpuLimit, 'WallClock':wallClock, 'WallClockLimit':wallClockLimit}
+    self.log.debug( consumed )
     failed = False
-    for k,v in consumed.items():
-      if v==None:
+    for k, v in consumed.items():
+      if v == None:
         failed = True
-        self.log.warn('Could not determine %s' %k)
+        self.log.warn( 'Could not determine %s' % k )
 
     if not failed:
-      return S_OK(consumed)
+      return S_OK( consumed )
     else:
-      self.log.info('Could not determine some parameters, this is the stdout from the batch system call\n%s' %(result['Value']))
-      return S_ERROR('Could not determine some parameters')
+      self.log.info( 'Could not determine some parameters, this is the stdout from the batch system call\n%s' % ( result['Value'] ) )
+      return S_ERROR( 'Could not determine some parameters' )
 
   #############################################################################
-  def __runCommand(self,cmd):
+  def __runCommand( self, cmd ):
     """Wrapper around shellCall to return S_OK(stdout) or S_ERROR(message)
     """
-    result = shellCall(0,cmd)
+    result = shellCall( 0, cmd )
     if not result['OK']:
       return result
     status = result['Value'][0]
@@ -82,10 +85,10 @@ class BQSTimeLeft:
     stderr = result['Value'][2]
 
     if status:
-      self.log.warn('Status %s while executing %s' %(status,cmd))
-      self.log.warn(stderr)
-      return S_ERROR(stdout)
+      self.log.warn( 'Status %s while executing %s' % ( status, cmd ) )
+      self.log.warn( stderr )
+      return S_ERROR( stdout )
     else:
-      return S_OK(stdout)
+      return S_OK( stdout )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
