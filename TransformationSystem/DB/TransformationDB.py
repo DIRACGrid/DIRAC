@@ -59,14 +59,16 @@ class TransformationDB(DB):
                           'InheritedFrom',
                           'Body',
                           'MaxNumberOfTasks',
-                          'EventsPerTask']
+                          'EventsPerTask',
+                          'TransformationFamily']
 
     self.mutable = [      'TransformationName',
                           'Description',
                           'LongDescription',
                           'AgentType',
                           'Status',
-                          'MaxNumberOfTasks']
+                          'MaxNumberOfTasks',
+                          'TransformationFamily'] # for the moment include TransformationFamily
 
     self.TRANSFILEPARAMS = ['TransformationID',
                             'FileID',
