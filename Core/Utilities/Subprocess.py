@@ -29,7 +29,7 @@ __RCSID__ = "$Id$"
 
 # Very Important:
 #  Here we can not import directly from DIRAC, since this file it is imported
-#  at initialization time therefore the full path is necesary
+#  at initialization time therefore the full path is necessary
 # from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 # from DIRAC import gLogger
@@ -193,6 +193,8 @@ class Subprocess:
           os.waitpid( pid, 0 )
           if retDict[ 'OK' ]:
             dataStub = retDict[ 'Value' ]
+            if not dataStub:
+              return S_ERROR( "Error decoding data coming from call" )
             retObj, stubLen = DEncode.decode( dataStub )
             if stubLen == len( dataStub ):
               return retObj
