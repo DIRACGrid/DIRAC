@@ -71,7 +71,7 @@ class SEOccupancy_Policy(PolicyBase):
     
     
     if status is not None and status != -1:
-      self.result['Reason'] = "Occupancy on the SE: " 
+      self.result['Reason'] = "Occupancy on the SE: %d -> " %status 
     
       if status == 0:
         str = 'FULL!'

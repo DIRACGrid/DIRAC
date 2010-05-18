@@ -5,11 +5,24 @@
 __RCSID__ = "$Id:  $"
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
 from DIRAC import gConfig
+
+import threading
+
+#import datetime 
+
+#infoForPanel_res = {}
+
+#rsDB = False
+#cc = False
+#ig = False
+#WMSAdmin = False
+
 
 class Publisher:
   """ Class Publisher is in charge of getting dispersed information,
@@ -38,6 +51,10 @@ class Publisher:
     
     self.WMSAdmin = RPCClient("WorkloadManagement/WMSAdministrator")
     
+    self.threadPool = ThreadPool( 2, 5 )
+    
+    self.lockObj = threading.RLock()
+
 #############################################################################
 
   def getInfo(self, granularity, name, view):
@@ -61,7 +78,11 @@ class Publisher:
     
     infoToGet_res = {}
     
+#    a = datetime.datetime.now()
+
     for panel in infoToGet.keys():
+      
+#      ptimeStart = datetime.datetime.now()
       
       (granularityForPanel, nameForPanel) = self.__getNameForPanel(granularity, name, panel)
       
@@ -74,59 +95,101 @@ class Publisher:
       #take info that goes into the panel
       infoForPanel = infoToGet[panel]
       
-      infoForPanel_res = {}
+      self.infoForPanel_res = {}
       
       for info in infoForPanel:
         
-        #get single RSS policy results
-        policyResToGet = info.keys()[0]
-        pol_res = self.rsDB.getPolicyRes(nameForPanel, policyResToGet)
-        if pol_res != []:
-          pol_res_dict = {'Status' : pol_res[0], 'Reason' : pol_res[1]}
-        else:
-          pol_res_dict = {'Status' : 'Unknown', 'Reason' : 'Unknown'}
-        infoForPanel_res[policyResToGet] = pol_res_dict
-#        infoForPanel_res[policyResToGet]['Status'] = pol_res[0]
-#        infoForPanel_res[policyResToGet]['Reason'] = pol_res[1]
-        
-        #get policy description
-        desc = self._getPolicyDesc(policyResToGet)
-        
-        #get other info
-        othersInfo = info.values()[0]
-        if not isinstance(othersInfo, list):
-          othersInfo = [othersInfo]
-        
-        info_res = {}
-        
-        for oi in othersInfo:
-          
-          format = oi.keys()[0]
-          what = oi.values()[0]
-          
-          info_bit_got = self._getInfo(granularityForPanel, nameForPanel, format, what)
-                    
-          info_res[format] = info_bit_got
-          
-        
-#        infoForPanel_res.append( {'policy': {policyResToGet: pol_res}, 
-#                                  'infos': info_res, 
-#                                  'desc': desc } )
-        
-        infoForPanel_res[policyResToGet]['infos'] = info_res 
-        infoForPanel_res[policyResToGet]['desc'] = desc 
+        self.threadPool.generateJobAndQueueIt(self.getInfoForPanel, 
+                                              args = (info, granularityForPanel, nameForPanel) )
 
-      completeInfoForPanel_res = {'Res': nameStatus_res, 'InfoForPanel': infoForPanel_res}
+
+      self.threadPool.processAllResults()
+
+      completeInfoForPanel_res = {'Res': nameStatus_res, 'InfoForPanel': self.infoForPanel_res}
+      
+#      ptimeStop = datetime.datetime.now()
+
+#      print "seconds for Panel ", panel, (ptimeStop - ptimeStart).seconds, (ptimeStop - ptimeStart).microseconds
       
 #      panel_info_res_dict = {'Res': nameStatus_res, 'InfoForPanel': infoForPanel_res} 
 #      completeInfoForPanel_res[panel] = panel_info_res_dict 
 
       infoToGet_res[panel] = completeInfoForPanel_res
     
+#    b = datetime.datetime.now()
+    
+#    print "(b-a).seconds total", (b-a).seconds, (b-a).microseconds
+    
     return infoToGet_res
 
 #############################################################################
 
+  def getInfoForPanel(self, info, granularityForPanel, nameForPanel):
+    
+#    self.info = info
+#    self.granularityForPanel = granularityForPanel 
+#    self.nameForPanel = nameForPanel
+    
+    #global infoForPanel_res, lockObj
+      
+#    print "starting thread for ", info, granularityForPanel, nameForPanel
+
+    #get single RSS policy results
+    policyResToGet = info.keys()[0]
+    pol_res = self.rsDB.getPolicyRes(nameForPanel, policyResToGet)
+    if pol_res != []:
+      pol_res_dict = {'Status' : pol_res[0], 'Reason' : pol_res[1]}
+    else:
+      pol_res_dict = {'Status' : 'Unknown', 'Reason' : 'Unknown'}
+    self.lockObj.acquire()
+    try:
+      self.infoForPanel_res[policyResToGet] = pol_res_dict
+#    except:
+#      raise RSSException, where(self, self.getInfoForPanel)
+    finally:
+      self.lockObj.release()
+#    infoForPanel_res[policyResToGet]['Status'] = pol_res[0]
+#    infoForPanel_res[policyResToGet]['Reason'] = pol_res[1]
+    
+    #get policy description
+    desc = self._getPolicyDesc(policyResToGet)
+    
+    #get other info
+    othersInfo = info.values()[0]
+    if not isinstance(othersInfo, list):
+      othersInfo = [othersInfo]
+    
+    info_res = {}
+    
+    for oi in othersInfo:
+      format = oi.keys()[0]
+      what = oi.values()[0]
+      
+      info_bit_got = self._getInfo(granularityForPanel, nameForPanel, format, what)
+                
+      info_res[format] = info_bit_got
+      
+    
+#        infoForPanel_res.append( {'policy': {policyResToGet: pol_res}, 
+#                                  'infos': info_res, 
+#                                  'desc': desc } )
+    
+    self.lockObj.acquire()
+    try:
+      self.infoForPanel_res[policyResToGet]['infos'] = info_res 
+      self.infoForPanel_res[policyResToGet]['desc'] = desc
+#    except:
+#      raise RSSException, where(self, self.getInfoForPanel)
+    finally:
+      self.lockObj.release()
+    
+
+#    print "leaving thread for ", info, granularityForPanel, nameForPanel
+    
+    
+
+#############################################################################
+  
   def _getStatus(self, name, panel):
   
     #get RSS status
@@ -152,6 +215,7 @@ class Publisher:
     else:
       status = { name : { 'RSSStatus': RSSStatus} }
       
+    
     return status
 
 #############################################################################

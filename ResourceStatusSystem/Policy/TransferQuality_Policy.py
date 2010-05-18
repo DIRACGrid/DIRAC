@@ -40,15 +40,18 @@ class TransferQuality_Policy(PolicyBase):
       else:
         self.result['SAT'] = True
         
+      self.result['Reason'] = 'TransferQuality: %d -> ' %quality
       if quality < Configurations.Transfer_QUALITY_LOW :
         self.result['Status'] = 'Probing'
-        self.result['Reason'] = 'TransferQuality:Low'
+        strReason = 'Low'
       elif quality >= Configurations.Transfer_QUALITY_HIGH :
         self.result['Status'] = 'Active'
-        self.result['Reason'] = 'TransferQuality:High'
+        strReason = 'High'
       else:   
         self.result['Status'] = 'Active'
-        self.result['Reason'] = 'TransferQuality:Mean'
+        strReason = 'Mean'
+        
+      self.result['Reason'] = self.result['Reason'] + strReason
 
     else:
       if self.oldStatus == 'Active':
@@ -69,16 +72,19 @@ class TransferQuality_Policy(PolicyBase):
       elif self.oldStatus == 'Banned':
         self.result['SAT'] = True
         
+      self.result['Reason'] = 'TransferQuality: %d -> ' %quality
       if quality < Configurations.Transfer_QUALITY_LOW :
         self.result['Status'] = 'Bad'
-        self.result['Reason'] = 'TransferQuality:Low'
+        strReason = 'Low'
       elif quality >= Configurations.Transfer_QUALITY_HIGH :
         self.result['Status'] = 'Active'
-        self.result['Reason'] = 'TransferQuality:High'
+        strReason = 'High'
       elif quality >= Configurations.Transfer_QUALITY_LOW and quality < Configurations.Transfer_QUALITY_HIGH:   
         self.result['Status'] = 'Probing'
-        self.result['Reason'] = 'TransferQuality:Mean'
+        strReason = 'Mean'
         
+      self.result['Reason'] = self.result['Reason'] + strReason
+
     return self.result
 
   evaluate.__doc__ = PolicyBase.evaluate.__doc__ + evaluate.__doc__
