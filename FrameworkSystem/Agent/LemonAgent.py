@@ -1,20 +1,20 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-"""  LemonAgent reports the state of all installed and set up services and agents. This output is then 
-     used in lemon sensors.                                                                            
-"""                                                                                                    
+"""  LemonAgent reports the state of all installed and set up services and agents. This output is then
+     used in lemon sensors.
+"""
 __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule import AgentModule         
+from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 from socket import gethostname;
 
 class LemonAgent( AgentModule ):
-                                
-  def initialize( self ):       
+
+  def initialize( self ):
     self.NON_CRITICAL = "NonCritical"
     self.CRITICAL = "Critical"
     self.FAILURE = "FAILURE"
@@ -36,19 +36,19 @@ class LemonAgent( AgentModule ):
     self.monitoringEnabled = self.setup in monitoredSetups
 
     if not self.monitoringEnabled:
-      self._log("Framewok/LemonAgent", self.NON_CRITICAL, self.OK, "Monitoring not enabled for this setup: " + self.setup +". Exiting.");
+      self._log("Framework/LemonAgent", self.NON_CRITICAL, self.OK, "Monitoring not enabled for this setup: " + self.setup +". Exiting.");
       return S_OK()
-    
+
     hostsInMaintenance = gConfig.getValue('/Operations/lhcb/Lemon/HostsInMaintenance',[]);
     if gethostname() in hostsInMaintenance:
-      self._log("Framewok/LemonAgent", self.NON_CRITICAL, self.OK, "I am in maintenance mode, exiting.");
+      self._log("Framework/LemonAgent", self.NON_CRITICAL, self.OK, "I am in maintenance mode, exiting.");
       return S_OK()
 
     result = self.admClient.getOverallStatus()
 
     if not result or not result['OK']:
       self._log("Framework/LemonAgent", self.CRITICAL, self.FAILURE, "Can not obtain result!!");
-      return S_OK()	
+      return S_OK()
 
     services = result[ 'Value' ][ 'Services' ]
     agents = result[ 'Value' ][ 'Agents' ]
