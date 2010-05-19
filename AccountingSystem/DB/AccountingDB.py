@@ -139,6 +139,8 @@ class AccountingDB( DB ):
               self.log.error( "Can't register type %s:%s" % ( typeName, retVal[ 'Message' ] ) )
             #Set the timespan
             self.dbCatalog[ typeName ][ 'dataTimespan' ] = typeClass().getDataTimespan()
+            self.dbCatalog[ typeName ][ 'definition' ] = { 'keys' : definitionKeyFields,
+                                                           'values' : definitionAccountingFields }
 
     return S_OK()
 
@@ -655,22 +657,37 @@ class AccountingDB( DB ):
     self.log.info( "Deleting record record", "for type %s\n [%s -> %s]" % ( typeName, Time.fromEpoch( startTime ), Time.fromEpoch( endTime ) ) )
     if not typeName in self.dbCatalog:
       return S_ERROR( "Type %s has not been defined in the db" % typeName )
+    sqlValues = []
+    sqlValues.extend( valuesList )
     #Discover key indexes
     for keyPos in range( len( self.dbCatalog[ typeName ][ 'keys' ] ) ):
       keyName = self.dbCatalog[ typeName ][ 'keys' ][ keyPos ]
-      keyValue = valuesList[ keyPos ]
+      keyValue = sqlValues[ keyPos ]
       retVal = self.__addKeyValue( typeName, keyName, keyValue )
       if not retVal[ 'OK' ]:
         return retVal
       self.log.verbose( "Value %s for key %s has id %s" % ( keyValue, keyName, retVal[ 'Value' ] ) )
-      valuesList[ keyPos ] = retVal[ 'Value' ]
+      sqlValues[ keyPos ] = retVal[ 'Value' ]
     sqlCond = []
-    mainTable = self.__getTableName( typeName, "type" )
-    valuesList.extend( [ startTime, endTime ] )
-    for i in range( len( valuesList ) ):
-      sqlCond.append( "`%s`.`%s`=%s" % ( mainTable,
-                                         self.dbCatalog[ typeName ][ 'typeFields' ],
-                                         valuesList[i] ) )
+    mainTable = self.__getTableName( "type", typeName )
+    sqlValues.extend( [ startTime, endTime ] )
+    numKeyFields = len( self.dbCatalog[ typeName ][ 'keys' ] )
+    numValueFields = len( self.dbCatalog[ typeName ][ 'values' ] )
+    for i in range( len( sqlValues ) ):
+      needToRound = False
+      if i >= numKeyFields and i - numKeyFields < numValueFields:
+        vIndex = i - numKeyFields
+        if self.dbCatalog[ typeName ][ 'definition' ][ 'values' ][vIndex][1].find( "FLOAT" ) > -1:
+          needToRound = True
+      if needToRound:
+        compVal = [ "`%s`.`%s`" % ( mainTable, self.dbCatalog[ typeName ][ 'typeFields' ][i] ),
+                    "%f" % sqlValues[i] ]
+        compVal = [ "CEIL( %s * 1000 )" % v for v in compVal ]
+        compVal = "ABS( %s ) <= 1 " % " - ".join( compVal )
+      else:
+        sqlCond.append( "`%s`.`%s`=%s" % ( mainTable,
+                                           self.dbCatalog[ typeName ][ 'typeFields' ][i],
+                                           sqlValues[i] ) )
     retVal = self._getConnection()
     if not retVal[ 'OK' ]:
       return retVal
@@ -685,8 +702,10 @@ class AccountingDB( DB ):
       return retVal
     #Record is not in the db
     if len( retVal[ 'Value' ] ) == 0:
-      return S_OK()
+      return S_OK( 0 )
     numInsertions = retVal[ 'Value' ][0][0]
+    if numInsertions == 0:
+      return S_OK( 0 )
     #Delete from type
     retVal = self._update( "DELETE FROM `%s` WHERE %s" % ( mainTable, " AND ".join( sqlCond ) ),
                            conn = connObj )
@@ -694,12 +713,16 @@ class AccountingDB( DB ):
       return retVal
     #Deleted from type, now the buckets
     #HACK: One more record to split in the buckets to be able to count total entries
-    valuesList.append( 1 )
-    retVal = self.__deleteFromBuckets( typeName, startTime, endTime, valuesList, numInsertions, connObj = connObj )
+    sqlValues.append( 1 )
+    retVal = self.__deleteFromBuckets( typeName, startTime, endTime, sqlValues, numInsertions, connObj = connObj )
     if not retVal[ 'OK' ]:
       self.__rollbackTransaction( connObj )
       return retVal
-    return self.__commitTransaction( connObj )
+    retVal = self.__commitTransaction( connObj )
+    if not retVal[ 'OK' ]:
+      self.__rollbackTransaction( connObj )
+      return retVal
+    return S_OK( numInsertions )
 
   def __splitInBuckets( self, typeName, startTime, endTime, valuesList, connObj = False ):
     """
