@@ -114,7 +114,8 @@ class StalledJobAgent( AgentModule ):
         if result['OK']:
           pilotStatus = result['Value']
           if pilotStatus != "Running":
-            result = self.__updateJobStatus( job, 'Failed', "Pilot stopped after job stalling" )  
+            result = self.__updateJobStatus( job, 'Failed', 
+                                             "Job stalled: pilot not running" )  
             failedCounter += 1
             continue          
           
