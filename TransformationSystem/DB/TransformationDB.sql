@@ -20,6 +20,7 @@ CREATE TABLE Transformations (
     Status  CHAR(32) DEFAULT 'New',
     FileMask VARCHAR(255),
     TransformationGroup varchar(64) NOT NULL default 'General',
+    TransformationFamily varchar(64) default '0',
     GroupSize INT NOT NULL DEFAULT 1,
     InheritedFrom INTEGER DEFAULT 0,
     Body LONGBLOB,
