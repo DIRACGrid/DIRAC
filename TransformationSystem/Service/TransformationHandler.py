@@ -131,6 +131,11 @@ class TransformationHandler(RequestHandler):
     res = self.database.getTransformationStats(transName)
     return self.__parseRes(res)
 
+  types_getTransformationFilesCount = [transTypes,StringTypes]
+  def export_getTransformationFilesCount(self,transName,field):
+    res = self.database.getTransformationFilesCount(transName,field)
+    return self.__parseRes(res)
+
   types_getTransformationFiles = []
   def export_getTransformationFiles(self,condDict={},older=None, newer=None, timeStamp='LastUpdate', orderAttribute=None, limit=None):
     res = self.database.getTransformationFiles(condDict=condDict,older=older, newer=newer, timeStamp=timeStamp, orderAttribute=orderAttribute, limit=limit,connection=False)

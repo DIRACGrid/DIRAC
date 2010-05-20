@@ -36,12 +36,7 @@ class TaskBase:
     startTime = time.time()
     for taskID in sortList(taskDict.keys()):
       transID = taskDict[taskID]['TransformationID']
-      if not taskDict[taskID]['Success']:
-        transName = str(transID).zfill(8)+'_'+str(taskID).zfill(8)
-        res = self.transClient.setTaskStatus(transID,taskID,'Created')
-        if not res['OK']:
-          gLogger.warn("updateDBAfterSubmission: Failed to update task status after submission failure" , "%s %s" % (taskName,res['Message']))
-      else:
+      if taskDict[taskID]['Success']:
         res = self.transClient.setTaskStatusAndWmsID(transID,taskID,'Submitted',str(taskDict[taskID]['ExternalID']))
         if not res['OK']:
           gLogger.warn("updateDBAfterSubmission: Failed to update task status after submission" , "%s %s" % (taskName,res['Message']))
