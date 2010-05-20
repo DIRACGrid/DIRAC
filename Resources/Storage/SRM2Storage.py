@@ -682,8 +682,12 @@ class SRM2Storage(StorageBase):
       nbstreams = 4
     else:
       nbstreams = 1
+    gLogger.info("SRM2Storage.__putFile: Using %d streams" % nbstreams)
     gLogger.info("SRM2Storage.__putFile: Executing transfer of %s to %s" % (src_url, dest_url))
-    res = pythonCall((timeout+10),self.lcg_util.lcg_cp3,src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
+    res = pythonCall((timeout+10),self.__lcg_cp_wrapper,src_url,dest_url,srctype,dsttype,nbstreams,timeout,src_spacetokendesc,dest_spacetokendesc)
+    if not res['OK']:
+      return res
+    res = res['Value']
     if not res['OK']:
       return res
     errCode,errStr = res['Value']
@@ -708,6 +712,20 @@ class SRM2Storage(StorageBase):
     else:
       gLogger.debug("SRM2Storage.__putFile: Unable to remove remote file remnant %s." % dest_url)
     return S_ERROR(errorMessage)
+
+  def __lcg_cp_wrapper(self,src_url,dest_url,srctype,dsttype,nbstreams,timeout,src_spacetokendesc,dest_spacetokendesc):
+    try:
+      errCode,errStr = self.lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
+      if type(errCode) not in [types.ListType,types.IntType]: 
+        gLogger.error("SRM2Storage.__lcg_cp_wrapper: Returned errCode was not an integer","%s %s" % (errCode,type(errCode)))
+        return S_ERROR("SRM2Storage.__lcg_cp_wrapper: Returned errCode was not an integer")
+      if type(errStr) not in types.StringTypes:
+        gLogger.error("SRM2Storage.__lcg_cp_wrapper: Returned errStr was not a string","%s %s" % (errCode,type(errStr)))
+        return S_ERROR("SRM2Storage.__lcg_cp_wrapper: Returned errStr was not a string")
+      return S_OK((errCode,errStr))
+    except Exception, x:
+      gLogger.exception("SRM2Storage.__lcg_cp_wrapper","",x)
+      return S_ERROR("Exception while attempting file upload")
 
   def getFile(self,path,localPath=False):
     """ Get a local copy in the current directory of a physical file specified by its path
@@ -750,8 +768,12 @@ class SRM2Storage(StorageBase):
     remoteSize = res['Value']
     timeout = int(remoteSize/self.MIN_BANDWIDTH + 300)
     nbstreams = 1
-    gLogger.debug("SRM2Storage.__getFile: Executing transfer of %s to %s" % (src_url, dest_url))
-    res = pythonCall((timeout+10),self.lcg_util.lcg_cp3,src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose,timeout,src_spacetokendesc,dest_spacetokendesc)
+    gLogger.info("SRM2Storage.__getFile: Using %d streams" % nbstreams)
+    gLogger.info("SRM2Storage.__getFile: Executing transfer of %s to %s" % (src_url, dest_url))
+    res = pythonCall((timeout+10),self.__lcg_cp_wrapper,src_url,dest_url,srctype,dsttype,nbstreams,timeout,src_spacetokendesc,dest_spacetokendesc)
+    if not res['OK']:
+      return res
+    res = res['Value']
     if not res['OK']:
       return res
     errCode,errStr = res['Value']
