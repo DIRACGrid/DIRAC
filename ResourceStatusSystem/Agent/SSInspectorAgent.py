@@ -2,16 +2,15 @@
 # $HeadURL:  $
 ########################################################################
 
-import threading
+import Queue
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
+from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
@@ -32,66 +31,59 @@ class SSInspectorAgent(AgentModule):
     """
     
     try:
-      try:
-        self.rsDB = ResourceStatusDB()
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
+      self.rsDB = ResourceStatusDB()
       
-      self.SitesToBeChecked = []
+      self.SitesToBeChecked = Queue.Queue()
       self.SiteNamesInCheck = []
       
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
-
-      self.threadPool = ThreadPool( self.am_getOption('minThreadsInPool', 1),
+      self.threadPool = ThreadPool( self.maxNumberOfThreads,
                                     self.maxNumberOfThreads )
+
       if not self.threadPool:
-        self.log.error('Can not create Thread Pool:')
+        self.log.error('Can not create Thread Pool')
         return S_ERROR('Can not create Thread Pool')
       
-      
-      self.lockObj = threading.RLock()
-
       self.setup = gConfig.getValue("DIRAC/Setup")
-      
+
       self.nc = NotificationClient()
 
       self.diracAdmin = DiracAdmin()
 
       self.csAPI = CSAPI()      
-    
+      
+      for i in range(self.maxNumberOfThreads):
+        self.threadPool.generateJobAndQueueIt(self._executeCheck, args = (None, ) )  
+        
       return S_OK()
-    
+
     except Exception:
       errorStr = "SSInspectorAgent initialization"
       gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
-
 #############################################################################
 
   def execute(self):
-    """ The main SSInspectorAgent execution method
+    """ 
+    The main RSInspectorAgent execution method.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getResourcesToCheck` and 
+    put result in self.SitesToBeChecked (a Queue) and in self.SiteNamesInCheck (a list)
     """
     
     try:
 
-      self._getSitesToCheck()
-
-      for i in range(self.maxNumberOfThreads):
-        self.lockObj.acquire()
-        try:
-          toBeChecked = self.SitesToBeChecked.pop()
-        except Exception:
+      res = self.rsDB.getStuffToCheck('Sites', Configurations.Resources_check_freq) 
+   
+      for resourceTuple in res:
+        if resourceTuple[0] in self.SiteNamesInCheck:
           break
-        finally:
-          self.lockObj.release()
-        
-        self.threadPool.generateJobAndQueueIt(self._executeCheck, args = (toBeChecked, ) )
-        
-      
-      self.threadPool.processAllResults()
+        resourceL = ['Site']
+        for x in resourceTuple:
+          resourceL.append(x)
+        self.SiteNamesInCheck.insert(0, resourceL[1])
+        self.SitesToBeChecked.put(resourceL)
+
       return S_OK()
 
     except Exception, x:
@@ -99,49 +91,21 @@ class SSInspectorAgent(AgentModule):
       gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr)
       
+        
 #############################################################################
 
-  def _getSitesToCheck(self):
+  def _executeCheck(self, arg):
     """ 
-    Call :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getSitesToCheck` 
-    and put result in list
+    Create instance of a PEP, instantiated popping a resource from lists.
     """
     
-    try:
+    
+    while True:
+      
       try:
-        res = self.rsDB.getStuffToCheck('Sites', Configurations.Sites_check_freq)
-      except RSSDBException, x:
-        gLogger.exception(whoRaised(x))
-      except RSSException, x:
-        gLogger.exception(whoRaised(x))
-  
-      for siteTuple in res:
-        if siteTuple[0] in self.SiteNamesInCheck:
-          break
-        siteL = ['Site']
-        for x in siteTuple:
-          siteL.append(x)
-        self.lockObj.acquire()
-        try:
-          self.SiteNamesInCheck.insert(0, siteL[1])
-          self.SitesToBeChecked.insert(0, siteL)
-        finally:
-          self.lockObj.release()
-    
-    except Exception:
-      errorStr = "SSInspectorAgent _getResourcesToCheck"
-      gLogger.exception(errorStr)
-
-#############################################################################
-
-  def _executeCheck(self, toBeChecked):
-    """ 
-    Create istance of a PEP, instantiated popping a site from lists.
-    """
-    
-    try:
-    
-      while True:
+      
+        toBeChecked = self.SitesToBeChecked.get()
+      
       
         granularity = toBeChecked[0]
         siteName = toBeChecked[1]
@@ -151,7 +115,7 @@ class SSInspectorAgent(AgentModule):
         operatorCode = toBeChecked[5]
         
         gLogger.info("Checking Site %s, with status %s" % (siteName, status))
-
+        
         newPEP = PEP(granularity = granularity, name = siteName, status = status, 
                      formerStatus = formerStatus, siteType = siteType, operatorCode = operatorCode)
         
@@ -159,30 +123,13 @@ class SSInspectorAgent(AgentModule):
                        daIn = self.diracAdmin, csAPIIn = self.csAPI)
     
         # remove from InCheck list
-        self.lockObj.acquire()
-        try:
-          self.SiteNamesInCheck.remove(toBeChecked[1])
-        finally:
-          self.lockObj.release()
+        self.SiteNamesInCheck.remove(toBeChecked[1])
 
-        # get new site to be checked 
-        self.lockObj.acquire()
+      except Exception:
+        gLogger.exception('SSInspector._executeCheck')
         try:
-          toBeChecked = self.SitesToBeChecked.pop()
-        except Exception:
-          break
-        finally:
-          self.lockObj.release()
-        
-    
-    except Exception, x:
-      gLogger.exception('SSInspector._executeCheck')
-      self.lockObj.acquire()
-      try:
-        self.SiteNamesInCheck.remove(siteName)
-      except IndexError:
-        pass
-      finally:
-        self.lockObj.release()
+          self.SiteNamesInCheck.remove(siteName)
+        except IndexError:
+          pass
 
-#############################################################################
+#############################################################################    

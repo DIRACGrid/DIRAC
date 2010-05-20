@@ -2,16 +2,15 @@
 # $HeadURL:  $
 ########################################################################
 
-import threading
+import Queue
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
+from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
@@ -32,25 +31,18 @@ class RSInspectorAgent(AgentModule):
     """
     
     try:
-      try:
-        self.rsDB = ResourceStatusDB()
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
+      self.rsDB = ResourceStatusDB()
       
-      self.ResourcesToBeChecked = []
+      self.ResourcesToBeChecked = Queue.Queue()
       self.ResourceNamesInCheck = []
       
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
-  
-      self.threadPool = ThreadPool( self.am_getOption('minThreadsInPool', 1),
+      self.threadPool = ThreadPool( self.maxNumberOfThreads,
                                     self.maxNumberOfThreads )
+
       if not self.threadPool:
         self.log.error('Can not create Thread Pool')
         return S_ERROR('Can not create Thread Pool')
-      
-      self.lockObj = threading.RLock()
       
       self.setup = gConfig.getValue("DIRAC/Setup")
 
@@ -59,7 +51,10 @@ class RSInspectorAgent(AgentModule):
       self.diracAdmin = DiracAdmin()
 
       self.csAPI = CSAPI()      
-    
+      
+      for i in range(self.maxNumberOfThreads):
+        self.threadPool.generateJobAndQueueIt(self._executeCheck, args = (None, ) )  
+        
       return S_OK()
 
     except Exception:
@@ -70,49 +65,15 @@ class RSInspectorAgent(AgentModule):
 #############################################################################
 
   def execute(self):
-    """ The main RSInspectorAgent execution method
-    """
-    
-    try:
-
-      self._getResourcesToCheck()
-
-      for i in range(self.maxNumberOfThreads):
-        self.lockObj.acquire()
-        try:
-          toBeChecked = self.ResourcesToBeChecked.pop()
-        except Exception:
-          break
-        finally:
-          self.lockObj.release()
-        
-        self.threadPool.generateJobAndQueueIt(self._executeCheck, args = (toBeChecked, ) )
-        
-      
-      self.threadPool.processAllResults()
-      return S_OK()
-
-    except Exception, x:
-      errorStr = where(self, self.execute)
-      gLogger.exception(errorStr,lException=x)
-      return S_ERROR(errorStr)
-      
-#############################################################################
-
-  def _getResourcesToCheck(self):
     """ 
-    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getResourcesToCheck` 
-    and put result in a list
+    The main RSInspectorAgent execution method.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getResourcesToCheck` and 
+    put result in self.ResourcesToBeChecked (a Queue) and in self.ResourceNamesInCheck (a list)
     """
-
-    try:
     
-      try:
-        res = self.rsDB.getStuffToCheck('Resources', Configurations.Resources_check_freq) 
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
+    try:
+
+      res = self.rsDB.getStuffToCheck('Resources', Configurations.Resources_check_freq) 
    
       for resourceTuple in res:
         if resourceTuple[0] in self.ResourceNamesInCheck:
@@ -120,29 +81,30 @@ class RSInspectorAgent(AgentModule):
         resourceL = ['Resource']
         for x in resourceTuple:
           resourceL.append(x)
-        self.lockObj.acquire()
-        try:
-          self.ResourceNamesInCheck.insert(0, resourceL[1])
-          self.ResourcesToBeChecked.insert(0, resourceL)
-        finally:
-          self.lockObj.release()
+        self.ResourceNamesInCheck.insert(0, resourceL[1])
+        self.ResourcesToBeChecked.put(resourceL)
 
-    except Exception:
-      errorStr = "RSInspectorAgent _getResourcesToCheck"
-      gLogger.exception(errorStr)
+      return S_OK()
 
-
+    except Exception, x:
+      errorStr = where(self, self.execute)
+      gLogger.exception(errorStr,lException=x)
+      return S_ERROR(errorStr)
+      
         
 #############################################################################
 
-  def _executeCheck(self, toBeChecked):
+  def _executeCheck(self, arg):
     """ 
     Create instance of a PEP, instantiated popping a resource from lists.
     """
     
-    try:
     
-      while True:
+    while True:
+      
+      try:
+      
+        toBeChecked = self.ResourcesToBeChecked.get()
       
         granularity = toBeChecked[0]
         resourceName = toBeChecked[1]
@@ -162,30 +124,13 @@ class RSInspectorAgent(AgentModule):
                        daIn = self.diracAdmin, csAPIIn = self.csAPI)
     
         # remove from InCheck list
-        self.lockObj.acquire()
-        try:
-          self.ResourceNamesInCheck.remove(toBeChecked[1])
-        finally:
-          self.lockObj.release()
+        self.ResourceNamesInCheck.remove(toBeChecked[1])
 
-        # get new resource to be checked 
-        self.lockObj.acquire()
+      except Exception:
+        gLogger.exception('RSInspector._executeCheck')
         try:
-          toBeChecked = self.ResourcesToBeChecked.pop()
-        except Exception:
-          break
-        finally:
-          self.lockObj.release()
-        
-    
-    except Exception:
-      gLogger.exception('RSInspector._executeCheck')
-      self.lockObj.acquire()
-      try:
-        self.ResourceNamesInCheck.remove(resourceName)
-      except IndexError:
-        pass
-      finally:
-        self.lockObj.release()
+          self.ResourceNamesInCheck.remove(resourceName)
+        except IndexError:
+          pass
 
 #############################################################################    

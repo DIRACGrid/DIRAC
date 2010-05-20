@@ -2,16 +2,15 @@
 # $HeadURL:  $
 ########################################################################
 
-import threading
+import Queue
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
+from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
@@ -25,70 +24,66 @@ class StElInspectorAgent(AgentModule):
       table, and pass StorageElement and Status to the PEP
   """
 
+#############################################################################
+
   def initialize(self):
     """ Standard constructor
     """
     
     try:
-      try:
-        self.rsDB = ResourceStatusDB()
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
+      self.rsDB = ResourceStatusDB()
       
-      self.StorageElementsToBeChecked = []
-      self.StorageElementNamesInCheck = []
+      self.StorageElementToBeChecked = Queue.Queue()
+      self.StorageElementInCheck = []
       
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
-  
-      self.threadPool = ThreadPool( self.am_getOption('minThreadsInPool', 1),
+      self.threadPool = ThreadPool( self.maxNumberOfThreads,
                                     self.maxNumberOfThreads )
+
       if not self.threadPool:
-        self.log.error('Can not create Thread Pool:')
+        self.log.error('Can not create Thread Pool')
         return S_ERROR('Can not create Thread Pool')
       
-      self.lockObj = threading.RLock()
-      
       self.setup = gConfig.getValue("DIRAC/Setup")
-      
+
       self.nc = NotificationClient()
 
       self.diracAdmin = DiracAdmin()
 
       self.csAPI = CSAPI()      
-    
+      
+      for i in range(self.maxNumberOfThreads):
+        self.threadPool.generateJobAndQueueIt(self._executeCheck, args = (None, ) )  
+        
       return S_OK()
-    
+
     except Exception:
       errorStr = "StElInspectorAgent initialization"
       gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
-
 #############################################################################
 
   def execute(self):
-    """ The main SSInspectorAgent execution method
+    """ 
+    The main RSInspectorAgent execution method.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getResourcesToCheck` and 
+    put result in self.StorageElementToBeChecked (a Queue) and in self.StorageElementInCheck (a list)
     """
     
     try:
 
-      self._getStorageElementsToCheck()
-
-      for i in range(self.maxNumberOfThreads):
-        self.lockObj.acquire()
-        try:
-          toBeChecked = self.StorageElementsToBeChecked.pop()
-        except Exception:
+      res = self.rsDB.getStuffToCheck('StorageElements', Configurations.Resources_check_freq) 
+   
+      for resourceTuple in res:
+        if resourceTuple[0] in self.StorageElementInCheck:
           break
-        finally:
-          self.lockObj.release()
-        
-        self.threadPool.generateJobAndQueueIt(self._executeCheck, args = (toBeChecked, ) )
-        
-      
-      self.threadPool.processAllResults()
+        resourceL = ['StorageElement']
+        for x in resourceTuple:
+          resourceL.append(x)
+        self.StorageElementInCheck.insert(0, resourceL[1])
+        self.StorageElementToBeChecked.put(resourceL)
+
       return S_OK()
 
     except Exception, x:
@@ -96,95 +91,43 @@ class StElInspectorAgent(AgentModule):
       gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr)
       
-
+        
 #############################################################################
 
-  def _getStorageElementsToCheck(self):
+  def _executeCheck(self, arg):
     """ 
-    Call :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getStorageElementsToCheck` 
-    and put result in list
+    Create instance of a PEP, instantiated popping a resource from lists.
     """
     
-    try:
+    
+    while True:
       
       try:
-        res = self.rsDB.getStuffToCheck('StorageElements', 
-                                        Configurations.StorageElements_check_freq, 
-                                        self.maxNumberOfThreads - 1)
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
-  
-      for storageElementTuple in res:
-        if storageElementTuple[0] in self.StorageElementNamesInCheck:
-          break
-        storageElementL = ['StorageElement']
-        for x in storageElementTuple:
-          storageElementL.append(x)
-        self.lockObj.acquire()
-        try:
-          self.StorageElementNamesInCheck.insert(0, storageElementL[1])
-          self.StorageElementsToBeChecked.insert(0, storageElementL)
-        finally:
-          self.lockObj.release()
-
-    except Exception:
-      errorStr = "StElInspectorAgent _getResourcesToCheck"
-      gLogger.exception(errorStr)
-
-
-#############################################################################
-
-  def _executeCheck(self, toBeChecked):
-    """ 
-    Create istance of a PEP, instantiated popping a storageElement from lists.
-    """
-    
-    try:
-    
-      while True:
       
+        toBeChecked = self.StorageElementToBeChecked.get()
+     
         granularity = toBeChecked[0]
         storageElementName = toBeChecked[1]
         status = toBeChecked[2]
         formerStatus = toBeChecked[3]
         siteType = toBeChecked[4]
         operatorCode = toBeChecked[5]
-        
+       
         gLogger.info("Checking StorageElement %s, with status %s" % (storageElementName, status))
-
+        
         newPEP = PEP(granularity = granularity, name = storageElementName, status = status, 
                      formerStatus = formerStatus, siteType = siteType, operatorCode = operatorCode)
-        
         newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup, ncIn = self.nc, 
                        daIn = self.diracAdmin, csAPIIn = self.csAPI)
     
         # remove from InCheck list
-        self.lockObj.acquire()
-        try:
-          self.StorageElementNamesInCheck.remove(toBeChecked[1])
-        finally:
-          self.lockObj.release()
+        self.StorageElementInCheck.remove(toBeChecked[1])
 
-        # get new site to be checked 
-        self.lockObj.acquire()
+      except Exception:
+        gLogger.exception('StElInspector._executeCheck')
         try:
-          toBeChecked = self.StorageElementsToBeChecked.pop()
-        except Exception:
-          break
-        finally:
-          self.lockObj.release()
-        
-    
-    except Exception, x:
-      gLogger.exception('StElInspector._executeCheck')
-      self.lockObj.acquire()
-      try:
-        self.StorageElementNamesInCheck.remove(storageElementName)
-      except IndexError:
-        pass
-      finally:
-        self.lockObj.release()
+          self.StorageElementInCheck.remove(storageElementName)
+        except IndexError:
+          pass
 
 #############################################################################

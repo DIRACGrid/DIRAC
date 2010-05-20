@@ -2,16 +2,15 @@
 # $HeadURL:  $
 ########################################################################
 
-import threading
+import Queue
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
+from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
@@ -32,37 +31,32 @@ class SeSInspectorAgent(AgentModule):
     """
     
     try:
-      try:
-        self.rsDB = ResourceStatusDB()
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
+      self.rsDB = ResourceStatusDB()
       
-      self.ServicesToBeChecked = []
+      self.ServicesToBeChecked = Queue.Queue()
       self.ServiceNamesInCheck = []
       
       self.maxNumberOfThreads = self.am_getOption( 'maxThreadsInPool', 1 )
-  
-      self.threadPool = ThreadPool( self.am_getOption('minThreadsInPool', 1),
+      self.threadPool = ThreadPool( self.maxNumberOfThreads,
                                     self.maxNumberOfThreads )
+
       if not self.threadPool:
-        self.log.error('Can not create Thread Pool:')
+        self.log.error('Can not create Thread Pool')
         return S_ERROR('Can not create Thread Pool')
       
-      
-      self.lockObj = threading.RLock()
-
       self.setup = gConfig.getValue("DIRAC/Setup")
-      
+
       self.nc = NotificationClient()
 
       self.diracAdmin = DiracAdmin()
 
       self.csAPI = CSAPI()      
-    
+      
+      for i in range(self.maxNumberOfThreads):
+        self.threadPool.generateJobAndQueueIt(self._executeCheck, args = (None, ) )  
+        
       return S_OK()
-    
+
     except Exception:
       errorStr = "SeSInspectorAgent initialization"
       gLogger.exception(errorStr)
@@ -72,66 +66,32 @@ class SeSInspectorAgent(AgentModule):
 #############################################################################
 
   def execute(self):
-    """ The main SSInspectorAgent execution method
+    """ 
+    The main SSInspectorAgent execution method.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getResourcesToCheck` and 
+    put result in self.ServicesToBeChecked (a Queue) and in self.ServiceNamesInCheck (a list)
     """
     
     try:
 
-      self._getServicesToCheck()
-
-      for i in range(self.maxNumberOfThreads):
-        self.lockObj.acquire()
-        try:
-          toBeChecked = self.ServicesToBeChecked.pop()
-        except Exception:
+      res = self.rsDB.getStuffToCheck('Services', Configurations.Resources_check_freq) 
+   
+      for resourceTuple in res:
+        if resourceTuple[0] in self.ServiceNamesInCheck:
           break
-        finally:
-          self.lockObj.release()
-        
-        self.threadPool.generateJobAndQueueIt(self._executeCheck, args = (toBeChecked, ) )
-        
-      
-      self.threadPool.processAllResults()
+        resourceL = ['Service']
+        for x in resourceTuple:
+          resourceL.append(x)
+        self.ServiceNamesInCheck.insert(0, resourceL[1])
+        self.ServicesToBeChecked.put(resourceL)
+
       return S_OK()
 
     except Exception, x:
       errorStr = where(self, self.execute)
       gLogger.exception(errorStr,lException=x)
       return S_ERROR(errorStr)
-    
-#############################################################################
-
-  def _getServicesToCheck(self):
-    """ 
-    Call :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.getServicesToCheck` 
-    and put result in list
-    """
-    
-    try:
-      try:
-        res = self.rsDB.getStuffToCheck('Services', Configurations.Services_check_freq)
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
-  
-      for serviceTuple in res:
-        if serviceTuple[0] in self.ServiceNamesInCheck:
-          break
-        serviceL = ['Service']
-        for x in serviceTuple:
-          serviceL.append(x)
-        self.lockObj.acquire()
-        try:
-          self.ServiceNamesInCheck.insert(0, serviceL[1])
-          self.ServicesToBeChecked.insert(0, serviceL)
-        finally:
-          self.lockObj.release()
-
-    except Exception:
-      errorStr = "SeSInspectorAgent _getResourcesToCheck"
-      gLogger.exception(errorStr)
-
+      
 #############################################################################
 
   def _executeCheck(self, toBeChecked):
@@ -139,9 +99,12 @@ class SeSInspectorAgent(AgentModule):
     Create instance of a PEP, instantiated popping a service from lists.
     """
     
-    try:
     
-      while True:
+    while True:
+      
+      try:
+      
+        toBeChecked = self.ServicesToBeChecked.get()
       
         granularity = toBeChecked[0]
         serviceName = toBeChecked[1]
@@ -152,7 +115,7 @@ class SeSInspectorAgent(AgentModule):
         operatorCode = toBeChecked[6]
         
         gLogger.info("Checking Service %s, with status %s" % (serviceName, status))
-
+        
         newPEP = PEP(granularity = granularity, name = serviceName, status = status, 
                      formerStatus = formerStatus, siteType = siteType, 
                      serviceType = serviceType, operatorCode = operatorCode)
@@ -160,32 +123,14 @@ class SeSInspectorAgent(AgentModule):
         newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup, ncIn = self.nc, 
                        daIn = self.diracAdmin, csAPIIn = self.csAPI)
     
-
         # remove from InCheck list
-        self.lockObj.acquire()
-        try:
-          self.ServiceNamesInCheck.remove(toBeChecked[1])
-        finally:
-          self.lockObj.release()
+        self.ServiceNamesInCheck.remove(toBeChecked[1])
 
-        # get new service to be checked 
-        self.lockObj.acquire()
+      except Exception:
+        gLogger.exception('SeSInspector._executeCheck')
         try:
-          toBeChecked = self.ServicesToBeChecked.pop()
-        except Exception:
-          break
-        finally:
-          self.lockObj.release()
-        
-    
-    except Exception, x:
-      gLogger.exception('SeSInspector._executeCheck')
-      self.lockObj.acquire()
-      try:
-        self.ServiceNamesInCheck.remove(serviceName)
-      except IndexError:
-        pass
-      finally:
-        self.lockObj.release()
+          self.ResourceNamesInCheck.remove(serviceName)
+        except IndexError:
+          pass
 
-#############################################################################
+#############################################################################    
