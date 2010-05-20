@@ -141,7 +141,7 @@ class TransformationDB(DB):
     # If the transformation has an input data specification
     if fileMask:
       self.filters.append((transID,re.compile(fileMask)))
-      
+
     if inheritedFrom:
       res  = self._getTransformationID(inheritedFrom,connection=connection)
       if not res['OK']:
@@ -149,19 +149,19 @@ class TransformationDB(DB):
         self.deleteTransformation(transID,connection=connection)
         return res
       originalID = res['Value']
-      res = self.setTransformationParameter(originalID,'Status','Stopped',author=authorDN,connection=connection)
+      res = self.setTransformationParameter(originalID,'Status','Completing',author=authorDN,connection=connection)
       if not res['OK']:
         gLogger.error("Failed to update parent transformation status",res['Message'])
         self.deleteTransformation(transID,connection=connection)
         return res
-      message = 'Status changed to "Stopped" due to creation of the derived transformation (%d)' % transID
+      message = 'Creation of the derived transformation (%d)' % transID
       self.__updateTransformationLogging(originalID,message,authorDN,connection=connection)
       res = self.getTransformationFiles(condDict={'TransformationID':originalID},connection=connection)
       if not res['OK']:
         self.deleteTransformation(transID,connection=connection)
         return res
       if res['Records']:
-        res = self.__insertExistingTransformationFiles(transID, res['Records'])
+        res = self.__insertExistingTransformationFiles(transID,res['Records'],connection=connection)
         if not res['OK']:
           self.deleteTransformation(transID,connection=connection)
           return res
@@ -655,13 +655,15 @@ class TransformationDB(DB):
       if self.__filterFile(lfn,filters):
         passFilter.append(fileID)
     return self.__addFilesToTransformation(transID, passFilter,connection=connection)
-  
-  def __insertExistingTransformationFiles(self,transID,fileTuples):
+
+  def __insertExistingTransformationFiles(self,transID,fileTuples,connection=False):
     req = "INSERT INTO TransformationFiles (TransformationID,Status,TaskID,FileID,TargetSE,UsedSE,LastUpdate) VALUES"
     candidates = False
-    for lfn,transID,fileID,status,taskID,targetSE,usedSE,errorCount,lastUpdate,insertTime in fileTuples:
+    for lfn,originalID,fileID,status,taskID,targetSE,usedSE,errorCount,lastUpdate,insertTime in fileTuples:
       if status != 'Unused':
-        candidates = True  
+        if status == 'Assigned':
+          status = 'Assigned%d' % originalID
+        candidates = True
         if taskID:
           taskID = str(int(originalID)).zfill(8)+'_'+str(int(taskID)).zfill(8)
         req = "%s (%d,'%s','%s',%d,'%s','%s',UTC_TIMESTAMP())," % (req,transID,status,taskID,fileID,targetSE,usedSE)
