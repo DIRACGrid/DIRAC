@@ -358,6 +358,14 @@ class TransformationDB(DB):
       self.__updateTransformationLogging(transID,message,author,connection=connection)      
     return res      
 
+  def getAdditionalParameters(self,transName,connection=False):
+    res = self._getConnectionTransID(connection,transName)
+    if not res['OK']:
+      return res
+    connection = res['Value']['Connection']
+    transID = res['Value']['TransformationID']
+    return self.__getAdditionalParameters(transID,connection=connection)
+
   def deleteTransformationParameter(self,transName,paramName,author='',connection=False):
     """ Delete a parameter from the additional parameters table """
     res = self._getConnectionTransID(connection,transName)

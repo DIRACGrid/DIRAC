@@ -210,6 +210,16 @@ class TransformationHandler(RequestHandler):
   def export_getTransformationLogging(self,transName):
     res = self.database.getTransformationLogging(transName)
     return self.__parseRes(res)
+
+  ####################################################################
+  #
+  # These are the methods for transformation additional parameters
+  #
+
+  types_getAdditionalParameters = [transTypes]
+  def export_getAdditionalParameters(self,transName):
+    res = self.database.getAdditionalParameters(transName)
+    return self.__parseRes(res)
   
   ####################################################################
   #
