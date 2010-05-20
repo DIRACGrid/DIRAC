@@ -766,7 +766,7 @@ class SRM2Storage(StorageBase):
     if not res['OK']:
       return S_ERROR(res['Message'])
     remoteSize = res['Value']
-    timeout = int(remoteSize/self.MIN_BANDWIDTH + 300)
+    timeout = int(remoteSize/self.MIN_BANDWIDTH * 4 + 300)
     nbstreams = 1
     gLogger.info("SRM2Storage.__getFile: Using %d streams" % nbstreams)
     gLogger.info("SRM2Storage.__getFile: Executing transfer of %s to %s" % (src_url, dest_url))
