@@ -1095,7 +1095,7 @@ class DataIntegrityClient:
     if not lfn:
       gLogger.info("PFNZeroSize replica (%d) not registered in catalog. Updating prognosis" % problematicDict['FileID'])
       return self.changeProblematicPrognosis(fileID,'PFNNotRegistered')
-    rm = res.getCatalogMetadata(lfn,singleFile=True)
+    res = rm.getCatalogFileMetadata(lfn,singleFile=True)
     if not res['OK']:
       return self.__returnProblematicError(fileID,res)
     catalogSize = res['Value']['Size']

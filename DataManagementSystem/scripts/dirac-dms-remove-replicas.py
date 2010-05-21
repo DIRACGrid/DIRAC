@@ -13,11 +13,11 @@ rm = ReplicaManager()
 import os,sys
 
 if len(sys.argv) < 3:
-  print 'Usage: ./dirac-dms-remove-replicas.py <LFN | fileContainingLFNs> SE'
+  print 'Usage: ./dirac-dms-remove-replicas.py <LFN | fileContainingLFNs> SE [SE] ...'
   sys.exit()
 else:
   inputFileName = sys.argv[1]
-  storageElementName = sys.argv[2]
+  storageElementNames = sys.argv[2:]
 
 if os.path.exists(inputFileName):
   inputFile = open(inputFileName,'r')
@@ -28,11 +28,12 @@ else:
   lfns = [inputFileName]
 
 for lfnList in breakListIntoChunks(sortList(lfns,True),500):
-  res = rm.removeReplica(storageElementName,lfnList)
-  if not res['OK']:
-    print res['Message']
-  for lfn in sortList(res['Value']['Successful'].keys()):
-    print 'Successfully removed %s replica of %s' % (storageElementName,lfn)
-  for lfn in sortList(res['Value']['Failed'].keys()):
-    message = res['Value']['Failed'][lfn]
-    print 'Failed to remove %s replica of %s: %s' % (storageElementName,lfn,message)
+  for storageElementName in storageElementNames:
+    res = rm.removeReplica(storageElementName,lfnList)
+    if not res['OK']:
+      print res['Message']
+    for lfn in sortList(res['Value']['Successful'].keys()):
+      print 'Successfully removed %s replica of %s' % (storageElementName,lfn)
+    for lfn in sortList(res['Value']['Failed'].keys()):
+      message = res['Value']['Failed'][lfn]
+      print 'Failed to remove %s replica of %s: %s' % (storageElementName,lfn,message)
