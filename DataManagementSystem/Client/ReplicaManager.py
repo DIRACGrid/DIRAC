@@ -2140,10 +2140,28 @@ class ReplicaManager( CatalogToStorage ):
     res = self.getCatalogReplicas( lfns )
     if not res['OK']:
       return res
-    failed = res['Value']['Failed']
+    replicas = res['Value']
+    return self.checkActiveReplicas(replicas)
+
+  def checkActiveReplicas( self, replicaDict ):
+    """ Check a replica dictionary for active replicas
+    """
+    
+    if type( replicaDict ) != types.DictType:
+      return S_ERROR( 'Wrong argument type %s, expected a Dictionary' % type( replicaDict ) )
+    
+    for key in [ 'Successful', 'Failed' ]:
+      if not key in replicaDict:
+        return S_ERROR( 'Missing key "%s" in replica Dictionary' % key )
+      if type( replicaDict[key] ) != types.DictType:
+        return S_ERROR( 'Wrong argument type %s, expected a Dictionary' % type( replicaDict[key] ) )
+
     seReadStatus = {}
-    lfnReplicas = {}
-    for lfn, replicas in res['Value']['Successful'].items():
+    for lfn, replicas in replicaDict['Successful'].items():
+      if type( replicas ) != types.DictType:
+        del replicaDict['Successful'][ lfn ]
+        replicaDict['Failed'][lfn] = 'Wrong replica info'
+      continue
       for se in replicas.keys():
         if not seReadStatus.has_key( se ):
           res = self.__SEActive( se )
@@ -2153,9 +2171,8 @@ class ReplicaManager( CatalogToStorage ):
             seReadStatus[se] = False
         if not seReadStatus[se]:
           replicas.pop( se )
-      lfnReplicas[lfn] = replicas
-    resDict = {'Successful':lfnReplicas, 'Failed':failed}
-    return S_OK( resDict )
+
+    return S_OK( replicaDict )
 
   def __SEActive( self, se ):
     storageCFGBase = "/Resources/StorageElements"
