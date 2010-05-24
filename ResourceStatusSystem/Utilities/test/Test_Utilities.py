@@ -26,7 +26,8 @@ class UtilitiesTestCase(unittest.TestCase):
     self.ig = InfoGetter()
     
 #############################################################################
-            
+
+#rifalla con un un mock al posto di infoGetter + un test vero!             
 class PublisherSuccess(UtilitiesTestCase):
   
   def test_getInfo(self):
@@ -47,12 +48,20 @@ class PublisherSuccess(UtilitiesTestCase):
       for (panel, res) in l:
         self.assert_(res.has_key(panel))
       
+#############################################################################
 
+class InfoGetterSuccess(UtilitiesTestCase):
+  
+  def testGetInfoToApply(self):
+    for arg in ('policy', 'policyType', 'panel_info'):
+      
+      self.ig.getInfoToApply((arg, ), )
 
 #############################################################################
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(UtilitiesTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PublisherSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(InfoGetterSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 

@@ -20,6 +20,7 @@ AGENT_NAME = 'ResourceStatus/ClientsCacheFeeder'
 
 class ClientsCacheFeeder(AgentModule):
 
+#############################################################################
 
   def initialize(self):
     """ ClientsCacheFeeder initialization
@@ -27,12 +28,7 @@ class ClientsCacheFeeder(AgentModule):
     
     try:
 
-      try:
-        self.rsDB = ResourceStatusDB()
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
+      self.rsDB = ResourceStatusDB()
       
       self.clientsInvoker = ClientsInvoker()
 
@@ -58,6 +54,7 @@ class ClientsCacheFeeder(AgentModule):
       gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
+#############################################################################
 
   def execute(self):
     """ The main ClientsCacheFeeder execution method
@@ -77,3 +74,5 @@ class ClientsCacheFeeder(AgentModule):
       errorStr = "ClientsCacheFeeder execution"
       gLogger.exception(errorStr)
       return S_ERROR(errorStr)
+
+#############################################################################
