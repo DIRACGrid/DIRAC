@@ -51,6 +51,8 @@ CREATE TABLE Jobs (
     INDEX (OwnerDN),
     OwnerGroup varchar(128) NOT NULL DEFAULT 'lhcb_user',
     INDEX (OwnerGroup),
+    RunNumber INTEGER NOT NULL DEFAULT 0,
+    INDEX(RunNumber),
     SubmissionTime DATETIME,
     RescheduleTime DATETIME,
     LastUpdateTime DATETIME,
