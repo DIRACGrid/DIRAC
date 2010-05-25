@@ -43,7 +43,8 @@ class PDP:
 #############################################################################
   
   def __init__(self, granularity = None, name = None, status = None, formerStatus = None, 
-               reason = None, siteType = None, serviceType = None, resourceType = None):
+               reason = None, siteType = None, serviceType = None, resourceType = None, 
+               useNewRes = False):
     
     self.__granularity = granularity
     if self.__granularity is not None:
@@ -81,6 +82,8 @@ class PDP:
 
     cc = CommandCaller()
     self.pc = PolicyCaller(cc)
+    
+    self.useNewRes = useNewRes
     
 
 #    self.lockObj = threading.RLock()
@@ -131,7 +134,8 @@ class PDP:
                              formerStatus = self.__formerStatus,
                              siteType = self.__siteType, 
                              serviceType = self.__serviceType,
-                             resourceType = self.__resourceType)
+                             resourceType = self.__resourceType,
+                             useNewRes = self.useNewRes)
     
     policyCombinedResultsList = []
       

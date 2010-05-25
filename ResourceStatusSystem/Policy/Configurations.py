@@ -106,7 +106,7 @@ AssigneeGroups = {
   'VladRobGreigJoel_PROD-Mail': 
   {'Users': ['roma', 'santinel', 'gcowan', 'joel'],
    'Setup': ['LHCb-Production'],
-   'Granularity': ValidRes,
+   'Granularity': ['Site', 'Service'],
    'SiteType': ValidSiteType, 
    'ServiceType': ValidServiceType, 
    'ResourceType': ValidResourceType, 
@@ -115,10 +115,28 @@ AssigneeGroups = {
   'VladRobGreigJoel_PROD-Web': 
   {'Users': ['roma', 'santinel', 'gcowan', 'joel'],
    'Setup': ['LHCb-Production'],
-   'Granularity': ValidRes,
+   'Granularity': ['Site', 'Service'],
    'SiteType': ValidSiteType, 
    'ServiceType': ValidServiceType, 
    'ResourceType': ValidResourceType, 
+   'Notifications': ['Web']
+   }, 
+  'VladRobGreigJoel_PROD-Mail-2': 
+  {'Users': ['roma', 'santinel', 'gcowan', 'joel'],
+   'Setup': ['LHCb-Production'],
+   'Granularity': ['Resource'],
+   'SiteType': ValidSiteType, 
+   'ServiceType': ValidServiceType, 
+   'ResourceType': ['SE', 'LFC_C', 'LFC_L', 'FTS'], 
+   'Notifications': ['Mail']
+   }, 
+  'VladRobGreigJoel_PROD-Web-2': 
+  {'Users': ['roma', 'santinel', 'gcowan', 'joel'],
+   'Setup': ['LHCb-Production'],
+   'Granularity': ['Resource'],
+   'SiteType': ValidSiteType, 
+   'ServiceType': ValidServiceType, 
+   'ResourceType': ['SE', 'LFC_C', 'LFC_L', 'FTS'], 
    'Notifications': ['Web']
    }, 
   'VladRob_DEV': 

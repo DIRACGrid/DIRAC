@@ -54,7 +54,7 @@ class PEP:
  
   def __init__(self, granularity = None, name = None, status = None, formerStatus = None, 
                reason = None, siteType = None, serviceType = None, resourceType = None, 
-               operatorCode = None, futureEnforcement = None):
+               operatorCode = None, futureEnforcement = None, useNewRes = False):
     
     try:
 #      granularity = presentEnforcement['Granularity']
@@ -108,6 +108,8 @@ class PEP:
         self.__futureGranularity = futureGranularity
       except NameError:
         pass
+      
+    self.useNewRes = useNewRes
       
 #############################################################################
     
@@ -163,7 +165,7 @@ class PEP:
       pdp = PDP(granularity = self.__granularity, name = self.__name, status = self.__status, 
                 formerStatus = self.__formerStatus, reason = self.__reason, 
                 siteType = self.__siteType, serviceType = self.__serviceType, 
-                resourceType = self.__resourceType)
+                resourceType = self.__resourceType, useNewRes = self.useNewRes)
 
     #DB
     if rsDBIn is not None:
