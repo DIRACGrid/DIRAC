@@ -623,8 +623,9 @@ class TransformationDB(DB):
     total=0
     for attrDict,count in res['Value']:
       status = attrDict['Status']
-      statusDict[status]=count
-      total += count
+      if not re.search('-',status):
+        statusDict[status]=count
+        total += count
     statusDict['Total']=total
     return S_OK(statusDict)
 
