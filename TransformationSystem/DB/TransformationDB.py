@@ -691,7 +691,9 @@ class TransformationDB(DB):
     for lfn,originalID,fileID,status,taskID,targetSE,usedSE,errorCount,lastUpdate,insertTime in fileTuples:
       if status != 'Unused':
         if status == 'Assigned':
-          status = 'Assigned%d' % originalID
+          status = 'Assigned-%d' % originalID
+        if status == 'Processed':
+          status = 'Processed-%d' % originalID
         candidates = True
         if taskID:
           taskID = str(int(originalID)).zfill(8)+'_'+str(int(taskID)).zfill(8)
