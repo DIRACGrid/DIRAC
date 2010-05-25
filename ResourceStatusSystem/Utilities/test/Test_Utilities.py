@@ -53,15 +53,75 @@ class PublisherSuccess(UtilitiesTestCase):
 class InfoGetterSuccess(UtilitiesTestCase):
   
   def testGetInfoToApply(self):
-    for arg in ('policy', 'policyType', 'panel_info'):
+#    for arg in ('policy', 'policyType', 'panel_info', 'view_info'):
+    for g in ValidRes:
+      for s in ValidStatus: 
+        for site_t in ValidSiteType: 
+          for service_t in ValidServiceType: 
       
-      self.ig.getInfoToApply((arg, ), )
+            if g in ('Site', 'Sites'):
+              panel = 'Site_Panel'
+            if g in ('Service', 'Services'):
+              if service_t == 'Storage':
+                panel = 'Service_Storage_Panel'
+              if service_t == 'Computing':
+                panel = 'Service_Computing_Panel'
+              if service_t == 'Others':
+                panel = 'Service_Others_Panel'
+            if g in ('Resource', 'Resources'):
+              panel = 'Resource_Panel'
+            if g in ('StorageElement', 'StorageElements'):
+              panel = 'SE_Panel'
+
+      
+            for resource_t in ValidResourceType: 
+
+              res = self.ig.getInfoToApply(('policyType', ), g, s, None, site_t, service_t, resource_t)
+              for p_res in res[0]['PolicyType']:
+                self.assert_(p_res in Configurations.Policy_Types.keys())
+
+              for useNewRes in (True, False):
+
+                res = self.ig.getInfoToApply(('policy', ), g, s, None, site_t, service_t, resource_t, useNewRes)
+                for p_res in res[0]['Policies']:
+                  self.assert_(p_res['Name'] in Configurations.Policies.keys())
+                  if useNewRes is False:
+                    self.assertEqual(p_res['commandIn'], Configurations.Policies[p_res['Name']]['commandIn'])
+                  else:
+                    try:
+                      self.assertEqual(p_res['commandIn'], Configurations.Policies[p_res['Name']]['commandInNewRes'])
+                    except KeyError:
+                      self.assertEqual(p_res['commandIn'], Configurations.Policies[p_res['Name']]['commandIn'])
+
+                res = self.ig.getInfoToApply(('panel_info', ), g, s, None, site_t, service_t, resource_t, useNewRes)
+                for p_res in res[0]['Info']:
+                  for p_name in p_res.keys():
+                    self.assert_(p_name in Configurations.Policies.keys())
+                    if isinstance(p_res[p_name], list):
+                      for i in range(len(p_res[p_name])):
+                        for k in p_res[p_name][i].keys():
+                          self.assertEqual(p_res[p_name][i][k]['args'], 
+                                           Configurations.Policies[p_name][panel][i][k]['args'])
+                          if useNewRes:
+                            try:
+                              self.assertEqual(p_res[p_name][i][k]['Command'], 
+                                               Configurations.Policies[p_name][panel][i][k]['CommandNew'])
+                            except KeyError:
+                              self.assertEqual(p_res[p_name][i][k]['Command'], 
+                                               Configurations.Policies[p_name][panel][i][k]['Command'])
+                          else:
+                            self.assertEqual(p_res[p_name][i][k]['Command'], 
+                                             Configurations.Policies[p_name][panel][i][k]['Command'])
+                            
+                    else:
+                      self.assertEqual(p_res[p_name], Configurations.Policies[p_name][panel])
+
 
 #############################################################################
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(UtilitiesTestCase)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PublisherSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PublisherSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(InfoGetterSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 

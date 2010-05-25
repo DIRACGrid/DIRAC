@@ -219,10 +219,10 @@ Policies = {
       'args' : (DTinHours, ),
       'commandIn' : 'DT_Status',
       'Site_Panel' : [ {'WebLink': {'Command': 'DT_Link', 
-                                    'args': None}}
+                                    'args': None}}, 
                       ], 
       'Resource_Panel' : [ {'WebLink': {'Command': 'DT_Link', 
-                                        'args': None}}
+                                        'args': None}}, 
                       ]
      },
   'GGUSTickets' : 
@@ -347,7 +347,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ['Computing'],
       'ResourceType' : ValidResourceType,
-#      'commandIn' : 'JE_S',
+      'commandInNewRes' : 'JE_S',
       'commandIn' : 'JE_S_Cached',
        'args' : None,  
       'Service_Computing_Panel' : [ {'FillChart': {'Command': 'DiracAccountingGraph', 
@@ -368,7 +368,7 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ['Computing'],
       'ResourceType' : ValidResourceType,
-#      'commandIn' : 'PE_S',
+      'commandInNewRes' : 'PE_S',
       'commandIn' : 'PE_S_Cached',
       'args' : None,  
       'Service_Computing_Panel' : [ {'FillChart': {'Command' : 'DiracAccountingGraph', 
@@ -394,7 +394,7 @@ Policies = {
       'Resource_Panel' : [ {'FillChart': {'Command': 'DiracAccountingGraph',
                                           'args': ('Pilot', 'CumulativeNumberOfPilots', 
                                                    {'Format': 'LastHours', 'hours': 24}, 
-                                                   'GridStatus', None)}}
+                                                   'GridStatus', None)}}, 
                           ]
      },
   'OnSitePropagation' :
@@ -464,7 +464,7 @@ Policies = {
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
       'commandIn' : 'MonitoredStatus',
-      'args' : None,
+      'args' : ('Resource', ),
       'SE_Panel' : {'RSS':'ResOfStorEl'}
      },
   'OnSENodePropagation' :
@@ -485,13 +485,14 @@ Policies = {
       'SiteType' : ValidSiteType,
       'ServiceType' : ValidServiceType,
       'ResourceType' : ValidResourceType,
-#      'commandIn' : 'SETransfer',
+      'commandInNewRes' : 'SETransfer',
       'commandIn' : 'SETransfer_Cached',
       'args' : None,  
-      'SE_Panel' : [ {'FillChart': {'Command':'DiracAccountingGraph', 
+      'SE_Panel' : [ {'FillChart': {'Command':'DiracAccountingGraph',
+                                    'CommandNew':'DiracAccountingGraph-NEW', 
                                     'args': ('DataOperation', 'Quality', 
                                              {'Format': 'LastHours', 'hours': 24}, 
-                                             'Channel', {'OperationType':'putAndRegister'})}}
+                                             'Channel', {'OperationType':'putAndRegister'})}}, 
                       ]
      },
   'SEOccupancy' :
@@ -505,7 +506,7 @@ Policies = {
       'commandIn' : 'SLS_Status',
       'args' : None,  
       'SE_Panel' : [ {'WebLink': {'Command':'SLS_Link',
-                                  'args': None}}
+                                  'args': None}}, 
                       ]
      },
   'SEQueuedTransfers' :
@@ -519,7 +520,7 @@ Policies = {
       'commandIn' : 'SLS_ServiceInfo',
       'args' : (["Queued transfers"], ),
       'SE_Panel' : [ {'WebLink': {'Command':'SLS_Link',
-                                  'args': None}}
+                                  'args': None}}, 
                       ]
      },
   'AlwaysFalse' :
@@ -588,9 +589,9 @@ Policy_Types = {
 #############################################################################
 
 views_panels = {
-  'Site_View' : ['Site_Panel', 'Service_Computing_Panel', 'Service_Storage_Panel', 'OtherServices_Panel'],
-  'Resource_View' : ['Resource_Panel'],
-  'SE_View' : ['SE_Panel']
+  'Site' : ['Site_Panel', 'Service_Computing_Panel', 'Service_Storage_Panel', 'OtherServices_Panel'],
+  'Resource' : ['Resource_Panel'],
+  'StorageElement' : ['SE_Panel']
 }
 
 
