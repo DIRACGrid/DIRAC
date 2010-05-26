@@ -36,7 +36,7 @@ def initializeJobStateUpdateHandler( serviceInfo ):
 class JobStateUpdateHandler( RequestHandler ):
 
   ###########################################################################
-  types_updateJobFromStager = [StringType,StringType]
+  types_updateJobFromStager = [[StringType,IntType,LongType],StringType]
   def export_updateJobFromStager(self,jobID,status):
     """ Simple call back method to be used by the stager. """
     if status == 'Done':
@@ -47,7 +47,7 @@ class JobStateUpdateHandler( RequestHandler ):
       minorStatus = 'Staging input files failed'
     else:
       return S_ERROR("updateJobFromStager: %s status not known." % status)
-    return self.__setJobStatus(int(jobID), jobStatus, minorStatus, 'StagerSystem')
+    return self.__setJobStatus(int(jobID), jobStatus, minorStatus, 'StagerSystem',None)
 
   ###########################################################################
   types_setJobStatus = [IntType,StringType,StringType,StringType]
