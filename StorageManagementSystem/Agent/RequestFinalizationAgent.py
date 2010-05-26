@@ -82,7 +82,7 @@ class RequestFinalizationAgent(AgentModule):
     gLogger.debug("RequestFinalization.__performCallback: Attempting to perform call back for %s with %s status" % (sourceTask,status))
     client = RPCClient(service)
     gLogger.debug("RequestFinalization.__performCallback: Created RPCClient to %s" % service)
-    execString = "res = client.%s(%s,'%s')" % (method,sourceTask,status)
+    execString = "res = client.%s('%s','%s')" % (method,sourceTask,status)
     gLogger.debug("RequestFinalization.__performCallback: Attempting to invoke %s service method" % method)
     exec(execString)
     if not res['OK']:
