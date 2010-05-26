@@ -232,6 +232,17 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     for g_1 in ValidRes:
       for g_2 in ValidRes:
         res = self.rsh.export_getGeneralName(g_1, 'XX', g_2)
+        self.assert_(res['OK'])
+
+#  def test_export_enforcePolicies(self):
+#    for g in ValidRes:
+#      res = self.rsh.export_enforcePolicies(g, 'XX')
+
+#  def test_export_publisher(self):
+#    for g in ValidRes:
+#      res = self.rsh.export_publisher(g, 'XX')
+#      print res
+#      self.assert_(res['OK'])
         
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusHandlerTestCase)

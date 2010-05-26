@@ -194,7 +194,7 @@ class ResourceStatusDB:
   def syncWithCS(self, a, b):
     pass
 
-  def getStuffToCheck(self, granularity, checkFrequency = None, maxN = None):
+  def getStuffToCheck(self, granularity, checkFrequency = None, maxN = None, name = None):
     return []
     
   def rankRes(self, granularity, days, startingDate = None):

@@ -22,6 +22,8 @@ from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
 from DIRAC.ResourceStatusSystem.Utilities.Publisher import Publisher 
 from DIRAC.ResourceStatusSystem.Client.Command.CommandCaller import CommandCaller
+from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
 
 rsDB = False
 
@@ -32,8 +34,13 @@ def initializeResourceStatusHandler(serviceInfo):
 
   cc = CommandCaller()
 
+  ig = InfoGetter()
+  
+  WMSAdmin = RPCClient("WorkloadManagement/WMSAdministrator")
+
   global publisher
-  publisher = Publisher(rsDBIn = rsDB, commandCallerIn = cc)
+  publisher = Publisher(rsDBIn = rsDB, commandCallerIn = cc, infoGetterIn = ig, 
+                        WMSAdminIn = WMSAdmin)
 
   gConfig.addListenerToNewVersionEvent( rsDB.syncWithCS )
   return S_OK()
@@ -1395,7 +1402,7 @@ class ResourceStatusHandler(RequestHandler):
     """ get a cached result
     """
     try:
-      gLogger.info("ResourceStatusHandler.getCachedResulr: Attempting to get %s: %s cached result" % (name, command))
+      gLogger.info("ResourceStatusHandler.getCachedResult: Attempting to get %s: %s cached result" % (name, command))
       try:
         res = rsDB.getClientsCacheRes(name, command)
       except RSSDBException, x:
@@ -1411,8 +1418,45 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
-  types_publisher = [StringType, StringType, StringType]
-  def export_publisher(self, granularity, name, view):
+  types_enforcePolicies = [StringType, StringType, BooleanType]
+  def export_enforcePolicies(self, granularity, name, useNewRes = True):
+    """ Enforce all the policies. If `useNewRes` is False, use cached results only (where available).
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.enforcePolicies: Attempting to enforce policies for %s %s" % (granularity, name))
+      try:
+        reason = serviceType = resourceType = futureEnforcement = None 
+
+        res = rsDB.getStuffToCheck(granularity, name = name)[0]
+        status = res[1]
+        formerStatus = res[2]
+        siteType = res[3]
+        operatorCode = res[len(res)-1]
+        if granularity == 'Resource':
+          resourceType = res[4]
+        elif granularity == 'Service':
+          serviceType = res[4]
+        
+        from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
+        pep = PEP(granularity, name, status, formerStatus, reason, siteType, 
+                  serviceType, resourceType, operatorCode, futureEnforcement, useNewRes)
+        pep.enforce(rsDBIn = rsDB)
+        
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.enforcePolicies: enforced for %s: %s" % (granularity, name))
+      return S_OK("ResourceStatusHandler.enforcePolicies: enforced for %s: %s" % (granularity, name))
+    except Exception:
+      errorStr = where(self, self.export_getCachedResult)
+      gLogger.exception(errorStr)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  types_publisher = [StringType, StringType, BooleanType]
+  def export_publisher(self, granularity, name, useNewRes = False):
     """ get a view
     
     :params:
@@ -1420,24 +1464,65 @@ class ResourceStatusHandler(RequestHandler):
     
       :attr:`name`: string - name of the res
 
-      :attr:`view`: string - name of the view
+      :attr:`useNewRes`: boolean. When set to true, will get new results, 
+      otherwise it will get cached results (where available).
     """
     try:
-      gLogger.info("ResourceStatusHandler.publisher: Attempting to get view %s for %s" % (view, name))
+      gLogger.info("ResourceStatusHandler.publisher: Attempting to get info for %s: %s" % (granularity, name))
       try:
-        res = publisher.getInfo(granularity, name, view)
+        if useNewRes == True:
+          from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
+          gLogger.info("ResourceStatusHandler.publisher: Recalculating policies for %s: %s" % (granularity, name))
+          if granularity in ('Site', 'Sites'):
+            res = rsDB.getStuffToCheck(granularity, name = name)[0]
+            status = res[1]
+            formerStatus = res[2]
+            siteType = res[3]
+            operatorCode = res[4]
+            
+            pep = PEP(granularity, name, status, formerStatus, None, siteType, 
+                      None, None, operatorCode, None, useNewRes)
+            pep.enforce(rsDBIn = rsDB)
+
+            res = rsDB.getMonitoredsList('Service', paramsList = ['ServiceName'], siteName = name)
+            services = [x[0] for x in res]
+            for s in services:
+              res = rsDB.getStuffToCheck('Service', name = s)[0]
+              status = res[1]
+              formerStatus = res[2]
+              siteType = res[3]
+              serviceType = res[4]
+              
+              pep = PEP('Service', s, status, formerStatus, None, siteType, 
+                        serviceType, None, operatorCode, None, useNewRes)
+              pep.enforce(rsDBIn = rsDB)
+          else:
+            reason = serviceType = resourceType = futureEnforcement = None 
+  
+            res = rsDB.getStuffToCheck(granularity, name = name)[0]
+            status = res[1]
+            formerStatus = res[2]
+            siteType = res[3]
+            operatorCode = res[len(res)-1]
+            if granularity == 'Resource':
+              resourceType = res[4]
+            elif granularity == 'Service':
+              serviceType = res[4]
+            
+            from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
+            pep = PEP(granularity, name, status, formerStatus, reason, siteType, 
+                      serviceType, resourceType, operatorCode, futureEnforcement, useNewRes)
+            pep.enforce(rsDBIn = rsDB)
+            
+        res = publisher.getInfo(granularity, name, useNewRes)
       except InvalidRes, x:
         errorStr = "Invalid granularity"
-        gLogger.exception(whoRaised(x) + errorStr)
-        return S_ERROR(errorStr)
-      except InvalidView, x:
-        errorStr = "Invalid view"
         gLogger.exception(whoRaised(x) + errorStr)
         return S_ERROR(errorStr)
       except RSSException, x:
         errorStr = "RSSException"
         gLogger.exception(whoRaised(x) + errorStr)
-      gLogger.info("ResourceStatusHandler.publisher: got view %s for %s" % (view, name))
+      gLogger.info("ResourceStatusHandler.publisher: got info for %s: %s" % (granularity, name))
       return S_OK(res)
     except Exception:
       errorStr = where(self, self.export_publisher)

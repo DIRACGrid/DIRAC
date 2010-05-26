@@ -2,58 +2,152 @@ import unittest
 import sys
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 import DIRAC.ResourceStatusSystem.test.fake_rsDB
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
+from DIRAC.ResourceStatusSystem.Utilities.Publisher import Publisher
 
 class UtilitiesTestCase(unittest.TestCase):
   """ Base class for the Utilities test cases
   """
   def setUp(self):
-    from DIRAC.Core.Base import Script
-    Script.parseCommandLine() 
-    #sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
-    from DIRAC.ResourceStatusSystem.Utilities.Publisher import Publisher
+#    from DIRAC.Core.Base import Script
+#    Script.parseCommandLine() 
+    sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
     
-    from DIRAC.ResourceStatusSystem.test.fake_rsDB import ResourceStatusDB
-    self.rsDB = ResourceStatusDB()
-    
-    mockCC = Mock()
-    
-    self.p = Publisher(self.rsDB, mockCC)
-    
-    self.ig = InfoGetter()
+#    from DIRAC.ResourceStatusSystem.test.fake_rsDB import ResourceStatusDB
+#    self.rsDB = ResourceStatusDB()
     
 #############################################################################
 
-#rifalla con un un mock al posto di infoGetter + un test vero!             
 class PublisherSuccess(UtilitiesTestCase):
   
   def test_getInfo(self):
-    comb = ( ('Site', 'LCG.CERN.ch', 'Site_View'), 
-             ('Resource', 'grid0.fe.infn.it', 'Resource_View'), 
-             ('StorageElement', 'CERN-RAW', 'SE_View') )
-    for (g, n, v) in comb: 
-      res = self.p.getInfo(g, n, v)
-      info = self.ig.getInfoToApply(('view_info', ), None, None, None, None, None, None, v)
 
-      l = []
-      i = 0
-      
-      for k in info[0]['Panels'].keys():
-        k in res.keys()
-        i = i + 1
-      
-      for (panel, res) in l:
-        self.assert_(res.has_key(panel))
-      
+    mockCC = Mock()
+    mockIG = Mock()
+    mockWMSA = Mock()
+    
+    mockCC.commandInvocation.return_value = 'INFO_GOT_MOCK'
+    mockWMSA.getSiteMaskLogging.return_value = {'OK': True, 
+                                                'Value': {'LCG.CERN.ch': [('Active', '2009-11-25 17:36:14', 'atsareg', 'test')]}}
+    
+    p = Publisher(rsDBIn = None, commandCallerIn = mockCC, infoGetterIn = mockIG, 
+                  WMSAdminIn = mockWMSA)
+    
+    igR = [{'Panels': {'Service_Storage_Panel': 
+                       [{'OnStorageServicePropagation_SE': {'RSS': 'StorageElementsOfSite'}}, 
+                        {'OnStorageServicePropagation_Res': {'RSS': 'ResOfStorService'}}], 
+                        'OtherServices_Panel': [], 
+                        'Site_Panel': [{'GGUSTickets': 
+                                        [{'WebLink': {'args': None, 'Command': 'GGUS_Link'}}, 
+                                         {'TextInfo': {'args': None, 'Command': 'GGUS_Info'}}]}, 
+                                         {'DT_Scheduled': [{'WebLink': {'args': None, 'Command': 'DT_Link'}}]}, 
+                                         {'OnSitePropagation': {'RSS': 'ServiceOfSite'}}], 
+                                         'Service_Computing_Panel': [{'OnComputingServicePropagation': 
+                                                                      {'RSS': 'ResOfCompService'}}, 
+                                                                      {'JobsEfficiencySimple': [{'FillChart': {'args': ('Job', 'CumulativeNumberOfJobs', {'hours': 24, 'Format': 'LastHours'}, 'FinalMajorStatus', None), 'Command': 'DiracAccountingGraph'}}, 
+                                                                                                {'PieChart': {'args': ('Job', 'TotalNumberOfJobs', {'hours': 24, 'Format': 'LastHours'}, 'JobType', {'FinalMajorStatus': 'Failed'}), 'Command': 'DiracAccountingGraph'}}]}, 
+                       {'PilotsEfficiencySimple_Service': [{'FillChart': {'args': ('Pilot', 'CumulativeNumberOfPilots', {'hours': 24, 'Format': 'LastHours'}, 'GridStatus', None), 'Command': 'DiracAccountingGraph'}}, 
+                                                           {'PieChart': {'args': ('Pilot', 'TotalNumberOfPilots', {'hours': 24, 'Format': 'LastHours'}, 'GridCE', None), 'Command': 'DiracAccountingGraph'}}]}]}}]
+
+    mockIG.getInfoToApply.return_value = igR 
+    
+    res = p.getInfo('Site', 'LCG.CERN.ch')
+
+    for panel_name in res.keys():
+      self.assert_(panel_name in igR[0]['Panels'].keys())
+      for policy in res[panel_name]['InfoForPanel'].keys():
+        pNames = []
+        for i in range(len(igR[0]['Panels'][panel_name])):
+          pNames = pNames + igR[0]['Panels'][panel_name][i].keys()
+        self.assert_(policy in pNames)
+        self.assert_('Status' in res[panel_name]['InfoForPanel'][policy].keys())
+        self.assert_('Reason' in res[panel_name]['InfoForPanel'][policy].keys())
+        self.assert_('infos' in res[panel_name]['InfoForPanel'][policy].keys())
+        self.assert_('desc' in res[panel_name]['InfoForPanel'][policy].keys())
+
+
+    igR = [{'Panels':  {'Resource_Panel': [
+                               {'DT_Scheduled': [{'WebLink': {'args': None, 'Command': 'DT_Link'}}]}, 
+                               {'SAM_CE': [{'SAM': {'args': (None, ['LHCb CE-lhcb-availability', 'LHCb CE-lhcb-install', 'LHCb CE-lhcb-job-Boole', 'LHCb CE-lhcb-job-Brunel', 'LHCb CE-lhcb-job-DaVinci', 'LHCb CE-lhcb-job-Gauss', 'LHCb CE-lhcb-os', 'LHCb CE-lhcb-queues', 'LHCb CE-lhcb-queues', 'bi', 'csh', 'js', 'gfal', 'swdir', 'voms']), 
+                                                    'Command': 'SAM_Tests'}}]}, 
+                               {'PilotsEfficiencySimple_Resource': [{'FillChart': {'args': ('Pilot', 'CumulativeNumberOfPilots', {'hours': 24, 'Format': 'LastHours'}, 'GridStatus', None), 
+                                                                                  'Command': 'DiracAccountingGraph'}}]}, 
+                       ]}}]
+    
+    mockIG.getInfoToApply.return_value = igR
+    
+    res = p.getInfo('Resource', 'grid0.fe.infn.it')
+
+    for panel_name in res.keys():
+      self.assert_(panel_name in igR[0]['Panels'].keys())
+      for policy in res[panel_name]['InfoForPanel'].keys():
+        pNames = []
+        for i in range(len(igR[0]['Panels'][panel_name])):
+          pNames = pNames + igR[0]['Panels'][panel_name][i].keys()
+        self.assert_(policy in pNames)
+        self.assert_('Status' in res[panel_name]['InfoForPanel'][policy].keys())
+        self.assert_('Reason' in res[panel_name]['InfoForPanel'][policy].keys())
+        self.assert_('infos' in res[panel_name]['InfoForPanel'][policy].keys())
+        self.assert_('desc' in res[panel_name]['InfoForPanel'][policy].keys())
+
+
+    igR = [{'Panels':  {'Resource_Panel': [
+                               {'SAM_LFC_L': [{'SAM': {'args': (None, ['lfcstreams', 'lfclr', 'lfcls', 'lfcping']), 
+                                                       'Command': 'SAM_Tests'}}]}, 
+                               {'DT_Scheduled': [{'WebLink': {'args': None, 'Command': 'DT_Link'}}]}, 
+                       ]}}]
+    
+    mockIG.getInfoToApply.return_value = igR
+    
+    res = p.getInfo('Resource', 'prod-lfc-lhcb-ro.cern.ch')
+
+    for panel_name in res.keys():
+      self.assert_(panel_name in igR[0]['Panels'].keys())
+      for policy in res[panel_name]['InfoForPanel'].keys():
+        pNames = []
+        for i in range(len(igR[0]['Panels'][panel_name])):
+          pNames = pNames + igR[0]['Panels'][panel_name][i].keys()
+        self.assert_(policy in pNames)
+        self.assert_('Status' in res[panel_name]['InfoForPanel'][policy].keys())
+        self.assert_('Reason' in res[panel_name]['InfoForPanel'][policy].keys())
+        self.assert_('infos' in res[panel_name]['InfoForPanel'][policy].keys())
+        self.assert_('desc' in res[panel_name]['InfoForPanel'][policy].keys())
+
+
+    igR = [{'Panels': {'SE_Panel': [
+                          {'OnStorageElementPropagation': {'RSS': 'ResOfStorEl'}}, 
+                          {'TransferQuality': [{'FillChart': {'args': ('DataOperation', 'Quality', {'hours': 24, 'Format': 'LastHours'}, 'Channel', {'OperationType': 'putAndRegister'}), 
+                                                              'Command': 'DiracAccountingGraph'}}]}, 
+                          {'SEOccupancy': [{'WebLink': {'args': None, 'Command': 'SLS_Link'}}]}, 
+                          {'SEQueuedTransfers': [{'WebLink': {'args': None, 'Command': 'SLS_Link'}}]}]}}]
+    
+    mockIG.getInfoToApply.return_value = igR
+    
+    res = p.getInfo('StorageElement', 'CERN-RAW')
+
+    for panel_name in res.keys():
+      self.assert_(panel_name in igR[0]['Panels'].keys())
+      for policy in res[panel_name]['InfoForPanel'].keys():
+        pNames = []
+        for i in range(len(igR[0]['Panels'][panel_name])):
+          pNames = pNames + igR[0]['Panels'][panel_name][i].keys()
+        self.assert_(policy in pNames)
+        self.assert_('Status' in res[panel_name]['InfoForPanel'][policy].keys())
+        self.assert_('Reason' in res[panel_name]['InfoForPanel'][policy].keys())
+        self.assert_('infos' in res[panel_name]['InfoForPanel'][policy].keys())
+        self.assert_('desc' in res[panel_name]['InfoForPanel'][policy].keys())
+
+
 #############################################################################
 
 class InfoGetterSuccess(UtilitiesTestCase):
   
   def testGetInfoToApply(self):
-#    for arg in ('policy', 'policyType', 'panel_info', 'view_info'):
+    ig = InfoGetter()
+    
     for g in ValidRes:
       for s in ValidStatus: 
         for site_t in ValidSiteType: 
@@ -76,13 +170,13 @@ class InfoGetterSuccess(UtilitiesTestCase):
       
             for resource_t in ValidResourceType: 
 
-              res = self.ig.getInfoToApply(('policyType', ), g, s, None, site_t, service_t, resource_t)
+              res = ig.getInfoToApply(('policyType', ), g, s, None, site_t, service_t, resource_t)
               for p_res in res[0]['PolicyType']:
                 self.assert_(p_res in Configurations.Policy_Types.keys())
 
               for useNewRes in (True, False):
 
-                res = self.ig.getInfoToApply(('policy', ), g, s, None, site_t, service_t, resource_t, useNewRes)
+                res = ig.getInfoToApply(('policy', ), g, s, None, site_t, service_t, resource_t, useNewRes)
                 for p_res in res[0]['Policies']:
                   self.assert_(p_res['Name'] in Configurations.Policies.keys())
                   if useNewRes is False:
@@ -93,7 +187,7 @@ class InfoGetterSuccess(UtilitiesTestCase):
                     except KeyError:
                       self.assertEqual(p_res['commandIn'], Configurations.Policies[p_res['Name']]['commandIn'])
 
-                res = self.ig.getInfoToApply(('panel_info', ), g, s, None, site_t, service_t, resource_t, useNewRes)
+                res = ig.getInfoToApply(('panel_info', ), g, s, None, site_t, service_t, resource_t, useNewRes)
                 for p_res in res[0]['Info']:
                   for p_name in p_res.keys():
                     self.assert_(p_name in Configurations.Policies.keys())
@@ -121,7 +215,7 @@ class InfoGetterSuccess(UtilitiesTestCase):
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(UtilitiesTestCase)
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PublisherSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PublisherSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(InfoGetterSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 

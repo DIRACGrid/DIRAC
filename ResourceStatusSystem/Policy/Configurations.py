@@ -353,8 +353,8 @@ Policies = {
       'args' : ( None, ['lfcstreams', 'lfclr', 'lfcls', 'lfcping'] ),
       'Resource_Panel' : [ {'SAM': {'Command':'SAM_Tests', 
                                     'args': ( None, ['lfcstreams', 'lfclr', 'lfcls', 'lfcping'] ) }},
-                           {'WebLink': {'Command':'SAM_Link',
-                                        'args': None}}
+#                           {'WebLink': {'Command':'SAM_Link',
+#                                        'args': None}}
                           ]
      },     
   'JobsEfficiencySimple' :  
@@ -507,7 +507,7 @@ Policies = {
       'commandIn' : 'SETransfer_Cached',
       'args' : None,  
       'SE_Panel' : [ {'FillChart': {'Command':'DiracAccountingGraph',
-                                    'CommandNew':'DiracAccountingGraph-NEW', 
+#                                    'CommandNew':'DiracAccountingGraph-NEW', 
                                     'args': ('DataOperation', 'Quality', 
                                              {'Format': 'LastHours', 'hours': 24}, 
                                              'Channel', {'OperationType':'putAndRegister'})}}, 

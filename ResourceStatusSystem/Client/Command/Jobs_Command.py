@@ -128,7 +128,7 @@ class JobsEffSimple_Command(Command):
       try:
         name = rsc.getGeneralName(self.args[0], self.args[1], 'Site', self.timeout)
       except:
-        gLogger.error("Can't get a general name for %s %s" %(self.args[0], self.args[1]))
+        gLogger.error("JobsEffSimple_Command: Can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'Result':'Unknown'}      
       granularity = 'Site'
     elif self.args[0] in ('Site', 'Sites'):
@@ -180,7 +180,7 @@ class JobsEffSimpleCached_Command(Command):
       try:
         name = self.client.getGeneralName(self.args[0], self.args[1], 'Site')
       except:
-        gLogger.error("Can't get a general name for %s %s" %(self.args[0], self.args[1]))
+        gLogger.error("JobsEffSimpleCached_Command: can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'Result':'Unknown'}      
       granularity = 'Site'
     elif self.args[0] in ('Site', 'Sites'):

@@ -3217,7 +3217,7 @@ class ResourceStatusDB:
       
 #############################################################################
 
-  def getStuffToCheck(self, granularity, checkFrequency = None, maxN = None):
+  def getStuffToCheck(self, granularity, checkFrequency = None, maxN = None, name = None):
     """ 
     Get Sites, Services, or Resources to be checked.
     
@@ -3230,55 +3230,69 @@ class ResourceStatusDB:
       :attr:`maxN`: integer - maximum number of lines in output
     """
     
-    T0activeCheckFrequecy = checkFrequency['T0_ACTIVE_CHECK_FREQUENCY']
-    T0probingCheckFrequecy = checkFrequency['T0_PROBING_CHECK_FREQUENCY']
-    T0badCheckFrequecy = checkFrequency['T0_BAD_CHECK_FREQUENCY']
-    T0bannedCheckFrequecy = checkFrequency['T0_BANNED_CHECK_FREQUENCY']
-    T1activeCheckFrequecy = checkFrequency['T1_ACTIVE_CHECK_FREQUENCY']
-    T1probingCheckFrequecy = checkFrequency['T1_PROBING_CHECK_FREQUENCY']
-    T1badCheckFrequecy = checkFrequency['T1_BAD_CHECK_FREQUENCY']
-    T1bannedCheckFrequecy = checkFrequency['T1_BANNED_CHECK_FREQUENCY']
-    T2activeCheckFrequecy = checkFrequency['T2_ACTIVE_CHECK_FREQUENCY']
-    T2probingCheckFrequecy = checkFrequency['T2_PROBING_CHECK_FREQUENCY']
-    T2badCheckFrequecy = checkFrequency['T2_BAD_CHECK_FREQUENCY']
-    T2bannedCheckFrequecy = checkFrequency['T2_BANNED_CHECK_FREQUENCY']
-
-    T0dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0activeCheckFrequecy)).isoformat(' ')
-    T0dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0probingCheckFrequecy)).isoformat(' ')
-    T0dateToCheckFromBad = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0badCheckFrequecy)).isoformat(' ')
-    T0dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0bannedCheckFrequecy)).isoformat(' ')
-    T1dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1activeCheckFrequecy)).isoformat(' ')
-    T1dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1probingCheckFrequecy)).isoformat(' ')
-    T1dateToCheckFromBad = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1badCheckFrequecy)).isoformat(' ')
-    T1dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1bannedCheckFrequecy)).isoformat(' ')
-    T2dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2activeCheckFrequecy)).isoformat(' ')
-    T2dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2probingCheckFrequecy)).isoformat(' ')
-    T2dateToCheckFromBad = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2badCheckFrequecy)).isoformat(' ')
-    T2dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2bannedCheckFrequecy)).isoformat(' ')
+    if checkFrequency is not None:
+      T0activeCheckFrequecy = checkFrequency['T0_ACTIVE_CHECK_FREQUENCY']
+      T0probingCheckFrequecy = checkFrequency['T0_PROBING_CHECK_FREQUENCY']
+      T0badCheckFrequecy = checkFrequency['T0_BAD_CHECK_FREQUENCY']
+      T0bannedCheckFrequecy = checkFrequency['T0_BANNED_CHECK_FREQUENCY']
+      T1activeCheckFrequecy = checkFrequency['T1_ACTIVE_CHECK_FREQUENCY']
+      T1probingCheckFrequecy = checkFrequency['T1_PROBING_CHECK_FREQUENCY']
+      T1badCheckFrequecy = checkFrequency['T1_BAD_CHECK_FREQUENCY']
+      T1bannedCheckFrequecy = checkFrequency['T1_BANNED_CHECK_FREQUENCY']
+      T2activeCheckFrequecy = checkFrequency['T2_ACTIVE_CHECK_FREQUENCY']
+      T2probingCheckFrequecy = checkFrequency['T2_PROBING_CHECK_FREQUENCY']
+      T2badCheckFrequecy = checkFrequency['T2_BAD_CHECK_FREQUENCY']
+      T2bannedCheckFrequecy = checkFrequency['T2_BANNED_CHECK_FREQUENCY']
+  
+      T0dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0activeCheckFrequecy)).isoformat(' ')
+      T0dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0probingCheckFrequecy)).isoformat(' ')
+      T0dateToCheckFromBad = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0badCheckFrequecy)).isoformat(' ')
+      T0dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0bannedCheckFrequecy)).isoformat(' ')
+      T1dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1activeCheckFrequecy)).isoformat(' ')
+      T1dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1probingCheckFrequecy)).isoformat(' ')
+      T1dateToCheckFromBad = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1badCheckFrequecy)).isoformat(' ')
+      T1dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1bannedCheckFrequecy)).isoformat(' ')
+      T2dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2activeCheckFrequecy)).isoformat(' ')
+      T2dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2probingCheckFrequecy)).isoformat(' ')
+      T2dateToCheckFromBad = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2badCheckFrequecy)).isoformat(' ')
+      T2dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2bannedCheckFrequecy)).isoformat(' ')
 
     if granularity in ('Site', 'Sites'):
-      req = "SELECT SiteName, Status, FormerStatus, SiteType, OperatorCode FROM PresentSites WHERE"
+      req = "SELECT SiteName, Status, FormerStatus, SiteType, OperatorCode FROM PresentSites"
     elif granularity in ('Service', 'Services'):
-      req = "SELECT ServiceName, Status, FormerStatus, SiteType, ServiceType, OperatorCode FROM PresentServices WHERE"
+      req = "SELECT ServiceName, Status, FormerStatus, SiteType, ServiceType, OperatorCode FROM PresentServices"
     elif granularity in ('Resource', 'Resources'):
-      req = "SELECT ResourceName, Status, FormerStatus, SiteType, ResourceType, OperatorCode FROM PresentResources WHERE"
+      req = "SELECT ResourceName, Status, FormerStatus, SiteType, ResourceType, OperatorCode FROM PresentResources"
     elif granularity in ('StorageElement', 'StorageElements'):
-      req = "SELECT StorageElementName, Status, FormerStatus, SiteType, OperatorCode FROM PresentStorageElements WHERE"
+      req = "SELECT StorageElementName, Status, FormerStatus, SiteType, OperatorCode FROM PresentStorageElements"
     else:
       raise InvalidRes, where(self, self.getStuffToCheck)
-    req = req + " (Status = 'Active' AND SiteType = 'T0' AND LastCheckTime < '%s') OR" %( T0dateToCheckFromActive )
-    req = req + " (Status = 'Probing' AND SiteType = 'T0' AND LastCheckTime < '%s') OR" %( T0dateToCheckFromProbing )
-    req = req + " (Status = 'Bad' AND SiteType = 'T0' AND LastCheckTime < '%s') OR" %( T0dateToCheckFromBad )
-    req = req + " (Status = 'Banned' AND SiteType = 'T0' AND LastCheckTime < '%s') OR" %( T0dateToCheckFromBanned )
-    req = req + " (Status = 'Active' AND SiteType = 'T1' AND LastCheckTime < '%s') OR" %( T1dateToCheckFromActive )
-    req = req + " (Status = 'Probing' AND SiteType = 'T1' AND LastCheckTime < '%s') OR" %( T1dateToCheckFromProbing )
-    req = req + " (Status = 'Bad' AND SiteType = 'T1' AND LastCheckTime < '%s') OR" %( T1dateToCheckFromBad )
-    req = req + " (Status = 'Banned' AND SiteType = 'T1' AND LastCheckTime < '%s') OR" %( T1dateToCheckFromBanned )
-    req = req + " (Status = 'Active' AND SiteType = 'T2' AND LastCheckTime < '%s') OR" %( T2dateToCheckFromActive )
-    req = req + " (Status = 'Probing' AND SiteType = 'T2' AND LastCheckTime < '%s') OR" %( T2dateToCheckFromProbing )
-    req = req + " (Status = 'Bad' AND SiteType = 'T2' AND LastCheckTime < '%s') OR" %( T2dateToCheckFromBad )
-    req = req + " (Status = 'Banned' AND SiteType = 'T2' AND LastCheckTime < '%s')" %( T2dateToCheckFromBanned )
-    req = req + " ORDER BY LastCheckTime"
+    if name is None:
+      if checkFrequency is not None:
+        req = req + " WHERE"
+        req = req + " (Status = 'Active' AND SiteType = 'T0' AND LastCheckTime < '%s') OR" %( T0dateToCheckFromActive )
+        req = req + " (Status = 'Probing' AND SiteType = 'T0' AND LastCheckTime < '%s') OR" %( T0dateToCheckFromProbing )
+        req = req + " (Status = 'Bad' AND SiteType = 'T0' AND LastCheckTime < '%s') OR" %( T0dateToCheckFromBad )
+        req = req + " (Status = 'Banned' AND SiteType = 'T0' AND LastCheckTime < '%s') OR" %( T0dateToCheckFromBanned )
+        req = req + " (Status = 'Active' AND SiteType = 'T1' AND LastCheckTime < '%s') OR" %( T1dateToCheckFromActive )
+        req = req + " (Status = 'Probing' AND SiteType = 'T1' AND LastCheckTime < '%s') OR" %( T1dateToCheckFromProbing )
+        req = req + " (Status = 'Bad' AND SiteType = 'T1' AND LastCheckTime < '%s') OR" %( T1dateToCheckFromBad )
+        req = req + " (Status = 'Banned' AND SiteType = 'T1' AND LastCheckTime < '%s') OR" %( T1dateToCheckFromBanned )
+        req = req + " (Status = 'Active' AND SiteType = 'T2' AND LastCheckTime < '%s') OR" %( T2dateToCheckFromActive )
+        req = req + " (Status = 'Probing' AND SiteType = 'T2' AND LastCheckTime < '%s') OR" %( T2dateToCheckFromProbing )
+        req = req + " (Status = 'Bad' AND SiteType = 'T2' AND LastCheckTime < '%s') OR" %( T2dateToCheckFromBad )
+        req = req + " (Status = 'Banned' AND SiteType = 'T2' AND LastCheckTime < '%s')" %( T2dateToCheckFromBanned )
+        req = req + " ORDER BY LastCheckTime"
+    else:
+      req = req + " WHERE"
+      if granularity in ('Site', 'Sites'):
+        req = req + " SiteName = '%s'" %name
+      elif granularity in ('Service', 'Services'):
+        req = req + " ServiceName = '%s'" %name
+      elif granularity in ('Resource', 'Resources'):
+        req = req + " ResourceName = '%s'" %name
+      elif granularity in ('StorageElement', 'StorageElements'):
+        req = req + " StorageElementName = '%s'" %name
     if maxN != None:
       req = req + " LIMIT %d" %maxN
     

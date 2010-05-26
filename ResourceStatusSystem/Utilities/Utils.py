@@ -115,6 +115,5 @@ PolicyTypes = ['Resource_PolType', 'Alarm_PolType', 'Collective_PolType', 'RealB
 ValidSiteType = ['T0', 'T1', 'T2']
 ValidResourceType = ['CE', 'CREAMCE', 'SE', 'LFC_C', 'LFC_L', 'FTS']
 ValidService = ValidServiceType = ['Computing', 'Storage']
-ValidView = ['Site_View', 'Resource_View', 'StorageElement_View']
 
 #############################################################################

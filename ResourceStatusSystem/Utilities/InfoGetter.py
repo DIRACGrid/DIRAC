@@ -76,15 +76,16 @@ class InfoGetter:
     
     if 'view_info' in args:
       panels_info_dict = {}
+      
+      if granularity in ('Site', 'Sites'):
+        granularity = None
 
       view_panels = self.__getViewPanels(granularity)
-      print view_panels
       for panel in view_panels:
         panel_info = self.__getPanelsInfo(granularity = granularity, status = status,
                                           formerStatus = formerStatus, siteType = siteType,
                                           serviceType = serviceType, resourceType = resourceType,
                                           panel_name = panel, useNewRes = useNewRes)
-        print panel_info
         panels_info_dict[panel] = panel_info
       
       EVAL['Panels'] = panels_info_dict
@@ -236,24 +237,17 @@ class InfoGetter:
         if isinstance(info[c][p], list):
           
           if useNewRes == False:
-            
-#            print "sono in useNewRes == False:"
-            
             for i in info[c][p]:
               for k in i.keys():
                 if 'CommandNew' in i[k].keys():
-#                  del i[k]['CommandNew']
+                  del i[k]['CommandNew']
                   pass
           elif useNewRes == True:
-
-#            print "sono in useNewRes == True:"
-            
             for i in info[c][p]:
-#              print i
               for k in i.keys():
                 if 'CommandNew' in i[k].keys():
                   i[k]['Command'] = i[k]['CommandNew']
-#                  del i[k]['CommandNew']
+                  del i[k]['CommandNew']
         
         if granularity is not None:
           if granularity not in C_Policies[p]['Granularity']:
@@ -301,7 +295,6 @@ class InfoGetter:
   
 #############################################################################
 
-#  def __getViewPanels(self, view_name):
   def __getViewPanels(self, granularity):
     if granularity is None:
       granularity = 'Site'

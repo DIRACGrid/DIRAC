@@ -365,6 +365,10 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     for g in ValidRes:
       res = self.rsDB.getStuffToCheck(g,Configurations.Sites_check_freq,3)
       self.assertEqual(res, [])
+      res = self.rsDB.getStuffToCheck(g,Configurations.Sites_check_freq)
+      self.assertEqual(res, [])
+      res = self.rsDB.getStuffToCheck(g,None,None,'aaa')
+      self.assertEqual(res, [])
 
 #  def test_setMonitoredToBeChecked(self):
 #    for monitored in ValidRes:

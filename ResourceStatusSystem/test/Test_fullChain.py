@@ -8,8 +8,8 @@ from DIRAC.Core.Base import Script
 Script.parseCommandLine() 
 
 #sito = {'name':'LCG.Cagliari.it', 'siteType':'T2'} #OK
-#sito = {'name':'LCG.CERN.ch', 'siteType':'T0'} #OK
-sito = {'name':'LCG.SARA.nl', 'siteType':'T2'} #OK
+sito = {'name':'LCG.CERN.ch', 'siteType':'T0'} #OK
+#sito = {'name':'LCG.SARA.nl', 'siteType':'T2'} #OK
 servizio = {'name':'Storage@LCG.GRIDKA.de', 'siteType':'T2', 'serviceType':'Storage'} #OK
 servizio2 = {'name':'Computing@LCG.DORTMUND.de', 'siteType':'T2', 'serviceType':'Computing'} #OK
 #risorsa = {'name':'gazon.nikhef.nl', 'siteType':'T2', 'resourceType':'CE'} #OK
@@ -19,9 +19,10 @@ risorsa = {'name':'cccreamceli01.in2p3.fr', 'siteType':'T1', 'resourceType':'CE'
 risorsa2 = {'name':'ccsrm.in2p3.fr', 'siteType':'T1', 'resourceType':'SE'} #OK
 risorsa3 = {'name':'lfclhcb.pic.es', 'siteType':'T1', 'resourceType':'LFC_L'} #OK
 #risorsa3 = {'name':'prod-lfc-lhcb-central.cern.ch', 'siteType':'T1', 'resourceType':'LFC_C'} #OK
-se = {'name':'CERN-RAW', 'siteType':'T0'} #OK
-#se = {'name':'NIKHEF-USER', 'siteType':'T1'} #OK
+#se = {'name':'CERN-RAW', 'siteType':'T0'} #OK
+se = {'name':'PIC-USER', 'siteType':'T1'} #OK
 
+useNewRes = False
 
 #sito = {'name':'LCG.CERN2.ch', 'siteType':'T0'} #WRONG
 #servizio = {'name':'Computing@LCG.#Ferrara.it', 'siteType':'T2', 'serviceType':'Computing'} #WRONG
@@ -40,7 +41,9 @@ for status in ValidStatus:
   print 'nel test:', status#, oldStatus
   pdp = PDP(granularity = 'Site', name = sito['name'], status = status, 
 #            formerStatus = oldStatus, 
-            reason = 'XXXXX', siteType = sito['siteType']) 
+            reason = 'XXXXX', siteType = sito['siteType'],
+             useNewRes = useNewRes
+            )  
   res = pdp.takeDecision()
   print res
 #
@@ -56,10 +59,11 @@ for status in ValidStatus:
   pdp = PDP(granularity = 'Service', name = servizio['name'], status = status, 
 #            formerStatus = oldStatus, 
             reason = 'XXXXX', siteType = servizio['siteType'],
-            serviceType = servizio['serviceType']) 
+            serviceType = servizio['serviceType'],
+            useNewRes = useNewRes
+            ) 
   res = pdp.takeDecision()
   print res
-
 
 print "\n\n ~~~~~~~ SERVICE 2 ~~~~~~~ : %s \n " %servizio2
 
@@ -73,7 +77,9 @@ for status in ValidStatus:
     pdp = PDP(granularity = 'Service', name = servizio2['name'], status = status, 
 #              formerStatus = oldStatus, 
               reason = 'XXXXX', siteType = servizio2['siteType'],
-              serviceType = servizio2['serviceType']) 
+              serviceType = servizio2['serviceType'], 
+              useNewRes = useNewRes
+              ) 
     res = pdp.takeDecision()
     print res
 
@@ -91,7 +97,9 @@ for status in ValidStatus:
   pdp = PDP(granularity = 'Resource', name = risorsa['name'], status = status, 
 #            formerStatus = oldStatus, 
             reason = 'XXXXX', siteType = risorsa['siteType'], 
-            resourceType = risorsa['resourceType'])
+            resourceType = risorsa['resourceType'],
+            useNewRes = useNewRes
+            ) 
   res = pdp.takeDecision()
   print res
 
@@ -107,7 +115,9 @@ for status in ValidStatus:
   pdp = PDP(granularity = 'Resource', name = risorsa2['name'], status = status, 
 #              formerStatus = oldStatus, 
             reason = 'XXXXX', siteType = risorsa2['siteType'], 
-            resourceType = risorsa2['resourceType'])
+            resourceType = risorsa2['resourceType'],
+            useNewRes = useNewRes
+            ) 
   res = pdp.takeDecision()
   print res
 
@@ -123,7 +133,9 @@ for status in ValidStatus:
   pdp = PDP(granularity = 'Resource', name = risorsa3['name'], status = status, 
 #            formerStatus = oldStatus, 
             reason = 'XXXXX', siteType = risorsa3['siteType'], 
-            resourceType = risorsa3['resourceType'])
+            resourceType = risorsa3['resourceType'],
+            useNewRes = useNewRes
+            ) 
   res = pdp.takeDecision()
   print res
 
@@ -138,6 +150,8 @@ for status in ValidStatus:
   print status#, oldStatus
   pdp = PDP(granularity = 'StorageElement', name = se['name'], status = status, 
 #            formerStatus = oldStatus, 
-            reason = 'XXXXX', siteType = se['siteType'])
+            reason = 'XXXXX', siteType = se['siteType'],
+            useNewRes = useNewRes
+            ) 
   res = pdp.takeDecision()
   print res

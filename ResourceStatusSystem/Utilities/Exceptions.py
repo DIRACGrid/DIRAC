@@ -83,14 +83,3 @@ class InvalidPolicyType(RSSException):
     return "Invalid policy type: \nshould be in " + repr(PolicyTypes) + repr(self.message)
 
 #############################################################################
-
-class InvalidView(RSSException):
-
-  def __init__(self, message = ""):
-    self.message = message
-    RSSException.__init__(self, message)
-  
-  def __str__(self):
-    return "Invalid view type: \nshould be in " + repr(ValidView) + repr(self.message)
-
-#############################################################################

@@ -5,24 +5,14 @@
 __RCSID__ = "$Id:  $"
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-#from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Policy import Configurations
-from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool,ThreadedJob
+from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC import gConfig
 
 import threading
 
 #import datetime 
-
-#infoForPanel_res = {}
-
-#rsDB = False
-#cc = False
-#ig = False
-#WMSAdmin = False
-
 
 class Publisher:
   """ Class Publisher is in charge of getting dispersed information,
@@ -31,8 +21,23 @@ class Publisher:
 
 #############################################################################
 
-  def __init__(self, rsDBIn = None, commandCallerIn = None):
-    """ Standard constructor
+  def __init__(self, rsDBIn = None, commandCallerIn = None, infoGetterIn = None, 
+               WMSAdminIn = None):
+    """ 
+    Standard constructor
+    
+    :params:
+      :attr:`rsDBIn`: optional ResourceStatusDB object 
+      (see :class: `DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB`)
+    
+      :attr:`commandCallerIn`: optional CommandCaller object
+      (see :class: `DIRAC.ResourceStatusSystem.Client.Command.CommandCaller.CommandCaller`) 
+    
+      :attr:`infoGetterIn`: optional InfoGetter object
+      (see :class: `DIRAC.ResourceStatusSystem.Utilities.InfoGetter.InfoGetter`) 
+    
+      :attr:`WMSAdminIn`: optional RPCClient object for WMSAdmin
+      (see :class: `DIRAC.Core.DISET.RPCClient.RPCClient`) 
     """
     
     if rsDBIn is not None:
@@ -47,9 +52,17 @@ class Publisher:
       from DIRAC.ResourceStatusSystem.Client.Command.CommandCaller import CommandCaller
       self.cc = CommandCaller() 
     
-    self.ig = InfoGetter()
+    if infoGetterIn is not None:
+      self.ig = infoGetterIn
+    else:
+      from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
+      self.ig = InfoGetter()
     
-    self.WMSAdmin = RPCClient("WorkloadManagement/WMSAdministrator")
+    if WMSAdminIn is not None:
+      self.WMSAdmin = WMSAdminIn
+    else:
+      from DIRAC.Core.DISET.RPCClient import RPCClient
+      self.WMSAdmin = RPCClient("WorkloadManagement/WMSAdministrator")
     
     self.threadPool = ThreadPool( 2, 5 )
     
@@ -57,24 +70,34 @@ class Publisher:
 
 #############################################################################
 
-  def getInfo(self, granularity, name, view):
+  def getInfo(self, granularity, name, useNewRes = False):
     """ 
+    Standard method to get all the info to be published, as defined in 
+    :mod:`DIRAC.ResourceStatusSystem.Policy.Configurations`
+    
+    This method uses a ThreadPool (:class:`DIRAC.Core.Utilities.ThreadPool.ThreadPool`)
+    with 2-5 threads. The threaded method is 
+    :meth:`DIRAC.ResourceStatusSystem.Utilities.Publisher.Publisher.getInfoForPanel`
+    
+    :params:
+      :attr:`granularity`: string - a ValidRes 
+      
+      :attr:`name`: string - name of the Validres
+      
+      :attr:`useNewRes`: boolean. When set to true, will get new results, 
+      otherwise it will get cached results (where available).
     """
     
     if granularity not in ValidRes:
       raise InvalidRes, where(self, self.getInfo)
 
-    if view not in Configurations.views_panels.keys():
-      raise InvalidView, where(self, self.getInfo)
-    
-    resType = None        
+    resType = None
     if granularity in ('Resource', 'Resources'):
       resType = self.rsDB.getMonitoredsList('Resource', ['ResourceType'], 
                                             resourceName = name)[0][0]
                                             
-    self.ig = InfoGetter()
-    infoToGet = self.ig.getInfoToApply(('view_info', ), None, None, None, 
-                                       None, None, resType, view)[0]['Panels']
+    infoToGet = self.ig.getInfoToApply(('view_info', ), granularity, None, None, 
+                                       None, None, resType, useNewRes)[0]['Panels']
     
     infoToGet_res = {}
     
@@ -111,9 +134,6 @@ class Publisher:
 
 #      print "seconds for Panel ", panel, (ptimeStop - ptimeStart).seconds, (ptimeStop - ptimeStart).microseconds
       
-#      panel_info_res_dict = {'Res': nameStatus_res, 'InfoForPanel': infoForPanel_res} 
-#      completeInfoForPanel_res[panel] = panel_info_res_dict 
-
       infoToGet_res[panel] = completeInfoForPanel_res
     
 #    b = datetime.datetime.now()
@@ -126,12 +146,6 @@ class Publisher:
 
   def getInfoForPanel(self, info, granularityForPanel, nameForPanel):
     
-#    self.info = info
-#    self.granularityForPanel = granularityForPanel 
-#    self.nameForPanel = nameForPanel
-    
-    #global infoForPanel_res, lockObj
-      
 #    print "starting thread for ", info, granularityForPanel, nameForPanel
 
     #get single RSS policy results
@@ -144,12 +158,8 @@ class Publisher:
     self.lockObj.acquire()
     try:
       self.infoForPanel_res[policyResToGet] = pol_res_dict
-#    except:
-#      raise RSSException, where(self, self.getInfoForPanel)
     finally:
       self.lockObj.release()
-#    infoForPanel_res[policyResToGet]['Status'] = pol_res[0]
-#    infoForPanel_res[policyResToGet]['Reason'] = pol_res[1]
     
     #get policy description
     desc = self._getPolicyDesc(policyResToGet)
@@ -169,20 +179,12 @@ class Publisher:
                 
       info_res[format] = info_bit_got
       
-    
-#        infoForPanel_res.append( {'policy': {policyResToGet: pol_res}, 
-#                                  'infos': info_res, 
-#                                  'desc': desc } )
-    
     self.lockObj.acquire()
     try:
       self.infoForPanel_res[policyResToGet]['infos'] = info_res 
       self.infoForPanel_res[policyResToGet]['desc'] = desc
-#    except:
-#      raise RSSException, where(self, self.getInfoForPanel)
     finally:
       self.lockObj.release()
-    
 
 #    print "leaving thread for ", info, granularityForPanel, nameForPanel
     
