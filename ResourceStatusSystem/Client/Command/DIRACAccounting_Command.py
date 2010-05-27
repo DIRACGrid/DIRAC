@@ -105,7 +105,7 @@ class TransferQuality_Command(Command):
       - args[3]: optional dateTime object: a "to" date
       
     :returns:
-      {'TransferQuality': None | a number between 0 and 1}
+      {'Result': None | a float between 0.0 and 100.0}
     """
     
     if self.RPC is None:
@@ -135,6 +135,7 @@ class TransferQuality_Command(Command):
       pr_quality = self.client.getReport('DataOperation', 'Quality', fromD, toD, 
                                          {'OperationType':'putAndRegister', 
                                           'Destination':[self.args[1]]}, 'Channel')
+      
       if not pr_quality['OK']:
         raise RSSException, where(self, self.doCommand) + " " + pr_quality['Message'] 
 
@@ -174,10 +175,8 @@ class TransferQualityCached_Command(Command):
   
        - args[1]: string should be the name of the ValidRes
 
-    returns:
-      {
-        'Result': '0-100'
-      }
+    :returns:
+      {'Result': None | a float between 0.0 and 100.0}
     """
 
     if self.client is None:
@@ -187,14 +186,14 @@ class TransferQualityCached_Command(Command):
     name = self.args[1]
     
     try:
-      res = self.client.getCachedResult(name, 'TransferQualityEveryOne')
+      res = self.client.getCachedResult(name, 'TransferQualityEverySEs')
       if res == []:
         return {'Result':None}
     except:
       gLogger.exception("Exception when calling ResourceStatusClient for %s" %(name))
       return {'Result':'Unknown'}
     
-    return {'Result':res[0]}
+    return {'Result':float(res[0])}
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     

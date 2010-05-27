@@ -32,8 +32,8 @@ MEDIUM_JOBS_PERIOD_WINDOW = 8
 LARGE_JOBS_PERIOD_WINDOW = 48
 
 # --- SE transfer quality --- #
-Transfer_QUALITY_LOW = 0.60
-Transfer_QUALITY_HIGH = 0.90
+Transfer_QUALITY_LOW = 60
+Transfer_QUALITY_HIGH = 90
 
 
 #############################################################################

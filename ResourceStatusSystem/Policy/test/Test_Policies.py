@@ -748,7 +748,7 @@ class TransferQuality_PolicySuccess(PoliciesTestCase):
     for status in ValidStatus:
       for SE in ('CNAF-RAW', 'CNAF-FAILOVER'):
         args = ('StorageElement', SE, status)
-        for resCl in [1, 0.91, 0.50, 0, None]:
+        for resCl in [100, 91.0, 50.9, 0, None]:
           self.TQ_P.setArgs(args)
           self.TQ_P.setKnownInfo({'Result':resCl})
           res = self.TQ_P.evaluate()
@@ -765,7 +765,7 @@ class TransferQuality_PolicySuccess(PoliciesTestCase):
             self.assert_(res.has_key('Reason'))
         
         args = ('StorageElement', 'XX', status, datetime.utcnow())
-        for resCl in [1, 0.91, 0.50, 0]:
+        for resCl in [100, 91.0, 50.9, 0, None]:
           TQ_P = TransferQuality_Policy()
           TQ_P.setArgs(args)
           TQ_P.setKnownInfo({'Result':resCl})

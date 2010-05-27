@@ -26,6 +26,8 @@ class TransferQuality_Policy(PolicyBase):
     elif quality == 'Unknown':
       return {'SAT':'Unknown'}
 
+    quality = int(round(quality))
+
     if 'FAILOVER'.lower() in self.args[1].lower():
       if self.oldStatus == 'Active':
         if quality >= Configurations.Transfer_QUALITY_LOW :
@@ -40,7 +42,7 @@ class TransferQuality_Policy(PolicyBase):
       else:
         self.result['SAT'] = True
         
-      self.result['Reason'] = 'TransferQuality: %d -> ' %quality
+      self.result['Reason'] = 'TransferQuality: %d %% -> ' %quality
       if quality < Configurations.Transfer_QUALITY_LOW :
         self.result['Status'] = 'Probing'
         strReason = 'Low'
@@ -72,7 +74,7 @@ class TransferQuality_Policy(PolicyBase):
       elif self.oldStatus == 'Banned':
         self.result['SAT'] = True
         
-      self.result['Reason'] = 'TransferQuality: %d -> ' %quality
+      self.result['Reason'] = 'TransferQuality: %d %% -> ' %quality
       if quality < Configurations.Transfer_QUALITY_LOW :
         self.result['Status'] = 'Bad'
         strReason = 'Low'
