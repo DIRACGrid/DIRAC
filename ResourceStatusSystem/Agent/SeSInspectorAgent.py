@@ -129,7 +129,7 @@ class SeSInspectorAgent(AgentModule):
       except Exception:
         gLogger.exception('SeSInspector._executeCheck')
         try:
-          self.ResourceNamesInCheck.remove(serviceName)
+          self.ServiceNamesInCheck.remove(serviceName)
         except IndexError:
           pass
 

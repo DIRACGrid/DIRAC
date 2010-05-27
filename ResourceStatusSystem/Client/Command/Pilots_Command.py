@@ -80,7 +80,7 @@ class PilotsEffSimple_Command(Command):
         rsc = ResourceStatusClient()
 
       try:
-        name = rsc.getGeneralName(self.args[0], self.args[1], 'Site', timeout = self.timeout)
+        name = rsc.getGeneralName(self.args[0], self.args[1], 'Site')
       except:
         gLogger.error("PilotsEffSimple_Command: can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'Result':'Unknown'}      

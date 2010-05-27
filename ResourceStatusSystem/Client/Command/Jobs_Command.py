@@ -126,7 +126,7 @@ class JobsEffSimple_Command(Command):
         from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
         rsc = ResourceStatusClient()
       try:
-        name = rsc.getGeneralName(self.args[0], self.args[1], 'Site', self.timeout)
+        name = rsc.getGeneralName(self.args[0], self.args[1], 'Site')
       except:
         gLogger.error("JobsEffSimple_Command: Can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'Result':'Unknown'}      
@@ -142,7 +142,7 @@ class JobsEffSimple_Command(Command):
       self.client = JobsClient()
       
     try:
-      res = self.client.getJobsSimpleEff(name, self.timeout)
+      res = self.client.getJobsSimpleEff(name, timeout = self.timeout)
       if res == None:
         return {'Result':'Idle'}
     except:
