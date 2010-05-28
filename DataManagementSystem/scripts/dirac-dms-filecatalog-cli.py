@@ -23,7 +23,7 @@ for switch in Script.getUnprocessedSwitches():
 
 from DIRAC.DataManagementSystem.Client.FileCatalogClientCLI import FileCatalogClientCLI
 
-if fcType == "LcgFileCatalog":
+if fcType == "LcgFileCatalog" or fcType =="LFC" :
   from DIRAC.Resources.Catalog.LcgFileCatalogClient import LcgFileCatalogClient
   cli = FileCatalogClientCLI(LcgFileCatalogClient())
   try:
@@ -33,17 +33,17 @@ if fcType == "LcgFileCatalog":
     sys.exit(1)
   print "Starting LFC FileCatalog client"
   cli.cmdloop()
-elif fcType == "LcgFileCatalogProxy":
+elif fcType == "LcgFileCatalogProxy" or fcType == "LFCproxy":
   from DIRAC.Resources.Catalog.LcgFileCatalogProxyClient import LcgFileCatalogProxyClient
   cli = FileCatalogClientCLI(LcgFileCatalogProxyClient())
   print "Starting LFC Proxy FileCatalog client"
   cli.cmdloop() 
-elif fcType == "LcgFileCatalogCombined":
+elif fcType == "LcgFileCatalogCombined" or fcType == "LFCCombined":
   from DIRAC.Resources.Catalog.LcgFileCatalogCombinedClient import LcgFileCatalogCombinedClient
   cli = FileCatalogClientCLI(LcgFileCatalogCombinedClient())
   print "Starting LFC FileCatalog Combined client"
   cli.cmdloop()  
-elif fcType == "FileCatalog":
+elif fcType == "FileCatalog" or fcType == "DiracFC" :
   from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
   cli = FileCatalogClientCLI(FileCatalogClient())
   print "Starting DIRAC FileCatalog client"
