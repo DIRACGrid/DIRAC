@@ -124,12 +124,10 @@ class StorageElement:
       gLogger.warn("StorageElement.isValid: The 'operation' argument is not supplied. It should be supplied in the future.")
       return S_OK()
     # The supplied operation can be 'Read','Write' or any of the possible StorageElement methods.
-    if operation in self.readMethods:
+    if (operation in self.readMethods) or (operation.lower() == 'read'):
       operation = 'Read'
-    elif operation in self.writeMethods:
+    elif operation in self.writeMethods or (operation.lower() == 'write'):
       operation = 'Write'
-    elif operation in ['Read','Write']:
-      pass
     else:
       gLogger.error("StorageElement.isValid: The supplied operation is not known.", operation)
       return S_ERROR("StorageElement.isValid: The supplied operation is not known.")
