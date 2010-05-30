@@ -458,7 +458,7 @@ class StorageManagementDB(DB):
     req = "INSERT INTO StageRequests (ReplicaID,RequestID,StageRequestSubmitTime,PinLength) VALUES "
     for requestID,replicaIDs in requestDict.items():
       for replicaID in replicaIDs:
-        replicaString = "(%s,%s,UTC_TIMESTAMP(),%d)," % (replicaID,requestID,pinLifeTime)
+        replicaString = "(%s,'%s',UTC_TIMESTAMP(),%d)," % (replicaID,requestID,pinLifeTime)
         req = "%s %s" % (req,replicaString)
     req = req.rstrip(',')
     res = self._update(req)
