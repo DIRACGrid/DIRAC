@@ -690,13 +690,11 @@ class TransformationDB(DB):
     candidates = False
     for lfn,originalID,fileID,status,taskID,targetSE,usedSE,errorCount,lastUpdate,insertTime in fileTuples:
       if status != 'Unused':
-        if status == 'Assigned':
-          status = 'Assigned-%d' % originalID
-        if status == 'Processed':
-          status = 'Processed-%d' % originalID
         candidates = True
-        if taskID:
-          taskID = str(int(originalID)).zfill(8)+'_'+str(int(taskID)).zfill(8)
+        if not re.search('-',status):
+          status = "%s-%d" % (status,originalID)
+          if taskID:
+            taskID = str(int(originalID)).zfill(8)+'_'+str(int(taskID)).zfill(8)
         req = "%s (%d,'%s','%s',%d,'%s','%s',UTC_TIMESTAMP())," % (req,transID,status,taskID,fileID,targetSE,usedSE)
     req = req.rstrip(",")
     if not candidates:
