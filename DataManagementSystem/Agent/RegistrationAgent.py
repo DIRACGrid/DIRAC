@@ -118,11 +118,18 @@ class RegistrationAgent(AgentModule,RequestAgentMixIn):
           subrequest_done = True
           for subRequestFile in subRequestFiles:
             if subRequestFile['Status'] == 'Waiting':
-              lfn = str(subRequestFile['LFN'])
-              physicalFile = str(subRequestFile['PFN'])
-              fileSize = int(subRequestFile['Size'])
-              fileGuid = str(subRequestFile['GUID'])
-              checksum = str(subRequestFile['Addler'])
+              lfn = subRequestFile.get('LFN','')
+              if lfn: lfn = str(lfn)
+              physicalFile = subRequestFile.get('PFN','')
+              if physicalFile: physicalFile = str(physicalFile)
+              fileSize =  subRequestFile.get('Size',0)
+              if fileSize: fileSize = int(fileSize)
+              fileGuid = subRequestFile.get('GUID','')
+              if fileGuid: fileGuid = str(fileGuid)
+              checksum = subRequestFile.get('Addler','')
+              if checksum: checksum = str(checksum)
+              if catalog == 'BookkeepingDB':
+                diracSE = 'CERN-HIST'
               fileTuple = (lfn,physicalFile,fileSize,diracSE,fileGuid,checksum)
               res = self.ReplicaManager.registerFile(fileTuple,catalog)
               print res
