@@ -32,6 +32,9 @@ def generateTimedStackedBarPlot( fileName, data, metadata ):
   except:
     return S_ERROR( "Can't open %s" % fileName )
   checkMetadata( metadata )
+  for k, v in ( ( 'sort_labels', 'sum' ), ( 'legend_unit', '%' ) ):
+    if k not in metadata:
+      metadata[ k ] = v
   barGraph( data, fn, **metadata )
   fn.close()
   return S_OK()
@@ -69,6 +72,9 @@ def generateStackedLinePlot( fileName, data, metadata ):
   except:
     return S_ERROR( "Can't open %s" % filename )
   checkMetadata( metadata )
+  for k, v in ( ( 'sort_labels', 'sum' ), ( 'legend_unit', '%' ) ):
+    if k not in metadata:
+      metadata[ k ] = v
   lineGraph( data, fn, **metadata )
   fn.close()
   return S_OK()
