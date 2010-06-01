@@ -147,3 +147,41 @@ class DataStoreHandler( RequestHandler ):
     Compact the db by grouping buckets
     """
     return gAccountingDB.compactBuckets()
+
+  types_remove = [ types.StringType, Time._dateTimeType, Time._dateTimeType, types.ListType ]
+  def export_remove( self, typeName, startTime, endTime, valuesList ):
+    """
+      Remove a record for a type
+    """
+    setup = self.serviceInfoDict[ 'clientSetup' ]
+    typeName = "%s_%s" % ( setup, typeName )
+    startTime = int( Time.toEpoch( startTime ) )
+    endTime = int( Time.toEpoch( endTime ) )
+    return gAccountingDB.deleteRecord( typeName, startTime, endTime, valuesList )
+
+  types_commitRegisters = [ types.ListType ]
+  def export_removeRegisters( self, entriesList ):
+    """
+      Remove a record for a type
+    """
+    setup = self.serviceInfoDict[ 'clientSetup' ]
+    expectedTypes = [ types.StringType, Time._dateTimeType, Time._dateTimeType, types.ListType ]
+    for entry in entriesList:
+      if len( entry ) != 4:
+        return S_ERROR( "Invalid records" )
+      for i in range( len( entry ) ):
+        if type( entry[i] ) != expectedTypes[i]:
+          return S_ERROR( "%s field in the records should be %s" % ( i, expectedTypes[i] ) )
+    records = []
+    ok = 0
+    for entry in entriesList:
+      typeName = "%s_%s" % ( setup, entry[0] )
+      startTime = int( Time.toEpoch( entry[1] ) )
+      endTime = int( Time.toEpoch( entry[2] ) )
+      records.append( ( typeName, startTime, endTime, entry[3] ) )
+      result = gAccountingDB.deleteRecord( typeName, startTime, endTime, valuesList )
+      if not result[ 'OK' ]:
+        return S_OK( ok )
+      ok += 1
+
+    return S_OK( ok )
