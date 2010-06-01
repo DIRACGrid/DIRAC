@@ -22,10 +22,15 @@ def getShifterProxy( type, file = False ):
   if not result[ 'OK' ]:
     return result
   userDN = result[ 'Value' ][0]
-  vo = gConfig.getValue( '/DIRAC/VirtualOrganization', 'lhcb' )
-  userGroup = gConfig.getValue( '%s/Group' % shifterSection, '%s_prod' % vo )
-  gLogger.info( "Getting proxy for shifter %s@%s (%s)" % ( userName, userGroup, userDN ) )
-  result = gProxyManager.downloadVOMSProxy( userDN, userGroup, requiredTimeLeft = 4*43200 )
+  userGroup = gConfig.getValue( '%s/Group' % shifterSection, CS.getDefaultUserGroup() )
+  vomsAttr = CS.getVOMSAttributeForGroup( userGroup )
+  if vomsAttr:
+    gLogger.info( "Getting VOMS [%s] proxy for shifter %s@%s (%s)" % ( vomsAttr, userName,
+                                                                       userGroup, userDN ) )
+    result = gProxyManager.downloadVOMSProxy( userDN, userGroup, requiredTimeLeft = 4 * 43200 )
+  else:
+    gLogger.info( "Getting proxy for shifter %s@%s (%s)" % ( userName, userGroup, userDN ) )
+    result = gProxyManager.downloadProxy( userDN, userGroup, requiredTimeLeft = 4 * 43200 )
   if not result[ 'OK' ]:
     return result
   chain = result[ 'Value' ]
