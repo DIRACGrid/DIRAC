@@ -127,7 +127,7 @@ class DirectoryMetadata:
 # Find directories corresponding to the metadata 
 #
 ############################################################################################  
-  def __findSubdirByMeta(self,meta,value):
+  def __findSubdirByMeta(self,meta,value,subdirFlag=True):
     """ Find directories for the given meta datum
     """
     
@@ -142,10 +142,11 @@ class DirectoryMetadata:
     for row in result['Value']:
       dirID = row[0]
       dirList.append(dirID)
-      result = self.dtree.getSubdirectoriesByID(dirID)
-      if not result['OK']:
-        return result
-      dirList += result['Value']
+      if subdirFlag:
+        result = self.dtree.getSubdirectoriesByID(dirID)
+        if not result['OK']:
+          return result
+        dirList += result['Value']
       
     return S_OK(dirList)  
   
@@ -221,23 +222,28 @@ class DirectoryMetadata:
     if not result['OK']:
       return result
     subdirs = result['Value']
-    
+
     # Find parent directories of the directories defining the meta datum
     pdirs= []
     if subdirs:
       # The first element is the directory for which the meta datum is defined
-      result = self.dtree.getPathIDsByID(subdirs[0])
+      result = self.__findSubdirByMeta(meta,value,False)
       if not result['OK']:
         return result
-      pdirs = result['Value']
+      psubdirs = result['Value']
+      for psub in psubdirs:
+        result = self.dtree.getPathIDsByID(subdirs[0])
+        if not result['OK']:
+          return result
+        pdirs += result['Value']
       
     # Constrain the output to only those that are present in the input list  
     resDirs = pdirs+subdirs  
-    if not fromDirs is None:
+    if fromDirs:
       resDirs = []
       for dir in pdirs+subdirs:
         if dir in fromDirs:
-          resDirs.appens(dir)  
+          resDirs.append(dir)  
       
     return S_OK(resDirs)  
   
@@ -246,10 +252,15 @@ class DirectoryMetadata:
         Limit the search for only metadata in the input list
     """
     
-    dString = ','.join([ str(x) for x in dList ])
+    if dList:
+      dString = ','.join([ str(x) for x in dList ])
+    else:
+      dString = None
     metaDict = {}
     for meta in metaList:
-      req = "SELECT DISTINCT(Value) FROM FC_Meta_%s WHERE DirID in (%s)" % (meta,dString)
+      req = "SELECT DISTINCT(Value) FROM FC_Meta_%s" % meta
+      if dString:
+        req += " WHERE DirID in (%s)" % dString
       result = self._query(req)
       if not result['OK']:
         return result
@@ -264,23 +275,38 @@ class DirectoryMetadata:
     """    
     
     # Get the list of metadata fields to inspect
-    result = self.getMetadataFields()
+    result = self.getMetadataFields(credDict)
     if not result['OK']:
       return result
     metaFields = result['Value']
     comFields = metaFields.keys()
     for m in metaDict:
       if m in comFields:
-        del comFields[m]
+        del comFields[comFields.index(m)]
     
-    metaDict = {}
-    cdirList = None
-    for meta,value in metaDict.items():
-      result = self.__findCompatibleDirectories(meta,value,cdirList)
-      if not result['OK']:
-        return result  
-      cdirList = result['Value']
-      
-    result = self.__findDistinctMetadata(comFields,cdirList)
+    fromList = []
+    any = True
+    if metaDict:
+      any = False
+      for meta,value in metaDict.items():
+        result = self.__findCompatibleDirectories(meta,value,fromList)
+
+        print "AT >>>", meta,value,result
+
+        if not result['OK']:
+          return result  
+        cdirList = result['Value']
+        if cdirList:
+          fromList = cdirList
+        else: 
+          fromList = []
+          break
+
+    if any:  
+      result = self.__findDistinctMetadata(comFields,[])
+    elif fromList:
+      result = self.__findDistinctMetadata(comFields,fromList)
+    else:
+      result = S_OK({})      
     return result  
   
