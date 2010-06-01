@@ -55,7 +55,7 @@ def getHostnameForDN( dn ):
   return S_ERROR( "No hostname found for dn %s" % dn )
 
 def getDefaultUserGroup():
-  return gConfig.getValue( "/%s/DefaultGroup" % g_BaseSecuritySection, "lhcb_user" )
+  return gConfig.getValue( "/%s/DefaultGroup" % g_BaseSecuritySection, "user" )
 
 def getAllUsers():
   retVal = gConfig.getSections( "%s/Users" % g_BaseSecuritySection )
