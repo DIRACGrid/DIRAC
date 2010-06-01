@@ -10,6 +10,7 @@ class JobStep( BaseAccountingType ):
     self.definitionKeyFields = [ ( 'User', "VARCHAR(32)" ),
                                  ( 'Group', 'VARCHAR(32)' ),
                                  ( 'JobGroup', 'VARCHAR(32)' ),
+                                 ( 'RunNumber', 'VARCHAR(32)' ),
                                  ( 'EventType', 'VARCHAR(32)' ),
                                  ( 'ApplicationName', 'VARCHAR(32)' ),
                                  ( 'ApplicationVersion', 'VARCHAR(32)' ),
