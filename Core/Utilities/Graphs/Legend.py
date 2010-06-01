@@ -126,7 +126,7 @@ class Legend:
     text = Text(0.,0.,text=max_column_text,size=self.text_size)
     text.set_figure(figure)
     bbox = text.get_window_extent(canvas.get_renderer())
-    self.column_width = bbox.width+6*l_size
+    self.column_width = bbox.width
     
   def draw(self):
   
