@@ -126,6 +126,7 @@ class GraphData:
           alpha - alphabetic order
           max_value - by max value of the subplot
           sum - by the sum of values of the subplot
+          last_value - by the last value in the subplot
     """
    
     if self.plotdata:      
