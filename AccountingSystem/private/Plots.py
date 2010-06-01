@@ -15,7 +15,7 @@ def checkMetadata( metadata ):
     if 'endtime' in metadata:
       metadata[ 'endtime' ] = metadata[ 'endtime' ] - metadata[ 'endtime' ] % granularity
   if 'limit_labels' not in metadata:
-    metadata[ 'limit_labels' ] = 30
+    metadata[ 'limit_labels' ] = 9999999
 
 def generateNoDataPlot( fileName, data, metadata ):
   try:
@@ -45,7 +45,6 @@ def generateQualityPlot( fileName, data, metadata ):
   metadata[ 'legend' ] = False
   #HACK: Pad a bit to the left until the proper padding is calculated
   maxKeyLength = max( [ len( key ) for key in data ] )
-  metadata[ 'limit_labels' ] = 9999
   metadata[ 'sort_labels' ] = 'alpha'
   metadata[ 'plot_left_padding' ] = int( maxKeyLength * 2.5 )
   qualityGraph( data, fn, **metadata )
