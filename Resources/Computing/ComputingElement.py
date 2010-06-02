@@ -14,7 +14,7 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import *
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
 from DIRAC.Core.Security                            import File
 from DIRAC.Core.Security.Misc                       import getProxyInfoAsString
-from DIRAC                                          import S_OK, S_ERROR, gLogger
+from DIRAC                                          import S_OK, S_ERROR, gLogger, version
 
 import os, re, string
 
@@ -363,6 +363,7 @@ class ComputingElement:
   def getJDL(self):
     """Returns CE JDL as a string.
     """
+    self.classAd.insertAttributeString('DIRACVersion',version)
     if self.classAd.isOK():
       jdl = self.classAd.asJDL()
       return S_OK(jdl)
