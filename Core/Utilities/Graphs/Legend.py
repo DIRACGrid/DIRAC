@@ -45,7 +45,7 @@ class Legend:
       percent_flag = self.prefs.get('legend_unit','')
       if percent_flag == "%":       
         sum_value = sum(data.label_values)
-        self.labels = [(l,'%.2f'%(v/sum_value*100.)) for l,v in self.labels ]
+        self.labels = [(l,v/sum_value*100.) for l,v in self.labels ]
     self.__get_column_width()
     
   def dumpPrefs(self):
@@ -104,7 +104,8 @@ class Legend:
     max_length = 0
     max_column_text = ''
     flag = self.prefs.get('legend_numbers',True)
-    for label,num in self.labels:
+    unit = self.prefs.get('legend_unit',False)
+    for label,num in self.labels:      
       if not flag: num = None
       if num is not None:
         column_length = len(str(label)+str(num)) + 1
@@ -113,10 +114,16 @@ class Legend:
       if column_length > max_length:
         max_length = column_length
         if flag:
-          max_column_text = '%s  %s' % (str(label),str(num))
+          if type(num) == types.IntType or type(num) == types.LongType:
+            numString = str(num)
+          else:
+            numString = "%.1f" % float(num)  
+          max_column_text = '%s  %s' % (str(label),numString)
+          if unit:
+            max_column_text += "%"
         else:
           max_column_text = '%s   ' % str(label)  
-               
+                         
     figure = Figure()   
     canvas = FigureCanvasAgg(figure) 
     dpi = self.prefs['dpi']
@@ -126,8 +133,8 @@ class Legend:
     text = Text(0.,0.,text=max_column_text,size=self.text_size)
     text.set_figure(figure)
     bbox = text.get_window_extent(canvas.get_renderer())
-    self.column_width = bbox.width+l_size
-    
+    self.column_width = bbox.width+6*l_size
+        
   def draw(self):
   
     dpi = self.prefs['dpi']
@@ -158,7 +165,7 @@ class Legend:
       percent_flag = self.prefs.get('legend_unit','')
       if num_flag:
         if percent_flag == "%":
-          num += "%"
+          num = "%.1f" % num +'%'
         else:  
           num = "%.1f" % num
       else:
