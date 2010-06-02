@@ -806,13 +806,16 @@ class TransformationDB(DB):
     for taskDict in tasks:
       if len(resultDict) >= numTasks:
         break
+      taskDict['Status'] = taskDict.pop('ExternalStatus')
+      taskDict['InputData'] = taskDict.pop('InputVector')
+      taskDict.pop('LastUpdateTime')
+      taskDict.pop('CreationTime')
+      taskDict.pop('ExternalID')
       taskID = taskDict['TaskID']
       se = taskDict['TargetSE']
-      status = taskDict['ExternalStatus']
-      inputVector = taskDict['InputVector']
-      transID = taskDict['TransformationID']
+      resultDict[taskID] = taskDict
       if not site:
-        if inputVector:
+        if taskDict['InputData']:
           res = getSitesForSE(se,'LCG')
           if not res['OK']:
             continue
@@ -820,11 +823,12 @@ class TransformationDB(DB):
           if len(usedSite) == 1:
             usedSite = usedSite[0]
         else:
-          usedSite = 'ANY'      
-        resultDict[taskID] = {'InputData':inputVector,'TargetSE':se,'Status':status,'Site':usedSite,'TransformationID':transID}
+          usedSite = 'ANY'
+        resultDict[taskID]['Site'] = usedSite
       elif site and (se in selSEs):
-        resultDict[taskID] = {'InputData':inputVector,'TargetSE':se,'Status':status,'Site':site,'TransformationID':transID}   
+        resultDict[taskID]['Site'] = usedSite
       else:
+        resultDict.pop(taskID)
         gLogger.warn("Can not find corresponding site for se",se)
     return S_OK(resultDict)
 
