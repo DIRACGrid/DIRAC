@@ -47,7 +47,11 @@ class JobStateUpdateHandler( RequestHandler ):
       minorStatus = 'Staging input files failed'
     else:
       return S_ERROR("updateJobFromStager: %s status not known." % status)
-    return self.__setJobStatus(int(jobID), jobStatus, minorStatus, 'StagerSystem',None)
+    result = self.__setJobStatus(int(jobID), jobStatus, minorStatus, 'StagerSystem',None)
+    if not result['OK']:
+      if result['Message'].find('does not exist') != -1:
+        return S_OK()
+    return result
 
   ###########################################################################
   types_setJobStatus = [IntType,StringType,StringType,StringType]
@@ -81,6 +85,8 @@ class JobStateUpdateHandler( RequestHandler ):
     result = jobDB.getJobAttributes(jobID, ['Status','MinorStatus'] )
     if not result['OK']:
       return result
+    if not result['Value']:
+      return S_ERROR('Job %d does not exist' % int(jobID) )
 
     status = result['Value']['Status']
     minorStatus = result['Value']['MinorStatus']
