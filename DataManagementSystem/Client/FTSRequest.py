@@ -1,9 +1,15 @@
-from DIRAC  import gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities.Grid import executeGridCommand
-from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
-from DIRAC.Core.Utilities.File import checkGuid
-#from DIRAC.DataManagementSystem.Storage.StorageElement import StorageElement
-import re,os
+from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities.Grid                          import executeGridCommand
+from DIRAC.Core.Utilities.File                          import checkGuid
+from DIRAC.Core.Utilities.Adler                         import compareAdler
+from DIRAC.Core.Utilities.List                          import sortList
+from DIRAC.Core.Utilities.SiteSEMapping                 import getSitesForSE
+from DIRAC.Core.Utilities.Time                          import dateTime,fromString
+from DIRAC.Resources.Storage.StorageElement             import StorageElement
+from DIRAC.DataManagementSystem.Client.ReplicaManager   import CatalogInterface
+from DIRAC.AccountingSystem.Client.Types.DataOperation  import DataOperation
+from DIRAC.AccountingSystem.Client.DataStoreClient      import gDataStoreClient
+import re,os,time,sys,tempfile,types
 
 class FTSRequest:
 
@@ -14,140 +20,536 @@ class FTSRequest:
     self.finalStates = ['Canceled','Failed','Hold','Finished','FinishedDirty']
     self.failedStates = ['Canceled','Failed','Hold','Finished','FinishedDirty']
     self.successfulStates = ['Finished','Done']
-    self.fileStates = ['Done','Canceled','Failed','Hold','Active','Finishing','Pending','Ready','Submitted','Waiting','Finished']
+    self.fileStates = ['Done','Active','Pending','Ready','Canceled','Failed','Finishing','Finished','Submitted','Hold','Waiting']
 
-    self.isOK = False
-
-    self.completedFiles = []
-    self.failedFiles = []
-    self.activeFiles = []
     self.newlyCompletedFiles = []
     self.newlyFailedFiles = []
 
-    self.ftsGUID = False
-    self.ftsServer = False
     self.statusSummary = {}
+    self.requestStatus = 'Unknown'
+
     self.fileDict = {}
+    self.catalogReplicas = {}
+    self.catalogMetadata = {}
 
-    self.isTerminal = None
-    self.requestStatus = None
-    self.percentageComplete = None
+    self.oCatalog = None
 
-    self.sourceSE = None
-    self.targetSE = None
-    self.spaceToken = None
-    self.lfns = []
+    self.submitTime = ''
 
-####################################################################
-#
-#  These are the methods used for submitting FTS transfers
-#
-  def submit(self):
-    """
-       Submits to the FTS the set of files specified in the initialisation.
+    self.ftsGUID = ''
+    self.ftsServer = ''
+    self.priority = 3
+    self.isTerminal = False
+    self.percentageComplete = 0.0
 
-       OPERATION: Creates temporary file conaining source and destination SURLs.
-                  Resolves from FTS server controlling the desired channel.
-                  Submit the FTS request through the CLI (checking the returned GUID).
-    """
-    # Check that we have all the required params for submission
-    res = self.isSubmissionReady()
+    self.sourceSE = ''
+    self.sourceValid = False
+    self.sourceToken = ''
+
+    self.targetSE = ''
+    self.targetValid = False
+    self.targetToken = ''
+
+    self.dumpStr = ''
+
+  ####################################################################
+  #
+  #  Methods for setting/getting/checking the SEs
+  #
+
+  def setSourceSE(self,se):
+    if se == self.targetSE:
+      return S_ERROR("SourceSE is TargetSE")
+    self.sourceSE = se
+    self.oSourceSE = StorageElement(self.sourceSE)
+    self.__getSESpaceToken(self.oSourceSE)
+    return self.__checkSourceSE()
+
+  def getSourceSE(self):
+    if not self.sourceSE:
+      return S_ERROR("Source SE not defined")
+    return S_OK(self.sourceSE)
+
+  def setSourceToken(self,token):
+    self.sourceToken = token
+    return S_OK()
+
+  def getSourceToken(self):
+    if not self.sourceToken:
+      return S_ERROR("Source token not defined")
+    return S_OK(self.sourceToken)
+ 
+  def __checkSourceSE(self):
+    if not self.sourceSE:
+      return S_ERROR("SourceSE not set")
+    res = self.oSourceSE.isValid('Read')
+    if not res['OK']:
+      return S_ERROR("SourceSE not available for reading")
+    res = self.oSourceSE.getStorageParameters("SRM2")
+    if not res['OK']:
+      return S_ERROR("SourceSE does not support FTS transfers")
+    self.sourceToken = res['Value'].get('SpaceToken')
+    self.sourceValid = True
+    return S_OK()
+
+  def setTargetSE(self,se):
+    if se == self.sourceSE:
+      return S_ERROR("TargetSE is SourceSE")
+    self.targetSE = se
+    self.oTargetSE = StorageElement(self.targetSE)
+    return self.__checkTargetSE()
+
+  def getTargetSE(self):
+    if not self.targetSE:
+      return S_ERROR("Target SE not defined")
+    return S_OK(self.targetSE)
+
+  def setTargetToken(self,token):
+    self.targetToken = token
+    return S_OK()
+
+  def getTargetToken(self):
+    if not self.targetToken:
+      return S_ERROR("Target token not defined")
+    return S_OK(self.targetToken)
+
+  def __checkTargetSE(self):
+    if not self.targetSE:
+      return S_ERROR("TargetSE not set")
+    res = self.oTargetSE.isValid('Write')
+    if not res['OK']:
+      return S_ERROR("TargetSE not available for writing")
+    res = self.oTargetSE.getStorageParameters("SRM2")
     if not res['OK']:
       return res
+    self.targetToken = res['Value'].get('SpaceToken')
+    self.targetValid = True
+    return S_OK()
 
-    # Create the file containing the source and destination SURLs
+  def __getSESpaceToken(self,oSE):
+    res = oSE.getStorageParameters("SRM2")
+    if not res['OK']:
+      return res
+    return S_OK(res['Value'].get('SpaceToken'))
+
+  ####################################################################
+  #
+  #  Methods for setting/getting FTS request parameters
+  #
+
+  def setFTSGUID(self,guid):
+    if not checkGuid(guid):
+      return S_ERROR("Incorrect GUID format")
+    self.ftsGUID = guid
+    return S_OK()
+
+  def getFTSGUID(self):
+    if not self.ftsGUID:
+      return S_ERROR("FTSGUID not set")
+    return S_OK(self.ftsGUID)
+
+  def setFTSServer(self,server):
+    self.ftsServer = server
+    return S_OK()
+
+  def getFTSServer(self):
+    if not self.ftsServer:
+      return S_ERROR("FTSServer not set")
+    return S_OK(self.ftsServer)
+
+  def setPriority(self,priority):
+    if not type(priority) in [types.IntType,types.LongType]:
+      return S_ERROR("Priority must be integer")
+    if priority < 0:
+      priority = 0
+    elif priority > 5:
+      priority = 5
+    self.priority = priority
+    return S_OK(self.priority)
+
+  def getPriority(self):
+    return S_OK(self.priority)
+
+  def getPercentageComplete(self):
+    completedFiles = 0
+    totalFiles = 0
+    for state in (self.statusSummary.keys()): 
+      if state in self.successfulStates:
+        completedFiles += self.statusSummary[state]
+      totalFiles += self.statusSummary[state]
+    self.percentageComplete = (float(completedFiles)*100.0)/float(totalFiles)
+    return S_OK(self.percentageComplete)
+
+  def isRequestTerminal(self):
+    if self.requestStatus in self.finalStates:
+      self.isTerminal = True
+    return S_OK(self.isTerminal)
+
+  def getStatus(self):
+    return S_OK(self.requestStatus)
+
+  ####################################################################
+  #
+  #  Methods for setting/getting/checking files and their metadata
+  #
+
+  def setLFN(self,lfn):
+    if not self.fileDict.has_key(lfn):
+      self.fileDict[lfn] = {}
+    return S_OK()
+
+  def setSourceSURL(self,lfn,surl):
+    target = self.fileDict[lfn].get('Target')
+    if target == surl:
+      return S_ERROR("Source and target the same")
+    self.__setFileParameter(lfn,'Source',surl)
+    return S_OK()
+
+  def getSourceSURL(self,lfn):
+    return self.__getFileParameter(lfn,'Source')
+
+  def setTargetSURL(self,lfn,surl):
+    source = self.fileDict[lfn].get('Source')
+    if source == surl:
+      return S_ERROR("Source and target the same")
+    self.__setFileParameter(lfn,'Target',surl)
+    return S_OK()
+
+  def getTargetSURL(self,lfn):
+    return self.__getFileParameter(lfn,'Target')
+
+  def getFailReason(self,lfn):
+    return self.__getFileParameter(lfn,'Reason')
+
+  def getRetries(self,lfn):
+    return self.__getFileParameter(lfn,'Retries')
+
+  def getTransferTime(self,lfn):
+    return self.__getFileParameter(lfn,'Duration')
+
+  def getFailed(self):
+    failed = []
+    for lfn in self.fileDict.keys():
+      status = self.fileDict[lfn].get('Status','')
+      if status in self.failedStates:
+        failed.append(lfn)
+    return S_OK(failed)
+
+  def getDone(self):
+    done = []
+    for lfn in self.fileDict.keys():
+      status = self.fileDict[lfn].get('Status','')
+      if status in self.successfulStates:
+        done.append(lfn)
+    return S_OK(done)
+
+  def __setFileParameter(self,lfn,paramName,paramValue):
+    self.setLFN(lfn)
+    self.fileDict[lfn][paramName] = paramValue
+    return S_OK()
+
+  def __getFileParameter(self,lfn,paramName):
+    if not self.fileDict.has_key(lfn):
+      return S_ERROR("Supplied file not set")
+    if not self.fileDict[lfn].has_key(paramName):
+      return S_ERROR("%s not set for file" % paramName)
+    return S_OK(self.fileDict[lfn][paramName])
+
+  ####################################################################
+  #
+  #  Methods for submission
+  #
+
+  def submit(self,monitor=False,printOutput=True):
+    res = self.__isSubmissionValid()
+    if not res['OK']:
+      print res['Message']
+      return res
     res = self.__createSURLPairFile()
     if not res['OK']:
+      print res['Message']
       return res
-
-    if not self.ftsServer:
-      # Make sure that we have the correct FTS server to submit to
-      res = self.__resolveFTSEndpoint()
-      if not res['OK']:
-        return res
-
-    # Submit the fts request through the CLI
     res = self.__submitFTSTransfer()
     if not res['OK']:
+      print res['Message']
       return res
-
     resDict = {'ftsGUID':self.ftsGUID,'ftsServer':self.ftsServer}
+    print "Submitted %s @ %s" % (self.ftsGUID,self.ftsServer)
+    if monitor:
+      self.monitor(untilTerminal=True,printOutput=printOutput)
     return S_OK(resDict)
 
-  def __checkSupportedProtocols(self):
-    """
-      This method is used to gauge the possibility of performing FTS transfers between two SEs.
-      The FTS uses SRM functionality and therefore both SEs must support the SRM protocol.
-
-      OPERATION: Both SE elements are initialised using the SE names supplied.
-                 A check is performed to see whether the required protocol is availalble at both sites.
-    """
+  def __isSubmissionValid(self):
+    if not self.fileDict:
+      return S_ERROR("No files set")
+    if not self.sourceValid:
+      return S_ERROR("SourceSE not valid")
+    if not self.targetValid:
+      return S_ERROR("TargetSE not valid")
+    if not self.ftsServer:
+      res = self.__resolveFTSServer()
+      if not res['OK']:
+        return S_ERROR("FTSServer not valid")
+    self.__resolveSource()
+    self.__resolveTarget()
+    res = self.__filesToSubmit()
+    if not res['OK']:
+      return S_ERROR("No files to submit")
     return S_OK()
-    """
-    #this should be removed when the StorageElement is ready
-    matchedProtocols = []
-    supportedProtocols = ['srm']
-    for protocol in supportedProtocols:
-      if protocol in self.sourceStorage.getProtocols() and protocol in self.targetStorage.getProtocols():
-        matchedProtocols.append(protocol)
-    if len(matchedProtocols) > 0:
+
+  def __getCatalogObject(self):
+    try:
+      if not self.oCatalog:
+        self.oCatalog = CatalogInterface()
       return S_OK()
+    except:
+      return S_ERROR()
+
+  def __updateReplicaCache(self,lfns=[],overwrite=False):
+    if not lfns:
+      lfns = self.fileDict.keys()
+    toUpdate = []
+    for lfn in lfns:
+      if (not lfn in self.catalogReplicas.keys()) or overwrite:
+        toUpdate.append(lfn)
+    if not toUpdate:
+      return S_OK()
+    res = self.__getCatalogObject()
+    if not res['OK']:
+      return res
+    res = self.oCatalog.getCatalogReplicas(toUpdate)
+    if not res['OK']:
+      return S_ERROR("Failed to update replica cache",res['Message'])
+    for lfn,error in res['Value']['Failed'].items():
+      self.__setFileParameter(lfn,'Reason',error)
+      self.__setFileParameter(lfn,'Status','Failed')
+    for lfn,replicas in res['Value']['Successful'].items():
+      self.catalogReplicas[lfn] = replicas
+    return S_OK()
+
+  def __updateMetadataCache(self,lfns=[],overwrite=False):
+    if not lfns:
+      lfns = self.fileDict.keys()
+    toUpdate = []
+    for lfn in lfns:
+      if (not lfn in self.catalogMetadata.keys()) or overwrite:
+        toUpdate.append(lfn)
+    if not toUpdate:
+      return S_OK()
+    res = self.__getCatalogObject()
+    if not res['OK']:  
+      return res
+    res = self.oCatalog.getCatalogFileMetadata(toUpdate)
+    if not res['OK']:
+      return S_ERROR("Failed to get source catalog metadata",res['Message'])
+    for lfn,error in res['Value']['Failed'].items():
+      self.__setFileParameter(lfn,'Reason',error)
+      self.__setFileParameter(lfn,'Status','Failed')
+    for lfn,metadata in res['Value']['Successful'].items():
+      self.catalogMetadata[lfn] = metadata
+    return S_OK()
+
+  def __resolveSource(self):
+    toResolve = []
+    for lfn in self.fileDict.keys():
+      if (not self.fileDict[lfn].has_key('Source')) and (self.fileDict[lfn].get('Status') != 'Failed'):
+        toResolve.append(lfn)
+    if not toResolve:
+      return S_OK()
+    res = self.__updateMetadataCache(toResolve)
+    if not res['OK']:
+      return res
+    res = self.__updateReplicaCache(toResolve)
+    if not res['OK']:
+      return res
+    for lfn in toResolve:
+      if self.fileDict[lfn].get('Status') == 'Failed':
+        continue
+      replicas = self.catalogReplicas.get(lfn,{})
+      if not replicas.has_key(self.sourceSE):
+        self.__setFileParameter(lfn,'Reason',"No replica at SourceSE")
+        self.__setFileParameter(lfn,'Status','Failed')
+        continue 
+      res = self.oSourceSE.getPfnForProtocol(replicas[self.sourceSE],'SRM2',withPort=True)
+      if not res['OK']:
+        self.__setFileParameter(lfn,'Reason',res['Message'])
+        self.__setFileParameter(lfn,'Status','Failed')
+        continue
+      self.setSourceSURL(lfn,res['Value'])
+      if not res['OK']:
+        self.__setFileParameter(lfn,'Reason',res['Message'])
+        self.__setFileParameter(lfn,'Status','Failed')
+        continue
+
+    toResolve = {}
+    for lfn in self.fileDict.keys():
+      if self.fileDict[lfn].has_key('Source'):
+        toResolve[self.fileDict[lfn]['Source']] = lfn
+    if not toResolve:
+      return S_ERROR("No eligible Source files")
+    res = self.oSourceSE.getFileMetadata(toResolve.keys())
+    if not res['OK']:
+      return S_ERROR("Failed to check source file metadata")
+    for pfn,error in res['Value']['Failed'].items():
+      lfn = toResolve[pfn]
+      if re.search('File does not exist',error):
+        self.__setFileParameter(lfn,'Reason',"Source file does not exist")
+        self.__setFileParameter(lfn,'Status','Failed')
+      else:
+        self.__setFileParameter(lfn,'Reason',"Failed to get Source metadata")
+        self.__setFileParameter(lfn,'Status','Failed')
+    for pfn,metadata in res['Value']['Successful'].items():
+      lfn = toResolve[pfn]
+      if metadata['Unavailable']:
+        self.__setFileParameter(lfn,'Reason',"Source file Unavailable")
+        self.__setFileParameter(lfn,'Status','Failed')
+      elif metadata['Lost']:
+        self.__setFileParameter(lfn,'Reason',"Source file Lost")
+        self.__setFileParameter(lfn,'Status','Failed')
+      #elif not metadata['Cached']:
+      #  self.__setFileParameter(lfn,'Reason',"Source file not Cached")
+      #  self.__setFileParameter(lfn,'Status','Failed')
+      elif metadata['Size'] != self.catalogMetadata[lfn]['Size']:
+        self.__setFileParameter(lfn,'Reason',"Source size mismatch")
+        self.__setFileParameter(lfn,'Status','Failed')
+      elif self.catalogMetadata[lfn]['CheckSumValue'] and metadata['Checksum'] and not (compareAdler(metadata['Checksum'], self.catalogMetadata[lfn]['CheckSumValue'])):
+        self.__setFileParameter(lfn,'Reason',"Source checksum mismatch")
+        self.__setFileParameter(lfn,'Status','Failed')
+    return S_OK()
+
+  def __resolveTarget(self):
+    toResolve = []
+    for lfn in self.fileDict.keys():
+      if not self.fileDict[lfn].has_key('Target') and (self.fileDict[lfn].get('Status') != 'Failed'):
+        toResolve.append(lfn)
+    if not toResolve:
+      return S_OK()
+    res = self.__updateReplicaCache(toResolve)
+    if not res['OK']:
+      return res
+    atTarget = []
+    for lfn in sortList(toResolve):
+      if self.fileDict[lfn].get('Status') == 'Failed':
+        continue
+      replicas = self.catalogReplicas.get(lfn,{})
+      if replicas.has_key(self.targetSE):
+        self.__setFileParameter(lfn,'Reason',"File already at Target")
+        self.__setFileParameter(lfn,'Status','Done')
+        atTarget.append(lfn)
+    for lfn in toResolve:
+      if (self.fileDict[lfn].get('Status') == 'Failed') or (lfn in atTarget):
+        continue
+      res = self.oTargetSE.getPfnForLfn(lfn)
+      if not res['OK']:
+        self.__setFileParameter(lfn,'Reason',"Failed to create Target")
+        self.__setFileParameter(lfn,'Status','Failed')
+        continue
+      res = self.oTargetSE.getPfnForProtocol(res['Value'],'SRM2',withPort=True)
+      if not res['OK']:
+        self.__setFileParameter(lfn,'Reason',res['Message'])
+        self.__setFileParameter(lfn,'Status','Failed')
+        continue
+      res = self.setTargetSURL(lfn,res['Value'])
+      if not res['OK']:
+        self.__setFileParameter(lfn,'Reason',res['Message'])
+        self.__setFileParameter(lfn,'Status','Failed')
+        continue
+    toResolve = {}
+    for lfn in self.fileDict.keys():
+      if self.fileDict[lfn].has_key('Target'):
+        toResolve[self.fileDict[lfn]['Target']] = lfn
+    if not toResolve:
+      return S_ERROR("No eligible Target files")
+    res = self.oTargetSE.exists(toResolve.keys())
+    if not res['OK']:
+      return S_ERROR("Failed to check target existence")
+    for pfn,error in res['Value']['Failed'].items():
+      lfn = toResolve[pfn]
+      self.__setFileParameter(lfn,'Reason',error)
+      self.__setFileParameter(lfn,'Status','Failed')
+    toRemove = []
+    for pfn,exists in res['Value']['Successful'].items():
+      if exists:
+        lfn = toResolve[pfn]
+        res = self.getSourceSURL(lfn)
+        if not res['OK']:
+          self.__setFileParameter(lfn,'Reason',"Target exists")
+          self.__setFileParameter(lfn,'Status','Failed')
+        elif res['Value'] == pfn:
+          self.__setFileParameter(lfn,'Reason',"Source and Target the same")
+          self.__setFileParameter(lfn,'Status','Failed')
+        else:
+          toRemove.append(pfn)
+    if toRemove:
+      self.oTargetSE.removeFile(toRemove)
+    return S_OK()
+
+  def __filesToSubmit(self):
+    for lfn in self.fileDict.keys():
+      lfnStatus = self.fileDict[lfn].get('Status')
+      source = self.fileDict[lfn].get('Source')
+      target =  self.fileDict[lfn].get('Target')
+      if (lfnStatus != 'Failed') and (lfnStatus != 'Done') and source and target:
+        return S_OK()
     return S_ERROR()
-    """
 
   def __createSURLPairFile(self):
-    """
-       Create and populate a temporary file containing SURL pairs specified.
-
-       OPERATION: Create temporary file.
-                  Populate it with the source and destination SURL pairs.
-    """
-    try:
-      tempfile = os.tmpnam()
-    except RuntimeWarning:
-      pass
-    surlFile = open(tempfile,'w')
-
+    fd, fileName = tempfile.mkstemp()
+    surlFile = os.fdopen(fd, 'w')
     for lfn in self.fileDict.keys():
-      sourceSURL = self.fileDict[lfn]['Source']
-      targetSURL = self.fileDict[lfn]['Destination']
-      surlString = '%s %s\n' % (sourceSURL,targetSURL)
-      surlFile.write(surlString)
+      lfnStatus = self.fileDict[lfn].get('Status')
+      source = self.fileDict[lfn].get('Source')
+      target =  self.fileDict[lfn].get('Target')
+      if (lfnStatus != 'Failed') and (lfnStatus != 'Done') and source and target:
+        surlString = '%s %s\n' % (source,target)
+        surlFile.write(surlString)
     surlFile.close()
-    self.surlFile = surlFile.name
+    self.surlFile = fileName
     return S_OK()
 
-  def __resolveFTSEndpoint(self):
-    """
-       Resolve which FTS Server is to be used for submission.
-       All transfers to and from CERN are managed by the CERN FTS.
-       Otherwise the transfers are handled by the target site's FTS Server.
+  def __submitFTSTransfer(self):
+    comm = ['glite-transfer-submit','-s', self.ftsServer,'-f',self.surlFile]
+    if self.targetToken:
+      comm.append('-t')
+      comm.append(self.targetToken)
+    if self.sourceToken:
+      comm.append('-S')
+      comm.append(self.sourceToken)
+    res = executeGridCommand('',comm,self.gridEnv)
+    os.remove(self.surlFile)
+    if not res['OK']:
+      return res
+    returnCode,output,errStr = res['Value']
+    if not returnCode == 0:
+      return S_ERROR(errStr)
+    guid = output.replace('\n','')
+    if not checkGuid(guid):
+      return S_ERROR('Wrong GUID format returned')
+    self.ftsGUID = guid
+    #if self.priority != 3:
+    #  comm = ['glite-transfer-setpriority','-s', self.ftsServer,self.ftsGUID,str(self.priority)]
+    #  executeGridCommand('',comm,self.gridEnv)
+    return res
 
-       OPERATION: Determine from the target and source SE which server to use.
-                  Obtain the URL for the server from the CS.
-    """
-    t1Sites = ['CNAF','GRIDKA','IN2P3','NIKHEF','PIC','RAL']
-    sourceSite = self.sourceSE.split('-')[0].split('_')[0]
-    targetSite = self.targetSE.split('-')[0].split('_')[0]
-    if (sourceSite == 'CERN') or (targetSite == 'CERN'):
-      # one of the two CERN fts servers should be used
-      if (sourceSite in t1Sites) or (targetSite in t1Sites):
-        # the transfer is either two or from a tier1
-        ep = 'CERNT1'
-      else:
-        # the transfer is either two or from a tier2
-        ep = 'CERNT2'
+  def __resolveFTSServer(self):
+    if not self.sourceSE:
+      return S_ERROR("Source SE not set")
+    if not self.targetSE:
+      return S_ERROR("Target SE not set")
+    res = getSitesForSE(self.sourceSE,'LCG')    
+    if not res['OK'] or not res['Value']:
+      return S_ERROR("Could not determine source site")
+    sourceSite = res['Value'][0]
+    res = getSitesForSE(self.targetSE,'LCG')
+    if not res['OK'] or not res['Value']:
+      return S_ERROR("Could not determine target site")
+    targetSite = res['Value'][0]
+
+    if (sourceSite == 'LCG.CERN.ch') or (targetSite == 'LCG.CERN.ch'):
+      ep = 'LCG.CERN.ch'
     else:
-      # a tier1 fts server should be used
-      if (sourceSite in t1Sites) and (targetSite in t1Sites):
-        # this is an t1-t1 transfer and should be managed by the target
-        ep = targetSite
-      elif sourceSite in t1Sites:
-        # this is a t1->t2 transfer
-        ep = sourceSite
-      else:
-        # this is a t2->t1 transfer
-        ep = targetSite
+      # Target site FTS server should be used
+      ep = targetSite
 
     try:
       configPath = '/Resources/FTSEndpoints/%s' % ep
@@ -160,90 +562,141 @@ class FTSRequest:
     except Exception, x:
       return S_ERROR('FTSRequest.__resolveFTSEndpoint: Failed to obtain endpoint details from CS')
 
-  def __submitFTSTransfer(self):
-    """
-       Submits the request to the FTS via the CLI which if successful returns a GUID.
-       The CLI options supplied are:
-         -s  FTS server to submit to.
-         -p  Password stored on the MyProxy server for the client DN.
-         -f  Location of the request file.
+  ####################################################################
+  #
+  #  Methods for monitoring
+  #
 
-       OPERATION: Constuct the system call to be made and execute it.
-                  Check that the returned string is a GUID.
-    """
-    comm = ['glite-transfer-submit','-s', self.ftsServer,'-f',self.surlFile]
-    if self.spaceToken:
-      comm.append('-t')
-      comm.append(self.spaceToken)
+  def summary(self,untilTerminal=False,printOutput=False):
+    while not self.isTerminal:
+      res = self.__parseOutput()
+      if not res['OK']:
+        return res
+      if untilTerminal:
+        self.__print()
+      self.isRequestTerminal()
+      if res['Value'] or (not untilTerminal):
+        break
+      time.sleep(1)
+    if untilTerminal:
+      print ""
+    if printOutput and (not untilTerminal):
+      return self.dumpSummary(printOutput=printOutput)
+    return S_OK()
 
+  def monitor(self,untilTerminal=False,printOutput=False):
+    res = self.__isMonitorValid()
+    if not res['OK']:
+      return res
+    if untilTerminal:
+      res = self.summary(untilTerminal=untilTerminal,printOutput=printOutput)
+      if not res['OK']:
+        return res
+    res = self.__parseOutput(True)
+    if not res['OK']:
+      return res
+    if untilTerminal:
+      self.finalize()
+    if printOutput:
+      self.dump()
+    return res
+
+  def dumpSummary(self,printOutput=False):
+    outStr = ''
+    for status in sortList(self.statusSummary.keys()):
+      outStr = '%s\t%s : %s\n' % (outStr,status.ljust(10),str(self.statusSummary[status]).ljust(10))
+    outStr = outStr.rstrip('\n')
+    if printOutput:
+      print outStr
+    return S_OK(outStr)
+
+  def __print(self):
+    self.getPercentageComplete()
+    width = 100
+    bits = int((width*self.percentageComplete)/100)
+    outStr = "|%s>%s| %.1f%s %s %s" % ("="*bits," "*(width-bits),self.percentageComplete,"%",self.requestStatus," "*10)
+    sys.stdout.write("%s\r" % (outStr)) 
+    sys.stdout.flush()
+
+  def dump(self):
+    print "%s : %s" % ("Status".ljust(10),self.requestStatus.ljust(10))
+    print "%s : %s" % ("Source".ljust(10),self.sourceSE.ljust(10))
+    print "%s : %s" % ("Target".ljust(10),self.targetSE.ljust(10))
+    print "%s : %s" % ("Server".ljust(10),self.ftsServer.ljust(100))
+    print "%s : %s" % ("GUID".ljust(10),self.ftsGUID.ljust(100))
+    for lfn in sortList(self.fileDict.keys()):
+      print "\n  %s : %s" % ('LFN'.ljust(15),lfn.ljust(128))
+      for key in ['Source','Target','Status','Reason','Duration']:
+        print "  %s : %s" % (key.ljust(15),str(self.fileDict[lfn].get(key)).ljust(128))
+    return S_OK()
+
+  def __isSummaryValid(self):
+    if not self.ftsServer:
+      return S_ERROR("FTSServer not set")
+    if not self.ftsGUID:
+      return S_ERROR("FTSGUID not set")
+    return S_OK()
+
+  def __isMonitorValid(self):
+    res = self.__isSummaryValid()
+    if not res['OK']:
+      return res
+    if not self.fileDict:
+      return S_ERROR("Files not set")
+    return S_OK()
+
+  def __parseOutput(self,full=False):
+    if full:
+      res = self.__isMonitorValid()
+    else:
+      res = self.__isSummaryValid()
+    if not res['OK']:
+      return res
+    comm = ['glite-transfer-status','--verbose','-s',self.ftsServer,self.ftsGUID]
+    if full:
+      comm.append('-l')
     res = executeGridCommand('',comm,self.gridEnv)
-    os.remove(self.surlFile)
     if not res['OK']:
       return res
     returnCode,output,errStr = res['Value']
+    # Returns a non zero status if error
     if not returnCode == 0:
       return S_ERROR(errStr)
-    guid = output.replace('\n','')
-    if not checkGuid(guid):
-      return S_ERROR('Wrong GUID format returned')
-    self.ftsGUID = guid
-    return res
-
-####################################################################
-#
-#  These are the methods used for obtaining a summary of the status
-#
-
-  def updateSummary(self):
-    """
-      Obtains summary information on a submitted FTS request.
-
-      OPERATION: Query the FTS server through the CLI for request.
-                 Obtains the request status (self.requestStatus).
-                 Determines whether state is terminal (self.isTerminal).
-                 Calculates percentage complete (self.percentageComplete).
-                 Obtains number of files in a given state (self.statusSummary).
-    """
-    res = self.isSummaryQueryReady()
+    toRemove = ["'","<",">"]
+    for char in toRemove:
+      output = output.replace(char,'')
+    regExp = re.compile("Status:\s+(\S+)")
+    self.requestStatus =  re.search(regExp,output).group(1)
+    regExp = re.compile("Submit time:\s+(\S+ \S+)")
+    self.submitTime = re.search(regExp,output).group(1)
+    self.statusSummary = {}
+    for state in self.fileStates:
+      regExp = re.compile("\s+%s:\s+(\d)" % state)
+      self.statusSummary[state] = int(re.search(regExp,output).group(1))
+    if not full:
+      return S_OK()
+    regExp = re.compile("[ ]+Source:[ ]+(\S+)\n[ ]+Destination:[ ]+(\S+)\n[ ]+State:[ ]+(\S+)\n[ ]+Retries:[ ]+(\d+)\n[ ]+Reason:[ ]+([\S ]+).+?[ ]+Duration:[ ]+(\d+)",re.S)
+    fileInfo = re.findall(regExp,output)
+    for source,target,status,retries,reason,duration in fileInfo:
+      lfn = ''
+      for candidate in sortList(self.fileDict.keys()):
+        if re.search(candidate,source):
+          lfn = candidate
+      if not lfn:
+        continue
+      self.__setFileParameter(lfn,'Source',source)
+      self.__setFileParameter(lfn,'Target',target)
+      self.__setFileParameter(lfn,'Status',status)
+      if reason == '(null)':
+        reason = ''
+      self.__setFileParameter(lfn,'Reason',reason.replace("\n"," "))
+      self.__setFileParameter(lfn,'Duration',int(duration))
+    return S_OK()
+    
+  def __getSummary(self):
+    res = self.__isSummaryValid()
     if not res['OK']:
       return res
-    res = self.__getSummary()
-    if res['OK']:
-      summaryDict = res['Value']
-      # Set the status of the request
-      self.requestStatus = summaryDict['Status']
-      if self.requestStatus in self.finalStates:
-        self.isTerminal = True
-      # Calculate the number of files completed
-      completedFiles = 0
-      for state in self.successfulStates:
-        completedFiles += int(summaryDict[state])
-      # Calculate the percentage of the request that is completed
-      totalFiles = float(summaryDict['Files'])
-      self.percentageComplete = 100*(completedFiles/totalFiles)
-      # Create the status summary dictionary
-      for status in self.fileStates:
-        if summaryDict[status] != '0':
-          self.statusSummary[status] = int(summaryDict[status])
-    return res
-
-  def __getSummary(self):
-    """
-       Obtains summary of request via the CLI.
-       The CLI options supplied are:
-         --verbose Gives a break down of the file states
-         -s  FTS server to submit to.
-
-       OPERATION: Constuct the system call to be made and execute it.
-                  Parse the output to create a dictionary with the key value pairs.
-       OUTPUT:    The result['Value'] contains a summary dictionary for the request.
-                  It has the following keys relating to the overall request:
-                    'Status','Submit time','Priority','Client DN','Request ID','Reason','Files','VOName','Channel'
-                  And the following keys with reference to the files state:
-                    'Canceled','Failed','Finished','Submitted','Ready','Done','Pending','Waiting','Active','Finishing','Hold'
-    """
-    if not self.ftsServer:
-      return S_ERROR('FTS Server information not supplied with request')
     comm = ['glite-transfer-status','--verbose','-s',self.ftsServer,self.ftsGUID]
     res = executeGridCommand('',comm,self.gridEnv)
     if not res['OK']:
@@ -260,60 +713,15 @@ class FTSRequest:
       key = line[0].replace('\t','')
       value = line[1].replace('\t','')
       summaryDict[key] = value
-    return S_OK(summaryDict)
+    self.requestStatus = summaryDict['Status']
+    self.submitTime = summaryDict['Submit time']
+    self.statusSummary = {}
+    for status in self.fileStates:
+      if summaryDict[status] != '0':
+        self.statusSummary[status] = int(summaryDict[status])
+    return S_OK()
 
-####################################################################
-#
-#  These are the methods to parse FTS output for full file status
-#
-
-  def updateFileStates(self):
-    """
-      Obtains summary information on a submitted FTS request.
-
-      OPERATION: Query the FTS server through the CLI for detailed request information.
-                 Updates the status, timing information and failure reason (self.fileDict)
-                 Updates newly completed transfers (self.newlyCompletedFiles,self.completedFiles)
-                 Updates newly failed transfers (self.newlyFailedFiles,self.failedFiles)
-                 Sets active files (self.activeFiles)
-    """
-    res = self.isDetailedQueryReady()
-    if not res['OK']:
-      return res
-
-    res = self.__updateRequestDetails()
-    if self.requestStatus in self.finalStates:
-      self.isTerminal = True
-
-    self.activeFiles = []
-    if res['OK']:
-      for lfn in self.lfns:
-        if self.fileDict[lfn].has_key('State'):
-          if self.fileDict[lfn]['State'] in self.successfulStates:
-            if lfn not in self.completedFiles:
-              self.newlyCompletedFiles.append(lfn)
-              self.completedFiles.append(lfn)
-          elif self.fileDict[lfn]['State'] in self.failedStates:
-            if lfn not in self.failedFiles:
-              self.newlyFailedFiles.append(lfn)
-              self.failedFiles.append(lfn)
-          else:
-            self.activeFiles.append(lfn)
-    self.percentageComplete = 100*(len(self.completedFiles)/float(len(self.lfns)))
-    return res
-
-  def __updateRequestDetails(self):
-    """
-       Obtains full details of request via the CLI.
-       The CLI options supplied are:
-         -s  FTS server to submit to.
-         -l  To obtain detailed information
-
-       OPERATION: Constuct the system call to be made and execute it.
-                  Parse the output to create a dictionary containing the information for each file.
-                  For each LFN the following information is obtained (self.fileDict):
-                    'Duration','Reason','Retries'
-    """
+  def __getFullOutput(self):
     comm = ['glite-transfer-status','-s',self.ftsServer,'-l',self.ftsGUID]
     res = executeGridCommand('',comm,self.gridEnv)
     if not res['OK']:
@@ -322,194 +730,146 @@ class FTSRequest:
     # Returns a non zero status if error
     if not returnCode == 0:
       return S_ERROR(errStr)
-
-
-    """
-    output = output.replace('\r','')
-    output = output.replace('DESTINATION error during PREPARATION phase: [GENERAL_FAILURE] Not able to find the version of castor in the database Original error was ORA-00904: "SCHEMAVERSION": invalid identifier\n\n','DESTINATION error during PREPARATION phase: [GENERAL_FAILURE] Not able to find the version of castor in the database Original error was ORA-00904: "SCHEMAVERSION": invalid identifier\n')
-    output = output.replace(' not found)\n\n',' not found)\n')
-    output = output.replace("TRANSFER error during TRANSFER phase: [GRIDFTP] the server sent an error response: 425 425 Can't open data connection. .\n\n",'TRANSFER error during TRANSFER phase: [GRIDFTP] the server sent an error response: 425 425 Cant open data connection.\n')
-    output = output.replace("TRANSFER error during TRANSFER phase: [GRIDFTP] the server sent an error response: 451 451 rfio read failure: Connection closed by remote end.\n\n","TRANSFER error during TRANSFER phase: [GRIDFTP] the server sent an error response: 451 451 rfio read failure: Connection closed by remote end.\n")
-    """
-
-    requiredKeys = ['Source','Destination','State','Retries','Reason','Duration']
-    fileDetails = output.split('\n\n  Source:')
-    # For each of the files in the request
-    for fileDetail in fileDetails:
-      dict = {}
-      fileDetail = '  Source:%s' % fileDetail
-      for line in fileDetail.splitlines():
-        if re.search(':',line):
-          line = line.replace("'",'')
-          line = line.replace("<",'')
-          line = line.replace(">",'')
-        key = line.split(':',1)[0].strip()
-        if key in requiredKeys:
-          value = line.split(':',1)[1].strip()
-          dict[key] = value
-        else:
-          if dict.has_key('Reason'):
-            dict['Reason'] = '%s %s' % (dict['Reason'],line)
-          else:
-            self.requestStatus = line
-      for lfn in self.lfns:
-        if re.search(lfn,dict['Destination']):
-          for key,value in dict.items():
-            self.fileDict[lfn][key] = value
+    statusExp = re.compile("^(\S+)")
+    self.requestStatus = re.search(statusExp,output).group(1)
+    output = output.replace("%s\n" % self.requestStatus,"",1)
+    toRemove = ["'","<",">"]
+    for char in toRemove:
+      output = output.replace(char,'')
+    regExp = re.compile("[ ]+Source:[ ]+(\S+)\n[ ]+Destination:[ ]+(\S+)\n[ ]+State:[ ]+(\S+)\n[ ]+Retries:[ ]+(\d+)\n[ ]+Reason:[ ]+([\S ]+).+?[ ]+Duration:[ ]+(\d+)",re.S)
+    fileInfo = re.findall(regExp,output)
+    for source,target,status,retries,reason,duration in fileInfo:
+      lfn = ''
+      for candidate in sortList(self.fileDict.keys()):
+        if re.search(candidate,source):
+          lfn = candidate
+      if not lfn:
+        continue
+      self.__setFileParameter(lfn,'Source',source)
+      self.__setFileParameter(lfn,'Target',target)
+      self.__setFileParameter(lfn,'Status',status)
+      if reason == '(null)':
+        reason = '' 
+      self.__setFileParameter(lfn,'Reason',reason.replace("\n"," "))
+      self.__setFileParameter(lfn,'Duration',int(duration))
     return S_OK()
 
-####################################################################
-#
-#  These are the set methods to prepare a monitor
-#
+  ####################################################################
+  #
+  #  Methods for finalization
+  #
 
-  def setFTSGUID(self,guid):
-    self.ftsGUID = guid
+  def finalize(self):
+    transEndTime = dateTime()
+    regStartTime = time.time()
+    res = self.__registerSuccessful()
+    regSuc,regTotal = res['Value']
+    regTime = time.time() - regStartTime
+    if self.sourceSE and self.targetSE:
+      self.__sendAccounting(regSuc,regTotal,regTime,transEndTime)
+    self.__removeFailedTargets()
+    self.__determineMissingSource()
+    return S_OK()
 
-  def getFTSGUID(self):
-    return self.ftsGUID
+  def __registerSuccessful(self):
+    toRegister = {}
+    for lfn in self.fileDict.keys():
+      if self.fileDict[lfn].get('Status') == 'Finished':
+        if self.fileDict[lfn].get('Duration',0):
+          res = self.oTargetSE.getPfnForProtocol(self.fileDict[lfn].get('Target'),'SRM2',withPort=False)
+          if not res['OK']:
+            self.__setFileParameter(lfn,'Reason',res['Message'])
+            self.__setFileParameter(lfn,'Status','Failed')
+          else:
+            toRegister[lfn] = {'PFN':res['Value'],'SE':self.targetSE}
+    if not toRegister:
+      return S_OK((0,0))
+    res = self.__getCatalogObject()
+    if not res['OK']:
+      for lfn in toRegister.keys():
+        self.__setFileParameter(lfn,'Reason',res['Message'])
+        self.__setFileParameter(lfn,'Status','Failed')
+    res = self.oCatalog.addCatalogReplica(toRegister,catalogs=['LcgFileCatalogCombined'])
+    if not res['OK']:
+      for lfn in toRegister.keys():
+        self.__setFileParameter(lfn,'Reason',res['Message'])
+        self.__setFileParameter(lfn,'Status','Failed')
+    for lfn,error in res['Value']['Failed'].items():
+      self.__setFileParameter(lfn,'Reason',error)
+      self.__setFileParameter(lfn,'Status','Failed')
+    return S_OK((len(res['Value']['Successful']),len(toRegister)))
 
-  def setFTSServer(self,server):
-    self.ftsServer = server
+  def __sendAccounting(self,regSuc,regTotal,regTime,transEndTime):
+    transSuc = 0
+    transSize = 0
+    missingSize = []
+    for lfn in self.fileDict.keys():
+      if self.fileDict[lfn].get('Status') == 'Finished':
+        transSuc +=1
+        if not self.catalogMetadata.has_key(lfn):
+          missingSize.append(lfn)
+    if missingSize:
+      self.__updateMetadataCache(missingSize)
+    for lfn in self.fileDict.keys():
+      if self.fileDict[lfn].get('Status') == 'Finished':
+        transSize += self.catalogMetadata[lfn]['Size']
+    transTotal = 0
+    for state in (self.statusSummary.keys()):
+      transTotal += self.statusSummary[state]
+    submitTime = fromString(self.submitTime)
+    endTime = fromString(transEndTime)
+    oAccounting = DataOperation()
+    oAccounting.setEndTime(endTime)
+    oAccounting.setStartTime(submitTime)
+    accountingDict = {}
+    accountingDict['OperationType'] = 'replicateAndRegister'
+    accountingDict['User'] = 'acsmith'
+    accountingDict['Protocol'] = 'FTS'
+    accountingDict['RegistrationTime'] = regTime
+    accountingDict['RegistrationOK'] = regSuc
+    accountingDict['RegistrationTotal'] = regTotal
+    accountingDict['TransferOK'] = transSuc
+    accountingDict['TransferTotal'] = transTotal
+    accountingDict['TransferSize'] = transSize
+    accountingDict['FinalStatus'] = self.requestStatus
+    accountingDict['Source'] = self.sourceSE
+    accountingDict['Destination'] = self.targetSE
+    c = transEndTime-submitTime
+    transferTime = c.days * 86400 + c.seconds
+    accountingDict['TransferTime'] = transferTime
+    oAccounting.setValuesFromDict(accountingDict)
+    gLogger.verbose("Attempting to commit accounting message...")
+    oAccounting.commit()
+    gLogger.verbose("...committed.")
+    return S_OK()
 
-  def getFTSServer(self):
-    return self.ftsServer
-
-  def isSummaryQueryReady(self):
-    if self.ftsServer:
-      if self.ftsGUID:
-         return S_OK()
-      else:
-        errStr = 'FTSRequest.isSummaryQueryReady: The FTS GUID must be supplied in the FTSRequest.'
-        return S_ERROR(errStr)
-    else:
-      errStr = 'FTSRequest.isSummaryQueryReady: The FTS server must be supplied in the FTSRequest.'
-      return S_ERROR(errStr)
-
-  def isDetailedQueryReady(self):
-    if self.ftsServer:
-      if self.ftsGUID:
-        if self.lfns:
-          return S_OK()
-        else:
-          errStr = 'FTSRequest.isDetailedQueryReady: The LFNs must be supplied in the FTSRequest.'
-          return S_ERROR(errStr)
-      else:
-        errStr = 'FTSRequest.isDetailedQueryReady: The FTS GUID must be supplied in the FTSRequest.'
-        return S_ERROR(errStr)
-    else:
-      errStr = 'FTSRequest.isDetailedQueryReady: The FTS server must be supplied in the FTSRequest.'
-      return S_ERROR(errStr)
-
-####################################################################
-#
-#  These are the set methods to prepare a submission
-#
-
-  def setSpaceToken(self,token):
-    self.spaceToken = token
-
-  def setLFNs(self,lfns):
-    self.lfns = lfns
-    for lfn in self.lfns:
-      if not self.fileDict.has_key(lfn):
-        self.fileDict[lfn] = {}
-
-  def setLFN(self,lfn):
-    self.lfns.append(lfn)
-    if not self.fileDict.has_key(lfn):
-      self.fileDict[lfn] = {}
-
-  def setSourceSURL(self,lfn,surl):
-    self.fileDict[lfn]['Source'] = surl
-
-  def setDestinationSURL(self,lfn,surl):
-    self.fileDict[lfn]['Destination'] = surl
-
-  def getSourceSURL(self,lfn):
-    if self.fileDict.has_key(lfn):
-      if self.fileDict[lfn].has_key('Source'):
-        return self.fileDict[lfn]['Source']
-
-  def getDestinationSURL(self,lfn):
-    if self.fileDict.has_key(lfn):
-      if self.fileDict[lfn].has_key('Destination'):
-        return self.fileDict[lfn]['Destination']
-
-  def setSourceSE(self,se):
-    self.sourceSE = se
-    #self.sourceStorage = StorageElement(self.sourceSE)
-
-  def setTargetSE(self,se):
-    self.targetSE = se
-    #self.targetStorage = StorageElement(self.targetSE)
-
-  def isSubmissionReady(self):
-    if self.sourceSE and self.targetSE and self.lfns:
-      result = self.__checkSupportedProtocols()
-      if not result['OK']:
-        result = S_ERROR('SEs do not support SRM')
-      for lfn in self.lfns:
-        if not self.fileDict[lfn].has_key('Source') or not self.fileDict[lfn].has_key('Destination'):
-          errStr = '%s is missing Source or Destination SURL' % lfn
-          result = S_ERROR(errStr)
-    else:
-      if not self.sourceSE:
-        result = S_ERROR('Source SE not supplied')
-      elif not self.targetSE:
-        result = S_ERROR('Target SE not supplied')
-      elif not self.lfns:
-        result = S_ERROR('LFNs not supplied')
-    return result
-
-####################################################################
-#
-#  These are the get methods to obtain metadata on the request
-#
-
-  def setFileCompleted(self,lfn):
-    self.fileDict[lfn]['State'] = 'Done'
-    self.completedFiles.append(lfn)
-
-  def setFileFailed(self,lfn):
-    self.fileDict[lfn]['State'] = 'Failed'
-    self.failedFiles.append(lfn)
-
-  def getTransferTime(self,lfn):
-    return int(self.fileDict[lfn]['Duration'])
-
-  def getFailReason(self,lfn):
-    return self.fileDict[lfn]['Reason']
-
-  def getRetries(self,lfn):
-    return int(self.fileDict[lfn]['Retries'])
-
-  def getCompleted(self):
-    return self.completedFiles
-
-  def getNewlyCompleted(self):
-    return self.newlyCompletedFiles
-
-  def getFailed(self):
-    return self.failedFiles
-
-  def getNewlyFailed(self):
-    return self.newlyFailedFiles
-
-  def isRequestOK(self):
-    return self.isOK
-
-  def getRequestStatus(self):
-    return self.requestStatus
-
-  def getStatusSummary(self):
-    outStr = ''
-    for status in self.statusSummary.keys():
-      outStr = '%s\n%s: %s' % (outStr,status.ljust(10),self.statusSummary[status])
-    return outStr
-
-  def isRequestTerminal(self):
-    return self.isTerminal
-
-  def getPercentageComplete(self):
-    return self.percentageComplete
+  def __removeFailedTargets(self):
+    corruptTargetErrors = ['file exists',
+                           'FILE_EXISTS',
+                           'Device or resource busy',
+                           'Marking Space as Being Used failed']
+    corruptedTarget = []
+    for lfn in sortList(self.fileDict.keys()):
+      if self.fileDict[lfn].get('Status','') == 'Failed':
+        reason = self.fileDict[lfn].get('Reason','')
+        for error in corruptTargetErrors:
+          if re.search(error,reason):
+            corruptedTarget.append(self.fileDict[lfn].get('Target'))
+    if corruptedTarget:
+      self.oTargetSE.removeFile(corruptedTarget)
+     
+  def __determineMissingSource(self):
+    missingSourceErrors = ['SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed',
+                           'SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] No such file or directory',
+                           'SOURCE error during PREPARATION phase: \[INVALID_PATH\] Failed',
+                           'SOURCE error during PREPARATION phase: \[INVALID_PATH\] The requested file either does not exist',
+                           'TRANSFER error during TRANSFER phase: \[INVALID_PATH\] the server sent an error response: 500 500 Command failed. : open error: No such file or directory',
+                           'SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist']
+    missingSource = []
+    for lfn in sortList(self.fileDict.keys()):
+      if self.fileDict[lfn].get('Status','') == 'Failed':
+        reason = self.fileDict[lfn].get('Reason','')
+        for error in missingSourceErrors:
+          if re.search(error,reason):
+            missingSource.append(lfn)
+    return missingSource
