@@ -59,7 +59,7 @@ DROP TABLE IF EXISTS StageRequests;
 CREATE TABLE StageRequests(
   ReplicaID INTEGER(8) NOT NULL REFERENCES CacheReplicas(ReplicaID),
   StageStatus VARCHAR(32) DEFAULT 'StageSubmitted',
-  RequestID INTEGER(32),
+  RequestID VARCHAR(32) DEFAULT '',
   StageRequestSubmitTime DATETIME NOT NULL,
   StageRequestCompletedTime DATETIME,
   PinLength INTEGER(8),
