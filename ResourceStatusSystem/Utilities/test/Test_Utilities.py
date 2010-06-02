@@ -37,10 +37,10 @@ class PublisherSuccess(UtilitiesTestCase):
                   WMSAdminIn = mockWMSA)
     
     igR = [{'Panels': {'Service_Storage_Panel': 
-                       [{'OnStorageServicePropagation_SE': {'RSS': 'StorageElementsOfSite'}}, 
-                        {'OnStorageServicePropagation_Res': {'RSS': 'ResOfStorService'}}], 
-                        'OtherServices_Panel': [], 
-                        'Site_Panel': [{'GGUSTickets': 
+                        [ {'OnStorageServicePropagation_SE': {'RSS': 'StorageElementsOfSite'}}, 
+                          {'OnStorageServicePropagation_Res': {'RSS': 'ResOfStorService'}}], 
+                       'OtherServices_Panel': [], 
+                       'Site_Panel': [{'GGUSTickets': 
                                         [{'WebLink': {'args': None, 'Command': 'GGUS_Link'}}, 
                                          {'TextInfo': {'args': None, 'Command': 'GGUS_Info'}}]}, 
                                          {'DT_Scheduled': [{'WebLink': {'args': None, 'Command': 'DT_Link'}}]}, 
@@ -55,6 +55,12 @@ class PublisherSuccess(UtilitiesTestCase):
     mockIG.getInfoToApply.return_value = igR 
     
     res = p.getInfo('Site', 'LCG.CERN.ch')
+
+    for panel in igR[0]['Panels'].keys():
+      self.assert_(panel in res.keys())
+      for i in range(len(igR[0]['Panels'][panel])):
+        for policy in igR[0]['Panels'][panel][i].keys():
+          self.assert_(policy in res[panel]['InfoForPanel'].keys())
 
     for panel_name in res.keys():
       self.assert_(panel_name in igR[0]['Panels'].keys())
@@ -81,6 +87,12 @@ class PublisherSuccess(UtilitiesTestCase):
     
     res = p.getInfo('Resource', 'grid0.fe.infn.it')
 
+    for panel in igR[0]['Panels'].keys():
+      self.assert_(panel in res.keys())
+      for i in range(len(igR[0]['Panels'][panel])):
+        for policy in igR[0]['Panels'][panel][i].keys():
+          self.assert_(policy in res[panel]['InfoForPanel'].keys())
+
     for panel_name in res.keys():
       self.assert_(panel_name in igR[0]['Panels'].keys())
       for policy in res[panel_name]['InfoForPanel'].keys():
@@ -103,6 +115,12 @@ class PublisherSuccess(UtilitiesTestCase):
     mockIG.getInfoToApply.return_value = igR
     
     res = p.getInfo('Resource', 'prod-lfc-lhcb-ro.cern.ch')
+
+    for panel in igR[0]['Panels'].keys():
+      self.assert_(panel in res.keys())
+      for i in range(len(igR[0]['Panels'][panel])):
+        for policy in igR[0]['Panels'][panel][i].keys():
+          self.assert_(policy in res[panel]['InfoForPanel'].keys())
 
     for panel_name in res.keys():
       self.assert_(panel_name in igR[0]['Panels'].keys())
@@ -127,6 +145,12 @@ class PublisherSuccess(UtilitiesTestCase):
     mockIG.getInfoToApply.return_value = igR
     
     res = p.getInfo('StorageElement', 'CERN-RAW')
+
+    for panel in igR[0]['Panels'].keys():
+      self.assert_(panel in res.keys())
+      for i in range(len(igR[0]['Panels'][panel])):
+        for policy in igR[0]['Panels'][panel][i].keys():
+          self.assert_(policy in res[panel]['InfoForPanel'].keys())
 
     for panel_name in res.keys():
       self.assert_(panel_name in igR[0]['Panels'].keys())
@@ -177,8 +201,16 @@ class InfoGetterSuccess(UtilitiesTestCase):
               for useNewRes in (True, False):
 
                 res = ig.getInfoToApply(('policy', ), g, s, None, site_t, service_t, resource_t, useNewRes)
+                pModuleList = [None]
+                for k in Configurations.Policies.keys():
+                  try:
+                    if Configurations.Policies[k]['module'] not in pModuleList:
+                      pModuleList.append(Configurations.Policies[k]['module'])
+                  except KeyError:
+                    pass
                 for p_res in res[0]['Policies']:
                   self.assert_(p_res['Name'] in Configurations.Policies.keys())
+                  self.assert_(p_res['Module'] in pModuleList)
                   if useNewRes is False:
                     self.assertEqual(p_res['commandIn'], Configurations.Policies[p_res['Name']]['commandIn'])
                   else:

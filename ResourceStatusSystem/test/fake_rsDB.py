@@ -2,6 +2,7 @@
     Every function can simply return S_OK() (or nothing)
 """
 
+from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC import S_OK
@@ -22,6 +23,8 @@ class NotAllowedDate(RSSException):
 class ResourceStatusDB:
   
   def __init__(self, *args, **kwargs):
+    self.db = Mock()
+    self.db._update.return_value = {'OK': True}
     pass
 
   def getMonitoredsList(self, granularity, paramsList = None, siteName = None, 

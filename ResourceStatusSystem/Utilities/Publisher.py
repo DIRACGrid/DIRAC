@@ -110,7 +110,8 @@ class Publisher:
       (granularityForPanel, nameForPanel) = self.__getNameForPanel(granularity, name, panel)
       
       if not self._resExist(granularityForPanel, nameForPanel):
-        continue
+        completeInfoForPanel_res = None
+        break
       
       #take composite RSS result for name
       nameStatus_res = self._getStatus(nameForPanel, panel) 

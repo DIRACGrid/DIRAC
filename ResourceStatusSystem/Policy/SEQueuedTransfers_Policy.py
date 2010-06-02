@@ -25,8 +25,8 @@ class SEQueuedTransfers_Policy(PolicyBase):
 
     if status == 'Unknown':
       return {'SAT':'Unknown'}
-
-    status = status['Queued transfers']
+    
+    status = int(round(status['Queued transfers']))
     
     if self.oldStatus == 'Active':
       if status > 100:
@@ -75,7 +75,7 @@ class SEQueuedTransfers_Policy(PolicyBase):
     
     if status is not None and status != -1:
     
-      self.result['Reason'] = "Queued transfers on the SE: %f -> " %status
+      self.result['Reason'] = "Queued transfers on the SE: %d -> " %status
     
       if status > 100:
         str = 'HIGH'

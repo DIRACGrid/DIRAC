@@ -748,7 +748,7 @@ class TransferQuality_PolicySuccess(PoliciesTestCase):
     for status in ValidStatus:
       for SE in ('CNAF-RAW', 'CNAF-FAILOVER'):
         args = ('StorageElement', SE, status)
-        for resCl in [100, 91.0, 50.9, 0, None]:
+        for resCl in [100.0, 91.0, 50.9, 0, None]:
           self.TQ_P.setArgs(args)
           self.TQ_P.setKnownInfo({'Result':resCl})
           res = self.TQ_P.evaluate()
@@ -765,7 +765,7 @@ class TransferQuality_PolicySuccess(PoliciesTestCase):
             self.assert_(res.has_key('Reason'))
         
         args = ('StorageElement', 'XX', status, datetime.utcnow())
-        for resCl in [100, 91.0, 50.9, 0, None]:
+        for resCl in [100.0, 91.0, 50.9, 0, None]:
           TQ_P = TransferQuality_Policy()
           TQ_P.setArgs(args)
           TQ_P.setKnownInfo({'Result':resCl})
@@ -785,7 +785,7 @@ class TransferQuality_PolicySuccess(PoliciesTestCase):
         self.assert_(res.has_key('SAT'))
       
         args = ('StorageElement', 'XX', status, datetime.utcnow(), datetime.utcnow())
-        for resCl in [1, 0.91, 0.50, 0]:
+        for resCl in [1.0, 0.91, 0.50, 0]:
           TQ_P = TransferQuality_Policy()
           TQ_P.setArgs(args)
           TQ_P.setKnownInfo({'Result':resCl})
@@ -905,21 +905,22 @@ class SEQueuedTransfers_PolicySuccess(PoliciesTestCase):
   def test_evaluate(self):
     for status in ValidStatus:
       args = ('StorageElement', 'XX', status, ["Queued transfers"])
-      for resCl in [110.0, 10.0, 1.0, None]:
+      for resCl in [{'Queued transfers':110.0}, {'Queued transfers':10.0}, 
+                    {'Queued transfers':1.0}]:
         self.SEQT_P.setArgs(args)
-        self.SEQT_P.setKnownInfo({'Result':{'Queued transfers':resCl}})
+        self.SEQT_P.setKnownInfo({'Result':resCl})
         res = self.SEQT_P.evaluate()
         self.assert_(res.has_key('SAT'))
-        if resCl is not None:
-          self.assert_(res.has_key('Reason'))
-        self.mock_command.doCommand.return_value =  {'Result':{'Queued transfers':resCl}}
+#        if resCl is not None:
+#          self.assert_(res.has_key('Reason'))
+        self.mock_command.doCommand.return_value =  {'Result':resCl}
         SEQT_P = SEQueuedTransfers_Policy()
         SEQT_P.setArgs(args)
         SEQT_P.setCommand(self.mock_command)
         res = SEQT_P.evaluate()
         self.assert_(res.has_key('SAT'))
-        if resCl is not None:
-          self.assert_(res.has_key('Reason'))
+#        if resCl is not None:
+#          self.assert_(res.has_key('Reason'))
 
     self.mock_command.doCommand.return_value =  {'Result':'Unknown'}
     SEQT_P = SEQueuedTransfers_Policy()
@@ -927,6 +928,13 @@ class SEQueuedTransfers_PolicySuccess(PoliciesTestCase):
     SEQT_P.setCommand(self.mock_command)
     res = self.SEQT_P.evaluate()
     self.assert_(res['SAT'], 'Unknown')
+      
+    self.mock_command.doCommand.return_value =  {'Result':None}
+    SEQT_P = SEQueuedTransfers_Policy()
+    SEQT_P.setArgs(args)
+    SEQT_P.setCommand(self.mock_command)
+    res = self.SEQT_P.evaluate()
+    self.assert_(res['SAT'], None)
       
 #############################################################################
 

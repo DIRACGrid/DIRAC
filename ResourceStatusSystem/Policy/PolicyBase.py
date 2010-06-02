@@ -60,7 +60,7 @@ class PolicyBase(object):
     set `self.commandName`, necessary when a command object is not provided with setCommand. 
     
     :params:
-      :attr:`commandIn`: a command object 
+      :attr:`commandNameIn`: a tuple containing the command module and class (as strings) 
     """
     self.commandName = commandNameIn
   

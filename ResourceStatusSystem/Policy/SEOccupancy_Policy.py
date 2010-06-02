@@ -71,17 +71,17 @@ class SEOccupancy_Policy(PolicyBase):
     
     
     if status is not None and status != -1:
-      self.result['Reason'] = "Occupancy on the SE: %d %% -> " %(100-status) 
+      self.result['Reason'] = "Space availability: %d %% -> " %(status) 
     
       if status == 0:
-        str = 'FULL!'
+        str = 'NONE!'
       else:
         if status > 10:
-          str = 'Low'
-        elif status <= 2:
           str = 'High'
+        elif status <= 2:
+          str = 'Poor'
         else:
-          str = 'Mid-High'
+          str = 'Sufficient'
       
       self.result['Reason'] = self.result['Reason'] + str
       

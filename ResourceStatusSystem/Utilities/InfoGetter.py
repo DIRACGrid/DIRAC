@@ -46,9 +46,9 @@ class InfoGetter:
 
     if 'policy' in args:
       EVAL['Policies'] = self.__getPolToEval(granularity = granularity, status = status, 
-                                                    formerStatus = formerStatus, siteType = siteType, 
-                                                    serviceType = serviceType, resourceType = resourceType, 
-                                                    useNewRes = useNewRes)
+                                             formerStatus = formerStatus, siteType = siteType, 
+                                             serviceType = serviceType, resourceType = resourceType, 
+                                             useNewRes = useNewRes)
     
     if 'policyType' in args:
       EVAL['PolicyType'] = self.__getPolTypes(granularity = granularity, status = status, 
@@ -147,6 +147,10 @@ class InfoGetter:
     polToEval_Args = []
     
     for p in pol_to_eval:
+      try:
+        moduleName = C_Policies[p]['module']
+      except KeyError:
+        moduleName = None
       args = C_Policies[p]['args']
       if useNewRes:
         try:
@@ -155,7 +159,7 @@ class InfoGetter:
           commandIn = C_Policies[p]['commandIn']
       else:
         commandIn = C_Policies[p]['commandIn']
-      polToEval_Args.append({'Name' : p, 'args' : args, 'commandIn' : commandIn})
+      polToEval_Args.append({'Name' : p, 'Module' : moduleName, 'args' : args, 'commandIn' : commandIn})
     
     return polToEval_Args
   

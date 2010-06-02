@@ -468,7 +468,7 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PEPFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyCallerSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyCallerSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
   
 #############################################################################

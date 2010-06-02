@@ -202,10 +202,11 @@ class PDP:
     
     for p in policies:
       pName = p['Name']
+      pModule = p['Module']
       extraArgs = p['args']
       commandIn = p['commandIn']
       res = self.pc.policyInvocation(granularity = granularity, name = name, status = status, 
-                                     policy = policy, args = args, pol = pName, 
+                                     policy = policy, args = args, pName = pName, pModule = pModule, 
                                      extraArgs = extraArgs, commandIn = commandIn)
 
       if res['SAT'] == 'Unknown':

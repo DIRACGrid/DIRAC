@@ -22,111 +22,117 @@ class PolicyCaller:
 #############################################################################
 
   def policyInvocation(self, granularity = None, name = None, status = None, policy = None,  
-                       args = None, pol = None, extraArgs = None, commandIn = None):
+                       args = None, pName = None, pModule = None, extraArgs = None, commandIn = None):
     
     p = policy
     a = args
     
+    moduleBase = "DIRAC.ResourceStatusSystem.Policy."
+    
     if p is None:
-      if pol == 'DT_OnGoing_Only':
-        from DIRAC.ResourceStatusSystem.Policy.DT_Policy import DT_Policy 
-        p = DT_Policy()
-        
-      elif pol == 'DT_Scheduled':
-        from DIRAC.ResourceStatusSystem.Policy.DT_Policy import DT_Policy 
-        p = DT_Policy()
-        
-      elif pol == 'GGUSTickets':
-        from DIRAC.ResourceStatusSystem.Policy.GGUSTickets_Policy import GGUSTickets_Policy 
-        p = GGUSTickets_Policy()
-    
-      elif pol == 'SAM':
-        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
-        p = SAMResults_Policy()
-    
-      elif pol == 'SAM_CE':
-        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
-        p = SAMResults_Policy()
-    
-      elif pol == 'SAM_CREAMCE':
-        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
-        p = SAMResults_Policy()
-  
-      elif pol == 'SAM_SE':
-        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
-        p = SAMResults_Policy()
-    
-      elif pol == 'SAM_LFC_C':
-        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
-        p = SAMResults_Policy()
-    
-      elif pol == 'SAM_LFC_L':
-        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
-        p = SAMResults_Policy()
-    
-      elif pol == 'PilotsEfficiency':
-        from DIRAC.ResourceStatusSystem.Policy.PilotsEfficiency_Policy import PilotsEfficiency_Policy 
-        p = PilotsEfficiency_Policy()
-    
-      elif pol == 'PilotsEfficiencySimple_Service':
-        from DIRAC.ResourceStatusSystem.Policy.PilotsEfficiency_Simple_Policy import PilotsEfficiency_Simple_Policy 
-        p = PilotsEfficiency_Simple_Policy()
-    
-      elif pol == 'PilotsEfficiencySimple_Resource':
-        from DIRAC.ResourceStatusSystem.Policy.PilotsEfficiency_Simple_Policy import PilotsEfficiency_Simple_Policy 
-        p = PilotsEfficiency_Simple_Policy()
-  
-      elif pol == 'JobsEfficiency':
-        from DIRAC.ResourceStatusSystem.Policy.JobsEfficiency_Policy import JobsEfficiency_Policy 
-        p = JobsEfficiency_Policy()
-    
-      elif pol == 'JobsEfficiencySimple':
-        from DIRAC.ResourceStatusSystem.Policy.JobsEfficiency_Simple_Policy import JobsEfficiency_Simple_Policy 
-        p = JobsEfficiency_Simple_Policy()
-    
-      elif pol == 'OnSitePropagation':
-        from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
-        p = Propagation_Policy()
-  
-      elif pol == 'OnComputingServicePropagation':
-        from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
-        p = Propagation_Policy()
-  
-      elif pol == 'OnStorageServicePropagation_Res':
-        from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
-        p = Propagation_Policy()
+      module = moduleBase + pModule
+      policyModule = __import__(module, globals(), locals(), ['*'])
+      p = getattr(policyModule, pModule)()
       
-      elif pol == 'OnStorageServicePropagation_SE':
-        from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
-        p = Propagation_Policy()
-      
-      elif pol == 'OnServicePropagation':
-        from DIRAC.ResourceStatusSystem.Policy.OnServicePropagation_Policy import OnServicePropagation_Policy 
-        p = OnServicePropagation_Policy()
-    
-      elif pol == 'OnSENodePropagation':
-        from DIRAC.ResourceStatusSystem.Policy.OnSENodePropagation_Policy import OnSENodePropagation_Policy 
-        p = OnSENodePropagation_Policy()
-    
-      elif pol == 'OnStorageElementPropagation':
-        from DIRAC.ResourceStatusSystem.Policy.OnStorageElementPropagation_Policy import OnStorageElementPropagation_Policy 
-        p = OnStorageElementPropagation_Policy()
-        
-      elif pol == 'TransferQuality':
-        from DIRAC.ResourceStatusSystem.Policy.TransferQuality_Policy import TransferQuality_Policy
-        p = TransferQuality_Policy()
-      
-      elif pol == 'SEOccupancy':
-        from DIRAC.ResourceStatusSystem.Policy.SEOccupancy_Policy import SEOccupancy_Policy 
-        p = SEOccupancy_Policy()
-      
-      elif pol == 'SEQueuedTransfers':
-        from DIRAC.ResourceStatusSystem.Policy.SEQueuedTransfers_Policy import SEQueuedTransfers_Policy 
-        p = SEQueuedTransfers_Policy()
-      
-      else:
-        from DIRAC.ResourceStatusSystem.Policy.AlwaysFalse_Policy import AlwaysFalse_Policy 
-        p = AlwaysFalse_Policy()
+#      if pol == 'DT_OnGoing_Only':
+#        from DIRAC.ResourceStatusSystem.Policy.DT_Policy import DT_Policy 
+#        p = DT_Policy()
+#        
+#      elif pol == 'DT_Scheduled':
+#        from DIRAC.ResourceStatusSystem.Policy.DT_Policy import DT_Policy 
+#        p = DT_Policy()
+#        
+#      elif pol == 'GGUSTickets':
+#        from DIRAC.ResourceStatusSystem.Policy.GGUSTickets_Policy import GGUSTickets_Policy 
+#        p = GGUSTickets_Policy()
+#    
+#      elif pol == 'SAM':
+#        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
+#        p = SAMResults_Policy()
+#    
+#      elif pol == 'SAM_CE':
+#        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
+#        p = SAMResults_Policy()
+#    
+#      elif pol == 'SAM_CREAMCE':
+#        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
+#        p = SAMResults_Policy()
+#  
+#      elif pol == 'SAM_SE':
+#        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
+#        p = SAMResults_Policy()
+#    
+#      elif pol == 'SAM_LFC_C':
+#        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
+#        p = SAMResults_Policy()
+#    
+#      elif pol == 'SAM_LFC_L':
+#        from DIRAC.ResourceStatusSystem.Policy.SAMResults_Policy import SAMResults_Policy 
+#        p = SAMResults_Policy()
+#    
+#      elif pol == 'PilotsEfficiency':
+#        from DIRAC.ResourceStatusSystem.Policy.PilotsEfficiency_Policy import PilotsEfficiency_Policy 
+#        p = PilotsEfficiency_Policy()
+#    
+#      elif pol == 'PilotsEfficiencySimple_Service':
+#        from DIRAC.ResourceStatusSystem.Policy.PilotsEfficiency_Simple_Policy import PilotsEfficiency_Simple_Policy 
+#        p = PilotsEfficiency_Simple_Policy()
+#    
+#      elif pol == 'PilotsEfficiencySimple_Resource':
+#        from DIRAC.ResourceStatusSystem.Policy.PilotsEfficiency_Simple_Policy import PilotsEfficiency_Simple_Policy 
+#        p = PilotsEfficiency_Simple_Policy()
+#  
+#      elif pol == 'JobsEfficiency':
+#        from DIRAC.ResourceStatusSystem.Policy.JobsEfficiency_Policy import JobsEfficiency_Policy 
+#        p = JobsEfficiency_Policy()
+#    
+#      elif pol == 'JobsEfficiencySimple':
+#        from DIRAC.ResourceStatusSystem.Policy.JobsEfficiency_Simple_Policy import JobsEfficiency_Simple_Policy 
+#        p = JobsEfficiency_Simple_Policy()
+#    
+#      elif pol == 'OnSitePropagation':
+#        from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
+#        p = Propagation_Policy()
+#  
+#      elif pol == 'OnComputingServicePropagation':
+#        from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
+#        p = Propagation_Policy()
+#  
+#      elif pol == 'OnStorageServicePropagation_Res':
+#        from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
+#        p = Propagation_Policy()
+#      
+#      elif pol == 'OnStorageServicePropagation_SE':
+#        from DIRAC.ResourceStatusSystem.Policy.Propagation_Policy import Propagation_Policy 
+#        p = Propagation_Policy()
+#      
+#      elif pol == 'OnServicePropagation':
+#        from DIRAC.ResourceStatusSystem.Policy.OnServicePropagation_Policy import OnServicePropagation_Policy 
+#        p = OnServicePropagation_Policy()
+#    
+#      elif pol == 'OnSENodePropagation':
+#        from DIRAC.ResourceStatusSystem.Policy.OnSENodePropagation_Policy import OnSENodePropagation_Policy 
+#        p = OnSENodePropagation_Policy()
+#    
+#      elif pol == 'OnStorageElementPropagation':
+#        from DIRAC.ResourceStatusSystem.Policy.OnStorageElementPropagation_Policy import OnStorageElementPropagation_Policy 
+#        p = OnStorageElementPropagation_Policy()
+#        
+#      elif pol == 'TransferQuality':
+#        from DIRAC.ResourceStatusSystem.Policy.TransferQuality_Policy import TransferQuality_Policy
+#        p = TransferQuality_Policy()
+#      
+#      elif pol == 'SEOccupancy':
+#        from DIRAC.ResourceStatusSystem.Policy.SEOccupancy_Policy import SEOccupancy_Policy 
+#        p = SEOccupancy_Policy()
+#      
+#      elif pol == 'SEQueuedTransfers':
+#        from DIRAC.ResourceStatusSystem.Policy.SEQueuedTransfers_Policy import SEQueuedTransfers_Policy 
+#        p = SEQueuedTransfers_Policy()
+#      
+#      else:
+#        from DIRAC.ResourceStatusSystem.Policy.AlwaysFalse_Policy import AlwaysFalse_Policy 
+#        p = AlwaysFalse_Policy()
   
     if a is None:
       a = (granularity, name, status)
@@ -139,7 +145,7 @@ class PolicyCaller:
 
     res = self._innerEval(p, a, commandIn = commandIn)
 
-    res['PolicyName'] = pol
+    res['PolicyName'] = pName
   
     return res
 

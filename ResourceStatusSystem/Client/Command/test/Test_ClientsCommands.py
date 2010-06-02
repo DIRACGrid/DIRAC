@@ -1012,7 +1012,7 @@ class TransferQualityCached_CommandSuccess(ClientsCommandsTestCase):
       self.TQC_C.setArgs(args)
       self.TQC_C.setClient(self.mock_client)
       res = self.TQC_C.doCommand()
-      self.assertEqual(res['Result'], pe)
+      self.assertEqual(res['Result'], float(pe))
 
 #############################################################################
    
