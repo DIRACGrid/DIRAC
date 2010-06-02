@@ -18,12 +18,14 @@ class Distribution:
                        'DIRAC' : cernAnonRoot,
                        'LHCbDIRAC' : cernAnonRoot,
                        'BelleDIRAC' : googleAnonRoot,
-                       'EELADIRAC' : googleAnonRoot
+                       'EELADIRAC' : googleAnonRoot,
+                       'ILCDIRAC' : cernAnonRoot,
                      }
 
   devSVNRoot = { 'global' : cernDevRoot,
                  'DIRAC' : cernDevRoot,
                  'LHCbDIRAC' : cernDevRoot,
+                 'ILCDIRAC' : cernDevRoot, 
                  'BelleDIRAC' : googleDevRoot,
                  'EELADIRAC' : googleDevRoot
                }
