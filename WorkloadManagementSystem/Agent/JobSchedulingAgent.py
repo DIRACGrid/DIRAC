@@ -36,7 +36,7 @@ class JobSchedulingAgent( OptimizerModule ):
     self.dataAgentName = self.am_getOption( 'InputDataAgent', 'InputData' )
     self.stagingStatus = self.am_getOption( 'StagingStatus', 'Staging' )
     self.stagingMinorStatus = self.am_getOption( 'StagingMinorStatus', 'Request Sent' )
-    self.newStaging = self.am_getOption( 'NewStaging', False )
+    self.newStaging = self.am_getOption( 'NewStaging', True )
     self.stagerClient = StagerClient( True )
 
     return S_OK()
