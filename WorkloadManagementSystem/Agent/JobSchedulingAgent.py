@@ -70,6 +70,9 @@ class JobSchedulingAgent( OptimizerModule ):
         self.log.error( wmsBannedSites['Message'] )
       return S_ERROR( 'Can not get Active and Banned Sites from JobDB' )
 
+    wmsSites = wmsSites['Value']
+    wmsBannedSites = wmsBannedSites['Value']
+
     if userSites:
       sites = self.__applySiteRequirements( userSites, wmsSites, wmsBannedSites )
       if not sites:
@@ -87,7 +90,6 @@ class JobSchedulingAgent( OptimizerModule ):
       return S_ERROR( 'Failed to get input data from JobDB' )
 
     if not result['Value']:
-      print 'No input data 1'
       return self.__sendJobToTaskQueue( job, classAdJob, userSites, userBannedSites )
 
     hasInputData = False
@@ -96,7 +98,6 @@ class JobSchedulingAgent( OptimizerModule ):
         hasInputData = True
 
     if not hasInputData:
-      print 'No input data 2'
       #With no input data requirement, job can proceed directly to task queue
       self.log.verbose( 'Job %s has no input data requirement' % ( job ) )
       return self.__sendJobToTaskQueue( job, classAdJob, userSites, userBannedSites )
