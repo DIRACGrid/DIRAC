@@ -1385,7 +1385,10 @@ class SRM2Storage(StorageBase):
         res = self.__gfal_operation_wrapper('gfal_ls',gfalDict)
         gDataStoreClient.addRegister(res['AccountingOperation'])
         if not res['OK']:
-          failed[url] = res['Message']
+          if re.search('\[SE\]\[Ls\]\[SRM_FAILURE\]',res['Message']):
+            allObtained = True
+          else:
+            failed[url] = res['Message']
         else:
           results = res['Value']
           tempStep = step
