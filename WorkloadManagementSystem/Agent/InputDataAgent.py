@@ -60,7 +60,7 @@ class InputDataAgent( OptimizerModule ):
       self.log.verbose( 'Job %s has no input data requirement' % ( job ) )
       return self.setNextOptimizer( job )
 
-    #ÊCheck if we already executed this Optimizer and the input data is resolved
+    #Check if we already executed this Optimizer and the input data is resolved
     result = self.getOptimizerJobInfo( job, self.am_getModuleParam( 'optimizerName' ) )
     if result['OK'] and len( result['Value'] ):
       resolvedData = result['Value']
@@ -73,7 +73,7 @@ class InputDataAgent( OptimizerModule ):
         self.log.warn( result['Message'] )
         return result
 
-    #ÊNow check if banned SE's might prevent jobs to be scheduled
+    #Now check if banned SE's might prevent jobs to be scheduled
     result = self.__checkActiveSEs( job, resolvedData['Value']['Value'] )
     if not result['OK']:
       # if after checking SE's input data can not be resolved any more
