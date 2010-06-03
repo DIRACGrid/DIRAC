@@ -61,9 +61,9 @@ class InputDataAgent( OptimizerModule ):
       return self.setNextOptimizer( job )
 
     #Check if we already executed this Optimizer and the input data is resolved
-    result = self.getOptimizerJobInfo( job, self.am_getModuleParam( 'optimizerName' ) )
-    if result['OK'] and len( result['Value'] ):
-      resolvedData = result['Value']
+    res = self.getOptimizerJobInfo( job, self.am_getModuleParam( 'optimizerName' ) )
+    if res['OK'] and len( res['Value'] ):
+      resolvedData = res['Value']
     else:
 
       self.log.verbose( 'Job %s has an input data requirement and will be processed' % ( job ) )
@@ -72,13 +72,14 @@ class InputDataAgent( OptimizerModule ):
       if not result['OK']:
         self.log.warn( result['Message'] )
         return result
+      resolvedData = result['Value']
 
     #Now check if banned SE's might prevent jobs to be scheduled
     result = self.__checkActiveSEs( job, resolvedData['Value']['Value'] )
     if not result['OK']:
       # if after checking SE's input data can not be resolved any more
       # then keep the job in the same status and update the application status
-      result = self.jobDB.setJobStatus( job, application = result['Messages'] )
+      result = self.jobDB.setJobStatus( job, application = result['Message'] )
       return S_OK()
 
     return self.setNextOptimizer( job )
