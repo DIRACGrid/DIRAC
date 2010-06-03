@@ -2161,7 +2161,7 @@ class ReplicaManager( CatalogToStorage ):
       if type( replicas ) != types.DictType:
         del replicaDict['Successful'][ lfn ]
         replicaDict['Failed'][lfn] = 'Wrong replica info'
-      continue
+        continue
       for se in replicas.keys():
         if not seReadStatus.has_key( se ):
           res = self.__SEActive( se )
