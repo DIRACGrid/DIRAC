@@ -98,13 +98,21 @@ class JobMonitoringHandler( RequestHandler ):
     """
     return jobDB.getDistinctJobAttributes( 'Status' )
 
- ##############################################################################
+##############################################################################
   types_getMinorStates = []
   def export_getMinorStates (self):
     """
     Return Distinct Values of Minor Status job Attribute in WMS
     """
     return jobDB.getDistinctJobAttributes( 'MinorStatus' )
+  
+##############################################################################
+  types_getRunNumbers = []
+  def export_getRunNumbers (self):
+    """
+    Return Distinct Values of the RunNumber job Attribute in WMS
+    """
+    return jobDB.getDistinctJobAttributes( 'RunNumber' ) 
 
 ##############################################################################
   types_getJobs = []
