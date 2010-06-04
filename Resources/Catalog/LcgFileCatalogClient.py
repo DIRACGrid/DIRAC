@@ -75,7 +75,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if self.session:
       return False
     else:
-      sessionName = 'DIRAC_%s.%s at %s' % (DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.siteName())
+      sessionName = 'DIRAC_%s.%s at %s at time %s' % (DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.siteName(),time.time())
       lfc.lfc_startsess(self.host,sessionName)
       self.session = True
       return True
@@ -88,7 +88,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
 
   def __startTransaction(self):
     """ Begin transaction for one time commit """
-    transactionName = 'Transaction: DIRAC_%s.%s at %s' % (DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.siteName())
+    transactionName = 'Transaction: DIRAC_%s.%s at %s at time %s' % (DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.siteName(),time.time())
     lfc.lfc_starttrans(self.host,transactionName)
     self.transaction = True
 
