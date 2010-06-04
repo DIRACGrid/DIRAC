@@ -631,6 +631,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     created = self.__openSession()
     res = self.exists(lfns)
     if not res['OK']:
+      if created: self.__closeSession()
       return res
     failed = res['Value']['Failed']
     successful = {}
@@ -673,6 +674,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       res = self.getReplicas(lfnRemoved,True)
       zeroReplicaFiles = []
       if not res['OK']:
+        if created: self.__closeSession()
         return res
       else:
         for lfn,repDict in res['Value']['Successful'].items():
@@ -681,6 +683,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       if len(zeroReplicaFiles) > 0:
         res = self.removeFile(zeroReplicaFiles)
         if not res['OK']:
+          if created: self.__closeSession()
           return res
     if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
@@ -747,6 +750,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     created = self.__openSession()
     res = self.exists(lfns)
     if not res['OK']:
+      if created: self.__closeSession()
       return res
     failed = res['Value']['Failed']
     successful = {}
