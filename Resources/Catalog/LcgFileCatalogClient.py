@@ -88,19 +88,22 @@ class LcgFileCatalogClient(FileCatalogueBase):
 
   def __startTransaction(self):
     """ Begin transaction for one time commit """
-    transactionName = 'Transaction: DIRAC_%s.%s at %s at time %s' % (DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.siteName(),time.time())
-    lfc.lfc_starttrans(self.host,transactionName)
-    self.transaction = True
+    if not self.transaction:
+      transactionName = 'Transaction: DIRAC_%s.%s at %s at time %s' % (DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.siteName(),time.time())
+      lfc.lfc_starttrans(self.host,transactionName)
+      self.transaction = True
 
   def __abortTransaction(self):
     """ Abort transaction """
-    lfc.lfc_aborttrans()
-    self.transaction = False
+    if self.transaction:
+      lfc.lfc_aborttrans()
+      self.transaction = False
 
   def __endTransaction(self):
     """ End transaction gracefully """
-    lfc.lfc_endtrans()
-    self.transaction = False
+    if self.transaction:
+      lfc.lfc_endtrans()
+      self.transaction = False
 
   def setAuthorizationId(self,dn):
     """ Set authorization id for the proxy-less LFC communication """
