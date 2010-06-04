@@ -2120,7 +2120,7 @@ class ResourceStatusDB:
     req = req + "WHERE Name = '%s' AND CommandName = '%s'" %(name, commandName)
     resQuery = self.db._query(req)
     if not resQuery['OK']:
-      raise RSSDBException, where(self, self.addOrModifyClientCacheRes) + resQuery['Message']
+      raise RSSDBException, where(self, self.addOrModifyClientsCacheRes) + resQuery['Message']
 
     if resQuery['Value']: 
       req = "UPDATE ClientsCache SET "

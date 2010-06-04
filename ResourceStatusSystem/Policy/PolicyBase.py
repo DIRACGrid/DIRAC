@@ -28,9 +28,11 @@ class PolicyBase(object):
   
   def setArgs(self, argsIn):
     """
+    Set `self.args`.
+    
     :params:
 
-      :attr:`args`: a tuple 
+      :attr:`argsIn`: a tuple of a list of tuples. Each tuple contains at least: 
         - `args[0]` should be a ValidRes
 
         - `args[1]` should be the name of the ValidRes
@@ -38,17 +40,26 @@ class PolicyBase(object):
         - `args[2]` should be the present status
     """    
     self.args = argsIn
+    
     if not isinstance(self.args, tuple):
-      raise TypeError, where(self, self.setArgs)
-    if self.args[0] not in ValidRes:
-       raise InvalidRes, where(self, self.setArgs)
-    if self.args[2] not in ValidStatus:
-      raise InvalidStatus, where(self, self.setArgs)
-    self.oldStatus = self.args[2]
+      if not isinstance(self.args, list):
+        raise TypeError, where(self, self.setArgs)
+      for arg in self.args:
+        if arg[0] not in ValidRes:
+           raise InvalidRes, where(self, self.setArgs)
+        if arg[2] not in ValidStatus:
+          raise InvalidStatus, where(self, self.setArgs)
+      self.oldStatus = self.args[0][2]
+    else:
+      if self.args[0] not in ValidRes:
+         raise InvalidRes, where(self, self.setArgs)
+      if self.args[2] not in ValidStatus:
+        raise InvalidStatus, where(self, self.setArgs)
+      self.oldStatus = self.args[2]
 
   def setCommand(self, commandIn = None):
     """
-    set `self.command`. 
+    Set `self.command`. 
     
     :params:
       :attr:`commandIn`: a command object 
@@ -57,7 +68,7 @@ class PolicyBase(object):
   
   def setCommandName(self, commandNameIn = None):
     """
-    set `self.commandName`, necessary when a command object is not provided with setCommand. 
+    Set `self.commandName`, necessary when a command object is not provided with setCommand. 
     
     :params:
       :attr:`commandNameIn`: a tuple containing the command module and class (as strings) 
@@ -66,7 +77,7 @@ class PolicyBase(object):
   
   def setKnownInfo(self, knownInfoIn = None):
     """
-    set `self.knownInfo`. No command will be then invoked. 
+    Set `self.knownInfo`. No command will be then invoked. 
     
     :params:
 
@@ -76,7 +87,7 @@ class PolicyBase(object):
   
   def setInfoName(self, infoNameIn = None):
     """
-    set `self.infoName`. 
+    Set `self.infoName`. 
     
     :params:
 
@@ -107,14 +118,27 @@ class PolicyBase(object):
       clientsInvoker = ClientsInvoker()
       clientsInvoker.setCommand(self.command)
 
-      if len(self.args) == 3:
-        self.command.setArgs((self.args[0], self.args[1]))
-      elif len(self.args) == 4:
-        self.command.setArgs((self.args[0], self.args[1], self.args[3]))
-      elif len(self.args) == 5:
-        self.command.setArgs((self.args[0], self.args[1], self.args[3], self.args[4]))
-      else:
-        raise RSSException, where(self, self.evaluate)
+      if isinstance(self.args, tuple):
+        if len(self.args) == 3:
+          self.command.setArgs((self.args[0], self.args[1]))
+        elif len(self.args) == 4:
+          self.command.setArgs((self.args[0], self.args[1], self.args[3]))
+        elif len(self.args) == 5:
+          self.command.setArgs((self.args[0], self.args[1], self.args[3], self.args[4]))
+        else:
+          raise RSSException, where(self, self.evaluate)
+      elif isinstance(self.args, list):
+        argsList = []
+        for arg in self.args:
+          if len(arg) == 3:
+            argsList.append((arg[0], arg[1]))
+          elif len(arg) == 4:
+            argsList.append((arg[0], arg[1], arg[3]))
+          elif len(arg) == 5:
+            argsList.append((arg[0], arg[1], arg[3], arg[4]))
+          else:
+            raise RSSException, where(self, self.evaluate)
+        self.command.setArgs(argsList)
 
       result = clientsInvoker.doCommand()
 

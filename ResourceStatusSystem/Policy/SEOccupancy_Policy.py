@@ -29,7 +29,7 @@ class SEOccupancy_Policy(PolicyBase):
         if status == 0:
           self.result['SAT'] = True
           self.result['Status'] = 'Banned'
-        elif status > 2:
+        elif status > 10:
           self.result['SAT'] = False
           self.result['Status'] = 'Active'
         else:
@@ -40,7 +40,7 @@ class SEOccupancy_Policy(PolicyBase):
         if status == 0:
           self.result['SAT'] = True
           self.result['Status'] = 'Banned'
-        elif status > 2:
+        elif status > 10:
           self.result['SAT'] = True
           self.result['Status'] = 'Active'
         else:
@@ -51,7 +51,7 @@ class SEOccupancy_Policy(PolicyBase):
         if status == 0:
           self.result['SAT'] = True
           self.result['Status'] = 'Banned'
-        elif status > 2:
+        elif status > 10:
           self.result['SAT'] = True
           self.result['Status'] = 'Active'
         else:
@@ -62,7 +62,7 @@ class SEOccupancy_Policy(PolicyBase):
         if status == 0:
           self.result['SAT'] = False
           self.result['Status'] = 'Banned'
-        elif status > 2:
+        elif status > 10:
           self.result['SAT'] = True
           self.result['Status'] = 'Active'
         else:
@@ -76,9 +76,9 @@ class SEOccupancy_Policy(PolicyBase):
       if status == 0:
         str = 'NONE!'
       else:
-        if status > 10:
+        if status > 30:
           str = 'High'
-        elif status <= 2:
+        elif status <= 10:
           str = 'Poor'
         else:
           str = 'Sufficient'

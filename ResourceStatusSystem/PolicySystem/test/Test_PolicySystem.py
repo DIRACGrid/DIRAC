@@ -448,17 +448,32 @@ class PolicyCallerSuccess(PolicySystemTestCase):
   def test_policyInvocation(self):
     cc = Mock()
 
+    policies_modules = {'Site':['DT_Policy', 'GGUSTickets_Policy'],
+                        'Service': ['PilotsEfficiency_Simple_Policy', 'JobsEfficiency_Simple_Policy'], 
+                        'Resource':['SAMResults_Policy', 'DT_Policy'],
+                        'StorageElement':['SEOccupancy_Policy', 'TransferQuality_Policy']
+                        }
+
     for g in ValidRes:
       for status in ValidStatus:
         self.mock_p.evaluate.return_value = {'SAT':True, 'Status':status, 
                                              'Reason':'testReason', 
                                              'PolicyName': 'test_P'}
         pc = PolicyCaller(commandCallerIn = cc)
-        policies_names = self.ig.getInfoToApply(('policy', ), g)[0]['Policies']
-        for pol_name in policies_names:
+
+        for pol_mod in policies_modules[g]:
           res = pc.policyInvocation(g, 'XX', status, self.mock_p, 
-                                    (g, 'XX', status), pol_name)
+                                    (g, 'XX', status), None, pol_mod)
           self.assert_(res['SAT'])
+
+          res = pc.policyInvocation(g, 'XX', status, self.mock_p, 
+                                    None, None, pol_mod)
+          self.assert_(res['SAT'])
+  
+          for extraArgs in ((g, 'XX', status), [(g, 'XX', status), (g, 'XX', status)]):
+            res = pc.policyInvocation(g, 'XX', status, self.mock_p, 
+                                      None, None, pol_mod, extraArgs)
+            self.assert_(res['SAT'])
   
 #############################################################################
 
@@ -468,7 +483,7 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PEPFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyCallerSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyCallerSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
   
 #############################################################################

@@ -5,6 +5,7 @@ import unittest
 from datetime import datetime
 
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
+from DIRAC.ResourceStatusSystem.Policy.PolicyBase import PolicyBase
 from DIRAC.ResourceStatusSystem.Policy.PolicyInvoker import PolicyInvoker
 from DIRAC.ResourceStatusSystem.Policy.DT_Policy import DT_Policy
 from DIRAC.ResourceStatusSystem.Policy.AlwaysFalse_Policy import AlwaysFalse_Policy 
@@ -38,6 +39,7 @@ class PoliciesTestCase(unittest.TestCase):
     
     self.mock_policy = Mock()
     self.mock_DB = Mock()
+    self.pb = PolicyBase()
     self.pi = PolicyInvoker()
     self.DT_P = DT_Policy()
     self.AF_P = AlwaysFalse_Policy()
@@ -61,6 +63,43 @@ class PoliciesTestCase(unittest.TestCase):
     self.mock_propCommand = Mock()
     self.mock_siteStatusCommand = Mock()
   
+#############################################################################
+
+class PolicyBaseSuccess(PoliciesTestCase):
+  
+  def test_setArgs(self):
+    for g in ValidRes:
+      for s in ValidStatus:
+        for a in [(g, 'XX', s), [(g, 'XX', s), (g, 'XX', s)]]:
+          self.pb.setArgs(a)
+          self.assertEqual(self.pb.args, a)
+          self.assertEqual(self.pb.oldStatus, s)
+
+  def test_evaluate(self):
+    for g in ValidRes:
+      for s in ValidStatus:
+        for a in [(g, 'XX', s), [(g, 'XX', s), (g, 'XX', s)]]:
+          self.pb.setArgs(a)
+          self.mock_command.doCommand.return_value = {'Result':'aRes'}
+          self.pb.setCommand(self.mock_command)
+          res = self.pb.evaluate()
+          self.assertEqual(res, 'aRes')
+
+#############################################################################
+
+class PolicyBaseFailure(PoliciesTestCase):
+  
+  def test_setBadArgs(self):
+    self.failUnlessRaises(InvalidRes, self.pb.setArgs, ('Sites', 'XX', 'Active'))
+    self.failUnlessRaises(InvalidStatus, self.pb.setArgs, ('Site', 'XX', 'Actives'))
+    
+    self.pb.setArgs(('Site', 'XX', 'Active', 'BOH', 'BOH', 'BOH'))
+    self.mock_command.doCommand.return_value = {'Result':'aRes'}
+    self.pb.setCommand(self.mock_command)
+    self.failUnlessRaises(RSSException, self.pb.evaluate)
+    self.pb.setArgs([('Site', 'XX', 'Active', 'BOH', 'BOH', 'BOH'), ('Site', 'XX', 'Active', 'BOH', 'BOH', 'BOH')])
+    self.failUnlessRaises(RSSException, self.pb.evaluate)
+
 #############################################################################
 
 class PolicyInvokerSuccess(PoliciesTestCase):
@@ -955,6 +994,8 @@ class SEQueuedTransfers_Policy_Failure(PoliciesTestCase):
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(PoliciesTestCase)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyBaseSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyBaseFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyInvokerSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyInvokerFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DT_PolicySuccess))

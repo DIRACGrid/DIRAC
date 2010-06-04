@@ -66,7 +66,7 @@ class ClientsCacheFeeder(AgentModule):
         self.clientsInvoker.setCommand(co[1])
         res = self.clientsInvoker.doCommand()
         for key in res.keys():
-          self.rsDB.addOrModifyClientsCacheRes(key, co[0], res[key])
+          self.rsDB.addOrModifyClientsCacheRes(key, co[0][1].split('_')[0], res[key])
       
       return S_OK()
     

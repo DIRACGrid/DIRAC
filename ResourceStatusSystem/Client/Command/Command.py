@@ -15,15 +15,18 @@ class Command(object):
   
   def setArgs(self, argsIn):
     """
+    Set the command arguments, as a tuple. The tuple has to contain at least 2 values.
+    
     :params:
 
       :attr:`args`: a tuple 
         - `args[0]` should be a ValidRes
 
         - `args[1]` should be the name of the ValidRes
-
-        - `args[2]` should be the present status
-    """    
+    """
+    if not isinstance(argsIn, tuple):
+      raise TypeError, "`Args` of commands should be in a tuple."
+    
     self.args = argsIn
     if not isinstance(self.args, tuple):
       raise TypeError, where(self, self.setArgs)
@@ -41,19 +44,19 @@ class Command(object):
   
   def setRPC(self, RPCIn = None):
     """
-    set `self.client`. If not set, a standard RPC will be instantiated.
+    set `self.RPC`. If not set, a standard RPC will be instantiated.
     
     :params:
-      :attr:`clientIn`: a client object 
+      :attr:`RPCIn`: a client object 
     """
     self.RPC = RPCIn
   
   def setTimeOut(self, timoeut = None):
     """
-    set `self.client`. If not set, a standard RPC will be instantiated.
+    set `self.timeout`. If not set, a standard RPC will be instantiated.
     
     :params:
-      :attr:`clientIn`: a client object 
+      :attr:`timeout`: a client object 
     """
     self.timeout = timeout
   

@@ -9,6 +9,9 @@ import DIRAC.ResourceStatusSystem.test.fake_Logger
 import DIRAC.ResourceStatusSystem.test.fake_Admin
 
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
+from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
+from DIRAC.ResourceStatusSystem.Client.Command.MacroCommand import MacroCommand
+from DIRAC.ResourceStatusSystem.Client.Command.CommandCaller import CommandCaller
 from DIRAC.ResourceStatusSystem.Client.Command.ClientsInvoker import ClientsInvoker
 from DIRAC.ResourceStatusSystem.Client.Command.GOCDBStatus_Command import *
 from DIRAC.ResourceStatusSystem.Client.Command.Pilots_Command import *
@@ -42,6 +45,8 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.mock_rsClient = Mock()
     self.mock_rsClient.getGeneralName.return_value = "YYY"
     
+    self.co = Command()
+    self.mco = MacroCommand()
     self.ci = ClientsInvoker()
     self.GOCDBS_C = GOCDBStatus_Command()
     self.GOCDBI_C = GOCDBInfo_Command()
@@ -74,6 +79,59 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.PSES_C = PilotsEffSimpleEverySites_Command()
     self.TQES_C = TransferQualityEverySEs_Command()
     self.TQC_C = TransferQualityCached_Command()
+
+#############################################################################
+
+class CommandSuccess(ClientsCommandsTestCase):
+
+  def test_setArgs(self):
+    for g in ValidRes:
+      self.co.setArgs((g, 'XX'))
+      self.assertEqual(self.co.args, (g, 'XX'))
+
+#############################################################################
+
+class CommandFailure(ClientsCommandsTestCase):
+
+  def test_setBadArgs(self):
+    self.failUnlessRaises(InvalidRes, self.co.setArgs, ('Sites', 'XX', 'Active'))
+  
+
+#############################################################################
+
+class MacroCommandSuccess(ClientsCommandsTestCase):
+
+  def test_setCommands(self):
+    self.mco.setCommands(self.mock_command)
+    self.assertEqual(self.mco.commands, [self.mock_command])
+
+    self.mco.setCommands([self.mock_command, self.mock_command])
+    self.assertEqual(self.mco.commands, [self.mock_command, self.mock_command])
+
+#  def test_setArgs(self):
+#    co = self.mock_command
+#    self.mco.setCommands(co)
+#    for g in ValidRes:
+##      for a in ((g, 'XX'), [(g, 'XX'), (g, 'XX')]):
+#      self.mco.setArgs((g, 'XX'))
+#      self.assertEqual(self.mco.co.args, (g, 'XX'))
+
+#############################################################################
+
+class CommandCallerSuccess(ClientsCommandsTestCase):
+
+  def test_setCommandObject(self):
+    cc = CommandCaller()
+    for comm in (('SAMResults_Command', 'SAMResults_Command'), 
+                 ('GGUSTickets_Command', 'GGUSTickets_Open')):
+      res = cc.setCommandObject(comm)
+      self.assert_(type(res), Command)
+
+#  def test_commandInvocation(self):
+#    cc = CommandCaller()
+#    for comm in (('SAMResults_Command', 'SAMResults_Command'), 
+#                 ('GGUSTickets_Command', 'GGUSTickets_Open')):
+#      res = cc.commandInvocation(comm = comm)
 
 #############################################################################
 
@@ -1045,6 +1103,10 @@ class TransferQualityCached_CommandFailure(ClientsCommandsTestCase):
     
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ClientsCommandsTestCase)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MacroCommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(CommandCallerSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ClientsInvokerSuccess))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ClientsInvokerFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBStatus_CommandSuccess))
