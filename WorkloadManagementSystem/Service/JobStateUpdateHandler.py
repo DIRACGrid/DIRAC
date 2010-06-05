@@ -81,6 +81,9 @@ class JobStateUpdateHandler( RequestHandler ):
 
     if status in JOB_FINAL_STATES:
       result = jobDB.setEndExecTime(jobID)
+      
+    if status == 'Running' and minorStatus == 'Application':
+      result = jobDB.setStartExecTime(jobID)  
 
     result = jobDB.getJobAttributes(jobID, ['Status','MinorStatus'] )
     if not result['OK']:
@@ -112,6 +115,8 @@ class JobStateUpdateHandler( RequestHandler ):
     application = ""
     appCounter  = ""
     endDate = ''
+    startDate = ''
+    startFlag = ''
 
     result = jobDB.getJobAttributes(jobID, ['Status'] )
     if not result['OK']:
@@ -131,8 +136,12 @@ class JobStateUpdateHandler( RequestHandler ):
         status = statusDict[date]['Status']
         if status in JOB_FINAL_STATES:
           endDate = date
+        if status == "Running":
+          startFlag = 'Running' 
       if statusDict[date]['MinorStatus']:
         minor = statusDict[date]['MinorStatus']
+        if minor == "Application" and startFlag == 'Running':
+          startDate = date
       if statusDict[date]['ApplicationStatus']:
         application = statusDict[date]['ApplicationStatus']
       if 'ApplicationCounter' in statusDict[date] and statusDict[date]['ApplicationCounter']:
@@ -157,6 +166,8 @@ class JobStateUpdateHandler( RequestHandler ):
 
     if endDate:
       result = jobDB.setEndExecTime(jobID,endDate)
+    if startDate:
+      result = jobDB.setStartExecTime(jobID,startDate)  
 
     # Update the JobLoggingDB records
     for date, sDict in statusDict.items():
