@@ -16,6 +16,7 @@ from DIRAC.Core.Base.AgentModule                    import AgentModule
 from DIRAC.Core.Utilities.Time                      import fromString, toEpoch
 from DIRAC                                          import gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
+from DIRAC.AccountingSystem.Client.Types.Job        import Job
 import time
 
 class StalledJobAgent( AgentModule ):
@@ -117,6 +118,7 @@ class StalledJobAgent( AgentModule ):
             result = self.__updateJobStatus( job, 'Failed', 
                                              "Job stalled: pilot not running" )  
             failedCounter += 1
+            result = self.sendAccounting(job)
             continue          
           
         result = self.__getLatestUpdateTime( job )
@@ -128,6 +130,7 @@ class StalledJobAgent( AgentModule ):
         if elapsedTime > failedTime:
           self.__updateJobStatus( job, 'Failed', 'Stalling for more than %d sec' % failedTime )  
           failedCounter += 1
+          result = self.sendAccounting(job)
           
     self.log.info('%d jobs set to Failed' % failedCounter)       
     return S_OK(failedCounter)      
@@ -231,4 +234,62 @@ class StalledJobAgent( AgentModule ):
 
     return result
 
+  #############################################################################
+  def sendAccounting( self, jobID ):
+    """Send WMS accounting data for the given job
+    """
+    
+    accountingReport = Job()
+    result = self.jobDB.getJobAttributes(jobID)
+    if not result['OK']:
+      return result
+    jobDict = result['Value']
+    startTime = jobDict['StartExecTime']
+    if not startTime:
+      result = self.jobLoggingDB.getJobLoggingInfo(jobID)
+      if not result['OK']:
+        startTime = jobDict['SubmissionTime']
+        accountingReport.setStartTime(startTime)
+      else:
+        for status,minor,app,stime,source in result['Value']:
+          if status == 'Running':
+            accountingReport.setStartTime(stime)
+            startTime = stime
+            break
+    else:
+      accountingReport.setStartTime(startTime)        
+    
+    accountingReport.setEndTime()
+    execTime = toEpoch()-toEpoch(startTime)
+    #Fill the data
+    acData = {
+               'User' : jobDict['Owner'],
+               'UserGroup' : jobDict['OwnerGroup'],
+               'JobGroup' : jobDict['JobGroup'],
+               'JobType' : jobDict['JobType'],
+               'JobClass' : jobDict['JobSplitType'],
+               'ProcessingType' : 'unknown',
+               'FinalMajorStatus' : 'Failed',
+               'FinalMinorStatus' : 'Stalled',
+               'CPUTime' : 0.0,
+               'NormCPUTime' : 0.0,
+               'ExecTime' : execTime,
+               'InputDataSize' : 0.0,
+               'OutputDataSize' : 0.0,
+               'InputDataFiles' : 0,
+               'OutputDataFiles' : 0,
+               'DiskSpace' : 0.0,
+               'InputSandBoxSize' : 0.0,
+               'OutputSandBoxSize' : 0.0,
+               'ProcessedEvents' : 0
+             }
+    self.log.verbose( 'Accounting Report is:' )
+    self.log.verbose( acData )
+    accountingReport.setValuesFromDict( acData )
+    result = accountingReport.commit()
+    if result['OK']:
+      self.jobDB.setJobAttribute(jobID,'AccountedFlag','True')
+    else:
+      self.log.warn('Failed to send accounting report for job %d' % int(jobID) )  
+    return result
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
