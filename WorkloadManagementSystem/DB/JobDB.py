@@ -1650,6 +1650,9 @@ class JobDB(DB):
 
     jobAttrNames.append('LastUpdateTime')
     jobAttrValues.append(Time.toString())
+    
+    jobAttrNames.append('RescheduleTime')
+    jobAttrValues.append(Time.toString())
 
     reqJDL = classAdReq.asJDL()
     classAdJob.insertAttributeInt( 'JobRequirements', reqJDL )
