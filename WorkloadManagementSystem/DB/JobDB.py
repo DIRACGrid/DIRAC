@@ -884,6 +884,27 @@ class JobDB(DB):
       req = "UPDATE Jobs SET EndExecTime=UTC_TIMESTAMP() WHERE JobID=%s AND EndExecTime IS NULL" % jobID
     result = self._update(req)
     return result
+  
+ #############################################################################
+  def setStartExecTime(self,jobID,startDate=None):
+    """ Set StartExecTime time stamp
+    """
+
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+
+    if startDate:
+      ret = self._escapeString(startDate)
+      if not ret['OK']:
+        return ret
+      startDate = ret['Value']
+      req = "UPDATE Jobs SET StartExecTime=%s WHERE JobID=%s AND StartExecTime IS NULL" % (startDate,jobID)
+    else:
+      req = "UPDATE Jobs SET StartExecTime=UTC_TIMESTAMP() WHERE JobID=%s AND StartExecTime IS NULL" % jobID
+    result = self._update(req)
+    return result 
 
 #############################################################################
   def setJobParameter_old(self,jobID,key,value):
