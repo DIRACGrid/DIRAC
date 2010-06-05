@@ -13,11 +13,11 @@ __RCSID__ = "$Id$"
 from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.Core.Base.AgentModule                    import AgentModule
-from DIRAC.Core.Utilities.Time                      import fromString, toEpoch
+from DIRAC.Core.Utilities.Time                      import fromString, toEpoch, dateTime
 from DIRAC                                          import gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.AccountingSystem.Client.Types.Job        import Job
-import time
+import time,types
 
 class StalledJobAgent( AgentModule ):
 
@@ -245,23 +245,39 @@ class StalledJobAgent( AgentModule ):
       return result
     jobDict = result['Value']
     startTime = jobDict['StartExecTime']
-    if not startTime:
-      result = self.jobLoggingDB.getJobLoggingInfo(jobID)
+    if not startTime or startTime == 'None' :
+      result = self.logDB.getJobLoggingInfo(jobID)
       if not result['OK']:
         startTime = jobDict['SubmissionTime']
-        accountingReport.setStartTime(startTime)
       else:
         for status,minor,app,stime,source in result['Value']:
           if status == 'Running':
-            accountingReport.setStartTime(stime)
             startTime = stime
             break
+        if not startTime:
+          startTime = jobDict['SubmissionTime']
+
+    if type(startTime) in types.StringTypes:
+      startTime = fromString(startTime)
+
+    endTime = ''
+    result = self.logDB.getJobLoggingInfo(jobID)
+    if not result['OK']:
+      endTime = dateTime()
     else:
-      accountingReport.setStartTime(startTime)        
-    
+      for status,minor,app,stime,source in result['Value']:
+        if status == 'Stalled':
+          endTime = stime
+          break
+    if not endTime:
+      endTime = dateTime()
+
+    if type(endTime) in types.StringTypes:
+      endTime = fromString(endTime)
+
     accountingReport.setEndTime()
-    execTime = toEpoch()-toEpoch(startTime)
-    #Fill the data
+    execTime = toEpoch(endTime)-toEpoch(startTime)
+    #Fill the accounting data
     acData = {
                'User' : jobDict['Owner'],
                'UserGroup' : jobDict['OwnerGroup'],
@@ -286,6 +302,7 @@ class StalledJobAgent( AgentModule ):
     self.log.verbose( 'Accounting Report is:' )
     self.log.verbose( acData )
     accountingReport.setValuesFromDict( acData )
+
     result = accountingReport.commit()
     if result['OK']:
       self.jobDB.setJobAttribute(jobID,'AccountedFlag','True')
