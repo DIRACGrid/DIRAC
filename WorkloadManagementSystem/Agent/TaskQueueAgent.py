@@ -46,7 +46,7 @@ class TaskQueueAgent(OptimizerModule):
       self.log.warn(result['Message'])
       return S_ERROR( result[ 'Message' ] )
 
-    result = self.updateJobStatus( job, self.waitingStatus, self.waitingMinorStatus )
+    result = self.updateJobStatus( job, self.waitingStatus, self.waitingMinorStatus, 'Unknown' )
     if not result['OK']:
       self.log.warn(result['Message'])
 
