@@ -56,7 +56,7 @@ class JobSchedulingAgent( OptimizerModule ):
       self.log.error( result['Message'] )
       return S_ERROR('Can not get job attributes from JobDB')
     jobDict = result['Value']
-    reCounter = jobDict['RescheduleCounter']
+    reCounter = int(jobDict['RescheduleCounter'])
     if reCounter != 0 :
       reTime = fromString(jobDict['RescheduleTime'])
       delta = toEpoch() - toEpoch(reTime)
@@ -64,8 +64,8 @@ class JobSchedulingAgent( OptimizerModule ):
       if reCounter <= len(self.rescheduleDelaysList):
         delay = self.rescheduleDelaysList[reCounter-1]
       if delta < delay:
-        if jobDict['ApplicationStatus'].find('On Hold: after rescheduling') != -1:
-          result = self.jobDB.setJobStatus(application='On Hold: after rescheduling #%d' % reCounter)
+        if jobDict['ApplicationStatus'].find('On Hold: after rescheduling') == -1:
+          result = self.jobDB.setJobStatus(job, application='On Hold: after rescheduling #%d' % reCounter)
         return S_OK()     
 
     # First, get Site and BannedSites from the Job
