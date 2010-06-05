@@ -183,25 +183,20 @@ class OptimizerModule(AgentModule):
 
 
   #############################################################################
-  def updateJobStatus( self, job, status, minorStatus = None ):
+  def updateJobStatus( self, job, status, minorStatus = None, appStatus = None ):
     """This method updates the job status in the JobDB, this should only be
        used to fail jobs due to the optimizer chain.
     """
-    self.log.verbose("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" %(job,status))
+    self.log.verbose("self.jobDB.setJobStatus(%s,'Status/Minor/Application','%s'/'%s'/'%s',update=True)" % (job,status,str(minorStatus),str(appStatus)))
     if not self.am_Enabled():
       return S_OK()
 
-    result = self.jobDB.setJobAttribute( job, 'Status', status, update=True )
+    result = self.jobDB.setJobStatus( job, status, minorStatus, appStatus )
     if not result['OK']:
       return result
 
-    if minorStatus:
-      self.log.verbose("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" % ( job ,minorStatus ) )
-      result = self.jobDB.setJobAttribute( job, 'MinorStatus', minorStatus, update=True )
-      if not result[ 'OK' ]:
-        return result
-
-    result = self.logDB.addLoggingRecord( job, status = status, minor = minorStatus, source = self.am_getModuleParam( 'optimizerName' ) )
+    result = self.logDB.addLoggingRecord( job, status = status, minor = minorStatus, application = appStatus,
+                                          source = self.am_getModuleParam( 'optimizerName' ) )
     if not result['OK']:
       self.log.warn (result['Message'] )
 
