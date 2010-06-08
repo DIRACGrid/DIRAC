@@ -15,6 +15,7 @@ class PilotsStats_Command(Command):
     """ 
     Return getPilotStats from Pilots Client  
     """
+    super(PilotsStats_Command, self).doCommand()
 
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient   
@@ -38,6 +39,7 @@ class PilotsEff_Command(Command):
     """ 
     Return getPilotsEff from Pilots Client  
     """
+    super(PilotsEff_Command, self).doCommand()
     
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient   
@@ -71,6 +73,7 @@ class PilotsEffSimple_Command(Command):
         'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
       }
     """
+    super(PilotsEffSimple_Command, self).doCommand()
 
     if self.args[0] in ('Service', 'Services'):
       if RSClientIn is not None:
@@ -128,6 +131,7 @@ class PilotsEffSimpleCached_Command(Command):
         'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
       }
     """
+    super(PilotsEffSimpleCached_Command, self).doCommand()
 
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient

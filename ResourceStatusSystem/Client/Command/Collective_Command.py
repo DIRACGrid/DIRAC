@@ -23,6 +23,7 @@ class JobsEffSimpleEveryOne_Command(Command):
     :returns:
       {'SiteName': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}
     """
+#    super(JobsEffSimpleEveryOne_Command, self).doCommand()
     
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient   
@@ -66,6 +67,7 @@ class PilotsEffSimpleEverySites_Command(Command):
     :returns:
       {'SiteName': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}
     """
+#    super(PilotsEffSimpleEverySites_Command, self).doCommand()
     
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient   
@@ -112,7 +114,8 @@ class TransferQualityEverySEs_Command(Command):
     :returns:
       {'SiteName': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}
     """
-    
+#    super(TransferQualityEverySEs_Command, self).doCommand()
+
     if SEs is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
       RPC_RSS = RPCClient("ResourceStatus/ResourceStatus")

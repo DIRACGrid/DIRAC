@@ -43,6 +43,7 @@ class GGUSTickets_Open(Command):
     `args`: 
       - args[0]: string: should be the name of the site
     """
+    super(GGUSTickets_Open, self).doCommand()
 
     openTickets = callClient(self.args, self.client)
     if openTickets == 'Unknown':
@@ -63,6 +64,7 @@ class GGUSTickets_Link(Command):
    :attr:`args`: 
      - args[0]: string: should be the name of the site
     """
+    super(GGUSTickets_Link, self).doCommand()
 
     openTickets = callClient(self.args, self.client)
     if openTickets == 'Unknown':
@@ -83,6 +85,7 @@ class GGUSTickets_Info(Command):
    :attr:`args`: 
      - args[0]: string: should be the name of the site
     """
+    super(GGUSTickets_Info, self).doCommand()
 
     openTickets = callClient(self.args, self.client)
     if openTickets == 'Unknown':

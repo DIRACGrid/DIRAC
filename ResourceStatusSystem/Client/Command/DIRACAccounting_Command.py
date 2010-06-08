@@ -32,6 +32,7 @@ class DIRACAccounting_Command(Command):
        
        - args[6]: dictionary - optional conditions
     """
+    super(DIRACAccounting_Command, self).doCommand()
     
     if self.RPC is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -107,7 +108,8 @@ class TransferQuality_Command(Command):
     :returns:
       {'Result': None | a float between 0.0 and 100.0}
     """
-    
+    super(TransferQuality_Command, self).doCommand()
+   
     if self.RPC is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
       self.RPC = RPCClient("Accounting/ReportGenerator", timeout = self.timeout)
@@ -178,6 +180,7 @@ class TransferQualityCached_Command(Command):
     :returns:
       {'Result': None | a float between 0.0 and 100.0}
     """
+    super(TransferQualityCached_Command, self).doCommand()
 
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient

@@ -45,34 +45,45 @@ class PublisherSuccess(UtilitiesTestCase):
                                          {'TextInfo': {'args': None, 'Command': 'GGUS_Info'}}]}, 
                                          {'DT_Scheduled': [{'WebLink': {'args': None, 'Command': 'DT_Link'}}]}, 
                                          {'OnSitePropagation': {'RSS': 'ServiceOfSite'}}], 
-                                         'Service_Computing_Panel': [{'OnComputingServicePropagation': 
+                        'Service_Computing_Panel': [{'OnComputingServicePropagation': 
                                                                       {'RSS': 'ResOfCompService'}}, 
                                                                       {'JobsEfficiencySimple': [{'FillChart': {'args': ('Job', 'CumulativeNumberOfJobs', {'hours': 24, 'Format': 'LastHours'}, 'FinalMajorStatus', None), 'Command': 'DiracAccountingGraph'}}, 
                                                                                                 {'PieChart': {'args': ('Job', 'TotalNumberOfJobs', {'hours': 24, 'Format': 'LastHours'}, 'JobType', {'FinalMajorStatus': 'Failed'}), 'Command': 'DiracAccountingGraph'}}]}, 
-                       {'PilotsEfficiencySimple_Service': [{'FillChart': {'args': ('Pilot', 'CumulativeNumberOfPilots', {'hours': 24, 'Format': 'LastHours'}, 'GridStatus', None), 'Command': 'DiracAccountingGraph'}}, 
-                                                           {'PieChart': {'args': ('Pilot', 'TotalNumberOfPilots', {'hours': 24, 'Format': 'LastHours'}, 'GridCE', None), 'Command': 'DiracAccountingGraph'}}]}]}}]
+                                                                       {'PilotsEfficiencySimple_Service': [{'FillChart': {'args': ('Pilot', 'CumulativeNumberOfPilots', {'hours': 24, 'Format': 'LastHours'}, 'GridStatus', None), 'Command': 'DiracAccountingGraph'}}, 
+                                                                                                           {'PieChart': {'args': ('Pilot', 'TotalNumberOfPilots', {'hours': 24, 'Format': 'LastHours'}, 'GridCE', None), 'Command': 'DiracAccountingGraph'}}]}]}}]
 
     mockIG.getInfoToApply.return_value = igR 
     
     res = p.getInfo('Site', 'LCG.CERN.ch')
+    
+    for record in res['Records']:
+      self.assert_(record[0] in ('ResultsForResource', 'SpecificInformation'))
+      self.assert_(record[1] in ('Service_Storage', 'OtherServices', 
+                                 'Site', 'Service_Computing'))
+      self.assert_(record[2] is not None)
+      if record[0] == 'SpecificInformation':
+        self.assert_(record[3] is not None)
+      else:
+        self.assert_(record[3] is None)
+      self.assert_(record[5] in ValidStatus)
 
-    for panel in igR[0]['Panels'].keys():
-      self.assert_(panel in res.keys())
-      for i in range(len(igR[0]['Panels'][panel])):
-        for policy in igR[0]['Panels'][panel][i].keys():
-          self.assert_(policy in res[panel]['InfoForPanel'].keys())
-
-    for panel_name in res.keys():
-      self.assert_(panel_name in igR[0]['Panels'].keys())
-      for policy in res[panel_name]['InfoForPanel'].keys():
-        pNames = []
-        for i in range(len(igR[0]['Panels'][panel_name])):
-          pNames = pNames + igR[0]['Panels'][panel_name][i].keys()
-        self.assert_(policy in pNames)
-        self.assert_('Status' in res[panel_name]['InfoForPanel'][policy].keys())
-        self.assert_('Reason' in res[panel_name]['InfoForPanel'][policy].keys())
-        self.assert_('infos' in res[panel_name]['InfoForPanel'][policy].keys())
-        self.assert_('desc' in res[panel_name]['InfoForPanel'][policy].keys())
+#    for panel in igR[0]['Panels'].keys():
+#      self.assert_(panel in res.keys())
+#      for i in range(len(igR[0]['Panels'][panel])):
+#        for policy in igR[0]['Panels'][panel][i].keys():
+#          self.assert_(policy in res[panel]['InfoForPanel'].keys())
+#
+#    for panel_name in res.keys():
+#      self.assert_(panel_name in igR[0]['Panels'].keys())
+#      for policy in res[panel_name]['InfoForPanel'].keys():
+#        pNames = []
+#        for i in range(len(igR[0]['Panels'][panel_name])):
+#          pNames = pNames + igR[0]['Panels'][panel_name][i].keys()
+#        self.assert_(policy in pNames)
+#        self.assert_('Status' in res[panel_name]['InfoForPanel'][policy].keys())
+#        self.assert_('Reason' in res[panel_name]['InfoForPanel'][policy].keys())
+#        self.assert_('infos' in res[panel_name]['InfoForPanel'][policy].keys())
+#        self.assert_('desc' in res[panel_name]['InfoForPanel'][policy].keys())
 
 
     igR = [{'Panels':  {'Resource_Panel': [
@@ -87,23 +98,33 @@ class PublisherSuccess(UtilitiesTestCase):
     
     res = p.getInfo('Resource', 'grid0.fe.infn.it')
 
-    for panel in igR[0]['Panels'].keys():
-      self.assert_(panel in res.keys())
-      for i in range(len(igR[0]['Panels'][panel])):
-        for policy in igR[0]['Panels'][panel][i].keys():
-          self.assert_(policy in res[panel]['InfoForPanel'].keys())
+    for record in res['Records']:
+      self.assert_(record[0] in ('ResultsForResource', 'SpecificInformation'))
+      self.assert_(record[1] in ('Resource_Panel'))
+      self.assert_(record[2] is not None)
+      if record[0] == 'SpecificInformation':
+        self.assert_(record[3] is not None)
+      else:
+        self.assert_(record[3] is None)
+      self.assert_(record[5] in ValidStatus)
 
-    for panel_name in res.keys():
-      self.assert_(panel_name in igR[0]['Panels'].keys())
-      for policy in res[panel_name]['InfoForPanel'].keys():
-        pNames = []
-        for i in range(len(igR[0]['Panels'][panel_name])):
-          pNames = pNames + igR[0]['Panels'][panel_name][i].keys()
-        self.assert_(policy in pNames)
-        self.assert_('Status' in res[panel_name]['InfoForPanel'][policy].keys())
-        self.assert_('Reason' in res[panel_name]['InfoForPanel'][policy].keys())
-        self.assert_('infos' in res[panel_name]['InfoForPanel'][policy].keys())
-        self.assert_('desc' in res[panel_name]['InfoForPanel'][policy].keys())
+#    for panel in igR[0]['Panels'].keys():
+#      self.assert_(panel in res.keys())
+#      for i in range(len(igR[0]['Panels'][panel])):
+#        for policy in igR[0]['Panels'][panel][i].keys():
+#          self.assert_(policy in res[panel]['InfoForPanel'].keys())
+#
+#    for panel_name in res.keys():
+#      self.assert_(panel_name in igR[0]['Panels'].keys())
+#      for policy in res[panel_name]['InfoForPanel'].keys():
+#        pNames = []
+#        for i in range(len(igR[0]['Panels'][panel_name])):
+#          pNames = pNames + igR[0]['Panels'][panel_name][i].keys()
+#        self.assert_(policy in pNames)
+#        self.assert_('Status' in res[panel_name]['InfoForPanel'][policy].keys())
+#        self.assert_('Reason' in res[panel_name]['InfoForPanel'][policy].keys())
+#        self.assert_('infos' in res[panel_name]['InfoForPanel'][policy].keys())
+#        self.assert_('desc' in res[panel_name]['InfoForPanel'][policy].keys())
 
 
     igR = [{'Panels':  {'Resource_Panel': [
@@ -116,23 +137,34 @@ class PublisherSuccess(UtilitiesTestCase):
     
     res = p.getInfo('Resource', 'prod-lfc-lhcb-ro.cern.ch')
 
-    for panel in igR[0]['Panels'].keys():
-      self.assert_(panel in res.keys())
-      for i in range(len(igR[0]['Panels'][panel])):
-        for policy in igR[0]['Panels'][panel][i].keys():
-          self.assert_(policy in res[panel]['InfoForPanel'].keys())
+    for record in res['Records']:
+      self.assert_(record[0] in ('ResultsForResource', 'SpecificInformation'))
+      self.assert_(record[1] in ('Resource_Panel'))
+      self.assert_(record[2] is not None)
+      if record[0] == 'SpecificInformation':
+        self.assert_(record[3] is not None)
+      else:
+        self.assert_(record[3] is None)
+      self.assert_(record[5] in ValidStatus)
 
-    for panel_name in res.keys():
-      self.assert_(panel_name in igR[0]['Panels'].keys())
-      for policy in res[panel_name]['InfoForPanel'].keys():
-        pNames = []
-        for i in range(len(igR[0]['Panels'][panel_name])):
-          pNames = pNames + igR[0]['Panels'][panel_name][i].keys()
-        self.assert_(policy in pNames)
-        self.assert_('Status' in res[panel_name]['InfoForPanel'][policy].keys())
-        self.assert_('Reason' in res[panel_name]['InfoForPanel'][policy].keys())
-        self.assert_('infos' in res[panel_name]['InfoForPanel'][policy].keys())
-        self.assert_('desc' in res[panel_name]['InfoForPanel'][policy].keys())
+
+#    for panel in igR[0]['Panels'].keys():
+#      self.assert_(panel in res.keys())
+#      for i in range(len(igR[0]['Panels'][panel])):
+#        for policy in igR[0]['Panels'][panel][i].keys():
+#          self.assert_(policy in res[panel]['InfoForPanel'].keys())
+#
+#    for panel_name in res.keys():
+#      self.assert_(panel_name in igR[0]['Panels'].keys())
+#      for policy in res[panel_name]['InfoForPanel'].keys():
+#        pNames = []
+#        for i in range(len(igR[0]['Panels'][panel_name])):
+#          pNames = pNames + igR[0]['Panels'][panel_name][i].keys()
+#        self.assert_(policy in pNames)
+#        self.assert_('Status' in res[panel_name]['InfoForPanel'][policy].keys())
+#        self.assert_('Reason' in res[panel_name]['InfoForPanel'][policy].keys())
+#        self.assert_('infos' in res[panel_name]['InfoForPanel'][policy].keys())
+#        self.assert_('desc' in res[panel_name]['InfoForPanel'][policy].keys())
 
 
     igR = [{'Panels': {'SE_Panel': [
@@ -146,23 +178,34 @@ class PublisherSuccess(UtilitiesTestCase):
     
     res = p.getInfo('StorageElement', 'CERN-RAW')
 
-    for panel in igR[0]['Panels'].keys():
-      self.assert_(panel in res.keys())
-      for i in range(len(igR[0]['Panels'][panel])):
-        for policy in igR[0]['Panels'][panel][i].keys():
-          self.assert_(policy in res[panel]['InfoForPanel'].keys())
+    for record in res['Records']:
+      self.assert_(record[0] in ('ResultsForResource', 'SpecificInformation'))
+      self.assert_(record[1] in ('SE_Panel'))
+      self.assert_(record[2] is not None)
+      if record[0] == 'SpecificInformation':
+        self.assert_(record[3] is not None)
+      else:
+        self.assert_(record[3] is None)
+      self.assert_(record[5] in ValidStatus)
 
-    for panel_name in res.keys():
-      self.assert_(panel_name in igR[0]['Panels'].keys())
-      for policy in res[panel_name]['InfoForPanel'].keys():
-        pNames = []
-        for i in range(len(igR[0]['Panels'][panel_name])):
-          pNames = pNames + igR[0]['Panels'][panel_name][i].keys()
-        self.assert_(policy in pNames)
-        self.assert_('Status' in res[panel_name]['InfoForPanel'][policy].keys())
-        self.assert_('Reason' in res[panel_name]['InfoForPanel'][policy].keys())
-        self.assert_('infos' in res[panel_name]['InfoForPanel'][policy].keys())
-        self.assert_('desc' in res[panel_name]['InfoForPanel'][policy].keys())
+
+#    for panel in igR[0]['Panels'].keys():
+#      self.assert_(panel in res.keys())
+#      for i in range(len(igR[0]['Panels'][panel])):
+#        for policy in igR[0]['Panels'][panel][i].keys():
+#          self.assert_(policy in res[panel]['InfoForPanel'].keys())
+#
+#    for panel_name in res.keys():
+#      self.assert_(panel_name in igR[0]['Panels'].keys())
+#      for policy in res[panel_name]['InfoForPanel'].keys():
+#        pNames = []
+#        for i in range(len(igR[0]['Panels'][panel_name])):
+#          pNames = pNames + igR[0]['Panels'][panel_name][i].keys()
+#        self.assert_(policy in pNames)
+#        self.assert_('Status' in res[panel_name]['InfoForPanel'][policy].keys())
+#        self.assert_('Reason' in res[panel_name]['InfoForPanel'][policy].keys())
+#        self.assert_('infos' in res[panel_name]['InfoForPanel'][policy].keys())
+#        self.assert_('desc' in res[panel_name]['InfoForPanel'][policy].keys())
 
 
 #############################################################################

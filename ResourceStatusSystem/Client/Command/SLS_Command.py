@@ -69,6 +69,7 @@ class SLSStatus_Command(Command):
 
      - args[1]: string: should be the (DIRAC) name of the ValidRes
     """
+    super(SLSStatus_Command, self).doCommand()
 
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.SLSClient import SLSClient   
@@ -113,6 +114,7 @@ class SLSServiceInfo_Command(Command):
 
      - args[2]: list: list of info requested
     """
+    super(SLSServiceInfo_Command, self).doCommand()
 
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.SLSClient import SLSClient   
@@ -158,6 +160,7 @@ class SLSLink_Command(Command):
 
       - args[1]: string: should be the (DIRAC) name of the ValidRes
     """
+    super(SLSLink_Command, self).doCommand()
 
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.SLSClient import SLSClient   

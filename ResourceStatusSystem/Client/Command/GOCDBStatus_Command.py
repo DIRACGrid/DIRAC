@@ -25,6 +25,7 @@ class GOCDBStatus_Command(Command):
      - args[2]: string: optional, number of hours in which 
      the down time is starting
     """
+    super(GOCDBStatus_Command, self).doCommand()
 
     if self.client is None:
       # use standard GOC DB Client

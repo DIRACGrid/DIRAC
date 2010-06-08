@@ -23,6 +23,7 @@ class RSPeriods_Command(Command):
 
     - args[3] are the number of hours requested
     """
+    super(RSPeriods_Command, self).doCommand()
 
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
@@ -59,6 +60,7 @@ class ServiceStats_Command(Command):
     :returns:
       {'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz}
     """
+    super(ServiceStats_Command, self).doCommand()
 
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
@@ -95,6 +97,7 @@ class ResourceStats_Command(Command):
     :returns:
     
     """
+    super(ResourceStats_Command, self).doCommand()
 
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   
@@ -131,6 +134,7 @@ class StorageElementsStats_Command(Command):
     :returns:
     
     """
+    super(StorageElementsStats_Command, self).doCommand()
     
     if self.args[0] in ('Service', 'Services'):
       granularity = 'Site'
@@ -179,6 +183,7 @@ class MonitoredStatus_Command(Command):
     :returns:
       {'MonitoredStatus': 'Active'|'Probing'|'Banned'}
     """
+    super(MonitoredStatus_Command, self).doCommand()
     
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient   

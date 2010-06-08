@@ -544,7 +544,7 @@ Policies = {
       'module': 'SEOccupancy_Policy', 
       'commandIn' : ('SLS_Command', 'SLSStatus_Command'),
       'args' : None,  
-      'SE_Panel' : [ {'WebLink': {'Command':'SLS_Link',
+      'SE_Panel' : [ {'WebLink': {'Command':('SLS_Command', 'SLSLink_Command'),
                                   'args': None}}, 
                       ]
      },
@@ -559,7 +559,7 @@ Policies = {
       'module': 'SEQueuedTransfers_Policy',
       'commandIn' : ('SLS_Command', 'SLSServiceInfo_Command'),
       'args' : (["Queued transfers"], ),
-      'SE_Panel' : [ {'WebLink': {'Command':'SLS_Link',
+      'SE_Panel' : [ {'WebLink': {'Command':('SLS_Command', 'SLSLink_Command'),
                                   'args': None}}, 
                       ]
      },

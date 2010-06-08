@@ -25,6 +25,7 @@ class JobsStats_Command(Command):
       'MeanProcessedJobs': X
     }
     """
+    super(JobsStats_Command, self).doCommand()
     
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient   
@@ -58,6 +59,7 @@ class JobsEff_Command(Command):
         'JobsEff': X
       }
     """
+    super(JobsEff_Command, self).doCommand()
 
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient   
@@ -85,6 +87,7 @@ class SystemCharge_Command(Command):
             'anHourBefore': n_anHourBefore
           }
     """
+    super(SystemCharge_Command, self).doCommand()
 
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient   
@@ -118,6 +121,7 @@ class JobsEffSimple_Command(Command):
         'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
       }
     """
+    super (JobsEffSimple_Command, self).doCommand()
 
     if self.args[0] in ('Service', 'Services'):
       if RSClientIn is not None:
@@ -171,6 +175,7 @@ class JobsEffSimpleCached_Command(Command):
         'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
       }
     """
+    super(JobsEffSimpleCached_Command, self).doCommand()
 
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient

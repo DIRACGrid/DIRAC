@@ -65,4 +65,6 @@ class Command(object):
     """ 
     Before use, call at least `setArgs`.  
     """
-    pass
+    if self.args is None:
+      raise RSSException, "Before, set `self.args` with `self.setArgs(a)` function."
+    

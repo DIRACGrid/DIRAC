@@ -27,6 +27,7 @@ class SAMResults_Command(Command):
      
      - args[3]: list: list of tests
     """
+    super(SAMResults_Command, self).doCommand()
     
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import SAMResultsClient

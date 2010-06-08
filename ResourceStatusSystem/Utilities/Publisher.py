@@ -10,6 +10,7 @@ from DIRAC.ResourceStatusSystem.Policy import Configurations
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC import gConfig
 
+import copy
 import threading
 
 #import datetime 
@@ -93,9 +94,15 @@ class Publisher:
 
     resType = None
     if granularity in ('Resource', 'Resources'):
-      resType = self.rsDB.getMonitoredsList('Resource', ['ResourceType'], 
-                                            resourceName = name)[0][0]
+      try:
+        resType = self.rsDB.getMonitoredsList('Resource', ['ResourceType'], 
+                                              resourceName = name)[0][0]
+      except IndexError:
+        return "%s does not exist!" %name
                                             
+    paramNames = ['Type', 'Group', 'Name', 'Policy', 'DIRAC Status',
+                  'RSS Status', 'Reason', 'Description']
+    
     infoToGet = self.ig.getInfoToApply(('view_info', ), granularity, None, None, 
                                        None, None, resType, useNewRes)[0]['Panels']
     
@@ -103,19 +110,36 @@ class Publisher:
     
 #    a = datetime.datetime.now()
 
+    recordsList = []
+
     for panel in infoToGet.keys():
-      
 #      ptimeStart = datetime.datetime.now()
       
       (granularityForPanel, nameForPanel) = self.__getNameForPanel(granularity, name, panel)
       
       if not self._resExist(granularityForPanel, nameForPanel):
         completeInfoForPanel_res = None
-        break
+        continue
       
       #take composite RSS result for name
-      nameStatus_res = self._getStatus(nameForPanel, panel) 
-            
+      nameStatus_res = self._getStatus(nameForPanel, panel)
+      
+      recordBase = [None, None, None, None, None, None, None, None]
+      infosForPolicy = {}
+      
+      recordBase[1] = panel.replace('_Panel', '')
+      recordBase[2] = nameForPanel #nameForPanel
+      try:
+        recordBase[4] = nameStatus_res[nameForPanel]['DIRACStatus'] #DIRAC Status
+      except:
+        pass
+      recordBase[5] = nameStatus_res[nameForPanel]['RSSStatus'] #RSS Status
+      
+      record = copy.deepcopy(recordBase)
+      record[0] = 'ResultsForResource'
+      
+      recordsList.append(record)
+      
       #take info that goes into the panel
       infoForPanel = infoToGet[panel]
       
@@ -129,13 +153,35 @@ class Publisher:
 
       self.threadPool.processAllResults()
 
-      completeInfoForPanel_res = {'Res': nameStatus_res, 'InfoForPanel': self.infoForPanel_res}
+      for policy in self.infoForPanel_res.keys():
+        record = copy.deepcopy(recordBase)
+        record[0] = 'SpecificInformation'
+        record[3] = policy #policyName
+        record[4] = None #DIRAC Status
+        record[5] = self.infoForPanel_res[policy]['Status'] #RSS status for the policy
+        record[6] = self.infoForPanel_res[policy]['Reason'] #Reason
+        record[7] = self.infoForPanel_res[policy]['desc'] #Description
+        recordsList.append(record)
+        
+        infosForPolicy[policy] = self.infoForPanel_res[policy]['infos']
+        
+#      completeInfoForPanel_res = {'Res': nameStatus_res, 'InfoForPanel': self.infoForPanel_res}
       
 #      ptimeStop = datetime.datetime.now()
 
 #      print "seconds for Panel ", panel, (ptimeStop - ptimeStart).seconds, (ptimeStop - ptimeStart).microseconds
       
-      infoToGet_res[panel] = completeInfoForPanel_res
+#      infoToGet_res[panel] = completeInfoForPanel_res
+      infoToGet_res['TotalRecords'] = len(recordsList)
+      infoToGet_res['ParameterNames'] = paramNames
+      # Return all the records if maxItems == 0 or the specified number otherwise
+#      if maxItems:
+#        infoToGet_res['Records'] = recordsList[startItem:startItem+maxItems]
+#      else:
+      infoToGet_res['Records'] = recordsList
+  
+      infoToGet_res['Extras'] = infosForPolicy
+
     
 #    b = datetime.datetime.now()
     
