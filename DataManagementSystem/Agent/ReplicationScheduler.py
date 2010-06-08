@@ -38,39 +38,40 @@ class ReplicationScheduler(AgentModule):
     return S_OK()
 
   def execute(self):
-    """ The main agent execution method """
+   """ The main agent execution method """
 
-    # This allows dynamic changing of the throughput timescale
-    self.throughputTimescale = self.am_getOption('ThroughputTimescale',3600)
-    self.throughputTimescale = 60*60*1
-    #print 'ThroughputTimescale:',self.throughputTimescale
-    ######################################################################################
-    #
-    #  Obtain information on the current state of the channel queues
-    #
+   # This allows dynamic changing of the throughput timescale
+   self.throughputTimescale = self.am_getOption('ThroughputTimescale',3600)
+   self.throughputTimescale = 60*60*1
+   #print 'ThroughputTimescale:',self.throughputTimescale
+   ######################################################################################
+   #
+   #  Obtain information on the current state of the channel queues
+   #
 
-    res = self.TransferDB.getChannelQueues()
-    if not res['OK']:
-      errStr = "ReplicationScheduler._execute: Failed to get channel queues from TransferDB."
-      gLogger.error(errStr, res['Message'])
-      return S_OK()
-    if not res['Value']:
-      gLogger.info("ReplicationScheduler._execute: No active channels found for replication.")
-      return S_OK()
-    channels = res['Value']
+   res = self.TransferDB.getChannelQueues()
+   if not res['OK']:
+     errStr = "ReplicationScheduler._execute: Failed to get channel queues from TransferDB."
+     gLogger.error(errStr, res['Message'])
+     return S_OK()
+   if not res['Value']:
+     gLogger.info("ReplicationScheduler._execute: No active channels found for replication.")
+     return S_OK()
+   channels = res['Value']
 
-    res = self.TransferDB.getChannelObservedThroughput(self.throughputTimescale)
-    if not res['OK']:
-      errStr = "ReplicationScheduler._execute: Failed to get observed throughput from TransferDB."
-      gLogger.error(errStr,res['Message'])
-      return S_OK()
-    if not res['Value']:
-      gLogger.info("ReplicationScheduler._execute: No active channels found for replication.")
-      return S_OK()
-    bandwidths = res['Value']
+   res = self.TransferDB.getChannelObservedThroughput(self.throughputTimescale)
+   if not res['OK']:
+     errStr = "ReplicationScheduler._execute: Failed to get observed throughput from TransferDB."
+     gLogger.error(errStr,res['Message'])
+     return S_OK()
+   if not res['Value']:
+     gLogger.info("ReplicationScheduler._execute: No active channels found for replication.")
+     return S_OK()
+   bandwidths = res['Value']
 
-    self.strategyHandler = StrategyHandler(bandwidths,channels,self.section)
+   self.strategyHandler = StrategyHandler(bandwidths,channels,self.section)
 
+   for bobby in range(100):
     ######################################################################################
     #
     #  The first step is to obtain a transfer request from the RequestDB which should be scheduled.
@@ -268,7 +269,7 @@ class ReplicationScheduler(AgentModule):
             # For each item in the replication tree add the file to the channel
             #
             channelName = '%s-%s' % (hopSourceSE,hopDestSE)
-            self.DataLog.addFileRecord(str(lfn),'ReplicationScheduled',channelName,'','ReplicationScheduler')
+            #self.DataLog.addFileRecord(str(lfn),'ReplicationScheduled',channelName,'','ReplicationScheduler')
             res = self.TransferDB.addFileToChannel(channelID, fileID, sourceSURL, targetSURL,fileSize,spaceToken,fileStatus=status)
             if not res['OK']:
               errStr = "ReplicationScheduler._execute: Failed to add File %s to Channel %s." % (fileID,channelID)
@@ -282,14 +283,15 @@ class ReplicationScheduler(AgentModule):
               gLogger.error(errStr, "%s to %s." % (fileID,hopDestSE))
           res = self.TransferDB.addReplicationTree(fileID,tree)
 
-        if oRequest.isSubRequestEmpty(ind,'transfer')['Value']:
-          oRequest.setSubRequestStatus(ind,'transfer','Scheduled')
+      if oRequest.isSubRequestEmpty(ind,'transfer')['Value']:
+        oRequest.setSubRequestStatus(ind,'transfer','Scheduled')
 
     ################################################
     #  Generate the new request string after operation
     requestString = oRequest.toXML()['Value']
     res = self.RequestDB.updateRequest(requestName,requestString)
-    return res
+    if not res['OK']:
+      gLogger.error("Failed to update request","%s %s" % (requestName,res['Message']))
 
   def obtainLFNSURL(self,targetSE,lfn):
     """ Creates the targetSURL for the storage and LFN supplied
