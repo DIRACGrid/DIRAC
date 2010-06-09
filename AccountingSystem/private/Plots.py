@@ -55,7 +55,6 @@ def generateQualityPlot( fileName, data, metadata ):
   return S_OK()
 
 def generateCumulativePlot( fileName, data, metadata ):
-  return generateStackedLinePlot( fileName, data, metadata )
   try:
     fn = file( fileName, "wb" )
   except:
@@ -63,7 +62,7 @@ def generateCumulativePlot( fileName, data, metadata ):
   checkMetadata( metadata )
   if 'sort_labels' not in metadata:
     metadata[ 'sort_labels' ] = 'last_value'
-  cumulativeGraph( data, fn, **metadata )
+  lineGraph( data, fn, **metadata )
   fn.close()
   return S_OK()
 
