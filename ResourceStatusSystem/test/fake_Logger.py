@@ -34,4 +34,7 @@ class Config:
   def addListenerToNewVersionEvent(self, a):
     pass
 
+  def getValue(self, a):
+    return "LHCb"
+
 gConfig = Config()

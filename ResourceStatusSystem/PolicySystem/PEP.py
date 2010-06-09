@@ -16,8 +16,8 @@ from DIRAC import gConfig
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Policy import Configurations
 
+import copy
 import time
 
 class PEP: 
@@ -26,6 +26,8 @@ class PEP:
   PEP (Policy Enforcement Point) initialization
   
   :params:
+    :attr:`VOExtension`: string - VO extension (e.g. 'LHCb')
+  
     :attr:`granularity`: string - a ValidRes (optional)
 
     :attr:`name`: string - optional name (e.g. of a site)
@@ -52,9 +54,11 @@ class PEP:
         
   """
  
-  def __init__(self, granularity = None, name = None, status = None, formerStatus = None, 
+  def __init__(self, VOExtension, granularity = None, name = None, status = None, formerStatus = None, 
                reason = None, siteType = None, serviceType = None, resourceType = None, 
                operatorCode = None, futureEnforcement = None, useNewRes = False):
+    
+    self.VOExtension = VOExtension
     
     try:
 #      granularity = presentEnforcement['Granularity']
@@ -110,6 +114,11 @@ class PEP:
         pass
       
     self.useNewRes = useNewRes
+
+    configModule = __import__(self.VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations", 
+                              globals(), locals(), ['*'])
+
+    self.AssigneeGroups = copy.deepcopy(configModule.AssigneeGroups)
       
 #############################################################################
     
@@ -162,8 +171,8 @@ class PEP:
     else:
       # Use standard DIRAC PDP
       from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
-      pdp = PDP(granularity = self.__granularity, name = self.__name, status = self.__status, 
-                formerStatus = self.__formerStatus, reason = self.__reason, 
+      pdp = PDP(VOExtension, granularity = self.__granularity, name = self.__name, 
+                status = self.__status, formerStatus = self.__formerStatus, reason = self.__reason, 
                 siteType = self.__siteType, serviceType = self.__serviceType, 
                 resourceType = self.__resourceType, useNewRes = self.useNewRes)
 
@@ -439,18 +448,18 @@ class PEP:
     
     NOTIF = []
     
-    for ag in Configurations.AssigneeGroups.keys():
+    for ag in self.AssigneeGroups.keys():
       
-      if setup in Configurations.AssigneeGroups[ag]['Setup'] \
-      and granularity in Configurations.AssigneeGroups[ag]['Granularity']:
-        if siteType is not None and siteType not in Configurations.AssigneeGroups[ag]['SiteType']:
+      if setup in self.AssigneeGroups[ag]['Setup'] \
+      and granularity in self.AssigneeGroups[ag]['Granularity']:
+        if siteType is not None and siteType not in self.AssigneeGroups[ag]['SiteType']:
           continue
-        if serviceType is not None and serviceType not in Configurations.AssigneeGroups[ag]['ServiceType']:
+        if serviceType is not None and serviceType not in self.AssigneeGroups[ag]['ServiceType']:
           continue
-        if resourceType is not None and resourceType not in Configurations.AssigneeGroups[ag]['ResourceType']:
+        if resourceType is not None and resourceType not in self.AssigneeGroups[ag]['ResourceType']:
           continue
-        NOTIF.append( {'Users':Configurations.AssigneeGroups[ag]['Users'], 
-                       'Notifications':Configurations.AssigneeGroups[ag]['Notifications']} )
+        NOTIF.append( {'Users':self.AssigneeGroups[ag]['Users'], 
+                       'Notifications':self.AssigneeGroups[ag]['Notifications']} )
           
     return NOTIF
 

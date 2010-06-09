@@ -19,7 +19,6 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC.ResourceStatusSystem.Policy import Configurations
 from DIRAC.ResourceStatusSystem.Utilities.Publisher import Publisher 
 from DIRAC.ResourceStatusSystem.Client.Command.CommandCaller import CommandCaller
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -34,13 +33,16 @@ def initializeResourceStatusHandler(serviceInfo):
 
   cc = CommandCaller()
 
-  ig = InfoGetter()
+  global VOExtension
+  VOExtension = gConfig.getValue("DIRAC/Extensions")
+
+  ig = InfoGetter(VOExtension)
   
   WMSAdmin = RPCClient("WorkloadManagement/WMSAdministrator")
 
   global publisher
-  publisher = Publisher(rsDBIn = rsDB, commandCallerIn = cc, infoGetterIn = ig, 
-                        WMSAdminIn = WMSAdmin)
+  publisher = Publisher(VOExtension, rsDBIn = rsDB, commandCallerIn = cc, 
+                        infoGetterIn = ig, WMSAdminIn = WMSAdmin)
 
   gConfig.addListenerToNewVersionEvent( rsDB.syncWithCS )
   return S_OK()
@@ -1438,7 +1440,7 @@ class ResourceStatusHandler(RequestHandler):
           serviceType = res[4]
         
         from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
-        pep = PEP(granularity, name, status, formerStatus, reason, siteType, 
+        pep = PEP(VOExtension, granularity, name, status, formerStatus, reason, siteType, 
                   serviceType, resourceType, operatorCode, futureEnforcement, useNewRes)
         pep.enforce(rsDBIn = rsDB)
         
@@ -1480,7 +1482,7 @@ class ResourceStatusHandler(RequestHandler):
             siteType = res[3]
             operatorCode = res[4]
             
-            pep = PEP(granularity, name, status, formerStatus, None, siteType, 
+            pep = PEP(VOExtension, granularity, name, status, formerStatus, None, siteType, 
                       None, None, operatorCode, None, useNewRes)
             pep.enforce(rsDBIn = rsDB)
 
@@ -1493,7 +1495,7 @@ class ResourceStatusHandler(RequestHandler):
               siteType = res[3]
               serviceType = res[4]
               
-              pep = PEP('Service', s, status, formerStatus, None, siteType, 
+              pep = PEP(VOExtension, 'Service', s, status, formerStatus, None, siteType, 
                         serviceType, None, operatorCode, None, useNewRes)
               pep.enforce(rsDBIn = rsDB)
           else:
@@ -1510,7 +1512,7 @@ class ResourceStatusHandler(RequestHandler):
               serviceType = res[4]
             
             from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
-            pep = PEP(granularity, name, status, formerStatus, reason, siteType, 
+            pep = PEP(VOExtension, granularity, name, status, formerStatus, reason, siteType, 
                       serviceType, resourceType, operatorCode, futureEnforcement, useNewRes)
             pep.enforce(rsDBIn = rsDB)
             

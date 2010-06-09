@@ -6,7 +6,7 @@ __RCSID__ = "$Id:  $"
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Policy import Configurations
+#from DIRAC.ResourceStatusSystem.Policy import Configurations
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC import gConfig
 
@@ -16,18 +16,20 @@ import threading
 #import datetime 
 
 class Publisher:
-  """ Class Publisher is in charge of getting dispersed information,
-      to be published on the web.
+  """ 
+  Class Publisher is in charge of getting dispersed information, to be published on the web.
   """
 
 #############################################################################
 
-  def __init__(self, rsDBIn = None, commandCallerIn = None, infoGetterIn = None, 
+  def __init__(self, VOExtension, rsDBIn = None, commandCallerIn = None, infoGetterIn = None, 
                WMSAdminIn = None):
     """ 
     Standard constructor
     
     :params:
+      :attr:`VOExtension`: string, VO Extension (e.g. 'LHCb')
+
       :attr:`rsDBIn`: optional ResourceStatusDB object 
       (see :class: `DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB`)
     
@@ -40,6 +42,9 @@ class Publisher:
       :attr:`WMSAdminIn`: optional RPCClient object for WMSAdmin
       (see :class: `DIRAC.Core.DISET.RPCClient.RPCClient`) 
     """
+    
+    self.configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations", 
+                                   globals(), locals(), ['*'])
     
     if rsDBIn is not None:
       self.rsDB = rsDBIn
@@ -57,7 +62,7 @@ class Publisher:
       self.ig = infoGetterIn
     else:
       from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
-      self.ig = InfoGetter()
+      self.ig = InfoGetter(VOExtension)
     
     if WMSAdminIn is not None:
       self.WMSAdmin = WMSAdminIn
@@ -73,8 +78,7 @@ class Publisher:
 
   def getInfo(self, granularity, name, useNewRes = False):
     """ 
-    Standard method to get all the info to be published, as defined in 
-    :mod:`DIRAC.ResourceStatusSystem.Policy.Configurations`
+    Standard method to get all the info to be published
     
     This method uses a ThreadPool (:class:`DIRAC.Core.Utilities.ThreadPool.ThreadPool`)
     with 2-5 threads. The threaded method is 
@@ -360,7 +364,7 @@ class Publisher:
 
   def _getPolicyDesc(self, policyName):
     
-    return Configurations.Policies[policyName]['Description']
+    return self.configModule.Policies[policyName]['Description']
 
 #############################################################################
 

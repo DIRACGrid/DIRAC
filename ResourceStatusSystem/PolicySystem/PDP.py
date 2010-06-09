@@ -19,32 +19,41 @@ from DIRAC.ResourceStatusSystem.Client.Command.CommandCaller import CommandCalle
 #############################################################################
 
 class PDP:
-  """ 
-  PDP (Policy Decision Point) initialization
-
-  :params:
-    :attr:`granularity`: string - a ValidRes
+  """
+  PDP = Policy Decision Point.
   
-    :attr:`name`: string - name (e.g. of a site)
-    
-    :attr:`status`: string - status
-    
-    :attr:`formerStatus`: string - former status
-    
-    :attr:`reason`: string - optional reason for last status change
-
-    :attr:`siteType`: string - optional site type
-
-    :attr:`serviceType`: string - optional service type
-
-    :attr:`resourceType`: string - optional resource type
+  Used to invoke policies and to take decision based on the polict results combination. 
   """
 
 #############################################################################
   
-  def __init__(self, granularity = None, name = None, status = None, formerStatus = None, 
+  def __init__(self, VOExtension, granularity = None, name = None, status = None, formerStatus = None, 
                reason = None, siteType = None, serviceType = None, resourceType = None, 
                useNewRes = False):
+    """ 
+    PDP (Policy Decision Point) initialization
+  
+    :params:
+      :attr:`VOExtension`: string - VO extension (e.g. 'LHCb')
+    
+      :attr:`granularity`: string - a ValidRes
+    
+      :attr:`name`: string - name (e.g. of a site)
+      
+      :attr:`status`: string - status
+      
+      :attr:`formerStatus`: string - former status
+      
+      :attr:`reason`: string - optional reason for last status change
+  
+      :attr:`siteType`: string - optional site type
+  
+      :attr:`serviceType`: string - optional service type
+  
+      :attr:`resourceType`: string - optional resource type
+    """
+    
+    self.VOExtension = VOExtension
     
     self.__granularity = granularity
     if self.__granularity is not None:
@@ -126,7 +135,7 @@ class PDP:
     self.knownInfo = knownInfo
 
                
-    ig = InfoGetter()
+    ig = InfoGetter(self.VOExtension)
     
     EVAL = ig.getInfoToApply(('policy', 'policyType'), 
                              granularity = self.__granularity, 
@@ -153,8 +162,8 @@ class PDP:
                                              'Action': False, 
                                              'Reason':'No policy results'}]}
 
-        singlePolicyResults = self._invocation(self.__granularity, self.__name,
-                                               self.__status, self.policy, 
+        singlePolicyResults = self._invocation(self.VOExtension, self.__granularity, 
+                                               self.__name, self.__status, self.policy, 
                                                self.args, policyGroup['Policies'])
 
       policyCombinedResults = self._evaluate(singlePolicyResults)
@@ -192,7 +201,7 @@ class PDP:
 
 #############################################################################
 
-  def _invocation(self, granularity, name, status, policy, args, policies):
+  def _invocation(self, VOExtension, granularity, name, status, policy, args, policies):
     """ One by one, use the PolicyCaller to invoke the policies, and putting
         their results in `policyResults`. When the status is `Unknown`, invokes
         `self.__useOldPolicyRes`. 
@@ -205,9 +214,9 @@ class PDP:
       pModule = p['Module']
       extraArgs = p['args']
       commandIn = p['commandIn']
-      res = self.pc.policyInvocation(granularity = granularity, name = name, status = status, 
-                                     policy = policy, args = args, pName = pName, pModule = pModule, 
-                                     extraArgs = extraArgs, commandIn = commandIn)
+      res = self.pc.policyInvocation(VOExtension, granularity = granularity, name = name, 
+                                     status = status, policy = policy, args = args, pName = pName, 
+                                     pModule = pModule, extraArgs = extraArgs, commandIn = commandIn)
 
       if res['SAT'] == 'Unknown':
         res = self.__useOldPolicyRes(name = name, policyName = pName, 

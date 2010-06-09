@@ -4,13 +4,14 @@
 """ This agents feeds the ClientsCache table.
 """
 
+import copy
+
 from DIRAC import S_OK, S_ERROR
-from DIRAC import gLogger
+from DIRAC import gLogger, gConfig
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Policy import Configurations
 from DIRAC.ResourceStatusSystem.Client.Command.CommandCaller import CommandCaller
 from DIRAC.ResourceStatusSystem.Client.Command.ClientsInvoker import ClientsInvoker
 
@@ -32,7 +33,9 @@ class ClientsCacheFeeder(AgentModule):
       
       self.clientsInvoker = ClientsInvoker()
 
-      commandsList = Configurations.Commands_to_use
+      VOExtension = gConfig.getValue("DIRAC/Extensions")
+      configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations", globals(), locals(), ['*'])
+      commandsList = copy.deepcopy(configModule.Commands_to_use)
 
       self.commandObjectsList = []
 

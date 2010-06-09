@@ -4,9 +4,9 @@ from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 import DIRAC.ResourceStatusSystem.test.fake_rsDB
 #from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC.ResourceStatusSystem.Policy import Configurations
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
 from DIRAC.ResourceStatusSystem.Utilities.Publisher import Publisher
+import DIRAC.ResourceStatusSystem.test.fake_Logger
 
 class UtilitiesTestCase(unittest.TestCase):
   """ Base class for the Utilities test cases
@@ -15,9 +15,15 @@ class UtilitiesTestCase(unittest.TestCase):
 #    from DIRAC.Core.Base import Script
 #    Script.parseCommandLine() 
     sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
+    sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    from DIRAC import gConfig
     
 #    from DIRAC.ResourceStatusSystem.test.fake_rsDB import ResourceStatusDB
 #    self.rsDB = ResourceStatusDB()
+
+    self.VO = gConfig.getValue("DIRAC/Extensions")
+    self.configModule = __import__(self.VO+"DIRAC.ResourceStatusSystem.Policy.Configurations", 
+                                   globals(), locals(), ['*'])
     
 #############################################################################
 
@@ -33,7 +39,7 @@ class PublisherSuccess(UtilitiesTestCase):
     mockWMSA.getSiteMaskLogging.return_value = {'OK': True, 
                                                 'Value': {'LCG.CERN.ch': [('Active', '2009-11-25 17:36:14', 'atsareg', 'test')]}}
     
-    p = Publisher(rsDBIn = None, commandCallerIn = mockCC, infoGetterIn = mockIG, 
+    p = Publisher(self.VO, rsDBIn = None, commandCallerIn = mockCC, infoGetterIn = mockIG, 
                   WMSAdminIn = mockWMSA)
     
     igR = [{'Panels': {'Service_Storage_Panel': 
@@ -213,7 +219,7 @@ class PublisherSuccess(UtilitiesTestCase):
 class InfoGetterSuccess(UtilitiesTestCase):
   
   def testGetInfoToApply(self):
-    ig = InfoGetter()
+    ig = InfoGetter('LHCb')
     
     for g in ValidRes:
       for s in ValidStatus: 
@@ -239,51 +245,51 @@ class InfoGetterSuccess(UtilitiesTestCase):
 
               res = ig.getInfoToApply(('policyType', ), g, s, None, site_t, service_t, resource_t)
               for p_res in res[0]['PolicyType']:
-                self.assert_(p_res in Configurations.Policy_Types.keys())
+                self.assert_(p_res in self.configModule.Policy_Types.keys())
 
               for useNewRes in (True, False):
 
                 res = ig.getInfoToApply(('policy', ), g, s, None, site_t, service_t, resource_t, useNewRes)
                 pModuleList = [None]
-                for k in Configurations.Policies.keys():
+                for k in self.configModule.Policies.keys():
                   try:
-                    if Configurations.Policies[k]['module'] not in pModuleList:
-                      pModuleList.append(Configurations.Policies[k]['module'])
+                    if self.configModule.Policies[k]['module'] not in pModuleList:
+                      pModuleList.append(self.configModule.Policies[k]['module'])
                   except KeyError:
                     pass
                 for p_res in res[0]['Policies']:
-                  self.assert_(p_res['Name'] in Configurations.Policies.keys())
+                  self.assert_(p_res['Name'] in self.configModule.Policies.keys())
                   self.assert_(p_res['Module'] in pModuleList)
                   if useNewRes is False:
-                    self.assertEqual(p_res['commandIn'], Configurations.Policies[p_res['Name']]['commandIn'])
+                    self.assertEqual(p_res['commandIn'], self.configModule.Policies[p_res['Name']]['commandIn'])
                   else:
                     try:
-                      self.assertEqual(p_res['commandIn'], Configurations.Policies[p_res['Name']]['commandInNewRes'])
+                      self.assertEqual(p_res['commandIn'], self.configModule.Policies[p_res['Name']]['commandInNewRes'])
                     except KeyError:
-                      self.assertEqual(p_res['commandIn'], Configurations.Policies[p_res['Name']]['commandIn'])
+                      self.assertEqual(p_res['commandIn'], self.configModule.Policies[p_res['Name']]['commandIn'])
 
                 res = ig.getInfoToApply(('panel_info', ), g, s, None, site_t, service_t, resource_t, useNewRes)
                 for p_res in res[0]['Info']:
                   for p_name in p_res.keys():
-                    self.assert_(p_name in Configurations.Policies.keys())
+                    self.assert_(p_name in self.configModule.Policies.keys())
                     if isinstance(p_res[p_name], list):
                       for i in range(len(p_res[p_name])):
                         for k in p_res[p_name][i].keys():
                           self.assertEqual(p_res[p_name][i][k]['args'], 
-                                           Configurations.Policies[p_name][panel][i][k]['args'])
+                                           self.configModule.Policies[p_name][panel][i][k]['args'])
                           if useNewRes:
                             try:
                               self.assertEqual(p_res[p_name][i][k]['Command'], 
-                                               Configurations.Policies[p_name][panel][i][k]['CommandNew'])
+                                               self.configModule.Policies[p_name][panel][i][k]['CommandNew'])
                             except KeyError:
                               self.assertEqual(p_res[p_name][i][k]['Command'], 
-                                               Configurations.Policies[p_name][panel][i][k]['Command'])
+                                               self.configModule.Policies[p_name][panel][i][k]['Command'])
                           else:
                             self.assertEqual(p_res[p_name][i][k]['Command'], 
-                                             Configurations.Policies[p_name][panel][i][k]['Command'])
+                                             self.configModule.Policies[p_name][panel][i][k]['Command'])
                             
                     else:
-                      self.assertEqual(p_res[p_name], Configurations.Policies[p_name][panel])
+                      self.assertEqual(p_res[p_name], self.configModule.Policies[p_name][panel])
 
 
 #############################################################################

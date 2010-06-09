@@ -2,6 +2,7 @@
 # $HeadURL:  $
 ########################################################################
 
+import copy
 import Queue
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -13,7 +14,6 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
-from DIRAC.ResourceStatusSystem.Policy import Configurations
 
 __RCSID__ = "$Id: $"
 
@@ -46,6 +46,13 @@ class SeSInspectorAgent(AgentModule):
       
       self.setup = gConfig.getValue("DIRAC/Setup")
 
+      self.VOExtension = gConfig.getValue("DIRAC/Extensions")
+
+      configModule = __import__(self.VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations", 
+                                globals(), locals(), ['*'])
+      
+      self.Services_check_freq = copy.deepcopy(configModule.Services_check_freq)
+      
       self.nc = NotificationClient()
 
       self.diracAdmin = DiracAdmin()
@@ -74,7 +81,7 @@ class SeSInspectorAgent(AgentModule):
     
     try:
 
-      res = self.rsDB.getStuffToCheck('Services', Configurations.Resources_check_freq) 
+      res = self.rsDB.getStuffToCheck('Services', self.Services_check_freq) 
    
       for resourceTuple in res:
         if resourceTuple[0] in self.ServiceNamesInCheck:
@@ -116,7 +123,7 @@ class SeSInspectorAgent(AgentModule):
         
         gLogger.info("Checking Service %s, with status %s" % (serviceName, status))
         
-        newPEP = PEP(granularity = granularity, name = serviceName, status = status, 
+        newPEP = PEP(self.VOExtension, granularity = granularity, name = serviceName, status = status, 
                      formerStatus = formerStatus, siteType = siteType, 
                      serviceType = serviceType, operatorCode = operatorCode)
         

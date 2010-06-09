@@ -2,6 +2,7 @@
 # $HeadURL:  $
 ########################################################################
 
+import copy
 import Queue
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -13,7 +14,6 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
-from DIRAC.ResourceStatusSystem.Policy import Configurations
 
 __RCSID__ = "$Id:  $"
 
@@ -45,7 +45,14 @@ class RSInspectorAgent(AgentModule):
         return S_ERROR('Can not create Thread Pool')
       
       self.setup = gConfig.getValue("DIRAC/Setup")
+      
+      self.VOExtension = gConfig.getValue("DIRAC/Extensions")
 
+      configModule = __import__(self.VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations", 
+                                globals(), locals(), ['*'])
+      
+      self.Resources_check_freq = copy.deepcopy(configModule.Resources_check_freq)
+      
       self.nc = NotificationClient()
 
       self.diracAdmin = DiracAdmin()
@@ -73,7 +80,7 @@ class RSInspectorAgent(AgentModule):
     
     try:
 
-      res = self.rsDB.getStuffToCheck('Resources', Configurations.Resources_check_freq) 
+      res = self.rsDB.getStuffToCheck('Resources', self.Resources_check_freq) 
    
       for resourceTuple in res:
         if resourceTuple[0] in self.ResourceNamesInCheck:
@@ -116,8 +123,8 @@ class RSInspectorAgent(AgentModule):
         
         gLogger.info("Checking Resource %s, with status %s" % (resourceName, status))
         
-        newPEP = PEP(granularity = granularity, name = resourceName, status = status, 
-                     formerStatus = formerStatus, siteType = siteType, 
+        newPEP = PEP(self.VOExtension, granularity = granularity, name = resourceName, 
+                     status = status, formerStatus = formerStatus, siteType = siteType, 
                      resourceType = resourceType, operatorCode = operatorCode)
         
         newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup, ncIn = self.nc, 

@@ -3,7 +3,6 @@
 ########################################################################
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC.ResourceStatusSystem.Policy.Configurations import Policies, Policy_Types, views_panels
 import copy
 
 __RCSID__ = "$Id:  $"
@@ -15,9 +14,20 @@ class InfoGetter:
 
 #############################################################################
 
-  def __init__(self):
-    """ Standard constructor
+  def __init__(self, VOExtension):
+    """ 
+    Standard constructor
+  
+    :params:
+      :attr:`VOExtension`: string - VO extension (e.g. 'LHCb')
     """
+    configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations", 
+                              globals(), locals(), ['*'])
+
+    self.C_Policies = copy.deepcopy(configModule.Policies)
+    self.C_Policy_Types = copy.deepcopy(configModule.Policy_Types)
+    self.C_views_panels = copy.deepcopy(configModule.views_panels)
+
   
 #############################################################################
 
@@ -104,41 +114,41 @@ class InfoGetter:
                      siteType = None, serviceType = None, resourceType = None,
                      useNewRes = False):
   
-    C_Policies = copy.deepcopy(Policies)
+#    self.C_Policies = copy.deepcopy(Policies)
 
     pol_to_eval = []
     
-    for p in C_Policies.keys():
-      if granularity in C_Policies[p]['Granularity']:
+    for p in self.C_Policies.keys():
+      if granularity in self.C_Policies[p]['Granularity']:
         pol_to_eval.append(p)
         
         if status is not None:
-          if status not in C_Policies[p]['Status']:
+          if status not in self.C_Policies[p]['Status']:
             pol_to_eval.remove(p)
         
         if formerStatus is not None:
-          if formerStatus not in C_Policies[p]['FormerStatus']:
+          if formerStatus not in self.C_Policies[p]['FormerStatus']:
             try:
               pol_to_eval.remove(p)
             except Exception:
               continue
             
         if siteType is not None:
-          if siteType not in C_Policies[p]['SiteType']:
+          if siteType not in self.C_Policies[p]['SiteType']:
             try:
               pol_to_eval.remove(p)
             except Exception:
               continue
             
         if serviceType is not None:
-          if serviceType not in C_Policies[p]['ServiceType']:
+          if serviceType not in self.C_Policies[p]['ServiceType']:
             try:
               pol_to_eval.remove(p)
             except Exception:
               continue
             
         if resourceType is not None:
-          if resourceType not in C_Policies[p]['ResourceType']:
+          if resourceType not in self.C_Policies[p]['ResourceType']:
             try:
               pol_to_eval.remove(p)
             except Exception:
@@ -148,17 +158,17 @@ class InfoGetter:
     
     for p in pol_to_eval:
       try:
-        moduleName = C_Policies[p]['module']
+        moduleName = self.C_Policies[p]['module']
       except KeyError:
         moduleName = None
-      args = C_Policies[p]['args']
+      args = self.C_Policies[p]['args']
       if useNewRes:
         try:
-          commandIn = C_Policies[p]['commandInNewRes']
+          commandIn = self.C_Policies[p]['commandInNewRes']
         except:
-          commandIn = C_Policies[p]['commandIn']
+          commandIn = self.C_Policies[p]['commandIn']
       else:
-        commandIn = C_Policies[p]['commandIn']
+        commandIn = self.C_Policies[p]['commandIn']
       polToEval_Args.append({'Name' : p, 'Module' : moduleName, 'args' : args, 'commandIn' : commandIn})
     
     return polToEval_Args
@@ -169,48 +179,48 @@ class InfoGetter:
   def __getPolTypes(self, granularity, status = None, formerStatus = None, newStatus = None,  
                     siteType = None, serviceType = None, resourceType = None):
           
-    C_Policy_Types = copy.deepcopy(Policy_Types)
+#    self.C_Policy_Types = copy.deepcopy(Policy_Types)
 
     pTypes = [] 
      
-    for pt in C_Policy_Types.keys():
-      if granularity in C_Policy_Types[pt]['Granularity']:
+    for pt in self.C_Policy_Types.keys():
+      if granularity in self.C_Policy_Types[pt]['Granularity']:
         pTypes.append(pt)  
     
         if status is not None:
-          if status not in C_Policy_Types[pt]['Status']:
+          if status not in self.C_Policy_Types[pt]['Status']:
             pTypes.remove(pt)
         
         if formerStatus is not None:
-          if formerStatus not in C_Policy_Types[pt]['FormerStatus']:
+          if formerStatus not in self.C_Policy_Types[pt]['FormerStatus']:
             try:
               pTypes.remove(pt)
             except Exception:
               continue
             
         if newStatus is not None:
-          if newStatus not in C_Policy_Types[pt]['NewStatus']:
+          if newStatus not in self.C_Policy_Types[pt]['NewStatus']:
             try:
               pTypes.remove(pt)
             except Exception:
               continue
             
         if siteType is not None:
-          if siteType not in C_Policy_Types[pt]['SiteType']:
+          if siteType not in self.C_Policy_Types[pt]['SiteType']:
             try:
               pTypes.remove(pt)
             except Exception:
               continue
             
         if serviceType is not None:
-          if serviceType not in C_Policy_Types[pt]['ServiceType']:
+          if serviceType not in self.C_Policy_Types[pt]['ServiceType']:
             try:
               pTypes.remove(pt)
             except Exception:
               continue
             
         if resourceType is not None:
-          if resourceType not in C_Policy_Types[pt]['ResourceType']:
+          if resourceType not in self.C_Policy_Types[pt]['ResourceType']:
             try:
               pTypes.remove(pt)
             except Exception:
@@ -230,13 +240,13 @@ class InfoGetter:
                       serviceType = None, resourceType = None, panel_name = None, useNewRes = False):
   
   
-    C_Policies = copy.deepcopy(Policies)
+#    self.C_Policies = copy.deepcopy(Policies)
     
     info = []
     
-    for p in C_Policies.keys():
-      if panel_name in C_Policies[p].keys():
-        info.append({p:C_Policies[p][panel_name]})
+    for p in self.C_Policies.keys():
+      if panel_name in self.C_Policies[p].keys():
+        info.append({p:self.C_Policies[p][panel_name]})
         c = len(info) - 1
         if isinstance(info[c][p], list):
           
@@ -254,44 +264,44 @@ class InfoGetter:
                   del i[k]['CommandNew']
         
         if granularity is not None:
-          if granularity not in C_Policies[p]['Granularity']:
+          if granularity not in self.C_Policies[p]['Granularity']:
             try:
-              info.remove({p: C_Policies[p][panel_name]})
+              info.remove({p: self.C_Policies[p][panel_name]})
             except Exception:
               continue
         
         if status is not None:
-          if status not in C_Policies[p]['Status']:
+          if status not in self.C_Policies[p]['Status']:
             try:
-              info.remove({p: C_Policies[p][panel_name]})
+              info.remove({p: self.C_Policies[p][panel_name]})
             except Exception:
               continue
         
         if formerStatus is not None:
-          if formerStatus not in C_Policies[p]['FormerStatus']:
+          if formerStatus not in self.C_Policies[p]['FormerStatus']:
             try:
-              info.remove({p: C_Policies[p][panel_name]})
+              info.remove({p: self.C_Policies[p][panel_name]})
             except Exception:
               continue
             
         if siteType is not None:
-          if siteType not in C_Policies[p]['SiteType']:
+          if siteType not in self.C_Policies[p]['SiteType']:
             try:
-              info.remove({p: C_Policies[p][panel_name]})
+              info.remove({p: self.C_Policies[p][panel_name]})
             except Exception:
               continue
             
         if serviceType is not None:
-          if serviceType not in C_Policies[p]['ServiceType']:
+          if serviceType not in self.C_Policies[p]['ServiceType']:
             try:
-              info.remove({p: C_Policies[p][panel_name]})
+              info.remove({p: self.C_Policies[p][panel_name]})
             except Exception:
               continue
             
         if resourceType is not None:
-          if resourceType not in C_Policies[p]['ResourceType']:
+          if resourceType not in self.C_Policies[p]['ResourceType']:
             try:
-              info.remove({p: C_Policies[p][panel_name]})
+              info.remove({p: self.C_Policies[p][panel_name]})
             except Exception:
               continue
     
@@ -302,7 +312,7 @@ class InfoGetter:
   def __getViewPanels(self, granularity):
     if granularity is None:
       granularity = 'Site'
-    return copy.deepcopy(views_panels[granularity])
+    return self.C_views_panels[granularity]
 
 #############################################################################
   

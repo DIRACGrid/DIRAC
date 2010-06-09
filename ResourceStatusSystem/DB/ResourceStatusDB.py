@@ -3225,7 +3225,6 @@ class ResourceStatusDB:
       :attr:`granularity`: a ValidRes
       
       :attr:`checkFrequecy': dictonary. Frequency of active sites/resources checking in minutes.
-              See :mod:`DIRAC.ResourceStatusSystem.Policy.Configurations`
       
       :attr:`maxN`: integer - maximum number of lines in output
     """

@@ -3,7 +3,7 @@
     real policies, based on the policy name
 """
 
-from DIRAC.ResourceStatusSystem.Policy.PolicyInvoker import PolicyInvoker
+from DIRAC.ResourceStatusSystem.PolicySystem.PolicyInvoker import PolicyInvoker
 
 class PolicyCaller:
 
@@ -21,13 +21,13 @@ class PolicyCaller:
 
 #############################################################################
 
-  def policyInvocation(self, granularity = None, name = None, status = None, policy = None,  
+  def policyInvocation(self, VOExtension, granularity = None, name = None, status = None, policy = None,  
                        args = None, pName = None, pModule = None, extraArgs = None, commandIn = None):
     
     p = policy
     a = args
     
-    moduleBase = "DIRAC.ResourceStatusSystem.Policy."
+    moduleBase = VOExtension + "DIRAC.ResourceStatusSystem.Policy."
     
     if p is None:
       try:

@@ -1,11 +1,13 @@
 import sys
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
-
+from DIRAC import gConfig
 import DIRAC.ResourceStatusSystem.test.fake_rsDB
 
 from DIRAC.Core.Base import Script
 Script.parseCommandLine() 
+
+VO = gConfig.getValue("DIRAC/Extensions")
 
 #sito = {'name':'LCG.Cagliari.it', 'siteType':'T2'} #OK
 sito = {'name':'LCG.CERN.ch', 'siteType':'T0'} #OK
@@ -39,7 +41,7 @@ for status in ValidStatus:
   print "############################"
   print " "
   print 'nel test:', status#, oldStatus
-  pdp = PDP(granularity = 'Site', name = sito['name'], status = status, 
+  pdp = PDP(VO, granularity = 'Site', name = sito['name'], status = status, 
 #            formerStatus = oldStatus, 
             reason = 'XXXXX', siteType = sito['siteType'],
              useNewRes = useNewRes
@@ -56,7 +58,7 @@ for status in ValidStatus:
   print "############################"
   print " "
   print 'nel test:', status#, oldStatus
-  pdp = PDP(granularity = 'Service', name = servizio['name'], status = status, 
+  pdp = PDP(VO, granularity = 'Service', name = servizio['name'], status = status, 
 #            formerStatus = oldStatus, 
             reason = 'XXXXX', siteType = servizio['siteType'],
             serviceType = servizio['serviceType'],
@@ -74,7 +76,7 @@ for status in ValidStatus:
     print "############################"
     print " "
     print 'nel test:', status#, oldStatus
-    pdp = PDP(granularity = 'Service', name = servizio2['name'], status = status, 
+    pdp = PDP(VO, granularity = 'Service', name = servizio2['name'], status = status, 
 #              formerStatus = oldStatus, 
               reason = 'XXXXX', siteType = servizio2['siteType'],
               serviceType = servizio2['serviceType'], 
@@ -94,7 +96,7 @@ for status in ValidStatus:
   print "############################"
   print " "
   print status#, oldStatus
-  pdp = PDP(granularity = 'Resource', name = risorsa['name'], status = status, 
+  pdp = PDP(VO, granularity = 'Resource', name = risorsa['name'], status = status, 
 #            formerStatus = oldStatus, 
             reason = 'XXXXX', siteType = risorsa['siteType'], 
             resourceType = risorsa['resourceType'],
@@ -112,7 +114,7 @@ for status in ValidStatus:
   print "############################"
   print " "
   print status#, oldStatus
-  pdp = PDP(granularity = 'Resource', name = risorsa2['name'], status = status, 
+  pdp = PDP(VO, granularity = 'Resource', name = risorsa2['name'], status = status, 
 #              formerStatus = oldStatus, 
             reason = 'XXXXX', siteType = risorsa2['siteType'], 
             resourceType = risorsa2['resourceType'],
@@ -130,7 +132,7 @@ for status in ValidStatus:
   print "############################"
   print " "
   print status#, oldStatus
-  pdp = PDP(granularity = 'Resource', name = risorsa3['name'], status = status, 
+  pdp = PDP(VO, granularity = 'Resource', name = risorsa3['name'], status = status, 
 #            formerStatus = oldStatus, 
             reason = 'XXXXX', siteType = risorsa3['siteType'], 
             resourceType = risorsa3['resourceType'],
@@ -148,7 +150,7 @@ for status in ValidStatus:
   print "############################"
   print " "
   print status#, oldStatus
-  pdp = PDP(granularity = 'StorageElement', name = se['name'], status = status, 
+  pdp = PDP(VO, granularity = 'StorageElement', name = se['name'], status = status, 
 #            formerStatus = oldStatus, 
             reason = 'XXXXX', siteType = se['siteType'],
             useNewRes = useNewRes

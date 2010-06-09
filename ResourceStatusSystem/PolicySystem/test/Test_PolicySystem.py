@@ -4,6 +4,8 @@ from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
+from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
+from DIRAC.ResourceStatusSystem.PolicySystem.PolicyInvoker import PolicyInvoker
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
@@ -21,9 +23,16 @@ class PolicySystemTestCase(unittest.TestCase):
     from DIRAC.Core.Base import Script
     Script.parseCommandLine() 
     
+    from DIRAC import gConfig
+    self.VO = gConfig.getValue("DIRAC/Extensions")
+    
     sys.modules["DIRAC.FrameworkSystem.Client.NotificationClient"] = DIRAC.ResourceStatusSystem.test.fake_NotificationClient
+    self.mock_command = Mock()
+    self.mock_policy = Mock()
     self.mock_p = Mock()
     self.mock_args = Mock()
+    self.pb = PolicyBase()
+    self.pi = PolicyInvoker()
     self.mock_pdp = Mock()
     self.mock_rsDB = Mock()
     self.mock_nc = Mock()
@@ -36,7 +45,7 @@ class PolicySystemTestCase(unittest.TestCase):
     self.mock_csAPI = Mock()
     self.mock_csAPI.setOption.return_value = {'OK': True, 'Value': ''}
     self.mock_csAPI.commit.return_value = {'OK': True, 'Value': ''}
-    self.ig = InfoGetter()
+    self.ig = InfoGetter(self.VO)
     
 #############################################################################
 
@@ -75,7 +84,7 @@ class PEPSuccess(PolicySystemTestCase):
                                                                                              'EndDate': '2010-02-16 15:00:00', 
                                                                                              'SAT': True}] }
           #                pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', {'PolicyType':newPolicyType, 'Granularity':newGranularity})
-                        pep = PEP(granularity, 'XX', status, oldStatus, 'XX', siteType, 
+                        pep = PEP(self.VO, granularity, 'XX', status, oldStatus, 'XX', siteType, 
                                   serviceType, resourceType, user)
         #                self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType], 
         #                                                                                     'Action':True, 'Status':status, 
@@ -197,7 +206,7 @@ class PEPFailure(PolicySystemTestCase):
                 for serviceType in ValidServiceType:
                   for resourceType in ValidResourceType:
 #                    pep = PEP(granularity, 'XX', status, oldStatus, 'XX', siteType, serviceType, resourceType,  {'PolicyType':newPolicyType, 'Granularity':newGranularity})
-                    pep = PEP(granularity, 'XX', status, oldStatus, 'XX', siteType, serviceType, resourceType)
+                    pep = PEP(self.VO, granularity, 'XX', status, oldStatus, 'XX', siteType, serviceType, resourceType)
                     self.failUnlessRaises(Exception, pep.enforce, self.mock_pdp, self.mock_rsDB, ncIn = self.mock_nc, 
                                           setupIn = 'LHCb-Development', daIn = self.mock_da, csAPIIn = self.mock_csAPI )
                     self.failUnlessRaises(Exception, pep.enforce, self.mock_pdp, self.mock_rsDB, knownInfo={'DT':'AT_RISK'}, 
@@ -213,15 +222,15 @@ class PEPFailure(PolicySystemTestCase):
         for oldStatus in ValidStatus:
           if status == oldStatus:
             continue
-          self.failUnlessRaises(InvalidRes, PEP, 'sites', 'LCG.Ferrara.it', status, oldStatus, 'XX')
+          self.failUnlessRaises(InvalidRes, PEP, self.VO, 'sites', 'LCG.Ferrara.it', status, oldStatus, 'XX')
     for policyType in PolicyTypes:
       for granularity in ValidRes:
         for status in ValidStatus:
           for oldStatus in ValidStatus:
             if status == oldStatus:
               continue
-            self.failUnlessRaises(InvalidStatus, PEP, granularity, 'XX', 'actives', oldStatus, 'XX')
-            self.failUnlessRaises(InvalidStatus, PEP, granularity, 'XX', status, 'banneds', 'XX')
+            self.failUnlessRaises(InvalidStatus, PEP, self.VO, granularity, 'XX', 'actives', oldStatus, 'XX')
+            self.failUnlessRaises(InvalidStatus, PEP, self.VO, granularity, 'XX', status, 'banneds', 'XX')
 
 
 #############################################################################
@@ -239,7 +248,7 @@ class PDPSuccess(PolicySystemTestCase):
             continue
           self.mock_p.evaluate.return_value = [{'SAT':True, 'Status':status, 
                                                'Reason':'testReason', 'PolicyName': 'test_P'}]
-          pdp = PDP(granularity, 'XX', status, oldStatus, 'XX')
+          pdp = PDP(self.VO, granularity, 'XX', status, oldStatus, 'XX')
           res = pdp.takeDecision(policyIn = self.mock_p)
           res = res['PolicyCombinedResult']
           for r in res:
@@ -280,7 +289,7 @@ class PDPSuccess(PolicySystemTestCase):
               newStatusF2 = newStatus2
               if newStatus1 == newStatusF2 or newStatusF1 == newStatus2:
                 continue
-              pdp = PDP(granularity, 'XX', status, oldStatus, 'XX')
+              pdp = PDP(self.VO, granularity, 'XX', status, oldStatus, 'XX')
               polRes = {'SAT':True, 'Status':newStatus1, 'Reason':'-Reason1-'}
               polResF = {'SAT':False, 'Status':newStatusF2, 'Reason':'-Reason2-'}
               # 1 policy
@@ -421,7 +430,7 @@ class PDPFailure(PolicySystemTestCase):
         for oldStatus in ValidStatus:
           if status == oldStatus:
             continue
-          pdp = PDP(granularity, 'XX', status, oldStatus, 'XX')
+          pdp = PDP(self.VO, granularity, 'XX', status, oldStatus, 'XX')
           self.failUnlessRaises(Exception, pdp.takeDecision, self.mock_pdp, self.mock_rsDB)
           self.failUnlessRaises(Exception, pdp.takeDecision, self.mock_pdp, self.mock_rsDB, knownInfo={'DT':'AT_RISK'})
         
@@ -432,14 +441,14 @@ class PDPFailure(PolicySystemTestCase):
       for oldStatus in ValidStatus:
         if status == oldStatus:
           continue
-        self.failUnlessRaises(InvalidRes, PDP, 'sites', 'XX', status, oldStatus, 'XX')
+        self.failUnlessRaises(InvalidRes, PDP, self.VO, 'sites', 'XX', status, oldStatus, 'XX')
     for granularity in ValidRes:
       for oldStatus in ValidStatus:
         for status in ValidStatus:
           if status == oldStatus:
             continue
-          self.failUnlessRaises(InvalidStatus, PDP, granularity, 'XX', 'actives', oldStatus, 'XX')
-          self.failUnlessRaises(InvalidStatus, PDP, granularity, 'XX', status, 'banneds', 'XX')
+          self.failUnlessRaises(InvalidStatus, PDP, self.VO, granularity, 'XX', 'actives', oldStatus, 'XX')
+          self.failUnlessRaises(InvalidStatus, PDP, self.VO, granularity, 'XX', status, 'banneds', 'XX')
 
 #############################################################################
 
@@ -462,23 +471,95 @@ class PolicyCallerSuccess(PolicySystemTestCase):
         pc = PolicyCaller(commandCallerIn = cc)
 
         for pol_mod in policies_modules[g]:
-          res = pc.policyInvocation(g, 'XX', status, self.mock_p, 
+          res = pc.policyInvocation(self.VO, g, 'XX', status, self.mock_p, 
                                     (g, 'XX', status), None, pol_mod)
           self.assert_(res['SAT'])
 
-          res = pc.policyInvocation(g, 'XX', status, self.mock_p, 
+          res = pc.policyInvocation(self.VO, g, 'XX', status, self.mock_p, 
                                     None, None, pol_mod)
           self.assert_(res['SAT'])
   
           for extraArgs in ((g, 'XX', status), [(g, 'XX', status), (g, 'XX', status)]):
-            res = pc.policyInvocation(g, 'XX', status, self.mock_p, 
+            res = pc.policyInvocation(self.VO, g, 'XX', status, self.mock_p, 
                                       None, None, pol_mod, extraArgs)
             self.assert_(res['SAT'])
   
 #############################################################################
 
+class PolicyBaseSuccess(PolicySystemTestCase):
+  
+  def test_setArgs(self):
+    for g in ValidRes:
+      for s in ValidStatus:
+        for a in [(g, 'XX', s), [(g, 'XX', s), (g, 'XX', s)]]:
+          self.pb.setArgs(a)
+          self.assertEqual(self.pb.args, a)
+          self.assertEqual(self.pb.oldStatus, s)
+
+  def test_evaluate(self):
+    for g in ValidRes:
+      for s in ValidStatus:
+        for a in [(g, 'XX', s), [(g, 'XX', s), (g, 'XX', s)]]:
+          self.pb.setArgs(a)
+          self.mock_command.doCommand.return_value = {'Result':'aRes'}
+          self.pb.setCommand(self.mock_command)
+          res = self.pb.evaluate()
+          self.assertEqual(res, 'aRes')
+
+#############################################################################
+
+class PolicyBaseFailure(PolicySystemTestCase):
+  
+  def test_setBadArgs(self):
+    self.failUnlessRaises(InvalidRes, self.pb.setArgs, ('Sites', 'XX', 'Active'))
+    self.failUnlessRaises(InvalidStatus, self.pb.setArgs, ('Site', 'XX', 'Actives'))
+    
+    self.pb.setArgs(('Site', 'XX', 'Active', 'BOH', 'BOH', 'BOH'))
+    self.mock_command.doCommand.return_value = {'Result':'aRes'}
+    self.pb.setCommand(self.mock_command)
+    self.failUnlessRaises(RSSException, self.pb.evaluate)
+    self.pb.setArgs([('Site', 'XX', 'Active', 'BOH', 'BOH', 'BOH'), ('Site', 'XX', 'Active', 'BOH', 'BOH', 'BOH')])
+    self.failUnlessRaises(RSSException, self.pb.evaluate)
+
+#############################################################################
+
+class PolicyInvokerSuccess(PolicySystemTestCase):
+
+  def test_setPolicy(self):
+    self.pi.setPolicy(self.mock_policy)
+    self.assertEqual(self.pi.policy, self.mock_policy)
+
+  def test_evaluatePolicy(self):
+    
+    self.mock_policy.evaluate.return_value = {'Result':'Satisfied', 'Status':'Banned', 'Reason':"reason"}
+    self.pi.setPolicy(self.mock_policy)
+    for granularity in ValidRes:
+      res = self.pi.evaluatePolicy()
+      self.assertEqual(res['Result'], 'Satisfied')
+    self.mock_policy.evaluate.return_value = {'Result':'Un-Satisfied'}
+    self.pi.setPolicy(self.mock_policy)
+    for granularity in ValidRes:
+      res = self.pi.evaluatePolicy()
+      self.assertEqual(res['Result'], 'Un-Satisfied')
+    
+#############################################################################
+
+class PolicyInvokerFailure(PolicySystemTestCase):
+  
+  def test_policyFail(self):
+    self.mock_policy.evaluate.side_effect = RSSException()
+    for granularity in ValidRes:
+      self.failUnlessRaises(Exception, self.pi.evaluatePolicy)
+        
+#############################################################################
+
+
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(PolicySystemTestCase)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyBaseSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyBaseFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyInvokerSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyInvokerFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PEPSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PEPFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPSuccess))

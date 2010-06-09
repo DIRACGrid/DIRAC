@@ -9,7 +9,7 @@ from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Policy import Configurations
+from LHCbDIRAC.ResourceStatusSystem.Policy import Configurations
 
 
 class ResourceStatusDBTestCase(unittest.TestCase):

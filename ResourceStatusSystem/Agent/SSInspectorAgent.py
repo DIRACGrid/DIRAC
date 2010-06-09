@@ -2,6 +2,7 @@
 # $HeadURL:  $
 ########################################################################
 
+import copy
 import Queue
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -13,7 +14,6 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
-from DIRAC.ResourceStatusSystem.Policy import Configurations
 
 __RCSID__ = "$Id:  $"
 
@@ -46,6 +46,13 @@ class SSInspectorAgent(AgentModule):
       
       self.setup = gConfig.getValue("DIRAC/Setup")
 
+      self.VOExtension = gConfig.getValue("DIRAC/Extensions")
+
+      configModule = __import__(self.VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations", 
+                                globals(), locals(), ['*'])
+      
+      self.Sites_check_freq = copy.deepcopy(configModule.Sites_check_freq)
+      
       self.nc = NotificationClient()
 
       self.diracAdmin = DiracAdmin()
@@ -73,7 +80,7 @@ class SSInspectorAgent(AgentModule):
     
     try:
 
-      res = self.rsDB.getStuffToCheck('Sites', Configurations.Resources_check_freq) 
+      res = self.rsDB.getStuffToCheck('Sites', self.Sites_check_freq) 
    
       for resourceTuple in res:
         if resourceTuple[0] in self.SiteNamesInCheck:
@@ -116,7 +123,7 @@ class SSInspectorAgent(AgentModule):
         
         gLogger.info("Checking Site %s, with status %s" % (siteName, status))
         
-        newPEP = PEP(granularity = granularity, name = siteName, status = status, 
+        newPEP = PEP(self.VOExtension, granularity = granularity, name = siteName, status = status, 
                      formerStatus = formerStatus, siteType = siteType, operatorCode = operatorCode)
         
         newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup, ncIn = self.nc, 

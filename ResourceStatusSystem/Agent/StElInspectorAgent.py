@@ -2,6 +2,7 @@
 # $HeadURL:  $
 ########################################################################
 
+import copy
 import Queue
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -13,7 +14,6 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
-from DIRAC.ResourceStatusSystem.Policy import Configurations
 
 __RCSID__ = "$Id:  $"
 
@@ -46,6 +46,13 @@ class StElInspectorAgent(AgentModule):
       
       self.setup = gConfig.getValue("DIRAC/Setup")
 
+      self.VOExtension = gConfig.getValue("DIRAC/Extensions")
+
+      configModule = __import__(self.VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations", 
+                                globals(), locals(), ['*'])
+      
+      self.StorageElements_check_freq = copy.deepcopy(configModule.StorageElements_check_freq)
+      
       self.nc = NotificationClient()
 
       self.diracAdmin = DiracAdmin()
@@ -73,7 +80,7 @@ class StElInspectorAgent(AgentModule):
     
     try:
 
-      res = self.rsDB.getStuffToCheck('StorageElements', Configurations.Resources_check_freq) 
+      res = self.rsDB.getStuffToCheck('StorageElements', self.StorageElements_check_freq) 
    
       for resourceTuple in res:
         if resourceTuple[0] in self.StorageElementInCheck:
@@ -115,8 +122,10 @@ class StElInspectorAgent(AgentModule):
        
         gLogger.info("Checking StorageElement %s, with status %s" % (storageElementName, status))
         
-        newPEP = PEP(granularity = granularity, name = storageElementName, status = status, 
-                     formerStatus = formerStatus, siteType = siteType, operatorCode = operatorCode)
+        newPEP = PEP(self.VOExtension, granularity = granularity, name = storageElementName, 
+                     status = status, formerStatus = formerStatus, siteType = siteType, 
+                     operatorCode = operatorCode)
+        
         newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup, ncIn = self.nc, 
                        daIn = self.diracAdmin, csAPIIn = self.csAPI)
     

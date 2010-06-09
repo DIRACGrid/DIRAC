@@ -7,7 +7,6 @@ import DIRAC.ResourceStatusSystem.test.fake_rsDB
 import DIRAC.ResourceStatusSystem.test.fake_Logger
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC.ResourceStatusSystem.Policy import Configurations
 
 class ResourceStatusHandlerTestCase(unittest.TestCase):
   """ Base class for the ResourceStatusHandlerTestCase test cases
@@ -25,7 +24,7 @@ class ResourceStatusHandlerTestCase(unittest.TestCase):
     self.rsh = ResourceStatusHandler('', '', '')
     
     self.mock_command = Mock()
-            
+
 class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
   
 #############################################################################
