@@ -633,10 +633,14 @@ File Catalog Client $Revision: 1.17 $Date:
   def do_chown(self,args):
     """ Change owner of the given path
 
-        usage: chown <owner> <path> 
+        usage: chown [-R] <owner> <path> 
     """         
     
     argss = args.split()
+    recursive = False
+    if argss[0] == '-R':
+      recursive = True
+      del argss[0]
     owner = argss[0]
     path = argss[1]
     lfn = self.getPath(path)
@@ -644,7 +648,7 @@ File Catalog Client $Revision: 1.17 $Date:
     pathDict[lfn] = owner
     
     try:
-      result = self.fc.changePathOwner(pathDict)         
+      result = self.fc.changePathOwner(pathDict,recursive)         
       if not result['OK']:
         print "chown failed:",result['Message']
     except Exception, x:
@@ -653,10 +657,14 @@ File Catalog Client $Revision: 1.17 $Date:
   def do_chgrp(self,args):
     """ Change group of the given path
 
-        usage: chgrp <group> <path> 
+        usage: chgrp [-R] <group> <path> 
     """         
     
     argss = args.split()
+    recursive = False
+    if argss[0] == '-R':
+      recursive = True
+      del argss[0]
     group = argss[0]
     path = argss[1]
     lfn = self.getPath(path)
@@ -664,7 +672,7 @@ File Catalog Client $Revision: 1.17 $Date:
     pathDict[lfn] = group
     
     try:
-      result = self.fc.changePathGroup(pathDict)         
+      result = self.fc.changePathGroup(pathDict,recursive)         
       if not result['OK']:
         print "chgrp failed:",result['Message']
     except Exception, x:
@@ -673,10 +681,14 @@ File Catalog Client $Revision: 1.17 $Date:
   def do_chmod(self,args):
     """ Change permissions of the given path
 
-        usage: chmod <mode> <path> 
+        usage: chmod [-R] <mode> <path> 
     """         
     
     argss = args.split()
+    recursive = False
+    if argss[0] == '-R':
+      recursive = True
+      del argss[0]
     mode = argss[0]
     path = argss[1]
     lfn = self.getPath(path)
@@ -685,7 +697,7 @@ File Catalog Client $Revision: 1.17 $Date:
     pathDict[lfn] = eval('0'+mode)
     
     try:
-      result = self.fc.changePathMode(pathDict)         
+      result = self.fc.changePathMode(pathDict,recursive)         
       if not result['OK']:
         print "chmod failed:",result['Message']
     except Exception, x:
