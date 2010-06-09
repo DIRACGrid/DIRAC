@@ -55,11 +55,11 @@ class PilotStatusAgent( AgentModule ):
     self.gridEnv = self.am_getOption( 'GridEnv' )
     if not self.gridEnv:
       # No specific option found, try a general one
-      setup = gConfig.getValue('/DIRAC/Setup','')
+      setup = gConfig.getValue( '/DIRAC/Setup', '' )
       if setup:
-        instance = gConfig.getValue('/DIRAC/Setups/%s/WorkloadManagement' % setup,'')
+        instance = gConfig.getValue( '/DIRAC/Setups/%s/WorkloadManagement' % setup, '' )
         if instance:
-          self.gridEnv = gConfig.getValue('/Systems/WorkloadManagement/%s/GridEnv' % instance,'')
+          self.gridEnv = gConfig.getValue( '/Systems/WorkloadManagement/%s/GridEnv' % instance, '' )
     result = self.pilotDB._getConnection()
     if result['OK']:
       connection = result['Value']
@@ -289,12 +289,12 @@ class PilotStatusAgent( AgentModule ):
             dbData[pref][ 'Status' ] = pilotsToAccount[pref][ 'Status' ]
             dbData[pref][ 'DestinationSite' ] = pilotsToAccount[pref][ 'DestinationSite' ]
             dbData[pref][ 'LastUpdateTime' ] = Time.fromString( pilotsToAccount[pref][ 'StatusDate' ] )
-  
+
       retVal = self.__addPilotsAccountingReport( dbData )
       if not retVal['OK']:
         self.log.error( 'Fail to retrieve Info for pilots', retVal['Message'] )
         return retVal
-  
+
       self.log.info( "Sending accounting records..." )
       retVal = gDataStoreClient.commit()
       if not retVal[ 'OK' ]:
@@ -302,8 +302,8 @@ class PilotStatusAgent( AgentModule ):
       else:
         self.log.info( "Accounting sent for %s pilots" % len( pilotsToAccount ) )
         accountingSent = True
-    
-    if not accountingFlag or accountingSent:     
+
+    if not accountingFlag or accountingSent:
       for pRef in pilotsToAccount:
         pDict = pilotsToAccount[pRef]
         self.log.verbose( 'Setting Status for %s to %s' % ( pRef, pDict['Status'] ) )
@@ -329,7 +329,7 @@ class PilotStatusAgent( AgentModule ):
     else:
       return S_ERROR()
     cmd.extend( pilotRefList )
-    
+
     start = time.time()
     ret = executeGridCommand( proxy, cmd, self.gridEnv )
     self.log.info( '%s Job Status Execution Time for %d jobs:' % ( gridType, len( pilotRefList ) ), time.time() - start )
@@ -403,7 +403,7 @@ class PilotStatusAgent( AgentModule ):
         statusDate = re.search( statusDateRE, job ).group( 1 )
         statusDate = time.strftime( '%Y-%m-%d %H:%M:%S', time.strptime( statusDate, '%b %d %H:%M:%S %Y' ) )
       if gridType == 'gLite' and re.search( submittedDateRE, job ):
-        submittedDate = re.search( submittedDateRE, job ).group(1)
+        submittedDate = re.search( submittedDateRE, job ).group( 1 )
         submittedDate = time.strftime( '%Y-%m-%d %H:%M:%S', time.strptime( submittedDate, '%b %d %H:%M:%S %Y %Z' ) )
     except Exception, x:
       self.log.error( 'Error parsing %s Job Status output:\n' % gridType, job )
@@ -418,19 +418,19 @@ class PilotStatusAgent( AgentModule ):
     if status == "Running":
       # Pilots can be in Running state for too long, due to bugs in the WMS
       if statusDate:
-        statusTime = fromString(statusDate)
+        statusTime = fromString( statusDate )
         delta = dateTime() - statusTime
-        if delta > 4*day:
-          self.log.info('Setting pilot status to Deleted after 4 days in Running')
+        if delta > 4 * day:
+          self.log.info( 'Setting pilot status to Deleted after 4 days in Running' )
           status = "Deleted"
-          statusDate = toString(statusTime+4*day)
+          statusDate = toString( statusTime + 4 * day )
       elif submittedDate:
-        statusTime = fromString(submittedDate)
+        statusTime = fromString( submittedDate )
         delta = dateTime() - statusTime
-        if delta > 7*day:
-          self.log.info('Setting pilot status to Deleted more than 7 days after submission still in Running')
+        if delta > 7 * day:
+          self.log.info( 'Setting pilot status to Deleted more than 7 days after submission still in Running' )
           status = "Deleted"
-          statusDate = toString(statusTime+7*day)
+          statusDate = toString( statusTime + 7 * day )
 
     childRefs = []
     childDicts = {}
@@ -465,11 +465,11 @@ class PilotStatusAgent( AgentModule ):
         userName = retVal[ 'Value' ]
       pA.setValueByKey( 'User', userName )
       pA.setValueByKey( 'UserGroup', pData[ 'OwnerGroup' ] )
-      result = getSiteForCE(pData[ 'DestinationSite' ])
-      if result['OK']:
-        pA.setValueByKey( 'Site', result['Value'] )
+      result = getSiteForCE( pData[ 'DestinationSite' ] )
+      if result['OK'] and result[ 'Value' ].strip():
+        pA.setValueByKey( 'Site', result['Value'].strip() )
       else:
-        pA.setValueByKey( 'Site', 'Unknown' )  
+        pA.setValueByKey( 'Site', 'Unknown' )
       pA.setValueByKey( 'GridCE', pData[ 'DestinationSite' ] )
       pA.setValueByKey( 'GridMiddleware', pData[ 'GridType' ] )
       pA.setValueByKey( 'GridResourceBroker', pData[ 'Broker' ] )
