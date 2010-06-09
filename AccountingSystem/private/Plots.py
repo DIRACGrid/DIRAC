@@ -55,6 +55,7 @@ def generateQualityPlot( fileName, data, metadata ):
   return S_OK()
 
 def generateCumulativePlot( fileName, data, metadata ):
+  return generateStackedLinePlot( fileName, data, metadata )
   try:
     fn = file( fileName, "wb" )
   except:

@@ -123,6 +123,7 @@ class DataOperationPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
 
   def _plotTransferedData( self, reportRequest, plotInfo, filename ):
