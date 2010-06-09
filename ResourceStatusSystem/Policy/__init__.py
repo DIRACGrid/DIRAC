@@ -1,3 +1,0 @@
-"""
-   DIRAC.ResourceStatusSystem.Policy package
-"""
