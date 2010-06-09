@@ -3,7 +3,7 @@
     real policies, based on the policy name
 """
 
-from DIRAC.ResourceStatusSystem.Client.Command.ClientsInvoker import ClientsInvoker
+from DIRAC.ResourceStatusSystem.Command.ClientsInvoker import ClientsInvoker
 
 class CommandCaller:
 
@@ -42,7 +42,7 @@ class CommandCaller:
       `comm`: a tuple, where comm[0] is a module name and comm[1] is a class name (inside the module)
     """ 
 
-    moduleBase = "DIRAC.ResourceStatusSystem.Client.Command."
+    moduleBase = "DIRAC.ResourceStatusSystem.Command."
     
     cModule = comm[0]
     cClass = comm[1]

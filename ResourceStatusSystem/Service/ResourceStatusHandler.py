@@ -20,7 +20,7 @@ from DIRAC.Core.Utilities import Time
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Publisher import Publisher 
-from DIRAC.ResourceStatusSystem.Client.Command.CommandCaller import CommandCaller
+from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
 

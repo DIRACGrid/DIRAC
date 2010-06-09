@@ -2,9 +2,9 @@
     for interacting with multiple commands
 """
 
-from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions   import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils        import *
+from DIRAC.ResourceStatusSystem.Command.Command import Command
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
+from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
 class MacroCommand(Command):
   

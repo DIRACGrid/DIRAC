@@ -4,7 +4,7 @@
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
-from DIRAC.ResourceStatusSystem.Client.Command.ClientsInvoker import ClientsInvoker
+from DIRAC.ResourceStatusSystem.Command.ClientsInvoker import ClientsInvoker
 
 #############################################################################
 
@@ -111,7 +111,7 @@ class PolicyBase(object):
     else:
       if self.command is None:
         # use standard Command
-        from DIRAC.ResourceStatusSystem.Client.Command.CommandCaller import CommandCaller
+        from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
         cc = CommandCaller()
         self.command = cc.setCommandObject(self.commandName)
 

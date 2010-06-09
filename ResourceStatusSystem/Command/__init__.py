@@ -1,3 +1,3 @@
 """
-   DIRAC.ResourceStatusSystem.Client.Command package
+   DIRAC.ResourceStatusSystem.Command package
 """

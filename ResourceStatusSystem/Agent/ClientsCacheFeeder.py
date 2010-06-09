@@ -12,8 +12,8 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Client.Command.CommandCaller import CommandCaller
-from DIRAC.ResourceStatusSystem.Client.Command.ClientsInvoker import ClientsInvoker
+from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
+from DIRAC.ResourceStatusSystem.Command.ClientsInvoker import ClientsInvoker
 
 __RCSID__ = "$Id:  $"
 

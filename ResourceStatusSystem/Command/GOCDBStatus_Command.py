@@ -6,7 +6,7 @@ import urllib2
 
 from DIRAC import gLogger
 
-from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
+from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Utils import getSiteRealName
 
 #############################################################################

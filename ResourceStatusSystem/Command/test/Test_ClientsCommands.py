@@ -9,19 +9,19 @@ import DIRAC.ResourceStatusSystem.test.fake_Logger
 import DIRAC.ResourceStatusSystem.test.fake_Admin
 
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
-from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Client.Command.MacroCommand import MacroCommand
-from DIRAC.ResourceStatusSystem.Client.Command.CommandCaller import CommandCaller
-from DIRAC.ResourceStatusSystem.Client.Command.ClientsInvoker import ClientsInvoker
-from DIRAC.ResourceStatusSystem.Client.Command.GOCDBStatus_Command import *
-from DIRAC.ResourceStatusSystem.Client.Command.Pilots_Command import *
-from DIRAC.ResourceStatusSystem.Client.Command.Jobs_Command import *
-from DIRAC.ResourceStatusSystem.Client.Command.SAMResults_Command import SAMResults_Command
-from DIRAC.ResourceStatusSystem.Client.Command.GGUSTickets_Command import *
-from DIRAC.ResourceStatusSystem.Client.Command.RS_Command import *
-from DIRAC.ResourceStatusSystem.Client.Command.DIRACAccounting_Command import *
-from DIRAC.ResourceStatusSystem.Client.Command.SLS_Command import *
-from DIRAC.ResourceStatusSystem.Client.Command.Collective_Command import *
+from DIRAC.ResourceStatusSystem.Command.Command import Command
+from DIRAC.ResourceStatusSystem.Command.MacroCommand import MacroCommand
+from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
+from DIRAC.ResourceStatusSystem.Command.ClientsInvoker import ClientsInvoker
+from DIRAC.ResourceStatusSystem.Command.GOCDBStatus_Command import *
+from DIRAC.ResourceStatusSystem.Command.Pilots_Command import *
+from DIRAC.ResourceStatusSystem.Command.Jobs_Command import *
+from DIRAC.ResourceStatusSystem.Command.SAMResults_Command import SAMResults_Command
+from DIRAC.ResourceStatusSystem.Command.GGUSTickets_Command import *
+from DIRAC.ResourceStatusSystem.Command.RS_Command import *
+from DIRAC.ResourceStatusSystem.Command.DIRACAccounting_Command import *
+from DIRAC.ResourceStatusSystem.Command.SLS_Command import *
+from DIRAC.ResourceStatusSystem.Command.Collective_Command import *
 from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import NoSAMTests
 from DIRAC.ResourceStatusSystem.Client.SLSClient import NoServiceException
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *

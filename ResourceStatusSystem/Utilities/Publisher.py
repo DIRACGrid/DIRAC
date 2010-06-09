@@ -6,7 +6,6 @@ __RCSID__ = "$Id:  $"
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-#from DIRAC.ResourceStatusSystem.Policy import Configurations
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC import gConfig
 
@@ -34,7 +33,7 @@ class Publisher:
       (see :class: `DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB`)
     
       :attr:`commandCallerIn`: optional CommandCaller object
-      (see :class: `DIRAC.ResourceStatusSystem.Client.Command.CommandCaller.CommandCaller`) 
+      (see :class: `DIRAC.ResourceStatusSystem.Command.CommandCaller.CommandCaller`) 
     
       :attr:`infoGetterIn`: optional InfoGetter object
       (see :class: `DIRAC.ResourceStatusSystem.Utilities.InfoGetter.InfoGetter`) 
@@ -55,7 +54,7 @@ class Publisher:
     if commandCallerIn is not None:
       self.cc = commandCallerIn
     else:
-      from DIRAC.ResourceStatusSystem.Client.Command.CommandCaller import CommandCaller
+      from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
       self.cc = CommandCaller() 
     
     if infoGetterIn is not None:

@@ -14,7 +14,7 @@ from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
-from DIRAC.ResourceStatusSystem.Client.Command.CommandCaller import CommandCaller
+from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
 
 #############################################################################
 

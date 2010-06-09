@@ -14,7 +14,7 @@ class PolicyCaller:
     if commandCallerIn is not None:
       self.cc = commandCallerIn
     else:
-      from DIRAC.ResourceStatusSystem.Client.Command.CommandCaller import CommandCaller
+      from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
       self.cc = CommandCaller()
       
     self.policyInvoker = PolicyInvoker() 

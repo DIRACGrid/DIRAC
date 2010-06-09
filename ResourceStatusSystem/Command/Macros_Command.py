@@ -1,10 +1,10 @@
-from DIRAC.ResourceStatusSystem.Client.Command.MacroCommand import MacroCommand
+from DIRAC.ResourceStatusSystem.Command.MacroCommand import MacroCommand
 
 class TransferQualityOnSE_Command(MacroCommand):
   
   def doCommand(self):
     #da decidere quali comandi
-#    from DIRAC.ResourceStatusSystem.Client.Command.DIRACAccounting_Command import *
+#    from DIRAC.ResourceStatusSystem.Command.DIRACAccounting_Command import *
 #    command1 = DA1()
 #    command1 = DA2()
 #    
@@ -26,7 +26,7 @@ class TransferQualityOnSE_Command(MacroCommand):
 
   
   
-#from DIRAC.ResourceStatusSystem.Client.Command.Command import Command
+#from DIRAC.ResourceStatusSystem.Command.Command import Command
 #  
 #class ProvaMacro_Command(MacroCommand):
 #  
