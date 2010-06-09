@@ -1,4 +1,3 @@
-
 import unittest
 from datetime import datetime
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
