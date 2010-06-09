@@ -353,20 +353,37 @@ class CE2CSAgent(AgentModule):
         for queue in queues:
           try:
             queueName = queue['GlueCEUniqueID'].split('/')[-1]
+          except:
+            gLogger.warn('error in queuename ',queue)
+            continue
+
+          try:
             newmaxCPUTime = queue['GlueCEPolicyMaxCPUTime']
           except:
-            gLogger.warn('error in queue',queue)
-            continue
+            newmaxCPUTime = None
+
+          newsi00 = None
+          try:
+            caps = queue['GlueCECapability']
+            if type(caps) == type(''):
+              caps = [caps]
+            for cap in caps:
+              if cap.count('CPUScalingReferenceSI00'):
+                newsi00 = cap.split('=')[-1]
+          except:
+            newsi00 = None                
 
           result = gConfig.getOptionsDict(queueSectionString+'/%s'%(queueName))
           if not result['OK']:
             gLogger.warn("Section Queues",result['Message'])
             maxCPUTime = 'Unknown'
+            si00 = 'Unknown'
           else:
             queueopt = result['Value']
             maxCPUTime = queueopt.get('maxCPUTime','Unknown')
+            si00 = queueopt.get('SI00','Unknown')
 
-          if maxCPUTime != newmaxCPUTime and newmaxCPUTime != 'Unknown':
+          if newmaxCPUTime and (maxCPUTime != newmaxCPUTime):
             section = queueSectionString + '/%s/maxCPUTime'%(queueName)
             gLogger.info( section, " -> ".join((maxCPUTime,newmaxCPUTime)))
             if maxCPUTime == 'Unknown':
@@ -374,7 +391,16 @@ class CE2CSAgent(AgentModule):
             else:
               self.csAPI.modifyValue(section,newmaxCPUTime)
             changed = True
-
+        
+          if newsi00 and (si00 != newsi00):
+            section = queueSectionString + '/%s/SI00'%(queueName)
+            gLogger.info( section, " -> ".join((si00,newsi00)))
+            if si00 == 'Unknown':
+              self.csAPI.setOption(section,newsi00)
+            else:
+              self.csAPI.modifyValue(section,newsi00)
+            changed = True
+          
     if changed:
       gLogger.info(body)
       if body and self.addressTo and self.addressFrom:
