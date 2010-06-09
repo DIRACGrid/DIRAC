@@ -548,10 +548,10 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     lfns = res['Value']
-    created = self.__openSession()
     failed = {}
     successful = {}
     for lfn,info in lfns.items():
+      created = self.__openSession()
       pfn = info['PFN']
       se = info['SE']
       size = info['Size']
@@ -559,6 +559,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       checksum = info['Checksum']
       master = True
       res = self.__checkAddFile(lfn,pfn,size,se,guid,checksum)
+      if created: self.__closeSession()
       if not res['OK']:
         errStr = "LcgFileCatalogClient.addFile: Failed pre-registration check."
         gLogger.error(errStr, res['Message'])
@@ -589,7 +590,6 @@ class LcgFileCatalogClient(FileCatalogueBase):
           else:
             self.__endTransaction()
             successful[lfn] = True
-    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
