@@ -263,7 +263,7 @@ class DirectoryTreeBase:
     if not result['OK']:
       return result
     dirID = result['Value']
-    result = self.findUser(owner)
+    result = self.db.ugManager.findUser(owner)
     uid = result['Value']
     result = self.__setDirectoryUid(dirID,uid)
     return result
@@ -272,11 +272,11 @@ class DirectoryTreeBase:
   def changeDirectoryOwner(self,paths,s_uid=0,s_gid=0):
     """ Bulk setting of the directory owner
     """  
-    result = self.findUser(s_uid)
+    result = self.db.ugManager.findUser(s_uid)
     if not result['OK']:
       return result
     uid = result['Value']
-    result = self.findGroup(s_gid)
+    result = self.db.ugManager.findGroup(s_gid)
     if not result['OK']:
       return result
     gid = result['Value']
@@ -305,7 +305,7 @@ class DirectoryTreeBase:
     if not result['OK']:
       return result
     dirID = result['Value']
-    result = self.findGroup(gname)
+    result = self.db.ugManager.findGroup(gname)
     gid = result['Value']
     result = self.__setDirectoryGid(dirID,gid)
     return result
@@ -314,11 +314,11 @@ class DirectoryTreeBase:
   def changeDirectoryGroup(self,paths,s_uid=0,s_gid=0):
     """ Bulk setting of the directory owner
     """  
-    result = self.findUser(s_uid)
+    result = self.db.ugManager.findUser(s_uid)
     if not result['OK']:
       return result
     uid = result['Value']
-    result = self.findGroup(s_gid)
+    result = self.db.ugManager.findGroup(s_gid)
     if not result['OK']:
       return result
     gid = result['Value']
@@ -348,11 +348,11 @@ class DirectoryTreeBase:
   def changeDirectoryMode(self,paths,s_uid=0,s_gid=0):
     """ Bulk setting of the directory owner
     """  
-    result = self.findUser(s_uid)
+    result = self.db.ugManager.findUser(s_uid)
     if not result['OK']:
       return result
     uid = result['Value']
-    result = self.findGroup(s_gid)
+    result = self.db.ugManager.findGroup(s_gid)
     if not result['OK']:
       return result
     gid = result['Value']
