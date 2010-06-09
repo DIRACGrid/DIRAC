@@ -198,6 +198,31 @@ class FileManager:
         # A.T. Hack to be consistent with the LcgFileCatalogClient
         if metadata.has_key('CheckSum'):
           metadata['CheckSumValue'] = metadata['CheckSum']
+        if metadata.has_key('Mode'): 
+          metadata['Permissions'] = metadata['Mode'] 
+        if metadata.has_key('ModificationDate'): 
+          metadata['ModificationDate'] = metadata['ModificationTime']   
+          
+        owner = 'unknown'
+        uid = metadata['UID']
+        if uid == 0:
+          owner = 'root'
+        else:  
+          resGet = self.db.ugManager.getUserName(uid)
+          if resGet['OK']:
+            owner = resGet['Value'] 
+        metadata['Owner'] = owner
+        gid = int(result['Value'][0][5])
+        gid = metadata['GID']
+        group = 'unknown'
+        if gid == 0:
+          group = 'root'
+        else:  
+          resGet = self.db.ugManager.getGroupName(gid)      
+          if resGet['OK']:
+            group = resGet['Value']  
+        metadata['OwnerGroup'] = group  
+          
         successful[fileIDLFNs[fileID]] = metadata  
     
     # Ensure all the files are in the result
@@ -723,19 +748,8 @@ class FileManager:
     else:
       failed.update(fileDict['Successful'])
     return S_OK({'Successful':successful,'Failed':failed})    
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+ 
+####################################################################  
   def changeFileOwner(self,lfns,s_uid=0,s_gid=0):
     """ Bulk method to set the file owner
     """
@@ -940,6 +954,28 @@ class FileManager:
           successful.update(result['Value']['Successful'])
           failed.update(result['Value']['Successful'])  
               
+      if recursive:
+        sDirs = result['Value']['Successful'].keys()
+        for path in sDirs:
+          result = self.db.listDirectory(path)
+          if not result['OK']:
+            failed[path] = "Failed recursion"
+            del successful[path]
+            continue
+          rPaths = result['Value']['Directories'].keys()
+          rPaths += result['Value']['Files'].keys()
+          result = self.__changePathFunction(rPaths,
+                                             credDict,
+                                             change_function_directory,
+                                             change_function_file, 
+                                             recursive)
+          if not result['OK']:
+            failed[path] = "Failed recursion"
+            del successful[path]
+            continue
+          successful.update(result['Value']['Successful'])
+          failed.update(result['Value']['Successful'])  
+              
     if fileArgs:
       result = change_function_file(fileArgs,uid,gid)
       if not result['OK']:
@@ -966,7 +1002,6 @@ class FileManager:
     """
     return self.__changePathFunction(paths,credDict,self.db.dtree.changeDirectoryMode,
                                      self.changeFileMode, recursive)
-
 
 #########################################################################
 #
