@@ -30,7 +30,7 @@ class DirectoryListing:
 
     perm = fileDict['Permissions']
     date = fileDict['ModificationTime']
-    nlinks = fileDict['NumberOfLinks']
+    nlinks = fileDict.get('NumberOfLinks',0)
     size = fileDict['Size']
     if fileDict.has_key('Owner'):
       uname = fileDict['Owner']
@@ -58,6 +58,8 @@ class DirectoryListing:
           gname = groups[0]
       else:
         gname = 'unknown' 
+    else:
+      gname = 'unknown'     
     if numericid:
       gname = str(fileDict['GID'])
     
@@ -496,9 +498,22 @@ File Catalog Client $Revision: 1.17 $Date:
     if path[-1] == '/' and path != '/':
       path = path[:-1]
     
+    # Check if the target path is a file
+    result =  self.fc.isFile(path)  
+    if not result['OK']:
+      print "Error: can not verify path"
+      return
+    elif result['Value']['Successful'][path]:
+      result = self.fc.getFileMetadata(path)
+      dList = DirectoryListing()
+      fileDict = result['Value']['Successful'][path]
+      dList.addFile(os.path.basename(path),fileDict,numericid)
+      dList.printListing(reverse,timeorder)
+      return         
+    
     # Get directory contents now
     try:
-      result =  self.fc.listDirectory(path,long)          
+      result =  self.fc.listDirectory(path,long)               
       dList = DirectoryListing()
       if result['OK']:
         if result['Value']['Successful']:
@@ -739,9 +754,15 @@ File Catalog Client $Revision: 1.17 $Date:
         print ("Error: %s" % result['Message'])              
       
   def do_get(self,args):
-    """ Get metadata for the directory
+    """ Get metadata definitions and values
 
-        usage: get metadata <directory>
+        usage: 
+          getting metadata for the given directory:
+          get metadata <directory> 
+          
+          getting values of a given metadata tag compatible with the given selection
+          get tags [ where <tagname>=<tagvalue> [<tagname>=<tagvalue>] ]
+        
     """         
     argss = args.split()
     option = argss[0]
@@ -782,7 +803,56 @@ File Catalog Client $Revision: 1.17 $Date:
       if result['Value']['Successful']:
         print result['Value']['Successful'][path]
       else:
-        print "Error:",result['Value']['Failed'][path]     
+        print "Error:",result['Value']['Failed'][path]    
+    elif option == 'tags':
+      tag =  argss[0]
+      del argss[0]
+      
+      # Evaluate the selection dictionary
+      metaDict = {}
+      if argss:
+        if argss[0].lower() == 'where':
+          result = self.fc.getMetadataFields()
+          if not result['OK']:
+            print ("Error: %s" % result['Message']) 
+            return
+          if not result['Value']:
+            print "Error: no metadata fields defined"
+            return
+          typeDict = result['Value']
+          
+          del argss[0]
+          for arg in argss:
+            try:
+              name,value = arg.split('=')
+              if not name in typeDict:
+                print "Error: metadata field %s not defined" % name
+                return
+              mtype = typeDict[name]
+              mvalue = value
+              if mtype[0:3].lower() == 'int':
+                mvalue = int(value)
+              if mtype[0:5].lower() == 'float':
+                mvalue = float(value)
+              metaDict[name] = mvalue
+            except Exception,x:
+              print "Error:",str(x)
+              return  
+        else:
+          print "Error: WHERE keyword is not found after the metadata tag name"
+        
+      result = self.fc.getCompatibleMetadata(metaDict)  
+      if not result['OK']:
+        print ("Error: %s" % result['Message']) 
+        return
+      tagDict = result['Value']
+      if tag in tagDict:
+        if tagDict[tag]:
+          print "Possible values for %s:" % tag
+          for v in tagDict[tag]:
+            print v
+        else:
+          print "No compatible values found for %s" % tag    
     
   def do_find(self,args):
     """ Find all files satisfying the given metadata information 
