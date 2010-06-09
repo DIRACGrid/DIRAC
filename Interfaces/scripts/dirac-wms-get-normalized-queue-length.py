@@ -4,7 +4,7 @@
 # File :   dirac-wms-get-normalized-queue-length.py
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id$"
+__RCSID__ = "$Id$"
 __VERSION__ = "$Revision: 1.3 $"
 
 import DIRAC
@@ -16,10 +16,10 @@ Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
 def usage():
-  print 'Usage: %s <GlueCEUniqueID> [<GlueCEUniqueID>]' %(Script.scriptName)
-  DIRAC.exit(2)
+  print 'Usage: %s <GlueCEUniqueID> [<GlueCEUniqueID>]' % ( Script.scriptName )
+  DIRAC.exit( 2 )
 
-if len(args) < 1:
+if len( args ) < 1:
   usage()
 
 exitCode = 0
@@ -29,36 +29,40 @@ resultList = {}
 for ceUniqueID in args:
 
   try:
-    subClusterUniqueID = ceUniqueID.split(':')[0]
-    queueID = ceUniqueID.split('/')[1]
+    subClusterUniqueID = ceUniqueID.split( ':' )[0]
+    queueID = ceUniqueID.split( '/' )[1]
   except:
-    errorList.append( (ceUniqueID, 'Wrong full queue Name') )
+    errorList.append( ( ceUniqueID, 'Wrong full queue Name' ) )
     exitCode = 1
     continue
-    
+
   result = getSiteForCE( subClusterUniqueID )
   if not result['OK']:
-    errorList.append( (ceUniqueID, result['Message']) )
+    errorList.append( ( ceUniqueID, result['Message'] ) )
     exitCode = 2
     continue
   diracSiteName = result['Value']
   if not diracSiteName:
     # getSiteForCE will return '' if not matching site is found
-    errorList.append( (ceUniqueID, 'Can not find corresponding Site in CS' ) )
+    errorList.append( ( ceUniqueID, 'Can not find corresponding Site in CS' ) )
     exitCode = 2
     continue
-  
-  siteCSSEction = '/Resources/Sites/%s/%s/CEs/%s' %( 'LCG', diracSiteName, subClusterUniqueID )
 
-  benchmarkSI00Option = '%s/%s' % ( siteCSSEction, 'SI00' )
-  benchmarkSI00       = gConfig.getValue( benchmarkSI00Option, 0.0 )
+  siteCSSEction = '/Resources/Sites/%s/%s/CEs/%s' % ( 'LCG', diracSiteName, subClusterUniqueID )
+  queueCSSection = '%s/Queues/%s' % ( siteCSSEction, queueID )
+
+  benchmarkSI00Option = '%s/%s' % ( queueCSSection, 'SI00' )
+  benchmarkSI00 = gConfig.getValue( benchmarkSI00Option, 0.0 )
+  if not benchmarkSI00:
+    benchmarkSI00Option = '%s/%s' % ( siteCSSEction, 'SI00' )
+    benchmarkSI00 = gConfig.getValue( benchmarkSI00Option, 0.0 )
 
   maxCPUTimeOption = '%s/Queues/%s/maxCPUTime' % ( siteCSSEction, queueID )
-  maxCPUTime       = gConfig.getValue( maxCPUTimeOption, 0.0 )
+  maxCPUTime = gConfig.getValue( maxCPUTimeOption, 0.0 )
   # For some sites there are crazy values in the CS
-  maxCPUTime       = max( maxCPUTime, 0 )
-  maxCPUTime       = min( maxCPUTime, 86400 * 10 )
-  
+  maxCPUTime = max( maxCPUTime, 0 )
+  maxCPUTime = min( maxCPUTime, 86400 * 12.5 )
+
   if maxCPUTime and benchmarkSI00:
     # To get to the Current LHCb 
     normCPUTime = 60. / 250. * maxCPUTime * benchmarkSI00
@@ -66,14 +70,14 @@ for ceUniqueID in args:
     print ceUniqueID, normCPUTime
   else:
     if not benchmarkSI00:
-      errorList.append( (subClusterUniqueID ,'benchmarkSI00 info not available' ) )
+      errorList.append( ( subClusterUniqueID , 'benchmarkSI00 info not available' ) )
       exitCode = 3
     if not maxCPUTime:
-      errorList.append( (ceUniqueID ,'maxCPUTime info not avalailable' ) )
+      errorList.append( ( ceUniqueID , 'maxCPUTime info not available' ) )
       exitCode = 3
 
 
 for error in errorList:
   print "ERROR %s: %s" % error
 
-DIRAC.exit(exitCode)
+DIRAC.exit( exitCode )

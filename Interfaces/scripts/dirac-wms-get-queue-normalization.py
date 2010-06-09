@@ -4,7 +4,7 @@
 # File :   dirac-wms-get-queue-normalization.py
 # Author : Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id$"
+__RCSID__ = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
 
 import DIRAC
@@ -16,10 +16,10 @@ Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
 def usage():
-  print 'Usage: %s <GlueCEUniqueID> [<GlueCEUniqueID>]' %(Script.scriptName)
-  DIRAC.exit(2)
+  print 'Usage: %s <GlueCEUniqueID> [<GlueCEUniqueID>]' % ( Script.scriptName )
+  DIRAC.exit( 2 )
 
-if len(args) < 1:
+if len( args ) < 1:
   usage()
 
 exitCode = 0
@@ -29,39 +29,42 @@ resultList = {}
 for ceUniqueID in args:
 
   try:
-    subClusterUniqueID = ceUniqueID.split(':')[0]
-    queueID = ceUniqueID.split('/')[1]
+    subClusterUniqueID = ceUniqueID.split( ':' )[0]
+    queueID = ceUniqueID.split( '/' )[1]
   except:
-    errorList.append( (ceUniqueID, 'Wrong full queue Name') )
+    errorList.append( ( ceUniqueID, 'Wrong full queue Name' ) )
     exitCode = 1
     continue
-    
+
   result = getSiteForCE( subClusterUniqueID )
   if not result['OK']:
-    errorList.append( (ceUniqueID, result['Message']) )
+    errorList.append( ( ceUniqueID, result['Message'] ) )
     exitCode = 2
     continue
   diracSiteName = result['Value']
   if not diracSiteName:
     # getSiteForCE will return '' if not matching site is found
-    errorList.append( (ceUniqueID, 'Can not find corresponding Site in CS' ) )
+    errorList.append( ( ceUniqueID, 'Can not find corresponding Site in CS' ) )
     exitCode = 2
     continue
-  
-  siteCSSEction = '/Resources/Sites/%s/%s/CEs/%s' %( 'LCG', diracSiteName, subClusterUniqueID )
 
-  benchmarkSI00Option = '%s/%s' % ( siteCSSEction, 'SI00' )
-  benchmarkSI00       = gConfig.getValue( benchmarkSI00Option, 0.0 )
+  siteCSSEction = '/Resources/Sites/%s/%s/CEs/%s' % ( 'LCG', diracSiteName, subClusterUniqueID )
+  queueCSSection = '%s/Queues/%s' % ( siteCSSEction, queueID )
+
+  benchmarkSI00Option = '%s/%s' % ( queueCSSection, 'SI00' )
+  benchmarkSI00 = gConfig.getValue( benchmarkSI00Option, 0.0 )
+  if not benchmarkSI00:
+    benchmarkSI00Option = '%s/%s' % ( siteCSSEction, 'SI00' )
+    benchmarkSI00 = gConfig.getValue( benchmarkSI00Option, 0.0 )
 
   if benchmarkSI00:
     resultList[ceUniqueID] = benchmarkSI00
     print ceUniqueID, benchmarkSI00
   else:
-    errorList.append( (subClusterUniqueID ,'benchmarkSI00 info not available' ) )
+    errorList.append( ( subClusterUniqueID , 'benchmarkSI00 info not available' ) )
     exitCode = 3
-
 
 for error in errorList:
   print "ERROR %s: %s" % error
 
-DIRAC.exit(exitCode)
+DIRAC.exit( exitCode )
