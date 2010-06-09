@@ -51,22 +51,22 @@ class FileCatalogHandler(RequestHandler):
   # Path operations (not updated)
   #  
   types_changePathOwner = [[ListType,DictType]+list(StringTypes)]
-  def export_changePathOwner(self,lfns):
+  def export_changePathOwner(self,lfns,recursive=False):
     """ Get replica info for the given list of LFNs
     """
-    return fcDB.changePathOwner(lfns,self.getRemoteCredentials())
+    return fcDB.changePathOwner(lfns,self.getRemoteCredentials(),recursive)
   
   types_changePathGroup = [[ListType,DictType]+list(StringTypes)]
-  def export_changePathGroup(self,lfns):
+  def export_changePathGroup(self,lfns,recursive=False):
     """ Get replica info for the given list of LFNs
     """
-    return fcDB.changePathGroup(lfns,self.getRemoteCredentials())
+    return fcDB.changePathGroup(lfns,self.getRemoteCredentials(),recursive)
   
   types_changePathMode = [[ListType,DictType]+list(StringTypes)]
-  def export_changePathMode(self,lfns):
+  def export_changePathMode(self,lfns,recursive=False):
     """ Get replica info for the given list of LFNs
     """
-    return fcDB.changePathMode(lfns,self.getRemoteCredentials())
+    return fcDB.changePathMode(lfns,self.getRemoteCredentials(),recursive)
 
   ########################################################################
   # ACL Operations

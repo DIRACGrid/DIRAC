@@ -172,42 +172,42 @@ class FileCatalogDB(DB, DirectoryMetadata):
   #  Path based read methods
   #
 
-  def changePathOwner(self, lfns, credDict):
+  def changePathOwner(self, lfns, credDict, recursive=False):
     """ Change the owner of the given list of paths
     """
     res = self._checkPathPermissions('Write', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.changePathOwner(res['Value']['Successful'],credDict)
+    res = self.fileManager.changePathOwner(res['Value']['Successful'],credDict, recursive)
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']   
     return S_OK({'Successful':successful,'Failed':failed}) 
   
-  def changePathGroup(self, lfns, credDict):
+  def changePathGroup(self, lfns, credDict, recursive=False):
     """ Change the group of the given list of paths
     """
     res = self._checkPathPermissions('Write', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.changePathGroup(res['Value']['Successful'],credDict)
+    res = self.fileManager.changePathGroup(res['Value']['Successful'],credDict, recursive)
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']   
     return S_OK({'Successful':successful,'Failed':failed}) 
 
-  def changePathMode(self, lfns, credDict):
+  def changePathMode(self, lfns, credDict, recursive=False):
     """ Change the mode of the given list of paths
     """
     res = self._checkPathPermissions('Write', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.changePathMode(res['Value']['Successful'],credDict)
+    res = self.fileManager.changePathMode(res['Value']['Successful'],credDict, recursive)
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])

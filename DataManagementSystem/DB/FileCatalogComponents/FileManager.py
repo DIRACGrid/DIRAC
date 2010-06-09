@@ -849,13 +849,24 @@ class FileManager:
   
 #####################################################################
 
-  
+ 
 ##################################################################### 
   def isFile(self,lfns,s_uid=0,s_gid=0):
     """ Check for the existence of files """
-    return self.findFile(lfns)   
+    result = self.findFile(lfns)
+    if not result['OK']:
+      return result
+    
+    successful = {}
+    failed = {}
+    for lfn in lfns:
+      if lfn in result['Value']['Successful']:
+        successful[lfn] = True 
+      else:
+        successful[lfn] = False     
+    return S_OK({'Successful':successful,'Failed':failed})      
   
-  def __changePathFunction(self,paths,credDict,change_function_directory,change_function_file):
+  def __changePathFunction(self,paths,credDict,change_function_directory,change_function_file, recursive=False):
     """ A generic function to change Owner, Group or Mode for the given paths
     """
     result = self.db.ugManager.getUserAndGroupID(credDict)
@@ -900,7 +911,35 @@ class FileManager:
       if not result['OK']:
         return result
       successful.update(result['Value']['Successful'])
-      failed.update(result['Value']['Successful'])    
+      failed.update(result['Value']['Successful'])
+   
+      if recursive:
+        sDirs = result['Value']['Successful'].keys()
+        for path in sDirs:
+          result = self.db.listDirectory(path,credDict)
+          if not result['OK']:
+            failed[path] = "Failed recursion"
+            del successful[path]
+            continue
+          changeParameter = dirArgs[path]
+          rPaths = {}
+          contents = result['Value']['Successful'][path]['SubDirs'].keys() + \
+                     result['Value']['Successful'][path]['Files'].keys()
+          contents = [ path+'/'+os.path.basename(x) for x in contents ]
+          for r in contents:
+            rPaths[r] = changeParameter
+          result = self.__changePathFunction(rPaths,
+                                             credDict,
+                                             change_function_directory,
+                                             change_function_file, 
+                                             recursive)
+          if not result['OK']:
+            failed[path] = "Failed recursion"
+            del successful[path]
+            continue
+          successful.update(result['Value']['Successful'])
+          failed.update(result['Value']['Successful'])  
+              
     if fileArgs:
       result = change_function_file(fileArgs,uid,gid)
       if not result['OK']:
@@ -910,20 +949,24 @@ class FileManager:
     
     return S_OK({'Successful':successful,'Failed':failed})
   
-  def changePathOwner(self,paths,credDict):  
+  def changePathOwner(self,paths,credDict,recursive=False):  
     """ Bulk method to change Owner for the given paths
     """
-    return self.__changePathFunction(paths,credDict,self.db.dtree.changeDirectoryOwner,self.changeFileOwner)
+    return self.__changePathFunction(paths,credDict,self.db.dtree.changeDirectoryOwner,
+                                     self.changeFileOwner, recursive)
   
-  def changePathGroup(self,paths,credDict):  
+  def changePathGroup(self,paths,credDict,recursive=False):  
     """ Bulk method to change Owner for the given paths
     """
-    return self.__changePathFunction(paths,credDict,self.db.dtree.changeDirectoryGroup,self.changeFileGroup)
+    return self.__changePathFunction(paths,credDict,self.db.dtree.changeDirectoryGroup,
+                                     self.changeFileGroup, recursive)
   
-  def changePathMode(self,paths,credDict):  
+  def changePathMode(self,paths,credDict,recursive=False):  
     """ Bulk method to change Owner for the given paths
     """
-    return self.__changePathFunction(paths,credDict,self.db.dtree.changeDirectoryMode,self.changeFileMode)
+    return self.__changePathFunction(paths,credDict,self.db.dtree.changeDirectoryMode,
+                                     self.changeFileMode, recursive)
+
 
 #########################################################################
 #
