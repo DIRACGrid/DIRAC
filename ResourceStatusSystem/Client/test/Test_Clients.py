@@ -1,4 +1,3 @@
-### UnitTest class for GOCDBClient class
 
 import unittest
 from datetime import datetime
@@ -9,7 +8,6 @@ from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient
 from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import *
-from DIRAC.ResourceStatusSystem.Client.DataOperationsClient import DataOperationsClient
 from DIRAC.ResourceStatusSystem.Client.GGUSTicketsClient import GGUSTicketsClient
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
@@ -32,7 +30,6 @@ class ClientsTestCase(unittest.TestCase):
     self.SAMCli = SAMResultsClient()
     self.PilotsCli = PilotsClient()
     self.JobsCli = JobsClient()
-    self.DOCli = DataOperationsClient()
     self.GGUSCli = GGUSTicketsClient()
 
 #############################################################################
