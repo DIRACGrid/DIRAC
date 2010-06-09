@@ -1,5 +1,6 @@
 
 import md5
+import time
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 from DIRAC.AccountingSystem.private.DataCache import gDataCache
@@ -45,14 +46,23 @@ class BaseReporter( DBUtils ):
     reportRequest[ 'groupingFields' ] = self._translateGrouping( reportRequest[ 'grouping' ] )
     reportHash = reportRequest[ 'hash' ]
     gLogger.info( "Retrieving data for %s:%s" % ( reportRequest[ 'typeName' ], reportRequest[ 'reportName' ] ) )
+    sT = time.time()
     retVal = self.__retrieveReportData( reportRequest, reportHash )
+    reportGenerationTime = time.time() - sT
     if not retVal[ 'OK' ]:
       return retVal
     if not reportRequest[ 'generatePlot' ]:
       return retVal
     reportData = retVal[ 'Value' ]
     gLogger.info( "Plotting data for %s:%s" % ( reportRequest[ 'typeName' ], reportRequest[ 'reportName' ] ) )
+    sT = time.time()
     retVal = self.__generatePlotForReport( reportRequest, reportHash, reportData )
+    plotGenerationTime = time.time() - sT
+    gLogger.info( "Time for %s:%s - Report %.2f Plot %.2f (%.2f%% g/r)" % ( reportRequest[ 'typeName' ],
+                                                                            reportRequest[ 'reportName' ],
+                                                                            reportGenerationTime,
+                                                                            plotGenerationTime,
+                                                                            ( plotGenerationTime / reportGenerationTime ) ) )
     if not retVal[ 'OK' ]:
       return retVal
     plotDict = retVal[ 'Value' ]
