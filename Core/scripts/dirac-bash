@@ -17,4 +17,4 @@ else
 fi
 export PYTHONPATH=$DIRACROOT
 
-/bin/bash --noprofile -p
+/bin/bash --noprofile --norc -p
