@@ -163,7 +163,8 @@ class PieGraph( PlotBase ):
 
     nLabels = self.pdata.getNumberOfLabels()
     explode = [0.] * nLabels
-    explode[0] = 0.1
+    if nLabels > 0:
+      explode[0] = 0.1
     self.wedges, text_labels, percent = self.pie( explode = explode, autopct = my_display )
 
 
