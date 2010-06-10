@@ -32,7 +32,19 @@ class PieGraph( PlotBase ):
             ):
 
         start = time.time()
-        labels = self.pdata.getLabels()
+        labels = self.pdata.getLabels()       
+        if labels[0][0] == "NoLabels":
+          try:           
+            self.pdata.initialize(key_type='string')
+            self.pdata.sortLabels()
+            labels = self.pdata.getLabels()
+            nLabels = self.pdata.getNumberOfLabels()
+            explode = [0.] * nLabels
+            if nLabels > 0:
+              explode[0] = 0.1
+          except Exception,x:
+            print "PieGraph Error: can not interpret data for the plot"  
+        
         #labels.reverse()
         values = [l[1] for l in labels]
         x = numpy.array( values, numpy.float64 )

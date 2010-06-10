@@ -63,6 +63,7 @@ class GraphData:
     self.subplots = {}
     self.plotdata = None
     self.data = dict(data)
+    self.key_type = 'string'
     self.initialize()
     
   def isEmpty(self):
@@ -78,20 +79,18 @@ class GraphData:
     self.data = dict(data)
     self.initialize()  
     
-  def initialize(self):
+  def initialize(self,key_type=None):
   
     keys = self.data.keys()
     if not keys:
-      print "GraphData Error: empty data"
-      
-      
+      print "GraphData Error: empty data"     
     start = time.time()  
       
     if type(self.data[keys[0]]) == types.DictType:
       for key in self.data:
-        self.subplots[key] = PlotData(self.data[key])
+        self.subplots[key] = PlotData(self.data[key],key_type=key_type)
     else:
-      self.plotdata = PlotData(self.data)   
+      self.plotdata = PlotData(self.data,key_type=key_type)   
       
     if DEBUG:  
       print "Time: plot data", time.time() - start, len(self.subplots)  
@@ -105,7 +104,10 @@ class GraphData:
           tmpset.add(key)
       self.all_keys = list(tmpset)           
           
-    self.key_type = get_key_type(self.all_keys)
+    if key_type:
+      self.key_type = key_type
+    else:        
+      self.key_type = get_key_type(self.all_keys)
     self.sortKeys()   
     self.makeNumKeys()      
           
@@ -127,12 +129,11 @@ class GraphData:
           max_value - by max value of the subplot
           sum - by the sum of values of the subplot
           last_value - by the last value in the subplot
-    """
-   
+    """   
     if self.plotdata:      
       if self.key_type == "string":        
         if sort_type in ['max_value','sum']:
-          self.labels = self.plotdata.sortKeys('weight')            
+          self.labels = self.plotdata.sortKeys('weight')                      
         else:
           self.labels = self.plotdata.sortKeys()            
         self.label_values = [ self.plotdata.parsed_data[l] for l in self.labels]     
@@ -357,7 +358,7 @@ class PlotData:
   """ PlotData class is a container for a one dimensional plot data
   """
 
-  def __init__(self,data,single=True):
+  def __init__(self,data,single=True,key_type=None):
   
     self.key_type = "unknown"
     keys = data.keys()
@@ -378,7 +379,7 @@ class PlotData:
     self.sorted_keys = []
     
     # Do initial data parsing
-    self.parseData()
+    self.parseData(key_type)
     if single:
       self.initialize()
       
@@ -482,24 +483,24 @@ class PlotData:
   def parseDatum( self, data ):
       """
       Parse the specific data value; this is the identity.
-      """
-      
+      """ 
       try:
         result = float(data)
       except:
         result = None
-        
       return result  
 
-  def parseData( self ):
+  def parseData( self, key_type = None ):
       """
       Parse all the data values passed to the graph.  For this super class,
       basically does nothing except loop through all the data.  A sub-class
       should override the parseDatum and parse_pivot functions rather than
       this one.
       """
-      
-      self.key_type = get_key_type(self.data.keys()) 
+      if key_type:
+        self.key_type = key_type
+      else:  
+        self.key_type = get_key_type(self.data.keys()) 
       new_parsed_data = {}
       for key, data in self.data.items():
           new_key = self.parseKey( key )
