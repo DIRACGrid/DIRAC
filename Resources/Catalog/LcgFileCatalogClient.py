@@ -4,6 +4,7 @@
 import DIRAC
 from DIRAC                                      import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Resources.Catalog.FileCatalogueBase  import FileCatalogueBase
+from DIRAC.Core.Utilities.Time                  import fromEpoch
 from stat import *
 import os, re, string, commands, types,time
 
@@ -218,8 +219,8 @@ class LcgFileCatalogClient(FileCatalogueBase):
         successful[lfn]['CheckSumValue'] = fstat.csumvalue
         successful[lfn]['GUID'] = fstat.guid
         successful[lfn]['Status'] = fstat.status
-        successful[lfn]['CreationTime'] = time.ctime(fstat.ctime)
-        successful[lfn]['ModificationTime'] = time.ctime(fstat.mtime)
+        successful[lfn]['CreationTime'] = fromEpoch(fstat.ctime)
+        successful[lfn]['ModificationTime'] = fromEpoch(fstat.mtime)
         successful[lfn]['NumberOfLinks'] = fstat.nlink
         successful[lfn]['Permissions'] = S_IMODE(fstat.filemode)
         if ownership:
@@ -373,8 +374,8 @@ class LcgFileCatalogClient(FileCatalogueBase):
         successful[lfn]['CheckSumValue'] = fstat.csumvalue
         successful[lfn]['GUID'] = fstat.guid
         successful[lfn]['Status'] = fstat.status
-        successful[lfn]['CreationTime'] = time.ctime(fstat.ctime)
-        successful[lfn]['ModificationTime'] = time.ctime(fstat.mtime)
+        successful[lfn]['CreationTime'] = fromEpoch(fstat.ctime)
+        successful[lfn]['ModificationTime'] = fromEpoch(fstat.mtime)
         successful[lfn]['NumberOfSubPaths'] = fstat.nlink
         res = self.__getDNFromUID(fstat.uid)
         if res['OK']:
@@ -1316,8 +1317,8 @@ class LcgFileCatalogClient(FileCatalogueBase):
           pathMetadata['CheckSumValue'] = oPath.csumvalue
           pathMetadata['GUID'] = oPath.guid
           pathMetadata['Status'] = oPath.status
-          pathMetadata['CreationTime'] = time.ctime(oPath.ctime)
-          pathMetadata['ModificationTime'] = time.ctime(oPath.mtime)
+          pathMetadata['CreationTime'] = fromEpoch(oPath.ctime)
+          pathMetadata['ModificationTime'] = fromEpoch(oPath.mtime)
           pathMetadata['NumberOfLinks'] = oPath.nlink
           pathMetadata['LastAccess'] = oPath.atime
           res = self.__getDNFromUID(oPath.uid)
@@ -1381,8 +1382,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         modTime = time.ctime()
         statRes = self.__getPathStat(subDir)
         if statRes['OK']:
-          modTime = time.ctime(statRes['Value'].mtime)
-        print modTime
+          modTime = fromEpoch(statRes['Value'].mtime)
         pathDict['SubDirs'][subDir] = modTime
       else:
         fileSize = entry.filesize
