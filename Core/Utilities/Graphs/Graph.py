@@ -225,10 +225,18 @@ class Graph(object):
         gdata.makeCumulativeGraph()
       plot_title = plot_prefs[i].get('plot_title','')
       if plot_title != "NoTitle":
-        if gdata.key_type == "time":        
-          time_title = add_time_to_title(gdata.min_key,gdata.max_key)
+        begin = ''
+        end = ''
+        if gdata.key_type == "time" :
+          begin = gdata.min_key
+          end = gdata.max_key
+        elif plot_prefs[i].has_key('starttime') and plot_prefs[i].has_key('endtime'):
+          begin = to_timestamp(plot_prefs[i]['starttime'])
+          end = to_timestamp(plot_prefs[i]['endtime'])          
+        if begin and end:          
+          time_title = add_time_to_title(begin,end)
           if plot_title:
-            plot_title += ":"
+            plot_title += ":"            
           plot_prefs[i]['plot_title'] = plot_title+' '+time_title
       graphData.append(gdata)     
     
