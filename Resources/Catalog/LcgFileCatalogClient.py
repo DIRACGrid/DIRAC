@@ -1370,7 +1370,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     oDirectory = res['Value']
-    pathDict = {'SubDirs':[],'ClosedDirs':[],'Files':0,'TotalSize':0,'SiteUsage':{}}
+    pathDict = {'SubDirs':{},'ClosedDirs':[],'Files':0,'TotalSize':0,'SiteUsage':{}}
     for i in  range(nbfiles):
       entry,fileInfo = lfc.lfc_readdirxr(oDirectory,"")
       if S_ISDIR(entry.filemode):
@@ -1378,7 +1378,12 @@ class LcgFileCatalogClient(FileCatalogueBase):
         permissions = S_IMODE(entry.filemode)
         if (not permissions & S_IWUSR) and (not permissions & S_IWGRP) and (not permissions & S_IWOTH):
           pathDict['ClosedDirs'].append(subDir)
-        pathDict['SubDirs'].append(subDir)
+        modTime = time.ctime()
+        statRes = self.__getPathStat(subDir)
+        if statRes['OK']:
+          modTime = time.ctime(statRes['Value'].mtime)
+        print modTime
+        pathDict['SubDirs'][subDir] = modTime
       else:
         fileSize = entry.filesize
         pathDict['TotalSize'] += fileSize
