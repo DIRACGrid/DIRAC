@@ -56,7 +56,8 @@ class PEP:
  
   def __init__(self, VOExtension, granularity = None, name = None, status = None, formerStatus = None, 
                reason = None, siteType = None, serviceType = None, resourceType = None, 
-               operatorCode = None, futureEnforcement = None, useNewRes = False):
+               operatorCode = None, #futureEnforcement = None, 
+               useNewRes = False):
     
     self.VOExtension = VOExtension
     
@@ -103,15 +104,15 @@ class PEP:
       if operatorCode == 'RS_SVC':
         self.__realBan = True
     
-    if futureEnforcement is not None:
-      try:
-        futureGranularity = futureEnforcement['Granularity']
-        if futureGranularity is not None:
-          if futureGranularity not in ValidRes:
-            raise InvalidRes, where(self, self.__init__)
-        self.__futureGranularity = futureGranularity
-      except NameError:
-        pass
+#    if futureEnforcement is not None:
+#      try:
+#        futureGranularity = futureEnforcement['Granularity']
+#        if futureGranularity is not None:
+#          if futureGranularity not in ValidRes:
+#            raise InvalidRes, where(self, self.__init__)
+#        self.__futureGranularity = futureGranularity
+#      except NameError:
+#        pass
       
     self.useNewRes = useNewRes
 
@@ -235,18 +236,18 @@ class PEP:
         pass
 
 
-
-      if res['Action']:
-        try:
-          if self.__futureGranularity != self.__granularity:
-            self.__name = rsDB.getGeneralName(self.__name, self.__granularity, 
-                                              self.__futureGranularity)
-          newPEP = PEP(granularity = self.__futureGranularity, name = self.__name, 
-                       status = self.__status, formerStatus = self.__formerStatus, 
-                       reason = self.__reason)
-          newPEP.enforce(pdpIn = pdp, rsDBIn = rsDB) 
-        except AttributeError:
-          pass
+#
+#      if res['Action']:
+#        try:
+#          if self.__futureGranularity != self.__granularity:
+#            self.__name = rsDB.getGeneralName(self.__name, self.__granularity, 
+#                                              self.__futureGranularity)
+#          newPEP = PEP(granularity = self.__futureGranularity, name = self.__name, 
+#                       status = self.__status, formerStatus = self.__formerStatus, 
+#                       reason = self.__reason)
+#          newPEP.enforce(pdpIn = pdp, rsDBIn = rsDB) 
+#        except AttributeError:
+#          pass
     
 
 

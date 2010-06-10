@@ -44,13 +44,12 @@ class CommandCaller:
 
     moduleBase = "DIRAC.ResourceStatusSystem.Command."
     
-    cModule = comm[0]
-    cClass = comm[1]
-    
     try:
+      cModule = comm[0]
+      cClass = comm[1]
       module = moduleBase + cModule
       commandModule = __import__(module, globals(), locals(), ['*'])
-    except ImportError:
+    except TypeError, ImportError:
       cModule = "Command"
       cClass = "Command"
       module = moduleBase + cModule

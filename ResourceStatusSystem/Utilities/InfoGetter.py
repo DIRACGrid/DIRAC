@@ -161,6 +161,10 @@ class InfoGetter:
         moduleName = self.C_Policies[p]['module']
       except KeyError:
         moduleName = None
+      try:
+        ConfirmationPolicy = self.C_Policies[p]['ConfirmationPolicy']
+      except KeyError:
+        ConfirmationPolicy = None
       args = self.C_Policies[p]['args']
       if useNewRes:
         try:
@@ -169,7 +173,9 @@ class InfoGetter:
           commandIn = self.C_Policies[p]['commandIn']
       else:
         commandIn = self.C_Policies[p]['commandIn']
-      polToEval_Args.append({'Name' : p, 'Module' : moduleName, 'args' : args, 'commandIn' : commandIn})
+      polToEval_Args.append({'Name' : p, 'Module' : moduleName, 'args' : args, 
+                             'ConfirmationPolicy' : ConfirmationPolicy,
+                             'commandIn' : commandIn})
     
     return polToEval_Args
   

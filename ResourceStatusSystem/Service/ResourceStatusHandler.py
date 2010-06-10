@@ -1427,7 +1427,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.enforcePolicies: Attempting to enforce policies for %s %s" % (granularity, name))
       try:
-        reason = serviceType = resourceType = futureEnforcement = None 
+        reason = serviceType = resourceType = None 
 
         res = rsDB.getStuffToCheck(granularity, name = name)[0]
         status = res[1]
@@ -1441,7 +1441,7 @@ class ResourceStatusHandler(RequestHandler):
         
         from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
         pep = PEP(VOExtension, granularity, name, status, formerStatus, reason, siteType, 
-                  serviceType, resourceType, operatorCode, futureEnforcement, useNewRes)
+                  serviceType, resourceType, operatorCode, useNewRes)
         pep.enforce(rsDBIn = rsDB)
         
       except RSSDBException, x:
@@ -1483,7 +1483,7 @@ class ResourceStatusHandler(RequestHandler):
             operatorCode = res[4]
             
             pep = PEP(VOExtension, granularity, name, status, formerStatus, None, siteType, 
-                      None, None, operatorCode, None, useNewRes)
+                      None, None, operatorCode, useNewRes)
             pep.enforce(rsDBIn = rsDB)
 
             res = rsDB.getMonitoredsList('Service', paramsList = ['ServiceName'], siteName = name)
@@ -1496,10 +1496,10 @@ class ResourceStatusHandler(RequestHandler):
               serviceType = res[4]
               
               pep = PEP(VOExtension, 'Service', s, status, formerStatus, None, siteType, 
-                        serviceType, None, operatorCode, None, useNewRes)
+                        serviceType, None, operatorCode, useNewRes)
               pep.enforce(rsDBIn = rsDB)
           else:
-            reason = serviceType = resourceType = futureEnforcement = None 
+            reason = serviceType = resourceType = None 
   
             res = rsDB.getStuffToCheck(granularity, name = name)[0]
             status = res[1]
@@ -1513,7 +1513,7 @@ class ResourceStatusHandler(RequestHandler):
             
             from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
             pep = PEP(VOExtension, granularity, name, status, formerStatus, reason, siteType, 
-                      serviceType, resourceType, operatorCode, futureEnforcement, useNewRes)
+                      serviceType, resourceType, operatorCode, useNewRes)
             pep.enforce(rsDBIn = rsDB)
             
         res = publisher.getInfo(granularity, name, useNewRes)

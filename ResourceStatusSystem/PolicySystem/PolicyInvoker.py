@@ -1,8 +1,6 @@
 """ PolicyInvoker is the invoker for policies to be evaluated
 """
 
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-
 #############################################################################
 
 class PolicyInvoker:

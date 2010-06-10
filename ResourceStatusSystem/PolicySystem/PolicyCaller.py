@@ -23,6 +23,17 @@ class PolicyCaller:
 
   def policyInvocation(self, VOExtension, granularity = None, name = None, status = None, policy = None,  
                        args = None, pName = None, pModule = None, extraArgs = None, commandIn = None):
+    """
+    Invokes a policy:
+    1. If :attr:`policy` is not None, import the right policy module, specified 
+    with :attr:`VOExtension` (e.g.: 'LHCb') and :attr:`pModule` (e.g. 'DT_Policy').
+      1.1. Create a policy object.
+    2. Set the policy arguments (usually :attr:`granularity`, :attr:`name`, :attr:`status`) 
+    + :attr:`extraArgs`.
+    3. If commandIn is specified (normally it is), use
+    :meth:`DIRAC.ResourceStatusSystem.Command.CommandCaller.CommandCaller.setCommandObject` 
+    to get a command object
+    """
     
     p = policy
     a = args

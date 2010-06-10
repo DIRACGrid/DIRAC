@@ -94,10 +94,6 @@ class PDP:
     
     self.useNewRes = useNewRes
     
-
-#    self.lockObj = threading.RLock()
-    
-
       
 #############################################################################
   
@@ -135,21 +131,21 @@ class PDP:
     self.knownInfo = knownInfo
 
                
-    ig = InfoGetter(self.VOExtension)
+    self.ig = InfoGetter(self.VOExtension)
     
-    EVAL = ig.getInfoToApply(('policy', 'policyType'), 
-                             granularity = self.__granularity, 
-                             status = self.__status, 
-                             formerStatus = self.__formerStatus,
-                             siteType = self.__siteType, 
-                             serviceType = self.__serviceType,
-                             resourceType = self.__resourceType,
-                             useNewRes = self.useNewRes)
+    EVAL = self.ig.getInfoToApply(('policy', 'policyType'), 
+                                  granularity = self.__granularity, 
+                                  status = self.__status, 
+                                  formerStatus = self.__formerStatus,
+                                  siteType = self.__siteType, 
+                                  serviceType = self.__serviceType,
+                                  resourceType = self.__resourceType,
+                                  useNewRes = self.useNewRes)
     
     policyCombinedResultsList = []
       
     for policyGroup in EVAL:
-          
+        
       policyType = policyGroup['PolicyType']
   
       if self.policy is not None:
@@ -178,7 +174,7 @@ class PDP:
       if policyCombinedResults['SAT']:
         newstatus = policyCombinedResults['Status']
         reason = policyCombinedResults['Reason']
-        newPolicyType = ig.getNewPolicyType(self.__granularity, newstatus)
+        newPolicyType = self.ig.getNewPolicyType(self.__granularity, newstatus)
         for npt in newPolicyType:
           if npt not in policyType:
             policyType.append(npt)
@@ -221,6 +217,16 @@ class PDP:
       if res['SAT'] == 'Unknown':
         res = self.__useOldPolicyRes(name = name, policyName = pName, 
                                      status = status)
+      
+      if res['SAT'] == 'NeedConfirmation':
+        pName = p['ConfirmationPolicy']
+        triggeredPolicy = self.ig.C_Policies[pName]
+        pModule = triggeredPolicy['module']
+        extraArgs = triggeredPolicy['args']
+        commandIn = triggeredPolicy['commandIn']
+        res = self.pc.policyInvocation(VOExtension, granularity = granularity, name = name, 
+                                       status = status, policy = policy, args = args, pName = pName, 
+                                       pModule = pModule, extraArgs = extraArgs, commandIn = commandIn)
 
       if res['SAT'] != None:
         policyResults.append(res)

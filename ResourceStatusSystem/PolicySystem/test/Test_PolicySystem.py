@@ -261,6 +261,7 @@ class PDPSuccess(PolicySystemTestCase):
           res = res['PolicyCombinedResult']
           for r in res:
             self.assert_(r['Action'])
+
           self.mock_p.evaluate.return_value = [{'SAT':False, 'Status':status, 
                                                'Reason':'testReason', 'PolicyName': 'test_P'}]
           res = pdp.takeDecision(policyIn = self.mock_p)
@@ -275,6 +276,51 @@ class PDPSuccess(PolicySystemTestCase):
           res = res['PolicyCombinedResult']
           for r in res:
             self.assertFalse(r['Action'])
+ 
+          self.mock_p.evaluate.return_value = [{'SAT':None, 'Status':status, 
+                                               'Reason':'testReason', 'PolicyName': 'test_P'}]
+          res = pdp.takeDecision(policyIn = self.mock_p)
+          res = res['PolicyCombinedResult']
+          for r in res:
+            self.assertFalse(r['Action'])
+          res = pdp.takeDecision(policyIn = self.mock_p, argsIn = ())
+          res = res['PolicyCombinedResult']
+          for r in res:
+            self.assertFalse(r['Action'])
+          res = pdp.takeDecision(policyIn = self.mock_p, knownInfo={})
+          res = res['PolicyCombinedResult']
+          for r in res:
+            self.assertFalse(r['Action'])
+ 
+          self.mock_p.evaluate.return_value = [{'SAT':'Unknown', 'Status':status, 
+                                               'Reason':'testReason', 'PolicyName': 'test_P'}]
+          res = pdp.takeDecision(policyIn = self.mock_p)
+          res = res['PolicyCombinedResult']
+          for r in res:
+            self.assert_(r['Action'])
+          res = pdp.takeDecision(policyIn = self.mock_p, argsIn = ())
+          res = res['PolicyCombinedResult']
+          for r in res:
+            self.assert_(r['Action'])
+          res = pdp.takeDecision(policyIn = self.mock_p, knownInfo={})
+          res = res['PolicyCombinedResult']
+          for r in res:
+            self.assert_(r['Action'])
+ 
+          self.mock_p.evaluate.return_value = [{'SAT':'NeedConfirmation', 'Status':status, 
+                                               'Reason':'testReason', 'PolicyName': 'test_P'}]
+          res = pdp.takeDecision(policyIn = self.mock_p)
+          res = res['PolicyCombinedResult']
+          for r in res:
+            self.assert_(r['Action'])
+          res = pdp.takeDecision(policyIn = self.mock_p, argsIn = ())
+          res = res['PolicyCombinedResult']
+          for r in res:
+            self.assert_(r['Action'])
+          res = pdp.takeDecision(policyIn = self.mock_p, knownInfo={})
+          res = res['PolicyCombinedResult']
+          for r in res:
+            self.assert_(r['Action'])
  
   def test__policyCombination(self):
     
