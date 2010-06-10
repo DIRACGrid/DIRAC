@@ -55,7 +55,7 @@ def logINFO( msg ):
     print "%s UTC dirac-install [INFO]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
   sys.stdout.flush()
 
-def alarmTimeoutHandler():
+def alarmTimeoutHandler( *args ):
   raise Exception( 'Timeout' )
 
 def urlretrieveTimeout( url, fileName, timeout = 0 ):
