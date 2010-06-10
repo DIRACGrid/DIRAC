@@ -214,7 +214,8 @@ class Graph(object):
     plot_prefs = []
     for i in range(nPlots):
       plot_prefs.append(evalPrefs(prefs,metadata[i]))        
-      gdata = GraphData(data[i])      
+      gdata = GraphData(data[i])       
+      if i == 0: plot_type = plot_prefs[i]['plot_type']      
       if plot_prefs[i].has_key('sort_labels'):      
         gdata.sortLabels(plot_prefs[i]['sort_labels'])      
       if plot_prefs[i].has_key('limit_labels'):
@@ -231,9 +232,11 @@ class Graph(object):
           plot_prefs[i]['plot_title'] = plot_title+' '+time_title
       graphData.append(gdata)     
     
-    # Do not make legend for the plot with non-string keys
-    if not graphData[0].subplots and graphData[0].key_type != 'string':
+    # Do not make legend for the plot with non-string keys (except for PieGraphs)
+    if not graphData[0].subplots and graphData[0].key_type != 'string' and not plot_type == 'PieGraph':
       prefs['legend'] = False
+    if prefs['legend'] and graphData[0].key_type != 'string' and plot_type == 'PieGraph':
+      graphData[0].initialize(key_type='string') 
       
     legend = Legend(graphData[0],None,prefs)
     self.figure = Figure()
