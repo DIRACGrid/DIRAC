@@ -171,7 +171,7 @@ class PEP:
     else:
       # Use standard DIRAC PDP
       from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
-      pdp = PDP(VOExtension, granularity = self.__granularity, name = self.__name, 
+      pdp = PDP(self.VOExtension, granularity = self.__granularity, name = self.__name, 
                 status = self.__status, formerStatus = self.__formerStatus, reason = self.__reason, 
                 siteType = self.__siteType, serviceType = self.__serviceType, 
                 resourceType = self.__resourceType, useNewRes = self.useNewRes)
