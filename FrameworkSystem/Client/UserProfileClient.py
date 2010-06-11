@@ -14,7 +14,7 @@ class UserProfileClient:
       self.rpcClientFunctor = RPCClient
     self.profile = profile
 
-  def __getRPCClient(self):
+  def __getRPCClient( self ):
     return self.rpcClientFunctor( "Framework/UserProfileManager" )
 
   def __generateTypeDest( self, dataObj ):
@@ -46,31 +46,41 @@ class UserProfileClient:
       return S_ERROR( "Stored data does not match typeRE: %s vs %s" % ( typeDesc, typeRE ) )
     return S_OK()
 
-  def storeVar( self, varName, data ):
+  def storeUserVar( self, varName, data, perms = {} ):
     try:
       stub = DEncode.encode( data )
     except Exception, e:
-      return S_ERROR( "Cannot encode data:%s" % str(e) )
-    return self.__getRPCClient().storeProfileVar( self.profile, varName, stub )
+      return S_ERROR( "Cannot encode data:%s" % str( e ) )
+    return self.__getRPCClient().storeUserProfileVar( self.profile, varName, stub, perms )
 
-  def retrieveVar( self, varName, dataTypeRE = False ):
-    rpcClient = self.__getRPCClient()
-    result = rpcClient.retrieveProfileVar( self.profile, varName )
-    if not result[ 'OK' ]:
-      return result
+  def __decodeVar( self, data, dataTypeRE ):
     try:
-      dataObj, lenData = DEncode.decode( result[ 'Value' ] )
+      dataObj, lenData = DEncode.decode( data )
     except Exception, e:
-      return S_ERROR( "Cannot decode data: %s" % str(e) )
+      return S_ERROR( "Cannot decode data: %s" % str( e ) )
     if dataTypeRE:
       result = self.checkTypeRe( dataObj, dataTypeRE )
       if not result[ 'OK' ]:
         return result
     return S_OK( dataObj )
-  
-  def retrieveAllVars( self ):
+
+  def retrieveUserVar( self, varName, dataTypeRE = False ):
     rpcClient = self.__getRPCClient()
-    result = rpcClient.retrieveProfileAllVars( self.profile )
+    result = rpcClient.retrieveUserProfileVar( self.profile, varName )
+    if not result[ 'OK' ]:
+      return result
+    return self.__decodeVar( result[ 'Value' ], dataTypeRE )
+
+  def retrieveVar( self, ownerName, ownerGroup, varName, dataTypeRE = False ):
+    rpcClient = self.__getRPCClient()
+    result = rpcClient.retrieveProfileVar( ownerName, ownerGroup, self.profile, varName )
+    if not result[ 'OK' ]:
+      return result
+    return self.__decodeVar( result[ 'Value' ], dataTypeRE )
+
+  def retrieveAllUserVars( self ):
+    rpcClient = self.__getRPCClient()
+    result = rpcClient.retrieveUserProfileAllVars( self.profile )
     if not result[ 'OK' ]:
       return result
     try:
@@ -80,20 +90,32 @@ class UserProfileClient:
         v, lenData = DEncode.decode( encodedData[k] )
         dataObj[ k ] = v
     except Exception, e:
-      return S_ERROR( "Cannot decode data: %s" % str(e) )
+      return S_ERROR( "Cannot decode data: %s" % str( e ) )
     return S_OK( dataObj )
-  
-  def deleteVar( self, varName ):
-    return self.__getRPCClient().deleteProfileData( self.profile, varName )
+
+  def listAvailableVars( self ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.listAvailableProfileVars( self.profile )
+
+  def setVarPermissions( self, varName, perms ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.setUserProfileVarPermissions( self.profile, varName, perms )
+
+  def getVarPermissions( self, varName ):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.getUserProfileVarPermissions( self.profile, varName )
+
+  def deleteUserVar( self, varName ):
+    return self.__getRPCClient().deleteUserProfileVar( self.profile, varName )
 
   def deleteProfiles( self, userList ):
     return self.__getRPCClient().deleteProfiles( userList )
-  
+
   def storeHashTag( self, tagName ):
     return self.__getRPCClient().storeHashTag( tagName )
 
   def retrieveHashTag( self, hashTag ):
     return self.__getRPCClient().retrieveHashTag( hashTag )
-  
+
   def retrieveAllHashTags( self ):
     return self.__getRPCClient().retrieveAllHashTags()

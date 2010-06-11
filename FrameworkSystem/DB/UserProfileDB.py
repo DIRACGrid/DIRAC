@@ -24,7 +24,8 @@ class UserProfileDB( DB ):
     """
     Create the tables
     """
-    self.__perms = ( 'USER', 'GROUP', 'VO', 'ALL' )
+    self.__permValues = [ 'USER', 'GROUP', 'VO', 'ALL' ]
+    self.__permAttrs = [ 'ReadAccess', 'PublishAccess' ]
     retVal = self._query( "show tables" )
     if not retVal[ 'OK' ]:
       return retVal
@@ -77,7 +78,7 @@ class UserProfileDB( DB ):
     return self._createTables( tablesD )
 
   def __getUserId( self, userName, insertIfMissing = True, connObj = False ):
-    result = self.__escapeString( userName )
+    result = self._escapeString( userName )
     if not result[ 'OK' ]:
       return result
     sqlUserName = result[ 'Value' ]
@@ -99,11 +100,11 @@ class UserProfileDB( DB ):
     return S_OK( result[ 'lastRowId' ] )
 
   def __getGroupId( self, groupName, insertIfMissing = True, connObj = False ):
-    result = self.__escapeString( groupName )
+    result = self._escapeString( groupName )
     if not result[ 'OK' ]:
       return result
     sqlGroupName = result[ 'Value' ]
-    selectSQL = "SELECT Id FROM `up_Groups` WHERE GroupName = %s" % sqlGroupName
+    selectSQL = "SELECT Id FROM `up_Groups` WHERE UserGroup = %s" % sqlGroupName
     result = self._query( selectSQL, connObj )
     if not result[ 'OK' ]:
       return result
@@ -114,7 +115,7 @@ class UserProfileDB( DB ):
       return S_OK( id )
     if not insertIfMissing:
       return S_ERROR( "No group %s defined in the DB" % groupName )
-    insertSQL = "INSERT INTO `up_Groups` ( Id, GroupName, LastAccess ) VALUES ( 0, %s, UTC_TIMESTAMP() )" % sqlGroupName
+    insertSQL = "INSERT INTO `up_Groups` ( Id, UserGroup, LastAccess ) VALUES ( 0, %s, UTC_TIMESTAMP() )" % sqlGroupName
     result = self._update( insertSQL, connObj )
     if not result[ 'OK' ]:
       return result
@@ -147,13 +148,17 @@ class UserProfileDB( DB ):
       groupId = result[ 'Value' ]
       sqlCond.append( "GroupId=%s" % userGroup )
     delSQL = "DELETE FROM `up_ProfilesData` WHERE %s" % " AND ".join( sqlCond )
+    result = self._update( delSQL )
+    if not result[ 'OK' ] or not userGroup:
+      return result
+    delSQL = "DELETE FROM `up_Users` WHERE Id = %s" % userId
     return self._update( delSQL )
 
   def __webProfileUserDataCond( self, userIds, sqlProfileName, sqlVarName = False ):
     condSQL = [ '`up_ProfilesData`.UserId=%s' % userIds[0],
                 '`up_ProfilesData`.GroupId=%s' % userIds[1],
                 '`up_ProfilesData`.Profile=%s' % sqlProfileName ]
-    if varName:
+    if sqlVarName:
       condSQL.append( '`up_ProfilesData`.VarName=%s' % sqlVarName )
     return " AND ".join( condSQL )
 
@@ -163,9 +168,9 @@ class UserProfileDB( DB ):
     permCondSQL.append( '`up_ProfilesData`.GroupId=%s AND `up_ProfilesData`.ReadAccess="GROUP"' % userIds[1] )
     permCondSQL.append( '`up_ProfilesData`.ReadAccess="ALL"' )
     sqlCond = []
-    sqlCond.append( '`up_ProfilesData`.Profile = %s' )
+    sqlCond.append( '`up_ProfilesData`.Profile = %s' % sqlProfileName )
     if sqlVarName:
-      sqlCond.append( "`up_ProfilesData`.VarName = %s" % ( sqlCond, sqlVarName ) )
+      sqlCond.append( "`up_ProfilesData`.VarName = %s" % ( sqlVarName ) )
     #Perms
     sqlCond.append( "( ( %s ) )" % " ) OR ( ".join( permCondSQL ) )
     return " AND ".join( sqlCond )
@@ -175,43 +180,44 @@ class UserProfileDB( DB ):
     condSQL.append( '`up_ProfilesData`.UserId = %s AND `up_ProfilesData`.GroupId=%s' % userIds )
     condSQL.append( '`up_ProfilesData`.GroupId=%s AND `up_ProfilesData`.PublishAccess="GROUP"' % userIds[1] )
     condSQL.append( '`up_ProfilesData`.PublishAccess="ALL"' )
-    sqlCond = "`up_ProfilesData`.Profile = %s AND ( ( %s ) )" % " ) OR ( ".join( condSQL )
+    sqlCond = "`up_ProfilesData`.Profile = %s AND ( ( %s ) )" % ( sqlProfileName,
+                                                                  " ) OR ( ".join( condSQL ) )
     return sqlCond
 
   def __parsePerms( self, perms, addMissing = True ):
     normPerms = {}
-    for pName in ( 'ReadAccess', 'PublishAccess' ):
+    for pName in self.__permAttrs:
       if pName not in perms:
         if addMissing:
-          normPerms[ pName ] = self.__perms[0]
+          normPerms[ pName ] = self.__permValues[0]
         continue
       else:
-        permVal = prems[ pName ].upper()
-        for nV in self.__perms:
+        permVal = perms[ pName ].upper()
+        for nV in self.__permValues:
           if nV == permVal:
             normPerms[ pName ] = nV
             break
         if pName not in normPerms and addMissing:
-          normPerms[ pName ] = self.__perms[0]
+          normPerms[ pName ] = self.__permValues[0]
 
     if 'PublishAccess' in normPerms:
       if 'ReadAccess' in normPerms:
-        iP = self.__perms.index( normPerms[ 'PublishAccess' ] )
-        iR = self.__perms.index( normPerms[ 'ReadAccess' ] )
+        iP = self.__permValues.index( normPerms[ 'PublishAccess' ] )
+        iR = self.__permValues.index( normPerms[ 'ReadAccess' ] )
         if iP > iR:
-          normPerms[ 'ReadAccess' ] = self.__perms[ iP ]
+          normPerms[ 'ReadAccess' ] = self.__permValues[ iP ]
     return normPerms
 
   def retrieveVarById( self, userIds, ownerIds, profileName, varName, connObj = False ):
     """
     Get a data entry for a profile
     """
-    result = self.__escapeString( profileName )
+    result = self._escapeString( profileName )
     if not result[ 'OK' ]:
       return result
     sqlProfileName = result[ 'Value' ]
 
-    result = self.__escapeString( varName )
+    result = self._escapeString( varName )
     if not result[ 'OK' ]:
       return result
     sqlVarName = result[ 'Value' ]
@@ -224,13 +230,13 @@ class UserProfileDB( DB ):
     data = result[ 'Value' ]
     if len( data ) > 0:
       return S_OK( data[0][0] )
-    return S_ERROR( "No data for userIds %s profileId %s varName %s" % ( userIds, profileId, varName ) )
+    return S_ERROR( "No data for userIds %s profileName %s varName %s" % ( userIds, profileName, varName ) )
 
   def retrieveAllUserVarsById( self, userIds, profileName, connObj = False ):
     """
     Get a data entry for a profile
     """
-    result = self.__escapeString( profileName )
+    result = self._escapeString( profileName )
     if not result[ 'OK' ]:
       return result
     sqlProfileName = result[ 'Value' ]
@@ -242,16 +248,45 @@ class UserProfileDB( DB ):
     data = result[ 'Value' ]
     return S_OK( dict( data ) )
 
-  def deleteVarByUserId( self, userIds, profileName, varName, connObj = False ):
+  def retrieveVarPermsById( self, userIds, ownerIds, profileName, varName, connObj = False ):
     """
-    Remove a data entry for a profile
+    Get a data entry for a profile
     """
-    result = self.__escapeString( profileName )
+    result = self._escapeString( profileName )
     if not result[ 'OK' ]:
       return result
     sqlProfileName = result[ 'Value' ]
 
-    result = self.__escapeString( varName )
+    result = self._escapeString( varName )
+    if not result[ 'OK' ]:
+      return result
+    sqlVarName = result[ 'Value' ]
+
+    selectSQL = "SELECT %s FROM `up_ProfilesData` WHERE %s" % ( ", ".join( self.__permAttrs ),
+                                                                self.__webProfileReadAccessDataCond( userIds, ownerIds,
+                                                                                                     sqlProfileName, sqlVarName )
+                                                              )
+    result = self._query( selectSQL, conn = connObj )
+    if not result[ 'OK' ]:
+      return result
+    data = result[ 'Value' ]
+    if len( data ) > 0:
+      permDict = {}
+      for i in range( len( self.__permAttrs ) ):
+        permDict[ self.__permAttrs[ i ] ] = data[0][i]
+      return S_OK( permDict )
+    return S_ERROR( "No data for userIds %s profileName %s varName %s" % ( userIds, profileName, varName ) )
+
+  def deleteVarByUserId( self, userIds, profileName, varName, connObj = False ):
+    """
+    Remove a data entry for a profile
+    """
+    result = self._escapeString( profileName )
+    if not result[ 'OK' ]:
+      return result
+    sqlProfileName = result[ 'Value' ]
+
+    result = self._escapeString( varName )
     if not result[ 'OK' ]:
       return result
     sqlVarName = result[ 'Value' ]
@@ -269,13 +304,13 @@ class UserProfileDB( DB ):
     sqlInsertKeys.append( ( 'UserId', userIds[0] ) )
     sqlInsertKeys.append( ( 'GroupId', userIds[1] ) )
 
-    result = self.__escapeString( profileName )
+    result = self._escapeString( profileName )
     if not result[ 'OK' ]:
       return result
     sqlProfileName = result[ 'Value' ]
     sqlInsertKeys.append( ( 'Profile', sqlProfileName ) )
 
-    result = self.__escapeString( varName )
+    result = self._escapeString( varName )
     if not result[ 'OK' ]:
       return result
     sqlVarName = result[ 'Value' ]
@@ -292,7 +327,7 @@ class UserProfileDB( DB ):
 
     sqlInsert = sqlInsertKeys + sqlInsertValues
     insertSQL = "INSERT INTO `up_ProfilesData` ( %s ) VALUES ( %s )" % ( ", ".join( [ f[0] for f in sqlInsert ] ),
-                                                                         ", ".join( [ f[1] for f in sqlInsert ] ) )
+                                                                         ", ".join( [ str( f[1] ) for f in sqlInsert ] ) )
     result = self._update( insertSQL, conn = connObj )
     if result[ 'OK' ]:
       return result
@@ -304,6 +339,29 @@ class UserProfileDB( DB ):
                                                                                               sqlProfileName,
                                                                                               sqlVarName ) )
     return self._update( updateSQL, conn = connObj )
+
+  def setUserVarPermsById( self, userIds, profileName, varName, perms ):
+
+    result = self._escapeString( profileName )
+    if not result[ 'OK' ]:
+      return result
+    sqlProfileName = result[ 'Value' ]
+
+    result = self._escapeString( varName )
+    if not result[ 'OK' ]:
+      return result
+    sqlVarName = result[ 'Value' ]
+
+    nPerms = self.__parsePerms( perms, False )
+    if not nPerms:
+      return S_OK()
+    sqlPerms = ",".join( [ "%s='%s'" % ( k, nPerms[k] ) for k in nPerms ] )
+
+    updateSql = "UPDATE `up_ProfilesData` SET %s WHERE %s" % ( sqlPerms,
+                                                               self.__webProfileUserDataCond( userIds,
+                                                                                              sqlProfileName,
+                                                                                              sqlVarName ) )
+    return self._update( updateSql )
 
   def retrieveVar( self, userName, userGroup, ownerName, ownerGroup, profileName, varName, connObj = False ):
     """
@@ -331,36 +389,27 @@ class UserProfileDB( DB ):
     userIds = result[ 'Value' ]
     return self.retrieveAllUserVarsById( userIds, profileName, connObj )
 
-  def setPermissionsById( self, userIds, profileName, varName, perms ):
-
-    result = self.__escapeString( profileName )
-    if not result[ 'OK' ]:
-      return result
-    sqlProfileName = result[ 'Value' ]
-
-    result = self.__escapeString( varName )
-    if not result[ 'OK' ]:
-      return result
-    sqlVarName = result[ 'Value' ]
-
-    nPerms = self.__parsePerms( perms, False )
-    if not nPerms:
-      return S_OK()
-    sqlPerms = ",".join( [ "%s='%s'" % ( k, nPerms[k] ) for k in nPerms ] )
-
-    updateSQL = "UPDATE `up_ProfilesData` SET %s WHERE %s" % ( sqlPerms,
-                                                               self.__webProfileUserDataCond( userIds,
-                                                                                              sqlProfileName,
-                                                                                              sqlVarName ) )
-
-  def setPermissions( self, userName, userGroup, profileName, varName, perms ):
+  def retrieveVarPerms( self, userName, userGroup, ownerName, ownerGroup, profileName, varName, connObj = False ):
     result = self.getUserGroupIds( userName, userGroup, False )
     if not result[ 'OK' ]:
       return result
     userIds = result[ 'Value' ]
-    return self.setPermissionsById( userIds, profileName, varName, perms )
 
-  def storeVar( self, userName, userGroup, profileId, varName, data, perms = {} ):
+    result = self.getUserGroupIds( ownerName, ownerGroup, False )
+    if not result[ 'OK' ]:
+      return result
+    ownerIds = result[ 'Value' ]
+
+    return self.retrieveVarPermsById( userIds, ownerIds, profileName, varName, connObj )
+
+  def setUserVarPerms( self, userName, userGroup, profileName, varName, perms ):
+    result = self.getUserGroupIds( userName, userGroup, False )
+    if not result[ 'OK' ]:
+      return result
+    userIds = result[ 'Value' ]
+    return self.setUserVarPermsById( userIds, profileName, varName, perms )
+
+  def storeVar( self, userName, userGroup, profileName, varName, data, perms = {} ):
     """
     Helper for setting data
     """
@@ -373,11 +422,11 @@ class UserProfileDB( DB ):
       if not result[ 'OK' ]:
         return result
       userIds = result[ 'Value' ]
-      return self.storeVarByUserId( userId, profileId, varName, data, perms = perms, connObj = connObj )
+      return self.storeVarByUserId( userIds, profileName, varName, data, perms = perms, connObj = connObj )
     finally:
       connObj.close()
 
-  def deleteVar( self, userName, userGroup, profileId, varName ):
+  def deleteVar( self, userName, userGroup, profileName, varName ):
     """
     Helper for deleteting data
     """
@@ -386,25 +435,30 @@ class UserProfileDB( DB ):
       return result
     connObj = result[ 'Value' ]
     try:
-      result = self.getUserId( userName, userGroup, connObj = connObj )
+      result = self.getUserGroupIds( userName, userGroup, connObj = connObj )
       if not result[ 'OK' ]:
         return result
       userIds = result[ 'Value' ]
-      return self.deleteVarByUserId( userIds, profileId, varName, connObj = connObj )
+      return self.deleteVarByUserId( userIds, profileName, varName, connObj = connObj )
     finally:
       connObj.close()
 
   def listVarsById( self, userIds, profileName ):
-    result = self.__escapeString( profileName )
+    result = self._escapeString( profileName )
     if not result[ 'OK' ]:
       return result
     sqlProfileName = result[ 'Value' ]
-    sqlCond = [ "u.Id=p.UserId", "g.Ig=p.GroupId", self.__webProfilePublishAccessDataCond( userIds, sqlProfileName )]
-    sqlQuery = "SELECT u,UserName, g.UserGroup, p.VarName FROM `up_Users` u, `up_Groups` g, `up_ProfilesData` p WHERE"
-    return self._query( "%s %s" % ( sqlQuery, " AND ".join( sqlCond ) ) )
+    sqlCond = [ "`up_Users`.Id = `up_ProfilesData`.UserId",
+                "`up_Groups`.Id = `up_ProfilesData`.GroupId",
+                self.__webProfilePublishAccessDataCond( userIds, sqlProfileName ) ]
+    sqlVars2Get = [ "`up_Users`.UserName", "`up_Groups`.UserGroup", "`up_ProfilesData`.VarName" ]
+    sqlQuery = "SELECT %s FROM `up_Users`, `up_Groups`, `up_ProfilesData` WHERE %s" % ( ", ".join( sqlVars2Get ),
+                                                                                        " AND ".join( sqlCond ) )
+
+    return self._query( sqlQuery )
 
   def listVars( self, userName, userGroup, profileName ):
-    result = self.getUserId( userName, userGroup, connObj = connObj )
+    result = self.getUserGroupIds( userName, userGroup )
     if not result[ 'OK' ]:
       return result
     userIds = result[ 'Value' ]
