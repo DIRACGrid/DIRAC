@@ -277,7 +277,7 @@ QueueWorkRef  = QueuePowerRef * QueueTimeRef;
         if req.strip().lower()[:6] == 'rank >':
           requirements.remove( req )
 
-    requirements.append( 'QueueWorkRef > WorkRef' )
+    requirements.append( 'QueueWorkRef > CPUWorkRef' )
 
     siteRequirements = '\n || '.join( [ 'other.GlueCEInfoHostName == "%s"' % s for s in ceMask ] )
     requirements.append( "( %s\n )" % siteRequirements )
