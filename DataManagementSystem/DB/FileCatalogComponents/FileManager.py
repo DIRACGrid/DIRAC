@@ -200,29 +200,29 @@ class FileManager:
           metadata['CheckSumValue'] = metadata['CheckSum']
         if metadata.has_key('Mode'): 
           metadata['Permissions'] = metadata['Mode'] 
-        if metadata.has_key('ModificationDate'): 
-          metadata['ModificationDate'] = metadata['ModificationTime']   
-          
-        owner = 'unknown'
-        uid = metadata['UID']
-        if uid == 0:
-          owner = 'root'
-        else:  
-          resGet = self.db.ugManager.getUserName(uid)
-          if resGet['OK']:
-            owner = resGet['Value'] 
-        metadata['Owner'] = owner
-        gid = int(result['Value'][0][5])
-        gid = metadata['GID']
-        group = 'unknown'
-        if gid == 0:
-          group = 'root'
-        else:  
-          resGet = self.db.ugManager.getGroupName(gid)      
-          if resGet['OK']:
-            group = resGet['Value']  
-        metadata['OwnerGroup'] = group  
-          
+        if metadata.has_key('ModificationDate'):
+          metadata['ModificationTime'] = metadata['ModificationDate']
+        if metadata.has_key('UID'):
+          owner = 'unknown'
+          uid = metadata['UID']
+          if uid == 0:
+            owner = 'root'
+          else:  
+            resGet = self.db.ugManager.getUserName(uid)
+            if resGet['OK']:
+              owner = resGet['Value'] 
+        if metadata.has_key('GID'):
+          metadata['Owner'] = owner
+          gid = metadata['GID']
+          group = 'unknown'
+          if gid == 0:
+            group = 'root'
+          else:  
+            resGet = self.db.ugManager.getGroupName(gid)      
+            if resGet['OK']:
+              group = resGet['Value']  
+          metadata['OwnerGroup'] = group  
+
         successful[fileIDLFNs[fileID]] = metadata  
     
     # Ensure all the files are in the result
@@ -748,8 +748,7 @@ class FileManager:
     else:
       failed.update(fileDict['Successful'])
     return S_OK({'Successful':successful,'Failed':failed})    
- 
-####################################################################  
+  
   def changeFileOwner(self,lfns,s_uid=0,s_gid=0):
     """ Bulk method to set the file owner
     """
@@ -863,7 +862,7 @@ class FileManager:
   
 #####################################################################
 
- 
+  
 ##################################################################### 
   def isFile(self,lfns,s_uid=0,s_gid=0):
     """ Check for the existence of files """
@@ -877,10 +876,10 @@ class FileManager:
       if lfn in result['Value']['Successful']:
         successful[lfn] = True 
       else:
-        successful[lfn] = False     
-    return S_OK({'Successful':successful,'Failed':failed})      
-  
-  def __changePathFunction(self,paths,credDict,change_function_directory,change_function_file, recursive=False):
+        successful[lfn] = False   
+    return S_OK({'Successful':successful,'Failed':failed})
+ 
+  def __changePathFunction(self,paths,credDict,change_function_directory,change_function_file):
     """ A generic function to change Owner, Group or Mode for the given paths
     """
     result = self.db.ugManager.getUserAndGroupID(credDict)
@@ -925,57 +924,7 @@ class FileManager:
       if not result['OK']:
         return result
       successful.update(result['Value']['Successful'])
-      failed.update(result['Value']['Successful'])
-   
-      if recursive:
-        sDirs = result['Value']['Successful'].keys()
-        for path in sDirs:
-          result = self.db.listDirectory(path,credDict)
-          if not result['OK']:
-            failed[path] = "Failed recursion"
-            del successful[path]
-            continue
-          changeParameter = dirArgs[path]
-          rPaths = {}
-          contents = result['Value']['Successful'][path]['SubDirs'].keys() + \
-                     result['Value']['Successful'][path]['Files'].keys()
-          contents = [ path+'/'+os.path.basename(x) for x in contents ]
-          for r in contents:
-            rPaths[r] = changeParameter
-          result = self.__changePathFunction(rPaths,
-                                             credDict,
-                                             change_function_directory,
-                                             change_function_file, 
-                                             recursive)
-          if not result['OK']:
-            failed[path] = "Failed recursion"
-            del successful[path]
-            continue
-          successful.update(result['Value']['Successful'])
-          failed.update(result['Value']['Successful'])  
-              
-      if recursive:
-        sDirs = result['Value']['Successful'].keys()
-        for path in sDirs:
-          result = self.db.listDirectory(path)
-          if not result['OK']:
-            failed[path] = "Failed recursion"
-            del successful[path]
-            continue
-          rPaths = result['Value']['Directories'].keys()
-          rPaths += result['Value']['Files'].keys()
-          result = self.__changePathFunction(rPaths,
-                                             credDict,
-                                             change_function_directory,
-                                             change_function_file, 
-                                             recursive)
-          if not result['OK']:
-            failed[path] = "Failed recursion"
-            del successful[path]
-            continue
-          successful.update(result['Value']['Successful'])
-          failed.update(result['Value']['Successful'])  
-              
+      failed.update(result['Value']['Successful'])    
     if fileArgs:
       result = change_function_file(fileArgs,uid,gid)
       if not result['OK']:
@@ -985,23 +934,20 @@ class FileManager:
     
     return S_OK({'Successful':successful,'Failed':failed})
   
-  def changePathOwner(self,paths,credDict,recursive=False):  
+  def changePathOwner(self,paths,credDict):  
     """ Bulk method to change Owner for the given paths
     """
-    return self.__changePathFunction(paths,credDict,self.db.dtree.changeDirectoryOwner,
-                                     self.changeFileOwner, recursive)
+    return self.__changePathFunction(paths,credDict,self.db.dtree.changeDirectoryOwner,self.changeFileOwner)
   
-  def changePathGroup(self,paths,credDict,recursive=False):  
+  def changePathGroup(self,paths,credDict):  
     """ Bulk method to change Owner for the given paths
     """
-    return self.__changePathFunction(paths,credDict,self.db.dtree.changeDirectoryGroup,
-                                     self.changeFileGroup, recursive)
+    return self.__changePathFunction(paths,credDict,self.db.dtree.changeDirectoryGroup,self.changeFileGroup)
   
-  def changePathMode(self,paths,credDict,recursive=False):  
+  def changePathMode(self,paths,credDict):  
     """ Bulk method to change Owner for the given paths
     """
-    return self.__changePathFunction(paths,credDict,self.db.dtree.changeDirectoryMode,
-                                     self.changeFileMode, recursive)
+    return self.__changePathFunction(paths,credDict,self.db.dtree.changeDirectoryMode,self.changeFileMode)
 
 #########################################################################
 #
