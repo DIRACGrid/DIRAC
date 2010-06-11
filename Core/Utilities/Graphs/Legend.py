@@ -40,12 +40,13 @@ class Legend:
       self.ax.set_axis_off()
     self.prefs = evalPrefs(*aw,**kw)
     self.palette = Palette()
-    
+        
     if self.labels and self.labels[0][0] != 'NoLabels':
       percent_flag = self.prefs.get('legend_unit','')
       if percent_flag == "%":       
         sum_value = sum(data.label_values)
-        self.labels = [(l,v/sum_value*100.) for l,v in self.labels ]
+        if sum_value > 0.:
+          self.labels = [(l,v/sum_value*100.) for l,v in self.labels ]
     self.__get_column_width()
     
   def dumpPrefs(self):
