@@ -7,12 +7,24 @@
 
 __RCSID__ = "$Id$"
 
-import md5, random
+import md5, random, os
 from types import *
 from DIRAC import S_OK, S_ERROR
 
 def checkArgumentFormat(path):
-  return checkArgumentDict(path)
+  """ Bring the various possible form of arguments to FileCatalog methods to
+      the standard dictionary form
+  """
+  result = checkArgumentDict(path)
+  if not result['OK']:
+    return result
+  
+  # Bring the lfn path to the normalized form
+  urls = {}
+  for url in path:
+    normpath = os.path.normpath(url)
+    urls[normpath] = path[url]
+  return S_OK(urls)  
 
 def checkArgumentList(path):
   """ Check and process format of the arguments to FileCatalog methods """
