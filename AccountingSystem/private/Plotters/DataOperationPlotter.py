@@ -183,7 +183,9 @@ class DataOperationPlotter( BaseReporter ):
 
   def _plotDataTransfered( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Total data transfered by %s' % reportRequest[ 'grouping' ],
-                 'ylabel' : 'bytes'
+                 'ylabel' : 'bytes',
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ]
                 }
     return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )
 

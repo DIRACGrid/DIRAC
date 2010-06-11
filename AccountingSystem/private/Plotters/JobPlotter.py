@@ -200,7 +200,9 @@ class JobPlotter( BaseReporter ):
 
   def _plotTotalNumberOfJobs( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Total Number of Jobs by %s' % reportRequest[ 'grouping' ],
-                 'ylabel' : 'Jobs'
+                 'ylabel' : 'Jobs',
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ]
                 }
     return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )
 
@@ -339,6 +341,8 @@ class JobPlotter( BaseReporter ):
 
   def _plotTotalCPUUsed( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'CPU days used by %s' % reportRequest[ 'grouping' ],
-                 'ylabel' : 'cpu days'
+                 'ylabel' : 'cpu days',
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ]
                 }
     return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )

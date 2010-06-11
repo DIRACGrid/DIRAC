@@ -168,6 +168,8 @@ class PilotPlotter( BaseReporter ):
 
   def _plotTotalNumberOfPilots( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Total Number of Pilots by %s' % reportRequest[ 'grouping' ],
-                 'ylabel' : 'Pilots'
+                 'ylabel' : 'Pilots',
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ]
                 }
     return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )

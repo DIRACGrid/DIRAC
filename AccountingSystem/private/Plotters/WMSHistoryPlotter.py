@@ -97,6 +97,8 @@ class WMSHistoryPlotter( BaseReporter ):
 
   def _plotAverageNumberOfJobs( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Average Number of Jobs by %s' % reportRequest[ 'grouping' ],
-                 'ylabel' : 'Jobs'
+                 'ylabel' : 'Jobs',
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ]
                 }
     return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )
