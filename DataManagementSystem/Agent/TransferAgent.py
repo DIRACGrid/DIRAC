@@ -64,7 +64,7 @@ class TransferAgent(AgentModule,RequestAgentMixIn):
       self.proxyLocation = False
 
     if self.useProxies:
-      self.am_setModuleParam('shifter','DataManager')
+      self.am_setModuleParam('shifterProxy','DataManager')
       self.am_setModuleParam('shifterProxyLocation',self.proxyLocation)
 
     return S_OK()
