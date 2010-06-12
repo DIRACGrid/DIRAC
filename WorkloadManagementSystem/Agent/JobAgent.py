@@ -622,7 +622,7 @@ class JobAgent( AgentModule ):
     #instead set the status with the cause and then another status showing the
     #reschedule operation.
 
-    jobReport.setJobStatus( status = 'Rescheduling', 
+    jobReport.setJobStatus( status = 'Rescheduled', 
                             application = message, 
                             sendFlag = True )
 
