@@ -427,7 +427,8 @@ class JobWrapper:
     border = ''
     for i in xrange( len( header ) ):
       border += '='
-    cpuTotal = 'CPU Total for job is %s (h:m:s)' % cpuConsumed[1]
+    cpuTotal = 'CPU Total: %s (h:m:s)' % cpuConsumed[1]
+    cpuTotal += " Normalized CPU Total %.1f s @ HEP'06" % normCPU
     header = '\n%s\n%s\n%s\n%s\n' % ( border, header, cpuTotal, border )
     appStdOut = header + appStdOut
     self.log.info( appStdOut )
