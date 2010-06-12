@@ -1149,7 +1149,7 @@ class JobWrapper:
       self.wmsMajorStatus = status
     if minorStatus:
       self.wmsMinorStatus = minorStatus
-    jobStatus = self.jobReport.setJobStatus( status, minorStatus, sendFlag )
+    jobStatus = self.jobReport.setJobStatus( status = status, minor = minorStatus, sendFlag = sendFlag )
     if not jobStatus['OK']:
       self.log.warn( jobStatus['Message'] )
     if self.jobID:
