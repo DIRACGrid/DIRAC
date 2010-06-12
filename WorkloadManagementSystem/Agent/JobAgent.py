@@ -622,14 +622,17 @@ class JobAgent( AgentModule ):
     #instead set the status with the cause and then another status showing the
     #reschedule operation.
 
-    jobReport.setJobStatus( 'Failed', message, sendFlag = False )
-    jobReport.setApplicationStatus( 'Failed %s ' % message, sendFlag = False )
-    jobReport.setJobStatus( minor = 'ReschedulingJob', sendFlag = True )
+    jobReport.setJobStatus( status = 'Rescheduling', 
+                            minor = message, 
+                            sendFlag = True )
 
     self.log.info( 'Job will be rescheduled' )
     result = jobManager.rescheduleJob( jobID )
     if not result['OK']:
       self.log.error( result['Message'] )
+      jobReport.setJobStatus( status = 'Failed', 
+                              minor = 'Job rescheduling', 
+                              sendFlag = True )
       return self.__finish( 'Problem Rescheduling Job' )
 
     self.log.info( 'Job Rescheduled %s' % ( jobID ) )
