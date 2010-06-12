@@ -96,6 +96,12 @@ class JobWrapper:
     self.log.verbose( 'Developer tag: 2' )
     self.currentPID = os.getpid()
     self.log.verbose( 'Job Wrapper started under PID: %s' % self.currentPID )
+    # Define a new process group for the job wrapper
+    self.parentPGID = os.getpgid()
+    self.log.verbose( 'Job Wrapper parent process group ID: %s' % self.parentPGID )
+    os.setpgid(self.currentPID,self.currentPID)
+    self.currentPGID = os.getpgid()
+    self.log.verbose( 'Job Wrapper process group ID: %s' % self.currentPGID )
     self.log.verbose( '==========================================================================' )
     self.log.verbose( 'sys.path is: \n%s' % ( string.join( sys.path, '\n' ) ) )
     self.log.verbose( '==========================================================================' )
