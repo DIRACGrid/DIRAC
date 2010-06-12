@@ -32,7 +32,7 @@ class JobReport:
 
     self.jobID = jobID
 
-  def setJobStatus(self, status='', minor='', sendFlag=True):
+  def setJobStatus(self, status='', minor='', application='', sendFlag=True):
     """ Send job status information to the JobState service for jobID
     """
     if not self.jobID:
@@ -41,6 +41,8 @@ class JobReport:
     timeStamp = Time.toString()
     # add job status record
     self.jobStatusInfo.append((status.replace("'",''),minor.replace("'",''),timeStamp))
+    if application:
+      self.appStatusInfo.append((application.replace("'",''),timeStamp))
     if sendFlag:
       # and send
       return self.sendStoredStatusInfo()
