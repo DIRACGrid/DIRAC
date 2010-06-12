@@ -623,7 +623,7 @@ class JobAgent( AgentModule ):
     #reschedule operation.
 
     jobReport.setJobStatus( status = 'Rescheduling', 
-                            minor = message, 
+                            application = message, 
                             sendFlag = True )
 
     self.log.info( 'Job will be rescheduled' )
