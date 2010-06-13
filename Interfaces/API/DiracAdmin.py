@@ -25,7 +25,7 @@ from DIRAC.FrameworkSystem.Client.NotificationClient          import Notificatio
 from DIRAC.Core.Security.X509Chain                            import X509Chain
 from DIRAC.Core.Security                                      import Locations, CS
 from DIRAC                                                    import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.Grid                                import ldapSite, ldapCluster, ldapCE, ldapCEState, ldapCEVOView, ldapSA
+from DIRAC.Core.Utilities.Grid                                import ldapSite, ldapCluster, ldapCE, ldapService, ldapCEState, ldapCEVOView, ldapSA
 
 import re, os, sys, string, time, shutil, types
 import pprint
@@ -1085,6 +1085,12 @@ class DiracAdmin:
     """Get information about ce from BDII at host
     """
     return ldapCE(ce, host=host)
+
+  #############################################################################
+  def getBDIIService(self,ce,host=None):
+    """Get information about ce from BDII at host
+    """
+    return ldapService(ce, host=host)
 
   #############################################################################
   def getBDIICEState(self,ce,useVO=vo,host=None):
