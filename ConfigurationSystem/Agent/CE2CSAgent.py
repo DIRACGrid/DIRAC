@@ -12,7 +12,7 @@ from DIRAC                                                    import gLogger, S_
 from DIRAC.Core.Base.AgentModule                              import AgentModule
 from DIRAC.Core.Utilities                                     import List
 from DIRAC.Core.Utilities.Shifter                             import setupShifterProxyInEnv
-from DIRAC.Core.Utilities.Grid                                import ldapSite, ldapCluster,ldapCE,ldapCEState
+from DIRAC.Core.Utilities.Grid                                import ldapSite, ldapCluster,ldapCE,ldapCEState,ldapService
 from DIRAC.FrameworkSystem.Client.NotificationClient          import NotificationClient
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
 
@@ -251,6 +251,7 @@ class CE2CSAgent(AgentModule):
           os = 'Unknown'
           si00 = 'Unknown'
           pilot = 'Unknown'
+          cetype = 'Unknown'
         else:
           ceopt = result['Value']
           wnTmpDir = ceopt.get('wnTmpDir','Unknown')
@@ -258,6 +259,7 @@ class CE2CSAgent(AgentModule):
           os = ceopt.get('OS','Unknown')
           si00 = ceopt.get('SI00','Unknown')
           pilot = ceopt.get('Pilot','Unknown')
+          cetype = ceopt.get('CEType','Unknown')
 
         result = ldapCE(ce)
         if not result['OK']:
@@ -338,7 +340,26 @@ class CE2CSAgent(AgentModule):
             else:
               self.csAPI.modifyValue(section,newpilot)
             changed = True
+            
+        result = ldapService(ce)
+        if result['OK']:
+          services = result['Value']
+          newcetype = 'LCG'
+          for service in services:
+            if service['GlueServiceType'].count('CREAM'):
+              newcetype = "CREAM"
+        else:
+          newcetype = 'Unknown'
 
+        if cetype != newcetype and newcetype != 'Unknown':
+          section = '/Resources/Sites/LCG/%s/CEs/%s/CEType'%(site,ce)
+          gLogger.info( section, " -> ".join((cetype,newcetype)))
+          if cetype == 'Unknown':
+            self.csAPI.setOption(section,newcetype)
+          else:
+            self.csAPI.modifyValue(section,newcetype)
+          changed = True
+                   
         result = ldapCEState(ce,vo=self.vo)        #getBDIICEVOView
         if not result['OK']:
           gLogger.warn( 'Error in bdii for queue %s'%ce, result['Message'])
