@@ -123,7 +123,7 @@ def ldapsearchBDII( filt=None, attr=None, host=None, base = None ):
 def ldapSite( site, attr=None, host=None ):
   """ Site information from bdii.
       Input parameter:
-        site:         Site as it defined in GOCDB or part of it whith globbing
+        site:         Site as it defined in GOCDB or part of it with globing
                       for example: "UKI-*"
       Return standart DIRAC answer with Value equals to list of sites.
       Each site is dictionary which contains attributes of site.
@@ -146,7 +146,7 @@ def ldapCluster( ce, attr=None, host=None ):
   """ CE (really SubCluster in definition of bdii) information from bdii.
       It contains by the way host information for ce.
       Input parameter:
-        ce:           ce or part of it whith globbing
+        ce:           ce or part of it with globing
                       for example  "ce0?.tier2.hep.manchester*"
       Return standart DIRAC answer with Value equals to list of clusters.
       Each cluster is dictionary which contains attributes of ce.
@@ -169,7 +169,7 @@ def ldapCE( ce, attr=None, host=None ):
   """ CE (really SubCluster in definition of bdii) information from bdii.
       It contains by the way host information for ce.
       Input parameter:
-        ce:           ce or part of it whith globbing
+        ce:           ce or part of it with globing
                       for example  "ce0?.tier2.hep.manchester*"
       Return standart DIRAC answer with Value equals to list of clusters.
       Each cluster is dictionary which contains attributes of ce.
@@ -188,10 +188,32 @@ def ldapCE( ce, attr=None, host=None ):
 
   return S_OK(ces)
 
+def ldapService( ce, attr=None, host=None ):
+  """ Service from BDII 
+      Input parameter:
+        ce:           ce or part of it with globing
+                      for example  "ce0?.tier2.hep.manchester*"
+      Return standard DIRAC answer with Value equals to list of services.
+      Each cluster is dictionary which contains attributes of ce.
+      For example result['Value'][0]['GlueHostBenchmarkSI00']
+  """
+  filt = '(GlueServiceUniqueID=%s*)'%ce
+
+  result = ldapsearchBDII( filt, attr, host )
+
+  if not result['OK']:
+    return result
+
+  ss = []
+  for value in result['Value']:
+    ss.append(value['attr'])
+
+  return S_OK(ss)
+
 def ldapCEState( ce, vo='lhcb', attr=None, host=None ):
   """ CEState information from bdii. Only CE with CEAccessControlBaseRule=VO:lhcb are selected.
       Input parameter:
-        ce:           ce or part of it whith globbing
+        ce:           ce or part of it with globing
                       for example  "ce0?.tier2.hep.manchester*"
       Return standart DIRAC answer with Value equals to list of ceStates.
       Each ceState is dictionary which contains attributes of ce.
@@ -213,7 +235,7 @@ def ldapCEState( ce, vo='lhcb', attr=None, host=None ):
 def ldapCEVOView( ce, vo='lhcb', attr=None, host=None ):
   """ CEVOView information from bdii. Only CE with CEAccessControlBaseRule=VO:lhcb are selected.
       Input parameter:
-        ce:           ce or part of it whith globbing
+        ce:           ce or part of it with globing
                       for example  "ce0?.tier2.hep.manchester*"
       Return standart DIRAC answer with Value equals to list of ceVOViews.
       Each ceVOView is dictionary which contains attributes of ce.
@@ -242,7 +264,7 @@ def ldapCEVOView( ce, vo='lhcb', attr=None, host=None ):
 def ldapSA( site, vo='lhcb', attr=None, host=None ):
   """ CEVOView information from bdii. Only CE with CEAccessControlBaseRule=VO:lhcb are selected.
       Input parameter:
-        ce:    ce or part of it whith globbing
+        ce:    ce or part of it with globing
           for example  "ce0?.tier2.hep.manchester*"
       Return standart DIRAC answer with Value equals to list of ceVOViews.
       Each ceVOView is dictionary which contains attributes of ce.
