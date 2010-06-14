@@ -18,17 +18,6 @@ def whoRaised(x):
 
 #############################################################################
 
-def getSiteRealName(s):
-  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-  DA = DiracAdmin()
-  res = DA.getCSDict('/Resources/Sites/%s/%s' %(s.split('.')[0],s))
-  if not res['OK']:
-    return s
-  else:
-    return res['Value']['Name']
-
-#############################################################################
-
 def convertTime(t, inTo = None):
   
   if inTo is None or inTo in ('second', 'seconds'):
