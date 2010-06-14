@@ -991,7 +991,7 @@ class PilotAgentsDB(DB):
     """
 
     paramNames = ['OwnerDN','OwnerGroup','GridType','Broker',
-                  'Status','DestinationSite','GridSite','TaskQueueID']
+                  'Status','DestinationSite','GridSite']
 
     resultDict = {}
     for param in paramNames:
