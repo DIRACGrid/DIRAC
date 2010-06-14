@@ -5,12 +5,12 @@
 import urllib2, httplib
 
 from DIRAC import gLogger
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import getSiteRealName
 
-from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import NoSAMTests
+#from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import NoSAMTests
 
 class SAMResults_Command(Command):
   
@@ -30,7 +30,7 @@ class SAMResults_Command(Command):
     super(SAMResults_Command, self).doCommand()
     
     if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import SAMResultsClient
+      from DIRAC.Core.LCG.SAMResultsClient import SAMResultsClient
       self.client = SAMResultsClient()
 
     if rsClientIn is not None:
@@ -48,7 +48,7 @@ class SAMResults_Command(Command):
       siteName = None
 
     if granularity in ('Site', 'Sites'):
-      siteName = getSiteRealName(name)
+      siteName = getGOCSiteName(name)['Value']
     elif granularity in ('Resource', 'Resources'):
       if siteName is None:
         try:
@@ -59,9 +59,9 @@ class SAMResults_Command(Command):
         if siteName is None or siteName == []:
           gLogger.info('%s is not a resource in DIRAC' %name)
           return {'Result':None}
-        siteName = getSiteRealName(siteName)
+        siteName = getGOCSiteName(siteName)['Value']
       else:
-        siteName = getSiteRealName(siteName)
+        siteName = getGOCSiteName(siteName)['Value']
     else:
       raise InvalidRes, where(self, self.doCommand)
     
@@ -73,9 +73,9 @@ class SAMResults_Command(Command):
       try:
         res = self.client.getStatus(granularity, name, siteName, tests, 
                                     timeout = self.timeout)
-      except NoSAMTests:
-        gLogger.error("There are no SAM tests for " + granularity + " " + name )
-        return  {'Result':None}
+        if not res['OK']:
+          gLogger.error("There are no SAM tests for " + granularity + " " + name )
+          return  {'Result':None}
       except urllib2.URLError:
         gLogger.error("SAM timed out for " + granularity + " " + name )
         return  {'Result':'Unknown'}      
@@ -86,6 +86,6 @@ class SAMResults_Command(Command):
         gLogger.exception("Exception when calling SAMResultsClient for %s %s" %(granularity, name))
         return  {'Result':'Unknown'}
 
-    return {'Result':res}
+    return {'Result':res['Value']}
   
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__

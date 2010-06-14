@@ -7,7 +7,7 @@ from DIRAC import gLogger
 
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Client.SLSClient import NoServiceException
+#from DIRAC.ResourceStatusSystem.Client.SLSClient import NoServiceException
 
 #############################################################################
 
@@ -72,7 +72,7 @@ class SLSStatus_Command(Command):
     super(SLSStatus_Command, self).doCommand()
 
     if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.SLSClient import SLSClient   
+      from DIRAC.Core.LCG.SLSClient import SLSClient   
       self.client = SLSClient()
       
     if self.args[0] == 'StorageElement':
@@ -86,10 +86,10 @@ class SLSStatus_Command(Command):
     
     try:
       res = self.client.getAvailabilityStatus(SLSName, timeout = self.timeout)
-      return {'Result':res}
-    except NoServiceException:
-      gLogger.error("No SLS sensors for " + self.args[0] + " " + self.args[1] )
-      return  {'Result':None}
+      if not res['OK']:
+        gLogger.error("No SLS sensors for " + self.args[0] + " " + self.args[1] )
+        return  {'Result':None}
+      return {'Result':res['Value']}
     except urllib2.URLError:
       gLogger.error("SLS timed out for " + self.args[0] + " " + self.args[1] )
       return  {'Result':'Unknown'}
@@ -117,7 +117,7 @@ class SLSServiceInfo_Command(Command):
     super(SLSServiceInfo_Command, self).doCommand()
 
     if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.SLSClient import SLSClient   
+      from DIRAC.Core.LCG.SLSClient import SLSClient   
       self.client = SLSClient()
       
     if self.args[0] == 'StorageElement':
@@ -131,10 +131,10 @@ class SLSServiceInfo_Command(Command):
     
     try:
       res = self.client.getServiceInfo(SLSName, self.args[2], timeout = self.timeout)
-      return {'Result':res}
-    except NoServiceException:
-      gLogger.error("No (not all) SLS sensors for " + self.args[0] + " " + self.args[1])
-      return  {'Result':None}
+      if not res['OK']:
+        gLogger.error("No SLS sensors for " + self.args[0] + " " + self.args[1] )
+        return  {'Result':None}
+      return {'Result':res['Value']}
     except urllib2.HTTPError:
       gLogger.error("No (not all) SLS sensors for " + self.args[0] + " " + self.args[1])
       return  {'Result':None}
@@ -163,7 +163,7 @@ class SLSLink_Command(Command):
     super(SLSLink_Command, self).doCommand()
 
     if self.client is None:
-      from DIRAC.ResourceStatusSystem.Client.SLSClient import SLSClient   
+      from DIRAC.Core.LCG.SLSClient import SLSClient   
       self.client = SLSClient()
       
     if self.args[0] == 'StorageElement':
@@ -177,7 +177,10 @@ class SLSLink_Command(Command):
     
     try:
       res = self.client.getLink(SLSName)
-      return {'Result':res}
+      if not res['OK']:
+        gLogger.error("No SLS sensors for " + self.args[0] + " " + self.args[1] )
+        return  {'Result':None}
+      return {'Result':res['Value']}
     except urllib2.URLError:
       gLogger.error("SLS timed out for " + self.args[0] + " " + self.args[1] )
       return  {'Result':'Unknown'}

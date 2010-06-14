@@ -5,9 +5,9 @@
 import urllib2
 
 from DIRAC import gLogger
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 
 from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities.Utils import getSiteRealName
 
 #############################################################################
 
@@ -29,7 +29,7 @@ class GOCDBStatus_Command(Command):
 
     if self.client is None:
       # use standard GOC DB Client
-      from DIRAC.ResourceStatusSystem.Client.GOCDBClient import GOCDBClient   
+      from DIRAC.Core.LCG.GOCDBClient import GOCDBClient   
       self.client = GOCDBClient()
     
     granularity = self.args[0]
@@ -40,10 +40,13 @@ class GOCDBStatus_Command(Command):
       hours = None
 
     if granularity in ('Site', 'Sites'):
-      name = getSiteRealName(name)
+      name = getGOCSiteName(name)['Value']
 
     try:
       res = self.client.getStatus(granularity, name, None, hours, self.timeout)
+      if not res['OK']:
+        return {'Result':'Unknown'}
+      res = res['Value']
       if res is None or res == []:
         return {'Result':{'DT':None}}
       
@@ -103,7 +106,7 @@ class GOCDBInfo_Command(Command):
 
     if self.client is None:
       # use standard GOC DB Client
-      from DIRAC.ResourceStatusSystem.Client.GOCDBClient import GOCDBClient   
+      from DIRAC.Core.LCG.GOCDBClient import GOCDBClient   
       self.client = GOCDBClient()
       
     granularity = self.args[0]
@@ -114,12 +117,15 @@ class GOCDBInfo_Command(Command):
       hours = None
 
     if granularity in ('Site', 'Sites'):
-      name = getSiteRealName(name)
+      name = getGOCSiteName(name)['Value']
 
     try:
 
       res = self.client.getStatus(granularity, name, None, hours, self.timeout)
-
+      if not res['OK']:
+        return {'Result':'Unknown'}
+      res = res['Value']
+      
       if res is None or res == []:
         return {'DT':'None'}
 

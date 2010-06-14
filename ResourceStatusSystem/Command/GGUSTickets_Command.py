@@ -5,9 +5,9 @@
 import urllib2
 
 from DIRAC import gLogger
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 
 from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities.Utils import getSiteRealName
 
 def callClient(args, clientIn = None):
 
@@ -15,15 +15,18 @@ def callClient(args, clientIn = None):
     c = clientIn
   else:
     # use standard GGUSTickets Client
-    from DIRAC.ResourceStatusSystem.Client.GGUSTicketsClient import GGUSTicketsClient   
+    from DIRAC.Core.LCG.GGUSTicketsClient import GGUSTicketsClient   
     c = GGUSTicketsClient()
     
   name = args[1]
   
-  name = getSiteRealName(name)
+  name = getGOCSiteName(name)['Value']
   
   try:
     openTickets = c.getTicketsList(name)
+    if not openTickets['OK']:
+      return 'Unknown'
+    return openTickets['Value']
   except urllib2.URLError:
     gLogger.error("GGUSTicketsClient timed out for " + name)
     return 'Unknown'
@@ -31,7 +34,6 @@ def callClient(args, clientIn = None):
     gLogger.exception("Exception when calling GGUSTicketsClient for " + name)
     return 'Unknown'
     
-  return openTickets
         
 #############################################################################
 

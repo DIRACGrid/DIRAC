@@ -5,6 +5,7 @@ import sys
 import unittest
 from datetime import datetime 
 
+from DIRAC import S_OK, S_ERROR
 import DIRAC.ResourceStatusSystem.test.fake_Logger
 import DIRAC.ResourceStatusSystem.test.fake_Admin
 
@@ -22,8 +23,8 @@ from DIRAC.ResourceStatusSystem.Command.RS_Command import *
 from DIRAC.ResourceStatusSystem.Command.DIRACAccounting_Command import *
 from DIRAC.ResourceStatusSystem.Command.SLS_Command import *
 from DIRAC.ResourceStatusSystem.Command.Collective_Command import *
-from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import NoSAMTests
-from DIRAC.ResourceStatusSystem.Client.SLSClient import NoServiceException
+#from DIRAC.ResourceStatusSystem.Client.SAMResultsClient import NoSAMTests
+#from DIRAC.ResourceStatusSystem.Client.SLSClient import NoServiceException
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
@@ -43,7 +44,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     
     self.mock_command = Mock()
     self.mock_rsClient = Mock()
-    self.mock_rsClient.getGeneralName.return_value = "YYY"
+    self.mock_rsClient.getGeneralName.return_value = "LCG.Ferrara.it"
     
     self.co = Command()
     self.mco = MacroCommand()
@@ -207,25 +208,28 @@ class GOCDBStatus_CommandSuccess(ClientsCommandsTestCase):
   def test_doCommand(self):
 
     for granularity in ValidRes:
-      args = (granularity, 'XX')
+      args = (granularity, 'LCG.CERN.ch')
       for retVal in ({'DT':'OUTAGE', 'Enddate':'', 'Type': 'OnGoing'}, 
                      [{'DT':'OUTAGE', 'Enddate':'', 'Type': 'Programmed', 'InHours' : 8}, 
                       {'DT':'OUTAGE', 'Enddate':'', 'Type': 'OnGoing'}]):
+        retVal = S_OK(retVal)
         self.mock_client.getStatus.return_value = retVal  
         self.GOCDBS_C.setArgs(args)
         self.GOCDBS_C.setClient(self.mock_client)
         res = self.GOCDBS_C.doCommand()
         self.assertEqual(res['Result']['DT'], 'OUTAGE')
-      self.mock_client.getStatus.return_value = {'DT':'OUTAGE', 'Enddate':'', 
-                                                 'Type': 'Programmed', 'InHours' : 8}
+      self.mock_client.getStatus.return_value = {'OK':True, 
+                                                 'Value':{'DT':'OUTAGE', 'Enddate':'', 
+                                                 'Type': 'Programmed', 'InHours' : 8} }
       self.GOCDBS_C.setArgs(args)
       self.GOCDBS_C.setClient(self.mock_client)
       res = self.GOCDBS_C.doCommand()
       self.assertEqual(res['Result']['DT'], 'OUTAGE in 8 hours')
-      self.mock_client.getStatus.return_value = {'DT':'AT_RISK', 'Enddate':'', 'Type': 'OnGoing'}
+      self.mock_client.getStatus.return_value = {'OK':True, 
+                                                 'Value': {'DT':'AT_RISK', 'Enddate':'', 'Type': 'OnGoing'}}
       res = self.GOCDBS_C.doCommand()
       self.assertEqual(res['Result']['DT'], 'AT_RISK')
-      self.mock_client.getStatus.return_value =  None
+      self.mock_client.getStatus.return_value =  {'OK':True, 'Value': None}
       res = self.GOCDBS_C.doCommand()
       self.assertEqual(res['Result']['DT'], None)
       
@@ -235,7 +239,7 @@ class GOCDBStatus_CommandFailure(ClientsCommandsTestCase):
 
   def test_badArgs(self):
     self.mock_client.getStatus.side_effect = RSSException
-    self.GOCDBS_C.setArgs(('Site', 'XX'))
+    self.GOCDBS_C.setArgs(('Site', 'LCG.CERN.ch'))
     self.GOCDBS_C.setClient(self.mock_client)
     res = self.GOCDBS_C.doCommand()
     self.assertEqual(res['Result'], 'Unknown')
@@ -251,7 +255,7 @@ class GOCDBInfo_CommandSuccess(ClientsCommandsTestCase):
 
     for granularity in ValidRes:
       args = (granularity, 'XX')
-      self.mock_client.getInfo.return_value =  ['XXXX', 'YYYYYYYYY']
+      self.mock_client.getInfo.return_value =  {'OK':True, 'Value': ['XXXX', 'YYYYYYYYY']}
       res = self.GOCDBI_C.doCommand(args, clientIn = self.mock_client)
       self.assertEqual(res, ['XXXX', 'YYYYYYYYY'])
 
@@ -271,13 +275,13 @@ class Res2SiteStatus_CommandSuccess(ClientsCommandsTestCase):
 
     for granularity in ValidRes:
       args = (granularity, 'XX')
-      self.mock_client.getStatus.return_value =  {}
+      self.mock_client.getStatus.return_value =  {'OK':True, 'Value': {}}
       res = self.R2SS_C.doCommand(args, clientIn = self.mock_client)
       self.assertEqual()
-      self.mock_client.getStatus.return_value = {}
+      self.mock_client.getStatus.return_value = {'OK':True, 'Value': {}}
       res = self.R2SS_C.doCommand(args, clientIn = self.mock_client)
       self.assertEqual()
-      self.mock_client.getStatus.return_value =  None
+      self.mock_client.getStatus.return_value =  {'OK':True, 'Value': None}
       res = self.R2SS_C.doCommand(args, clientIn = self.mock_client)
       self.assertEqual(res, None)
 
@@ -588,11 +592,13 @@ class SAMResults_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
 
-    for args in (('Site', 'XX'), ('Site', 'XX', 'XXX'), ('Resource', 'XX'), 
-                 ('Resource', 'XX', 'XXX'), 
+    for args in (('Site', 'LCG.CERN.ch'), ('Site', 'LCG.CERN.ch', 'CERN-PROD'), 
+                 ('Resource', 'grid.fe.infn.it'), 
+                 ('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it'), 
                  ('Resource', 'grid0.fe.infn.it', None, ['aa', 'bbb']), 
                  ('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it', ['aa', 'bbb'])):
-      self.mock_client.getStatus.return_value =  {'Status':None}
+      self.mock_client.getStatus.return_value =  {'OK':True, 
+                                                  'Value': {'Status':None}}
       self.SAMR_C.setArgs(args)
       self.SAMR_C.setClient(self.mock_client)
       res = self.SAMR_C.doCommand(rsClientIn = self.mock_rsClient)
@@ -600,14 +606,16 @@ class SAMResults_CommandSuccess(ClientsCommandsTestCase):
       
     args = ('Resource', 'grid0.fe.infn.it', None, ['aa', 'bbb'])
     for status in ['ok', 'down', 'na', 'degraded', 'partial', 'maint']:
-      self.mock_client.getStatus.return_value =  {'Status':status}
+      self.mock_client.getStatus.return_value =  {'OK':True, 
+                                                  'Value': {'Status':status}}
       self.SAMR_C.setArgs(args)
       self.SAMR_C.setClient(self.mock_client)
       res = self.SAMR_C.doCommand(rsClientIn = self.mock_rsClient)
       self.assertEqual(res['Result']['Status'], status)
     args = ('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it', ['aa', 'bbb'])
     for status in ['ok', 'down', 'na', 'degraded', 'partial', 'maint']:
-      self.mock_client.getStatus.return_value =  {'Status':status}
+      self.mock_client.getStatus.return_value =  {'OK':True, 
+                                                  'Value': {'Status':status}}
       self.SAMR_C.setArgs(args)
       self.SAMR_C.setClient(self.mock_client)
       res = self.SAMR_C.doCommand(rsClientIn = self.mock_rsClient)
@@ -619,8 +627,8 @@ class SAMResults_CommandFailure(ClientsCommandsTestCase):
 
   def test_clientFail(self):
     self.mock_client.getStatus.side_effect = RSSException()
-    for args in (('Site', 'XX'), ('Site', 'XX', 'XXX'), 
-                 ('Resource', 'XX'), ('Resource', 'XX', 'XXX'), 
+    for args in (('Site', 'LCG.CERN.ch'), ('Site', 'LCG.CERN.ch', 'CERN-PROD'), 
+                 ('Resource', 'grid0.fe.infn.it'), ('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it'), 
                  ('Resource', 'grid0.fe.infn.it', None, ['aa', 'bbb']), 
                  ('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it', ['aa', 'bbb'])):
       self.SAMR_C.setArgs(args)
@@ -628,15 +636,15 @@ class SAMResults_CommandFailure(ClientsCommandsTestCase):
       res = self.SAMR_C.doCommand(rsClientIn = self.mock_rsClient)
       self.assertEqual(res['Result'], 'Unknown')
     
-    self.mock_client.getStatus.side_effect = NoSAMTests()
-    for args in (('Site', 'XX'), ('Site', 'XX', 'XXX'), 
-                 ('Resource', 'XX'), ('Resource', 'XX', 'XXX'), 
-                 ('Resource', 'grid0.fe.infn.it', None, ['aa', 'bbb']), 
-                 ('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it', ['aa', 'bbb'])):
-      self.SAMR_C.setArgs(args)
-      self.SAMR_C.setClient(self.mock_client)
-      res = self.SAMR_C.doCommand(rsClientIn = self.mock_rsClient)
-      self.assertEqual(res['Result'], None)
+#    self.mock_client.getStatus.side_effect = NoSAMTests()
+#    for args in (('Site', 'XX'), ('Site', 'XX', 'XXX'), 
+#                 ('Resource', 'XX'), ('Resource', 'XX', 'XXX'), 
+#                 ('Resource', 'grid0.fe.infn.it', None, ['aa', 'bbb']), 
+#                 ('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it', ['aa', 'bbb'])):
+#      self.SAMR_C.setArgs(args)
+#      self.SAMR_C.setClient(self.mock_client)
+#      res = self.SAMR_C.doCommand(rsClientIn = self.mock_rsClient)
+#      self.assertEqual(res['Result'], None)
     
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.SAMR_C.setArgs, None)
@@ -647,9 +655,9 @@ class GGUSTickets_Open_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
 
-    self.mock_client.getTicketsList.return_value = ({'terminal': 211, 'open': 2}, 
-                                                    'https://gus.fzk.de/ws/ticket_search.php?')
-    self.GGUS_O_C.setArgs(('Site', 'XX'))
+    self.mock_client.getTicketsList.return_value = {'OK':True, 'Value': ({'terminal': 211, 'open': 2}, 
+                                                    'https://gus.fzk.de/ws/ticket_search.php?')}
+    self.GGUS_O_C.setArgs(('Site', 'LCG.CERN.ch'))
     self.GGUS_O_C.setClient(self.mock_client)
     res = self.GGUS_O_C.doCommand()
     self.assertEqual(res['Result'], 2)
@@ -660,7 +668,7 @@ class GGUSTickets_All_CommandFailure(ClientsCommandsTestCase):
 
   def test_clientFail(self):
     self.mock_client.getTicketsList.side_effect = Exception()
-    self.GGUS_O_C.setArgs(('Site', 'XX'))
+    self.GGUS_O_C.setArgs(('Site', 'LCG.CERN.ch'))
     self.GGUS_O_C.setClient(self.mock_client)
     res = self.GGUS_O_C.doCommand()
     self.assertEqual(res['Result'], 'Unknown')
@@ -676,11 +684,11 @@ class GGUSTickets_Link_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
 
-    self.mock_client.getTicketsList.return_value = ({'terminal': 211, 'open': 2}, 
+    self.mock_client.getTicketsList.return_value = {'OK':True, 'Value': ({'terminal': 211, 'open': 2}, 
                                                     'https://gus.fzk.de/ws/ticket_search.php?', 
                                                     {56220: 'jobs failed at gridce2.pi.infn.it INFN-PISA', 
-                                                     55948: 'Jobs Failed at INFN-PISA'})
-    self.GGUS_L_C.setArgs(('Site', 'XX'))
+                                                     55948: 'Jobs Failed at INFN-PISA'})}
+    self.GGUS_L_C.setArgs(('Site', 'LCG.CERN.ch'))
     self.GGUS_L_C.setClient(self.mock_client)
     res = self.GGUS_L_C.doCommand()
     self.assertEqual(res['Result'], 'https://gus.fzk.de/ws/ticket_search.php?')
@@ -691,11 +699,11 @@ class GGUSTickets_Info_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
 
-    self.mock_client.getTicketsList.return_value = ({'terminal': 211, 'open': 2}, 
+    self.mock_client.getTicketsList.return_value = {'OK':True, 'Value': ({'terminal': 211, 'open': 2}, 
                                                     'https://gus.fzk.de/ws/ticket_search.php?', 
                                                     {56220: 'jobs failed at gridce2.pi.infn.it INFN-PISA', 
-                                                     55948: 'Jobs Failed at INFN-PISA'})
-    self.GGUS_I_C.setArgs(('Site', 'XX'))
+                                                     55948: 'Jobs Failed at INFN-PISA'})}
+    self.GGUS_I_C.setArgs(('Site', 'LCG.CERN.ch'))
     self.GGUS_I_C.setClient(self.mock_client)
     res = self.GGUS_I_C.doCommand()
     self.assertEqual(res['Result'], {56220: 'jobs failed at gridce2.pi.infn.it INFN-PISA', 
@@ -891,7 +899,7 @@ class SLSStatus_CommandSuccess(ClientsCommandsTestCase):
   def test_doCommand(self):
     
     for ret in (80, 10, 1, None):
-      self.mock_client.getAvailabilityStatus.return_value = ret
+      self.mock_client.getAvailabilityStatus.return_value = {'OK':True, 'Value': ret}
       for SE in ('CNAF-RAW', 'CNAF_MC_M-DST'):
         self.SLSS_C.setArgs(('StorageElement', SE))
         self.SLSS_C.setClient(self.mock_client)
@@ -907,12 +915,12 @@ class SLSStatus_CommandSuccess(ClientsCommandsTestCase):
 class SLSStatus_CommandFailure(ClientsCommandsTestCase):
   
   def test_clientFail(self):
-    self.mock_client.getAvailabilityStatus.side_effect = NoServiceException()
-    SE = 'CNAF-RAW'
-    self.SLSS_C.setArgs(('StorageElement', SE))
-    self.SLSS_C.setClient(self.mock_client)
-    res = self.SLSS_C.doCommand()
-    self.assertEqual(res['Result'], None)
+#    self.mock_client.getAvailabilityStatus.side_effect = NoServiceException()
+#    SE = 'CNAF-RAW'
+#    self.SLSS_C.setArgs(('StorageElement', SE))
+#    self.SLSS_C.setClient(self.mock_client)
+#    res = self.SLSS_C.doCommand()
+#    self.assertEqual(res['Result'], None)
     
     self.mock_client.getAvailabilityStatus.side_effect = Exception()
     SE = 'CNAF-RAW'
@@ -933,7 +941,7 @@ class SLSServiceInfo_CommandSuccess(ClientsCommandsTestCase):
   def test_doCommand(self):
     
     ret = {'Free space': 33.0}
-    self.mock_client.getServiceInfo.return_value = ret
+    self.mock_client.getServiceInfo.return_value = {'OK':True, 'Value': ret}
     for SE in ('CNAF-RAW', 'CNAF_MC_M-DST'):
       self.SLSSI_C.setArgs(('StorageElement', SE, ['Free space']))
       self.SLSSI_C.setClient(self.mock_client)
@@ -949,12 +957,12 @@ class SLSServiceInfo_CommandSuccess(ClientsCommandsTestCase):
 class SLSServiceInfo_CommandFailure(ClientsCommandsTestCase):
   
   def test_clientFail(self):
-    self.mock_client.getServiceInfo.side_effect = NoServiceException()
-    SE = 'CNAF-RAW'
-    self.SLSSI_C.setArgs(('StorageElement', SE, ['Free space']))
-    self.SLSSI_C.setClient(self.mock_client)
-    res = self.SLSSI_C.doCommand()
-    self.assertEqual(res['Result'], None)
+#    self.mock_client.getServiceInfo.side_effect = NoServiceException()
+#    SE = 'CNAF-RAW'
+#    self.SLSSI_C.setArgs(('StorageElement', SE, ['Free space']))
+#    self.SLSSI_C.setClient(self.mock_client)
+#    res = self.SLSSI_C.doCommand()
+#    self.assertEqual(res['Result'], None)
     
     self.mock_client.getServiceInfo.side_effect = Exception()
     SE = 'CNAF-RAW'
@@ -975,7 +983,7 @@ class SLSLink_CommandSuccess(ClientsCommandsTestCase):
   def test_doCommand(self):
     
     ret = 'https://sls.cern.ch/sls/service.php?id=CERN-LHCb_RAW'
-    self.mock_client.getLink.return_value = ret
+    self.mock_client.getLink.return_value = {'OK':True, 'Value': ret}
     SE = 'CNAF-RAW'
     self.SLSL_C.setArgs(('StorageElement', SE))
     self.SLSL_C.setClient(self.mock_client)
@@ -986,13 +994,13 @@ class SLSLink_CommandSuccess(ClientsCommandsTestCase):
 
 class SLSLink_CommandFailure(ClientsCommandsTestCase):
   
-  def test_clientFail(self):
-    self.mock_client.getLink.side_effect = NoServiceException()
-    SE = 'CNAF-RAW'
-    self.SLSL_C.setArgs(('StorageElement', SE))
-    self.SLSL_C.setClient(self.mock_client)
-    res = self.SLSL_C.doCommand()
-    self.assertEqual(res['Result'], 'Unknown')
+#  def test_clientFail(self):
+#    self.mock_client.getLink.side_effect = NoServiceException()
+#    SE = 'CNAF-RAW'
+#    self.SLSL_C.setArgs(('StorageElement', SE))
+#    self.SLSL_C.setClient(self.mock_client)
+#    res = self.SLSL_C.doCommand()
+#    self.assertEqual(res['Result'], 'Unknown')
     
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.SLSL_C.setArgs, None)
