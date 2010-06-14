@@ -17,7 +17,7 @@ def getGOCSiteName(diracSiteName):
   """
   GOCDBName = gConfig.getValue('/Resources/Sites/%s/%s/Name' %(diracSiteName.split('.')[0], 
                                                           diracSiteName))
-  if GOCDBName == '':
+  if GOCDBName == '' or GOCDBName == None:
     return S_ERROR("There's no site with DIRAC name = %s in DIRAC CS" %diracSiteName)
   else:
     return S_OK(GOCDBName)
