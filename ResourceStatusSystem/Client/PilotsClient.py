@@ -2,9 +2,12 @@
 """
 
 from datetime import datetime, timedelta
+
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
+from DIRAC.Core.DISET.RPCClient import RPCClient
+
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class PilotsClient:
   
@@ -36,7 +39,7 @@ class PilotsClient:
       raise InvalidRes, where(self, self.getPilotStats)
     
     if granularity == 'Site':
-      entity = getSiteRealName(name)
+      entity = getGOCSiteName(name)
       _granularity = 'Site'
     else:
       entity = name

@@ -33,28 +33,6 @@ class ClientsTestCase(unittest.TestCase):
 
 #############################################################################
 
-class GOCDBClientSuccess(ClientsTestCase):
-
-  def test_getStatus(self):
-    for granularity in ('Site', 'Resource'):
-      res = self.GOCCli.getStatus(granularity, 'XX')
-      self.assertEqual(res, None)
-      res = self.GOCCli.getStatus(granularity, 'XX', datetime.utcnow())
-      self.assertEqual(res, None)
-      res = self.GOCCli.getStatus(granularity, 'XX', datetime.utcnow(), 12)
-      self.assertEqual(res, None)
-      
-    res = self.GOCCli.getStatus('Site', 'pic')
-    self.assertEqual(res, None)
-    
-#  def test_getInfo(self):
-#    for granularity in ('Site', 'Resource'):
-#      res = self.GOCCli.getInfo(granularity, 'XX')
-#      self.assertEqual(res, None)
-  
-#############################################################################
-
-
 class ResourceStatusClientSuccess(ClientsTestCase):
 
   def test_getPeriods(self):
@@ -101,34 +79,6 @@ class ResourceStatusClientSuccess(ClientsTestCase):
  
 #############################################################################
 
-class SAMResultsClientSuccess(ClientsTestCase):
-
-  def test_getStatus(self):
-    res = self.SAMCli.getStatus('Resource', 'grid0.fe.infn.it', 'INFN-FERRARA')
-    self.assertEqual(res, {'SS':'ok'})
-    res = self.SAMCli.getStatus('Resource', 'grid0.fe.infn.it', 'INFN-FERRARA', ['ver'])
-    self.assertEqual(res, {'ver':'ok'})
-    res = self.SAMCli.getStatus('Resource', 'grid0.fe.infn.it', 'INFN-FERRARA', ['LHCb CE-lhcb-os', 'PilotRole'])
-    self.assertEqual(res, {'PilotRole':'ok', 'LHCb CE-lhcb-os':'ok'})
-    res = self.SAMCli.getStatus('Resource', 'grid0.fe.infn.it', 'INFN-FERRARA', ['wrong'])
-    self.assertEqual(res, None)
-    res = self.SAMCli.getStatus('Resource', 'grid0.fe.infn.it', 'INFN-FERRARA', ['ver', 'wrong'])
-    self.assertEqual(res, {'ver':'ok'})
-    res = self.SAMCli.getStatus('Resource', 'grid0.fe.infn.it', 'INFN-FERRARA')
-    self.assertEqual(res, {'SS':'ok'})
-
-    res = self.SAMCli.getStatus('Site', 'INFN-FERRARA')
-    self.assertEqual(res, {'SiteStatus':'ok'})
-      
-#############################################################################
-
-class SAMResultsClientFailure(ClientsTestCase):
-
-  def test_getStatus(self):
-    self.failUnlessRaises(NoSAMTests, self.SAMCli.getStatus, 'Resource', 'XX', 'INFN-FERRARA')
-
-#############################################################################
-
 class JobsClientSuccess(ClientsTestCase):
 
   def test_getJobsSimpleEff(self):
@@ -157,44 +107,9 @@ class PilotsClientSuccess(ClientsTestCase):
     
 #############################################################################
 
-class SLSClientSuccess(ClientsTestCase):
-
-  def test_getAvailabilityStatus(self):
-    res = self.SLSCli.getAvailabilityStatus('RAL-LHCb_FAILOVER')
-    self.assertEqual(res, 100)
-
-  def test_getServiceInfo(self):
-    res = self.SLSCli.getServiceInfo('CASTORLHCB_LHCBMDST', ["Volume to be recallled GB"])
-    self.assertEqual(res["Volume to be recallled GB"], 0.0)
-
-#############################################################################
-
-class SLSClientFailure(ClientsTestCase):
-
-  def test_getStatus(self):
-    self.failUnlessRaises(NoServiceException, self.SLSCli.getAvailabilityStatus, 'XX')
-
-#############################################################################
-
-class GGUSTicketsClientSuccess(ClientsTestCase):
-  
-  def test_getTicketsList(self):
-    res = self.GGUSCli.getTicketsList('INFN-CAGLIARI')
-    self.assertEqual(res[0]['open'], 0)
-
-
-#############################################################################
-
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ClientsTestCase)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBClientSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBClient_Failure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusClientSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResultsClientSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SAMResultsClientFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobsClientSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsClientSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSClientSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SLSClientFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GGUSTicketsClientSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

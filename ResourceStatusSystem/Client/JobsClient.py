@@ -1,9 +1,11 @@
 """ JobResultsClient class is a client for to get jobs' stats.
 """
 
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
+
 from datetime import datetime, timedelta
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.ResourceStatusSystem.Utilities.Utils import *
+#from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
 class JobsClient:
   
@@ -66,7 +68,7 @@ class JobsClient:
     """
 
     if granularity == 'Site':
-      entity = getSiteRealName(name)
+      entity = getGOCSiteName(name)['Value']
       _granularity = 'Site'
     else:
       entity = name
