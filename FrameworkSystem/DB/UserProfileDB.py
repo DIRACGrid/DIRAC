@@ -367,12 +367,12 @@ class UserProfileDB( DB ):
     """
     Get a data entry for a profile
     """
-    result = self.getUserGroupIds( userName, userGroup, False )
+    result = self.getUserGroupIds( userName, userGroup )
     if not result[ 'OK' ]:
       return result
     userIds = result[ 'Value' ]
 
-    result = self.getUserGroupIds( ownerName, ownerGroup, False )
+    result = self.getUserGroupIds( ownerName, ownerGroup )
     if not result[ 'OK' ]:
       return result
     ownerIds = result[ 'Value' ]
@@ -390,7 +390,7 @@ class UserProfileDB( DB ):
     return self.retrieveAllUserVarsById( userIds, profileName, connObj )
 
   def retrieveVarPerms( self, userName, userGroup, ownerName, ownerGroup, profileName, varName, connObj = False ):
-    result = self.getUserGroupIds( userName, userGroup, False )
+    result = self.getUserGroupIds( userName, userGroup )
     if not result[ 'OK' ]:
       return result
     userIds = result[ 'Value' ]
@@ -403,7 +403,7 @@ class UserProfileDB( DB ):
     return self.retrieveVarPermsById( userIds, ownerIds, profileName, varName, connObj )
 
   def setUserVarPerms( self, userName, userGroup, profileName, varName, perms ):
-    result = self.getUserGroupIds( userName, userGroup, False )
+    result = self.getUserGroupIds( userName, userGroup )
     if not result[ 'OK' ]:
       return result
     userIds = result[ 'Value' ]
