@@ -1,5 +1,5 @@
 """  The SitesDIRACGOCDBmapping module performs the necessary CS gymnastics to
-     resolve sites DIRAC-GOCDB names.ù
+     resolve sites DIRAC-GOCDB names.
      
      Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
 """
