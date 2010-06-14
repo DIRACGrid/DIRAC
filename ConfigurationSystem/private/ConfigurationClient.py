@@ -65,6 +65,30 @@ class ConfigurationClient:
     else:
       gLogger.warn( "gConfig.getValue for invalid value", retVal[ 'Message' ] )
       return defaultValue
+    
+  def getSpecialValue(self, optionPath, defaultValue = None, vo = None, setup = None): 
+    """ Get a configuration option value for a specific vo and setup
+    """ 
+    voName = vo
+    if not vo:
+      voName = self.getValue('/DIRAC/VirtualOrganization','')
+    setupName = setup
+    if not setup:
+      setupName = self.getValue('/DIRAC/Setup','')
+        
+    # Get the most specific defined value now
+    section = optionPath.split('/')[1]
+    oPath = '/'.join(optionPath.split('/')[2:])
+    if voName:
+      if setupName:
+        value = self.getValue(section+'/'+voName+'/'+setupName+oPath,'NotDefined')
+        if value != 'NotDefined':
+          return value
+      value = self.getValue(section+'/'+voName+oPath,'NotDefined')
+      if value != 'NotDefined':
+        return value
+    value = self.getValue(optionPath,defaultValue)
+    return value 
 
   def getOption( self, optionPath, defaultValue = None ):
     gRefresher.refreshConfigurationIfNeeded()
