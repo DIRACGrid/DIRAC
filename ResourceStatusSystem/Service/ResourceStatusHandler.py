@@ -115,7 +115,6 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
-  #Ok
   types_getSitesStatusWeb = [DictType, ListType, IntType, IntType]
   def export_getSitesStatusWeb(self, selectDict, sortList, startItem, maxItems):
     """ get present sites status list, for the web
@@ -1415,6 +1414,60 @@ class ResourceStatusHandler(RequestHandler):
       return S_OK(res)
     except Exception:
       errorStr = where(self, self.export_getCachedResult)
+      gLogger.exception(errorStr)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  types_getDownTimesWeb = [DictType, ListType, IntType, IntType]
+  def export_getDownTimesWeb(self, selectDict, sortList, startItem, maxItems):
+    """ get down times as registered with the policies.
+        Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getDownTimesWeb`
+    
+        :Params:
+          selectDict = 
+            {
+              'Granularity':'Site', 'Resource', or a list with both
+              'Severity':'OUTAGE', 'AT_RISK', or a list with both
+            }
+          
+          sortList = [] (no sorting provided)
+          
+          startItem
+          
+          maxItems
+    
+        :return:
+        {
+          'OK': XX, 
+
+          'rpcStub': XX, 'getDownTimesWeb', ({}, [], X, X)), 
+
+          Value': 
+          {
+
+            'ParameterNames': ['Granularity', 'Name', 'Severity', 'When'], 
+
+            'Records': [[], [], ...]
+
+            'TotalRecords': X, 
+
+            'Extras': {}, 
+          }
+        }
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getDownTimesWeb: Attempting to get down times list")
+      try:
+        res = rsDB.getDownTimesWeb(selectDict, sortList, startItem, maxItems)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getDownTimesWeb: got DT list")
+      return S_OK(res)
+    except Exception:
+      errorStr = where(self, self.export_getDownTimesWeb)
       gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
