@@ -46,12 +46,12 @@ class UserProfileClient:
       return S_ERROR( "Stored data does not match typeRE: %s vs %s" % ( typeDesc, typeRE ) )
     return S_OK()
 
-  def storeUserVar( self, varName, data, perms = {} ):
+  def storeVar( self, varName, data, perms = {} ):
     try:
       stub = DEncode.encode( data )
     except Exception, e:
       return S_ERROR( "Cannot encode data:%s" % str( e ) )
-    return self.__getRPCClient().storeUserProfileVar( self.profile, varName, stub, perms )
+    return self.__getRPCClient().storeProfileVar( self.profile, varName, stub, perms )
 
   def __decodeVar( self, data, dataTypeRE ):
     try:
@@ -64,23 +64,23 @@ class UserProfileClient:
         return result
     return S_OK( dataObj )
 
-  def retrieveUserVar( self, varName, dataTypeRE = False ):
+  def retrieveVar( self, varName, dataTypeRE = False ):
     rpcClient = self.__getRPCClient()
-    result = rpcClient.retrieveUserProfileVar( self.profile, varName )
+    result = rpcClient.retrieveProfileVar( self.profile, varName )
     if not result[ 'OK' ]:
       return result
     return self.__decodeVar( result[ 'Value' ], dataTypeRE )
 
-  def retrieveVar( self, ownerName, ownerGroup, varName, dataTypeRE = False ):
+  def retrieveVarFromUser( self, ownerName, ownerGroup, varName, dataTypeRE = False ):
     rpcClient = self.__getRPCClient()
-    result = rpcClient.retrieveProfileVar( ownerName, ownerGroup, self.profile, varName )
+    result = rpcClient.retrieveProfileVarFromUser( ownerName, ownerGroup, self.profile, varName )
     if not result[ 'OK' ]:
       return result
     return self.__decodeVar( result[ 'Value' ], dataTypeRE )
 
-  def retrieveAllUserVars( self ):
+  def retrieveAllVars( self ):
     rpcClient = self.__getRPCClient()
-    result = rpcClient.retrieveUserProfileAllVars( self.profile )
+    result = rpcClient.retrieveProfileAllVars( self.profile )
     if not result[ 'OK' ]:
       return result
     try:
@@ -93,20 +93,20 @@ class UserProfileClient:
       return S_ERROR( "Cannot decode data: %s" % str( e ) )
     return S_OK( dataObj )
 
-  def listAvailableVars( self ):
+  def listAvailableVars( self, filterDict = {} ):
     rpcClient = self.__getRPCClient()
-    return rpcClient.listAvailableProfileVars( self.profile )
+    return rpcClient.listAvailableProfileVars( self.profile, filterDict )
 
   def setVarPermissions( self, varName, perms ):
     rpcClient = self.__getRPCClient()
-    return rpcClient.setUserProfileVarPermissions( self.profile, varName, perms )
+    return rpcClient.setProfileVarPermissions( self.profile, varName, perms )
 
   def getVarPermissions( self, varName ):
     rpcClient = self.__getRPCClient()
-    return rpcClient.getUserProfileVarPermissions( self.profile, varName )
+    return rpcClient.getProfileVarPermissions( self.profile, varName )
 
-  def deleteUserVar( self, varName ):
-    return self.__getRPCClient().deleteUserProfileVar( self.profile, varName )
+  def deleteVar( self, varName ):
+    return self.__getRPCClient().deleteProfileVar( self.profile, varName )
 
   def deleteProfiles( self, userList ):
     return self.__getRPCClient().deleteProfiles( userList )

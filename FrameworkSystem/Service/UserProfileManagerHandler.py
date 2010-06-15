@@ -27,8 +27,8 @@ def initializeUserProfileManagerHandler( serviceInfo ):
 
 class UserProfileManagerHandler( RequestHandler ):
 
-  types_retrieveUserProfileVar = [ types.StringType, types.StringType ]
-  def export_retrieveUserProfileVar( self, profileName, varName ):
+  types_retrieveProfileVar = [ types.StringType, types.StringType ]
+  def export_retrieveProfileVar( self, profileName, varName ):
     """ Get profile data for web
     """
     credDict = self.getRemoteCredentials()
@@ -38,8 +38,8 @@ class UserProfileManagerHandler( RequestHandler ):
                               userName, userGroup,
                               profileName, varName )
 
-  types_retrieveProfileVar = [ types.StringType, types.StringType, types.StringType, types.StringType ]
-  def export_retrieveProfileVar( self, ownerName, ownerGroup, profileName, varName ):
+  types_retrieveProfileVarFromUser = [ types.StringType, types.StringType, types.StringType, types.StringType ]
+  def export_retrieveProfileVarFromUser( self, ownerName, ownerGroup, profileName, varName ):
     """ Get profile data for web for any user according to perms
     """
     credDict = self.getRemoteCredentials()
@@ -49,8 +49,8 @@ class UserProfileManagerHandler( RequestHandler ):
                               ownerName, ownerGroup,
                               profileName, varName )
 
-  types_retrieveUserProfileAllVars = [ types.StringType ]
-  def export_retrieveUserProfileAllVars( self, profileName ):
+  types_retrieveProfileAllVars = [ types.StringType ]
+  def export_retrieveProfileAllVars( self, profileName ):
     """ Get profile data for web
     """
     credDict = self.getRemoteCredentials()
@@ -58,8 +58,8 @@ class UserProfileManagerHandler( RequestHandler ):
     userGroup = credDict[ 'group' ]
     return gUPDB.retrieveAllUserVars( userName, userGroup, profileName )
 
-  types_storeUserProfileVar = [ types.StringType, types.StringType, types.StringType, types.DictType ]
-  def export_storeUserProfileVar( self, profileName, varName, data, perms ):
+  types_storeProfileVar = [ types.StringType, types.StringType, types.StringType, types.DictType ]
+  def export_storeProfileVar( self, profileName, varName, data, perms ):
     """ Set profile data for web
     """
     credDict = self.getRemoteCredentials()
@@ -67,8 +67,8 @@ class UserProfileManagerHandler( RequestHandler ):
     userGroup = credDict[ 'group' ]
     return gUPDB.storeVar( userName, userGroup, profileName, varName, data, perms )
 
-  types_deleteUserProfileVar = [ types.StringType, types.StringType ]
-  def export_deleteUserProfileVar( self, profileName, varName ):
+  types_deleteProfileVar = [ types.StringType, types.StringType ]
+  def export_deleteProfileVar( self, profileName, varName ):
     """ Set profile data for web
     """
     credDict = self.getRemoteCredentials()
@@ -77,16 +77,16 @@ class UserProfileManagerHandler( RequestHandler ):
     return gUPDB.deleteVar( userName, userGroup, profileName, varName )
 
   types_listAvailableProfileVars = [ types.StringType ]
-  def export_listAvailableProfileVars( self, profileName ):
+  def export_listAvailableProfileVars( self, profileName, filterDict = {} ):
     """ Set profile data for web
     """
     credDict = self.getRemoteCredentials()
     userName = credDict[ 'username' ]
     userGroup = credDict[ 'group' ]
-    return gUPDB.listVars( userName, userGroup, profileName )
+    return gUPDB.listVars( userName, userGroup, profileName, filterDict )
 
-  types_setUserProfileVarPermissions = [  types.StringType, types.StringType, types.DictType ]
-  def export_setUserProfileVarPermissions( self, profileName, varName, perms ):
+  types_setProfileVarPermissions = [  types.StringType, types.StringType, types.DictType ]
+  def export_setProfileVarPermissions( self, profileName, varName, perms ):
     """ Set profile data for web
     """
     credDict = self.getRemoteCredentials()
@@ -94,8 +94,8 @@ class UserProfileManagerHandler( RequestHandler ):
     userGroup = credDict[ 'group' ]
     return gUPDB.setUserVarPerms( userName, userGroup, profileName, varName, perms )
 
-  types_getUserProfileVarPermissions = [  types.StringType, types.StringType ]
-  def export_getUserProfileVarPermissions( self, profileName, varName ):
+  types_getProfileVarPermissions = [  types.StringType, types.StringType ]
+  def export_getProfileVarPermissions( self, profileName, varName ):
     """ Set profile data for web
     """
     credDict = self.getRemoteCredentials()

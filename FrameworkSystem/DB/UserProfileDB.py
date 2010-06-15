@@ -443,7 +443,7 @@ class UserProfileDB( DB ):
     finally:
       connObj.close()
 
-  def listVarsById( self, userIds, profileName ):
+  def listVarsById( self, userIds, profileName, filterDict = {} ):
     result = self._escapeString( profileName )
     if not result[ 'OK' ]:
       return result
@@ -451,18 +451,30 @@ class UserProfileDB( DB ):
     sqlCond = [ "`up_Users`.Id = `up_ProfilesData`.UserId",
                 "`up_Groups`.Id = `up_ProfilesData`.GroupId",
                 self.__webProfilePublishAccessDataCond( userIds, sqlProfileName ) ]
+    if filterDict:
+      if 'UserGroup' in filterDict:
+        groups = filterDict[ 'UserGroup' ]
+        if type( groups ) in ( types.StringType, types.UnicodeType ):
+          groups = [ groups ]
+        groupIds = [ userIds[1] ]
+        for group in groups:
+          result = self.__getGroupId( group )
+          if not result[ 'OK' ]:
+            return result
+          groupIds.append( group )
+        sqlCond.append( "`up_ProfilesData`.GroupId in ( %s )" % ", ".join( [ str( groupId ) for groupId in groupIds ] ) )
     sqlVars2Get = [ "`up_Users`.UserName", "`up_Groups`.UserGroup", "`up_ProfilesData`.VarName" ]
     sqlQuery = "SELECT %s FROM `up_Users`, `up_Groups`, `up_ProfilesData` WHERE %s" % ( ", ".join( sqlVars2Get ),
                                                                                         " AND ".join( sqlCond ) )
 
     return self._query( sqlQuery )
 
-  def listVars( self, userName, userGroup, profileName ):
+  def listVars( self, userName, userGroup, profileName, filterDict = {} ):
     result = self.getUserGroupIds( userName, userGroup )
     if not result[ 'OK' ]:
       return result
     userIds = result[ 'Value' ]
-    return self.listVarsById( userIds, profileName )
+    return self.listVarsById( userIds, profileName, filterDict )
 
   def storeHashTagById( self, userIds, tagName, hashTag = False, connObj = False ):
     """
@@ -470,7 +482,7 @@ class UserProfileDB( DB ):
     """
     if not hashTag:
       hashTag = md5.md5()
-      hashTag.update( "%s;%s;%s" % ( Time.dateTime(), userId, tagName ) )
+      hashTag.update( "%s;%s;%s" % ( Time.dateTime(), userIds, tagName ) )
       hashTag = hashTag.hexdigest()
     hashTagUnescaped = hashTag
     result = self._escapeString( hashTag )
@@ -481,7 +493,7 @@ class UserProfileDB( DB ):
     if not result[ 'OK' ]:
       return result
     tagName = result[ 'Value' ]
-    insertSQL = "INSERT INTO `up_HashTags` ( UserId, GroupId TagName, HashTag ) VALUES ( %s, %s, %s )" % ( userIds[0], userIds[1], tagName, hashTag )
+    insertSQL = "INSERT INTO `up_HashTags` ( UserId, GroupId, TagName, HashTag ) VALUES ( %s, %s, %s, %s )" % ( userIds[0], userIds[1], tagName, hashTag )
     result = self._update( insertSQL, conn = connObj )
     if result[ 'OK' ]:
       return S_OK( hashTagUnescaped )
@@ -494,7 +506,7 @@ class UserProfileDB( DB ):
       return result
     return S_OK( hashTagUnescaped )
 
-  def retrieveHashTagByUserId( self, userIds, hashTag, connObj = False ):
+  def retrieveHashTagById( self, userIds, hashTag, connObj = False ):
     """
     Get a data entry for a profile
     """
@@ -511,7 +523,7 @@ class UserProfileDB( DB ):
       return S_OK( data[0][0] )
     return S_ERROR( "No data for combo userId %s hashTag %s" % ( userIds, hashTag ) )
 
-  def retrieveAllHashTagsByUserId( self, userId, connObj = False ):
+  def retrieveAllHashTagsById( self, userIds, connObj = False ):
     """
     Get a data entry for a profile
     """
@@ -535,7 +547,7 @@ class UserProfileDB( DB ):
       if not result[ 'OK' ]:
         return result
       userIds = result[ 'Value' ]
-      return self.storeHashTagByUserId( userIds, tagName, hashTag, connObj = connObj )
+      return self.storeHashTagById( userIds, tagName, hashTag, connObj = connObj )
     finally:
       connObj.close()
 
@@ -552,7 +564,7 @@ class UserProfileDB( DB ):
       if not result[ 'OK' ]:
         return result
       userIds = result[ 'Value' ]
-      return self.retrieveHashTagByUserId( userIds, hashTag, connObj = connObj )
+      return self.retrieveHashTagById( userIds, hashTag, connObj = connObj )
     finally:
       connObj.close()
 
@@ -569,6 +581,6 @@ class UserProfileDB( DB ):
       if not result[ 'OK' ]:
         return result
       userIds = result[ 'Value' ]
-      return self.retrieveAllHashTagsByUserId( userIds, connObj = connObj )
+      return self.retrieveAllHashTagsById( userIds, connObj = connObj )
     finally:
       connObj.close()
