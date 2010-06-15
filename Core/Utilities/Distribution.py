@@ -17,6 +17,7 @@ class Distribution:
   anonymousSVNRoot = { 'global' : cernAnonRoot,
                        'DIRAC' : cernAnonRoot,
                        'LHCbDIRAC' : cernAnonRoot,
+                       'LHCbWebDIRAC' : cernAnonRoot,
                        'BelleDIRAC' : googleAnonRoot,
                        'EELADIRAC' : googleAnonRoot,
                        'ILCDIRAC' : cernAnonRoot,
@@ -25,6 +26,7 @@ class Distribution:
   devSVNRoot = { 'global' : cernDevRoot,
                  'DIRAC' : cernDevRoot,
                  'LHCbDIRAC' : cernDevRoot,
+                 'LHCbWebDIRAC' : cernDevRoot,
                  'ILCDIRAC' : cernDevRoot, 
                  'BelleDIRAC' : googleDevRoot,
                  'EELADIRAC' : googleDevRoot
