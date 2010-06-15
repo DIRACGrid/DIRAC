@@ -3217,6 +3217,66 @@ class ResourceStatusDB:
       
 #############################################################################
 
+  def getDownTimesWeb(self, selectDict, sortList = [], startItem = 0, maxItems = 1000):
+    """
+    Get downtimes registered in the RSS DB (with a web layout)
+
+    :params:
+      :attr:`selectDict`: { 'Granularity':['Site', 'Resource'], 'Severity': ['OUTAGE', 'AT_RISK']}
+            
+      :attr:`sortList` 
+      
+      :attr:`startItem` 
+      
+      :attr:`maxItems`
+    """
+    
+    granularity = selectDict['Granularity']
+    severity = selectDict['Severity']
+    
+    if not isinstance(granularity, list):
+      granularity = [granularity]
+    if not isinstance(severity, list):
+      severity = [severity]
+    
+    paramNames = ['Granularity', 'Name', 'Severity', 'When']
+    
+    req = "SELECT Granularity, Name, Reason FROM PolicyRes WHERE "
+    req = req + "PolicyName LIKE 'DT_%' AND Reason LIKE \'%found%\' "
+    req = req + "AND Granularity in (%s)" %(','.join(['"'+x.strip()+'"' for x in granularity]))
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, resQuery['Message']
+    if not resQuery['Value']:
+      records = []
+    else:
+      resQuery = resQuery['Value']
+      records = []
+      for tuple in resQuery:
+        sev = tuple[2].split()[2]
+        if sev not in severity: 
+          continue
+        when = tuple[2].split(sev)[1][1:]
+        if when == '':
+          when = 'Ongoing'
+        records.append([tuple[0], tuple[1], sev, when])
+    
+    finalDict = {}
+    finalDict['TotalRecords'] = len(records)
+    finalDict['ParameterNames'] = paramNames
+
+    # Return all the records if maxItems == 0 or the specified number otherwise
+    if maxItems:
+      finalDict['Records'] = records[startItem:startItem+maxItems]
+    else:
+      finalDict['Records'] = records
+
+    finalDict['Extras'] = None
+ 
+    return finalDict
+ 
+#############################################################################
+
   def getStuffToCheck(self, granularity, checkFrequency = None, maxN = None, name = None):
     """ 
     Get Sites, Services, or Resources to be checked.

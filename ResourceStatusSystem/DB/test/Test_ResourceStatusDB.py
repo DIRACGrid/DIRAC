@@ -361,6 +361,26 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     res = self.rsDB.getStorageElementsStats('Site', 'XX')
     self.assertEqual(res, {'Active': 0, 'Probing': 0, 'Bad': 0, 'Banned': 0, 'Total': 0})
 
+  def test_getDownTimesWeb(self):
+    g1 = 'Site'
+    g2 = 'Resource'
+    s1 = 'OUTAGE'
+    s2 = 'AT_RISK'
+    for g in (g1, g2):
+      for s in (s1, s2):
+        res = self.rsDB.getDownTimesWeb({'Granularity': g, 'Severity': [s]})
+        self.assertEqual(res['Records'], [])
+        res = self.rsDB.getDownTimesWeb({'Granularity': [g1, g2], 'Severity': [s]})
+        self.assertEqual(res['Records'], [])
+        res = self.rsDB.getDownTimesWeb({'Granularity': g, 'Severity': [s]}, [])
+        self.assertEqual(res['Records'], [])
+        res = self.rsDB.getDownTimesWeb({'Granularity': [g1, g2], 'Severity': [s]})
+        self.assertEqual(res['Records'], [])
+      res = self.rsDB.getDownTimesWeb({'Granularity': [g], 'Severity': [s1, s2]})
+      self.assertEqual(res['Records'], [])
+    res = self.rsDB.getDownTimesWeb({'Granularity': [g1, g2], 'Severity': [s1, s2]})
+    self.assertEqual(res['Records'], [])
+
   def test_getStuffToCheck(self):
     for g in ValidRes:
       res = self.rsDB.getStuffToCheck(g,Configurations.Sites_check_freq,3)
