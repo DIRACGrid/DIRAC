@@ -212,7 +212,7 @@ class GridPilotDirector( PilotDirector ):
       pilotsToSubmit -= pilotsPerJob
       ownerDN = self.genericPilotDN
       ownerGroup = self.genericPilotGroup
-      result = gProxyManager.requestToken( ownerDN, ownerGroup, pilotsToSubmit )
+      result = gProxyManager.requestToken( ownerDN, ownerGroup, max( pilotsToSubmit, self.maxJobsInFillMode ) )
       if not result[ 'OK' ]:
         self.log.error( ERROR_TOKEN, result['Message'] )
         return S_ERROR( ERROR_TOKEN )
@@ -221,6 +221,7 @@ class GridPilotDirector( PilotDirector ):
         if option.find( '-o /Security/ProxyToken=' ) == 0:
           pilotOptions.remove( option )
       pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
+      pilotsPerJob = min( pilotsPerJob, int( numberOfUses / self.maxJobsInFillMode ) )
       result = self._submitPilots( workDir, taskQueueDict, pilotOptions,
                                    pilotsToSubmit, ceMask,
                                    submitPrivatePilot, privateTQ,
