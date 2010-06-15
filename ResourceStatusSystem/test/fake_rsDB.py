@@ -203,5 +203,14 @@ class ResourceStatusDB:
   def rankRes(self, granularity, days, startingDate = None):
     pass
 
+  def getDownTimesWeb(self, selectDict, sortList, startItem, maxItems):
+    return {'TotalRecords': 4, 
+            'ParameterNames': ['Granularity', 'Name', 'Severity', 'When'], 
+            'Extras': None, 
+            'Records': [['Site', 'LCG.NIPNE-15.ro', 'OUTAGE', 'Ongoing'], 
+                        ['Resource', 'ce124.cern.ch', 'OUTAGE', 'in 0 hours'], 
+                        ['Site', 'LCG.Poznan.pl', 'OUTAGE', 'Ongoing'], 
+                        ['Site', 'LCG.KIAE.ru', 'OUTAGE', 'Ongoing']]}
+  
   def __convertTime(self, t):
     pass
