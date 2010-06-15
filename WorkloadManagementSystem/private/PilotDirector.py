@@ -18,39 +18,38 @@
 __RCSID__ = "$Id$"
 
 
-import os, time, tempfile, shutil, re, random
+import os, random
 random.seed()
 
 
 import DIRAC
 # Some reasonable Defaults
-DIRAC_PILOT   = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
+DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
 DIRAC_VERSION = 'Production'
 DIRAC_VERSION = 'HEAD'
 
 MAX_JOBS_IN_FILLMODE = 2
 
-ERROR_CLEAR_TIME   = 60*60  # 1 hour
-ERROR_TICKET_TIME  = 60*60  # 1 hour (added to the above)
-FROM_MAIL          = "lhcb-dirac@cern.ch"
+ERROR_CLEAR_TIME = 60 * 60  # 1 hour
+ERROR_TICKET_TIME = 60 * 60  # 1 hour (added to the above)
+FROM_MAIL = "lhcb-dirac@cern.ch"
 
-PILOT_DN               = '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=paterson/CN=607602/CN=Stuart Paterson'
-PILOT_DN               = '/DC=es/DC=irisgrid/O=ecm-ub/CN=Ricardo-Graciani-Diaz'
-PILOT_GROUP            = 'lhcb_pilot'
+PILOT_DN = '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=paterson/CN=607602/CN=Stuart Paterson'
+PILOT_DN = '/DC=es/DC=irisgrid/O=ecm-ub/CN=Ricardo-Graciani-Diaz'
+PILOT_GROUP = 'lhcb_pilot'
 
-ENABLE_LISTMATCH       = 1
-LISTMATCH_DELAY        = 5
+ENABLE_LISTMATCH = 1
+LISTMATCH_DELAY = 5
 
 PRIVATE_PILOT_FRACTION = 0.5
 
-ERROR_PROXY      = 'No proxy Available'
-ERROR_TOKEN      = 'Invalid proxy token request'
+ERROR_PROXY = 'No proxy Available'
+ERROR_TOKEN = 'Invalid proxy token request'
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import jobDB
 from DIRAC.Core.Security.CS                                import getPropertiesForGroup
-from DIRAC.Core.Utilities                                  import List 
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig, DictCache
 
@@ -78,42 +77,42 @@ class PilotDirector:
       - be reconfigured in the configureFromSection method by executing
         self.reloadConfiguration( csSection, submitPool ) in theri configure method
   """
-  def __init__( self, submitPool):
+  def __init__( self, submitPool ):
     """
      Define the logger and some defaults
     """
 
     if submitPool == self.gridMiddleware:
-      self.log = gLogger.getSubLogger('%sPilotDirector' % self.gridMiddleware)
+      self.log = gLogger.getSubLogger( '%sPilotDirector' % self.gridMiddleware )
     else:
-      self.log = gLogger.getSubLogger( '%sPilotDirector/%s' % (self.gridMiddleware, submitPool ) )
+      self.log = gLogger.getSubLogger( '%sPilotDirector/%s' % ( self.gridMiddleware, submitPool ) )
 
-    self.pilot              = DIRAC_PILOT
-    self.extraPilotOptions  = []
-    self.diracVersion       = DIRAC_VERSION
-    self.install            = DIRAC_INSTALL
-    self.maxJobsInFillMode  = MAX_JOBS_IN_FILLMODE
+    self.pilot = DIRAC_PILOT
+    self.extraPilotOptions = []
+    self.diracVersion = DIRAC_VERSION
+    self.install = DIRAC_INSTALL
+    self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
 
 
-    self.genericPilotDN       = PILOT_DN
-    self.genericPilotGroup    = PILOT_GROUP
-    self.enableListMatch      = ENABLE_LISTMATCH
-    self.listMatchDelay       = LISTMATCH_DELAY
-    self.listMatchCache       = DictCache()
+    self.genericPilotDN = PILOT_DN
+    self.genericPilotGroup = PILOT_GROUP
+    self.enableListMatch = ENABLE_LISTMATCH
+    self.listMatchDelay = LISTMATCH_DELAY
+    self.listMatchCache = DictCache()
 
     self.privatePilotFraction = PRIVATE_PILOT_FRACTION
 
-    self.errorClearTime       = ERROR_CLEAR_TIME
-    self.errorTicketTime      = ERROR_TICKET_TIME
-    self.errorMailAddress     = DIRAC.errorMail
-    self.alarmMailAddress     = DIRAC.alarmMail
-    self.mailFromAddress      = FROM_MAIL
+    self.errorClearTime = ERROR_CLEAR_TIME
+    self.errorTicketTime = ERROR_TICKET_TIME
+    self.errorMailAddress = DIRAC.errorMail
+    self.alarmMailAddress = DIRAC.alarmMail
+    self.mailFromAddress = FROM_MAIL
 
     if not  'log' in self.__dict__:
-      self.log = gLogger.getSubLogger('PilotDirector')
-    self.log.info('Initialized')
+      self.log = gLogger.getSubLogger( 'PilotDirector' )
+    self.log.info( 'Initialized' )
 
-  def configure(self, csSection, submitPool ):
+  def configure( self, csSection, submitPool ):
     """
      Here goes common configuration for all PilotDirectors
     """
@@ -134,38 +133,38 @@ class PilotDirector:
       self.log.info( ' ListMatch Delay:', self.listMatchDelay )
     self.listMatchCache.purgeExpired()
 
-  def reloadConfiguration(self, csSection, submitPool):
+  def reloadConfiguration( self, csSection, submitPool ):
     """
      Common Configuration can be overwriten for each GridMiddleware
     """
-    mySection   = csSection+'/'+self.gridMiddleware
+    mySection = csSection + '/' + self.gridMiddleware
     self.configureFromSection( mySection )
     """
      And Again for each SubmitPool
     """
-    mySection   = csSection+'/'+submitPool
+    mySection = csSection + '/' + submitPool
     self.configureFromSection( mySection )
 
   def configureFromSection( self, mySection ):
     """
       reload from CS
     """
-    self.pilot                = gConfig.getValue( mySection+'/PilotScript'          , self.pilot )
-    self.diracVersion         = gConfig.getValue( mySection+'/DIRACVersion'         , self.diracVersion )
-    self.extraPilotOptions    = gConfig.getValue( mySection+'/ExtraPilotOptions'    , self.extraPilotOptions )
-    self.install              = gConfig.getValue( mySection+'/InstallScript'        , self.install )
-    self.maxJobsInFillMode    = gConfig.getValue( mySection+'/MaxJobsInFillMode'    , self.maxJobsInFillMode )
+    self.pilot = gConfig.getValue( mySection + '/PilotScript'          , self.pilot )
+    self.diracVersion = gConfig.getValue( mySection + '/DIRACVersion'         , self.diracVersion )
+    self.extraPilotOptions = gConfig.getValue( mySection + '/ExtraPilotOptions'    , self.extraPilotOptions )
+    self.install = gConfig.getValue( mySection + '/InstallScript'        , self.install )
+    self.maxJobsInFillMode = gConfig.getValue( mySection + '/MaxJobsInFillMode'    , self.maxJobsInFillMode )
 
-    self.enableListMatch      = gConfig.getValue( mySection+'/EnableListMatch'      , self.enableListMatch )
-    self.listMatchDelay       = gConfig.getValue( mySection+'/ListMatchDelay'       , self.listMatchDelay )
-    self.errorClearTime       = gConfig.getValue( mySection+'/ErrorClearTime'       , self.errorClearTime )
-    self.errorTicketTime      = gConfig.getValue( mySection+'/ErrorTicketTime'      , self.errorTicketTime )
-    self.errorMailAddress     = gConfig.getValue( mySection+'/ErrorMailAddress'     , self.errorMailAddress )
-    self.alarmMailAddress     = gConfig.getValue( mySection+'/AlarmMailAddress'     , self.alarmMailAddress )
-    self.mailFromAddress      = gConfig.getValue( mySection+'/MailFromAddress'      , self.mailFromAddress )
-    self.genericPilotDN       = gConfig.getValue( mySection+'/GenericPilotDN'       , self.genericPilotDN )
-    self.genericPilotGroup    = gConfig.getValue( mySection+'/GenericPilotGroup'    , self.genericPilotGroup )
-    self.privatePilotFraction = gConfig.getValue( mySection+'/PrivatePilotFraction' , self.privatePilotFraction )
+    self.enableListMatch = gConfig.getValue( mySection + '/EnableListMatch'      , self.enableListMatch )
+    self.listMatchDelay = gConfig.getValue( mySection + '/ListMatchDelay'       , self.listMatchDelay )
+    self.errorClearTime = gConfig.getValue( mySection + '/ErrorClearTime'       , self.errorClearTime )
+    self.errorTicketTime = gConfig.getValue( mySection + '/ErrorTicketTime'      , self.errorTicketTime )
+    self.errorMailAddress = gConfig.getValue( mySection + '/ErrorMailAddress'     , self.errorMailAddress )
+    self.alarmMailAddress = gConfig.getValue( mySection + '/AlarmMailAddress'     , self.alarmMailAddress )
+    self.mailFromAddress = gConfig.getValue( mySection + '/MailFromAddress'      , self.mailFromAddress )
+    self.genericPilotDN = gConfig.getValue( mySection + '/GenericPilotDN'       , self.genericPilotDN )
+    self.genericPilotGroup = gConfig.getValue( mySection + '/GenericPilotGroup'    , self.genericPilotGroup )
+    self.privatePilotFraction = gConfig.getValue( mySection + '/PrivatePilotFraction' , self.privatePilotFraction )
 
   def _resolveCECandidates( self, taskQueueDict ):
     """
@@ -187,14 +186,14 @@ class PilotDirector:
       self.log.error( 'Site mask is empty' )
       return []
 
-    self.log.verbose( 'Site Mask: %s' % ', '.join(siteMask) )
+    self.log.verbose( 'Site Mask: %s' % ', '.join( siteMask ) )
 
     # remove banned sites from siteMask
     if 'BannedSites' in taskQueueDict:
       for site in taskQueueDict['BannedSites']:
         if site in siteMask:
-          siteMask.remove(site)
-          self.log.verbose('Removing banned site %s from site Mask' % site )
+          siteMask.remove( site )
+          self.log.verbose( 'Removing banned site %s from site Mask' % site )
 
     # remove from the mask if a Site is given
     siteMask = [ site for site in siteMask if 'Sites' not in taskQueueDict or site in taskQueueDict['Sites'] ]
@@ -204,19 +203,19 @@ class PilotDirector:
       self.log.info( 'No Valid Site Candidate in Mask for TaskQueue %s' % taskQueueDict['TaskQueueID'] )
       return []
 
-    self.log.info( 'Site Candidates for TaskQueue %s:' % taskQueueDict['TaskQueueID'], ', '.join(siteMask) )
+    self.log.info( 'Site Candidates for TaskQueue %s:' % taskQueueDict['TaskQueueID'], ', '.join( siteMask ) )
 
     # Get CE's associates to the given site Names
     ceMask = []
 
     section = '/Resources/Sites/%s' % self.gridMiddleware
-    ret = gConfig.getSections(section)
+    ret = gConfig.getSections( section )
     if not ret['OK']:
       # To avoid duplicating sites listed in LCG for gLite for example.
       # This could be passed as a parameter from
       # the sub class to avoid below...
       section = '/Resources/Sites/LCG'
-      ret = gConfig.getSections(section)
+      ret = gConfig.getSections( section )
 
     if not ret['OK'] or not ret['Value']:
       self.log.error( 'Could not obtain CEs from CS', ret['Message'] )
@@ -225,14 +224,14 @@ class PilotDirector:
     gridSites = ret['Value']
     for siteName in gridSites:
       if siteName in siteMask:
-        ret = gConfig.getValue( '%s/%s/CE' % ( section, siteName), [] )
+        ret = gConfig.getValue( '%s/%s/CE' % ( section, siteName ), [] )
         if ret:
           ceMask.extend( ret )
 
     if not ceMask:
-      self.log.info( 'No CE Candidate found for TaskQueue %s:' % taskQueueDict['TaskQueueID'], ', '.join(siteMask) )
+      self.log.info( 'No CE Candidate found for TaskQueue %s:' % taskQueueDict['TaskQueueID'], ', '.join( siteMask ) )
 
-    self.log.verbose( 'CE Candidates for TaskQueue %s:' % taskQueueDict['TaskQueueID'], ', '.join(ceMask) )
+    self.log.verbose( 'CE Candidates for TaskQueue %s:' % taskQueueDict['TaskQueueID'], ', '.join( ceMask ) )
 
     return ceMask
 
@@ -244,8 +243,8 @@ class PilotDirector:
     forceGeneric = 'ForceGeneric' in taskQueueDict
     submitPrivatePilot = ( privateIfGenericTQ or privateTQ ) and not forceGeneric
     if submitPrivatePilot:
-      self.log.verbose('Submitting private pilots for TaskQueue %s' % taskQueueDict['TaskQueueID'] )
-      ownerDN    = taskQueueDict['OwnerDN']
+      self.log.verbose( 'Submitting private pilots for TaskQueue %s' % taskQueueDict['TaskQueueID'] )
+      ownerDN = taskQueueDict['OwnerDN']
       ownerGroup = taskQueueDict['OwnerGroup']
       # User Group requirement
       pilotOptions.append( '-G %s' % taskQueueDict['OwnerGroup'] )
@@ -256,23 +255,26 @@ class PilotDirector:
         pilotOptions.append( "-O '%s'" % ownerDN )
       if privateTQ:
         pilotOptions.append( '-o /Resources/Computing/CEDefaults/PilotType=private' )
+      maxJobsInFillMode = self.maxJobsInFillMode
     else:
       #For generic jobs we'll submit mixture of generic and private pilots
-      self.log.verbose('Submitting generic pilots for TaskQueue %s' % taskQueueDict['TaskQueueID'] )
-      ownerDN    = self.genericPilotDN
+      self.log.verbose( 'Submitting generic pilots for TaskQueue %s' % taskQueueDict['TaskQueueID'] )
+      ownerDN = self.genericPilotDN
       ownerGroup = self.genericPilotGroup
-      result = gProxyManager.requestToken( ownerDN, ownerGroup, pilotsToSubmit )
+      result = gProxyManager.requestToken( ownerDN, ownerGroup, max( pilotsToSubmit, self.maxJobsInFillMode ) )
       if not result[ 'OK' ]:
         self.log.error( ERROR_TOKEN, result['Message'] )
         return S_ERROR( ERROR_TOKEN )
-      (token, numberOfUses) = result[ 'Value' ]
+      ( token, numberOfUses ) = result[ 'Value' ]
       pilotsToSubmit = min( numberOfUses, pilotsToSubmit )
 
       pilotOptions.append( '-o /Security/ProxyToken=%s' % token )
 
       pilotsToSubmit = ( pilotsToSubmit - 1 ) / self.maxJobsInFillMode + 1
+
+      maxJobsInFillMode = int( numberOfUses / self.maxJobsInFillMode )
     # Use Filling mode
-    pilotOptions.append( '-M %s' % self.maxJobsInFillMode )
+    pilotOptions.append( '-M %s' % maxJobsInFillMode )
 
     # Debug
     pilotOptions.append( '-d' )
@@ -289,11 +291,11 @@ class PilotDirector:
     pilotOptions.append( '-r %s' % self.diracVersion )
     # Requested CPU time
     pilotOptions.append( '-T %s' % taskQueueDict['CPUTime'] )
-    
+
     if self.extraPilotOptions:
       pilotOptions.extend( self.extraPilotOptions )
 
-    return S_OK( (pilotOptions, pilotsToSubmit, ownerDN, ownerGroup, submitPrivatePilot, privateTQ) )
+    return S_OK( ( pilotOptions, pilotsToSubmit, ownerDN, ownerGroup, submitPrivatePilot, privateTQ ) )
 
   def _submitPilots( self, workDir, taskQueueDict, pilotOptions, pilotsToSubmit,
                      ceMask, submitPrivatePilot, privateTQ, proxy ):
@@ -303,10 +305,10 @@ class PilotDirector:
       Return S_ERROR if not defined.
     """
     self.log.error( '_submitPilots method not implemented' )
-    return S_OK( )
+    return S_OK()
 
 
-  def submitPilots(self, taskQueueDict, pilotsToSubmit, workDir=None ):
+  def submitPilots( self, taskQueueDict, pilotsToSubmit, workDir = None ):
     """
       Submit pilot for the given TaskQueue,
       this method just insert the request in the corresponding ThreadPool,
@@ -319,11 +321,11 @@ class PilotDirector:
       self.log.verbose( 'Submitting Pilot' )
       ceMask = self._resolveCECandidates( taskQueueDict )
       if not ceMask:
-        return S_ERROR( 'No CE available for TaskQueue %d' % int(taskQueueID) )
+        return S_ERROR( 'No CE available for TaskQueue %d' % int( taskQueueID ) )
       result = self._getPilotOptions( taskQueueDict, pilotsToSubmit )
       if not result['OK']:
         return result
-      (pilotOptions, pilotsPerJob, ownerDN, ownerGroup, submitPrivatePilot, privateTQ ) = result['Value']
+      ( pilotOptions, pilotsPerJob, ownerDN, ownerGroup, submitPrivatePilot, privateTQ ) = result['Value']
       # get a valid proxy, submit with a long proxy to avoid renewal
       ret = self._getPilotProxyFromDIRACGroup( ownerDN, ownerGroup, requiredTimeLeft = 86400 * 5 )
       if not ret['OK']:
@@ -337,10 +339,10 @@ class PilotDirector:
                                  submitPrivatePilot, privateTQ,
                                  proxy, pilotsPerJob )
 
-    except Exception,x:
+    except Exception, x:
       self.log.exception( 'Error in Pilot Submission' )
 
-    return S_OK(0)
+    return S_OK( 0 )
 
   def _getPilotProxyFromDIRACGroup( self, ownerDN, ownerGroup, requiredTimeLeft ):
     """
@@ -348,5 +350,5 @@ class PilotDirector:
     """
     return gProxyManager.getPilotProxyFromDIRACGroup( ownerDN, ownerGroup, requiredTimeLeft )
 
-  def exceptionCallBack(self, threadedJob, exceptionInfo ):
+  def exceptionCallBack( self, threadedJob, exceptionInfo ):
     self.log.exception( 'Error in Pilot Submission' )
