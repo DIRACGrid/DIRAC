@@ -54,6 +54,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     self.prefix = '/grid'
     self.session = False
     self.name = "LFC"
+    self.transaction = False
 
   ####################################################################
   #
