@@ -286,8 +286,8 @@ for o, v in optList:
         if iPos == -1 or iPos != len( pl[0] ) - 5:
           pl[0] = "%sDIRAC" % pl[0]
       pkg = "@".join( pl )
-    if pkg not in cliParams.packagesToInstall:
-      cliParams.packagesToInstall.append( pkg )
+      if pkg not in cliParams.packagesToInstall:
+        cliParams.packagesToInstall.append( pkg )
   elif o in ( '-t', '--installType' ):
     cliParams.externalsType = v
   elif o in ( '-y', '--pythonVersion' ):
