@@ -34,6 +34,7 @@ class LSFTimeLeft:
 
     self.cpuLimit = None
     self.wallClockLimit = None
+    self.hostNorm = None
 
     cmd = '%s/bqueues -l %s' %(self.bin,self.queue)
     result = self.__runCommand(cmd)
@@ -71,29 +72,68 @@ class LSFTimeLeft:
     wallClock = None
     wallClockLimit = None
 
-    cmd = '%s/bjobs -l %s' %(self.bin,self.jobID)
-    result = self.__runCommand(cmd)
+    cmd = '%s/bjobs -W %s' %( self.bin, self.jobID )
+    result = self.__runCommand( cmd )
     if not result['OK']:
       return result
+    lines = result['Value'].split( '\n' )
+    l1 = lines[0].split()
+    l2 = lines[1].split()
+    if len(l1) > len(l2):
+      self.log.error( cmd )
+      self.log.error( lines[0] )
+      self.log.error( lines[1] )
+      return S_ERROR( 'Can not parse LSF output' )
 
-    self.log.debug(result['Value'])
-    lines = result['Value'].split('\n')
-    for line in lines:
-      if re.search('.*Started on.*',line):
-        info = line.split(': ')
-        if len(info)>=1:
-          timeStr = '%s %s' %(info[0],self.year)
-          timeTup=time.strptime(timeStr, '%a %b %d %H:%M:%S %Y')
+    sCPU = None
+    sStart = None
+    host = None
+    for i in range( len(l1) ):
+      if l1[i] == 'CPU_USED':
+        sCPU = l2[i]
+        lCPU = sCPU.split( ':' )
+        try:
+          cpu = float(lCPU[0]) * 3600 + float(lCPU[1]) * 60 + float(lCPU[2]) 
+        except:
+          pass
+      elif l1[i] == 'START_TIME':
+        sStart = l2[i]
+        sStart = '%s %s' %( sStart, self.year)
+        try:
+          timeTup=time.strptime(sStart, '%m/%d-%H:%M:%S %Y')
           wallClock=time.mktime(timeTup)
           wallClock = time.mktime(time.localtime())-wallClock
-        else:
-          self.log.warn('Problem parsing "%s" for elapsed wall clock time' %line)
-      if re.search('.*The CPU time used is.*',line):
-        info = line.split()
-        if len(info)>=5:
-          cpu = float(info[5])
-        else:
-          self.log.warn('Problem parsing "%s" for CPU consumed' %line)
+        except:
+          pass
+      elif l1[i] == 'EXEC_HOST':
+        host = l2[i]
+    if not self.hostNorm and host:
+      cmd = '%s/lshosts %s' % ( self.bin, host )
+      result = self.__runCommand(cmd)
+      if not result['OK']:
+        return result
+      lines = result['Value'].split('\n') 
+      l1 = lines[0].split()
+      l2 = lines[1].split()
+      if len(l1) > len(l2):
+        self.log.error( cmd )
+        self.log.error( lines[0] )
+        self.log.error( lines[1] )
+        return S_ERROR( 'Can not parse LSF output' )
+      for i in range(len(l1)):
+        if l1[i] == 'cpuf':
+          try:
+            self.hostNorm = float(l2[i])
+          except:
+            pass
+
+    if not cpu or not wallClock:
+      return S_ERROR( 'Failed to parse LSF output' )
+
+    if not self.hostNorm:
+      return S_ERROR( 'Can not determine host Norm factor' )
+
+    cpu = cpu * self.hostNorm
 
     consumed = {'CPU':cpu,'CPULimit':self.cpuLimit,'WallClock':wallClock,'WallClockLimit':self.wallClockLimit}
     self.log.debug(consumed)
@@ -125,6 +165,7 @@ class LSFTimeLeft:
       self.log.warn(stderr)
       return S_ERROR(stdout)
     else:
+      self.log.debug( stdout )
       return S_OK(stdout)
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
