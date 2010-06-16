@@ -630,9 +630,6 @@ class JobAgent( AgentModule ):
     result = jobManager.rescheduleJob( jobID )
     if not result['OK']:
       self.log.error( result['Message'] )
-      jobReport.setJobStatus( status = 'Failed', 
-                              minor = 'Job rescheduling', 
-                              sendFlag = True )
       return self.__finish( 'Problem Rescheduling Job' )
 
     self.log.info( 'Job Rescheduled %s' % ( jobID ) )
