@@ -48,6 +48,9 @@ class RSInspectorAgent(AgentModule):
       
       self.VOExtension = gConfig.getValue("DIRAC/Extensions")
 
+      if 'LHCb' in self.VOExtension:
+        self.VOExtension = 'LHCb'
+
       configModule = __import__(self.VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations", 
                                 globals(), locals(), ['*'])
       

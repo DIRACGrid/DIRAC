@@ -36,6 +36,9 @@ def initializeResourceStatusHandler(serviceInfo):
   global VOExtension
   VOExtension = gConfig.getValue("DIRAC/Extensions")
 
+  if 'LHCb' in VOExtension:
+    VOExtension = 'LHCb'
+
   ig = InfoGetter(VOExtension)
   
   WMSAdmin = RPCClient("WorkloadManagement/WMSAdministrator")

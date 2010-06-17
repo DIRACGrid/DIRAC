@@ -34,7 +34,12 @@ class ClientsCacheFeeder(AgentModule):
       self.clientsInvoker = ClientsInvoker()
 
       VOExtension = gConfig.getValue("DIRAC/Extensions")
-      configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations", globals(), locals(), ['*'])
+
+      if 'LHCb' in VOExtension:
+        VOExtension = 'LHCb'
+      
+      configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations", 
+                                globals(), locals(), ['*'])
       commandsList = copy.deepcopy(configModule.Commands_to_use)
 
       self.commandObjectsList = []

@@ -25,6 +25,8 @@ class PolicySystemTestCase(unittest.TestCase):
     
     from DIRAC import gConfig
     self.VO = gConfig.getValue("DIRAC/Extensions")
+    if 'LHCb' in self.VO:
+      self.VO = 'LHCb'
     
     sys.modules["DIRAC.FrameworkSystem.Client.NotificationClient"] = DIRAC.ResourceStatusSystem.test.fake_NotificationClient
     self.mock_command = Mock()

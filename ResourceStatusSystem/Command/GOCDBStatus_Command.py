@@ -147,19 +147,14 @@ class GOCDBInfo_Command(Command):
       if resDT['Type'] == 'Programmed':
         resDT['DT'] = resDT['DT'] + " in " + str(resDT['InHours']) + ' hours'
 
-      return resDT
+      return {'Result':resDT}
         
     except urllib2.URLError:
       gLogger.error("GOCDB timed out for " + granularity + " " + name )
-      return {'DT':'Unknown'}      
+      return {'Result':'Unknown'}    
     except:
       gLogger.exception("Exception when calling GOCDBClient for " + granularity + " " + name )
-      return {'DT':'Unknown'}
-
-    try:
-      return res['URL']
-    except:
-      return None
+      return {'Result':'Unknown'}
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
