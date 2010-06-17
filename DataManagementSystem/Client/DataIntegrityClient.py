@@ -643,6 +643,8 @@ class DataIntegrityClient:
   def __getCatalogMetadata(self,lfns):
     """ Obtain the file metadata from the catalog while checking they exist
     """
+    if not lfns:
+      return S_OK({})
     gLogger.info('Obtaining the catalog metadata for %s files' % len(lfns))
     rm = ReplicaManager()
     missingCatalogFiles = []
