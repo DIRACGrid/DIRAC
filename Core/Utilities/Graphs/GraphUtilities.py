@@ -153,7 +153,8 @@ def add_time_to_title( begin, end, metadata={} ):
         format_name = 'Seconds'
         time_slice = 1
 
-    begin_tuple = time.gmtime(begin); end_tuple = time.gmtime(end)
+    begin_tuple = time.localtime(begin)
+    end_tuple = time.localtime(end)
     added_title = '%i %s from ' % (int((end-begin)/time_slice), format_name)
     added_title += time.strftime('%s to' % format_str, begin_tuple)
     if time_slice < 86400:
