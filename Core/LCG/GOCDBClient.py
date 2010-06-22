@@ -13,7 +13,7 @@ class GOCDBClient:
   
 #############################################################################
 
-  def getStatus(self, granularity, name, startDate = None, 
+  def getStatus(self, granularity, name = None, startDate = None, 
                 startingInHours = None, timeout = None):
     """  
     Return actual GOCDB status of entity in `name`
@@ -21,7 +21,9 @@ class GOCDBClient:
     :params:
       :attr:`granularity`: string: should be a ValidRes
       
-      :attr:`name`: should be the name of the ValidRes
+      :attr:`name`: should be the name(s) of the ValidRes. 
+      Could be a list of basestring or simply one basestring. 
+      If not given, fetches the complete list. 
       
       :attr:`startDate`: if not given, takes only ongoing DownTimes.
       if given, could be a datetime or a string ("YYYY-MM-DD"), and download 
@@ -30,12 +32,25 @@ class GOCDBClient:
       :attr:`startingInHours`: optional integer. If given, donwload 
       DownTimes starting in the next given hours (startDate is then useless)  
 
-    :return:
-      {
-        'DT':'OUTAGE in X hours'|'AT_RISK in X hours'|'OUTAGE'|'AT_RISK'|'None',
-        'Startdate':datetime (in string)
-        'EndDate':datetime (in string)
-        'StartDate':datetime (in string)
+    :return: (example)
+      {'OK': True, 
+      'Value': {'78305448': 
+                  {
+                  'SITENAME': 'UKI-LT2-QMUL', 
+                  'FORMATED_END_DATE': '2010-06-22 19:00', 
+                  'SEVERITY': 'OUTAGE', 
+                  'FORMATED_START_DATE': '2010-06-18 09:00', 
+                  'DESCRIPTION': 'Electrical work in the building housing the cluster.'
+                  }, 
+                '78905446': 
+                  {
+                  'SITENAME': 'NCP-LCG2', 
+                  'FORMATED_END_DATE': '2010-06-22 19:40', 
+                  'SEVERITY': 'OUTAGE', 
+                  'FORMATED_START_DATE': '2010-06-20 19:43', 
+                  'DESCRIPTION': "Problem at Service provider's end"
+                  }
+                }
       }
 
     """
@@ -66,185 +81,45 @@ class GOCDBClient:
       # so the curlDownload method will search for only ongoing DTs
       resXML_ongoing = self._downTimeCurlDonwload(name)
       if resXML_ongoing is None:
-        res_ongoing = 'None'
+        res_ongoing = {}
       else:
-        res_ongoing = self._downTimeXMLParsing(resXML_ongoing, granularity, startDate, startDateMax)
-        if res_ongoing == []:
-          res_ongoing = 'None'
-      resXML_startDate = self._downTimeCurlDonwload(name, startDate_STR)
-
+        res_ongoing = self._downTimeXMLParsing(resXML_ongoing, granularity, name)
+      
       # second call: pass the startDate argument
+      resXML_startDate = self._downTimeCurlDonwload(name, startDate_STR)
       if resXML_startDate is None:
-        res_startDate = 'None'
+        res_startDate = {}
       else:
-        res_startDate = self._downTimeXMLParsing(resXML_startDate, granularity, startDate, startDateMax)
-        if res_startDate == []:
-          res_startDate = 'None'
+        res_startDate = self._downTimeXMLParsing(resXML_startDate, granularity, 
+                                                 name, startDateMax) 
       
       # merge the results of the 2 queries:
-      if res_startDate is not 'None' and res_ongoing is not 'None':
-        res = []
-        for dt in res_startDate:
-          res.append(dt)
-        for dt in res_ongoing:
-          if dt in res:
-            #DT already appended
-            pass
-          else:
-            res.append(dt)
-
-      elif res_startDate is not 'None' and res_ongoing is 'None':
-        res = res_startDate
-      elif res_startDate is 'None' and res_ongoing is not 'None':
-        res = res_ongoing
-      else:
-        return S_OK(None)
-         
+      res = res_ongoing
+      for k in res_startDate.keys():
+        if k not in res.keys():
+          res[k] = res_startDate[k]
+    
     else:
       #just query for onGoing downtimes
-      resXML = self._downTimeCurlDonwload(name)
+      resXML = self._downTimeCurlDonwload(name, startDate_STR)
       if resXML is None:
         return S_OK(None)
     
-      res = self._downTimeXMLParsing(resXML, granularity, startDate, startDateMax)
+      res = self._downTimeXMLParsing(resXML, granularity, name, startDateMax) 
     
-    self.buildURL(res)
+    # Common: build URL
+#    if res is None or res == []:
+#      return S_OK(None)
+#      
+#    self.buildURL(res)
 
-    if res is None or res == []:
-      return S_OK(None)
-      
-    if len(res) == 1:
-      res = res[0]
-    
+
+    if res == {}:
+      res = None
+   
     return S_OK(res)
   
 
-#############################################################################
-
-  def buildURL(self, DTList):
-    '''build the URL relative to the DT '''
-    baseURL = "https://goc.gridops.org/downtime/list?id="
-    for dt in DTList:
-      id = str(dt['id'])
-      url = baseURL + id
-      dt['URL'] = url
-
-#############################################################################
-  
-  def _downTimeCurlDonwload(self, entity, startDate=None):
-    """ Download ongoing downtimes for entity using the GOC DB programmatic interface
-    """
-
-    #GOCDB-PI url and method settings
-    #
-    # Set the GOCDB URL
-    gocdbpi_url = "https://goc.gridops.org/gocdbpi/public/?"
-    # Set your method
-    gocdbpi_method = "get_downtime"
-    # Set the desidered start date
-    if startDate is None: 
-      when = "&ongoing_only=yes" 
-      gocdbpi_startDate = ""
-    else:
-      when = "&startdate="
-      gocdbpi_startDate = startDate
-     
-    # GOCDB-PI to query
-    gocdb_ep = gocdbpi_url + "method=" + gocdbpi_method + "&topentity=" + entity + when + gocdbpi_startDate
-
-    req = urllib2.Request(gocdb_ep)
-    dtPage = urllib2.urlopen(req)
-
-    dt = dtPage.read()
-
-    return dt
-    
-
-#############################################################################
-
-  def _downTimeXMLParsing(self, dt, siteOrRes, startDate = None, startDateMax = None):
-    """ Performs xml parsing from the dt string (returns a dictionary)
-    """
-    doc = minidom.parseString(dt)
-
-    downtimes = doc.getElementsByTagName("DOWNTIME")
-#      if downtimes == []:
-#        return {'DT':'No Info'} 
-    DTList = []  
-    
-    for dt in downtimes:
-      DTtype = 'None' # can be a site or a resource DT
-      handler = {}  
-      if dt.getAttributeNode("CLASSIFICATION"):
-        attrs_class = dt.attributes["CLASSIFICATION"]
-        # List containing all the DOM elements
-        dom_elements = dt.childNodes
-        
-        for elements in dom_elements:
-          if siteOrRes == 'Site':
-            if elements.nodeName == "HOSTNAME":
-              DTtype = 'Resource'
-              break
-          if elements.nodeName == "SEVERITY":
-            for element in elements.childNodes:
-              if element.nodeType == element.TEXT_NODE: 
-                severity = str(element.nodeValue)
-                handler['DT'] = severity
-          elif elements.nodeName == "START_DATE":
-            for element in elements.childNodes:
-              if element.nodeType == element.TEXT_NODE: 
-                sdate = float(element.nodeValue)
-              start_date = datetime.utcfromtimestamp(sdate)
-              start_date_STR = start_date.isoformat(' ')
-              handler['StartDate'] = start_date_STR
-          elif elements.nodeName == "END_DATE":
-            for element in elements.childNodes:
-              if element.nodeType == element.TEXT_NODE: 
-                edate = float(element.nodeValue)
-              end_date = datetime.utcfromtimestamp(edate)
-              end_date_STR = end_date.isoformat(' ')
-              handler['EndDate'] = end_date_STR
-        
-	
-	try:
-	  if start_date is None or end_date is None:
-    	    continue
-          if startDate is not None:
-            if end_date < startDate:
-              continue
-          if startDateMax is not None:
-            if start_date > startDateMax:
-              continue
-          if start_date > datetime.utcnow():
-            hoursTo = self.__convertTime(start_date - datetime.utcnow())
-            handler['Type'] = 'Programmed'
-            handler['InHours'] = hoursTo
-          else:
-            handler['Type'] = 'OnGoing'
-
-        except NameError, UnboundLocalError:
-          pass
-      
-      start_date = None
-      end_date = None
-      
-      # get the DT ID:
-      if dt.getAttributeNode("ID"):
-        attrs_id = dt.attributes["ID"]
-        id=attrs_id.nodeValue.replace("u","")
-        if siteOrRes == 'Site' and DTtype == 'Resource': 
-#            print 'it is a resource DT, do not store the ID'
-          pass
-        else: 
-          handler['id'] = id
-
-
-      if handler != {}:
-        DTList.append(handler)
-        
-    return DTList
-    
-    
 #############################################################################
 
   def getServiceEndpointInfo(self, granularity, entity):
@@ -263,6 +138,48 @@ class GOCDBClient:
     
 #############################################################################
   
+  def buildURL(self, DTList):
+    '''build the URL relative to the DT '''
+    baseURL = "https://goc.gridops.org/downtime/list?id="
+    for dt in DTList:
+      id = str(dt['id'])
+      url = baseURL + id
+      dt['URL'] = url
+
+#############################################################################
+  
+  def _downTimeCurlDonwload(self, entity = None, startDate = None):
+    """ Download ongoing downtimes for entity using the GOC DB programmatic interface
+    """
+
+    #GOCDB-PI url and method settings
+    #
+    # Set the GOCDB URL
+    gocdbpi_url = "https://goc.gridops.org/gocdbpi/public/?method=get_downtime"
+    # Set the desidered start date
+    if startDate is None: 
+      when = "&ongoing_only=yes" 
+      gocdbpi_startDate = ""
+    else:
+      when = "&startdate="
+      gocdbpi_startDate = startDate
+     
+    # GOCDB-PI to query
+    gocdb_ep = gocdbpi_url 
+    if entity is not None:
+      if isinstance(entity, basestring):
+        gocdb_ep = gocdb_ep + "&topentity=" + entity 
+    gocdb_ep = gocdb_ep + when + gocdbpi_startDate
+
+    req = urllib2.Request(gocdb_ep)
+    dtPage = urllib2.urlopen(req)
+
+    dt = dtPage.read()
+
+    return dt
+    
+#############################################################################
+
   def _getServiceEndpointCurlDonwload(self, granularity, entity):
     """ 
     Calls method `get_service_endpoint` from the GOC DB programmatic interface.
@@ -284,6 +201,52 @@ class GOCDBClient:
 
 #############################################################################
 
+  def _downTimeXMLParsing(self, dt, siteOrRes, entities = None, startDateMax = None):
+    """ Performs xml parsing from the dt string (returns a dictionary)
+    """
+    doc = minidom.parseString(dt)
+
+    downtimeElements = doc.getElementsByTagName("DOWNTIME")
+    DTdict = {}  
+    
+    for dtElement in downtimeElements:
+      elements = self.__parseSingleElement(dtElement, ['SEVERITY', 'SITENAME', 'HOSTNAME', 
+                                                       'HOSTED_BY', 'FORMATED_START_DATE', 
+                                                       'FORMATED_END_DATE', 'DESCRIPTION'])
+      DTdict[ str(dtElement.getAttributeNode("ID").nodeValue) ] = elements
+
+    for DT_ID in DTdict.keys():
+      if siteOrRes in ('Site', 'Sites'):
+        if not ('SITENAME' in DTdict[DT_ID].keys()):
+          DTdict.pop(DT_ID)
+          continue
+        if entities is not None:
+          if not isinstance(entities, list):
+            entities = [entities]
+          if not (DTdict[DT_ID]['SITENAME'] in entities):
+            DTdict.pop(DT_ID)
+          
+      elif siteOrRes in ('Resource', 'Resources'):
+        if not ('HOSTNAME' in DTdict[DT_ID].keys()):
+          DTdict.pop(DT_ID)
+          continue
+        if entities is not None:
+          if not isinstance(entities, list):
+            entities = [entities]
+          if not (DTdict[DT_ID]['HOSTNAME'] in entities):
+            DTdict.pop(DT_ID)
+    
+    if startDateMax is not None:
+      for DT_ID in DTdict.keys():
+        startDateMaxFromKeys = datetime(*time.strptime( DTdict[DT_ID]['FORMATED_START_DATE'], 
+                                                        "%Y-%m-%d %H:%M")[0:5] )
+        if startDateMaxFromKeys > startDateMax:
+          DTdict.pop(DT_ID)  
+    
+    return DTdict
+
+#############################################################################
+
   def _serviceEndpointXMLParsing(self, serviceXML):
     """ Performs xml parsing from the service endpoint string (returns a dictionary)
     """
@@ -294,54 +257,28 @@ class GOCDBClient:
     servicesList = []  
     
     for service in services:
-      handler = {}
-      for child in service.childNodes:
-        attrName = str(child.nodeName)
-        attrValue = str(child.childNodes[0].nodeValue)
-        handler[attrName] = attrValue
-      
+      handler = self.__parseSingleElement(service)
       servicesList.append(handler)
       
     return servicesList
 
-
 #############################################################################
   
-  def __convertTime(self, t):
+  def __parseSingleElement(self, element, attributes = None):
+    """
+    Given a minidom element, return a dictionary of its 
+    child elements and values (as strings). 
+    """
     
-    hour = 0
-    
-    try:
-      tms = t.milliseconds
-      hour = hour + tms/36000
-    except AttributeError:
-      pass
-    try:
-      ts = t.seconds
-      hour = hour + ts/3600
-    except AttributeError:
-      pass
-    try:
-      tm = t.minutes
-      hour = hour + tm/60
-    except AttributeError:
-      pass
-    try:
-      th = t.hours
-      hour = hour + th
-    except AttributeError:
-      pass
-    try:
-      td = t.days
-      hour = hour + td * 24
-    except AttributeError:
-      pass
-    try:
-      tw = t.weeks
-      hour = hour + tw * 168
-    except AttributeError:
-      pass
-    
-    return hour
-
+    handler = {}
+    for child in element.childNodes:
+      attrName = str(child.nodeName)
+      if attributes is not None:
+        if attrName not in attributes:
+          continue
+      attrValue = str(child.childNodes[0].nodeValue)
+      handler[attrName] = attrValue
+      
+    return handler
+  
 #############################################################################
