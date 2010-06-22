@@ -163,7 +163,7 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     self.assertEqual(res, [])
 
   def test_getClientsCacheRes(self):
-    res = self.rsDB.getClientsCacheRes('XX', 'YY')
+    res = self.rsDB.getClientsCacheRes('XX', 'YY', 'ZZ')
     self.assertEqual(res, [])
 
   def test_getMonitoredsList(self):

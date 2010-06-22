@@ -1401,19 +1401,19 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
-  types_getCachedResult = [StringType, StringType]
-  def export_getCachedResult(self, name, command):
+  types_getCachedResult = [StringType, StringType, StringType]
+  def export_getCachedResult(self, name, command, value):
     """ get a cached result
     """
     try:
-      gLogger.info("ResourceStatusHandler.getCachedResult: Attempting to get %s: %s cached result" % (name, command))
+      gLogger.info("ResourceStatusHandler.getCachedResult: Attempting to get %s: %s, %s cached result" % (name, value, command))
       try:
-        res = rsDB.getClientsCacheRes(name, command)
+        res = rsDB.getClientsCacheRes(name, command, value)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
         gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.getCachedResult: got %s: %s cached result" % (name, command))
+      gLogger.info("ResourceStatusHandler.getCachedResult: got %s: %s %s cached result" % (name, value, command))
       return S_OK(res)
     except Exception:
       errorStr = where(self, self.export_getCachedResult)

@@ -151,7 +151,7 @@ class PilotsEffSimpleCached_Command(Command):
       raise InvalidRes, where(self, self.doCommand)
     
     try:
-      res = self.client.getCachedResult(name, 'PilotsEffSimpleEverySites')
+      res = self.client.getCachedResult(name, 'PilotsEffSimpleEverySites', 'PE_S')
       if res == None:
         return {'Result':'Idle'}
       if res == []:

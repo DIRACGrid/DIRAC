@@ -207,28 +207,77 @@ class GOCDBStatus_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
 
+    now = datetime.utcnow().replace(microsecond = 0, second = 0)
+    tomorrow = datetime.utcnow().replace(microsecond = 0, second = 0) + timedelta(hours = 24)
+    inAWeek = datetime.utcnow().replace(microsecond = 0, second = 0) + timedelta(days = 7)
+    
+    nowLess12h = str( now - timedelta(hours = 12) )[:-3]
+    nowPlus8h = str( now + timedelta(hours = 8) )[:-3]
+    nowPlus24h = str( now + timedelta(hours = 24) )[:-3]
+    nowPlus40h = str( now + timedelta(hours = 40) )[:-3]
+    nowPlus50h = str( now + timedelta(hours = 50) )[:-3]
+    nowPlus60h = str( now + timedelta(hours = 60) )[:-3]
+
+
     for granularity in ValidRes:
       args = (granularity, 'LCG.CERN.ch')
-      for retVal in ({'DT':'OUTAGE', 'Enddate':'', 'Type': 'OnGoing'}, 
-                     [{'DT':'OUTAGE', 'Enddate':'', 'Type': 'Programmed', 'InHours' : 8}, 
-                      {'DT':'OUTAGE', 'Enddate':'', 'Type': 'OnGoing'}]):
+      for retVal in ( {'78305448': {'SITENAME': 'UKI-LT2-QMUL', 
+                                   'FORMATED_END_DATE': nowPlus8h, 
+                                   'SEVERITY': 'OUTAGE', 
+                                   'FORMATED_START_DATE': nowLess12h, 
+                                   'DESCRIPTION': 'Electrical work in the building housing the cluster.'} 
+                      },
+                      {'78305448': {'SITENAME': 'UKI-LT2-QMUL', 
+                                   'FORMATED_END_DATE': nowPlus60h, 
+                                   'SEVERITY': 'OUTAGE', 
+                                   'FORMATED_START_DATE': nowPlus24h, 
+                                   'DESCRIPTION': 'Electrical work in the building housing the cluster 1.'}, 
+                      '78305449': {'SITENAME': 'UKI-LT2-QMUL', 
+                                   'FORMATED_END_DATE': nowLess12h, 
+                                   'SEVERITY': 'OUTAGE', 
+                                   'FORMATED_START_DATE': nowPlus8h, 
+                                   'DESCRIPTION': 'Electrical work in the building housing the cluster 2.'} 
+                      },
+                      {'78305448': {'SITENAME': 'UKI-LT2-QMUL', 
+                                   'FORMATED_END_DATE': nowPlus60h, 
+                                   'SEVERITY': 'OUTAGE', 
+                                   'FORMATED_START_DATE': nowPlus50h,
+                                   'DESCRIPTION': 'Electrical work in the building housing the cluster 1.'}, 
+                      '78305449': {'SITENAME': 'UKI-LT2-QMUL', 
+                                   'FORMATED_END_DATE': nowPlus24h, 
+                                   'SEVERITY': 'OUTAGE', 
+                                   'FORMATED_START_DATE': nowPlus8h, 
+                                   'DESCRIPTION': 'Electrical work in the building housing the cluster 2.'} 
+                      }
+                    ):
         retVal = S_OK(retVal)
         self.mock_client.getStatus.return_value = retVal  
         self.GOCDBS_C.setArgs(args)
         self.GOCDBS_C.setClient(self.mock_client)
         res = self.GOCDBS_C.doCommand()
-        self.assertEqual(res['Result']['DT'], 'OUTAGE')
+        self.assert_('OUTAGE' in res['Result']['DT'])
       self.mock_client.getStatus.return_value = {'OK':True, 
-                                                 'Value':{'DT':'OUTAGE', 'Enddate':'', 
-                                                 'Type': 'Programmed', 'InHours' : 8} }
+                                                 'Value':{'78305448': 
+                                                          {'SITENAME': 'UKI-LT2-QMUL', 
+                                                          'FORMATED_END_DATE': nowPlus40h, 
+                                                          'SEVERITY': 'OUTAGE',
+                                                          'FORMATED_START_DATE': nowPlus8h, 
+                                                          'DESCRIPTION': 'Electrical work in the building housing the cluster.'} 
+                                                 }}
       self.GOCDBS_C.setArgs(args)
       self.GOCDBS_C.setClient(self.mock_client)
       res = self.GOCDBS_C.doCommand()
       self.assertEqual(res['Result']['DT'], 'OUTAGE in 8 hours')
       self.mock_client.getStatus.return_value = {'OK':True, 
-                                                 'Value': {'DT':'AT_RISK', 'Enddate':'', 'Type': 'OnGoing'}}
+                                                 'Value':{'78305448': 
+                                                          {'SITENAME': 'UKI-LT2-QMUL', 
+                                                          'FORMATED_END_DATE': nowPlus40h, 
+                                                          'SEVERITY': 'AT_RISK',
+                                                          'FORMATED_START_DATE': nowPlus8h, 
+                                                          'DESCRIPTION': 'Electrical work in the building housing the cluster.'}
+                                                }} 
       res = self.GOCDBS_C.doCommand()
-      self.assertEqual(res['Result']['DT'], 'AT_RISK')
+      self.assert_('AT_RISK' in res['Result']['DT'])
       self.mock_client.getStatus.return_value =  {'OK':True, 'Value': None}
       res = self.GOCDBS_C.doCommand()
       self.assertEqual(res['Result']['DT'], None)
@@ -1014,9 +1063,9 @@ class JobsEffSimpleEveryOne_CommandSuccess(ClientsCommandsTestCase):
     self.mock_client.getJobsSimpleEff.return_value = {'XX':'Fair', 'YY':'Bad'}
     self.JSEO_C.setClient(self.mock_client)
     res = self.JSEO_C.doCommand(['XX', 'YY'])
-    self.assertEqual(res, {'XX':'Fair', 'YY':'Bad'})
+    self.assertEqual(res, {'XX':{'JE_S':'Fair'}, 'YY':{'JE_S':'Bad'}})
     res = self.JSEO_C.doCommand()
-    self.assertEqual(res, {'XX':'Fair', 'YY':'Bad'})
+    self.assertEqual(res, {'XX':{'JE_S':'Fair'}, 'YY':{'JE_S':'Bad'}})
 
 #############################################################################
 
@@ -1042,9 +1091,9 @@ class PilotsEffSimpleEverySites_CommandSuccess(ClientsCommandsTestCase):
     self.mock_client.getPilotsSimpleEff.return_value = {'XX':'Fair', 'YY':'Bad'}
     self.PSES_C.setClient(self.mock_client)
     res = self.PSES_C.doCommand(['XX', 'YY'])
-    self.assertEqual(res, {'XX':'Fair', 'YY':'Bad'})
+    self.assertEqual(res, {'XX':{'PE_S':'Fair'}, 'YY':{'PE_S':'Bad'}})
     res = self.PSES_C.doCommand()
-    self.assertEqual(res, {'XX':'Fair', 'YY':'Bad'})
+    self.assertEqual(res, {'XX':{'PE_S':'Fair'}, 'YY':{'PE_S':'Bad'}})
 
 #############################################################################
 
@@ -1081,7 +1130,7 @@ class TransferQualityEverySEs_CommandSuccess(ClientsCommandsTestCase):
     self.TQES_C.setRPC(mock_RPC)
     self.TQES_C.setClient(self.mock_client)
     res = self.TQES_C.doCommand(SEs)
-    self.assertEqual(res, {'CNAF-USER': 75.0, 'CERN-USER': 100.0})
+    self.assertEqual(res, {'CNAF-USER': {'TQ':75.0}, 'CERN-USER': {'TQ':100.0}})
       
 #############################################################################
 
@@ -1154,8 +1203,8 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBStatus_CommandFailure))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBInfo_CommandSuccess))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GOCDBInfo_CommandFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEff_CommandSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEff_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEff_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEff_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsStats_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsStats_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PilotsEffSimple_CommandSuccess))

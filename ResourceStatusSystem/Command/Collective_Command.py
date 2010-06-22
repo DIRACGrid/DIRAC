@@ -21,7 +21,7 @@ class JobsEffSimpleEveryOne_Command(Command):
       :attr:`sites`: list of site names (when not given, take every site)
     
     :returns:
-      {'SiteName': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}
+      {'SiteName': {'JE': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}, ...}
     """
 #    super(JobsEffSimpleEveryOne_Command, self).doCommand()
     
@@ -48,7 +48,12 @@ class JobsEffSimpleEveryOne_Command(Command):
       gLogger.exception("Exception when calling JobsClient.")
       return {}
     
-    return res
+    resToReturn = {}
+    
+    for site in res:
+      resToReturn[site] = {'JE_S': res[site]}
+    
+    return resToReturn
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
@@ -92,7 +97,13 @@ class PilotsEffSimpleEverySites_Command(Command):
       gLogger.exception("Exception when calling PilotsClient.")
       return {}
     
-    return res
+    resToReturn = {}
+    
+    for site in res:
+      resToReturn[site] = {'PE_S': res[site]}
+    
+    return resToReturn
+
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 
@@ -173,7 +184,13 @@ class TransferQualityEverySEs_Command(Command):
           continue
       meanQuality[destSE] = s/n
       
-    return meanQuality
+    resToReturn = {}
+    
+    for se in meanQuality:
+      resToReturn[se] = {'TQ': meanQuality[se]}
+    
+    return resToReturn
+
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 

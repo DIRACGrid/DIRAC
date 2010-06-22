@@ -8,16 +8,18 @@ from DIRAC.Core.Base import Script
 Script.parseCommandLine() 
 
 VO = gConfig.getValue("DIRAC/Extensions")
+if 'LHCb' in VO:
+  VO = 'LHCb'
 
 #sito = {'name':'LCG.Cagliari.it', 'siteType':'T2'} #OK
-sito = {'name':'LCG.CERN.ch', 'siteType':'T0'} #OK
-#sito = {'name':'LCG.SARA.nl', 'siteType':'T2'} #OK
+#sito = {'name':'LCG.CERN.ch', 'siteType':'T0'} #OK
+sito = {'name':'LCG.CNAF.it', 'siteType':'T1'} #OK
 servizio = {'name':'Storage@LCG.GRIDKA.de', 'siteType':'T2', 'serviceType':'Storage'} #OK
 servizio2 = {'name':'Computing@LCG.DORTMUND.de', 'siteType':'T2', 'serviceType':'Computing'} #OK
 #risorsa = {'name':'gazon.nikhef.nl', 'siteType':'T2', 'resourceType':'CE'} #OK
 #risorsa = {'name':'ce111.cern.ch', 'siteType':'T0', 'resourceType':'CE'} #OK
 #risorsa3 = {'name':'tblb01.nipne.ro', 'siteType':'T2', 'resourceType':'CE'} #OK
-risorsa = {'name':'cccreamceli01.in2p3.fr', 'siteType':'T1', 'resourceType':'CE'} #OK, ma messo CE al posto di CREAMCE
+risorsa = {'name':'hepgrid3.ph.liv.ac.uk', 'siteType':'T1', 'resourceType':'CE'} #OK, ma messo CE al posto di CREAMCE
 risorsa2 = {'name':'ccsrm.in2p3.fr', 'siteType':'T1', 'resourceType':'SE'} #OK
 risorsa3 = {'name':'lfclhcb.pic.es', 'siteType':'T1', 'resourceType':'LFC_L'} #OK
 #risorsa3 = {'name':'prod-lfc-lhcb-central.cern.ch', 'siteType':'T1', 'resourceType':'LFC_C'} #OK
@@ -48,7 +50,7 @@ for status in ValidStatus:
             )  
   res = pdp.takeDecision()
   print res
-#
+
 print "\n\n ~~~~~~~ SERVICE 1 ~~~~~~~ : %s \n " %servizio
 
 for status in ValidStatus:

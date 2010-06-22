@@ -72,7 +72,7 @@ class ResourceStatusClientSuccess(ClientsTestCase):
 
   def test_getServiceStats(self):
     self.mockRSS.getCachedResult.return_value = {'OK':True, 'Value':[]}
-    res = self.RSCli.getCachedResult('XX', 'pippo')
+    res = self.RSCli.getCachedResult('XX', 'pippo', 'ZZ')
     self.assertEqual(res, [])
   
 

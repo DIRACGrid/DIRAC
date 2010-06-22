@@ -170,7 +170,7 @@ class ResourceStatusClient:
     
 #############################################################################
 
-  def getCachedResult(self, name, commandName):
+  def getCachedResult(self, name, commandName, value):
     """ 
     Returns a cached result;
         
@@ -179,11 +179,13 @@ class ResourceStatusClient:
     
       :attr:`commandName`: string
       
+      :attr:`value`: string
+      
     :returns:
       (result, )
     """
 
-    res = self.rsS.getCachedResult(name, commandName)
+    res = self.rsS.getCachedResult(name, commandName, value)
     if not res['OK']:
       raise RSSException, where(self, self.getCachedResult) + " " + res['Message'] 
   

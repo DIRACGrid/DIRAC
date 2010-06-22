@@ -3,11 +3,14 @@
 """
 
 import urllib2
+import time
+from datetime import datetime
 
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 
 from DIRAC.ResourceStatusSystem.Command.Command import Command
+from DIRAC.ResourceStatusSystem.Utilities.Utils import convertTime
 
 #############################################################################
 
@@ -47,40 +50,40 @@ class GOCDBStatus_Command(Command):
       if not res['OK']:
         return {'Result':'Unknown'}
       res = res['Value']
-      if res is None or res == []:
+      if res is None or res == {}:
         return {'Result':{'DT':None}}
       
-      if isinstance(res, list):
+      DT_dict_result = {}
+      
+      now = datetime.utcnow().replace(microsecond = 0, second = 0)
+      
+      if len(res) > 1:
         #there's more than one DT
-        for dt in res:
-          if dt['Type'] == 'OnGoing':
-            resDT = dt
+        for dt_ID in res:
+          #looking for an ongoing one
+          startSTR = res[dt_ID]['FORMATED_START_DATE']
+          start_datetime = datetime( *time.strptime(startSTR, "%Y-%m-%d %H:%M")[0:5] )
+          if start_datetime < now:
+            resDT = res[dt_ID]
             break
         try:
           resDT
         except:
           #if I'm here, there's no OnGoing DT
-          resDT = res[0]
+          resDT = res[res.keys()[0]]
+        res = resDT
+      else:
+        res = res[res.keys()[0]]
 
-      else:
-        resDT = res
-      
-      if resDT['Type'] == 'Programmed':
-        resDT['DT'] = resDT['DT'] + " in " + str(resDT['InHours']) + ' hours'
-      else:
-        resDT['DT'] = resDT['DT']
-      if 'Type' in resDT.keys():
-        del resDT['Type']
-      if 'InHours' in resDT.keys():
-        del resDT['InHours']
-      if 'URL' in resDT.keys():
-        del resDT['URL']
-      if 'id' in resDT.keys():
-        del resDT['id']
-      if 'StartDate' in resDT.keys():
-        del resDT['StartDate']
-      
-      return {'Result':resDT}
+      DT_dict_result['DT'] = res['SEVERITY']
+      DT_dict_result['EndDate'] = res['FORMATED_END_DATE']
+      startSTR = res['FORMATED_START_DATE']
+      start_datetime = datetime( *time.strptime(startSTR, "%Y-%m-%d %H:%M")[0:5] )
+      if start_datetime > now:
+        diff = convertTime(start_datetime - now, 'hours')
+        DT_dict_result['DT'] = DT_dict_result['DT'] + " in " + str(diff) + ' hours'
+          
+      return {'Result':DT_dict_result}
         
     except urllib2.URLError:
       gLogger.error("GOCDB timed out for " + granularity + " " + name )
@@ -159,4 +162,4 @@ class GOCDBInfo_Command(Command):
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 #############################################################################
-    
+  

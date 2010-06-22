@@ -2096,7 +2096,7 @@ class ResourceStatusDB:
 #############################################################################
 
   
-  def addOrModifyClientsCacheRes(self, name, commandName, result, dateEffective = None):
+  def addOrModifyClientsCacheRes(self, name, commandName, value, result, dateEffective = None):
     """
     Add or modify a Client Result to the ClientCache table.
     
@@ -2104,6 +2104,8 @@ class ResourceStatusDB:
       :attr:`name`: string - name of the ValidRes
       
       :attr:`commandName`: string - the command name
+    
+      :attr:`value`: string - the value
     
       :attr:`result`: string - command result
       
@@ -2116,33 +2118,33 @@ class ResourceStatusDB:
     if dateEffective is None:
       dateEffective = now
     
-    req = "SELECT Name, CommandName, Result FROM ClientsCache "
-    req = req + "WHERE Name = '%s' AND CommandName = '%s'" %(name, commandName)
+    req = "SELECT Name, CommandName, Value, Result FROM ClientsCache WHERE "
+    req = req + "Name = '%s' AND CommandName = '%s' AND Value = '%s'" %(name, commandName, value)
     resQuery = self.db._query(req)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.addOrModifyClientsCacheRes) + resQuery['Message']
 
     if resQuery['Value']: 
       req = "UPDATE ClientsCache SET "
-      if resQuery['Value'][0][2] != result:
+      if resQuery['Value'][0][3] != result:
         req = req + "Result = '%s', DateEffective = '%s', " %(result, dateEffective)
       req = req + "LastCheckTime = '%s' WHERE " %(now)
-      req = req + "Name = '%s' AND CommandName = '%s'" %(name, commandName)
+      req = req + "Name = '%s' AND CommandName = '%s' AND Value = '%s'" %(name, commandName, value)
       
       resUpdate = self.db._update(req)
       if not resUpdate['OK']:
         raise RSSDBException, where(self, self.addOrModifyClientCacheRes) + resUpdate['Message']
     else:
-      req = "INSERT INTO ClientsCache (Name, CommandName, Result, DateEffective, "
+      req = "INSERT INTO ClientsCache (Name, CommandName, Value, Result, DateEffective, "
       req = req + "LastCheckTime) VALUES ('%s', '%s', " %(name, commandName)
-      req = req + "'%s', '%s', '%s')" %(result, dateEffective, now)
+      req = req + "'%s', '%s', '%s', '%s')" %(value, result, dateEffective, now)
       resUpdate = self.db._update(req)
       if not resUpdate['OK']:
         raise RSSDBException, where(self, self.addOrModifyClientCacheRes) + resUpdate['Message']
     
 #############################################################################
 
-  def getClientsCacheRes(self, name, commandName, lastCheckTime = False):
+  def getClientsCacheRes(self, name, commandName, value, lastCheckTime = False):
     """ 
     Get a Policy Result from the ClientCache table.
     
@@ -2159,7 +2161,7 @@ class ResourceStatusDB:
     if lastCheckTime:
       req = req + ", LastCheckTime"  
     req = req + " FROM ClientsCache WHERE"
-    req = req + " Name = '%s' AND CommandName = '%s'" %(name, commandName)
+    req = req + " Name = '%s' AND CommandName = '%s' AND Value = '%s'" %(name, commandName, value)
 
     resQuery = self.db._query(req)
     if not resQuery['OK']:
