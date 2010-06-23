@@ -33,6 +33,7 @@ class LSFTimeLeft:
     self.log.verbose('LSB_JOBID=%s, LSB_QUEUE=%s, LSF_BINDIR=%s' %(self.jobID,self.queue,self.bin))
 
     self.cpuLimit = None
+    self.cpuRef = None
     self.wallClockLimit = None
     self.hostNorm = None
 
@@ -46,8 +47,9 @@ class LSFTimeLeft:
     for i in xrange(len(lines)):
       if re.search('.*CPULIMIT.*',lines[i]):
         info = lines[i+1].split()
-        if len(info)>=1:
+        if len(info)>=4:
           self.cpuLimit = float(info[0])*60
+          self.cpuRef = info[3]
         else:
           self.log.warn('Problem parsing "%s" for CPU limit' % lines[i+1])
           self.cpuLimit = -1
@@ -126,6 +128,26 @@ class LSFTimeLeft:
             self.hostNorm = float(l2[i])
           except:
             pass
+      if self.hostNorm and self.cpuRef:
+        cmd = '%s/lshosts %s' % ( self.bin, self.cpuRef )
+        result = self.__runCommand(cmd)
+        if result['OK']:
+          # At CERN this command will return an error since there is no host defined 
+          # with the name of the reference Host. The Reference Host has Norm factor = 1
+          lines = result['Value'].split('\n') 
+          l1 = lines[0].split()
+          l2 = lines[1].split()
+          if len(l1) > len(l2):
+            self.log.error( cmd )
+            self.log.error( lines[0] )
+            self.log.error( lines[1] )
+            return S_ERROR( 'Can not parse LSF output' )
+          for i in range(len(l1)):
+            if l1[i] == 'cpuf':
+              try:
+                self.hostNorm = self.hostNorm / float(l2[i])
+              except:
+                pass
 
     if not cpu or not wallClock:
       return S_ERROR( 'Failed to parse LSF output' )
