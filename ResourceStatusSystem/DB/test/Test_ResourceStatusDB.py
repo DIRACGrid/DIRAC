@@ -155,7 +155,7 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
 
   def test_addOrModifyClientCacheRes(self):
     for g in ValidRes:
-      res = self.rsDB.addOrModifyClientsCacheRes(g, 'XXX', 'ppp', 'XXX')
+      res = self.rsDB.addOrModifyClientsCacheRes(g, 'XXX', 'ppp', 'XXX', 'ID')
       self.assertEqual(res, None)
 
   def test_getPolicyRes(self):
@@ -164,6 +164,10 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
 
   def test_getClientsCacheRes(self):
     res = self.rsDB.getClientsCacheRes('XX', 'YY', 'ZZ')
+    self.assertEqual(res, [])
+
+  def test_getCachedIDs(self):
+    res = self.rsDB.getCachedIDs('XX', 'YY')
     self.assertEqual(res, [])
 
   def test_getMonitoredsList(self):

@@ -5,6 +5,7 @@
 from datetime import datetime, timedelta
 
 from DIRAC import gLogger
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getDIRACSiteName
 
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
@@ -21,7 +22,7 @@ class JobsEffSimpleEveryOne_Command(Command):
       :attr:`sites`: list of site names (when not given, take every site)
     
     :returns:
-      {'SiteName': {'JE': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}, ...}
+      {'SiteName': {'JE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}, ...}
     """
 #    super(JobsEffSimpleEveryOne_Command, self).doCommand()
     
@@ -70,7 +71,7 @@ class PilotsEffSimpleEverySites_Command(Command):
       :attr:`sites`: list of site names (when not given, take every site)
     
     :returns:
-      {'SiteName': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}
+      {'SiteName':  {'PE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
     """
 #    super(PilotsEffSimpleEverySites_Command, self).doCommand()
     
@@ -123,7 +124,7 @@ class TransferQualityEverySEs_Command(Command):
       :attr:`RPCWMSAdmin`: optional RPCClient to RPCWMSAdmin
 
     :returns:
-      {'SiteName': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}
+      {'SiteName': {TQ : 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
     """
 #    super(TransferQualityEverySEs_Command, self).doCommand()
 
@@ -191,6 +192,127 @@ class TransferQualityEverySEs_Command(Command):
     
     return resToReturn
 
+
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+
+#############################################################################
+
+
+class DTEverySites_Command(Command):
+  
+  def doCommand(self, sites = None):
+    """ 
+    Returns downtimes information for all the sites in input.
+        
+    :params:
+      :attr:`sites`: list of site names (when not given, take every site)
+    
+    :returns:
+      {'SiteName': {'SEVERITY': 'OUTAGE'|'AT_RISK', 
+                    'StartDate': 'aDate', ...} ... }
+    """
+#    super(PilotsEffSimpleEverySites_Command, self).doCommand()
+    
+    if self.client is None:
+      from DIRAC.Core.LCG.GOCDBClient import GOCDBClient   
+      self.client = GOCDBClient()
+
+    if sites is None:
+      from DIRAC.Core.DISET.RPCClient import RPCClient
+      RPC = RPCClient("ResourceStatus/ResourceStatus")
+      sites = RPC.getSitesList()
+      if not sites['OK']:
+        raise RSSException, where(self, self.doCommand) + " " + res['Message'] 
+      else:
+        sites = sites['Value']
+    
+    GOC_sites = []
+    for site in sites:
+      GOC_site = getGOCSiteName(site)
+      if GOC_site['OK']:
+        GOC_sites.append(GOC_site['Value'])
+    
+    try:
+      res = self.client.getStatus('Site', GOC_sites, None, 120)
+    except:
+      gLogger.exception("Exception when calling GOCDBClient.")
+      return {}
+    
+    if not res['OK']:
+      raise RSSException, where(self, self.doCommand) + " " + res['Message']
+    else:
+      res = res['Value']
+    
+    resToReturn = {}
+    
+    for dt_ID in res:
+      dt = {}
+      dt['ID'] = dt_ID
+      dt['StartDate'] = res[dt_ID]['FORMATED_START_DATE']
+      dt['EndDate'] = res[dt_ID]['FORMATED_END_DATE']
+      dt['Severity'] = res[dt_ID]['SEVERITY']
+      dt['Description'] = res[dt_ID]['DESCRIPTION'].replace('\'', '')
+      DIRACname = getDIRACSiteName(res[dt_ID]['SITENAME'])['Value']
+      resToReturn[DIRACname] = dt
+    
+    return resToReturn
+
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+
+#############################################################################
+
+
+class DTEveryResources_Command(Command):
+  
+  def doCommand(self, resources = None):
+    """ 
+    Returns downtimes information for all the resources in input.
+        
+    :params:
+      :attr:`sites`: list of resource names (when not given, take every resource)
+    
+    :returns:
+      {'ResourceName': {'SEVERITY': 'OUTAGE'|'AT_RISK', 
+                    'StartDate': 'aDate', ...} ... }
+    """
+#    super(PilotsEffSimpleEverySites_Command, self).doCommand()
+    
+    if self.client is None:
+      from DIRAC.Core.LCG.GOCDBClient import GOCDBClient   
+      self.client = GOCDBClient()
+
+    if resources is None:
+      from DIRAC.Core.DISET.RPCClient import RPCClient
+      RPC = RPCClient("ResourceStatus/ResourceStatus")
+      resources = RPC.getResourcesList()
+      if not resources['OK']:
+        raise RSSException, where(self, self.doCommand) + " " + res['Message'] 
+      else:
+        resources = resources['Value']
+    
+    try:
+      res = self.client.getStatus('Resource', resources, None, 120)
+    except:
+      gLogger.exception("Exception when calling GOCDBClient.")
+      return {}
+    
+    if not res['OK']:
+      raise RSSException, where(self, self.doCommand) + " " + res['Message']
+    else:
+      res = res['Value']
+    
+    resToReturn = {}
+    
+    for dt_ID in res:
+      dt = {}
+      dt['ID'] = dt_ID
+      dt['StartDate'] = res[dt_ID]['FORMATED_START_DATE']
+      dt['EndDate'] = res[dt_ID]['FORMATED_END_DATE']
+      dt['Severity'] = res[dt_ID]['SEVERITY']
+      dt['Description'] = res[dt_ID]['DESCRIPTION'].replace('\'', '')
+      resToReturn[res[dt_ID]['HOSTNAME']] = dt
+    
+    return resToReturn
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
 

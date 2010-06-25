@@ -24,7 +24,8 @@ class ResourceStatusDB:
   
   def __init__(self, *args, **kwargs):
     self.db = Mock()
-    self.db._update.return_value = {'OK': True}
+    self.db._update.return_value = {'OK': True, 'Value': []}
+    self.db._query.return_value = {'OK': True, 'Value': ()}
     pass
 
   def getMonitoredsList(self, granularity, paramsList = None, siteName = None, 
@@ -173,11 +174,15 @@ class ResourceStatusDB:
   def getPolicyRes(self, name, policyName, lastCheckTime = False):
     return ('Active', 'DT:None')
   
-  def addOrModifyClientsCacheRes(self, name, commandName, value, result, dateEffective = None):
+  def addOrModifyClientsCacheRes(self, name, commandName, value, result, 
+                                 opt_ID = None, dateEffective = None):
     pass
   
   def getClientsCacheRes(self, name, commandName, value, lastCheckTime = False):
     return ('Bad', )
+  
+  def getCachedIDs(self, name, commandName):
+    return [78805473L, 78805473L, 78805473L, 78805473L]
   
   def transact2History(self, *args):
     pass

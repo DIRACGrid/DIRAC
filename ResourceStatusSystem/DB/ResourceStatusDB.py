@@ -2096,7 +2096,8 @@ class ResourceStatusDB:
 #############################################################################
 
   
-  def addOrModifyClientsCacheRes(self, name, commandName, value, result, dateEffective = None):
+  def addOrModifyClientsCacheRes(self, name, commandName, value, result, 
+                                 opt_ID = None, dateEffective = None):
     """
     Add or modify a Client Result to the ClientCache table.
     
@@ -2109,6 +2110,8 @@ class ResourceStatusDB:
     
       :attr:`result`: string - command result
       
+      :attr:`opt_ID`: string or integer - optional ID (e.g. used for downtimes)
+      
       :attr:`dateEffective`: datetime - 
       date from which the result is effective
     """
@@ -2118,8 +2121,18 @@ class ResourceStatusDB:
     if dateEffective is None:
       dateEffective = now
     
-    req = "SELECT Name, CommandName, Value, Result FROM ClientsCache WHERE "
-    req = req + "Name = '%s' AND CommandName = '%s' AND Value = '%s'" %(name, commandName, value)
+    if opt_ID is not None:
+      if isinstance(opt_ID, int):
+        opt_ID = str(opt_ID)
+    
+    req = "SELECT Name, CommandName, "
+    if opt_ID is not None:
+      req = req + "Opt_ID, "
+    req = req + "Value, Result FROM ClientsCache WHERE "
+    req = req + "Name = '%s' AND CommandName = '%s' " %(name, commandName)
+    if opt_ID is not None:
+      req = req + "AND Opt_ID = %s " %opt_ID
+    req = req + "AND Value = '%s' " %value
     resQuery = self.db._query(req)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.addOrModifyClientsCacheRes) + resQuery['Message']
@@ -2133,18 +2146,24 @@ class ResourceStatusDB:
       
       resUpdate = self.db._update(req)
       if not resUpdate['OK']:
-        raise RSSDBException, where(self, self.addOrModifyClientCacheRes) + resUpdate['Message']
+        raise RSSDBException, where(self, self.addOrModifyClientsCacheRes) + resUpdate['Message']
     else:
-      req = "INSERT INTO ClientsCache (Name, CommandName, Value, Result, DateEffective, "
+      req = "INSERT INTO ClientsCache (Name, CommandName, "
+      if opt_ID is not None:
+        req = req + "Opt_ID, "
+      req = req + "Value, Result, DateEffective, "
       req = req + "LastCheckTime) VALUES ('%s', '%s', " %(name, commandName)
+      if opt_ID is not None:
+        req = req + "%s, " %opt_ID
       req = req + "'%s', '%s', '%s', '%s')" %(value, result, dateEffective, now)
+      
       resUpdate = self.db._update(req)
       if not resUpdate['OK']:
-        raise RSSDBException, where(self, self.addOrModifyClientCacheRes) + resUpdate['Message']
+        raise RSSDBException, where(self, self.addOrModifyClientsCacheRes) + resUpdate['Message']
     
 #############################################################################
 
-  def getClientsCacheRes(self, name, commandName, value, lastCheckTime = False):
+  def getClientsCacheRes(self, name, commandName, value, opt_ID = None, lastCheckTime = False):
     """ 
     Get a Policy Result from the ClientCache table.
     
@@ -2152,6 +2171,10 @@ class ResourceStatusDB:
       :attr:`name`: string - name of the ValidRes
       
       :attr:`commandName`: string - the command name
+      
+      :attr:`value`: string - the value
+      
+      :attr:`opt_ID`: string  or integer - the optional ID (e.g. used for downtimes)
       
       :attr:`lastCheckTime`: optional - if TRUE, it will get also the 
       LastCheckTime 
@@ -2162,6 +2185,8 @@ class ResourceStatusDB:
       req = req + ", LastCheckTime"  
     req = req + " FROM ClientsCache WHERE"
     req = req + " Name = '%s' AND CommandName = '%s' AND Value = '%s'" %(name, commandName, value)
+    if opt_ID is not None:
+      req = req + " AND Opt_ID = %s" %opt_ID 
 
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -2172,6 +2197,31 @@ class ResourceStatusDB:
     return resQuery['Value'][0]
     
 
+#############################################################################
+
+  def getCachedIDs(self, name, commandName):
+    """ 
+    Get Opt_ID(s) list from the ClientCache table.
+    
+    :params:
+      :attr:`name`: string - name of the ValidRes
+      
+      :attr:`commandName`: string - the command name
+    """
+    
+    req = "SELECT DISTINCT Opt_ID FROM ClientsCache WHERE Name = " 
+    req = req + "'%s' AND CommandName = '%s'" %(name, commandName)
+
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.getCachedIDs) + resQuery['Message']
+    if not resQuery['Value']:
+      return []
+    
+    C_IDsList = [ x[0] for x in resQuery['Value'] ]
+    
+    return C_IDsList
+    
 #############################################################################
 
   def removeRow(self, granularity, name, dateEffective):

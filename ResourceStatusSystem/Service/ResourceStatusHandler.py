@@ -1401,14 +1401,16 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
-  types_getCachedResult = [StringType, StringType, StringType]
-  def export_getCachedResult(self, name, command, value):
+  types_getCachedResult = [StringType, StringType, StringType, IntType]
+  def export_getCachedResult(self, name, command, value, opt_ID):
     """ get a cached result
     """
     try:
       gLogger.info("ResourceStatusHandler.getCachedResult: Attempting to get %s: %s, %s cached result" % (name, value, command))
       try:
-        res = rsDB.getClientsCacheRes(name, command, value)
+        if opt_ID == 0:
+          opt_ID = None
+        res = rsDB.getClientsCacheRes(name, command, value, opt_ID)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -1417,6 +1419,27 @@ class ResourceStatusHandler(RequestHandler):
       return S_OK(res)
     except Exception:
       errorStr = where(self, self.export_getCachedResult)
+      gLogger.exception(errorStr)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  types_getCachedIDs = [StringType, StringType]
+  def export_getCachedIDs(self, name, command):
+    """ get a cached IDs
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getCachedIDs: Attempting to get %s: %s cached IDs" % (name, command))
+      try:
+        res = rsDB.getCachedIDs(name, command)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getCachedIDs: got %s: %s cached result" % (name, command))
+      return S_OK(res)
+    except Exception:
+      errorStr = where(self, self.export_getCachedIDs)
       gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 

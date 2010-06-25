@@ -74,9 +74,15 @@ class ClientsCacheFeeder(AgentModule):
         self.clientsInvoker.setCommand(co[1])
         res = self.clientsInvoker.doCommand()
         for key in res.keys():
-          for value in res[key].keys():
-            self.rsDB.addOrModifyClientsCacheRes(key, co[0][1].split('_')[0], 
-                                                 value, res[key][value])
+          if 'ID' in res[key].keys():
+            for value in res[key].keys():
+              if value != 'ID':
+                self.rsDB.addOrModifyClientsCacheRes(key, co[0][1].split('_')[0], 
+                                                     value, res[key][value], res[key]['ID'])
+          else:
+            for value in res[key].keys():
+              self.rsDB.addOrModifyClientsCacheRes(key, co[0][1].split('_')[0], 
+                                                   value, res[key][value])
       
       return S_OK()
     

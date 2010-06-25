@@ -189,7 +189,7 @@ class TransferQualityCached_Command(Command):
     name = self.args[1]
     
     try:
-      res = self.client.getCachedResult(name, 'TransferQualityEverySEs', 'TQ')
+      res = self.client.getCachedResult(name, 'TransferQualityEverySEs', 'TQ', 0)
       if res == []:
         return {'Result':None}
     except:

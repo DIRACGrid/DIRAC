@@ -229,8 +229,13 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     self.assert_(res['OK'])
     
   def test_export_getCachedResult(self):
-    res = self.rsh.export_getCachedResult('XX', 'YY', 'ZZ')
+    res = self.rsh.export_getCachedResult('XX', 'YY', 'ZZ', 1)
     self.assert_(res['OK'])
+        
+  def test_export_getCachedIDs(self):
+    res = self.rsh.export_getCachedIDs('XX', 'YY')
+    self.assert_(res['OK'])
+    self.assertEqual(res['Value'], [78805473L, 78805473L, 78805473L, 78805473L])
         
   def test_export_getGeneralName(self):
     for g_1 in ValidRes:

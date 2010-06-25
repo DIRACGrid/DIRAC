@@ -170,7 +170,7 @@ class ResourceStatusClient:
     
 #############################################################################
 
-  def getCachedResult(self, name, commandName, value):
+  def getCachedResult(self, name, commandName, value, opt_ID = 0):
     """ 
     Returns a cached result;
         
@@ -181,11 +181,13 @@ class ResourceStatusClient:
       
       :attr:`value`: string
       
+      :attr:`opt_ID`: optional integer
+      
     :returns:
       (result, )
     """
 
-    res = self.rsS.getCachedResult(name, commandName, value)
+    res = self.rsS.getCachedResult(name, commandName, value, opt_ID)
     if not res['OK']:
       raise RSSException, where(self, self.getCachedResult) + " " + res['Message'] 
   
@@ -194,6 +196,28 @@ class ResourceStatusClient:
 
 #############################################################################
 
+  def getCachedIDs(self, name, commandName):
+    """ 
+    Returns a cached result;
+        
+    :params:
+      :attr:`name`: string, name of site or resource
+    
+      :attr:`commandName`: string
+      
+    :returns: (e.g.)
+      [78805473L, 78805473L, 78805473L, 78805473L]
+    """
+
+    res = self.rsS.getCachedIDs(name, commandName)
+    if not res['OK']:
+      raise RSSException, where(self, self.getCachedIDs) + " " + res['Message'] 
+  
+    ID_list = [int(x) for x in res['Value']]
+  
+    return ID_list
+  
+#############################################################################
 #  
 #  def addOrModifySite(self, siteName, siteType, description, status, reason, dateEffective, operatorCode, dateEnd):
 #    try:

@@ -80,6 +80,10 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.PSES_C = PilotsEffSimpleEverySites_Command()
     self.TQES_C = TransferQualityEverySEs_Command()
     self.TQC_C = TransferQualityCached_Command()
+    self.DTES_C = DTEverySites_Command()
+    self.DTER_C = DTEveryResources_Command()
+    self.DTC_C = DTCached_Command()
+
     self.GOCDBS_C.setArgs(('Site', ))
     self.GOCDBI_C.setArgs(('Site', ))
     self.PE_C.setArgs(('Site', ))
@@ -1191,6 +1195,126 @@ class TransferQualityCached_CommandFailure(ClientsCommandsTestCase):
     
 #############################################################################
     
+class DTEverySites_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+    self.mock_client.getStatus.return_value = {'OK': True, 
+                                               'Value': {'78305448': 
+                                                          {'SITENAME': 'UKI-LT2-QMUL', 
+                                                           'FORMATED_END_DATE': '2010-06-22 19:00', 
+                                                           'SEVERITY': 'OUTAGE', 
+                                                           'FORMATED_START_DATE': '2010-06-18 09:00', 
+                                                           'DESCRIPTION': 'Electrical work in the building housing the cluster.'}, 
+                                                        '78805480': 
+                                                          {'SITENAME': 'ESA-ESRIN', 
+                                                           'FORMATED_END_DATE': '2010-06-27 12:30', 
+                                                           'SEVERITY': 'OUTAGE', 
+                                                           'FORMATED_START_DATE': '2010-06-22 05:00', 
+                                                           'DESCRIPTION': 'The CNRS CA does not support ESA-'}
+                                                        } 
+                                                }
+    self.DTES_C.setClient(self.mock_client)
+    res = self.DTES_C.doCommand(['LCG.UKI-LT2-QMUL.uk', 'CERN-PROD', 'LCG.ESA-ESRIN.it'])
+    self.assert_('LCG.UKI-LT2-QMUL.uk' in res.keys())
+    self.assert_('LCG.ESA-ESRIN.it' in res.keys())
+    self.assertEqual(res['LCG.UKI-LT2-QMUL.uk']['ID'], '78305448')
+    self.assertEqual(res['LCG.UKI-LT2-QMUL.uk']['Severity'], 'OUTAGE')
+    self.assertEqual(res['LCG.ESA-ESRIN.it']['ID'], '78805480')
+    self.assertEqual(res['LCG.ESA-ESRIN.it']['Description'], 'The CNRS CA does not support ESA-')
+
+#############################################################################
+
+class DTEverySites_CommandFailure(ClientsCommandsTestCase):
+  
+  def test_clientFail(self):
+    self.mock_client.getStatus.side_effect = Exception()
+    self.DTES_C.setClient(self.mock_client)
+    res = self.DTES_C.doCommand(['LCG.UKI-LT2-QMUL.uk', 'CERN-PROD', 'LCG.ESA-ESRIN.it'])
+    self.assertEqual(res, {})
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.DTES_C.setArgs, None)
+    self.failUnlessRaises(InvalidRes, self.DTES_C.setArgs, ('sites', ''))
+
+#############################################################################
+
+class DTEveryResources_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+    self.mock_client.getStatus.return_value = {'OK': True, 
+                                               'Value': {'78305448': 
+                                                          {'HOSTNAME': 'grid0.fe.infn.it', 
+                                                           'FORMATED_END_DATE': '2010-06-22 19:00', 
+                                                           'SEVERITY': 'OUTAGE', 
+                                                           'FORMATED_START_DATE': '2010-06-18 09:00', 
+                                                           'DESCRIPTION': 'Electrical work in the building housing the cluster.'}, 
+                                                        '78805480': 
+                                                          {'HOSTNAME': 'ce112.cern.ch', 
+                                                           'FORMATED_END_DATE': '2010-06-27 12:30', 
+                                                           'SEVERITY': 'OUTAGE', 
+                                                           'FORMATED_START_DATE': '2010-06-22 05:00', 
+                                                           'DESCRIPTION': 'The CNRS CA does not support ESA-'}
+                                                        } 
+                                                }
+    self.DTER_C.setClient(self.mock_client)
+    res = self.DTER_C.doCommand(['grid0.fe.infn.it', 'ce113.cern.ch', 'ce112.cern.ch'])
+    self.assert_('grid0.fe.infn.it' in res.keys())
+    self.assert_('ce112.cern.ch' in res.keys())
+    self.assertEqual(res['grid0.fe.infn.it']['ID'], '78305448')
+    self.assertEqual(res['grid0.fe.infn.it']['Severity'], 'OUTAGE')
+    self.assertEqual(res['ce112.cern.ch']['ID'], '78805480')
+    self.assertEqual(res['ce112.cern.ch']['Description'], 'The CNRS CA does not support ESA-')
+
+#############################################################################
+
+class DTEveryResources_CommandFailure(ClientsCommandsTestCase):
+  
+  def test_clientFail(self):
+    self.mock_client.getStatus.side_effect = Exception()
+    self.DTER_C.setClient(self.mock_client)
+    res = self.DTER_C.doCommand(['grid0.fe.infn.it', 'ce113.cern.ch', 'ce112.cern.ch'])
+    self.assertEqual(res, {})
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.DTER_C.setArgs, None)
+    self.failUnlessRaises(InvalidRes, self.DTER_C.setArgs, ('resources', ''))
+
+#############################################################################
+
+#class DTCached_CommandSuccess(ClientsCommandsTestCase):
+#  
+#  def test_doCommand(self):
+#
+#    for g in ('Site', 'Resource'):
+#      self.mock_client.getCachedIDs.return_value = ((78805473L,), )
+#      self.mock_client.getCachedResult.return_value = (('AT_RISK',),)
+#      self.DTC_C.setClient(self.mock_client)
+#      self.DTC_C.setArgs((g, 'XX'))
+#      self.DTC_C.doCommand()
+#      
+#      
+#      self.mock_client.getCachedIDs = ((78805473L,), (78805481L,), (78805480L,), (78705450L,))
+#      self.mock_client.getCachedResult = (('AT_RISK',),)
+    
+
+##############################################################################
+#   
+#class DTSitesCached_CommandFailure(ClientsCommandsTestCase):
+#  
+#  def test_clientFail(self):
+#    self.mock_client.getCachedResult.side_effect = Exception()
+#    for pe in ('100.0', '75.0', '0.0'):
+#      self.TQC_C.setArgs(('StorageElement', 'XX'))
+#      self.TQC_C.setClient(self.mock_client)
+#      res = self.TQC_C.doCommand()
+#      self.assertEqual(res['Result'], 'Unknown')
+#    
+#  def test_badArgs(self):
+#    self.failUnlessRaises(InvalidRes, self.TQC_C.setArgs, ('sites', ''))
+#     
+##############################################################################
+
+
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ClientsCommandsTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(CommandSuccess))
@@ -1253,4 +1377,10 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQualityEverySEs_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQualityCached_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQualityCached_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DTEverySites_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DTEverySites_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DTEveryResources_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DTEveryResources_CommandFailure))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DTCached_CommandSuccess))
+#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DTCached_CommandFailure))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

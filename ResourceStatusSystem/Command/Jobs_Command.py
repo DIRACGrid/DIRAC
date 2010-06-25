@@ -195,7 +195,7 @@ class JobsEffSimpleCached_Command(Command):
       raise InvalidRes, where(self, self.doCommand)
     
     try:
-      res = self.client.getCachedResult(name, 'JobsEffSimpleEveryOne', 'JE_S')
+      res = self.client.getCachedResult(name, 'JobsEffSimpleEveryOne', 'JE_S', 0)
       if res == None:
         return {'Result':'Idle'}
       if res == []:
