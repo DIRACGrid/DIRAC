@@ -67,6 +67,35 @@ class StorageManagerHandler(RequestHandler):
       gLogger.error('getTaskSummary: Failed to get task summary',res['Message'])
     return res
 
+  types_getTasks = [DictType]
+  def export_getTasks(self, condDict, older=None, newer=None, timeStamp='LastUpdate', orderAttribute=None, limit=None):
+    """ Get the replcias known to the DB. """
+    res = storageDB.getTasks(condDict=condDict,older=older,newer=newer,timeStamp=timeStamp,orderAttribute=orderAttribute,limit=limit) 
+    if not res['OK']:
+      gLogger.error('getTasks: Failed to get Cache replicas',res['Message'])
+    return res
+
+  types_getCacheReplicas = [DictType]
+  def export_getCacheReplicas(self, condDict, older=None, newer=None, timeStamp='LastUpdate', orderAttribute=None, limit=None):
+    """ Get the replcias known to the DB. """
+    res = storageDB.getCacheReplicas(condDict=condDict,older=older,newer=newer,timeStamp=timeStamp,orderAttribute=orderAttribute,limit=limit) 
+    if not res['OK']:
+      gLogger.error('getCacheReplicas: Failed to get Cache replicas',res['Message'])
+    return res
+
+  types_getStageRequests = [DictType]
+  def export_getStageRequests(self, condDict, older=None, newer=None, timeStamp='StageRequestSubmitTime', orderAttribute=None, limit=None):
+    """ Get the replcias known to the DB. """
+    res = storageDB.getStageRequests(condDict=condDict,older=older,newer=newer,timeStamp=timeStamp,orderAttribute=orderAttribute,limit=limit) 
+    if not res['OK']:
+      gLogger.error('getStageRequests: Failed to get Cache replicas',res['Message'])
+    return res
+  #                                                                    
+  #                                                Monitoring methods    
+  #                                                                    
+  ######################################################################
+
+
   ####################################################################
   #
   # setRequest is used to initially insert tasks and their associated files. Leaves files in New status.
@@ -127,33 +156,12 @@ class StorageManagerHandler(RequestHandler):
   # The state transition of the Replicas from StageSubmitted->Staged
   #
 
-  types_getStageSubmittedReplicas = []
-  def export_getStageSubmittedReplicas(self):
-    """ This method obtains the replica metadata and the stage requestID for the replicas in StageSubmitted status """
-    res = storageDB.getStageSubmittedReplicas()
-    if not res['OK']:
-      gLogger.error('getStageSubmittedReplicas: Failed to obtain StageSubmitted replicas',res['Message'])
-    return res
-
   types_setStageComplete = [ListType]
   def export_setStageComplete(self,replicaIDs):
     """ This method updates the status of the stage request for the supplied replica IDs """
     res = storageDB.setStageComplete(replicaIDs)
     if not res['OK']:
       gLogger.error('setStageComplete: Failed to set StageRequest complete',res['Message'])
-    return res
-
-  ####################################################################
-  #
-  # The state transition of the Replicas from Staged->Pinned
-  #
-
-  types_getStagedReplicas = []
-  def export_getStagedReplicas(self):
-    """ This method obtains the replicas and SRM request information which are in the Staged status """
-    res = storageDB.getStagedReplicas()
-    if not res['OK']:
-      gLogger.error('getStagedReplicas: Failed to obtain Staged replicas',res['Message'])
     return res
 
   ####################################################################
@@ -208,7 +216,7 @@ class StorageManagerHandler(RequestHandler):
 
   ####################################################################
   #
-  # General methods for obtaining Tasks, Replicas with supplied state
+  # Methods for obtaining Tasks, Replicas with supplied state
   #
 
   types_getTasksWithStatus = [StringType]
@@ -222,7 +230,24 @@ class StorageManagerHandler(RequestHandler):
   types_getReplicasWithStatus = [StringType]
   def export_getReplicasWithStatus(self,status):
     """ This method allows to retrieve replicas with the supplied status """
-    res = storageDB.getReplicasWithStatus(status)
+    res = storageDB.getCacheReplicas({'Status':status})
     if not res['OK']:
       gLogger.error('getReplicasWithStatus: Failed to get replicas with %s status' % status,res['Message'])
     return res
+
+  types_getStageSubmittedReplicas = []
+  def export_getStageSubmittedReplicas(self):
+    """ This method obtains the replica metadata and the stage requestID for the replicas in StageSubmitted status """
+    res = storageDB.getCacheReplicas({'Status':'StageSubmitted'})
+    if not res['OK']:
+      gLogger.error('getStageSubmittedReplicas: Failed to obtain StageSubmitted replicas',res['Message'])
+    return res
+
+  types_getStagedReplicas = []
+  def export_getStagedReplicas(self):
+    """ This method obtains the replicas and SRM request information which are in the Staged status """
+    res = storageDB.getCacheReplicas({'Status':'Staged'})
+    if not res['OK']:
+      gLogger.error('getStagedReplicas: Failed to obtain Staged replicas',res['Message'])
+    return res
+
