@@ -217,8 +217,7 @@ for o, v in optList:
   elif o == '-t' or o == '--test':
     cliParams.dryRun = True
   elif o == '-u' or o == '--url':
-    #TODO
-    pass
+    installOpts.append( '-u "%s"' % v )
   elif o == '-N' or o == '--Name':
     configureOpts.append( '-N "%s"' % v )
     cliParams.ceName = v
