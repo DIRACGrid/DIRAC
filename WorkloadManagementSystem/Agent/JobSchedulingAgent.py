@@ -39,7 +39,7 @@ class JobSchedulingAgent( OptimizerModule ):
     self.stagingMinorStatus = self.am_getOption( 'StagingMinorStatus', 'Request Sent' )
     self.newStaging = self.am_getOption( 'NewStaging', True )
     self.stagerClient = StagerClient( True )
-    self.rescheduleDelaysList = self.am_getOption( 'RescheduleDelays', [60,180,300,600] )
+    self.rescheduleDelaysList = self.am_getOption( 'RescheduleDelays', [60, 180, 300, 600] )
     self.maxRescheduleDelay = self.rescheduleDelaysList[-1]
 
     return S_OK()
@@ -49,24 +49,24 @@ class JobSchedulingAgent( OptimizerModule ):
     """This method controls the checking of the job.
     """
     self.log.verbose( 'Job %s will be processed' % ( job ) )
-    
+
     # Check if the job was recently rescheduled
-    result = self.jobDB.getJobAttributes(job,['RescheduleCounter','RescheduleTime','ApplicationStatus'])
+    result = self.jobDB.getJobAttributes( job, ['RescheduleCounter', 'RescheduleTime', 'ApplicationStatus'] )
     if not result['OK']:
       self.log.error( result['Message'] )
-      return S_ERROR('Can not get job attributes from JobDB')
+      return S_ERROR( 'Can not get job attributes from JobDB' )
     jobDict = result['Value']
-    reCounter = int(jobDict['RescheduleCounter'])
+    reCounter = int( jobDict['RescheduleCounter'] )
     if reCounter != 0 :
-      reTime = fromString(jobDict['RescheduleTime'])
-      delta = toEpoch() - toEpoch(reTime)
+      reTime = fromString( jobDict['RescheduleTime'] )
+      delta = toEpoch() - toEpoch( reTime )
       delay = self.maxRescheduleDelay
-      if reCounter <= len(self.rescheduleDelaysList):
-        delay = self.rescheduleDelaysList[reCounter-1]
+      if reCounter <= len( self.rescheduleDelaysList ):
+        delay = self.rescheduleDelaysList[reCounter - 1]
       if delta < delay:
-        if jobDict['ApplicationStatus'].find('On Hold: after rescheduling') == -1:
-          result = self.jobDB.setJobStatus(job, application='On Hold: after rescheduling #%d' % reCounter)
-        return S_OK()     
+        if jobDict['ApplicationStatus'].find( 'On Hold: after rescheduling' ) == -1:
+          result = self.jobDB.setJobStatus( job, application = 'On Hold: after rescheduling #%d' % reCounter )
+        return S_OK()
 
     # First, get Site and BannedSites from the Job
 
@@ -192,7 +192,7 @@ class JobSchedulingAgent( OptimizerModule ):
     """
     siteList = list( sites )
     if activeSites:
-      for site in siteList:
+      for site in sites:
         if site not in activeSites:
           siteList.remove( site )
     for site in bannedSites:
