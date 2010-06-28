@@ -55,7 +55,7 @@ class NotificationClient:
 
       self.log.warn( 'Could not send mail with the following message:\n%s\n will attempt to send via NotificationService' % result['Message'] )
 
-    notify = RPCClient( 'Framework/Notification', useCertificates = False, timeout = 120 )
+    notify = RPCClient( 'Framework/Notification', timeout = 120 )
     result = notify.sendMail( address, subject, body, str( fromAddress ) )
     if not result['OK']:
       self.log.error( 'Could not send mail via central Notification service', result['Message'] )
