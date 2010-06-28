@@ -322,7 +322,7 @@ class PEP:
             
             mailMessage = mailMessage + "Setup = %s\n" %setup
 
-            nc.sendMail(gConfig.getValue("Security/Users/%s/email" %user), 
+            nc.sendMail(gConfig.getValue("Registry/Users/%s/Email" %user), 
                         '%s: %s' %(self.__name, res['Status']), mailMessage)
       
 #          for alarm in Configurations.alarms_list:

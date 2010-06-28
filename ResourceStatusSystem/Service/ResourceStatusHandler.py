@@ -1410,7 +1410,9 @@ class ResourceStatusHandler(RequestHandler):
         if opt_ID == 0:
           opt_ID = None
         res = rsDB.getClientsCacheStuff(['Result'], name = name, commandName = command, 
-                                        value = value, opt_ID = opt_ID)[0]
+                                        value = value, opt_ID = opt_ID)
+        if not (res == []):
+          res = res[0]  
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -1486,108 +1488,117 @@ class ResourceStatusHandler(RequestHandler):
           }
         }
     """
-#    try:
-    gLogger.info("ResourceStatusHandler.getDownTimesWeb: Attempting to get down times list")
     try:
+      gLogger.info("ResourceStatusHandler.getDownTimesWeb: Attempting to get down times list")
       try:
-        granularity = selectDict['Granularity']
-      except KeyError:
-        granularity = []
-        
-      if not isinstance(granularity, list):
-        granularity = [granularity]
-      commands = []
-      if granularity == []:
-        commands = ['DTEverySites', 'DTEveryResources']
-      elif 'Site' in granularity:
-        commands.append('DTEverySites')
-      elif 'Resource' in granularity:
-        commands.append('DTEveryResources')
-
-      try:
-        severity = selectDict['Severity']
-      except KeyError:
-        severity = []
-      if not isinstance(severity, list):
-        severity = [severity]
-
-      res = rsDB.getClientsCacheStuff(['Name', 'Opt_ID', 'Value', 'Result'], 
-                                      commandName = commands)
-      records = []
-      
-      if not ( res == () ):
-        made_IDs = []
-        
-        for dt_tuple in res:
-          considered_ID = dt_tuple[1]
-          if considered_ID not in made_IDs:
-            name = dt_tuple[0]
-            if dt_tuple[4] == 'DTEverySites':
-              granularity = 'Site'
-            elif dt_tuple[4] == 'DTEveryResources':
-              granularity = 'Resource'
-            toTake = ['Severity', 'StartDate', 'EndDate', 'Description']
-            
-            for dt_t in res:
-              if considered_ID == dt_t[1]:
-                if toTake != []:
-                  if dt_t[2] in toTake:
-                    if dt_t[2] == 'Severity':
-                      severity = dt_t[3]
-                      toTake.remove('Severity')
-                    if dt_t[2] == 'StartDate':
-                      startDate = dt_t[3]
-                      toTake.remove('StartDate')
-                    if dt_t[2] == 'EndDate':
-                      endDate = dt_t[3]
-                      toTake.remove('EndDate')
-                    if dt_t[2] == 'Description':
-                      description = dt_t[3]
-                      toTake.remove('Description')
-            
-            now = datetime.utcnow().replace(microsecond = 0, second = 0)
-            startDate_datetime = datetime.strptime(startDate, '%Y-%m-%d %H:%M')
-            endDate_datetime = datetime.strptime(endDate, '%Y-%m-%d %H:%M')
-            
-            if endDate_datetime < now:
-              when = 'Finished'
-            else:
-              if startDate_datetime < now:
-                when = 'OnGoing'
-              else:
-                hours = str(convertTime(startDate_datetime - now, 'hours'))
-                when = 'In ' + hours + ' hours.'
-            
-            records.append([ considered_ID, granularity, name, severity,
-                             when, startDate, endDate, description])
-            made_IDs.append(considered_ID)
-      
-      
-      paramNames = ['ID', 'Granularity', 'Name', 'Severity', 'When', 'Start', 'End', 'Description']
-  
-      finalDict = {}
-      finalDict['TotalRecords'] = len(records)
-      finalDict['ParameterNames'] = paramNames
-  
-      # Return all the records if maxItems == 0 or the specified number otherwise
-      if maxItems:
-        finalDict['Records'] = records[startItem:startItem+maxItems]
-      else:
-        finalDict['Records'] = records
-  
-      finalDict['Extras'] = None
+        try:
+          granularity = selectDict['Granularity']
+        except KeyError:
+          granularity = []
           
-      
-    except RSSDBException, x:
-      gLogger.error(whoRaised(x))
-    except RSSException, x:
-      gLogger.error(whoRaised(x))
-    gLogger.info("ResourceStatusHandler.getDownTimesWeb: got DT list")
-    return S_OK(finalDict)
-#    except Exception:
-#      errorStr = where(self, self.export_getDownTimesWeb)
-#      gLogger.exception(errorStr)
-#      return S_ERROR(errorStr)
+        if not isinstance(granularity, list):
+          granularity = [granularity]
+        commands = []
+        if granularity == []:
+          commands = ['DTEverySites', 'DTEveryResources']
+        elif 'Site' in granularity:
+          commands.append('DTEverySites')
+        elif 'Resource' in granularity:
+          commands.append('DTEveryResources')
+  
+        try:
+          severity = selectDict['Severity']
+        except KeyError:
+          severity = []
+        if not isinstance(severity, list):
+          severity = [severity]
+        if severity == []:
+          severity = ['AT_RISK', 'OUTAGE']
+  
+        res = rsDB.getClientsCacheStuff(['Name', 'Opt_ID', 'Value', 'Result', 'CommandName'], 
+                                        commandName = commands)
+        records = []
+        
+        if not ( res == () ):
+          made_IDs = []
+          
+          for dt_tuple in res:
+            considered_ID = dt_tuple[1]
+            if considered_ID not in made_IDs:
+              name = dt_tuple[0]
+              if dt_tuple[4] == 'DTEverySites':
+                granularity = 'Site'
+              elif dt_tuple[4] == 'DTEveryResources':
+                granularity = 'Resource'
+              toTake = ['Severity', 'StartDate', 'EndDate', 'Description']
+              
+              for dt_t in res:
+                if considered_ID == dt_t[1]:
+                  if toTake != []:
+                    if dt_t[2] in toTake:
+                      if dt_t[2] == 'Severity':
+                        sev = dt_t[3]
+                        toTake.remove('Severity')
+                      if dt_t[2] == 'StartDate':
+                        startDate = dt_t[3]
+                        toTake.remove('StartDate')
+                      if dt_t[2] == 'EndDate':
+                        endDate = dt_t[3]
+                        toTake.remove('EndDate')
+                      if dt_t[2] == 'Description':
+                        description = dt_t[3]
+                        toTake.remove('Description')
+              
+              now = datetime.utcnow().replace(microsecond = 0, second = 0)
+              startDate_datetime = datetime.strptime(startDate, '%Y-%m-%d %H:%M')
+              endDate_datetime = datetime.strptime(endDate, '%Y-%m-%d %H:%M')
+              
+              if endDate_datetime < now:
+                when = 'Finished'
+              else:
+                if startDate_datetime < now:
+                  when = 'OnGoing'
+                else:
+                  hours = str(convertTime(startDate_datetime - now, 'hours'))
+                  when = 'In ' + hours + ' hours.'
+              
+              if sev in severity:
+                records.append([ considered_ID, granularity, name, sev,
+                                when, startDate, endDate, description ])
+              
+              made_IDs.append(considered_ID)
+        
+        # adding downtime links to the GOC DB page in Extras
+        DT_links = []
+        for record in records:
+          DT_links.append({ record[0] : 
+                           "https://goc.gridops.org/downtime/list?id=" + str(record[0]) } )
+          
+        paramNames = ['ID', 'Granularity', 'Name', 'Severity', 'When', 'Start', 'End', 'Description']
+    
+        finalDict = {}
+        finalDict['TotalRecords'] = len(records)
+        finalDict['ParameterNames'] = paramNames
+    
+        # Return all the records if maxItems == 0 or the specified number otherwise
+        if maxItems:
+          finalDict['Records'] = records[startItem:startItem+maxItems]
+        else:
+          finalDict['Records'] = records
+    
+        finalDict['Extras'] = DT_links
+            
+        
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getDownTimesWeb: got DT list")
+      return S_OK(finalDict)
+    except Exception:
+      errorStr = where(self, self.export_getDownTimesWeb)
+      gLogger.exception(errorStr)
+      return S_ERROR(errorStr)
 
 #############################################################################
 
