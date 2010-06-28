@@ -69,7 +69,7 @@ class NotificationClient:
     """ Send an SMS with body to the specified DIRAC user name.
     """
     self.log.verbose( 'Received signal to send the following SMS to %s:\n%s' % ( userName, body ) )
-    notify = RPCClient( 'Framework/Notification', useCertificates = False, timeout = 120 )
+    notify = RPCClient( 'Framework/Notification', timeout = 120 )
     result = notify.sendSMS( userName, body, str( fromAddress ) )
     if not result['OK']:
       self.log.error( 'Could not send SMS via central Notification service', result['Message'] )
