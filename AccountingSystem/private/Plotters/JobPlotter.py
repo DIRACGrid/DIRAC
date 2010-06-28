@@ -124,7 +124,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "days" }
-    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
+    return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportCumulativeNumberOfJobs( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
@@ -180,7 +180,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "jobs"  }
-    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
+    return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportTotalNumberOfJobs( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s)",
@@ -229,7 +229,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "MB/sec"  }
-    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
+    return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportInputSandboxSize( self, reportRequest ):
     return self.__reportFieldSizeinMB( reportRequest, ( "InputSandBoxSize", "Input sand box size" ) )
@@ -284,7 +284,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "MB" }
-    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
+    return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportInputDataFiles( self, reportRequest ):
     return self.__reportDataFiles( reportRequest, ( "InputDataFiles", "Input files" ) )
@@ -321,7 +321,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : "files" }
-    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
+    return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportTotalCPUUsed( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s)/86400",
