@@ -162,12 +162,26 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     res = self.rsDB.getPolicyRes('XX', 'YY')
     self.assertEqual(res, [])
 
-  def test_getClientsCacheRes(self):
-    res = self.rsDB.getClientsCacheRes('XX', 'YY', 'ZZ')
+  def test_getClientsCacheStuff(self):
+    res = self.rsDB.getClientsCacheStuff()
     self.assertEqual(res, [])
-
-  def test_getCachedIDs(self):
-    res = self.rsDB.getCachedIDs('XX', 'YY')
+    res = self.rsDB.getClientsCacheStuff('XX')
+    self.assertEqual(res, [])
+    res = self.rsDB.getClientsCacheStuff(None, 'YY')
+    self.assertEqual(res, [])
+    res = self.rsDB.getClientsCacheStuff(None, None, 'ZZ')
+    self.assertEqual(res, [])
+    res = self.rsDB.getClientsCacheStuff('XX', None, 'ZZ')
+    self.assertEqual(res, [])
+    res = self.rsDB.getClientsCacheStuff('XX', 'YY', None)
+    self.assertEqual(res, [])
+    res = self.rsDB.getClientsCacheStuff(None, 'XX', 'YY')
+    self.assertEqual(res, [])
+    res = self.rsDB.getClientsCacheStuff('XX', 'YY', None, 'XX', 'YY', None)
+    self.assertEqual(res, [])
+    res = self.rsDB.getClientsCacheStuff(None, 'XX', 'YY', 'XX', 'YY', None, 'ZZ')
+    self.assertEqual(res, [])
+    res = self.rsDB.getClientsCacheStuff(None, 'XX', 'YY', ['XX', 'YY'], None, ['ZZ'])
     self.assertEqual(res, [])
 
   def test_getMonitoredsList(self):

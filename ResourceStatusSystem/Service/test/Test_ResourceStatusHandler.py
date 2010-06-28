@@ -225,7 +225,7 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
 
   def test_export_getDownTimesWeb(self):
     res = self.rsh.export_getDownTimesWeb({}, [], 0, 500)
-#    print res
+    print res
     self.assert_(res['OK'])
     
   def test_export_getCachedResult(self):
@@ -235,7 +235,6 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
   def test_export_getCachedIDs(self):
     res = self.rsh.export_getCachedIDs('XX', 'YY')
     self.assert_(res['OK'])
-    self.assertEqual(res['Value'], [78805473L, 78805473L, 78805473L, 78805473L])
         
   def test_export_getGeneralName(self):
     for g_1 in ValidRes:

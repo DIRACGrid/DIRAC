@@ -222,7 +222,7 @@ class DTEverySites_Command(Command):
       RPC = RPCClient("ResourceStatus/ResourceStatus")
       sites = RPC.getSitesList()
       if not sites['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + res['Message'] 
+        raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:
         sites = sites['Value']
     
@@ -242,6 +242,9 @@ class DTEverySites_Command(Command):
       raise RSSException, where(self, self.doCommand) + " " + res['Message']
     else:
       res = res['Value']
+    
+    if res == None:
+      return {}
     
     resToReturn = {}
     
@@ -286,7 +289,7 @@ class DTEveryResources_Command(Command):
       RPC = RPCClient("ResourceStatus/ResourceStatus")
       resources = RPC.getResourcesList()
       if not resources['OK']:
-        raise RSSException, where(self, self.doCommand) + " " + res['Message'] 
+        raise RSSException, where(self, self.doCommand) + " " + resources['Message'] 
       else:
         resources = resources['Value']
     
@@ -300,6 +303,9 @@ class DTEveryResources_Command(Command):
       raise RSSException, where(self, self.doCommand) + " " + res['Message']
     else:
       res = res['Value']
+    
+    if res == None:
+      return {}
     
     resToReturn = {}
     

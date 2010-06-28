@@ -8,7 +8,6 @@
 
 """
 
-
 from datetime import datetime, timedelta
 
 from types import *
@@ -1410,7 +1409,8 @@ class ResourceStatusHandler(RequestHandler):
       try:
         if opt_ID == 0:
           opt_ID = None
-        res = rsDB.getClientsCacheRes(name, command, value, opt_ID)
+        res = rsDB.getClientsCacheStuff(['Result'], name = name, commandName = command, 
+                                        value = value, opt_ID = opt_ID)[0]
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -1431,13 +1431,17 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.getCachedIDs: Attempting to get %s: %s cached IDs" % (name, command))
       try:
-        res = rsDB.getCachedIDs(name, command)
+        dt_ID = []
+        res = rsDB.getClientsCacheStuff('opt_ID', name = name, commandName = command)
+        for tuple_dt_ID in res:
+          if tuple_dt_ID[0] not in dt_ID:
+            dt_ID.append(tuple_dt_ID[0])
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
         gLogger.error(whoRaised(x))
       gLogger.info("ResourceStatusHandler.getCachedIDs: got %s: %s cached result" % (name, command))
-      return S_OK(res)
+      return S_OK(dt_ID)
     except Exception:
       errorStr = where(self, self.export_getCachedIDs)
       gLogger.exception(errorStr)
@@ -1482,20 +1486,108 @@ class ResourceStatusHandler(RequestHandler):
           }
         }
     """
+#    try:
+    gLogger.info("ResourceStatusHandler.getDownTimesWeb: Attempting to get down times list")
     try:
-      gLogger.info("ResourceStatusHandler.getDownTimesWeb: Attempting to get down times list")
       try:
-        res = rsDB.getDownTimesWeb(selectDict, sortList, startItem, maxItems)
-      except RSSDBException, x:
-        gLogger.error(whoRaised(x))
-      except RSSException, x:
-        gLogger.error(whoRaised(x))
-      gLogger.info("ResourceStatusHandler.getDownTimesWeb: got DT list")
-      return S_OK(res)
-    except Exception:
-      errorStr = where(self, self.export_getDownTimesWeb)
-      gLogger.exception(errorStr)
-      return S_ERROR(errorStr)
+        granularity = selectDict['Granularity']
+      except KeyError:
+        granularity = []
+        
+      if not isinstance(granularity, list):
+        granularity = [granularity]
+      commands = []
+      if granularity == []:
+        commands = ['DTEverySites', 'DTEveryResources']
+      elif 'Site' in granularity:
+        commands.append('DTEverySites')
+      elif 'Resource' in granularity:
+        commands.append('DTEveryResources')
+
+      try:
+        severity = selectDict['Severity']
+      except KeyError:
+        severity = []
+      if not isinstance(severity, list):
+        severity = [severity]
+
+      res = rsDB.getClientsCacheStuff(['Name', 'Opt_ID', 'Value', 'Result'], 
+                                      commandName = commands)
+      records = []
+      
+      if not ( res == () ):
+        made_IDs = []
+        
+        for dt_tuple in res:
+          considered_ID = dt_tuple[1]
+          if considered_ID not in made_IDs:
+            name = dt_tuple[0]
+            if dt_tuple[4] == 'DTEverySites':
+              granularity = 'Site'
+            elif dt_tuple[4] == 'DTEveryResources':
+              granularity = 'Resource'
+            toTake = ['Severity', 'StartDate', 'EndDate', 'Description']
+            
+            for dt_t in res:
+              if considered_ID == dt_t[1]:
+                if toTake != []:
+                  if dt_t[2] in toTake:
+                    if dt_t[2] == 'Severity':
+                      severity = dt_t[3]
+                      toTake.remove('Severity')
+                    if dt_t[2] == 'StartDate':
+                      startDate = dt_t[3]
+                      toTake.remove('StartDate')
+                    if dt_t[2] == 'EndDate':
+                      endDate = dt_t[3]
+                      toTake.remove('EndDate')
+                    if dt_t[2] == 'Description':
+                      description = dt_t[3]
+                      toTake.remove('Description')
+            
+            now = datetime.utcnow().replace(microsecond = 0, second = 0)
+            startDate_datetime = datetime.strptime(startDate, '%Y-%m-%d %H:%M')
+            endDate_datetime = datetime.strptime(endDate, '%Y-%m-%d %H:%M')
+            
+            if endDate_datetime < now:
+              when = 'Finished'
+            else:
+              if startDate_datetime < now:
+                when = 'OnGoing'
+              else:
+                hours = str(convertTime(startDate_datetime - now, 'hours'))
+                when = 'In ' + hours + ' hours.'
+            
+            records.append([ considered_ID, granularity, name, severity,
+                             when, startDate, endDate, description])
+            made_IDs.append(considered_ID)
+      
+      
+      paramNames = ['ID', 'Granularity', 'Name', 'Severity', 'When', 'Start', 'End', 'Description']
+  
+      finalDict = {}
+      finalDict['TotalRecords'] = len(records)
+      finalDict['ParameterNames'] = paramNames
+  
+      # Return all the records if maxItems == 0 or the specified number otherwise
+      if maxItems:
+        finalDict['Records'] = records[startItem:startItem+maxItems]
+      else:
+        finalDict['Records'] = records
+  
+      finalDict['Extras'] = None
+          
+      
+    except RSSDBException, x:
+      gLogger.error(whoRaised(x))
+    except RSSException, x:
+      gLogger.error(whoRaised(x))
+    gLogger.info("ResourceStatusHandler.getDownTimesWeb: got DT list")
+    return S_OK(finalDict)
+#    except Exception:
+#      errorStr = where(self, self.export_getDownTimesWeb)
+#      gLogger.exception(errorStr)
+#      return S_ERROR(errorStr)
 
 #############################################################################
 

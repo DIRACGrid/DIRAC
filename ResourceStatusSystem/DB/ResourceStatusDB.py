@@ -2163,73 +2163,115 @@ class ResourceStatusDB:
     
 #############################################################################
 
-  def getClientsCacheRes(self, name, commandName, value, opt_ID = None, lastCheckTime = False):
-    """ 
-    Get a Policy Result from the ClientCache table.
+  def getClientsCacheStuff(self, paramsList = None, ccID = None, name = None, commandName = None,
+                           opt_ID = None, value = None, result = None, dateEffective = None, 
+                           lastCheckTime = None):
+    """
+    Generic function to get values from the ClientsCache table.
     
     :params:
-      :attr:`name`: string - name of the ValidRes
-      
-      :attr:`commandName`: string - the command name
-      
-      :attr:`value`: string - the value
-      
-      :attr:`opt_ID`: string  or integer - the optional ID (e.g. used for downtimes)
-      
-      :attr:`lastCheckTime`: optional - if TRUE, it will get also the 
-      LastCheckTime 
+      :attr:`paramsList` - string or list of strings
+    
+      :attr:`ccID` - integer or list of integers
+    
+      :attr:`name` - string or list of strings
+    
+      :attr:`commandName` - string or list of strings
+    
+      :attr:`opt_ID` - string or list of strings
+    
+      :attr:`value` - string or list of strings
+    
+      :attr:`result` - string or list of strings
+    
+      :attr:`dateEffective` - string or list of strings
+    
+      :attr:`lastCheckTime` - string or list of strings
     """
     
-    req = "SELECT Result"
-    if lastCheckTime:
-      req = req + ", LastCheckTime"  
-    req = req + " FROM ClientsCache WHERE"
-    req = req + " Name = '%s' AND CommandName = '%s' AND Value = '%s'" %(name, commandName, value)
+    if (paramsList == None or paramsList == []):
+      params = "ccID, Name, CommandName, Opt_ID, Value, Result, DateEffective "
+    else:
+      if type(paramsList) is not type([]):
+        paramsList = [paramsList]
+      params = ','.join([x.strip()+' ' for x in paramsList])
+      
+    req = "SELECT " + params + "FROM ClientsCache "
+    
+    if not (ccID == name == commandName == opt_ID == value == 
+            result == dateEffective == lastCheckTime == None):
+      req = req + "WHERE "
+    
+    if ccID is not None:
+      if type(ccID) is not type([]):
+        ccID = [ccID]
+      req = req + "ccID IN (" + ','.join([str(x).strip() + ' ' for x in ccID]) + ")"
+    
+    if name is not None:
+      if ccID is not None:
+        req = req + " AND "
+      if type(name) is not type([]):
+        name = [name]
+      req = req + "Name IN (" + ','.join(['"' + x.strip() + '"' + ' ' for x in name]) + ")"
+    
+    if commandName is not None:
+      if ccID is not None or name is not None:
+        req = req + " AND "
+      if type(commandName) is not type([]):
+        commandName = [commandName]
+      req = req + "commandName IN (" + ','.join(['"' + x.strip() + '"' + ' ' for x in commandName]) + ")"
+    
     if opt_ID is not None:
-      req = req + " AND Opt_ID = %s" %opt_ID 
-
+      if ccID is not None or name is not None or commandName is not None:
+        req = req + " AND "
+      if type(opt_ID) is not type([]):
+        opt_ID = [opt_ID]
+      req = req + "opt_ID IN (" + ','.join(['"' + str(x).strip() + '"' + ' ' for x in opt_ID]) + ")"
+    
+    if value is not None:
+      if ccID is not None or name is not None or commandName is not None or opt_ID is not None:
+        req = req + " AND "
+      if type(value) is not type([]):
+        value = [value]
+      req = req + "value IN (" + ','.join(['"' + x.strip() + '"' + ' ' for x in value]) + ")"
+    
+    if result is not None:
+      if (ccID is not None or name is not None or commandName is not None or opt_ID is not None or value is not None):
+        req = req + " AND "
+      if type(result) is not type([]):
+        result = [result]
+      req = req + "result IN (" + ','.join(['"' + x.strip() + '"' + ' ' for x in result]) + ")"
+    
+    if dateEffective is not None:
+      if (ccID is not None or name is not None or commandName is not None or opt_ID is not None or value is not None or result is not None):
+        req = req + " AND "
+      if type(dateEffective) is not type([]):
+        dateEffective = [dateEffective]
+      req = req + "dateEffective IN (" + ','.join(['"' + x.strip() + '"' + ' ' for x in dateEffective]) + ")"
+    
+    if lastCheckTime is not None:
+      if (ccID is not None or name is not None or commandName is not None or opt_ID is not None or value is not None or result is not None or dateEffective is not None):
+        req = req + " AND "
+      if type(lastCheckTime) is not type([]):
+        lastCheckTime = [lastCheckTime]
+      req = req + "lastCheckTime IN (" + ','.join(['"' + x.strip() + '"' + ' ' for x in lastCheckTime]) + ")"
+    
     resQuery = self.db._query(req)
     if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getClientCacheRes) + resQuery['Message']
+      raise RSSDBException, where(self, self.getClientsCacheStuff) + resQuery['Message']
     if not resQuery['Value']:
       return []
     
-    return resQuery['Value'][0]
-    
+    return resQuery['Value']
 
 #############################################################################
 
-  def getCachedIDs(self, name, commandName):
-    """ 
-    Get Opt_ID(s) list from the ClientCache table.
-    
-    :params:
-      :attr:`name`: string - name of the ValidRes
-      
-      :attr:`commandName`: string - the command name
-    """
-    
-    req = "SELECT DISTINCT Opt_ID FROM ClientsCache WHERE Name = " 
-    req = req + "'%s' AND CommandName = '%s'" %(name, commandName)
-
-    resQuery = self.db._query(req)
-    if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getCachedIDs) + resQuery['Message']
-    if not resQuery['Value']:
-      return []
-    
-    C_IDsList = [ x[0] for x in resQuery['Value'] ]
-    
-    return C_IDsList
-    
-#############################################################################
-
-  def removeRow(self, granularity, name, dateEffective):
+  def removeRow(self, fromWhere, name, dateEffective = None):
     """ 
     Remove a row from one of the tables
     
     :params:
-      :attr:`granularity`: string, a ValidRes
+      :attr:`fromWhere`: string, a ValidRes
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
     
       :attr:`name`: string
@@ -2237,26 +2279,31 @@ class ResourceStatusDB:
       :attr:`dateEffective`: string or datetime
     """
 
-    if not isinstance(dateEffective, basestring):
-      dateEffective = dateEffective.isoformat(' ')
+    if dateEffective is not None:
+      if not isinstance(dateEffective, basestring):
+        dateEffective = dateEffective.isoformat(' ')
 
-    if granularity in ('Site', 'Sites'):
+    if fromWhere in ('Site', 'Sites'):
       DBname = 'SiteName'
       DBtable = 'Sites'
-    elif granularity in ('Service', 'Services'):
+    elif fromWhere in ('Service', 'Services'):
       DBname = 'ServiceName'
       DBtable = 'Services'
-    elif granularity in ('Resource', 'Resources'):
+    elif fromWhere in ('Resource', 'Resources'):
       DBname = 'ResourceName'
       DBtable = 'Resources'
-    elif granularity in ('StorageElement', 'StorageElements'):
+    elif fromWhere in ('StorageElement', 'StorageElements'):
       DBname = 'StorageElementName'
       DBtable = 'StorageElements'
+    elif fromWhere in ('Cache', 'ClientsCache', 'ClientCache'):
+      DBname = 'Name'
+      DBtable = 'ClientsCache'
     else:
       raise InvalidRes, where(self, self.removeRow)
     
-    req = "DELETE from %s WHERE %s = '%s' AND " % (DBtable, DBname, name)
-    req = req + "DateEffective = '%s';" %(dateEffective)
+    req = "DELETE from %s WHERE %s = '%s'" % (DBtable, DBname, name)
+    if dateEffective is not None:
+      req = req + " AND DateEffective = '%s'" %(dateEffective)
     resDel = self.db._update(req)
     if not resDel['OK']:
       raise RSSDBException, where(self, self.removeRow) + resDel['Message']
