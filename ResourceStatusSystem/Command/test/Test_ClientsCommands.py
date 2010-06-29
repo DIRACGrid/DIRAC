@@ -1204,13 +1204,15 @@ class DTEverySites_CommandSuccess(ClientsCommandsTestCase):
                                                            'FORMATED_END_DATE': '2010-06-22 19:00', 
                                                            'SEVERITY': 'OUTAGE', 
                                                            'FORMATED_START_DATE': '2010-06-18 09:00', 
-                                                           'DESCRIPTION': 'Electrical work in the building housing the cluster.'}, 
+                                                           'DESCRIPTION': 'Electrical work in the building housing the cluster.', 
+                                                           'GOCDB_PORTAL_URL': 'https://next.gocdb.eu/portal/index.php?Page_Type=View_Object&object_id=12686&grid_id=0'}, 
                                                         '78805480': 
                                                           {'SITENAME': 'ESA-ESRIN', 
                                                            'FORMATED_END_DATE': '2010-06-27 12:30', 
                                                            'SEVERITY': 'OUTAGE', 
                                                            'FORMATED_START_DATE': '2010-06-22 05:00', 
-                                                           'DESCRIPTION': 'The CNRS CA does not support ESA-'}
+                                                           'DESCRIPTION': 'The CNRS CA does not support ESA-',
+                                                           'GOCDB_PORTAL_URL': 'https://next.gocdb.eu/portal/index.php?Page_Type=View_Object&object_id=12686&grid_id=0'}, 
                                                         } 
                                                 }
     self.DTES_C.setClient(self.mock_client)
@@ -1247,13 +1249,15 @@ class DTEveryResources_CommandSuccess(ClientsCommandsTestCase):
                                                            'FORMATED_END_DATE': '2010-06-22 19:00', 
                                                            'SEVERITY': 'OUTAGE', 
                                                            'FORMATED_START_DATE': '2010-06-18 09:00', 
-                                                           'DESCRIPTION': 'Electrical work in the building housing the cluster.'}, 
+                                                           'DESCRIPTION': 'Electrical work in the building housing the cluster.',
+                                                           'GOCDB_PORTAL_URL': 'https://next.gocdb.eu/portal/index.php?Page_Type=View_Object&object_id=12686&grid_id=0'}, 
                                                         '78805480': 
                                                           {'HOSTNAME': 'ce112.cern.ch', 
                                                            'FORMATED_END_DATE': '2010-06-27 12:30', 
                                                            'SEVERITY': 'OUTAGE', 
                                                            'FORMATED_START_DATE': '2010-06-22 05:00', 
-                                                           'DESCRIPTION': 'The CNRS CA does not support ESA-'}
+                                                           'DESCRIPTION': 'The CNRS CA does not support ESA-',
+                                                           'GOCDB_PORTAL_URL': 'https://next.gocdb.eu/portal/index.php?Page_Type=View_Object&object_id=12686&grid_id=0'}, 
                                                         } 
                                                 }
     self.DTER_C.setClient(self.mock_client)

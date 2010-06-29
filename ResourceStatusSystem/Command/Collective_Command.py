@@ -255,6 +255,7 @@ class DTEverySites_Command(Command):
       dt['EndDate'] = res[dt_ID]['FORMATED_END_DATE']
       dt['Severity'] = res[dt_ID]['SEVERITY']
       dt['Description'] = res[dt_ID]['DESCRIPTION'].replace('\'', '')
+      dt['Link'] = res[dt_ID]['GOCDB_PORTAL_URL']
       DIRACname = getDIRACSiteName(res[dt_ID]['SITENAME'])['Value']
       resToReturn[DIRACname] = dt
     
@@ -316,6 +317,7 @@ class DTEveryResources_Command(Command):
       dt['EndDate'] = res[dt_ID]['FORMATED_END_DATE']
       dt['Severity'] = res[dt_ID]['SEVERITY']
       dt['Description'] = res[dt_ID]['DESCRIPTION'].replace('\'', '')
+      dt['Link'] = res[dt_ID]['GOCDB_PORTAL_URL']
       resToReturn[res[dt_ID]['HOSTNAME']] = dt
     
     return resToReturn

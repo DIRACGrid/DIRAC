@@ -1571,8 +1571,8 @@ class ResourceStatusHandler(RequestHandler):
         # adding downtime links to the GOC DB page in Extras
         DT_links = []
         for record in records:
-          DT_links.append({ record[0] : 
-                           "https://goc.gridops.org/downtime/list?id=" + str(record[0]) } )
+          DT_link = rsDB.getClientsCacheStuff(['Result'], opt_ID = record, value = 'Link')[0]
+          DT_links.append({ record[0] : DT_link } )
           
         paramNames = ['ID', 'Granularity', 'Name', 'Severity', 'When', 'Start', 'End', 'Description']
     

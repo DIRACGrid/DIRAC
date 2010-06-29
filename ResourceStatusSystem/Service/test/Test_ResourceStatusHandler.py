@@ -225,7 +225,6 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
 
   def test_export_getDownTimesWeb(self):
     res = self.rsh.export_getDownTimesWeb({}, [], 0, 500)
-    print res
     self.assert_(res['OK'])
     
   def test_export_getCachedResult(self):
