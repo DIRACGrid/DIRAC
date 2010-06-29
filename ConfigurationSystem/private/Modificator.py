@@ -6,6 +6,7 @@ import difflib
 from DIRAC.Core.Utilities import List, Time
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.Core.Security.Misc import getProxyInfo
 
 class Modificator:
 
@@ -15,8 +16,8 @@ class Modificator:
     if rpcClient:
       self.setRPCClient( rpcClient )
 
-  def getCredentials( self ):
-    retVal = self.rpcClient.getCredentials()
+  def loadCredentials( self ):
+    retVal = getProxyInfo()
     if retVal[ 'OK' ]:
       credDict = retVal[ 'Value' ]
       self.commiterId = "%s@%s - %s" % ( credDict[ 'username' ],
