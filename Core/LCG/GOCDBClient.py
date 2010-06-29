@@ -138,13 +138,13 @@ class GOCDBClient:
     
 #############################################################################
   
-  def buildURL(self, DTList):
-    '''build the URL relative to the DT '''
-    baseURL = "https://goc.gridops.org/downtime/list?id="
-    for dt in DTList:
-      id = str(dt['id'])
-      url = baseURL + id
-      dt['URL'] = url
+#  def buildURL(self, DTList):
+#    '''build the URL relative to the DT '''
+#    baseURL = "https://goc.gridops.org/downtime/list?id="
+#    for dt in DTList:
+#      id = str(dt['id'])
+#      url = baseURL + id
+#      dt['URL'] = url
 
 #############################################################################
   
@@ -155,7 +155,7 @@ class GOCDBClient:
     #GOCDB-PI url and method settings
     #
     # Set the GOCDB URL
-    gocdbpi_url = "https://goc.gridops.org/gocdbpi/public/?method=get_downtime"
+    gocdbpi_url = "https://goc.gridops.org/gocdbpi_v4/public/?method=get_downtime"
     # Set the desidered start date
     if startDate is None: 
       when = "&ongoing_only=yes" 
@@ -175,7 +175,7 @@ class GOCDBClient:
     dtPage = urllib2.urlopen(req)
 
     dt = dtPage.read()
-
+    
     return dt
     
 #############################################################################
@@ -192,7 +192,7 @@ class GOCDBClient:
     """
      
     # GOCDB-PI query
-    gocdb_ep = "https://goc.gridops.org/gocdbpi/public/?method=get_service_endpoint&"+granularity+'='+entity
+    gocdb_ep = "https://goc.gridops.org/gocdbpi_v4/public/?method=get_service_endpoint&"+granularity+'='+entity
 
     req = urllib2.Request(gocdb_ep)
     service_endpoint_page = urllib2.urlopen(req)
@@ -212,7 +212,8 @@ class GOCDBClient:
     for dtElement in downtimeElements:
       elements = self.__parseSingleElement(dtElement, ['SEVERITY', 'SITENAME', 'HOSTNAME', 
                                                        'HOSTED_BY', 'FORMATED_START_DATE', 
-                                                       'FORMATED_END_DATE', 'DESCRIPTION'])
+                                                       'FORMATED_END_DATE', 'DESCRIPTION', 
+                                                       'GOCDB_PORTAL_URL'])
       DTdict[ str(dtElement.getAttributeNode("ID").nodeValue) ] = elements
 
     for DT_ID in DTdict.keys():
@@ -276,7 +277,10 @@ class GOCDBClient:
       if attributes is not None:
         if attrName not in attributes:
           continue
-      attrValue = str(child.childNodes[0].nodeValue)
+      try:
+        attrValue = str(child.childNodes[0].nodeValue)
+      except IndexError:
+        continue
       handler[attrName] = attrValue
       
     return handler

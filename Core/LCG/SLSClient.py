@@ -48,8 +48,10 @@ class SLSClient:
       return S_ERROR("The service is not instrumented with SLS sensors")
 #      raise NoServiceException
     elif "ERROR:" in res:
-      return S_ERROR("ERROR with SLS sensors : %s" %res)
-#      raise Exception
+#      return S_ERROR("ERROR with SLS sensors : %s" %res)
+      raise Exception, "ERROR with SLS sensors : %s" %res
+    elif res == -1:
+      raise Exception, "ERROR with SLS sensors : %s" %res
     
     return S_OK(int(res))
   
