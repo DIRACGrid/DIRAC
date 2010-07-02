@@ -112,7 +112,8 @@ class LSFTimeLeft:
 
       if not self.normRef:
         # Now parse LSF configuration files
-        ret = sourceEnv( 10, [os.path.join( os.environ['LSF_ENVDIR'], 'lsf.conf' )] )
+        os.symlink( os.path.join( os.environ['LSF_ENVDIR'], 'lsf.conf') , './lsf.sh' )
+        ret = sourceEnv( 10, ['./lsf' ] )
         if ret['OK']:
           lsfEnv = ret['outputEnv']
           shared = None
