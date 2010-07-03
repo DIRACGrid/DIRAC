@@ -8,6 +8,7 @@ __RCSID__   = "$Id$"
 from DIRAC.Core.DISET.RequestHandler                import RequestHandler
 from DIRAC                                          import gLogger, gConfig, rootPath, S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogDB    import FileCatalogDB
+from DIRAC.Core.Utilities.List                      import sortList
 
 import time,os
 from types import *
@@ -19,29 +20,33 @@ def initializeFileCatalogHandler(serviceInfo):
   global fcDB
   fcDB = FileCatalogDB()
   serviceCS = serviceInfo ['serviceSectionPath']
-
   databaseConfig = {}
 
   # Obtain the plugins to be used for DB interaction
-  databaseConfig['UserGroupManager'] = gConfig.getValue('%s/%s' % (serviceCS,'UserGroupManager'),'UserAndGroupManagerDB')
-  databaseConfig['SEManager'] = gConfig.getValue('%s/%s' % (serviceCS,'SEManager'),'SEManagerDB')
-  databaseConfig['SecurityManager'] = gConfig.getValue('%s/%s' % (serviceCS,'SecurityManager'),'NoSecurityManager')
-  databaseConfig['DirectoryManager'] = gConfig.getValue('%s/%s' % (serviceCS,'DirectoryManager'),'DirectoryLevelTree')
-  databaseConfig['FileManager'] = gConfig.getValue('%s/%s' % (serviceCS,'FileManager'),'FileManager')
+  gLogger.info("Initializing with FileCatalog with following managers:")
+  defaultManagers = {  'UserGroupManager' : 'UserAndGroupManagerDB',
+                       'SEManager'        : 'SEManagerDB',
+                       'SecurityManager'  : 'NoSecurityManager',
+                       'DirectoryManager' : 'DirectoryLevelTree',
+                       'FileManager'      : 'FileManager'}
+  for configKey in sortList(defaultManagers.keys()):
+    defaultValue = defaultManagers[configKey]
+    configValue = gConfig.getValue('%s/%s' % (serviceCS,configKey),defaultValue)
+    gLogger.info("%s : %s" % (str(configKey).ljust(20),str(configValue).ljust(20)))
+    databaseConfig[configKey] = configValue
 
   # Obtain some general configuration of the database
-
-  # If true this option ensures that all GUIDs associated to files are unique
-  databaseConfig['UniqueGUID'] = gConfig.getValue('%s/%s' % (serviceCS,'UniqueGUID'),False)
-  # If true this option allows global read access to all files/directories
-  databaseConfig['GlobalReadAccess'] = gConfig.getValue('%s/%s' % (serviceCS,'GlobalReadAccess'),True)
-  # If true this option will ensure that all replicas being registered conform to the LFN->PFN convention
-  databaseConfig['LFNPFNConvention'] = gConfig.getValue('%s/%s' % (serviceCS,'LFNPFNConvention'),True)
-  # If true this option not store PFNs in the replica table but rather resolve it at read time
-  databaseConfig['ResolvePFN'] = gConfig.getValue('%s/%s' % (serviceCS,'ResolvePFN'),True)
-  # Default umask
-  databaseConfig['DefaultUmask'] = gConfig.getValue('%s/%s' % (serviceCS,'DefaultUmask'),0775)
-  
+  gLogger.info("Initializing the FileCatalog with the following configuration:")
+  defaultConfig = { 'UniqueGUID'        : False,
+                    'GlobalReadAccess'  : True,
+                    'LFNPFNConvention'  : True,
+                    'ResolvePFN'        : True,
+                    'DefaultUmask'      : 0775}
+  for configKey in sortList(defaultConfig.keys()):
+    defaultValue = defaultConfig[configKey]
+    configValue = gConfig.getValue('%s/%s' % (serviceCS,configKey),defaultValue)
+    gLogger.info("%s : %s" % (str(configKey).ljust(20),str(configValue).ljust(20)))
+    databaseConfig[configKey] = configValue
   res = fcDB.setConfig(databaseConfig)
   return res
 
