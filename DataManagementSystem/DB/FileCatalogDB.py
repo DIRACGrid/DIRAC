@@ -5,28 +5,19 @@
 
 __RCSID__ = "$Id$"
 
-import re, os, sys, md5, random
-import string, time, datetime
-import threading
-from types import *
-
-from DIRAC                                  import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.DB                     import DB
-from DIRAC.Core.Utilities.Pfn               import pfnparse, pfnunparse
-from DIRAC.Core.Utilities.List              import intListToString,stringListToString
-
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager             import SEManagerCS,SEManagerDB
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserAndGroupManager   import UserAndGroupManagerCS,UserAndGroupManagerDB
+from DIRAC                                                                     import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Base.DB                                                        import DB
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryMetadata     import DirectoryMetadata
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectorySimpleTree   import DirectorySimpleTree 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryNodeTree     import DirectoryNodeTree 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryLevelTree    import DirectoryLevelTree 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import * 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager,DirectorySecurityManager,FullSecurityManager
-
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryLevelTree    import DirectoryLevelTree
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryFlatTree     import DirectoryFlatTree
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerFlat       import FileManagerFlat
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager       import FileManager
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager           import FileManager
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager             import SEManagerCS,SEManagerDB
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager       import NoSecurityManager,DirectorySecurityManager,FullSecurityManager
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserAndGroupManager   import UserAndGroupManagerCS,UserAndGroupManagerDB
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities             import * 
 
 #############################################################################
 class FileCatalogDB(DB, DirectoryMetadata):
