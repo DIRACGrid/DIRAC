@@ -2143,6 +2143,8 @@ class ResourceStatusDB:
         req = req + "Result = '%s', DateEffective = '%s', " %(result, dateEffective)
       req = req + "LastCheckTime = '%s' WHERE " %(now)
       req = req + "Name = '%s' AND CommandName = '%s' AND Value = '%s'" %(name, commandName, value)
+      if opt_ID is not None:
+        req = req + "AND Opt_ID = %s " %opt_ID
       
       resUpdate = self.db._update(req)
       if not resUpdate['OK']:

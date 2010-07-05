@@ -4,10 +4,12 @@ This module contains a class to synchronize the content of the DataBase with wha
 
 import time
 
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteCEMapping
 from DIRAC.Core.Utilities.SiteSEMapping import getSiteSEMapping
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
+
+from DIRAC.ResourceStatusSystem.Utilities.CS import * 
 
 from DIRAC.ResourceStatusSystem.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
@@ -83,8 +85,8 @@ class Synchronizer:
     sitesIn = [s[0] for s in sitesIn]
 
     # sited in CS now
-    sitesList = gConfig.getSections('Resources/Sites/LCG', True)
-    sitesList = sitesList['Value']
+    sitesList = getSites()['Value']
+    
     try:
       sitesList.remove('LCG.Dummy.ch')
     except ValueError:
@@ -101,7 +103,7 @@ class Synchronizer:
     # add to DB what is CS now and wasn't before
     for site in sitesList:
       if site not in sitesIn:
-        tier = gConfig.getValue("Resources/Sites/LCG/%s/MoUTierLevel" %site)
+        tier = getSiteTier(site)['Value'] 
         if tier == 0 or tier == '0':
           t = 'T0'
         elif tier == 1 or tier == '1':
@@ -148,7 +150,7 @@ class Synchronizer:
     # SE Nodes in CS now 
     SENodeList = []
     for SE in SEList:
-      node = gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/Host" %SE)
+      node = getSENode(SE)['Value']
       if node is None:
         continue
       if node not in SENodeList:
@@ -156,9 +158,9 @@ class Synchronizer:
   
     # LFC Nodes in CS now
     LFCNodeList = []
-    for site in gConfig.getSections('Resources/FileCatalogs/LcgFileCatalogCombined', True)['Value']:
+    for site in getLFCSites()['Value']:
       for readable in ('ReadOnly', 'ReadWrite'):
-        LFCNode = gConfig.getValue('Resources/FileCatalogs/LcgFileCatalogCombined/%s/%s' %(site, readable))
+        LFCNode = getLFCNode(site, readable)['Value']
         if LFCNode is None:
           continue
         if LFCNode not in LFCNodeList:
@@ -166,11 +168,9 @@ class Synchronizer:
 
     # FTS Nodes in CS now
     FTSNodeList = []
-    sitesWithFTS = gConfig.getOptions("/Resources/FTSEndpoints")
-    if not sitesWithFTS['OK']:
-      raise RSSException, sitesWithFTS['Message']
+    sitesWithFTS = getFTSSites()
     for site in sitesWithFTS['Value']:
-      fts =  gConfig.getValue("/Resources/FTSEndpoints/%s" %site).split('/')[2][0:-5]
+      fts = getFTSEndpoint(site)['Value']
       if FTSNodeList is None:
         continue
       if fts not in FTSNodeList:
@@ -197,7 +197,7 @@ class Synchronizer:
           continue
         service = 'Computing@' + site
         if ce not in  resourcesIn:
-          CEType = gConfig.getValue('Resources/Sites/LCG/%s/CEs/%s/CEType')
+          CEType = getCEType(site, ce)
           ceType = 'CE'
           if CEType == 'CREAM':
             ceType = 'CREAMCE'

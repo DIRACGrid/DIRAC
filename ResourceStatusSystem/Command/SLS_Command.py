@@ -86,9 +86,6 @@ class SLSStatus_Command(Command):
     
     try:
       res = self.client.getAvailabilityStatus(SLSName, timeout = self.timeout)
-      
-      print res
-      
       if not res['OK']:
         gLogger.error("No SLS sensors for " + self.args[0] + " " + self.args[1] )
         return  {'Result':None}

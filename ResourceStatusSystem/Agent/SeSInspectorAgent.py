@@ -4,12 +4,14 @@
 
 import copy
 import Queue
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+
+from DIRAC.ResourceStatusSystem.Utilities.CS import *
 
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
@@ -44,10 +46,10 @@ class SeSInspectorAgent(AgentModule):
         self.log.error('Can not create Thread Pool')
         return S_ERROR('Can not create Thread Pool')
       
-      self.setup = gConfig.getValue("DIRAC/Setup")
+      self.setup = getSetup()
 
-      self.VOExtension = gConfig.getValue("DIRAC/Extensions")
-      
+      self.VOExtension = getExtensions()['Value']
+
       if 'LHCb' in self.VOExtension:
         self.VOExtension = 'LHCb'
 

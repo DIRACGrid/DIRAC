@@ -7,7 +7,8 @@ __RCSID__ = "$Id:  $"
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
-from DIRAC import gConfig
+
+from DIRAC.ResourceStatusSystem.Utilities.CS import *
 
 import copy
 import threading
@@ -258,8 +259,8 @@ class Publisher:
           raise RSSException, where(self, self._getStatus)
       
       elif panel == 'SE_Panel':
-        ra = gConfig.getValue("Resources/StorageElements/%s/ReadAccess" %name)
-        wa = gConfig.getValue("Resources/StorageElements/%s/WriteAccess" %name)
+        ra = getStorageElementStatus(name, 'ReadAccess')['Value']
+        wa = getStorageElementStatus(name, 'WriteAccess')['Value']
         DIRACStatus = {'ReadAccess': ra, 'WriteAccess': wa}
       
       status = { name : { 'RSSStatus': RSSStatus, 'DIRACStatus': DIRACStatus } }

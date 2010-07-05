@@ -12,7 +12,7 @@
        c. other....
 """
 
-from DIRAC import gConfig
+from DIRAC.ResourceStatusSystem.Utilities.CS import *
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
@@ -190,8 +190,7 @@ class PEP:
       setup = setupIn
     else:
       # get present setup
-      from DIRAC import gConfig
-      setup = gConfig.getValue("DIRAC/Setup")
+      setup = getSetup()['Value']
           
     #notification client
     if ncIn is not None:
@@ -322,7 +321,7 @@ class PEP:
             
             mailMessage = mailMessage + "Setup = %s\n" %setup
 
-            nc.sendMail(gConfig.getValue("Registry/Users/%s/Email" %user), 
+            nc.sendMail(getMailForUser(user)['Value'], 
                         '%s: %s' %(self.__name, res['Status']), mailMessage)
       
 #          for alarm in Configurations.alarms_list:
@@ -351,8 +350,8 @@ class PEP:
             banSite = da.banSiteFromMask(self.__name, res['Reason'])
             if not banSite['OK']:
               raise RSSException, where(self, self.enforce) + banSite['Message']
-            if setup == 'LHCb-Production':
-              address = gConfig.getValue('/Operations/EMail/Production','')
+            if 'Production' in setup:
+              address = getOperationMails('Production')['Value']
             else:
               address = 'fstagni@cern.ch'
             
@@ -370,7 +369,7 @@ class PEP:
             if not addSite['OK']:
               raise RSSException, where(self, self.enforce) + addSite['Message']
             if setup == 'LHCb-Production':
-              address = gConfig.getValue('/Operations/EMail/Production','')
+              address = getOperationMails('Production')['Value']
             else:
               address = 'fstagni@cern.ch'
             
@@ -385,8 +384,8 @@ class PEP:
     
       elif self.__granularity == 'StorageElement':
       
-        presentReadStatus = gConfig.getValue("/Resources/StorageElements/%s/ReadAccess" %(self.__name) )
-        presentWriteStatus = gConfig.getValue("/Resources/StorageElements/%s/WriteAccess" %(self.__name) )
+        presentReadStatus = getStorageElementStatus( self.__name, 'ReadAccess')['Value']
+        presentWriteStatus = getStorageElementStatus( self.__name, 'WriteAccess')['Value']
   
         if res['Status'] == 'Banned':
           
@@ -400,8 +399,8 @@ class PEP:
             commit = csAPI.commit()
             if not commit['OK']:
               raise RSSException, where(self, self.enforce) + commit['Message']
-            if setup == 'LHCb-Production':
-              address = gConfig.getValue('/Operations/EMail/Production','')
+            if 'Production' in setup:
+              address = getSetup()['Value']
             else:
               address = 'fstagni@cern.ch'
             
@@ -427,7 +426,7 @@ class PEP:
             if not commit['OK']:
               raise RSSException, where(self, self.enforce) + commit['Message']
             if setup == 'LHCb-Production':
-              address = gConfig.getValue('/Operations/EMail/Production','')
+              address = getSetup()['Value']
             else:
               address = 'fstagni@cern.ch'
             

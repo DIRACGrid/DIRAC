@@ -13,6 +13,9 @@ from datetime import datetime, timedelta
 from types import *
 from DIRAC import S_OK, S_ERROR
 from DIRAC import gLogger, gConfig
+
+from DIRAC.ResourceStatusSystem.Utilities.CS import *
+
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
@@ -33,7 +36,7 @@ def initializeResourceStatusHandler(serviceInfo):
   cc = CommandCaller()
 
   global VOExtension
-  VOExtension = gConfig.getValue("DIRAC/Extensions")
+  VOExtension = getExtensions()['Value']
 
   if 'LHCb' in VOExtension:
     VOExtension = 'LHCb'
@@ -1571,7 +1574,8 @@ class ResourceStatusHandler(RequestHandler):
         # adding downtime links to the GOC DB page in Extras
         DT_links = []
         for record in records:
-          DT_link = rsDB.getClientsCacheStuff(['Result'], opt_ID = record, value = 'Link')[0]
+          DT_link = rsDB.getClientsCacheStuff(['Result'], opt_ID = record[0], value = 'Link')
+          DT_link = DT_link[0][0]
           DT_links.append({ record[0] : DT_link } )
           
         paramNames = ['ID', 'Granularity', 'Name', 'Severity', 'When', 'Start', 'End', 'Description']

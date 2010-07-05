@@ -451,15 +451,11 @@ class PDPSuccess(PolicySystemTestCase):
                     self.assertEqual(res['Reason'], '-ReasonTrue-')
                 if ValidStatus.index(newStatus1) > ValidStatus.index(newStatus3):
                   if ValidStatus.index(newStatus3) > ValidStatus.index(newStatus2):
-                    print newStatus3
-                    print res
                     self.assert_(res['SAT'])
                     self.assertEqual(res['Status'], newStatus1)
                     self.assertEqual(res['Reason'], '-ReasonTrue-')
                 if ValidStatus.index(newStatus3) > ValidStatus.index(newStatus2):
                   if ValidStatus.index(newStatus2) > ValidStatus.index(newStatus1):
-                    print newStatus3
-                    print res
                     self.assert_(res['SAT'])
                     self.assertEqual(res['Status'], newStatus3)
                     self.assertEqual(res['Reason'], '-ReasonTrue3-')
