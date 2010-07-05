@@ -214,7 +214,10 @@ class GOCDBClient:
                                                        'HOSTED_BY', 'FORMATED_START_DATE', 
                                                        'FORMATED_END_DATE', 'DESCRIPTION', 
                                                        'GOCDB_PORTAL_URL'])
-      DTdict[ str(dtElement.getAttributeNode("ID").nodeValue) ] = elements
+      try:
+        DTdict[ str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + ' ' + elements['HOSTNAME'] ] = elements
+      except:
+        DTdict[ str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + ' ' + elements['SITENAME'] ] = elements
 
     for DT_ID in DTdict.keys():
       if siteOrRes in ('Site', 'Sites'):
