@@ -1403,14 +1403,14 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
-  types_getCachedResult = [StringType, StringType, StringType, IntType]
+  types_getCachedResult = [StringType, StringType, StringType, StringType]
   def export_getCachedResult(self, name, command, value, opt_ID):
     """ get a cached result
     """
     try:
       gLogger.info("ResourceStatusHandler.getCachedResult: Attempting to get %s: %s, %s cached result" % (name, value, command))
       try:
-        if opt_ID == 0:
+        if opt_ID == 'NULL':
           opt_ID = None
         res = rsDB.getClientsCacheStuff(['Result'], name = name, commandName = command, 
                                         value = value, opt_ID = opt_ID)

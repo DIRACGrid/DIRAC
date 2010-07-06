@@ -170,7 +170,7 @@ class ResourceStatusClient:
     
 #############################################################################
 
-  def getCachedResult(self, name, commandName, value, opt_ID = 0):
+  def getCachedResult(self, name, commandName, value, opt_ID = 'NULL'):
     """ 
     Returns a cached result;
         
@@ -181,7 +181,7 @@ class ResourceStatusClient:
       
       :attr:`value`: string
       
-      :attr:`opt_ID`: optional integer
+      :attr:`opt_ID`: optional string
       
     :returns:
       (result, )
@@ -213,7 +213,7 @@ class ResourceStatusClient:
     if not res['OK']:
       raise RSSException, where(self, self.getCachedIDs) + " " + res['Message'] 
   
-    ID_list = [int(x) for x in res['Value']]
+    ID_list = [x for x in res['Value']]
   
     return ID_list
   

@@ -321,7 +321,7 @@ class PEP:
             
             mailMessage = mailMessage + "Setup = %s\n" %setup
 
-            nc.sendMail(getMailForUser(user)['Value'], 
+            nc.sendMail(getMailForUser(user)['Value'][0], 
                         '%s: %s' %(self.__name, res['Status']), mailMessage)
       
 #          for alarm in Configurations.alarms_list:

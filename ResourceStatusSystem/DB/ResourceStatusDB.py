@@ -2131,7 +2131,7 @@ class ResourceStatusDB:
     req = req + "Value, Result FROM ClientsCache WHERE "
     req = req + "Name = '%s' AND CommandName = '%s' " %(name, commandName)
     if opt_ID is not None:
-      req = req + "AND Opt_ID = %s " %opt_ID
+      req = req + "AND Opt_ID = '%s' " %opt_ID
     req = req + "AND Value = '%s' " %value
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -2144,7 +2144,7 @@ class ResourceStatusDB:
       req = req + "LastCheckTime = '%s' WHERE " %(now)
       req = req + "Name = '%s' AND CommandName = '%s' AND Value = '%s'" %(name, commandName, value)
       if opt_ID is not None:
-        req = req + "AND Opt_ID = %s " %opt_ID
+        req = req + "AND Opt_ID = '%s' " %opt_ID
       
       resUpdate = self.db._update(req)
       if not resUpdate['OK']:
@@ -2156,7 +2156,7 @@ class ResourceStatusDB:
       req = req + "Value, Result, DateEffective, "
       req = req + "LastCheckTime) VALUES ('%s', '%s', " %(name, commandName)
       if opt_ID is not None:
-        req = req + "%s, " %opt_ID
+        req = req + "'%s', " %opt_ID
       req = req + "'%s', '%s', '%s', '%s')" %(value, result, dateEffective, now)
       
       resUpdate = self.db._update(req)
@@ -2174,7 +2174,7 @@ class ResourceStatusDB:
     :params:
       :attr:`paramsList` - string or list of strings
     
-      :attr:`ccID` - integer or list of integers
+      :attr:`ccID` - string or list of strings
     
       :attr:`name` - string or list of strings
     
@@ -2221,21 +2221,21 @@ class ResourceStatusDB:
         req = req + " AND "
       if type(commandName) is not type([]):
         commandName = [commandName]
-      req = req + "commandName IN (" + ','.join(['"' + x.strip() + '"' + ' ' for x in commandName]) + ")"
+      req = req + "CommandName IN (" + ','.join(['"' + x.strip() + '"' + ' ' for x in commandName]) + ")"
     
     if opt_ID is not None:
       if ccID is not None or name is not None or commandName is not None:
         req = req + " AND "
       if type(opt_ID) is not type([]):
         opt_ID = [opt_ID]
-      req = req + "opt_ID IN (" + ','.join(['"' + str(x).strip() + '"' + ' ' for x in opt_ID]) + ")"
+      req = req + "Opt_ID IN (" + ','.join(['"' + str(x).strip() + '"' + ' ' for x in opt_ID]) + ")"
     
     if value is not None:
       if ccID is not None or name is not None or commandName is not None or opt_ID is not None:
         req = req + " AND "
       if type(value) is not type([]):
         value = [value]
-      req = req + "value IN (" + ','.join(['"' + x.strip() + '"' + ' ' for x in value]) + ")"
+      req = req + "Value IN (" + ','.join(['"' + x.strip() + '"' + ' ' for x in value]) + ")"
     
     if result is not None:
       if (ccID is not None or name is not None or commandName is not None or opt_ID is not None or value is not None):

@@ -46,7 +46,7 @@ class StElInspectorAgent(AgentModule):
         self.log.error('Can not create Thread Pool')
         return S_ERROR('Can not create Thread Pool')
       
-      self.setup = getSetup()
+      self.setup = getSetup()['Value']
 
       self.VOExtension = getExtensions()['Value']
 
