@@ -81,7 +81,7 @@ class Job:
     self.addToInputSandbox = []
     self.addToOutputSandbox = []
     self.addToInputData = []
-    self.systemConfig = ''
+    self.systemConfig = 'ANY'
     self.reqParams = {'MaxCPUTime':   'other.NAME>=VALUE',
                       'MinCPUTime':   'other.NAME<=VALUE',
                       'Site':         'other.NAME=="VALUE"',
@@ -729,14 +729,14 @@ class Job:
   #############################################################################
 
   def __setJobDefaults(self):
-    """Set job default values.  For initial version still using local account string
-    for a nickname.
+    """Set job default values. Note that the system configuration is set to "ANY".
     """
     self._addParameter(self.workflow,'JobType','JDL',self.type,'Job Type')
     self._addParameter(self.workflow,'Priority','JDL',self.priority,'User Job Priority')
     self._addParameter(self.workflow,'JobGroup','JDL',self.group,'Corresponding VOMS role')
     self._addParameter(self.workflow,'JobName','JDL',self.name,'Name of Job')
     #self._addParameter(self.workflow,'DIRACSetup','JDL',self.setup,'DIRAC Setup')
+    self._addParameter(self.workflow,'SystemConfig','JDLReqt',self.systemConfig,'System configuration for job')    
     self._addParameter(self.workflow,'Site','JDL',self.site,'Site Requirement')
     self._addParameter(self.workflow,'Origin','JDL',self.origin,'Origin of client')
     self._addParameter(self.workflow,'StdOutput','JDL',self.stdout,'Standard output file')
