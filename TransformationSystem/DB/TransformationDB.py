@@ -24,7 +24,7 @@ from DIRAC.Core.Utilities.Subprocess                                   import py
 from types import *
 import re,time,string,threading,copy
 
-MAX_ERROR_COUNT = 3
+MAX_ERROR_COUNT = 10
 
 #############################################################################
 
