@@ -31,31 +31,19 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 
   def getUserAndGroupID(self, credDict):
     """ Get a uid, gid tuple for the given Credentials """
+    # Get the user
     s_uid = credDict.get('username','anon')
-    s_gid = credDict.get('group','anon') 
-    # Get the user (create it if it doesn't exist)      
     res = self.getUserID(s_uid)
-    if res['OK']:
-      uid = res['Value']
-    elif res['Message'] != 'User not found':
+    if not res['OK']:
       return res
-    else:
-      res = self.addUser(s_uid)
-      if not res['OK']:
-        return res
-      uid = res['Value']
+    uid = res['Value']
 
     # Get the group (create it if it doesn't exist)      
+    s_gid = credDict.get('group','anon') 
     res = self.getGroupID(s_gid)
-    if res['OK']:
-      gid = res['Value']
-    elif res['Message'] != 'Group not found':
+    if not res['OK']:
       return res
-    else:
-      res = self.addGroup(s_gid)
-      if not res['OK']:
-        return res
-      gid = res['Value']
+    gid = res['Value']
     return S_OK( ( uid, gid ) )
   
 #####################################################################
@@ -64,20 +52,28 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 #
 #####################################################################
 
-  def addUser(self,uname):
-    """ Add a new user with a name 'name' """
-    res = self.getUserID(uname)
-    if res['OK']:
+  def getUserID(self,user):
+    """ Get ID for a user specified by its name """
+    if type(user) in [IntType,LongType]:
+      return S_OK(user)
+    if user in self.db.users.keys():
+      return S_OK(self.db.users[user])
+    res = self.__getUsers()
+    if not res['OK']:
       return res
-    if res['Message'] != 'User not found':
-      return res
-    res = self.db._insert('FC_Users',['UserName'],[uname])
+    if user in self.db.users.keys():
+      return S_OK(self.db.users[user])
+    res = self.db._insert('FC_Users',['UserName'],[user])
     if not res['OK']:
       return res
     uid = res['lastRowId']
-    self.db.uids[uid] = uname
-    self.db.users[uname] = uid
+    self.db.uids[uid] = user
+    self.db.users[user] = uid
     return S_OK(uid)
+
+  def addUser(self,uname):
+    """ Add a new user with a name 'name' """
+    return self.getUserID(uname)
 
   def deleteUser(self,uname,force=True):
     """ Delete a user specified by its name """
@@ -93,19 +89,6 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 
   def findUser(self,user):
     return self.getUserID(user)
-
-  def getUserID(self,user):
-    """ Get ID for a user specified by its name """
-    if type(user) in [IntType,LongType]:
-      return S_OK(user)
-    if user in self.db.users.keys():
-      return S_OK(self.db.users[user])
-    res = self.__getUsers()
-    if not res['OK']:
-      return res
-    if not user in self.db.users.keys():
-      return S_ERROR('User not found')
-    return S_OK(self.db.users[user])
 
   def getUserName(self,uid):
     """ Get user name for the given id """   
@@ -134,20 +117,28 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 #  Group related methods
 #
 
-  def addGroup(self,gname):
-    """ Add a new group with a name 'name' """
-    res = self.getGroupID(gname)
-    if res['OK']:
+  def getGroupID(self,group):
+    """ Get ID for a group specified by its name """
+    if type(group) in [IntType,LongType]:
+      return S_OK(group)
+    if group in self.db.groups.keys():
+      return S_OK(self.db.groups[group])
+    res = self.__getGroups()
+    if not res['OK']:
       return res
-    if res['Message'] != 'Group not found':
-      return res
-    res = self.db._insert('FC_Groups',['GroupName'],[gname])
+    if group in self.db.groups.keys():
+      return S_OK(self.db.groups[group])
+    res = self.db._insert('FC_Groups',['GroupName'],[group])
     if not res['OK']:
       return res
     gid = res['lastRowId']
-    self.db.groups[gname] = gid
-    self.db.gids[gid] = gname
+    self.db.groups[group] = gid
+    self.db.gids[gid] = group
     return S_OK(gid)
+
+  def addGroup(self,gname):
+    """ Add a new group with a name 'name' """
+    return self.getGroupID(gname)
 
   def deleteGroup(self,gname,force=True):
     """ Delete a group specified by its name """
@@ -163,19 +154,6 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 
   def findGroup(self,group):
     return self.getGroupID(group)
-
-  def getGroupID(self,group):
-    """ Get ID for a group specified by its name """
-    if type(group) in [IntType,LongType]:
-      return S_OK(group)
-    if group in self.db.groups.keys():
-      return S_OK(self.db.groups[group])
-    res = self.__getGroups()
-    if not res['OK']:
-      return res
-    if not group in self.db.groups.keys():
-      return S_ERROR('Group not found')
-    return S_OK(self.db.groups[group])
 
   def getGroupName(self,gid):
     """ Get group name for the given id """   

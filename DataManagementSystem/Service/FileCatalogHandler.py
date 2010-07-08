@@ -253,7 +253,7 @@ class FileCatalogHandler(RequestHandler):
 
   ########################################################################
   #
-  # Adinistrative database operations
+  # Administrative database operations
   #
 
   types_getCatalogContents = []

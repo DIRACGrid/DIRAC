@@ -14,104 +14,162 @@ GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalogDB
 FLUSH PRIVILEGES;
 
 USE FileCatalogDB;
--- -----------------------------------------------------------------------------
-
-drop table if exists FC_DirectoryInfo;
-CREATE TABLE FC_DirectoryInfo (
-    DirID INTEGER NOT NULL,
-    UID SMALLINT UNSIGNED NOT NULL default 0,
-    GID SMALLINT UNSIGNED NOT NULL default 0,
-    CreationDate DATETIME,
-    ModificationDate DATETIME,
-    Mode SMALLINT UNSIGNED NOT NULL default 775,
-    Status SMALLINT UNSIGNED NOT NULL default 0,
-    PRIMARY KEY (DirID)
-);
-
 -- ------------------------------------------------------------------------------
+
+drop table if exists FC_Files;
+CREATE TABLE FC_Files (
+    FileID INT AUTO_INCREMENT PRIMARY KEY,
+    DirID INT NOT NULL,
+    FileName VARCHAR(128) NOT NULL,
+    INDEX (DirID),
+    INDEX (FileName),
+    INDEX (DirID,FileName)
+);
 
 drop table if exists FC_FileInfo;
 CREATE TABLE FC_FileInfo (
     FileID INTEGER NOT NULL,
-    UID SMALLINT UNSIGNED NOT NULL default 0,
-    GID SMALLINT UNSIGNED NOT NULL default 0,
-    Size BIGINT UNSIGNED NOT NULL default 0,
+    UID SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    GID SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    Size BIGINT UNSIGNED NOT NULL DEFAULT 0,
     CheckSum VARCHAR(32),
     CheckSumType ENUM('Adler32','MD5'),
-    Type ENUM('File','Link') NOT NULL default 'File',
+    Type ENUM('File','Link') NOT NULL DEFAULT 'File',
     CreationDate DATETIME,
     ModificationDate DATETIME,
-    Mode SMALLINT UNSIGNED NOT NULL default 775,
-    Status SMALLINT UNSIGNED NOT NULL default 0,
-    PRIMARY KEY (FileID)
+    Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
+    Status SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (FileID),
+    INDEX(FileID),
+    INDEX(Status)
 );
 
--- ------------------------------------------------------------------------------
+-- Make additions to the FC_Files table to include the FC_FileInfo information
+ALTER TABLE FC_Files ADD COLUMN UID SMALLINT UNSIGNED NOT NULL DEFAULT 0 AFTER FileName;
+ALTER TABLE FC_Files ADD COLUMN GID SMALLINT UNSIGNED NOT NULL DEFAULT 0 AFTER UID;
+ALTER TABLE FC_Files ADD COLUMN Size BIGINT UNSIGNED NOT NULL DEFAULT 0 AFTER GID;
+ALTER TABLE FC_Files ADD COLUMN CheckSum VARCHAR(32) AFTER Size;
+ALTER TABLE FC_Files ADD COLUMN CheckSumType ENUM('Adler32','MD5') AFTER CheckSum;
+ALTER TABLE FC_Files ADD COLUMN Type ENUM('File','Link') NOT NULL DEFAULT 'File' AFTER CheckSumType;
+ALTER TABLE FC_Files ADD COLUMN CreationDate DATETIME AFTER Type;
+ALTER TABLE FC_Files ADD COLUMN ModificationDate DATETIME AFTER CreationDate;
+ALTER TABLE FC_Files ADD COLUMN Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775 AFTER ModificationDate;
+ALTER TABLE FC_Files ADD COLUMN Status SMALLINT UNSIGNED NOT NULL DEFAULT 0 AFTER Mode;
+ALTER TABLE FC_Files ADD INDEX (Status);
 
-drop table if exists FC_DirMeta;
-CREATE TABLE FC_DirMeta (
-    DirID INTEGER NOT NULL,
-    MetaKey VARCHAR(31) NOT NULL default 'Noname',
-    MetaValue VARCHAR(31) NOT NULL default 'Noname',
-    PRIMARY KEY (DirID,MetaKey)
+-- Make additions to the FC_FileInfo table to include the FC_Files information
+-- ALTER TABLE FC_FileInfo MODIFY COLUMN FileID INT AUTO_INCREMENT PRIMARY KEY;
+-- ALTER TABLE FC_FileInfo ADD COLUMN DirID INTEGER NOT NULL AFTER FileID;
+-- ALTER TABLE FC_FileInfo ADD INDEX (DirID);
+-- ALTER TABLE FC_FileInfo ADD COLUMN FileName VARCHAR(128) NOT NULL AFTER DirID;
+-- ALTER TABLE FC_FileInfo ADD INDEX (FileName);
+-- ALTER TABLE FC_FileInfo ADD COLUMN GUID CHAR(36) NOT NULL;
+
+DROP TABLE IF EXISTS FC_Statuses;
+CREATE TABLE FC_Statuses (
+    StatusID INT AUTO_INCREMENT PRIMARY KEY,
+    Status VARCHAR(32),
+    INDEX(Status),
+    INDEX(StatusID)
 );
--- ------------------------------------------------------------------------------
-
-drop table if exists FC_Groups;
-CREATE TABLE FC_Groups (
-    GID INTEGER NOT NULL AUTO_INCREMENT,
-    GroupName VARCHAR(127) NOT NULL default 'Noname',
-    PRIMARY KEY (GID),
-    UNIQUE KEY (GroupName)
-);
--- ------------------------------------------------------------------------------
-
-drop table if exists FC_Users;
-CREATE TABLE FC_Users (
-    UID INTEGER NOT NULL AUTO_INCREMENT,
-    UserName VARCHAR(127) NOT NULL default 'Noname',
-    PRIMARY KEY (UID),
-    UNIQUE KEY (UserName)
-);
--- ------------------------------------------------------------------------------
-
-drop table if exists FC_StorageElements;
-CREATE TABLE FC_StorageElements (
-    SEID INTEGER AUTO_INCREMENT PRIMARY KEY,
-    SEName VARCHAR(127) NOT NULL default 'Noname',
-    AliasName VARCHAR(127) NOT NULL default 'Noname'
-);
--- ------------------------------------------------------------------------------
-
-drop table if exists FC_GUID_to_LFN;
-CREATE TABLE FC_GUID_to_LFN (
-    GUID char(36) NOT NULL,
-    LFN VARCHAR(255),
-    PRIMARY KEY (GUID)
-);
-
--- ------------------------------------------------------------------------------
 
 drop table if exists FC_GUID_to_File;
 CREATE TABLE FC_GUID_to_File (
     GUID char(36) NOT NULL,
     FileID INTEGER UNSIGNED NOT NULL,
     PRIMARY KEY (GUID),
-    INDEX (FileID)
+    INDEX (FileID),
+    INDEX (GUID)
 );
--- ------------------------------------------------------------------------------
+
+-- -----------------------------------------------------------------------------
+
+drop table if exists FC_Replicas;
+CREATE TABLE FC_Replicas (
+    RepID INT AUTO_INCREMENT PRIMARY KEY,
+    FileID INT NOT NULL,
+    SEID INTEGER NOT NULL,
+    INDEX (FileID),
+    INDEX (SEID),
+    INDEX (FileID,SEID)
+);
 
 drop table if exists FC_ReplicaInfo;
 CREATE TABLE FC_ReplicaInfo (
-  RepID INTEGER NOT NULL AUTO_INCREMENT,
-  RepType ENUM ('Master','Slave') NOT NULL DEFAULT 'Master',
-  Status SMALLINT UNSIGNED NOT NULL default 0,
-  CreationDate DATETIME,
-  ModificationDate DATETIME,
-  PFN varchar(256),
-  PRIMARY KEY ( RepID ),
-  INDEX (Status)
+    RepID INTEGER NOT NULL AUTO_INCREMENT,
+    RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master',
+    Status SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    CreationDate DATETIME,
+    ModificationDate DATETIME,
+    PFN VARCHAR(1024),
+    PRIMARY KEY (RepID),
+    INDEX (Status),
+    INDEX (RepID)
 );
+
+-- Make additions to the FC_Replicas table to include the FC_ReplicaInfo information
+ALTER TABLE FC_Replicas ADD COLUMN RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master' AFTER SEID;
+ALTER TABLE FC_Replicas ADD COLUMN Status SMALLINT UNSIGNED NOT NULL DEFAULT 0 AFTER RepType;
+ALTER TABLE FC_Replicas ADD COLUMN CreationDate DATETIME AFTER Status;
+ALTER TABLE FC_Replicas ADD COLUMN ModificationDate DATETIME AFTER CreationDate;
+ALTER TABLE FC_Replicas ADD COLUMN PFN VARCHAR(1024) AFTER ModificationDate;
+ALTER TABLE FC_Files ADD INDEX (Status);
+
+-- Make additions to the FC_ReplicaInfo table to include the FC_Replicas information
+-- ALTER TABLE FC_ReplicaInfo ADD COLUMN FileID INTEGER NOT NULL AFTER RepID;
+-- ALTER TABLE FC_ReplicaInfo ADD INDEX (FileID);
+-- ALTER TABLE FC_ReplicaInfo ADD COLUMN SEID INTEGER NOT NULL AFTER FileID;
+-- ALTER TABLE FC_ReplicaInfo ADD INDEX (SEID);
+
+-- ------------------------------------------------------------------------------
+
+drop table if exists FC_Groups;
+CREATE TABLE FC_Groups (
+    GID INTEGER NOT NULL AUTO_INCREMENT,
+    GroupName VARCHAR(127) NOT NULL DEFAULT 'Noname',
+    PRIMARY KEY (GID),
+    UNIQUE KEY (GroupName)
+);
+
+drop table if exists FC_Users;
+CREATE TABLE FC_Users (
+    UID INTEGER NOT NULL AUTO_INCREMENT,
+    UserName VARCHAR(127) NOT NULL DEFAULT 'Noname',
+    PRIMARY KEY (UID),
+    UNIQUE KEY (UserName)
+);
+
+-- ------------------------------------------------------------------------------
+
+drop table if exists FC_StorageElements;
+CREATE TABLE FC_StorageElements (
+    SEID INTEGER AUTO_INCREMENT PRIMARY KEY,
+    SEName VARCHAR(127) NOT NULL DEFAULT 'Noname',
+    AliasName VARCHAR(127) NOT NULL DEFAULT 'Noname'
+);
+
+-- -----------------------------------------------------------------------------
+
+drop table if exists FC_DirectoryInfo;
+CREATE TABLE FC_DirectoryInfo (
+    DirID INTEGER NOT NULL,
+    UID SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    GID SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    CreationDate DATETIME,
+    ModificationDate DATETIME,
+    Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
+    Status SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (DirID)
+);
+
+drop table if exists FC_DirMeta;
+CREATE TABLE FC_DirMeta (
+    DirID INTEGER NOT NULL,
+    MetaKey VARCHAR(31) NOT NULL DEFAULT 'Noname',
+    MetaValue VARCHAR(31) NOT NULL DEFAULT 'Noname',
+    PRIMARY KEY (DirID,MetaKey)
+);
+
 
 drop table if exists FC_DirectoryTree;
 CREATE TABLE FC_DirectoryTree (
@@ -120,24 +178,6 @@ CREATE TABLE FC_DirectoryTree (
  Parent INT NOT NULL DEFAULT 0,
  INDEX (Parent),
  INDEX (DirName)
-);
-
-drop table if exists FC_Files;
-CREATE TABLE FC_Files (
- FileID INT AUTO_INCREMENT PRIMARY KEY,
- DirID INT NOT NULL,
- FileName VARCHAR(128) NOT NULL,
- INDEX (DirID),
- INDEX (FileName)
-);
-
-drop table if exists FC_Replicas;
-CREATE TABLE FC_Replicas (
- RepID INT AUTO_INCREMENT PRIMARY KEY,
- FileID INT NOT NULL,
- SEID INTEGER NOT NULL,
- INDEX (FileID),
- INDEX (SEID)
 );
 
 drop table if exists FC_DirectoryTreeM;
@@ -195,38 +235,3 @@ CREATE TABLE DirectoryInfo(
   INDEX(DirName)
 );
 
-DROP TABLE IF EXISTS FileInfo;
-CREATE TABLE FileInfo(
-  FileID INTEGER AUTO_INCREMENT PRIMARY KEY,
-  DirID INTEGER NOT NULL,
-  Size BIGINT UNSIGNED NOT NULL DEFAULT 0,
-  GUID CHAR(36) NOT NULL,
-  FileName VARCHAR(128) NOT NULL,
-  Checksum VARCHAR(32),
-  ChecksumType CHAR(8) DEFAULT 'Adler32',
-  Type CHAR(4) NOT NULL DEFAULT 'File',
-  UID CHAR(8) NOT NULL,
-  GID CHAR(8) NOT NULL,
-  CreationDate DATETIME,
-  ModificationDate DATETIME,
-  Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
-  Status SMALLINT UNSIGNED NOT NULL DEFAULT 0,
-  INDEX(DirID),
-  INDEX(FileName),
-  INDEX(Status)
-);
-
-DROP TABLE IF EXISTS ReplicaInfo;
-CREATE TABLE ReplicaInfo(
-  FileID INTEGER NOT NULL,
-  SEName VARCHAR(127) NOT NULL,
-  RepType CHAR(8) NOT NULL DEFAULT 'Replica',
-  Status CHAR(1) NOT NULL DEFAULT 'U',
-  CreationDate DATETIME,
-  ModificationDate DATETIME,
-  PFN VARCHAR(1024),
-  PRIMARY KEY (FileID,SEName),
-  INDEX(FileID),
-  INDEX(SEName),
-  INDEX (Status)
-);

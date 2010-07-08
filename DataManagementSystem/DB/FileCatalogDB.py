@@ -282,6 +282,43 @@ class FileCatalogDB(DB, DirectoryMetadata):
     successful = res['Value']['Successful']
     return S_OK( {'Successful':successful,'Failed':failed} )
 
+  def setFileOwner(self,lfns,credDict):
+    res = self._checkPathPermissions('Write', lfns, credDict)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    res = self.fileManager.setFileOwner(res['Value']['Successful'])
+    if not res['OK']:
+      return res
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']
+    return S_OK( {'Successful':successful,'Failed':failed} )
+  
+  def setFileGroup(self,lfns,credDict):  
+    res = self._checkPathPermissions('Write', lfns, credDict)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    res = self.fileManager.setFileGroup(res['Value']['Successful'])
+    if not res['OK']:
+      return res
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']
+    return S_OK( {'Successful':successful,'Failed':failed} )
+    
+  def setFileMode(self,lfns,credDict):  
+    res = self._checkPathPermissions('Write', lfns, credDict)
+    if not res['OK']:
+      return res
+    failed = res['Value']['Failed']
+    res = self.fileManager.setFileMode(res['Value']['Successful'])
+    if not res['OK']:
+      return res
+    failed.update(res['Value']['Failed'])
+    successful = res['Value']['Successful']
+    return S_OK( {'Successful':successful,'Failed':failed} )
+    
+  
   ########################################################################
   #
   #  File based read methods
@@ -433,6 +470,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
   #
   #  Catalog admin methods
   #
+
   def getCatalogContents(self,credDict):
     res = self._checkAdminPermission(credDict)
     if not res['OK']:
