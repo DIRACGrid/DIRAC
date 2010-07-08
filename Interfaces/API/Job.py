@@ -297,7 +297,9 @@ class Job:
 
        For specifying output data to be registered in Grid storage.  If a list
        of OutputSEs are specified the job wrapper will try each in turn until
-       successful.
+       successful.  If the OutputPath is specified this will appear only after
+       / <VO> / user / <initial> / <username>
+       directory.
 
        Example usage:
 
@@ -306,8 +308,8 @@ class Job:
 
        @param lfns: Output data file or files
        @type lfns: Single string or list of strings ['','']
-       @param OutputSE: Optional parameter to specify the Storage
-       @param OutputPath: Optional parameter to specify the Path in the Storage
+       @param OutputSE: Optional parameter to specify the Storage Element
+       @param OutputPath: Optional parameter to specify part of the path in the storage (see above)
        Element to store data or files, e.g. CERN-tape
        @type OutputSE: string or list
        @type OutputPath: string
