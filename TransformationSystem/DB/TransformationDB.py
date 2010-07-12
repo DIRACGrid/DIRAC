@@ -688,7 +688,8 @@ class TransformationDB(DB):
   def __insertExistingTransformationFiles(self,transID,fileTuples,connection=False):
     req = "INSERT INTO TransformationFiles (TransformationID,Status,TaskID,FileID,TargetSE,UsedSE,LastUpdate) VALUES"
     candidates = False
-    for lfn,originalID,fileID,status,taskID,targetSE,usedSE,errorCount,lastUpdate,insertTime in fileTuples:
+    for tuple in fileTuples:
+      lfn,originalID,fileID,status,taskID,targetSE,usedSE,errorCount,lastUpdate,insertTime = tuple[:10]
       if status != 'Unused':
         candidates = True
         if not re.search('-',status):
