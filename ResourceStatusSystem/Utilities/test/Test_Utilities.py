@@ -6,16 +6,19 @@ import DIRAC.ResourceStatusSystem.test.fake_rsDB
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
 from DIRAC.ResourceStatusSystem.Utilities.Publisher import Publisher
+from DIRAC.ResourceStatusSystem.Utilities.Synchronizer import Synchronizer
 import DIRAC.ResourceStatusSystem.test.fake_Logger
 
 class UtilitiesTestCase(unittest.TestCase):
   """ Base class for the Utilities test cases
   """
   def setUp(self):
-#    from DIRAC.Core.Base import Script
-#    Script.parseCommandLine() 
+    from DIRAC.Core.Base import Script
+    Script.parseCommandLine() 
+    
     sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
     sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    
     from DIRAC import gConfig
     
 #    from DIRAC.ResourceStatusSystem.test.fake_rsDB import ResourceStatusDB
@@ -294,9 +297,32 @@ class InfoGetterSuccess(UtilitiesTestCase):
 
 #############################################################################
 
+class SynchronizerSuccess(UtilitiesTestCase):
+  
+  
+  def test__syncUtils(self):
+    self.syncC = Synchronizer()
+    self.syncC._syncUtils()
+
+  def test__syncSites(self):
+    self.syncC = Synchronizer()
+    self.syncC._syncSites()
+
+  def test__syncResources(self):
+    self.syncC = Synchronizer()
+    self.syncC._syncResources()
+
+  def test__syncStorageElements(self):
+    self.syncC = Synchronizer()
+    self.syncC._syncStorageElements()
+
+#############################################################################
+
+
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(UtilitiesTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PublisherSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(InfoGetterSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SynchronizerSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 

@@ -198,6 +198,8 @@ class DTCached_Command(Command):
       if len(res) == 0:
         return {'Result':{'DT':None}}
 
+      print res
+
       if len(res) > 1:
         #there's more than one DT
         dt_ID_startingSoon = res[0]
@@ -205,23 +207,36 @@ class DTCached_Command(Command):
                                                             'StartDate', dt_ID_startingSoon)[0]
         start_datetime_startingSoon = datetime( *time.strptime(startSTR_startingSoon,
                                                                 "%Y-%m-%d %H:%M")[0:5] )
+        endSTR_startingSoon = self.client.getCachedResult(name, commandName, 
+                                                          'EndDate', dt_ID_startingSoon)[0]
+        end_datetime_startingSoon = datetime( *time.strptime(endSTR_startingSoon,
+                                                             "%Y-%m-%d %H:%M")[0:5] )
+        
         if start_datetime_startingSoon < now:
-          DT_ID = dt_ID_startingSoon
-        else:
-          for dt_ID in res[1:]:
-            #looking for an ongoing one
-            startSTR = self.client.getCachedResult(name, commandName, 'StartDate', dt_ID)[0]
-            start_datetime = datetime( *time.strptime(startSTR, "%Y-%m-%d %H:%M")[0:5] )
-            if start_datetime < now:
-              DT_ID = dt_ID
-              break
-            if start_datetime < start_datetime_startingSoon:
-              dt_ID_startingSoon = dt_ID
-          try:
-            DT_ID
-          except:
-            #if I'm here, there's no OnGoing DT
+          if end_datetime_startingSoon > now:
+            #ongoing downtime found!
             DT_ID = dt_ID_startingSoon
+          else:
+            for dt_ID in res[1:]:
+              #looking for an ongoing one
+              startSTR = self.client.getCachedResult(name, commandName, 'StartDate', dt_ID)[0]
+              start_datetime = datetime( *time.strptime(startSTR, "%Y-%m-%d %H:%M")[0:5] )
+              endSTR = self.client.getCachedResult(name, commandName, 'EndDate', dt_ID)[0]
+              end_datetime = datetime( *time.strptime(endSTR, "%Y-%m-%d %H:%M")[0:5] )
+  
+              if start_datetime < now:
+                if end_datetime > now:
+                  #ongoing downtime found!
+                  DT_ID = dt_ID
+                break
+              if start_datetime < start_datetime_startingSoon:
+                #the DT starts before the former considered one
+                dt_ID_startingSoon = dt_ID
+            try:
+              DT_ID
+            except:
+              #if I'm here, there's no OnGoing DT
+              DT_ID = dt_ID_startingSoon
 
       else:
         DT_ID = res[0]

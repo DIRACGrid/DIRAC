@@ -25,6 +25,7 @@ from DIRAC.ResourceStatusSystem.Utilities.Publisher import Publisher
 from DIRAC.ResourceStatusSystem.Command.CommandCaller import CommandCaller
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
+from DIRAC.ResourceStatusSystem.Utilities.Synchronizer import Synchronizer
 
 rsDB = False
 
@@ -49,7 +50,11 @@ def initializeResourceStatusHandler(serviceInfo):
   publisher = Publisher(VOExtension, rsDBIn = rsDB, commandCallerIn = cc, 
                         infoGetterIn = ig, WMSAdminIn = WMSAdmin)
 
-  gConfig.addListenerToNewVersionEvent( rsDB.syncWithCS )
+#  gConfig.addListenerToNewVersionEvent( rsDB.syncWithCS )
+  sync_O = Synchronizer(rsDB)
+  gConfig.addListenerToNewVersionEvent( sync_O.sync(['Utils', 'Sites', 'Resources', 
+                                                     'StorageElements']) )
+  
   return S_OK()
 
 class ResourceStatusHandler(RequestHandler):

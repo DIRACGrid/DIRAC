@@ -6,6 +6,8 @@ g_BaseRegistrySection = "/Registry"
 g_BaseResourcesSection = "/Resources"
 g_BaseOperationsSection = "/Operations"
 
+import time
+
 #############################################################################
 
 def getMailForUser( users ):
@@ -75,6 +77,23 @@ def getLFCSites():
   lfcL = gConfig.getSections('%s/FileCatalogs/LcgFileCatalogCombined' %g_BaseResourcesSection, 
                              True)
   return lfcL
+
+def getStorageElements( hostName = None ):
+  SEs = gConfig.getSections('%s/StorageElements' %g_BaseResourcesSection)
+  if not SEs['OK']:
+    return SEs
+  SEs = SEs['Value']
+  if hostName != None:
+    removeSEs = []
+    if isinstance(hostName, basestring):
+      hostName = [hostName]
+    for SE in SEs:
+      host = gConfig.getValue('%s/StorageElements/%s/AccessProtocol.1/Host' %(g_BaseResourcesSection, SE) )
+      if host not in hostName:
+        removeSEs.append(SE)
+    for SE in removeSEs:
+      SEs.remove(SE)
+  return S_OK(SEs)
 
 def getLFCNode( sites = None, readable = None ):
   if sites == None:

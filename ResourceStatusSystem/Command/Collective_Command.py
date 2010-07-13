@@ -249,15 +249,18 @@ class DTEverySites_Command(Command):
     resToReturn = {}
     
     for dt_ID in res:
-      dt = {}
-      dt['ID'] = dt_ID
-      dt['StartDate'] = res[dt_ID]['FORMATED_START_DATE']
-      dt['EndDate'] = res[dt_ID]['FORMATED_END_DATE']
-      dt['Severity'] = res[dt_ID]['SEVERITY']
-      dt['Description'] = res[dt_ID]['DESCRIPTION'].replace('\'', '')
-      dt['Link'] = res[dt_ID]['GOCDB_PORTAL_URL']
-      DIRACname = getDIRACSiteName(res[dt_ID]['SITENAME'])['Value']
-      resToReturn[DIRACname] = dt
+      try:
+        dt = {}
+        dt['ID'] = dt_ID
+        dt['StartDate'] = res[dt_ID]['FORMATED_START_DATE']
+        dt['EndDate'] = res[dt_ID]['FORMATED_END_DATE']
+        dt['Severity'] = res[dt_ID]['SEVERITY']
+        dt['Description'] = res[dt_ID]['DESCRIPTION'].replace('\'', '')
+        dt['Link'] = res[dt_ID]['GOCDB_PORTAL_URL']
+        DIRACname = getDIRACSiteName(res[dt_ID]['SITENAME'])['Value']
+        resToReturn[DIRACname] = dt
+      except KeyError:
+        continue
     
     return resToReturn
 
