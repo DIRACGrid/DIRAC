@@ -99,7 +99,7 @@ class Dispatcher:
     if not handlerLocation:
       handlerLocation = self.__autoDiscoverHandlerLocation( serviceName )
       if not handlerLocation:
-        return S_ERROR( "HandlerLocation is not defined in %s and autodiscover failed" % serviceCfg.getServicePath() )
+        return S_ERROR( "HandlerPath is not defined in %s and autodiscover failed" % serviceCfg.getServicePath() )
     gLogger.debug( "Found a handler", handlerLocation )
     if handlerLocation.find( "Handler.py" ) != len( handlerLocation ) - 10:
       return S_ERROR( "File %s does not have a valid handler name" % handlerLocation )
@@ -110,7 +110,7 @@ class Dispatcher:
       handlerModule = __import__( ".".join( lServicePath ),
                                    globals(),
                                    locals(), handlerName )
-      handlerClass  = getattr( handlerModule, handlerName )
+      handlerClass = getattr( handlerModule, handlerName )
     except Exception, e:
       gLogger.exception()
       return S_ERROR( "Can't import handler: %s" % str( e ) )
@@ -171,10 +171,10 @@ class Dispatcher:
       handlerInitFunc = handlerDict[ "handlerInitialization" ]
       if handlerInitFunc:
         try:
-          retDict = handlerInitFunc( serviceInfo  )
+          retDict = handlerInitFunc( serviceInfo )
         except Exception, e:
           gLogger.exception()
-          DIRAC.abort( 10, "Can't call handler initialization function" "for service %s", ( serviceName, str(e) ) )
+          DIRAC.abort( 10, "Can't call handler initialization function" "for service %s", ( serviceName, str( e ) ) )
         if not retDict[ 'OK' ]:
           DIRAC.abort( 10, "Error in the initialization function", retDict[ 'Message' ] )
 
@@ -221,7 +221,7 @@ class Dispatcher:
     """
     retVal = clientTransport.receiveData( 1024 )
     if not retVal[ 'OK' ]:
-      gLogger.error( "Invalid action proposal", "%s %s" % ( self.__formattedRemoteCredentials(clientTransport),
+      gLogger.error( "Invalid action proposal", "%s %s" % ( self.__formattedRemoteCredentials( clientTransport ),
                                                             retVal[ 'Message' ] ) )
       return
     proposalTuple = retVal[ 'Value' ]
@@ -240,7 +240,7 @@ class Dispatcher:
   def _createIdentityStringFromCredDict( self, credDict ):
     if 'username' in credDict:
       if 'group' in credDict:
-        identity = "[%s:%s]" % ( credDict[ 'username' ], credDict[ 'group' ]  )
+        identity = "[%s:%s]" % ( credDict[ 'username' ], credDict[ 'group' ] )
       else:
         identity = "[%s:unknown]" % credDict[ 'username' ]
     else:
@@ -254,7 +254,7 @@ class Dispatcher:
     Authorize the action being proposed by the client
     """
     if serviceName not in self.servicesDict:
-      gLogger.error( "Client is trying to connect to an invalid service", "%s is not one of %s"  % ( serviceName,
+      gLogger.error( "Client is trying to connect to an invalid service", "%s is not one of %s" % ( serviceName,
                                                                                                      self.servicesDict.keys() ) )
       clientTransport.sendData( S_ERROR( "%s is not up in this service" % serviceName ) )
       return
@@ -305,7 +305,7 @@ class Dispatcher:
                                                                 clientParams,
                                                                 clientTransport )
     except Exception, e:
-      clientTransport.sendData( S_ERROR( "Server error while initializing handler: %s" % str(e) ) )
+      clientTransport.sendData( S_ERROR( "Server error while initializing handler: %s" % str( e ) ) )
       raise
     retVal = clientTransport.sendData( S_OK() )
     if not retVal[ 'OK' ]:
