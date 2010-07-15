@@ -8,7 +8,10 @@ __RCSID__ = "$Id$"
 
 import time
 import random
-import md5
+try:
+  import hashlib as md5
+except:
+  import md5
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security.X509Request import X509Request
@@ -733,7 +736,7 @@ class ProxyDB( DB ):
       lifeTime = gConfig.getValue( "/DIRAC/VOPolicy/TokenLifeTime", self.__defaultTokenLifetime )
     maxUses = gConfig.getValue( "/DIRAC/VOPolicy/TokenMaxUses", self.__defaultTokenMaxUses )
     numUses = max( 1, min( numUses, maxUses ) )
-    m = md5.new()
+    m = md5.md5()
     rndData = "%s.%s.%s.%s" % ( time.time(), random.random(), numUses, lifeTime )
     m.update( rndData )
     token = m.hexdigest()

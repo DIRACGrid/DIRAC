@@ -8,35 +8,34 @@ __RCSID__ = "$Id$"
 
 import time
 import random
-import md5
 import types
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import Time, List, Network
 
-class ComponentMonitoringDB(DB):
+class ComponentMonitoringDB( DB ):
 
-  def __init__(self, requireVoms = False,
+  def __init__( self, requireVoms = False,
                useMyProxy = False,
                maxQueueSize = 10 ):
-    DB.__init__(self,'ComponentMonitoringDB','Framework/ComponentMonitoringDB',maxQueueSize)
+    DB.__init__( self, 'ComponentMonitoringDB', 'Framework/ComponentMonitoringDB', maxQueueSize )
     random.seed()
     retVal = self.__initializeDB()
     if not retVal[ 'OK' ]:
-      raise Exception( "Can't create tables: %s" % retVal[ 'Message' ])
+      raise Exception( "Can't create tables: %s" % retVal[ 'Message' ] )
     self.__optionalFields = ( 'startTime', 'cycles', 'version', 'queries',
                               'DIRACVersion', 'description', 'platform' )
     self.__mainFields = ( "Id", "Setup", "Type", "ComponentName", "Host", "Port",
                           "StartTime", "LastHeartbeat", "cycles", "queries", "LoggingState" )
     self.__versionFields = ( 'VersionTimestamp', 'Version', 'DIRACVersion', 'Platform', 'Description' )
 
-  def getOptionalFields(self):
+  def getOptionalFields( self ):
     return self.__optionalFields
 
   def __getTableName( self, name ):
     return "compmon_%s" % name
 
-  def __initializeDB(self):
+  def __initializeDB( self ):
     """
     Create the tables
     """
@@ -104,7 +103,7 @@ class ComponentMonitoringDB(DB):
       sqlInsertFields.append( field )
       sqlInsertValues.append( "'%s'" % value )
       sqlCond.append( "%s = '%s'" % ( field, value ) )
-    compLogName = ":".join( sqlInsertValues ).replace("'","")
+    compLogName = ":".join( sqlInsertValues ).replace( "'", "" )
     self.log.info( "Trying to register %s" % compLogName )
     result = self._query( "SELECT id FROM `%s` WHERE %s" % ( tableName, " AND ".join( sqlCond ) ) )
     if not result[ 'OK' ]:
@@ -344,14 +343,14 @@ class ComponentMonitoringDB(DB):
             for url in List.fromChar( serviceURLs[ service ] ):
               loc = url[ url.find( "://" ) + 3: ]
               iS = loc.find( "/" )
-              componentName = loc[ iS+1: ]
+              componentName = loc[ iS + 1: ]
               loc = loc[ :iS ]
               hostname, port = loc.split( ":" )
               compDict = { 'ComponentName' : componentName,
                            'Type' : 'service',
                            'Setup' : setup,
                            'Host' : hostname,
-                           'Port' : int(port)
+                           'Port' : int( port )
                           }
               if self.__componentMatchesCondition( compDict, requiredComponents, conditionDict ):
                 statusSet.addUniqueToSet( requiredComponents, compDict )
@@ -409,7 +408,7 @@ class StatusSet:
     for i in range( len( componentList ) ):
       component = componentList[i]
       for j in range( len( componentList ) ):
-        if i==j or componentList[j] == False :
+        if i == j or componentList[j] == False :
           continue
         potentiallyMoreRestrictiveComponent = componentList[j]
         match = True
@@ -465,7 +464,7 @@ class StatusSet:
 
   def __addFoundDefinedComponent( self, compDictList ):
     cD = self.walkSet( self.__requiredSet, compDictList[0] )
-    dbD = self.walkSet( self.__dbSet, compDictList[0]  )
+    dbD = self.walkSet( self.__dbSet, compDictList[0] )
     now = Time.dateTime()
     unmatched = compDictList
     for dbComp in dbD:
