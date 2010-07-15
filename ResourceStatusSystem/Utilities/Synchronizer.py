@@ -36,6 +36,9 @@ class Synchronizer:
     :params:
       :attr:`thingsToSync`: list of things to sync
     """
+    
+    gLogger.info("!!! Sync DB content with CS content for %s !!!" %(' '.join(x for x in thingsToSync)))
+    
     for thing in thingsToSync:
       getattr(self, '_sync'+thing)()
       

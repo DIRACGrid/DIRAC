@@ -198,8 +198,6 @@ class DTCached_Command(Command):
       if len(res) == 0:
         return {'Result':{'DT':None}}
 
-      print res
-
       if len(res) > 1:
         #there's more than one DT
         dt_ID_startingSoon = res[0]
