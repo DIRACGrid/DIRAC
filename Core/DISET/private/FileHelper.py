@@ -2,7 +2,10 @@
 __RCSID__ = "$Id$"
 
 import os
-import md5
+try:
+  import hashlib as md5
+except:
+  import md5
 import types
 import threading
 import cStringIO
@@ -20,7 +23,7 @@ class FileHelper:
 
   def __init__( self, oTransport = None ):
     self.oTransport = oTransport
-    self.__oMD5 = md5.new()
+    self.__oMD5 = md5.md5()
     self.bFinishedTransmission = False
     self.bReceivedEOF = False
     self.direction = False
@@ -138,7 +141,7 @@ class FileHelper:
   def networkToDataSink( self, dataSink, maxFileSize = 0 ):
     if "write" not in dir( dataSink ):
       return S_ERROR( "%s data sink object does not have a write method" % str( dataSink ) )
-    self.__oMD5 = md5.new()
+    self.__oMD5 = md5.md5()
     self.bReceivedEOF = False
     self.bErrorInMD5 = False
     receivedBytes = 0
@@ -175,11 +178,11 @@ class FileHelper:
 
     iPacketSize = self.packetSize
     ioffset = 0
-    strlen = len(stringVal)
+    strlen = len( stringVal )
     try:
-      while (ioffset) < strlen:
-        if (ioffset+iPacketSize) < strlen:
-          result = self.sendData( stringVal[ioffset:ioffset+iPacketSize] )
+      while ( ioffset ) < strlen:
+        if ( ioffset + iPacketSize ) < strlen:
+          result = self.sendData( stringVal[ioffset:ioffset + iPacketSize] )
         else:
           result = self.sendData( stringVal[ioffset:strlen] )
         if not result['OK']:
@@ -198,7 +201,7 @@ class FileHelper:
     return S_OK()
 
   def FDToNetwork( self, iFD ):
-    self.__oMD5 = md5.new()
+    self.__oMD5 = md5.md5()
     iPacketSize = self.packetSize
     self.__fileBytes = 0
     sentBytes = 0
@@ -230,7 +233,7 @@ class FileHelper:
   def DataSourceToNetwork( self, dataSource ):
     if "read" not in dir( dataSource ):
       return S_ERROR( "%s data source object does not have a read method" % str( dataSource ) )
-    self.__oMD5 = md5.new()
+    self.__oMD5 = md5.md5()
     iPacketSize = self.packetSize
     try:
       sBuffer = dataSource.read( iPacketSize )
@@ -313,12 +316,12 @@ class FileHelper:
       try:
         filePipe, filePath = tempfile.mkstemp()
       except Exception, e:
-        return S_ERROR( "Can't create temporary file to pregenerate the bulk: %s" % str(e) )
+        return S_ERROR( "Can't create temporary file to pregenerate the bulk: %s" % str( e ) )
       self.__createTar( fileList, filePipe, compress )
       try:
         fo = file( filePath, 'rb' )
       except Exception, e:
-        return S_ERROR( "Can't read pregenerated bulk: %s" % str(e))
+        return S_ERROR( "Can't read pregenerated bulk: %s" % str( e ) )
       result = self.DataSourceToNetwork( fo )
       try:
         fo.close()
@@ -366,7 +369,7 @@ class FileHelper:
     try:
       self.__extractTar( destDir, rPipe, compress )
     except Exception, e:
-      return S_ERROR( "Error while extracting bulk: %s" % e)
+      return S_ERROR( "Error while extracting bulk: %s" % e )
     thrd.join()
     return retList[0]
 
@@ -388,5 +391,5 @@ class FileHelper:
     except tarfile.CompressionError, v:
       return S_ERROR( "Error in bulk compression setting: %s" % str( v ) )
     except Exception, v:
-      return S_ERROR( "Error in listing bulk: %s" % str( v )  )
+      return S_ERROR( "Error in listing bulk: %s" % str( v ) )
 
