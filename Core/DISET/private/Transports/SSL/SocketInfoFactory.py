@@ -4,7 +4,10 @@ __RCSID__ = "$Id$"
 import socket
 import select
 import os
-import md5
+try:
+  import hashlib as md5
+except:
+  import md5
 import GSI
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities import List, Network
@@ -40,7 +43,7 @@ class SocketInfoFactory:
     osSocket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
     sslSocket = GSI.SSL.Connection( socketInfo.getSSLContext(), osSocket )
     #Generate sessionId
-    sessionHash = md5.new()
+    sessionHash = md5.md5()
     sessionHash.update( str( hostAddress ) )
     sessionHash.update( "|%s" % str( socketInfo.getLocalCredentialsLocation() ) )
     for key in ( 'proxyLocation', 'proxyString' ):
