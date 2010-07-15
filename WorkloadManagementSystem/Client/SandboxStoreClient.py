@@ -4,7 +4,10 @@
 
 import os
 import tarfile
-import md5
+try:
+  import hashlib as md5
+except:
+  import md5
 import tempfile
 import types
 import re
@@ -19,7 +22,7 @@ class SandboxStoreClient:
 
   __validSandboxTypes = ( 'Input', 'Output' )
 
-  def __init__( self, useCertificates = False, rpcClient = False, transferClient = False, 
+  def __init__( self, useCertificates = False, rpcClient = False, transferClient = False,
                 delegatedDN = None, delegatedGroup = None, setup = None ):
     self.__serviceName = "WorkloadManagement/SandboxStore"
     self.__rpcClient = rpcClient
@@ -33,15 +36,15 @@ class SandboxStoreClient:
     if self.__rpcClient:
       return self.__rpcClient
     else:
-      return RPCClient( self.__serviceName, useCertificates = self.__useCertificates, 
-                        delegatedGroup=self.__delegatedGroup, delegatedDN=self.__delegatedDN, setup=self.__setup )
+      return RPCClient( self.__serviceName, useCertificates = self.__useCertificates,
+                        delegatedGroup = self.__delegatedGroup, delegatedDN = self.__delegatedDN, setup = self.__setup )
 
   def __getTransferClient( self ):
     if self.__transferClient:
       return self.__transferClient
     else:
-      return TransferClient( self.__serviceName, useCertificates = self.__useCertificates, 
-                             delegatedGroup=self.__delegatedGroup, delegatedDN=self.__delegatedDN, setup=self.__setup )
+      return TransferClient( self.__serviceName, useCertificates = self.__useCertificates,
+                             delegatedGroup = self.__delegatedGroup, delegatedDN = self.__delegatedDN, setup = self.__setup )
 
   #Upload sandbox to jobs and pilots
 
@@ -104,7 +107,7 @@ class SandboxStoreClient:
         result[ 'SandboxFileName' ] = tmpFilePath
         return result
 
-    oMD5 = md5.new()
+    oMD5 = md5.md5()
     fd = open( tmpFilePath, "rb" )
     bData = fd.read( 10240 )
     while bData:
@@ -158,19 +161,19 @@ class SandboxStoreClient:
 
     result = S_OK()
     tarFileName = os.path.join( tmpSBDir, sbFileName )
-    
+
     if inMemory:
       try:
-        tfile = open(tarFileName,'r')
+        tfile = open( tarFileName, 'r' )
         data = tfile.read()
         tfile.close()
-        os.unlink(tarFileName)
-        os.rmdir( tmpSBDir )  
-      except Exception, e:
-        os.unlink(tarFileName)
+        os.unlink( tarFileName )
         os.rmdir( tmpSBDir )
-        return S_ERROR('Failed to read the sandbox archive: %s' % str(e))
-      return S_OK(data)    
+      except Exception, e:
+        os.unlink( tarFileName )
+        os.rmdir( tmpSBDir )
+        return S_ERROR( 'Failed to read the sandbox archive: %s' % str( e ) )
+      return S_OK( data )
 
     try:
       sandboxSize = 0
@@ -211,7 +214,7 @@ class SandboxStoreClient:
       entitiesList.append( "Job:%s" % jobId )
     return self.__unassignEntities( entitiesList )
 
-  def downloadSandboxForJob( self, jobId, sbType, destinationPath = "", inMemory=False ):
+  def downloadSandboxForJob( self, jobId, sbType, destinationPath = "", inMemory = False ):
     result = self.__getSandboxesForEntity( "Job:%s" % jobId )
     if not result[ 'OK' ]:
       return result

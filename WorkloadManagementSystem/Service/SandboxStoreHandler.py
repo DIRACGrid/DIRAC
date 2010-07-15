@@ -11,7 +11,6 @@ __RCSID__ = "$Id$"
 
 from types import *
 import os
-import md5
 import time
 import random
 import types
@@ -75,7 +74,7 @@ class SandboxStoreHandler( RequestHandler ):
     """
     Receive a file as a sandbox
     """
-  
+
     if self.__maxUploadBytes and fileSize > self.__maxUploadBytes:
       fileHelper.markAsTransferred()
       return S_ERROR( "Sandbox is too big. Please upload it to a grid storage element" )
@@ -111,7 +110,7 @@ class SandboxStoreHandler( RequestHandler ):
       gLogger.info( "Sandbox already exists. Skipping upload" )
       fileHelper.markAsTransferred()
       sbURL = "SB:%s|%s" % ( seName, sePFN )
-      assignTo = dict( [ ( key,  [ ( sbURL, assignTo[ key ] ) ] ) for key in assignTo ] )
+      assignTo = dict( [ ( key, [ ( sbURL, assignTo[ key ] ) ] ) for key in assignTo ] )
       result = self.export_assignSandboxesToEntities( assignTo )
       if not result[ 'OK' ]:
         return result
@@ -150,7 +149,7 @@ class SandboxStoreHandler( RequestHandler ):
       return result
 
     sbURL = "SB:%s|%s" % ( self.__seNameToUse, sbPath )
-    assignTo = dict( [ ( key,  [ ( sbURL, assignTo[ key ] ) ] ) for key in assignTo ] )
+    assignTo = dict( [ ( key, [ ( sbURL, assignTo[ key ] ) ] ) for key in assignTo ] )
     result = self.export_assignSandboxesToEntities( assignTo )
     if not result[ 'OK' ]:
       return result
@@ -234,9 +233,9 @@ class SandboxStoreHandler( RequestHandler ):
     tfd = False
     if not destFileName:
       try:
-        tfd, destFileName = tempfile.mkstemp( prefix="DSB." )
+        tfd, destFileName = tempfile.mkstemp( prefix = "DSB." )
       except Exception, e:
-        return S_ERROR( "Cannot create temporal file: %s" % str(e) )
+        return S_ERROR( "Cannot create temporal file: %s" % str( e ) )
     destFileName = os.path.realpath( destFileName )
     try:
       os.makedirs( os.path.dirname( destFileName ) )
@@ -258,7 +257,7 @@ class SandboxStoreHandler( RequestHandler ):
     try:
       os.unlink( filePath )
     except Exception, e:
-      gLogger.warn(" Could not unlink file %s: %s" % ( filePath, str( e ) ) )
+      gLogger.warn( " Could not unlink file %s: %s" % ( filePath, str( e ) ) )
       return False
     return True
 
@@ -279,8 +278,8 @@ class SandboxStoreHandler( RequestHandler ):
           os.rename( localFilePath, hdFilePath )
         except Exception, e:
           errMsg = "Cannot move temporal file to final path"
-          gLogger.error( errMsg, str(e) )
-          result = S_ERROR( "%s: %s" % ( errMsg, str(e) ) )
+          gLogger.error( errMsg, str( e ) )
+          result = S_ERROR( "%s: %s" % ( errMsg, str( e ) ) )
     else:
       result = self.__copyToExternalSE( localFilePath, sbPath )
 
@@ -304,7 +303,7 @@ class SandboxStoreHandler( RequestHandler ):
         return S_ERROR( "RM returned OK to the action but SB transfer wasn't in the successful ones" )
       return S_OK( ( self.__externalSEName, okTrans[ sbPath ] ) )
     except Exception, e:
-      return S_ERROR( "Error while moving sandbox to SE: %s" % str(e) )
+      return S_ERROR( "Error while moving sandbox to SE: %s" % str( e ) )
 
   ##################
   # Assigning sbs to jobs
@@ -337,7 +336,7 @@ class SandboxStoreHandler( RequestHandler ):
     if not assignList:
       return S_OK()
     credDict = self.getRemoteCredentials()
-    return sandboxDB.assignSandboxesToEntities( assignList, credDict[ 'username' ], credDict[ 'group' ], 
+    return sandboxDB.assignSandboxesToEntities( assignList, credDict[ 'username' ], credDict[ 'group' ],
                                                 ownerName, ownerGroup )
 
   ##################
@@ -400,7 +399,7 @@ class SandboxStoreHandler( RequestHandler ):
     result = fileHelper.FDToNetwork( fd )
     fileHelper.oFile.close()
     return result
-  
+
   ##################
   # Purge sandboxes
 
@@ -430,13 +429,13 @@ class SandboxStoreHandler( RequestHandler ):
     if SEName != self.__localSEName:
      return self.__deleteSandboxFromExternalBackend( SEName, SEPFN )
     else:
-      hdPath =  self.__sbToHDPath( SEPFN )
+      hdPath = self.__sbToHDPath( SEPFN )
       if not os.path.isfile( hdPath ):
         return S_OK()
       try:
         os.unlink( hdPath )
       except Exception, e:
-        gLogger.error( "Cannot delete local sandbox", "%s : %s" % ( hdPath, str(e) ) )
+        gLogger.error( "Cannot delete local sandbox", "%s : %s" % ( hdPath, str( e ) ) )
       while hdPath:
         hdPath = os.path.dirname( hdPath )
         gLogger.info( "Checking if dir %s is empty" % hdPath )
@@ -449,7 +448,7 @@ class SandboxStoreHandler( RequestHandler ):
         try:
           os.rmdir( hdPath )
         except Exception, e:
-          gLogger.error( "Cannot clean empty directory", "%s : %s" % ( hdPath, str(e) ) )
+          gLogger.error( "Cannot clean empty directory", "%s : %s" % ( hdPath, str( e ) ) )
           break
     return S_OK()
 
@@ -470,7 +469,7 @@ class SandboxStoreHandler( RequestHandler ):
                                     request.toXML()[ 'Value' ] )
       except Exception, e:
         gLogger.exception( "Exception while setting deletion request" )
-        return S_ERROR( "Cannot set deletion request: %s" % str(e) )
+        return S_ERROR( "Cannot set deletion request: %s" % str( e ) )
     else:
       gLogger.info( "Deleting external Sandbox" )
       try:
