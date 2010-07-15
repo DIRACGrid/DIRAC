@@ -8,20 +8,23 @@ __RCSID__ = "$Id$"
 
 from types import *
 import os
-import md5
+try:
+  import hashlib as md5
+except:
+  import md5
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.FrameworkSystem.Service.PlotCache import gPlotCache
 from DIRAC.Core.Utilities.Graphs import graph
-import tempfile 
+import tempfile
 
 def initializePlottingHandler( serviceInfo ):
 
   #Get data location
   plottingSection = PathFinder.getServiceSection( "Framework/Plotting" )
-  dataPath = gConfig.getValue( "%s/DataLocation" % plottingSection, "data/graphs" )  
+  dataPath = gConfig.getValue( "%s/DataLocation" % plottingSection, "data/graphs" )
   dataPath = dataPath.strip()
   if "/" != dataPath[0]:
     dataPath = os.path.realpath( "%s/%s" % ( rootPath, dataPath ) )
@@ -38,28 +41,28 @@ def initializePlottingHandler( serviceInfo ):
   except IOError:
     gLogger.fatal( "Can't write to %s" % dataPath )
     return S_ERROR( "Data location is not writable" )
-    
+
   gPlotCache.setPlotsLocation( dataPath )
   gMonitor.registerActivity( "plotsDrawn", "Drawn plot images", "Plotting requests", "plots", gMonitor.OP_SUM )
   return S_OK()
 
 class PlottingHandler( RequestHandler ):
-    
-  def __calculatePlotHash(self,data,metadata,subplotMetadata):
-    m = md5.new()
-    m.update(repr({'Data':data,'PlotMetadata':metadata,'SubplotMetadata':subplotMetadata}))
-    return m.hexdigest()  
-    
-  types_generatePlot = [ [DictType,ListType], DictType, [DictType,ListType] ]
+
+  def __calculatePlotHash( self, data, metadata, subplotMetadata ):
+    m = md5.md5()
+    m.update( repr( {'Data':data, 'PlotMetadata':metadata, 'SubplotMetadata':subplotMetadata} ) )
+    return m.hexdigest()
+
+  types_generatePlot = [ [DictType, ListType], DictType, [DictType, ListType] ]
   def export_generatePlot( self, data, plotMetadata, subplotMetadata ):
     """ Create a plot according to the client specification and return its name
     """
 
-    plotHash = self.__calculatePlotHash(data,plotMetadata,subplotMetadata)
-    result = gPlotCache.getPlot(plotHash,data,plotMetadata,subplotMetadata)
+    plotHash = self.__calculatePlotHash( data, plotMetadata, subplotMetadata )
+    result = gPlotCache.getPlot( plotHash, data, plotMetadata, subplotMetadata )
     if not result['OK']:
       return result
-    return S_OK(result['Value']['plot'])    
+    return S_OK( result['Value']['plot'] )
 
   def transfer_toClient( self, fileId, token, fileHelper ):
     """

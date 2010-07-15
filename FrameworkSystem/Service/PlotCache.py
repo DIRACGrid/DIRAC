@@ -7,7 +7,6 @@ __RCSID__ = "$Id$"
 
 import os
 import os.path
-import md5
 import time
 import threading
 
@@ -18,7 +17,7 @@ from DIRAC.Core.Utilities.Graphs import graph
 
 class PlotCache:
 
-  def __init__( self, plotsLocation=False ):
+  def __init__( self, plotsLocation = False ):
     self.plotsLocation = plotsLocation
     self.alive = True
     self.__graphCache = DictCache( deleteFunction = self.__deleteGraph )
@@ -52,22 +51,22 @@ class PlotCache:
     """
     Get plot from the cache if exists, else generate it
     """
-    
+
     plotDict = self.__graphCache.get( plotHash )
     if plotDict == False:
       basePlotFileName = "%s/%s.png" % ( self.plotsLocation, plotHash )
-      if subplotMetadata: 
-        retVal = graph( plotData, basePlotFileName, plotMetadata, metadata=subplotMetadata  )
+      if subplotMetadata:
+        retVal = graph( plotData, basePlotFileName, plotMetadata, metadata = subplotMetadata )
       else:
-        retVal = graph( plotData, basePlotFileName, plotMetadata )  
+        retVal = graph( plotData, basePlotFileName, plotMetadata )
       if not retVal[ 'OK' ]:
         return retVal
       plotDict = retVal[ 'Value' ]
       if plotDict[ 'plot' ]:
-        plotDict[ 'plot' ] = os.path.basename(basePlotFileName)
+        plotDict[ 'plot' ] = os.path.basename( basePlotFileName )
       self.__graphCache.add( plotHash, self.__graphLifeTime, plotDict )
     return S_OK( plotDict )
-    
+
   def getPlotData( self, plotFileName ):
     filename = "%s/%s" % ( self.plotsLocation, plotFileName )
     try:
@@ -75,7 +74,7 @@ class PlotCache:
       data = fd.read()
       fd.close()
     except Exception, v:
-      return S_ERROR( "Can't open file %s: %s" % ( plotFileName, str(v) ) )
-    return S_OK( data )  
+      return S_ERROR( "Can't open file %s: %s" % ( plotFileName, str( v ) ) )
+    return S_OK( data )
 
 gPlotCache = PlotCache()
