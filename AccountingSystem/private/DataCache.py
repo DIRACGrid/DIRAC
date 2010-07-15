@@ -3,7 +3,6 @@ __RCSID__ = "$Id$"
 
 import os
 import os.path
-import md5
 import time
 import threading
 
@@ -89,7 +88,7 @@ class DataCache:
       data = fd.read()
       fd.close()
     except Exception, v:
-      return S_ERROR( "Can't open file %s: %s" % ( plotFileName, str(v) ) )
+      return S_ERROR( "Can't open file %s: %s" % ( plotFileName, str( v ) ) )
     return S_OK( data )
 
 gDataCache = DataCache()
