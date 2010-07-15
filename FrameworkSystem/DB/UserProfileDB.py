@@ -7,7 +7,10 @@
 __RCSID__ = "$Id$"
 
 import time
-import md5
+try:
+  import hashlib as md5
+except:
+  import md5
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Base.DB import DB
