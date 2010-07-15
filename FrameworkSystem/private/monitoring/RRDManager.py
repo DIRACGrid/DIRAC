@@ -2,7 +2,10 @@
 __RCSID__ = "$Id$"
 import os
 import os.path
-import md5
+try:
+  import hashlib as md5
+except:
+  import md5
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 from DIRAC.FrameworkSystem.private.monitoring.ColorGenerator import ColorGenerator
@@ -31,7 +34,7 @@ class RRDManager:
     rrdFilePath = "%s/%s" % ( self.rrdLocation, rrdFile )
     return os.path.isfile( rrdFilePath )
 
-  def getGraphLocation(self):
+  def getGraphLocation( self ):
     """
     Set the location for graph files
     """
@@ -41,7 +44,7 @@ class RRDManager:
     """
     Execute a system command
     """
-    self.log.debug( "RRD command: %s" % cmd)
+    self.log.debug( "RRD command: %s" % cmd )
     retVal = Subprocess.shellCall( 0, cmd )
     if self.__logRRDCommands and rrdFile:
       try:
@@ -53,7 +56,7 @@ class RRDManager:
           fd.write( "OK    %s\n" % cmd )
         fd.close()
       except Exception, e:
-        self.log.warn( "Cannot write log %s: %s" % ( logFile, str(e) ) )
+        self.log.warn( "Cannot write log %s: %s" % ( logFile, str( e ) ) )
     if not retVal[ 'OK' ]:
       return retVal
     retTuple = retVal[ 'Value' ]
@@ -158,7 +161,7 @@ class RRDManager:
     """
     Generate a random name
     """
-    m = md5.new()
+    m = md5.md5()
     m.update( str( args ) )
     m.update( str( kwargs ) )
     return m.hexdigest()
@@ -185,7 +188,7 @@ class RRDManager:
     return varStr
 
   def __graphTimeComment( self, fromEpoch, toEpoch ):
-    comStr =  " 'COMMENT:Generated on %s UTC'" % Time.toString().replace( ":", "\:" ).split( "." )[0]
+    comStr = " 'COMMENT:Generated on %s UTC'" % Time.toString().replace( ":", "\:" ).split( "." )[0]
     comStr += " 'COMMENT:%s'" % ( "From %s to %s" % ( Time.fromEpoch( fromEpoch ), Time.fromEpoch( toEpoch ) ) ).replace( ":", "\:" )
     return comStr
 
@@ -228,7 +231,7 @@ class RRDManager:
       return retVal
     return S_OK( graphFilename )
 
-  def plot( self, fromSecs, toSecs, activity, stackActivities , size, graphFilename = ""  ):
+  def plot( self, fromSecs, toSecs, activity, stackActivities , size, graphFilename = "" ):
     """
     Generate a non grouped plot
     """
@@ -262,4 +265,4 @@ class RRDManager:
     try:
       os.unlink( "%s/%s" % ( self.rrdLocation, rrdFile ) )
     except Exception, e:
-      self.log.error( "Could not delete rrd file %s: %s" % ( rrdFile, str(e) ) )
+      self.log.error( "Could not delete rrd file %s: %s" % ( rrdFile, str( e ) ) )

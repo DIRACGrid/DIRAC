@@ -5,7 +5,10 @@ except:
 
 import os
 import types
-import md5
+try:
+  import hashlib as md5
+except:
+  import md5
 import time
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -135,7 +138,7 @@ class MonitoringCatalog:
         whereCond += " AND %s" % extraCond
       else:
         whereCond = "WHERE %s" % extraCond
-    query = "SELECT %s FROM %s %s %s;" % (
+    query = "SELECT %s FROM %s %s %s;" % ( 
                                            ",".join( fields ),
                                            table,
                                            whereCond,
@@ -211,14 +214,14 @@ class MonitoringCatalog:
     else:
       self.log.info( "Registering source", str( sourceDict ) )
       if self.__insert( "sources", { 'id' : 'NULL' }, sourceDict ) == 0:
-        return -1
+        return - 1
       return self.__select( "id", "sources", sourceDict )[0][0]
 
   def registerActivity( self, sourceId, acName, acDict ):
     """
     Register an activity
     """
-    m = md5.new()
+    m = md5.md5()
     acDict[ 'name' ] = acName
     acDict[ 'sourceId' ] = sourceId
     m.update( str( acDict ) )
@@ -235,7 +238,7 @@ class MonitoringCatalog:
                                'filename' : "'%s'" % filePath,
                                },
                                acDict ) == 0:
-        return -1
+        return - 1
       return self.__select( "filename", "activities", acDict )[0][0]
 
   def getFilename( self, sourceId, acName ):
@@ -274,11 +277,11 @@ class MonitoringCatalog:
       extraSQL = "ORDER BY %s" % ",".join( [ "%s %s" % sorting for sorting in sortList ] )
     if limit:
       if start:
-        extraSQL += " LIMIT %s OFFSET %s" % ( limit, start)
+        extraSQL += " LIMIT %s OFFSET %s" % ( limit, start )
       else:
         extraSQL += " LIMIT %s" % limit
 
-    retList = self.__select( ", ".join(fields), 'sources, activities', selDict, 'sources.id = activities.sourceId',
+    retList = self.__select( ", ".join( fields ), 'sources, activities', selDict, 'sources.id = activities.sourceId',
                              extraSQL )
     return S_OK( ( retList, fields ) )
 
@@ -359,12 +362,12 @@ class MonitoringCatalog:
       fields = ", ".join( fields )
     return self.__select( fields,
                           "sources",
-                          dbCond)
+                          dbCond )
 
   def getActivities( self, dbCond ):
     return self.__select( "id, name, category, unit, type, description, bucketLength",
                           "activities",
-                        dbCond)
+                        dbCond )
 
   def deleteActivity( self, sourceId, activityId ):
     """

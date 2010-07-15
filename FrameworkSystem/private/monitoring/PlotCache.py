@@ -3,7 +3,10 @@ __RCSID__ = "$Id$"
 
 import os
 import os.path
-import md5
+try:
+  import hashlib as md5
+except:
+  import md5
 import time
 import threading
 
@@ -30,7 +33,7 @@ class PlotCache:
     self.purgeThread.start()
 
   def __generateName( self, *args, **kwargs ):
-    m = md5.new()
+    m = md5.md5()
     m.update( repr( args ) )
     m.update( repr( kwargs ) )
     return m.hexdigest()
@@ -73,7 +76,7 @@ class PlotCache:
         filePath = "%s/%s" % ( self.plotsLocation, cachedFile )
         os.unlink( filePath )
       except Exception, e:
-        gLogger.error( "Can't delete plot file %s: %s" % ( filePath, str(e) ) )
+        gLogger.error( "Can't delete plot file %s: %s" % ( filePath, str( e ) ) )
       del( self.cachedPlots[ cachedFile ] )
 
   def groupPlot( self, *args ):
@@ -97,7 +100,7 @@ class PlotCache:
     else:
       gMonitor.addMark( "drawnplots" )
       self.__registerGraph( graphFile, fromSecs, toSecs )
-      return plotFunc(  graphFilename = graphFile, *args )
+      return plotFunc( graphFilename = graphFile, *args )
 
 
 
