@@ -10,11 +10,14 @@
 
 __RCSID__ = "$Id$"
 
-import md5
+try:
+  import hashlib as md5
+except:
+  import md5
 
 job_status_palette = {
    'Received':  '#D9E7F8',
-   'Checking':  '#FAFAFA', 
+   'Checking':  '#FAFAFA',
    'Staging':   '#6190CD',
    'Waiting':   '#004EFF',
    'Matched':   '#FEF7AA',
@@ -47,36 +50,36 @@ country_palette = {
   'Hungary':'#825CE2',
   'Portugal':'#009182',
   'Turkey':'#B85D00'
-}   
+}
 
 class Palette:
 
-  def __init__(self,palette={},colors=[]):
-  
-    self.palette = country_palette 
-    self.palette.update(job_status_palette)
-    self.palette.update(miscelaneous_pallette)
-    
-  def setPalette(self,palette):
-    self.palette = palette  
-    
-  def setColor(self,label,color):
-    self.palette[label] = color  
-    
-  def addPalette(self,palette):
-    self.palette.update(palette)  
-    
-  def getColor(self,label):
-  
+  def __init__( self, palette = {}, colors = [] ):
+
+    self.palette = country_palette
+    self.palette.update( job_status_palette )
+    self.palette.update( miscelaneous_pallette )
+
+  def setPalette( self, palette ):
+    self.palette = palette
+
+  def setColor( self, label, color ):
+    self.palette[label] = color
+
+  def addPalette( self, palette ):
+    self.palette.update( palette )
+
+  def getColor( self, label ):
+
     if label in self.palette.keys():
-      return self.palette[label]  
-    else:  
-      return self.generateColor(label)
-      
-  def generateColor(self,label):
-  
-    myMD5 = md5.new()
-    myMD5.update(label)
+      return self.palette[label]
+    else:
+      return self.generateColor( label )
+
+  def generateColor( self, label ):
+
+    myMD5 = md5.md5()
+    myMD5.update( label )
     hexstring = myMD5.hexdigest()
-    color = "#"+hexstring[:6]
-    return color    
+    color = "#" + hexstring[:6]
+    return color
