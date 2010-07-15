@@ -1,4 +1,7 @@
-import md5
+try:
+  import hashlib as md5
+except:
+  import md5
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 from DIRAC.AccountingSystem.private.Plotters import gPlottersList
@@ -18,7 +21,7 @@ class MainReporter:
     for key in ( 'startTime', 'endTime' ):
       epoch = requestToHash[ key ]
       requestToHash[ key ] = epoch - epoch % granularity
-    m = md5.new()
+    m = md5.md5()
     m.update( repr( requestToHash ) )
     m.update( self.setup )
     return m.hexdigest()
@@ -34,7 +37,7 @@ class MainReporter:
                                                     reportRequest[ 'grouping' ] )
       if not retVal[ 'OK' ]:
         return retVal
-    reportRequest[ 'hash' ] =  self.__calculateReportHash( reportRequest )
+    reportRequest[ 'hash' ] = self.__calculateReportHash( reportRequest )
     plotter = gPlottersList[ typeName ]( self.db, self.setup, reportRequest[ 'extraArgs' ] )
     return plotter.generate( reportRequest )
 
