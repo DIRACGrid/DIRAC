@@ -3,7 +3,10 @@ __RCSID__ = "$Id$"
 
 import os
 import os.path
-import md5
+try:
+  import hashlib as md5
+except:
+  import md5
 import time
 import threading
 
@@ -29,7 +32,7 @@ class FileCache:
     self.__purgeThread = threading.Thread( target = self.__purgeExpired )
     self.__purgeThread.start()
 
-  def __initCacheLocation(self):
+  def __initCacheLocation( self ):
     try:
       os.makedirs( self.__filesLocation )
     except:
@@ -42,7 +45,7 @@ class FileCache:
       raise Exception( "Can't write into %s, check perms" % self.__filesLocation )
 
   def __generateName( self, *args, **kwargs ):
-    m = md5.new()
+    m = md5.md5()
     m.update( repr( args ) )
     m.update( repr( kwargs ) )
     return m.hexdigest()
@@ -73,7 +76,7 @@ class FileCache:
         gLogger.verbose( "Purging %s" % fileName )
         os.unlink( "%s/%s" % ( self.__filesLocation, fileName ) )
       except Exception, e:
-        gLogger.error( "Can't delete file file %s: %s" % ( fileName, str(e) ) )
+        gLogger.error( "Can't delete file file %s: %s" % ( fileName, str( e ) ) )
       del( self.__cachedFiles[ fileName ] )
 
   @gSynchro
@@ -93,7 +96,7 @@ class FileCache:
     if not fileName:
       fileName = "%s.png" % self.__generateName( funcToGenerate, extraArgs, lifeTime )
     if fileName not in self.__cachedFiles:
-      filePath = "%s/%s" %( self.__filesLocation, fileName )
+      filePath = "%s/%s" % ( self.__filesLocation, fileName )
       try:
         retVal = funcToGenerate( filePath, *extraArgs )
         if not retVal[ 'OK' ]:
@@ -115,5 +118,5 @@ class FileCache:
       fileData = fd.read()
       fd.close()
     except Exception, e:
-      return S_ERROR( "Can't get file %s: %s" % ( fileName, str(e) ) )
+      return S_ERROR( "Can't get file %s: %s" % ( fileName, str( e ) ) )
     return S_OK( fileData )

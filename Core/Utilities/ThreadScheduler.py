@@ -1,7 +1,10 @@
 
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
-import md5
+try:
+  import hashlib as md5
+except:
+  import md5
 import threading
 import time
 
@@ -22,7 +25,7 @@ class ThreadScheduler:
   def setMinValidPeriod( self, period ):
     self.__minPeriod = period
 
-  def disableCreateReactorThread(self):
+  def disableCreateReactorThread( self ):
     self.__createReactorThread = False
 
   def addPeriodicTask( self, period, taskFunc, taskArgs = (), executions = 0, elapsedTime = 0 ):
@@ -30,7 +33,7 @@ class ThreadScheduler:
       return S_ERROR( "%s is not callable" % str( taskFunc ) )
     period = max( period, self.__minPeriod )
     elapsedTime = min( elapsedTime, period - 1 )
-    md = md5.new()
+    md = md5.md5()
     task = { 'period' : period,
              'func' : taskFunc,
              'args' : taskArgs,
@@ -49,7 +52,7 @@ class ThreadScheduler:
     return S_OK( taskId )
 
   @gSchedulerLock
-  def removeTask( self, taskId  ):
+  def removeTask( self, taskId ):
     if taskId not in self.__taskDict:
       return S_ERROR( "Task %s does not exist" % taskId )
     del( self.__taskDict[ taskId ] )
@@ -95,7 +98,7 @@ class ThreadScheduler:
 
     return S_OK()
 
-  def __executorThread(self):
+  def __executorThread( self ):
     while self.__hood:
       timeToNext = self.executeNextTask()
       if timeToNext == None:
@@ -105,7 +108,7 @@ class ThreadScheduler:
     #If we are leaving
     self.__destroyExecutor()
 
-  def executeNextTask(self):
+  def executeNextTask( self ):
     if not self.__hood:
       return None
     timeToWait = self.__timeToNextTask()
@@ -119,7 +122,7 @@ class ThreadScheduler:
     return self.__timeToNextTask()
 
   @gSchedulerLock
-  def __createExecutorIfNeeded(self):
+  def __createExecutorIfNeeded( self ):
     if not self.__createReactorThread:
       return
     if self.__thId:
@@ -129,7 +132,7 @@ class ThreadScheduler:
     self.__thId.start()
 
   @gSchedulerLock
-  def __destroyExecutor(self):
+  def __destroyExecutor( self ):
     self.__thId = False
 
   @gSchedulerLock
@@ -149,7 +152,7 @@ class ThreadScheduler:
     if len( self.__hood ) == 0:
       return None
     return self.__hood[0][0]
-  
+
   @gSchedulerLock
   def setNumExecutionsForTask( self, taskId, numExecutions ):
     if taskId not in self.__taskDict:

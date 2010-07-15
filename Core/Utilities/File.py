@@ -7,23 +7,26 @@ __RCSID__ = "$Id$"
 """
 
 import os
-import md5
+try:
+  import hashlib as md5
+except:
+  import md5
 import random
 import glob
 import types
 
-def makeGuid( fileName=None ):
+def makeGuid( fileName = None ):
   """
      Utility to create GUID's, if a filename it is provided the
      GUID will correspond to its hexadecimal md5 checksum
      the format is capitalized 8-4-4-4-12, otherwise a random seed it is
      used to create a GUID
   """
-  myMd5 = md5.new()
+  myMd5 = md5.md5()
   if fileName:
     try:
       fd = open( fileName, 'r' )
-      data = fd.read( 1024*1024 )
+      data = fd.read( 1024 * 1024 )
       myMd5.update( data )
       fd.close()
     except:
@@ -41,7 +44,7 @@ def makeGuid( fileName=None ):
 
   return md5String.upper()
 
-def checkGuid(guid):
+def checkGuid( guid ):
     """
        Checks whether a supplied GUID is of the correct format.
        The guid is a string of 36 characters long split into 5 parts of length 8-4-4-4-12.
@@ -51,13 +54,13 @@ def checkGuid(guid):
        OUTPUT:    Returns 1 if the supplied string is a GUID.
                   Returns 0 otherwise.
     """
-    guidSplit = guid.split('-')
-    if len(guid) == 36 \
-      and len(guidSplit[0]) == 8 \
-        and len(guidSplit[1]) == 4 \
-          and len(guidSplit[2]) == 4 \
-            and len(guidSplit[3]) ==4 \
-              and len(guidSplit[4]) == 12:
+    guidSplit = guid.split( '-' )
+    if len( guid ) == 36 \
+      and len( guidSplit[0] ) == 8 \
+        and len( guidSplit[1] ) == 4 \
+          and len( guidSplit[2] ) == 4 \
+            and len( guidSplit[3] ) == 4 \
+              and len( guidSplit[4] ) == 12:
       return True
     else:
       return False
@@ -69,7 +72,7 @@ def getSize( fileName ):
   try:
     return os.stat( fileName )[6]
   except Exception, v:
-    return -1
+    return - 1
 
 def getGlobbedTotalSize( files ):
   """
@@ -117,11 +120,11 @@ def getCommonPath( files ):
   """
   Get the common path for all files in the file list
   """
-  
+
   def properSplit( dirPath ):
     nDrive, nPath = os.path.splitdrive( dirPath )
     return  [ nDrive ] + [ d for d in nPath.split( os.sep ) if d.strip() ]
-  
+
   if not files:
     return ""
   commonPath = properSplit( files[0] )
@@ -148,7 +151,7 @@ def getMD5ForFiles( fileList ):
   fileList.sort()
   hash = md5.md5()
   for filePath in fileList:
-    fd  = open( filePath, "rb" )
+    fd = open( filePath, "rb" )
     buf = fd.read( 4096 )
     while buf:
       hash.update( buf )
@@ -156,7 +159,7 @@ def getMD5ForFiles( fileList ):
     fd.close()
   return hash.hexdigest()
 
-if __name__=="__main__":
+if __name__ == "__main__":
   import sys
   for p in sys.argv[1:]:
     print "%s : %s bytes" % ( p, getGlobbedTotalSize( p ) )
