@@ -1,5 +1,3 @@
-
-import md5
 import time
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
