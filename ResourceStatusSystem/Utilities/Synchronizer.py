@@ -31,12 +31,18 @@ class Synchronizer:
       
 #############################################################################
       
-  def sync(self, thingsToSync):
+#  def sync(self, thingsToSync = None, fake_param = None):
+  def sync(self, a, b):
     """
     :params:
       :attr:`thingsToSync`: list of things to sync
     """
     
+#    if thingsToSync == None:
+#      thingsToSync = ['Utils', 'Sites', 'Resources', 'StorageElements'],     
+#                                                     
+    thingsToSync = ['Utils', 'Sites', 'Resources', 'StorageElements'],     
+
     gLogger.info("!!! Sync DB content with CS content for %s !!!" %(' '.join(x for x in thingsToSync)))
     
     for thing in thingsToSync:
@@ -343,11 +349,22 @@ class Synchronizer:
     storageElementsIn = self.rsDB.getMonitoredsList('StorageElement', 
                                                     paramsList = ['StorageElementName'])
     
+    try:
+      storageElementsIn = [x[0] for x in storageElementsIn]
+    except IndexError:
+      pass
+    
     SEs = getStorageElements()
     if not SEs['OK']:
       raise RSSException, SEs['Message']
     SEs = SEs['Value']
     
+    #remove storageElements no more in the CS
+    for se in storageElementsIn:
+      if se not in SEs:
+        self.rsDB.removeStorageElement(storageElementName = se)
+
+    #Add new storage Elements
     for SE in SEs:
       srm = getSENodes(SE)['Value'][0]
       if srm == None:
@@ -365,5 +382,5 @@ class Synchronizer:
                                             datetime.utcnow().replace(microsecond = 0), 
                                             'RS_SVC', datetime(9999, 12, 31, 23, 59, 59))
         storageElementsIn.append(SE)
-  
+
 #############################################################################

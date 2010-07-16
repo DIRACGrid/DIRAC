@@ -50,18 +50,14 @@ def initializeResourceStatusHandler(serviceInfo):
   publisher = Publisher(VOExtension, rsDBIn = rsDB, commandCallerIn = cc, 
                         infoGetterIn = ig, WMSAdminIn = WMSAdmin)
 
-#  gConfig.addListenerToNewVersionEvent( rsDB.syncWithCS )
   sync_O = Synchronizer(rsDB)
-  gConfig.addListenerToNewVersionEvent( sync_O.sync(['Utils', 'Sites', 'Resources', 
-                                                     'StorageElements']) )
-  
+  gConfig.addListenerToNewVersionEvent( sync_O.sync )
+    
   return S_OK()
 
 class ResourceStatusHandler(RequestHandler):
 
   def initialize(self):
-    #Listerer -> Listener
-#    gConfig.addListenerToNewVersionEvent( self.export_syncWithCS )
     pass
     
 #############################################################################

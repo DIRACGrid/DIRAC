@@ -31,7 +31,7 @@ class ResourceStatusDB:
   def getMonitoredsList(self, granularity, paramsList = None, siteName = None, 
                         serviceName = None, resourceName = None, storageElementName = None,
                         status = None, siteType = None, resourceType = None, serviceType = None):
-    return [('NAME', 'Banned'), ('NAME', 'Active')]
+    return [('NAME@X', 'Banned'), ('NAME@X', 'Active')]
   
   def getMonitoredsStatusWeb(self, granularity, selectDict, sortList, startItem, maxItems):
     if granularity in ('Resource', 'Resources'):

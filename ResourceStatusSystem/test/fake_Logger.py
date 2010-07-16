@@ -37,4 +37,7 @@ class Config:
   def getValue(self, a):
     return "LHCb"
 
+  def getSections(self, a = '', b = ''):
+    return {'OK':True, 'Value': ['a', 'b']}
+
 gConfig = Config()
