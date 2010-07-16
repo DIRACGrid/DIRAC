@@ -190,7 +190,7 @@ class GOCDBClient:
       
       :attr:`entity` : a string. Actual name of the entity.
     """
-     
+    
     # GOCDB-PI query
     gocdb_ep = "https://goc.gridops.org/gocdbpi_v4/public/?method=get_service_endpoint&"+granularity+'='+entity
 
