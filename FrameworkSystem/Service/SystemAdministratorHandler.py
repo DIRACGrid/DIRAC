@@ -42,6 +42,8 @@ class SystemAdministratorHandler( RequestHandler ):
     agents = {}
     
     for extension in ['DIRAC']+[ x+'DIRAC' for x in extensions]:
+      if not os.path.exists(DIRACROOT+'/'+extension):
+        continue
       systemList = os.listdir(DIRACROOT+'/'+extension)
       for sys in systemList:
         system = sys.replace('System','')
