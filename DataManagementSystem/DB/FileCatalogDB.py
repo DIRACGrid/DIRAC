@@ -28,6 +28,17 @@ class FileCatalogDB(DB, DirectoryMetadata):
     DB.__init__(self,'FileCatalogDB','DataManagement/FileCatalogDB',maxQueueSize)
 
   def setConfig(self,databaseConfig):
+
+    self.directories = {}
+    # In memory storage of the various parameters
+    self.users = {}
+    self.uids = {}
+    self.groups = {}
+    self.gids = {}
+    self.seNames = {}
+    self.seids = {}
+    self.seDefinitions = {}
+
     # Obtain some general configuration of the database
     self.uniqueGUID = databaseConfig['UniqueGUID']
     self.globalReadAccess = databaseConfig['GlobalReadAccess']
@@ -46,15 +57,6 @@ class FileCatalogDB(DB, DirectoryMetadata):
       gLogger.fatal("Failed to create database objects",x)
       return S_ERROR("Failed to create database objects")
 
-    self.directories = {}
-    # In memory storage of the various parameters
-    self.users = {}
-    self.uids = {}
-    self.groups = {}
-    self.gids = {}
-    self.seNames = {}
-    self.seids = {}
-    self.seDefinitions = {}
     return S_OK()
     
   def setUmask(self,umask):
