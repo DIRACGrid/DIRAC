@@ -126,7 +126,7 @@ ALTER TABLE FC_Files ADD INDEX (Status);
 drop table if exists FC_Groups;
 CREATE TABLE FC_Groups (
     GID INTEGER NOT NULL AUTO_INCREMENT,
-    GroupName VARCHAR(127) NOT NULL DEFAULT 'Noname',
+    GroupName VARCHAR(127) NOT NULL,
     PRIMARY KEY (GID),
     UNIQUE KEY (GroupName)
 );
@@ -134,7 +134,7 @@ CREATE TABLE FC_Groups (
 drop table if exists FC_Users;
 CREATE TABLE FC_Users (
     UID INTEGER NOT NULL AUTO_INCREMENT,
-    UserName VARCHAR(127) NOT NULL DEFAULT 'Noname',
+    UserName VARCHAR(127) NOT NULL,
     PRIMARY KEY (UID),
     UNIQUE KEY (UserName)
 );
@@ -144,8 +144,9 @@ CREATE TABLE FC_Users (
 drop table if exists FC_StorageElements;
 CREATE TABLE FC_StorageElements (
     SEID INTEGER AUTO_INCREMENT PRIMARY KEY,
-    SEName VARCHAR(127) NOT NULL DEFAULT 'Noname',
-    AliasName VARCHAR(127) NOT NULL DEFAULT 'Noname'
+    SEName VARCHAR(127) NOT NULL,
+    AliasName VARCHAR(127) DEFAULT '',
+    UNIQUE KEY (SEName)
 );
 
 -- -----------------------------------------------------------------------------
@@ -162,6 +163,22 @@ CREATE TABLE FC_DirectoryInfo (
     PRIMARY KEY (DirID)
 );
 
+DROP TABLE IF EXISTS DirectoryInfo;
+CREATE TABLE DirectoryInfo(
+  DirID INTEGER AUTO_INCREMENT PRIMARY KEY,
+  Parent INTEGER NOT NULL,
+  Status SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  DirName VARCHAR(1024) NOT NULL,
+  CreationDate DATETIME,
+  ModificationDate DATETIME,
+  UID CHAR(8) NOT NULL,
+  GID CHAR(8) NOT NULL,
+  Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
+  INDEX(Parent),
+  INDEX(Status),
+  INDEX(DirName)
+);
+
 drop table if exists FC_DirMeta;
 CREATE TABLE FC_DirMeta (
     DirID INTEGER NOT NULL,
@@ -169,7 +186,6 @@ CREATE TABLE FC_DirMeta (
     MetaValue VARCHAR(31) NOT NULL DEFAULT 'Noname',
     PRIMARY KEY (DirID,MetaKey)
 );
-
 
 drop table if exists FC_DirectoryTree;
 CREATE TABLE FC_DirectoryTree (
@@ -217,21 +233,5 @@ CREATE TABLE FC_Meta_Fields (
   MetaID INT AUTO_INCREMENT PRIMARY KEY,
   MetaName VARCHAR(64) NOT NULL,
   MetaType VARCHAR(128) NOT NULL
-);
-
-DROP TABLE IF EXISTS DirectoryInfo;
-CREATE TABLE DirectoryInfo(
-  DirID INTEGER AUTO_INCREMENT PRIMARY KEY,
-  Parent INTEGER NOT NULL,
-  Status SMALLINT UNSIGNED NOT NULL DEFAULT 0,
-  DirName VARCHAR(1024) NOT NULL,
-  CreationDate DATETIME,
-  ModificationDate DATETIME,
-  UID CHAR(8) NOT NULL,
-  GID CHAR(8) NOT NULL,
-  Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
-  INDEX(Parent),
-  INDEX(Status),
-  INDEX(DirName)
 );
 

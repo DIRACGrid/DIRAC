@@ -5,12 +5,10 @@
 
 __RCSID__ = "$Id: FileCatalogDB.py 22623 2010-03-09 19:54:25Z acsmith $"
 
-import re, os, sys, md5, random
-import string, time, datetime
-import threading
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities  import * 
+from DIRAC                                                          import S_OK, S_ERROR, gLogger
+import string, time, datetime,threading, re, os, sys, md5, random
 from types import *
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import * 
-from DIRAC import S_OK, S_ERROR
 
 DEBUG = 0
      
@@ -19,6 +17,7 @@ class DirectoryTreeBase:
 
   def __init__(self, database=None):
     self.db = database
+    self.lock = threading.Lock()
     
   def setDatabase(self,database):
     self.db = database  
@@ -27,14 +26,21 @@ class DirectoryTreeBase:
     """Create a new directory. The return value is the dictionary
        containing all the parameters of the newly created directory
     """
-
     if path[0] != '/':
       return S_ERROR('Not an absolute path')
-
+    
+    startTime = time.time()
+    self.lock.acquire()
+    waitTime = time.time()
+    gLogger.debug("DirectoryTreeBase MakeDir lock created. Waited %.3f seconds." % (waitTime-startTime))
     result = self.findDir(path)
     if not result['OK']:
+      gLogger.debug("DirectoryTreeBase MakeDir lock released. Used %.3f seconds." % (time.time()-waitTime))
+      self.lock.release()
       return result
     if result['Value']:
+      gLogger.debug("DirectoryTreeBase MakeDir lock released. Used %.3f seconds." % (time.time()-waitTime))
+      self.lock.release()
       return S_OK(result['Value'])
 
     if path == '/':
@@ -44,12 +50,16 @@ class DirectoryTreeBase:
     else:
       result = self.db.ugManager.getUserAndGroupID(credDict)
       if not result['OK']:
+        gLogger.debug("DirectoryTreeBase MakeDir lock released. Used %.3f seconds." % (time.time()-waitTime))
+        self.lock.release()
         return result
       ( l_uid, l_gid ) = result['Value']
 
     dirDict = {}
     result = self.makeDir(path)
     if not result['OK']:
+      gLogger.debug("DirectoryTreeBase MakeDir lock released. Used %.3f seconds." % (time.time()-waitTime))
+      self.lock.release()
       return result
     dirID = result['Value']
     req = "INSERT INTO FC_DirectoryInfo (DirID,UID,GID,CreationDate,ModificationDate,Mode,Status) Values "
@@ -62,7 +72,11 @@ class DirectoryTreeBase:
 
     if not dirDict:
       result = self.removeDir(path)
+      gLogger.debug("DirectoryTreeBase MakeDir lock released. Used %.3f seconds." % (time.time()-waitTime))
+      self.lock.release()
       return S_ERROR('Failed to create directory %s' % path)
+    gLogger.debug("DirectoryTreeBase MakeDir lock released. Used %.3f seconds." % (time.time()-waitTime))
+    self.lock.release()
     return S_OK(dirID)
 
 #####################################################################

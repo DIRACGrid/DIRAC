@@ -46,17 +46,40 @@ class FileCatalogDB(DB, DirectoryMetadata):
       gLogger.fatal("Failed to create database objects",x)
       return S_ERROR("Failed to create database objects")
 
-    # In memory storage of the various parameters
     self.directories = {}
+    # In memory storage of the various parameters
     self.users = {}
     self.uids = {}
     self.groups = {}
     self.gids = {}
+    self.seNames = {}
+    self.seids = {}
     self.seDefinitions = {}
     return S_OK()
     
   def setUmask(self,umask):
     self.umask = umask
+
+  ########################################################################
+  #
+  #  SE based write methods
+  #
+  
+  def addSE(self,seName,credDict):
+    res = self._checkAdminPermission(credDict)
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      return S_ERROR("Permission denied")
+    return self.seManager.addSE(seName)
+    
+  def deleteSE(self,seName,credDict):
+    res = self._checkAdminPermission(credDict)
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      return S_ERROR("Permission denied")
+    return self.seManager.deleteSE(seName)
 
   ########################################################################
   #
@@ -472,15 +495,16 @@ class FileCatalogDB(DB, DirectoryMetadata):
   #
 
   def getCatalogContents(self,credDict):
+    counterDict = {}
     res = self._checkAdminPermission(credDict)
     if not res['OK']:
       return res
     if not res['Value']:
       return S_ERROR("Permission denied")
-    res = self.dtree.getDirectoryCounters()
-    if not res['OK']:
-      return res
-    counterDict = res['Value']
+    #res = self.dtree.getDirectoryCounters()
+    #if not res['OK']:
+    #  return res
+    #counterDict.update(res['Value'])
     res = self.fileManager.getFileCounters()
     if not res['OK']:
       return res

@@ -7,16 +7,18 @@
 
 __RCSID__ = "$Id$"
 
-import time
+from DIRAC                                      import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.Core.Security                        import Properties
+import time,threading
 from types import *
-from DIRAC.Core.Security import Properties
-from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 class UserAndGroupManagerBase:
 
   def __init__(self,database=None):
     self.db = database
+    self.lock = threading.Lock()
+    self._refreshUsers()
+    self._refreshGroups()
     
   def setDatabase(self,database):
     self.db = database
@@ -37,7 +39,6 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     if not res['OK']:
       return res
     uid = res['Value']
-
     # Get the group (create it if it doesn't exist)      
     s_gid = credDict.get('group','anon') 
     res = self.getGroupID(s_gid)
@@ -58,33 +59,14 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
       return S_OK(user)
     if user in self.db.users.keys():
       return S_OK(self.db.users[user])
-    res = self.__getUsers()
-    if not res['OK']:
-      return res
-    if user in self.db.users.keys():
-      return S_OK(self.db.users[user])
-    res = self.db._insert('FC_Users',['UserName'],[user])
-    if not res['OK']:
-      return res
-    uid = res['lastRowId']
-    self.db.uids[uid] = user
-    self.db.users[user] = uid
-    return S_OK(uid)
+    return self.__addUser(user)
 
   def addUser(self,uname):
-    """ Add a new user with a name 'name' """
+    """ Add a new user with a name 'uname' """
     return self.getUserID(uname)
 
-  def deleteUser(self,uname,force=True):
-    """ Delete a user specified by its name """
-    if not force:
-      # ToDo: Check first if there are files belonging to the user
-      pass
-    req = "DELETE FROM FC_Users WHERE UserName='%s'" % uname
-    return self.db._update(req)
-  
   def getUsers(self):
-    self.__getUsers()  
+    #self.__refreshUsers()  
     return S_OK(self.db.users)
 
   def findUser(self,user):
@@ -94,22 +76,75 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     """ Get user name for the given id """   
     if uid in self.db.uids.keys():
       return S_OK(self.db.uids[uid])
-    res = self.__getUsers()
-    if not res['OK']:
-      return res
-    if not uid in self.db.uids.keys():
-      return S_ERROR('User id %d not found' % uid)
-    return S_OK(self.db.uids[uid])
+    return S_ERROR('User id %d not found' % uid)
 
-  def __getUsers(self):
+  def deleteUser(self,uname,force=True):
+    """ Delete a user specified by its name """
+    # ToDo: Check first if there are files belonging to the user
+    if not force:
+      pass
+    return self.__removeUser(uname)
+  
+  def __addUser(self,uname):
+    startTime = time.time()
+    self.lock.acquire()
+    waitTime = time.time()
+    gLogger.debug("UserGroupManager AddUser lock created. Waited %.3f seconds. %s" % (waitTime-startTime,uname))
+    if uname in self.db.users.keys():
+      uid = self.db.users[uname]
+      gLogger.debug("UserGroupManager AddUser lock released. Used %.3f seconds. %s" % (time.time()-waitTime,uname))
+      self.lock.release()
+      return S_OK(uid)
+    res = self.db._insert('FC_Users',['UserName'],[uname])
+    if not res['OK']:
+      gLogger.debug("UserGroupManager AddUser lock released. Used %.3f seconds. %s" % (time.time()-waitTime,uname))
+      self.lock.release()
+      return res
+    uid = res['lastRowId']
+    self.db.uids[uid] = uname
+    self.db.users[uname] = uid
+    gLogger.debug("UserGroupManager AddUser lock released. Used %.3f seconds. %s" % (time.time()-waitTime,uname))
+    self.lock.release()
+    return S_OK(uid)
+
+  def __removeUser(self,uname):
+    startTime = time.time()
+    self.lock.acquire()
+    waitTime = time.time()
+    gLogger.debug("UserGroupManager RemoveUser lock created. Waited %.3f seconds. %s" % (waitTime-startTime,uname))
+    uid = self.db.users.get(uname,'Missing')
+    req = "DELETE FROM FC_Users WHERE UserName='%s'" % uname
+    res = self.db._update(req)
+    if not res['OK']:
+      gLogger.debug("UserGroupManager RemoveUser lock released. Used %.3f seconds. %s" % (time.time()-waitTime,uname))
+      self.lock.release()
+      return res
+    if uid != 'Missing':
+      self.db.users.pop(uname)
+      self.db.uids.pop(uid)
+    gLogger.debug("UserGroupManager RemoveUser lock released. Used %.3f seconds. %s" % (time.time()-waitTime,uname))
+    self.lock.release()
+    return S_OK()
+
+  def _refreshUsers(self):
     """ Get the current user IDs and names """
+    startTime = time.time()
+    self.lock.acquire()
+    waitTime = time.time()
+    gLogger.debug("UserGroupManager RefreshUsers lock created. Waited %.3f seconds." % (waitTime-startTime))
     req = "SELECT UID,UserName from FC_Users"
     res = self.db._query(req)
     if not res['OK']:
+      gLogger.debug("UserGroupManager RefreshUsers lock released. Used %.3f seconds." % (time.time()-waitTime))
+      self.lock.release()
       return res
+    self.db.users = {}
+    self.db.uids = {}
     for uid,uname in res['Value']:
       self.db.users[uname] = uid
       self.db.uids[uid] = uname
+    gLogger.debug("UserGroupManager RefreshUsers lock released. Used %.3f seconds." % (time.time()-waitTime))
+    self.lock.release()
     return S_OK()
   
 #####################################################################
@@ -123,33 +158,14 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
       return S_OK(group)
     if group in self.db.groups.keys():
       return S_OK(self.db.groups[group])
-    res = self.__getGroups()
-    if not res['OK']:
-      return res
-    if group in self.db.groups.keys():
-      return S_OK(self.db.groups[group])
-    res = self.db._insert('FC_Groups',['GroupName'],[group])
-    if not res['OK']:
-      return res
-    gid = res['lastRowId']
-    self.db.groups[group] = gid
-    self.db.gids[gid] = group
-    return S_OK(gid)
+    return self.__addGroup(group)
 
   def addGroup(self,gname):
     """ Add a new group with a name 'name' """
     return self.getGroupID(gname)
 
-  def deleteGroup(self,gname,force=True):
-    """ Delete a group specified by its name """
-    if not force:
-      # ToDo: Check first if there are files belonging to the group
-      pass
-    req = "DELETE FROM FC_Groups WHERE GroupName='%s'" % gname
-    return self.db._update(req)
-  
   def getGroups(self):
-    self.__getGroups()
+    #self.__refreshGroups()
     return S_OK(self.db.groups)  
 
   def findGroup(self,group):
@@ -159,22 +175,75 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     """ Get group name for the given id """   
     if gid in self.db.gids.keys():
       return S_OK(self.db.gids[gid])
-    res = self.__getGroups()
-    if not res['OK']:
-      return res
-    if not gid in self.db.gids.keys():
-      return S_ERROR('Group id %d not found' % gid)
-    return S_OK(self.db.gids[gid])
+    return S_ERROR('Group id %d not found' % gid)
+  
+  def deleteGroup(self,gname,force=True):
+    """ Delete a group specified by its name """
+    if not force:
+      # ToDo: Check first if there are files belonging to the group
+      pass
+    return self.__removeGroup(gname)
 
-  def __getGroups(self):
+  def __addGroup(self,group):
+    startTime = time.time()
+    self.lock.acquire()
+    waitTime = time.time()
+    gLogger.debug("UserGroupManager AddGroup lock created. Waited %.3f seconds. %s" % (waitTime-startTime,group))
+    if group in self.db.groups.keys():
+      gid = self.db.groups[group]
+      gLogger.debug("UserGroupManager AddGroup lock released. Used %.3f seconds. %s" % (time.time()-waitTime,group))
+      self.lock.release()
+      return S_OK(gid)
+    res = self.db._insert('FC_Groups',['GroupName'],[group])
+    if not res['OK']:
+      gLogger.debug("UserGroupManager AddGroup lock released. Used %.3f seconds. %s" % (time.time()-waitTime,group))
+      self.lock.release()
+      return res
+    gid = res['lastRowId']
+    self.db.gids[gid] = group
+    self.db.groups[group] = gid
+    gLogger.debug("UserGroupManager AddGroup lock released. Used %.3f seconds. %s" % (time.time()-waitTime,group))
+    self.lock.release()
+    return S_OK(gid)
+
+  def __removeGroup(self,group):
+    startTime = time.time()
+    self.lock.acquire()
+    waitTime = time.time()
+    gLogger.debug("UserGroupManager RemoveGroup lock created. Waited %.3f seconds. %s" % (waitTime-startTime,group))
+    gid = self.db.groups.get(group,'Missing')
+    req = "DELETE FROM FC_Groups WHERE GroupName='%s'" % group
+    res = self.db._update(req)
+    if not res['OK']:
+      gLogger.debug("UserGroupManager RemoveGroup lock released. Used %.3f seconds. %s" % (time.time()-waitTime,group))
+      self.lock.release()
+      return res
+    if gid != 'Missing':
+      self.db.groups.pop(group)
+      self.db.gids.pop(gid)
+    gLogger.debug("UserGroupManager RemoveGroup lock released. Used %.3f seconds. %s" % (time.time()-waitTime,group))
+    self.lock.release()
+    return S_OK()
+
+  def _refreshGroups(self):
     """ Get the current group IDs and names """
     req = "SELECT GID,GroupName from FC_Groups"
+    startTime = time.time()
+    self.lock.acquire()
+    waitTime = time.time()
+    gLogger.debug("UserGroupManager RefreshGroups lock created. Waited %.3f seconds." % (waitTime-startTime))
     res = self.db._query(req)
     if not res['OK']:
+      gLogger.debug("UserGroupManager RefreshGroups lock released. Used %.3f seconds." % (time.time()-waitTime))
+      self.lock.release()  
       return res
+    self.db.groups = {}
+    self.db.gids = {}
     for gid,gname in res['Value']:
       self.db.groups[gname] = gid
       self.db.gids[gid] = gname
+    gLogger.debug("UserGroupManager RefreshGroups lock released. Used %.3f seconds." % (time.time()-waitTime))
+    self.lock.release()
     return S_OK()
 
 class UserAndGroupManagerCS(UserAndGroupManagerBase):

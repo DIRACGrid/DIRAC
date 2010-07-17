@@ -5,16 +5,17 @@
 
 __RCSID__ = "$Id: SEManager.py 22623 2010-03-09 19:54:25Z acsmith $"
 
-import time
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC                        import S_OK, S_ERROR, gConfig, gLogger
+import threading,time
+from types import *
 
 class SEManagerBase:
 
   def __init__(self,database=None):
     self.db = database
-    self.seDefinitions = {}
-    self.seNames = {}
-    self.seUpdatePeriod = 600
+    self.lock = threading.Lock()
+    self._refreshSEs()
+    #self.seUpdatePeriod = 600
     
   def setUpdatePeriod(self,period): 
     self.seUpdatePeriod = period
@@ -28,66 +29,106 @@ class SEManagerBase:
 
   def setDatabase(self,database):
     self.db = database  
+
+  def _getConnection(self,connection):
+    if connection:
+      return connection
+    res = self.db._getConnection()
+    if res['OK']:
+      return res['Value']
+    gLogger.warn("Failed to get MySQL connection",res['Message'])
+    return connection
     
 class SEManagerDB(SEManagerBase):
 
-  def findSE(self,se):
-    """ Find the ID of the given SE, add it to the catalog if it is not yet there
-    """
-    if se in self.seNames.keys():
-      return S_OK(self.seNames[se])
-    
-    # Look for the SE definition in the database
-    seID = 0
-    query = "SELECT SEID FROM FC_StorageElements WHERE SEName='%s'" % se   
-    resQuery = self.db._query(query)
-    if resQuery['OK']:
-      if resQuery['Value']:
-        seID = int(resQuery['Value'][0][0])
-    else:
-      return S_ERROR('Failed to query SE database') 
+  def _refreshSEs(self,connection=False):
+    connection = self._getConnection(connection)
+    req = "SELECT SEID,SEName FROM FC_StorageElements;"   
+    startTime = time.time()
+    self.lock.acquire()
+    waitTime = time.time()
+    gLogger.debug("SEManager RefreshSEs lock created. Waited %.3f seconds." % (waitTime-startTime))
+    res = self.db._query(req,connection)
+    if not res['OK']:
+      gLogger.debug("SEManager RefreshSEs lock released. Used %.3f seconds." % (time.time()-waitTime))
+      self.lock.release()
+      return res
+    self.db.seNames = {}
+    self.db.seids = {}
+    for seid,seName in res['Value']:
+      self.db.seNames[seName] = seid
+      self.db.seids[seid] = seName
+    gLogger.debug("SEManager RefreshSEs lock released. Used %.3f seconds." % (time.time()-waitTime))
+    self.lock.release()
+    return S_OK()
 
-    if not seID:    
-      # The SE is not yet in the catalog, add it
-      result = self.addSE(se)
-      if not result['OK']:
-        return result
-      seID = result['Value']
-    
-    self.seNames[se] = seID
-    
-    return S_OK(seID)
+  def __addSE(self,seName,connection=False):
+    startTime = time.time()
+    self.lock.acquire()
+    waitTime = time.time()
+    gLogger.debug("SEManager AddSE lock created. Waited %.3f seconds. %s" % (waitTime-startTime,seName))
+    if seName in self.db.seNames.keys():
+      seid = self.db.seNames[seName]
+      gLogger.debug("SEManager AddSE lock released. Used %.3f seconds. %s" % (time.time()-waitTime,seName))
+      self.lock.release()
+      return S_OK(seid)
+    connection = self._getConnection(connection)
+    res = self.db._insert('FC_StorageElements',['SEName'],[seName],connection)
+    if not res['OK']:
+      gLogger.debug("SEManager AddSE lock released. Used %.3f seconds. %s" % (time.time()-waitTime,seName))
+      self.lock.release()
+      return res
+    seid = res['lastRowId']
+    self.db.seids[seid] = seName
+    self.db.seNames[seName] = seid
+    gLogger.debug("SEManager AddSE lock released. Used %.3f seconds. %s" % (time.time()-waitTime,seName))
+    self.lock.release()
+    return S_OK(seid)
+
+  def __removeSE(self,seName,connection=False):
+    connection = self._getConnection(connection)
+    startTime = time.time()
+    self.lock.acquire()
+    waitTime = time.time()
+    gLogger.debug("SEManager RemoveSE lock created. Waited %.3f seconds. %s" % (waitTime-startTime,seName))
+    seid = self.db.seNames.get(seName,'Missing')
+    req = "DELETE FROM FC_StorageElements WHERE SEName='%s'" % seName
+    res = self.db._update(req,connection)
+    if not res['OK']:
+      gLogger.debug("SEManager RemoveSE lock released. Used %.3f seconds. %s" % (time.time()-waitTime,seName))
+      self.lock.release()
+      return res
+    if seid != 'Missing':
+      self.db.seNames.pop(seName)
+      self.db.seids.pop(seid)
+    gLogger.debug("SEManager RemoveSE lock released. Used %.3f seconds. %s" % (time.time()-waitTime,seName))
+    self.lock.release()
+    return S_OK()
   
+  def findSE(self,seName):
+    return self.getSEID(seName)
+
+  def getSEID(self,seName):
+    """ Get ID for a SE specified by its name """
+    if type(seName) in [IntType,LongType]:
+      return S_OK(seName)
+    if seName in self.db.seNames.keys():
+      return S_OK(self.db.seNames[seName])
+    return self.__addSE(seName)
+
+  def addSE(self,seName):
+    return self.getSEID(seName)
+
   def getSEName(self,seID):
-    """ Get the name of Storage Element specified by seID
-    """
-    if seID in self.seDefinitions:
-      return S_OK(self.seDefinitions[seID]['SEName'])
-    
-    query = "SELECT SEName FROM FC_StorageElements WHERE SEID=%d" % seID   
-    resQuery = self.db._query(query)
-    if not resQuery['OK']:
-      return resQuery
-    if not resQuery['Value']:
-      return S_ERROR('SE Name for %d not found' % seID)
-    return S_OK(resQuery['Value'][0][0])
-  
-  def addSE(self,se):
-    """ Add a Storage Element to the catalog
-    """
-    req = "SELECT SEID FROM FC_StorageElements WHERE SEName='%s'" % se
-    result = self.db._query(req)
-    if not result['OK']:
-      return result
-    if result['Value']:
-      return S_OK(result['Value'][0][0])
-    
-    # Add a new SE
-    result = self.db._insert('FC_StorageElements',['SEName'],[se])
-    if not result['OK']:
-      return result
-    seID = result['lastRowId']
-    return S_OK(seID)
+    if seID in self.db.seids.keys():
+      return S_OK(self.db.seids[seID])
+    return S_ERROR('SE id %d not found' % seid)
+
+  def deleteSE(self,seName,force=True):
+    # ToDo: Check first if there are replicas using this SE
+    if not force:
+      pass
+    return self.__removeSE(seName)
   
   def getSEDefinition(self,seID):
     """ Get the Storage Element definition
