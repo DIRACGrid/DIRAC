@@ -33,7 +33,9 @@ class FileManager(FileManagerBase):
       if (not res['OK']) or (not res['Value']):
         error = res.get('Message','No such file or directory')
         for fileName in dirDict[dirPath]:
-          failed['%s/%s' % (dirPath,fileName)] = error
+          fname = '%s/%s' % (dirPath,fileName)
+          fname = fname.replace('//','/')
+          failed[fname] = error
       else:
         directoryIDs[dirPath] = res['Value']
     successful = {}
@@ -43,10 +45,14 @@ class FileManager(FileManagerBase):
       if (not res['OK']) or (not res['Value']):
         error = res.get('Message','No such file or directory')
         for fileName in fileNames:
-          failed['%s/%s' % (dirPath,fileName)] = error
+          fname = '%s/%s' % (dirPath,fileName)
+          fname = fname.replace('//','/')
+          failed[fname] = error
       else:
         for fileName,fileDict in res['Value'].items():
-          successful["%s/%s" % (dirPath,fileName)] = fileDict
+          fname = '%s/%s' % (dirPath,fileName)
+          fname = fname.replace('//','/')
+          successful[fname] = fileDict
     return S_OK({"Successful":successful,"Failed":failed})
 
   def _getDirectoryFiles(self,dirID,fileNames,metadata,connection=False):
