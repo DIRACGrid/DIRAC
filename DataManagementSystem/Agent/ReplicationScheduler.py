@@ -6,16 +6,17 @@
 """
 from DIRAC                                                  import gLogger, gConfig, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Base.AgentModule                            import AgentModule
+from DIRAC.Core.DISET.RPCClient                             import RPCClient
+from DIRAC.Core.Utilities.Shifter                           import setupShifterProxyInEnv
+from DIRAC.Core.Utilities.List                              import sortList
+from DIRAC.ConfigurationSystem.Client                       import PathFinder
 from DIRAC.ConfigurationSystem.Client.PathFinder            import getDatabaseSection
-from DIRAC.RequestManagementSystem.DB.RequestDBMySQL        import RequestDBMySQL
 from DIRAC.DataManagementSystem.DB.TransferDB               import TransferDB
+from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
+from DIRAC.DataManagementSystem.Client.DataLoggingClient    import DataLoggingClient
+from DIRAC.RequestManagementSystem.DB.RequestDBMySQL        import RequestDBMySQL
 from DIRAC.RequestManagementSystem.Client.RequestContainer  import RequestContainer
 from DIRAC.Resources.Storage.StorageFactory                 import StorageFactory
-from DIRAC.DataManagementSystem.Client.ReplicaManager       import ReplicaManager
-from DIRAC.Core.DISET.RPCClient                             import RPCClient
-from DIRAC.DataManagementSystem.Client.DataLoggingClient    import DataLoggingClient
-from DIRAC.Core.Utilities.Shifter                           import setupShifterProxyInEnv
-from DIRAC.ConfigurationSystem.Client                       import PathFinder
 import types,re,random
 
 __RCSID__ = "$Id$"
@@ -261,7 +262,7 @@ class ReplicationScheduler(AgentModule):
             #
             # For each item in the replication tree add the file to the channel
             #
-            res = self.TransferDB.addFileToChannel(channelID,fileID,sourceSE,sourceSURL,targetSE,targetSURL,fileSize,fileStatus=status)
+            res = self.TransferDB.addFileToChannel(channelID,fileID,hopSourceSE,sourceSURL,hopDestSE,targetSURL,fileSize,fileStatus=status)
             if not res['OK']:
               gLogger.error("ReplicationScheduler._execute: Failed to add File to Channel." , "%s %s" % (fileID,channelID))
               return S_ERROR(errStr)

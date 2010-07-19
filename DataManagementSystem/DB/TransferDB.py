@@ -244,7 +244,7 @@ class TransferDB(DB):
     resDict['ChannelID'] = selectedChannel
     return S_OK(resDict)
 
-  def addFileToChannel(self,channelID,fileID,sourceSURL,targetSURL,fileSize,spaceToken,fileStatus='Waiting'):
+  def addFileToChannel(self,channelID,fileID,sourceSE,sourceSURL,targetSE,targetSURL,fileSize,fileStatus='Waiting'):
     res = self.checkFileChannelExists(channelID, fileID)
     if not res['OK']:
       err = 'TransferDB._addFileToChannel: Failed check existance of File %s on Channel %s.' % (fileID,channelID)
@@ -253,8 +253,8 @@ class TransferDB(DB):
       err = 'TransferDB._addFileToChannel: File %s already exists on Channel %s.' % (fileID,channelID)
       return S_ERROR(err)
     time_order = self.__getFineTime()
-    req = "INSERT INTO Channel (ChannelID,FileID,SourceSURL,TargetSURL,SpaceToken,SchedulingTime,SchedulingTimeOrder,LastUpdate,LastUpdateTimeOrder,FileSize,Status) VALUES \
-           (%s,%s,'%s','%s','%s',UTC_TIMESTAMP(),%s,UTC_TIMESTAMP(),%s,%s,'%s');"  % (channelID,fileID,sourceSURL,targetSURL,spaceToken,time_order,time_order,fileSize,fileStatus)
+    req = "INSERT INTO Channel (ChannelID,FileID,SourceSE,SourceSURL,TargetSE,TargetSURL,SchedulingTime,SchedulingTimeOrder,LastUpdate,LastUpdateTimeOrder,FileSize,Status) VALUES \
+           (%s,%s,'%s','%s','%s','%s',UTC_TIMESTAMP(),%s,UTC_TIMESTAMP(),%s,%s,'%s');"  % (channelID,fileID,sourceSE,sourceSURL,targetSE,targetSURL,time_order,time_order,fileSize,fileStatus)
     res = self._update(req)
     if not res['OK']:
       err = 'TransferDB._addFileToChannel: Failed to insert File %s to Channel %s.' % (fileID,channelID)
