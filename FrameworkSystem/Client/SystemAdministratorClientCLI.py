@@ -41,6 +41,26 @@ class SystemAdministratorClientCLI(cmd.Cmd):
     
     self.host = host
     self.prompt = '%s >' % self.host
+    
+  def __getSoftwareComponents(self):
+    
+    componentDict = {}
+    client = SystemAdministratorClient(self.host)
+    result = client.getSoftwareComponents()
+    if not result['OK']:
+      print "ERROR:",result['Message']
+      return componentDict
+    rDict = result['Value']
+    for compType in rDict:
+      for system in rDict[compType]:
+        for component in rDict[compType][system]:  
+          if not componentDict.has_key(component):
+            componentDict[component] = [(system,compType[:-1])]
+          else:
+            componentDict[component].append((system,compType[:-1]))
+            
+    return componentDict          
+      
   
   def do_show(self,args):
     """ 
@@ -48,11 +68,11 @@ class SystemAdministratorClientCLI(cmd.Cmd):
     
         usage:
         
-          show software
-          show installed 
-          show status
-          show database
-          show mysql
+          show software      - show components for which software is available
+          show installed     - show components installed in the host
+          show status        - show status of the installed components
+          show database      - show the status of the databases
+          show mysql         - show the status of the MySQL server
           show log <system> <service|agent>
           show info    - show version of software and setup
     """
@@ -65,15 +85,35 @@ class SystemAdministratorClientCLI(cmd.Cmd):
       result = client.getSoftwareComponents()
       if not result['OK']:
         print "ERROR:",result['Message']
-      else:  
-        print result['Value']
+      else:
+        serviceCount = 0
+        agentCount = 0  
+        for compType in result['Value']:
+          for system in result['Value'][compType]:
+            for component in result['Value'][compType][system]:
+              print compType.ljust(8),system.ljust(28),component.ljust(28)
+              if compType == 'Services':
+                serviceCount += 1
+              if compType == 'Agents':
+                agentCount += 1                  
+        print "Total: %d services, %d agents" % (serviceCount,agentCount)       
     elif option == 'installed':
       client = SystemAdministratorClient(self.host)
       result = client.getSetupComponents()
       if not result['OK']:
         print "ERROR:",result['Message']
       else:  
-        print result['Value']
+        serviceCount = 0
+        agentCount = 0  
+        for compType in result['Value']:
+          for system in result['Value'][compType]:
+            for component in result['Value'][compType][system]:
+              print compType.ljust(8),system.ljust(28),component.ljust(28) 
+              if compType == 'Services':
+                serviceCount += 1
+              if compType == 'Agents':
+                agentCount += 1  
+        print "Total: %d services, %d agents" % (serviceCount,agentCount)
     elif option == 'status':
       client = SystemAdministratorClient(self.host)
       result = client.getOverallStatus()
@@ -86,19 +126,20 @@ class SystemAdministratorClientCLI(cmd.Cmd):
         for compType in rDict:
           for system in rDict[compType]:
             for component in rDict[compType][system]:
-              print  system.ljust(28),component.ljust(28),compType.lower()[:-1].ljust(7),
-              if rDict[compType][system][component]['Setup']:
-                print 'SetUp'.rjust(12),
-              else:
-                print 'NotSetup'.rjust(12),  
               if rDict[compType][system][component]['Installed']:
-                print 'Installed'.rjust(12),
-              else:
-                print 'NotInstalled'.rjust(12),
-              print str(rDict[compType][system][component]['RunitStatus']).ljust(7),  
-              print str(rDict[compType][system][component]['Timeup']).rjust(7),
-              print str(rDict[compType][system][component]['PID']).rjust(8),
-              print  
+                print  system.ljust(28),component.ljust(28),compType.lower()[:-1].ljust(7),
+                if rDict[compType][system][component]['Setup']:
+                  print 'SetUp'.rjust(12),
+                else:
+                  print 'NotSetup'.rjust(12),  
+                if rDict[compType][system][component]['Installed']:
+                  print 'Installed'.rjust(12),
+                else:
+                  print 'NotInstalled'.rjust(12),
+                print str(rDict[compType][system][component]['RunitStatus']).ljust(7),  
+                print str(rDict[compType][system][component]['Timeup']).rjust(7),
+                print str(rDict[compType][system][component]['PID']).rjust(8),
+                print  
     elif option == 'database' or option == 'databases':
       client = SystemAdministratorClient(self.host)
       result = client.getDatabases(self.rootPwd)
@@ -175,6 +216,7 @@ class SystemAdministratorClientCLI(cmd.Cmd):
           install db <database>
           install service <system> <service>
           install agent <system> <agent>
+          install <component>
     """    
     argss = args.split()
     option = argss[0]
@@ -221,7 +263,39 @@ class SystemAdministratorClientCLI(cmd.Cmd):
         return
       print "%s %s_%s is installed, runit status: %s" % (compType,system,component,runit)  
     else:
-      print "Unknown option:",option    
+      componentDict = self.__getSoftwareComponents()
+      if componentDict.has_key(option):
+        if len(componentDict[option]) == 1:
+          system,compTypeSoft = componentDict[option][0]
+          client = SystemAdministratorClient(self.host)
+          result = client.addSystemInstance(system)
+          if not result['OK']:
+            print "ERROR:",result['Message']
+            return  
+          instance = result['Value']
+          result = client.setupComponent(system,option)
+          if not result['OK']:
+            print "ERROR:",result['Message']
+            return      
+          compType = result['Value']['ComponentType']
+          if compType.lower() == 'unknown':
+            compType = compTypeSoft.lower()  
+          runit = result['Value']['RunitStatus']
+          result = client.addCSDefaultOptions(system,option,self.host)
+          if not result['OK']:
+            print "ERROR:",result['Message']
+            return
+          print "%s %s_%s is installed in instance %s, runit status: %s" % (compType,system,option,instance,runit)
+        elif len(componentDict[option]) > 1:
+          print "Ambiguous component choice:"
+          i = 0
+          for system,compType in componentDict[option]:
+            i += 1
+            print "%d. %s %s in %s system" % (i,compType,option,system)
+          print "Use install %s command instead" % compType
+        else:
+          print "Component %s not found" % option    
+            
       
   def do_start(self,args):
     """ Start services or agents or database server    
@@ -337,14 +411,19 @@ class SystemAdministratorClientCLI(cmd.Cmd):
     
         usage:
         
-          add instance <system> <instance>
+          add instance <system> [<instance_name>]
+          
+          System instance name is Production by default
     """           
     argss = args.split()
     option = argss[0]
     del argss[0]
     if option == "instance":
       system = argss[0]
-      instance = argss[1]
+      if len(argss)>1:
+        instance = argss[1]
+      else:
+        instance = "Production"  
       client = SystemAdministratorClient(self.host)
       result = client.addSystemInstance(system,instance)
       if not result['OK']:
@@ -370,6 +449,31 @@ class SystemAdministratorClientCLI(cmd.Cmd):
       print "Error:", status
       for line in error.split('\n'):
         print line    
+        
+  def do_execfile(self,args ):
+    """ Execute a series of administrator CLI commands from a given file
+    
+        usage:
+        
+          execfile <filename>
+    """
+    argss = args.split()
+    fname = argss[0]
+    execfile = open(fname,'r')
+    lines = execfile.readlines()
+    execfile.close()
+    
+    for line in lines:
+      line = line.strip()
+      if not line:
+        continue
+      if line[0] == "#":
+        continue
+      print "\n--> Executing %s\n" % line
+      elements = line.split()
+      command = elements[0]
+      args = ' '.join(elements[1:])
+      result = eval("self.do_%s(args)" % command)          
       
   def do_exit(self, args):
     """ Exit the shell.

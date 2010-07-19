@@ -264,13 +264,19 @@ class SystemAdministratorClient(Client):
 
     return result        
     
-  def addSystemInstance(self,system,instance):
-    """ Add a new system instance
+  def addSystemInstance(self,system,instance='Production'):
+    """ Add a new system instance to the current setup
     """  
     
     setup = gConfig.getValue('/DIRAC/Setup','')
     if not setup:
       return S_ERROR('Failed to get setup')
+    
+    # Check that the system instance does not exist yet
+    sysInstance = gConfig.getValue('/DIRAC/Setups/%s/%s' % (setup,system),'Unknown')
+    if sysInstance != "Unknown":
+      return S_OK(sysInstance)
+    
     cfg = CFG()
     cfg.createNewSection('DIRAC')
     cfg.createNewSection('DIRAC/Setups')
@@ -285,5 +291,7 @@ class SystemAdministratorClient(Client):
     if not result['OK']:
       return result
     result = cfgClient.commit()
+    if not result['OK']:
+      return result
 
-    return result
+    return S_OK(instance)
