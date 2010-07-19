@@ -31,9 +31,23 @@ def getSetup():
   setup = gConfig.getValue("DIRAC/Setup")
   return S_OK(setup)
 
+#############################################################################
+
 def getExtensions():
   ext = gConfig.getValue("DIRAC/Extensions")
   return S_OK(ext)
+
+#############################################################################
+
+def getExt():
+  VOExtension = ''
+  
+  ext = getExtensions()['Value']
+  
+  if 'LHCb' in ext:
+    VOExtension = 'LHCb'
+  
+  return VOExtension    
 
 #############################################################################
 
