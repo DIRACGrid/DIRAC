@@ -236,8 +236,8 @@ class InfoGetterSuccess(UtilitiesTestCase):
                 panel = 'Service_Storage_Panel'
               if service_t == 'Computing':
                 panel = 'Service_Computing_Panel'
-              if service_t == 'Others':
-                panel = 'Service_Others_Panel'
+              if service_t == 'VO-BOX':
+                panel = 'Service_VO-BOX_Panel'
             if g in ('Resource', 'Resources'):
               panel = 'Resource_Panel'
             if g in ('StorageElement', 'StorageElements'):
@@ -307,6 +307,10 @@ class SynchronizerSuccess(UtilitiesTestCase):
   def test__syncSites(self):
     self.syncC = Synchronizer()
     self.syncC._syncSites()
+
+  def test__syncSites(self):
+    self.syncC = Synchronizer()
+    self.syncC._syncVOBOX()
 
   def test__syncResources(self):
     self.syncC = Synchronizer()

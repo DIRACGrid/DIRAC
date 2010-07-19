@@ -110,7 +110,6 @@ class StElInspectorSuccess(AgentsTestCase):
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(AgentsTestCase)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RS2HistorySuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ClientsCacheFeederSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(CleanerSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RSInspectorSuccess))

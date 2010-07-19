@@ -73,8 +73,8 @@ class InfoGetter:
           info = 'Service_Storage_Panel'
         elif serviceType == 'Computing':
           info = 'Service_Computing_Panel'
-        elif serviceType == 'Others':
-          info = 'Service_Others_Panel'
+        elif serviceType == 'VO-BOX':
+          info = 'Service_VO-BOX_Panel'
       elif granularity in ('Resource', 'Resources'):
         info = 'Resource_Panel'
       elif granularity in ('StorageElement', 'StorageElements'):

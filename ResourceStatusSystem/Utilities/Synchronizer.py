@@ -41,7 +41,7 @@ class Synchronizer:
 #    if thingsToSync == None:
 #      thingsToSync = ['Utils', 'Sites', 'Resources', 'StorageElements'],     
 #                                                     
-    thingsToSync = ['Utils', 'Sites', 'Resources', 'StorageElements']     
+    thingsToSync = ['Utils', 'Sites', 'VOBOX', 'Resources', 'StorageElements']     
 
     gLogger.info("!!! Sync DB content with CS content for %s !!!" %(' '.join(x for x in thingsToSync)))
     
@@ -126,6 +126,26 @@ class Synchronizer:
                                   datetime(9999, 12, 31, 23, 59, 59))
         sitesIn.append(site)
     
+#############################################################################
+
+  def _syncVOBOX(self):
+    """
+    Sync DB content with VOBoxes
+    """
+    
+    # services in the DB now
+    servicesIn = self.rsDB.getMonitoredsList('Service', paramsList = ['ServiceName'])
+    servicesIn = [s[0] for s in servicesIn]
+
+    for site in ['LCG.CNAF.it', 'LCG.IN2P3.fr', 'LCG.PIC.es', 
+                 'LCG.RAL.uk', 'LCG.GRIDKA.de', 'LCG.NIKHEF.nl']:
+      service = 'VO-BOX@' + site
+      if service not in servicesIn: 
+        self.rsDB.addOrModifyService(service, 'VO-BOX', site, 'Active', 'init', 
+                                     datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
+                                     datetime(9999, 12, 31, 23, 59, 59))
+      
+  
 #############################################################################
 
   def _syncResources(self):

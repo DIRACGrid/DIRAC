@@ -51,8 +51,16 @@ def _getCastorSESLSName(name):
       
 #############################################################################
 
-def _getServiceSLSName(name):
-  #TBD
+def _getServiceSLSName(input):
+
+  site = input.split('.')[1]
+  
+  if site == 'GRIDKA':
+    site = 'GridKa'
+  if site == 'NIKHEF':
+    site = 'Nikhef'
+
+  name = site + "_VOBOX"
   
   return name
 
@@ -79,7 +87,7 @@ class SLSStatus_Command(Command):
       #know the SLS name of the SE
       SLSName = _getSESLSName(self.args[1])
     elif self.args[0] == 'Service':
-      #know the SLS name of the VO BOX - TBD
+      #know the SLS name of the VO BOX
       SLSName = _getServiceSLSName(self.args[1])
     else:
       raise InvalidRes, where(self, self.doCommand)
@@ -170,7 +178,7 @@ class SLSLink_Command(Command):
       #know the SLS name of the SE
       SLSName = _getSESLSName(self.args[1])
     elif self.args[0] == 'Service':
-      #know the SLS name of the VO BOX - TBD
+      #know the SLS name of the VO BOX
       SLSName = _getServiceSLSName(self.args[1])
     else:
       raise InvalidRes, where(self, self.doCommand)
