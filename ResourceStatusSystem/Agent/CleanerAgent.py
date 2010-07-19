@@ -1,7 +1,7 @@
 ########################################################################
 # $HeadURL:  $
 ########################################################################
-""" CleanerAgent is in charge of cleaning history tables from rows older than 6 months
+""" CleanerAgent is in charge of different cleanings
 """
 
 from datetime import datetime, timedelta
@@ -29,7 +29,8 @@ class CleanerAgent(AgentModule):
     try:
 
       self.rsDB = ResourceStatusDB()
-      self.historyTables = [x+'History' for x in self.rsDB.getTablesWithHistory()]
+      self.tablesWithHistory = self.rsDB.getTablesWithHistory()
+      self.historyTables = [x+'History' for x in self.tablesWithHistory]
       
       return S_OK()
 
@@ -45,12 +46,22 @@ class CleanerAgent(AgentModule):
     """ 
     The main CleanerAgent execution method
     
+    - Update Resource Status history tables.
+    
     - Cleans history tables from entries older than 6 months.
     
     - Cleans ClientsCache table from DownTimes older than a day. 
     """
     
     try:
+      # update Resource Status history tables.
+      for table in self.tablesWithHistory:
+        res = self.rsDB.getEndings(table)
+        
+        for row in res:
+          if not self.rsDB.unique(table, row):
+            self.rsDB.transact2History(table, row)
+
       # Cleans history tables from entries older than 6 months.
       sixMonthsAgo = str((datetime.utcnow()).replace(microsecond = 0, 
                                                      second = 0) - timedelta(days = 180))

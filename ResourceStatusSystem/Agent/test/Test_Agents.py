@@ -18,9 +18,6 @@ class AgentsTestCase(unittest.TestCase):
     sys.modules["DIRAC.Core.Base.AgentModule"] = DIRAC.ResourceStatusSystem.test.fake_AgentModule
     sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
     
-    from DIRAC.ResourceStatusSystem.Agent.RS2HistoryAgent import RS2HistoryAgent
-    self.rs2hAgent = RS2HistoryAgent("", "")
-
     from DIRAC.ResourceStatusSystem.Agent.ClientsCacheFeeder import ClientsCacheFeeder
     self.ccFeeder = ClientsCacheFeeder("", "")
 
@@ -40,18 +37,6 @@ class AgentsTestCase(unittest.TestCase):
     self.stelIAgent = StElInspectorAgent("", "")
 
         
-class RS2HistorySuccess(AgentsTestCase):
-
-  def test_initialize(self):
-    res = self.rs2hAgent.initialize()
-    self.assert_(res['OK'])
-
-  def test_execute(self):
-    self.rs2hAgent.initialize()
-    res = self.rs2hAgent.execute()
-    self.assert_(res['OK'])
-
-
 class ClientsCacheFeederSuccess(AgentsTestCase):
 
   def test_initialize(self):
