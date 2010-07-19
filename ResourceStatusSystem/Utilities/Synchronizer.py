@@ -41,7 +41,7 @@ class Synchronizer:
 #    if thingsToSync == None:
 #      thingsToSync = ['Utils', 'Sites', 'Resources', 'StorageElements'],     
 #                                                     
-    thingsToSync = ['Utils', 'Sites', 'Resources', 'StorageElements'],     
+    thingsToSync = ['Utils', 'Sites', 'Resources', 'StorageElements']     
 
     gLogger.info("!!! Sync DB content with CS content for %s !!!" %(' '.join(x for x in thingsToSync)))
     
