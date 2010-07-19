@@ -37,10 +37,7 @@ def initializeResourceStatusHandler(serviceInfo):
   cc = CommandCaller()
 
   global VOExtension
-  VOExtension = getExtensions()['Value']
-
-  if 'LHCb' in VOExtension:
-    VOExtension = 'LHCb'
+  VOExtension = getExt()
 
   ig = InfoGetter(VOExtension)
   
