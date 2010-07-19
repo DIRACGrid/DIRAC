@@ -48,10 +48,7 @@ class StElInspectorAgent(AgentModule):
       
       self.setup = getSetup()['Value']
 
-      self.VOExtension = getExtensions()['Value']
-
-      if 'LHCb' in self.VOExtension:
-        self.VOExtension = 'LHCb'
+      self.VOExtension = getExt()
 
       configModule = __import__(self.VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations", 
                                 globals(), locals(), ['*'])
