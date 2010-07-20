@@ -238,6 +238,8 @@ class InfoGetterSuccess(UtilitiesTestCase):
                 panel = 'Service_Computing_Panel'
               if service_t == 'VO-BOX':
                 panel = 'Service_VO-BOX_Panel'
+              if service_t == 'VOMS':
+                panel = 'Service_VOMS_Panel'
             if g in ('Resource', 'Resources'):
               panel = 'Resource_Panel'
             if g in ('StorageElement', 'StorageElements'):

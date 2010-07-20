@@ -51,16 +51,20 @@ def _getCastorSESLSName(name):
       
 #############################################################################
 
-def _getServiceSLSName(input):
+def _getServiceSLSName(input, type):
 
-  site = input.split('.')[1]
+  if type == 'VO-BOX':
+    site = input.split('.')[1]
+    
+    if site == 'GRIDKA':
+      site = 'GridKa'
+    if site == 'NIKHEF':
+      site = 'Nikhef'
   
-  if site == 'GRIDKA':
-    site = 'GridKa'
-  if site == 'NIKHEF':
-    site = 'Nikhef'
-
-  name = site + "_VOBOX"
+    name = site + "_VOBOX"
+  
+  elif type == 'VOMS':
+    name = 'VOMS'
   
   return name
 
@@ -76,6 +80,8 @@ class SLSStatus_Command(Command):
      - args[0]: string: should be a ValidRes
 
      - args[1]: string: should be the (DIRAC) name of the ValidRes
+
+     - args[2]: string: should be the ValidRes type (e.g. 'VO-BOX')
     """
     super(SLSStatus_Command, self).doCommand()
 
@@ -88,7 +94,7 @@ class SLSStatus_Command(Command):
       SLSName = _getSESLSName(self.args[1])
     elif self.args[0] == 'Service':
       #know the SLS name of the VO BOX
-      SLSName = _getServiceSLSName(self.args[1])
+      SLSName = _getServiceSLSName(self.args[1], self.args[2])
     else:
       raise InvalidRes, where(self, self.doCommand)
     

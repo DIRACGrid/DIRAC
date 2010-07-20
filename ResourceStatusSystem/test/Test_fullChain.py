@@ -17,10 +17,12 @@ sito = {'name':'LCG.CNAF.it', 'siteType':'T1'} #OK
 servizio = {'name':'Storage@LCG.GRIDKA.de', 'siteType':'T2', 'serviceType':'Storage'} #OK
 servizio2 = {'name':'Computing@LCG.DORTMUND.de', 'siteType':'T2', 'serviceType':'Computing'} #OK
 servizio3 = {'name':'VO-BOX@LCG.GRIDKA.de', 'siteType':'T1', 'serviceType':'VO-BOX'} #OK
+servizio4 = {'name':'VOMS@LCG.CERN.ch', 'siteType':'T0', 'serviceType':'VOMS'} #OK
 #risorsa = {'name':'gazon.nikhef.nl', 'siteType':'T2', 'resourceType':'CE'} #OK
 #risorsa = {'name':'ce111.cern.ch', 'siteType':'T0', 'resourceType':'CE'} #OK
 #risorsa3 = {'name':'tblb01.nipne.ro', 'siteType':'T2', 'resourceType':'CE'} #OK
 risorsa4 = {'name':'fts.cr.cnaf.infn.it', 'siteType':'T1', 'resourceType':'FTS'} #OK
+risorsa5 = {'name':'voms.cern.ch', 'siteType':'T0', 'resourceType':'VOMS'} #OK
 #risorsa = {'name':'hepgrid3.ph.liv.ac.uk', 'siteType':'T1', 'resourceType':'CE'} #OK, ma messo CE al posto di CREAMCE
 risorsa2 = {'name':'ccsrm.in2p3.fr', 'siteType':'T1', 'resourceType':'SE'} #OK
 risorsa3 = {'name':'lhcb-lfc.gridpp.rl.ac.uk', 'siteType':'T1', 'resourceType':'LFC_L'} #OK
@@ -108,6 +110,24 @@ for status in ValidStatus:
     res = pdp.takeDecision()
     print res
 
+print "\n\n ~~~~~~~ SERVICE 4 ~~~~~~~ : %s \n " %servizio4
+
+for status in ValidStatus:
+#  for oldStatus in ValidStatus:
+#    if status == oldStatus:
+#      continue
+    print "############################"
+    print " "
+    print 'nel test:', status#, oldStatus
+    pdp = PDP(VO, granularity = 'Service', name = servizio4['name'], status = status, 
+#              formerStatus = oldStatus, 
+              reason = 'XXXXX', siteType = servizio4['siteType'],
+              serviceType = servizio4['serviceType'], 
+              useNewRes = useNewRes
+              ) 
+    res = pdp.takeDecision()
+    print res
+
 #
 #
 #print "\n\n ~~~~~~~ RISORSA 1 ~~~~~~~ : %s \n " %risorsa
@@ -146,23 +166,23 @@ for status in ValidStatus:
 #  res = pdp.takeDecision()
 #  print res
 #
-print "\n\n ~~~~~~~ RISORSA 3 ~~~~~~~ : %s \n " %risorsa3
-
-for status in ValidStatus:
-#  for oldStatus in ValidStatus:
-#    if status == oldStatus:
-#      continue
-  print "############################"
-  print " "
-  print status#, oldStatus
-  pdp = PDP(VO, granularity = 'Resource', name = risorsa3['name'], status = status, 
-#            formerStatus = oldStatus, 
-            reason = 'XXXXX', siteType = risorsa3['siteType'], 
-            resourceType = risorsa3['resourceType'],
-            useNewRes = useNewRes
-            ) 
-  res = pdp.takeDecision()
-  print res
+#print "\n\n ~~~~~~~ RISORSA 3 ~~~~~~~ : %s \n " %risorsa3
+#
+#for status in ValidStatus:
+##  for oldStatus in ValidStatus:
+##    if status == oldStatus:
+##      continue
+#  print "############################"
+#  print " "
+#  print status#, oldStatus
+#  pdp = PDP(VO, granularity = 'Resource', name = risorsa3['name'], status = status, 
+##            formerStatus = oldStatus, 
+#            reason = 'XXXXX', siteType = risorsa3['siteType'], 
+#            resourceType = risorsa3['resourceType'],
+#            useNewRes = useNewRes
+#            ) 
+#  res = pdp.takeDecision()
+#  print res
 
 #print "\n\n ~~~~~~~ RISORSA 4 ~~~~~~~ : %s \n " %risorsa4
 #
@@ -181,6 +201,25 @@ for status in ValidStatus:
 #            ) 
 #  res = pdp.takeDecision()
 #  print res
+
+print "\n\n ~~~~~~~ RISORSA 5 ~~~~~~~ : %s \n " %risorsa5
+
+for status in ValidStatus:
+#  for oldStatus in ValidStatus:
+#    if status == oldStatus:
+#      continue
+  print "############################"
+  print " "
+  print status#, oldStatus
+  pdp = PDP(VO, granularity = 'Resource', name = risorsa5['name'], status = status, 
+#            formerStatus = oldStatus, 
+            reason = 'XXXXX', siteType = risorsa5['siteType'], 
+            resourceType = risorsa5['resourceType'],
+            useNewRes = useNewRes
+            ) 
+  res = pdp.takeDecision()
+  print res
+
 
 #print "\n\n ~~~~~~~ StorageElement ~~~~~~~ : %s \n " %se
 #

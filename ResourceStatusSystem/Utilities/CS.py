@@ -21,9 +21,21 @@ def getMailForUser( users ):
 
 #############################################################################
 
+def getVOMSEndpoints():
+  voms_S = gConfig.getSections("%s/VOMS/Servers/lhcb/" %(g_BaseRegistrySection) ,'')
+  return voms_S
+
+#############################################################################
+
 def getOperationMails( op ):
   mail = gConfig.getValue("%s/EMail/%s" %(g_BaseOperationsSection, op) ,'')
   return S_OK(mail)
+
+#############################################################################
+
+def getVOMSEndpoints():
+  voms_S = gConfig.getSections("%s/VOMS/Servers/lhcb/" %(g_BaseRegistrySection) ,'')
+  return voms_S
 
 #############################################################################
 

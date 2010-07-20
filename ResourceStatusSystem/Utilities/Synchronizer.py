@@ -31,7 +31,7 @@ class Synchronizer:
       
 #############################################################################
       
-#  def sync(self, thingsToSync = None, fake_param = None):
+ # def sync(self, thingsToSync = None, fake_param = None):
   def sync(self, a, b):
     """
     :params:
@@ -39,8 +39,8 @@ class Synchronizer:
     """
     
 #    if thingsToSync == None:
-#      thingsToSync = ['Utils', 'Sites', 'Resources', 'StorageElements'],     
-#                                                     
+#      thingsToSync = ['Utils', 'Sites', 'VOBOX', 'Resources', 'StorageElements'],     
+                                                     
     thingsToSync = ['Utils', 'Sites', 'VOBOX', 'Resources', 'StorageElements']     
 
     gLogger.info("!!! Sync DB content with CS content for %s !!!" %(' '.join(x for x in thingsToSync)))
@@ -213,8 +213,12 @@ class Synchronizer:
       if fts not in FTSNodeList:
         FTSNodeList.append(fts)
 
+    # VOMS Nodes in CS now
+    VOMSNodeList = getVOMSEndpoints()['Value']
+    
+
     # complete list of resources in CS now
-    resourcesList = CEList + SENodeList + LFCNodeList_L + LFCNodeList_C + FTSNodeList
+    resourcesList = CEList + SENodeList + LFCNodeList_L + LFCNodeList_C + FTSNodeList + VOMSNodeList
 
     # list of services in CS now (to be done)
     servicesList = []
@@ -353,13 +357,40 @@ class Synchronizer:
                                       datetime(9999, 12, 31, 23, 59, 59))
         resourcesIn.append(fts)
       
+    # VOMSs
+    for voms in VOMSNodeList:
+      siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo('hostname', voms)
+      if not siteInGOCDB['OK']:
+        raise RSSException, siteInGOCDB['Message']
+      siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+      siteInDIRAC = getDIRACSiteName(siteInGOCDB)
+      if not siteInDIRAC['OK']:
+        raise RSSException, siteInDIRAC['Message']
+      site = siteInDIRAC['Value']
+      service = 'VOMS@' + site
+      if service not in servicesList:
+        servicesList.append(service)
+      if service not in servicesIn:
+        self.rsDB.addOrModifyService(service, 'VOMS', site, 'Active', 'init', 
+                                     datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
+                                     datetime(9999, 12, 31, 23, 59, 59))
+        servicesIn.append(service)
+      if voms not in resourcesIn and voms is not None:
+        self.rsDB.addOrModifyResource(voms, 'VOMS', service, site, 'Active', 'init', 
+                                      datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
+                                      datetime(9999, 12, 31, 23, 59, 59))
+        resourcesIn.append(voms)
+      
     #remove services no more in the CS
     for ser in servicesIn:
       if ser not in servicesList:
-        self.rsDB.removeService(ser)
-        self.rsDB.removeResource(serviceName = ser)
-        site = ser.split('@')[1]
-        self.rsDB.removeStorageElement(siteName = site)
+        serType = ser.split('@')[0]
+        if serType != 'VO-BOX':
+          self.rsDB.removeService(ser)
+          self.rsDB.removeResource(serviceName = ser)
+          site = ser.split('@')[1]
+          if serType == 'Storage':
+            self.rsDB.removeStorageElement(siteName = site)
       
       
 #############################################################################
@@ -368,7 +399,6 @@ class Synchronizer:
 
     storageElementsIn = self.rsDB.getMonitoredsList('StorageElement', 
                                                     paramsList = ['StorageElementName'])
-    
     try:
       storageElementsIn = [x[0] for x in storageElementsIn]
     except IndexError:
