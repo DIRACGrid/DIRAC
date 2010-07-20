@@ -379,22 +379,22 @@ class TransferDB(DB):
     return res
 
   def getFilesForChannel(self,channelID,numberOfFiles):
-    req = "SELECT SpaceToken FROM Channel WHERE ChannelID = %s AND Status = 'Waiting' ORDER BY LastUpdateTimeOrder LIMIT 1;" % (channelID)
+    req = "SELECT SourceSE,TargetSE FROM Channel WHERE ChannelID = %s AND Status = 'Waiting' ORDER BY LastUpdateTimeOrder LIMIT 1;" % (channelID)
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB.getFilesForChannel: Failed to get files for Channel %s." % channelID
       return S_ERROR('%s\n%s' % (err,res['Message']))
     if not res['Value']:
       return S_OK()
-    spaceToken = res['Value'][0][0]
-    req = "SELECT c.FileID,c.SourceSURL,c.TargetSURL,c.FileSize,f.LFN FROM Files as f, Channel as c WHERE c.ChannelID = %s AND c.FileID=f.FileID AND c.Status = 'Waiting' AND c.SpaceToken = '%s' ORDER BY c.LastUpdateTimeOrder LIMIT %s;" % (channelID,spaceToken,numberOfFiles)
+    sourceSE,targetSE = res['Value'][0]
+    req = "SELECT c.FileID,c.SourceSURL,c.TargetSURL,c.FileSize,f.LFN FROM Files as f, Channel as c WHERE c.ChannelID = %s AND c.FileID=f.FileID AND c.Status = 'Waiting' AND c.SourceSE = '%s' and c.TargetSE = '%s' ORDER BY c.LastUpdateTimeOrder LIMIT %s;" % (channelID,sourceSE,targetSE,numberOfFiles)
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB.getFilesForChannel: Failed to get files for Channel %s." % channelID
       return S_ERROR('%s\n%s' % (err,res['Message']))
     if not res['Value']:
       return S_OK()
-    resDict = {'SpaceToken':spaceToken}
+    resDict = {'SourceSE':sourceSE,'TargetSE':targetSE}
     files = []
     for fileID,sourceSURL,targetSURL,size,lfn in res['Value']:
       files.append({'FileID':fileID,'SourceSURL':sourceSURL,'TargetSURL':targetSURL,'LFN':lfn,'Size':size})
@@ -469,9 +469,9 @@ class TransferDB(DB):
     return res
 
   def getFTSReq(self):
-    req = "SELECT f.FTSReqID,f.FTSGUID,f.FTSServer,f.ChannelID,f.SubmitTime,f.NumberOfFiles,f.TotalSize,c.SourceSite,c.DestinationSite FROM FTSReq as f,Channels as c WHERE f.Status = 'Submitted' and f.ChannelID=c.ChannelID ORDER BY f.LastMonitor;"
+    #req = "SELECT f.FTSReqID,f.FTSGUID,f.FTSServer,f.ChannelID,f.SubmitTime,f.NumberOfFiles,f.TotalSize,c.SourceSite,c.DestinationSite FROM FTSReq as f,Channels as c WHERE f.Status = 'Submitted' and f.ChannelID=c.ChannelID ORDER BY f.LastMonitor;"
 
-    # SELECT FTSReqID,FTSGUID,FTSServer,ChannelID,SubmitTime,NumberOfFiles,TotalSize FROM FTSReq WHERE Status = 'Submitted' ORDER BY LastMonitor LIMIT 1;"
+    req = "SELECT FTSReqID,FTSGUID,FTSServer,ChannelID,SubmitTime,SourceSE,TargetSE,NumberOfFiles,TotalSize FROM FTSReq WHERE Status = 'Submitted' ORDER BY LastMonitor;"
     res = self._query(req)
     if not res['OK']:
       err = "TransferDB._getFTSReq: Failed to get entry from FTSReq table."
@@ -481,7 +481,7 @@ class TransferDB(DB):
       return S_OK()
 
     ftsReqs = []
-    for ftsReqID,ftsGUID,ftsServer,channelID,submitTime,numberOfFiles,totalSize,sourceSite,destSite in res['Value']:
+    for ftsReqID,ftsGUID,ftsServer,channelID,submitTime,sourceSE,targetSE,numberOfFiles,totalSize in res['Value']:
       resDict = {}
       resDict['FTSReqID'] = ftsReqID
       resDict['FTSGuid'] = ftsGUID
@@ -490,8 +490,8 @@ class TransferDB(DB):
       resDict['SubmitTime'] = submitTime
       resDict['NumberOfFiles'] = numberOfFiles
       resDict['TotalSize'] = totalSize
-      resDict['Source'] = sourceSite
-      resDict['Target'] = destSite
+      resDict['SourceSE'] = sourceSE
+      resDict['TargetSE'] = targetSE
       ftsReqs.append(resDict)
     return S_OK(ftsReqs)
 

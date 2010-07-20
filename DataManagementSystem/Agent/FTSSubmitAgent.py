@@ -4,15 +4,13 @@
 
 """  FTS Submit Agent takes files from the TransferDB and submits them to the FTS
 """
-from DIRAC  import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
-from DIRAC.DataManagementSystem.DB.TransferDB import TransferDB
-from DIRAC.DataManagementSystem.Client.FTSRequest import FTSRequest
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
-
-from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
+from DIRAC                                                           import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Base.AgentModule                                     import AgentModule
+from DIRAC.ConfigurationSystem.Client.PathFinder                     import getDatabaseSection
+from DIRAC.DataManagementSystem.DB.TransferDB                        import TransferDB
+from DIRAC.DataManagementSystem.Client.FTSRequest                    import FTSRequest
+from DIRAC.Core.DISET.RPCClient                                      import RPCClient
+from DIRAC.Core.Utilities.Shifter                                    import setupShifterProxyInEnv
 import os,time
 from types import *
 
@@ -24,7 +22,6 @@ class FTSSubmitAgent(AgentModule):
 
     self.TransferDB = TransferDB()
     self.maxJobsPerChannel = self.am_getOption('MaxJobsPerChannel',2)
-    self.DataLog = DataLoggingClient()
 
     self.useProxies = self.am_getOption('UseProxies','True').lower() in ( "y", "yes", "true" )
     self.proxyLocation = self.am_getOption('ProxyLocation', '' )
@@ -68,19 +65,13 @@ class FTSSubmitAgent(AgentModule):
     """
 
     # Create the FTSRequest object for preparing the submission
-    ftsRequest = FTSRequest()
+    oFTSRequest = FTSRequest()
     channelID = channelDict['ChannelID']
-    sourceSE = channelDict['Source']
-    ftsRequest.setSourceSE(sourceSE)
-    targetSE = channelDict['Destination']
-    ftsRequest.setTargetSE(targetSE)
-    ftsServer = channelDict['FTSServer']
-    ftsRequest.setFTSServer(ftsServer)
     filesPerJob = channelDict['NumFiles']
 
     #########################################################################
     #  Obtain the first files in the selected channel.
-    gLogger.info("FTSSubmitAgent.submitTransfer: Attempting to obtain files for %s to %s channel." % (sourceSE,targetSE))
+    gLogger.info("FTSSubmitAgent.submitTransfer: Attempting to obtain files to transfer on channel %s" % channelID)
     res = self.TransferDB.getFilesForChannel(channelID,2*filesPerJob)
     if not res['OK']:
       errStr = 'FTSSubmitAgent.%s' % res['Message']
@@ -92,9 +83,11 @@ class FTSSubmitAgent(AgentModule):
     filesDict = res['Value']
     gLogger.info('Obtained %s files for channel' % len(filesDict['Files']))
 
-    if filesDict.has_key('SpaceToken'):
-      spaceToken = filesDict['SpaceToken']
-      ftsRequest.setSpaceToken(spaceToken)
+    sourceSE = filesDict['SourceSE']
+    oFTSRequest.setSourceSE(sourceSE)
+    targetSE = filesDict['TargetSE']
+    oFTSRequest.setTargetSE(targetSE)
+    gLogger.info("FTSSubmitAgent.submitTransfer: Attempting to obtain files for %s to %s channel." % (sourceSE,targetSE))
     files = filesDict['Files']
 
     #########################################################################
@@ -105,9 +98,9 @@ class FTSSubmitAgent(AgentModule):
     fileIDSizes = {}
     for file in files:
       lfn = file['LFN']
-      ftsRequest.setLFN(lfn)
-      ftsRequest.setSourceSURL(lfn,file['SourceSURL'])
-      ftsRequest.setDestinationSURL(lfn,file['TargetSURL'])
+      oFTSRequest.setLFN(lfn)
+      oFTSRequest.setSourceSURL(lfn,file['SourceSURL'])
+      oFTSRequest.setTargetSURL(lfn,file['TargetSURL'])
       fileID = file['FileID']
       fileIDs.append(fileID)
       totalSize += file['Size']
@@ -116,13 +109,23 @@ class FTSSubmitAgent(AgentModule):
     #########################################################################
     #  Submit the FTS request and retrieve the FTS GUID/Server
     gLogger.info('Submitting the FTS request')
-    res = ftsRequest.submit()
+    res = oFTSRequest.submit()
+    print oFTSRequest.__file__
     if not res['OK']:
       errStr = "FTSSubmitAgent.%s" % res['Message']
       gLogger.error(errStr)
       return S_ERROR(errStr)
-    ftsGUID = ftsRequest.getFTSGUID()
-    ftsServer = ftsRequest.getFTSServer()
+    res = oFTSRequest.getFTSGUID()
+    if not res['OK']:
+      gLogger.error("Failed to get FTS GUID after submission",res['Message'])
+      return res
+    ftsGUID = res['Value']
+    res = oFTSRequest.getFTSServer()
+    if not res['OK']:
+      gLogger.error("Failed to get FTS Server after submission",res['Message'])
+      return res
+    ftsServer = res['Value']
+
     infoStr = "Submitted FTS Job:\n\n\
               FTS Guid:%s\n\
               FTS Server:%s\n\
@@ -141,14 +144,18 @@ class FTSSubmitAgent(AgentModule):
       return S_ERROR(errStr)
     ftsReqID = res['Value']
     gLogger.info('Obtained FTS RequestID %s' % ftsReqID)
+    res = self.TransferDB.setFTSReqAttribute(ftsReqID,'SourceSE',sourceSE)
+    if not res['OK']:
+      gLogger.error("Failed to set SourceSE for FTSRequest",res['Message'])
+    res = self.TransferDB.setFTSReqAttribute(ftsReqID,'TargetSE',targetSE)
+    if not res['OK']:
+      gLogger.error("Failed to set TargetSE for FTSRequest",res['Message'])
     res = self.TransferDB.setFTSReqAttribute(ftsReqID,'NumberOfFiles',len(fileIDs))
     if not res['OK']:
-      errStr = "FTSSubmitAgent.%s" % res['Message']
-      gLogger.error(errStr)
+      gLogger.error("Failed to set NumberOfFiles for FTSRequest",res['Message'])
     res = self.TransferDB.setFTSReqAttribute(ftsReqID,'TotalSize',totalSize)
     if not res['OK']:
-      errStr = "FTSSubmitAgent.%s" % res['Message']
-      gLogger.error(errStr)
+      gLogger.error("Failed to set TotalSize for FTSRequest",res['Message'])
 
     #########################################################################
     #  Insert the submission event in the FTSReqLogging table
@@ -177,6 +184,3 @@ class FTSSubmitAgent(AgentModule):
     res = self.TransferDB.setFTSReqFiles(ftsReqID,channelID,fileToFTSFileAttributes)
     if not res['OK']:
       gLogger.error('Failed to populate the FileToFTS table with files.')
-
-    gLogger.info('Updating the data logging information for files')
-    self.DataLog.addFileRecord(lfns,'FTSSubmit',str(ftsReqID),'','FTSSubmitAgent')

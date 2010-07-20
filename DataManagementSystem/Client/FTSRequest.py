@@ -18,7 +18,7 @@ class FTSRequest:
     self.gridEnv = '/afs/cern.ch/project/gd/LCG-share/3.2.4-0/etc/profile.d/grid-env'
 
     self.finalStates = ['Canceled','Failed','Hold','Finished','FinishedDirty']
-    self.failedStates = ['Canceled','Failed','Hold','Finished','FinishedDirty']
+    self.failedStates = ['Canceled','Failed','Hold','FinishedDirty']
     self.successfulStates = ['Finished','Done']
     self.fileStates = ['Done','Active','Pending','Ready','Canceled','Failed','Finishing','Finished','Submitted','Hold','Waiting']
 
@@ -604,7 +604,8 @@ class FTSRequest:
   def dumpSummary(self,printOutput=False):
     outStr = ''
     for status in sortList(self.statusSummary.keys()):
-      outStr = '%s\t%s : %s\n' % (outStr,status.ljust(10),str(self.statusSummary[status]).ljust(10))
+      if self.statusSummary[status]:
+        outStr = '%s\t%s : %s\n' % (outStr,status.ljust(10),str(self.statusSummary[status]).ljust(10))
     outStr = outStr.rstrip('\n')
     if printOutput:
       print outStr
