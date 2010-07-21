@@ -328,6 +328,8 @@ class LocalConfiguration:
   def __showHelp( self, dummy = False ):
     gLogger.info( "Usage:" )
     gLogger.info( "  %s (<options>|<cfgFile>)*" % sys.argv[0] )
+    if dummy:
+      gLogger.info( dummy )
     gLogger.info( "Options:" )
     for optionTuple in self.commandOptionList:
       gLogger.info( "  -%s  --%s  :  %s" % optionTuple[:3] )
