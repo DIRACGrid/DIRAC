@@ -921,7 +921,7 @@ def installMySQL():
                            'replicate-ignore-table = mysql.MonitorData',
                            '# replicate-ignore-db=db_name',
                            'log-bin = mysql-bin'
-                           'log-slave-updates:', '' ] )
+                           'log-slave-updates' ] )
       elif line.find( 'server-id' ) == 0 and mysqlMode.lower() == 'slave':
         # MySQL Configuration for Slave Server
         import time
@@ -931,7 +931,7 @@ def installMySQL():
                            'replicate-ignore-table = mysql.MonitorData',
                            '# replicate-ignore-db=db_name',
                            'log-bin = mysql-bin'
-                           'log-slave-updates:', '' ] )
+                           'log-slave-updates' ] )
       elif line.find( '/opt/dirac/mysql' ) > -1:
         line = line.replace( '/opt/dirac/mysql', mysqlDir )
 
