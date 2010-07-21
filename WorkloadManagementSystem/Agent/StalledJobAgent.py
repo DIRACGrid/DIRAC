@@ -17,7 +17,7 @@ from DIRAC.Core.Utilities.Time                      import fromString, toEpoch, 
 from DIRAC                                          import gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.AccountingSystem.Client.Types.Job        import Job
-import time,types
+import time, types
 
 class StalledJobAgent( AgentModule ):
 
@@ -91,36 +91,36 @@ class StalledJobAgent( AgentModule ):
 
     self.log.info( 'Total jobs: %s, Stalled job count: %s, Running job count: %s' % ( len( jobs ), stalledCounter, runningCounter ) )
     return S_OK()
-  
+
  #############################################################################
   def __failStalledJobs( self, failedTime ):
     """ Changes the Stalled status to Failed for jobs long in the Stalled status
-    """ 
-    
+    """
+
     result = self.jobDB.selectJobs( {'Status':'Stalled'} )
-    
+
     failedCounter = 0
-    
+
     if not result['OK'] or not result['Value']:
       self.log.warn( result )
       return result
     else:
       jobs = result['Value']
       self.log.info( '%s Stalled jobs will be checked for failure' % ( len( jobs ) ) )
-            
+
       for job in jobs:
-        
+
         # Check if the job pilot is lost
-        result = self.__getJobPilotStatus(job)
+        result = self.__getJobPilotStatus( job )
         if result['OK']:
           pilotStatus = result['Value']
           if pilotStatus != "Running":
-            result = self.__updateJobStatus( job, 'Failed', 
-                                             "Job stalled: pilot not running" )  
+            result = self.__updateJobStatus( job, 'Failed',
+                                             "Job stalled: pilot not running" )
             failedCounter += 1
-            result = self.sendAccounting(job)
-            continue          
-          
+            result = self.sendAccounting( job )
+            continue
+
         result = self.__getLatestUpdateTime( job )
         if not result['OK']:
           return result
@@ -128,30 +128,30 @@ class StalledJobAgent( AgentModule ):
         lastUpdate = result['Value']
         elapsedTime = currentTime - lastUpdate
         if elapsedTime > failedTime:
-          self.__updateJobStatus( job, 'Failed', 'Stalling for more than %d sec' % failedTime )  
+          self.__updateJobStatus( job, 'Failed', 'Stalling for more than %d sec' % failedTime )
           failedCounter += 1
-          result = self.sendAccounting(job)
-          
-    self.log.info('%d jobs set to Failed' % failedCounter)       
-    return S_OK(failedCounter)      
-        
+          result = self.sendAccounting( job )
+
+    self.log.info( '%d jobs set to Failed' % failedCounter )
+    return S_OK( failedCounter )
+
  #############################################################################
   def __getJobPilotStatus( self, jobID ):
     """ Get the job pilot status
-    """       
-    result = self.jobDB.getJobParameter(jobID,'Pilot_Reference')
+    """
+    result = self.jobDB.getJobParameter( jobID, 'Pilot_Reference' )
     if result['OK']:
       pilotReference = result['Value']
-      wmsAdminClient = RPCClient('WorkloadManagement/WMSAdministrator')
-      result = wmsAdminClient.getPilotInfo(pilotReference)
+      wmsAdminClient = RPCClient( 'WorkloadManagement/WMSAdministrator' )
+      result = wmsAdminClient.getPilotInfo( pilotReference )
       if result['OK']:
         pilotStatus = result['Value'][pilotReference]['Status']
-        return S_OK(pilotStatus)
+        return S_OK( pilotStatus )
       else:
-        return S_ERROR('Failed to get the pilot status')
+        return S_ERROR( 'Failed to get the pilot status' )
     else:
-      return S_ERROR('Failed to get the pilot reference')
-    
+      return S_ERROR( 'Failed to get the pilot reference' )
+
 
  #############################################################################
   def __getStalledJob( self, job, stalledTime ):
@@ -238,45 +238,69 @@ class StalledJobAgent( AgentModule ):
   def sendAccounting( self, jobID ):
     """Send WMS accounting data for the given job
     """
-    
+
     accountingReport = Job()
-    result = self.jobDB.getJobAttributes(jobID)
+
+    result = self.jobDB.getJobAttributes( jobID )
     if not result['OK']:
       return result
     jobDict = result['Value']
+
+    result = self.logDB.getJobLoggingInfo( jobID )
+    if not result['OK']:
+      logList = []
+    else:
+      logList = result['Value']
+
     startTime = jobDict['StartExecTime']
-    if not startTime or startTime == 'None' :
-      result = self.logDB.getJobLoggingInfo(jobID)
-      if not result['OK']:
-        startTime = jobDict['SubmissionTime']
-      else:
-        for status,minor,app,stime,source in result['Value']:
-          if status == 'Running':
-            startTime = stime
-            break
-        if not startTime:
-          startTime = jobDict['SubmissionTime']
-
-    if type(startTime) in types.StringTypes:
-      startTime = fromString(startTime)
-
     endTime = ''
-    result = self.logDB.getJobLoggingInfo(jobID)
+
+    if not startTime or startTime == 'None':
+      for status, minor, app, stime, source in logList:
+        if status == 'Running':
+          startTime = stime
+          break
+      for status, minor, app, stime, source in logList:
+        if status == 'Stalled':
+          endTime = stime
+      if not startTime or startTime == 'None':
+        startTime = jobDict['SubmissionTime']
+
+    if type( startTime ) in types.StringTypes:
+      startTime = fromString( startTime )
+
+
+    result = self.logDB.getJobLoggingInfo( jobID )
     if not result['OK']:
       endTime = dateTime()
     else:
-      for status,minor,app,stime,source in result['Value']:
+      for status, minor, app, stime, source in result['Value']:
         if status == 'Stalled':
           endTime = stime
           break
     if not endTime:
       endTime = dateTime()
 
-    if type(endTime) in types.StringTypes:
-      endTime = fromString(endTime)
+    if type( endTime ) in types.StringTypes:
+      endTime = fromString( endTime )
 
+    result = self.jobDB.getHeartBeatData( jobID )
+
+    lastCPUTime = 0
+    lastWallTime = 0
+    lastHeartBeatTime = jobDict['StartExecTime']
+    if result['OK']:
+      for name, value, heartBeatTime in result['Value']:
+        if 'CPUConsumed' == name and value > lastCPUTime:
+          lastCPUTime = value
+        if 'WallClockTime' == name and value > lastWallTime:
+          lastWallTime = value
+        if heartBeatTime > lastHeartBeatTime:
+          lastHeartBeatTime = heartBeatTime
+
+    accountingReport.setStartTime(startTime)
     accountingReport.setEndTime()
-    execTime = toEpoch(endTime)-toEpoch(startTime)
+    # execTime = toEpoch( endTime ) - toEpoch( startTime )
     #Fill the accounting data
     acData = {
                'User' : jobDict['Owner'],
@@ -287,9 +311,9 @@ class StalledJobAgent( AgentModule ):
                'ProcessingType' : 'unknown',
                'FinalMajorStatus' : 'Failed',
                'FinalMinorStatus' : 'Stalled',
-               'CPUTime' : 0.0,
+               'CPUTime' : lastCPUTime,
                'NormCPUTime' : 0.0,
-               'ExecTime' : execTime,
+               'ExecTime' : lastWallTime,
                'InputDataSize' : 0.0,
                'OutputDataSize' : 0.0,
                'InputDataFiles' : 0,
@@ -305,8 +329,8 @@ class StalledJobAgent( AgentModule ):
 
     result = accountingReport.commit()
     if result['OK']:
-      self.jobDB.setJobAttribute(jobID,'AccountedFlag','True')
+      self.jobDB.setJobAttribute( jobID, 'AccountedFlag', 'True' )
     else:
-      self.log.warn('Failed to send accounting report for job %d' % int(jobID) )  
+      self.log.warn( 'Failed to send accounting report for job %d' % int( jobID ) )
     return result
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
