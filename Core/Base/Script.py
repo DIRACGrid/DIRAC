@@ -72,5 +72,5 @@ def disableCS():
 def enableCS():
   return localCfg.enableCS()
 
-def showHelp():
-  localCfg._LocalConfiguration__showHelp()
+def showHelp( text ):
+  localCfg._LocalConfiguration__showHelp( text )
