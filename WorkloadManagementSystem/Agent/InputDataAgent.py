@@ -26,9 +26,9 @@ class InputDataAgent( OptimizerModule ):
     """
     self.failedMinorStatus = self.am_getOption( '/FailedJobStatus', 'Input Data Not Available' )
     #this will ignore failover SE files
-    self.diskSE = self.am_getOption( '/DiskSE', ['-disk', '-DST', '-USER'] )
-    self.tapeSE = self.am_getOption( '/TapeSE', ['-tape', '-RDST', '-RAW'] )
-    self.checkFileMetadata = self.am_getOption( '/CheckFileMetadata', True )
+    self.diskSE = self.am_getOption( 'DiskSE', ['-disk', '-DST', '-USER'] )
+    self.tapeSE = self.am_getOption( 'TapeSE', ['-tape', '-RDST', '-RAW'] )
+    self.checkFileMetadata = self.am_getOption( 'CheckFileMetadata', True )
 
     #Define the shifter proxy needed
     self.am_setModuleParam( "shifterProxy", "ProductionManager" )
