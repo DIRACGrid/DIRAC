@@ -75,17 +75,17 @@ class CommandCaller:
     
     client = None
     
-    if comm == 'JobsEffSimpleEveryOne':
+    if comm == 'JobsEffSimpleEveryOne_Command':
       from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient
       client = JobsClient()
       cObj.setRPC(RPCWMSAdmin)
 
-    elif comm == 'PilotsEffSimpleEverySites':
+    elif comm == 'PilotsEffSimpleEverySites_Command':
       from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient
       client = PilotsClient()
       cObj.setRPC(RPCWMSAdmin)
       
-    elif comm == 'TransferQualityEverySEs':
+    elif comm in ('TransferQualityEverySEs_Command', 'TransferQualityEverySEsSplitted_Command'):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       client = ReportsClient(rpcClient = RPCAccounting)
       cObj.setRPC(RPCAccounting)

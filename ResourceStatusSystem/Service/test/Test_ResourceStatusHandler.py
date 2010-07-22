@@ -227,6 +227,10 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     res = self.rsh.export_getDownTimesWeb({}, [], 0, 500)
     self.assert_(res['OK'])
     
+  def test_export_getCachedAccountingResult(self):
+    res = self.rsh.export_getCachedAccountingResult('XX', 'YY', 'ZZ')
+    self.assert_(res['OK'])
+        
   def test_export_getCachedResult(self):
     res = self.rsh.export_getCachedResult('XX', 'YY', 'ZZ', 1)
     self.assert_(res['OK'])

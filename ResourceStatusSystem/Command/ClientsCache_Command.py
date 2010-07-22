@@ -1,4 +1,4 @@
-""" The Collective_Command class is a command class to know about collective results 
+""" The ClientsCache_Command class is a command module to know about collective clients results 
     (to be cached)
 """
 
@@ -121,8 +121,6 @@ class TransferQualityEverySEs_Command(Command):
     :params:
       :attr:`SEs`: list of storage elements (when not given, take every SE)
     
-      :attr:`RPCWMSAdmin`: optional RPCClient to RPCWMSAdmin
-
     :returns:
       {'SiteName': {TQ : 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
     """

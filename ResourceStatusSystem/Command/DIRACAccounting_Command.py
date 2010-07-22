@@ -201,3 +201,96 @@ class TransferQualityCached_Command(Command):
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
 #############################################################################
+
+class CachedPlot_Command(Command):
+  
+  def doCommand(self):
+    """ 
+    Returns transfer quality plot as it is cached in the accounting cache.
+
+    :attr:`args`: 
+       - args[0]: string - should be a ValidRes
+  
+       - args[1]: string - should be the name of the ValidRes
+
+       - args[2]: string - should be the plot type
+
+       - args[3]: string - should be the plot name
+
+    :returns:
+      a plot
+    """
+    super(CachedPlot_Command, self).doCommand()
+
+    if self.client is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.client = ResourceStatusClient(timeout = self.timeout)
+      
+    name = self.args[1]
+    plotType = self.args[2]
+    plotName = self.args[3]
+    
+    try:
+      res = self.client.getCachedAccountingResult(self, name, plotType, plotName)
+      if res == []:
+        return {'Result':{'data':{}, 'granularity':900}}
+    except:
+      gLogger.exception("Exception when calling ResourceStatusClient for %s" %(name))
+      return {'Result':'Unknown'}
+    
+    return {'Result':res[0]}
+
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    
+#############################################################################
+
+class TransferQualityFromCachedPlot_Command(Command):
+  
+  def doCommand(self):
+    """ 
+    Returns transfer quality from the plot cached in the accounting cache.
+
+    :attr:`args`: 
+       - args[0]: string: should be a ValidRes
+  
+       - args[1]: string should be the name of the ValidRes
+
+    :returns:
+      {'Result': None | a float between 0.0 and 100.0}
+    """
+    super(TransferQualityFromCachedPlot_Command, self).doCommand()
+
+    if self.client is None:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      self.client = ResourceStatusClient(timeout = self.timeout)
+      
+    name = self.args[1]
+    plotType = self.args[2]
+    plotName = self.args[3]
+    
+    try:
+      res = self.client.getCachedAccountingResult(name, plotType, plotName)
+      if res == []:
+        return {'Result':None}
+      
+      s = 0
+      n = 0
+      
+      try:
+        SE = res[0]['data'].keys()[0]
+      except IndexError:
+        return {'Result':None}  
+      
+      n = n + len(res[0]['data'][SE])
+      s = s + sum(res[0]['data'][SE].values())
+      meanQuality = s/n
+      
+    except:
+      gLogger.exception("Exception when calling ResourceStatusClient for %s" %(name))
+      return {'Result':'Unknown'}
+    
+    return {'Result':meanQuality}
+
+  doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
+    
+#############################################################################

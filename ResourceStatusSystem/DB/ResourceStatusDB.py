@@ -2268,6 +2268,145 @@ class ResourceStatusDB:
 
 #############################################################################
 
+  def addOrModifyAccountingCacheRes(self, name, plotType, plotName, result, dateEffective = None):
+    """
+    Add or modify an Accounting Result to the AccountingCache table.
+    
+    :params:
+      :attr:`name`: string - name of the ValidRes
+      
+      :attr:`plotType`: string - the plotType name (e.g. 'Pilot')
+    
+      :attr:`plotName`: string - the plot name
+    
+      :attr:`result`: string - command result
+      
+      :attr:`dateEffective`: datetime - 
+      date from which the result is effective
+    """
+    
+    now = datetime.utcnow().replace(microsecond = 0).isoformat(' ')
+    
+    if dateEffective is None:
+      dateEffective = now
+    
+    req = "SELECT Name, PlotType, PlotName, Result FROM AccountingCache WHERE "
+    req = req + "Name = '%s' AND PlotType = '%s' AND PlotName = '%s' " %(name, plotType, plotName)
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.addOrModifyAccountingCacheRes) + resQuery['Message']
+
+    if resQuery['Value']: 
+      req = "UPDATE AccountingCache SET "
+      if resQuery['Value'][0][3] != result:
+        req = req + "Result = '%s', DateEffective = '%s', " %(result, dateEffective)
+      req = req + "LastCheckTime = '%s' WHERE " %(now)
+      req = req + "Name = '%s' AND PlotType = '%s' AND PlotName = '%s'" %(name, plotType, plotName)
+      
+      resUpdate = self.db._update(req)
+      if not resUpdate['OK']:
+        raise RSSDBException, where(self, self.addOrModifyAccountingCacheRes) + resUpdate['Message']
+    else:
+      req = "INSERT INTO AccountingCache (Name, PlotType, PlotName, Result, DateEffective, "
+      req = req + "LastCheckTime) VALUES ('%s', '%s', '%s', " %(name, plotType, plotName)
+      req = req + "'%s', '%s', '%s')" %(result, dateEffective, now)
+      
+      resUpdate = self.db._update(req)
+      if not resUpdate['OK']:
+        raise RSSDBException, where(self, self.addOrModifyAccountingCacheRes) + resUpdate['Message']
+    
+#############################################################################
+
+  def getAccountingCacheStuff(self, paramsList = None, acID = None, name = None, plotType = None, 
+                              plotName = None, result = None, dateEffective = None, 
+                              lastCheckTime = None):
+    """
+    Generic function to get values from the AccountingCache table.
+    
+    :params:
+      :attr:`paramsList` - string or list of strings
+    
+      :attr:`acID` - string or list of strings
+    
+      :attr:`name` - string or list of strings
+    
+      :attr:`plotName` - string or list of strings
+    
+      :attr:`result` - string or list of strings
+    
+      :attr:`dateEffective` - string or list of strings
+    
+      :attr:`lastCheckTime` - string or list of strings
+    """
+    if (paramsList == None or paramsList == []):
+      params = "acID, Name, PlotType, PlotName, Result, DateEffective "
+    else:
+      if type(paramsList) != type([]):
+        paramsList = [paramsList]
+      params = ','.join([x.strip()+' ' for x in paramsList])
+      
+    req = "SELECT " + params + "FROM AccountingCache "
+    
+    if not (acID == name == plotType == plotName == result == dateEffective == lastCheckTime == None):
+      req = req + "WHERE "
+    
+    if acID is not None:
+      if type(acID) is not type([]):
+        acID = [acID]
+      req = req + "acID IN (" + ','.join([str(x).strip() + ' ' for x in acID]) + ")"
+    
+    if name is not None:
+      if acID is not None:
+        req = req + " AND "
+      if type(name) is not type([]):
+        name = [name]
+      req = req + "Name IN (" + ','.join(['"' + x.strip() + '"' + ' ' for x in name]) + ")"
+    
+    if plotName is not None:
+      if acID is not None or name is not None:
+        req = req + " AND "
+      if type(plotName) is not type([]):
+        plotName = [plotName]
+      req = req + "PlotName IN (" + ','.join(['"' + x.strip() + '"' + ' ' for x in plotName]) + ")"
+    
+    if plotType is not None:
+      if acID is not None or name is not None or plotName is not None:
+        req = req + " AND "
+      if type(plotType) is not type([]):
+        plotType = [plotType]
+      req = req + "PlotType IN (" + ','.join(['"' + x.strip() + '"' + ' ' for x in plotType]) + ")"
+    
+    if result is not None:
+      if (acID is not None or name is not None or plotName is not None or plotType is not None):
+        req = req + " AND "
+      if type(result) is not type([]):
+        result = [result]
+      req = req + "Result IN (" + ','.join(['"' + x.strip() + '"' + ' ' for x in result]) + ")"
+    
+    if dateEffective is not None:
+      if (acID is not None or name is not None or plotName is not None or plotType is not None or result is not None):
+        req = req + " AND "
+      if type(dateEffective) is not type([]):
+        dateEffective = [dateEffective]
+      req = req + "DateEffective IN (" + ','.join(['"' + x.strip() + '"' + ' ' for x in dateEffective]) + ")"
+    
+    if lastCheckTime is not None:
+      if (acID is not None or name is not None or plotName is not None or plotType is not None or result is not None or dateEffective is not None):
+        req = req + " AND "
+      if type(lastCheckTime) is not type([]):
+        lastCheckTime = [lastCheckTime]
+      req = req + "LastCheckTime IN (" + ','.join(['"' + x.strip() + '"' + ' ' for x in lastCheckTime]) + ")"
+    
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.getAccountingCacheStuff) + resQuery['Message']
+    if not resQuery['Value']:
+      return []
+    
+    return resQuery['Value']
+
+#############################################################################
+
   def removeRow(self, fromWhere, name, dateEffective = None):
     """ 
     Remove a row from one of the tables

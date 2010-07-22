@@ -70,6 +70,11 @@ class ResourceStatusClientSuccess(ClientsTestCase):
       res = self.RSCli.getMonitoredStatus(g, '')
       self.assertEqual(res, 'Active')
 
+  def test_getCachedAccountingResult(self):
+    self.mockRSS.getCachedAccountingResult.return_value = {'OK':True, 'Value':[]}
+    res = self.RSCli.getCachedAccountingResult('XX', 'pippo', 'ZZ')
+    self.assertEqual(res, [])
+  
   def test_getCachedResult(self):
     self.mockRSS.getCachedResult.return_value = {'OK':True, 'Value':[]}
     res = self.RSCli.getCachedResult('XX', 'pippo', 'ZZ', 1)

@@ -153,14 +153,14 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
         res = self.rsDB.addOrModifyPolicyRes(g, 'XXX', 'ppp', s, 'XXX')
         self.assertEqual(res, None)
 
+  def test_getPolicyRes(self):
+    res = self.rsDB.getPolicyRes('XX', 'YY')
+    self.assertEqual(res, [])
+
   def test_addOrModifyClientCacheRes(self):
     for g in ValidRes:
       res = self.rsDB.addOrModifyClientsCacheRes(g, 'XXX', 'ppp', 'XXX', 'ID')
       self.assertEqual(res, None)
-
-  def test_getPolicyRes(self):
-    res = self.rsDB.getPolicyRes('XX', 'YY')
-    self.assertEqual(res, [])
 
   def test_getClientsCacheStuff(self):
     res = self.rsDB.getClientsCacheStuff()
@@ -184,6 +184,30 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     res = self.rsDB.getClientsCacheStuff(None, 'XX', 'YY', ['XX', 'YY'], None, ['ZZ'])
     self.assertEqual(res, [])
 
+  def test_addOrModifyAccountingCacheRes(self):
+    res = self.rsDB.addOrModifyAccountingCacheRes('Name', 'XXX', 'ppp', 'XXX')
+    self.assertEqual(res, None)
+
+  def test_getAccountingCacheStuff(self):
+    res = self.rsDB.getAccountingCacheStuff()
+    self.assertEqual(res, [])
+    res = self.rsDB.getAccountingCacheStuff('XX')
+    self.assertEqual(res, [])
+    res = self.rsDB.getAccountingCacheStuff(None, 'YY')
+    self.assertEqual(res, [])
+    res = self.rsDB.getAccountingCacheStuff(None, None, 'ZZ')
+    self.assertEqual(res, [])
+    res = self.rsDB.getAccountingCacheStuff('XX', None, 'ZZ')
+    self.assertEqual(res, [])
+    res = self.rsDB.getAccountingCacheStuff('XX', 'YY', None)
+    self.assertEqual(res, [])
+    res = self.rsDB.getAccountingCacheStuff(None, 'XX', 'YY')
+    self.assertEqual(res, [])
+    res = self.rsDB.getAccountingCacheStuff(['XX'], 'YY', None, 'XX')
+    self.assertEqual(res, [])
+    res = self.rsDB.getAccountingCacheStuff(None, 'XX', 'YY', 'XX')
+    self.assertEqual(res, [])
+    
   def test_getMonitoredsList(self):
     for g in ValidRes:
       res = self.rsDB.getMonitoredsList(g)

@@ -1401,6 +1401,30 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
+  types_getCachedAccountingResult = [StringType, StringType, StringType]
+  def export_getCachedAccountingResult(self, name, plotType, plotName):
+    """ get a cached accounting result
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getCachedAccountingResult: Attempting to get %s: %s, %s accounting cached result" % (name, plotType, plotName))
+      try:
+        res = rsDB.getAccountingCacheStuff(['Result'], name = name, plotType = plotType, 
+                                           plotName = plotName)
+        if not (res == []):
+          res = res[0]
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getCachedAccountingResult: got %s: %s %s cached result" % (name, plotType, plotName))
+      return S_OK(res)
+    except Exception:
+      errorStr = where(self, self.export_getCachedAccountingResult)
+      gLogger.exception(errorStr)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
   types_getCachedResult = [StringType, StringType, StringType, StringType]
   def export_getCachedResult(self, name, command, value, opt_ID):
     """ get a cached result

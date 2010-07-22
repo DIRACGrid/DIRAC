@@ -170,6 +170,30 @@ class ResourceStatusClient:
     
 #############################################################################
 
+  def getCachedAccountingResult(self, name, plotType, plotName):
+    """ 
+    Returns a cached accounting plot
+        
+    :params:
+      :attr:`name` string, should be the name of the res
+      
+      :attr:`plotType`: string, plot type
+    
+      :attr:`plotName` string, should be the plot name
+      
+    :returns:
+      a plot
+    """
+
+    res = self.rsS.getCachedAccountingResult(name, plotType, plotName)
+    if not res['OK']:
+      raise RSSException, where(self, self.getCachedAccountingResult) + " " + res['Message'] 
+  
+    return res['Value']
+  
+  
+#############################################################################
+
   def getCachedResult(self, name, commandName, value, opt_ID = 'NULL'):
     """ 
     Returns a cached result;

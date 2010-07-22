@@ -40,20 +40,29 @@ class ClientsCacheFeeder(AgentModule):
       
       configModule = __import__(VOExtension+"DIRAC.ResourceStatusSystem.Policy.Configurations", 
                                 globals(), locals(), ['*'])
-      commandsList = copy.deepcopy(configModule.Commands_to_use)
+      commandsList_ClientsCache = copy.deepcopy(configModule.Commands_ClientsCache)
 
-      self.commandObjectsList = []
+      commandsList_AccountingCache = copy.deepcopy(configModule.Commands_AccountingCache)
+
+      self.commandObjectsList_ClientsCache = []
+
+      self.commandObjectsList_AccountingCache = []
 
       cc = CommandCaller()
 
       RPCWMSAdmin = RPCClient("WorkloadManagement/WMSAdministrator")
       RPCAccounting = RPCClient("Accounting/ReportGenerator")
 
-      for command in commandsList:
+      for command in commandsList_ClientsCache:
         cObj = cc.setCommandObject(command)
         cc.setCommandClient(command, cObj, RPCWMSAdmin = RPCWMSAdmin, 
                             RPCAccounting = RPCAccounting)
-        self.commandObjectsList.append((command, cObj))
+        self.commandObjectsList_ClientsCache.append((command, cObj))
+        
+      for command in commandsList_AccountingCache:
+        cObj = cc.setCommandObject(command)
+        cc.setCommandClient(command, cObj, RPCAccounting = RPCAccounting)
+        self.commandObjectsList_AccountingCache.append((command, cObj))
         
       return S_OK()
 
@@ -70,7 +79,7 @@ class ClientsCacheFeeder(AgentModule):
     
     try:
       
-      for co in self.commandObjectsList:
+      for co in self.commandObjectsList_ClientsCache:
         self.clientsInvoker.setCommand(co[1])
         res = self.clientsInvoker.doCommand()
         for key in res.keys():
@@ -83,6 +92,14 @@ class ClientsCacheFeeder(AgentModule):
             for value in res[key].keys():
               self.rsDB.addOrModifyClientsCacheRes(key, co[0][1].split('_')[0], 
                                                    value, res[key][value])
+      
+      for co in self.commandObjectsList_AccountingCache:
+        self.clientsInvoker.setCommand(co[1])
+        res = self.clientsInvoker.doCommand()
+        plotType = res.keys()[0]
+        for name in res[plotType].keys():
+          self.rsDB.addOrModifyAccountingCacheRes(name, plotType, co[0][1].split('_')[0],
+                                                  res[plotType][name])
       
       return S_OK()
     

@@ -296,10 +296,24 @@ CREATE TABLE ClientsCache(
   INDEX (Name),
   CommandName VARCHAR(64) NOT NULL,
   INDEX (CommandName),
-  Opt_ID INT UNSIGNED,
+  Opt_ID VARCHAR(64) UNSIGNED,
   Value VARCHAR(16) NOT NULL,
-  Result VARCHAR(128) NOT NULL,
+  Result VARCHAR(256) NOT NULL,
   DateEffective DATETIME NOT NULL,
   LastCheckTime DATETIME NOT NULL,
   PRIMARY KEY(ccID)
+) Engine=InnoDB;
+
+DROP TABLE IF EXISTS AccountingCache;
+CREATE TABLE AccountingCache(
+  acID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  Name VARCHAR(64) NOT NULL,
+  INDEX (Name),
+  PlotType VARCHAR(16) NOT NULL,
+  PlotName VARCHAR(64) NOT NULL,
+  INDEX (PlotName),
+  Result TEXT NOT NULL,
+  DateEffective DATETIME NOT NULL,
+  LastCheckTime DATETIME NOT NULL,
+  PRIMARY KEY(acID)
 ) Engine=InnoDB;

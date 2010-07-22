@@ -178,6 +178,11 @@ class ResourceStatusDB:
                                  opt_ID = None, dateEffective = None):
     pass
   
+  def getAccountingCacheStuff(self, paramsList = None, acID = None, name = None, plotType = None, 
+                              plotName = None, result = None, dateEffective = None, 
+                              lastCheckTime = None):
+    return ((), ())
+  
   def getClientsCacheStuff(self,  paramsList = None, ccID = None, name = None, commandName = None,
                            opt_ID = None, value = None, result = None, dateEffective = None, 
                            lastCheckTime = None):
