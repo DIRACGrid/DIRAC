@@ -6,14 +6,9 @@
 
 __RCSID__ = "$Id$"
 
-import stat
-import sys
 import cmd
-import commands
-import os.path
 import pprint
 from types  import *
-from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 
 class SystemAdministratorClientCLI( cmd.Cmd ):
@@ -22,13 +17,23 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
   def __init__( self, host = None ):
     cmd.Cmd.__init__( self )
-    self.host = host
+    # Check if Port is given
+    self.host = None
+    self.port = None
     self.prompt = 'nohost >'
-    if self.host:
-      self.prompt = '%s >' % self.host
+    self.__setHost( host )
+
+  def __setHost( self, host ):
+    if host:
+      self.prompt = '%s >' % host
+      hostList = host.split( ':' )
+      self.host = hostList[0]
+      if len( hostList ) == 2:
+        self.port = hostList[1]
 
   def do_set( self, args ):
-    """ Set the host to be managed
+    """
+        Set the host to be managed
     
         usage:
         
@@ -43,9 +48,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     del argss[0]
     if option == 'host':
       host = argss[0]
-      self.host = host
-      self.prompt = '%s >' % self.host
-
+      self.__setHost( host )
     else:
       print "Unknown option:", option
 
@@ -431,6 +434,31 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       print "Error:", status
       for line in error.split( '\n' ):
         print line
+
+  def do_execfile( self, args ):
+    """ Execute a series of administrator CLI commands from a given file
+    
+        usage:
+        
+          execfile <filename>
+    """
+    argss = args.split()
+    fname = argss[0]
+    execfile = open( fname, 'r' )
+    lines = execfile.readlines()
+    execfile.close()
+
+    for line in lines:
+      if line.find( '#' ) != -1 :
+        line = line[:line.find( '#' )]
+      line = line.strip()
+      if not line:
+        continue
+      print "\n--> Executing %s\n" % line
+      elements = line.split()
+      command = elements[0]
+      args = ' '.join( elements[1:] )
+      eval( "self.do_%s(args)" % command )
 
   def do_exit( self, args ):
     """ Exit the shell.
