@@ -80,6 +80,10 @@ class TransformationDB(DB):
                             'LastUpdate',
                             'InsertedTime']
 
+    self.TRANSFILETASKPARAMS = ['TransformationID',
+                                'FileID',
+                                'TaskID']
+
     self.TASKSPARAMS = [  'TaskID',
                           'TransformationID',
                           'ExternalStatus',
