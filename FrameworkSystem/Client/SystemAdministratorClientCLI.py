@@ -7,8 +7,8 @@
 __RCSID__ = "$Id$"
 
 import cmd
+import sys
 import pprint
-from types  import *
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 
 class SystemAdministratorClientCLI( cmd.Cmd ):
@@ -78,7 +78,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     option = argss[0]
     del argss[0]
     if option == 'software':
-      client = SystemAdministratorClient( self.host )
+      client = SystemAdministratorClient( self.host, self.port )
       result = client.getSoftwareComponents()
       if not result['OK']:
         print " ERROR:", result['Message']
@@ -86,7 +86,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         print
         pprint.pprint( result['Value'] )
     elif option == 'installed':
-      client = SystemAdministratorClient( self.host )
+      client = SystemAdministratorClient( self.host, self.port )
       result = client.getInstalledComponents()
       if not result['OK']:
         print " ERROR:", result['Message']
@@ -94,7 +94,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         print
         pprint.pprint( result['Value'] )
     elif option == 'setup':
-      client = SystemAdministratorClient( self.host )
+      client = SystemAdministratorClient( self.host, self.port )
       result = client.getSetupComponents()
       if not result['OK']:
         print " ERROR:", result['Message']
@@ -102,7 +102,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         print
         pprint.pprint( result['Value'] )
     elif option == 'status':
-      client = SystemAdministratorClient( self.host )
+      client = SystemAdministratorClient( self.host, self.port )
       result = client.getOverallStatus()
       if not result['OK']:
         print "ERROR:", result['Message']
@@ -128,7 +128,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
               print str( rDict[compType][system][component]['PID'] ).rjust( 8 ),
               print
     elif option == 'database' or option == 'databases':
-      client = SystemAdministratorClient( self.host )
+      client = SystemAdministratorClient( self.host, self.port )
       result = client.getDatabases()
       if not result['OK']:
         print "ERROR:", result['Message']
@@ -149,7 +149,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if not sw:
         print "No database found"
     elif option == 'mysql':
-      client = SystemAdministratorClient( self.host )
+      client = SystemAdministratorClient( self.host, self.port )
       result = client.getMySQLStatus()
       if not result['OK']:
         print "ERROR:", result['Message']
@@ -162,7 +162,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     elif option == "log":
       self.getLog( argss )
     elif option == "info":
-      client = SystemAdministratorClient( self.host )
+      client = SystemAdministratorClient( self.host, self.port )
       result = client.getInfo()
       if not result['OK']:
         print "ERROR:", result['Message']
@@ -186,7 +186,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
     system = argss[0]
     component = argss[1]
-    client = SystemAdministratorClient( self.host )
+    client = SystemAdministratorClient( self.host, self.port )
     result = client.getLogTail( system, component, 40 )
     if not result['OK']:
       print "ERROR:", result['Message']
@@ -219,7 +219,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     del argss[0]
     if option == "mysql":
       print "Installing MySQL database, this can take a while ..."
-      client = SystemAdministratorClient( self.host )
+      client = SystemAdministratorClient( self.host, self.port )
       result = client.installMySQL()
       if not result['OK']:
         print "ERROR:", result['Message']
@@ -232,7 +232,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         return
 
       database = argss[0]
-      client = SystemAdministratorClient( self.host )
+      client = SystemAdministratorClient( self.host, self.port )
       result = client.installDatabase( database )
       if not result['OK']:
         print "ERROR:", result['Message']
@@ -250,7 +250,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
       system = argss[0]
       component = argss[1]
-      client = SystemAdministratorClient( self.host )
+      client = SystemAdministratorClient( self.host, self.port )
       # First need to update the CS
       result = client.addDefaultOptionsToCS( option, system, component )
       if not result['OK']:
@@ -291,7 +291,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         component = argss[0]
       else:
         component = '*'
-      client = SystemAdministratorClient( self.host )
+      client = SystemAdministratorClient( self.host, self.port )
       result = client.startComponent( system, component )
       if not result['OK']:
         print "ERROR:", result['Message']
@@ -328,7 +328,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         component = argss[0]
       else:
         component = '*'
-      client = SystemAdministratorClient( self.host )
+      client = SystemAdministratorClient( self.host, self.port )
       result = client.restartComponent( system, component )
       if not result['OK']:
         if system == '*':
@@ -360,7 +360,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         component = argss[1]
       else:
         component = '*'
-      client = SystemAdministratorClient( self.host )
+      client = SystemAdministratorClient( self.host, self.port )
       result = client.stopComponent( system, component )
       if not result['OK']:
         print "ERROR:", result['Message']
@@ -383,7 +383,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     """
     argss = args.split()
     version = argss[0]
-    client = SystemAdministratorClient( self.host )
+    client = SystemAdministratorClient( self.host, self.port )
     print "Software update can take a while, please wait ..."
     result = client.updateSoftware( version )
     if not result['OK']:
@@ -406,7 +406,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     if option == "instance":
       system = argss[0]
       instance = argss[1]
-      client = SystemAdministratorClient( self.host )
+      client = SystemAdministratorClient( self.host, self.port )
       result = client.addSystemInstance( system, instance )
       if not result['OK']:
         print "ERROR:", result['Message']
@@ -422,7 +422,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         
           exec <cmd> [<arguments>]
     """
-    client = SystemAdministratorClient( self.host )
+    client = SystemAdministratorClient( self.host, self.port )
     result = client.executeCommand( args )
     if not result['OK']:
       print "ERROR:", result['Message']
