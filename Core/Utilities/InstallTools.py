@@ -7,24 +7,24 @@
 """
 Collection of Tools for installation of DIRAC components: MySQL, DB's, Services's, Agents
 
-It only makes use of defaults in LocalSite Section in dirac.cfg
+It only makes use of defaults in LocalInstallation Section in dirac.cfg
 
 The Following Options are used:
 
 /DIRAC/Setup:             Setup to be used for any operation
 
-/LocalSite/LogLevel:      LogLevel set in "run" script for all components installed
-/LocalSite/RootPath:      Used instead of rootPath in "run" script if defined (if links are used to named versions)
-/LocalSite/Host:          Used when build the URL to be published for the installed service
-/LocalSite/InstancePath:  Location where runit and startup directories are created (default rootPath)
-/LocalSite/RunitDir:      Location where runit directory is created (default InstancePath/runit)
-/LocalSite/StartupDir:    Location where startup directory is created (default InstancePath/startup)
-/LocalSite/MySQLDir:      Location where mysql databases are created (default InstancePath/mysql)
+/LocalInstallation/LogLevel:      LogLevel set in "run" script for all components installed
+/LocalInstallation/RootPath:      Used instead of rootPath in "run" script if defined (if links are used to named versions)
+/LocalInstallation/Host:          Used when build the URL to be published for the installed service
+/LocalInstallation/InstancePath:  Location where runit and startup directories are created (default rootPath)
+/LocalInstallation/RunitDir:      Location where runit directory is created (default InstancePath/runit)
+/LocalInstallation/StartupDir:    Location where startup directory is created (default InstancePath/startup)
+/LocalInstallation/MySQLDir:      Location where mysql databases are created (default InstancePath/mysql)
 
-/LocalSite/Databases/User:                 (default Dirac)
-/LocalSite/Databases/Password:             (must be set for SystemAdministrator Service to work)
-/LocalSite/Databases/RootPwd:              (must be set for SystemAdministrator Service to work)
-/LocalSite/Databases/Host:                 (must be set for SystemAdministrator Service to work)
+/LocalInstallation/Databases/User:                 (default Dirac)
+/LocalInstallation/Databases/Password:             (must be set for SystemAdministrator Service to work)
+/LocalInstallation/Databases/RootPwd:              (must be set for SystemAdministrator Service to work)
+/LocalInstallation/Databases/Host:                 (must be set for SystemAdministrator Service to work)
 
 """
 __RCSID__ = "$Id: TaskQueueDirector.py 23253 2010-03-18 08:34:57Z rgracian $"
@@ -52,27 +52,27 @@ cfgFile = os.path.join( rootPath, 'etc', 'dirac.cfg' )
 localCfg.loadFromFile( cfgFile )
 
 setup = localCfg.getOption( '/DIRAC/Setup', '' )
-logLevel = localCfg.getOption( '/LocalSite/LogLevel', 'INFO' )
-linkedRootPath = localCfg.getOption( '/LocalSite/RootPath', rootPath )
-host = localCfg.getOption( '/LocalSite/Host', '' )
+logLevel = localCfg.getOption( '/LocalInstallation/LogLevel', 'INFO' )
+linkedRootPath = localCfg.getOption( '/LocalInstallation/RootPath', rootPath )
+host = localCfg.getOption( '/LocalInstallation/Host', '' )
 
 
 instancePath = os.path.dirname( rootPath )
-instancePath = localCfg.getOption( '/LocalSite/InstancePath', instancePath )
+instancePath = localCfg.getOption( '/LocalInstallation/InstancePath', instancePath )
 gLogger.info( 'Using Instance Base Dir at', instancePath )
 
 runitDir = os.path.join( instancePath, 'runit' )
-runitDir = localCfg.getOption( '/LocalSite/RunitDir', runitDir )
+runitDir = localCfg.getOption( '/LocalInstallation/RunitDir', runitDir )
 gLogger.info( 'Using Runit Dir at', runitDir )
 
 startDir = os.path.join( instancePath, 'startup' )
-startDir = localCfg.getOption( '/LocalSite/StartupDir', startDir )
+startDir = localCfg.getOption( '/LocalInstallation/StartupDir', startDir )
 gLogger.info( 'Using Startup Dir at', startDir )
 
 db = False
 
 mysqlDir = os.path.join( instancePath, 'mysql' )
-mysqlDir = localCfg.getOption( '/LocalSite/MySQLDir', mysqlDir )
+mysqlDir = localCfg.getOption( '/LocalInstallation/MySQLDir', mysqlDir )
 gLogger.info( 'Using MySQL Dir at', mysqlDir )
 
 mysqlDbDir = os.path.join( mysqlDir, 'db' )
@@ -83,21 +83,21 @@ mysqlMyCnf = os.path.join( mysqlDir, '.my.cnf' )
 
 mysqlStartupScript = os.path.join( rootPath, 'mysql', 'share', 'mysql', 'mysql.server' )
 
-mysqlRootPwd = localCfg.getOption( '/LocalSite/Databases/RootPwd', '' )
+mysqlRootPwd = localCfg.getOption( '/LocalInstallation/Databases/RootPwd', '' )
 if mysqlRootPwd:
   gLogger.info( 'Reading Root MySQL Password from local configuration' )
 
-mysqlUser = localCfg.getOption( '/LocalSite/Databases/User', '' )
+mysqlUser = localCfg.getOption( '/LocalInstallation/Databases/User', '' )
 if mysqlUser:
   gLogger.info( 'Reading MySQL User from local configuration' )
 else:
   mysqlUser = 'Dirac'
 
-mysqlPassword = localCfg.getOption( '/LocalSite/Databases/Password', '' )
+mysqlPassword = localCfg.getOption( '/LocalInstallation/Databases/Password', '' )
 if mysqlPassword:
   gLogger.info( 'Reading %s MySQL Password from local configuration' % mysqlUser )
 
-mysqlHost = localCfg.getOption( '/LocalSite/Databases/Host', '' )
+mysqlHost = localCfg.getOption( '/LocalInstallation/Databases/Host', '' )
 if mysqlHost:
   gLogger.info( 'Using MySQL Host from local configuration', mysqlHost )
 
@@ -111,6 +111,23 @@ def getInfo( extensions ):
   else:
     rDict['Setup'] = 'Unknown'
   return S_OK( rDict )
+
+def getExtensions():
+  """
+  Get the list of installed extensions
+  """
+  initList = glob.glob( os.path.join( rootPath, '*DIRAC', '__init__.py' ) )
+  extensions = [ os.path.basename( os.path.dirname( k ) ) for k in initList]
+  try:
+    extensions.remove( 'DIRAC' )
+  except:
+    error = 'DIRAC is not properly installed'
+    gLogger.exception( error )
+    if exitOnError:
+      exit( -1 )
+    return S_ERROR( error )
+
+  return S_OK( extensions )
 
 def _addCfgToDiracCfg( cfg ):
   """
@@ -627,6 +644,12 @@ def getLogTail( system, component, length = 100 ):
 
   return S_OK( retDict )
 
+def setupSite():
+  """
+  Setup a new site using the options defined
+  """
+  return S_OK()
+
 def installComponent( componentType, system, component, extensions ):
   """ Install runit directory for the specified component
   """
@@ -872,7 +895,7 @@ def installMySQL():
     gLogger.info( 'MySQL already installed' )
     return S_OK()
 
-  mysqlMode = localCfg.getOption( '/LocalSite/Databases/MySQLMode', '' )
+  mysqlMode = localCfg.getOption( '/LocalInstallation/Databases/MySQLMode', '' )
 
   if mysqlMode.lower() not in [ '', 'master', 'slave' ]:
     error = 'Unknown MySQL server Mode'
@@ -888,7 +911,7 @@ def installMySQL():
   if mysqlMode:
     gLogger.info( 'This is a MySQl %s server' % mysqlMode )
 
-  mysqlSmallMem = localCfg.getOption( '/LocalSite/Databases/MySQLSmallMem', False )
+  mysqlSmallMem = localCfg.getOption( '/LocalInstallation/Databases/MySQLSmallMem', False )
 
   fixMySQLScripts()
 
@@ -1038,10 +1061,10 @@ def installDatabase( dbName ):
     return S_ERROR( error )
 
   if not mysqlRootPwd:
-    return S_ERROR( 'Missing /LocalSite/Databases/RootPwd in %s' % cfgFile )
+    return S_ERROR( 'Missing /LocalInstallation/Databases/RootPwd in %s' % cfgFile )
 
   if not mysqlPassword:
-    return S_ERROR( 'Missing /LocalSite/Databases/Password in %s' % cfgFile )
+    return S_ERROR( 'Missing /LocalInstallation/Databases/Password in %s' % cfgFile )
 
   dbFile = glob.glob( os.path.join( rootPath, '*', '*', 'DB', '%s.sql' % dbName ) )
 
@@ -1178,7 +1201,7 @@ def _addMySQLToDiracCfg():
   Add the database access info to the local configuration
   """
   if not mysqlPassword:
-    return S_ERROR( 'Missing /LocalSite/Databases/Password in %s' % cfgFile )
+    return S_ERROR( 'Missing /LocalInstallation/Databases/Password in %s' % cfgFile )
 
   section = '/'.join( ['Systems', 'Databases'] )
   cfg = __getCfg( section, 'User', mysqlUser )
