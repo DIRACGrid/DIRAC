@@ -708,6 +708,13 @@ class TransformationDB(DB):
     res = self._update(req,connection)
     if not res['OK']:
       gLogger.error("Failed to assign file to task",res['Message'])
+    fileTuples = []
+    for fileID in fileIDs:
+      fileTuples.append(("(%d,%d,%d)" % (transID,fileID,taskID)))
+    req = "INSERT INTO TransformationFileTasks (TransformationID,FileID,TaskID) VALUES %s" % ','.join(fileTuples)
+    res = self._update(req,connection)
+    if not res['OK']:
+      gLogger.error("Failed to assign file to task",res['Message'])
     return res
   
   def __setTransformationFileStatus(self,fileIDs,status,connection=False):

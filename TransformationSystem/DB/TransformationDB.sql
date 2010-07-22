@@ -83,6 +83,16 @@ INDEX(ExternalStatus)
 );
 
 -- -------------------------------------------------------------------------------
+DROP TABLE IF EXISTS TransformationFileTasks;
+CREATE TABLE TransformationFileTasks (
+  TransformationID INTEGER NOT NULL,
+  FileID INTEGER NOT NULL,
+  TaskID INTEGER NOT NULL,
+  PRIMARY KEY(TransformationID,FileID,TaskID),
+INDEX(ExternalStatus)
+);
+
+-- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TaskInputs;
 CREATE TABLE TaskInputs (
 TransformationID INTEGER NOT NULL,
