@@ -907,7 +907,7 @@ class TaskQueueDB( DB ):
     self.log.info( "Updating correctors state" )
     if self.isSharesCorrectionEnabled():
       self.__sharesCorrector.update()
-      self.__updateGlobalShares()
+    self.__updateGlobalShares()
     self.log.info( "Recalculating shares for all TQs" )
     retVal = self._getConnection()
     if not retVal[ 'OK' ]:
