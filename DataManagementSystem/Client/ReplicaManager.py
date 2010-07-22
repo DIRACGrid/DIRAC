@@ -1105,7 +1105,7 @@ class ReplicaManager( CatalogToStorage ):
         dirContents = res['Value']
         subdirs = dirContents['SubDirs']
         for subdir, metadata in subdirs.items():
-          if ( not days ) or self.__isOlderThan( metadata['CreationTime'], days ):
+          if ( not days ) or self.__isOlderThan(metadata['CreationTime'], days ):
             if subdir[0] <> '/':
               subdir = currentDir + '/' + subdir
             activeDirs.append( subdir )
@@ -1123,9 +1123,10 @@ class ReplicaManager( CatalogToStorage ):
 
   def __isOlderThan( self, stringTime, days ):
     timeDelta = timedelta( days=days )
-    st = time.strptime( stringTime, "%a %b %d %H:%M:%S %Y" )
-    cTimeStruct = datetime( st[0], st[1], st[2], st[3], st[4], st[5], st[6], None )
     maxCTime = datetime.utcnow() - timeDelta
+    #st = time.strptime( stringTime, "%a %b %d %H:%M:%S %Y" )
+    #cTimeStruct = datetime( st[0], st[1], st[2], st[3], st[4], st[5], st[6], None )
+    cTimeStruct = stringTime
     if cTimeStruct < maxCTime:
       return True
     return False
