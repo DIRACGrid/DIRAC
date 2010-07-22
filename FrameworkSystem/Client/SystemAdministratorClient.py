@@ -9,12 +9,7 @@
 
 __RCSID__ = "$Id$"
 
-import re, time, random, os, types, getpass
-from DIRAC.Core.DISET.RPCClient  import RPCClient
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig, rootPath
 from DIRAC.Core.Base.Client import Client
-from DIRAC.Core.Utilities.CFG import CFG
-from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 class SystemAdministratorClient( Client ):
 
