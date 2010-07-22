@@ -18,7 +18,9 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 class SystemAdministratorClient( Client ):
 
-  def __init__( self, host ):
+  def __init__( self, host, port = None ):
     """ Constructor function. Takes a mandatory host parameter 
     """
-    self.setServer( 'dips://%s:9162/Framework/SystemAdministrator' % host )
+    if not port:
+      port = 9162
+    self.setServer( 'dips://%s:%s/Framework/SystemAdministrator' % ( host, port ) )
