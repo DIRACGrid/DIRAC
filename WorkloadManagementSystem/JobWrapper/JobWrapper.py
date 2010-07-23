@@ -484,7 +484,7 @@ class JobWrapper:
     if type( localSEList ) in types.StringTypes:
       localSEList = List.fromChar( localSEList )
 
-    msg = 'Job Wrapper cannot resolve input data with null '
+    msg = 'Job Wrapper cannot resolve local replicas of input data with null '
     if not inputData:
       msg += 'job input data parameter '
       self.log.warn( msg )
@@ -492,7 +492,7 @@ class JobWrapper:
     if not localSEList:
       msg += 'site localSEList list'
       self.log.warn( msg )
-      return S_ERROR( msg )
+#      return S_ERROR( msg )
 
     if not self.jobArgs.has_key( 'InputDataModule' ):
       msg = 'Job has no input data resolution module specified'
@@ -522,11 +522,11 @@ class JobWrapper:
         self.log.warn( 'Optimizer information could not be converted to a dictionary will call catalogue directly' )
 
     resolvedData = {}
-    result = self.__checkFileCatalog( lfns, localSEList, optReplicas )
+    result = self.__checkFileCatalog( lfns, optReplicas )
     if not result['OK']:
       self.log.info( 'Could not obtain replica information from Optimizer File Catalog information' )
       self.log.warn( result )
-      result = self.__checkFileCatalog( lfns, localSEList )
+      result = self.__checkFileCatalog( lfns )
       if not result['OK']:
         self.log.warn( 'Could not obtain replica information from File Catalog directly' )
         self.log.warn( result )
@@ -567,7 +567,7 @@ class JobWrapper:
     return S_OK()
 
   #############################################################################
-  def __checkFileCatalog( self, lfns, localSEList, optReplicaInfo = None ):
+  def __checkFileCatalog( self, lfns, optReplicaInfo = None ):
     """This function returns dictionaries containing all relevant parameters
        to allow data access from the relevant file catalogue.  Optionally, optimizer
        parameters can be supplied here but if these are not sufficient, the file catalogue
@@ -587,31 +587,15 @@ class JobWrapper:
     pfnList = []
     originalReplicaInfo = replicas
 
-    #First make a check in case replicas have been removed from the local site
-    for lfn, reps in replicas['Value']['Successful'].items():
-      localReplica = False
-      for localSE in localSEList:
-        if reps.has_key( localSE ):
-          localReplica = True
-      if not localReplica:
-        failedReplicas.append( lfn )
-
-    #Check that all LFNs have at least one replica and GUID
-    if failedReplicas:
-      #in principle this is not a failure but depends on the policy of the VO
-      #datasets can be downloaded from another site
-      self.log.info( 'The following file(s) were found not to have replicas for available LocalSEs:\n%s' % ( string.join( failedReplicas, ',\n' ) ) )
-
     failedGUIDs = []
     for lfn, reps in replicas['Value']['Successful'].items():
-      if not lfn in failedReplicas:
-        if not reps.has_key( 'GUID' ):
-          failedGUIDs.append( lfn )
+      if not reps.has_key( 'GUID' ):
+        failedGUIDs.append( lfn )
 
     if failedGUIDs:
       self.log.info( 'The following file(s) were found not to have a GUID:\n%s' % ( string.join( failedGUIDs, ',\n' ) ) )
 
-    if failedReplicas or failedGUIDs:
+    if failedGUIDs:
       return S_ERROR( 'File metadata is not available' )
     else:
       return replicas
@@ -622,7 +606,7 @@ class JobWrapper:
         and check the result.
     """
     start = time.time()
-    repsResult = self.rm.getActiveReplicas( lfns )
+    repsResult = self.rm.getReplicas( lfns )
     timing = time.time() - start
     self.log.info( 'Replica Lookup Time: %.2f seconds ' % ( timing ) )
     if not repsResult['OK']:
