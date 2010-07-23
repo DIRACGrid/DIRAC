@@ -272,7 +272,7 @@ class PilotDirector:
 
       pilotsToSubmit = ( pilotsToSubmit - 1 ) / self.maxJobsInFillMode + 1
 
-      maxJobsInFillMode = int( numberOfUses / self.maxJobsInFillMode )
+      maxJobsInFillMode = int( numberOfUses / pilotsToSubmit )
     # Use Filling mode
     pilotOptions.append( '-M %s' % maxJobsInFillMode )
 
