@@ -1403,7 +1403,7 @@ class SRM2Storage(StorageBase):
           if len(results) < tempStep:
             allObtained = True
       successful.append({'surl':url,'status':0,'subpaths':allResults})
-    gDataStoreClient.commit()
+    #gDataStoreClient.commit()
     resDict = {}
     resDict['AllResults'] = successful
     resDict['Failed'] = failed
@@ -1432,7 +1432,7 @@ class SRM2Storage(StorageBase):
       else:
         allResults.extend(res['Value'])
 
-    gDataStoreClient.commit()
+    #gDataStoreClient.commit()
     resDict = {}
     resDict['AllResults'] = allResults
     resDict['Failed'] = failed
@@ -1463,7 +1463,7 @@ class SRM2Storage(StorageBase):
       else:
         allResults.extend(res['Value'])
 
-    gDataStoreClient.commit()
+    #gDataStoreClient.commit()
     resDict = {}
     resDict['AllResults'] = allResults
     resDict['Failed'] = failed
@@ -1493,7 +1493,7 @@ class SRM2Storage(StorageBase):
       else:
         allResults.extend(res['Value'])
 
-    gDataStoreClient.commit()
+    #gDataStoreClient.commit()
     resDict = {}
     resDict['AllResults'] = allResults
     resDict['Failed'] = failed
@@ -1521,7 +1521,7 @@ class SRM2Storage(StorageBase):
       else:
         allResults.extend(res['Value'])
 
-    gDataStoreClient.commit()
+    #gDataStoreClient.commit()
     resDict = {}
     resDict['AllResults'] = allResults
     resDict['Failed'] = failed
@@ -1550,7 +1550,7 @@ class SRM2Storage(StorageBase):
       else:
         allResults.extend(res['Value'])
 
-    gDataStoreClient.commit()
+    #gDataStoreClient.commit()
     resDict = {}
     resDict['AllResults'] = allResults
     resDict['Failed'] = failed
@@ -1586,7 +1586,7 @@ class SRM2Storage(StorageBase):
         else:
           allResults.extend(res['Value'])
 
-    gDataStoreClient.commit()
+    #gDataStoreClient.commit()
     resDict = {}
     resDict['AllResults'] = allResults
     resDict['Failed'] = failed
@@ -1621,7 +1621,7 @@ class SRM2Storage(StorageBase):
         else:
           allResults.extend(res['Value'])
 
-    gDataStoreClient.commit()
+    #gDataStoreClient.commit()
     resDict = {}
     resDict['AllResults'] = allResults
     resDict['Failed'] = failed
@@ -1655,7 +1655,7 @@ class SRM2Storage(StorageBase):
         else:
           allResults.extend(res['Value'])
 
-    gDataStoreClient.commit()
+    #gDataStoreClient.commit()
     resDict = {}
     resDict['AllResults'] = allResults
     resDict['Failed'] = failed
