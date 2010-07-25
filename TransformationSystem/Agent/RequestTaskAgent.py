@@ -10,14 +10,14 @@ from DIRAC.TransformationSystem.Client.TaskManager                  import Reque
 
 AGENT_NAME = 'TransformationSystem/RequestTaskAgent'
 
-class RequestTaskAgent(TaskManagerAgentBase,RequestTasks):
+class RequestTaskAgent( TaskManagerAgentBase, RequestTasks ):
 
   #############################################################################
-  def initialize(self):
+  def initialize( self ):
     """ Sets defaults """
-    TaskManagerAgentBase.initialize(self)
-    RequestTasks.__init__(self)
-    self.transType = ['Replication','Removal']
-    self.am_setModuleParam('shifterProxy','ProductionManager')
-    self.am_setModuleParam("shifterProxyLocation","%s/runit/%s/proxy" % (rootPath,AGENT_NAME))
+    TaskManagerAgentBase.initialize( self )
+    RequestTasks.__init__( self )
+    self.transType = ['Replication', 'Removal']
+    self.am_setModuleParam( 'shifterProxy', 'ProductionManager' )
+    self.am_setModuleParam( "shifterProxyLocation", "%s/runit/%s/proxy" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), AGENT_NAME ) )
     return S_OK()
