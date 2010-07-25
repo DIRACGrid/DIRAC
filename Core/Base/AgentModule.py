@@ -98,7 +98,7 @@ class AgentModule:
     self.__checkDir( self.am_getControlDirectory() )
     self.__checkDir( self.am_getWorkDirectory() )
     if not self.__moduleProperties[ 'shifterProxyLocation' ]:
-      self.__moduleProperties[ 'shifterProxyLocation' ] = os.path.join( self.am_getOption( 'WorkDirectory' ),
+      self.__moduleProperties[ 'shifterProxyLocation' ] = os.path.join( self.am_getWorkDirectory(),
                                                                         '.shifterCred' )
     if self.am_monitoringEnabled():
       self.monitor.enable()
@@ -115,8 +115,8 @@ class AgentModule:
     self.log.info( " DIRAC version: %s" % DIRAC.version )
     self.log.info( " DIRAC platform: %s" % DIRAC.platform )
     self.log.info( " Polling time: %s" % self.am_getOption( 'PollingTime' ) )
-    self.log.info( " Control dir: %s" % self.am_getOption( 'ControlDirectory' ) )
-    self.log.info( " Work dir: %s" % self.am_getOption( 'WorkDirectory' ) )
+    self.log.info( " Control dir: %s" % self.am_getControlDirectory() )
+    self.log.info( " Work dir: %s" % self.am_getWorkDirectory() )
     if self.am_getOption( 'MaxCycles' ) > 0:
       self.log.info( " Cycles: %s" % self.am_getMaxCycles() )
     else:
