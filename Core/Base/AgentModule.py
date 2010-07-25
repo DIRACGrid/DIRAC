@@ -136,6 +136,9 @@ class AgentModule:
   def am_getControlDirectory( self ):
     return os.path.join( self.__basePath, str( self.am_getOption( 'ControlDirectory', '' ) ) )
 
+  def am_getBasePath( self ):
+    return self.__basePath
+
   def am_getWorkDirectory( self ):
     return os.path.join( self.__basePath, str( self.am_getOption( 'WorkDirectory', '' ) ) )
 
