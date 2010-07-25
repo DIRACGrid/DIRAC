@@ -11,7 +11,7 @@ __RCSID__ = "$Id$"
 import time
 import os
 import threading
-from DIRAC  import gLogger, gConfig, gMonitor,S_OK, S_ERROR
+from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB         import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB  import JobLoggingDB
@@ -21,11 +21,11 @@ from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 
 gOptimizerLoadSync = ThreadSafe.Synchronizer()
 
-class MightyOptimizer(AgentModule):
+class MightyOptimizer( AgentModule ):
 
   __jobStates = [ 'Received', 'Checking' ]
 
-  def initialize(self):
+  def initialize( self ):
     """ Standard constructor
     """
     self.jobDB = JobDB()
@@ -35,7 +35,7 @@ class MightyOptimizer(AgentModule):
     return S_OK()
 
   def execute( self ):
-    result = self.jobDB.selectJobs(  { 'Status': self.__jobStates  } )
+    result = self.jobDB.selectJobs( { 'Status': self.__jobStates  } )
     if not result[ 'OK' ]:
       return result
     jobsList = result[ 'Value' ]
@@ -44,9 +44,9 @@ class MightyOptimizer(AgentModule):
     result = self.jobDB.getAttributesForJobList( jobsList )
     if not result[ 'OK' ]:
       return result
-    jobsToProcess =  result[ 'Value' ]
+    jobsToProcess = result[ 'Value' ]
     for jobId in jobsToProcess:
-      self.log.info( "== Processing job %s == " % jobId  )
+      self.log.info( "== Processing job %s == " % jobId )
       jobAttrs = jobsToProcess[ jobId ]
       jobDef = False
       jobOptimized = False
@@ -86,7 +86,7 @@ class MightyOptimizer(AgentModule):
     if optimizer.am_getModuleParam( 'shifterProxy' ):
       shifterEnv = True
       result = setupShifterProxyInEnv( optimizer.am_getModuleParam( 'shifterProxy' ),
-                                       optimizer.am_getModuleParam( 'shifterProxyLocation' ) )
+                                       optimizer.am_getShifterProxyLocation() )
       if not result[ 'OK' ]:
         return result
     #Call the initCycle function
@@ -143,7 +143,7 @@ class MightyOptimizer(AgentModule):
         return S_ERROR( "Can't initialize optimizer %s: %s" % ( optimizerName, result[ 'Message' ] ) )
     except Exception, e:
       gLogger.exception( "LOADERROR" )
-      return S_ERROR( "Can't load optimizer %s: %s" % ( optimizerName, str(e) ) )
+      return S_ERROR( "Can't load optimizer %s: %s" % ( optimizerName, str( e ) ) )
     return S_OK( optimizer )
 
 
