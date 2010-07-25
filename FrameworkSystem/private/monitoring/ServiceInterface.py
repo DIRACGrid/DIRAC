@@ -1,7 +1,7 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 import DIRAC
-from DIRAC import gLogger
+from DIRAC import gLogger, rootPath, gConfig
 from DIRAC.FrameworkSystem.private.monitoring.RRDManager import RRDManager
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, List
@@ -11,13 +11,13 @@ class ServiceInterface:
   __sourceToComponentIdMapping = {}
 
   def __init__( self ):
-    self.dataPath = "%s/data/monitoring" % DIRAC.rootPath
+    self.dataPath = "%s/data/monitoring" % gConfig.getValue( '/LocalSite/InstancePath', rootPath )
     self.plotsPath = "%s/plots" % self.dataPath
     self.rrdPath = "%s/rrd" % self.dataPath
     self.srvUp = False
     self.compmonDB = False
 
-  def __createRRDManager(self):
+  def __createRRDManager( self ):
     """
     Generate an RRDManager
     """
@@ -289,7 +289,7 @@ class ServiceInterface:
           missingVarFields.append( neededField )
       if len( missingVarFields ) > 0:
         return S_ERROR( "Missing required fields %s!" % ", ".join( missingVarFields ) )
-    return self.generatePlots( viewRequest[ 'fromSecs' ], viewRequest[ 'toSecs' ], viewDefinition, viewRequest[ 'size' ])
+    return self.generatePlots( viewRequest[ 'fromSecs' ], viewRequest[ 'toSecs' ], viewDefinition, viewRequest[ 'size' ] )
 
   def deleteView( self, viewId ):
     """
@@ -382,10 +382,10 @@ class ServiceInterface:
                 }
     if compDict[ 'type' ] == 'service':
       loc = compDict[ 'host' ]
-      loc = loc[ loc.find( "://" )+3 : ]
+      loc = loc[ loc.find( "://" ) + 3 : ]
       loc = loc[ : loc.find( "/" ) ]
       compDict[ 'host' ] = loc[ :loc.find( ":" ) ]
-      compDict[ 'port' ] = loc[ loc.find( ":" ) +1: ]
+      compDict[ 'port' ] = loc[ loc.find( ":" ) + 1: ]
     ServiceInterface.__sourceToComponentIdMapping[ sourceId ] = compDict
 
   def __cmdb__writeHeartbeat( self, sourceId ):
@@ -404,10 +404,10 @@ class ServiceInterface:
                 }
     if compDict[ 'type' ] == 'service':
       loc = compDict[ 'host' ]
-      loc = loc[ loc.find( "://" )+3 : ]
+      loc = loc[ loc.find( "://" ) + 3 : ]
       loc = loc[ : loc.find( "/" ) ]
       compDict[ 'host' ] = loc[ :loc.find( ":" ) ]
-      compDict[ 'port' ] = loc[ loc.find( ":" ) +1: ]
+      compDict[ 'port' ] = loc[ loc.find( ":" ) + 1: ]
     ServiceInterface.__sourceToComponentIdMapping[ sourceId ] = compDict
     self.__cmdb__merge( sourceId, componentExtraInfo )
     self.__cmdb__writeComponent( sourceId )
