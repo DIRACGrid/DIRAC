@@ -242,7 +242,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if not result['OK']:
         print "ERROR:", result['Message']
         return
-      print "Database %s from %s installed successfully" % ( database, extension )
+      print "Database %s from %s/%s installed successfully" % ( database, extension, system )
     elif option == "service" or option == "agent":
       if len( argss ) < 2:
         print self.do_install.__doc__
