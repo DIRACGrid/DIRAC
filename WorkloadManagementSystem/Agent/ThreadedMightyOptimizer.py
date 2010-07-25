@@ -229,7 +229,7 @@ class ThreadedOptimizer( threading.Thread ):
       if self.optimizer.am_getModuleParam( 'shifterProxy' ):
         shifterEnv = True
         result = setupShifterProxyInEnv( self.optimizer.am_getModuleParam( 'shifterProxy' ),
-                                         self.optimizer.am_getModuleParam( 'shifterProxyLocation' ) )
+                                         self.optimizer.am_getShifterProxyLocation() )
         if not result[ 'OK' ]:
           return result
       #Call the initCycle function
