@@ -13,6 +13,7 @@ The Following Options are used:
 
 /DIRAC/Setup:             Setup to be used for any operation
 
+/LocalInstallation/InstanceName:  Name of the Instance for the current Setup (default /DIRAC/Setup)
 /LocalInstallation/LogLevel:      LogLevel set in "run" script for all components installed
 /LocalInstallation/RootPath:      Used instead of rootPath in "run" script if defined (if links are used to named versions)
 /LocalInstallation/Host:          Used when build the URL to be published for the installed service
@@ -21,10 +22,17 @@ The Following Options are used:
 /LocalInstallation/StartupDir:    Location where startup directory is created (default InstancePath/startup)
 /LocalInstallation/MySQLDir:      Location where mysql databases are created (default InstancePath/mysql)
 
-/LocalInstallation/Databases/User:                 (default Dirac)
-/LocalInstallation/Databases/Password:             (must be set for SystemAdministrator Service to work)
-/LocalInstallation/Databases/RootPwd:              (must be set for SystemAdministrator Service to work)
-/LocalInstallation/Databases/Host:                 (must be set for SystemAdministrator Service to work)
+/LocalInstallation/Database/User:                 (default Dirac)
+/LocalInstallation/Database/Password:             (must be set for SystemAdministrator Service to work)
+/LocalInstallation/Database/RootPwd:              (must be set for SystemAdministrator Service to work)
+/LocalInstallation/Database/Host:                 (must be set for SystemAdministrator Service to work)
+
+The setupSite method (used by the setup_site.py command) will use the following info:
+
+/LocalInstallation/Systems:       List of Systems to be defined for this instance in the CS (default: Configuration, Framework)
+/LocalInstallation/Databases:     List of Databases to be installed and configured
+/LocalInstallation/Services:      List of System/ServiceName to be setup
+/LocalInstallation/Agents:        List of System/AgentName to be setup
 
 """
 __RCSID__ = "$Id: TaskQueueDirector.py 23253 2010-03-18 08:34:57Z rgracian $"
@@ -32,6 +40,8 @@ __RCSID__ = "$Id: TaskQueueDirector.py 23253 2010-03-18 08:34:57Z rgracian $"
 import os, re, glob, stat, time, shutil
 
 defaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
+
+baseSection = 'LocalInstallation'
 
 from DIRAC import rootPath
 from DIRAC import gLogger
@@ -43,63 +53,101 @@ from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
+# On command line tools this can be set to True to abort after the first error.
 exitOnError = False
 
+# First some global defaults
 gLogger.info( 'DIRAC Root Path =', rootPath )
 
-localCfg = CFG()
-cfgFile = os.path.join( rootPath, 'etc', 'dirac.cfg' )
-localCfg.loadFromFile( cfgFile )
+def __cfgPath( *args ):
+  return '/'.join( [str( k ) for k in args] )
 
-setup = localCfg.getOption( '/DIRAC/Setup', '' )
-logLevel = localCfg.getOption( '/LocalInstallation/LogLevel', 'INFO' )
-linkedRootPath = localCfg.getOption( '/LocalInstallation/RootPath', rootPath )
-host = localCfg.getOption( '/LocalInstallation/Host', '' )
+def __installPath( *args ):
+  return __cfgPath( baseSection, *args )
+
+def loadDiracCfg( verbose = False ):
+  """
+  Read again defaults from dirac.cfg
+  """
+  global localCfg, cfgFile, setup, instance, logLevel, linkedRootPath, host
+  global basePath, instancePath, runitDir, startDir
+  global db, mysqlDir, mysqlDbDir, mysqlLogDir, mysqlMyOrg, mysqlMyCnf, mysqlStartupScript
+  global mysqlRootPwd, mysqlUser, mysqlPassword, mysqlHost, mysqlMode, mysqlSmallMem
+
+  from DIRAC.Core.Utilities.Network import getFQDN
+
+  localCfg = CFG()
+  cfgFile = os.path.join( rootPath, 'etc', 'dirac.cfg' )
+  try:
+    localCfg.loadFromFile( cfgFile )
+  except:
+    gLogger.always( "Can't load ", cfgFile )
+    gLogger.always( "Might be OK if setting up the site" )
+
+  setup = localCfg.getOption( __cfgPath( 'DIRAC', 'Setup' ), '' )
+  instance = localCfg.getOption( __installPath( 'InstanceName' ), setup )
+  logLevel = localCfg.getOption( __installPath( 'LogLevel' ), 'INFO' )
+  linkedRootPath = localCfg.getOption( __cfgPath( baseSection, 'RootPath' ), rootPath )
+  host = localCfg.getOption( __installPath( 'Host' ), getFQDN() )
+
+  basePath = os.path.dirname( rootPath )
+  instancePath = localCfg.getOption( __installPath( 'InstancePath' ), basePath )
+  if verbose:
+    gLogger.info( 'Using Instance Base Dir at', instancePath )
+
+  runitDir = os.path.join( instancePath, 'runit' )
+  runitDir = localCfg.getOption( __installPath( 'RunitDir' ), runitDir )
+  if verbose:
+    gLogger.info( 'Using Runit Dir at', runitDir )
+
+  startDir = os.path.join( instancePath, 'startup' )
+  startDir = localCfg.getOption( __installPath( 'StartupDir' ), startDir )
+  if verbose:
+    gLogger.info( 'Using Startup Dir at', startDir )
+
+  # Now some MySQL default values
+  db = {}
+
+  mysqlDir = os.path.join( instancePath, 'mysql' )
+  mysqlDir = localCfg.getOption( __installPath( 'MySQLDir' ), mysqlDir )
+  if verbose:
+    gLogger.info( 'Using MySQL Dir at', mysqlDir )
+
+  mysqlDbDir = os.path.join( mysqlDir, 'db' )
+  mysqlLogDir = os.path.join( mysqlDir, 'log' )
+  mysqlMyOrg = os.path.join( rootPath, 'mysql', 'etc', 'my.cnf' )
+  mysqlMyCnf = os.path.join( mysqlDir, '.my.cnf' )
+
+  mysqlStartupScript = os.path.join( rootPath, 'mysql', 'share', 'mysql', 'mysql.server' )
+
+  mysqlRootPwd = localCfg.getOption( __installPath( 'Database', 'RootPwd' ), '' )
+  if verbose and mysqlRootPwd:
+    gLogger.info( 'Reading Root MySQL Password from local configuration' )
+
+  mysqlUser = localCfg.getOption( __installPath( 'Database', 'User' ), '' )
+  if verbose and mysqlUser:
+    gLogger.info( 'Reading MySQL User from local configuration' )
+  else:
+    mysqlUser = 'Dirac'
+
+  mysqlPassword = localCfg.getOption( __installPath( 'Database', 'Password' ), '' )
+  if verbose and mysqlPassword:
+    gLogger.info( 'Reading %s MySQL Password from local configuration' % mysqlUser )
+
+  mysqlHost = localCfg.getOption( __installPath( 'Database', 'Host' ), '' )
+  if verbose and mysqlHost:
+    gLogger.info( 'Using MySQL Host from local configuration', mysqlHost )
+
+  mysqlMode = localCfg.getOption( __installPath( 'Database', 'MySQLMode' ), '' )
+  if verbose and mysqlMode:
+    gLogger.info( 'Configuring MySQL server as %s' % mysqlMode )
+
+  mysqlSmallMem = localCfg.getOption( __installPath( 'Database', 'MySQLSmallMem' ), False )
+  if verbose and mysqlSmallMem:
+    gLogger.info( 'Configuring MySQL server for Low Memory uasge' )
 
 
-instancePath = os.path.dirname( rootPath )
-instancePath = localCfg.getOption( '/LocalInstallation/InstancePath', instancePath )
-gLogger.info( 'Using Instance Base Dir at', instancePath )
-
-runitDir = os.path.join( instancePath, 'runit' )
-runitDir = localCfg.getOption( '/LocalInstallation/RunitDir', runitDir )
-gLogger.info( 'Using Runit Dir at', runitDir )
-
-startDir = os.path.join( instancePath, 'startup' )
-startDir = localCfg.getOption( '/LocalInstallation/StartupDir', startDir )
-gLogger.info( 'Using Startup Dir at', startDir )
-
-db = False
-
-mysqlDir = os.path.join( instancePath, 'mysql' )
-mysqlDir = localCfg.getOption( '/LocalInstallation/MySQLDir', mysqlDir )
-gLogger.info( 'Using MySQL Dir at', mysqlDir )
-
-mysqlDbDir = os.path.join( mysqlDir, 'db' )
-mysqlLogDir = os.path.join( mysqlDir, 'log' )
-mysqlMyOrg = os.path.join( rootPath, 'mysql', 'etc', 'my.cnf' )
-mysqlMyCnf = os.path.join( mysqlDir, '.my.cnf' )
-
-
-mysqlStartupScript = os.path.join( rootPath, 'mysql', 'share', 'mysql', 'mysql.server' )
-
-mysqlRootPwd = localCfg.getOption( '/LocalInstallation/Databases/RootPwd', '' )
-if mysqlRootPwd:
-  gLogger.info( 'Reading Root MySQL Password from local configuration' )
-
-mysqlUser = localCfg.getOption( '/LocalInstallation/Databases/User', '' )
-if mysqlUser:
-  gLogger.info( 'Reading MySQL User from local configuration' )
-else:
-  mysqlUser = 'Dirac'
-
-mysqlPassword = localCfg.getOption( '/LocalInstallation/Databases/Password', '' )
-if mysqlPassword:
-  gLogger.info( 'Reading %s MySQL Password from local configuration' % mysqlUser )
-
-mysqlHost = localCfg.getOption( '/LocalInstallation/Databases/Host', '' )
-if mysqlHost:
-  gLogger.info( 'Using MySQL Host from local configuration', mysqlHost )
+loadDiracCfg( verbose = True )
 
 def getInfo( extensions ):
   result = getVersion()
@@ -129,16 +177,19 @@ def getExtensions():
 
   return S_OK( extensions )
 
-def _addCfgToDiracCfg( cfg ):
+def _addCfgToDiracCfg( cfg, verbose = False ):
   """
   Merge cfg into existing dirac.cfg file
   """
   global localCfg
-  newCfg = localCfg.mergeWith( cfg )
+  if str( localCfg ):
+    newCfg = localCfg.mergeWith( cfg )
+  else:
+    newCfg = cfg
   result = newCfg.writeToFile( cfgFile )
   if not result:
     return result
-  localCfg.loadFromFile( cfgFile )
+  loadDiracCfg( verbose )
   return result
 
 def _addCfgToCS( cfg ):
@@ -155,6 +206,28 @@ def _addCfgToCS( cfg ):
     return result
   return cfgClient.commit()
 
+def _addCfgToLocalCS( cfg ):
+  """
+  Merge cfg into local CS
+  """
+  csName = localCfg.getOption( __cfgPath( 'DIRAC', 'Configuration', 'Name' ) , '' )
+  if not csName:
+    error = 'Missing %s' % __cfgPath( 'DIRAC', 'Configuration', 'Name' )
+    if exitOnError:
+      gLogger.error( error )
+      exit( -1 )
+    return S_ERROR( error )
+
+  csCfg = CFG()
+  csFile = os.path.join( rootPath, 'etc', '%s.cfg' % csName )
+  if os.path.exists( csFile ):
+    csCfg.loadFromFile( csFile )
+  if str( csCfg ):
+    newCfg = csCfg.mergeWith( cfg )
+  else:
+    newCfg = cfg
+  return newCfg.writeToFile( csFile )
+
 def __getCfg( section, option = '', value = '' ):
   """
   Create a new Cfg with given info
@@ -167,7 +240,7 @@ def __getCfg( section, option = '', value = '' ):
     if not section:
       continue
     sectionList.append( section )
-    cfg.createNewSection( '/'.join( sectionList ) )
+    cfg.createNewSection( __cfgPath( *sectionList ) )
   if not sectionList:
     return None
 
@@ -181,8 +254,9 @@ def addOptionToDiracCfg( option, value ):
   """
   Add Option to dirac.cfg
   """
-  optionName = option.split( '/' )[-1]
-  section = '/'.join( option.split( '/' )[:-1] )
+  optionList = option.split( '/' )
+  optionName = optionList[-1]
+  section = __cfgPath( *optionList[:-1] )
   cfg = __getCfg( section, optionName, value )
 
   if not cfg:
@@ -193,12 +267,14 @@ def addOptionToDiracCfg( option, value ):
 
   return S_ERROR( 'Could not merge %s=%s with local configuration' % ( option, value ) )
 
-def addDefaultOptionsToCS( gConfig, componentType, system, component, extensions, overwrite = False ):
+def addDefaultOptionsToCS( gConfig, componentType, systemName, component, extensions, overwrite = False ):
   """ Add the section with the component options to the CS
   """
-  instance = localCfg.getOption( '/DIRAC/Setups/%s/%s' % ( setup, system ), '' )
+  system = systemName.replace( 'System', '' )
+  instanceOption = __cfgPath( 'DIRAC', 'Setups', setup, system )
+  instance = localCfg.getOption( instanceOption, '' )
   if not instance:
-    return S_ERROR( '/DIRAC/Setups/%s/%s not defined in %s' % ( setup, system, cfgFile ) )
+    return S_ERROR( '%s not defined in %s' % ( instanceOption, cfgFile ) )
 
   sectionName = "Agents"
   if componentType == 'service':
@@ -207,7 +283,8 @@ def addDefaultOptionsToCS( gConfig, componentType, system, component, extensions
   # Check if the component CS options exist
   addOptions = True
   if not overwrite:
-    result = gConfig.getOptions( '/Systems/%s/%s/%s/%s' % ( system, instance, sectionName, component ) )
+    componentSection = __cfgPath( 'Systems', system, instance, sectionName, component )
+    result = gConfig.getOptions( componentSection )
     if result['OK']:
       addOptions = False
   if not addOptions:
@@ -219,15 +296,18 @@ def addDefaultOptionsToCS( gConfig, componentType, system, component, extensions
     return result
   compCfg = result['Value']
 
+  gLogger.info( 'Adding to CS', '%s/%s' % ( system, component ) )
   return _addCfgToCS( compCfg )
 
-def addDefaultOptionsToComponentCfg( componentType, system, component, extensions ):
+def addDefaultOptionsToComponentCfg( componentType, systemName, component, extensions ):
   """
   Add default component options local component cfg
   """
-  instance = localCfg.getOption( '/DIRAC/Setups/%s/%s' % ( setup, system ), '' )
+  system = systemName.replace( 'System', '' )
+  instanceOption = __cfgPath( 'DIRAC', 'Setups', setup, system )
+  instance = localCfg.getOption( instanceOption, '' )
   if not instance:
-    return S_ERROR( '/DIRAC/Setups/%s/%s not defined in %s' % ( setup, system, cfgFile ) )
+    return S_ERROR( '%s not defined in %s' % ( instanceOption, cfgFile ) )
 
   # Add the component options now
   result = getComponentCfg( componentType, system, component, instance, extensions )
@@ -243,7 +323,6 @@ def getComponentCfg( componentType, system, component, instance, extensions ):
   """
   Get the CFG object of the component configuration
   """
-
   sectionName = 'Services'
   if componentType == 'agent':
     sectionName = 'Agents'
@@ -259,7 +338,7 @@ def getComponentCfg( componentType, system, component, instance, extensions ):
       try:
         compCfg = loadCfg[sectionName][component]
       except:
-        error = 'Can not find %s/%s in template' % ( sectionName, component )
+        error = 'Can not find %s in template' % __cfgPath( sectionName, component )
         gLogger.error( error )
         if exitOnError:
           exit( -1 )
@@ -272,16 +351,17 @@ def getComponentCfg( componentType, system, component, instance, extensions ):
       exit( -1 )
     return S_ERROR( error )
 
-  section = '/'.join( ['Systems', system, instance, sectionName] )
-  cfg = __getCfg( section )
-  cfg.createNewSection( '/'.join( [section, component] ), '', compCfg )
+  sectionPath = __cfgPath( 'Systems', system, instance, sectionName )
+  cfg = __getCfg( sectionPath )
+  cfg.createNewSection( __cfgPath( sectionPath, component ), '', compCfg )
 
   # Add the service URL
   if componentType == "service":
-    port = compCfg.getOption( '/Port', 0 )
+    port = compCfg.getOption( 'Port' , 0 )
     if port and host:
-      cfg.createNewSection( '/'.join( ['Systems', system, instance, 'URLs'] ) )
-      cfg.setOption( '/'.join( ['Systems', system, instance, 'URLs', component] ),
+      urlsPath = __cfgPath( 'Systems', system, instance, 'URLs' )
+      cfg.createNewSection( urlsPath )
+      cfg.setOption( __cfgPath( urlsPath, component ),
                     'dips://%s:%d/%s/%s' % ( host, port, system, component ) )
 
   return S_OK( cfg )
@@ -291,14 +371,16 @@ def addDatabaseOptionsToCS( gConfig, systemName, dbName, overwrite = False ):
   Add the section with the database options to the CS
   """
   system = systemName.replace( 'System', '' )
-  instance = localCfg.getOption( '/DIRAC/Setups/%s/%s' % ( setup, system ), '' )
+  instanceOption = __cfgPath( 'DIRAC', 'Setups', setup, system )
+  instance = localCfg.getOption( instanceOption, '' )
   if not instance:
-    return S_ERROR( '/DIRAC/Setups/%s/%s not defined in %s' % ( setup, system, cfgFile ) )
+    return S_ERROR( '%s not defined in %s' % ( instanceOption, cfgFile ) )
 
   # Check if the component CS options exist
   addOptions = True
   if not overwrite:
-    result = gConfig.getOptions( '/Systems/%s/%s/Databases/%s' % ( system, instance, dbName ) )
+    databasePath = __cfgPath( 'Systems', system, instance, 'Databases', dbName )
+    result = gConfig.getOptions( databasePath )
     if result['OK']:
       addOptions = False
   if not addOptions:
@@ -309,26 +391,27 @@ def addDatabaseOptionsToCS( gConfig, systemName, dbName, overwrite = False ):
   if not result['OK']:
     return result
   databaseCfg = result['Value']
-
+  gLogger.info( 'Adding to CS', '%s/%s' % ( system, dbName ) )
   return _addCfgToCS( databaseCfg )
 
 def getDatabaseCfg( system, dbName, instance ):
   """ 
   Get the CFG object of the database configuration
   """
-  section = '/'.join( ['Systems', system, instance, 'Databases', dbName] )
-  print section
-  cfg = __getCfg( section, 'DBName', dbName )
-  cfg.setOption( '/'.join( [section, 'Host'] ), mysqlHost )
+  databasePath = __cfgPath( 'Systems', system, instance, 'Databases', dbName )
+  cfg = __getCfg( databasePath, 'DBName', dbName )
+  cfg.setOption( __cfgPath( databasePath, 'Host' ), mysqlHost )
 
   return S_OK( cfg )
 
-def addSystemInstance( system, instance ):
+def addSystemInstance( systemName, instance ):
   """ 
   Add a new system instance to dirac.cfg and CS
   """
+  system = systemName.replace( 'System', '' )
+  gLogger.info( 'Adding %s system as %s instance for %s setup to dirac.cfg and CS' % ( system, instance, setup ) )
 
-  cfg = __getCfg( '/'.join( ['DIRAC', 'Setups', setup] ), system, instance )
+  cfg = __getCfg( __cfgPath( 'DIRAC', 'Setups', setup ), system, instance )
   if not _addCfgToDiracCfg( cfg ):
     return S_ERROR( 'Failed to add system instance to dirac.cfg' )
 
@@ -644,10 +727,144 @@ def getLogTail( system, component, length = 100 ):
 
   return S_OK( retDict )
 
-def setupSite():
+def setupSite( scriptCfg, cfg = None ):
   """
   Setup a new site using the options defined
   """
+  # First we need to find out what needs to be installed
+  # by default use dirac.cfg, but if a cfg is given use it and
+  # merge it into the dirac.cfg
+  diracCfg = CFG()
+  centralCfg = CFG()
+  if cfg:
+    try:
+      installCfg = CFG()
+      installCfg.loadFromFile( cfg )
+
+      for section in ['DIRAC', 'LocalSite', baseSection]:
+        if installCfg.isSection( section ):
+          diracCfg.createNewSection( section, contents = installCfg[section] )
+
+      for section in [ 'Systems', 'Resource', 'Operation', 'WebSite', 'Registry' ]:
+        if installCfg.isSection( section ):
+          centralCfg.createNewSection( section, contents = installCfg[section] )
+      if instancePath != basePath:
+        if not diracCfg.isSection( 'LocalSite' ):
+          diracCfg.createNewSection( 'LocalSite' )
+        diracCfg.setOption( __cfgPath( 'LocalSite', 'InstancePath' ), instancePath )
+
+      _addCfgToDiracCfg( diracCfg, verbose = True )
+    except:
+      error = 'Failed to load %s' % cfg
+      gLogger.exception( error )
+      if exitOnError:
+        exit( -1 )
+      return S_ERROR( error )
+
+  # Now get the necessary info from localCfg
+  setupSystems = localCfg.getOption( __installPath( 'Systems' ), ['Configuration', 'Framework'] )
+  setupDatabases = localCfg.getOption( __installPath( 'Databases' ), [] )
+  setupServices = [ k.split( '/' ) for k in localCfg.getOption( __installPath( 'Services' ), [] ) ]
+  setupAgents = [ k.split( '/' ) for k in localCfg.getOption( __installPath( 'Agents' ), [] ) ]
+
+  for serviceTuple in setupServices:
+    error = ''
+    if len( serviceTuple ) != 2:
+      error = 'Wrong service specification: system/service'
+    elif serviceTuple[0] not in setupSystems:
+      error = 'System %s not available' % serviceTuple[0]
+    if error:
+      if exitOnError:
+        gLogger.error( error )
+        exit( -1 )
+      return S_ERROR( error )
+
+  for agentTuple in setupAgents:
+    error = ''
+    if len( agentTuple ) != 2:
+      error = 'Wrong agent specification: system/service'
+    elif agentTuple[0] not in setupSystems:
+      error = 'System %s not available' % agentTuple[0]
+    if error:
+      if exitOnError:
+        gLogger.error( error )
+        exit( -1 )
+      return S_ERROR( error )
+
+  # And to find out the available extensions
+  result = getExtensions()
+  if not result['OK']:
+    return result
+  extensions = result['Value']
+
+  if diracCfg.getOption( __cfgPath( 'DIRAC', 'Configuration', 'Master' ), False ):
+    # This server hosts the Master of the CS
+    cfg = __getCfg( __cfgPath( 'DIRAC', 'Setups', setup ), 'Configuration', instance )
+    _addCfgToDiracCfg( cfg )
+    addDefaultOptionsToComponentCfg( 'service', 'Configuration', 'Server', [] )
+    _addCfgToLocalCS( centralCfg )
+    setupComponent( 'service', 'Configuration', 'Server', [] )
+    runsvctrlComponent( 'Configuration', 'Server', 't' )
+
+    while ( 'Configuration', 'Server' ) in setupServices:
+      setupServices.remove( ( 'Configuration', 'Server' ) )
+
+  # Now need to check is there is valid CS to register the info
+  result = scriptCfg.enableCS()
+  if not result['OK']:
+    if exitOnError:
+      exit( -1 )
+    return result
+
+  cfgClient = CSAPI()
+  if not cfgClient.initialize():
+    error = 'Configuration Server not defined'
+    if exitOnError:
+      gLogger.error( error )
+      exit( -1 )
+    return S_ERROR( error )
+
+
+  # 1.- Setup the instances in the CS
+  # If the Configuration Server used is not the Master, it can take some time for this
+  # info to be propagated, this my cause the later setup to fail
+  gLogger.info( 'Registering System instances' )
+  for system in setupSystems:
+    addSystemInstance( system, instance )
+  for system, service in setupServices:
+    addDefaultOptionsToCS( None, 'service', system, service, extensions, True )
+  for system, agent in setupAgents:
+    addDefaultOptionsToCS( None, 'agent', system, agent, extensions, True )
+
+  # 2.- Check if MySQL is required
+  if setupDatabases:
+    gLogger.info( 'Installing MySQL' )
+    getMySQLPasswords()
+    installMySQL()
+
+    # 3.- And install requested Databases
+    result = getDatabases()
+    if not result['OK']:
+      if exitOnError:
+        gLogger.error( result['Message'] )
+        exit( -1 )
+      return result
+    installedDatabases = result['Value']
+    for db in setupDatabases:
+      if db not in installedDatabases:
+        extension, system = installDatabase( db )['Value']
+        gLogger.info( 'Database %s from %s/%s installed' % ( db, extension, system ) )
+        addDatabaseOptionsToCS( None, system, db, True )
+      gLogger.info( 'Database already %s installed' % db )
+
+  # 4.- Then installed requested services
+  for system, service in setupServices:
+    setupComponent( 'service', system, service, extensions )
+
+  # 5.- And finally the agents
+  for system, agent in setupAgents:
+    setupComponent( 'agent', system, agent, extensions )
+
   return S_OK()
 
 def installComponent( componentType, system, component, extensions ):
@@ -748,6 +965,8 @@ def setupComponent( componentType, system, component, extensions ):
   # Create the startup entry now
   runitCompDir = result['Value']
   startCompDir = os.path.join( startDir, '%s_%s' % ( system, component ) )
+  if not os.path.exists( startDir ):
+    os.makedirs( startDir )
   if not os.path.lexists( startCompDir ):
     gLogger.info( 'Creating startup link at', startCompDir )
     os.symlink( runitCompDir, startCompDir )
@@ -895,8 +1114,6 @@ def installMySQL():
     gLogger.info( 'MySQL already installed' )
     return S_OK()
 
-  mysqlMode = localCfg.getOption( '/LocalInstallation/Databases/MySQLMode', '' )
-
   if mysqlMode.lower() not in [ '', 'master', 'slave' ]:
     error = 'Unknown MySQL server Mode'
     if exitOnError:
@@ -910,8 +1127,6 @@ def installMySQL():
 
   if mysqlMode:
     gLogger.info( 'This is a MySQl %s server' % mysqlMode )
-
-  mysqlSmallMem = localCfg.getOption( '/LocalInstallation/Databases/MySQLSmallMem', False )
 
   fixMySQLScripts()
 
@@ -1037,7 +1252,7 @@ def getDatabases():
   """
   Get the list of installed databases
   """
-  result = execMySQL( 'SHOW DATABASES', 'mysql' )
+  result = execMySQL( 'SHOW DATABASES' )
   if not result['OK']:
     return result
   dbList = []
@@ -1052,7 +1267,6 @@ def installDatabase( dbName ):
   """
   Install requested DB in MySQL server
   """
-  print os.getcwd()
   if not mysqlInstalled()['OK']:
     error = 'MySQL not installed'
     gLogger.error( error )
@@ -1061,10 +1275,14 @@ def installDatabase( dbName ):
     return S_ERROR( error )
 
   if not mysqlRootPwd:
-    return S_ERROR( 'Missing /LocalInstallation/Databases/RootPwd in %s' % cfgFile )
+    rootPwdPath = __installPath( 'Database', 'RootPwd' )
+    return S_ERROR( 'Missing %s in %s' % ( rootPwdPath, cfgFile ) )
 
   if not mysqlPassword:
-    return S_ERROR( 'Missing /LocalInstallation/Databases/Password in %s' % cfgFile )
+    mysqlPwdPath = __installPath( 'Database', 'Password' )
+    return S_ERROR( 'Missing %sin %s' % ( mysqlPwdPath, cfgFile ) )
+
+  gLogger.info( 'Installing', dbName )
 
   dbFile = glob.glob( os.path.join( rootPath, '*', '*', 'DB', '%s.sql' % dbName ) )
 
@@ -1078,7 +1296,6 @@ def installDatabase( dbName ):
   dbFile = dbFile[0]
 
   try:
-    from DIRAC.Core.Utilities.MySQL import MySQL
     f = open( dbFile )
     dbLines = f.readlines()
     f.close()
@@ -1086,16 +1303,15 @@ def installDatabase( dbName ):
     cmdLines = []
     for l in dbLines:
       if l.lower().find( ( 'use %s;' % dbName ).lower() ) > -1:
-        result = execCommand( 0, [ 'mysqladmin', '-u', 'root', '-p%s' % mysqlRootPwd,
-                                  'create', dbName] )
+        result = execMySQL( 'CREATE DATABASE `%s`' % dbName )
         if not result['OK']:
           gLogger.error( result['Message'] )
           if exitOnError:
             exit( -1 )
           return result
 
-        db = MySQL( mysqlHost, 'root', mysqlRootPwd, dbName )
-        if not db._connected:
+        result = execMySQL( 'SHOW STATUS' )
+        if not result['OK']:
           error = 'Could not connect to MySQL server'
           gLogger.error( error )
           if exitOnError:
@@ -1105,7 +1321,7 @@ def installDatabase( dbName ):
                     "GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON `%s`.* TO 'Dirac'@'%s' IDENTIFIED BY '%s'" % ( dbName, mysqlHost, mysqlPassword ),
                     "GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON `%s`.* TO 'Dirac'@'%%' IDENTIFIED BY '%s'" % ( dbName, mysqlPassword ),
                     ]:
-          result = db._query( cmd )
+          result = execMySQL( cmd )
           if not result['OK']:
             error = 'Error setting MySQL permissions'
             gLogger.error( error, result['Message'] )
@@ -1113,8 +1329,7 @@ def installDatabase( dbName ):
               exit( -1 )
             return S_ERROR( error )
           dbAdded = True
-          result = execCommand( 0, ['mysqladmin', '-u', 'root', '-p%s' % mysqlRootPwd,
-                                    'flush-privileges'] )
+          result = execMySQL( 'FLUSH PRIVILEGES' )
           if not result['OK']:
             gLogger.error( result['Message'] )
             if exitOnError:
@@ -1125,7 +1340,7 @@ def installDatabase( dbName ):
         if l.strip():
           cmdLines.append( l.strip() )
         if l.strip() and l.strip()[-1] == ';':
-          result = db._query( '\n'.join( cmdLines ) )
+          result = execMySQL( '\n'.join( cmdLines ), dbName )
           if not result['OK']:
             error = 'Failed to initialize Database'
             gLogger.error( error, result['Message'] )
@@ -1148,7 +1363,7 @@ def installDatabase( dbName ):
             if l.strip():
               cmdLines.append( l.strip() )
             if l.strip() and l.strip()[-1] == ';':
-              result = db._query( '\n'.join( cmdLines ) )
+              result = execMySQL( '\n'.join( cmdLines ), dbName )
               if not result['OK']:
                 error = 'Failed to initialize Database'
                 gLogger.error( error, result['Message'] )
@@ -1170,7 +1385,6 @@ def installDatabase( dbName ):
         exit( -1 )
       return S_ERROR( error )
 
-    del db
   except:
     error = 'Failed to create Database'
     gLogger.exception( error )
@@ -1180,32 +1394,32 @@ def installDatabase( dbName ):
 
   return S_OK( dbFile.split( '/' )[-4:-2] )
 
-def execMySQL( cmd, dbName ):
+def execMySQL( cmd, dbName = 'mysql' ):
   """
   Execute MySQL Command
   """
   global db
   from DIRAC.Core.Utilities.MySQL import MySQL
-  if not db:
-    db = MySQL( mysqlHost, 'root', mysqlRootPwd, dbName )
-  if not db._connected:
+  if dbName not in db:
+    db[dbName] = MySQL( mysqlHost, 'root', mysqlRootPwd, dbName )
+  if not db[dbName]._connected:
     error = 'Could not connect to MySQL server'
     gLogger.error( error )
     if exitOnError:
       exit( -1 )
     return S_ERROR( error )
-  return db._query( cmd )
+  return db[dbName]._query( cmd )
 
 def _addMySQLToDiracCfg():
   """
   Add the database access info to the local configuration
   """
   if not mysqlPassword:
-    return S_ERROR( 'Missing /LocalInstallation/Databases/Password in %s' % cfgFile )
+    return S_ERROR( 'Missing /LocalInstallation/Database/Password in %s' % cfgFile )
 
-  section = '/'.join( ['Systems', 'Databases'] )
-  cfg = __getCfg( section, 'User', mysqlUser )
-  cfg.setOption( '/'.join( [section, 'Password'] ), mysqlPassword )
+  sectionPath = __cfgPath( 'Systems', 'Databases' )
+  cfg = __getCfg( sectionPath, 'User', mysqlUser )
+  cfg.setOption( __cfgPath( sectionPath, 'Password' ), mysqlPassword )
 
   return _addCfgToDiracCfg( cfg )
 
