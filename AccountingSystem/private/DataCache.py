@@ -6,7 +6,7 @@ import os.path
 import time
 import threading
 
-from DIRAC import S_OK, S_ERROR, gLogger, rootPath
+from DIRAC import S_OK, S_ERROR, gLogger, rootPath, gConfig
 from DIRAC.Core.Utilities import DictCache
 from DIRAC.Core.Utilities import Time
 
@@ -14,7 +14,7 @@ from DIRAC.Core.Utilities import Time
 class DataCache:
 
   def __init__( self ):
-    self.graphsLocation = "%s/data/accountingPlots" % rootPath
+    self.graphsLocation = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data', 'accountingPlots' )
     self.cachedGraphs = {}
     self.alive = True
     self.purgeThread = threading.Thread( target = self.purgeExpired )
