@@ -11,17 +11,17 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
-from DIRAC                                               import S_OK,S_ERROR
+from DIRAC                                               import S_OK, S_ERROR
 from DIRAC                                               import systemCall, rootPath
 from DIRAC                                               import gConfig
 from DIRAC.Core.Security.Misc                            import getProxyInfo
 
-import os,sys, time, re, socket
+import os, sys, time, re, socket
 import string, shutil, bz2, base64, tempfile
 
 CE_NAME = 'Torque'
 
-UsedParameters      = [ 'ExecQueue', 'SharedArea', 'BatchOutput', 'BatchError' ]
+UsedParameters = [ 'ExecQueue', 'SharedArea', 'BatchOutput', 'BatchError' ]
 MandatoryParameters = [ 'Queue' ]
 
 class TorqueComputingElement( ComputingElement ):
@@ -37,7 +37,7 @@ class TorqueComputingElement( ComputingElement ):
 
     self.queue = self.ceConfigDict['Queue']
     self.execQueue = self.ceConfigDict['ExecQueue']
-    self.log.info("Using queue: ", self.queue)
+    self.log.info( "Using queue: ", self.queue )
     self.hostname = socket.gethostname()
     self.sharedArea = self.ceConfigDict['SharedArea']
     self.batchOutput = self.ceConfigDict['BatchOutput']
@@ -57,40 +57,40 @@ class TorqueComputingElement( ComputingElement ):
       self.ceConfigDict['SharedArea'] = ''
 
     if 'BatchOutput' not in self.ceConfigDict:
-      self.ceConfigDict['BatchOutput'] = os.path.join(rootPath, 'data' )
+      self.ceConfigDict['BatchOutput'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
 
     if 'BatchError' not in self.ceConfigDict:
-      self.ceConfigDict['BatchError'] = os.path.join(rootPath, 'data' )
+      self.ceConfigDict['BatchError'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
 
 
   #############################################################################
-  def submitJob(self,executableFile,jdl,proxy,localID):
+  def submitJob( self, executableFile, jdl, proxy, localID ):
     """ Method to submit job, should be overridden in sub-class.
     """
 
-    self.log.info("Executable file path: %s" %executableFile)
-    if not os.access(executableFile, 5):
-      os.chmod(executableFile,0755)
+    self.log.info( "Executable file path: %s" % executableFile )
+    if not os.access( executableFile, 5 ):
+      os.chmod( executableFile, 0755 )
 
     #Perform any other actions from the site admin
-    if self.ceParameters.has_key('AdminCommands'):
-      commands = self.ceParameters['AdminCommands'].split(';')
+    if self.ceParameters.has_key( 'AdminCommands' ):
+      commands = self.ceParameters['AdminCommands'].split( ';' )
       for command in commands:
-        self.log.verbose('Executing site admin command: %s' %command)
-        result = shellCall(0,command,callbackFunction=self.sendOutput)
+        self.log.verbose( 'Executing site admin command: %s' % command )
+        result = shellCall( 0, command, callbackFunction = self.sendOutput )
         if not result['OK'] or result['Value'][0]:
-          self.log.error('Error during "%s":' %command,result)
-          return S_ERROR('Error executing %s CE AdminCommands' %CE_NAME)
+          self.log.error( 'Error during "%s":' % command, result )
+          return S_ERROR( 'Error executing %s CE AdminCommands' % CE_NAME )
 
     # if no proxy is supplied, the executable can be submitted directly
     # otherwise a wrapper script is needed to get the proxy to the execution node
     # The wrapper script makes debugging more complicated and thus it is
     # recommended to transfer a proxy inside the executable if possible.
     if proxy:
-      self.log.verbose('Setting up proxy for payload')
+      self.log.verbose( 'Setting up proxy for payload' )
 
-      compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy ) ).replace('\n','')
-      compressedAndEncodedExecutable = base64.encodestring( bz2.compress( open( executableFile, "rb" ).read(), 9 ) ).replace('\n','')
+      compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy ) ).replace( '\n', '' )
+      compressedAndEncodedExecutable = base64.encodestring( bz2.compress( open( executableFile, "rb" ).read(), 9 ) ).replace( '\n', '' )
 
       wrapperContent = """#!/usr/bin/env python
 # Wrapper script for executable and proxy
@@ -115,10 +115,10 @@ shutil.rmtree( workingDirectory )
 
 """ % { 'compressedAndEncodedProxy': compressedAndEncodedProxy, \
         'compressedAndEncodedExecutable': compressedAndEncodedExecutable, \
-        'executable': os.path.basename(executableFile) }
+        'executable': os.path.basename( executableFile ) }
 
-      fd, name = tempfile.mkstemp( suffix = '_wrapper.py', prefix = 'TORQUE_', dir=os.getcwd())
-      wrapper = os.fdopen(fd, 'w')
+      fd, name = tempfile.mkstemp( suffix = '_wrapper.py', prefix = 'TORQUE_', dir = os.getcwd() )
+      wrapper = os.fdopen( fd, 'w' )
       wrapper.write( wrapperContent )
       wrapper.close()
 
@@ -134,21 +134,21 @@ shutil.rmtree( workingDirectory )
        'queue': self.queue, \
        'executable': os.path.abspath( submitFile ) }
 
-    self.log.verbose('CE submission command: %s' %(cmd))
+    self.log.verbose( 'CE submission command: %s' % ( cmd ) )
 
-    result = shellCall(0,cmd, callbackFunction = self.sendOutput)
+    result = shellCall( 0, cmd, callbackFunction = self.sendOutput )
     if not result['OK'] or result['Value'][0]:
-      self.log.warn('===========>Torque CE result NOT OK')
-      self.log.debug(result)
-      return S_ERROR(result['Value'])
+      self.log.warn( '===========>Torque CE result NOT OK' )
+      self.log.debug( result )
+      return S_ERROR( result['Value'] )
     else:
-      self.log.debug('Torque CE result OK')
+      self.log.debug( 'Torque CE result OK' )
 
     self.submittedJobs += 1
-    return S_OK(localID)
+    return S_OK( localID )
 
   #############################################################################
-  def getDynamicInfo(self):
+  def getDynamicInfo( self ):
     """ Method to return information on running and pending jobs.
     """
     result = S_OK()
@@ -159,37 +159,37 @@ shutil.rmtree( workingDirectory )
     ret = systemCall( 10, cmd )
 
     if not ret['OK']:
-      self.log.error( 'Timeout', ret['Message'])
+      self.log.error( 'Timeout', ret['Message'] )
       return ret
 
     status = ret['Value'][0]
     stdout = ret['Value'][1]
     stderr = ret['Value'][2]
 
-    self.log.debug("status:", status)
-    self.log.debug("stdout:", stdout)
-    self.log.debug("stderr:", stderr)
+    self.log.debug( "status:", status )
+    self.log.debug( "stdout:", stdout )
+    self.log.debug( "stderr:", stderr )
 
     if status:
       self.log.error( 'Failed qstat execution:', stderr )
       return S_ERROR( stderr )
 
-    matched = re.search(self.queue + "\D+(\d+)\D+(\d+)\W+(\w+)\W+(\w+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\W+(\w+)", stdout)
+    matched = re.search( self.queue + "\D+(\d+)\D+(\d+)\W+(\w+)\W+(\w+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\D+(\d+)\W+(\w+)", stdout )
 
     if matched.groups < 6:
-      return S_ERROR("Error retrieving information from qstat:" + stdout + stderr)
+      return S_ERROR( "Error retrieving information from qstat:" + stdout + stderr )
 
     try:
-      waitingJobs = int(matched.group(5))
-      runningJobs = int(matched.group(6))
+      waitingJobs = int( matched.group( 5 ) )
+      runningJobs = int( matched.group( 6 ) )
     except:
-      return S_ERROR("Error retrieving information from qstat:" + stdout + stderr)
+      return S_ERROR( "Error retrieving information from qstat:" + stdout + stderr )
 
     result['WaitingJobs'] = waitingJobs
     result['RunningJobs'] = runningJobs
 
-    self.log.verbose('Waiting Jobs: ', waitingJobs )
-    self.log.verbose('Running Jobs: ', runningJobs )
+    self.log.verbose( 'Waiting Jobs: ', waitingJobs )
+    self.log.verbose( 'Running Jobs: ', runningJobs )
 
     return result
 
