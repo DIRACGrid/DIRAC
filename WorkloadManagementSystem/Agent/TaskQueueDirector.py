@@ -146,9 +146,9 @@ import DIRAC
 
 random.seed()
 
-class TaskQueueDirector(AgentModule):
+class TaskQueueDirector( AgentModule ):
 
-  def initialize(self):
+  def initialize( self ):
     """ Standard constructor
     """
     import threading
@@ -161,14 +161,14 @@ class TaskQueueDirector(AgentModule):
     self.am_setOption( "extraPilots", 4 )
     self.am_setOption( "maxPilotWaitingHours", 6 )
 
-    self.am_setOption('ThreadStartDelay', 1 )
-    self.am_setOption('SubmitPools', [] )
-    self.am_setOption('DefaultSubmitPools', [] )
+    self.am_setOption( 'ThreadStartDelay', 1 )
+    self.am_setOption( 'SubmitPools', [] )
+    self.am_setOption( 'DefaultSubmitPools', [] )
 
 
-    self.am_setOption('minThreadsInPool', 0 )
-    self.am_setOption('maxThreadsInPool', 2 )
-    self.am_setOption('totalThreadsInPool', 40 )
+    self.am_setOption( 'minThreadsInPool', 0 )
+    self.am_setOption( 'maxThreadsInPool', 2 )
+    self.am_setOption( 'totalThreadsInPool', 40 )
 
     self.directors = {}
     self.pools = {}
@@ -179,7 +179,7 @@ class TaskQueueDirector(AgentModule):
 
     return S_OK()
 
-  def execute(self):
+  def execute( self ):
     """Main Agent code:
       1.- Query TaskQueueDB for existing TQs
       2.- Add their Priorities
@@ -196,7 +196,7 @@ class TaskQueueDirector(AgentModule):
       return result
     taskQueueDict = result['Value']
 
-    self.log.info( 'Found %s TaskQueues' % len(taskQueueDict) )
+    self.log.info( 'Found %s TaskQueues' % len( taskQueueDict ) )
 
     if not taskQueueDict:
       self.log.info( 'No TaskQueue to Process' )
@@ -213,26 +213,26 @@ class TaskQueueDirector(AgentModule):
 
     if waitingJobs == 0:
       self.log.info( 'No waiting Jobs' )
-      return S_OK('No waiting Jobs')
+      return S_OK( 'No waiting Jobs' )
     if prioritySum <= 0:
-      return S_ERROR('Wrong TaskQueue Priorities')
+      return S_ERROR( 'Wrong TaskQueue Priorities' )
 
-    self.pilotsPerPriority  = self.am_getOption('pilotsPerIteration') / prioritySum
-    self.pilotsPerJob       = self.am_getOption('pilotsPerIteration') / waitingJobs
+    self.pilotsPerPriority = self.am_getOption( 'pilotsPerIteration' ) / prioritySum
+    self.pilotsPerJob = self.am_getOption( 'pilotsPerIteration' ) / waitingJobs
 
     self.callBackLock.acquire()
     self.submittedPilots = 0
     self.callBackLock.release()
     self.toSubmitPilots = 0
-    waitingStatusList = ['Submitted','Ready','Scheduled','Waiting']
-    timeLimitToConsider = Time.toString( Time.dateTime() - Time.hour * self.am_getOption( "maxPilotWaitingHours") )
+    waitingStatusList = ['Submitted', 'Ready', 'Scheduled', 'Waiting']
+    timeLimitToConsider = Time.toString( Time.dateTime() - Time.hour * self.am_getOption( "maxPilotWaitingHours" ) )
 
     for taskQueueID in taskQueueDict:
       self.log.verbose( 'Processing TaskQueue', taskQueueID )
 
       result = pilotAgentsDB.countPilots( {'TaskQueueID': taskQueueID, 'Status': waitingStatusList}, None, timeLimitToConsider )
       if not result['OK']:
-        self.log.error('Fail to get Number of Waiting pilots',result['Message'])
+        self.log.error( 'Fail to get Number of Waiting pilots', result['Message'] )
         waitingPilots = 0
       else:
         waitingPilots = result['Value']
@@ -255,21 +255,21 @@ class TaskQueueDirector(AgentModule):
 
     return S_OK()
 
-  def submitPilotsForTaskQueue(self, taskQueueDict, waitingPilots ):
+  def submitPilotsForTaskQueue( self, taskQueueDict, waitingPilots ):
 
     from numpy.random import poisson
     from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import maxCPUSegments
 
     taskQueueID = taskQueueDict['TaskQueueID']
     maxCPU = maxCPUSegments[-1]
-    extraPilotFraction = self.am_getOption('extraPilotFraction')
-    extraPilots = self.am_getOption('extraPilots')
+    extraPilotFraction = self.am_getOption( 'extraPilotFraction' )
+    extraPilots = self.am_getOption( 'extraPilots' )
 
     taskQueuePriority = taskQueueDict['Priority']
     self.log.verbose( 'Priority for TaskQueue %s:' % taskQueueID, taskQueuePriority )
-    taskQueueCPU      = max( taskQueueDict['CPUTime'], self.am_getOption('lowestCPUBoost') )
+    taskQueueCPU = max( taskQueueDict['CPUTime'], self.am_getOption( 'lowestCPUBoost' ) )
     self.log.verbose( 'CPUTime  for TaskQueue %s:' % taskQueueID, taskQueueCPU )
-    taskQueueJobs     = taskQueueDict['Jobs']
+    taskQueueJobs = taskQueueDict['Jobs']
     self.log.verbose( 'Jobs in TaskQueue %s:' % taskQueueID, taskQueueJobs )
 
     # Determine number of pilots to submit, boosting TaskQueues with low CPU requirements
@@ -280,11 +280,11 @@ class TaskQueueDirector(AgentModule):
     pilotsToSubmit = min( pilotsToSubmit, int( ( 1 + extraPilotFraction ) * taskQueueJobs ) + extraPilots - waitingPilots )
 
     if pilotsToSubmit <= 0: return S_OK( 0 )
-    self.log.verbose( 'Submitting %s pilots for TaskQueue %s' % ( pilotsToSubmit,  taskQueueID ) )
+    self.log.verbose( 'Submitting %s pilots for TaskQueue %s' % ( pilotsToSubmit, taskQueueID ) )
 
     return self.__submitPilots( taskQueueDict, pilotsToSubmit )
 
-  def __submitPilots(self, taskQueueDict, pilotsToSubmit ):
+  def __submitPilots( self, taskQueueDict, pilotsToSubmit ):
     """
       Try to insert the submission in the corresponding Thread Pool, disable the Thread Pool
       until next itration once it becomes full
@@ -293,11 +293,11 @@ class TaskQueueDirector(AgentModule):
     if 'SubmitPools' in taskQueueDict:
       submitPools = taskQueueDict[ 'SubmitPools' ]
     else:
-      submitPools = self.am_getOption('DefaultSubmitPools')
+      submitPools = self.am_getOption( 'DefaultSubmitPools' )
     submitPools = List.randomize( submitPools )
 
     for submitPool in submitPools:
-      self.log.verbose( 'Trying SubmitPool:',submitPool )
+      self.log.verbose( 'Trying SubmitPool:', submitPool )
 
       if not submitPool in self.directors or not self.directors[submitPool]['isEnabled']:
         self.log.verbose( 'Not Enabled' )
@@ -306,20 +306,20 @@ class TaskQueueDirector(AgentModule):
       pool = self.pools[self.directors[submitPool]['pool']]
       director = self.directors[submitPool]['director']
       ret = pool.generateJobAndQueueIt( director.submitPilots,
-                                        args=(taskQueueDict, pilotsToSubmit, self.workDir ),
-                                        oCallback=self.callBack,
-                                        oExceptionCallback=director.exceptionCallBack,
-                                        blocking=False )
+                                        args = ( taskQueueDict, pilotsToSubmit, self.workDir ),
+                                        oCallback = self.callBack,
+                                        oExceptionCallback = director.exceptionCallBack,
+                                        blocking = False )
       if not ret['OK']:
         # Disable submission until next iteration
         self.directors[submitPool]['isEnabled'] = False
       else:
-        time.sleep( self.am_getOption('ThreadStartDelay') )
+        time.sleep( self.am_getOption( 'ThreadStartDelay' ) )
         break
 
     return S_OK( pilotsToSubmit )
 
-  def __checkSubmitPools(self):
+  def __checkSubmitPools( self ):
     # this method is called at initialization and at the beginning of each execution cycle
     # in this way running parameters can be dynamically changed via the remote
     # configuration.
@@ -333,15 +333,15 @@ class TaskQueueDirector(AgentModule):
       # check if the Director is initialized, then reconfigure
       if submitPool not in self.directors:
         # instantiate a new Director
-        self.__createDirector(submitPool)
+        self.__createDirector( submitPool )
 
-      self.__configureDirector(submitPool)
+      self.__configureDirector( submitPool )
 
       # Now enable the director for this iteration, if some RB/WMS/CE is defined
       if submitPool in self.directors:
-        if 'resourceBrokers' in dir(self.directors[submitPool]['director']) and self.directors[submitPool]['director'].resourceBrokers:
+        if 'resourceBrokers' in dir( self.directors[submitPool]['director'] ) and self.directors[submitPool]['director'].resourceBrokers:
           self.directors[submitPool]['isEnabled'] = True
-        if 'computingElements' in dir(self.directors[submitPool]['director']) and self.directors[submitPool]['director'].computingElements:
+        if 'computingElements' in dir( self.directors[submitPool]['director'] ) and self.directors[submitPool]['director'].computingElements:
           self.directors[submitPool]['isEnabled'] = True
 
     # Now remove directors that are not Enable (they have been used but are no
@@ -359,11 +359,11 @@ class TaskQueueDirector(AgentModule):
     # Finally delete ThreadPools that are no longer in use
     for pool in self.pools:
       if pool != 'Default' and not pool in pools:
-        pool = self.pools.pop(pool)
+        pool = self.pools.pop( pool )
         # del self.pools[pool]
         del pool
 
-  def __createDirector(self,submitPool):
+  def __createDirector( self, submitPool ):
     """
      Instantiate a new PilotDirector for the given SubmitPool
     """
@@ -380,9 +380,9 @@ class TaskQueueDirector(AgentModule):
 
     try:
       self.log.info( 'Instantiating Director Object:', directorName )
-      director = eval( '%s( "%s" )' %  ( directorName, submitPool ) )
-    except Exception,x:
-      self.log.exception( )
+      director = eval( '%s( "%s" )' % ( directorName, submitPool ) )
+    except Exception, x:
+      self.log.exception()
       return
 
     self.log.info( 'Director Object instantiated:', directorName )
@@ -390,7 +390,7 @@ class TaskQueueDirector(AgentModule):
     # 2. check the requested ThreadPool (if not defined use the default one)
     directorPool = self.am_getOption( submitPool + '/Pool', 'Default' )
     if not directorPool in self.pools:
-      self.log.info( 'Adding Thread Pool:', directorPool)
+      self.log.info( 'Adding Thread Pool:', directorPool )
       poolName = self.__addPool( directorPool )
       if not poolName:
         self.log.error( 'Can not create Thread Pool:', directorPool )
@@ -406,30 +406,30 @@ class TaskQueueDirector(AgentModule):
 
     return
 
-  def __configureDirector( self, submitPool=None ):
+  def __configureDirector( self, submitPool = None ):
     # Update Configuration from CS
     # if submitPool == None then,
     #     disable all Directors
     # else
     #    Update Configuration for the PilotDirector of that SubmitPool
     if not submitPool:
-      self.workDir     = self.am_getOption( 'WorkDirectory' )
+      self.workDir = self.am_getWorkDirectory()
       # By default disable all directors
       for director in self.directors:
         self.directors[director]['isEnabled'] = False
 
     else:
       if submitPool not in self.directors:
-        DIRAC.abort(-1, "Submit Pool not available", submitPool)
+        DIRAC.abort( -1, "Submit Pool not available", submitPool )
       director = self.directors[submitPool]['director']
 
       # Pass reference to our CS section so that defaults can be taken from there
-      director.configure( self.am_getModuleParam('section'), submitPool )
+      director.configure( self.am_getModuleParam( 'section' ), submitPool )
 
       # Enable director for pilot submission
       self.directors[submitPool]['isEnabled'] = True
 
-  def __addPool(self, poolName):
+  def __addPool( self, poolName ):
     # create a new thread Pool, by default it has 2 executing threads and 40 requests
     # in the Queue
 
@@ -437,16 +437,16 @@ class TaskQueueDirector(AgentModule):
       return None
     if poolName in self.pools:
       return None
-    pool = ThreadPool( self.am_getOption('minThreadsInPool'),
-                       self.am_getOption('maxThreadsInPool'),
-                       self.am_getOption('totalThreadsInPool') )
+    pool = ThreadPool( self.am_getOption( 'minThreadsInPool' ),
+                       self.am_getOption( 'maxThreadsInPool' ),
+                       self.am_getOption( 'totalThreadsInPool' ) )
     # Daemonize except "Default" pool
     if poolName != 'Default':
       pool.daemonize()
     self.pools[poolName] = pool
     return poolName
 
-  def callBack(self, threadedJob, submitResult):
+  def callBack( self, threadedJob, submitResult ):
     if not submitResult['OK']:
       self.log.error( 'submitPilot Failed: ', submitResult['Message'] )
       if 'Value' in submitResult:
