@@ -9,5 +9,8 @@ from DIRAC.Core.Utilities import InstallTools
 #
 InstallTools.exitOnError = True
 #
+from DIRAC.Core.Base import Script
+Script.disableCS()
+#
 print InstallTools.startMySQL()['Value'][1]
 
