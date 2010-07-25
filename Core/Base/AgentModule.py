@@ -95,8 +95,8 @@ class AgentModule:
       return S_ERROR( "Error while initializing %s module: initialize must return S_OK/S_ERROR" % agentName )
     if not result[ 'OK' ]:
       return S_ERROR( "Error while initializing %s: %s" % ( agentName, result[ 'Message' ] ) )
-    self.__checkAgentDir( 'ControlDirectory' )
-    self.__checkAgentDir( 'WorkDirectory' )
+    self.__checkDir( self.am_getControlDirectory() )
+    self.__checkDir( self.am_getWorkDirectory() )
     if not self.__moduleProperties[ 'shifterProxyLocation' ]:
       self.__moduleProperties[ 'shifterProxyLocation' ] = os.path.join( self.am_getOption( 'WorkDirectory' ),
                                                                         '.shifterCred' )
@@ -125,16 +125,19 @@ class AgentModule:
     self.__initialized = True
     return S_OK()
 
-  def __checkAgentDir( self, name ):
-    path = self.am_getOption( name )
+  def __checkDir( self, path ):
     try:
-      # if path is not absolute it will be considered relative to agent base Path 
-      path = os.path.join( self.__basePath, path )
       os.makedirs( path )
     except:
       pass
     if not os.path.isdir( path ):
-      raise Exception( 'Can not create %s at %s' % ( name, path ) )
+      raise Exception( 'Can not create %s' % path )
+
+  def am_getControlDirectory( self ):
+    return os.path.join( self.__basePath, self.am_getOption( 'ControlDirectory' ) )
+
+  def am_getWorkDirectory( self ):
+    return os.path.join( self.__basePath, self.am_getOption( 'WorkDirectory' ) )
 
   def am_getOption( self, optionName, defaultValue = False ):
     if not defaultValue:
