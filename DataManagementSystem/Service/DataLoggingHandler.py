@@ -18,7 +18,7 @@ from DIRAC                                          import gLogger, gConfig, roo
 from DIRAC.Core.DISET.RequestHandler                import RequestHandler
 from DIRAC.DataManagementSystem.DB.DataLoggingDB    import DataLoggingDB
 from types import *
-import time,os
+import time, os
 
 from DIRAC.ConfigurationSystem.Client               import PathFinder
 
@@ -34,12 +34,12 @@ def initializeDataLoggingHandler( serviceInfo ):
 
   monitoringSection = PathFinder.getServiceSection( "DataManagement/DataLogging" )
   #Get data location
-  retDict = gConfig.getOption( "%s/DataLocation" % monitoringSection )
+  retDict = gConfig.getOption( "%s/DataLocation" % monitoringSection, "dataLoggingPlots" )
   if not retDict[ 'OK' ]:
     return retDict
   dataPath = retDict[ 'Value' ].strip()
   if "/" != dataPath[0]:
-    dataPath = os.path.realpath( "%s/%s" % ( rootPath, dataPath ) )
+    dataPath = os.path.realpath( "%s/%s" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), dataPath ) )
   gLogger.info( "Data will be written into %s" % dataPath )
   try:
     os.makedirs( dataPath )
@@ -58,41 +58,41 @@ def initializeDataLoggingHandler( serviceInfo ):
 class DataLoggingHandler( RequestHandler ):
 
   ###########################################################################
-  types_addFileRecord = [[StringType,ListType],StringType,StringType,StringType,StringType]
-  def export_addFileRecord(self,lfn,status,minor,date,source):
+  types_addFileRecord = [[StringType, ListType], StringType, StringType, StringType, StringType]
+  def export_addFileRecord( self, lfn, status, minor, date, source ):
     """ Add a logging record for the given file
     """
-    if type(lfn) == StringType:
+    if type( lfn ) == StringType:
       lfns = [lfn]
     else:
       lfns = lfn
-    result = logDB.addFileRecord(lfns,status,minor,date,source)
+    result = logDB.addFileRecord( lfns, status, minor, date, source )
     return result
 
-  types_addFileRecords = [[ListType,TupleType]]
-  def export_addFileRecords(self,fileTuples):
+  types_addFileRecords = [[ListType, TupleType]]
+  def export_addFileRecords( self, fileTuples ):
     """ Add a group of logging records
     """
-    result = logDB.addFileRecords(fileTuples)
+    result = logDB.addFileRecords( fileTuples )
     return result
 
   ###########################################################################
   types_getFileLoggingInfo = [StringType]
-  def export_getFileLoggingInfo(self,lfn):
+  def export_getFileLoggingInfo( self, lfn ):
     """ Get the file logging information
     """
-    result = logDB.getFileLoggingInfo(lfn)
+    result = logDB.getFileLoggingInfo( lfn )
     return result
 
   types_getUniqueStates = []
-  def export_getUniqueStates(self):
+  def export_getUniqueStates( self ):
     """ Get all the unique states
     """
     result = logDB.getUniqueStates()
     return result
 
   types_plotView = [DictType]
-  def export_plotView(self,paramsDict):
+  def export_plotView( self, paramsDict ):
     """  Plot the view for the supplied parameters
     """
 
@@ -100,16 +100,16 @@ class DataLoggingHandler( RequestHandler ):
     endState = paramsDict['EndState']
     startTime = ''
     endTime = ''
-    title = '%s till %s' % (startState,endState)
-    if paramsDict.has_key('StartTime'):
+    title = '%s till %s' % ( startState, endState )
+    if paramsDict.has_key( 'StartTime' ):
       startTime = paramsDict['StartTime']
-    if paramsDict.has_key('EndTime'):
+    if paramsDict.has_key( 'EndTime' ):
       endTime = paramsDict['EndTime']
     xlabel = 'Time (seconds)'
     ylabel = ''
-    outputFile = '%s/%s-%s' % (dataPath,startState,endState)
-    res = logDB.getStateDiff(startState,endState,startTime,endTime)
+    outputFile = '%s/%s-%s' % ( dataPath, startState, endState )
+    res = logDB.getStateDiff( startState, endState, startTime, endTime )
     if not res['OK']:
-      return S_ERROR('Failed to get DB info: %s' % res['Message'])
+      return S_ERROR( 'Failed to get DB info: %s' % res['Message'] )
     dataPoints = res['Value']
-    return S_ERROR("To be migrated to new plotting package")
+    return S_ERROR( "To be migrated to new plotting package" )
