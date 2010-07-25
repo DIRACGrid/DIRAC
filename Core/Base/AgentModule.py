@@ -134,10 +134,13 @@ class AgentModule:
       raise Exception( 'Can not create %s' % path )
 
   def am_getControlDirectory( self ):
-    return os.path.join( self.__basePath, self.am_getOption( 'ControlDirectory' ) )
+    return os.path.join( self.__basePath, str( self.am_getOption( 'ControlDirectory', '' ) ) )
 
   def am_getWorkDirectory( self ):
-    return os.path.join( self.__basePath, self.am_getOption( 'WorkDirectory' ) )
+    return os.path.join( self.__basePath, str( self.am_getOption( 'WorkDirectory', '' ) ) )
+
+  def am_getShifterProxyLocaltion( self ):
+    return os.path.join( self.__basePath, str( self.am_getOption( 'shifterProxyLocation', '' ) ) )
 
   def am_getOption( self, optionName, defaultValue = False ):
     if not defaultValue:
@@ -215,7 +218,7 @@ class AgentModule:
     #Set the shifter proxy if required
     if self.__moduleProperties[ 'shifterProxy' ]:
       result = setupShifterProxyInEnv( self.__moduleProperties[ 'shifterProxy' ],
-                                       self.__moduleProperties[ 'shifterProxyLocation' ] )
+                                       self.am_getShifterProxyLocaltion() )
       if not result[ 'OK' ]:
         self.log.error( result['Message'] )
         return result
