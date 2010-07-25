@@ -21,7 +21,7 @@ import threading
 import types
 import time
 import DIRAC
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger, gMonitor
+from DIRAC import S_OK, S_ERROR, gConfig, gLogger, gMonitor, rootPath
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
@@ -51,7 +51,7 @@ class AgentModule:
     self.__configDefaults[ 'Enabled'] = self.am_getOption( "Status", "Active" ).lower() in ( 'active' )
     self.__configDefaults[ 'PollingTime'] = self.am_getOption( "PollingTime", 120 )
     self.__configDefaults[ 'MaxCycles'] = self.am_getOption( "MaxCycles", 500 )
-    self.__basePath = gConfig.getValue( '/LocalSite/InstancePath', DIRAC.rootPath )
+    self.__basePath = gConfig.getValue( '/LocalSite/InstancePath', rootPath )
     self.__configDefaults[ 'ControlDirectory' ] = os.path.join( self.__basePath,
                                                             'control',
                                                             os.path.join( *self.__moduleProperties[ 'fullName' ].split( "/" ) ) )
