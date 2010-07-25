@@ -26,7 +26,7 @@ def initializeReportGeneratorHandler( serviceInfo ):
   dataPath = gConfig.getValue( "%s/DataLocation" % reportSection, "data/accountingGraphs" )
   dataPath = dataPath.strip()
   if "/" != dataPath[0]:
-    dataPath = os.path.realpath( "%s/%s" % ( rootPath, dataPath ) )
+    dataPath = os.path.realpath( "%s/%s" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), dataPath ) )
   gLogger.info( "Data will be written into %s" % dataPath )
   try:
     os.makedirs( dataPath )
@@ -84,13 +84,13 @@ class ReportGeneratorHandler( RequestHandler ):
       if key in ( 'startTime', 'endTime' ):
         if requestKeyType not in self.__reportRequestDict[ key ]:
           return S_ERROR( "Type mismatch for field %s (%s), required one of %s" % ( key,
-                                                                                    str(requestKeyType),
+                                                                                    str( requestKeyType ),
                                                                                     str( self.__reportRequestDict[ key ] ) ) )
         reportRequest[ key ] = int( Time.toEpoch( reportRequest[ key ] ) )
       else:
         if requestKeyType != self.__reportRequestDict[ key ]:
           return S_ERROR( "Type mismatch for field %s (%s), required %s" % ( key,
-                                                                             str(requestKeyType),
+                                                                             str( requestKeyType ),
                                                                              str( self.__reportRequestDict[ key ] ) ) )
     return S_OK( reportRequest )
 
@@ -168,24 +168,24 @@ class ReportGeneratorHandler( RequestHandler ):
     stub = fileId[2:]
     type = fileId[0]
     if type == 'Z':
-      gLogger.info( "Compressed request, uncompressing")
+      gLogger.info( "Compressed request, uncompressing" )
       try:
         stub = base64.urlsafe_b64decode( stub )
       except Exception, e:
-        gLogger.error( "Oops! Plot request is not properly encoded!", str(e) )
-        return S_ERROR( "Oops! Plot request is not properly encoded!: %s" % str(e) )
+        gLogger.error( "Oops! Plot request is not properly encoded!", str( e ) )
+        return S_ERROR( "Oops! Plot request is not properly encoded!: %s" % str( e ) )
       try:
         stub = zlib.decompress( stub )
       except Exception, e:
-        gLogger.error( "Oops! Plot request is invalid!", str(e) )
-        return S_ERROR( "Oops! Plot request is invalid!: %s" % str(e) )
+        gLogger.error( "Oops! Plot request is invalid!", str( e ) )
+        return S_ERROR( "Oops! Plot request is invalid!: %s" % str( e ) )
     elif type == 'S':
-      gLogger.info( "Base64 request, decoding")
+      gLogger.info( "Base64 request, decoding" )
       try:
         stub = base64.urlsafe_b64decode( stub )
       except Exception, e:
-        gLogger.error( "Oops! Plot request is not properly encoded!", str(e) )
-        return S_ERROR( "Oops! Plot request is not properly encoded!: %s" % str(e) )
+        gLogger.error( "Oops! Plot request is not properly encoded!", str( e ) )
+        return S_ERROR( "Oops! Plot request is not properly encoded!: %s" % str( e ) )
     elif type == 'R':
       #Do nothing, it's already uncompressed
       pass
@@ -196,7 +196,7 @@ class ReportGeneratorHandler( RequestHandler ):
     if len( stub ) != stubLength:
       gLogger.error( "Oops! The stub is longer than the data :P" )
       return S_ERROR( "Oops! The stub is longer than the data :P" )
-    gLogger.info( "Generating the plots..")
+    gLogger.info( "Generating the plots.." )
     result = self.export_generatePlot( plotRequest )
     if not result[ 'OK' ]:
       gLogger.error( "Error while generating the plots", result[ 'Message' ] )
