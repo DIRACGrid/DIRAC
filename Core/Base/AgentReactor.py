@@ -128,7 +128,7 @@ class AgentReactor:
       if not self.__agentModules[ agentName ][ 'running' ]:
         continue
       agent = self.__agentModules[ agentName ][ 'instance' ]
-      stopAgentFile = os.path.join( agent.am_getOption( 'ControlDirectory' ), 'stop_agent' )
+      stopAgentFile = os.path.join( agent.am_getControlDirectory(), 'stop_agent' )
 
       alive = agent.am_getModuleParam( 'alive' )
       if alive:
