@@ -51,10 +51,11 @@ class AgentModule:
     self.__configDefaults[ 'Enabled'] = self.am_getOption( "Status", "Active" ).lower() in ( 'active' )
     self.__configDefaults[ 'PollingTime'] = self.am_getOption( "PollingTime", 120 )
     self.__configDefaults[ 'MaxCycles'] = self.am_getOption( "MaxCycles", 500 )
-    self.__configDefaults[ 'ControlDirectory' ] = os.path.join( DIRAC.rootPath,
+    self.__basePath = gConfig.getValue( '/LocalSite/InstancePath', DIRAC.rootPath )
+    self.__configDefaults[ 'ControlDirectory' ] = os.path.join( self.__basePath,
                                                             'control',
                                                             os.path.join( *self.__moduleProperties[ 'fullName' ].split( "/" ) ) )
-    self.__configDefaults[ 'WorkDirectory' ] = os.path.join( DIRAC.rootPath,
+    self.__configDefaults[ 'WorkDirectory' ] = os.path.join( self.__basePath,
                                                             'work',
                                                             os.path.join( *self.__moduleProperties[ 'fullName' ].split( "/" ) ) )
 
@@ -127,6 +128,8 @@ class AgentModule:
   def __checkAgentDir( self, name ):
     path = self.am_getOption( name )
     try:
+      # if path is not absolute it will be considered relative to agent base Path 
+      path = os.path.join( self.__basePath, path )
       os.makedirs( path )
     except:
       pass
