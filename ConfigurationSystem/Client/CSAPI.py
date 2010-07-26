@@ -34,7 +34,7 @@ class CSAPI:
     self.__userDN = idCert.getSubjectDN()[ 'Value' ]
     self.__userGroup = idCert.getDIRACGroup()[ 'Value' ]
     return True
-    
+
   def __getCertificateID( self ):
     certLocation = Locations.getHostCertificateAndKeyLocation()
     if not certLocation:
@@ -49,7 +49,7 @@ class CSAPI:
     self.__userDN = idCert.getSubjectDN()[ 'Value' ]
     self.__userGroup = 'host'
     return True
-  
+
   def initialize( self ):
     if not gConfig._useServerCertificate():
       res = self.__getProxyID()
@@ -57,7 +57,7 @@ class CSAPI:
       res = self.__getCertificateID()
     if not res:
       return False
-    retVal = gConfig.getOption( "/DIRAC/Configuration/MasterServer")
+    retVal = gConfig.getOption( "/DIRAC/Configuration/MasterServer" )
     if not retVal[ 'OK' ]:
       gLogger.warn( "Master server is not known. Is everything initialized?" )
       return False
@@ -76,7 +76,7 @@ class CSAPI:
     self.__csMod.updateGConfigurationData()
     return S_OK()
 
-  def listUsers(self , group = False ):
+  def listUsers( self , group = False ):
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
     if not group:
@@ -88,7 +88,7 @@ class CSAPI:
       else:
         return S_OK( List.fromChar( users ) )
 
-  def listHosts(self):
+  def listHosts( self ):
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
     return S_OK( self.__csMod.getSections( "%s/Hosts" % self.__baseSecurity ) )
@@ -351,8 +351,8 @@ class CSAPI:
       self.__csModified = False
       return self.downloadCSData()
     return S_OK()
-  
-  def commit(self):
+
+  def commit( self ):
     """ Commit the accumulated changes to the CS server
     """
     if not self.__initialized:
@@ -365,34 +365,44 @@ class CSAPI:
       self.__csModified = False
       return self.downloadCSData()
     return S_OK()
-  
-  def mergeFromCFG(self,cfg):
+
+  def mergeFromCFG( self, cfg ):
     """ Merge the internal CFG data with the input
     """
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
-    self.__csMod.mergeFromCFG(cfg)
+    self.__csMod.mergeFromCFG( cfg )
     self.__csModified = True
     return S_OK()
 
-  def modifyValue(self,optionPath,newValue):
+  def modifyValue( self, optionPath, newValue ):
     """Modify an existing value at the specified options path.
     """
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
-    prevVal = self.__csMod.getValue(optionPath)
+    prevVal = self.__csMod.getValue( optionPath )
     if not prevVal:
-      return S_ERROR('Trying to set %s to %s but option does not exist' %(optionPath,newValue))
-    gLogger.verbose( "Changing %s from \n%s \nto \n%s" % (optionPath,prevVal,newValue))
-    self.__csMod.setOptionValue(optionPath,newValue)
+      return S_ERROR( 'Trying to set %s to %s but option does not exist' % ( optionPath, newValue ) )
+    gLogger.verbose( "Changing %s from \n%s \nto \n%s" % ( optionPath, prevVal, newValue ) )
+    self.__csMod.setOptionValue( optionPath, newValue )
     self.__csModified = True
-    return S_OK('Modified %s' %optionPath)
+    return S_OK( 'Modified %s' % optionPath )
 
-  def setOption(self,optionPath,optionValue):
+  def setOption( self, optionPath, optionValue ):
     """Create an option at the specified path.
     """
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
-    self.__csMod.setOptionValue(optionPath,optionValue)
+    self.__csMod.setOptionValue( optionPath, optionValue )
     self.__csModified = True
-    return S_OK('Created new option %s = %s' %(optionPath,optionValue))
+    return S_OK( 'Created new option %s = %s' % ( optionPath, optionValue ) )
+
+
+  def setOptionComment( self, optionPath, comment ):
+    """Create an option at the specified path.
+    """
+    if not self.__initialized:
+      return S_ERROR( "CSAPI didn't initialize properly" )
+    self.__csMod.setComment( optionPath, optionValue )
+    self.__csModified = True
+    return S_OK( 'Set option comment %s : %s' % ( optionPath, optionValue ) )
