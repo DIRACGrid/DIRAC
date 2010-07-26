@@ -403,6 +403,6 @@ class CSAPI:
     """
     if not self.__initialized:
       return S_ERROR( "CSAPI didn't initialize properly" )
-    self.__csMod.setComment( optionPath, optionValue )
+    self.__csMod.setComment( optionPath, comment )
     self.__csModified = True
-    return S_OK( 'Set option comment %s : %s' % ( optionPath, optionValue ) )
+    return S_OK( 'Set option comment %s : %s' % ( optionPath, comment ) )
