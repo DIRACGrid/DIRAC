@@ -89,6 +89,10 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.FTBSS_C = FailedTransfersBySourceSplitted_Command()
     self.SJBSS_C = SuccessfullJobsBySiteSplitted_Command()
     self.FJBSS_C = FailedJobsBySiteSplitted_Command()
+    self.SPBSS_C = SuccessfullPilotsBySiteSplitted_Command()
+    self.FPBSS_C = FailedPilotsBySiteSplitted_Command()
+    self.SPBCS_C = SuccessfullPilotsByCESplitted_Command()
+    self.FPBCS_C = FailedPilotsByCESplitted_Command()
     self.CP_C = CachedPlot_Command()
     self.TQFCP_C = TransferQualityFromCachedPlot_Command()
 
@@ -1553,7 +1557,7 @@ class SuccessfullJobsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
 
-    sites = ['LCG.Liverpool.uk', 'LCG.DURHAM.uk', 'LCG.GLASGOW.uk']
+    sites = ['LCG.Liverpool.uk', 'LCG.IN2P3.fr', 'LCG.CERN.ch']
 
     self.mock_client.getReport.return_value = {'OK': True, 'Value': {'data': {
                                                                       'LCG.Liverpool.uk': {
@@ -1561,12 +1565,12 @@ class SuccessfullJobsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
                                                                             1279724400L: 32.931318204, 
                                                                             1279782000L: 3.3573791108000002, 
                                                                             1279731600L: 21.076516482900001}, 
-                                                                      'LCG.GLASGOW.uk': {
+                                                                      'LCG.CERN.ch': {
                                                                             1279728000L: 27.0578966723, 
                                                                             1279724400L: 35.494135291299997, 
                                                                             1279782000L: 1.1481022599999999, 
                                                                             1279731600L: 16.954525820299999}, 
-                                                                      'LCG.DURHAM.uk': {
+                                                                      'LCG.IN2P3.fr': {
                                                                             1279728000L: 7.0667871383999996, 
                                                                             1279724400L: 9.4527226238999997, 
                                                                             1279782000L: 0.14342238769999999, 
@@ -1580,17 +1584,17 @@ class SuccessfullJobsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
     self.SJBSS_C.setClient(self.mock_client)
     res = self.SJBSS_C.doCommand(sites)
     self.assertEqual( res, {'Job': {
-                                    'LCG.DURHAM.uk':
+                                    'LCG.IN2P3.fr':
                                      {'data': {
-                                        'LCG.DURHAM.uk': {
+                                        'LCG.IN2P3.fr': {
                                               1279728000L: 7.0667871383999996, 
                                               1279724400L: 9.4527226238999997, 
                                               1279782000L: 0.14342238769999999, 
                                               1279731600L: 4.3287127422999996}},
                                       'granularity': 3600},
-                                    'LCG.GLASGOW.uk':
+                                    'LCG.CERN.ch':
                                      {'data': {
-                                        'LCG.GLASGOW.uk': {
+                                        'LCG.CERN.ch': {
                                               1279728000L: 27.0578966723, 
                                               1279724400L: 35.494135291299997, 
                                               1279782000L: 1.1481022599999999, 
@@ -1609,17 +1613,17 @@ class SuccessfullJobsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
                       )
     res = self.SJBSS_C.doCommand()
     self.assertEqual( res, {'Job': {
-                                    'LCG.DURHAM.uk':
+                                    'LCG.IN2P3.fr':
                                      {'data': {
-                                        'LCG.DURHAM.uk': {
+                                        'LCG.IN2P3.fr': {
                                               1279728000L: 7.0667871383999996, 
                                               1279724400L: 9.4527226238999997, 
                                               1279782000L: 0.14342238769999999, 
                                               1279731600L: 4.3287127422999996}},
                                       'granularity': 3600},
-                                    'LCG.GLASGOW.uk':
+                                    'LCG.CERN.ch':
                                      {'data': {
-                                        'LCG.GLASGOW.uk': {
+                                        'LCG.CERN.ch': {
                                               1279728000L: 27.0578966723, 
                                               1279724400L: 35.494135291299997, 
                                               1279782000L: 1.1481022599999999, 
@@ -1642,7 +1646,7 @@ class SuccessfullJobsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
 class SuccessfullJobsBySiteSplitted_CommandFailure(ClientsCommandsTestCase):
 
   def test_clientFail(self):
-    sites = ['LCG.Liverpool.uk', 'LCG.DURHAM.uk', 'LCG.GLASGOW.uk']
+    sites = ['LCG.Liverpool.uk', 'LCG.IN2P3.fr', 'LCG.CERN.ch']
     self.mock_client.getReport.side_effect = Exception()
     mock_RPC = Mock()
     self.SJBSS_C.setRPC(mock_RPC)
@@ -1661,7 +1665,7 @@ class FailedJobsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
 
-    sites = ['LCG.Liverpool.uk', 'LCG.DURHAM.uk', 'LCG.GLASGOW.uk']
+    sites = ['LCG.Liverpool.uk', 'LCG.IN2P3.fr', 'LCG.CERN.ch']
 
     self.mock_client.getReport.return_value = {'OK': True, 'Value': {'data': {
                                                                       'LCG.Liverpool.uk': {
@@ -1669,12 +1673,12 @@ class FailedJobsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
                                                                             1279724400L: 32.931318204, 
                                                                             1279782000L: 3.3573791108000002, 
                                                                             1279731600L: 21.076516482900001}, 
-                                                                      'LCG.GLASGOW.uk': {
+                                                                      'LCG.CERN.ch': {
                                                                             1279728000L: 27.0578966723, 
                                                                             1279724400L: 35.494135291299997, 
                                                                             1279782000L: 1.1481022599999999, 
                                                                             1279731600L: 16.954525820299999}, 
-                                                                      'LCG.DURHAM.uk': {
+                                                                      'LCG.IN2P3.fr': {
                                                                             1279728000L: 7.0667871383999996, 
                                                                             1279724400L: 9.4527226238999997, 
                                                                             1279782000L: 0.14342238769999999, 
@@ -1688,17 +1692,17 @@ class FailedJobsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
     self.FJBSS_C.setClient(self.mock_client)
     res = self.FJBSS_C.doCommand(sites)
     self.assertEqual( res, {'Job': {
-                                    'LCG.DURHAM.uk':
+                                    'LCG.IN2P3.fr':
                                      {'data': {
-                                        'LCG.DURHAM.uk': {
+                                        'LCG.IN2P3.fr': {
                                               1279728000L: 7.0667871383999996, 
                                               1279724400L: 9.4527226238999997, 
                                               1279782000L: 0.14342238769999999, 
                                               1279731600L: 4.3287127422999996}},
                                       'granularity': 3600},
-                                    'LCG.GLASGOW.uk':
+                                    'LCG.CERN.ch':
                                      {'data': {
-                                        'LCG.GLASGOW.uk': {
+                                        'LCG.CERN.ch': {
                                               1279728000L: 27.0578966723, 
                                               1279724400L: 35.494135291299997, 
                                               1279782000L: 1.1481022599999999, 
@@ -1717,17 +1721,17 @@ class FailedJobsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
                       )
     res = self.FJBSS_C.doCommand()
     self.assertEqual( res, {'Job': {
-                                    'LCG.DURHAM.uk':
+                                    'LCG.IN2P3.fr':
                                      {'data': {
-                                        'LCG.DURHAM.uk': {
+                                        'LCG.IN2P3.fr': {
                                               1279728000L: 7.0667871383999996, 
                                               1279724400L: 9.4527226238999997, 
                                               1279782000L: 0.14342238769999999, 
                                               1279731600L: 4.3287127422999996}},
                                       'granularity': 3600},
-                                    'LCG.GLASGOW.uk':
+                                    'LCG.CERN.ch':
                                      {'data': {
-                                        'LCG.GLASGOW.uk': {
+                                        'LCG.CERN.ch': {
                                               1279728000L: 27.0578966723, 
                                               1279724400L: 35.494135291299997, 
                                               1279782000L: 1.1481022599999999, 
@@ -1750,7 +1754,7 @@ class FailedJobsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
 class FailedJobsBySiteSplitted_CommandFailure(ClientsCommandsTestCase):
 
   def test_clientFail(self):
-    sites = ['LCG.Liverpool.uk', 'LCG.DURHAM.uk', 'LCG.GLASGOW.uk']
+    sites = ['LCG.Liverpool.uk', 'LCG.IN2P3.fr', 'LCG.CERN.ch']
     self.mock_client.getReport.side_effect = Exception()
     mock_RPC = Mock()
     self.FJBSS_C.setRPC(mock_RPC)
@@ -1762,6 +1766,438 @@ class FailedJobsBySiteSplitted_CommandFailure(ClientsCommandsTestCase):
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.FJBSS_C.setArgs, None)
+
+#############################################################################
+
+class SuccessfullPilotsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+
+    sites = ['LCG.Liverpool.uk', 'LCG.IN2P3.fr', 'LCG.CERN.ch']
+
+    self.mock_client.getReport.return_value = {'OK': True, 'Value': {'data': {
+                                                                      'LCG.Liverpool.uk': {
+                                                                            1279728000L: 26.531777492, 
+                                                                            1279724400L: 32.931318204, 
+                                                                            1279782000L: 3.3573791108000002, 
+                                                                            1279731600L: 21.076516482900001}, 
+                                                                      'LCG.CERN.ch': {
+                                                                            1279728000L: 27.0578966723, 
+                                                                            1279724400L: 35.494135291299997, 
+                                                                            1279782000L: 1.1481022599999999, 
+                                                                            1279731600L: 16.954525820299999}, 
+                                                                      'LCG.IN2P3.fr': {
+                                                                            1279728000L: 7.0667871383999996, 
+                                                                            1279724400L: 9.4527226238999997, 
+                                                                            1279782000L: 0.14342238769999999, 
+                                                                            1279731600L: 4.3287127422999996}
+                                                                      }, 
+                                                                      'granularity': 3600}}
+    
+     
+    mock_RPC = Mock()
+    self.SPBSS_C.setRPC(mock_RPC)
+    self.SPBSS_C.setClient(self.mock_client)
+    res = self.SPBSS_C.doCommand(sites)
+    self.assertEqual( res, {'Pilot': {
+                                    'LCG.IN2P3.fr':
+                                     {'data': {
+                                        'LCG.IN2P3.fr': {
+                                              1279728000L: 7.0667871383999996, 
+                                              1279724400L: 9.4527226238999997, 
+                                              1279782000L: 0.14342238769999999, 
+                                              1279731600L: 4.3287127422999996}},
+                                      'granularity': 3600},
+                                    'LCG.CERN.ch':
+                                     {'data': {
+                                        'LCG.CERN.ch': {
+                                              1279728000L: 27.0578966723, 
+                                              1279724400L: 35.494135291299997, 
+                                              1279782000L: 1.1481022599999999, 
+                                              1279731600L: 16.954525820299999}}, 
+                                      'granularity': 3600},
+                                    'LCG.Liverpool.uk':
+                                     {'data': {
+                                        'LCG.Liverpool.uk': {
+                                              1279728000L: 26.531777492, 
+                                              1279724400L: 32.931318204, 
+                                              1279782000L: 3.3573791108000002, 
+                                              1279731600L: 21.076516482900001}},
+                                      'granularity': 3600},
+                                    }, 
+                            } 
+                      )
+    res = self.SPBSS_C.doCommand()
+    self.assertEqual( res, {'Pilot': {
+                                    'LCG.IN2P3.fr':
+                                     {'data': {
+                                        'LCG.IN2P3.fr': {
+                                              1279728000L: 7.0667871383999996, 
+                                              1279724400L: 9.4527226238999997, 
+                                              1279782000L: 0.14342238769999999, 
+                                              1279731600L: 4.3287127422999996}},
+                                      'granularity': 3600},
+                                    'LCG.CERN.ch':
+                                     {'data': {
+                                        'LCG.CERN.ch': {
+                                              1279728000L: 27.0578966723, 
+                                              1279724400L: 35.494135291299997, 
+                                              1279782000L: 1.1481022599999999, 
+                                              1279731600L: 16.954525820299999}}, 
+                                      'granularity': 3600},
+                                    'LCG.Liverpool.uk':
+                                     {'data': {
+                                        'LCG.Liverpool.uk': {
+                                              1279728000L: 26.531777492, 
+                                              1279724400L: 32.931318204, 
+                                              1279782000L: 3.3573791108000002, 
+                                              1279731600L: 21.076516482900001}},
+                                      'granularity': 3600},
+                                    }, 
+                            } 
+                      )
+
+#############################################################################
+
+class SuccessfullPilotsBySiteSplitted_CommandFailure(ClientsCommandsTestCase):
+
+  def test_clientFail(self):
+    sites = ['LCG.Liverpool.uk', 'LCG.IN2P3.fr', 'LCG.CERN.ch']
+    self.mock_client.getReport.side_effect = Exception()
+    mock_RPC = Mock()
+    self.SPBSS_C.setRPC(mock_RPC)
+    self.SPBSS_C.setClient(self.mock_client)
+    res = self.SPBSS_C.doCommand()
+    self.assertEqual(res, {})
+    res = self.SPBSS_C.doCommand(sites)
+    self.assertEqual(res, {})
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.SPBSS_C.setArgs, None)
+
+#############################################################################
+
+class FailedPilotsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+
+    sites = ['LCG.Liverpool.uk', 'LCG.IN2P3.fr', 'LCG.CERN.ch']
+
+    self.mock_client.getReport.return_value = {'OK': True, 'Value': {'data': {
+                                                                      'LCG.Liverpool.uk': {
+                                                                            1279728000L: 26.531777492, 
+                                                                            1279724400L: 32.931318204, 
+                                                                            1279782000L: 3.3573791108000002, 
+                                                                            1279731600L: 21.076516482900001}, 
+                                                                      'LCG.CERN.ch': {
+                                                                            1279728000L: 27.0578966723, 
+                                                                            1279724400L: 35.494135291299997, 
+                                                                            1279782000L: 1.1481022599999999, 
+                                                                            1279731600L: 16.954525820299999}, 
+                                                                      'LCG.IN2P3.fr': {
+                                                                            1279728000L: 7.0667871383999996, 
+                                                                            1279724400L: 9.4527226238999997, 
+                                                                            1279782000L: 0.14342238769999999, 
+                                                                            1279731600L: 4.3287127422999996}
+                                                                      }, 
+                                                                      'granularity': 3600}}
+    
+     
+    mock_RPC = Mock()
+    self.FPBSS_C.setRPC(mock_RPC)
+    self.FPBSS_C.setClient(self.mock_client)
+    res = self.FPBSS_C.doCommand(sites)
+    self.assertEqual( res, {'Pilot': {
+                                    'LCG.IN2P3.fr':
+                                     {'data': {
+                                        'LCG.IN2P3.fr': {
+                                              1279728000L: 7.0667871383999996, 
+                                              1279724400L: 9.4527226238999997, 
+                                              1279782000L: 0.14342238769999999, 
+                                              1279731600L: 4.3287127422999996}},
+                                      'granularity': 3600},
+                                    'LCG.CERN.ch':
+                                     {'data': {
+                                        'LCG.CERN.ch': {
+                                              1279728000L: 27.0578966723, 
+                                              1279724400L: 35.494135291299997, 
+                                              1279782000L: 1.1481022599999999, 
+                                              1279731600L: 16.954525820299999}}, 
+                                      'granularity': 3600},
+                                    'LCG.Liverpool.uk':
+                                     {'data': {
+                                        'LCG.Liverpool.uk': {
+                                              1279728000L: 26.531777492, 
+                                              1279724400L: 32.931318204, 
+                                              1279782000L: 3.3573791108000002, 
+                                              1279731600L: 21.076516482900001}},
+                                      'granularity': 3600},
+                                    }, 
+                            } 
+                      )
+    res = self.FPBSS_C.doCommand()
+    self.assertEqual( res, {'Pilot': {
+                                    'LCG.IN2P3.fr':
+                                     {'data': {
+                                        'LCG.IN2P3.fr': {
+                                              1279728000L: 7.0667871383999996, 
+                                              1279724400L: 9.4527226238999997, 
+                                              1279782000L: 0.14342238769999999, 
+                                              1279731600L: 4.3287127422999996}},
+                                      'granularity': 3600},
+                                    'LCG.CERN.ch':
+                                     {'data': {
+                                        'LCG.CERN.ch': {
+                                              1279728000L: 27.0578966723, 
+                                              1279724400L: 35.494135291299997, 
+                                              1279782000L: 1.1481022599999999, 
+                                              1279731600L: 16.954525820299999}}, 
+                                      'granularity': 3600},
+                                    'LCG.Liverpool.uk':
+                                     {'data': {
+                                        'LCG.Liverpool.uk': {
+                                              1279728000L: 26.531777492, 
+                                              1279724400L: 32.931318204, 
+                                              1279782000L: 3.3573791108000002, 
+                                              1279731600L: 21.076516482900001}},
+                                      'granularity': 3600},
+                                    }, 
+                            } 
+                      )
+
+#############################################################################
+
+class FailedPilotsBySiteSplitted_CommandFailure(ClientsCommandsTestCase):
+
+  def test_clientFail(self):
+    sites = ['LCG.Liverpool.uk', 'LCG.IN2P3.fr', 'LCG.CERN.ch']
+    self.mock_client.getReport.side_effect = Exception()
+    mock_RPC = Mock()
+    self.FPBSS_C.setRPC(mock_RPC)
+    self.FPBSS_C.setClient(self.mock_client)
+    res = self.FPBSS_C.doCommand()
+    self.assertEqual(res, {})
+    res = self.FPBSS_C.doCommand(sites)
+    self.assertEqual(res, {})
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.FPBSS_C.setArgs, None)
+
+#############################################################################
+
+class SuccessfullPilotsByCESplitted_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+
+    sites = ['ce08.pic.es', 'ce.cyf-kr.edu.pl', 'lcgce07.gridpp.rl.ac.uk']
+
+    self.mock_client.getReport.return_value = {'OK': True, 'Value': {'data': {
+                                                                      'ce08.pic.es': {
+                                                                            1279728000L: 26.531777492, 
+                                                                            1279724400L: 32.931318204, 
+                                                                            1279782000L: 3.3573791108000002, 
+                                                                            1279731600L: 21.076516482900001}, 
+                                                                      'lcgce07.gridpp.rl.ac.uk': {
+                                                                            1279728000L: 27.0578966723, 
+                                                                            1279724400L: 35.494135291299997, 
+                                                                            1279782000L: 1.1481022599999999, 
+                                                                            1279731600L: 16.954525820299999}, 
+                                                                      'ce.cyf-kr.edu.pl': {
+                                                                            1279728000L: 7.0667871383999996, 
+                                                                            1279724400L: 9.4527226238999997, 
+                                                                            1279782000L: 0.14342238769999999, 
+                                                                            1279731600L: 4.3287127422999996}
+                                                                      }, 
+                                                                      'granularity': 3600}}
+    
+     
+    mock_RPC = Mock()
+    self.SPBCS_C.setRPC(mock_RPC)
+    self.SPBCS_C.setClient(self.mock_client)
+    res = self.SPBCS_C.doCommand(sites)
+    self.assertEqual( res, {'Pilot': {
+                                    'ce.cyf-kr.edu.pl':
+                                     {'data': {
+                                        'ce.cyf-kr.edu.pl': {
+                                              1279728000L: 7.0667871383999996, 
+                                              1279724400L: 9.4527226238999997, 
+                                              1279782000L: 0.14342238769999999, 
+                                              1279731600L: 4.3287127422999996}},
+                                      'granularity': 3600},
+                                    'lcgce07.gridpp.rl.ac.uk':
+                                     {'data': {
+                                        'lcgce07.gridpp.rl.ac.uk': {
+                                              1279728000L: 27.0578966723, 
+                                              1279724400L: 35.494135291299997, 
+                                              1279782000L: 1.1481022599999999, 
+                                              1279731600L: 16.954525820299999}}, 
+                                      'granularity': 3600},
+                                    'ce08.pic.es':
+                                     {'data': {
+                                        'ce08.pic.es': {
+                                              1279728000L: 26.531777492, 
+                                              1279724400L: 32.931318204, 
+                                              1279782000L: 3.3573791108000002, 
+                                              1279731600L: 21.076516482900001}},
+                                      'granularity': 3600},
+                                    }, 
+                            } 
+                      )
+    res = self.SPBCS_C.doCommand()
+    self.assertEqual( res, {'Pilot': {
+                                    'ce.cyf-kr.edu.pl':
+                                     {'data': {
+                                        'ce.cyf-kr.edu.pl': {
+                                              1279728000L: 7.0667871383999996, 
+                                              1279724400L: 9.4527226238999997, 
+                                              1279782000L: 0.14342238769999999, 
+                                              1279731600L: 4.3287127422999996}},
+                                      'granularity': 3600},
+                                    'lcgce07.gridpp.rl.ac.uk':
+                                     {'data': {
+                                        'lcgce07.gridpp.rl.ac.uk': {
+                                              1279728000L: 27.0578966723, 
+                                              1279724400L: 35.494135291299997, 
+                                              1279782000L: 1.1481022599999999, 
+                                              1279731600L: 16.954525820299999}}, 
+                                      'granularity': 3600},
+                                    'ce08.pic.es':
+                                     {'data': {
+                                        'ce08.pic.es': {
+                                              1279728000L: 26.531777492, 
+                                              1279724400L: 32.931318204, 
+                                              1279782000L: 3.3573791108000002, 
+                                              1279731600L: 21.076516482900001}},
+                                      'granularity': 3600},
+                                    }, 
+                            } 
+                      )
+
+#############################################################################
+
+class SuccessfullPilotsByCESplitted_CommandFailure(ClientsCommandsTestCase):
+
+  def test_clientFail(self):
+    sites = ['ce08.pic.es', 'ce.cyf-kr.edu.pl', 'lcgce07.gridpp.rl.ac.uk']
+    self.mock_client.getReport.side_effect = Exception()
+    mock_RPC = Mock()
+    self.SPBCS_C.setRPC(mock_RPC)
+    self.SPBCS_C.setClient(self.mock_client)
+    res = self.SPBCS_C.doCommand()
+    self.assertEqual(res, {})
+    res = self.SPBCS_C.doCommand(sites)
+    self.assertEqual(res, {})
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.SPBCS_C.setArgs, None)
+
+#############################################################################
+
+class FailedPilotsByCESplitted_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+
+    sites = ['ce08.pic.es', 'ce.cyf-kr.edu.pl', 'lcgce07.gridpp.rl.ac.uk']
+
+    self.mock_client.getReport.return_value = {'OK': True, 'Value': {'data': {
+                                                                      'ce08.pic.es': {
+                                                                            1279728000L: 26.531777492, 
+                                                                            1279724400L: 32.931318204, 
+                                                                            1279782000L: 3.3573791108000002, 
+                                                                            1279731600L: 21.076516482900001}, 
+                                                                      'lcgce07.gridpp.rl.ac.uk': {
+                                                                            1279728000L: 27.0578966723, 
+                                                                            1279724400L: 35.494135291299997, 
+                                                                            1279782000L: 1.1481022599999999, 
+                                                                            1279731600L: 16.954525820299999}, 
+                                                                      'ce.cyf-kr.edu.pl': {
+                                                                            1279728000L: 7.0667871383999996, 
+                                                                            1279724400L: 9.4527226238999997, 
+                                                                            1279782000L: 0.14342238769999999, 
+                                                                            1279731600L: 4.3287127422999996}
+                                                                      }, 
+                                                                      'granularity': 3600}}
+    
+     
+    mock_RPC = Mock()
+    self.FPBCS_C.setRPC(mock_RPC)
+    self.FPBCS_C.setClient(self.mock_client)
+    res = self.FPBCS_C.doCommand(sites)
+    self.assertEqual( res, {'Pilot': {
+                                    'ce.cyf-kr.edu.pl':
+                                     {'data': {
+                                        'ce.cyf-kr.edu.pl': {
+                                              1279728000L: 7.0667871383999996, 
+                                              1279724400L: 9.4527226238999997, 
+                                              1279782000L: 0.14342238769999999, 
+                                              1279731600L: 4.3287127422999996}},
+                                      'granularity': 3600},
+                                    'lcgce07.gridpp.rl.ac.uk':
+                                     {'data': {
+                                        'lcgce07.gridpp.rl.ac.uk': {
+                                              1279728000L: 27.0578966723, 
+                                              1279724400L: 35.494135291299997, 
+                                              1279782000L: 1.1481022599999999, 
+                                              1279731600L: 16.954525820299999}}, 
+                                      'granularity': 3600},
+                                    'ce08.pic.es':
+                                     {'data': {
+                                        'ce08.pic.es': {
+                                              1279728000L: 26.531777492, 
+                                              1279724400L: 32.931318204, 
+                                              1279782000L: 3.3573791108000002, 
+                                              1279731600L: 21.076516482900001}},
+                                      'granularity': 3600},
+                                    }, 
+                            } 
+                      )
+    res = self.FPBCS_C.doCommand()
+    self.assertEqual( res, {'Pilot': {
+                                    'ce.cyf-kr.edu.pl':
+                                     {'data': {
+                                        'ce.cyf-kr.edu.pl': {
+                                              1279728000L: 7.0667871383999996, 
+                                              1279724400L: 9.4527226238999997, 
+                                              1279782000L: 0.14342238769999999, 
+                                              1279731600L: 4.3287127422999996}},
+                                      'granularity': 3600},
+                                    'lcgce07.gridpp.rl.ac.uk':
+                                     {'data': {
+                                        'lcgce07.gridpp.rl.ac.uk': {
+                                              1279728000L: 27.0578966723, 
+                                              1279724400L: 35.494135291299997, 
+                                              1279782000L: 1.1481022599999999, 
+                                              1279731600L: 16.954525820299999}}, 
+                                      'granularity': 3600},
+                                    'ce08.pic.es':
+                                     {'data': {
+                                        'ce08.pic.es': {
+                                              1279728000L: 26.531777492, 
+                                              1279724400L: 32.931318204, 
+                                              1279782000L: 3.3573791108000002, 
+                                              1279731600L: 21.076516482900001}},
+                                      'granularity': 3600},
+                                    }, 
+                            } 
+                      )
+
+#############################################################################
+
+class FailedPilotsByCESplitted_CommandFailure(ClientsCommandsTestCase):
+
+  def test_clientFail(self):
+    sites = ['ce08.pic.es', 'ce.cyf-kr.edu.pl', 'lcgce07.gridpp.rl.ac.uk']
+    self.mock_client.getReport.side_effect = Exception()
+    mock_RPC = Mock()
+    self.FPBCS_C.setRPC(mock_RPC)
+    self.FPBCS_C.setClient(self.mock_client)
+    res = self.FPBCS_C.doCommand()
+    self.assertEqual(res, {})
+    res = self.FPBCS_C.doCommand(sites)
+    self.assertEqual(res, {})
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.FPBCS_C.setArgs, None)
 
 #############################################################################
 
@@ -1798,14 +2234,21 @@ class TransferQualityFromCachedPlot_CommandSuccess(ClientsCommandsTestCase):
   def test_doCommand(self):
 
     args = ('StorageElement', 'CERN-RAW', 'DataOperation', 'TransferQualityByDestSplitted')
-    plot = {'data': { 'CERN-RAW': {800L: 100.0, 700L: 60.0} }, 'granularity':900}
+    plot = "{'data': { 'CERN-RAW': {800L: 100.0, 700L: 60.0} }, 'granularity':900}"
     self.mock_client.getCachedAccountingResult.return_value = (plot, )
     self.TQFCP_C.setArgs(args)
     self.TQFCP_C.setClient(self.mock_client)
     res = self.TQFCP_C.doCommand()
     self.assertEqual(res['Result'], 80.0)
 
-###################################### #######################################
+    plot = []
+    self.mock_client.getCachedAccountingResult.return_value = plot
+    self.TQFCP_C.setArgs(args)
+    self.TQFCP_C.setClient(self.mock_client)
+    res = self.TQFCP_C.doCommand()
+    self.assertEqual(res['Result'], None)
+
+#############################################################################
    
 class TransferQualityFromCachedPlot_CommandFailure(ClientsCommandsTestCase):
   
@@ -1895,6 +2338,14 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SuccessfullJobsBySiteSplitted_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FailedJobsBySiteSplitted_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FailedJobsBySiteSplitted_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SuccessfullPilotsBySiteSplitted_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SuccessfullPilotsBySiteSplitted_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FailedPilotsBySiteSplitted_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FailedPilotsBySiteSplitted_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SuccessfullPilotsByCESplitted_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SuccessfullPilotsByCESplitted_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FailedPilotsByCESplitted_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FailedPilotsByCESplitted_CommandFailure))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DTCached_CommandSuccess))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DTCached_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(CachedPlot_CommandSuccess))

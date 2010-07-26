@@ -90,6 +90,16 @@ class CleanerAgent(AgentModule):
         if not resDel['OK']:
           raise RSSDBException, where(self, self.execute) + resDel['Message']       
 
+
+      # Cleans AccountingCache table from plots not updated nor checked in the last 30 mins 
+      anHourAgo = str((datetime.utcnow()).replace(microsecond = 0, 
+                                                  second = 0) - timedelta(minutes = 30))
+      req = "DELETE FROM AccountingCache WHERE LastCheckTime < '%s'" %(anHourAgo)
+      resDel = self.rsDB.db._update(req)
+      if not resDel['OK']:
+        raise RSSDBException, where(self, self.execute) + resDel['Message']
+
+
       return S_OK()
     
     except Exception:

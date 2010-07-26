@@ -226,12 +226,16 @@ class CachedPlot_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
       self.client = ResourceStatusClient(timeout = self.timeout)
       
+    granularity = self.args[0]
     name = self.args[1]
     plotType = self.args[2]
     plotName = self.args[3]
     
+    if granularity == 'Service':
+      name = name.split('@')[1]
+    
     try:
-      res = self.client.getCachedAccountingResult(self, name, plotType, plotName)
+      res = self.client.getCachedAccountingResult(name, plotType, plotName)
       if res == []:
         return {'Result':{'data':{}, 'granularity':900}}
     except:
@@ -264,6 +268,7 @@ class TransferQualityFromCachedPlot_Command(Command):
       from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
       self.client = ResourceStatusClient(timeout = self.timeout)
       
+    granularity = self.args[0]
     name = self.args[1]
     plotType = self.args[2]
     plotName = self.args[3]
@@ -272,17 +277,18 @@ class TransferQualityFromCachedPlot_Command(Command):
       res = self.client.getCachedAccountingResult(name, plotType, plotName)
       if res == []:
         return {'Result':None}
+      res = eval(res[0])
       
       s = 0
       n = 0
       
       try:
-        SE = res[0]['data'].keys()[0]
+        SE = res['data'].keys()[0]
       except IndexError:
         return {'Result':None}  
       
-      n = n + len(res[0]['data'][SE])
-      s = s + sum(res[0]['data'][SE].values())
+      n = n + len(res['data'][SE])
+      s = s + sum(res['data'][SE].values())
       meanQuality = s/n
       
     except:

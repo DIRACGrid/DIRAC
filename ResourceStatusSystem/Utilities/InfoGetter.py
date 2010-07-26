@@ -167,7 +167,7 @@ class InfoGetter:
         ConfirmationPolicy = self.C_Policies[p]['ConfirmationPolicy']
       except KeyError:
         ConfirmationPolicy = None
-      args = self.C_Policies[p]['args']
+#      args = self.C_Policies[p]['args']
       if useNewRes:
         try:
           commandIn = self.C_Policies[p]['commandInNewRes']
@@ -175,6 +175,15 @@ class InfoGetter:
           commandIn = self.C_Policies[p]['commandIn']
       else:
         commandIn = self.C_Policies[p]['commandIn']
+
+      if useNewRes:
+        try:
+          args = self.C_Policies[p]['argsNewRes']
+        except:
+          args = self.C_Policies[p]['args']
+      else:
+        args = self.C_Policies[p]['args']
+     
       polToEval_Args.append({'Name' : p, 'Module' : moduleName, 'args' : args, 
                              'ConfirmationPolicy' : ConfirmationPolicy,
                              'commandIn' : commandIn})
@@ -251,25 +260,50 @@ class InfoGetter:
 #    self.C_Policies = copy.deepcopy(Policies)
     
     info = []
-    
+
     for p in self.C_Policies.keys():
       if panel_name in self.C_Policies[p].keys():
-        info.append({p:self.C_Policies[p][panel_name]})
-        c = len(info) - 1
-        if isinstance(info[c][p], list):
-          
-          if useNewRes == False:
-            for i in info[c][p]:
-              for k in i.keys():
-                if 'CommandNew' in i[k].keys():
-                  del i[k]['CommandNew']
-                  pass
-          elif useNewRes == True:
-            for i in info[c][p]:
-              for k in i.keys():
-                if 'CommandNew' in i[k].keys():
-                  i[k]['Command'] = i[k]['CommandNew']
-                  del i[k]['CommandNew']
+
+        toAppend = copy.deepcopy(self.C_Policies[p][panel_name])
+
+        if not useNewRes:
+          for i in range(len(toAppend)):
+            for info_type in toAppend[i].keys():
+              
+              try:
+                command = toAppend[i][info_type]['CommandIn']
+                toAppend[i][info_type]['CommandIn'] = command
+                del toAppend[i][info_type]['CommandInNewRes']
+              except:
+                pass
+              try:
+                args = toAppend[i][info_type]['args']
+                toAppend[i][info_type]['args'] = args
+                del toAppend[i][info_type]['argsNewRes']
+              except:
+                pass
+        
+        else:
+          for i in range(len(toAppend)):
+            for info_type in toAppend[i].keys():
+
+              if isinstance(toAppend[i][info_type], dict):
+                try:
+                  command = toAppend[i][info_type]['CommandInNewRes']
+                  del toAppend[i][info_type]['CommandInNewRes']
+                except:
+                  command = toAppend[i][info_type]['CommandIn']
+                toAppend[i][info_type]['CommandIn'] = command
+                
+                
+                try:
+                  args = toAppend[i][info_type]['argsNewRes']
+                  del toAppend[i][info_type]['argsNewRes']
+                except:
+                  args = toAppend[i][info_type]['args']
+                toAppend[i][info_type]['args'] = args
+        
+        info.append({p:toAppend})
         
         if granularity is not None:
           if granularity not in self.C_Policies[p]['Granularity']:

@@ -252,7 +252,7 @@ class InfoGetterSuccess(UtilitiesTestCase):
               for p_res in res[0]['PolicyType']:
                 self.assert_(p_res in self.configModule.Policy_Types.keys())
 
-              for useNewRes in (True, False):
+              for useNewRes in (False, True):
 
                 res = ig.getInfoToApply(('policy', ), g, s, None, site_t, service_t, resource_t, useNewRes)
                 pModuleList = [None]
@@ -267,31 +267,65 @@ class InfoGetterSuccess(UtilitiesTestCase):
                   self.assert_(p_res['Module'] in pModuleList)
                   if useNewRes is False:
                     self.assertEqual(p_res['commandIn'], self.configModule.Policies[p_res['Name']]['commandIn'])
+                    self.assertEqual(p_res['args'], self.configModule.Policies[p_res['Name']]['args'])
                   else:
                     try:
                       self.assertEqual(p_res['commandIn'], self.configModule.Policies[p_res['Name']]['commandInNewRes'])
                     except KeyError:
                       self.assertEqual(p_res['commandIn'], self.configModule.Policies[p_res['Name']]['commandIn'])
+                    try:
+                      self.assertEqual(p_res['args'], self.configModule.Policies[p_res['Name']]['argsNewRes'])
+                    except KeyError:
+                      self.assertEqual(p_res['args'], self.configModule.Policies[p_res['Name']]['args'])
 
                 res = ig.getInfoToApply(('panel_info', ), g, s, None, site_t, service_t, resource_t, useNewRes)
                 for p_res in res[0]['Info']:
+                  
+#                  if 'JobsEfficiencySimple' in p_res.keys():
+#                    print useNewRes, p_res
+                  
+                  
                   for p_name in p_res.keys():
                     self.assert_(p_name in self.configModule.Policies.keys())
                     if isinstance(p_res[p_name], list):
                       for i in range(len(p_res[p_name])):
                         for k in p_res[p_name][i].keys():
-                          self.assertEqual(p_res[p_name][i][k]['args'], 
-                                           self.configModule.Policies[p_name][panel][i][k]['args'])
                           if useNewRes:
                             try:
-                              self.assertEqual(p_res[p_name][i][k]['Command'], 
-                                               self.configModule.Policies[p_name][panel][i][k]['CommandNew'])
+                              self.assertEqual(p_res[p_name][i][k]['CommandIn'], 
+                                               self.configModule.Policies[p_name][panel][i][k]['CommandInNewRes'])
                             except KeyError:
-                              self.assertEqual(p_res[p_name][i][k]['Command'], 
-                                               self.configModule.Policies[p_name][panel][i][k]['Command'])
+                              self.assertEqual(p_res[p_name][i][k]['CommandIn'], 
+                                               self.configModule.Policies[p_name][panel][i][k]['CommandIn'])
+                            except TypeError:
+                              self.assertEqual(p_res[p_name][i][k], 
+                                               self.configModule.Policies[p_name][panel][i][k])
+                              
+                            try:
+                              self.assertEqual(p_res[p_name][i][k]['args'], 
+                                               self.configModule.Policies[p_name][panel][i][k]['argsNewRes'])
+                            except KeyError:
+                              self.assertEqual(p_res[p_name][i][k]['args'], 
+                                               self.configModule.Policies[p_name][panel][i][k]['args'])
+                            except TypeError:
+                              self.assertEqual(p_res[p_name][i][k], 
+                                               self.configModule.Policies[p_name][panel][i][k])
+
                           else:
-                            self.assertEqual(p_res[p_name][i][k]['Command'], 
-                                             self.configModule.Policies[p_name][panel][i][k]['Command'])
+                            
+                            try:
+                              self.assertEqual(p_res[p_name][i][k]['CommandIn'], 
+                                               self.configModule.Policies[p_name][panel][i][k]['CommandIn'])
+                            except:
+                              self.assertEqual(p_res[p_name][i][k], 
+                                               self.configModule.Policies[p_name][panel][i][k])
+                              
+                            try:
+                              self.assertEqual(p_res[p_name][i][k]['args'], 
+                                               self.configModule.Policies[p_name][panel][i][k]['args'])
+                            except:
+                              self.assertEqual(p_res[p_name][i][k], 
+                                               self.configModule.Policies[p_name][panel][i][k])
                             
                     else:
                       self.assertEqual(p_res[p_name], self.configModule.Policies[p_name][panel])

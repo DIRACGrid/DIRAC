@@ -136,6 +136,10 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     res = self.rsh.export_getResourcesList()
     self.assert_(res['OK'])
     
+  def test_export_getCEsList(self):
+    res = self.rsh.export_getResourcesList()
+    self.assert_(res['OK'])
+    
   def test_export_getResourcesStatusWeb(self):
     res = self.rsh.export_getResourcesStatusWeb({}, [], 0, 500)
     self.assert_(res['OK'])

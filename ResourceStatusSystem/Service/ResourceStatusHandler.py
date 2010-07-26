@@ -878,7 +878,6 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
-  #ok
   types_getResourcesList = []
   def export_getResourcesList(self):
     """ 
@@ -905,7 +904,33 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
-  #ok
+  types_getCEsList = []
+  def export_getCEsList(self):
+    """ 
+    Get CEs list from the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getCEsList: Attempting to get CEs list")
+      try:
+        r = rsDB.getMonitoredsList('Resource', paramsList = ['ResourceName'], 
+                                   resourceType = ['CE', 'CREAMCE'])
+        res = []
+        for x in r:
+          res.append(x[0])
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getCEsList: got CEs list")
+      return S_OK(res)
+    except Exception:
+      errorStr = where(self, self.export_getResourcesList)
+      gLogger.exception(errorStr)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
   types_getResourcesHistory = [StringType]
   def export_getResourcesHistory(self, resource):
     """ get resources history

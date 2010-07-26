@@ -2,6 +2,8 @@
 This module contains a class to synchronize the content of the DataBase with what is the CS  
 """
 
+import socket
+
 from datetime import datetime, timedelta
 
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -195,7 +197,7 @@ class Synchronizer:
         if LFCNode is None or LFCNode == []:
           continue
         LFCNode = LFCNode[0]
-        if readable == 'ReadOnly':
+        if readable == 'ReadWrite':
           if LFCNode not in LFCNodeList_C:
             LFCNodeList_C.append(LFCNode)
         elif readable == 'ReadOnly':
@@ -250,7 +252,7 @@ class Synchronizer:
           servicesIn.append(service)
           
         if ce not in  resourcesIn:
-          CEType = getCEType(site, ce)
+          CEType = getCEType(site, ce)['Value']
           ceType = 'CE'
           if CEType == 'CREAM':
             ceType = 'CREAMCE'
@@ -264,7 +266,13 @@ class Synchronizer:
       siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo('hostname', srm)
       if not siteInGOCDB['OK']:
         raise RSSException, siteInGOCDB['Message']
-      siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+      if siteInGOCDB['Value'] == []:
+        trueName = socket.gethostbyname_ex(lfc)[0]
+        siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo('hostname', trueName)
+      try:
+        siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+      except IndexError:
+        continue
       siteInDIRAC = getDIRACSiteName(siteInGOCDB)
       if not siteInDIRAC['OK']:
         raise RSSException, siteInDIRAC['Message']
@@ -289,7 +297,13 @@ class Synchronizer:
       siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo('hostname', lfc)
       if not siteInGOCDB['OK']:
         raise RSSException, siteInGOCDB['Message']
-      siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+      if siteInGOCDB['Value'] == []:
+        trueName = socket.gethostbyname_ex(lfc)[0]
+        siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo('hostname', trueName)
+      try:
+        siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+      except IndexError:
+        continue
       siteInDIRAC = getDIRACSiteName(siteInGOCDB)
       if not siteInDIRAC['OK']:
         raise RSSException, siteInDIRAC['Message']
@@ -313,7 +327,13 @@ class Synchronizer:
       siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo('hostname', lfc)
       if not siteInGOCDB['OK']:
         raise RSSException, siteInGOCDB['Message']
-      siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+      if siteInGOCDB['Value'] == []:
+        trueName = socket.gethostbyname_ex(lfc)[0]
+        siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo('hostname', trueName)
+      try:
+        siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+      except IndexError:
+        continue
       siteInDIRAC = getDIRACSiteName(siteInGOCDB)
       if not siteInDIRAC['OK']:
         raise RSSException, siteInDIRAC['Message']
@@ -338,7 +358,13 @@ class Synchronizer:
       siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo('hostname', fts)
       if not siteInGOCDB['OK']:
         raise RSSException, siteInGOCDB['Message']
-      siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+      if siteInGOCDB['Value'] == []:
+        trueName = socket.gethostbyname_ex(lfc)[0]
+        siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo('hostname', trueName)
+      try:
+        siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+      except IndexError:
+        continue
       siteInDIRAC = getDIRACSiteName(siteInGOCDB)
       if not siteInDIRAC['OK']:
         raise RSSException, siteInDIRAC['Message']
@@ -362,7 +388,13 @@ class Synchronizer:
       siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo('hostname', voms)
       if not siteInGOCDB['OK']:
         raise RSSException, siteInGOCDB['Message']
-      siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+      if siteInGOCDB['Value'] == []:
+        trueName = socket.gethostbyname_ex(lfc)[0]
+        siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo('hostname', trueName)
+      try:
+        siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+      except IndexError:
+        continue
       siteInDIRAC = getDIRACSiteName(siteInGOCDB)
       if not siteInDIRAC['OK']:
         raise RSSException, siteInDIRAC['Message']

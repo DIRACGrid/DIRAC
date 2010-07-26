@@ -2299,7 +2299,7 @@ class ResourceStatusDB:
     if resQuery['Value']: 
       req = "UPDATE AccountingCache SET "
       if resQuery['Value'][0][3] != result:
-        req = req + "Result = '%s', DateEffective = '%s', " %(result, dateEffective)
+        req = req + "Result = \"%s\", DateEffective = '%s', " %(result, dateEffective)
       req = req + "LastCheckTime = '%s' WHERE " %(now)
       req = req + "Name = '%s' AND PlotType = '%s' AND PlotName = '%s'" %(name, plotType, plotName)
       
@@ -2309,7 +2309,7 @@ class ResourceStatusDB:
     else:
       req = "INSERT INTO AccountingCache (Name, PlotType, PlotName, Result, DateEffective, "
       req = req + "LastCheckTime) VALUES ('%s', '%s', '%s', " %(name, plotType, plotName)
-      req = req + "'%s', '%s', '%s')" %(result, dateEffective, now)
+      req = req + "\"%s\", '%s', '%s')" %(result, dateEffective, now)
       
       resUpdate = self.db._update(req)
       if not resUpdate['OK']:

@@ -174,6 +174,9 @@ class ResourceStatusDB:
   def getPolicyRes(self, name, policyName, lastCheckTime = False):
     return ('Active', 'DT:None')
   
+  def addOrModifyAccountingCacheRes(self, name, plotType, plotName, result, dateEffective = None):
+    pass
+  
   def addOrModifyClientsCacheRes(self, name, commandName, value, result, 
                                  opt_ID = None, dateEffective = None):
     pass
