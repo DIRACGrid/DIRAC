@@ -20,7 +20,7 @@ import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
 from DIRAC.Core.DISET.RPCClient                               import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient          import gProxyManager
-from DIRAC.Core.Utilities.SiteCEMapping                       import getCEsForSite,getSiteCEMapping
+from DIRAC.Core.Utilities.SiteCEMapping                       import getCEsForSite, getSiteCEMapping
 from DIRAC.FrameworkSystem.Client.NotificationClient          import NotificationClient
 from DIRAC.Core.Security.X509Chain                            import X509Chain
 from DIRAC.Core.Security                                      import Locations, CS
@@ -30,34 +30,34 @@ from DIRAC.Core.Utilities.Grid                                import ldapSite, l
 import re, os, sys, string, time, shutil, types
 import pprint
 
-vo = gConfig.getValue('/DIRAC/VirtualOrganization', 'lhcb')
+vo = gConfig.getValue( '/DIRAC/VirtualOrganization', 'lhcb' )
 
-COMPONENT_NAME='/Interfaces/API/DiracAdmin'
+COMPONENT_NAME = '/Interfaces/API/DiracAdmin'
 
 class DiracAdmin:
 
   #############################################################################
-  def __init__(self):
+  def __init__( self ):
     """Internal initialization of the DIRAC Admin API.
     """
-    self.log = gLogger.getSubLogger('DIRACAdminAPI')
-    self.setup      = gConfig.getValue('/DIRAC/Setup','Unknown')
-    self.section    = COMPONENT_NAME
-    self.cvsVersion = 'CVS version '+__RCSID__
-    self.diracInfo  = 'DIRAC version v%dr%d build %d' \
-                       %(DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.patchLevel)
-    self.csAPI      = CSAPI()
+    self.log = gLogger.getSubLogger( 'DIRACAdminAPI' )
+    self.setup = gConfig.getValue( '/DIRAC/Setup', 'Unknown' )
+    self.section = COMPONENT_NAME
+    self.cvsVersion = 'CVS version ' + __RCSID__
+    self.diracInfo = 'DIRAC version v%dr%d build %d' \
+                       % ( DIRAC.majorVersion, DIRAC.minorVersion, DIRAC.patchLevel )
+    self.csAPI = CSAPI()
 
     self.dbg = False
-    if gConfig.getValue(self.section+'/LogLevel','DEBUG') == 'DEBUG':
+    if gConfig.getValue( self.section + '/LogLevel', 'DEBUG' ) == 'DEBUG':
       self.dbg = True
 
-    self.scratchDir = gConfig.getValue(self.section+'/ScratchDir','/tmp')
+    self.scratchDir = gConfig.getValue( self.section + '/ScratchDir', '/tmp' )
     self.currentDir = os.getcwd()
     self.pPrint = pprint.PrettyPrinter()
 
   #############################################################################
-  def uploadProxy(self,group):
+  def uploadProxy( self, group ):
     """Upload a proxy to the DIRAC WMS.  This method
 
        Example usage:
@@ -73,7 +73,7 @@ class DiracAdmin:
        @type permanent: boolean
 
     """
-    return gProxyManager.uploadProxy(diracGroup=group)
+    return gProxyManager.uploadProxy( diracGroup = group )
 
   #############################################################################
   def setProxyPersistency( self, userDN, userGroup, persistent = True ):
@@ -114,7 +114,7 @@ class DiracAdmin:
     return gProxyManager.userHasProxy( userDN, userGroup, requiredTime )
 
   #############################################################################
-  def getSiteMask(self,printOutput=False):
+  def getSiteMask( self, printOutput = False ):
     """Retrieve current site mask from WMS Administrator service.
 
        Example usage:
@@ -125,7 +125,7 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
 
     """
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
     result = wmsAdmin.getSiteMask()
     if result['OK']:
       sites = result['Value']
@@ -137,7 +137,7 @@ class DiracAdmin:
     return result
 
   #############################################################################
-  def getBannedSites(self,gridType='LCG',printOutput=False):
+  def getBannedSites( self, gridType = 'LCG', printOutput = False ):
     """Retrieve current list of banned sites.
 
        Example usage:
@@ -148,25 +148,25 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
 
     """
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
     result = wmsAdmin.getSiteMask()
     bannedSites = []
     if not result['OK']:
-      self.log.warn(result['Message'])
+      self.log.warn( result['Message'] )
       return result
 
-    totalList = gConfig.getSections('/Resources/Sites/%s' %gridType)['Value']
+    totalList = gConfig.getSections( '/Resources/Sites/%s' % gridType )['Value']
     sites = result['Value']
     for site in totalList:
       if not site in sites:
-        bannedSites.append(site)
+        bannedSites.append( site )
     bannedSites.sort()
     if printOutput:
-      print string.join(bannedSites,'\n')
-    return S_OK(bannedSites)
+      print string.join( bannedSites, '\n' )
+    return S_OK( bannedSites )
 
   #############################################################################
-  def getSiteSection(self,site,printOutput=False):
+  def getSiteSection( self, site, printOutput = False ):
     """Simple utility to get the list of CEs for DIRAC site name.
 
        Example usage:
@@ -176,17 +176,17 @@ class DiracAdmin:
 
        @return: S_OK,S_ERROR
     """
-    gridType = site.split('.')[0]
-    if not gConfig.getSections('/Resources/Sites/%s' %(gridType))['OK']:
-      return S_ERROR('/Resources/Sites/%s is not a valid site section' %(gridType))
+    gridType = site.split( '.' )[0]
+    if not gConfig.getSections( '/Resources/Sites/%s' % ( gridType ) )['OK']:
+      return S_ERROR( '/Resources/Sites/%s is not a valid site section' % ( gridType ) )
 
-    result = self.getCSDict('/Resources/Sites/%s/%s' %(gridType,site))
+    result = self.getCSDict( '/Resources/Sites/%s/%s' % ( gridType, site ) )
     if printOutput and result['OK']:
-      print self.pPrint.pformat(result['Value'])
+      print self.pPrint.pformat( result['Value'] )
     return result
 
   #############################################################################
-  def getCSDict(self,sectionPath):
+  def getCSDict( self, sectionPath ):
     """Retrieve a dictionary from the CS for the specified path.
 
        Example usage:
@@ -197,11 +197,11 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
 
     """
-    result = gConfig.getOptionsDict(sectionPath)
+    result = gConfig.getOptionsDict( sectionPath )
     return result
 
   #############################################################################
-  def addSiteInMask(self,site,comment,printOutput=False):
+  def addSiteInMask( self, site, comment, printOutput = False ):
     """Adds the site to the site mask.
 
        Example usage:
@@ -212,7 +212,7 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
 
     """
-    result = self.__checkSiteIsValid(site)
+    result = self.__checkSiteIsValid( site )
     if not result['OK']:
       return result
 
@@ -221,20 +221,20 @@ class DiracAdmin:
       return mask
     siteMask = mask['Value']
     if site in siteMask:
-      return S_ERROR('Site %s already in mask of allowed sites' %site)
+      return S_ERROR( 'Site %s already in mask of allowed sites' % site )
 
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
-    result = wmsAdmin.allowSite(site,comment)
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    result = wmsAdmin.allowSite( site, comment )
     if not result['OK']:
       return result
 
     if printOutput:
-      print 'Allowing %s in site mask' %site
+      print 'Allowing %s in site mask' % site
 
     return result
 
   #############################################################################
-  def getSiteMaskLogging(self,site=None,printOutput=False):
+  def getSiteMaskLogging( self, site = None, printOutput = False ):
     """Retrieves site mask logging information.
 
        Example usage:
@@ -244,36 +244,36 @@ class DiracAdmin:
 
        @return: S_OK,S_ERROR
     """
-    result = self.__checkSiteIsValid(site)
+    result = self.__checkSiteIsValid( site )
     if not result['OK']:
       return result
 
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
-    result = wmsAdmin.getSiteMaskLogging(site)
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    result = wmsAdmin.getSiteMaskLogging( site )
     if not result['OK']:
       return result
 
     if site:
-      if not result['Value'].has_key(site):
-        return S_ERROR('Site mask information not available for %s' %(site))
+      if not result['Value'].has_key( site ):
+        return S_ERROR( 'Site mask information not available for %s' % ( site ) )
 
     if printOutput:
       if site:
-        print '\nSite Mask Logging Info for %s\n' %site
+        print '\nSite Mask Logging Info for %s\n' % site
       else:
         print '\nAll Site Mask Logging Info\n'
 
       siteDict = result['Value']
-      for site,tupleList in result['Value'].items():
+      for site, tupleList in result['Value'].items():
         if not site:
-          print '\n===> %s\n' %site
+          print '\n===> %s\n' % site
         for tup in tupleList:
-          print str(tup[0]).ljust(8)+str(tup[1]).ljust(20)+'( '+str(tup[2]).ljust(len(str(tup[2])))+' )  "'+str(tup[3])+'"'
+          print str( tup[0] ).ljust( 8 ) + str( tup[1] ).ljust( 20 ) + '( ' + str( tup[2] ).ljust( len( str( tup[2] ) ) ) + ' )  "' + str( tup[3] ) + '"'
         print ' '
     return result
 
   #############################################################################
-  def banSiteFromMask(self,site,comment,printOutput=False):
+  def banSiteFromMask( self, site, comment, printOutput = False ):
     """Removes the site from the site mask.
 
        Example usage:
@@ -284,7 +284,7 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
 
     """
-    result = self.__checkSiteIsValid(site)
+    result = self.__checkSiteIsValid( site )
     if not result['OK']:
       return result
 
@@ -293,10 +293,10 @@ class DiracAdmin:
       return mask
     siteMask = mask['Value']
     if not site in siteMask:
-      return S_ERROR('Site %s is already banned' %site)
+      return S_ERROR( 'Site %s is already banned' % site )
 
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
-    result = wmsAdmin.banSite(site,comment)
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    result = wmsAdmin.banSite( site, comment )
     if not result['OK']:
       return result
 
@@ -306,20 +306,20 @@ class DiracAdmin:
     return result
 
   #############################################################################
-  def __checkSiteIsValid(self,site):
+  def __checkSiteIsValid( self, site ):
     """Internal function to check that a site name is valid.
     """
     sites = getSiteCEMapping()
     if not sites['OK']:
-      return S_ERROR('Could not get site CE mapping')
+      return S_ERROR( 'Could not get site CE mapping' )
     siteList = sites['Value'].keys()
     if not site in siteList:
-      return S_ERROR('Specified site %s is not in list of defined sites' %site)
+      return S_ERROR( 'Specified site %s is not in list of defined sites' % site )
 
-    return S_OK('%s is valid' %site)
+    return S_OK( '%s is valid' % site )
 
   #############################################################################
-  def clearMask(self):
+  def clearMask( self ):
     """Removes all sites from the site mask.  Should be used with care.
 
        Example usage:
@@ -330,12 +330,12 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
 
     """
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
     result = wmsAdmin.clearMask()
     return result
 
   #############################################################################
-  def getServicePorts(self,setup='',printOutput=False):
+  def getServicePorts( self, setup = '', printOutput = False ):
     """Checks the service ports for the specified setup.  If not given this is
        taken from the current installation (/DIRAC/Setup)
 
@@ -348,53 +348,53 @@ class DiracAdmin:
 
     """
     if not setup:
-      setup = gConfig.getValue('/DIRAC/Setup','')
+      setup = gConfig.getValue( '/DIRAC/Setup', '' )
 
-    setupList = gConfig.getSections('/DIRAC/Setups',[])
+    setupList = gConfig.getSections( '/DIRAC/Setups', [] )
     if not setupList['OK']:
-      return S_ERROR('Could not get /DIRAC/Setups sections')
+      return S_ERROR( 'Could not get /DIRAC/Setups sections' )
     setupList = setupList['Value']
     if not setup in setupList:
-      return S_ERROR('Setup %s is not in allowed list: %s' %(setup,string.join(setupList,', ')))
+      return S_ERROR( 'Setup %s is not in allowed list: %s' % ( setup, string.join( setupList, ', ' ) ) )
 
-    serviceSetups = gConfig.getOptionsDict('/DIRAC/Setups/%s' %setup)
+    serviceSetups = gConfig.getOptionsDict( '/DIRAC/Setups/%s' % setup )
     if not serviceSetups['OK']:
-      return S_ERROR('Could not get /DIRAC/Setups/%s options' %setup)
+      return S_ERROR( 'Could not get /DIRAC/Setups/%s options' % setup )
     serviceSetups = serviceSetups['Value'] #dict
-    systemList = gConfig.getSections('/Systems')
+    systemList = gConfig.getSections( '/Systems' )
     if not systemList['OK']:
-      return S_ERROR('Could not get Systems sections')
+      return S_ERROR( 'Could not get Systems sections' )
     systemList = systemList['Value']
     result = {}
     for system in systemList:
-      if serviceSetups.has_key(system):
-        path = '/Systems/%s/%s/Services' %(system,serviceSetups[system])
-        servicesList = gConfig.getSections(path)
+      if serviceSetups.has_key( system ):
+        path = '/Systems/%s/%s/Services' % ( system, serviceSetups[system] )
+        servicesList = gConfig.getSections( path )
         if not servicesList['OK']:
-          self.log.warn('Could not get sections in %s' %path)
+          self.log.warn( 'Could not get sections in %s' % path )
         else:
           servicesList = servicesList['Value']
           if not servicesList:
-            servicesList=[]
-          self.log.verbose('System: %s ServicesList: %s' %(system,string.join(servicesList,', ')))
+            servicesList = []
+          self.log.verbose( 'System: %s ServicesList: %s' % ( system, string.join( servicesList, ', ' ) ) )
           for service in servicesList:
-            spath = '%s/%s/Port' %(path,service)
-            servicePort = gConfig.getValue(spath,0)
+            spath = '%s/%s/Port' % ( path, service )
+            servicePort = gConfig.getValue( spath, 0 )
             if servicePort:
-              self.log.verbose('Found port for %s/%s = %s' %(system,service,servicePort))
-              result['%s/%s' %(system,service)] = servicePort
+              self.log.verbose( 'Found port for %s/%s = %s' % ( system, service, servicePort ) )
+              result['%s/%s' % ( system, service )] = servicePort
             else:
-              self.log.warn('No port found for %s' %spath)
+              self.log.warn( 'No port found for %s' % spath )
       else:
-        self.log.warn('%s is not defined in /DIRAC/Setups/%s' %(system,setup))
+        self.log.warn( '%s is not defined in /DIRAC/Setups/%s' % ( system, setup ) )
 
     if printOutput:
-      print self.pPrint.pformat(result)
+      print self.pPrint.pformat( result )
 
-    return S_OK(result)
+    return S_OK( result )
 
   #############################################################################
-  def getProxy( self, userDN, userGroup, validity=43200, limited = False ):
+  def getProxy( self, userDN, userGroup, validity = 43200, limited = False ):
     """Retrieves a proxy with default 12hr validity and stores
        this in a file in the local directory by default.
 
@@ -410,7 +410,7 @@ class DiracAdmin:
                                         requiredTimeLeft = validity )
 
   #############################################################################
-  def getVOMSProxy( self, userDN, userGroup, vomsAttr = False, validity=43200, limited = False ):
+  def getVOMSProxy( self, userDN, userGroup, vomsAttr = False, validity = 43200, limited = False ):
     """Retrieves a proxy with default 12hr validity and VOMS extensions and stores
        this in a file in the local directory by default.
 
@@ -427,7 +427,7 @@ class DiracAdmin:
                                             requiredTimeLeft = validity )
 
   #############################################################################
-  def getPilotProxy( self, userDN, userGroup, validity=43200 ):
+  def getPilotProxy( self, userDN, userGroup, validity = 43200 ):
     """Retrieves a pilot proxy with default 12hr validity and stores
        this in a file in the local directory by default.
 
@@ -443,7 +443,7 @@ class DiracAdmin:
     return gProxyManager.getPilotProxyFromDIRACGroup( userDN, userGroup, requiredTimeLeft = validity )
 
   #############################################################################
-  def resetJob(self,jobID):
+  def resetJob( self, jobID ):
     """Reset a job or list of jobs in the WMS.  This operation resets the reschedule
        counter for a job or list of jobs and allows them to run as new.
 
@@ -455,23 +455,23 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
 
     """
-    if type(jobID)==type(" "):
+    if type( jobID ) == type( " " ):
       try:
-        jobID = int(jobID)
-      except Exception,x:
-        return self.__errorReport(str(x),'Expected integer or convertible integer for existing jobID')
-    elif type(jobID)==type([]):
+        jobID = int( jobID )
+      except Exception, x:
+        return self.__errorReport( str( x ), 'Expected integer or convertible integer for existing jobID' )
+    elif type( jobID ) == type( [] ):
       try:
-        jobID = [int(job) for job in jobID]
-      except Exception,x:
-        return self.__errorReport(str(x),'Expected integer or convertible integer for existing jobIDs')
+        jobID = [int( job ) for job in jobID]
+      except Exception, x:
+        return self.__errorReport( str( x ), 'Expected integer or convertible integer for existing jobIDs' )
 
-    jobManager = RPCClient('WorkloadManagement/JobManager',useCertificates=False,timeout=120)
-    result = jobManager.resetJob(jobID)
+    jobManager = RPCClient( 'WorkloadManagement/JobManager', useCertificates = False, timeout = 120 )
+    result = jobManager.resetJob( jobID )
     return result
 
   #############################################################################
-  def getJobJDL(self,jobID):
+  def getJobJDL( self, jobID ):
     """Retrieve the JDL of an existing job in the WMS.
 
        >>> print dirac.getJobJDL(12345)
@@ -481,17 +481,17 @@ class DiracAdmin:
        @type job: integer or string
        @return: S_OK,S_ERROR
     """
-    if type(jobID)==type(" "):
+    if type( jobID ) == type( " " ):
       try:
-        jobID = int(jobID)
-      except Exception,x:
-        return self.__errorReport(str(x),'Expected integer or convertible integer for existing jobID')
+        jobID = int( jobID )
+      except Exception, x:
+        return self.__errorReport( str( x ), 'Expected integer or convertible integer for existing jobID' )
 
-    result = self.monitoring.getJobJDL(jobID)
+    result = self.monitoring.getJobJDL( jobID )
     return result
 
   #############################################################################
-  def getJobPilotOutput(self,jobID,directory=''):
+  def getJobPilotOutput( self, jobID, directory = '' ):
     """Retrieve the pilot output for an existing job in the WMS.
        The output will be retrieved in a local directory unless
        otherwise specified.
@@ -506,47 +506,47 @@ class DiracAdmin:
     if not directory:
       directory = self.currentDir
 
-    if not os.path.exists(directory):
-      self.__report('Directory %s does not exist' % directory)
+    if not os.path.exists( directory ):
+      self.__report( 'Directory %s does not exist' % directory )
 
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
-    result = wmsAdmin.getJobPilotOutput(jobID)
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    result = wmsAdmin.getJobPilotOutput( jobID )
     if not result['OK']:
       return result
 
-    outputPath = '%s/pilot_%s' %(directory,jobID)
-    if os.path.exists(outputPath):
-      self.log.info('Remove %s and retry to continue' %outputPath)
-      return S_ERROR('Remove %s and retry to continue' %outputPath)
+    outputPath = '%s/pilot_%s' % ( directory, jobID )
+    if os.path.exists( outputPath ):
+      self.log.info( 'Remove %s and retry to continue' % outputPath )
+      return S_ERROR( 'Remove %s and retry to continue' % outputPath )
 
-    if not os.path.exists(outputPath):
-      self.log.verbose('Creating directory %s' %outputPath)
-      os.mkdir(outputPath)
+    if not os.path.exists( outputPath ):
+      self.log.verbose( 'Creating directory %s' % outputPath )
+      os.mkdir( outputPath )
 
     outputs = result['Value']
-    if outputs.has_key('StdOut'):
-      stdout = '%s/std.out' %(outputPath)
-      fopen = open(stdout,'w')
-      fopen.write(outputs['StdOut'])
+    if outputs.has_key( 'StdOut' ):
+      stdout = '%s/std.out' % ( outputPath )
+      fopen = open( stdout, 'w' )
+      fopen.write( outputs['StdOut'] )
       fopen.close()
-      self.log.verbose('Standard output written to %s' %(stdout))
+      self.log.verbose( 'Standard output written to %s' % ( stdout ) )
     else:
-      self.log.warn('No standard output returned')
+      self.log.warn( 'No standard output returned' )
 
-    if outputs.has_key('StdError'):
-      stderr = '%s/std.err' %(outputPath)
-      fopen = open(stderr,'w')
-      fopen.write(outputs['StdError'])
+    if outputs.has_key( 'StdError' ):
+      stderr = '%s/std.err' % ( outputPath )
+      fopen = open( stderr, 'w' )
+      fopen.write( outputs['StdError'] )
       fopen.close()
-      self.log.verbose('Standard error written to %s' %(stderr))
+      self.log.verbose( 'Standard error written to %s' % ( stderr ) )
     else:
-      self.log.warn('No standard error returned')
+      self.log.warn( 'No standard error returned' )
 
-    self.log.info('Outputs retrieved in %s' %outputPath)
+    self.log.info( 'Outputs retrieved in %s' % outputPath )
     return result
 
   #############################################################################
-  def getPilotOutput(self,gridReference,directory=''):
+  def getPilotOutput( self, gridReference, directory = '' ):
     """Retrieve the pilot output  (std.out and std.err) for an existing job in the WMS.
 
        >>> print dirac.getJobPilotOutput(12345)
@@ -556,57 +556,57 @@ class DiracAdmin:
        @type job: integer or string
        @return: S_OK,S_ERROR
     """
-    if not type(gridReference)==type(" "):
+    if not type( gridReference ) == type( " " ):
       return self.__errorReport( 'Expected string for pilot reference' )
 
     if not directory:
       directory = self.currentDir
 
-    if not os.path.exists(directory):
-      self.__report('Directory %s does not exist' % directory)
+    if not os.path.exists( directory ):
+      self.__report( 'Directory %s does not exist' % directory )
 
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
-    result = wmsAdmin.getPilotOutput(gridReference)
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    result = wmsAdmin.getPilotOutput( gridReference )
     if not result['OK']:
       return result
 
-    gridReferenceSmall = string.split(gridReference,'/')[-1]
+    gridReferenceSmall = string.split( gridReference, '/' )[-1]
     if not gridReferenceSmall:
-      gridReferenceSmall='reference'
-    outputPath = '%s/pilot_%s' %(directory,gridReferenceSmall)
+      gridReferenceSmall = 'reference'
+    outputPath = '%s/pilot_%s' % ( directory, gridReferenceSmall )
 
-    if os.path.exists(outputPath):
-      self.log.info('Remove %s and retry to continue' %outputPath)
-      return S_ERROR('Remove %s and retry to continue' %outputPath)
+    if os.path.exists( outputPath ):
+      self.log.info( 'Remove %s and retry to continue' % outputPath )
+      return S_ERROR( 'Remove %s and retry to continue' % outputPath )
 
-    if not os.path.exists(outputPath):
-      self.log.verbose('Creating directory %s' %outputPath)
-      os.mkdir(outputPath)
+    if not os.path.exists( outputPath ):
+      self.log.verbose( 'Creating directory %s' % outputPath )
+      os.mkdir( outputPath )
 
     outputs = result['Value']
-    if outputs.has_key('StdOut'):
-      stdout = '%s/std.out' %(outputPath)
-      fopen = open(stdout,'w')
-      fopen.write(outputs['StdOut'])
+    if outputs.has_key( 'StdOut' ):
+      stdout = '%s/std.out' % ( outputPath )
+      fopen = open( stdout, 'w' )
+      fopen.write( outputs['StdOut'] )
       fopen.close()
-      self.log.verbose('Standard output written to %s' %(stdout))
+      self.log.verbose( 'Standard output written to %s' % ( stdout ) )
     else:
-      self.log.warn('No standard output returned')
+      self.log.warn( 'No standard output returned' )
 
-    if outputs.has_key('StdErr'):
-      stderr = '%s/std.err' %(outputPath)
-      fopen = open(stderr,'w')
-      fopen.write(outputs['StdErr'])
+    if outputs.has_key( 'StdErr' ):
+      stderr = '%s/std.err' % ( outputPath )
+      fopen = open( stderr, 'w' )
+      fopen.write( outputs['StdErr'] )
       fopen.close()
-      self.log.verbose('Standard error written to %s' %(stderr))
+      self.log.verbose( 'Standard error written to %s' % ( stderr ) )
     else:
-      self.log.warn('No standard error returned')
+      self.log.warn( 'No standard error returned' )
 
-    self.log.info('Outputs retrieved in %s' %outputPath)
+    self.log.info( 'Outputs retrieved in %s' % outputPath )
     return result
 
   #############################################################################
-  def getPilotInfo(self,gridReference):
+  def getPilotInfo( self, gridReference ):
     """Retrieve info relative to a pilot reference
 
        >>> print dirac.getPilotInfo(12345)
@@ -616,15 +616,15 @@ class DiracAdmin:
        @type gridReference: string
        @return: S_OK,S_ERROR
     """
-    if not type(gridReference)==type(" "):
+    if not type( gridReference ) == type( " " ):
       return self.__errorReport( 'Expected string for pilot reference' )
 
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
-    result = wmsAdmin.getPilotInfo(gridReference)
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    result = wmsAdmin.getPilotInfo( gridReference )
     return result
 
   #############################################################################
-  def getPilotLoggingInfo(self,gridReference):
+  def getPilotLoggingInfo( self, gridReference ):
     """Retrieve the pilot logging info for an existing job in the WMS.
 
        >>> print dirac.getPilotLoggingInfo(12345)
@@ -634,14 +634,14 @@ class DiracAdmin:
        @type gridReference: string
        @return: S_OK,S_ERROR
     """
-    if type(gridReference) not in types.StringTypes:
+    if type( gridReference ) not in types.StringTypes:
       return self.__errorReport( 'Expected string for pilot reference' )
 
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
-    return wmsAdmin.getPilotLoggingInfo(gridReference)
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    return wmsAdmin.getPilotLoggingInfo( gridReference )
 
   #############################################################################
-  def getJobPilots(self,jobID):
+  def getJobPilots( self, jobID ):
     """Extract the list of submitted pilots and their status for a given
        jobID from the WMS.  Useful information is printed to the screen.
 
@@ -653,20 +653,20 @@ class DiracAdmin:
        @return: S_OK,S_ERROR
 
     """
-    if type(jobID)==type(" "):
+    if type( jobID ) == type( " " ):
       try:
-        jobID = int(jobID)
-      except Exception,x:
-        return self.__errorReport(str(x),'Expected integer or string for existing jobID')
+        jobID = int( jobID )
+      except Exception, x:
+        return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
 
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
-    result = wmsAdmin.getPilots(jobID)
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    result = wmsAdmin.getPilots( jobID )
     if result['OK']:
-      print self.pPrint.pformat(result['Value'])
+      print self.pPrint.pformat( result['Value'] )
     return result
 
   #############################################################################
-  def getPilotSummary(self,startDate='',endDate=''):
+  def getPilotSummary( self, startDate = '', endDate = '' ):
     """Retrieve the pilot output for an existing job in the WMS.  Summary is
        printed at INFO level, full dictionary of results also returned.
 
@@ -677,36 +677,36 @@ class DiracAdmin:
        @type job: integer or string
        @return: S_OK,S_ERROR
     """
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator',timeout=120)
-    result = wmsAdmin.getPilotSummary(startDate,endDate)
+    wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator', timeout = 120 )
+    result = wmsAdmin.getPilotSummary( startDate, endDate )
     if not result['OK']:
       return result
 
     ceDict = result['Value']
-    headers = 'CE'.ljust(28)
+    headers = 'CE'.ljust( 28 )
     i = 0
-    for ce,summary in ceDict.items():
+    for ce, summary in ceDict.items():
       states = summary.keys()
-      if len(states)>i:
-        i = len(states)
+      if len( states ) > i:
+        i = len( states )
 
-    for i in xrange(i):
-      headers += 'Status'.ljust(12)+'Count'.ljust(12)
+    for i in xrange( i ):
+      headers += 'Status'.ljust( 12 ) + 'Count'.ljust( 12 )
     print headers
 
-    for ce,summary in ceDict.items():
-      line = ce.ljust(28)
+    for ce, summary in ceDict.items():
+      line = ce.ljust( 28 )
       states = summary.keys()
       states.sort()
       for state in states:
-        count = str(summary[state])
-        line += state.ljust(12)+count.ljust(12)
+        count = str( summary[state] )
+        line += state.ljust( 12 ) + count.ljust( 12 )
       print line
 
     return result
 
   #############################################################################
-  def selectRequests(self,JobID=None,RequestID=None,RequestName=None,RequestType=None,Status=None,Operation=None,OwnerDN=None,OwnerGroup=None,RequestStart=0,Limit=100,printOutput=False):
+  def selectRequests( self, JobID = None, RequestID = None, RequestName = None, RequestType = None, Status = None, Operation = None, OwnerDN = None, OwnerGroup = None, RequestStart = 0, Limit = 100, printOutput = False ):
     """ Select requests from the request management system. A few notes on the selection criteria:
         - RequestID is assigned during submission of the request
         - JobID is the WMS JobID for the request (if applicable)
@@ -720,187 +720,187 @@ class DiracAdmin:
        >>> dirac.selectRequests(JobID='4894')
        {'OK': True, 'Value': [[<Requests>]]}
     """
-    options = {'RequestID':RequestID,'RequestName':RequestName,'JobID':JobID,'OwnerDN':OwnerDN,
-               'OwnerGroup':OwnerGroup,'RequestType':RequestType,'Status':Status,'Operation':Operation}
+    options = {'RequestID':RequestID, 'RequestName':RequestName, 'JobID':JobID, 'OwnerDN':OwnerDN,
+               'OwnerGroup':OwnerGroup, 'RequestType':RequestType, 'Status':Status, 'Operation':Operation}
 
     conditions = {}
-    for n,v in options.items():
+    for n, v in options.items():
       if v:
         try:
-          conditions[n] = str(v)
-        except Exception,x:
-          return self.__errorReport(str(x),'Expected string for %s field' %n)
+          conditions[n] = str( v )
+        except Exception, x:
+          return self.__errorReport( str( x ), 'Expected string for %s field' % n )
 
     try:
-      RequestStart = int(RequestStart)
-      Limit = int(Limit)
-    except Exception,x:
-      return self.__errorReport(str(x),'Expected integer for %s field' %n)
+      RequestStart = int( RequestStart )
+      Limit = int( Limit )
+    except Exception, x:
+      return self.__errorReport( str( x ), 'Expected integer for %s field' % n )
 
-    self.log.verbose('Will select requests with the following conditions')
-    self.log.verbose(self.pPrint.pformat(conditions))
-    requestClient = RPCClient("RequestManagement/centralURL",timeout=120)
-    result = requestClient.getRequestSummaryWeb(conditions,[],RequestStart,Limit)
+    self.log.verbose( 'Will select requests with the following conditions' )
+    self.log.verbose( self.pPrint.pformat( conditions ) )
+    requestClient = RPCClient( "RequestManagement/centralURL", timeout = 120 )
+    result = requestClient.getRequestSummaryWeb( conditions, [], RequestStart, Limit )
     if not result['OK']:
-      self.log.warn(result['Message'])
+      self.log.warn( result['Message'] )
       return result
 
     requestIDs = result['Value']
     conds = []
-    for n,v in conditions.items():
+    for n, v in conditions.items():
       if v:
-        conds.append('%s = %s' %(n,v))
-    self.log.verbose('%s request(s) selected with conditions %s and limit %s' %(len(requestIDs['Records']),string.join(conds,', '),Limit))
+        conds.append( '%s = %s' % ( n, v ) )
+    self.log.verbose( '%s request(s) selected with conditions %s and limit %s' % ( len( requestIDs['Records'] ), string.join( conds, ', ' ), Limit ) )
     if printOutput:
       requests = []
-      if len(requestIDs['Records'])>Limit:
+      if len( requestIDs['Records'] ) > Limit:
         requestList = requestIDs['Records']
         requests = requestList[:Limit]
       else:
         requests = requestIDs['Records']
-      print '%s request(s) selected with conditions %s and limit %s' %(len(requestIDs['Records']),string.join(conds,', '),Limit)
+      print '%s request(s) selected with conditions %s and limit %s' % ( len( requestIDs['Records'] ), string.join( conds, ', ' ), Limit )
       print requestIDs['ParameterNames']
       for request in requests:
         print request
     if not requestIDs:
-      return S_ERROR('No requests selected for conditions: %s' %conditions)
+      return S_ERROR( 'No requests selected for conditions: %s' % conditions )
     else:
       return result
 
   #############################################################################
-  def getRequestSummary(self,printOutput=False):
+  def getRequestSummary( self, printOutput = False ):
     """ Get a summary of the requests in the request DB.
     """
-    requestClient = RPCClient("RequestManagement/centralURL",timeout=120)
+    requestClient = RPCClient( "RequestManagement/centralURL", timeout = 120 )
     result = requestClient.getDBSummary()
     if not result['OK']:
-      self.log.warn(result['Message'])
+      self.log.warn( result['Message'] )
       return result
 
     if printOutput:
-      print self.pPrint.pformat(result['Value'])
+      print self.pPrint.pformat( result['Value'] )
 
     return result
 
   #############################################################################
-  def getExternalPackageVersions(self):
+  def getExternalPackageVersions( self ):
     """ Simple function that attempts to obtain the external versions for
         the local DIRAC installation (frequently needed for debugging purposes).
     """
-    gLogger.info('DIRAC version v%dr%d build %d' %(DIRAC.majorVersion,DIRAC.minorVersion,DIRAC.patchLevel))
+    gLogger.info( 'DIRAC version v%dr%d build %d' % ( DIRAC.majorVersion, DIRAC.minorVersion, DIRAC.patchLevel ) )
     try:
       import lcg_util
       infoStr = 'Using lcg_util from: \n%s' % lcg_util.__file__
-      gLogger.info(infoStr)
+      gLogger.info( infoStr )
       infoStr = "The version of lcg_utils is %s" % lcg_util.lcg_util_version()
-      gLogger.info(infoStr)
-    except Exception,x:
-      errStr = "SRM2Storage.__init__: Failed to import lcg_util: %s" % (x)
-      gLogger.exception(errStr)
+      gLogger.info( infoStr )
+    except Exception, x:
+      errStr = "SRM2Storage.__init__: Failed to import lcg_util: %s" % ( x )
+      gLogger.exception( errStr )
 
     try:
       import gfalthr as gfal
       infoStr = "Using gfalthr from: \n%s" % gfal.__file__
-      gLogger.info(infoStr)
+      gLogger.info( infoStr )
       infoStr = "The version of gfalthr is %s" % gfal.gfal_version()
-      gLogger.info(infoStr)
-    except Exception,x:
-      errStr = "SRM2Storage.__init__: Failed to import gfalthr: %s." % (x)
-      gLogger.warn(errStr)
+      gLogger.info( infoStr )
+    except Exception, x:
+      errStr = "SRM2Storage.__init__: Failed to import gfalthr: %s." % ( x )
+      gLogger.warn( errStr )
       try:
         import gfal
         infoStr = "Using gfal from: %s" % gfal.__file__
-        gLogger.info(infoStr)
+        gLogger.info( infoStr )
         infoStr = "The version of gfal is %s" % gfal.gfal_version()
-        gLogger.info(infoStr)
-      except Exception,x:
-        errStr = "SRM2Storage.__init__: Failed to import gfal: %s" % (x)
-        gLogger.exception(errStr)
+        gLogger.info( infoStr )
+      except Exception, x:
+        errStr = "SRM2Storage.__init__: Failed to import gfal: %s" % ( x )
+        gLogger.exception( errStr )
 
 
-    defaultProtocols = gConfig.getValue('/Resources/StorageElements/DefaultProtocols',[])
-    gLogger.info('Default list of protocols are: %s' %(string.join(defaultProtocols,', ')))
+    defaultProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
+    gLogger.info( 'Default list of protocols are: %s' % ( string.join( defaultProtocols, ', ' ) ) )
     return S_OK()
 
   #############################################################################
-  def getSiteProtocols(self,site,printOutput=False):
+  def getSiteProtocols( self, site, printOutput = False ):
     """Allows to check the defined protocols for each site SE.
     """
-    result = self.__checkSiteIsValid(site)
+    result = self.__checkSiteIsValid( site )
     if not result['OK']:
       return result
 
-    siteSection = '/Resources/Sites/%s/%s/SE' %(site.split('.')[0],site)
-    siteSEs = gConfig.getValue(siteSection,[])
+    siteSection = '/Resources/Sites/%s/%s/SE' % ( site.split( '.' )[0], site )
+    siteSEs = gConfig.getValue( siteSection, [] )
     if not siteSEs:
-      return S_ERROR('No SEs found for site %s in section %s' %(site,siteSection))
+      return S_ERROR( 'No SEs found for site %s in section %s' % ( site, siteSection ) )
 
-    defaultProtocols = gConfig.getValue('/Resources/StorageElements/DefaultProtocols',[])
-    self.log.verbose('Default list of protocols are %s' %(string.join(defaultProtocols,', ')))
-    seInfo={}
+    defaultProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
+    self.log.verbose( 'Default list of protocols are %s' % ( string.join( defaultProtocols, ', ' ) ) )
+    seInfo = {}
     siteSEs.sort()
     for se in siteSEs:
-      sections = gConfig.getSections('/Resources/StorageElements/%s/' %(se))
+      sections = gConfig.getSections( '/Resources/StorageElements/%s/' % ( se ) )
       if not sections['OK']:
         return sections
       for section in sections['Value']:
-        if gConfig.getValue('/Resources/StorageElements/%s/%s/ProtocolName' %(se,section),'')=='SRM2':
-          path = '/Resources/StorageElements/%s/%s/ProtocolsList' %(se,section)
-          seProtocols = gConfig.getValue(path,[])
+        if gConfig.getValue( '/Resources/StorageElements/%s/%s/ProtocolName' % ( se, section ), '' ) == 'SRM2':
+          path = '/Resources/StorageElements/%s/%s/ProtocolsList' % ( se, section )
+          seProtocols = gConfig.getValue( path, [] )
           if not seProtocols:
             seProtocols = defaultProtocols
-          seInfo[se]=seProtocols
+          seInfo[se] = seProtocols
 
     if printOutput:
-      print '\nSummary of protocols for StorageElements at site %s' %site
-      print '\nStorageElement'.ljust(30)+'ProtocolsList'.ljust(30)+'\n'
-      for se,protocols in seInfo.items():
-        print se.ljust(30)+string.join(protocols,', ').ljust(30)
+      print '\nSummary of protocols for StorageElements at site %s' % site
+      print '\nStorageElement'.ljust( 30 ) + 'ProtocolsList'.ljust( 30 ) + '\n'
+      for se, protocols in seInfo.items():
+        print se.ljust( 30 ) + string.join( protocols, ', ' ).ljust( 30 )
 
-    return S_OK(seInfo)
+    return S_OK( seInfo )
 
   #############################################################################
-  def setSiteProtocols(self,site,protocolsList,printOutput=False):
+  def setSiteProtocols( self, site, protocolsList, printOutput = False ):
     """Allows to set the defined protocols for each SE for a given site.
     """
-    result = self.__checkSiteIsValid(site)
+    result = self.__checkSiteIsValid( site )
     if not result['OK']:
       return result
 
-    siteSection = '/Resources/Sites/%s/%s/SE' %(site.split('.')[0],site)
-    siteSEs = gConfig.getValue(siteSection,[])
+    siteSection = '/Resources/Sites/%s/%s/SE' % ( site.split( '.' )[0], site )
+    siteSEs = gConfig.getValue( siteSection, [] )
     if not siteSEs:
-      return S_ERROR('No SEs found for site %s in section %s' %(site,siteSection))
+      return S_ERROR( 'No SEs found for site %s in section %s' % ( site, siteSection ) )
 
-    defaultProtocols = gConfig.getValue('/Resources/StorageElements/DefaultProtocols',[])
-    self.log.verbose('Default list of protocols are %s' %(string.join(defaultProtocols,', ')))
+    defaultProtocols = gConfig.getValue( '/Resources/StorageElements/DefaultProtocols', [] )
+    self.log.verbose( 'Default list of protocols are %s' % ( string.join( defaultProtocols, ', ' ) ) )
 
     for protocol in protocolsList:
       if not protocol in defaultProtocols:
-        return S_ERROR('Requested to set protocol %s in list but %s is not in default list of protocols:\n%s' %(protocol,protocol,string.join(defaultProtocols,', ')))
+        return S_ERROR( 'Requested to set protocol %s in list but %s is not in default list of protocols:\n%s' % ( protocol, protocol, string.join( defaultProtocols, ', ' ) ) )
 
     modifiedCS = False
-    result = self._promptUser('Do you want to add the following default protocols: %s for SE(s):\n%s' %(string.join(protocolsList,', '),string.join(siteSEs,', ')))
+    result = self._promptUser( 'Do you want to add the following default protocols: %s for SE(s):\n%s' % ( string.join( protocolsList, ', ' ), string.join( siteSEs, ', ' ) ) )
     if not result['OK']:
       return result
 
     for se in siteSEs:
-      sections = gConfig.getSections('/Resources/StorageElements/%s/' %(se))
+      sections = gConfig.getSections( '/Resources/StorageElements/%s/' % ( se ) )
       if not sections['OK']:
         return sections
       for section in sections['Value']:
-        if gConfig.getValue('/Resources/StorageElements/%s/%s/ProtocolName' %(se,section),'')=='SRM2':
-          path = '/Resources/StorageElements/%s/%s/ProtocolsList' %(se,section)
-          self.log.verbose('Setting %s to %s' %(path,string.join(protocolsList,', ')))
-          result = self.csSetOption(path,string.join(protocolsList,', '))
+        if gConfig.getValue( '/Resources/StorageElements/%s/%s/ProtocolName' % ( se, section ), '' ) == 'SRM2':
+          path = '/Resources/StorageElements/%s/%s/ProtocolsList' % ( se, section )
+          self.log.verbose( 'Setting %s to %s' % ( path, string.join( protocolsList, ', ' ) ) )
+          result = self.csSetOption( path, string.join( protocolsList, ', ' ) )
           if not result['OK']:
             return result
           modifiedCS = True
 
     if modifiedCS:
-      result = self.csCommitChanges(False)
+      result = self.csCommitChanges( False )
       if not result[ 'OK' ]:
-        return S_ERROR('CS Commit failed with message = %s' %(result[ 'Message' ]))
+        return S_ERROR( 'CS Commit failed with message = %s' % ( result[ 'Message' ] ) )
       else:
         if printOutput:
           print 'Successfully committed changes to CS'
@@ -911,26 +911,32 @@ class DiracAdmin:
     return S_OK()
 
   #############################################################################
-  def __errorReport(self,error,message=None):
+  def __errorReport( self, error, message = None ):
     """Internal function to return errors and exit with an S_ERROR()
     """
     if not message:
       message = error
 
-    self.log.warn(error)
-    return S_ERROR(message)
+    self.log.warn( error )
+    return S_ERROR( message )
 
   #############################################################################
-  def csSetOption(self,optionPath,optionValue):
+  def csSetOption( self, optionPath, optionValue ):
     """Function to modify an existing value in the CS.
     """
-    return self.csAPI.setOption(optionPath,optionValue)
+    return self.csAPI.setOption( optionPath, optionValue )
 
   #############################################################################
-  def csModifyValue(self,optionPath,newValue):
+  def csSetOptionComment( self, optionPath, comment ):
     """Function to modify an existing value in the CS.
     """
-    return self.csAPI.modifyValue(optionPath,newValue)
+    return self.csAPI.setOptionComment( optionPath, comment )
+
+  #############################################################################
+  def csModifyValue( self, optionPath, newValue ):
+    """Function to modify an existing value in the CS.
+    """
+    return self.csAPI.modifyValue( optionPath, newValue )
 
   #############################################################################
   def csRegisterUser( self, username, properties ):
@@ -1001,36 +1007,36 @@ class DiracAdmin:
     return self.csAPI.syncUsersWithCFG( usersCFG )
 
   #############################################################################
-  def csCommitChanges(self,sortUsers=True):
+  def csCommitChanges( self, sortUsers = True ):
     """Commit the changes in the CS
     """
-    return self.csAPI.commitChanges(sortUsers=False)
+    return self.csAPI.commitChanges( sortUsers = False )
 
   #############################################################################
-  def sendMail(self,address,subject,body,fromAddress=None,localAttempt=True):
+  def sendMail( self, address, subject, body, fromAddress = None, localAttempt = True ):
     """ Send mail to specified address with body.
     """
     notification = NotificationClient()
-    return notification.sendMail(address,subject,body,fromAddress,localAttempt)
+    return notification.sendMail( address, subject, body, fromAddress, localAttempt )
 
   #############################################################################
-  def sendSMS(self,userName,body,fromAddress=None):
+  def sendSMS( self, userName, body, fromAddress = None ):
     """ Send mail to specified address with body.
     """
-    if len(body)>160:
-      return S_ERROR('Exceeded maximum SMS length of 160 characters')
+    if len( body ) > 160:
+      return S_ERROR( 'Exceeded maximum SMS length of 160 characters' )
     notification = NotificationClient()
-    return notification.sendSMS(userName,body,fromAddress)
+    return notification.sendSMS( userName, body, fromAddress )
 
   #############################################################################
-  def _getCurrentUser(self):
+  def _getCurrentUser( self ):
     """Simple function to return current DIRAC username.
     """
     self.proxy = Locations.getProxyLocation()
     if not self.proxy:
-      return S_ERROR('No proxy found in local environment')
+      return S_ERROR( 'No proxy found in local environment' )
     else:
-      self.log.verbose('Current proxy is %s' %self.proxy)
+      self.log.verbose( 'Current proxy is %s' % self.proxy )
 
     chain = X509Chain()
     result = chain.loadProxyFromFile( self.proxy )
@@ -1049,65 +1055,65 @@ class DiracAdmin:
     return result
 
   #############################################################################
-  def _promptUser(self,message):
+  def _promptUser( self, message ):
     """Internal function to pretty print an object.
     """
-    self.log.verbose('%s %s' %(message,'[yes/no] : '))
-    response = raw_input('%s %s' %(message,'[yes/no] : '))
-    responses = ['yes','y','n','no']
-    if not response.strip() or response=='\n':
-      self.log.info('Possible responses are: %s' %(string.join(responses,', ')))
-      response = raw_input('%s %s' %(message,'[yes/no] : '))
+    self.log.verbose( '%s %s' % ( message, '[yes/no] : ' ) )
+    response = raw_input( '%s %s' % ( message, '[yes/no] : ' ) )
+    responses = ['yes', 'y', 'n', 'no']
+    if not response.strip() or response == '\n':
+      self.log.info( 'Possible responses are: %s' % ( string.join( responses, ', ' ) ) )
+      response = raw_input( '%s %s' % ( message, '[yes/no] : ' ) )
 
     if not response.strip().lower() in responses:
-      self.log.info('Problem interpreting input "%s", assuming negative response.' %(response))
-      return S_ERROR(response)
+      self.log.info( 'Problem interpreting input "%s", assuming negative response.' % ( response ) )
+      return S_ERROR( response )
 
-    if response.strip().lower()=='y' or response.strip().lower()=='yes':
-      return S_OK(response)
+    if response.strip().lower() == 'y' or response.strip().lower() == 'yes':
+      return S_OK( response )
     else:
-      return S_ERROR(response)
+      return S_ERROR( response )
 
   #############################################################################
-  def getBDIISite(self,site,host=None):
+  def getBDIISite( self, site, host = None ):
     """Get information about site from BDII at host
     """
-    return ldapSite(site, host=host)
+    return ldapSite( site, host = host )
 
   #############################################################################
-  def getBDIICluster(self,ce,host=None):
+  def getBDIICluster( self, ce, host = None ):
     """Get information about ce from BDII at host
     """
-    return ldapCluster(ce, host=host)
+    return ldapCluster( ce, host = host )
 
   #############################################################################
-  def getBDIICE(self,ce,host=None):
+  def getBDIICE( self, ce, host = None ):
     """Get information about ce from BDII at host
     """
-    return ldapCE(ce, host=host)
+    return ldapCE( ce, host = host )
 
   #############################################################################
-  def getBDIIService(self,ce,host=None):
+  def getBDIIService( self, ce, host = None ):
     """Get information about ce from BDII at host
     """
-    return ldapService(ce, host=host)
+    return ldapService( ce, host = host )
 
   #############################################################################
-  def getBDIICEState(self,ce,useVO=vo,host=None):
+  def getBDIICEState( self, ce, useVO = vo, host = None ):
     """Get information about ce state from BDII at host
     """
-    return ldapCEState(ce,useVO,host=host)
+    return ldapCEState( ce, useVO, host = host )
 
   #############################################################################
-  def getBDIICEVOView(self,ce,useVO=vo,host=None):
+  def getBDIICEVOView( self, ce, useVO = vo, host = None ):
     """Get information about ce voview from BDII at host
     """
-    return ldapCEVOView(ce,useVO,host=host)
+    return ldapCEVOView( ce, useVO, host = host )
 
   #############################################################################
-  def getBDIISA(self,site,useVO=vo,host=None):
+  def getBDIISA( self, site, useVO = vo, host = None ):
     """Get information about SA  from BDII at host
     """
-    return ldapSA(site,useVO,host=host)
+    return ldapSA( site, useVO, host = host )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
