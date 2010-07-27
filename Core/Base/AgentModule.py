@@ -134,19 +134,19 @@ class AgentModule:
       raise Exception( 'Can not create %s' % path )
 
   def am_getControlDirectory( self ):
-    return os.path.join( self.__basePath, str( self.am_getOption( 'ControlDirectory', '' ) ) )
+    return os.path.join( self.__basePath, str( self.am_getOption( 'ControlDirectory' ) ) )
 
   def am_getBasePath( self ):
     return self.__basePath
 
   def am_getWorkDirectory( self ):
-    return os.path.join( self.__basePath, str( self.am_getOption( 'WorkDirectory', '' ) ) )
+    return os.path.join( self.__basePath, str( self.am_getOption( 'WorkDirectory' ) ) )
 
   def am_getShifterProxyLocaltion( self ):
-    return os.path.join( self.__basePath, str( self.am_getOption( 'shifterProxyLocation', '' ) ) )
+    return os.path.join( self.__basePath, str( self.am_getOption( 'shifterProxyLocation' ) ) )
 
-  def am_getOption( self, optionName, defaultValue = False ):
-    if not defaultValue:
+  def am_getOption( self, optionName, defaultValue = None ):
+    if defaultValue == None:
       if optionName in self.__configDefaults:
         defaultValue = self.__configDefaults[ optionName ]
     if optionName and optionName[0] == "/":
