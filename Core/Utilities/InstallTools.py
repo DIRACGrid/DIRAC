@@ -795,7 +795,7 @@ def setupSite( scriptCfg, cfg = None ):
   result = getExtensions()
   if not result['OK']:
     return result
-  extensions = result['Value']
+  extensions = [ k.replace( 'DIRAC', '' ) for k in result['Value']]
 
   if diracCfg.getOption( __cfgPath( 'DIRAC', 'Configuration', 'Master' ), False ):
     # This server hosts the Master of the CS
