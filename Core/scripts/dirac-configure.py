@@ -232,7 +232,13 @@ if not os.path.exists(DIRAC.gConfig.diracConfigFilePath):
   configDir = os.path.dirname(DIRAC.gConfig.diracConfigFilePath)
   if not os.path.exists(configDir):
     os.makedirs(configDir)
+    
+  # A.T. csDisabled state drops the CS Server setting, should be restored before dumping  
+  csDisabledFlag = bool(Script.localCfg.csDisabled) 
+  Script.enableCS()    
   DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
+  if csDisabledFlag:
+    Script.disableCS()  
   
 # We need user proxy or server certificate to continue
 if not useServerCert: 
