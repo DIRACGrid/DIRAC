@@ -364,7 +364,7 @@ class MySQL:
     """
     tableDict:
       tableName: { 'Fields' : { 'Field': 'Description' },
-                   'ForeignKeys': {'Field': 'Table' },
+                   'ForeignKeys': {'Field': 'Table.key' },
                    'PrimaryKey': 'Id',
                    'Indexes': { 'Index': [] },
                    'UniqueIndexes': { 'Index': [] },
@@ -381,7 +381,7 @@ class MySQL:
       tableDict: dictionary of dictionary with description of tables to be created.
       Only "Fields" is a mandatory key in the table description.
         "Fields": Dictionary with Field names and description of the fields
-        "ForeignKeys": Dictionary with Field names and name of auxuliary tables.
+        "ForeignKeys": Dictionary with Field names and name of auxiliary tables.
           The auxiliary tables must be defined in tableDict.
         "PrimaryKey": Name of PRIMARY KEY for the table (if exist).
         "Indexes": Dictionary with definition of indexes, the value for each
@@ -404,73 +404,75 @@ class MySQL:
     tableList = tableDict.keys()
     if len( tableList ) == 0:
       return S_OK( 0 )
-
-    auxiliaryTableList = []
-    primaryTableList = []
-
     for table in tableList:
       thisTable = tableDict[table]
       # Check if Table is properly described with a dictionary
       if type( thisTable ) != DictType:
         return S_ERROR( 'Table description is not a dictionary: %s( %s )'
                         % ( type( thisTable ), thisTable ) )
-      # Now check all the tables to determine if:
-      #   - Table is primary (has foreign keys)
+      if not 'Fields' in thisTable:
+        return S_ERROR( 'Missing `Fields` key in `%s` table dictionary' % table )
 
-      if thisTable.has_key( 'ForeignKeys' ):
+    tableCreationList = [[]]
 
-        if not table in primaryTableList:
-          primaryTableList.append( table )
+    auxiliaryTableList = []
+    primaryTableList = []
 
-        thisKeys = thisTable['ForeignKeys']
-        for key in thisKeys:
+    i = 0
+    extracted = True
+    while tableList and extracted:
+      # iterate extracting tables from list if they only depend on 
+      # already extracted tables.
+      extracted = False
+      auxiliaryTableList += tableCreationList[i]
+      i += 1
+      tableCreationList.append( [] )
+      for table in list( tableList ):
+        toBeExtracted = True
+        thisTable = tableDict[table]
+        if 'ForeignKeys' in thisTable:
+          thisKeys = thisTable['ForeignKeys']
+          for key, auxTable in thisKeys.items():
+            forTable = auxTable.split( '.' )[0]
+            forKey = key
+            if forTable != auxTable:
+              forKey = auxTable.split( '.' )[1]
+            if forTable not in auxiliaryTableList:
+              toBeExtracted = False
+              break
+            if not key in thisTable['Fields']:
+              return S_ERROR( 'ForeignKey `%s` -> `%s` not defined in Primary table `%s`.'
+                              % ( key, forKey, table ) )
+            if not forKey in tableDict[forTable]['Fields']:
+              return S_ERROR( 'ForeignKey `%s` -> `%s` not defined in Auxiliary table `%s`.'
+                              % ( key, forKey, forTable ) )
 
-          auxTable = thisKeys[key]
-          if not auxTable in tableList:
-            return S_ERROR( 'Auxiliary table `%s` is not defined.' % auxTable )
+        if toBeExtracted:
+          self.log.info( 'Table %s ready to be created' % table )
+          extracted = True
+          tableList.remove( table )
+          tableCreationList[i].append( table )
 
-          if not auxTable in auxiliaryTableList:
-            auxiliaryTableList.append( auxTable )
+    if tableList:
+      return S_ERROR( 'Recursive Foreign Keys in %s' % ', '.join( tableList ) )
 
-          if not key in tableDict[auxTable]['Fields'].keys():
-            return S_ERROR( 'ForeignKey `%s.%s` not defined in Auxiliary table `%s`.'
-                            % ( table, key, auxTable ) )
-
-        # Check if Table exist
-        retDict = self.__checkTable( table, force = force )
-        if not retDict['OK']:
-          return retDict
-
-    for table in auxiliaryTableList:
-      if table in primaryTableList:
-        return S_ERROR( 'Auxiliary table `%s` can not have ForeignKeys defined.' % table )
-
-    # All tables that are not Primary can be handled as auxiliary (ie have
-    # no dependency with other tables)
-
-    for table in tableList:
-      if not table in primaryTableList:
+    for tableList in tableCreationList:
+      for table in tableList:
         # Check if Table exist
         retDict = self.__checkTable( table, force = force )
         if not retDict['OK']:
           return retDict
 
         thisTable = tableDict[table]
-        # Now create the table
-
         cmdList = []
-        if table in auxiliaryTableList:
-          cmdList.append( '`Key` INT NOT NULL AUTO_INCREMENT' )
-          cmdList.append( 'PRIMARY KEY ( `Key` )' )
-          cmdList.append( 'CONSTRAINT UNIQUE INDEX `Id` (`%s`)' % string.join( thisTable['Fields'], '`, `' ) )
-        elif thisTable.has_key( 'PrimaryKey' ):
+        for field in thisTable['Fields'].keys():
+          cmdList.append( '`%s` %s' % ( field, thisTable['Fields'][field] ) )
+
+        if thisTable.has_key( 'PrimaryKey' ):
           if type( thisTable['PrimaryKey'] ) == types.StringType:
             cmdList.append( 'PRIMARY KEY ( `%s` )' % thisTable['PrimaryKey'] )
           else:
             cmdList.append( 'PRIMARY KEY ( %s )' % ", ".join( [ "`%s`" % str( f ) for f in thisTable['PrimaryKey'] ] ) )
-
-        for field in thisTable['Fields'].keys():
-          cmdList.append( '`%s` %s' % ( field, thisTable['Fields'][field] ) )
 
         if thisTable.has_key( 'Indexes' ):
           indexDict = thisTable['Indexes']
@@ -483,6 +485,18 @@ class MySQL:
           for index in indexDict:
             indexedFields = string.join( indexDict[index], '`, `' )
             cmdList.append( 'UNIQUE INDEX `%s` ( `%s` )' % ( index, indexedFields ) )
+        if 'ForeignKeys' in thisTable:
+          thisKeys = thisTable['ForeignKeys']
+          for key, auxTable in thisKeys.items():
+
+            forTable = auxTable.split( '.' )[0]
+            forKey = key
+            if forTable != auxTable:
+              forKey = auxTable.split( '.' )[1]
+
+            # cmdList.append( '`%s` %s' % ( forTable, tableDict[forTable]['Fields'][forKey] )
+            cmdList.append( 'FOREIGN KEY ( `%s` ) REFERENCES `%s` ( `%s` )'
+                            ' ON DELETE RESTRICT' % ( key, forTable, forKey ) )
 
         if thisTable.has_key( 'Engine' ):
           engine = thisTable['Engine']
@@ -491,143 +505,19 @@ class MySQL:
 
         cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s' % ( 
                table, string.join( cmdList, ',\n' ), engine )
-
+        print cmd
         retDict = self._update( cmd )
         if not retDict['OK']:
           return retDict
-
-    # Now all primary tables can be created
-    for table in primaryTableList:
-      thisTable = tableDict[table]
-
-      cmdList = []
-
-      for field in thisTable['Fields'].keys():
-        cmdList.append( '`%s` %s' % ( field, thisTable['Fields'][field] ) )
-
-      if thisTable.has_key( 'PrimaryKey' ):
-        cmdList.append( 'PRIMARY KEY ( `%s` )' % thisTable['PrimaryKey'] )
-
-      auxTableList = []
-      if thisTable.has_key( 'ForeignKeys' ):
-        # foreign keys only need to be declared once
-        for field in thisTable['ForeignKeys']:
-          auxTable = thisTable['ForeignKeys'][field]
-          if not auxTable in auxTableList:
-            auxTableList.append( auxTable )
-            cmdList.append( '`%s` INT NOT NULL' % auxTable )
-            cmdList.append( 'FOREIGN KEY ( `%s` ) REFERENCES `%s` ( `Key` )'
-                            ' ON DELETE RESTRICT' % ( auxTable, auxTable ) )
-      if thisTable.has_key( 'Indexes' ):
-        indexDict = thisTable['Indexes']
-        for index in indexDict:
-          indexedFields = string.join( indexDict[index], ', ' )
-          cmdList.append( 'INDEX `%s` ( %s )' % ( index, indexedFields ) )
-
-      if thisTable.has_key( 'Engine' ):
-        engine = thisTable['Engine']
-      else:
-        engine = 'InnoDB'
-
-      cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s' % ( 
-             table, string.join( cmdList, ',\n' ), engine )
-
-      retDict = self._update( cmd )
-      if not retDict['OK']:
-        return retDict
+        self.log.info( 'Table %s created' % table )
 
     return S_OK()
-
-
-    # Now start to create tables
-    # First Auxiliary Tables
-
-
-    # Then PrimaryTables
-
-
-    for field in thisTable:
-      thisField = thisTable[field]
-        # If the Field is a reference to an auxiliary Table
-
-    fieldList = []
-    auxTableDict = {}
-
-    # Check list of requested fields
-    for field in fieldDict:
-      fieldDesc = fieldDict[field]
-      if type( fieldDesc ) == DictType:
-        # the field is kept on an auxiliary Table
-        try:
-          table = fieldDesc['Table']
-          description = fieldDesc['Description']
-        except Exception, v:
-          return S_ERROR( 'Wrong field Dictionary: %s' % v )
-        if table not in auxTableDict:
-          # add new auxiliary Table if it does not exist
-          auxTableDict[table] = { }
-
-        # add new field to existing auxiliary Table
-        auxTableDict[table][field] = description
-      else:
-        fieldList.append( '`%s` %s' % ( field, fieldDesc ) )
-
-    # create auxiliary tables
-    for auxTable in auxTableDict:
-      auxFields = auxTableDict[ auxTable ]
-      auxFields[ 'Key' ] = 'INT NOT NULL AUTO_INCREMENT'
-      auxKeys = [ 'Key' ]
-      retDict = self._createTable( auxTable, auxFields, auxKeys, [], force = force )
-      if not retDict['OK']:
-        return retDict
-      # Add now fields for the foreign keys.
-      fieldList.append( '`%sKey` INT NOT NULL' % auxTable )
-
-    # Now create the main table
-
-    # String with list of fields to create
-    cmdFields = string.join( fieldList, ', ' )
-    cmdForeign = ''
-    cmdKeys = ''
-    cmdIndex = ''
-
-    for auxTable in auxTableDict:
-      cmdForeign += ', FOREIGN KEY ( `%sKey` )' % auxTable
-      cmdForeign += ' REFERENCES `%s` ( `Key` ) ON DELETE RESTRICT' % auxTable
-
-    if len( keyList ) > 0:
-      cmdKeys = ', PRIMARY KEY ( `%s` )' % keyList[0]
-
-    for index in indexDict:
-      indexedFields = string.join( indexDict[index], ', ' )
-      cmdIndex += ', INDEX `%s` ( %s )' % ( index, indexedFields )
-
-    cmd = 'CREATE TABLE `%s` ( ' % tableName
-    if cmdFields:
-      cmd += cmdFields
-    else:
-      return S_ERROR( 'No fields especified' )
-
-    if cmdIndex:
-      cmd += '%s' % cmdIndex
-
-    if cmdForeign:
-      cmd += '%s' % cmdForeign
-
-    if cmdKeys:
-      cmd += '%s' % cmdKeys
-
-    cmd += ' ) ENGINE=%s' % engine
-
-
-    return S_OK()
-
 
   def _insert( self, tableName, inFields = [], inValues = [], conn = False ):
     """
     Insert a new row in "tableName" assigning the values "inValues" to the
     fields "inFields".
-    String type values will be appropiatelly escaped.
+    String type values will be appropriately escaped.
     """
     quotedInFields = []
     for field in inFields:
