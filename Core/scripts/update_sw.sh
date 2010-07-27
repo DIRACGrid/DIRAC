@@ -42,7 +42,7 @@ fi
 # The binary platform as evaluated by the dirac-platform script 
 DIRACARCH=$3
 if [ -z "$DIRACARCH" ]; then
-  DIRACARCH=`dirac-platform`
+  DIRACARCH=`dirac-platform | grep -v UTC`
 fi  
 #
 # The version of the python interpreter
