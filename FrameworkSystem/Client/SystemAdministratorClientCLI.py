@@ -57,15 +57,15 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
   def do_show( self, args ):
     """ 
         Show list of components
-    
-        usage:
         
-          show software
-          show installed 
-          show setup 
-          show status
-          show database
-          show mysql
+        usage:
+    
+          show software      - show components for which software is available
+          show installed     - show components installed in the host
+          show setup         - show components set up in the host
+          show status        - show status of the installed components
+          show database      - show the status of the databases
+          show mysql         - show the status of the MySQL server
           show log <system> <service|agent>
           show info    - show version of software and setup
     """
@@ -314,15 +314,13 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
           restart mysql
     """
     argss = args.split()
-    if len( argss ) < 2:
-      print self.do_restart.__doc__
-      return
     option = argss[0]
     del argss[0]
     if option != 'mysql':
-      if len( argss ) < 1:
-        print self.do_restart.__doc__
-        return
+      if option != "*":
+        if len( argss ) < 1:
+          print self.do_restart.__doc__
+          return
       system = option
       if system != '*':
         component = argss[0]
@@ -375,7 +373,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       print "Not yet implemented"
 
   def do_update( self, args ):
-    """ Update the software on the target host
+    """ Update the software on the target host to a given version
     
         usage:
           
