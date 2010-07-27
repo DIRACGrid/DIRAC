@@ -4,16 +4,14 @@
 
 __RCSID__ = "$Id:  $"
 
+import copy
+import threading
+
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 
 from DIRAC.ResourceStatusSystem.Utilities.CS import *
-
-import copy
-import threading
-
-#import datetime 
 
 class Publisher:
   """ 
@@ -74,6 +72,8 @@ class Publisher:
     
     self.lockObj = threading.RLock()
 
+    self.infoForPanel_res = {}
+
 #############################################################################
 
   def getInfo(self, granularity, name, useNewRes = False):
@@ -96,6 +96,8 @@ class Publisher:
     if granularity not in ValidRes:
       raise InvalidRes, where(self, self.getInfo)
 
+    self.infoForPanel_res = {}
+
     resType = None
     if granularity in ('Resource', 'Resources'):
       try:
@@ -112,12 +114,9 @@ class Publisher:
     
     infoToGet_res = {}
     
-#    a = datetime.datetime.now()
-
     recordsList = []
 
     for panel in infoToGet.keys():
-#      ptimeStart = datetime.datetime.now()
       
       (granularityForPanel, nameForPanel) = self.__getNameForPanel(granularity, name, panel)
       
@@ -147,13 +146,10 @@ class Publisher:
       #take info that goes into the panel
       infoForPanel = infoToGet[panel]
       
-      self.infoForPanel_res = {}
-      
       for info in infoForPanel:
         
         self.threadPool.generateJobAndQueueIt(self.getInfoForPanel, 
                                               args = (info, granularityForPanel, nameForPanel) )
-
 
       self.threadPool.processAllResults()
 
@@ -169,35 +165,17 @@ class Publisher:
         
         infosForPolicy[policy] = self.infoForPanel_res[policy]['infos']
         
-#      completeInfoForPanel_res = {'Res': nameStatus_res, 'InfoForPanel': self.infoForPanel_res}
-      
-#      ptimeStop = datetime.datetime.now()
-
-#      print "seconds for Panel ", panel, (ptimeStop - ptimeStart).seconds, (ptimeStop - ptimeStart).microseconds
-      
-#      infoToGet_res[panel] = completeInfoForPanel_res
       infoToGet_res['TotalRecords'] = len(recordsList)
       infoToGet_res['ParameterNames'] = paramNames
-      # Return all the records if maxItems == 0 or the specified number otherwise
-#      if maxItems:
-#        infoToGet_res['Records'] = recordsList[startItem:startItem+maxItems]
-#      else:
       infoToGet_res['Records'] = recordsList
   
       infoToGet_res['Extras'] = infosForPolicy
 
-    
-#    b = datetime.datetime.now()
-    
-#    print "(b-a).seconds total", (b-a).seconds, (b-a).microseconds
-    
     return infoToGet_res
 
 #############################################################################
 
   def getInfoForPanel(self, info, granularityForPanel, nameForPanel):
-    
-#    print "starting thread for ", info, granularityForPanel, nameForPanel
 
     #get single RSS policy results
     policyResToGet = info.keys()[0]
@@ -237,10 +215,6 @@ class Publisher:
     finally:
       self.lockObj.release()
 
-#    print "leaving thread for ", info, granularityForPanel, nameForPanel
-    
-    
-
 #############################################################################
   
   def _getStatus(self, name, panel):
@@ -279,7 +253,7 @@ class Publisher:
       info_bit_got = self._getInfoFromRSSDB(name, what)
     else:
       if isinstance(what, dict):
-        command = what['Command']
+        command = what['CommandIn']
         extraArgs = what['args']
       else:
         command = what
@@ -341,7 +315,11 @@ class Publisher:
       gran = 'Service'
       paramsL.insert(0, 'ServiceName')
       serviceName = name
-    elif what == 'OtherServices_Panel':
+    elif what == 'Service_VO-BOX_Panel':
+      gran = 'Services'
+      paramsL.insert(0, 'ServiceName')
+      serviceName = name
+    elif what == 'Service_VOMS_Panel':
       gran = 'Services'
       paramsL.insert(0, 'ServiceName')
       serviceName = name
@@ -380,6 +358,12 @@ class Publisher:
       elif panel == 'OtherServices_Panel':
         granularity = 'Service'
         name = 'OtherS@' + name
+      elif panel == 'Service_VOMS_Panel':
+        granularity = 'Service'
+        name = 'VOMS@' + name
+      elif panel == 'Service_VO-BOX_Panel':
+        granularity = 'Service'
+        name = 'VO-BOX@' + name
 #      else:
 #        granularity = granularity
 #        name = name

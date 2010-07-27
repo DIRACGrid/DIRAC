@@ -48,18 +48,19 @@ class PublisherSuccess(UtilitiesTestCase):
     igR = [{'Panels': {'Service_Storage_Panel': 
                         [ {'OnStorageServicePropagation_SE': {'RSS': 'StorageElementsOfSite'}}, 
                           {'OnStorageServicePropagation_Res': {'RSS': 'ResOfStorService'}}], 
-                       'OtherServices_Panel': [], 
+                       'Service_VOMS_Panel': [], 
+                       'Service_VO-BOX_Panel': [], 
                        'Site_Panel': [{'GGUSTickets': 
-                                        [{'WebLink': {'args': None, 'Command': 'GGUS_Link'}}, 
-                                         {'TextInfo': {'args': None, 'Command': 'GGUS_Info'}}]}, 
-                                         {'DT_Scheduled': [{'WebLink': {'args': None, 'Command': 'DT_Link'}}]}, 
+                                        [{'WebLink': {'args': None, 'CommandIn': 'GGUS_Link'}}, 
+                                         {'TextInfo': {'args': None, 'CommandIn': 'GGUS_Info'}}]}, 
+                                         {'DT_Scheduled': [{'WebLink': {'args': None, 'CommandIn': 'DT_Link'}}]}, 
                                          {'OnSitePropagation': {'RSS': 'ServiceOfSite'}}], 
                         'Service_Computing_Panel': [{'OnComputingServicePropagation': 
                                                                       {'RSS': 'ResOfCompService'}}, 
-                                                                      {'JobsEfficiencySimple': [{'FillChart': {'args': ('Job', 'CumulativeNumberOfJobs', {'hours': 24, 'Format': 'LastHours'}, 'FinalMajorStatus', None), 'Command': 'DiracAccountingGraph'}}, 
-                                                                                                {'PieChart': {'args': ('Job', 'TotalNumberOfJobs', {'hours': 24, 'Format': 'LastHours'}, 'JobType', {'FinalMajorStatus': 'Failed'}), 'Command': 'DiracAccountingGraph'}}]}, 
-                                                                       {'PilotsEfficiencySimple_Service': [{'FillChart': {'args': ('Pilot', 'CumulativeNumberOfPilots', {'hours': 24, 'Format': 'LastHours'}, 'GridStatus', None), 'Command': 'DiracAccountingGraph'}}, 
-                                                                                                           {'PieChart': {'args': ('Pilot', 'TotalNumberOfPilots', {'hours': 24, 'Format': 'LastHours'}, 'GridCE', None), 'Command': 'DiracAccountingGraph'}}]}]}}]
+                                                                      {'JobsEfficiencySimple': [{'FillChart': {'args': ('Job', 'CumulativeNumberOfJobs', {'hours': 24, 'Format': 'LastHours'}, 'FinalMajorStatus', None), 'CommandIn': 'DiracAccountingGraph'}}, 
+                                                                                                {'PieChart': {'args': ('Job', 'TotalNumberOfJobs', {'hours': 24, 'Format': 'LastHours'}, 'JobType', {'FinalMajorStatus': 'Failed'}), 'CommandIn': 'DiracAccountingGraph'}}]}, 
+                                                                       {'PilotsEfficiencySimple_Service': [{'FillChart': {'args': ('Pilot', 'CumulativeNumberOfPilots', {'hours': 24, 'Format': 'LastHours'}, 'GridStatus', None), 'CommandIn': 'DiracAccountingGraph'}}, 
+                                                                                                           {'PieChart': {'args': ('Pilot', 'TotalNumberOfPilots', {'hours': 24, 'Format': 'LastHours'}, 'GridCE', None), 'CommandIn': 'DiracAccountingGraph'}}]}]}}]
 
     mockIG.getInfoToApply.return_value = igR 
     
@@ -67,7 +68,7 @@ class PublisherSuccess(UtilitiesTestCase):
     
     for record in res['Records']:
       self.assert_(record[0] in ('ResultsForResource', 'SpecificInformation'))
-      self.assert_(record[1] in ('Service_Storage', 'OtherServices', 
+      self.assert_(record[1] in ('Service_Storage', 'Service_VOMS', 'Service_VO-BOX',  
                                  'Site', 'Service_Computing'))
       self.assert_(record[2] is not None)
       if record[0] == 'SpecificInformation':
@@ -96,11 +97,11 @@ class PublisherSuccess(UtilitiesTestCase):
 
 
     igR = [{'Panels':  {'Resource_Panel': [
-                               {'DT_Scheduled': [{'WebLink': {'args': None, 'Command': 'DT_Link'}}]}, 
+                               {'DT_Scheduled': [{'WebLink': {'args': None, 'CommandIn': 'DT_Link'}}]}, 
                                {'SAM_CE': [{'SAM': {'args': (None, ['LHCb CE-lhcb-availability', 'LHCb CE-lhcb-install', 'LHCb CE-lhcb-job-Boole', 'LHCb CE-lhcb-job-Brunel', 'LHCb CE-lhcb-job-DaVinci', 'LHCb CE-lhcb-job-Gauss', 'LHCb CE-lhcb-os', 'LHCb CE-lhcb-queues', 'LHCb CE-lhcb-queues', 'bi', 'csh', 'js', 'gfal', 'swdir', 'voms']), 
-                                                    'Command': 'SAM_Tests'}}]}, 
+                                                    'CommandIn': 'SAM_Tests'}}]}, 
                                {'PilotsEfficiencySimple_Resource': [{'FillChart': {'args': ('Pilot', 'CumulativeNumberOfPilots', {'hours': 24, 'Format': 'LastHours'}, 'GridStatus', None), 
-                                                                                  'Command': 'DiracAccountingGraph'}}]}, 
+                                                                                  'CommandIn': 'DiracAccountingGraph'}}]}, 
                        ]}}]
     
     mockIG.getInfoToApply.return_value = igR
@@ -138,8 +139,8 @@ class PublisherSuccess(UtilitiesTestCase):
 
     igR = [{'Panels':  {'Resource_Panel': [
                                {'SAM_LFC_L': [{'SAM': {'args': (None, ['lfcstreams', 'lfclr', 'lfcls', 'lfcping']), 
-                                                       'Command': 'SAM_Tests'}}]}, 
-                               {'DT_Scheduled': [{'WebLink': {'args': None, 'Command': 'DT_Link'}}]}, 
+                                                       'CommandIn': 'SAM_Tests'}}]}, 
+                               {'DT_Scheduled': [{'WebLink': {'args': None, 'CommandIn': 'DT_Link'}}]}, 
                        ]}}]
     
     mockIG.getInfoToApply.return_value = igR
@@ -179,9 +180,9 @@ class PublisherSuccess(UtilitiesTestCase):
     igR = [{'Panels': {'SE_Panel': [
                           {'OnStorageElementPropagation': {'RSS': 'ResOfStorEl'}}, 
                           {'TransferQuality': [{'FillChart': {'args': ('DataOperation', 'Quality', {'hours': 24, 'Format': 'LastHours'}, 'Channel', {'OperationType': 'putAndRegister'}), 
-                                                              'Command': 'DiracAccountingGraph'}}]}, 
-                          {'SEOccupancy': [{'WebLink': {'args': None, 'Command': 'SLS_Link'}}]}, 
-                          {'SEQueuedTransfers': [{'WebLink': {'args': None, 'Command': 'SLS_Link'}}]}]}}]
+                                                              'CommandIn': 'DiracAccountingGraph'}}]}, 
+                          {'SEOccupancy': [{'WebLink': {'args': None, 'CommandIn': 'SLS_Link'}}]}, 
+                          {'SEQueuedTransfers': [{'WebLink': {'args': None, 'CommandIn': 'SLS_Link'}}]}]}}]
     
     mockIG.getInfoToApply.return_value = igR
     

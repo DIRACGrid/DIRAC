@@ -138,8 +138,8 @@ class SLSServiceInfo_Command(Command):
       #know the SLS name of the SE
       SLSName = _getCastorSESLSName(self.args[1])
     elif self.args[0] == 'Service':
-      #know the SLS name of the VO BOX - TBD
-      SLSName = _getServiceSLSName(self.args[1])
+      #know the SLS name of the VO BOX
+      SLSName = _getServiceSLSName(self.args[1], self.args[2])
     else:
       raise InvalidRes, where(self, self.doCommand)
     
@@ -185,7 +185,7 @@ class SLSLink_Command(Command):
       SLSName = _getSESLSName(self.args[1])
     elif self.args[0] == 'Service':
       #know the SLS name of the VO BOX
-      SLSName = _getServiceSLSName(self.args[1])
+      SLSName = _getServiceSLSName(self.args[1], self.args[2])
     else:
       raise InvalidRes, where(self, self.doCommand)
     
