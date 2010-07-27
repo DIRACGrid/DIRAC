@@ -242,7 +242,7 @@ class CachedPlot_Command(Command):
       gLogger.exception("Exception when calling ResourceStatusClient for %s" %(name))
       return {'Result':'Unknown'}
     
-    return {'Result':res[0]}
+    return {'Result':eval(res[0])}
 
   doCommand.__doc__ = Command.doCommand.__doc__ + doCommand.__doc__
     
