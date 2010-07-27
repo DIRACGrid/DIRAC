@@ -210,80 +210,80 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     
   def test_getMonitoredsList(self):
     for g in ValidRes:
-      res = self.rsDB.getMonitoredsList(g)
+      res = self.rsDB.getMonitoredsList(g, countries = 'a')
       self.assertEqual(res, [])
-      res = self.rsDB.getMonitoredsList(g, paramsList = ['SiteName', 'Status'])
+      res = self.rsDB.getMonitoredsList(g, paramsList = ['SiteName', 'Status'], countries = 'a')
       self.assertEqual(res, [])
-      res = self.rsDB.getMonitoredsList(g, status = ['Active'])
+      res = self.rsDB.getMonitoredsList(g, status = ['Active'], countries = 'a')
       self.assertEqual(res, [])
-      res = self.rsDB.getMonitoredsList(g, siteName = ['xx', 'ss'])
+      res = self.rsDB.getMonitoredsList(g, siteName = ['xx', 'ss'], countries = 'a')
       self.assertEqual(res, [])
       
-    res = self.rsDB.getMonitoredsList('Site', siteType = ['XXX'])
+    res = self.rsDB.getMonitoredsList('Site', siteType = ['XXX'], countries = 'a')
     self.assertEqual(res, [])
-    res = self.rsDB.getMonitoredsList('Site', paramsList = ['SiteName', 'Status'], status = ['Active'], siteType = ['XXX'])
+    res = self.rsDB.getMonitoredsList('Site', paramsList = ['SiteName', 'Status'], status = ['Active'], siteType = ['XXX'], countries = 'a')
     self.assertEqual(res, [])
 
-    res = self.rsDB.getMonitoredsList('Service', serviceName = ['CNAF', 'Ferrara'])
+    res = self.rsDB.getMonitoredsList('Service', serviceName = ['CNAF', 'Ferrara'], countries = 'a')
     self.assertEqual(res, [])
-    res = self.rsDB.getMonitoredsList('Service', serviceType = ['XXX'])
+    res = self.rsDB.getMonitoredsList('Service', serviceType = ['XXX'], countries = 'a')
     self.assertEqual(res, [])
-    res = self.rsDB.getMonitoredsList('Service', paramsList = ['ServiceName', 'Status'], status = ['Active'], serviceType = ['XXX'])
+    res = self.rsDB.getMonitoredsList('Service', paramsList = ['ServiceName', 'Status'], status = ['Active'], serviceType = ['XXX'], countries = 'a')
     self.assertEqual(res, [])
     
-    res = self.rsDB.getMonitoredsList('Resource', resourceName = ['CNAF', 'Ferrara'])
+    res = self.rsDB.getMonitoredsList('Resource', resourceName = ['CNAF', 'Ferrara'], countries = 'a')
     self.assertEqual(res, [])
-    res = self.rsDB.getMonitoredsList('Service', resourceType = ['XXX'])
+    res = self.rsDB.getMonitoredsList('Service', resourceType = ['XXX'], countries = 'a')
     self.assertEqual(res, [])
-    res = self.rsDB.getMonitoredsList('Resource', paramsList = ['ResourceName', 'Status'], siteName = ['xx', 'ss'], status = ['xx'], resourceType = ['xx', 'cc'])
+    res = self.rsDB.getMonitoredsList('Resource', paramsList = ['ResourceName', 'Status'], siteName = ['xx', 'ss'], status = ['xx'], resourceType = ['xx', 'cc'], countries = 'a')
     self.assertEqual(res, [])
 
-    res = self.rsDB.getMonitoredsList('StorageElement', storageElementName = ['CNAF', 'Ferrara'])
+    res = self.rsDB.getMonitoredsList('StorageElement', storageElementName = ['CNAF', 'Ferrara'], countries = 'a')
     self.assertEqual(res, [])
-    res = self.rsDB.getMonitoredsList('StorageElement', paramsList = ['ResourceName', 'Status'], storageElementName = ['xx', 'ss'], status = ['xx'], resourceType = ['xx', 'cc'])
+    res = self.rsDB.getMonitoredsList('StorageElement', paramsList = ['ResourceName', 'Status'], storageElementName = ['xx', 'ss'], status = ['xx'], resourceType = ['xx', 'cc'], countries = 'a')
     self.assertEqual(res, [])
 
 
   def test_getMonitoredsStatusWeb(self):
     for g in ValidRes:
-      res = self.rsDB.getMonitoredsStatusWeb(g, {}, [], 0, 500)
+      res = self.rsDB.getMonitoredsStatusWeb(g, {'Countries':'a'}, [], 0, 500)
       self.assertEqual(res['Records'], [])
-      res = self.rsDB.getMonitoredsStatusWeb(g, {'Status':['XX', 'zz']}, [], 0, 500)
+      res = self.rsDB.getMonitoredsStatusWeb(g, {'Status':['XX', 'zz'], 'Countries':'a'}, [], 0, 500)
       self.assertEqual(res['Records'], [])
 
-    res = self.rsDB.getMonitoredsStatusWeb('Site', {'ExpandSiteHistory':'XX'}, [], 0, 500)
+    res = self.rsDB.getMonitoredsStatusWeb('Site', {'ExpandSiteHistory':'XX', 'Countries':'a'}, [], 0, 500)
     self.assertEqual(res['Records'], [])
-    res = self.rsDB.getMonitoredsStatusWeb('Site', {'SiteName':['XX', 'zz']}, [], 0, 500)
+    res = self.rsDB.getMonitoredsStatusWeb('Site', {'SiteName':['XX', 'zz'], 'Countries':'a'}, [], 0, 500)
     self.assertEqual(res['Records'], [])
-    res = self.rsDB.getMonitoredsStatusWeb('Site', {'SiteType':['XX', 'zz']}, [], 0, 500)
+    res = self.rsDB.getMonitoredsStatusWeb('Site', {'SiteType':['XX', 'zz'], 'Countries':'a'}, [], 0, 500)
     self.assertEqual(res['Records'], [])
-    res = self.rsDB.getMonitoredsStatusWeb('Site', {'SiteName':['XX', 'zz'], 'Status':['XX', 'zz']}, [], 0, 500)
+    res = self.rsDB.getMonitoredsStatusWeb('Site', {'SiteName':['XX', 'zz'], 'Status':['XX', 'zz'], 'Countries':'a'}, [], 0, 500)
     self.assertEqual(res['Records'], [])
-    res = self.rsDB.getMonitoredsStatusWeb('Site', {'SiteName':['XX', 'zz'], 'SiteType':['XX', 'zz'], 'Status':['XX', 'zz']}, [], 0, 500)
-    self.assertEqual(res['Records'], [])
-
-    res = self.rsDB.getMonitoredsStatusWeb('Service', {'ExpandServiceHistory':'XX'}, [], 0, 500)
-    self.assertEqual(res['Records'], [])
-    res = self.rsDB.getMonitoredsStatusWeb('Service', {'ServiceName':['XX', 'zz']}, [], 0, 500)
-    self.assertEqual(res['Records'], [])
-    res = self.rsDB.getMonitoredsStatusWeb('Service', {'ServiceType':['XX', 'zz']}, [], 0, 500)
-    self.assertEqual(res['Records'], [])
-    res = self.rsDB.getMonitoredsStatusWeb('Service', {'ServiceName':['XX', 'zz'], 'Status':['XX', 'zz']}, [], 0, 500)
-    self.assertEqual(res['Records'], [])
-    res = self.rsDB.getMonitoredsStatusWeb('Service', {'ServiceName':['XX', 'zz'], 'ServiceType':['XX', 'zz'], 'Status':['XX', 'zz']}, [], 0, 500)
+    res = self.rsDB.getMonitoredsStatusWeb('Site', {'SiteName':['XX', 'zz'], 'SiteType':['XX', 'zz'], 'Status':['XX', 'zz'], 'Countries':'a'}, [], 0, 500)
     self.assertEqual(res['Records'], [])
 
-    res = self.rsDB.getMonitoredsStatusWeb('Resource', {'ExpandResourceHistory':'XX'}, [], 0, 500)
+    res = self.rsDB.getMonitoredsStatusWeb('Service', {'ExpandServiceHistory':'XX', 'Countries':'a'}, [], 0, 500)
     self.assertEqual(res['Records'], [])
-    res = self.rsDB.getMonitoredsStatusWeb('Resource', {'ResourceName':['XX', 'zz']}, [], 0, 500)
+    res = self.rsDB.getMonitoredsStatusWeb('Service', {'ServiceName':['XX', 'zz'], 'Countries':'a'}, [], 0, 500)
     self.assertEqual(res['Records'], [])
-    res = self.rsDB.getMonitoredsStatusWeb('Resource', {'SiteName':['XX', 'zz']}, [], 0, 500)
+    res = self.rsDB.getMonitoredsStatusWeb('Service', {'ServiceType':['XX', 'zz'], 'Countries':'a'}, [], 0, 500)
     self.assertEqual(res['Records'], [])
-    res = self.rsDB.getMonitoredsStatusWeb('Resource', {'ResourceType':['XX', 'zz']}, [], 0, 500)
+    res = self.rsDB.getMonitoredsStatusWeb('Service', {'ServiceName':['XX', 'zz'], 'Status':['XX', 'zz'], 'Countries':'a'}, [], 0, 500)
     self.assertEqual(res['Records'], [])
-    res = self.rsDB.getMonitoredsStatusWeb('Resource', {'ResourceName':['XX', 'zz'], 'Status':['XX', 'zz']}, [], 0, 500)
+    res = self.rsDB.getMonitoredsStatusWeb('Service', {'ServiceName':['XX', 'zz'], 'ServiceType':['XX', 'zz'], 'Status':['XX', 'zz'], 'Countries':'a'}, [], 0, 500)
     self.assertEqual(res['Records'], [])
-    res = self.rsDB.getMonitoredsStatusWeb('Resource', {'ResourceName':['XX', 'zz'], 'SiteName':['XX', 'zz'], 'Status':['XX', 'zz'], 'ResourceType':['xx']}, [], 0, 500)
+
+    res = self.rsDB.getMonitoredsStatusWeb('Resource', {'ExpandResourceHistory':'XX', 'Countries':'a'}, [], 0, 500)
+    self.assertEqual(res['Records'], [])
+    res = self.rsDB.getMonitoredsStatusWeb('Resource', {'ResourceName':['XX', 'zz'], 'Countries':'a'}, [], 0, 500)
+    self.assertEqual(res['Records'], [])
+    res = self.rsDB.getMonitoredsStatusWeb('Resource', {'SiteName':['XX', 'zz'], 'Countries':'a'}, [], 0, 500)
+    self.assertEqual(res['Records'], [])
+    res = self.rsDB.getMonitoredsStatusWeb('Resource', {'ResourceType':['XX', 'zz'], 'Countries':'a'}, [], 0, 500)
+    self.assertEqual(res['Records'], [])
+    res = self.rsDB.getMonitoredsStatusWeb('Resource', {'ResourceName':['XX', 'zz'], 'Status':['XX', 'zz'], 'Countries':'a'}, [], 0, 500)
+    self.assertEqual(res['Records'], [])
+    res = self.rsDB.getMonitoredsStatusWeb('Resource', {'ResourceName':['XX', 'zz'], 'SiteName':['XX', 'zz'], 'Status':['XX', 'zz'], 'ResourceType':['xx'], 'Countries':'a'}, [], 0, 500)
     self.assertEqual(res['Records'], [])
    
   def test_getMonitoredsHistory(self):
@@ -348,6 +348,11 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
   def test_addType(self):
     for g in ('Site', 'Service', 'Resource'):
       res = self.rsDB.addType(g, 'CE', 'test desc')
+      self.assertEqual(res, None)
+
+  def test_getCountries(self):
+    for g in ValidRes:
+      res = self.rsDB.getCountries(g)
       self.assertEqual(res, None)
 
   def test_unique(self):
@@ -440,10 +445,10 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
 #        res = self.rsDB.setMonitoredToBeChecked(monitored, granularity, 'aaa.ch')
 #        self.assertEqual(res, None)
 
-  def test_rankRes(self):
-    for granularity in ValidRes:
-      res = self.rsDB.rankRes(granularity, 30)
-      self.assertEqual(res, {'WeightedRank':[], 'ActivesRank':[], 'ProbingsRank':[], 'BadsRank':[]})
+#  def test_rankRes(self):
+#    for granularity in ValidRes:
+#      res = self.rsDB.rankRes(granularity, 30)
+#      self.assertEqual(res, {'WeightedRank':[], 'ActivesRank':[], 'ProbingsRank':[], 'BadsRank':[]})
 
 #  def test_syncWithCS(self):
 #    res = self.rsDB.syncWithCS()
@@ -495,6 +500,7 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
     self.assertRaises(RSSDBException, self.rsDB.getServiceStats, 'xxx')
     self.assertRaises(RSSDBException, self.rsDB.getResourceStats, 'Site', 'xxx')
     self.assertRaises(RSSDBException, self.rsDB.getStorageElementsStats, 'Site', 'xxx')
+    self.assertRaises(RSSDBException, self.rsDB.getCountries, 'Site')
 
     for g in ['Site', 'Service', 'Resource']:
       self.assertRaises(RSSDBException, self.rsDB.getTypesList, g) 

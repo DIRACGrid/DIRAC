@@ -1292,7 +1292,6 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
-  #ok
   types_getStatusList = []
   def export_getStatusList(self):
     """
@@ -1311,6 +1310,29 @@ class ResourceStatusHandler(RequestHandler):
       return S_OK(res)
     except Exception:
       errorStr = where(self, self.export_getStatusList)
+      gLogger.exception(errorStr)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  types_getCountries = [StringType]
+  def export_getCountries(self, countries):
+    """
+    Get countries list from the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getCountries`
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getCountries: Attempting to get countries list")
+      try:
+        res = rsDB.getCountries(countries)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getCountries: got countries list")
+      return S_OK(res)
+    except Exception:
+      errorStr = where(self, self.export_getCountries)
       gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 

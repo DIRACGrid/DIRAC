@@ -238,6 +238,9 @@ class ResourceStatusDB:
   def removeStatus(self, status):
     pass
 
+  def getCountries(self, countries):
+    return (('it', ), ('ch', ))
+
   def unique(self, table, ID):
     pass
 

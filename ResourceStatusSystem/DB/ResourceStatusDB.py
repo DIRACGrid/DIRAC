@@ -115,9 +115,9 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def getMonitoredsList(self, granularity, paramsList = None, siteName = None, 
-                        serviceName = None, resourceName = None, storageElementName = None, 
-                        status = None, siteType = None, resourceType = None, serviceType = None):
+  def getMonitoredsList(self, granularity, paramsList = None, siteName = None, serviceName = None, 
+                        resourceName = None, storageElementName = None, status = None, 
+                        siteType = None, resourceType = None, serviceType = None, countries = None):
     """ 
     Get Present Sites/Services/Resources/StorageElements lists. 
     
@@ -140,6 +140,9 @@ class ResourceStatusDB:
       If not given, fetch all.
       
       :attr:`resourceType`: a string or a list representing the resource type.
+      If not given, fetch all.
+      
+      :attr:`countries`: a string or a list representing the countries extensions.
       If not given, fetch all.
       
       See :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils` for these parameters.
@@ -278,6 +281,16 @@ class ResourceStatusDB:
           resourceType = [resourceType]
       resourceType = ','.join(['"'+x.strip()+'"' for x in resourceType])
 
+    #countries
+    if (countries == None or countries == []):
+      countries = self.getCountries(granularity)
+    else:
+      if type(countries) is not type([]):
+        countries = [countries]
+    str = ' OR SiteName LIKE '
+    countries = str.join(['"%.'+x.strip()+'"' for x in countries])
+
+
     #storageElementType
 #    if 'StorageElementType' in getInfo:
 #      if (storageElementType == None or storageElementType == []):
@@ -304,17 +317,18 @@ class ResourceStatusDB:
       if storageElementName != [] and storageElementName != None and storageElementName is not None and storageElementName != '':
         req = req + " StorageElementName IN (%s) AND" %(storageElementName)
     #status    
-    req = req + " Status in (%s)" % (status)
+    req = req + " Status IN (%s)" % (status)
     #types
     if 'SiteType' in getInfo:
-      req = req + " AND SiteType in (%s)" % (siteType)
+      req = req + " AND SiteType IN (%s)" % (siteType)
     if 'ServiceType' in getInfo:
-      req = req + " AND ServiceType in (%s)" % (serviceType)
+      req = req + " AND ServiceType IN (%s)" % (serviceType)
     if 'ResourceType' in getInfo:
       req = req + " AND ResourceType IN (%s)" % (resourceType)
 #    if 'StorageElementType' in getInfo:
 #      req = req + " WHERE StorageElementName LIKE \'%" + "%s\'" %(storageElementType)
-
+    req = req + " AND (SiteName LIKE %s)" % (countries)
+    
     resQuery = self.db._query(req)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.getMonitoredsList)+resQuery['Message']
@@ -454,6 +468,13 @@ class ResourceStatusDB:
         resourceType_select = [resourceType_select]
       del selectDict['ResourceType']
     
+    #Countries
+    if selectDict.has_key('Countries'):
+      countries_select = selectDict['Countries']
+      if type(countries_select) is not list:
+        countries_select = [countries_select]
+      del selectDict['Countries']
+      
     #ExpandSiteHistory
     if selectDict.has_key('ExpandSiteHistory'):
       paramsList = ['SiteName', 'Status', 'Reason', 'DateEffective']
@@ -543,7 +564,7 @@ class ResourceStatusDB:
       if granularity in ('Site', 'Sites'):
         sitesList = self.getMonitoredsList(granularity, paramsList = paramsList, 
                                            siteName = sites_select, status = status_select, 
-                                           siteType = siteType_select)
+                                           siteType = siteType_select, countries = countries_select)
         for site in sitesList:
           record = []
           record.append(site[0]) #SiteName
@@ -563,7 +584,8 @@ class ResourceStatusDB:
                                               serviceName = services_select, 
                                               siteName = sites_select, status = status_select, 
                                               siteType = siteType_select,
-                                              serviceType = serviceType_select)
+                                              serviceType = serviceType_select, 
+                                              countries = countries_select)
         for service in servicesList:
           record = []
           record.append(service[0]) #ServiceName
@@ -583,7 +605,8 @@ class ResourceStatusDB:
                                                siteName = sites_select, 
                                                status = status_select, 
                                                siteType = siteType_select,
-                                               resourceType = resourceType_select)
+                                               resourceType = resourceType_select, 
+                                               countries = countries_select)
         for resource in resourcesList:
           record = []
           record.append(resource[0]) #ResourceName
@@ -603,7 +626,8 @@ class ResourceStatusDB:
         storageElementsList = self.getMonitoredsList(granularity, paramsList = paramsList, 
                                                      storageElementName = storageElements_select, 
                                                      siteName = sites_select, 
-                                                     status = status_select)
+                                                     status = status_select, 
+                                                     countries = countries_select)
         for storageElement in storageElementsList:
           record = []
           record.append(storageElement[0]) #StorageElementName
@@ -3061,6 +3085,43 @@ class ResourceStatusDB:
     resDel = self.db._update(req)
     if not resDel['OK']:
       raise RSSDBException, where(self, self.removeStatus) + resDel['Message']
+
+#############################################################################
+
+  def getCountries(self, granularity):
+    """ 
+    Get countries of resources in granularity
+    
+    :params:
+      :attr:`granularity`: string - a ValidRes
+    """
+    
+    if granularity in ('Site', 'Sites'):
+      DBtable = 'Sites'
+    elif granularity in ('Service', 'Services'):
+      DBtable = 'Services'
+    elif granularity in ('Resource', 'Resources'):
+      DBtable = 'Resources'
+    elif granularity in ('StorageElement', 'StorageElements'):
+      DBtable = 'StorageElements'
+    else:
+      raise InvalidRes, where(self, self.getCountries)
+
+    req = "SELECT SiteName FROM %s" %DBtable
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.getCountries) + resQuery['Message']
+    if not resQuery['Value']:
+      return None
+    
+    countries = []
+    
+    for name in resQuery['Value']:
+      country = name[0].split('.').pop()
+      if country not in countries:
+        countries.append(country)
+
+    return countries
 
 #############################################################################
 

@@ -209,6 +209,10 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     res = self.rsh.export_addStatus('')
     self.assert_(res['OK'])
 
+  def test_export_getCountries(self):
+    res = self.rsh.export_getCountries('Site')
+    self.assert_(res['OK'])
+        
   def test_export_removeStatus(self):
     res = self.rsh.export_removeStatus('')
     self.assert_(res['OK'])
