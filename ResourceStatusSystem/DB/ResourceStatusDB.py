@@ -407,6 +407,7 @@ class ResourceStatusDB:
     siteType_select = []
     serviceType_select = []
     resourceType_select = []
+    countries_select = []
     expand_site_history = ''
     expand_service_history = ''
     expand_resource_history = ''
