@@ -561,7 +561,6 @@ class JobWrapper:
     result = module.execute()
     if not result['OK']:
       self.log.warn( 'Input data resolution failed' )
-      self.__report( 'Failed', 'Input Data Resolution' )
       return result
 
     return S_OK()
