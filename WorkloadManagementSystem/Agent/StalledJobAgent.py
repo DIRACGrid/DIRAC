@@ -298,11 +298,11 @@ class StalledJobAgent( AgentModule ):
         if heartBeatTime > lastHeartBeatTime:
           lastHeartBeatTime = heartBeatTime
 
-    accountingReport.setStartTime(startTime)
+    accountingReport.setStartTime( startTime )
     accountingReport.setEndTime()
     # execTime = toEpoch( endTime ) - toEpoch( startTime )
     #Fill the accounting data
-    acData = {
+    acData = { 'Site' : jobDict['Site'],
                'User' : jobDict['Owner'],
                'UserGroup' : jobDict['OwnerGroup'],
                'JobGroup' : jobDict['JobGroup'],
