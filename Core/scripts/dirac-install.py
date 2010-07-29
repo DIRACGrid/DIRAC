@@ -19,15 +19,15 @@ class Params:
 
   def __init__( self ):
     self.packagesToInstall = [ 'DIRAC' ]
-    self.release = False
+    self.release = ''
     self.externalsType = 'client'
     self.pythonVersion = '25'
-    self.platform = False
+    self.platform = ''
     self.targetPath = os.getcwd()
     self.buildExternals = False
     self.buildIfNotAvailable = False
     self.debug = False
-    self.lcgVer = False
+    self.lcgVer = ''
     self.downBaseURL = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3'
 
 cliParams = Params()
@@ -267,11 +267,38 @@ optList, args = getopt.getopt( sys.argv[1:],
                                [ opt[1] for opt in cmdOpts ] )
 
 def usage():
-  print "Usage %s <opts>" % sys.argv[0]
+  print "Usage %s <opts> <cfgFile>" % sys.argv[0]
   for cmdOpt in cmdOpts:
     print " %s %s : %s" % ( cmdOpt[0].ljust( 3 ), cmdOpt[1].ljust( 20 ), cmdOpt[2] )
   sys.exit( 1 )
 
+#Load CFG  
+downloadFileFromSVN( "DIRAC/trunk/DIRAC/Core/Utilities/CFG.py", cliParams.targetPath, False, [ '@gCFGSynchro' ] )
+cfgPath = os.path.join( cliParams.targetPath , "CFG.py" )
+cfgFD = open( cfgPath, "r" )
+CFG = imp.load_module( "CFG", cfgFD, cfgPath, ( "", "r", imp.PY_SOURCE ) )
+cfgFD.close()
+
+optCfg = None
+for arg in args:
+  if not arg[-4:] == ".cfg":
+    continue
+  cfg = CFG.CFG().loadFromFile( arg )
+  if not cfg.isSection( 'LocalInstallation' ):
+    continue
+  if not optCfg:
+    optCfg = cfg['LocalInstallation']
+    continue
+  optCfg = optCfg.mergeWith( cfg['LocalInstallation'] )
+
+cliParams.release = optCfg.getOption( 'Release', cliParams.release )
+cliParams.externalsType = optCfg.getOption( 'InstallType', cliParams.externalsType )
+cliParams.pythonVersion = optCfg.getOption( 'PythonVersion', cliParams.pythonVersion )
+cliParams.platform = optCfg.getOption( 'Platform', cliParams.platform )
+cliParams.targetPath = optCfg.getOption( 'TargetPath', cliParams.targetPath )
+cliParams.buildExternals = optCfg.getOption( 'BuildExternals', cliParams.buildExternals )
+cliParams.lcgVer = optCfg.getOption( 'LcgVer', cliParams.lcgVer )
+cliParams.downBaseURL = optCfg.getOption( 'BaseURL', cliParams.downBaseURL )
 
 for o, v in optList:
   if o in ( '-h', '--help' ):
@@ -324,13 +351,6 @@ fd = open( tarListPath, "r" )
 availableTars = [ line.strip() for line in fd.readlines() if line.strip() ]
 fd.close()
 os.unlink( tarListPath )
-
-#Load CFG  
-downloadFileFromSVN( "DIRAC/trunk/DIRAC/Core/Utilities/CFG.py", cliParams.targetPath, False, [ '@gCFGSynchro' ] )
-cfgPath = os.path.join( cliParams.targetPath , "CFG.py" )
-cfgFD = open( cfgPath, "r" )
-CFG = imp.load_module( "CFG", cfgFD, cfgPath, ( "", "r", imp.PY_SOURCE ) )
-cfgFD.close()
 
 #Load releases
 cfgURL = "%s/%s/%s" % ( cliParams.downBaseURL, "tars", "releases-%s.cfg" % cliParams.release )
