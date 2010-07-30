@@ -95,20 +95,30 @@ class DownloadInputData:
               downloadReplicas[lfn] = {'SE':se,'PFN':pfn,'Size':size,'GUID':guid}
 
         if not downloadReplicas.has_key(lfn):
-          pfn = replicas[lfn][localTapeSE]
-          if replicas[lfn].has_key('Size') and replicas[lfn].has_key('GUID'):
-            size = replicas[lfn]['Size']
-            guid = replicas[lfn]['GUID']
-            downloadReplicas[lfn] = {'SE':localTapeSE,'PFN':pfn,'Size':size,'GUID':guid}
+          if replicas[lfn].has_key(localTapeSE):
+            pfn = replicas[lfn][localTapeSE]
+            if replicas[lfn].has_key('Size') and replicas[lfn].has_key('GUID'):
+              size = replicas[lfn]['Size']
+              guid = replicas[lfn]['GUID']
+              downloadReplicas[lfn] = {'SE':localTapeSE,'PFN':pfn,'Size':size,'GUID':guid}
       else:
         self.log.verbose('LFN %s is not in requested input data to download')
 
+    if not downloadReplicas:
+      self.log.info('Failed to find data at local site SEs, will try to download from anywhere')
+      for lfn,reps in replicas.items():
+        if replicas[lfn].has_key('Size') and replicas[lfn].has_key('GUID'):
+          size = replicas[lfn]['Size']
+          guid = replicas[lfn]['GUID']        
+          downloadReplicas[lfn]={'SE':'','PFN':'','Size':size,'GUID':guid}
+
     totalSize = 0
-    self.log.verbose('Replicas to download from local SEs are:')
+    self.log.verbose('Replicas to download are:')
     for lfn,reps in downloadReplicas.items():
       self.log.verbose(lfn)
       for n,v in reps.items():
-        self.log.verbose('%s %s' %(n,v))
+        if v:
+          self.log.verbose('%s %s' %(n,v))
         if n=='Size':
           totalSize+=int(v) #bytes
 
@@ -209,6 +219,9 @@ class DownloadInputData:
     result = self.rm.getFile(lfn)
     os.chdir(start)
     fileName = os.path.basename(pfn)
+    if not fileName:
+      fileName=os.path.basename(lfn)
+
     self.log.verbose(result)
     localFile = '%s/%s' %(downloadDir,fileName)
     if os.path.exists(localFile):
@@ -223,6 +236,9 @@ class DownloadInputData:
   def __getPFN(self,pfn,se,size,guid):
     """ Download a local copy of a single PFN from the specified Storage Element.
     """
+    if not pfn:
+      return S_ERROR('Assume file is not at this site')
+    
     fileName = os.path.basename(pfn)
     if os.path.exists('%s/%s' %(os.getcwd(),fileName)):
       self.log.verbose('File already %s exists in current directory' %(fileName))
