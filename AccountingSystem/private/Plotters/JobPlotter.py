@@ -126,6 +126,87 @@ class JobPlotter( BaseReporter ):
                  'ylabel' : "days" }
     return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
+  #WallTime
+  def _reportWallTime( self, reportRequest ):
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)/86400",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
+                                    'ExecTime'
+                                   ]
+                   )
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
+                                selectFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
+                                {} )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict, granularity = retVal[ 'Value' ]
+    self.stripDataField( dataDict, 0 )
+    dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+
+  def _plotWallTime( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Wall Time by %s' % reportRequest[ 'grouping' ],
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ],
+                 'ylabel' : "days" }
+    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
+
+  def _reportAccumulatedWallTime( self, reportRequest ):
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)/86400",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
+                                    'ExecTime'
+                                   ]
+                   )
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
+                                selectFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
+                                {} )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict, granularity = retVal[ 'Value' ]
+    self.stripDataField( dataDict, 0 )
+    dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+
+  def _plotAccumulatedWallTime( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Accumulated Wall Time by %s' % reportRequest[ 'grouping' ],
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ],
+                 'ylabel' : "days",
+                 'sort_labels' : 'last_value' }
+    return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
+
+  def _reportTotalWallTime( self, reportRequest ):
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s)/86400",
+                     reportRequest[ 'groupingFields' ][1] + [ 'ExecTime'
+                                   ]
+                   )
+    retVal = self._getSummaryData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
+                                selectFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
+                                {} )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict = retVal[ 'Value' ]
+    return S_OK( { 'data' : dataDict  } )
+
+  def _plotTotalWallTime( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Wall Time days used by %s' % reportRequest[ 'grouping' ],
+                 'ylabel' : 'cpu days',
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ]
+                }
+    return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )
+
   def _reportCumulativeNumberOfJobs( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
