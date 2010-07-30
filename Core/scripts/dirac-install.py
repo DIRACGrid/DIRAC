@@ -291,14 +291,15 @@ for arg in args:
     continue
   optCfg = optCfg.mergeWith( cfg['LocalInstallation'] )
 
-cliParams.release = optCfg.getOption( 'Release', cliParams.release )
-cliParams.externalsType = optCfg.getOption( 'InstallType', cliParams.externalsType )
-cliParams.pythonVersion = optCfg.getOption( 'PythonVersion', cliParams.pythonVersion )
-cliParams.platform = optCfg.getOption( 'Platform', cliParams.platform )
-cliParams.targetPath = optCfg.getOption( 'TargetPath', cliParams.targetPath )
-cliParams.buildExternals = optCfg.getOption( 'BuildExternals', cliParams.buildExternals )
-cliParams.lcgVer = optCfg.getOption( 'LcgVer', cliParams.lcgVer )
-cliParams.downBaseURL = optCfg.getOption( 'BaseURL', cliParams.downBaseURL )
+if optCfg:
+  cliParams.release = optCfg.getOption( 'Release', cliParams.release )
+  cliParams.externalsType = optCfg.getOption( 'InstallType', cliParams.externalsType )
+  cliParams.pythonVersion = optCfg.getOption( 'PythonVersion', cliParams.pythonVersion )
+  cliParams.platform = optCfg.getOption( 'Platform', cliParams.platform )
+  cliParams.targetPath = optCfg.getOption( 'TargetPath', cliParams.targetPath )
+  cliParams.buildExternals = optCfg.getOption( 'BuildExternals', cliParams.buildExternals )
+  cliParams.lcgVer = optCfg.getOption( 'LcgVer', cliParams.lcgVer )
+  cliParams.downBaseURL = optCfg.getOption( 'BaseURL', cliParams.downBaseURL )
 
 for o, v in optList:
   if o in ( '-h', '--help' ):
