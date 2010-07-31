@@ -18,12 +18,10 @@ class JobRepository:
         self.location = '%s/.dirac.repo.cfg' % os.getcwd()
     self.repo = CFG()
     if os.path.exists(self.location):
-      self.repo = CFG()
       self.repo.loadFromFile(self.location)
       if not self.repo.existsKey('Jobs'):
         self.repo.createNewSection('Jobs')
     else:
-      self.repo = CFG()
       self.repo.createNewSection('Jobs')
     self.OK = True
     written = self._writeRepository(self.location)
@@ -60,7 +58,10 @@ class JobRepository:
   def _writeRepository(self,path):
     handle,tmpName = tempfile.mkstemp()
     written = self.repo.writeToFile(tmpName)
+    os.close(handle)
     if not written:
+      if os.path.exists(tmpName):
+        os.remove(tmpName)
       return written
     if os.path.exists(path):
       gLogger.debug("Replacing %s" % path)
