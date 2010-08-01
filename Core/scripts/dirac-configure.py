@@ -228,28 +228,27 @@ if gatewayServer:
   Script.localCfg.addDefaultEntry( '/DIRAC/GateWay/%s' % DIRAC.siteName(), gatewayServer )
 
 # Create the local dirac.cfg if it is not yet there
-if not os.path.exists(DIRAC.gConfig.diracConfigFilePath):
-  configDir = os.path.dirname(DIRAC.gConfig.diracConfigFilePath)
-  if not os.path.exists(configDir):
-    os.makedirs(configDir)
-    
-  # A.T. csDisabled state drops the CS Server setting, should be restored before dumping  
-  csDisabledFlag = bool(Script.localCfg.csDisabled) 
-  Script.enableCS()    
+if not os.path.exists( DIRAC.gConfig.diracConfigFilePath ):
+  configDir = os.path.dirname( DIRAC.gConfig.diracConfigFilePath )
+  if not os.path.exists( configDir ):
+    os.makedirs( configDir )
+  if Script.localCfg.csDisabled and Script.localCfg.csDisabledServers:
+    from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+    gConfigurationData.setOptionInCFG( "/DIRAC/Configuration/Servers", Script.localCfg.csDisabledServers )
+
   DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
-  if csDisabledFlag:
-    Script.disableCS()  
-  
+
 # We need user proxy or server certificate to continue
-if not useServerCert: 
+if not useServerCert:
   result = getProxyInfo()
   if not result['OK']:
-    DIRAC.gLogger.info('No user proxy available')
-    sys.exit(0)
+    DIRAC.gLogger.info( 'No user proxy available' )
+    DIRAC.gLogger.info( 'Create one using %s and execute again' % os.path.join( DIRAC.rootPath, 'scripts', 'dirac-proxy-init' ) )
+    sys.exit( 0 )
   else:
-    Script.enableCS()  
+    Script.enableCS()
 else:
-  Script.enableCS()      
+  Script.enableCS()
 
 #Do the vomsdir magic
 voName = DIRAC.gConfig.getValue( "/DIRAC/VirtualOrganization", "" )
