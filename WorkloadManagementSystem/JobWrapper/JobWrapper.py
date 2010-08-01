@@ -97,10 +97,10 @@ class JobWrapper:
     self.currentPID = os.getpid()
     self.log.verbose( 'Job Wrapper started under PID: %s' % self.currentPID )
     # Define a new process group for the job wrapper
-    self.parentPGID = os.getpgid(self.currentPID)
+    self.parentPGID = os.getpgid( self.currentPID )
     self.log.verbose( 'Job Wrapper parent process group ID: %s' % self.parentPGID )
-    os.setpgid(self.currentPID,self.currentPID)
-    self.currentPGID = os.getpgid(self.currentPID)
+    os.setpgid( self.currentPID, self.currentPID )
+    self.currentPGID = os.getpgid( self.currentPID )
     self.log.verbose( 'Job Wrapper process group ID: %s' % self.currentPGID )
     self.log.verbose( '==========================================================================' )
     self.log.verbose( 'sys.path is: \n%s' % ( string.join( sys.path, '\n' ) ) )
@@ -293,12 +293,12 @@ class JobWrapper:
       self.log.verbose( 'Replaced $DIRACROOT for executable as %s' % ( self.localSiteRoot ) )
 
     # Make the full path since . is not always in the PATH
-    executable = os.path.abspath(executable)
-    if not os.access(executable,os.X_OK):
+    executable = os.path.abspath( executable )
+    if not os.access( executable, os.X_OK ):
       try:
-        os.chmod(executable,0775)
-      except Exception,x:
-        self.log.warn('Failed to change mode to 775 for the executable',executable)  
+        os.chmod( executable, 0775 )
+      except Exception, x:
+        self.log.warn( 'Failed to change mode to 775 for the executable', executable )
 
     exeEnv = dict( os.environ )
     if self.jobArgs.has_key( 'ExecutionEnvironment' ):
@@ -500,8 +500,8 @@ class JobWrapper:
       # Use the default one
       inputDataPolicy = 'DIRAC.WorkloadManagementSystem.Client.InputDataResolution'
     else:
-      inputDataPolicy = self.jobArgs['InputDataModule']  
-    
+      inputDataPolicy = self.jobArgs['InputDataModule']
+
     self.log.verbose( 'Job input data requirement is \n%s' % ( string.join( inputData, ',\n' ) ) )
     self.log.verbose( 'Job input data resolution policy module is %s' % ( inputDataPolicy ) )
     self.log.info( 'Site has the following local SEs: %s' % ( string.join( localSEList, ', ' ) ) )
@@ -733,7 +733,7 @@ class JobWrapper:
         outputPath = self.defaultOutputPath
 
       if not outputSE and not self.defaultFailoverSE:
-        return S_ERROR('No output SEs defined in VO configuration')
+        return S_ERROR( 'No output SEs defined in VO configuration' )
 
       result = self.__transferOutputDataFiles( owner, outputData, outputSE, outputPath )
       if not result['OK']:
@@ -848,7 +848,7 @@ class JobWrapper:
       self.log.error( result )
       return S_ERROR( 'Could not retrieve modified request' )
 
-    request = result['Value']    
+    request = result['Value']
     if not request.isEmpty()['Value']:
       request.toFile( 'transferOutputDataFiles_request.xml' )
 
@@ -1042,16 +1042,16 @@ class JobWrapper:
   #############################################################################
   def sendFailoverRequest( self, status = '', minorStatus = '' ):
     """ Create and send a combined job failover request if any
-    """    
+    """
     request = RequestContainer()
     requestName = '%s.xml' % self.jobID
-    if self.jobArgs.has_key('JobName'):
+    if self.jobArgs.has_key( 'JobName' ):
       #To make the request names more appealing for users
       jobName = self.jobArgs['JobName']
-      if type(jobName)==type(' ') and jobName:
-        jobName = jobName.replace(' ','').replace('(','').replace(')','').replace('.','').replace('{','').replace('}','').replace(':','')
-        requestName = '%s_%s' %(jobName,requestName)
-      
+      if type( jobName ) == type( ' ' ) and jobName:
+        jobName = jobName.replace( ' ', '' ).replace( '(', '' ).replace( ')', '' ).replace( '.', '' ).replace( '{', '' ).replace( '}', '' ).replace( ':', '' )
+        requestName = '%s_%s' % ( jobName, requestName )
+
     request.setRequestName( requestName )
     request.setJobID( self.jobID )
     request.setSourceComponent( "Job_%s" % self.jobID )
@@ -1069,12 +1069,12 @@ class JobWrapper:
     else:
       result = self.sendWMSAccounting( status, minorStatus )
       if not result['OK']:
-        self.log.warn('Could not send WMS accounting with result: \n%s' %result)
-        if result.has_key('rpcStub'):
-          self.log.verbose('Adding accounting report to failover request object')
+        self.log.warn( 'Could not send WMS accounting with result: \n%s' % result )
+        if result.has_key( 'rpcStub' ):
+          self.log.verbose( 'Adding accounting report to failover request object' )
           request.setDISETRequest( result['rpcStub'] )
         else:
-          self.log.warn('No rpcStub found to construct failover request for WMS accounting report')  
+          self.log.warn( 'No rpcStub found to construct failover request for WMS accounting report' )
 
     # Any other requests in the current directory
     rfiles = self.__getRequestFiles()
