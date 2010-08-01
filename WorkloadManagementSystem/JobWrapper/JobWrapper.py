@@ -42,6 +42,7 @@ class JobWrapper:
   def __init__( self, jobID = None, jobReport = None ):
     """ Standard constructor
     """
+    self.initialTiming = os.times()
     self.section = os.path.join( getSystemSection( 'WorkloadManagement/JobWrapper' ), 'JobWrapper' )
     self.log = gLogger
     #Create the acctounting report
@@ -1001,10 +1002,15 @@ class JobWrapper:
 
     self.accountingReport.setEndTime()
     #CPUTime and ExecTime
-    if 'CPU' in EXECUTION_RESULT:
-      utime, stime, cutime, cstime, elapsed = EXECUTION_RESULT['CPU']
-    else:
-      utime, stime, cutime, cstime, elapsed = os.times()
+    if not 'CPU' in EXECUTION_RESULT:
+      # If the payload has not started execution (error with input data, SW, SB,...)
+      # Execution result is not filled use self.initialTiming
+      finalStat = os.times()
+      EXECUTION_RESULT['CPU'] = []
+      for i in range( len( finalStat ) ):
+        EXECUTION_RESULT['CPU'].append( finalStat[i] - self.initialTiming[i] )
+
+    utime, stime, cutime, cstime, elapsed = EXECUTION_RESULT['CPU']
     cpuTime = utime + stime + cutime + cstime
     execTime = elapsed
     diskSpaceConsumed = getGlobbedTotalSize( os.path.join( self.root, str( self.jobID ) ) )
