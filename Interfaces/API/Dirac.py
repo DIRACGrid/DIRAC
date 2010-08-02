@@ -884,7 +884,11 @@ class Dirac:
     if parameters['Value'].has_key( 'Arguments' ):
       arguments = parameters['Value']['Arguments']
 
-    command = '%s %s' % ( executable, arguments )
+    jobArguments = ''
+    if parameters['Value'].has_key('JobConfigArgs'):
+      jobArguments = parameters['Value']['JobConfigArgs']
+
+    command = '%s %s %s' % ( executable, arguments, jobArguments )
 
     self.log.info( 'Executing: %s' % command )
     executionEnv = dict( os.environ )
