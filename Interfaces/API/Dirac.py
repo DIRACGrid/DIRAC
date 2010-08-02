@@ -322,14 +322,18 @@ class Dirac:
         curDir = os.getcwd()
 
         stopCopies = False
-        if gConfig.getValue( '/LocalSite/DisableLocalJobDirectory', '' ):
+        if gConfig.getValue('/LocalSite/DisableLocalJobDirectory',''):
           stopCopies = True
         else:
           jobDir = tempfile.mkdtemp( suffix = '_JobDir', prefix = 'Local_', dir = curDir )
           os.chdir( jobDir )
 
+        stopCallback = False
+        if gConfig.getValue('/LocalSite/DisableLocalModeCallback',''):
+          stopCallback = True
+          
         self.log.info( 'Executing at', os.getcwd() )
-        result = self.runLocal( jdl, jobDescription, curDir, disableCopies = stopCopies )
+        result = self.runLocal( jdl, jobDescription, curDir, disableCopies = stopCopies, disableCallback = stopCallback )
         os.chdir( curDir )
       if mode.lower() == 'agent':
         self.log.info( 'Executing workflow locally with full WMS submission and DIRAC Job Agent' )
@@ -747,7 +751,7 @@ class Dirac:
     return result
 
   #############################################################################
-  def runLocal( self, jobJDL, jobXML, baseDir, disableCopies = False ):
+  def runLocal( self, jobJDL, jobXML, baseDir, disableCopies = False, disableCallback = False ):
     """Internal function.  This method is equivalent to submit(job,mode='Local').
        All output files are written to the local directory.
     """
@@ -884,11 +888,7 @@ class Dirac:
     if parameters['Value'].has_key( 'Arguments' ):
       arguments = parameters['Value']['Arguments']
 
-    jobArguments = ''
-    if parameters['Value'].has_key('JobConfigArgs'):
-      jobArguments = parameters['Value']['JobConfigArgs']
-
-    command = '%s %s %s' % ( executable, arguments, jobArguments )
+    command = '%s %s' % ( executable, arguments )
 
     self.log.info( 'Executing: %s' % command )
     executionEnv = dict( os.environ )
@@ -903,7 +903,11 @@ class Dirac:
         executionEnv[nameEnv] = valEnv
         self.log.verbose( '%s = %s' % ( nameEnv, valEnv ) )
 
-    result = shellCall( 0, command, env = executionEnv, callbackFunction = self.__printOutput )
+    cbFunction = self.__printOutput
+    if disableCallback:
+      cbFunction = None
+    
+    result = shellCall( 0, command, env = executionEnv, callbackFunction = cbFunction )
     if not result['OK']:
       return result
 
