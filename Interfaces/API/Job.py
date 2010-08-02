@@ -55,7 +55,7 @@ class Job:
 
   #############################################################################
 
-  def __init__(self,script=None):
+  def __init__(self,script=None,stdout='std.out',stderr='std.err'):
     """Instantiates the Workflow object and some default parameters.
     """
     self.log = gLogger
@@ -74,8 +74,8 @@ class Job:
     self.site = 'ANY' #ANY
     #self.setup = 'Development'
     self.origin = 'DIRAC'
-    self.stdout = 'std.out'
-    self.stderr = 'std.err'
+    self.stdout = stdout
+    self.stderr = stderr
     self.logLevel = 'info'
     self.executable = '$DIRACROOT/scripts/dirac-jobexec' # to be clarified
     self.addToInputSandbox = []
