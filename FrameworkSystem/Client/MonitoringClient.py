@@ -8,7 +8,6 @@ import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities import Time, ExitCallback, Network, ThreadScheduler
-from DIRAC.FrameworkSystem.private.monitoring.ServiceInterface import gServiceInterface
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 class MonitoringFlusher:
@@ -21,7 +20,7 @@ class MonitoringFlusher:
     #HACK: Avoid exiting while the thread is starting
     time.sleep( 0.1 )
 
-  def flush( self, allData = False):
+  def flush( self, allData = False ):
     for mc in self.__mcList:
       mc.flush( allData )
 
@@ -36,14 +35,14 @@ class MonitoringClient:
   #Different types of operations
   OP_MEAN = "mean"
   OP_ACUM = "acum"
-  OP_SUM  = "sum"
+  OP_SUM = "sum"
   OP_RATE = "rate"
 
   #Predefined components that can be registered
   COMPONENT_SERVICE = "service"
-  COMPONENT_AGENT   = "agent"
-  COMPONENT_WEB     = "web"
-  COMPONENT_SCRIPT  = "script"
+  COMPONENT_AGENT = "agent"
+  COMPONENT_WEB = "web"
+  COMPONENT_SCRIPT = "script"
 
   __validMonitoringValues = ( types.IntType, types.LongType, types.FloatType )
 
@@ -65,10 +64,10 @@ class MonitoringClient:
     self.__initialized = False
     self.__enabled = True
 
-  def disable(self):
+  def disable( self ):
     self.__enabled = False
 
-  def enable(self):
+  def enable( self ):
     self.__enabled = True
 
   def setComponentExtraParam( self, name, value ):
@@ -81,7 +80,7 @@ class MonitoringClient:
 
   def initialize( self ):
     self.logger = gLogger.getSubLogger( "Monitoring" )
-    self.logger.debug( "Initializing Monitoring Client")
+    self.logger.debug( "Initializing Monitoring Client" )
     self.sourceDict[ 'setup' ] = gConfig.getValue( "/DIRAC/Setup" )
     self.sourceDict[ 'site' ] = DIRAC.siteName()
     if self.sourceDict[ 'componentType' ] == self.COMPONENT_SERVICE:
@@ -187,7 +186,7 @@ class MonitoringClient:
     if not self.__enabled:
       return
     if name not in self.activitiesDefinitions:
-      raise Exception( "You must register activity %s before adding marks to it" % name)
+      raise Exception( "You must register activity %s before adding marks to it" % name )
     if type( value ) not in self.__validMonitoringValues:
       raise Exception( "Value %s is not valid" % value )
     self.activitiesLock.acquire()
@@ -241,7 +240,7 @@ class MonitoringClient:
     try:
       self.activitiesLock.acquire()
       try:
-        self.logger.debug( "Consolidating data...")
+        self.logger.debug( "Consolidating data..." )
         self.__appendMarksToSend( self.__consolidateMarks( allData ) )
       finally:
         self.activitiesLock.release()
@@ -271,8 +270,9 @@ class MonitoringClient:
         self.marksToSend[ acName ] = acMarks[ acName ]
 
   def __sendData( self, secsTimeout = False ):
+    from DIRAC.FrameworkSystem.private.monitoring.ServiceInterface import gServiceInterface
     if gServiceInterface.serviceRunning():
-      self.logger.debug( "Using internal interface to send data")
+      self.logger.debug( "Using internal interface to send data" )
       rpcClient = gServiceInterface
     else:
       self.logger.debug( "Creating RPC client" )
@@ -287,14 +287,14 @@ class MonitoringClient:
       if not self.__sendRegistration( rpcClient ):
         return False
 
-  def __pruneMarksData(self):
+  def __pruneMarksData( self ):
     for acName in self.marksToSend:
       maxBuckets = 86400 / self.activitiesDefinitions[ acName ][ 'bucketLength' ]
       if len( self.marksToSend[ acName ] ) > maxBuckets:
         timeSlots = self.marksToSend[ acName ].keys()
         timeSlots.sort()
         while len( self.marksToSend[ acName ] ) > maxBuckets:
-          del( self.marksToSend[ acName ][ timeSlots.pop(0) ] )
+          del( self.marksToSend[ acName ][ timeSlots.pop( 0 ) ] )
 
   def __sendRegistration( self, rpcClient ):
     if not len( self.definitionsToSend ):
