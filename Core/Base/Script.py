@@ -9,12 +9,12 @@ from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 localCfg = LocalConfiguration()
 
-scriptName = False
+scriptName = os.path.basename( sys.argv[0] )
 
 def initAsScript( script = False ):
-  scriptName = script
-  if not scriptName:
-    scriptName = os.path.basename( sys.argv[0] )
+  global scriptName
+  if scriptName:
+    scriptName = script
   scriptSection = localCfg.setConfigurationForScript( scriptName )
 
 def parseCommandLine( script = False, ignoreErrors = False, initializeMonitor = True ):
@@ -26,11 +26,10 @@ def initialize( script = False, ignoreErrors = False, initializeMonitor = False,
   if not enableCommandLine:
     localCfg.disableParsingCommandLine()
 
-  if not scriptName:
+  if scriptName:
     scriptName = script
-    if not scriptName:
-      scriptName = os.path.basename( sys.argv[0] )
-    scriptSection = localCfg.setConfigurationForScript( scriptName )
+  scriptSection = localCfg.setConfigurationForScript( scriptName )
+
   if not ignoreErrors:
     localCfg.addMandatoryEntry( "/DIRAC/Setup" )
   resultDict = localCfg.loadUserData()
