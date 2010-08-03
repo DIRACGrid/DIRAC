@@ -337,7 +337,6 @@ if ceName or siteName:
         Script.localCfg.addDefaultEntry( '/LocalSite/LocalSE', localSE )
         break
 
-
 if gatewayServer:
   DIRAC.gLogger.debug( '/DIRAC/GateWay/%s =' % DIRAC.siteName(), gatewayServer )
   Script.localCfg.addDefaultEntry( '/DIRAC/GateWay/%s' % DIRAC.siteName(), gatewayServer )
@@ -347,9 +346,6 @@ if not os.path.exists( DIRAC.gConfig.diracConfigFilePath ):
   configDir = os.path.dirname( DIRAC.gConfig.diracConfigFilePath )
   if not os.path.exists( configDir ):
     os.makedirs( configDir )
-  if Script.localCfg.csDisabled and Script.localCfg.csDisabledServers:
-    from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-    gConfigurationData.setOptionInCFG( "/DIRAC/Configuration/Servers", Script.localCfg.csDisabledServers )
 
   DIRAC.gConfig.dumpLocalCFGToFile( DIRAC.gConfig.diracConfigFilePath )
 
