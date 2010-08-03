@@ -434,6 +434,9 @@ def getSoftwareComponents( extensions ):
   agents = {}
 
   for extension in ['DIRAC'] + [ x + 'DIRAC' for x in extensions]:
+    if not os.path.exists(os.path.join( rootPath, extension )):
+      # Not all the extensions are necessarily installed in this instance
+      continue
     systemList = os.listdir( os.path.join( rootPath, extension ) )
     for sys in systemList:
       system = sys.replace( 'System', '' )
