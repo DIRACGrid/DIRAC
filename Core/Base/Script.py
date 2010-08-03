@@ -66,6 +66,10 @@ def addDefaultOptionValue( option, value ):
   global localCfg
   localCfg.addDefaultEntry( option, value )
 
+def setUsageMessage( usageMessage ):
+  global localCfg
+  localCfg.setUsageMessage( usageMessage )
+
 def disableCS():
   localCfg.disableCS()
 
@@ -73,4 +77,4 @@ def enableCS():
   return localCfg.enableCS()
 
 def showHelp( text ):
-  localCfg._LocalConfiguration__showHelp( text )
+  localCfg.showHelp( text )

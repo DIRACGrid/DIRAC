@@ -32,6 +32,7 @@ class LocalConfiguration:
     self.loggingSection = "/DIRAC"
     self.initialized = False
     self.csDisabled = False
+    self.__usageMessage = False
     self.csDisabledServers = ""
 
   def disableParsingCommandLine( self ):
@@ -56,6 +57,9 @@ class LocalConfiguration:
   def addCFGFile( self, filePath ):
     self.additionalCFGFiles.append( filePath )
 
+  def setUsageMessage( self, usageMsg ):
+    self.__usageMessage = usageMsg
+
   def __setOptionValue( self, optionPath, value ):
     gConfigurationData.setOptionInCFG( self.__getAbsolutePath( optionPath ),
                                        str( value ) )
@@ -68,7 +72,7 @@ class LocalConfiguration:
     self.registerCmdOpt( "c:", "cert=", "Use server certificate to connect to Core Services",
                          self.__setUseCertByCmd )
     self.registerCmdOpt( "h", "help", "Shows this help",
-                         self.__showHelp )
+                         self.showHelp )
 
   def registerCmdOpt( self, shortOption, longOption, helpString, function = False ):
     #TODO: Can't overwrite switches (FATAL)
@@ -171,7 +175,7 @@ class LocalConfiguration:
       # v = option "-k" not recognized
       # print help information and exit
       gLogger.fatal( "Error when parsing command line arguments: %s" % str( v ) )
-      self.__showHelp()
+      self.showHelp()
       sys.exit( 2 )
 
     self.cliAdditionalCFGFiles = [ arg for arg in args if arg[-4:] == ".cfg" ]
@@ -322,11 +326,15 @@ class LocalConfiguration:
     self.__setOptionValue( "/DIRAC/Security/UseServerCertificate", useCert )
     return S_OK()
 
-  def __showHelp( self, dummy = False ):
-    gLogger.info( "Usage:" )
-    gLogger.info( "  %s (<options>|<cfgFile>)*" % sys.argv[0] )
-    if dummy:
-      gLogger.info( dummy )
+  def showHelp( self, dummy = False ):
+    if self.__usageMessage:
+      gLogger.info( self.__usageMessage )
+    else:
+      gLogger.info( "Usage:" )
+      gLogger.info( "  %s (<options>|<cfgFile>)*" % sys.argv[0] )
+      if dummy:
+        gLogger.info( dummy )
+
     gLogger.info( "Options:" )
     for optionTuple in self.commandOptionList:
       gLogger.info( "  -%s  --%s  :  %s" % optionTuple[:3] )
