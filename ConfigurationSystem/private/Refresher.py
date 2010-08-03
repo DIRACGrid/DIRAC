@@ -16,43 +16,48 @@ class Refresher( threading.Thread ):
 
   def __init__( self ):
     threading.Thread.__init__( self )
-    self.bAutomaticUpdate = False
-    self.iLastUpdateTime = 0
-    self.sURL = False
-    self.bEnabled = True
-    self.timeout = 60
+    self.__automaticUpdate = False
+    self.__lastUpdateTime = 0
+    self.__url = False
+    self.__refreshEnabled = True
+    self.__timeout = 60
     self.__callbacks = { 'newVersion' : [] }
     gEventDispatcher.registerEvent( "CSNewVersion" )
     random.seed()
-    self.oTriggeredRefreshLock = threading.Lock()
+    self.__triggeredRefreshLock = threading.Lock()
 
   def disable( self ):
-    self.bEnabled = False
-    
+    self.__refreshEnabled = False
+
+  def enable( self ):
+    self.__refreshEnabled = True
+
   def addListenerToNewVersionEvent( self, functor ):
     gEventDispatcher.addListener( "CSNewVersion", functor )
 
-  def __refreshInThread(self):
+  def __refreshInThread( self ):
     retVal = self.__refresh()
     if not retVal[ 'OK' ]:
       gLogger.error( "Error while updating the configuration", retVal[ 'Message' ] )
 
   def refreshConfigurationIfNeeded( self ):
-    if not self.bEnabled or self.bAutomaticUpdate or not gConfigurationData.getServers():
+    if not self.__refreshEnabled or self.__automaticUpdate or not gConfigurationData.getServers():
       return
-    self.oTriggeredRefreshLock.acquire()
+    self.__triggeredRefreshLock.acquire()
     try:
-      if time.time() - self.iLastUpdateTime < gConfigurationData.getRefreshTime():
+      if time.time() - self.__lastUpdateTime < gConfigurationData.getRefreshTime():
         return
-      self.iLastUpdateTime = time.time()
-      thd = threading.Thread( target = self.__refreshInThread )
-      thd.setDaemon(1)
-      thd.start()
+      self.__lastUpdateTime = time.time()
     finally:
-      self.oTriggeredRefreshLock.release()
+      self.__triggeredRefreshLock.release()
+    #Launch the refresh
+    thd = threading.Thread( target = self.__refreshInThread )
+    thd.setDaemon( 1 )
+    thd.start()
+
 
   def forceRefresh( self ):
-    if self.bEnabled:
+    if self.__refreshEnabled:
       return self.__refresh()
     return S_OK()
 
@@ -63,26 +68,27 @@ class Refresher( threading.Thread ):
     if not gConfigurationData.getName():
       import DIRAC
       DIRAC.abort( 10, "Missing configuration name!" )
-    self.sURL = sURL
-    self.bAutomaticUpdate = True
-    self.setDaemon(1)
+    self.__url = sURL
+    self.__automaticUpdate = True
+    self.setDaemon( 1 )
     self.start()
 
   def run( self ):
-    while self.bAutomaticUpdate:
+    while self.__automaticUpdate:
       iWaitTime = gConfigurationData.getPropagationTime()
       time.sleep( iWaitTime )
-      if not self.__refreshAndPublish():
-        gLogger.error( "Can't refresh configuration from any source" )
+      if self.__refreshEnabled:
+        if not self.__refreshAndPublish():
+          gLogger.error( "Can't refresh configuration from any source" )
 
 
   def __refreshAndPublish( self ):
-    self.iLastUpdateTime = time.time()
+    self.__lastUpdateTime = time.time()
     gLogger.info( "Refreshing from master server" )
     from DIRAC.Core.DISET.RPCClient import RPCClient
     sMasterServer = gConfigurationData.getMasterServer()
     if sMasterServer:
-      oClient = RPCClient( sMasterServer, timeout = self.timeout, 
+      oClient = RPCClient( sMasterServer, timeout = self.__timeout,
                            useCertificates = gConfigurationData.useServerCertificate(),
                            skipCACheck = gConfigurationData.skipCACheck() )
       dRetVal = self.__updateFromRemoteLocation( oClient )
@@ -91,16 +97,16 @@ class Refresher( threading.Thread ):
         return False
       if gConfigurationData.getAutoPublish():
         gLogger.info( "Publishing to master server..." )
-        dRetVal = oClient.publishSlaveServer( self.sURL )
+        dRetVal = oClient.publishSlaveServer( self.__url )
         if not dRetVal[ 'OK' ]:
           gLogger.error( "Can't publish to master server", dRetVal[ 'Message' ] )
       return True
     else:
-      gLogger.warn( "No master server is specified in the configuration, trying to get data from other slaves")
+      gLogger.warn( "No master server is specified in the configuration, trying to get data from other slaves" )
       return self.__refresh()[ 'OK' ]
 
   def __refresh( self ):
-    self.iLastUpdateTime = time.time()
+    self.__lastUpdateTime = time.time()
     gLogger.debug( "Refreshing configuration..." )
     gatewayList = getGatewayURLs( "Configuration/Server" )
     updatingErrorsList = []
@@ -115,7 +121,7 @@ class Refresher( threading.Thread ):
 
     for sServer in lRandomListOfServers:
         from DIRAC.Core.DISET.RPCClient import RPCClient
-        oClient = RPCClient( sServer, 
+        oClient = RPCClient( sServer,
                            useCertificates = gConfigurationData.useServerCertificate(),
                            skipCACheck = gConfigurationData.skipCACheck() )
         dRetVal = self.__updateFromRemoteLocation( oClient )
@@ -123,8 +129,8 @@ class Refresher( threading.Thread ):
           return dRetVal
         else:
           updatingErrorsList.append( dRetVal[ 'Message' ] )
-          gLogger.warn( "Can't update from server", "Error while updating from %s: %s" %( sServer, dRetVal[ 'Message' ] ) )
-    return S_ERROR( "Reason(s):\n\t%s" % "\n\t".join( List.uniqueElements( updatingErrorsList) ) )
+          gLogger.warn( "Can't update from server", "Error while updating from %s: %s" % ( sServer, dRetVal[ 'Message' ] ) )
+    return S_ERROR( "Reason(s):\n\t%s" % "\n\t".join( List.uniqueElements( updatingErrorsList ) ) )
 
   def __updateFromRemoteLocation( self, serviceClient ):
     gLogger.debug( "", "Trying to refresh from %s" % serviceClient.serviceURL )
@@ -142,6 +148,6 @@ class Refresher( threading.Thread ):
 
 gRefresher = Refresher()
 
-if __name__=="__main__":
-  time.sleep(0.1)
+if __name__ == "__main__":
+  time.sleep( 0.1 )
   gRefresher.daemonize()

@@ -265,13 +265,10 @@ class LocalConfiguration:
     return S_OK()
 
   def disableCS( self ):
-    self.csDisabled = True
+    gRefresher.disable()
 
   def enableCS( self ):
-    self.csDisabled = False
-    if self.csDisabledServers:
-      gConfigurationData.setOptionInCFG( "/DIRAC/Configuration/Servers", self.csDisabledServers )
-      return self.syncRemoteConfiguration( strict = True )
+    gRefresher.enable()
     return S_OK()
 
 
