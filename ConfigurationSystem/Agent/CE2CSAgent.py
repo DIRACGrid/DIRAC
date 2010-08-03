@@ -58,7 +58,10 @@ class CE2CSAgent( AgentModule ):
 
   def _lookForCE( self ):
 
-    sites = gConfig.getSections( '/Resources/Sites/LCG' )['Value']
+    result = gConfig.getSections( '/Resources/Sites/LCG' )
+    if not result['OK']:
+      return
+    sites = result['Value']
 
     bannedCEs = self.am_getOption( 'BannedCEs', '' )
     if bannedCEs:
@@ -317,7 +320,7 @@ class CE2CSAgent( AgentModule ):
             newsi00 = 'Unknown'
           if si00 != newsi00 and newsi00 != 'Unknown':
             section = '/Resources/Sites/LCG/%s/CEs/%s/SI00' % ( site, ce )
-            gLogger.info( section, " -> ".join( ( newsi00, si00 ) ) )
+            gLogger.info( section, " -> ".join( ( si00, newsi00 ) ) )
             if si00 == 'Unknown':
               self.csAPI.setOption( section, newsi00 )
             else:
