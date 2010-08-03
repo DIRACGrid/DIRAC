@@ -27,8 +27,9 @@ from DIRAC.Core.DISET.RPCClient                                     import RPCCl
 from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
 from DIRAC.Core.Utilities.Subprocess                                import systemCall, shellCall
 from DIRAC.Core.Utilities.Subprocess                                import Subprocess
-from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize
+from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize,getGlobbedFiles
 from DIRAC.Core.Utilities.Version                                   import getCurrentVersion
+from DIRAC.Core.Utilities                                           import List
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, List
 import DIRAC
 
@@ -787,9 +788,15 @@ class JobWrapper:
     """
     self.log.verbose( 'Uploading output data files' )
     self.__report( 'Completed', 'Uploading Output Data' )
-    self.log.verbose( 'Output data files %s to be uploaded to %s SE' % ( string.join( outputData, ', ' ), outputSE ) )
+    self.log.info( 'Output data files %s to be uploaded to %s SE' % ( string.join( outputData, ', ' ), outputSE ) )
     missing = []
     uploaded = []
+
+    #Check whether list of outputData has a globbable pattern
+    globbedOutputList = List.uniqueElements(getGlobbedFiles(outputData))
+    if not globbedOutputList==outputData:
+      self.log.info('Found a pattern in the output data file list, files to upload are: %s' %(string.join(globbedOutputList,', ')))
+      outputData = globbedOutputList    
 
     pfnGUID = {}
     result = getGUID( outputData )
