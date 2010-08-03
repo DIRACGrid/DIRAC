@@ -88,8 +88,7 @@ CREATE TABLE TransformationFileTasks (
   TransformationID INTEGER NOT NULL,
   FileID INTEGER NOT NULL,
   TaskID INTEGER NOT NULL,
-  PRIMARY KEY(TransformationID,FileID,TaskID),
-INDEX(ExternalStatus)
+  PRIMARY KEY(TransformationID,FileID,TaskID)
 );
 
 -- -------------------------------------------------------------------------------
