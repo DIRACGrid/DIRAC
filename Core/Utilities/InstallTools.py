@@ -13,14 +13,16 @@ The Following Options are used:
 
 /DIRAC/Setup:             Setup to be used for any operation
 
-/LocalInstallation/InstanceName:  Name of the Instance for the current Setup (default /DIRAC/Setup)
-/LocalInstallation/LogLevel:      LogLevel set in "run" script for all components installed
-/LocalInstallation/RootPath:      Used instead of rootPath in "run" script if defined (if links are used to named versions)
-/LocalInstallation/Host:          Used when build the URL to be published for the installed service
-/LocalInstallation/InstancePath:  Location where runit and startup directories are created (default rootPath)
-/LocalInstallation/RunitDir:      Location where runit directory is created (default InstancePath/runit)
-/LocalInstallation/StartupDir:    Location where startup directory is created (default InstancePath/startup)
-/LocalInstallation/MySQLDir:      Location where mysql databases are created (default InstancePath/mysql)
+/LocalInstallation/InstanceName:    Name of the Instance for the current Setup (default /DIRAC/Setup)
+/LocalInstallation/LogLevel:        LogLevel set in "run" script for all components installed
+/LocalInstallation/RootPath:        Used instead of rootPath in "run" script if defined (if links are used to named versions)
+/LocalInstallation/InstancePath:    Location where runit and startup directories are created (default rootPath)
+/LocalInstallation/UseVersionsDir:  DIRAC is installed under versions/<Versioned Directory> with a link from pro
+                                    (This option overwrites RootPath and InstancePath)
+/LocalInstallation/Host:            Used when build the URL to be published for the installed service
+/LocalInstallation/RunitDir:        Location where runit directory is created (default InstancePath/runit)
+/LocalInstallation/StartupDir:      Location where startup directory is created (default InstancePath/startup)
+/LocalInstallation/MySQLDir:        Location where mysql databases are created (default InstancePath/mysql)
 
 /LocalInstallation/Database/User:                 (default Dirac)
 /LocalInstallation/Database/Password:             (must be set for SystemAdministrator Service to work)
@@ -87,11 +89,17 @@ def loadDiracCfg( verbose = False ):
   setup = localCfg.getOption( __cfgPath( 'DIRAC', 'Setup' ), '' )
   instance = localCfg.getOption( __installPath( 'InstanceName' ), setup )
   logLevel = localCfg.getOption( __installPath( 'LogLevel' ), 'INFO' )
-  linkedRootPath = localCfg.getOption( __cfgPath( baseSection, 'RootPath' ), rootPath )
+  linkedRootPath = localCfg.getOption( __installPath( 'RootPath' ), rootPath )
+  useVersionsDir = localCfg.getOption( __installPath( 'UseVersionsDir' ), False )
+
   host = localCfg.getOption( __installPath( 'Host' ), getFQDN() )
 
   basePath = os.path.dirname( rootPath )
-  instancePath = localCfg.getOption( __installPath( 'InstancePath' ), basePath )
+  instancePath = localCfg.getOption( __installPath( 'InstancePath' ), rootPath )
+  if useVersionsDir:
+    # This option takes precedence
+    instancePath = os.path.dirname( os.path.dirname( rootPath ) )
+    linkedRootPath = os.path.join( instancePath, 'pro' )
   if verbose:
     gLogger.info( 'Using Instance Base Dir at', instancePath )
 
@@ -796,6 +804,43 @@ def setupSite( scriptCfg, cfg = None ):
   if not result['OK']:
     return result
   extensions = [ k.replace( 'DIRAC', '' ) for k in result['Value']]
+
+  # Make sure the necessary directories are there
+  if basePath != instancePath:
+    if not os.path.exists( instancePath ):
+      try:
+        os.makedirs( instancePath )
+      except:
+        error = 'Can not create directory for instance %s' % instancePath
+        if exitOnError:
+          gLogger.exception( error )
+          exit( -1 )
+        return S_ERROR( error )
+    if not os.path.isdir( instancePath ):
+      error = 'Instance directory %s is not valid' % instancePath
+      if exitOnError:
+        gLogger.error( error )
+        exit( -1 )
+      return S_ERROR( error )
+
+    instanceEtcDir = os.path.join( instancePath, 'etc' )
+    etcDir = os.path.dirname( cfgFile )
+    if not os.path.exists( instanceEtcDir ):
+      try:
+        os.symlink( etcDir, instanceEtcDir )
+      except:
+        error = 'Can not create link to configuration %s' % instanceEtcDir
+        if exitOnError:
+          gLogger.exception( error )
+          exit( -1 )
+        return S_ERROR( error )
+
+    if os.path.realpath( instanceEtcDir ) != os.path.realpath( etcDir ):
+      error = 'Instance etc (%s) is not the same as DIRAC etc (%s)' % ( instanceEtcDir, etcDir )
+      if exitOnError:
+        gLogger.error( error )
+        exit( -1 )
+      return S_ERROR( error )
 
   if diracCfg.getOption( __cfgPath( 'DIRAC', 'Configuration', 'Master' ), False ):
     # This server hosts the Master of the CS
