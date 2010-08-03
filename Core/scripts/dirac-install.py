@@ -28,6 +28,7 @@ class Params:
     self.buildIfNotAvailable = False
     self.debug = False
     self.lcgVer = ''
+    self.useVersionsDir = False
     self.downBaseURL = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3'
 
 cliParams = Params()
@@ -258,6 +259,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'b', 'build', 'Force local compilation' ),
             ( 'g:', 'grid=', 'lcg tools package version' ),
             ( 'B', 'buildIfNotAvailable', 'Build if not available' ),
+            ( 'v', 'useVersionsDir', 'Use versions directory' ),
             ( 'd', 'debug', 'Show debug messages' ),
             ( 'h', 'help', 'Show this help' ),
           )
@@ -279,7 +281,7 @@ cfgFD = open( cfgPath, "r" )
 CFG = imp.load_module( "CFG", cfgFD, cfgPath, ( "", "r", imp.PY_SOURCE ) )
 cfgFD.close()
 
-optCfg = None
+optCfg = CFG.CFG()
 for arg in args:
   if not arg[-4:] == ".cfg":
     continue
@@ -291,15 +293,15 @@ for arg in args:
     continue
   optCfg = optCfg.mergeWith( cfg['LocalInstallation'] )
 
-if optCfg:
-  cliParams.release = optCfg.getOption( 'Release', cliParams.release )
-  cliParams.externalsType = optCfg.getOption( 'InstallType', cliParams.externalsType )
-  cliParams.pythonVersion = optCfg.getOption( 'PythonVersion', cliParams.pythonVersion )
-  cliParams.platform = optCfg.getOption( 'Platform', cliParams.platform )
-  cliParams.targetPath = optCfg.getOption( 'TargetPath', cliParams.targetPath )
-  cliParams.buildExternals = optCfg.getOption( 'BuildExternals', cliParams.buildExternals )
-  cliParams.lcgVer = optCfg.getOption( 'LcgVer', cliParams.lcgVer )
-  cliParams.downBaseURL = optCfg.getOption( 'BaseURL', cliParams.downBaseURL )
+cliParams.release = optCfg.getOption( 'Release', cliParams.release )
+cliParams.externalsType = optCfg.getOption( 'InstallType', cliParams.externalsType )
+cliParams.pythonVersion = optCfg.getOption( 'PythonVersion', cliParams.pythonVersion )
+cliParams.platform = optCfg.getOption( 'Platform', cliParams.platform )
+cliParams.targetPath = optCfg.getOption( 'TargetPath', cliParams.targetPath )
+cliParams.buildExternals = optCfg.getOption( 'BuildExternals', cliParams.buildExternals )
+cliParams.lcgVer = optCfg.getOption( 'LcgVer', cliParams.lcgVer )
+cliParams.downBaseURL = optCfg.getOption( 'BaseURL', cliParams.downBaseURL )
+cliParams.useVersionsDir = optCfg.getOption( 'UseVersionsDir', cliParams.useVersionsDir )
 
 for o, v in optList:
   if o in ( '-h', '--help' ):
@@ -332,12 +334,24 @@ for o, v in optList:
       os.makedirs( v )
     except:
       pass
+  elif o in ( '-v', '--useVersionsDir' ):
+    cliParams.useVersionsDir = True
+
   elif o in ( '-b', '--build' ):
     cliParams.buildExternals = True
 
 if not cliParams.release:
   logERROR( ": Need to define a release version to install!" )
   usage()
+
+if cliParams.useVersionsDir:
+  # install under <installPath>/versions/<version>_<timestamp>
+  cliParams.basePath = cliParams.targetPath
+  cliParams.targetPath = os.path.join( cliParams.targetPath, 'versions', '%s_%s' % ( cliParams.release, int( time.time() ) ) )
+  try:
+    os.makedirs( cliParams.targetPath )
+  except:
+    pass
 
 #Get the list of tarfiles
 tarsURL = "%s/tars/tars.list" % cliParams.downBaseURL
@@ -462,5 +476,24 @@ for file in ( "releases.cfg", "CFG.py", "CFG.pyc", "CFG.pyo" ):
   filePath = os.path.join( cliParams.targetPath, file )
   if os.path.isfile( filePath ):
     os.unlink( filePath )
+
+if cliParams.useVersionsDir:
+  oldPath = os.path.join( cliParams.basePath, 'old' )
+  proPath = os.path.join( cliParams.basePath, 'pro' )
+  fakeEtc = os.path.join( cliParams.targetPath, 'etc' )
+  realEtc = os.path.join( cliParams.basePath, 'etc' )
+  try:
+    if os.path.exists( proPath ):
+      if os.path.exists( oldPath ):
+        os.unlink( oldPath )
+      os.rename( proPath, oldPath )
+    os.symlink( cliParams.targetPath, proPath )
+    if not os.path.exists( realEtc ):
+      os.makedirs( realEtc )
+    os.symlink( realEtc, fakeEtc )
+  except Exception, x:
+    logERROR( x )
+    sys.exit( 1 )
+
 logINFO( "DIRAC release %s successfully installed" % cliParams.release )
 sys.exit( 0 )
