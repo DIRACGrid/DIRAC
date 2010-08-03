@@ -31,6 +31,8 @@ class Refresher( threading.Thread ):
 
   def enable( self ):
     self.__refreshEnabled = True
+    if self.__lastRefreshExpired():
+      self.forceRefresh()
 
   def addListenerToNewVersionEvent( self, functor ):
     gEventDispatcher.addListener( "CSNewVersion", functor )
@@ -40,12 +42,15 @@ class Refresher( threading.Thread ):
     if not retVal[ 'OK' ]:
       gLogger.error( "Error while updating the configuration", retVal[ 'Message' ] )
 
+  def __lastRefreshExpired( self ):
+    return time.time() - self.__lastUpdateTime >= gConfigurationData.getRefreshTime()
+
   def refreshConfigurationIfNeeded( self ):
     if not self.__refreshEnabled or self.__automaticUpdate or not gConfigurationData.getServers():
       return
     self.__triggeredRefreshLock.acquire()
     try:
-      if time.time() - self.__lastUpdateTime < gConfigurationData.getRefreshTime():
+      if not self.__lastRefreshExpired():
         return
       self.__lastUpdateTime = time.time()
     finally:
