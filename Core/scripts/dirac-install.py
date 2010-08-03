@@ -210,7 +210,7 @@ def fixBuildPaths():
     line = fd.readline()
     fd.close()
     buildPath = line[2:line.find( cliParams.platform ) - 1]
-    replaceCmd = "grep -rIl '%s' %s | xargs sed -i '.org' 's:%s:%s:g'" % ( buildPath, cliParams.targetPath, buildPath, cliParams.targetPath )
+    replaceCmd = "grep -rIl '%s' %s | xargs sed -i'.org' 's:%s:%s:g'" % ( buildPath, cliParams.targetPath, buildPath, cliParams.targetPath )
     os.system( replaceCmd )
 
   except:
