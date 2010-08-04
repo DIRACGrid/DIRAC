@@ -58,6 +58,9 @@ class AgentModule:
     self.__configDefaults[ 'WorkDirectory' ] = os.path.join( self.__basePath,
                                                             'work',
                                                             os.path.join( *self.__moduleProperties[ 'fullName' ].split( "/" ) ) )
+    self.__configDefaults[ 'shifterProxyLocation' ] = os.path.join( self.__configDefaults[ 'WorkDirectory' ],
+                                                                        '.shifterCred' )
+
 
     for key in properties:
       self.__moduleProperties[ key ] = self.properties[ key ]
