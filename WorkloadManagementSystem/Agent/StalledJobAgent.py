@@ -14,7 +14,7 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB        import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.Core.Base.AgentModule                    import AgentModule
 from DIRAC.Core.Utilities.Time                      import fromString, toEpoch, dateTime
-from DIRAC                                          import gConfig, S_OK, S_ERROR
+from DIRAC                                          import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient                     import RPCClient
 from DIRAC.AccountingSystem.Client.Types.Job        import Job
 import time, types
@@ -64,7 +64,7 @@ class StalledJobAgent( AgentModule ):
 
     return S_OK( 'Stalled Job Agent cycle complete' )
 
- #############################################################################
+  #############################################################################
   def __markStalledJobs( self, stalledTime ):
     """ Identifies stalled jobs running without update longer than stalledTime.
     """
@@ -92,18 +92,20 @@ class StalledJobAgent( AgentModule ):
     self.log.info( 'Total jobs: %s, Stalled job count: %s, Running job count: %s' % ( len( jobs ), stalledCounter, runningCounter ) )
     return S_OK()
 
- #############################################################################
+  #############################################################################
   def __failStalledJobs( self, failedTime ):
     """ Changes the Stalled status to Failed for jobs long in the Stalled status
     """
 
     result = self.jobDB.selectJobs( {'Status':'Stalled'} )
+    if not result['OK']:
+      self.log.error( result['Message'] )
+      return result
 
     failedCounter = 0
 
     if not result['OK'] or not result['Value']:
       self.log.warn( result )
-      return result
     else:
       jobs = result['Value']
       self.log.info( '%s Stalled jobs will be checked for failure' % ( len( jobs ) ) )
@@ -132,10 +134,30 @@ class StalledJobAgent( AgentModule ):
           failedCounter += 1
           result = self.sendAccounting( job )
 
+    recoverCounter = 0
+
+    for minor in ["Job stalled: pilot not running", 'Stalling for more than %d sec' % failedTime]:
+      result = self.jobDB.selectJobs( {'Status':'Failed', 'MinorStatus':  minor } )
+      if not result['OK']:
+        self.log.error( result['Message'] )
+        return result
+      if result['Value']:
+        jobs = result['Value']
+        self.log.info( '%s Stalled jobs will be Accounted' % ( len( jobs ) ) )
+        for job in jobs:
+          result = self.sendAccounting( job )
+          if not result['OK']:
+            break
+          recoverCounter += 1
+      if not result['OK']:
+        break
+
     self.log.info( '%d jobs set to Failed' % failedCounter )
+    if recoverCounter:
+      self.log.info( '%d jobs properly Accounted' % recoverCounter )
     return S_OK( failedCounter )
 
- #############################################################################
+  #############################################################################
   def __getJobPilotStatus( self, jobID ):
     """ Get the job pilot status
     """
@@ -153,7 +175,7 @@ class StalledJobAgent( AgentModule ):
       return S_ERROR( 'Failed to get the pilot reference' )
 
 
- #############################################################################
+  #############################################################################
   def __getStalledJob( self, job, stalledTime ):
     """ Compares the most recent of LastUpdateTime and HeartBeatTime against
         the stalledTime limit.
@@ -173,7 +195,7 @@ class StalledJobAgent( AgentModule ):
 
     return S_ERROR( 'Job %s is running and will be ignored' % job )
 
- #############################################################################
+  #############################################################################
   def __getLatestUpdateTime( self, job ):
     """Returns the most recent of HeartBeatTime and LastUpdateTime
     """
@@ -291,10 +313,20 @@ class StalledJobAgent( AgentModule ):
     lastHeartBeatTime = jobDict['StartExecTime']
     if result['OK']:
       for name, value, heartBeatTime in result['Value']:
-        if 'CPUConsumed' == name and value > lastCPUTime:
-          lastCPUTime = value
-        if 'WallClockTime' == name and value > lastWallTime:
-          lastWallTime = value
+        if 'CPUConsumed' == name:
+          try:
+            value = int( float( value ) )
+            if value > lastCPUTime:
+              lastCPUTime = value
+          except:
+            pass
+        if 'WallClockTime' == name:
+          try:
+            value = int( float( value ) )
+            if value > lastWallTime:
+              lastWallTime = value
+          except:
+            pass
         if heartBeatTime > lastHeartBeatTime:
           lastHeartBeatTime = heartBeatTime
 
@@ -332,5 +364,6 @@ class StalledJobAgent( AgentModule ):
       self.jobDB.setJobAttribute( jobID, 'AccountedFlag', 'True' )
     else:
       self.log.warn( 'Failed to send accounting report for job %d' % int( jobID ) )
+      self.log.error( result['Message'] )
     return result
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
