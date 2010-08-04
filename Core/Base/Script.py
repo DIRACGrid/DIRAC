@@ -13,7 +13,7 @@ scriptName = os.path.basename( sys.argv[0] )
 
 def initAsScript( script = False ):
   global scriptName
-  if scriptName:
+  if script:
     scriptName = script
   scriptSection = localCfg.setConfigurationForScript( scriptName )
 
@@ -26,7 +26,7 @@ def initialize( script = False, ignoreErrors = False, initializeMonitor = False,
   if not enableCommandLine:
     localCfg.disableParsingCommandLine()
 
-  if scriptName:
+  if script:
     scriptName = script
   scriptSection = localCfg.setConfigurationForScript( scriptName )
 
