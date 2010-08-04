@@ -47,7 +47,7 @@ class StageMonitorAgent(AgentModule):
     replicaIDs = res['Value']['ReplicaIDs']
     gLogger.info("StageMonitor.monitorStageRequests: Obtained %s StageSubmitted replicas for monitoring." % len(replicaIDs))
     for storageElement,seReplicaIDs in seReplicas.items():
-      self.__monitorStorageElementStageRequests(storageElement,seReplicaIDs,replicaIDs)
+      self.__monitqorStorageElementStageRequests(storageElement,seReplicaIDs,replicaIDs)
     return S_OK()
 
   def __monitorStorageElementStageRequests(self,storageElement,seReplicaIDs,replicaIDs):
@@ -60,7 +60,7 @@ class StageMonitorAgent(AgentModule):
       pfnRepIDs[pfn] = replicaID
       pfnReqIDs[pfn] = replicaIDs[replicaID]['RequestID']
     gLogger.info("StageMonitor.__monitorStorageElementStageRequests: Monitoring %s stage requests for %s." % (len(pfnRepIDs),storageElement))
-    res = self.replicaManager.getPrestageStorageFileStatus(pfnReqIDs,storageElement)
+    res = self.replicaManager.getPrestageStorageFileStatus(pfnReqIDs,storageElement) 
     if not res['OK']:
       gLogger.error("StageMonitor.__monitorStorageElementStageRequests: Completely failed to monitor stage requests for replicas.",res['Message'])
       return
@@ -107,13 +107,26 @@ class StageMonitorAgent(AgentModule):
       return S_OK()
     else:
      gLogger.debug("StageRequest.__getStageSubmittedReplicas: Obtained %s StageSubmitted replicas(s) to process." % len(res['Value']))
+
     seReplicas = {}
     replicaIDs = res['Value']
     for replicaID,info in replicaIDs.items():
-      storageElement = info['StorageElement']
+      storageElement = info['SE']
       if not seReplicas.has_key(storageElement):
         seReplicas[storageElement] = []
       seReplicas[storageElement].append(replicaID)
+      
+    # RequestID was missing from replicaIDs dictionary 
+    res = self.stagerClient.getStageRequests({'StageStatus':'StageSubmitted'})
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      return S_ERROR('Could not obtain request IDs for replicas')
+    
+    for replicaID,info in res['Value'].items():
+      reqID = info['RequestID']
+      replicaIDs[replicaID]['RequestID'] = reqID
+        
     return S_OK({'SEReplicas':seReplicas,'ReplicaIDs':replicaIDs})
 
   def __reportProblematicFiles(self,lfns,reason):
