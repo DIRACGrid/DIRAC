@@ -127,7 +127,11 @@ class StageRequestAgent(AgentModule):
     seReplicas = {}
     replicaIDs = {}
     for replicaID,info in res['Value'].items():
-      lfn,storageElement,size,pfn = info
+      lfn = info['LFN']
+      storageElement = info['SE']
+      size = info['Size']
+      pfn = info['PFN']      
+#      lfn,storageElement,size,pfn = info
       replicaIDs[replicaID] = {'LFN':lfn,'PFN':pfn,'Size':size,'StorageElement':storageElement}
       if not seReplicas.has_key(storageElement):
         seReplicas[storageElement] = []
