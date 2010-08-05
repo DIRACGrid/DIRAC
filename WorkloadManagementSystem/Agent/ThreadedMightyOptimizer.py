@@ -25,10 +25,10 @@ gOptimizerLoadSync = ThreadSafe.Synchronizer()
 class ThreadedMightyOptimizer( AgentModule ):
 
   __jobStates = [ 'Received', 'Checking' ]
-  __defaultValidOptimizers = [ 'WorkloadManagement/JobPath',
-                               'WorkloadManagement/JobSanity',
-                               'WorkloadManagement/JobScheduling',
-                               'WorkloadManagement/TaskQueue',
+  __defaultValidOptimizers = [ 'WorkloadManagement/JobPathAgent',
+                               'WorkloadManagement/JobSanityAgent',
+                               'WorkloadManagement/JobSchedulingAgent',
+                               'WorkloadManagement/TaskQueueAgent',
                                ]
 
   def initialize( self ):
@@ -188,7 +188,7 @@ class ThreadedOptimizer( threading.Thread ):
     optList = List.fromChar( self.optimizerName, "/" )
     optList[1] = "/".join( optList[1:] )
     systemName = optList[0]
-    agentName = "%sAgent" % optList[1]
+    agentName = optList[1]
     rootModulesToLook = gConfig.getValue( "/LocalSite/Extensions", [] ) + [ 'DIRAC' ]
     for rootModule in rootModulesToLook:
       try:
