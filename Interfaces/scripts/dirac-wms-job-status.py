@@ -24,23 +24,21 @@ dirac=Dirac()
 exitCode = 0
 errorList = []
 
-for job in args:
+try:
+  jobs = [ int(job) for job in args ]
+except Exception,x:
+  print 'Expected integer for jobID'
+  exitCode = 2
+  DIRAC.exit(exitCode)
 
-  try:
-    job = int(job)
-  except Exception,x:
-    errorList.append( ('Expected integer for jobID', job) )
-    exitCode = 2
-    continue
-
-  result = dirac.status(job)
-  if result['OK']:
-    print job, result['Value']
-  else:
-    errorList.append( (job, result['Message']) )
-    exitCode = 2
-
-for error in errorList:
-  print "ERROR %s: %s" % error
+result = dirac.status(jobs)
+if result['OK']:
+  for job in result['Value']:
+    print 'JobID='+str(job), 
+    for status in result['Value'][job]:
+      print status+'='+result['Value'][job][status]+';',
+    print  
+else:
+  print "ERROR: %s" % error
 
 DIRAC.exit(exitCode)
