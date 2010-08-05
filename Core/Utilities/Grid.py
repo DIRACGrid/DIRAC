@@ -18,7 +18,7 @@ def executeGridCommand(proxy, cmd, gridEnvScript=None ):
     if gridEnvScript:
       ret = sourceEnv( 10, [gridEnvScript] )
       if not ret['OK']:
-        return S_ERROR( 'Failed sourcing GridEnv' )
+        return S_ERROR( 'Failed sourcing GridEnv: %s' % ret['Message'] )
       gridEnv = ret['outputEnv']
       #
       # Preserve some current settings if they are there
