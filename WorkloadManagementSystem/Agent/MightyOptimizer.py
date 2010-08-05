@@ -117,7 +117,7 @@ class MightyOptimizer( AgentModule ):
       nextOptimizer = "JobPath"
     else:
       nextOptimizer = jobAttrs[ 'MinorStatus' ]
-    if nextOptimizer in self.am_getOption( "FilteredOptimizers", "InputDataAgent, BKInputDataAgent" ):
+    if nextOptimizer in self.am_getOption( "FilteredOptimizers", "InputData, BKInputData" ):
       return S_OK( False )
     gLogger.info( "Next optimizer for job %s is %s" % ( jobAttrs['JobID'], nextOptimizer ) )
     if nextOptimizer not in self._optimizers:
@@ -132,7 +132,7 @@ class MightyOptimizer( AgentModule ):
     #Need to load an optimizer
     gLogger.info( "Loading optimizer %s" % optimizerName )
     try:
-      agentName = optimizerName
+      agentName = "%sAgent" % optimizerName
       optimizerModule = __import__( 'DIRAC.WorkloadManagementSystem.Agent.%s' % agentName,
                               globals(),
                               locals(), agentName )
