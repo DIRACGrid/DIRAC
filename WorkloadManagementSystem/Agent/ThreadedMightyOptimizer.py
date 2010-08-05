@@ -25,10 +25,10 @@ gOptimizerLoadSync = ThreadSafe.Synchronizer()
 class ThreadedMightyOptimizer( AgentModule ):
 
   __jobStates = [ 'Received', 'Checking' ]
-  __defaultValidOptimizers = [ 'WorkloadManagement/JobPathAgent',
-                               'WorkloadManagement/JobSanityAgent',
-                               'WorkloadManagement/JobSchedulingAgent',
-                               'WorkloadManagement/TaskQueueAgent',
+  __defaultValidOptimizers = [ 'WorkloadManagement/JobPath',
+                               'WorkloadManagement/JobSanity',
+                               'WorkloadManagement/JobScheduling',
+                               'WorkloadManagement/TaskQueue',
                                ]
 
   def initialize( self ):
@@ -188,7 +188,7 @@ class ThreadedOptimizer( threading.Thread ):
     optList = List.fromChar( self.optimizerName, "/" )
     optList[1] = "/".join( optList[1:] )
     systemName = optList[0]
-    agentName = optList[1]
+    agentName = "%sAgent" % optList[1]
     rootModulesToLook = gConfig.getValue( "/LocalSite/Extensions", [] ) + [ 'DIRAC' ]
     for rootModule in rootModulesToLook:
       try:
@@ -202,7 +202,7 @@ class ThreadedOptimizer( threading.Thread ):
         continue
       try:
         optimizerClass = getattr( optimizerModule, agentName )
-        optimizer = optimizerClass( self.optimizerName, self.containerName )
+        optimizer = optimizerClass( '%sAgent' % self.optimizerName, self.containerName )
         result = optimizer.am_initialize( self.jobDB, self.jobLoggingDB )
         if not result[ 'OK' ]:
           return S_ERROR( "Can't initialize optimizer %s: %s" % ( self.optimizerName, result[ 'Message' ] ) )
