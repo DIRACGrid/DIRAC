@@ -39,8 +39,10 @@ class JobSchedulingAgent( OptimizerModule ):
     self.stagingMinorStatus = self.am_getOption( 'StagingMinorStatus', 'Request Sent' )
     self.newStaging = self.am_getOption( 'NewStaging', True )
     self.stagerClient = StagerClient( True )
-    self.rescheduleDelaysList = self.am_getOption( 'RescheduleDelays', [60, 180, 300, 600] )
+    delays = self.am_getOption( 'RescheduleDelays', [60, 180, 300, 600] )
+    self.rescheduleDelaysList = [ int(x) for x in delays ]
     self.maxRescheduleDelay = self.rescheduleDelaysList[-1]
+    self.excludedOnHoldJobTypes = self.am_getOption( 'ExcludedOnHoldJobTypes', [] )
 
     return S_OK()
 
@@ -97,10 +99,13 @@ class JobSchedulingAgent( OptimizerModule ):
     if userSites:
       sites = self.__applySiteRequirements( userSites, wmsSites, wmsBannedSites )
       if not sites:
-        msg = 'On Hold: Requested site is Banned or not Active'
-        self.log.info( msg )
-        result = self.jobDB.setJobStatus( job, application = msg )
-        return S_OK()
+        # Put on Hold only non-excluded job types
+        jobType = classAdJob.getAttributeString('JobType')
+        if not jobType in self.excludedOnHoldJobTypes:
+          msg = 'On Hold: Requested site is Banned or not Active'
+          self.log.info( msg )
+          result = self.jobDB.setJobStatus( job, application = msg )
+          return S_OK()
 
 
     # Third, check if there is input data
