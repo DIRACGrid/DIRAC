@@ -296,9 +296,9 @@ CREATE TABLE ClientsCache(
   INDEX (Name),
   CommandName VARCHAR(64) NOT NULL,
   INDEX (CommandName),
-  Opt_ID VARCHAR(64) UNSIGNED,
+  Opt_ID VARCHAR(64),
   Value VARCHAR(16) NOT NULL,
-  Result VARCHAR(256) NOT NULL,
+  Result VARCHAR(255) NOT NULL,
   DateEffective DATETIME NOT NULL,
   LastCheckTime DATETIME NOT NULL,
   PRIMARY KEY(ccID)
