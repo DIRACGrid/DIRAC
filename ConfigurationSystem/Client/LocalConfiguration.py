@@ -31,9 +31,7 @@ class LocalConfiguration:
     self.componentType = False
     self.loggingSection = "/DIRAC"
     self.initialized = False
-    self.csDisabled = False
     self.__usageMessage = False
-    self.csDisabledServers = ""
 
   def disableParsingCommandLine( self ):
       self.isParsed = True
@@ -213,12 +211,6 @@ class LocalConfiguration:
 
     errorsList = self.__loadCFGFiles()
 
-    if self.csDisabled:
-      newDisabledServers = gConfigurationData.extractOptionFromCFG( "/DIRAC/Configuration/Servers" )
-      if newDisabledServers:
-        self.csDisabledServers = newDisabledServers
-      gConfigurationData.deleteLocalOption( "/DIRAC/Configuration/Servers" )
-
     if gConfigurationData.getServers():
       retVal = self.syncRemoteConfiguration()
       if not retVal[ 'OK' ]:
@@ -257,12 +249,6 @@ class LocalConfiguration:
               errorsList.append( retVal[ 'Message' ] )
           else:
             self.unprocessedSwitches.append( ( optionName, optionValue ) )
-
-    if self.csDisabled:
-      newDisabledServers = gConfigurationData.extractOptionFromCFG( "/DIRAC/Configuration/Servers" )
-      if newDisabledServers and not newDisabledServers == self.csDisabledServers:
-        self.csDisabledServers = "%s, %s" % ( self.csDisabledServers, newDisabledServers )
-      gConfigurationData.deleteLocalOption( "/DIRAC/Configuration/Servers" )
 
     if len( errorsList ) > 0:
       return S_ERROR( "\n%s" % "\n".join( errorsList ) )
