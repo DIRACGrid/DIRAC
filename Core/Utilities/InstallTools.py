@@ -434,7 +434,7 @@ def getSoftwareComponents( extensions ):
   agents = {}
 
   for extension in ['DIRAC'] + [ x + 'DIRAC' for x in extensions]:
-    if not os.path.exists(os.path.join( rootPath, extension )):
+    if not os.path.exists( os.path.join( rootPath, extension ) ):
       # Not all the extensions are necessarily installed in this instance
       continue
     systemList = os.listdir( os.path.join( rootPath, extension ) )
@@ -845,8 +845,37 @@ def setupSite( scriptCfg, cfg = None ):
         exit( -1 )
       return S_ERROR( error )
 
-  if diracCfg.getOption( __cfgPath( 'DIRAC', 'Configuration', 'Master' ), False ):
+  # if any server or agent needs to be install we need the startup directory and runsvdir running
+  if setupServices or setupAgents:
+    if not os.path.exists( startDir ):
+      try:
+        os.makedirs( startDir )
+      except:
+        error = 'Can not create %s' % startDir
+        if exitOnError:
+          gLogger.exception( error )
+          exit( -1 )
+        return S_ERROR( error )
+    # And need to make sure runsvdir is running
+    result = execCommand( 0, ['ps', '-ef'] )
+    if not result['OK']:
+      if exitOnError:
+        gLogger.error( result['Message'] )
+        exit( -1 )
+      return S_ERROR( result['Message'] )
+    processList = result['Value'][1].split( '\n' )
+    cmd = 'runsvdir %s' % startDir
+    cmdFound = False
+    for process in processList:
+      if process.find( cmd ) != -1:
+        cmdFound = True
+    if not cmdFound:
+      gLogger.info( 'Starting runsvdir ...' )
+      os.system( "runsvdir %s 'log:  DIRAC runsv' &" % startDir )
+
+  if ['Configuration', 'Server'] in setupServices and diracCfg.getOption( __cfgPath( 'DIRAC', 'Configuration', 'Master' ), False ):
     # This server hosts the Master of the CS
+    gLogger.info( 'Installing Master Configuration Server' )
     cfg = __getCfg( __cfgPath( 'DIRAC', 'Setups', setup ), 'Configuration', instance )
     _addCfgToDiracCfg( cfg )
     addDefaultOptionsToComponentCfg( 'service', 'Configuration', 'Server', [] )
@@ -854,8 +883,8 @@ def setupSite( scriptCfg, cfg = None ):
     setupComponent( 'service', 'Configuration', 'Server', [] )
     runsvctrlComponent( 'Configuration', 'Server', 't' )
 
-    while ( 'Configuration', 'Server' ) in setupServices:
-      setupServices.remove( ( 'Configuration', 'Server' ) )
+    while ['Configuration', 'Server'] in setupServices:
+      setupServices.remove( ['Configuration', 'Server'] )
 
   # Now need to check is there is valid CS to register the info
   result = scriptCfg.enableCS()
@@ -872,6 +901,13 @@ def setupSite( scriptCfg, cfg = None ):
       exit( -1 )
     return S_ERROR( error )
 
+  # We need to make sure components are connecting to the Master CS, that is the only one being update
+  from DIRAC import gConfig
+  localServers = localCfg.getOption( __cfgPath( 'DIRAC', 'Configuration', 'Servers' ) )
+  masterServer = gConfig.getValue( __cfgPath( 'DIRAC', 'Configuration', 'MasterServer' ), '' )
+  initialCfg = __getCfg( __cfgPath( 'DIRAC', 'Configuration' ), 'Servers' , localServers )
+  masterCfg = __getCfg( __cfgPath( 'DIRAC', 'Configuration' ), 'Servers' , masterServer )
+  _addCfgToDiracCfg( masterCfg )
 
   # 1.- Setup the instances in the CS
   # If the Configuration Server used is not the Master, it can take some time for this
@@ -913,6 +949,13 @@ def setupSite( scriptCfg, cfg = None ):
   for system, agent in setupAgents:
     setupComponent( 'agent', system, agent, extensions )
 
+  if localServers != masterServer:
+    _addCfgToDiracCfg( initialCfg )
+    for system, service in  setupServices:
+      runsvctrlComponent( system, service, 't' )
+    for system, agent in setupAgents:
+      runsvctrlComponent( system, agent, 't' )
+
   return S_OK()
 
 def installComponent( componentType, system, component, extensions ):
@@ -938,8 +981,9 @@ def installComponent( componentType, system, component, extensions ):
   # Now do the actual installation
   try:
     componentCfg = os.path.join( linkedRootPath, 'etc', '%s_%s.cfg' % ( system, component ) )
-    f = open( componentCfg, 'w' )
-    f.close()
+    if not os.path.exists( componentCfg ):
+      f = open( componentCfg, 'w' )
+      f.close()
 
     logDir = os.path.join( runitCompDir, 'log' )
     os.makedirs( logDir )
@@ -1097,15 +1141,21 @@ def fixMySQLScripts():
   return S_OK()
 
 
-def mysqlInstalled():
+def mysqlInstalled( doNotExit = False ):
   """
   Check if MySQL is already installed
   """
 
   if os.path.exists( mysqlDbDir ) or os.path.exists( mysqlLogDir ):
     return S_OK()
+  if doNotExit:
+    return S_ERROR()
 
-  return S_ERROR()
+  error = 'MySQL not properly Installed'
+  gLogger.error( error )
+  if exitOnError:
+    exit( -1 )
+  return S_ERROR( error )
 
 def getMySQLPasswords():
   """
@@ -1136,18 +1186,18 @@ def startMySQL():
   """
   Start MySQL server
   """
-  if not mysqlInstalled()['OK']:
-    return S_ERROR( 'MySQL not properly Installed' )
-
+  result = mysqlInstalled()
+  if not result['OK']:
+    return result
   return execCommand( 0, [mysqlStartupScript, 'start'] )
 
 def stopMySQL():
   """
   Stop MySQL server
   """
-  if not mysqlInstalled()['OK']:
-    return S_ERROR( 'MySQL not properly Installed' )
-
+  result = mysqlInstalled()
+  if not result['OK']:
+    return result
   return execCommand( 0, [mysqlStartupScript, 'stop'] )
 
 def installMySQL():
@@ -1158,7 +1208,7 @@ def installMySQL():
     Slave
     None
   """
-  if mysqlInstalled()['OK']:
+  if mysqlInstalled( doNotExit = True )['OK']:
     gLogger.info( 'MySQL already installed' )
     return S_OK()
 
@@ -1315,12 +1365,9 @@ def installDatabase( dbName ):
   """
   Install requested DB in MySQL server
   """
-  if not mysqlInstalled()['OK']:
-    error = 'MySQL not installed'
-    gLogger.error( error )
-    if exitOnError:
-      exit( -1 )
-    return S_ERROR( error )
+  result = mysqlInstalled()
+  if not result['OK']:
+    return result
 
   if not mysqlRootPwd:
     rootPwdPath = __installPath( 'Database', 'RootPwd' )
@@ -1391,6 +1438,7 @@ def installDatabase( dbName ):
           result = execMySQL( '\n'.join( cmdLines ), dbName )
           if not result['OK']:
             error = 'Failed to initialize Database'
+            gLogger.info( '\n'.join( cmdLines ) )
             gLogger.error( error, result['Message'] )
             if exitOnError:
               exit( -1 )
@@ -1414,6 +1462,7 @@ def installDatabase( dbName ):
               result = execMySQL( '\n'.join( cmdLines ), dbName )
               if not result['OK']:
                 error = 'Failed to initialize Database'
+                gLogger.info( '\n'.join( cmdLines ) )
                 gLogger.error( error, result['Message'] )
                 if exitOnError:
                   exit( -1 )
