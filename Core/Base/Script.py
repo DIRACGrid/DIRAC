@@ -23,7 +23,7 @@ def parseCommandLine( script = False, ignoreErrors = False, initializeMonitor = 
 def initialize( script = False, ignoreErrors = False, initializeMonitor = False, enableCommandLine = True ):
   global localCfg, scriptName
 
-  userDisabled = localCfg.isCSEnabled()
+  userDisabled = not localCfg.isCSEnabled()
   if not userDisabled:
     localCfg.disableCS()
 
