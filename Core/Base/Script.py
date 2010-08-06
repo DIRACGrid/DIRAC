@@ -23,6 +23,10 @@ def parseCommandLine( script = False, ignoreErrors = False, initializeMonitor = 
 def initialize( script = False, ignoreErrors = False, initializeMonitor = False, enableCommandLine = True ):
   global localCfg, scriptName
 
+  userDisabled = localCfg.isCSEnabled()
+  if not userDisabled:
+    localCfg.disableCS()
+
   if not enableCommandLine:
     localCfg.disableParsingCommandLine()
 
@@ -36,6 +40,9 @@ def initialize( script = False, ignoreErrors = False, initializeMonitor = False,
   if not ignoreErrors and not resultDict[ 'OK' ]:
     gLogger.error( "There were errors when loading configuration", resultDict[ 'Message' ] )
     sys.exit( 1 )
+
+  if not userDisabled:
+    localCfg.enableCS()
 
   if initializeMonitor:
     gMonitor.setComponentType( gMonitor.COMPONENT_SCRIPT )
@@ -75,5 +82,5 @@ def disableCS():
 def enableCS():
   return localCfg.enableCS()
 
-def showHelp( text ):
+def showHelp( text = False ):
   localCfg.showHelp( text )

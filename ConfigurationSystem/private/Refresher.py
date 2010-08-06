@@ -34,6 +34,9 @@ class Refresher( threading.Thread ):
     if self.__lastRefreshExpired():
       self.forceRefresh()
 
+  def isEnabled( self ):
+    return self.__refreshEnabled
+
   def addListenerToNewVersionEvent( self, functor ):
     gEventDispatcher.addListener( "CSNewVersion", functor )
 

@@ -275,6 +275,9 @@ class LocalConfiguration:
     gRefresher.enable()
     return S_OK()
 
+  def isCSEnabled( self ):
+    return gRefresher.isEnabled()
+
 
   def syncRemoteConfiguration( self, strict = False ):
     if self.componentName == "Configuration/Server" :
