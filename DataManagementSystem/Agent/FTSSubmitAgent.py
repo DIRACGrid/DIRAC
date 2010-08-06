@@ -110,7 +110,6 @@ class FTSSubmitAgent(AgentModule):
     #  Submit the FTS request and retrieve the FTS GUID/Server
     gLogger.info('Submitting the FTS request')
     res = oFTSRequest.submit()
-    print oFTSRequest.__file__
     if not res['OK']:
       errStr = "FTSSubmitAgent.%s" % res['Message']
       gLogger.error(errStr)
