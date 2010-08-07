@@ -15,33 +15,33 @@ from DIRAC.Core.DISET.RPCClient import executeRPCStub
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.RequestManagementSystem.Agent.RequestAgentMixIn import RequestAgentMixIn
 
-import time,os,re
+import time, os, re
 from types import *
 
 AGENT_NAME = 'RequestManagement/DISETForwardingAgent'
 
-class DISETForwardingAgent(AgentModule,RequestAgentMixIn):
+class DISETForwardingAgent( AgentModule, RequestAgentMixIn ):
 
-  def initialize(self):
+  def initialize( self ):
 
     self.RequestDBClient = RequestClient()
 
-    gMonitor.registerActivity("Iteration",          "Agent Loops",                  "DISETForwardingAgent",      "Loops/min",      gMonitor.OP_SUM)
-    gMonitor.registerActivity("Attempted",          "Request Processed",            "DISETForwardingAgent",      "Requests/min",   gMonitor.OP_SUM)
-    gMonitor.registerActivity("Successful",         "Request Forward Successful",   "DISETForwardingAgent",      "Requests/min",   gMonitor.OP_SUM)
-    gMonitor.registerActivity("Failed",             "Request Forward Failed",       "DISETForwardingAgent",      "Requests/min",   gMonitor.OP_SUM)
+    gMonitor.registerActivity( "Iteration", "Agent Loops", "DISETForwardingAgent", "Loops/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "Attempted", "Request Processed", "DISETForwardingAgent", "Requests/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "Successful", "Request Forward Successful", "DISETForwardingAgent", "Requests/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "Failed", "Request Forward Failed", "DISETForwardingAgent", "Requests/min", gMonitor.OP_SUM )
 
-    self.local = PathFinder.getServiceURL("RequestManagement/localURL")
+    self.local = PathFinder.getServiceURL( "RequestManagement/localURL" )
     if not self.local:
       errStr = 'The RequestManagement/localURL option must be defined.'
-      gLogger.fatal(errStr)
-      return S_ERROR(errStr)
+      gLogger.fatal( errStr )
+      return S_ERROR( errStr )
     return S_OK()
-  
-  def execute(self):
+
+  def execute( self ):
     """ The main execute method
     """
-    self.requestsPerCycle = self.am_getOption( '/RequestsPerCycle',10 )
+    self.requestsPerCycle = self.am_getOption( '/RequestsPerCycle', 10 )
     count = 0
     while count < self.requestsPerCycle:
       gLogger.verbose( 'Executing request #%d in this cycle' % count )
@@ -49,86 +49,86 @@ class DISETForwardingAgent(AgentModule,RequestAgentMixIn):
       if not result['OK']:
         return result
       count += 1
-      
-    return S_OK()  
 
-  def execute_request(self):
+    return S_OK()
+
+  def execute_request( self ):
     """ Takes one DISET request and forward it to the destination service
     """
-    gMonitor.addMark("Iteration",1)
-    res = self.RequestDBClient.getRequest('diset',url=self.local)
+    gMonitor.addMark( "Iteration", 1 )
+    res = self.RequestDBClient.getRequest( 'diset', url = self.local )
     if not res['OK']:
-      gLogger.error("DISETForwardingAgent.execute: Failed to get request from database.",self.local)
+      gLogger.error( "DISETForwardingAgent.execute: Failed to get request from database.", self.local )
       return S_OK()
     elif not res['Value']:
-      gLogger.info("DISETForwardingAgent.execute: No requests to be executed found.")
+      gLogger.info( "DISETForwardingAgent.execute: No requests to be executed found." )
       return S_OK()
 
-    gMonitor.addMark("Attempted",1)
+    gMonitor.addMark( "Attempted", 1 )
     requestString = res['Value']['RequestString']
     requestName = res['Value']['RequestName']
     try:
-      jobID = int(res['Value']['JobID'])
+      jobID = int( res['Value']['JobID'] )
     except:
       jobID = 0
-    gLogger.info("DISETForwardingAgent.execute: Obtained request %s" % requestName)
+    gLogger.info( "DISETForwardingAgent.execute: Obtained request %s" % requestName )
 
-    result = self.RequestDBClient.getCurrentExecutionOrder(requestName,self.local)
+    result = self.RequestDBClient.getCurrentExecutionOrder( requestName, self.local )
     if result['OK']:
       currentOrder = result['Value']
     else:
-      return S_OK('Can not get the request execution order')
+      return S_OK( 'Can not get the request execution order' )
 
-    oRequest = RequestContainer(request=requestString)
+    oRequest = RequestContainer( request = requestString )
     requestAttributes = oRequest.getRequestAttributes()['Value']
 
     ################################################
     # Find the number of sub-requests from the request
-    res = oRequest.getNumSubRequests('diset')
+    res = oRequest.getNumSubRequests( 'diset' )
     if not res['OK']:
       errStr = "DISETForwardingAgent.execute: Failed to obtain number of diset subrequests."
-      gLogger.error(errStr,res['Message'])
+      gLogger.error( errStr, res['Message'] )
       return S_OK()
 
-    gLogger.info("DISETForwardingAgent.execute: Found %s sub requests for job %s" % (res['Value'],jobID))
+    gLogger.info( "DISETForwardingAgent.execute: Found %s sub requests for job %s" % ( res['Value'], jobID ) )
     ################################################
     # For all the sub-requests in the request
     modified = False
-    for ind in range(res['Value']):
-      subRequestAttributes = oRequest.getSubRequestAttributes(ind,'diset')['Value']
-      subExecutionOrder = int(subRequestAttributes['ExecutionOrder'])
+    for ind in range( res['Value'] ):
+      subRequestAttributes = oRequest.getSubRequestAttributes( ind, 'diset' )['Value']
+      subExecutionOrder = int( subRequestAttributes['ExecutionOrder'] )
       subStatus = subRequestAttributes['Status']
-      gLogger.info("DISETForwardingAgent.execute: Processing sub-request %s with execution order %d" % (ind,subExecutionOrder))
+      gLogger.info( "DISETForwardingAgent.execute: Processing sub-request %s with execution order %d" % ( ind, subExecutionOrder ) )
       if subStatus == 'Waiting' and subExecutionOrder <= currentOrder:
         operation = subRequestAttributes['Operation']
-        gLogger.info("DISETForwardingAgent.execute: Attempting to forward %s type." % operation)
+        gLogger.info( "DISETForwardingAgent.execute: Attempting to forward %s type." % operation )
         rpcStubString = subRequestAttributes['Arguments']
-        rpcStub,length = DEncode.decode(rpcStubString)
-        res = executeRPCStub(rpcStub)
+        rpcStub, length = DEncode.decode( rpcStubString )
+        res = executeRPCStub( rpcStub )
         if res['OK']:
-          gLogger.info("DISETForwardingAgent.execute: Successfully forwarded.")
-          oRequest.setSubRequestStatus(ind,'diset','Done')
-          gMonitor.addMark("Successful",1)
+          gLogger.info( "DISETForwardingAgent.execute: Successfully forwarded." )
+          oRequest.setSubRequestStatus( ind, 'diset', 'Done' )
+          gMonitor.addMark( "Successful", 1 )
           modified = True
         elif res['Message'] == 'No Matching Job':
-          gLogger.warn("DISETForwardingAgent.execute: No corresponding job found. Setting to done.")
-          oRequest.setSubRequestStatus(ind,'diset','Done')
+          gLogger.warn( "DISETForwardingAgent.execute: No corresponding job found. Setting to done." )
+          oRequest.setSubRequestStatus( ind, 'diset', 'Done' )
         else:
-          gLogger.error("DISETForwardingAgent.execute: Failed to forward request.",res['Message'])
+          gLogger.error( "DISETForwardingAgent.execute: Failed to forward request.", res['Message'] )
       else:
-        gLogger.info("DISETForwardingAgent.execute: Sub-request %s is status '%s' and  not to be executed." % (ind,subRequestAttributes['Status']))
+        gLogger.info( "DISETForwardingAgent.execute: Sub-request %s is status '%s' and  not to be executed." % ( ind, subRequestAttributes['Status'] ) )
 
     ################################################
     #  Generate the new request string after operation
     requestString = oRequest.toXML()['Value']
-    res = self.RequestDBClient.updateRequest(requestName,requestString,self.local)
+    res = self.RequestDBClient.updateRequest( requestName, requestString, self.local )
     if res['OK']:
-      gLogger.info("DISETForwardingAgent.execute: Successfully updated request.")
+      gLogger.info( "DISETForwardingAgent.execute: Successfully updated request." )
     else:
-      gLogger.error("DISETForwardingAgent.execute: Failed to update request to", self.central)
+      gLogger.error( "DISETForwardingAgent.execute: Failed to update request to", self.central )
 
     if modified and jobID:
-      result = self.finalizeRequest(requestName,jobID,self.local)
+      result = self.finalizeRequest( requestName, jobID, self.local )
 
     return S_OK()
 
