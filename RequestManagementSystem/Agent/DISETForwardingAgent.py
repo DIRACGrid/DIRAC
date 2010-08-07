@@ -25,6 +25,15 @@ class DISETForwardingAgent( AgentModule, RequestAgentMixIn ):
   def initialize( self ):
 
     self.RequestDBClient = RequestClient()
+    backend = self.am_getOption( 'Backend', '' )
+    self.RequestDB = False
+    if backend == 'mysql':
+      from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
+      requestDB = RequestDBMySQL()
+      if requestDB._connected:
+        self.RequestDB = requestDB
+
+
 
     gMonitor.registerActivity( "Iteration", "Agent Loops", "DISETForwardingAgent", "Loops/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "Attempted", "Request Processed", "DISETForwardingAgent", "Requests/min", gMonitor.OP_SUM )
@@ -56,7 +65,10 @@ class DISETForwardingAgent( AgentModule, RequestAgentMixIn ):
     """ Takes one DISET request and forward it to the destination service
     """
     gMonitor.addMark( "Iteration", 1 )
-    res = self.RequestDBClient.getRequest( 'diset', url = self.local )
+    if self.RequestDB:
+      res = self.RequestDB.getRequest( 'diset' )
+    else:
+      res = self.RequestDBClient.getRequest( 'diset', url = self.local )
     if not res['OK']:
       gLogger.error( "DISETForwardingAgent.execute: Failed to get request from database.", self.local )
       return S_OK()
@@ -73,7 +85,14 @@ class DISETForwardingAgent( AgentModule, RequestAgentMixIn ):
       jobID = 0
     gLogger.info( "DISETForwardingAgent.execute: Obtained request %s" % requestName )
 
-    result = self.RequestDBClient.getCurrentExecutionOrder( requestName, self.local )
+    if self.RequestDB:
+      result = self.RequestDB._getRequestAttribute( 'RequestID', requestName = requestName )
+      if not result['OK']:
+        return S_OK( 'Can not get the request execution order' )
+      requestID = result['Value']
+      result = self.RequestDB.getCurrentExecutionOrder( requestID )
+    else:
+      result = self.RequestDBClient.getCurrentExecutionOrder( requestName, self.local )
     if result['OK']:
       currentOrder = result['Value']
     else:
@@ -121,7 +140,10 @@ class DISETForwardingAgent( AgentModule, RequestAgentMixIn ):
     ################################################
     #  Generate the new request string after operation
     requestString = oRequest.toXML()['Value']
-    res = self.RequestDBClient.updateRequest( requestName, requestString, self.local )
+    if self.RequestDB:
+      res = self.RequestDB.updateRequest( requestName, requestString )
+    else:
+      res = self.RequestDBClient.updateRequest( requestName, requestString, self.local )
     if res['OK']:
       gLogger.info( "DISETForwardingAgent.execute: Successfully updated request." )
     else:
@@ -131,4 +153,3 @@ class DISETForwardingAgent( AgentModule, RequestAgentMixIn ):
       result = self.finalizeRequest( requestName, jobID, self.local )
 
     return S_OK()
-
