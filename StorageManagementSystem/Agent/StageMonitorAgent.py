@@ -47,7 +47,7 @@ class StageMonitorAgent(AgentModule):
     replicaIDs = res['Value']['ReplicaIDs']
     gLogger.info("StageMonitor.monitorStageRequests: Obtained %s StageSubmitted replicas for monitoring." % len(replicaIDs))
     for storageElement,seReplicaIDs in seReplicas.items():
-      self.__monitqorStorageElementStageRequests(storageElement,seReplicaIDs,replicaIDs)
+      self.__monitorStorageElementStageRequests(storageElement,seReplicaIDs,replicaIDs)
     return S_OK()
 
   def __monitorStorageElementStageRequests(self,storageElement,seReplicaIDs,replicaIDs):
