@@ -1073,11 +1073,11 @@ class AccountingDB( DB ):
     """
     for typeName in self.dbCatalog:
       if self.dbCatalog[ typeName ][ 'dataTimespan' ] > 0:
-        self.log.info( "Deleting records older that timespan for type %s" % typeName )
+        self.log.info( "[COMPACT] Deleting records older that timespan for type %s" % typeName )
         self.__deleteRecordsOlderThanDataTimespan( typeName )
-      self.log.info( "Compacting %s" % typeName )
+      self.log.info( "[COMPACT] Compacting %s" % typeName )
       self.__compactBucketsForType( typeName )
-    self.log.info( "Compaction finished" )
+    self.log.info( "[COMPACT] Compaction finished" )
     self.__lastCompactionEpoch = int( Time.toEpoch() )
     return S_OK()
 
@@ -1130,24 +1130,26 @@ class AccountingDB( DB ):
     #if not retVal[ 'OK' ]:
     #  return retVal
     for bPos in range( len( self.dbBucketsLength[ typeName ] ) - 1 ):
+      self.log.info( "[COMPACT] Query %d of %d" % ( bPos, len( self.dbBucketsLength[ typeName ] ) - 1 ) )
       secondsLimit = self.dbBucketsLength[ typeName ][ bPos ][0]
       bucketLength = self.dbBucketsLength[ typeName ][ bPos ][1]
       timeLimit = ( nowEpoch - nowEpoch % bucketLength ) - secondsLimit
       nextBucketLength = self.dbBucketsLength[ typeName ][ bPos + 1 ][1]
-      self.log.verbose( "Compacting data newer that %s with bucket size %s" % ( Time.fromEpoch( timeLimit ), bucketLength ) )
+      self.log.verbose( "[COMPACT] Compacting data newer that %s with bucket size %s" % ( Time.fromEpoch( timeLimit ), bucketLength ) )
       #Retrieve the data
       retVal = self.__selectForCompactBuckets( typeName, timeLimit, bucketLength, nextBucketLength, connObj )
       if not retVal[ 'OK' ]:
         #self.__rollbackTransaction( connObj )
         return retVal
       bucketsData = retVal[ 'Value' ]
+      self.log.verbose( "[COMPACT] Got %d records to compact" % len( bucketsData ) )
       if len( bucketsData ) == 0:
         continue
       retVal = self.__deleteForCompactBuckets( typeName, timeLimit, bucketLength, connObj )
       if not retVal[ 'OK' ]:
         #self.__rollbackTransaction( connObj )
         return retVal
-      self.log.info( "Compacting %s records %s seconds size for %s" % ( len( bucketsData ), bucketLength, typeName ) )
+      self.log.info( "[COMPACT] Compacting %s records %s seconds size for %s" % ( len( bucketsData ), bucketLength, typeName ) )
       #Add data
       for record in bucketsData:
         startTime = record[-2]
@@ -1156,7 +1158,8 @@ class AccountingDB( DB ):
         retVal = self.__splitInBuckets( typeName, startTime, endTime, valuesList, connObj )
         if not retVal[ 'OK' ]:
           #self.__rollbackTransaction( connObj )
-          self.log.error( "Error while compacting data for record in %s: %s" % ( typeName, retVal[ 'Value' ] ) )
+          self.log.error( "[COMPACT] Error while compacting data for record in %s: %s" % ( typeName, retVal[ 'Value' ] ) )
+      self.log.info( "[COMPACT] Finised compaction %d of %d" % ( bPos, len( self.dbBucketsLength[ typeName ] ) - 1 ) )
     #return self.__commitTransaction( connObj )
     return S_OK()
 
