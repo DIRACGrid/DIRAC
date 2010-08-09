@@ -96,7 +96,7 @@ class FTSMonitorAgent(AgentModule):
     if not res['OK']:
       gLogger.error("Failed to get FTS percentage complete",res['Message'])
       return res
-    gLogger.info('FTS Request found to be %s percent complete' % res['Value'])
+    gLogger.info('FTS Request found to be %.1f percent complete' % res['Value'])
     self.TransferDB.setFTSReqAttribute(ftsReqID,'PercentageComplete',res['Value'])
     self.TransferDB.addLoggingEvent(ftsReqID,res['Value'])
 
@@ -106,7 +106,7 @@ class FTSMonitorAgent(AgentModule):
     if not res['OK']:
       gLogger.error("Failed to determine whether FTS request terminal",res['Message'])
       return res
-    if not res['OK']:
+    if not res['Value']:
       return S_OK()
     gLogger.info('FTS Request found to be terminal, updating file states')
 
@@ -225,7 +225,12 @@ class FTSMonitorAgent(AgentModule):
     return S_OK()
 
   def missingSource(self,failReason):
-    missingSourceErrors = ['SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed','SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] No such file or directory','SOURCE error during PREPARATION phase: \[INVALID_PATH\] Failed','SOURCE error during PREPARATION phase: \[INVALID_PATH\] The requested file either does not exist','TRANSFER error during TRANSFER phase: \[INVALID_PATH\] the server sent an error response: 500 500 Command failed. : open error: No such file or directory','SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist']
+    missingSourceErrors = ['SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed',
+                           'SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] No such file or directory',
+                           'SOURCE error during PREPARATION phase: \[INVALID_PATH\] Failed',
+                           'SOURCE error during PREPARATION phase: \[INVALID_PATH\] The requested file either does not exist',
+                           'TRANSFER error during TRANSFER phase: \[INVALID_PATH\] the server sent an error response: 500 500 Command failed. : open error: No such file or directory',
+                           'SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist']
     for error in missingSourceErrors:
       if re.search(error,failReason):
         return 1
