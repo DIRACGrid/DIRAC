@@ -1135,14 +1135,14 @@ class AccountingDB( DB ):
       bucketLength = self.dbBucketsLength[ typeName ][ bPos ][1]
       timeLimit = ( nowEpoch - nowEpoch % bucketLength ) - secondsLimit
       nextBucketLength = self.dbBucketsLength[ typeName ][ bPos + 1 ][1]
-      self.log.verbose( "[COMPACT] Compacting data newer that %s with bucket size %s" % ( Time.fromEpoch( timeLimit ), bucketLength ) )
+      self.log.info( "[COMPACT] Compacting data newer that %s with bucket size %s" % ( Time.fromEpoch( timeLimit ), bucketLength ) )
       #Retrieve the data
       retVal = self.__selectForCompactBuckets( typeName, timeLimit, bucketLength, nextBucketLength, connObj )
       if not retVal[ 'OK' ]:
         #self.__rollbackTransaction( connObj )
         return retVal
       bucketsData = retVal[ 'Value' ]
-      self.log.verbose( "[COMPACT] Got %d records to compact" % len( bucketsData ) )
+      self.log.info( "[COMPACT] Got %d records to compact" % len( bucketsData ) )
       if len( bucketsData ) == 0:
         continue
       retVal = self.__deleteForCompactBuckets( typeName, timeLimit, bucketLength, connObj )
