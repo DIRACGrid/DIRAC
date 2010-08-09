@@ -633,22 +633,25 @@ class AccountingDB( DB ):
     if not retVal[ 'OK' ]:
       return retVal
     connObj = retVal[ 'Value' ]
-    retVal = self._insert( self.__getTableName( "type", typeName ),
-                           self.dbCatalog[ typeName ][ 'typeFields' ],
-                           insertList,
-                           conn = connObj )
-    if not retVal[ 'OK' ]:
-      return retVal
-    #HACK: One more record to split in the buckets to be able to count total entries
-    valuesList.append( 1 )
-    retVal = self.__startTransaction( connObj )
-    if not retVal[ 'OK' ]:
-      return retVal
-    retVal = self.__splitInBuckets( typeName, startTime, endTime, valuesList, connObj = connObj )
-    if not retVal[ 'OK' ]:
-      self.__rollbackTransaction( connObj )
-      return retVal
-    return self.__commitTransaction( connObj )
+    try:
+      retVal = self._insert( self.__getTableName( "type", typeName ),
+                             self.dbCatalog[ typeName ][ 'typeFields' ],
+                             insertList,
+                             conn = connObj )
+      if not retVal[ 'OK' ]:
+        return retVal
+      #HACK: One more record to split in the buckets to be able to count total entries
+      valuesList.append( 1 )
+      retVal = self.__startTransaction( connObj )
+      if not retVal[ 'OK' ]:
+        return retVal
+      retVal = self.__splitInBuckets( typeName, startTime, endTime, valuesList, connObj = connObj )
+      if not retVal[ 'OK' ]:
+        self.__rollbackTransaction( connObj )
+        return retVal
+      return self.__commitTransaction( connObj )
+    finally:
+      connObj.close()
 
   def deleteRecord( self, typeName, startTime, endTime, valuesList ):
     """
@@ -1161,6 +1164,7 @@ class AccountingDB( DB ):
           self.log.error( "[COMPACT] Error while compacting data for record in %s: %s" % ( typeName, retVal[ 'Value' ] ) )
       self.log.info( "[COMPACT] Finised compaction %d of %d" % ( bPos, len( self.dbBucketsLength[ typeName ] ) - 1 ) )
     #return self.__commitTransaction( connObj )
+    connObj.close()
     return S_OK()
 
   def __deleteRecordsOlderThanDataTimespan( self, typeName ):
@@ -1296,6 +1300,7 @@ class AccountingDB( DB ):
         if rebucketedRecords % 1000 == 0:
           self.log.info( "[REBUCKET] Rebucketed %s records..." % rebucketedRecords )
     #return self.__commitTransaction( connObj )
+    connObj.close()
     return S_OK()
 
 
