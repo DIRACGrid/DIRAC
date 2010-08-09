@@ -93,8 +93,8 @@ class Dirac:
 
        Example Usage:
 
-       >>> print dirac.monitorRepository()
-       {'OK': True, 'Value': ''}
+       >>> print dirac.getRepositoryJobs()
+       {'OK': True, 'Value': [1,2,3,4]}
 
        @return: S_OK,S_ERROR
     """
@@ -125,18 +125,19 @@ class Dirac:
     res = self.status( jobIDs )
     if not res['OK']:
       return self.__errorReport( res['Message'], 'Failed to get status of jobs from WMS' )
+
+    jobs = self.jobRepo.readRepository()['Value']
+    statusDict = {}
+    for jobDict in jobs.values():
+      state = 'Unknown'
+      if jobDict.has_key( 'State' ):
+        state = jobDict['State']
+      if not statusDict.has_key( state ):
+        statusDict[state] = 0
+      statusDict[state] += 1
     if printOutput:
-      jobs = self.jobRepo.readRepository()['Value']
-      statusDict = {}
-      for jobDict in jobs.values():
-        state = 'Unknown'
-        if jobDict.has_key( 'State' ):
-          state = jobDict['State']
-        if not statusDict.has_key( state ):
-          statusDict[state] = 0
-        statusDict[state] += 1
       print self.pPrint.pformat( statusDict )
-    return S_OK()
+    return S_OK(statusDict)
 
   def retrieveRepositorySandboxes( self, requestedStates = ['Done', 'Failed'], destinationDirectory = '' ):
     """ Obtain the output sandbox for the jobs in requested states in the repository
