@@ -672,7 +672,7 @@ class FTSRequest:
     self.submitTime = re.search(regExp,output).group(1)
     self.statusSummary = {}
     for state in self.fileStates:
-      regExp = re.compile("\s+%s:\s+(\d)" % state)
+      regExp = re.compile("\s+%s:\s+(\d+)" % state)
       self.statusSummary[state] = int(re.search(regExp,output).group(1))
     if not full:
       return S_OK()
