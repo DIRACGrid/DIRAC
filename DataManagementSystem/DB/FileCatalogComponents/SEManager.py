@@ -15,15 +15,15 @@ class SEManagerBase:
     self.db = database
     self.lock = threading.Lock()
     self._refreshSEs()
-    #self.seUpdatePeriod = 600
+    self.seUpdatePeriod = 600
     
   def setUpdatePeriod(self,period): 
     self.seUpdatePeriod = period
     
   def setSEDefinitions(self,seDefinitions):
-    self.seDefinitions = seDefinitions
+    self.db.seDefinitions = seDefinitions
     self.seNames= {}
-    for seID,seDef in self.seDefinitions.items():
+    for seID,seDef in self.db.seDefinitions.items():
       seName = seDef['SEName']
       self.seNames[seName] = seID
 
@@ -55,9 +55,11 @@ class SEManagerDB(SEManagerBase):
       return res
     self.db.seNames = {}
     self.db.seids = {}
+    self.db.seDefinitions = {}
     for seid,seName in res['Value']:
       self.db.seNames[seName] = seid
       self.db.seids[seid] = seName
+      self.getSEDefinition(seid)
     gLogger.debug("SEManager RefreshSEs lock released. Used %.3f seconds." % (time.time()-waitTime))
     self.lock.release()
     return S_OK()
@@ -81,6 +83,7 @@ class SEManagerDB(SEManagerBase):
     seid = res['lastRowId']
     self.db.seids[seid] = seName
     self.db.seNames[seName] = seid
+    self.getSEDefinition(seid)
     gLogger.debug("SEManager AddSE lock released. Used %.3f seconds. %s" % (time.time()-waitTime,seName))
     self.lock.release()
     return S_OK(seid)
@@ -101,6 +104,7 @@ class SEManagerDB(SEManagerBase):
     if seid != 'Missing':
       self.db.seNames.pop(seName)
       self.db.seids.pop(seid)
+      self.db.seDefinitions.pop(seid)
     gLogger.debug("SEManager RemoveSE lock released. Used %.3f seconds. %s" % (time.time()-waitTime,seName))
     self.lock.release()
     return S_OK()
@@ -133,32 +137,36 @@ class SEManagerDB(SEManagerBase):
   def getSEDefinition(self,seID):
     """ Get the Storage Element definition
     """
-    if seID in self.seDefinitions:
-      if (time.time()-self.seDefinitions[seID]['LastUpdate']) < self.seUpdatePeriod:
-        if self.seDefinitions[seID]['SEDict']:
-          return S_OK(self.seDefinitions[seID])
-      se = self.seDefinitions[seID]['SEName']  
+    if type(seID) in StringTypes:
+      result = self.getSEID(seID)
+      if not result['OK']:
+        return result
+      seID = result['Value']
+
+    if seID in self.db.seDefinitions:
+      if (time.time()-self.db.seDefinitions[seID]['LastUpdate']) < self.seUpdatePeriod:
+        if self.db.seDefinitions[seID]['SEDict']:
+          return S_OK(self.db.seDefinitions[seID])
+      se = self.db.seDefinitions[seID]['SEName']  
     else:
       result = self.getSEName(seID)
       if not result['OK']:
         return result  
       se = result['Value']
-      self.seDefinitions[seID] = {}
-      self.seDefinitions[seID]['SEName'] = se
-      self.seDefinitions[seID]['SEDict'] = {}
-      self.seDefinitions[seID]['LastUpdate'] = 0.
+      self.db.seDefinitions[seID] = {}
+      self.db.seDefinitions[seID]['SEName'] = se
+      self.db.seDefinitions[seID]['SEDict'] = {}
+      self.db.seDefinitions[seID]['LastUpdate'] = 0.
       
-    
     # We have to refresh the SE definition from the CS
     result = gConfig.getOptionsDict('/Resources/StorageElements/%s/AccessProtocol.1' % se)
     if not result['OK']:
       return result
     seDict = result['Value']
-    self.seDefinitions[seID]['SEDict'] = seDict
-    self.seDefinitions[seID]['LastUpdate'] = time.time()
-    
-    return S_OK(self.seDefinitions[seID])
-  
+    self.db.seDefinitions[seID]['SEDict'] = seDict
+    self.db.seDefinitions[seID]['LastUpdate'] = time.time()
+    return S_OK(self.db.seDefinitions[seID])
+
 class SEManagerCS(SEManagerBase):
 
   def findSE(self,se):
