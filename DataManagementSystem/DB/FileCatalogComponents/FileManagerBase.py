@@ -450,9 +450,21 @@ class FileManagerBase:
         for se,repDict in seDict.items():
           repStatus = repDict['Status']
           if (repStatus.lower() != 'p') or (allStatus):
-            # TODO Must consider LFN->PFN resolutions
-            replicas[lfn][se] = repDict['PFN']
+            pfn = repDict['PFN']
+            if not pfn:
+              res = self._resolvePFN(lfn,se)
+              if res['OK']:
+                pfn = res['Value']
+            replicas[lfn][se] = pfn
     return S_OK({'Successful':replicas,'Failed':failed})
+
+  def _resolvePFN(self,lfn,se):
+    resSE = self.db.seManager.getSEDefinition(se)
+    if not resSE['OK']:
+      return res
+    pfnDict = dict(resSE['Value']['SEDict'])
+    pfnDict['FileName'] = lfn
+    return pfnunparse(pfnDict)
 
   def getReplicaStatus(self,lfns,connection=False):
     connection = self._getConnection(connection)
