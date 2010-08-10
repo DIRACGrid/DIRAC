@@ -1190,8 +1190,8 @@ class ReplicaManager( CatalogToStorage ):
         localAdler = fileAdler( localFile )
         if ( metadata['Size'] != res['Value'] ):
           gLogger.error( "Size of downloaded file (%d) does not match catalog (%d)" % ( res['Value'], metadata['Size'] ) )
-        elif ( metadata['CheckSumValue'] ) and ( not compareAdler( metadata['CheckSumValue'], localAdler ) ):
-          gLogger.error( "Checksum of downloaded file (%s) does not match catalog (%s)" % ( localAdler, metadata['CheckSumValue'] ) )
+        elif ( metadata['CheckSum'] ) and ( not compareAdler( metadata['CheckSum'], localAdler ) ):
+          gLogger.error( "Checksum of downloaded file (%s) does not match catalog (%s)" % ( localAdler, metadata['CheckSum'] ) )
         else:
           return S_OK( localFile )
     gLogger.error( "ReplicaManager.getFile: Failed to get local copy from any replicas.", lfn )

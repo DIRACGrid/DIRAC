@@ -38,8 +38,8 @@ print '%s %s %s %s %s' % ('FileName'.ljust(100),'Size'.ljust(10),'GUID'.ljust(40
 for lfn in sortList(res['Value']['Successful'].keys()):
   metadata = res['Value']['Successful'][lfn]
   checksum = ''
-  if metadata.has_key('CheckSumValue'):
-    checksum = str(metadata['CheckSumValue'])
+  if metadata.has_key('CheckSum'):
+    checksum = str(metadata['CheckSum'])
   size = ''
   if metadata.has_key('Size'):
     size = str(metadata['Size'])
