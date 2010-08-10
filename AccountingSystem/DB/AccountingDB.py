@@ -1202,7 +1202,7 @@ class AccountingDB( DB ):
       timeLimit = ( nowEpoch - nowEpoch % bucketLength ) - secondsLimit
       nextBucketLength = self.dbBucketsLength[ typeName ][ bPos + 1 ][1]
       self.log.info( "[COMPACT] Compacting data newer that %s with bucket size %s" % ( Time.fromEpoch( timeLimit ), bucketLength ) )
-      querySize = 1000
+      querySize = 10000
       previousRecordsSelected = querySize
       totalCompacted = 0
       while previousRecordsSelected == querySize:
@@ -1307,15 +1307,15 @@ class AccountingDB( DB ):
       return
     for table, field in ( ( self.__getTableName( "type", typeName ), 'endTime' ),
                           ( self.__getTableName( "bucket", typeName ), 'startTime + bucketLength' ) ):
-      gLogger.info( "Deleting old records for table %s" % table )
+      gLogger.info( "[COMPACT] Deleting old records for table %s" % table )
       sqlCmd = "DELETE FROM `%s` WHERE %s < UNIX_TIMESTAMP()-%d" % ( table, field, dataTimespan )
       result = self._update( sqlCmd )
       if not result[ 'OK' ]:
-        gLogger.error( "Cannot delete old records", "Table: %s Timespan: %s Error: %s" % ( table,
+        gLogger.error( "[COMPACT] Cannot delete old records", "Table: %s Timespan: %s Error: %s" % ( table,
                                                                                           dataTimespan,
                                                                                           result[ 'Message' ] ) )
       else:
-        gLogger.info( "Deleted %d records for %s table" % ( result[ 'Value' ], table ) )
+        gLogger.info( "[COMPACT] Deleted %d records for %s table" % ( result[ 'Value' ], table ) )
 
   def regenerateBuckets( self, typeName ):
     retVal = self._getConnection()
