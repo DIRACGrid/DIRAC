@@ -21,6 +21,7 @@ class AccountingDB( DB ):
     DB.__init__( self, 'AccountingDB', name, maxQueueSize )
     self.maxBucketTime = 604800 #1 w
     self.autoCompact = False
+    self.__doingCompaction = False
     self.__deadLockRetries = 2
     self.dbCatalog = {}
     self.dbBucketsLength = {}
@@ -252,7 +253,7 @@ class AccountingDB( DB ):
     self.dbCatalog[ typeName ][ 'bucketFields' ].extend( [  'entriesInBucket', 'startTime', 'bucketLength' ] )
     self.dbBucketsLength[ typeName ] = bucketsLength
     #ADRI: TEST COMPACT BUCKETS
-    #self.dbBucketsLength[ typeName ] = [ ( 86400, 3600 ), ( 15552000, 86400 ), ( 31104000, 604800 ) ]
+    #self.dbBucketsLength[ typeName ] = [ ( 31104000, 3600 ) ]
 
   @gSynchro
   def changeBucketsLength( self, typeName, bucketsLength ):
@@ -1069,19 +1070,35 @@ class AccountingDB( DB ):
     self.log.verbose( cmd )
     return self._query( cmd, conn = connObj )
 
-  @gSynchro
   def compactBuckets( self ):
     """
     Compact buckets for all defined types
     """
+    gSynchro.lock()
+    try:
+      if self.__doingCompaction:
+        return S_OK()
+      self.__doingCompaction = True
+    finally:
+      gSynchro.unlock()
+    slow = True
     for typeName in self.dbCatalog:
       if self.dbCatalog[ typeName ][ 'dataTimespan' ] > 0:
         self.log.info( "[COMPACT] Deleting records older that timespan for type %s" % typeName )
         self.__deleteRecordsOlderThanDataTimespan( typeName )
       self.log.info( "[COMPACT] Compacting %s" % typeName )
-      self.__compactBucketsForType( typeName )
+      if slow:
+        self.__slowCompactBucketsForType( typeName )
+      else:
+        self.__compactBucketsForType( typeName )
     self.log.info( "[COMPACT] Compaction finished" )
     self.__lastCompactionEpoch = int( Time.toEpoch() )
+    gSynchro.lock()
+    try:
+      if self.__doingCompaction:
+        self.__doingCompaction = False
+    finally:
+      gSynchro.unlock()
     return S_OK()
 
   def __selectForCompactBuckets( self, typeName, timeLimit, bucketLength, nextBucketLength, connObj = False ):
@@ -1166,6 +1183,103 @@ class AccountingDB( DB ):
     #return self.__commitTransaction( connObj )
     connObj.close()
     return S_OK()
+
+  def __slowCompactBucketsForType( self, typeName ):
+    """
+    Compact all buckets for a given type
+    """
+    tableName = self.__getTableName( "bucket", typeName )
+    nowEpoch = Time.toEpoch()
+    retVal = self._getConnection()
+    if not retVal[ 'OK' ]:
+      return retVal
+    connObj = retVal[ 'Value' ]
+    for bPos in range( len( self.dbBucketsLength[ typeName ] ) - 1 ):
+      self.log.info( "[COMPACT] Query %d of %d" % ( bPos, len( self.dbBucketsLength[ typeName ] ) - 1 ) )
+      secondsLimit = self.dbBucketsLength[ typeName ][ bPos ][0]
+      bucketLength = self.dbBucketsLength[ typeName ][ bPos ][1]
+      timeLimit = ( nowEpoch - nowEpoch % bucketLength ) - secondsLimit
+      nextBucketLength = self.dbBucketsLength[ typeName ][ bPos + 1 ][1]
+      self.log.info( "[COMPACT] Compacting data newer that %s with bucket size %s" % ( Time.fromEpoch( timeLimit ), bucketLength ) )
+      querySize = 1000
+      previousRecordsSelected = querySize
+      while previousRecordsSelected == querySize:
+        #Retrieve the data
+        result = self.__selectIndividualForCompactBuckets( typeName, timeLimit, bucketLength, nextBucketLength, querySize, connObj )
+        if not result[ 'OK' ]:
+          #self.__rollbackTransaction( connObj )
+          return result
+        bucketsData = result[ 'Value' ]
+        previousRecordsSelected = len( bucketsData )
+        self.log.info( "[COMPACT] Got %d/%d records to compact" % ( previousRecordsSelected, querySize ) )
+        if len( bucketsData ) == 0:
+          break
+        result = self.__deleteIndividualForCompactBuckets( typeName, bucketsData, connObj )
+        if not result[ 'OK' ]:
+          #self.__rollbackTransaction( connObj )
+          return result
+        bucketsData = result[ 'Value' ]
+        self.log.info( "[COMPACT] Compacting %s records %s seconds size for %s" % ( len( bucketsData ), bucketLength, typeName ) )
+        #Add data
+        for record in bucketsData:
+          startTime = record[-2]
+          endTime = record[-2] + record[-1]
+          valuesList = record[:-2]
+          retVal = self.__splitInBuckets( typeName, startTime, endTime, valuesList, connObj )
+          if not retVal[ 'OK' ]:
+            self.log.error( "[COMPACT] Error while compacting data for record in %s: %s" % ( typeName, retVal[ 'Value' ] ) )
+      self.log.info( "[COMPACT] Finised compaction %d of %d" % ( bPos, len( self.dbBucketsLength[ typeName ] ) - 1 ) )
+    #return self.__commitTransaction( connObj )
+    connObj.close()
+    return S_OK()
+
+  def __selectIndividualForCompactBuckets( self, typeName, timeLimit, bucketLength, nextBucketLength, querySize, connObj = False ):
+    """
+    Nasty SQL query to get ideal buckets using grouping by date calculations and adding value contents
+    """
+    tableName = self.__getTableName( "bucket", typeName )
+    selectSQL = "SELECT "
+    sqlSelectList = []
+    for field in self.dbCatalog[ typeName ][ 'keys' ]:
+      sqlSelectList.append( "`%s`.`%s`" % ( tableName, field ) )
+    for field in self.dbCatalog[ typeName ][ 'values' ]:
+      sqlSelectList.append( "`%s`.`%s`" % ( tableName, field ) )
+    sqlSelectList.append( "`%s`.`entriesInBucket`" % ( tableName ) )
+    sqlSelectList.append( "`%s`.`startTime`" % tableName )
+    sqlSelectList.append( "`%s`.bucketLength" % ( tableName ) )
+    selectSQL += ", ".join( sqlSelectList )
+    selectSQL += " FROM `%s`" % tableName
+    selectSQL += " WHERE `%s`.`startTime` < '%s' AND" % ( tableName, timeLimit )
+    selectSQL += " `%s`.`bucketLength` = %s" % ( tableName, bucketLength )
+    #MAGIC bucketing
+    selectSQL += " LIMIT %d" % querySize
+    return self._query( selectSQL, conn = connObj )
+
+  def __deleteIndividualForCompactBuckets( self, typeName, bucketsData, connObj = False ):
+    """
+    Delete compacted buckets
+    """
+    tableName = self.__getTableName( "bucket", typeName )
+    keyFields = self.dbCatalog[ typeName ][ 'keys' ]
+    deleteQueryLimit = 50
+    deletedBuckets = []
+    for bLimit in range( 0, len( bucketsData ) , deleteQueryLimit ):
+      delCondsSQL = []
+      for record in bucketsData[ bLimit : bLimit + deleteQueryLimit ]:
+        condSQL = []
+        for iPos in range( len( keyFields ) ):
+          field = keyFields[ iPos ]
+          condSQL.append( "`%s`.`%s` = %s" % ( tableName, field, record[ iPos ] ) )
+        condSQL.append( "`%s`.`startTime` = %d" % ( tableName, record[-2] ) )
+        condSQL.append( "`%s`.`bucketLength` = %d" % ( tableName, record[-1] ) )
+        delCondsSQL.append( "(%s)" % " AND ".join( condSQL ) )
+      delSQL = "DELETE FROM `%s` WHERE %s" % ( tableName, " OR ".join( delCondsSQL ) )
+      result = self._update( delSQL, conn = connObj )
+      if not result[ 'OK' ]:
+        self.log.error( "Cannot delete individual records for compaction", result[ 'Message' ] )
+      else:
+        deletedBuckets.extend( bucketsData[ bLimit : bLimit + deleteQueryLimit ] )
+    return S_OK( deletedBuckets )
 
   def __deleteRecordsOlderThanDataTimespan( self, typeName ):
     """
