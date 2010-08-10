@@ -1204,6 +1204,7 @@ class AccountingDB( DB ):
       self.log.info( "[COMPACT] Compacting data newer that %s with bucket size %s" % ( Time.fromEpoch( timeLimit ), bucketLength ) )
       querySize = 1000
       previousRecordsSelected = querySize
+      totalCompacted = 0
       while previousRecordsSelected == querySize:
         #Retrieve the data
         result = self.__selectIndividualForCompactBuckets( typeName, timeLimit, bucketLength, nextBucketLength, querySize, connObj )
@@ -1212,7 +1213,7 @@ class AccountingDB( DB ):
           return result
         bucketsData = result[ 'Value' ]
         previousRecordsSelected = len( bucketsData )
-        self.log.info( "[COMPACT] Got %d/%d records to compact" % ( previousRecordsSelected, querySize ) )
+        self.log.info( "[COMPACT] Got %d records to compact (%d done)" % ( previousRecordsSelected, totalCompacted ) )
         if len( bucketsData ) == 0:
           break
         result = self.__deleteIndividualForCompactBuckets( typeName, bucketsData, connObj )
@@ -1229,6 +1230,7 @@ class AccountingDB( DB ):
           retVal = self.__splitInBuckets( typeName, startTime, endTime, valuesList, connObj )
           if not retVal[ 'OK' ]:
             self.log.error( "[COMPACT] Error while compacting data for record in %s: %s" % ( typeName, retVal[ 'Value' ] ) )
+        totalCompacted += len( bucketsData )
       self.log.info( "[COMPACT] Finised compaction %d of %d" % ( bPos, len( self.dbBucketsLength[ typeName ] ) - 1 ) )
     #return self.__commitTransaction( connObj )
     connObj.close()
