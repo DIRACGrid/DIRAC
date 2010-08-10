@@ -146,7 +146,7 @@ class FileTestCase(CatalogPlugInTestCase):
     # Test getFileSize with a directory
     res = self.catalog.getFileSize(self.destDir)
     returnValue = self.parseResult(res,self.destDir)  
-    self.assertEqual(returnValue,0)     
+    self.assertEqual(returnValue,0)
 
   def test_getReplicas(self):
     # Test getReplicas with a file
@@ -237,6 +237,7 @@ class FileTestCase(CatalogPlugInTestCase):
     res = self.catalog.getReplicas(self.files[0])
     returnValue = self.parseResult(res,self.files[0])
     self.assertFalse(returnValue)
+    #time.sleep(2)
     # Test setReplicaStatus with a file
     lfnDict = {}
     lfnDict[self.files[0]] = {'PFN': 'protocol://host:port/storage/path%s' % self.files[0],'SE':'DIRAC-storage' ,'Status':'U'} 
@@ -389,6 +390,7 @@ class DatasetTestCase(CatalogPlugInTestCase):
 if __name__ == '__main__':
   #TODO getDirectoryMetadata and getFileMetadata should be merged
   #TODO Fix the return structure of write operations from FileCatalog
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryTestCase)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FileTestCase))
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(FileTestCase)
+  #suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FileTestCase))
+  #suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryTestCase))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
