@@ -71,8 +71,10 @@ class DirectoryLevelTree(DirectoryTreeBase):
       
     return S_OK(epathList)  
     
-
   def makeDir(self,path):
+    return self.makeDir_andrei(path)
+
+  def makeDir_andrew(self,path):
         
     result = self.findDir(path)
     if not result['OK']:
@@ -133,6 +135,85 @@ class DirectoryLevelTree(DirectoryTreeBase):
       if not result['OK']:
         return result
     return S_OK(dirID)
+
+  def makeDir_andrei(self,path):
+      
+    result = self.findDir(path)
+    if not result['OK']:
+      return result
+    dirID = result['Value']
+    if dirID:
+      result = S_OK(dirID)
+      result['NewDirectory'] = False
+      return result  
+       
+    dpath = path 
+    if path == '/':
+      dirName = '/'
+      level = 0
+      elements = []
+      parentDirID = 0
+    else:  
+      if path[0] == "/":
+        dpath = path[1:]  
+      elements = dpath.split('/')
+      level = len(elements)
+      dirName = elements[-1]
+      result = self.getParent(path)
+      if not result['OK']:
+        return result
+      parentDirID = result['Value']
+    
+    epathList = []
+    if parentDirID:
+      result = self.__getNumericPath(parentDirID)
+      if not result['OK']:
+        return result
+      epathList = result['Value']
+    
+    names = ['DirName','Level','Parent']
+    values = [path,level,parentDirID]
+    if path != '/':
+      for i in range(1,level,1):                
+        names.append('LPATH%d' % i) 
+        values.append(epathList[i-1])
+      
+    result = self.db._getConnection()
+    conn = result['Value']  
+    result = self.db._query("LOCK TABLES FC_DirectoryLevelTree WRITE; ",conn)
+    result = self.db._insert('FC_DirectoryLevelTree',names,values,conn)    
+    if not result['OK']:
+      resUnlock = self.db._query("UNLOCK TABLES;",conn)      
+      if result['Message'].find('Duplicate') != -1:
+        #The directory is already added
+        resFind = self.findDir(path)
+        if not resFind['OK']:
+          return resFind
+        dirID = resFind['Value']
+        result = S_OK(dirID)
+        result['NewDirectory'] = False
+        return result
+      else:
+        return result 
+    dirID = result['lastRowId']
+    
+    # Update the path number
+    if parentDirID:
+      lPath = "LPATH%d" % (level)
+      req = " SELECT @tmpvar:=max(%s)+1 FROM FC_DirectoryLevelTree WHERE Parent=%d; " % (lPath,parentDirID) 
+      result = self.db._query(req,conn)
+      req = "UPDATE FC_DirectoryLevelTree SET %s=@tmpvar WHERE DirID=%d; " % (lPath,dirID)   
+      result = self.db._update(req,conn)
+      result = self.db._query("UNLOCK TABLES;",conn)      
+      if not result['OK']:
+        return result
+    else:
+      result = self.db._query("UNLOCK TABLES;",conn)     
+      
+    result = S_OK(dirID)
+    result['NewDirectory'] = True
+    return result  
+  
   
   def existsDir(self,path):
     """ Check the existence of a directory at the specified path
