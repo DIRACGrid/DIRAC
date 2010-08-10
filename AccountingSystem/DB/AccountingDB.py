@@ -245,7 +245,8 @@ class AccountingDB( DB ):
     Add type to catalog
     """
     self.log.verbose( "Adding to catalog type %s" % typeName, "with length %s" % str( bucketsLength ) )
-    self.dbCatalog[ typeName ] = { 'keys' : keyFields , 'values' : valueFields, 'typeFields' : [], 'bucketFields' : [] }
+    self.dbCatalog[ typeName ] = { 'keys' : keyFields , 'values' : valueFields,
+                                   'typeFields' : [], 'bucketFields' : [], dataTimespan : 0 }
     self.dbCatalog[ typeName ][ 'typeFields' ].extend( keyFields )
     self.dbCatalog[ typeName ][ 'typeFields' ].extend( valueFields )
     self.dbCatalog[ typeName ][ 'bucketFields' ] = list( self.dbCatalog[ typeName ][ 'typeFields' ] )
