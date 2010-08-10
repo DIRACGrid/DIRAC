@@ -345,12 +345,18 @@ class AccountingDB( DB ):
     uniqueIndexFields.append( 'bucketLength' )
     bucketTableName = self.__getTableName( "bucket", name )
     if bucketTableName not in tablesInThere:
+      bucketIndexes = dict( indexesDict )
+      bucketIndexes.update( { 'startTimeIndex' : [ 'startTime' ],
+                              'bucketLengthIndex' : [ 'bucketLength' ] } )
       tables[ bucketTableName ] = { 'Fields' : bucketFieldsDict,
-                                      'Indexes' : indexesDict,
+                                      'Indexes' : bucketIndexes,
                                       'UniqueIndexes' : { 'UniqueConstraint' : uniqueIndexFields }
                                     }
     typeTableName = self.__getTableName( "type", name )
     if typeTableName not in tablesInThere:
+      typeIndexes = dict( indexesDict )
+      typeIndexes.update( { 'startTimeIndex' : [ 'startTime' ],
+                            'endTimeIndex' : [ 'endTime' ] } )
       tables[ typeTableName ] = { 'Fields' : fieldsDict,
                                     'Indexes' : indexesDict,
                                   }
@@ -1151,7 +1157,7 @@ class AccountingDB( DB ):
     #if not retVal[ 'OK' ]:
     #  return retVal
     for bPos in range( len( self.dbBucketsLength[ typeName ] ) - 1 ):
-      self.log.info( "[COMPACT] Query %d of %d" % ( bPos, len( self.dbBucketsLength[ typeName ] ) - 1 ) )
+      self.log.info( "[COMPACT] Query %d of %d" % ( bPos + 1, len( self.dbBucketsLength[ typeName ] ) - 1 ) )
       secondsLimit = self.dbBucketsLength[ typeName ][ bPos ][0]
       bucketLength = self.dbBucketsLength[ typeName ][ bPos ][1]
       timeLimit = ( nowEpoch - nowEpoch % bucketLength ) - secondsLimit
@@ -1180,7 +1186,7 @@ class AccountingDB( DB ):
         if not retVal[ 'OK' ]:
           #self.__rollbackTransaction( connObj )
           self.log.error( "[COMPACT] Error while compacting data for record in %s: %s" % ( typeName, retVal[ 'Value' ] ) )
-      self.log.info( "[COMPACT] Finised compaction %d of %d" % ( bPos, len( self.dbBucketsLength[ typeName ] ) - 1 ) )
+      self.log.info( "[COMPACT] Finished compaction %d of %d" % ( bPos, len( self.dbBucketsLength[ typeName ] ) - 1 ) )
     #return self.__commitTransaction( connObj )
     connObj.close()
     return S_OK()
