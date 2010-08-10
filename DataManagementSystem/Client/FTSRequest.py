@@ -820,7 +820,8 @@ class FTSRequest:
     submitTime = fromString(self.submitTime)
     endTime = fromString(transEndTime)
     oAccounting = DataOperation()
-    oAccounting.setEndTime(endTime)
+    #oAccounting.setEndTime(endTime)
+    oAccounting.setEndTime(transEndTime)
     oAccounting.setStartTime(submitTime)
     accountingDict = {}
     accountingDict['OperationType'] = 'replicateAndRegister'
