@@ -162,10 +162,10 @@ class StageRequestAgent(AgentModule):
         terminalReplicaIDs[pfnRepIDs[pfn]] = 'PFN is declared Unavailable by the StorageElement'
         pfnRepIDs.pop(pfn)
     for pfn,reason in res['Value']['Failed'].items():
-      pfnRepIDs.pop(pfn)
       if re.search('File does not exist',reason):
         gLogger.error("StageRequest.__checkIntegrity: PFN does not exist in the StorageElement",pfn)
         terminalReplicaIDs[pfnRepIDs[pfn]] = 'PFN does not exist in the StorageElement'
+      pfnRepIDs.pop(pfn)
     # Update the states of the replicas in the database #TODO Sent status to integrity DB
     if terminalReplicaIDs:
       gLogger.info("StageRequest.__checkIntegrity: %s replicas are terminally failed." % len(terminalReplicaIDs))
