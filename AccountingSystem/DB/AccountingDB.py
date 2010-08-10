@@ -1207,6 +1207,7 @@ class AccountingDB( DB ):
       totalCompacted = 0
       while previousRecordsSelected == querySize:
         #Retrieve the data
+        self.log.info( "[COMPACT] Retrieving records to compact" )
         result = self.__selectIndividualForCompactBuckets( typeName, timeLimit, bucketLength, nextBucketLength, querySize, connObj )
         if not result[ 'OK' ]:
           #self.__rollbackTransaction( connObj )
