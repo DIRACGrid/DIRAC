@@ -1207,22 +1207,31 @@ class AccountingDB( DB ):
       totalCompacted = 0
       while previousRecordsSelected == querySize:
         #Retrieve the data
-        self.log.info( "[COMPACT] Retrieving records to compact" )
-        result = self.__selectIndividualForCompactBuckets( typeName, timeLimit, bucketLength, nextBucketLength, querySize, connObj )
+        self.log.info( "[COMPACT] Retrieving buckets to compact newer that %s with size %s" % ( Time.fromEpoch( timeLimit ),
+                                                                                                       bucketLength ) )
+        roundStartTime = time.time()
+        result = self.__selectIndividualForCompactBuckets( typeName, timeLimit, bucketLength,
+                                                           nextBucketLength, querySize, connObj )
         if not result[ 'OK' ]:
           #self.__rollbackTransaction( connObj )
           return result
         bucketsData = result[ 'Value' ]
         previousRecordsSelected = len( bucketsData )
-        self.log.info( "[COMPACT] Got %d records to compact (%d done)" % ( previousRecordsSelected, totalCompacted ) )
+        selectEndTime = time.time()
+        self.log.info( "[COMPACT] Got %d buckets (%d done) (took %.2f secs)" % ( previousRecordsSelected,
+                                                                                 totalCompacted,
+                                                                                 selectEndTime - roundStartTime ) )
         if len( bucketsData ) == 0:
           break
+        now = time.time()
         result = self.__deleteIndividualForCompactBuckets( typeName, bucketsData, connObj )
         if not result[ 'OK' ]:
           #self.__rollbackTransaction( connObj )
           return result
         bucketsData = result[ 'Value' ]
-        self.log.info( "[COMPACT] Compacting %s records %s seconds size for %s" % ( len( bucketsData ), bucketLength, typeName ) )
+        deleteEndTime = time.time()
+        self.log.info( "[COMPACT] Deleted %s out-of-bounds buckets (took %.2f secs)" % ( len( bucketsData ),
+                                                                                         deleteEndTime - selectEndTime ) )
         #Add data
         for record in bucketsData:
           startTime = record[-2]
@@ -1230,8 +1239,11 @@ class AccountingDB( DB ):
           valuesList = record[:-2]
           retVal = self.__splitInBuckets( typeName, startTime, endTime, valuesList, connObj )
           if not retVal[ 'OK' ]:
-            self.log.error( "[COMPACT] Error while compacting data for record in %s: %s" % ( typeName, retVal[ 'Value' ] ) )
+            self.log.error( "[COMPACT] Error while compacting data for buckets in %s: %s" % ( typeName, retVal[ 'Value' ] ) )
         totalCompacted += len( bucketsData )
+        insertElapsedTime = time.time() - deleteEndTime
+        self.log.info( "[COMPACT] Records compacted (took %.2f secs, %.2f secs/bucket)" % ( insertElapsedTime,
+                                                                                            insertElapsedTime / len( bucketsData ) ) )
       self.log.info( "[COMPACT] Finised compaction %d of %d" % ( bPos, len( self.dbBucketsLength[ typeName ] ) - 1 ) )
     #return self.__commitTransaction( connObj )
     connObj.close()
