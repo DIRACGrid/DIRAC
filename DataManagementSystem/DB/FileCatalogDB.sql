@@ -26,6 +26,7 @@ CREATE TABLE FC_Files (
     INDEX (DirID,FileName)
 );
 
+-- ------------------------------------------------------------------------------
 drop table if exists FC_FileInfo;
 CREATE TABLE FC_FileInfo (
     FileID INTEGER NOT NULL,
@@ -65,6 +66,7 @@ ALTER TABLE FC_Files ADD INDEX (Status);
 -- ALTER TABLE FC_FileInfo ADD INDEX (FileName);
 -- ALTER TABLE FC_FileInfo ADD COLUMN GUID CHAR(36) NOT NULL;
 
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS FC_Statuses;
 CREATE TABLE FC_Statuses (
     StatusID INT AUTO_INCREMENT PRIMARY KEY,
@@ -73,6 +75,7 @@ CREATE TABLE FC_Statuses (
     INDEX(StatusID)
 );
 
+-- ------------------------------------------------------------------------------
 drop table if exists FC_GUID_to_File;
 CREATE TABLE FC_GUID_to_File (
     GUID char(36) NOT NULL,
@@ -94,6 +97,7 @@ CREATE TABLE FC_Replicas (
     INDEX (FileID,SEID)
 );
 
+-- ------------------------------------------------------------------------------
 drop table if exists FC_ReplicaInfo;
 CREATE TABLE FC_ReplicaInfo (
     RepID INTEGER NOT NULL AUTO_INCREMENT,
@@ -131,6 +135,7 @@ CREATE TABLE FC_Groups (
     UNIQUE KEY (GroupName)
 );
 
+-- ------------------------------------------------------------------------------
 drop table if exists FC_Users;
 CREATE TABLE FC_Users (
     UID INTEGER NOT NULL AUTO_INCREMENT,
@@ -163,6 +168,7 @@ CREATE TABLE FC_DirectoryInfo (
     PRIMARY KEY (DirID)
 );
 
+-- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS DirectoryInfo;
 CREATE TABLE DirectoryInfo(
   DirID INTEGER AUTO_INCREMENT PRIMARY KEY,
@@ -179,6 +185,7 @@ CREATE TABLE DirectoryInfo(
   INDEX(DirName)
 );
 
+-- ------------------------------------------------------------------------------
 drop table if exists FC_DirMeta;
 CREATE TABLE FC_DirMeta (
     DirID INTEGER NOT NULL,
@@ -187,6 +194,7 @@ CREATE TABLE FC_DirMeta (
     PRIMARY KEY (DirID,MetaKey)
 );
 
+-- ------------------------------------------------------------------------------
 drop table if exists FC_DirectoryTree;
 CREATE TABLE FC_DirectoryTree (
  DirID INT AUTO_INCREMENT PRIMARY KEY,
@@ -196,6 +204,7 @@ CREATE TABLE FC_DirectoryTree (
  INDEX (DirName)
 );
 
+-- ------------------------------------------------------------------------------
 drop table if exists FC_DirectoryTreeM;
 CREATE TABLE FC_DirectoryTreeM (
  DirID INT AUTO_INCREMENT PRIMARY KEY,
@@ -207,6 +216,7 @@ CREATE TABLE FC_DirectoryTreeM (
  INDEX (DirName)
 );
 
+-- ------------------------------------------------------------------------------
 drop table if exists FC_DirectoryLevelTree;
 CREATE TABLE FC_DirectoryLevelTree (
  DirID INT AUTO_INCREMENT PRIMARY KEY,
@@ -225,9 +235,10 @@ CREATE TABLE FC_DirectoryLevelTree (
  LPATH10 SMALLINT NOT NULL DEFAULT 0,
  INDEX (Level),
  INDEX (Parent),
- INDEX (DirName)
+ UNIQUE INDEX (DirName)
 );
 
+-- ------------------------------------------------------------------------------
 drop table if exists FC_Meta_Fields;
 CREATE TABLE FC_Meta_Fields (
   MetaID INT AUTO_INCREMENT PRIMARY KEY,
@@ -235,3 +246,13 @@ CREATE TABLE FC_Meta_Fields (
   MetaType VARCHAR(128) NOT NULL
 );
 
+-- ------------------------------------------------------------------------------
+drop table if exists FC_Ancestors;
+CREATE TABLE FC_Ancestors (
+  FileID INT NOT NULL DEFAULT 0,
+  AncestorID INT NOT NULL DEFAULT 0,
+  AncestorDepth INT NOT NULL DEFAULT 0,
+  INDEX (FileID),
+  INDEX (AncestorID),
+  INDEX (AncestorDepth)
+);
