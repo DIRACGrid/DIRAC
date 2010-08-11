@@ -412,7 +412,7 @@ class FTSRequest:
       elif metadata['Size'] != self.catalogMetadata[lfn]['Size']:
         self.__setFileParameter(lfn,'Reason',"Source size mismatch")
         self.__setFileParameter(lfn,'Status','Failed')
-      elif self.catalogMetadata[lfn]['CheckSum'] and metadata['Checksum'] and not (compareAdler(metadata['Checksum'], self.catalogMetadata[lfn]['CheckSum'])):
+      elif self.catalogMetadata[lfn]['Checksum'] and metadata['Checksum'] and not (compareAdler(metadata['Checksum'], self.catalogMetadata[lfn]['Checksum'])):
         self.__setFileParameter(lfn,'Reason',"Source checksum mismatch")
         self.__setFileParameter(lfn,'Status','Failed')
     return S_OK()

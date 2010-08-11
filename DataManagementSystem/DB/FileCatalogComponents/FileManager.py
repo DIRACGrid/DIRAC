@@ -57,7 +57,7 @@ class FileManager(FileManagerBase):
 
   def _getDirectoryFiles(self,dirID,fileNames,metadata,connection=False):
     connection = self._getConnection(connection)
-    # metadata can be any of ['FileID','Size','CheckSum','CheckSumType','Type','UID','GID','CreationDate','ModificationDate','Mode','Status']
+    # metadata can be any of ['FileID','Size','Checksum','CheckSumType','Type','UID','GID','CreationDate','ModificationDate','Mode','Status']
     req = "SELECT FileName,FileID FROM FC_Files WHERE DirID=%d" % (dirID)
     if fileNames:
       req = "%s AND FileName IN (%s)" % (req,stringListToString(fileNames))
@@ -136,7 +136,7 @@ class FileManager(FileManagerBase):
       toDelete.append(fileID)
       insertTuples.append("(%d,%d,'%s','%s',%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (fileID,size,checksum,checksumtype,uid,gid,self.db.umask,statusID))
     if insertTuples:
-      req = "INSERT INTO FC_FileInfo (FileID,Size,CheckSum,CheckSumType,UID,GID,CreationDate,ModificationDate,Mode,Status) VALUES %s" % ','.join(insertTuples)
+      req = "INSERT INTO FC_FileInfo (FileID,Size,Checksum,CheckSumType,UID,GID,CreationDate,ModificationDate,Mode,Status) VALUES %s" % ','.join(insertTuples)
       res = self.db._update(req)
       if not res['OK']:
         self._deleteFiles(toDelete,connection=connection)

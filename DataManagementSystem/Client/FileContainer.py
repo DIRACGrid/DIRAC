@@ -122,7 +122,7 @@ class File:
     if not res['OK']:
       return res
     metadata = res['Value']
-    self.setChecksum(metadata['CheckSum'])
+    self.setChecksum(metadata['Checksum'])
     self.setGUID(metadata['GUID'])
     self.setSize(metadata['Size']) 
     self.setStatus(metadata['Status'])
