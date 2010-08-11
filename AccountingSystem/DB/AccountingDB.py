@@ -193,7 +193,7 @@ class AccountingDB( DB ):
     self.log.info( "[PENDING] Loading pending records for insertion" )
     pending = 0
     now = Time.toEpoch()
-    recordsPerSlot = 10
+    recordsPerSlot = self.getCSOption( "RecordsPerSlot", 100 )
     for typeName in self.dbCatalog:
       self.log.info( "[PENDING] Checking %s" % typeName )
       pendingInQueue = self.__threadPool.pendingJobs()
@@ -211,7 +211,7 @@ class AccountingDB( DB ):
       if not result[ 'OK' ]:
         self.log.error( "[PENDING] Error when trying to get pending records", "for %s : %s" % ( typeName, result[ 'Message' ] ) )
         return result
-      self.log.info( "[PENDING] Got %s pending requests for type %s" % ( len( result[ 'Value' ] ), typeName ) )
+      self.log.info( "[PENDING] Got %s pending records for type %s" % ( len( result[ 'Value' ] ), typeName ) )
       dbData = result[ 'Value' ]
       idList = [ str( r[0] ) for r in dbData ]
       #If nothing to do, continue
@@ -239,7 +239,7 @@ class AccountingDB( DB ):
       if recordsToProcess:
         self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
                                                  args = ( recordsToProcess, ) )
-    self.log.info( "[PENDING] Got %s pending requests for all types" % pending )
+    self.log.info( "[PENDING] Got %s records requests for all types" % pending )
     self.__doingPendingLockTime = 0
     return S_OK()
 
@@ -584,10 +584,12 @@ class AccountingDB( DB ):
       id = result[ 'Value' ]
       recordsToProcess.append( ( id, typeName, startTime, endTime, valuesList, now ) )
 
+    recordsPerBundle = min( self.getCSOption( "RecordsPerSlot", 100 ), self.__threadPool.pendingJobs() )
+    recordsPerBundle = max( 1, recordsPerBundle )
     self.__queuedRecordsLock.lock()
     try:
       self.__queuedRecordsToInsert.extend( recordsToProcess )
-      if len( self.__queuedRecordsToInsert ) >= 10:
+      if len( self.__queuedRecordsToInsert ) >= recordsPerBundle:
         self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
                                                  args = ( self.__queuedRecordsToInsert, ) )
         self.__queuedRecordsToInsert = []
@@ -619,10 +621,12 @@ class AccountingDB( DB ):
     id = result[ 'Value' ]
     record = ( id, typeName, startTime, endTime, valuesList, Time.toEpoch() )
 
+    recordsPerBundle = min( self.getCSOption( "RecordsPerSlot", 100 ), self.__threadPool.pendingJobs() )
+    recordsPerBundle = max( 1, recordsPerBundle )
     self.__queuedRecordsLock.lock()
     try:
       self.__queuedRecordsToInsert.append( record )
-      if len( self.__queuedRecordsToInsert ) >= 10:
+      if len( self.__queuedRecordsToInsert ) >= recordsPerBundle:
         self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
                                                  args = ( self.__queuedRecordsToInsert, ) )
         self.__queuedRecordsToInsert = []
