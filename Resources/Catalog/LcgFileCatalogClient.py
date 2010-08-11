@@ -217,7 +217,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         successful[lfn] = {}
         successful[lfn]['Size'] = fstat.filesize
         successful[lfn]['CheckSumType'] = fstat.csumtype
-        successful[lfn]['CheckSum'] = fstat.csumvalue
+        successful[lfn]['Checksum'] = fstat.csumvalue
         successful[lfn]['GUID'] = fstat.guid
         successful[lfn]['Status'] = fstat.status
         successful[lfn]['CreationTime'] = fromEpoch(fstat.ctime)
@@ -372,7 +372,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         successful[lfn] = {}   
         successful[lfn]['Size'] = fstat.filesize
         successful[lfn]['CheckSumType'] = fstat.csumtype
-        successful[lfn]['CheckSum'] = fstat.csumvalue
+        successful[lfn]['Checksum'] = fstat.csumvalue
         successful[lfn]['GUID'] = fstat.guid
         successful[lfn]['Status'] = fstat.status
         successful[lfn]['CreationTime'] = fromEpoch(fstat.ctime)
@@ -1315,7 +1315,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
           oPath = statRes['Value']
           pathMetadata['Size'] = oPath.filesize
           pathMetadata['CheckSumType'] = oPath.csumtype
-          pathMetadata['CheckSum'] = oPath.csumvalue
+          pathMetadata['Checksum'] = oPath.csumvalue
           pathMetadata['GUID'] = oPath.guid
           pathMetadata['Status'] = oPath.status
           pathMetadata['CreationTime'] = fromEpoch(oPath.ctime)
