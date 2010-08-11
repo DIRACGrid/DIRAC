@@ -22,12 +22,15 @@ class AccountingDB( DB ):
     self.maxBucketTime = 604800 #1 w
     self.autoCompact = False
     self.__doingCompaction = False
+    self.__doingPendingLockTime = 0
     self.__deadLockRetries = 2
+    self.__queuedRecordsLock = ThreadSafe.Synchronizer()
+    self.__queuedRecordsToInsert = []
     self.dbCatalog = {}
     self.dbBucketsLength = {}
     self.__keysCache = {}
     maxParallelInsertions = self.getCSOption( "ParallelRecordInsertions", maxQueueSize )
-    self.__threadPool = ThreadPool( 1, 10 )
+    self.__threadPool = ThreadPool( 1, 5 )
     self.__threadPool.daemonize()
     self.catalogTableName = self.__getTableName( "catalog", "Types" )
     self._createTables( { self.catalogTableName : { 'Fields' : { 'name' : "VARCHAR(64) UNIQUE NOT NULL",
@@ -179,14 +182,23 @@ class AccountingDB( DB ):
     """
       Load all records pending to insertion and generate threaded jobs
     """
-    self.log.info( "Loading pending records for insertion" )
+    gSynchro.lock()
+    try:
+      now = time.time()
+      if now - self.__doingPendingLockTime <= 3600:
+        return S_OK()
+      self.__doingPendingLockTime = now
+    finally:
+      gSynchro.unlock()
+    self.log.info( "[PENDING] Loading pending records for insertion" )
     pending = 0
     now = Time.toEpoch()
+    recordsPerSlot = 10
     for typeName in self.dbCatalog:
-      self.log.info( "Checking %s" % typeName )
+      self.log.info( "[PENDING] Checking %s" % typeName )
       pendingInQueue = self.__threadPool.pendingJobs()
-      self.log.info( "%s pending slots in queue" % pendingInQueue )
-      emptySlots = max( 0, ( 200 - pendingInQueue ) * 10 )
+      emptySlots = max( 0, 3000 - pendingInQueue )
+      self.log.info( "[PENDING] %s in the queue, %d empty slots" % ( pendingInQueue, emptySlots ) )
       if emptySlots < 1:
         continue
       sqlTableName = self.__getTableName( "in", typeName )
@@ -195,11 +207,11 @@ class AccountingDB( DB ):
       result = self._query( "SELECT %s FROM `%s` %s ORDER BY id ASC LIMIT %d" % ( ", ".join( [ "`%s`" % f for f in sqlFields ] ),
                                                                                   sqlTableName,
                                                                                   sqlCond,
-                                                                                  emptySlots ) )
+                                                                                  emptySlots * recordsPerSlot ) )
       if not result[ 'OK' ]:
-        self.log.error( "Error when trying to get pending records", "for %s : %s" % ( typeName, result[ 'Message' ] ) )
+        self.log.error( "[PENDING] Error when trying to get pending records", "for %s : %s" % ( typeName, result[ 'Message' ] ) )
         return result
-      self.log.info( "Got %s pending requests for type %s" % ( len( result[ 'Value' ] ), typeName ) )
+      self.log.info( "[PENDING] Got %s pending requests for type %s" % ( len( result[ 'Value' ] ), typeName ) )
       dbData = result[ 'Value' ]
       idList = [ str( r[0] ) for r in dbData ]
       #If nothing to do, continue
@@ -208,7 +220,8 @@ class AccountingDB( DB ):
       result = self._update( "UPDATE `%s` SET taken=1, takenSince=UTC_TIMESTAMP() WHERE id in (%s)" % ( sqlTableName,
                                                                                                            ", ".join( idList ) ) )
       if not result[ 'OK' ]:
-        self.log.error( "Error when trying set state to waiting records", "for %s : %s" % ( typeName, result[ 'Message' ] ) )
+        self.log.error( "[PENDING] Error when trying set state to waiting records", "for %s : %s" % ( typeName, result[ 'Message' ] ) )
+        self.__doingPendingLockTime = 0
         return result
       #Group them in groups of 10
       recordsToProcess = []
@@ -219,14 +232,15 @@ class AccountingDB( DB ):
         endTime = record[ -1 ]
         valuesList = list( record[ 1:-2 ] )
         recordsToProcess.append( ( id, typeName, startTime, endTime, valuesList, now ) )
-        if len( recordsToProcess ) % 10 == 0:
+        if len( recordsToProcess ) % recordsPerSlot == 0:
           self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
                                                    args = ( recordsToProcess, ) )
           recordsToProcess = []
       if recordsToProcess:
         self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
                                                  args = ( recordsToProcess, ) )
-    self.log.info( "Got %s pending requests for all types" % pending )
+    self.log.info( "[PENDING] Got %s pending requests for all types" % pending )
+    self.__doingPendingLockTime = 0
     return S_OK()
 
   def __getTableName( self, tableType, typeName, keyName = None ):
@@ -569,8 +583,17 @@ class AccountingDB( DB ):
         return result
       id = result[ 'Value' ]
       recordsToProcess.append( ( id, typeName, startTime, endTime, valuesList, now ) )
-    self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
-                                             args = ( recordsToProcess, ) )
+
+    self.__queuedRecordsLock.lock()
+    try:
+      self.__queuedRecordsToInsert.extend( recordsToProcess )
+      if len( self.__queuedRecordsToInsert ) >= 10:
+        self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
+                                                 args = ( self.__queuedRecordsToInsert, ) )
+        self.__queuedRecordsToInsert = []
+    finally:
+      self.__queuedRecordsLock.unlock()
+
     return S_OK()
 
 
@@ -592,10 +615,19 @@ class AccountingDB( DB ):
     result = self.__insertInQueueTable( typeName, startTime, endTime, valuesList )
     if not result[ '0K' ]:
       return result
+
     id = result[ 'Value' ]
-    recordsToProcess = [ ( id, typeName, startTime, endTime, valuesList, Time.toEpoch() ) ]
-    self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
-                                             args = ( recordsToProcess, ) )
+    record = ( id, typeName, startTime, endTime, valuesList, Time.toEpoch() )
+
+    self.__queuedRecordsLock.lock()
+    try:
+      self.__queuedRecordsToInsert.append( record )
+      if len( self.__queuedRecordsToInsert ) >= 10:
+        self.__threadPool.generateJobAndQueueIt( self.__insertFromINTable ,
+                                                 args = ( self.__queuedRecordsToInsert, ) )
+        self.__queuedRecordsToInsert = []
+    finally:
+      self.__queuedRecordsLock.unlock()
     return S_OK()
 
   def __insertFromINTable( self, recordTuples ):
