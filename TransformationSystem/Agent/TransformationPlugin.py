@@ -4,7 +4,7 @@ from DIRAC                                                               import 
 from DIRAC.Core.Utilities.SiteSEMapping                                  import getSitesForSE,getSEsForSite
 from DIRAC.Core.Utilities.List                                           import breakListIntoChunks, sortList, uniqueElements,randomize
 from DIRAC.DataManagementSystem.Client.ReplicaManager                    import ReplicaManager
-from LHCbDIRAC.ProductionManagementSystem.Client.TransformationDBClient  import TransformationDBClient
+from DIRAC.TransformationSystem.Client.TransformationDBClient            import TransformationDBClient
 import random,re
 
 class TransformationPlugin:
