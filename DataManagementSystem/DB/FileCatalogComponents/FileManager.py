@@ -64,16 +64,23 @@ class FileManager(FileManagerBase):
     res = self.db._query(req,connection)
     if not res['OK']:
       return res
-    if not res['Value']:
+    fileNameIDs = res['Value']
+    if not fileNameIDs:
       return S_OK({})
     filesDict = {}
     # If we only requested the FileIDs then there is no need to do anything else
     if metadata == ['FileID']:
-      for fileName,fileID in res['Value']:
+      for fileName,fileID in fileNameIDs:
         filesDict[fileName] = {'FileID':fileID}
       return S_OK(filesDict)
     # Otherwise get the additionally requested metadata from the FC_FileInfo table
-    for fileName,fileID in res['Value']:
+    guidDict = {}
+    if 'GUID' in metadata:
+      metadata.remove('GUID')
+      res = self._getGuidFromFileID([x[1] for x in fileNameIDs],connection=connection)
+      if res['OK']:
+        guidDict = res['Value']
+    for fileName,fileID in fileNameIDs:
       filesDict[fileID] = fileName
     if 'FileID' in metadata:
       metadata.remove('FileID')
@@ -87,6 +94,8 @@ class FileManager(FileManagerBase):
     for tuple in res['Value']:
       fileID = tuple[0]
       files[filesDict[fileID]] = dict(zip(metadata,tuple))
+      if guidDict.has_key(fileID):
+        files[filesDict[fileID]]['GUID'] = guidDict[fileID]
     return S_OK(files)
 
   ######################################################

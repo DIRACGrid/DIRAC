@@ -389,7 +389,7 @@ class FileManagerBase:
     connection = self._getConnection(connection)
     """ Get file metadata from the catalog """
     #TO DO, should check whether it is a directory if it fails
-    return self._findFiles(lfns,['Size','Checksum','ChecksumType','UID','GID','CreationDate','ModificationDate','Mode','Status'],connection=connection)
+    return self._findFiles(lfns,['Size','Checksum','ChecksumType','UID','GID','GUID','CreationDate','ModificationDate','Mode','Status'],connection=connection)
 
   def getPathPermissions(self,paths,credDict,connection=False):
     connection = self._getConnection(connection)
@@ -524,7 +524,7 @@ class FileManagerBase:
     """ Get GUID of the given file """
     if type(fileID) not in [ListType,TupleType]:
       fileID = [fileID] 
-    req = "SELECT FileID,GUID FROM FC_GUID_to_File WHERE GUID IN (%s)" % stringListToString(guid)
+    req = "SELECT FileID,GUID FROM FC_GUID_to_File WHERE FileID IN (%s)" % stringListToString(fileID)
     res = self.db._query(req,connection)
     if not res['OK']:
       return res
