@@ -330,12 +330,12 @@ def getComponentCfg( componentType, system, component, instance, extensions ):
 
   compCfg = ''
   for ext in extensions + ['DIRAC']:
-    cfgPath = os.path.join( rootPath, ext, '%sSystem' % system, 'ConfigTemplate.cfg' )
-    if os.path.exists( cfgPath ):
-      gLogger.info( 'Loading configuration template', cfgPath )
+    cfgTemplatePath = os.path.join( rootPath, ext, '%sSystem' % system, 'ConfigTemplate.cfg' )
+    if os.path.exists( cfgTemplatePath ):
+      gLogger.info( 'Loading configuration template', cfgTemplatePath )
       # Look up the component in this template
       loadCfg = CFG()
-      loadCfg.loadFromFile( cfgPath )
+      loadCfg.loadFromFile( cfgTemplatePath )
       try:
         compCfg = loadCfg[sectionName][component]
       except:
