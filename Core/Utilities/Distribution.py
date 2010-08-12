@@ -19,6 +19,8 @@ class Distribution:
                        'LHCbDIRAC' : cernAnonRoot,
                        'LHCbWebDIRAC' : cernAnonRoot,
                        'BelleDIRAC' : googleAnonRoot,
+                       'MagicDIRAC' : googleAnonRoot,
+                       'CTADIRAC' : googleAnonRoot,
                        'EELADIRAC' : googleAnonRoot,
                        'ILCDIRAC' : cernAnonRoot,
                      }
@@ -27,8 +29,10 @@ class Distribution:
                  'DIRAC' : cernDevRoot,
                  'LHCbDIRAC' : cernDevRoot,
                  'LHCbWebDIRAC' : cernDevRoot,
-                 'ILCDIRAC' : cernDevRoot, 
+                 'ILCDIRAC' : cernDevRoot,
                  'BelleDIRAC' : googleDevRoot,
+                 'MagicDIRAC' : googleDevRoot,
+                 'CTADIRAC' : googleDevRoot,
                  'EELADIRAC' : googleDevRoot
                }
 
@@ -328,12 +332,12 @@ def generateReleaseNotes( packages, destinationPath, versionReleased = "", singl
             for line in versionNotes[ 'notes' ][ system ][ noteType ]:
               notes4Type.append( "  - %s" % line )
         if notes4Type:
-          fileContents.append("")
+          fileContents.append( "" )
           fileContents.append( "%s" % noteType )
           fileContents.append( ":" * len( noteType ) )
-          fileContents.append("")
+          fileContents.append( "" )
           fileContents.extend( notes4Type )
-  fd = open( destinationPath, "w" )  
+  fd = open( destinationPath, "w" )
   fd.write( "%s\n\n" % "\n".join( fileContents ) )
   fd.close()
 
