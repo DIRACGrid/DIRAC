@@ -29,8 +29,8 @@ class AccountingDB( DB ):
     self.dbCatalog = {}
     self.dbBucketsLength = {}
     self.__keysCache = {}
-    maxParallelInsertions = self.getCSOption( "ParallelRecordInsertions", maxQueueSize )
-    self.__threadPool = ThreadPool( 1, 5 )
+    maxParallelInsertions = self.getCSOption( "ParallelRecordInsertions", 10 )
+    self.__threadPool = ThreadPool( 1, maxParallelInsertions )
     self.__threadPool.daemonize()
     self.catalogTableName = self.__getTableName( "catalog", "Types" )
     self._createTables( { self.catalogTableName : { 'Fields' : { 'name' : "VARCHAR(64) UNIQUE NOT NULL",
@@ -1113,7 +1113,7 @@ class AccountingDB( DB ):
     self.log.verbose( cmd )
     return self._query( cmd, conn = connObj )
 
-  def compactBuckets( self ):
+  def compactBuckets( self, typeFilter = False ):
     """
     Compact buckets for all defined types
     """
@@ -1126,6 +1126,9 @@ class AccountingDB( DB ):
       gSynchro.unlock()
     slow = True
     for typeName in self.dbCatalog:
+      if typeFilter and typeName.find( typeFilter ) == -1:
+        self.log.info( "[COMPACT] Skipping %s" % typeName )
+        continue
       if self.dbCatalog[ typeName ][ 'dataTimespan' ] > 0:
         self.log.info( "[COMPACT] Deleting records older that timespan for type %s" % typeName )
         self.__deleteRecordsOlderThanDataTimespan( typeName )
@@ -1243,7 +1246,7 @@ class AccountingDB( DB ):
       bucketLength = self.dbBucketsLength[ typeName ][ bPos ][1]
       timeLimit = ( nowEpoch - nowEpoch % bucketLength ) - secondsLimit
       nextBucketLength = self.dbBucketsLength[ typeName ][ bPos + 1 ][1]
-      self.log.info( "[COMPACT] Compacting data newer that %s with bucket size %s" % ( Time.fromEpoch( timeLimit ), bucketLength ) )
+      self.log.info( "[COMPACT] Compacting data newer that %s with bucket size %s for %s" % ( Time.fromEpoch( timeLimit ), bucketLength, typeName ) )
       querySize = 10000
       previousRecordsSelected = querySize
       totalCompacted = 0
