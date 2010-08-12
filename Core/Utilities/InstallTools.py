@@ -879,6 +879,8 @@ def setupSite( scriptCfg, cfg = None ):
     while ['Configuration', 'Server'] in setupServices:
       setupServices.remove( ['Configuration', 'Server'] )
 
+  time.sleep( 5 )
+
   # Now need to check is there is valid CS to register the info
   result = scriptCfg.enableCS()
   if not result['OK']:
