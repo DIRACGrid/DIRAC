@@ -43,8 +43,6 @@ import os, re, glob, stat, time, shutil
 
 defaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 
-baseSection = 'LocalInstallation'
-
 from DIRAC import rootPath
 from DIRAC import gLogger
 from DIRAC import exit
@@ -54,18 +52,13 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgInstallPath, cfgInstallSection
 
 # On command line tools this can be set to True to abort after the first error.
 exitOnError = False
 
 # First some global defaults
 gLogger.info( 'DIRAC Root Path =', rootPath )
-
-def __cfgPath( *args ):
-  return '/'.join( [str( k ) for k in args] )
-
-def __installPath( *args ):
-  return __cfgPath( baseSection, *args )
 
 def loadDiracCfg( verbose = False ):
   """
@@ -86,16 +79,16 @@ def loadDiracCfg( verbose = False ):
     gLogger.always( "Can't load ", cfgFile )
     gLogger.always( "Might be OK if setting up the site" )
 
-  setup = localCfg.getOption( __cfgPath( 'DIRAC', 'Setup' ), '' )
-  instance = localCfg.getOption( __installPath( 'InstanceName' ), setup )
-  logLevel = localCfg.getOption( __installPath( 'LogLevel' ), 'INFO' )
-  linkedRootPath = localCfg.getOption( __installPath( 'RootPath' ), rootPath )
-  useVersionsDir = localCfg.getOption( __installPath( 'UseVersionsDir' ), False )
+  setup = localCfg.getOption( cfgPath( 'DIRAC', 'Setup' ), '' )
+  instance = localCfg.getOption( cfgInstallPath( 'InstanceName' ), setup )
+  logLevel = localCfg.getOption( cfgInstallPath( 'LogLevel' ), 'INFO' )
+  linkedRootPath = localCfg.getOption( cfgInstallPath( 'RootPath' ), rootPath )
+  useVersionsDir = localCfg.getOption( cfgInstallPath( 'UseVersionsDir' ), False )
 
-  host = localCfg.getOption( __installPath( 'Host' ), getFQDN() )
+  host = localCfg.getOption( cfgInstallPath( 'Host' ), getFQDN() )
 
   basePath = os.path.dirname( rootPath )
-  instancePath = localCfg.getOption( __installPath( 'InstancePath' ), rootPath )
+  instancePath = localCfg.getOption( cfgInstallPath( 'InstancePath' ), rootPath )
   if useVersionsDir:
     # This option takes precedence
     instancePath = os.path.dirname( os.path.dirname( rootPath ) )
@@ -104,12 +97,12 @@ def loadDiracCfg( verbose = False ):
     gLogger.info( 'Using Instance Base Dir at', instancePath )
 
   runitDir = os.path.join( instancePath, 'runit' )
-  runitDir = localCfg.getOption( __installPath( 'RunitDir' ), runitDir )
+  runitDir = localCfg.getOption( cfgInstallPath( 'RunitDir' ), runitDir )
   if verbose:
     gLogger.info( 'Using Runit Dir at', runitDir )
 
   startDir = os.path.join( instancePath, 'startup' )
-  startDir = localCfg.getOption( __installPath( 'StartupDir' ), startDir )
+  startDir = localCfg.getOption( cfgInstallPath( 'StartupDir' ), startDir )
   if verbose:
     gLogger.info( 'Using Startup Dir at', startDir )
 
@@ -117,7 +110,7 @@ def loadDiracCfg( verbose = False ):
   db = {}
 
   mysqlDir = os.path.join( instancePath, 'mysql' )
-  mysqlDir = localCfg.getOption( __installPath( 'MySQLDir' ), mysqlDir )
+  mysqlDir = localCfg.getOption( cfgInstallPath( 'MySQLDir' ), mysqlDir )
   if verbose:
     gLogger.info( 'Using MySQL Dir at', mysqlDir )
 
@@ -128,34 +121,34 @@ def loadDiracCfg( verbose = False ):
 
   mysqlStartupScript = os.path.join( rootPath, 'mysql', 'share', 'mysql', 'mysql.server' )
 
-  mysqlRootPwd = localCfg.getOption( __installPath( 'Database', 'RootPwd' ), '' )
+  mysqlRootPwd = localCfg.getOption( cfgInstallPath( 'Database', 'RootPwd' ), '' )
   if verbose and mysqlRootPwd:
     gLogger.info( 'Reading Root MySQL Password from local configuration' )
 
-  mysqlUser = localCfg.getOption( __installPath( 'Database', 'User' ), '' )
+  mysqlUser = localCfg.getOption( cfgInstallPath( 'Database', 'User' ), '' )
   if verbose and mysqlUser:
     gLogger.info( 'Reading MySQL User from local configuration' )
   else:
     mysqlUser = 'Dirac'
 
-  mysqlPassword = localCfg.getOption( __installPath( 'Database', 'Password' ), '' )
+  mysqlPassword = localCfg.getOption( cfgInstallPath( 'Database', 'Password' ), '' )
   if verbose and mysqlPassword:
     gLogger.info( 'Reading %s MySQL Password from local configuration' % mysqlUser )
 
-  mysqlHost = localCfg.getOption( __installPath( 'Database', 'Host' ), '' )
+  mysqlHost = localCfg.getOption( cfgInstallPath( 'Database', 'Host' ), '' )
   if verbose and mysqlHost:
     gLogger.info( 'Using MySQL Host from local configuration', mysqlHost )
 
-  mysqlMode = localCfg.getOption( __installPath( 'Database', 'MySQLMode' ), '' )
+  mysqlMode = localCfg.getOption( cfgInstallPath( 'Database', 'MySQLMode' ), '' )
   if verbose and mysqlMode:
     gLogger.info( 'Configuring MySQL server as %s' % mysqlMode )
 
-  mysqlSmallMem = localCfg.getOption( __installPath( 'Database', 'MySQLSmallMem' ), False )
+  mysqlSmallMem = localCfg.getOption( cfgInstallPath( 'Database', 'MySQLSmallMem' ), False )
   if verbose and mysqlSmallMem:
     gLogger.info( 'Configuring MySQL server for Low Memory uasge' )
 
 
-loadDiracCfg( verbose = True )
+loadDiracCfg()
 
 def getInfo( extensions ):
   result = getVersion()
@@ -218,9 +211,9 @@ def _addCfgToLocalCS( cfg ):
   """
   Merge cfg into local CS
   """
-  csName = localCfg.getOption( __cfgPath( 'DIRAC', 'Configuration', 'Name' ) , '' )
+  csName = localCfg.getOption( cfgPath( 'DIRAC', 'Configuration', 'Name' ) , '' )
   if not csName:
-    error = 'Missing %s' % __cfgPath( 'DIRAC', 'Configuration', 'Name' )
+    error = 'Missing %s' % cfgPath( 'DIRAC', 'Configuration', 'Name' )
     if exitOnError:
       gLogger.error( error )
       exit( -1 )
@@ -248,7 +241,7 @@ def __getCfg( section, option = '', value = '' ):
     if not section:
       continue
     sectionList.append( section )
-    cfg.createNewSection( __cfgPath( *sectionList ) )
+    cfg.createNewSection( cfgPath( *sectionList ) )
   if not sectionList:
     return None
 
@@ -264,7 +257,7 @@ def addOptionToDiracCfg( option, value ):
   """
   optionList = option.split( '/' )
   optionName = optionList[-1]
-  section = __cfgPath( *optionList[:-1] )
+  section = cfgPath( *optionList[:-1] )
   cfg = __getCfg( section, optionName, value )
 
   if not cfg:
@@ -279,7 +272,7 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName, component, extens
   """ Add the section with the component options to the CS
   """
   system = systemName.replace( 'System', '' )
-  instanceOption = __cfgPath( 'DIRAC', 'Setups', setup, system )
+  instanceOption = cfgPath( 'DIRAC', 'Setups', setup, system )
   instance = localCfg.getOption( instanceOption, '' )
   if not instance:
     return S_ERROR( '%s not defined in %s' % ( instanceOption, cfgFile ) )
@@ -291,7 +284,7 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName, component, extens
   # Check if the component CS options exist
   addOptions = True
   if not overwrite:
-    componentSection = __cfgPath( 'Systems', system, instance, sectionName, component )
+    componentSection = cfgPath( 'Systems', system, instance, sectionName, component )
     result = gConfig.getOptions( componentSection )
     if result['OK']:
       addOptions = False
@@ -312,7 +305,7 @@ def addDefaultOptionsToComponentCfg( componentType, systemName, component, exten
   Add default component options local component cfg
   """
   system = systemName.replace( 'System', '' )
-  instanceOption = __cfgPath( 'DIRAC', 'Setups', setup, system )
+  instanceOption = cfgPath( 'DIRAC', 'Setups', setup, system )
   instance = localCfg.getOption( instanceOption, '' )
   if not instance:
     return S_ERROR( '%s not defined in %s' % ( instanceOption, cfgFile ) )
@@ -346,7 +339,7 @@ def getComponentCfg( componentType, system, component, instance, extensions ):
       try:
         compCfg = loadCfg[sectionName][component]
       except:
-        error = 'Can not find %s in template' % __cfgPath( sectionName, component )
+        error = 'Can not find %s in template' % cfgPath( sectionName, component )
         gLogger.error( error )
         if exitOnError:
           exit( -1 )
@@ -359,17 +352,17 @@ def getComponentCfg( componentType, system, component, instance, extensions ):
       exit( -1 )
     return S_ERROR( error )
 
-  sectionPath = __cfgPath( 'Systems', system, instance, sectionName )
+  sectionPath = cfgPath( 'Systems', system, instance, sectionName )
   cfg = __getCfg( sectionPath )
-  cfg.createNewSection( __cfgPath( sectionPath, component ), '', compCfg )
+  cfg.createNewSection( cfgPath( sectionPath, component ), '', compCfg )
 
   # Add the service URL
   if componentType == "service":
     port = compCfg.getOption( 'Port' , 0 )
     if port and host:
-      urlsPath = __cfgPath( 'Systems', system, instance, 'URLs' )
+      urlsPath = cfgPath( 'Systems', system, instance, 'URLs' )
       cfg.createNewSection( urlsPath )
-      cfg.setOption( __cfgPath( urlsPath, component ),
+      cfg.setOption( cfgPath( urlsPath, component ),
                     'dips://%s:%d/%s/%s' % ( host, port, system, component ) )
 
   return S_OK( cfg )
@@ -379,7 +372,7 @@ def addDatabaseOptionsToCS( gConfig, systemName, dbName, overwrite = False ):
   Add the section with the database options to the CS
   """
   system = systemName.replace( 'System', '' )
-  instanceOption = __cfgPath( 'DIRAC', 'Setups', setup, system )
+  instanceOption = cfgPath( 'DIRAC', 'Setups', setup, system )
   instance = localCfg.getOption( instanceOption, '' )
   if not instance:
     return S_ERROR( '%s not defined in %s' % ( instanceOption, cfgFile ) )
@@ -387,7 +380,7 @@ def addDatabaseOptionsToCS( gConfig, systemName, dbName, overwrite = False ):
   # Check if the component CS options exist
   addOptions = True
   if not overwrite:
-    databasePath = __cfgPath( 'Systems', system, instance, 'Databases', dbName )
+    databasePath = cfgPath( 'Systems', system, instance, 'Databases', dbName )
     result = gConfig.getOptions( databasePath )
     if result['OK']:
       addOptions = False
@@ -406,9 +399,9 @@ def getDatabaseCfg( system, dbName, instance ):
   """ 
   Get the CFG object of the database configuration
   """
-  databasePath = __cfgPath( 'Systems', system, instance, 'Databases', dbName )
+  databasePath = cfgPath( 'Systems', system, instance, 'Databases', dbName )
   cfg = __getCfg( databasePath, 'DBName', dbName )
-  cfg.setOption( __cfgPath( databasePath, 'Host' ), mysqlHost )
+  cfg.setOption( cfgPath( databasePath, 'Host' ), mysqlHost )
 
   return S_OK( cfg )
 
@@ -419,7 +412,7 @@ def addSystemInstance( systemName, instance ):
   system = systemName.replace( 'System', '' )
   gLogger.info( 'Adding %s system as %s instance for %s setup to dirac.cfg and CS' % ( system, instance, setup ) )
 
-  cfg = __getCfg( __cfgPath( 'DIRAC', 'Setups', setup ), system, instance )
+  cfg = __getCfg( cfgPath( 'DIRAC', 'Setups', setup ), system, instance )
   if not _addCfgToDiracCfg( cfg ):
     return S_ERROR( 'Failed to add system instance to dirac.cfg' )
 
@@ -752,7 +745,7 @@ def setupSite( scriptCfg, cfg = None ):
       installCfg = CFG()
       installCfg.loadFromFile( cfg )
 
-      for section in ['DIRAC', 'LocalSite', baseSection]:
+      for section in ['DIRAC', 'LocalSite', cfgInstallSection]:
         if installCfg.isSection( section ):
           diracCfg.createNewSection( section, contents = installCfg[section] )
 
@@ -762,7 +755,7 @@ def setupSite( scriptCfg, cfg = None ):
       if instancePath != basePath:
         if not diracCfg.isSection( 'LocalSite' ):
           diracCfg.createNewSection( 'LocalSite' )
-        diracCfg.setOption( __cfgPath( 'LocalSite', 'InstancePath' ), instancePath )
+        diracCfg.setOption( cfgPath( 'LocalSite', 'InstancePath' ), instancePath )
 
       _addCfgToDiracCfg( diracCfg, verbose = True )
     except:
@@ -773,10 +766,10 @@ def setupSite( scriptCfg, cfg = None ):
       return S_ERROR( error )
 
   # Now get the necessary info from localCfg
-  setupSystems = localCfg.getOption( __installPath( 'Systems' ), ['Configuration', 'Framework'] )
-  setupDatabases = localCfg.getOption( __installPath( 'Databases' ), [] )
-  setupServices = [ k.split( '/' ) for k in localCfg.getOption( __installPath( 'Services' ), [] ) ]
-  setupAgents = [ k.split( '/' ) for k in localCfg.getOption( __installPath( 'Agents' ), [] ) ]
+  setupSystems = localCfg.getOption( cfgInstallPath( 'Systems' ), ['Configuration', 'Framework'] )
+  setupDatabases = localCfg.getOption( cfgInstallPath( 'Databases' ), [] )
+  setupServices = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Services' ), [] ) ]
+  setupAgents = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Agents' ), [] ) ]
 
   for serviceTuple in setupServices:
     error = ''
@@ -873,10 +866,10 @@ def setupSite( scriptCfg, cfg = None ):
       gLogger.info( 'Starting runsvdir ...' )
       os.system( "runsvdir %s 'log:  DIRAC runsv' &" % startDir )
 
-  if ['Configuration', 'Server'] in setupServices and diracCfg.getOption( __cfgPath( 'DIRAC', 'Configuration', 'Master' ), False ):
+  if ['Configuration', 'Server'] in setupServices and diracCfg.getOption( cfgPath( 'DIRAC', 'Configuration', 'Master' ), False ):
     # This server hosts the Master of the CS
     gLogger.info( 'Installing Master Configuration Server' )
-    cfg = __getCfg( __cfgPath( 'DIRAC', 'Setups', setup ), 'Configuration', instance )
+    cfg = __getCfg( cfgPath( 'DIRAC', 'Setups', setup ), 'Configuration', instance )
     _addCfgToDiracCfg( cfg )
     addDefaultOptionsToComponentCfg( 'service', 'Configuration', 'Server', [] )
     _addCfgToLocalCS( centralCfg )
@@ -903,10 +896,10 @@ def setupSite( scriptCfg, cfg = None ):
 
   # We need to make sure components are connecting to the Master CS, that is the only one being update
   from DIRAC import gConfig
-  localServers = localCfg.getOption( __cfgPath( 'DIRAC', 'Configuration', 'Servers' ) )
-  masterServer = gConfig.getValue( __cfgPath( 'DIRAC', 'Configuration', 'MasterServer' ), '' )
-  initialCfg = __getCfg( __cfgPath( 'DIRAC', 'Configuration' ), 'Servers' , localServers )
-  masterCfg = __getCfg( __cfgPath( 'DIRAC', 'Configuration' ), 'Servers' , masterServer )
+  localServers = localCfg.getOption( cfgPath( 'DIRAC', 'Configuration', 'Servers' ) )
+  masterServer = gConfig.getValue( cfgPath( 'DIRAC', 'Configuration', 'MasterServer' ), '' )
+  initialCfg = __getCfg( cfgPath( 'DIRAC', 'Configuration' ), 'Servers' , localServers )
+  masterCfg = __getCfg( cfgPath( 'DIRAC', 'Configuration' ), 'Servers' , masterServer )
   _addCfgToDiracCfg( masterCfg )
 
   # 1.- Setup the instances in the CS
@@ -1370,11 +1363,11 @@ def installDatabase( dbName ):
     return result
 
   if not mysqlRootPwd:
-    rootPwdPath = __installPath( 'Database', 'RootPwd' )
+    rootPwdPath = cfgInstallPath( 'Database', 'RootPwd' )
     return S_ERROR( 'Missing %s in %s' % ( rootPwdPath, cfgFile ) )
 
   if not mysqlPassword:
-    mysqlPwdPath = __installPath( 'Database', 'Password' )
+    mysqlPwdPath = cfgInstallPath( 'Database', 'Password' )
     return S_ERROR( 'Missing %sin %s' % ( mysqlPwdPath, cfgFile ) )
 
   gLogger.info( 'Installing', dbName )
@@ -1512,11 +1505,11 @@ def _addMySQLToDiracCfg():
   Add the database access info to the local configuration
   """
   if not mysqlPassword:
-    return S_ERROR( 'Missing /LocalInstallation/Database/Password in %s' % cfgFile )
+    return S_ERROR( 'Missing %s in %s' % ( cfgInstallPath( 'Database', 'Password' ), cfgFile ) )
 
-  sectionPath = __cfgPath( 'Systems', 'Databases' )
+  sectionPath = cfgPath( 'Systems', 'Databases' )
   cfg = __getCfg( sectionPath, 'User', mysqlUser )
-  cfg.setOption( __cfgPath( sectionPath, 'Password' ), mysqlPassword )
+  cfg.setOption( cfgPath( sectionPath, 'Password' ), mysqlPassword )
 
   return _addCfgToDiracCfg( cfg )
 
