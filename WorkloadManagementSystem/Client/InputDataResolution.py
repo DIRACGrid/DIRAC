@@ -52,8 +52,7 @@ class InputDataResolution:
     if self.arguments.has_key('IgnoreMissing'):
       ignoreMissing = self.arguments['IgnoreMissing']
 
-    #For LHCb original policy was as long as one TURL exists, this can be conveyed to the application
-    #this breaks due to the stripping so the policy has been changed.
+    # Missing some of the input files is a fatal error unless ignoreMissing option is defined
     if result.has_key('Failed'):
       failedReplicas = result['Failed']
       if failedReplicas and not ignoreMissing:
