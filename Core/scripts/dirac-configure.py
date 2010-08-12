@@ -52,7 +52,7 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Security.Misc import getProxyInfo
-from DIRAC.Core.Utilities import InstallTools
+from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath
 
 import sys, os
 
@@ -81,7 +81,7 @@ def setGateway( optionValue ):
   global gatewayServer
   gatewayServer = optionValue
   setServer( gatewayServer + '/Configuration/Server' )
-  DIRAC.gConfig.setOptionValue( InstallTools.__installPath( 'Gateway' ), gatewayServer )
+  DIRAC.gConfig.setOptionValue( cfgInstallPath( 'Gateway' ), gatewayServer )
   return DIRAC.S_OK()
 
 
@@ -90,7 +90,7 @@ def setServer( optionValue ):
   configurationServer = optionValue
   DIRAC.gLogger.debug( '/DIRAC/Configuration/Servers =', configurationServer )
   Script.localCfg.addDefaultEntry( '/DIRAC/Configuration/Servers', configurationServer )
-  DIRAC.gConfig.setOptionValue( InstallTools.__installPath( 'ConfigurationServer' ), configurationServer )
+  DIRAC.gConfig.setOptionValue( cfgInstallPath( 'ConfigurationServer' ), configurationServer )
   return DIRAC.S_OK()
 
 
@@ -99,7 +99,7 @@ def setSetup( optionValue ):
   setup = optionValue
   DIRAC.gLogger.debug( '/DIRAC/Setup =', setup )
   Script.localCfg.addDefaultEntry( '/DIRAC/Setup', setup )
-  DIRAC.gConfig.setOptionValue( InstallTools.__installPath( 'Setup' ), setup )
+  DIRAC.gConfig.setOptionValue( cfgInstallPath( 'Setup' ), setup )
   return DIRAC.S_OK()
 
 
@@ -109,34 +109,34 @@ def setSiteName( optionValue ):
   DIRAC.gLogger.debug( '/LocalSite/Site =', siteName )
   Script.localCfg.addDefaultEntry( '/LocalSite/Site', siteName )
   DIRAC.__siteName = False
-  DIRAC.gConfig.setOptionValue( InstallTools.__installPath( 'SiteName' ), siteName )
+  DIRAC.gConfig.setOptionValue( cfgInstallPath( 'SiteName' ), siteName )
   return DIRAC.S_OK()
 
 
 def setCEName( optionValue ):
   global ceName
   ceName = optionValue
-  DIRAC.gConfig.setOptionValue( InstallTools.__installPath( 'CEName' ), ceName )
+  DIRAC.gConfig.setOptionValue( cfgInstallPath( 'CEName' ), ceName )
   return DIRAC.S_OK()
 
 
 def setServerCert( optionValue ):
   global useServerCert
   useServerCert = True
-  DIRAC.gConfig.setOptionValue( InstallTools.__installPath( 'UseServerCertificate' ), useServerCert )
+  DIRAC.gConfig.setOptionValue( cfgInstallPath( 'UseServerCertificate' ), useServerCert )
   return DIRAC.S_OK()
 
 
 def setSkipCAChecks( optionValue ):
   global skipCAChecks
   skipCAChecks = True
-  DIRAC.gConfig.setOptionValue( InstallTools.__installPath( 'SkipCAChecks' ), skipCAChecks )
+  DIRAC.gConfig.setOptionValue( cfgInstallPath( 'SkipCAChecks' ), skipCAChecks )
   return DIRAC.S_OK()
 
 def setUseVersionsDir( optionValue ):
   global useVersionsDir
   useVersionsDir = True
-  DIRAC.gConfig.setOptionValue( InstallTools.__installPath( 'UseVersionsDir' ), useVersionsDir )
+  DIRAC.gConfig.setOptionValue( cfgInstallPath( 'UseVersionsDir' ), useVersionsDir )
   return DIRAC.S_OK()
 
 def setArchitecture( optionValue ):
@@ -144,7 +144,7 @@ def setArchitecture( optionValue ):
   architecture = optionValue
   DIRAC.gLogger.debug( '/LocalSite/Architecture =', architecture )
   Script.localCfg.addDefaultEntry( '/LocalSite/Architecture', architecture )
-  DIRAC.gConfig.setOptionValue( InstallTools.__installPath( 'Architecture' ), architecture )
+  DIRAC.gConfig.setOptionValue( cfgInstallPath( 'Architecture' ), architecture )
   return DIRAC.S_OK()
 
 
@@ -153,7 +153,7 @@ def setLocalSE( optionValue ):
   localSE = optionValue
   DIRAC.gLogger.debug( '/LocalSite/localSE =', localSE )
   Script.localCfg.addDefaultEntry( '/LocalSite/localSE', localSE )
-  DIRAC.gConfig.setOptionValue( InstallTools.__installPath( 'LocalSE' ), localSE )
+  DIRAC.gConfig.setOptionValue( cfgInstallPath( 'LocalSE' ), localSE )
   return DIRAC.S_OK()
 
 def setVO( optionValue ):
@@ -161,7 +161,7 @@ def setVO( optionValue ):
   vo = optionValue
   DIRAC.gLogger.debug( '/DIRAC/VirtualOrganization =', vo )
   Script.localCfg.addDefaultEntry( '/DIRAC/VirtualOrganization', vo )
-  DIRAC.gConfig.setOptionValue( InstallTools.__installPath( 'VirtualOrganization' ), vo )
+  DIRAC.gConfig.setOptionValue( cfgInstallPath( 'VirtualOrganization' ), vo )
   return DIRAC.S_OK()
 
 Script.disableCS()
@@ -187,64 +187,64 @@ Script.parseCommandLine( ignoreErrors = True )
 args = Script.getExtraCLICFGFiles()
 
 if not logLevel:
-  logLevel = DIRAC.gConfig.getValue( InstallTools.__installPath( 'LogLevel' ), '' )
+  logLevel = DIRAC.gConfig.getValue( cfgInstallPath( 'LogLevel' ), '' )
   if logLevel:
     DIRAC.gLogger.setLevel( logLevel )
 else:
-  DIRAC.gConfig.setOptionValue( InstallTools.__installPath( 'LogLevel' ), logLevel )
+  DIRAC.gConfig.setOptionValue( cfgInstallPath( 'LogLevel' ), logLevel )
 
 if not gatewayServer:
-  newGatewayServer = DIRAC.gConfig.getValue( InstallTools.__installPath( 'Gateway' ), '' )
+  newGatewayServer = DIRAC.gConfig.getValue( cfgInstallPath( 'Gateway' ), '' )
   if newGatewayServer:
     setGateway( newGatewayServer )
 
 if not configurationServer:
-  newConfigurationServer = DIRAC.gConfig.getValue( InstallTools.__installPath( 'ConfigurationServer' ), '' )
+  newConfigurationServer = DIRAC.gConfig.getValue( cfgInstallPath( 'ConfigurationServer' ), '' )
   if newConfigurationServer:
     setServer( newConfigurationServer )
 
 if not setup:
-  newSetup = DIRAC.gConfig.getValue( InstallTools.__installPath( 'Setup' ), '' )
+  newSetup = DIRAC.gConfig.getValue( cfgInstallPath( 'Setup' ), '' )
   if newSetup:
     setSetup( newSetup )
 
 if not siteName:
-  newSiteName = DIRAC.gConfig.getValue( InstallTools.__installPath( 'SiteName' ), '' )
+  newSiteName = DIRAC.gConfig.getValue( cfgInstallPath( 'SiteName' ), '' )
   if newSiteName:
     setSiteName( newSiteName )
 
 if not ceName:
-  newCEName = DIRAC.gConfig.getValue( InstallTools.__installPath( 'CEName' ), '' )
+  newCEName = DIRAC.gConfig.getValue( cfgInstallPath( 'CEName' ), '' )
   if newCEName:
     setCEName( newCEName )
 
 if not useServerCert:
-  newUserServerCert = DIRAC.gConfig.getValue( InstallTools.__installPath( 'UseServerCertificate' ), False )
+  newUserServerCert = DIRAC.gConfig.getValue( cfgInstallPath( 'UseServerCertificate' ), False )
   if newUserServerCert:
     setServerCert( newUserServerCert )
 
 if not skipCAChecks:
-  newSkipCAChecks = DIRAC.gConfig.getValue( InstallTools.__installPath( 'SkipCAChecks' ), False )
+  newSkipCAChecks = DIRAC.gConfig.getValue( cfgInstallPath( 'SkipCAChecks' ), False )
   if newSkipCAChecks:
     setSkipCAChecks( newSkipCAChecks )
 
 if not useVersionsDir:
-  newUseVersionsDir = DIRAC.gConfig.getValue( InstallTools.__installPath( 'UseVersionsDir' ), False )
+  newUseVersionsDir = DIRAC.gConfig.getValue( cfgInstallPath( 'UseVersionsDir' ), False )
   if newUseVersionsDir:
     setUseVersionsDir( newUseVersionsDir )
     # Set proper Defaults in configuration (even if they will be properly overwrite by InstallTools
     instancePath = os.path.dirname( os.path.dirname( DIRAC.rootPath ) )
     rootPath = os.path.join( instancePath, 'pro' )
-    DIRAC.gConfig.setOptionValue( InstallTools.__installPath( 'InstancePath' ), instancePath )
-    DIRAC.gConfig.setOptionValue( InstallTools.__installPath( 'RootPath' ), rootPath )
+    DIRAC.gConfig.setOptionValue( cfgInstallPath( 'InstancePath' ), instancePath )
+    DIRAC.gConfig.setOptionValue( cfgInstallPath( 'RootPath' ), rootPath )
 
 if not architecture:
-  newArchitecture = DIRAC.gConfig.getValue( InstallTools.__installPath( 'Architecture' ), '' )
+  newArchitecture = DIRAC.gConfig.getValue( cfgInstallPath( 'Architecture' ), '' )
   if newArchitecture:
     setArchitecture( newArchitecture )
 
 if not vo:
-  newVO = DIRAC.gConfig.getValue( InstallTools.__installPath( 'VirtualOrganization' ), '' )
+  newVO = DIRAC.gConfig.getValue( cfgInstallPath( 'VirtualOrganization' ), '' )
   if newVO:
     setVO( newVO )
 
