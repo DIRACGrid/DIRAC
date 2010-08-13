@@ -1031,7 +1031,6 @@ exec python %(DIRAC)s/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%
        'logLevel': logLevel } )
     f.close()
 
-    os.chmod( logRunFile, defaultPerms )
     os.chmod( runFile, defaultPerms )
 
   except:
