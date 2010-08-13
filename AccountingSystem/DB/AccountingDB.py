@@ -1353,15 +1353,15 @@ class AccountingDB( DB ):
       return
     for table, field in ( ( self.__getTableName( "type", typeName ), 'endTime' ),
                           ( self.__getTableName( "bucket", typeName ), 'startTime + bucketLength' ) ):
-      gLogger.info( "[COMPACT] Deleting old records for table %s" % table )
+      self.log.info( "[COMPACT] Deleting old records for table %s" % table )
       sqlCmd = "DELETE FROM `%s` WHERE %s < UNIX_TIMESTAMP()-%d" % ( table, field, dataTimespan )
       result = self._update( sqlCmd )
       if not result[ 'OK' ]:
-        gLogger.error( "[COMPACT] Cannot delete old records", "Table: %s Timespan: %s Error: %s" % ( table,
+        self.log.error( "[COMPACT] Cannot delete old records", "Table: %s Timespan: %s Error: %s" % ( table,
                                                                                           dataTimespan,
                                                                                           result[ 'Message' ] ) )
       else:
-        gLogger.info( "[COMPACT] Deleted %d records for %s table" % ( result[ 'Value' ], table ) )
+        self.log.info( "[COMPACT] Deleted %d records for %s table" % ( result[ 'Value' ], table ) )
 
   def regenerateBuckets( self, typeName ):
     retVal = self._getConnection()
