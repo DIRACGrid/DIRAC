@@ -1,6 +1,7 @@
 """ 
 ResourceStatusClient class is a client for requesting info from the ResourceStatusService.
 """
+__docformat__ = "restructuredtext en"
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
@@ -24,10 +25,12 @@ class ResourceStatusClient:
     """ 
     Returns simple statistics of active, probing and banned services of a site;
         
-    :params:
-      :attr:`granularity`: string, has to be 'Site'
+    :Parameters:
+      `granularity`
+        string, has to be 'Site'
     
-      :attr:`name`: string - a service name
+      `name`
+        string - a service name
     
     :returns:
       { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
@@ -48,10 +51,12 @@ class ResourceStatusClient:
     """ 
     Returns simple statistics of active, probing and banned resources of a site or a service;
         
-    :params:
-      :attr:`granularity` string, should be in ('Site', 'Service')
+    :Parameters:
+      `granularity`
+        string, should be in ('Site', 'Service')
       
-      :attr:`name`: string, name of site or service
+      `name`
+        string, name of site or service
     
     :returns:
       { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
@@ -69,10 +74,12 @@ class ResourceStatusClient:
     """ 
     Returns simple statistics of active, probing and banned storageElements of a site or a resource;
         
-    :params:
-      :attr:`granularity` string, should be in ['Site', 'Resource']
+    :Parameters:
+      `granularity`
+        string, should be in ['Site', 'Resource']
       
-      :attr:`name`: string, name of site or resource
+      `name`
+        string, name of site or resource
     
     :returns:
       { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
@@ -113,12 +120,15 @@ class ResourceStatusClient:
     """ 
     Returns simple statistics of active, probing and banned storageElements of a site or a resource;
         
-    :params:
-      :attr:`granularity` string, should be a ValidRes
+    :Parameters:
+      `granularity`
+        string, should be a ValidRes
       
-      :attr:`name`: string, name of site or resource
+      `name`
+        string, name of site or resource
     
-      :attr:`toGranularity` string, should be a ValidRes
+      `toGranularity`
+        string, should be a ValidRes
       
     :returns:
       { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
@@ -137,10 +147,12 @@ class ResourceStatusClient:
     """ 
     Returns RSS status of name
         
-    :params:
-      :attr:`granularity` string, should be a ValidRes
+    :Parameters:
+      `granularity`
+        string, should be a ValidRes
       
-      :attr:`name`: string, name of the ValidRes
+      `name`
+        string, name of the ValidRes
       
     :returns:
       'Active'|'Probing'|'Banned'|None
@@ -174,12 +186,15 @@ class ResourceStatusClient:
     """ 
     Returns a cached accounting plot
         
-    :params:
-      :attr:`name` string, should be the name of the res
+    :Parameters:
+      `name`
+        string, should be the name of the res
       
-      :attr:`plotType`: string, plot type
+      `plotType`
+        string, plot type
     
-      :attr:`plotName` string, should be the plot name
+      `plotName`
+        string, should be the plot name
       
     :returns:
       a plot
@@ -198,14 +213,18 @@ class ResourceStatusClient:
     """ 
     Returns a cached result;
         
-    :params:
-      :attr:`name`: string, name of site or resource
+    :Parameters:
+      `name`
+        string, name of site or resource
     
-      :attr:`commandName`: string
+      `commandName`
+        string
       
-      :attr:`value`: string
+      `value`
+        string
       
-      :attr:`opt_ID`: optional string
+      `opt_ID`
+        optional string
       
     :returns:
       (result, )
@@ -224,10 +243,12 @@ class ResourceStatusClient:
     """ 
     Returns a cached result;
         
-    :params:
-      :attr:`name`: string, name of site or resource
+    :Parameters:
+      `name`
+        string, name of site or resource
     
-      :attr:`commandName`: string
+      `commandName`
+        string
       
     :returns: (e.g.)
       [78805473L, 78805473L, 78805473L, 78805473L]

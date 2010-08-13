@@ -261,6 +261,11 @@ class Publisher:
       
       info_bit_got = self.cc.commandInvocation(granularity, name, None, 
                                                None, command, extraArgs)
+      
+      try:
+        info_bit_got = info_bit_got['Result']
+      except:
+        pass
 
     return info_bit_got
 

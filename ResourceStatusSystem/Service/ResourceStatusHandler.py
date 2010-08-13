@@ -7,6 +7,7 @@
     >>> server = RPCCLient("ResourceStatus/ResourceStatus")
 
 """
+__docformat__ = "restructuredtext en"
 
 from datetime import datetime, timedelta
 
@@ -123,18 +124,19 @@ class ResourceStatusHandler(RequestHandler):
     """ get present sites status list, for the web
         Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsStatusWeb`
     
-        :Params:
-          selectDict = 
+        :Parameters:
+          `selectDict` 
             {
               'SiteName':'name of a site' --- present status
               'ExpandSiteHistory':'name of a site' --- site status history
             }
           
-          sortList = [] (no sorting provided)
+          `sortList`
+            (no sorting provided)
           
-          startItem
+          `startItem`
           
-          maxItems
+          `maxItems`
     
         :return:
         {
@@ -179,15 +181,19 @@ class ResourceStatusHandler(RequestHandler):
     Set Site status to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.setSiteStatus`
 
-    :params:
-      :attr:`siteName`: a string representing the site name
+    :Parameters
+      `siteName`
+        a string representing the site name
       
-      :attr:`status`: a string representing the status
+      `status`
+        a string representing the status
 
-      :attr:`reason`: a string representing the reason
+      `reason`
+        a string representing the reason
 
-      :attr:`operatorCode`: a string representing the operator Code
-      (can be a user name, or ``RS_SVC`` for the service itself)
+      `operatorCode`
+        a string representing the operator Code
+        (can be a user name, or ``RS_SVC`` for the service itself)
     """
     try:
       gLogger.info("ResourceStatusHandler.setSiteStatus: Attempting to modify site %s status" % siteName)
@@ -215,20 +221,27 @@ class ResourceStatusHandler(RequestHandler):
     Add or modify a site to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifySite`
     
-    :params:
-      :attr:`siteName`: string - name of the site (DIRAC name)
+    :Parameters
+      `siteName`
+        string - name of the site (DIRAC name)
     
-      :attr:`siteType`: string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      `siteType`
+        string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
-      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      `status`
+        string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
-      :attr:`reason`: string - free
+      `reason`
+        string - free
       
-      :attr:`dateEffective`: datetime - date from which the site status is effective
+      `dateEffective`
+        datetime - date from which the site status is effective
 
-      :attr:`operatorCode`: string - free
+      `operatorCode`
+        string - free
 
-      :attr:`dateEnd`: datetime - date from which the site status ends to be effective
+      `dateEnd`
+        datetime - date from which the site status ends to be effective
     """
     try:
       gLogger.info("ResourceStatusHandler.addOrModifySite: Attempting to add or modify site %s" % siteName)
@@ -381,24 +394,25 @@ class ResourceStatusHandler(RequestHandler):
     Get present services status list, for the web.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsStatusWeb`
     
-    :params:
-      :attr:`selectDict`: { 'ServiceName':['XX', ...] , 'ExpandServiceHistory': ['XX', ...], 'Status': ['XX', ...]} 
+    :Parameters
+      `selectDict`
+        { 'ServiceName':['XX', ...] , 'ExpandServiceHistory': ['XX', ...], 'Status': ['XX', ...]} 
       
-      :attr:`sortList` 
+      `sortList` 
       
-      :attr:`startItem` 
+      `startItem` 
       
-      :attr:`maxItems`
+      `maxItems`
       
     :return: { 
-      :attr:`ParameterNames`: ['ServiceName', 'ServiceType', 'Site', 'GridType', 'Country', 
+      `ParameterNames`: ['ServiceName', 'ServiceType', 'Site', 'GridType', 'Country', 
       'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'], 
       
-      :attr:'Records': [[], [], ...], 
+      'Records': [[], [], ...], 
       
-      :attr:'TotalRecords': X,
+      'TotalRecords': X,
        
-      :attr:'Extras': {}
+      'Extras': {}
       
       }
     """
@@ -425,14 +439,18 @@ class ResourceStatusHandler(RequestHandler):
     Set Service status to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.setServiceStatus`
 
-    :params:
-      :attr:`serviceName`: a string representing the service name
+    :Parameters
+      `serviceName`
+        a string representing the service name
       
-      :attr:`status`: a string representing the status
+      `status`
+        a string representing the status
 
-      :attr:`reason`: a string representing the reason
+      `reason`
+        a string representing the reason
 
-      :attr:`operatorCode`: a string representing the operator Code
+      `operatorCode`
+        a string representing the operator Code
       (can be a user name, or ``RS_SVC`` for the service itself)
     """
     try:
@@ -461,21 +479,28 @@ class ResourceStatusHandler(RequestHandler):
     Add or modify a service to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifyService`
     
-    :params:
-      :attr:`serviceName`: string - name of the service (DIRAC name)
+    :Parameters
+      `serviceName`
+        string - name of the service (DIRAC name)
     
-      :attr:`serviceType`: string - ValidServiceType: 
-      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      `serviceType`
+        string - ValidServiceType: 
+        see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
-      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      `status`
+        string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
-      :attr:`reason`: string - free
+      `reason`
+        string - free
       
-      :attr:`dateEffective`: datetime - date from which the service status is effective
+      `dateEffective`
+        datetime - date from which the service status is effective
 
-      :attr:`operatorCode`: string - free
+      `operatorCode`
+        string - free
 
-      :attr:`dateEnd`: datetime - date from which the service status ends to be effective
+      `dateEnd`
+        datetime - date from which the service status ends to be effective
     
     """
     try:
@@ -552,9 +577,9 @@ class ResourceStatusHandler(RequestHandler):
 #    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.addServiceType`
 #    
 #    :Params:
-#      :attr:`serviceType`: a string
+#      `serviceType`: a string
 #
-#      :attr:`description`: an optional string
+#      `description`: an optional string
 #    """
 #    try:
 #      gLogger.info("ResourceStatusHandler.addServiceType: Attempting to add service type %s" % (serviceType))
@@ -603,8 +628,9 @@ class ResourceStatusHandler(RequestHandler):
     """ 
     Returns simple statistics of active, probing and banned services of a site;
         
-    :params:
-      :attr:`siteName`: string - a site name
+    :Parameters
+      `siteName`
+        string - a site name
     
     :returns:
       S_OK { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
@@ -664,27 +690,30 @@ class ResourceStatusHandler(RequestHandler):
         Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsStatusWeb`
 
 
-        Input:
-        selectDict: {'ResourceName':'name of a resource' --- present status
-        
-        'ExpandResourceHistory':'name of a resource' --- resource status history }
-        
-        sortList = [] (no sorting provided)
-        
-        startItem
-        
-        maxItems
+        :Parameters:
+          `selectDict`
+            {'ResourceName':'name of a resource' --- present status
           
-        Output: { 'OK': XX, 'rpcStub': XX, 'getSitesStatusWeb', ({}, [], X, X)), 
-        
-        Value': { 'ParameterNames': ['ResourceName', 'SiteName', 'ServiceExposed', 'Country', 
-        'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'], 
+          `ExpandResourceHistory`
+            'name of a resource' --- resource status history }
+          
+          `sortList`
+            [] (no sorting provided)
+          
+          `startItem`
+          
+          `maxItems`
             
-        'Records': [[], [], ...]
-            
-        'TotalRecords': X, 
-           
-        'Extras': {} } }
+        `return`: { 'OK': XX, 'rpcStub': XX, 'getSitesStatusWeb', ({}, [], X, X)), 
+          
+          'Value': { 'ParameterNames': ['ResourceName', 'SiteName', 'ServiceExposed', 'Country', 
+          'Status', 'DateEffective', 'FormerStatus', 'Reason', 'StatusInTheMask'], 
+              
+          'Records': [[], [], ...]
+              
+          'TotalRecords': X, 
+             
+          'Extras': {} } }
     """
     try:
       gLogger.info("ResourceStatusHandler.getResourcesStatusWeb: Attempting to get resources list")
@@ -710,15 +739,19 @@ class ResourceStatusHandler(RequestHandler):
     Set Resource status to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.setResourceStatus`
 
-    :params:
-      :attr:`resourceName`: a string representing the resource name
+    :Parameters
+      `resourceName`
+        a string representing the resource name
       
-      :attr:`status`: a string representing the status
+      `status`
+        a string representing the status
 
-      :attr:`reason`: a string representing the reason
+      `reason`
+        a string representing the reason
 
-      :attr:`operatorCode`: a string representing the operator Code
-      (can be a user name, or ``RS_SVC`` for the service itself)
+      `operatorCode`
+        a string representing the operator Code
+        (can be a user name, or ``RS_SVC`` for the service itself)
     """
     try:
       gLogger.info("ResourceStatusHandler.setResourceStatus: Attempting to modify resource %s status" % resourceName)
@@ -748,21 +781,29 @@ class ResourceStatusHandler(RequestHandler):
     Add or modify a resource to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifyResource`
     
-    :params:
-      :attr:`resourceName`: string - name of the resource (DIRAC name)
+    :Parameters:
+      `resourceName`
+        string - name of the resource (DIRAC name)
     
-      :attr:`resourceType`: string - ValidResourceType: 
-      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      `resourceType`
+        string - ValidResourceType: 
+        see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
-      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      `status`
+        string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
-      :attr:`reason`: string - free
+      `reason`
+        string - free
       
-      :attr:`dateEffective`: datetime - date from which the resource status is effective
+      `dateEffective`
+        datetime - date from which the resource status is effective
 
-      :attr:`operatorCode`: string - free
+      `operatorCode`
+        string - free
 
-      :attr:`dateEnd`: datetime - date from which the resource status ends to be effective
+      `dateEnd`
+        datetime - date from which the resource status ends to be effective
+        
     """
     try:
       gLogger.info("ResourceStatusHandler.addOrModifyResource: Attempting to add or modify resource %s %s" % (resourceName, siteName))
@@ -812,8 +853,8 @@ class ResourceStatusHandler(RequestHandler):
 #    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.addResourceType`
 #    
 #    :Params:
-#      :attr:`resourceType`: a string
-#      :attr:`description`: an optional long string
+#      `resourceType`: a string
+#      `description`: an optional long string
 #    """
 #    try:
 #      gLogger.info("ResourceStatusHandler.addResourceType: Attempting to add resource type %s" % (resourceType))
@@ -958,14 +999,16 @@ class ResourceStatusHandler(RequestHandler):
     """ 
     Returns simple statistics of active, probing and banned resources of a site or service;
         
-    :params:
-      :attr:`granularity` string, should be in ['Site', 'Service']
+    :Parameters:
+      `granularity`
+        string, should be in ['Site', 'Service']
       
-      :attr:`name`: string, name of site or service
+      `name`
+        string, name of site or service
     
-    :returns:
+    :return:
       S_OK { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
-      or S_Error
+      or S_ERROR
     """
 
     try:
@@ -1051,18 +1094,19 @@ class ResourceStatusHandler(RequestHandler):
         Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsStatusWeb`
 
     
-        :Params:
-          :attr:`selectDict` = 
+        :Parameters:
+          `selectDict` 
             {
               'StorageElementName':'name of a site' --- present status
               'ExpandStorageElementHistory':'name of a site' --- site status history
             }
           
-          :attr:`sortList` = [] (no sorting provided)
+          `sortList`
+            [] (no sorting provided)
           
-          :attr:`startItem`
+          `startItem`
           
-          :attr:`maxItems`
+          `maxItems`
     
         :return:
         {
@@ -1107,15 +1151,19 @@ class ResourceStatusHandler(RequestHandler):
     Set StorageElement status to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.setStorageElementStatus`
 
-    :params:
-      :attr:`seName`: a string representing the se name
+    :Parameters
+      `seName`
+        a string representing the se name
       
-      :attr:`status`: a string representing the status
+      `status`
+        a string representing the status
 
-      :attr:`reason`: a string representing the reason
+      `reason`
+        a string representing the reason
 
-      :attr:`operatorCode`: a string representing the operator Code
-      (can be a user name, or ``RS_SVC`` for the service itself)
+      `operatorCode`
+        a string representing the operator Code
+        (can be a user name, or ``RS_SVC`` for the service itself)
     """
     try:
       gLogger.info("ResourceStatusHandler.setStorageElementStatus: Attempting to modify se %s status" % seName)
@@ -1143,22 +1191,30 @@ class ResourceStatusHandler(RequestHandler):
     Add or modify a site to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifyStorageElement`
     
-    :params:
-      :attr:`seName`: string - name of the se (DIRAC name)
+    :Parameters
+      `seName`
+        string - name of the se (DIRAC name)
     
-      :attr:`resourceName`: string - name of the node (resource)
+      `resourceName`
+        string - name of the node (resource)
     
-      :attr:`siteName`: string - name of the site (DIRAC name)
+      `siteName`
+        string - name of the site (DIRAC name)
     
-      :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      `status`
+        string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
-      :attr:`reason`: string - free
+      `reason`
+        string - free
       
-      :attr:`dateEffective`: datetime - date from which the site status is effective
+      `dateEffective`
+        datetime - date from which the site status is effective
 
-      :attr:`operatorCode`: string - free
+      `operatorCode`
+        string - free
 
-      :attr:`dateEnd`: datetime - date from which the site status ends to be effective
+      `dateEnd`
+        datetime - date from which the site status ends to be effective
     """
     try:
       gLogger.info("ResourceStatusHandler.addOrModifyStorageElement: Attempting to add or modify se %s" % seName)
@@ -1231,12 +1287,14 @@ class ResourceStatusHandler(RequestHandler):
     """ 
     Returns simple statistics of active, probing and banned storageElementss of a site or resource;
         
-    :params:
-      :attr:`granularity` string, should be in ['Site', 'Resource']
+    :Parameters:
+      `granularity`
+        string, should be in ['Site', 'Resource']
       
-      :attr:`name`: string, name of site or service
+      `name`
+        string, name of site or service
     
-    :returns:
+    :return:
       S_OK { 'Active':xx, 'Probing':yy, 'Banned':zz, 'Total':xyz }
       or S_Error
     """
@@ -1271,9 +1329,12 @@ class ResourceStatusHandler(RequestHandler):
     Add a status to the ResourceStatusDB. 
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.addStatus`
     
-    :Params:
-      :attr:`status`: a string
-      :attr:`description`: an optional long string
+    :Parameters:
+      `status`
+        a string
+      
+      `description`
+        an optional long string
     """
     try:
       gLogger.info("ResourceStatusHandler.addStatus: Attempting to add status %s" % (status))
@@ -1528,18 +1589,19 @@ class ResourceStatusHandler(RequestHandler):
     """ get down times as registered with the policies.
         Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getDownTimesWeb`
     
-        :Params:
-          selectDict = 
+        :Parameters:
+          `selectDict` 
             {
               'Granularity':'Site', 'Resource', or a list with both
               'Severity':'OUTAGE', 'AT_RISK', or a list with both
             }
           
-          sortList = [] (no sorting provided)
+          `sortList`
+            [] (no sorting provided)
           
-          startItem
+          `startItem`
           
-          maxItems
+          `maxItems`
     
         :return:
         {
@@ -1716,13 +1778,16 @@ class ResourceStatusHandler(RequestHandler):
   def export_publisher(self, granularity, name, useNewRes = False):
     """ get a view
     
-    :params:
-      :attr:`granularity`: string - a ValidRes
+    :Parameters:
+      `granularity`
+        string - a ValidRes
     
-      :attr:`name`: string - name of the res
+      `name`
+        string - name of the res
 
-      :attr:`useNewRes`: boolean. When set to true, will get new results, 
-      otherwise it will get cached results (where available).
+      `useNewRes`
+        boolean. When set to true, will get new results, 
+        otherwise it will get cached results (where available).
     """
     try:
       gLogger.info("ResourceStatusHandler.publisher: Attempting to get info for %s: %s" % (granularity, name))

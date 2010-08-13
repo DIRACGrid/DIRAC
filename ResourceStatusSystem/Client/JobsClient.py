@@ -1,5 +1,6 @@
 """ JobResultsClient class is a client for to get jobs' stats.
 """
+__docformat__ = "restructuredtext en"
 
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 
@@ -16,11 +17,13 @@ class JobsClient:
     """  
     Return jobs stats of entity in name
     
-    :params:
-      :attr:`name`: should be the name of the ValidRes
+    :Parameters:
+      `name`
+        should be the name of the ValidRes
     
-      :attr:`periods`: optional list - contains the periods to consider in the query.
-      If not given, takes the last 24h
+      `periods`
+        optional list - contains the periods to consider in the query. 
+        If not given, takes the last 24h
 
     :return:
       {
@@ -54,14 +57,17 @@ class JobsClient:
     """
     Return job stats of entity in args for periods
     
-    :params:
-      :attr:`granularity`: string - should be a ValidRes
+    :Parameters:
+      `granularity`
+        string - should be a ValidRes
     
-      :attr:`name` should be the name of the ValidRes
+      `name`
+        should be the name of the ValidRes
     
-      :attr:`periods`: list - contains the periods to consider in the query
+      `periods`
+        list - contains the periods to consider in the query
 
-    returns:
+    :return:
       {
         'JobsEff': X (0-1)'
       }
@@ -86,7 +92,7 @@ class JobsClient:
   def getSystemCharge(self):
     """ Returns last hour system charge, and the system charge of an hour before
 
-        returns:
+        :return:
           {
             'LastHour': n_lastHour
             'anHourBefore': n_anHourBefore
@@ -109,10 +115,12 @@ class JobsClient:
     """  
     Return simple jobs efficiency
     
-    :params:
-      :attr:`name`: string or list of string - Site name(s)
+    :Parameters:
+      `name`
+        string or list of string - Site name(s)
     
-      :attr:`RPCWMSAdmin`: RPCClient to RPCWMSAdmin
+      `RPCWMSAdmin`
+        RPCClient to RPCWMSAdmin
 
     :return: {'SiteName':'Good'|'Fair'|'Poor'|'Idle'|'Bad'}
     """

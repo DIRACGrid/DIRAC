@@ -71,6 +71,10 @@ class SAMResults_Command(Command):
       tests = None
     finally:
       try:
+        
+        print self.client, granularity, name, siteName, tests, self.timeout
+        
+        
         res = self.client.getStatus(granularity, name, siteName, tests, 
                                     timeout = self.timeout)
         if not res['OK']:

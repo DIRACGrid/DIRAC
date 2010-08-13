@@ -1,5 +1,6 @@
 """ PilotsClient class is a client for to get pilots stats.
 """
+__docformat__ = "restructuredtext en"
 
 from datetime import datetime, timedelta
 
@@ -20,13 +21,16 @@ class PilotsClient:
     """  
     Return pilot stats
     
-    :params:
-      :attr:`granularity`: string - should be a ValidRes
-    
-      :attr:`name`: string - should be the name of the ValidRes
-    
-      :attr:`periods`: list - contains the periods to consider in the query
-
+    :Parameters:
+      `granularity` 
+        string - should be a ValidRes
+      
+      `name`
+        string - should be the name of the ValidRes
+      
+      `periods`
+        list - contains the periods to consider in the query
+      
     :return:
       {
         'MeanProcessedPilots': X'
@@ -69,14 +73,17 @@ class PilotsClient:
     """  
     Return pilot stats of entity in args for periods
     
-    :params:
-      :attr:`granularity`: string - should be a ValidRes
+    :Parameters:
+      `granularity`
+        string - should be a ValidRes
     
-      :attr:`name`: string - should be the name of the ValidRes
+      `name`
+        string - should be the name of the ValidRes
     
-      :attr:`name`: list - periods contains the periods to consider in the query
+      `name`
+        list - periods contains the periods to consider in the query
 
-    returns:
+    :return:
       {
         'PilotsEff': X (0-1)'
       }
@@ -98,42 +105,29 @@ class PilotsClient:
     
 #############################################################################
 
-  def getPilotSimpleEff(self, granularity, name, periods):
-    """  return pilot simple efficiency of entity in args for periods
-        - granularity should be a ValidRes
-        - name should be the name of the ValidRes
-        
-        returns:
-          {
-            'PilotsEff': X (0-1)'
-          }
-    """
-
-    
-#    RPC = RPCClient("WorkloadManagement/WMSAdministrator")
-
-#############################################################################
-
 
   def getPilotsSimpleEff(self, granularity, name, siteName = None, 
                          RPCWMSAdmin = None, timeout = None):
     """  
     Return pilots simple efficiency of entity in args for periods
     
-    :params:
-      :attr:`granularity`: string - should be a ValidRes (Site or Resource)
+    :Parameters:
+      `granularity` 
+        string - should be a ValidRes (Site or Resource)
       
-      :attr:`name`: string or list - names of the ValidRes
+      `name`
+        string or list - names of the ValidRes
       
-      :attr:`siteName`: string - optional site name, in case 
-      granularity is `Resource`
+      `siteName`
+        string - optional site name, in case granularity is `Resource`
 
-      :attr:`RPCWMSAdmin`: RPCClient to RPCWMSAdmin
+      `RPCWMSAdmin`
+        RPCClient to RPCWMSAdmin
     
     :return:
-    {
+      {
       'PilotsEff': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'
-    }
+      }
     """
     
     if RPCWMSAdmin is not None: 
