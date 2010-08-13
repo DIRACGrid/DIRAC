@@ -16,9 +16,6 @@ def initializeDataStoreHandler( serviceInfo ):
   result = gAccountingDB.markAllPendingRecordsAsNotTaken()
   if not result[ 'OK' ]:
     return result
-  result = gAccountingDB.loadPendingRecords()
-  if not result[ 'OK' ]:
-    return result
   gThreadScheduler.addPeriodicTask( 60, gAccountingDB.loadPendingRecords )
   return S_OK()
 
@@ -159,7 +156,7 @@ class DataStoreHandler( RequestHandler ):
     endTime = int( Time.toEpoch( endTime ) )
     return gAccountingDB.deleteRecord( typeName, startTime, endTime, valuesList )
 
-  types_commitRegisters = [ types.ListType ]
+  types_removeRegisters = [ types.ListType ]
   def export_removeRegisters( self, entriesList ):
     """
       Remove a record for a type
