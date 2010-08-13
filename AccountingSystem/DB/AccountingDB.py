@@ -201,6 +201,7 @@ class AccountingDB( DB ):
       self.log.info( "[PENDING] %s in the queue, %d empty slots" % ( pendingInQueue, emptySlots ) )
       if emptySlots < 1:
         continue
+      emptySlots = min( 100, emptySlots )
       sqlTableName = self.__getTableName( "in", typeName )
       sqlFields = [ 'id' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
       sqlCond = "WHERE taken = 0 or TIMESTAMPDIFF( SECOND, takenSince, UTC_TIMESTAMP() ) > %s" % self.getWaitingRecordsLifeTime()
