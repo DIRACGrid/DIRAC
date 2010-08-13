@@ -1,5 +1,6 @@
 """ SAMResultsClient class is a client for the SAM Results DB.
 """
+__docformat__ = "restructuredtext en"
 
 import urllib2
 from datetime import datetime
@@ -12,8 +13,7 @@ class SAMResultsClient:
   
 #############################################################################
 
-  def getStatus(self, granularity, name, siteName = None, 
-                tests = None, timeout = None):
+  def getStatus(self, granularity, name, siteName, tests = None, timeout = None):
     """  
     Return stats of entity in args
     
@@ -22,11 +22,13 @@ class SAMResultsClient:
       
       :attr:`name`: string: the name of the site or of the resource
       
-      :attr:`siteName`: optional (string) for the sitename, 
-      in case you're looking for a resource status 
+      :attr:`siteName`: string for the sitename 
 
       :attr:`tests`: optional (list of) tests. 
       If omitted, takes only the service status metrics
+      
+      :attr:`timeout`: optional timeout. 
+      If omitted, there will be no timeout.
 
     :returns:
       {
