@@ -953,6 +953,34 @@ def setupSite( scriptCfg, cfg = None ):
 
   return S_OK()
 
+def _createRunitLog( runitCompDir ):
+    logDir = os.path.join( runitCompDir, 'log' )
+    os.makedirs( logDir )
+
+    logConfigFile = os.path.join( logDir, 'config' )
+    f = open( logConfigFile, 'w' )
+    f.write( 
+"""s10000000
+n20
+""" )
+    f.close()
+
+    logRunFile = os.path.join( logDir, 'run' )
+    f = open( logRunFile, 'w' )
+    f.write( 
+"""#!/bin/bash
+#
+rcfile=%(bashrc)s
+[ -e $rcfile ] && source $rcfile
+#
+exec svlogd .
+
+""" % { 'bashrc' : os.path.join( instancePath, 'bashrc' ) } )
+    f.close()
+
+    os.chmod( logRunFile, defaultPerms )
+
+
 def installComponent( componentType, system, component, extensions ):
   """ Install runit directory for the specified component
   """
@@ -980,29 +1008,7 @@ def installComponent( componentType, system, component, extensions ):
       f = open( componentCfg, 'w' )
       f.close()
 
-    logDir = os.path.join( runitCompDir, 'log' )
-    os.makedirs( logDir )
-
-    logConfigFile = os.path.join( logDir, 'config' )
-    f = open( logConfigFile, 'w' )
-    f.write( 
-"""s10000000
-n20
-""" )
-    f.close()
-
-    logRunFile = os.path.join( logDir, 'run' )
-    f = open( logRunFile, 'w' )
-    f.write( 
-"""#!/bin/bash
-#
-rcfile=%(bashrc)s
-[ -e $rcfile ] && source $rcfile
-#
-exec svlogd .
-
-""" % { 'bashrc' : os.path.join( instancePath, 'bashrc' ) } )
-    f.close()
+    _createRunitLog( runitCompDir )
 
     runFile = os.path.join( runitCompDir, 'run' )
     f = open( runFile, 'w' )
@@ -1104,6 +1110,75 @@ def uninstallComponent( system, component ):
       gLogger.exception()
 
   return S_OK()
+
+def installPortal():
+  """
+  Install runit directories for the Web Portal
+  """
+  # Check that the software for the Web Portal is installed
+  error = ''
+  webDir = os.path.join( linkedRootPath, 'Web' )
+  if not os.path.exists( webDir ):
+    error = 'Web extension not installed at %s' % webDir
+    if exitOnError:
+      gLogger.error( error )
+      exit( -1 )
+    return S_ERROR( error )
+
+  # First the lighthttpd server
+
+  # Check if the component is already installed
+  runitHttpdDir = os.path.join( runitDir, 'lighthttpd' )
+  runitWebDir = os.path.join( runitDir, 'Web' )
+
+  if os.path.exists( runitHttpdDir ):
+    msg = "lighthttpd already installed"
+    gLogger.info( msg )
+  else:
+
+    gLogger.info( 'Installing Light httpd' )
+
+    # Now do the actual installation
+    try:
+      _createRunitLog( runitHttpdDir )
+
+      runFile = os.path.join( runitHttpdDir, 'run' )
+      f = open( runFile, 'w' )
+      f.write( 
+"""#!/bin/bash
+rcfile=%(bashrc)s
+[ -e $rcfile ] && source $rcfile
+#
+exec 2>&1
+#
+exec lighttpdSvc.sh < /dev/null
+""" % {'bashrc': os.path.join( instancePath, 'bashrc' ), } )
+      f.close()
+
+      os.chmod( runFile, defaultPerms )
+
+    except:
+      error = 'Failed to prepare setup for light httpd'
+      gLogger.exception( error )
+      if exitOnError:
+        exit( -1 )
+      return S_ERROR( error )
+
+    result = execCommand( 5, [runFile] )
+
+    gLogger.info( result['Value'][1] )
+
+  return S_OK( runitHttpdDir )
+
+  # Second the Web portal
+
+  # Check if the component is already installed
+  if os.path.exists( runitWebDir ):
+    msg = "Web Portal already installed"
+    gLogger.info( msg )
+  else:
+
+    gLogger.info( 'Installing Web Portal' )
 
 
 def fixMySQLScripts():
@@ -1514,9 +1589,6 @@ def _addMySQLToDiracCfg():
   cfg.setOption( cfgPath( sectionPath, 'Password' ), mysqlPassword )
 
   return _addCfgToDiracCfg( cfg )
-
-def installService():
-  pass
 
 def execCommand( timeout, cmd ):
   """
