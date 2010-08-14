@@ -105,6 +105,8 @@ class StorageElement:
     return S_OK(self.name)
 
   def isValid(self,operation=''):
+    if self.overwride:
+      return S_OK()
     gLogger.verbose("StorageElement.isValid: Determining whether the StorageElement %s is valid for use." % self.name)
     if not self.valid:
       gLogger.error("StorageElement.isValid: Failed to create StorageElement plugins.",self.errorReason)
