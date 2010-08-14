@@ -771,7 +771,7 @@ def setupSite( scriptCfg, cfg = None ):
   setupDatabases = localCfg.getOption( cfgInstallPath( 'Databases' ), [] )
   setupServices = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Services' ), [] ) ]
   setupAgents = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Agents' ), [] ) ]
-  setupPortal = localCfg.getOption( cfgInstallPath( 'Agents' ), False )
+  setupWeb = localCfg.getOption( cfgInstallPath( 'Portal' ), False )
 
   for serviceTuple in setupServices:
     error = ''
@@ -841,7 +841,7 @@ def setupSite( scriptCfg, cfg = None ):
       return S_ERROR( error )
 
   # if any server or agent needs to be install we need the startup directory and runsvdir running
-  if setupServices or setupAgents or setupPortal:
+  if setupServices or setupAgents or setupWeb:
     if not os.path.exists( startDir ):
       try:
         os.makedirs( startDir )
@@ -947,7 +947,7 @@ def setupSite( scriptCfg, cfg = None ):
     setupComponent( 'agent', system, agent, extensions )
 
   # 6.- And finally the Portal
-  if setupPortal:
+  if setupWeb:
     setupPortal()
 
   if localServers != masterServer:
