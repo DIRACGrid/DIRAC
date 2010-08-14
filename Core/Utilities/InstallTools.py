@@ -1134,13 +1134,10 @@ def installPortal():
     msg = "lighthttpd already installed"
     gLogger.info( msg )
   else:
-
     gLogger.info( 'Installing Light httpd' )
-
     # Now do the actual installation
     try:
       _createRunitLog( runitHttpdDir )
-
       runFile = os.path.join( runitHttpdDir, 'run' )
       f = open( runFile, 'w' )
       f.write( 
@@ -1155,7 +1152,6 @@ exec lighttpdSvc.sh < /dev/null
       f.close()
 
       os.chmod( runFile, defaultPerms )
-
     except:
       error = 'Failed to prepare setup for light httpd'
       gLogger.exception( error )
@@ -1164,10 +1160,7 @@ exec lighttpdSvc.sh < /dev/null
       return S_ERROR( error )
 
     result = execCommand( 5, [runFile] )
-
     gLogger.info( result['Value'][1] )
-
-  return S_OK( runitHttpdDir )
 
   # Second the Web portal
 
@@ -1176,8 +1169,36 @@ exec lighttpdSvc.sh < /dev/null
     msg = "Web Portal already installed"
     gLogger.info( msg )
   else:
-
     gLogger.info( 'Installing Web Portal' )
+    # Now do the actual installation
+    try:
+      _createRunitLog( runitWebDir )
+      runFile = os.path.join( runitWebDir, 'run' )
+      f = open( runFile, 'w' )
+      f.write( 
+"""#!/bin/bash
+rcfile=%(bashrc)s
+[ -e $rcfile ] && source $rcfile
+#
+exec 2>&1
+#
+exec paster serve --reload %(DIRAC)s/Web/production.ini < /dev/null
+""" % {'bashrc': os.path.join( instancePath, 'bashrc' ),
+       'DIRAC': linkedRootPath} )
+      f.close()
+
+      os.chmod( runFile, defaultPerms )
+    except:
+      error = 'Failed to prepare setup for Web Portal'
+      gLogger.exception( error )
+      if exitOnError:
+        exit( -1 )
+      return S_ERROR( error )
+
+    result = execCommand( 5, [runFile] )
+    gLogger.info( result['Value'][1] )
+
+  return S_OK( [runitHttpdDir, runitWebDir] )
 
 
 def fixMySQLScripts():
