@@ -1182,7 +1182,8 @@ rcfile=%(bashrc)s
 #
 exec 2>&1
 #
-exec paster serve --reload %(DIRAC)s/Web/production.ini < /dev/null
+cd %(DIRAC)s/Web
+exec paster serve --reload production.ini < /dev/null
 """ % {'bashrc': os.path.join( instancePath, 'bashrc' ),
        'DIRAC': linkedRootPath} )
       f.close()
