@@ -1217,7 +1217,7 @@ def setupPortal():
   if not os.path.exists( startDir ):
     os.makedirs( startDir )
 
-  for i in seq( 2 ):
+  for i in range( 2 ):
     if not os.path.lexists( startCompDir[i] ):
       gLogger.info( 'Creating startup link at', startCompDir[i] )
       os.symlink( runitCompDir[i], startCompDir[i] )
