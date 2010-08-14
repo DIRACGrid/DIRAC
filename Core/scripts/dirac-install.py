@@ -294,6 +294,7 @@ for arg in args:
   optCfg = optCfg.mergeWith( cfg['LocalInstallation'] )
 
 cliParams.release = optCfg.getOption( 'Release', cliParams.release )
+cliParams.packagesToInstall = optCfg.getOption( 'Extensions', cliParams.packagesToInstall )
 cliParams.externalsType = optCfg.getOption( 'InstallType', cliParams.externalsType )
 cliParams.pythonVersion = optCfg.getOption( 'PythonVersion', cliParams.pythonVersion )
 cliParams.platform = optCfg.getOption( 'Platform', cliParams.platform )
@@ -310,14 +311,7 @@ for o, v in optList:
     cliParams.release = v
   elif o in ( '-e', '--extraPackages' ):
     for pkg in [ p.strip() for p in v.split( "," ) if p.strip() ]:
-      pl = pkg.split( '@' )
-      if pl[0] != 'Web':
-        iPos = pl[0].find( "DIRAC" )
-        if iPos == -1 or iPos != len( pl[0] ) - 5:
-          pl[0] = "%sDIRAC" % pl[0]
-      pkg = "@".join( pl )
-      if pkg not in cliParams.packagesToInstall:
-        cliParams.packagesToInstall.append( pkg )
+      cliParams.packagesToInstall.append( pkg )
   elif o in ( '-t', '--installType' ):
     cliParams.externalsType = v
   elif o in ( '-y', '--pythonVersion' ):
@@ -343,6 +337,19 @@ for o, v in optList:
 if not cliParams.release:
   logERROR( ": Need to define a release version to install!" )
   usage()
+
+# Make sure Extensions are not duplicated and have the full name
+pkgList = cliParams.packagesToInstall
+cliParams.packagesToInstall = []
+for pkg in pkgList:
+  pl = pkg.split( '@' )
+  if pl[0] != 'Web':
+    iPos = pl[0].find( "DIRAC" )
+    if iPos == -1 or iPos != len( pl[0] ) - 5:
+      pl[0] = "%sDIRAC" % pl[0]
+  pkg = "@".join( pl )
+  if pkg not in cliParams.packagesToInstall:
+    cliParams.packagesToInstall.append( pkg )
 
 if cliParams.useVersionsDir:
   # install under <installPath>/versions/<version>_<timestamp>
