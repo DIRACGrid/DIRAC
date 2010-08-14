@@ -264,8 +264,6 @@ else:
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'yes' )
 
 
-
-
 if skipCAChecks:
   DIRAC.gLogger.debug( '/DIRAC/Security/SkipCAChecks =', 'yes' )
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/SkipCAChecks', 'yes' )
@@ -290,11 +288,6 @@ else:
   except:
     DIRAC.gLogger.exception( 'Could not import BundleDeliveryClient' )
     pass
-  Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
-
-if useServerCert:
-  Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
-  # When using Server Certs CA's will be checked, the flag only disables initial download
   Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
 
 if ceName or siteName:
@@ -337,6 +330,11 @@ if ceName or siteName:
         Script.localCfg.addDefaultEntry( '/LocalSite/LocalSE', localSE )
         break
 
+if useServerCert:
+  Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
+  # When using Server Certs CA's will be checked, the flag only disables initial download
+  Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
+
 if gatewayServer:
   DIRAC.gLogger.debug( '/DIRAC/GateWay/%s =' % DIRAC.siteName(), gatewayServer )
   Script.localCfg.addDefaultEntry( '/DIRAC/GateWay/%s' % DIRAC.siteName(), gatewayServer )
@@ -359,6 +357,7 @@ if not useServerCert:
   else:
     Script.enableCS()
 else:
+  Script.localCfg.addDefaultEntry( '/DIRAC/Security/UseServerCertificate', 'yes' )
   Script.enableCS()
 
 #Do the vomsdir magic
