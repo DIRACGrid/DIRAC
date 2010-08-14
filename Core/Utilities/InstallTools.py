@@ -1201,6 +1201,43 @@ exec paster serve --reload production.ini < /dev/null
 
   return S_OK( [runitHttpdDir, runitWebDir] )
 
+def setupPortal():
+  """
+  Install and create link in startup
+  """
+  result = installPortal()
+  if not result['OK']:
+    return result
+
+  # Create the startup entries now
+  runitCompDir = result['Value']
+  startCompDir = [ os.path.join( startDir, 'Web_httpd' ),
+                   os.path.join( startDir, 'Web_paster' ) ]
+
+  if not os.path.exists( startDir ):
+    os.makedirs( startDir )
+
+  for i in seq( 2 ):
+    if not os.path.lexists( startCompDir[i] ):
+      gLogger.info( 'Creating startup link at', startCompDir[i] )
+      os.symlink( runitCompDir[i], startCompDir[i] )
+      time.sleep( 1 )
+  time.sleep( 5 )
+
+  # Check the runsv status
+  start = time.time()
+  while ( time.time() - 10 ) < start:
+    result = getStartupComponentStatus( [ ( 'Web', 'httpd' ), ( 'Web', 'paster' ) ] )
+    if not result['OK']:
+      return S_ERROR( 'Failed to start the Portal' )
+    if result['Value'] and \
+       result['Value']['%s_%s' % ( 'Web', 'httpd' )]['RunitStatus'] == "Run" and \
+       result['Value']['%s_%s' % ( 'Web', 'paster' )]['RunitStatus'] == "Run" :
+      break
+    time.sleep( 1 )
+
+  # Final check
+  return getStartupComponentStatus( [ ( 'Web', 'httpd' ), ( 'Web', 'paster' ) ] )
 
 def fixMySQLScripts():
   """
