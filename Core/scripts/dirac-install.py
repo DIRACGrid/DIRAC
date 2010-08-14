@@ -294,7 +294,7 @@ for arg in args:
   optCfg = optCfg.mergeWith( cfg['LocalInstallation'] )
 
 cliParams.release = optCfg.getOption( 'Release', cliParams.release )
-cliParams.packagesToInstall = optCfg.getOption( 'Extensions', cliParams.packagesToInstall )
+cliParams.packagesToInstall.extend( optCfg.getOption( 'Extensions', [] ) )
 cliParams.externalsType = optCfg.getOption( 'InstallType', cliParams.externalsType )
 cliParams.pythonVersion = optCfg.getOption( 'PythonVersion', cliParams.pythonVersion )
 cliParams.platform = optCfg.getOption( 'Platform', cliParams.platform )
