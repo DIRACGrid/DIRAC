@@ -35,6 +35,7 @@ The setupSite method (used by the setup_site.py command) will use the following 
 /LocalInstallation/Databases:     List of Databases to be installed and configured
 /LocalInstallation/Services:      List of System/ServiceName to be setup
 /LocalInstallation/Agents:        List of System/AgentName to be setup
+/LocalInstallation/Portal:        Boolean to setup the Portal (default no)
 
 """
 __RCSID__ = "$Id: TaskQueueDirector.py 23253 2010-03-18 08:34:57Z rgracian $"
@@ -770,6 +771,7 @@ def setupSite( scriptCfg, cfg = None ):
   setupDatabases = localCfg.getOption( cfgInstallPath( 'Databases' ), [] )
   setupServices = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Services' ), [] ) ]
   setupAgents = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Agents' ), [] ) ]
+  setupPortal = localCfg.getOption( cfgInstallPath( 'Agents' ), False )
 
   for serviceTuple in setupServices:
     error = ''
@@ -839,7 +841,7 @@ def setupSite( scriptCfg, cfg = None ):
       return S_ERROR( error )
 
   # if any server or agent needs to be install we need the startup directory and runsvdir running
-  if setupServices or setupAgents:
+  if setupServices or setupAgents or setupPortal:
     if not os.path.exists( startDir ):
       try:
         os.makedirs( startDir )
@@ -940,9 +942,13 @@ def setupSite( scriptCfg, cfg = None ):
   for system, service in setupServices:
     setupComponent( 'service', system, service, extensions )
 
-  # 5.- And finally the agents
+  # 5.- Now the agents
   for system, agent in setupAgents:
     setupComponent( 'agent', system, agent, extensions )
+
+  # 6.- And finally the Portal
+  if setupPortal:
+    setupPortal()
 
   if localServers != masterServer:
     _addCfgToDiracCfg( initialCfg )
@@ -1127,8 +1133,8 @@ def installPortal():
   # First the lighthttpd server
 
   # Check if the component is already installed
-  runitHttpdDir = os.path.join( runitDir, 'lighthttpd' )
-  runitWebDir = os.path.join( runitDir, 'Web' )
+  runitHttpdDir = os.path.join( runitDir, 'Web', 'httpd' )
+  runitPasterDir = os.path.join( runitDir, 'Web', 'paster' )
 
   if os.path.exists( runitHttpdDir ):
     msg = "lighthttpd already installed"
@@ -1165,15 +1171,15 @@ exec lighttpdSvc.sh < /dev/null
   # Second the Web portal
 
   # Check if the component is already installed
-  if os.path.exists( runitWebDir ):
+  if os.path.exists( runitPasterDir ):
     msg = "Web Portal already installed"
     gLogger.info( msg )
   else:
     gLogger.info( 'Installing Web Portal' )
     # Now do the actual installation
     try:
-      _createRunitLog( runitWebDir )
-      runFile = os.path.join( runitWebDir, 'run' )
+      _createRunitLog( runitPasterDir )
+      runFile = os.path.join( runitPasterDir, 'run' )
       f = open( runFile, 'w' )
       f.write( 
 """#!/bin/bash
@@ -1199,7 +1205,7 @@ exec paster serve --reload production.ini < /dev/null
     result = execCommand( 5, [runFile] )
     gLogger.info( result['Value'][1] )
 
-  return S_OK( [runitHttpdDir, runitWebDir] )
+  return S_OK( [runitHttpdDir, runitPasterDir] )
 
 def setupPortal():
   """
