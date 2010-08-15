@@ -566,7 +566,7 @@ class AccountingDB( DB ):
 
   def __insertInQueueTable( self, typeName, startTime, endTime, valuesList ):
     sqlFields = [ 'id', 'taken', 'takenSince' ] + self.dbCatalog[ typeName ][ 'typeFields' ]
-    sqlValues = [ '0', '1', 'UTC_TIMESTAMP()' ] + valuesList + [ startTime, endTime ]
+    sqlValues = [ '0', '0', 'UTC_TIMESTAMP()' ] + valuesList + [ startTime, endTime ]
     retVal = self._insert( self.__getTableName( "in", typeName ),
                            sqlFields,
                            sqlValues )
@@ -585,6 +585,7 @@ class AccountingDB( DB ):
       id = result[ 'Value' ]
       recordsToProcess.append( ( id, typeName, startTime, endTime, valuesList, now ) )
 
+    return S_OK()
     recordsPerBundle = min( self.getCSOption( "RecordsPerSlot", 100 ), self.__threadPool.pendingJobs() )
     recordsPerBundle = max( 1, recordsPerBundle )
     self.__queuedRecordsLock.lock()
@@ -619,6 +620,7 @@ class AccountingDB( DB ):
     if not result[ '0K' ]:
       return result
 
+    return S_OK()
     id = result[ 'Value' ]
     record = ( id, typeName, startTime, endTime, valuesList, Time.toEpoch() )
 
