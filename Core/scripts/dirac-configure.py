@@ -32,6 +32,7 @@ ConfigurationServer
 Gateway
 SiteName
 CEName
+VirtualOrganization
 UseServerCertificate
 SkipCAChecks
 UseVersionsDir
