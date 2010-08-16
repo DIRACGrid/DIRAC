@@ -137,7 +137,7 @@ class StalledJobAgent( AgentModule ):
     recoverCounter = 0
 
     for minor in ["Job stalled: pilot not running", 'Stalling for more than %d sec' % failedTime]:
-      result = self.jobDB.selectJobs( {'Status':'Failed', 'MinorStatus':  minor } )
+      result = self.jobDB.selectJobs( {'Status':'Failed', 'MinorStatus':  minor, 'AccountedFlag': 'False' } )
       if not result['OK']:
         self.log.error( result['Message'] )
         return result
