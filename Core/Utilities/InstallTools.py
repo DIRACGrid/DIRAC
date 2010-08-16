@@ -28,6 +28,8 @@ The Following Options are used:
 /LocalInstallation/Database/Password:             (must be set for SystemAdministrator Service to work)
 /LocalInstallation/Database/RootPwd:              (must be set for SystemAdministrator Service to work)
 /LocalInstallation/Database/Host:                 (must be set for SystemAdministrator Service to work)
+/LocalInstallation/Database/MySQLSmallMem:        Configure a MySQL with small memory requirements for testing purposes innodb_buffer_pool_size=200MB
+/LocalInstallation/Database/MySQLLargeMem:        Configure a MySQL with high memory requirements for production purposes innodb_buffer_pool_size=10000MB
 
 The setupSite method (used by the setup_site.py command) will use the following info:
 
@@ -68,7 +70,7 @@ def loadDiracCfg( verbose = False ):
   global localCfg, cfgFile, setup, instance, logLevel, linkedRootPath, host
   global basePath, instancePath, runitDir, startDir
   global db, mysqlDir, mysqlDbDir, mysqlLogDir, mysqlMyOrg, mysqlMyCnf, mysqlStartupScript
-  global mysqlRootPwd, mysqlUser, mysqlPassword, mysqlHost, mysqlMode, mysqlSmallMem
+  global mysqlRootPwd, mysqlUser, mysqlPassword, mysqlHost, mysqlMode, mysqlSmallMem, mysqlLargeMem
 
   from DIRAC.Core.Utilities.Network import getFQDN
 
@@ -148,6 +150,9 @@ def loadDiracCfg( verbose = False ):
   if verbose and mysqlSmallMem:
     gLogger.info( 'Configuring MySQL server for Low Memory uasge' )
 
+  mysqlLargeMem = localCfg.getOption( cfgInstallPath( 'Database', 'MySQLLargeMem' ), False )
+  if verbose and mysqlLargeMem:
+    gLogger.info( 'Configuring MySQL server for Large Memory uasge' )
 
 loadDiracCfg()
 
@@ -1072,7 +1077,7 @@ def setupComponent( componentType, system, component, extensions ):
 
   # Check the runsv status
   start = time.time()
-  while ( time.time() - 10 ) < start:
+  while ( time.time() - 20 ) < start:
     result = getStartupComponentStatus( [ ( system, component )] )
     if not result['OK']:
       return S_ERROR( 'Failed to start the component %s_%s' % ( system, component ) )
@@ -1383,6 +1388,8 @@ def installMySQL():
         line += '\n'.join( [ 'innodb_file_per_table', '' ] )
       elif line.find( 'innodb_log_arch_dir' ) == 0:
         line = ''
+      elif line.find( 'innodb_data_file_path' ) == 0:
+        line = line.replace( '2000M', '200M' )
       elif line.find( 'server-id' ) == 0 and mysqlMode.lower() == 'master':
         # MySQL Configuration for Master Server
         line = '\n'.join( ['server-id = 1',
@@ -1390,8 +1397,8 @@ def installMySQL():
                            'sync-binlog = 1',
                            'replicate-ignore-table = mysql.MonitorData',
                            '# replicate-ignore-db=db_name',
-                           'log-bin = mysql-bin'
-                           'log-slave-updates' ] )
+                           'log-bin = mysql-bin',
+                           'log-slave-updates', '' ] )
       elif line.find( 'server-id' ) == 0 and mysqlMode.lower() == 'slave':
         # MySQL Configuration for Slave Server
         import time
@@ -1400,12 +1407,17 @@ def installMySQL():
                            'sync-binlog = 1',
                            'replicate-ignore-table = mysql.MonitorData',
                            '# replicate-ignore-db=db_name',
-                           'log-bin = mysql-bin'
-                           'log-slave-updates' ] )
+                           'log-bin = mysql-bin',
+                           'log-slave-updates', '' ] )
       elif line.find( '/opt/dirac/mysql' ) > -1:
         line = line.replace( '/opt/dirac/mysql', mysqlDir )
 
-      # TODO: if mysqlSmallMem need to fix the size of some buffers
+      if mysqlSmallMem:
+        if line.find( 'innodb_buffer_pool_size' ) == 0:
+          line = 'innodb_buffer_pool_size = 200M\n'
+      elif mysqlLargeMem:
+        if line.find( 'innodb_buffer_pool_size' ) == 0:
+          line = 'innodb_buffer_pool_size = 10G\n'
 
       f.write( line )
     f.close()
