@@ -92,7 +92,7 @@ class PilotAgentsDB(DB):
 
 ##########################################################################################
   def setPilotStatus( self, pilotRef, status, destination=None,
-                      updateTime=None, statusReason=None, gridSite=None, queue=None, conn = False ):
+                      statusReason=None, gridSite=None, queue=None, updateTime=None, conn = False ):
     """ Set pilot job LCG status """
 
     setList = []
