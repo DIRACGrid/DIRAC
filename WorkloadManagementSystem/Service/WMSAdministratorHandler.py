@@ -495,10 +495,10 @@ class WMSAdministratorHandler(RequestHandler):
 
   ##########################################################################################
   types_setPilotStatus = [StringType, StringType]
-  def export_setPilotStatus(self,pilotRef,status,destination=None,reason=None,queue=None):
+  def export_setPilotStatus(self,pilotRef,status,destination=None,reason=None,gridSite=None,queue=None):
     """ Set the pilot agent status
     """
 
     result = pilotDB.setPilotStatus(pilotRef,status,destination=destination,
-                                    statusReason=reason,queue=queue)
+                                    statusReason=reason,gridSite=gridSite,queue=queue)
     return result
