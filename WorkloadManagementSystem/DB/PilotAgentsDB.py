@@ -8,7 +8,7 @@
 
     Available methods are:
 
-    addPilotReference()
+    addPilotTQReference()
     setPilotStatus()
     deletePilot()
     clearPilots()
@@ -43,52 +43,6 @@ class PilotAgentsDB(DB):
 
      DB.__init__(self,'PilotAgentsDB','WorkloadManagement/PilotAgentsDB',maxQueueSize)
      self.lock = threading.Lock()
-
-##########################################################################################
-  def addPilotReference(self,pilotRef,jobID,ownerDN,ownerGroup,broker='Unknown',
-                        gridType='DIRAC',requirements='Unknown',taskQueueID=0):
-    """ Add a new pilot job reference """
-
-    result = self._getConnection()
-    if result['OK']:
-      connection = result['Value']
-    else:
-      return S_ERROR('Failed to get connection to MySQL: '+result['Message'])
-
-    result = self._escapeString(requirements)
-    if not result['OK']:
-      gLogger.warn('Failed to escape requirements string')
-      e_requirements = "Failed to escape requirements string"
-    e_requirements = result['Value']
-
-    parentID = -1
-    if len(pilotRef) > 1:
-      parentID = 0
-
-    for ref in pilotRef:
-
-      req = "INSERT INTO PilotAgents( PilotJobReference, InitialJobID, TaskQueueID, OwnerDN, " + \
-            "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status, ParentID ) " + \
-            "VALUES ('%s',%d,%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted', %s)" % \
-            (ref,int(jobID),int(taskQueueID),ownerDN,ownerGroup,broker,gridType, parentID)
-
-      result = self._update(req,connection)
-      if not result['OK']:
-        connection.close()
-        return result
-
-      if parentID < 1 :
-        req = "SELECT LAST_INSERT_ID();"
-        res = self._query(req,connection)
-        if not res['OK']:
-          connection.close()
-          return res
-        parentID = int(res['Value'][0][0])
-
-    connection.close()
-
-    req = "INSERT INTO PilotRequirements (PilotID,Requirements) VALUES (%d,'%s')" % (parentID,e_requirements)
-    return self._update(req)
 
 ##########################################################################################
   def addPilotTQReference(self,pilotRef,taskQueueID,ownerDN,ownerGroup,broker='Unknown',
@@ -138,7 +92,7 @@ class PilotAgentsDB(DB):
 
 ##########################################################################################
   def setPilotStatus( self, pilotRef, status, destination=None,
-                      updateTime=None, statusReason=None, gridSite=None, conn = False ):
+                      updateTime=None, statusReason=None, gridSite=None, queue=None, conn = False ):
     """ Set pilot job LCG status """
 
     setList = []
@@ -152,6 +106,8 @@ class PilotAgentsDB(DB):
     setList.append("StatusReason='%s'" % statusReason)
     if gridSite:
       setList.append("GridSite='%s'" % gridSite)
+    if queue:
+      setList.append("Queue='%s'" % queue)  
 
     set_string = ','.join(setList)
     req = "UPDATE PilotAgents SET "+set_string+" WHERE PilotJobReference='%s'" % pilotRef
@@ -355,7 +311,7 @@ class PilotAgentsDB(DB):
     return S_OK( resDict )
 
 ##########################################################################################
-  def setPilotDestinationSite(self,pilotRef,destination,conn=False):
+  def setPilotDestinationSite(self,pilotRef,destination,queue='Unknown', conn=False):
     """ Set the pilot agent destination site
     """
 
@@ -367,7 +323,8 @@ class PilotAgentsDB(DB):
     if not gridSite:
       gridSite = 'Unknown'
 
-    req = "UPDATE PilotAgents SET DestinationSite='%s', GridSite='%s' WHERE PilotJobReference='%s'" % (destination,gridSite,pilotRef)
+    req = "UPDATE PilotAgents SET DestinationSite='%s', Queue='%s', GridSite='%s' WHERE PilotJobReference='%s'" 
+    req = req % (destination,queue,gridSite,pilotRef)
     result = self._update(req, conn = conn)
     return result
 
