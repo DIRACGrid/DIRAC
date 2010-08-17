@@ -642,25 +642,17 @@ class AccountingDB( DB ):
     Do the real insert and delete from the in buffer table
     """
     self.log.verbose( "Received bundle to process", "of %s elements" % len( recordTuples ) )
-    # First check the types of the records to insert them sorted by type:
-    sortedTuples = {}
     for record in recordTuples:
       id, typeName, startTime, endTime, valuesList, insertionEpoch = record
-      if typeName not in sortedTuples:
-        sortedTuples[typeName] = []
-      sortedTuples[typeName].append( record )
-    for type, sortedTuple in sortedTuples.items():
-      for record in sortedTuple:
-        id, typeName, startTime, endTime, valuesList, insertionEpoch = record
-        result = self.insertRecordDirectly( typeName, startTime, endTime, valuesList )
-        if not result[ 'OK' ]:
-          self._update( "UPDATE `%s` SET taken=0 WHERE id=%s" % ( self.__getTableName( "in", typeName ), id ) )
-          self.log.error( "Can't insert row", result[ 'Message' ] )
-          continue
-        result = self._update( "DELETE FROM `%s` WHERE id=%s" % ( self.__getTableName( "in", typeName ), id ) )
-        if not result[ 'OK' ]:
-          self.log.error( "Can't delete row from the IN table", result[ 'Message' ] )
-        gMonitor.addMark( "insertiontime", Time.toEpoch() - insertionEpoch )
+      result = self.insertRecordDirectly( typeName, startTime, endTime, valuesList )
+      if not result[ 'OK' ]:
+        self._update( "UPDATE `%s` SET taken=0 WHERE id=%s" % ( self.__getTableName( "in", typeName ), id ) )
+        self.log.error( "Can't insert row", result[ 'Message' ] )
+        continue
+      result = self._update( "DELETE FROM `%s` WHERE id=%s" % ( self.__getTableName( "in", typeName ), id ) )
+      if not result[ 'OK' ]:
+        self.log.error( "Can't delete row from the IN table", result[ 'Message' ] )
+      gMonitor.addMark( "insertiontime", Time.toEpoch() - insertionEpoch )
 
 
   def insertRecordDirectly( self, typeName, startTime, endTime, valuesList ):
