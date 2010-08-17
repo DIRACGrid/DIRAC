@@ -111,7 +111,6 @@ class PilotAgentsDB(DB):
 
     set_string = ','.join(setList)
     req = "UPDATE PilotAgents SET "+set_string+" WHERE PilotJobReference='%s'" % pilotRef
-
     result = self._update( req, conn = conn )
     if not result['OK']:
       return result
@@ -311,7 +310,7 @@ class PilotAgentsDB(DB):
     return S_OK( resDict )
 
 ##########################################################################################
-  def setPilotDestinationSite(self,pilotRef,destination,queue='Unknown', conn=False):
+  def setPilotDestinationSite(self,pilotRef,destination, conn=False):
     """ Set the pilot agent destination site
     """
 
@@ -323,8 +322,8 @@ class PilotAgentsDB(DB):
     if not gridSite:
       gridSite = 'Unknown'
 
-    req = "UPDATE PilotAgents SET DestinationSite='%s', Queue='%s', GridSite='%s' WHERE PilotJobReference='%s'" 
-    req = req % (destination,queue,gridSite,pilotRef)
+    req = "UPDATE PilotAgents SET DestinationSite='%s', GridSite='%s' WHERE PilotJobReference='%s'" 
+    req = req % (destination,gridSite,pilotRef)
     result = self._update(req, conn = conn)
     return result
 
