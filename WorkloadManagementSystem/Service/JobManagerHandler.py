@@ -296,7 +296,7 @@ class JobManagerHandler( RequestHandler ):
     bad_ids = []
     good_ids = []
     for jobID in validJobList:
-      result = gJobDB.setJobAttribute(jobID,'RescheduleCounter',1)
+      result = gJobDB.setJobAttribute(jobID,'RescheduleCounter',0)
       if not result['OK']:
         bad_ids.append(jobID)
       else:
