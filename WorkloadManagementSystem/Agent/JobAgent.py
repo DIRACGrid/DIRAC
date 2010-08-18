@@ -640,7 +640,7 @@ class JobAgent( AgentModule ):
     """ Job Agent finalization method
     """
 
-    gridCE = gConfig.getValue( '/LocalSite/GridCE', '' )
+    gridCE = gConfig.getValue( '/LocalInstallation/CEName', '' )
     queue = gConfig.getValue( '/LocalSite/CEQueue', '' )
 
     print "AT >>>", gridCE, queue, self.siteName, self.pilotReference
