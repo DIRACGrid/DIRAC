@@ -219,12 +219,25 @@ class WMSAdministratorHandler(RequestHandler):
     return self.__getGridJobOutput(pilotReference)
 
   ##############################################################################
-  types_getPilotInfo = [StringType]
+  types_getPilotInfo = [ [StringType,ListType] ]
   def export_getPilotInfo(self,pilotReference):
     """ Get the info about a given pilot job reference
     """
-
     return pilotDB.getPilotInfo(pilotReference)
+  
+  ##############################################################################
+  types_selectPilots = [ DictType ] 
+  def export_selectPilots(self,condDict):
+    """ Select pilots given the selection conditions
+    """
+    return pilotDB.selectPilots(condDict)
+  
+  ##############################################################################
+  types_storePilotOutput = [ StringTypes,StringTypes,StringTypes ] 
+  def export_storePilotOutput(self,pilotReference,output,error):
+    """ Store the pilot output and error
+    """
+    return pilotDB.storePilotOutput(pilotReference,output,error)
 
   ##############################################################################
   types_getPilotLoggingInfo = [StringType]
@@ -250,6 +263,8 @@ class WMSAdministratorHandler(RequestHandler):
     gridType = pilotDict['GridType']
 
     return getPilotLoggingInfo( proxy, gridType, pilotReference )
+  
+  
 
   ##############################################################################
   types_getJobPilotOutput = [IntType]
@@ -269,7 +284,7 @@ class WMSAdministratorHandler(RequestHandler):
       result = jobDB.getAtticJobParameters(jobID,['Pilot_Reference'])
       if result['OK']:
         c = -1
-        # Get the pilot reference for the last reschedling cycle
+        # Get the pilot reference for the last rescheduling cycle
         for cycle in result['Value']:
           if cycle > c:
             pilotReference = result['Value'][cycle]['Pilot_Reference']
@@ -308,8 +323,6 @@ class WMSAdministratorHandler(RequestHandler):
         resultDict['FileList'] = []
         return S_OK(resultDict)
 
-    print "AT >>>>", owner, group 
-
     ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
     if not ret['OK']:
       gLogger.error( ret['Message'] )
@@ -320,9 +333,6 @@ class WMSAdministratorHandler(RequestHandler):
     gridType = pilotDict['GridType']
 
     result = getPilotOutput( proxy, gridType, pilotReference )
-    
-    print "AT >>>> getPilotOutput", result
-
     if not result['OK']:
       return S_ERROR('Failed to get pilot output: '+result['Message'])
     # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
