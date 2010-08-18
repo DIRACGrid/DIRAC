@@ -102,7 +102,7 @@ class AgentReactor:
   
   def finalize( self ):
     for agentName in self.__agentModules:
-      self.__agentModules['instance'].finalize()
+      self.__agentModules[agentName]['instance'].finalize()
 
   def go( self ):
     if self.__running:
@@ -118,6 +118,7 @@ class AgentReactor:
         time.sleep( min( max( timeToNext, 0.5 ), 5 ) )
     finally:
       self.__running = False
+    self.finalize()  
 
   def setAgentModuleCyclesToExecute( self, agentName, maxCycles ):
     if not agentName in self.__agentModules:
