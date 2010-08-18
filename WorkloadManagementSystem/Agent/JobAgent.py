@@ -637,11 +637,13 @@ class JobAgent( AgentModule ):
 
   #############################################################################
   def finalize( self ):
-    """Force the JobAgent to complete gracefully.
+    """ Job Agent finalization method
     """
 
-    gridCE = gConfig.getValue( '/LocalSite/GridCE', 'Unknown' )
+    gridCE = gConfig.getValue( '/LocalSite/GridCE', '' )
     queue = gConfig.getValue( '/LocalSite/CEQueue', '' )
+
+    print "AT >>>", gridCE, queue, self.siteName, self.pilotReference
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.setPilotStatus( str( self.pilotReference ), 'Done', gridCE, 
