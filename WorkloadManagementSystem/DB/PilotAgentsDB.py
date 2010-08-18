@@ -250,7 +250,7 @@ class PilotAgentsDB(DB):
     """
 
     parameters = ['PilotJobReference','OwnerDN','OwnerGroup','GridType','Broker',
-                  'Status','DestinationSite','BenchMark','ParentID',
+                  'Status','DestinationSite','BenchMark','ParentID','OutputReady',
                   'SubmissionTime', 'PilotID', 'LastUpdateTime', 'TaskQueueID', 'GridSite' ]
     if paramNames:
       parameters = paramNames
@@ -357,7 +357,6 @@ class PilotAgentsDB(DB):
   def storePilotOutput(self,pilotRef,output,error):
     """ Store standard output and error for a pilot with pilotRef
     """
-
     pilotID = self.__getPilotID(pilotRef)
     if not pilotID:
       return S_ERROR('Pilot reference not found %s' % pilotRef)
