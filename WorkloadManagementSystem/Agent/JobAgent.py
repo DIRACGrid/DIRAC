@@ -377,7 +377,7 @@ class JobAgent( AgentModule ):
     payloadProxy = proxy['Value']
     # FIXME: how can we set the batchID before we submit, this makes no sense
     batchID = 'dc%s' % ( jobID )
-    submission = self.computingElement.submitJob( wrapperFile, jobJDL, payloadProxy, batchID )
+    submission = self.computingElement.submitJob( wrapperFile, payloadProxy )
 
     ret = S_OK( 'Job submitted' )
 
