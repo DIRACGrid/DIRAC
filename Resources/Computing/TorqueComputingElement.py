@@ -62,37 +62,14 @@ class TorqueComputingElement( ComputingElement ):
     if 'BatchError' not in self.ceConfigDict:
       self.ceConfigDict['BatchError'] = os.path.join( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), 'data' )
 
-
   #############################################################################
-  def submitJob( self, executableFile, jdl, proxy, localID ):
-    """ Method to submit job, should be overridden in sub-class.
+  def makeProxyExecutableFile(self, executableFile, proxy):
+    """ Make a single executable bundling together executableFile and proxy
     """
+    compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy ) ).replace( '\n', '' )
+    compressedAndEncodedExecutable = base64.encodestring( bz2.compress( open( executableFile, "rb" ).read(), 9 ) ).replace( '\n', '' )
 
-    self.log.info( "Executable file path: %s" % executableFile )
-    if not os.access( executableFile, 5 ):
-      os.chmod( executableFile, 0755 )
-
-    #Perform any other actions from the site admin
-    if self.ceParameters.has_key( 'AdminCommands' ):
-      commands = self.ceParameters['AdminCommands'].split( ';' )
-      for command in commands:
-        self.log.verbose( 'Executing site admin command: %s' % command )
-        result = shellCall( 0, command, callbackFunction = self.sendOutput )
-        if not result['OK'] or result['Value'][0]:
-          self.log.error( 'Error during "%s":' % command, result )
-          return S_ERROR( 'Error executing %s CE AdminCommands' % CE_NAME )
-
-    # if no proxy is supplied, the executable can be submitted directly
-    # otherwise a wrapper script is needed to get the proxy to the execution node
-    # The wrapper script makes debugging more complicated and thus it is
-    # recommended to transfer a proxy inside the executable if possible.
-    if proxy:
-      self.log.verbose( 'Setting up proxy for payload' )
-
-      compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy ) ).replace( '\n', '' )
-      compressedAndEncodedExecutable = base64.encodestring( bz2.compress( open( executableFile, "rb" ).read(), 9 ) ).replace( '\n', '' )
-
-      wrapperContent = """#!/usr/bin/env python
+    wrapperContent = """#!/usr/bin/env python
 # Wrapper script for executable and proxy
 import os, tempfile, sys, base64, bz2
 try:
@@ -117,12 +94,40 @@ shutil.rmtree( workingDirectory )
         'compressedAndEncodedExecutable': compressedAndEncodedExecutable, \
         'executable': os.path.basename( executableFile ) }
 
-      fd, name = tempfile.mkstemp( suffix = '_wrapper.py', prefix = 'TORQUE_', dir = os.getcwd() )
-      wrapper = os.fdopen( fd, 'w' )
-      wrapper.write( wrapperContent )
-      wrapper.close()
+    fd, name = tempfile.mkstemp( suffix = '_wrapper.py', prefix = 'TORQUE_', dir = os.getcwd() )
+    wrapper = os.fdopen( fd, 'w' )
+    wrapper.write( wrapperContent )
+    wrapper.close()
+    
+    return name
+    
 
-      submitFile = name
+  #############################################################################
+  def submitJob( self, executableFile, proxy, localID ):
+    """ Method to submit job, should be overridden in sub-class.
+    """
+
+    self.log.info( "Executable file path: %s" % executableFile )
+    if not os.access( executableFile, 5 ):
+      os.chmod( executableFile, 0755 )
+
+    #Perform any other actions from the site admin
+    if self.ceParameters.has_key( 'AdminCommands' ):
+      commands = self.ceParameters['AdminCommands'].split( ';' )
+      for command in commands:
+        self.log.verbose( 'Executing site admin command: %s' % command )
+        result = shellCall( 0, command, callbackFunction = self.sendOutput )
+        if not result['OK'] or result['Value'][0]:
+          self.log.error( 'Error during "%s":' % command, result )
+          return S_ERROR( 'Error executing %s CE AdminCommands' % CE_NAME )
+
+    # if no proxy is supplied, the executable can be submitted directly
+    # otherwise a wrapper script is needed to get the proxy to the execution node
+    # The wrapper script makes debugging more complicated and thus it is
+    # recommended to transfer a proxy inside the executable if possible.
+    if proxy:
+      self.log.verbose( 'Setting up proxy for payload' )
+      submitFile = self.makeProxyExecutableFile(executableFile, proxy)
 
     else: # no proxy
       submitFile = executableFile
@@ -144,8 +149,10 @@ shutil.rmtree( workingDirectory )
     else:
       self.log.debug( 'Torque CE result OK' )
 
+    batchID = result['Value'][1]
+
     self.submittedJobs += 1
-    return S_OK( localID )
+    return S_OK( batchID )
 
   #############################################################################
   def getDynamicInfo( self ):
@@ -192,5 +199,90 @@ shutil.rmtree( workingDirectory )
     self.log.verbose( 'Running Jobs: ', runningJobs )
 
     return result
+
+  def getJobStatus(self,jobIDList):
+    """ Get the status information for the given list of jobs
+    """
+    jobDict = {}
+    for job in jobIDList:
+      jobNumber = job.split('.')[0]
+      jobDict[jobNumber] = job
+      
+    cmd = [ 'qstat',' '.join(jobIDList) ]
+    result = systemCall( 10, cmd )
+    if not result['OK']:
+      return result
+    
+    resultDict = {}
+    output = result['Value'][1].replace('\r','')
+    lines = output.split('\n')
+    for job in jobDict:
+      resultDict[jobDict[job]] = 'Unknown'
+      for line in lines:
+        if line.find(job) != -1:
+          if line.find('Unknown') != -1:
+            resultDict[jobDict[job]] = 'Unknown'
+          else:
+            torqueStatus = line.split()[4]  
+            if torqueStatus in ['E','C']:
+              resultDict[jobDict[job]] = 'Done'
+            elif torqueStatus in ['R']:    
+              resultDict[jobDict[job]] = 'Running'
+            elif torqueStatus in ['S','W','Q','H','T']:    
+              resultDict[jobDict[job]] = 'Waiting'
+              
+    return S_OK(resultDict)      
+  
+  def getJobOutput(self,jobID,localDir=None):
+    """ Get the specified job standard output and error files. If the localDir is provided,
+        the output is returned as file in this directory. Otherwise, the output is returned 
+        as strings. 
+    """     
+    jobNumber = jobID.split('.')[0]
+    # Find the output files
+    outFile = ''
+    outNames = os.listdir(self.batchOutput)
+    for outName in outNames:
+      if outName.find(jobNumber) != -1:
+        outFile = os.path.join(self.batchOutput,outName)
+        break
+    errFile = ''    
+    errNames = os.listdir(self.batchError)
+    for errName in errNames:
+      if errName.find(jobNumber) != -1:  
+        errFile = os.path.join(self.batchError,errName)
+        break
+      
+    if localDir:
+      if outFile:
+        doutFile = os.path.join(localDir,os.path.basename(outFile))
+        shutil.copyfile(outFile,doutFile)
+      if errFile:
+        derrFile = os.path.join(localDir,os.path.basename(errFile))
+        shutil.copyfile(errFile,derrFile)   
+    
+    # The result is OK, we can remove the output
+    if self.removeOutput:
+      result = os.system('rm -f %s/*%s* %s/*%s*' % (self.batchOutput,jobNumber,self.batchError,jobNumber) )
+    
+    if localDir:
+      if outFile and errFile:
+        return S_OK((doutFile,derrFile))
+      else:
+        return S_ERROR('Output files not found')
+    else:
+      # Return the output as a string
+      output = ''
+      error = ''
+      if outFile:
+        outputFile = open(outFile,'r')
+        output = outputFile.read()
+        outputFile.close()
+      if errFile:
+        outputFile = open(errFile,'r')
+        error = outputFile.read()
+        outputFile.close()    
+
+      return S_OK((output,error))
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
