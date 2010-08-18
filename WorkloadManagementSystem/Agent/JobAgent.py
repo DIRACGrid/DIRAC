@@ -640,8 +640,8 @@ class JobAgent( AgentModule ):
     """Force the JobAgent to complete gracefully.
     """
 
-    gridCE = gConfig.getValue( 'LocalSite/GridCE', 'Unknown' )
-    queue = gConfig.getValue( 'LocalSite/CEQueue', '' )
+    gridCE = gConfig.getValue( '/LocalSite/GridCE', 'Unknown' )
+    queue = gConfig.getValue( '/LocalSite/CEQueue', '' )
 
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.setPilotStatus( str( self.pilotReference ), 'Done', gridCE, 
