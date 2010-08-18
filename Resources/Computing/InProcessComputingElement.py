@@ -43,7 +43,7 @@ class InProcessComputingElement( ComputingElement ):
     # Now InProcess specific ones
 
   #############################################################################
-  def submitJob(self,executableFile,jdl,proxy,localID):
+  def submitJob(self,executableFile,proxy):
     """ Method to submit job, should be overridden in sub-class.
     """
     # FIXME: when not running on a WN this will not work
@@ -78,7 +78,7 @@ class InProcessComputingElement( ComputingElement ):
     if payloadProxy:
       os.unlink(payloadProxy)
 
-    ret = S_OK(localID)
+    ret = S_OK()
 
     if not result['OK']:
       self.log.error('Fail to run InProcess',result['Message'])

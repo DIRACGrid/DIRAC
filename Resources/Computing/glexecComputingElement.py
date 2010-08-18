@@ -46,7 +46,7 @@ class glexecComputingElement( ComputingElement ):
     # Now glexec specific ones
 
   #############################################################################
-  def submitJob(self,executableFile,jdl,proxy,localID):
+  def submitJob(self,executableFile,proxy):
     """ Method to submit job, should be overridden in sub-class.
     """
     self.log.verbose('Setting up proxy for payload')
@@ -109,7 +109,7 @@ class glexecComputingElement( ComputingElement ):
 
     self.log.debug('glexec CE result OK')
     self.submittedJobs += 1
-    return S_OK(localID)
+    return S_OK()
 
   #############################################################################
   def recursivelyChangePermissions(self):
