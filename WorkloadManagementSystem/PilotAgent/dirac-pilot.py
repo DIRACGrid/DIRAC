@@ -52,6 +52,7 @@ class CliParams:
     self.testVOMSOK = False
     self.site = ""
     self.ceName = ""
+    self.queueName = ""
     self.platform = ""
     self.minDiskSpace = 2560 #MB
     self.jobCPUReq = 900
@@ -61,6 +62,7 @@ class CliParams:
     self.maxCycles = CliParams.MAX_CYCLES
     self.flavour = 'DIRAC'
     self.gridVersion = '2009-08-13'
+    self.pilotReference = ''
 
 ###
 # Helper functions
@@ -179,6 +181,7 @@ cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
             ( 's:', 'section=', 'Set base section for relative parsed options' ),
             ( 'o:', 'option=', 'Option=value to add' ),
             ( 'c', 'cert', 'Use server certificate instead of proxy' ),
+            ( 'R', 'reference', 'Use this pilot reference' ),
           )
 
 cliParams = CliParams()
@@ -231,6 +234,8 @@ for o, v in optList:
       cliParams.maxCycles = min( CliParams.MAX_CYCLES, int( v ) )
     except:
       pass
+  elif o == '-R' or o == '--reference':
+    cliParams.pilotReference = v  
   elif o in ( '-S', '--setup' ):
     configureOpts.append( '-S "%s"' % v )
   elif o in ( '-C', '--configurationServer' ):
@@ -270,6 +275,18 @@ if cliParams.pythonVersion:
 ##
 
 pilotRef = 'Unknown'
+
+# Pilot reference is specifed at submission
+if cliParams.pilotReference:
+  cliParams.flavor = 'DIRAC'
+  pilotRef = cliParams.pilotReference
+  
+# Take the reference from the Torque batch system  
+if os.environ.has_key( 'PBS_JOBID' ):
+  cliParams.flavour = 'DIRAC'
+  pilotRef = os.environ['PBS_JOBID']  
+  cliParams.queueName = os.environ['PBS_QUEUE']  
+      
 if os.environ.has_key( 'EDG_WL_JOBID' ):
   cliParams.flavour = 'LCG'
   pilotRef = os.environ['EDG_WL_JOBID']
@@ -277,21 +294,40 @@ if os.environ.has_key( 'EDG_WL_JOBID' ):
 if os.environ.has_key( 'GLITE_WMS_JOBID' ):
   cliParams.flavour = 'gLite'
   pilotRef = os.environ['GLITE_WMS_JOBID']
+  
+# This is the CREAM direct submission case  
+if os.environ.has_key( '__delegationProxyCertSandboxPath' ):
+
+  logDEBUG(os.environ['__delegationProxyCertSandboxPath'])
+
+  match = re.search('gsiftp://([a-zA-Z0-9-\.]*)/.*(CREAM\d*)/',os.environ['__delegationProxyCertSandboxPath'])
+  if match:
+    ce = match.group(1)
+    creamJob = match.group(2)
+    cliParams.flavour = 'CREAM'
+    pilotRef = 'https://%s:8443/%s' % (ce,creamJob)
+    logDEBUG('%s %s %s' % (ce,creamJob,pilotRef))  
 
 configureOpts.append( '-o /LocalSite/GridMiddleware=%s' % cliParams.flavour )
+if pilotRef != 'Unknown':
+  configureOpts.append( '-o /LocalSite/PilotReference=%s' % pilotRef )
 
 ###
 # Try to get the CE name
 ###
-cliParams.ceName = 'Local'
-if pilotRef != 'Unknown':
+#cliParams.ceName = 'Local'
+if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
   retCode, CE = executeAndGetOutput( 'edg-brokerinfo getCE || glite-brokerinfo getCE' )
   if not retCode:
     cliParams.ceName = CE.split( ':' )[0]
-    configureOpts.append( '-o /LocalSite/PilotReference=%s' % pilotRef )
+    cliParams.queueName = CE.split( '/' )[1]
     configureOpts.append( '-N "%s"' % cliParams.ceName )
+    configureOpts.append( '-o /LocalSite/CEQueue="%s"' % cliParams.queueName )
   else:
     logERROR( "There was an error executing brokerinfo. Setting ceName to local " )
+
+if cliParams.queueName:
+  configureOpts.append( '-o /LocalSite/CEQueue="%s"' % cliParams.queueName )
 
 ###
 # Set the platform if defined
@@ -497,7 +533,7 @@ if diskSpace < cliParams.minDiskSpace:
 # Get job CPU requirement and queue normalization
 #
 
-if pilotRef != 'Unknown':
+if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
   logINFO( 'CE = %s' % CE )
   logINFO( 'LCG_SITE_CE = %s' % cliParams.ceName )
 
@@ -535,7 +571,7 @@ if pilotRef != 'Unknown':
 inProcessOpts = ['-s /Resources/Computing/CEDefaults' ]
 inProcessOpts .append( '-o WorkingDirectory=%s' % rootPath )
 inProcessOpts .append( '-o GridCE=%s' % cliParams.ceName )
-if pilotRef != 'Unknown':
+if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
   inProcessOpts .append( '-o GridCEQueue=%s' % CE )
 inProcessOpts .append( '-o LocalAccountString=%s' % localUser )
 inProcessOpts .append( '-o TotalCPUs=%s' % 1 )
