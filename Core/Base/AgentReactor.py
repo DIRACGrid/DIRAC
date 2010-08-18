@@ -97,7 +97,12 @@ class AgentReactor:
     for agentName in self.__agentModules:
       self.setAgentModuleCyclesToExecute( agentName, numCycles )
     self.go()
+    self.finalize()
     return S_OK()
+  
+  def finalize( self ):
+    for agentName in self.__agentModules:
+      self.__agentModules['instance'].finalize()
 
   def go( self ):
     if self.__running:
