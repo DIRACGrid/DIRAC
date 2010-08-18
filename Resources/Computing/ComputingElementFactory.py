@@ -17,24 +17,28 @@ import sys,types
 class ComputingElementFactory:
 
   #############################################################################
-  def __init__(self,ceUniqueID):
+  def __init__(self,ceType=''):
     """ Standard constructor
     """
-    self.log = gLogger
-    self.ceUniqueID = ceUniqueID
-    self.log = gLogger.getSubLogger( self.ceUniqueID )
+    self.ceType = ceType
+    self.log = gLogger.getSubLogger( self.ceType )
 
   #############################################################################
-  def getCE(self):
+  def getCE(self, ceType='', ceName='', ceParametersDict={}):
     """This method returns the CE instance corresponding to the supplied
        CEUniqueID.  If no corresponding CE is available, this is indicated.
     """
-    self.ceType = self.ceUniqueID
-    ceConfigDict = getCEConfigDict( self.ceUniqueID )
+    ceTypeLocal = ceType
+    if not ceTypeLocal:
+      ceTypeLocal = self.ceType
+    ceNameLocal = ceName
+    if not ceNameLocal:
+      ceNameLocal = self.ceType 
+    ceConfigDict = getCEConfigDict( ceNameLocal )
     self.log.info('CEConfigDict',ceConfigDict)
     if 'CEType' in ceConfigDict:
-      self.ceType = ceConfigDict['CEType']
-    subClassName = "%sComputingElement" % (self.ceType)
+      ceTypeLocal = ceConfigDict['CEType']
+    subClassName = "%sComputingElement" % (ceTypeLocal)
 
     try:
       ceSubClass = __import__('DIRAC.Resources.Computing.%s' % subClassName,globals(),locals(),[subClassName])
@@ -45,8 +49,10 @@ class ComputingElementFactory:
       return S_ERROR( msg )
 
     try:
-      ceStr = 'ceSubClass.%s( "%s" )' % ( subClassName, self.ceUniqueID )
+      ceStr = 'ceSubClass.%s( "%s" )' % ( subClassName, ceNameLocal )
       computingElement = eval( ceStr )
+      if ceParametersDict:
+        computingElement.setParameters(ceParametersDict)
     except Exception, x:
       msg = 'ComputingElementFactory could not instantiate %s()' %(subClassName)
       self.log.exception()

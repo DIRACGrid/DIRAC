@@ -18,8 +18,8 @@ from DIRAC                                          import S_OK, S_ERROR, gLogge
 
 import os, re, string
 
-UsedParameters = [ 'WaitingToRunningRatio', 'MaxWaitingJobs', 'MaxNumberJobs' ]
-
+INTEGER_PARAMETERS = ['CPUTime']
+FLOAT_PARAMETERS = []
 WAITING_TO_RUNNING_RATIO = 0.5
 MAX_WAITING_JOBS = 1
 MAX_TOTAL_JOBS = 1
@@ -31,20 +31,31 @@ class ComputingElement:
     """ Standard constructor
     """
     self.log  = gLogger.getSubLogger( ceName )
-    self.name = ceName
+    self.ceName = ceName
+    self.ceType = ''
     #self.log.setLevel('debug') #temporary for debugging
     self.classAd = ClassAd('[]')
     self.ceRequirementDict = {}
     self.ceParameters = {}
-
-    self.percentageRatio = 0.3
-
-    self.__getCEParameters('/Resources/Computing/%s' % ceName )
-    self.__getCEParameters('/Resources/Computing/CEDefaults') #can be overwritten by other sections
-    result = self.__getCEParameters('/LocalSite/%s' % ceName )
-
+    
+    self.initializeParameters()
+        
+  def initializeParameters(self):
+    """ Initialize the CE parameters after they are collected from various sources
+    """  
+    
+    # Collect global defaults first
+    result = self.__getCEParameters('/Resources/Computing/CEDefaults') #can be overwritten by other sections
     if not result['OK']:
       self.log.warn(result['Message'])
+    result = self.__getCEParameters('/Resources/Computing/%s' % self.ceName )
+    if not result['OK']:
+      self.log.warn(result['Message'])
+      
+    # Get local CE configuration
+    localConfigDict = getLocalCEConfigDict(self.ceName)
+    self.ceParameters.update(localConfigDict)
+
     result = self.__getSiteParameters()
     if not result['OK']:
       self.log.warn(result['Message'])
@@ -52,47 +63,38 @@ class ComputingElement:
     if not result['OK']:
       self.log.warn(result['Message'])
 
-    self.ceConfigDict = getCEConfigDict( ceName )
-    for par in self.mandatoryParameters:
-      if par not in self.ceConfigDict:
-        import DIRAC
-        self.log.fatal( 'Missing Mandatory Parameter in Configuration:', par )
-        DIRAC.abort( -1, 'Can not Instantiate CE:', ceName )
     self._addCEConfigDefaults()
+            
+  def isValid(self):
+    """ Check the sanity of the Computing Element definition
+    """  
+    for par in self.mandatoryParameters:
+      if par not in self.ceParameters:
+        return S_ERROR('Missing Mandatory Parameter in Configuration: %s' % par)        
+    return S_OK()  
+    
 
   #############################################################################
   def _addCEConfigDefaults( self ):
     """Method to make sure all necessary Configuration Parameters are defined
     """
     try:
-      try:
-        self.ceConfigDict['WaitingToRunningRatio'] = float(self.ceParameters['WaitingToRunningRatio'])
-      except:
-        pass
-      self.ceConfigDict['WaitingToRunningRatio'] = float(self.ceConfigDict['WaitingToRunningRatio'])
+      self.ceParameters['WaitingToRunningRatio'] = float(self.ceParameters['WaitingToRunningRatio'])
     except:
       # if it does not exist or it can not be converted, take the default
-      self.ceConfigDict['WaitingToRunningRatio'] = WAITING_TO_RUNNING_RATIO
+      self.ceParameters['WaitingToRunningRatio'] = WAITING_TO_RUNNING_RATIO
 
     try:
-      try:
-        self.ceConfigDict['MaxWaitingJobs'] = int(self.ceParameters['MaxWaitingJobs'])
-      except:
-        pass
-      self.ceConfigDict['MaxWaitingJobs'] = int(self.ceConfigDict['MaxWaitingJobs'])
+      self.ceParameters['MaxWaitingJobs'] = int(self.ceParameters['MaxWaitingJobs'])
     except:
       # if it does not exist or it can not be converted, take the default
-      self.ceConfigDict['MaxWaitingJobs'] = MAX_WAITING_JOBS
+      self.ceParameters['MaxWaitingJobs'] = MAX_WAITING_JOBS
 
     try:
-      try:
-        self.ceConfigDict['MaxTotalJobs'] = int(self.ceParameters['MaxTotalJobs'])
-      except:
-        pass
-      self.ceConfigDict['MaxTotalJobs'] = int(self.ceConfigDict['MaxTotalJobs'])
+      self.ceParameters['MaxTotalJobs'] = int(self.ceParameters['MaxTotalJobs'])
     except:
       # if it does not exist or it can not be converted, take the default
-      self.ceConfigDict['MaxTotalJobs'] = MAX_TOTAL_JOBS
+      self.ceParameters['MaxTotalJobs'] = MAX_TOTAL_JOBS
 
 
 
@@ -105,34 +107,9 @@ class ComputingElement:
     if not result['OK']:
       self.log.warn(result['Message'])
       return S_OK(result['Message'])
-
-    requirements = ''
+    
     reqsDict = result['Value']
     self.ceRequirementDict.update( reqsDict )
-    for option,value in reqsDict.items():
-      if type(value) == type(' '):
-        jdlInt = self.__getInt(value)
-        if type(jdlInt) == type(1):
-          requirements += ' other.'+option+' == %d &&' %(jdlInt)
-          self.log.debug('Found JDL reqt integer attribute: %s = %s' %(option,jdlInt))
-          self.classAd.insertAttributeInt(option, jdlInt)
-        else:
-          requirements += ' other.'+option+' == "%s" &&' %(value)
-          self.log.debug('Found string reqt attribute: %s = %s' %(option,value))
-          self.classAd.insertAttributeString(option, value)
-      elif type(value) == type(1):
-        requirements += ' other.'+option+' == %d &&' %(value)
-        self.log.debug('Found integer reqt attribute: %s = %s' %(option,value))
-        self.classAd.insertAttributeInt(option, value)
-      else:
-        self.log.warn('Could not determine type of:  %s = %s' %(option,value))
-
-    if requirements:
-      if re.search('&&$',requirements):
-        requirements = requirements[:-3]
-      self.classAd.set_expression('Requirements',requirements)
-    else:
-      self.classAd.set_expression('Requirements','True')
 
     return S_OK('Added requirements')
 
@@ -182,30 +159,43 @@ class ComputingElement:
     localSite = options['Value']
     self.log.debug('Local site parameters are: %s' %(localSite))
 
-    self.ceRequirementDict.update( localSite )
     for option,value in localSite.items():
       if option == 'Architecture':
-        self.classAd.insertAttributeString('LHCbPlatform',value)
+        self.ceParameter['LHCbPlatform'] = value
+        self.ceParameter['Architecture'] = value
         if value in platforms.keys():
           compatiblePlatforms = platforms[value]
-          self.classAd.insertAttributeVectorString('CompatiblePlatforms', compatiblePlatforms.split(', '))
+          self.ceParameters['CompatiblePlatforms'] = compatiblePlatforms.split(', ')
       elif option == 'LocalSE':
-        self.classAd.insertAttributeVectorString('LocalSE',value.split(', '))
-      elif type(value) == type(' '):
-        jdlInt = self.__getInt(value)
-        if type(jdlInt) == type(1):
-          self.log.debug('Found JDL integer attribute: %s = %s' %(option,jdlInt))
-          self.classAd.insertAttributeInt(option, jdlInt)
-        else:
-          self.log.debug('Found string attribute: %s = %s' %(option,value))
-          self.classAd.insertAttributeString(option, value)
-      elif type(value) == type(1):
-        self.log.debug('Found integer attribute: %s = %s' %(option,value))
-        self.classAd.insertAttributeInt(option, value)
+        self.ceParameters['LocalSE'] = value.split(', ')  
       else:
-        self.log.warn('Type of option %s = %s not determined' %(option,value))
+        self.ceParameters[option] = value  
 
     return S_OK()
+  
+  def reset(self):
+    """ Make specific CE parameter adjustments here
+    """
+    pass
+    
+
+  def setParameters(self,ceOptions):
+    """ Add parameters from the given dictionary overriding the previous values
+    """
+    self.ceParameters.update(ceOptions)
+    for key in ceOptions:
+      if key in INTEGER_PARAMETERS:
+        self.ceParameters[key] = int(self.ceParameters[key])
+      if key in FLOAT_PARAMETERS: 
+        self.ceParameters[key] = float(self.ceParameters[key]) 
+    self.reset()
+    return S_OK()
+  
+  def getParameterDict(self):
+    """  Get the CE complete parameter dictionary
+    """
+    
+    return self.ceParameters
 
   #############################################################################
   def __getCEParameters(self,cfgName):
@@ -220,23 +210,12 @@ class ComputingElement:
       return S_ERROR('Empty CS section %s' %(section))
 
     ceOptions = options['Value']
-    self.ceRequirementDict.update( ceOptions )
-    self.ceParameters = ceOptions
-    for option,value in ceOptions.items():
-      if type(value) == type(' '):
-        jdlInt = self.__getInt(value)
-        if type(jdlInt) == type(1):
-          self.log.debug('Found JDL integer attribute: %s = %s' %(option,jdlInt))
-          self.classAd.insertAttributeInt(option, jdlInt)
-        else:
-          self.log.debug('Found string attribute: %s = %s' %(option,value))
-          self.classAd.insertAttributeString(option, value)
-      elif type(value) == type(1):
-        self.log.debug('Found integer attribute: %s = %s' %(option,value))
-        self.classAd.insertAttributeInt(option, value)
-      else:
-        self.log.warn('Type of option %s = %s not determined' %(option,value))
-
+    for key in ceOptions:
+      if key in INTEGER_PARAMETERS:
+        ceOptions[key] = int(ceOptions[key])
+      if key in FLOAT_PARAMETERS: 
+        ceOptions[key] = float(ceOptions[key]) 
+    self.ceParameters.update(ceOptions)
     return S_OK()
 
   #############################################################################
@@ -244,18 +223,14 @@ class ComputingElement:
     """Returns CE parameter, e.g. MaxTotalJobs
     """
     if type(param)==type(' '):
-      if param in self.ceConfigDict:
-        return S_OK(self.ceConfigDict[param])
-      elif param in self.ceParameters.keys():
+      if param in self.ceParameters.keys():
         return S_OK(self.ceParameters[param])
       else:
         return S_ERROR('Parameter %s not found' %(param))
     elif type(param)==type([]):
       result = {}
       for p in param:
-        if param in self.ceConfigDict:
-          result[param] = self.ceConfigDict[param]
-        elif param in self.ceParameters.keys():
+        if param in self.ceParameters.keys():
           result[param] = self.ceParameters[param]
       if len(result.keys()) == len(p):
         return S_OK(result)
@@ -309,7 +284,7 @@ class ComputingElement:
     self.log.verbose('Max Waiting Jobs:', maxWaitingJobs )
 
     # Determine how many more jobs can be submitted
-    message = '%sCE: SubmittedJobs=%s' %(self.name,submittedJobs)
+    message = '%sCE: SubmittedJobs=%s' %(self.ceName,submittedJobs)
     message += ', WaitingJobs=%s, RunningJobs=%s' %(waitingJobs,runningJobs)
     totalJobs = runningJobs + waitingJobs
 
@@ -363,6 +338,52 @@ class ComputingElement:
   def getJDL(self):
     """Returns CE JDL as a string.
     """
+    
+    # Add the CE parameters
+    for option,value in self.ceParameters.items():
+      if type(option) == type( [] ):
+        self.classAd.insertAttributeVectorString(option, value.split(', '))
+      elif type(value) == type(' '):
+        jdlInt = self.__getInt(value)
+        if type(jdlInt) == type(1):
+          self.log.debug('Found JDL integer attribute: %s = %s' %(option,jdlInt))
+          self.classAd.insertAttributeInt(option, jdlInt)
+        else:
+          self.log.debug('Found string attribute: %s = %s' %(option,value))
+          self.classAd.insertAttributeString(option, value)
+      elif type(value) == type(1):
+        self.log.debug('Found integer attribute: %s = %s' %(option,value))
+        self.classAd.insertAttributeInt(option, value)
+      else:
+        self.log.warn('Type of option %s = %s not determined' %(option,value))
+    
+    # Add the CE requirements if any
+    requirements = ''
+    for option,value in self.RequirementDict.items():
+      if type(value) == type(' '):
+        jdlInt = self.__getInt(value)
+        if type(jdlInt) == type(1):
+          requirements += ' other.'+option+' == %d &&' %(jdlInt)
+          self.log.debug('Found JDL reqt integer attribute: %s = %s' %(option,jdlInt))
+          self.classAd.insertAttributeInt(option, jdlInt)
+        else:
+          requirements += ' other.'+option+' == "%s" &&' %(value)
+          self.log.debug('Found string reqt attribute: %s = %s' %(option,value))
+          self.classAd.insertAttributeString(option, value)
+      elif type(value) == type(1):
+        requirements += ' other.'+option+' == %d &&' %(value)
+        self.log.debug('Found integer reqt attribute: %s = %s' %(option,value))
+        self.classAd.insertAttributeInt(option, value)
+      else:
+        self.log.warn('Could not determine type of:  %s = %s' %(option,value))
+
+    if requirements:
+      if re.search('&&$',requirements):
+        requirements = requirements[:-3]
+      self.classAd.set_expression('Requirements',requirements)
+    else:
+      self.classAd.set_expression('Requirements','True')
+    
     self.classAd.insertAttributeString('DIRACVersion',version)
     if self.classAd.isOK():
       jdl = self.classAd.asJDL()
@@ -377,7 +398,7 @@ class ComputingElement:
     print line
 
   #############################################################################
-  def submitJob(self,executableFile,jdl,localID):
+  def submitJob(self,executableFile,proxy):
     """ Method to submit job, should be overridden in sub-class.
     """
     name = 'submitJob()'
@@ -392,14 +413,22 @@ class ComputingElement:
     self.log.error('ComputingElement: %s should be implemented in a subclass' %(name))
     return S_ERROR('ComputingElement: %s should be implemented in a subclass' %(name))
 
+def getLocalCEConfigDict(ceName):
+  """ Collect all the local settings relevant to the CE configuration
+  """
+  ceConfigDict = getCEConfigDict(ceName)
+  resourceDict = getResourceDict(ceName)
+  ceConfigDict.update(resourceDict)
+  return ceConfigDict
 
 def getCEConfigDict( ceName ):
   """Look into LocalSite for configuration Parameters for this CE
   """
   ceConfigDict = {}
-  result = gConfig.getOptionsDict( '/LocalSite/%s' % ceName )
-  if result['OK']:
-    ceConfigDict= result['Value']
+  if ceName:
+    result = gConfig.getOptionsDict( '/LocalSite/%s' % ceName )
+    if result['OK']:
+      ceConfigDict= result['Value']
   return ceConfigDict
 
 def getResourceDict( ceName = None ):
