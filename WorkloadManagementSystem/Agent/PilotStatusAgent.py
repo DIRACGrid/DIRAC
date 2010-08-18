@@ -146,7 +146,7 @@ class PilotStatusAgent( AgentModule ):
                 result = self.pilotDB.setPilotStatus( pRef,
                                                       pDict['Status'],
                                                       pDict['DestinationSite'],
-                                                      pDict['StatusDate'],
+                                                      updateTime = pDict['StatusDate'],
                                                       conn = connection )
 
           if len( pilotsToAccount ) > 100:
