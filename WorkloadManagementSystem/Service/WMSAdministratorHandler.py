@@ -512,3 +512,13 @@ class WMSAdministratorHandler(RequestHandler):
     result = pilotDB.setPilotStatus(pilotRef,status,destination=destination,
                                     statusReason=reason,gridSite=gridSite,queue=queue)
     return result
+
+  ##########################################################################################
+  types_countPilots = [ DictType ]
+  def export_countPilots(self,condDict, older=None, newer=None, timeStamp='SubmissionTime'):
+    """ Set the pilot agent status
+    """
+    
+    result = pilotDB.countPilots(condDict, older, newer, timeStamp )
+    return result
+  
