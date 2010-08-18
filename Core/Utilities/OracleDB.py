@@ -291,7 +291,7 @@ class OracleDB:
     """
     self.logger.debug( '__newConnection:' )
 
-    connection = cx_Oracle.Connection(self.__userName, self.__passwd, self.__tnsName )
+    connection = cx_Oracle.Connection(self.__userName, self.__passwd, self.__tnsName, threaded=True )
     self.__putConnection( connection )
 
 
