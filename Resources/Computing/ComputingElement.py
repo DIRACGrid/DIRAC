@@ -161,8 +161,8 @@ class ComputingElement:
 
     for option,value in localSite.items():
       if option == 'Architecture':
-        self.ceParameter['LHCbPlatform'] = value
-        self.ceParameter['Architecture'] = value
+        self.ceParameters['LHCbPlatform'] = value
+        self.ceParameters['Architecture'] = value
         if value in platforms.keys():
           compatiblePlatforms = platforms[value]
           self.ceParameters['CompatiblePlatforms'] = compatiblePlatforms.split(', ')
