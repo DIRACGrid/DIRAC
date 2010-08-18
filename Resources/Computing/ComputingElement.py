@@ -53,7 +53,7 @@ class ComputingElement:
       self.log.warn(result['Message'])
       
     # Get local CE configuration
-    localConfigDict = getLocalCEConfigDict(self.ceName)
+    localConfigDict = getCEConfigDict(self.ceName)
     self.ceParameters.update(localConfigDict)
 
     result = self.__getSiteParameters()
