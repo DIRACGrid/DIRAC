@@ -640,11 +640,8 @@ class JobAgent( AgentModule ):
     """ Job Agent finalization method
     """
 
-    gridCE = gConfig.getValue( '/LocalInstallation/CEName', '' )
+    gridCE = gConfig.getValue( '/LocalSite/GridCE', '' )
     queue = gConfig.getValue( '/LocalSite/CEQueue', '' )
-
-    print "AT >>>", gridCE, queue, self.siteName, self.pilotReference
-
     wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
     result = wmsAdmin.setPilotStatus( str( self.pilotReference ), 'Done', gridCE, 
                                       'Report from JobAgent', self.siteName, queue )
