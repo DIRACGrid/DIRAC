@@ -359,7 +359,7 @@ class ComputingElement:
     
     # Add the CE requirements if any
     requirements = ''
-    for option,value in self.RequirementDict.items():
+    for option,value in self.ceRequirementDict.items():
       if type(value) == type(' '):
         jdlInt = self.__getInt(value)
         if type(jdlInt) == type(1):
