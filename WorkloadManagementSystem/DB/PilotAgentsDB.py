@@ -372,6 +372,8 @@ class PilotAgentsDB(DB):
     e_error = result['Value']
     req = "INSERT INTO PilotOutput VALUES (%d,%s,%s)" % (pilotID,e_output,e_error)
     result = self._update(req)
+    req = "UPDATE PilotAgents SET OutputReady='True' where PilotID=%d" % pilotID
+    result = self._update(req)
     return result
 
 ##########################################################################################
