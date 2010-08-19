@@ -28,7 +28,7 @@ InstallTools.exitOnError = True
 #
 InstallTools.setupSite( Script.localCfg, cfg )
 #
-result = InstallTools.getStartupComponentStatus( [system, component] )
+result = InstallTools.getStartupComponentStatus( [] )
 if not result['OK']:
   print 'ERROR:', result['Message']
   exit( -1 )
