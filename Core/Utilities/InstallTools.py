@@ -424,6 +424,47 @@ def addSystemInstance( systemName, instance ):
 
   return _addCfgToCS( cfg )
 
+def printStartupStatus( rDict ):
+  """
+  Print in nice format the return dictionary from getStartupComponentStatus (also returned by runsvctrlComponent)
+  """
+  try:
+    print 'Name'.rjust( 32 ), ':', 'Runit    Uptime    PID'
+    for comp in rDict:
+      print comp.rjust( 32 ), ':', rDict[comp]['RunitStatus'].ljust( 7 ), rDict[comp]['Timeup'].rjust( 7 ), rDict[comp]['PID'].rjust( 8 )
+  except:
+    pass
+  return S_OK()
+
+def printOverallStatus( rDict ):
+  """
+  Print in nice format the return dictionary from getOverallStatus
+  """
+  try:
+    print
+    print "   System", ' '*20, 'Name', ' '*5, 'Type', ' '*23, 'Setup    Installed   Runit    Uptime    PID'
+    print '-' * 116
+    for compType in rDict:
+      for system in rDict[compType]:
+        for component in rDict[compType][system]:
+          print  system.ljust( 28 ), component.ljust( 28 ), compType.lower()[:-1].ljust( 7 ),
+          if rDict[compType][system][component]['Setup']:
+            print 'SetUp'.rjust( 12 ),
+          else:
+            print 'NotSetup'.rjust( 12 ),
+          if rDict[compType][system][component]['Installed']:
+            print 'Installed'.rjust( 12 ),
+          else:
+            print 'NotInstalled'.rjust( 12 ),
+          print str( rDict[compType][system][component]['RunitStatus'] ).ljust( 7 ),
+          print str( rDict[compType][system][component]['Timeup'] ).rjust( 7 ),
+          print str( rDict[compType][system][component]['PID'] ).rjust( 8 ),
+          print
+  except:
+    pass
+
+  return S_OK()
+
 def getSoftwareComponents( extensions ):
   """  Get the list of all the components ( services and agents ) for which the software
        is installed on the system
@@ -548,7 +589,7 @@ def getStartupComponentStatus( componentTupleList ):
     if componentTupleList:
       cList = []
       for componentTuple in componentTupleList:
-        cList.append( os.path.join( startDir, '_'.join( componentTuple ) ) )
+        cList.extend( glob.glob( os.path.join( startDir, '_'.join( componentTuple ) ) ) )
     else:
       cList = glob.glob( os.path.join( startDir, '*' ) )
   except:
