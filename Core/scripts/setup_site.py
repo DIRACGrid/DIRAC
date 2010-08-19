@@ -11,12 +11,15 @@ InstallTools.exitOnError = True
 #
 from DIRAC.Core.Base import Script
 Script.disableCS()
+Script.setUsageMessage( '\n'.join( ['Usage:',
+                                    '%s [option] ... [cfgfile]' % Script.scriptName,
+                                    'Arguments:',
+                                    ' [<cfgfile>]: DIRAC Cfg with description of the configuration (optional)'] ) )
 Script.parseCommandLine()
 args = Script.getExtraCLICFGFiles()
 
 def usage():
-  Script.showHelp( '\n'.join( ['Arguments:',
-                               '  [<cfgfile>] DIRAC Cfg with description of the configuration (optional)'] ) )
+  Script.showHelp()
   exit( -1 )
 
 if len( args ) > 1:
