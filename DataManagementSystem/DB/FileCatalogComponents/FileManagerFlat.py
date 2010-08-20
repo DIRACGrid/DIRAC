@@ -81,7 +81,7 @@ class FileManagerFlat(FileManagerBase):
     for lfn in sortList(lfns.keys()):
       fileInfo = lfns[lfn]
       size = fileInfo['Size']
-      guid = fileInfo['GUID']
+      guid = fileInfo.get('GUID','')
       checksum = fileInfo['Checksum']
       checksumtype = fileInfo.get('ChecksumType','Adler32')
       dirName = os.path.dirname(lfn)
@@ -90,8 +90,8 @@ class FileManagerFlat(FileManagerBase):
       if not directoryFiles.has_key(dirName):
         directoryFiles[dirName] = []
       directoryFiles[dirName].append(fileName)  
-      insertTuples.append("(%d,'%s',%d,'%s','%s',%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (dirID,fileName,size,checksum,checksumtype,uid,gid,self.db.umask,statusID))
-    req = "INSERT INTO FC_Files (DirID,FileName,Size,Checksum,ChecksumType,UID,GID,CreationDate,ModificationDate,Mode,Status) VALUES %s" % (','.join(insertTuples))
+      insertTuples.append("(%d,'%s','%s',%d,'%s','%s',%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (dirID,fileName,guid,size,checksum,checksumtype,uid,gid,self.db.umask,statusID))
+    req = "INSERT INTO FC_Files (DirID,FileName,GUID,Size,Checksum,ChecksumType,UID,GID,CreationDate,ModificationDate,Mode,Status) VALUES %s" % (','.join(insertTuples))
     res = self.db._update(req,connection)
     if not res['OK']:
       return res
@@ -105,19 +105,22 @@ class FileManagerFlat(FileManagerBase):
       failed.update(res['Value']['Failed'])
       for lfn,fileDict in res['Value']['Successful'].items():
         lfns[lfn]['FileID'] = fileDict['FileID']
-    if self.db.uniqueGUID and lfns:
-      fileIDGuids = {}
-      for lfn,fileDict in lfns.items():
-        fileID = fileDict['FileID']
-        guid = fileDict['GUID']
-        fileIDGuids[fileID] = guid
-      res = self._insertFileGUIDs(fileIDGuids,connection=connection)
-      if not res['OK']:
-        for lfn in lfns.keys():
-          failed[lfn] = "Failed while registering file GUIDs"
-          lfns.pop(lfn)
-        self._deleteFiles(lfnFileIDs.values(),connection=connection)
     return S_OK({'Successful':lfns,'Failed':failed})
+
+  def _getFileIDFromGUID(self,guid,connection=False):
+    connection = self._getConnection(connection)
+    if not guid:
+      return S_OK({})
+    if type(guid) not in [ListType,TupleType]:
+      guid = [guid] 
+    req = "SELECT FileID,GUID FROM FC_Files WHERE GUID IN (%s)" % stringListToString(guid)
+    res = self.db._query(req,connection)
+    if not res['OK']:
+      return res
+    guidDict = {}
+    for fileID,guid in res['Value']:
+      guidDict[guid] = fileID
+    return S_OK(guidDict)
 
   ######################################################
   #

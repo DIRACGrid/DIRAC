@@ -14,10 +14,9 @@ GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalogDB
 FLUSH PRIVILEGES;
 
 USE FileCatalogDB;
--- ------------------------------------------------------------------------------
 
 drop table if exists FC_Files;
-CREATE TABLE FC_Files (
+CREATE TABLE FC_Files(
     FileID INT AUTO_INCREMENT PRIMARY KEY,
     DirID INT NOT NULL,
     FileName VARCHAR(128) NOT NULL,
@@ -29,7 +28,10 @@ CREATE TABLE FC_Files (
 -- ------------------------------------------------------------------------------
 drop table if exists FC_FileInfo;
 CREATE TABLE FC_FileInfo (
-    FileID INTEGER NOT NULL,
+    FileID INTEGER NOT NULL PRIMARY KEY,
+    INDEX(FileID),
+    GUID char(36) NOT NULL,
+    INDEX(GUID),
     UID SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     GID SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     Size BIGINT UNSIGNED NOT NULL DEFAULT 0,
@@ -40,13 +42,13 @@ CREATE TABLE FC_FileInfo (
     ModificationDate DATETIME,
     Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
     Status SMALLINT UNSIGNED NOT NULL DEFAULT 0,
-    PRIMARY KEY (FileID),
-    INDEX(FileID),
     INDEX(Status)
 );
 
 -- Make additions to the FC_Files table to include the FC_FileInfo information
-ALTER TABLE FC_Files ADD COLUMN UID SMALLINT UNSIGNED NOT NULL DEFAULT 0 AFTER FileName;
+ALTER TABLE FC_Files ADD COLUMN GUID CHAR(36) NOT NULL AFTER FileName;
+ALTER TABLE FC_Files ADD INDEX (GUID);
+ALTER TABLE FC_Files ADD COLUMN UID SMALLINT UNSIGNED NOT NULL DEFAULT 0 AFTER GUID;
 ALTER TABLE FC_Files ADD COLUMN GID SMALLINT UNSIGNED NOT NULL DEFAULT 0 AFTER UID;
 ALTER TABLE FC_Files ADD COLUMN Size BIGINT UNSIGNED NOT NULL DEFAULT 0 AFTER GID;
 ALTER TABLE FC_Files ADD COLUMN Checksum VARCHAR(32) AFTER Size;
@@ -64,7 +66,6 @@ ALTER TABLE FC_Files ADD INDEX (Status);
 -- ALTER TABLE FC_FileInfo ADD INDEX (DirID);
 -- ALTER TABLE FC_FileInfo ADD COLUMN FileName VARCHAR(128) NOT NULL AFTER DirID;
 -- ALTER TABLE FC_FileInfo ADD INDEX (FileName);
--- ALTER TABLE FC_FileInfo ADD COLUMN GUID CHAR(36) NOT NULL;
 
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS FC_Statuses;
@@ -75,18 +76,7 @@ CREATE TABLE FC_Statuses (
     INDEX(StatusID)
 );
 
--- ------------------------------------------------------------------------------
-drop table if exists FC_GUID_to_File;
-CREATE TABLE FC_GUID_to_File (
-    GUID char(36) NOT NULL,
-    FileID INTEGER UNSIGNED NOT NULL,
-    PRIMARY KEY (GUID),
-    INDEX (FileID),
-    INDEX (GUID)
-);
-
 -- -----------------------------------------------------------------------------
-
 drop table if exists FC_Replicas;
 CREATE TABLE FC_Replicas (
     RepID INT AUTO_INCREMENT PRIMARY KEY,
@@ -114,10 +104,10 @@ CREATE TABLE FC_ReplicaInfo (
 -- Make additions to the FC_Replicas table to include the FC_ReplicaInfo information
 ALTER TABLE FC_Replicas ADD COLUMN RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master' AFTER SEID;
 ALTER TABLE FC_Replicas ADD COLUMN Status SMALLINT UNSIGNED NOT NULL DEFAULT 0 AFTER RepType;
+ALTER TABLE FC_Replicas ADD INDEX (Status);
 ALTER TABLE FC_Replicas ADD COLUMN CreationDate DATETIME AFTER Status;
 ALTER TABLE FC_Replicas ADD COLUMN ModificationDate DATETIME AFTER CreationDate;
 ALTER TABLE FC_Replicas ADD COLUMN PFN VARCHAR(1024) AFTER ModificationDate;
-ALTER TABLE FC_Files ADD INDEX (Status);
 
 -- Make additions to the FC_ReplicaInfo table to include the FC_Replicas information
 -- ALTER TABLE FC_ReplicaInfo ADD COLUMN FileID INTEGER NOT NULL AFTER RepID;
@@ -247,8 +237,8 @@ CREATE TABLE FC_Meta_Fields (
 );
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_Ancestors;
-CREATE TABLE FC_Ancestors (
+drop table if exists FC_FileAncestors;
+CREATE TABLE FC_FileAncestors (
   FileID INT NOT NULL DEFAULT 0,
   AncestorID INT NOT NULL DEFAULT 0,
   AncestorDepth INT NOT NULL DEFAULT 0,

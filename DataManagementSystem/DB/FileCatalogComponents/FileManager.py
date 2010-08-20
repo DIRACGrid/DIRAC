@@ -74,18 +74,12 @@ class FileManager(FileManagerBase):
         filesDict[fileName] = {'FileID':fileID}
       return S_OK(filesDict)
     # Otherwise get the additionally requested metadata from the FC_FileInfo table
-    guidDict = {}
-    if 'GUID' in metadata:
-      metadata.remove('GUID')
-      res = self._getGuidFromFileID([x[1] for x in fileNameIDs],connection=connection)
-      if res['OK']:
-        guidDict = res['Value']
     for fileName,fileID in fileNameIDs:
       filesDict[fileID] = fileName
     if 'FileID' in metadata:
       metadata.remove('FileID')
     metadata.append('FileID')
-    metadata.reverse()  
+    metadata.reverse()
     req = "SELECT %s FROM FC_FileInfo WHERE FileID IN (%s)" % (intListToString(metadata),intListToString(filesDict.keys()))  
     res = self.db._query(req,connection)
     if not res['OK']:
@@ -94,8 +88,6 @@ class FileManager(FileManagerBase):
     for tuple in res['Value']:
       fileID = tuple[0]
       files[filesDict[fileID]] = dict(zip(metadata,tuple))
-      if guidDict.has_key(fileID):
-        files[filesDict[fileID]]['GUID'] = guidDict[fileID]
     return S_OK(files)
 
   ######################################################
@@ -141,32 +133,34 @@ class FileManager(FileManagerBase):
       size = fileInfo['Size']
       checksum = fileInfo['Checksum']
       checksumtype = fileInfo.get('ChecksumType','Adler32')
+      guid = fileInfo.get('GUID','')
       dirName = os.path.dirname(lfn)
       toDelete.append(fileID)
-      insertTuples.append("(%d,%d,'%s','%s',%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (fileID,size,checksum,checksumtype,uid,gid,self.db.umask,statusID))
+      insertTuples.append("(%d,'%s',%d,'%s','%s',%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (fileID,guid,size,checksum,checksumtype,uid,gid,self.db.umask,statusID))
     if insertTuples:
-      req = "INSERT INTO FC_FileInfo (FileID,Size,Checksum,CheckSumType,UID,GID,CreationDate,ModificationDate,Mode,Status) VALUES %s" % ','.join(insertTuples)
+      req = "INSERT INTO FC_FileInfo (FileID,GUID,Size,Checksum,CheckSumType,UID,GID,CreationDate,ModificationDate,Mode,Status) VALUES %s" % ','.join(insertTuples)
       res = self.db._update(req)
       if not res['OK']:
         self._deleteFiles(toDelete,connection=connection)
         for lfn in lfns.keys():
           failed[lfn] = res['Message']
           lfns.pop(lfn)
-    toDelete = []
-    if self.db.uniqueGUID and lfns:
-      fileIDGuids = {}
-      for lfn,fileDict in lfns.items():
-        fileID = fileDict['FileID']
-        toDelete.append(fileID)
-        guid = fileDict['GUID']
-        fileIDGuids[fileID] = guid
-      res = self._insertFileGUIDs(fileIDGuids,connection=connection)
-      if not res['OK']:
-        for lfn in lfns.keys():
-          failed[lfn] = "Failed while registering file GUIDs"
-          lfns.pop(lfn)
-        self._deleteFiles(toDelete,connection=connection)
     return S_OK({'Successful':lfns,'Failed':failed})
+
+  def _getFileIDFromGUID(self,guid,connection=False):
+    connection = self._getConnection(connection)
+    if not guid:
+      return S_OK({})
+    if type(guid) not in [ListType,TupleType]:
+      guid = [guid] 
+    req = "SELECT FileID,GUID FROM FC_FileInfo WHERE GUID IN (%s)" % stringListToString(guid)
+    res = self.db._query(req,connection)
+    if not res['OK']:
+      return res
+    guidDict = {}
+    for fileID,guid in res['Value']:
+      guidDict[guid] = fileID
+    return S_OK(guidDict)
 
   ######################################################
   #
@@ -199,7 +193,7 @@ class FileManager(FileManagerBase):
       return S_OK()
     fileIDString = intListToString(fileIDs)
     failed = []
-    for table in ['FC_Files','FC_FileInfo','FC_GUID_to_File']:
+    for table in ['FC_Files','FC_FileInfo']:
       req = "DELETE FROM %s WHERE FileID in (%s)" % (table,fileIDString)
       res = self.db._update(req,connection)
       if not res['OK']:

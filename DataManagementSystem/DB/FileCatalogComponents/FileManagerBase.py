@@ -79,7 +79,7 @@ class FileManagerBase:
     # Check whether the supplied files have been registered already
     existingMetadata,failed = self._getExistingMetadata(lfns.keys(),connection=connection)
     if existingMetadata:
-      success,fail = self._checkExistingMetadata(existingMetadata)
+      success,fail = self._checkExistingMetadata(existingMetadata,lfns)
       successful.update(success)
       failed.update(fail)
       for lfn in (success.keys()+fail.keys()):
@@ -115,6 +115,22 @@ class FileManagerBase:
           failed[lfn] = error
           lfns.pop(lfn)
         lfns = res['Value']['Successful']
+    # Add the ancestors
+    if lfns:
+      res = self._populateFileAncestors(lfns,connection=connection)
+      toPurge =[]
+      if not res['OK']:
+        for lfn in lfns.keys():
+          failed[lfn] = "Failed while registering ancestors"
+          toPurge.append(lfns[lfn]['FileID'])
+      else:
+        failed.update(res['Value']['Failed'])
+        for lfn,error in res['Value']['Failed'].items():
+          toPurge.append(lfns[lfn]['FileID'])
+      if toPurge:
+        self._deleteFiles(toPurge,connection=connection)
+        
+    # Register the replicas
     if lfns:
       res = self._insertReplicas(lfns,master=True,connection=connection)
       toPurge =[]
@@ -125,16 +141,94 @@ class FileManagerBase:
       else:
         successful.update(res['Value']['Successful'])
         failed.update(res['Value']['Failed'])
-        for lfn in res['Value']['Failed'].items():
+        for lfn,error in res['Value']['Failed'].items():
           toPurge.append(lfns[lfn]['FileID'])
       if toPurge:
         self._deleteFiles(toPurge,connection=connection)
     return S_OK({'Successful':successful,'Failed':failed})
 
+  def _populateFileAncestors(self,lfns,connection=False):
+    connection = self._getConnection(connection)
+    successful = {}
+    failed = {}
+    for lfn,lfnDict in lfns.items():
+      originalFileID = lfnDict['FileID']
+      originalDepth = lfnDict.get('AncestorDepth',1)
+      ancestors = lfnDict.get('Ancestors',[])
+      if lfn in ancestors:
+        ancestors.remove(lfn)
+      if not ancestors:
+        successful[lfn] = True
+        continue
+      res = self._findFiles(ancestors,connection=connection)
+      if res['Value']['Failed']:
+        failed[lfn] = "Failed to resolve ancestor files"
+        continue
+      ancestorIDs = res['Value']['Successful']
+      fileIDLFNs = {}
+      toInsert = {}
+      for ancestor in ancestorIDs.keys():
+        fileIDLFNs[ancestorIDs[ancestor]['FileID']] = ancestor
+        toInsert[ancestorIDs[ancestor]['FileID']] = originalDepth
+      res = self._getFileAncestors(fileIDLFNs.keys())
+      if not res['OK']:
+        failed[lfn] = "Failed to obtain all ancestors"
+        continue
+      fileIDAncestorDict = res['Value']
+      for fileID,fileIDDict in fileIDAncestorDict.items():
+        for ancestorID,relativeDepth in fileIDDict.items():
+          toInsert[ancestorID] = relativeDepth+originalDepth
+      res = self._insertFileAncestors(originalFileID,toInsert,connection=connection)
+      if not res['OK']:
+        failed[lfn] = "Failed to insert ancestor files"
+      else:
+        successful[lfn] = True
+    return S_OK({'Successful':successful,'Failed':failed})
+
+  def _insertFileAncestors(self,fileID,ancestorDict,connection=False):  
+    connection = self._getConnection(connection)
+    ancestorTuples = []
+    for ancestorID,depth in ancestorDict.items():
+      ancestorTuples.append("(%d,%d,%d)" % (fileID,ancestorID,depth))
+    if not ancestorTuples:
+      return S_OK()
+    req = "INSERT INTO FC_FileAncestors (FileID,AncestorID,AncestorDepth) VALUES %s" % intListToString(ancestorTuples)
+    return self.db._update(req,connection)
+    
+  def _getFileAncestors(self,fileIDs,depths=[],connection=False):
+    connection = self._getConnection(connection)
+    req = "SELECT FileID,AncestorID,AncestorDepth FROM FC_FileAncestors WHERE FileID IN (%s)" % intListToString(fileIDs)
+    if depths:
+     req = "%s AND AncestorDepth IN (%s);" % (req,intListToString(depths))
+    res = self.db._query(req,connection)
+    if not res['OK']:
+      return res
+    fileIDAncestors = {}
+    for fileID,ancestorID,depth in res['Value']:
+      if not fileIDAncestors.has_key(fileID):
+        fileIDAncestors[fileID] = {}
+      fileIDAncestors[fileID][ancestorID] = depth
+    return S_OK(fileIDAncestors)
+
+  def _getFileDecendents(self,fileIDs,depths,connection=False):
+    connection = self._getConnection(connection)
+    req = "SELECT AncestorID,FileID,AncestorDepth FROM FC_FileAncestors WHERE AncestorID IN (%s)" % intListToString(fileIDs) 
+    if depths:
+      req = "%s AND AncestorDepth IN (%s);" % (req,intListToString(depths))
+    res = self.db._query(req,connection)
+    if not res['OK']:
+      return res
+    fileIDAncestors = {}
+    for ancestorID,fileID,depth in res['Value']:
+      if not fileIDAncestors.has_key(ancestorID):
+        fileIDAncestors[ancestorID] = {}
+      fileIDAncestors[ancestorID][fileID] = depth
+    return S_OK(fileIDAncestors)
+
   def _getExistingMetadata(self,lfns,connection=False):
     connection = self._getConnection(connection)
     # Check whether the files already exist before adding
-    res = self._findFiles(lfns,['FileID','Size','Checksum'],connection=connection)
+    res = self._findFiles(lfns,['FileID','Size','Checksum','GUID'],connection=connection)
     successful = res['Value']['Successful']
     failed = res['Value']['Failed']
     for lfn,error in res['Value']['Failed'].items():
@@ -142,7 +236,7 @@ class FileManagerBase:
         failed.pop(lfn)
     return successful,failed
 
-  def _checkExistingMetadata(self,existingMetadata):
+  def _checkExistingMetadata(self,existingMetadata,lfns):
     failed = {}
     successful = {}
     fileIDLFNs = {}
@@ -184,11 +278,11 @@ class FileManagerBase:
       guidLFNs[fileDict['GUID']] = lfn
     res = self._getFileIDFromGUID(guidLFNs.keys(),connection=connection)
     if not res['OK']:
-      failed = dict.fromkeys(lfns,res['Message'])
+      return dict.fromkeys(lfns,res['Message'])
     for guid,fileID in res['Value'].items():
       failed[guidLFNs[guid]] = "GUID already registered for another file %s" % fileID # resolve this to LFN
     return failed
-
+  
   def removeFile(self,lfns,connection=False):
     connection = self._getConnection(connection)
     """ Remove file from the catalog """
@@ -421,6 +515,14 @@ class FileManagerBase:
         successful[dirName]['Execute'] = mode & stat.S_IXOTH
     return S_OK({'Successful':successful,'Failed':res['Value']['Failed']})
 
+  def getFileAncestors(self,lfns,depths,connection=False):
+    connection = self._getConnection(connection)
+    return S_ERROR()
+
+  def getFileDescendents(self,lfns,depths,connection=False):
+    connection = self._getConnection(connection)
+    return S_ERROR()
+
   ######################################################
   #
   # Replica read methods
@@ -490,48 +592,6 @@ class FileManagerBase:
         else:
           successful[lfn] = seDict[requestedSE]['Status']
     return S_OK({'Successful':successful,'Failed':failed})
-
-
-  ######################################################
-  #
-  # Methods for interacting with the FC_GUID_to_File table
-  #
-
-  def _getFileIDFromGUID(self,guid,connection=False):
-    connection = self._getConnection(connection)
-    """ Get the FileID for a given GUID """
-    if type(guid) not in [ListType,TupleType]:
-      guid = [guid] 
-    req = "SELECT FileID,GUID FROM FC_GUID_to_File WHERE GUID IN (%s)" % stringListToString(guid)
-    res = self.db._query(req,connection)
-    if not res['OK']:
-      return res
-    guidDict = {}
-    for fileID,guid in res['Value']:
-      guidDict[guid] = fileID
-    return S_OK(guidDict)
-
-  def _insertFileGUIDs(self,fileGuids,connection=False):
-    connection = self._getConnection(connection)
-    stringTuples = []
-    for fileID,guid in fileGuids.items():
-      stringTuples.append("(%d,'%s')" % (fileID,guid))
-    req = "INSERT INTO FC_GUID_to_File (FileID,GUID) VALUES %s" % intListToString(stringTuples)
-    return self.db._update(req,connection)
-
-  def _getGuidFromFileID(self,fileID,connection=False):
-    connection = self._getConnection(connection)
-    """ Get GUID of the given file """
-    if type(fileID) not in [ListType,TupleType]:
-      fileID = [fileID] 
-    req = "SELECT FileID,GUID FROM FC_GUID_to_File WHERE FileID IN (%s)" % stringListToString(fileID)
-    res = self.db._query(req,connection)
-    if not res['OK']:
-      return res
-    guidDict = {}
-    for fileID,guid in res['Value']:
-      guidDict[fileID] = guid
-    return S_OK(guidDict)
 
   ######################################################
   #
