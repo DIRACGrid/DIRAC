@@ -464,7 +464,7 @@ class TaskQueueDB( DB ):
       gLogger.warn( "Found two task queues for the same requirements", self.__strDict( tqDefDict ) )
     return S_OK( { 'found' : True, 'tqId' : data[0][0] } )
 
-  def matchAndGetJob( self, tqMatchDict, numJobsPerTry = 10, numQueuesPerTry = 10 ):
+  def matchAndGetJob( self, tqMatchDict, numJobsPerTry = 10, numQueuesPerTry = 10, extraConditions = {} ):
     """
     Match a job
     """
@@ -488,7 +488,11 @@ class TaskQueueDB( DB ):
         retVal = self.matchAndGetTaskQueue( tqMatchDict, numQueuesToGet = 0, skipMatchDictDef = True, connObj = connObj )
         preJobSQL = "%s AND `tq_Jobs`.JobId = %s " % ( preJobSQL, tqMatchDict['JobID'] )
       else:
-        retVal = self.matchAndGetTaskQueue( tqMatchDict, numQueuesToGet = numQueuesPerTry, skipMatchDictDef = True, connObj = connObj )
+        retVal = self.matchAndGetTaskQueue( tqMatchDict, 
+                                            numQueuesToGet = numQueuesPerTry, 
+                                            skipMatchDictDef = True, 
+                                            extraConditions = extraConditions,
+                                            connObj = connObj )
       if not retVal[ 'OK' ]:
         return retVal
       tqList = retVal[ 'Value' ]
@@ -528,7 +532,8 @@ class TaskQueueDB( DB ):
     self.log.info( "Could not find a match after %s match retries" % self.__maxMatchRetry )
     return S_ERROR( "Could not find a match after %s match retries" % self.__maxMatchRetry )
 
-  def matchAndGetTaskQueue( self, tqMatchDict, numQueuesToGet = 1, skipMatchDictDef = False, connObj = False ):
+  def matchAndGetTaskQueue( self, tqMatchDict, numQueuesToGet = 1, skipMatchDictDef = False, 
+                                  extraConditions = {}, connObj = False ):
     """
     Get a queue that matches the requirements
     """
@@ -538,7 +543,7 @@ class TaskQueueDB( DB ):
       retVal = self._checkMatchDefinition( tqMatchDict )
       if not retVal[ 'OK' ]:
         return retVal
-    retVal = self.__generateTQMatchSQL( tqMatchDict, numQueuesToGet = numQueuesToGet )
+    retVal = self.__generateTQMatchSQL( tqMatchDict, numQueuesToGet = numQueuesToGet, extraConditions = extraConditions )
     if not retVal[ 'OK' ]:
       return retVal
     matchSQL = retVal[ 'Value' ]
@@ -555,7 +560,24 @@ class TaskQueueDB( DB ):
       sqlORList.append( sqlString % str( v ).strip() )
     return "( %s )" % ( " %s " % boolOp ).join( sqlORList )
 
-  def __generateTQMatchSQL( self, tqMatchDict, numQueuesToGet = 1 ):
+  def __generateExtraSQL( self, extraConditions ):
+    """ Generate extra conditions due to site throttling
+    """
+
+    condList = []
+    for field in extraConditions:
+      if field in self.__multiValueMatchFields:
+        tableName = '`tq_TQTo%ss`' % field
+        for value in extraConditions[field]:
+          sql = "'%s' NOT IN ( SELECT %s.Value FROM %s WHERE %s.TQId = `tq_TaskQueues`.TQId )" % ( value, tableName, tableName, tableName )
+          condList.append(sql)
+      else:
+        for value in extraConditions[field]:
+          sql = "'%s' <> tq_TaskQueues.%s " % (value,field)
+          condList.append(sql) 
+    return condList 
+
+  def __generateTQMatchSQL( self, tqMatchDict, numQueuesToGet = 1, extraConditions={} ):
     """
     Generate the SQL needed to match a task queue
     """
@@ -628,6 +650,9 @@ class TaskQueueDB( DB ):
     #If not pilot type was not specified, none must be in the task queue
     if 'PilotType' not in tqMatchDict:
       sqlCondList.append( "( SELECT COUNT(`tq_TQToPilotTypes`.Value) FROM `tq_TQToPilotTypes` WHERE `tq_TQToPilotTypes`.TQId = `tq_TaskQueues`.TQId ) = 0 " )
+    # Add extra conditions
+    if extraConditions:
+      sqlCondList += self.__generateExtraSQL(extraConditions)
     #Generate the final query string
     tqSqlCmd = "SELECT `tq_TaskQueues`.TQId, `tq_TaskQueues`.OwnerDN, `tq_TaskQueues`.OwnerGroup FROM %s WHERE %s" % ( ", ".join( sqlTables ),
                                                                                                                       " AND ".join( sqlCondList ) )
@@ -1059,4 +1084,5 @@ class TaskQueueDB( DB ):
     if not updated:
       return S_OK()
     return self.recalculateTQSharesForAll()
+
 

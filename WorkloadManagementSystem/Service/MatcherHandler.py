@@ -25,6 +25,8 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB     import TaskQueueDB
 from DIRAC                                             import gMonitor
 from DIRAC.Core.Utilities.ThreadScheduler              import gThreadScheduler
 
+DEBUG = 0
+
 gMutex = threading.Semaphore()
 gTaskQueues = {}
 jobDB = False
@@ -65,32 +67,51 @@ def sendNumTaskQueues():
 
 class MatcherHandler(RequestHandler):
 
-  def selectJob(self, resourceJDL):
+  def initialize(self):
+
+    self.siteJobLimits = self.getCSOption( "SiteJobLimits", False )
+
+  def selectJob(self, resourceDescription):
     """ Main job selection function to find the highest priority job
         matching the resource capacity
     """
 
     startTime = time.time()
-    classAdAgent = ClassAd(resourceJDL)
-    if not classAdAgent.isOK():
-      return S_ERROR('Illegal Resource JDL')
-    gLogger.verbose(classAdAgent.asJDL())
-
+    
+    # Check and form the resource description dictionary
     resourceDict = {}
-    for name in taskQueueDB.getSingleValueTQDefFields():
-      if classAdAgent.lookupAttribute(name):
-        if name == 'CPUTime':
-          resourceDict[name] = classAdAgent.getAttributeInt(name)
-        else:
+    if type(resourceDescription) in StringTypes:
+      classAdAgent = ClassAd(resourceDescription)
+      if not classAdAgent.isOK():
+        return S_ERROR('Illegal Resource JDL')
+      gLogger.verbose(classAdAgent.asJDL())
+  
+      for name in taskQueueDB.getSingleValueTQDefFields():
+        if classAdAgent.lookupAttribute(name):
+          if name == 'CPUTime':
+            resourceDict[name] = classAdAgent.getAttributeInt(name)
+          else:
+            resourceDict[name] = classAdAgent.getAttributeString(name)
+  
+      for name in taskQueueDB.getMultiValueMatchFields():
+        if classAdAgent.lookupAttribute(name):
           resourceDict[name] = classAdAgent.getAttributeString(name)
-
-    for name in taskQueueDB.getMultiValueMatchFields():
-      if classAdAgent.lookupAttribute(name):
-        resourceDict[name] = classAdAgent.getAttributeString(name)
-
-    # Check if a JobID is requested
-    if classAdAgent.lookupAttribute('JobID'):
-      resourceDict['JobID'] = classAdAgent.getAttributeInt('JobID')
+   
+      # Check if a JobID is requested
+      if classAdAgent.lookupAttribute('JobID'):
+        resourceDict['JobID'] = classAdAgent.getAttributeInt('JobID')    
+          
+    else:
+      for name in taskQueueDB.getSingleValueTQDefFields():
+        if resourceDescription.has_key(name):
+          resourceDict[name] = resourceDescription[name]
+  
+      for name in taskQueueDB.getMultiValueMatchFields():
+        if resourceDescription.has_key(name):
+          resourceDict[name] = resourceDescription[name]
+          
+      if resourceDescription.has_key('JobID'):
+        resourceDict[name] = resourceDescription['JobID']    
 
     # Get common site mask and check the agent site
     result = jobDB.getSiteMask(siteState='Active')
@@ -102,6 +123,7 @@ class MatcherHandler(RequestHandler):
     if not 'Site' in resourceDict:
       return S_ERROR('Missing Site Name in Resource JDL')
 
+    siteName = resourceDict['Site']
     if resourceDict['Site'] not in maskList:
       if 'GridCE' in resourceDict:
         del resourceDict['Site']
@@ -110,11 +132,25 @@ class MatcherHandler(RequestHandler):
 
     resourceDict['Setup'] = self.serviceInfoDict['clientSetup']
 
-    print resourceDict
+    if DEBUG:
+      print "Resource description:" 
+      for k,v in resourceDict.items():
+        print k.rjust(20),v
 
-    result = taskQueueDB.matchAndGetJob( resourceDict )
+    # Check if Job Limits are imposed onto the site
+    extraConditions = {}
+    if self.siteJobLimits:
+      result = self.getExtraConditions(siteName)
+      if not result['OK']:
+        return result
+      extraConditions = result['Value']
+    if extraConditions:
+      gLogger.info('Job Limits for site %s are: %s' % (siteName,str(extraConditions)) )
 
-    print result
+    result = taskQueueDB.matchAndGetJob( resourceDict, extraConditions = extraConditions )
+
+    if DEBUG:
+      print result
 
     if not result['OK']:
       return result
@@ -156,17 +192,59 @@ class MatcherHandler(RequestHandler):
     resultDict['DN'] = resAtt['Value']['OwnerDN']
     resultDict['Group'] = resAtt['Value']['OwnerGroup']
     return S_OK(resultDict)
+  
+  def getExtraConditions(self,site):
+    """ Get extra conditions allowing site throttling
+    """
+    # Find Site job limits
+    grid,siteName,country = site.split('.')
+    siteSection = '/Resources/Sites/%s/%s' % (grid,site)
+    result = gConfig.getSections('%s/JobLimits' % siteSection)
+    if not result['OK']:
+      return result
+    sections = result['Value']
+    limitDict = {}
+    resultDict = {}
+    if sections:
+      for section in sections:
+        result = gConfig.getOptionsDict('%s/JobLimits/%s' % (siteSection,section) )
+        if not result['OK']:
+          return result
+        optionDict = result['Value'] 
+        if optionDict:
+          limitDict[section] = []
+          for k,v in optionDict.items():
+            limitDict[section].append((k,int(v)))
+    if not limitDict:
+      return S_OK({})
+    # Check if the site exceeding the given limits
+    fields = limitDict.keys()
+    for field in fields:
+      for key,value in limitDict[field]:
+        result = jobDB.getCounters('Jobs',['Status'],{'Site':site,field:key}) 
+        if not result['OK']:
+          return result
+        count = 0
+        if result['Value']:
+          for countDict,number in result['Value']:
+            if countDict['Status'] == "Running":
+              count = number
+              break
+        if count > value:
+          if not resultDict.has_key(field):
+            resultDict[field] = []
+          resultDict[field].append(key)     
+
+    return S_OK(resultDict)
 
 ##############################################################################
-  types_requestJob = [StringType]
-  def export_requestJob(self, resourceJDL ):
+  types_requestJob = [ [StringType,DictType] ]
+  def export_requestJob(self, resourceDescription ):
     """ Serve a job to the request of an agent which is the highest priority
         one matching the agent's site capacity
     """
 
-    #print "requestJob: ",resourceJDL
-
-    result = self.selectJob(resourceJDL)
+    result = self.selectJob(resourceDescription)
     gMonitor.addMark( "matchesDone" )
     return result
 
@@ -183,3 +261,4 @@ class MatcherHandler(RequestHandler):
     """ Return all task queues
     """
     return taskQueueDB.retrieveTaskQueuesThatMatch( resourceDict )
+
