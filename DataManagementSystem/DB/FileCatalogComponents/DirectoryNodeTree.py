@@ -16,6 +16,9 @@ class DirectoryNodeTree(DirectoryTreeBase):
   """ Class managing Directory Tree as a self-linked structure with directory 
       names stored in each node
   """
+  def __init__(self,database=None):
+    DirectoryTreeBase.__init__(self,database)
+    self.treeTable = 'FC_DirectoryTreeM'
   
   def findDir(self,path):
     """ Find the identifier of a directory specified by its path

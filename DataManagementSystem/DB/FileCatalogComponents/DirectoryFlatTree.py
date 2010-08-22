@@ -12,6 +12,10 @@ from DIRAC.Core.Utilities.List                                                 i
 
 class DirectoryFlatTree(DirectoryTreeBase):
 
+  def __init__(self,database=None):
+    DirectoryTreeBase.__init__(self,database)
+    self.treeTable = 'DirectoryInfo'
+
   def getDirectoryCounters(self):
     req = "SELECT COUNT(*) FROM DirectoryInfo"
     res = self.db._query(req)

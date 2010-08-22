@@ -15,6 +15,10 @@ class DirectorySimpleTree(DirectoryTreeBase):
   """ Class managing Directory Tree as a simple self-linked structure with full
       directory path stored in each node
   """
+  
+  def __init__(self,database=None):
+    DirectoryTreeBase.__init__(self,database)
+    self.treeTable = 'FC_DirectoryTree'
 
   def findDir(self,path):
     

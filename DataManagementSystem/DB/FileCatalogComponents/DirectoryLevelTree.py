@@ -17,7 +17,17 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase     i
 MAX_LEVELS = 10
 
 class DirectoryLevelTree(DirectoryTreeBase):
-  """ Class managing Directory Tree as a simple self-linked structure with full directory path stored in each node """
+  """ Class managing Directory Tree as a simple self-linked structure 
+      with full directory path stored in each node 
+  """
+  
+  def __init__(self,database=None):
+    DirectoryTreeBase.__init__(self,database)
+    self.treeTable = 'FC_DirectoryLevelTree'
+
+  def getTreeType(self):
+    
+    return 'Directory'
 
   def findDir(self,path):
     req = "SELECT DirID,Level from FC_DirectoryLevelTree WHERE DirName='%s'" % path
