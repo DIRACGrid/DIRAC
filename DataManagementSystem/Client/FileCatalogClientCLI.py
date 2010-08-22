@@ -398,7 +398,7 @@ File Catalog Client $Revision: 1.17 $Date:
     if result['OK']:
       if result['Value']['Successful']:
         if result['Value']['Successful'].has_key(newdir):
-          print "Successfully created directory;", newdir
+          print "Successfully created directory:", newdir
       elif result['Value']['Failed']:
         if result['Value']['Failed'].has_key(newdir):  
           print 'Failed to create directory:',result['Value']['Failed'][newdir]
@@ -499,7 +499,7 @@ File Catalog Client $Revision: 1.17 $Date:
       path = path[:-1]
     
     # Check if the target path is a file
-    result =  self.fc.isFile(path)  
+    result =  self.fc.isFile(path)      
     if not result['OK']:
       print "Error: can not verify path"
       return
@@ -891,12 +891,26 @@ File Catalog Client $Revision: 1.17 $Date:
           print "Error: metadata field %s not defined" % name
           return
         mtype = typeDict[name]
-        mvalue = value
-        if mtype[0:3].lower() == 'int':
-          mvalue = int(value)
-        if mtype[0:5].lower() == 'float':
-          mvalue = float(value)
+        if value.find(',') != -1:
+          valueList = value.split(',')
+          mvalue = valueList
+          if mtype[0:3].lower() == 'int':
+            mvalue = [ int(x) for x in valueList if not x in ['Missing','Any'] ]
+            mvalue += [ x for x in valueList if x in ['Missing','Any'] ]
+          if mtype[0:5].lower() == 'float':
+            mvalue = [ float(x) for x in valueList if not x in ['Missing','Any'] ]
+            mvalue += [ x for x in valueList if x in ['Missing','Any'] ]
+        else:  
+          mvalue = value
+          if not value in ['Missing','Any']:
+            if mtype[0:3].lower() == 'int':
+              mvalue = int(value)
+            if mtype[0:5].lower() == 'float':
+              mvalue = float(value)
         metaDict[name] = mvalue
+        
+        print mvalue
+        
       except Exception,x:
         print "Error:",str(x)
         return  
