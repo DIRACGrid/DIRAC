@@ -64,6 +64,16 @@ class DirectoryMetadata:
   def setMetadata(self,dpath,metaName,metaValue,credDict):
     """ Set the value of a given metadata field for the the given directory path
     """
+    result = self.getMetadataFields(credDict)
+    if not result['OK']:
+      return result
+    metaFields = result['Value']
+    
+    if not metaName in metaFields:
+      result = self.setMetaParameter(dpath,metaName,metaValue,credDict)
+      result['Warning'] = "Added metadata is not searchable"
+      return result
+    
     result = self.dtree.findDir(dpath)
     if not result['OK']:
       return result
@@ -88,6 +98,62 @@ class DirectoryMetadata:
         return result       
         
     return S_OK() 
+  
+  def setMetaParameter(self,dpath,metaName,metaValue,credDict):
+    """ Set an meta parameter - metadata which is not used in the the data
+        search operations
+    """
+    result = self.dtree.findDir(dpath)
+    if not result['OK']:
+      return result
+    dirID = result['Value']
+    if not dirID:
+      return S_ERROR('%s: directory not found' % dpath)
+    
+    result = self._insert('FC_DirMeta',
+                          ['DirID','MetaKey','MetaValue'],
+                          [dirID,metaName,str(metaValue)])
+    return result
+  
+  def getDirectoryMetaParameters(self,dpath,credDict,inherited=True,owndata=True):
+    """ Get meta parameters for the given directory
+    """
+    if inherited:
+      result = self.dtree.getPathIDs(dpath)
+      if not result['OK']:
+        return result
+      pathIDs = result['Value']
+      dirID = pathIDs[-1]
+    else:
+      result = self.dtree.findDir(dpath)
+      if not result['OK']:
+        return result
+      dirID = result['Value']
+      if not dirID:
+        return S_ERROR('%s: directory not found' % dpath)  
+      pathIDs = [dirID]
+      
+    if len(pathIDs) > 1:  
+      pathString = ','.join( [ str(x) for x in pathIDs ] )
+      req = "SELECT DirID,MetaKey,MetaValue from FC_DirMeta where DirID in (%s)" % pathString
+    else:
+      req = "SELECT DirID,MetaKey,MetaValue from FC_DirMeta where DirID=%d " % dirID
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      return S_OK({})
+    metaDict = {}
+    for dID,key,value in result['Value']:
+      if metaDict.has_key(key):
+        if type(metaDict[key]) == ListType:
+          metaDict[key].append(value)
+        else:
+          metaDict[key] = [metaDict[key]].append(value) 
+      else:
+        metaDict[key] = value
+        
+    return S_OK(metaDict)             
   
   def getDirectoryMetadata(self,path,credDict,inherited=True,owndata=True):
     """ Get metadata for the given directory aggregating metadata for the directory itself
@@ -120,6 +186,11 @@ class DirectoryMetadata:
       if result['Value']:
         metaDict[meta] = result['Value'][0][0]
       
+    # Get also non-searchable data  
+    result = self.getDirectoryMetaParameters(path,credDict,inherited,owndata) 
+    if result['OK']:
+      metaDict.update(result['Value'])
+       
     return S_OK(metaDict)  
 
 ############################################################################################
