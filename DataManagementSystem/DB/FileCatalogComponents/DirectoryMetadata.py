@@ -7,7 +7,7 @@
 
 __RCSID__ = "$Id:  $"
 
-import time, os
+import time, os, types
 from DIRAC import S_OK, S_ERROR
 
 class DirectoryMetadata:
@@ -128,10 +128,19 @@ class DirectoryMetadata:
 #
 ############################################################################################  
   def __findSubdirByMeta(self,meta,value,subdirFlag=True):
-    """ Find directories for the given meta datum
+    """ Find directories for the given meta datum. If the the meta datum type is a list,
+        combine values in OR. In case the meta datum is 'Any', finds all the subdirectories
+        for which the meta datum is defined at all.
     """
-    
-    req = " SELECT DirID from FC_Meta_%s WHERE Value='%s' " % (meta,value)
+  
+    if type(value) == types.ListType:
+      vString = ','.join( [ "'"+str(x)+"'" for x in value] )
+      req = " SELECT DirID FROM FC_Meta_%s WHERE Value IN (%s) " % (meta,vString)
+    else:  
+      if value == "Any":
+        req = " SELECT DirID FROM FC_Meta_%s " % meta
+      else:  
+        req = " SELECT DirID FROM FC_Meta_%s WHERE Value='%s' " % (meta,value)
     result = self._query(req)
     if not result['OK']:
       return result
@@ -150,6 +159,25 @@ class DirectoryMetadata:
       
     return S_OK(dirList)  
   
+  def __findSubdirMissingMeta(self,meta):
+    """ Find directories not having the given meta datum defined
+    """
+    result = self.__findSubdirByMeta(meta,'Any')
+    if not result['OK']:
+      return result
+    dirList = result['Value']
+    table = self.dtree.getTreeTable()
+    dirString = ','.join( [ str(x) for x in dirList ] )
+    req = 'SELECT DirID FROM %s WHERE DirID NOT IN ( %s )' % (table,dirString)
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      return S_OK([])
+    
+    dirList = [ x[0] for x in result['Value'] ]
+    return S_OK(dirList)        
+  
   def findDirectoriesByMetadata(self,metaDict,credDict):
     """ Find Directories satisfying the given metadata
     """
@@ -157,7 +185,10 @@ class DirectoryMetadata:
     dirList = []
     first = True
     for meta,value in metaDict.items():
-      result = self.__findSubdirByMeta(meta,value)
+      if value == "Missing":
+        result = self.__findSubdirMissingMeta(meta)
+      else:  
+        result = self.__findSubdirByMeta(meta,value)
       if not result['OK']:
         return result
       mList = result['Value']
@@ -290,9 +321,6 @@ class DirectoryMetadata:
       any = False
       for meta,value in metaDict.items():
         result = self.__findCompatibleDirectories(meta,value,fromList)
-
-        print "AT >>>", meta,value,result
-
         if not result['OK']:
           return result  
         cdirList = result['Value']
