@@ -907,10 +907,7 @@ File Catalog Client $Revision: 1.17 $Date:
               mvalue = int(value)
             if mtype[0:5].lower() == 'float':
               mvalue = float(value)
-        metaDict[name] = mvalue
-        
-        print mvalue
-        
+        metaDict[name] = mvalue        
       except Exception,x:
         print "Error:",str(x)
         return  
