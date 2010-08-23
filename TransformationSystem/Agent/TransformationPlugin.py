@@ -185,11 +185,8 @@ class TransformationPlugin:
     total = 0.0
     for site in shares.keys():   
       share = float(shares[site])
-      if not share:
-        shares.pop(site)
-      else:
-        shares[site] = share
-        total += share
+      shares[site] = share
+      total += share
     for site in shares.keys():
       share = 100.0*(shares[site]/total)
       shares[site] = share
@@ -207,7 +204,9 @@ class TransformationPlugin:
     minShareShortFall = - float("inf")
     for site,cpuShare in cpuShares.items():
       if (candidates) and not (site in candidates):
-        continue 
+        continue
+      if not cpuShare:
+        continue
       existingShare = siteShare[site]
       shareShortFall = cpuShare-existingShare
       if shareShortFall > minShareShortFall:
