@@ -37,7 +37,7 @@ The setupSite method (used by the setup_site.py command) will use the following 
 /LocalInstallation/Databases:     List of Databases to be installed and configured
 /LocalInstallation/Services:      List of System/ServiceName to be setup
 /LocalInstallation/Agents:        List of System/AgentName to be setup
-/LocalInstallation/Portal:        Boolean to setup the Portal (default no)
+/LocalInstallation/WebPortal:     Boolean to setup the Web Portal (default no)
 
 """
 __RCSID__ = "$Id: TaskQueueDirector.py 23253 2010-03-18 08:34:57Z rgracian $"
@@ -817,7 +817,7 @@ def setupSite( scriptCfg, cfg = None ):
   setupDatabases = localCfg.getOption( cfgInstallPath( 'Databases' ), [] )
   setupServices = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Services' ), [] ) ]
   setupAgents = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Agents' ), [] ) ]
-  setupWeb = localCfg.getOption( cfgInstallPath( 'Portal' ), False )
+  setupWeb = localCfg.getOption( cfgInstallPath( 'WebPortal' ), False )
 
   for serviceTuple in setupServices:
     error = ''
@@ -1684,6 +1684,8 @@ def execMySQL( cmd, dbName = 'mysql' ):
   """
   global db
   from DIRAC.Core.Utilities.MySQL import MySQL
+  if not mysqlRootPwd:
+    return S_ERROR('MySQL root password is not defined')
   if dbName not in db:
     db[dbName] = MySQL( mysqlHost, 'root', mysqlRootPwd, dbName )
   if not db[dbName]._connected:
