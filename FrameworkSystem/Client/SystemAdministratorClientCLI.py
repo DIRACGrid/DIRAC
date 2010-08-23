@@ -10,6 +10,8 @@ import cmd
 import sys
 import pprint
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
+from DIRAC.Core.Utilities.InstallTools import *
+from DIRAC import gConfig
 
 class SystemAdministratorClientCLI( cmd.Cmd ):
   """ 
@@ -51,8 +53,6 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       self.__setHost( host )
     else:
       print "Unknown option:", option
-
-
 
   def do_show( self, args ):
     """ 
@@ -114,19 +114,20 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         for compType in rDict:
           for system in rDict[compType]:
             for component in rDict[compType][system]:
-              print  system.ljust( 28 ), component.ljust( 28 ), compType.lower()[:-1].ljust( 7 ),
-              if rDict[compType][system][component]['Setup']:
-                print 'SetUp'.rjust( 12 ),
-              else:
-                print 'NotSetup'.rjust( 12 ),
               if rDict[compType][system][component]['Installed']:
-                print 'Installed'.rjust( 12 ),
-              else:
-                print 'NotInstalled'.rjust( 12 ),
-              print str( rDict[compType][system][component]['RunitStatus'] ).ljust( 7 ),
-              print str( rDict[compType][system][component]['Timeup'] ).rjust( 7 ),
-              print str( rDict[compType][system][component]['PID'] ).rjust( 8 ),
-              print
+                print  system.ljust( 28 ), component.ljust( 28 ), compType.lower()[:-1].ljust( 7 ),
+                if rDict[compType][system][component]['Setup']:
+                  print 'SetUp'.rjust( 12 ),
+                else:
+                  print 'NotSetup'.rjust( 12 ),
+                if rDict[compType][system][component]['Installed']:
+                  print 'Installed'.rjust( 12 ),
+                else:
+                  print 'NotInstalled'.rjust( 12 ),
+                print str( rDict[compType][system][component]['RunitStatus'] ).ljust( 7 ),
+                print str( rDict[compType][system][component]['Timeup'] ).rjust( 7 ),
+                print str( rDict[compType][system][component]['PID'] ).rjust( 8 ),
+                print
     elif option == 'database' or option == 'databases':
       client = SystemAdministratorClient( self.host, self.port )
       result = client.getDatabases()
@@ -173,6 +174,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         if result['Value']['Extensions']:
           for e, v in result['Value']['Extensions'].items():
             print "%s version" % e, v
+        print    
     else:
       print "Unknown option:", option
 
@@ -186,16 +188,17 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
     system = argss[0]
     component = argss[1]
+    nLines = 40
+    if len(argss) > 2:
+      nLines = int(argss[2])
     client = SystemAdministratorClient( self.host, self.port )
-    result = client.getLogTail( system, component, 40 )
+    result = client.getLogTail( system, component, nLines )        
     if not result['OK']:
       print "ERROR:", result['Message']
-    elif result['Value']:
-      for componentName, log in result['Value'].items():
-        print
-        print componentName
-        for l in log.split( '\n' ):
-          print '   ', l
+    elif result['Value']:    
+      for line in result['Value']['_'.join([system,component])].split('\n'):
+        print '   ',line
+    
     else:
       print "No logs found"
 
@@ -238,7 +241,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         print "ERROR:", result['Message']
         return
       extension, system = result['Value']
-      result = client.addDatabaseOptionsToCS( system, database )
+      # result = client.addDatabaseOptionsToCS( system, database )
+      result = addDatabaseOptionsToCS(gConfig,system, database)
       if not result['OK']:
         print "ERROR:", result['Message']
         return
@@ -252,7 +256,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       component = argss[1]
       client = SystemAdministratorClient( self.host, self.port )
       # First need to update the CS
-      result = client.addDefaultOptionsToCS( option, system, component )
+      # result = client.addDefaultOptionsToCS( option, system, component )
+      extensions = gConfig.getValue('/DIRAC/Extensions',[])
+      result = addDefaultOptionsToCS(gConfig, option, system, component, extensions)
       if not result['OK']:
         print "ERROR:", result['Message']
         return
