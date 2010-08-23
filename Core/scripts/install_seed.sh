@@ -27,10 +27,10 @@
 DIRACUSER=dirac
 #
 # Host where it is allowed to run the script
-DIRACHOST=volhcb17.cern.ch
+DIRACHOST=volhcb29.cern.ch
 #
 # The DN of the host certificate
-DIRACHOSTDN=/DC=ch/DC=cern/OU=computers/CN=volhcb17.cern.ch
+DIRACHOSTDN=/DC=ch/DC=cern/OU=computers/CN=volhcb29.cern.ch
 #
 # The user name of the primary DIRAC administrator
 DIRACADMIN=atsareg
@@ -48,7 +48,7 @@ DIRACADMINEMAIL=atsareg@in2p3.fr
 DESTDIR=/opt/dirac
 #
 # Installation site name
-SiteName=VOLHCB17.cern.ch
+SiteName=VOLHCB29.cern.ch
 #
 # The main VO name
 VO=lhcb
@@ -63,9 +63,13 @@ DIRACSETUP=LHCb-NewProduction
 DIRACINSTANCE=NewProduction
 #
 # DIRAC software version
-DIRACVERSION=v5r0
+DIRACVERSION=HEAD
 #
 # Use the following extensions
+# for example
+# EXTENSION='LHCb EELA'
+# or
+# EXTENSION=Belle
 EXTENSION=LHCb
 #
 # Install Web Portal flag
@@ -239,6 +243,11 @@ DIRAC
     KeyFile = $DESTDIR/etc/grid-security/hostkey.pem
   }
 }
+LocalInstallation
+{
+   UseVersionsDir = yes
+   InstancePath = $DESTDIR
+}
 EOF
 fi
 #################>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -267,6 +276,9 @@ if [ ! -z "$EXTENSION" ]; then
   for ext in $EXTENSION; do
     EXT="-e $ext $EXT"
   done
+fi
+if [ "$INSTALL_WEB" = "yes" ]; then
+  EXT="$EXT -e Web"
 fi
 #
 # Create link to etc directory to prevent etc directory to be created
@@ -324,87 +336,24 @@ EOF
 fi
 chmod +x $DESTDIR/sbin/runsvdir-start
 
-##############################################################
-# Install the minimal set of services which allows a remote 
-# management of the DIRAC setup 
-#
-# Install basic services
-$DESTDIR/pro/scripts/install_service.sh Configuration Server
-$DESTDIR/pro/scripts/install_service.sh Framework SystemAdministrator
+echo "Setting up the site now"
 
-###################<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-# Generate the required Configuration Server configuration
-#
-[ -e $DESTDIR/etc/Configuration_Server.cfg ] && rm -f $DESTDIR/etc/Configuration_Server.cfg
-cat >> $DESTDIR/etc/Configuration_Server.cfg << EOF || exit
-Systems
+# Define components to be installed by default
+[ -f install.cfg ] && rm install.cfg
+cat >> install.cfg << EOF
+DIRAC
 {
   Configuration
   {
-    $DIRACINSTANCE
-    {
-      Services
-      {
-        Server
-        {
-          LogLevel = DEBUG
-          Port = 9135
-          HandlerPath = DIRAC/ConfigurationSystem/Service/ConfigurationHandler.py
-          Protocol = dips
-          Authorization
-          {
-            Default = all
-            commitNewData = CSAdministrator
-          }
-        }
-      }
-    }
+    Master = yes
   }
 }
-EOF
-
-#
-# Generate System Administrator service configuration
-#[ -e $DESTDIR/etc/Framework_SystemAdministrator.cfg ] && rm -f $DESTDIR/etc/Framework_SysAdministrator.cfg
-grep SystemAdministrator $DESTDIR/etc/$CONFIGNAME.cfg > /dev/null || cat >> $DESTDIR/etc/$CONFIGNAME.cfg << EOF || exit
-Systems
+LocalInstallation
 {
-  Framework
-  {
-    $DIRACINSTANCE
-    {
-      Services
-      {
-        SystemAdministrator
-        {
-          LogLevel = DEBUG
-          Port = 9162
-          Protocol = dips
-          Authorization
-          {
-            Default = all
-            commitNewData = CSAdministrator
-          }
-        }
-      }
-    }
-  }
+   Systems = Configuration,Framework
+   Services = Configuration/Server,Framework/SystemAdministrator
+   WebPortal = $INSTALL_WEB
 }
 EOF
 
-#
-# Put the basic services under the runit control
-[ -e  $DESTDIR/startup/Configuration_Server ] || ln -s $DESTDIR/runit/Configuration/Server $DESTDIR/startup/Configuration_Server
-[ -e  $DESTDIR/startup/Framework_SystemAdministrator ] || ln -s $DESTDIR/runit/Framework/SystemAdministrator $DESTDIR/startup/Framework_SystemAdministrator
-
-#
-# Install Web Portal
-if [ ! -z "$INSTALL_WEB" ]; then
-  install_web.sh $DESTDIR $VERDIR $DIRACVERSION $DIRACARCH $DIRACPYTHON $CONFIGNAME
-fi
-
-#
-# Create link to permanent directories
-for dir in etc $DIRACDIRS ; do
-  [ -e $VERDIR/$dir ] || ln -s ../../$dir $VERDIR   || exit 1
-done
+dirac-setup-site install.cfg
