@@ -494,6 +494,7 @@ for file in ( "releases.cfg", "CFG.py", "CFG.pyc", "CFG.pyo" ):
   if os.path.isfile( filePath ):
     os.unlink( filePath )
 
+proPath = cliParams.basePath
 if cliParams.useVersionsDir:
   oldPath = os.path.join( cliParams.basePath, 'old' )
   proPath = os.path.join( cliParams.basePath, 'pro' )
@@ -509,8 +510,43 @@ if cliParams.useVersionsDir:
       os.makedirs( realEtc )
     os.symlink( realEtc, fakeEtc )
   except Exception, x:
-    logERROR( x )
+    logERROR( str( x ) )
     sys.exit( 1 )
+
+# Now create bashrc at basePath
+try:
+  bashrcFile = os.path.join( cliParams.basePath, 'bashrc' )
+  logINFO( 'Creating %s' % bashrcFile )
+  if not os.path.exists( bashrcFile ):
+    lines = [ '# DIRAC bashrc file, used by service and agent run scripts to set environment',
+              'export PYTHONUNBUFFERED=yes',
+              'export PYTHONOPTIMIZE=x' ]
+    if 'HOME' in os.environ:
+      lines.append( '[ -z "$HOME" ] && export HOME=%s' % os.environ['HOME'] )
+    if 'X509_CERT_DIR' in os.environ:
+      lines.append( 'export X509_CERT_DIR=%s' % os.environ( 'X509_CERT_DIR' ) )
+    lines.append( 'export X509_VOMS_DIR=%s' % os.path.join( os.path.join( cliParams.basePath, 'etc', 'grid-security', 'vomsdir' ) ) )
+    lines.extend( ['# Some DIRAC locations',
+                   'export DIRAC=%s' % proPath,
+                   'export DIRACBIN=%s' % os.path.join( proPath, cliParams.platform, 'bin' ),
+                   'export DIRACSCRIPTS=%s' % os.path.join( proPath, 'scripts' ),
+                   'export DIRACLIB=%s' % os.path.join( proPath, cliParams.platform, 'lib' ) ] )
+
+    lines.extend( ['# Clear the PYTHONPATH and the LD_LIBRARY_PATH',
+                  'PYTHONPATH=""',
+                  'LD_LIBRARY_PATH=""'] )
+
+    lines.extend( ['( echo $PATH | grep -q $DIRACBIN ) || export PATH=$DIRACBIN:$PATH',
+                   '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH',
+                   'export LD_LIBRARY_PATH=$DIRACLIB:$DIRACLIB/mysql',
+                   'export PYTHONPATH=$DIRAC'] )
+    lines.append( '' )
+    f = open( bashrcFile, 'w' )
+    f.write( '\n'.join( lines ) )
+    f.close()
+except Exception, x:
+ logERROR( str( x ) )
+ sys.exit( 1 )
 
 logINFO( "DIRAC release %s successfully installed" % cliParams.release )
 sys.exit( 0 )
