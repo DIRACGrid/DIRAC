@@ -494,7 +494,7 @@ for file in ( "releases.cfg", "CFG.py", "CFG.pyc", "CFG.pyo" ):
   if os.path.isfile( filePath ):
     os.unlink( filePath )
 
-proPath = cliParams.basePath
+proPath = cliParams.targetPath
 if cliParams.useVersionsDir:
   oldPath = os.path.join( cliParams.basePath, 'old' )
   proPath = os.path.join( cliParams.basePath, 'pro' )
@@ -515,7 +515,7 @@ if cliParams.useVersionsDir:
 
 # Now create bashrc at basePath
 try:
-  bashrcFile = os.path.join( cliParams.basePath, 'bashrc' )
+  bashrcFile = os.path.join( cliParams.targetPath, 'bashrc' )
   logINFO( 'Creating %s' % bashrcFile )
   if not os.path.exists( bashrcFile ):
     lines = [ '# DIRAC bashrc file, used by service and agent run scripts to set environment',
@@ -525,7 +525,7 @@ try:
       lines.append( '[ -z "$HOME" ] && export HOME=%s' % os.environ['HOME'] )
     if 'X509_CERT_DIR' in os.environ:
       lines.append( 'export X509_CERT_DIR=%s' % os.environ( 'X509_CERT_DIR' ) )
-    lines.append( 'export X509_VOMS_DIR=%s' % os.path.join( os.path.join( cliParams.basePath, 'etc', 'grid-security', 'vomsdir' ) ) )
+    lines.append( 'export X509_VOMS_DIR=%s' % os.path.join( os.path.join( cliParams.targetPath, 'etc', 'grid-security', 'vomsdir' ) ) )
     lines.extend( ['# Some DIRAC locations',
                    'export DIRAC=%s' % proPath,
                    'export DIRACBIN=%s' % os.path.join( proPath, cliParams.platform, 'bin' ),
