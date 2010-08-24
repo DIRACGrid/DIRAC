@@ -27,7 +27,7 @@ from DIRAC.Core.DISET.RPCClient                                     import RPCCl
 from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
 from DIRAC.Core.Utilities.Subprocess                                import systemCall, shellCall
 from DIRAC.Core.Utilities.Subprocess                                import Subprocess
-from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize,getGlobbedFiles
+from DIRAC.Core.Utilities.File                                      import getGlobbedTotalSize, getGlobbedFiles
 from DIRAC.Core.Utilities.Version                                   import getCurrentVersion
 from DIRAC.Core.Utilities                                           import List
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gLogger, List
@@ -369,6 +369,8 @@ class JobWrapper:
       threadResult = EXECUTION_RESULT['Thread']
       if not threadResult['OK']:
         self.log.error( 'Failed to execute the payload', threadResult['Message'] )
+        if 'Value' in threadResult:
+          outputs = threadResult['Value']
       else:
         outputs = threadResult['Value']
 
@@ -793,10 +795,10 @@ class JobWrapper:
     uploaded = []
 
     #Check whether list of outputData has a globbable pattern
-    globbedOutputList = List.uniqueElements(getGlobbedFiles(outputData))
-    if not globbedOutputList==outputData:
-      self.log.info('Found a pattern in the output data file list, files to upload are: %s' %(string.join(globbedOutputList,', ')))
-      outputData = globbedOutputList    
+    globbedOutputList = List.uniqueElements( getGlobbedFiles( outputData ) )
+    if not globbedOutputList == outputData:
+      self.log.info( 'Found a pattern in the output data file list, files to upload are: %s' % ( string.join( globbedOutputList, ', ' ) ) )
+      outputData = globbedOutputList
 
     pfnGUID = {}
     result = getGUID( outputData )
