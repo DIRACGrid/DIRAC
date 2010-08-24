@@ -8,6 +8,10 @@
 # to manage the composition of the DIRAC service remotely. The script should
 # be only used for the initial installation and not for the software updates. 
 #
+# The installation is described in the CFG file which is passed to the script
+# as a single argument. See DIRAC documentation for the contents of the
+# installation CFG file.
+#
 # Points to check before the installation can be done:
 # 1. The local user account under which the services will be running should
 #    be created ( typically 'dirac' login name )
@@ -20,70 +24,66 @@
 #
 # Authors: R.Graciani, A.T.
 ########################################################################
+CFG=$1
 #
 # Check the following settings before installation 
 #
-# User allowed to execute the script
-DIRACUSER=dirac
+# Installation options. These options determine which  
+# DIRAC software and which versions will be installed
+# and where
 #
-# Host where it is allowed to run the script
-DIRACHOST=volhcb29.cern.ch
+# The root of the DIRAC installation - mandatory
+DESTDIR=`grep InstancePath $CFG | grep -v '#' | cut -d '=' -f 2 | sed -e 's/ //g'`
+if [ -z "$DESTDIR" ]; then
+  echo InstancePath is not specified, exiting
+fi 
+# DIRAC software version - mandatory
+DIRACVERSION=`grep DiracVersion $CFG | grep -v '#' | cut -d '=' -f 2 | sed -e 's/ //g'`
+if [ -z "$DIRACVERSION" ]; then
+  echo DIRAC version is not specified, using HEAD by default
+  DIRACVERSION=HEAD
+fi
 #
-# The DN of the host certificate
-DIRACHOSTDN=/DC=ch/DC=cern/OU=computers/CN=volhcb29.cern.ch
-#
-# The user name of the primary DIRAC administrator
-DIRACADMIN=atsareg
-#
-# The DN of the the primary DIRAC administrator
-DIRACADMINDN='/O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Andrei Tsaregorodtsev'
-#
-# The CN of the admin user certificate issuer
-DIRACADMINCN=/C=FR/O=CNRS/CN=GRID2-FR
-#
-# The e-mail address of the admin user 
-DIRACADMINEMAIL=atsareg@in2p3.fr
-#
-# Location of the installation
-DESTDIR=/opt/dirac
-#
-# Installation site name
-SiteName=VOLHCB29.cern.ch
-#
-# The main VO name
-VO=lhcb
-#
-# The name of the master configuration database
-CONFIGNAME=LHCb-Prod
-#
-# The DIRAC setup name to which the local instance belongs
-DIRACSETUP=LHCb-NewProduction
-#
-# The name of the local service instance 
-DIRACINSTANCE=NewProduction
-#
-# DIRAC software version
-DIRACVERSION=HEAD
-#
-# Use the following extensions
-# for example
+# Use the following DIRAC software extensions, for example
 # EXTENSION='LHCb EELA'
 # or
 # EXTENSION=Belle
-EXTENSION=LHCb
+# No extensions by default
+EXTENSION=`grep Extensions $CFG | grep -v '#' | cut -d '=' -f 2 | sed -e 's/ //g' | sed -e 's/,/ /g'`
 #
-# Install Web Portal flag
-INSTALL_WEB=yes
+# Install Web Portal flag (yes/no). Default is no 
+INSTALL_WEB=`grep WebPortal $CFG | grep -v '#' | cut -d '=' -f 2 | sed -e 's/ //g'`
 #
-# The binary platform as evaluated by the dirac-platform script 
-DIRACARCH=Linux_x86_64_glibc-2.5
+# The binary platform as evaluated by the dirac-platform script. 
+# Specify it only if the default platform evaluation is not acceptable
+#DIRACARCH=Linux_x86_64_glibc-2.5
 #
-# The version of the python interpreter
-DIRACPYTHON=25
+# The version of the python interpreter ( 24 for Python 2.4; 25 for Python 2.5 - default )
+DIRACPYTHON=`grep PythonVersion $CFG | grep -v '#' | cut -d '=' -f 2 | sed -e 's/ //g'`
+if [ -z "$DIRACPYTHON" ]; then
+  echo DIRAC Python version is not specified, using 2.5 by default
+  DIRACPYTHON=25
+fi
 #
-# The version of the LCG middleware
-LCGVERSION=2009-08-13
+# The version of the LCG middleware packaged by DIRAC if needed.
+# It is needed if thrid party grid services are to be used, e.g. VOMS, MyProxy,
+# gLite WMS, etc
+LCGVERSION=`grep LCGVersion $CFG | grep -v '#' | cut -d '=' -f 2 | sed -e 's/ //g'`
 
+#################################################################
+# DIRAC Basic Configuration 
+#
+# In the following the install.cfg file is generated with the
+# basic configuration parameters and the choice of components.
+#
+
+# Prepare some variables
+if [ ! -z "$EXTENSION" ]; then
+  for ext in $EXTENSION; do
+    INSTALL_EXT="-e $ext $INSTALL_EXT"
+    CONFIG_EXT="$ext,$CONFIG_EXT"
+  done
+fi
 ######################################################################
 #
 # The installation starts here
@@ -92,17 +92,6 @@ LCGVERSION=2009-08-13
 
 DIRACDIRS="startup runit data work control sbin"
 
-# check if we are called in the right host
-echo Checking the host name
-if [ "`hostname -f`" != "$DIRACHOST" ] ; then
-  echo $0 should be run at $DIRACHOST
-fi
-# check if we are the right user
-echo Checking the user
-if [ $USER != $DIRACUSER ] ; then
-  echo $0 should be run by $DIRACUSER
-  exit
-fi
 # make sure $DESTDIR is available
 mkdir -p $DESTDIR || exit 1
 
@@ -121,135 +110,6 @@ if [ ! -d $DESTDIR/etc ]; then
   exit 1
 fi
 
-###################<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-# Generate the minimally required global configuration
-#
-if [ ! -e $DESTDIR/etc/$CONFIGNAME.cfg ] ; then
-
-  echo Generate $CONFIGNAME.cfg file
-
-#
-# Add Extensions option
-  CONFIGEXT=
-  if [ ! -z "$EXTENSION" ]; then
-    EXT=`echo $EXTENSION | sed 's/ /,/'`
-    CONFIGEXT="Extensions = $EXT"
-  fi
-
-  cat >> $DESTDIR/etc/$CONFIGNAME.cfg << EOF || exit
-DIRAC
-{
-  Configuration
-  {
-    Servers = dips://$DIRACHOST:9135/Configuration/Server
-    Name = $CONFIGNAME
-  }
-  Setups
-  {
-    $DIRACSETUP
-    {
-      Configuration = $DIRACINSTANCE
-      Framework = $DIRACINSTANCE
-    }
-  }
-  $CONFIGEXT
-  VirtualOrganization = $VO
-}
-Registry
-{
-  DefaultGroup = ${VO}_user
-  Hosts
-  {
-    host-$DIRACHOST
-    {
-      DN = $DIRACHOSTDN
-      Properties  = JobAdministrator
-      Properties += FullDelegation
-      Properties += Operator
-      Properties += CSAdministrator
-      Properties += ProductionManagement
-      Properties += AlarmsManagement
-      Properties += ProxyManagement
-      Properties += TrustedHost
-    }
-  }
-  Groups
-  {
-    diracAdmin
-    {
-      Users = $DIRACADMIN
-      Properties  = Operator
-      Properties += FullDelegation
-      Properties += ProxyManagement
-      Properties += NormalUser
-      Properties += ServiceAdministrator
-      Properties += JobAdministrator
-      Properties += CSAdministrator
-      Properties += AlarmsManagement
-    }
-    ${VO}_user
-    {
-      Users = $DIRACADMIN
-      Properties = NormalUser
-    }
-    ${VO}_pilot
-    {
-      Users = $DIRACADMIN
-      Properties = GenericPilot, LimitedDelegation, Pilot
-    }
-  }
-  Users
-  {
-    $DIRACADMIN
-    {
-      DN = $DIRACADMINDN
-      CN = $DIRACADMINCN
-      Email = $DIRACADMINEMAIL
-    }
-  }
-}
-EOF
-fi
-#################>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-#################<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-# Generate the minimally required local configuration
-#
-if [ ! -e $DESTDIR/etc/dirac.cfg ] ; then
-  cat >> $DESTDIR/etc/dirac.cfg << EOF || exit
-LocalSite
-{
-  EnableAgentMonitoring = yes
-}
-DIRAC
-{
-  Setup = $DIRACSETUP
-  Setups
-  {
-    $DIRACSETUP
-    {
-      Configuration = $DIRACINSTANCE
-    }
-  }
-  Configuration
-  {
-    Master = yes
-    Servers = dips://$DIRACHOST:9135/Configuration/Server
-    Name = $CONFIGNAME
-  }
-  Security
-  {
-    CertFile = $DESTDIR/etc/grid-security/hostcert.pem
-    KeyFile = $DESTDIR/etc/grid-security/hostkey.pem
-  }
-}
-LocalInstallation
-{
-   UseVersionsDir = yes
-   InstancePath = $DESTDIR
-}
-EOF
-fi
 #################>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 for dir in $DIRACDIRS ; do
@@ -271,27 +131,31 @@ echo Downloading dirac-install.py script
 wget http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/dirac-install.py
 
 # Prepare the list of extensions
-EXT=''
-if [ ! -z "$EXTENSION" ]; then
-  for ext in $EXTENSION; do
-    EXT="-e $ext $EXT"
-  done
-fi
 if [ "$INSTALL_WEB" = "yes" ]; then
-  EXT="$EXT -e Web"
+  INSTALL_EXT="$INSTALL_EXT -e Web"
 fi
 #
 # Create link to etc directory to prevent etc directory to be created
 [ -e $VERDIR/etc ] || ln -s ../../etc $VERDIR   || exit 1
 
+INSTALL_ARGS=" -t server -P $VERDIR $INSTALL_EXT"
+[ ! -z "$DIRACARCH" ] && INSTALL_ARGS="$INSTALL_ARGS -p $DIRACARCH"
+[ ! -z "$LCGVERSION" ] && INSTALL_ARGS="$INSTALL_ARGS -g $LCGVERSION"
+[ ! -z "$DIRACPYTHON" ] && INSTALL_ARGS="$INSTALL_ARGS -i $DIRACPYTHON"
+if [ ! -z "$DIRACVERSION" ]; then
+   INSTALL_ARGS="$INSTALL_ARGS -r $DIRACVERSION"
+else
+   INSTALL_ARGS="$INSTALL_ARGS -r HEAD"
+fi
+
 echo Installing DIRAC software
-echo python dirac-install.py -t server -P $VERDIR -r $DIRACVERSION -g $LCGVERSION -p $DIRACARCH -i $DIRACPYTHON $EXT || exit 1
-     python dirac-install.py -t server -P $VERDIR -r $DIRACVERSION -g $LCGVERSION -p $DIRACARCH -i $DIRACPYTHON $EXT || exit 1
+echo python dirac-install.py $INSTALL_ARGS $CFG || exit 1
+     python dirac-install.py $INSTALL_ARGS $CFG || exit 1
 
 #
 # Do the standard DIRAC configuration
 echo 
-  $VERDIR/scripts/dirac-configure -n $SiteName --UseServerCertificate -o /LocalSite/Root=$ROOT/pro -V $VO --SkipCAChecks || exit 1
+  $VERDIR/scripts/dirac-configure --UseServerCertificate -o /LocalSite/Root=$ROOT/pro --SkipCAChecks || exit 1
 echo
 
 #
@@ -299,6 +163,10 @@ echo
 old=$DESTDIR/old
 pro=$DESTDIR/pro
 [ -L $old ] && rm $old; [ -e $old ] && exit 1; [ -L $pro ] && mv $pro $old; [ -e $pro ] && exit 1; ln -s $VERDIR $pro || exit 1
+
+if [ -z "$DIRACARCH" ]; then
+  DIRACARCH=`$VERDIR/scripts/dirac-platform`
+fi 
 
 #
 # Create bin link
@@ -338,22 +206,4 @@ chmod +x $DESTDIR/sbin/runsvdir-start
 
 echo "Setting up the site now"
 
-# Define components to be installed by default
-[ -f install.cfg ] && rm install.cfg
-cat >> install.cfg << EOF
-DIRAC
-{
-  Configuration
-  {
-    Master = yes
-  }
-}
-LocalInstallation
-{
-   Systems = Configuration,Framework
-   Services = Configuration/Server,Framework/SystemAdministrator
-   WebPortal = $INSTALL_WEB
-}
-EOF
-
-dirac-setup-site install.cfg
+dirac-setup-site $CFG
