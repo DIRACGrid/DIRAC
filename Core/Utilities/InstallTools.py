@@ -260,7 +260,7 @@ def _getCentralCfg( installCfg ):
   # DIRAC/Extensions
   extensions = localCfg.getOption( cfgInstallPath( 'Extensions' ), [] )
   while 'Web' in list( extensions ):
-    extensions.remove( value )
+    extensions.remove( 'Web' )
   centralCfg.createNewSection( 'DIRAC', '' )
   if extensions:
     centralCfg['DIRAC'].addKey( 'Extensions', ','.join( extensions ), '' )
