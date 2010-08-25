@@ -19,7 +19,7 @@ The Following Options are used:
 /LocalInstallation/InstancePath:    Location where runit and startup directories are created (default rootPath)
 /LocalInstallation/UseVersionsDir:  DIRAC is installed under versions/<Versioned Directory> with a link from pro
                                     (This option overwrites RootPath and InstancePath)
-/LocalInstallation/Host:            Used when build the URL to be published for the installed service
+/LocalInstallation/Host:            Used when build the URL to be published for the installed service (default: socket.getfqdn())
 /LocalInstallation/RunitDir:        Location where runit directory is created (default InstancePath/runit)
 /LocalInstallation/StartupDir:      Location where startup directory is created (default InstancePath/startup)
 /LocalInstallation/MySQLDir:        Location where mysql databases are created (default InstancePath/mysql)
@@ -49,8 +49,6 @@ If a Master Configuration Server is being installed the following Options can be
 /LocalInstallation/AdminUserEmail: Email of the Admin user (default: None )
 /LocalInstallation/AdminGroupName: Name of the Admin group (default: dirac_admin )
 
-/LocalInstallation/Host: Name of the installation host (default: the current host )
-/LocalInstallation/HostType: Type of the installation host Normal or Power (default: Normal )
 /LocalInstallation/HostDN: DN of the host certificate (default: None )
 
 /LocalInstallation/VirtualOrganization: Name of the main Virtual Organization (default: None)
@@ -258,6 +256,19 @@ def _getCentralCfg( installCfg ):
   """
   # First copy over from installation cfg
   centralCfg = CFG()
+
+  # DIRAC/Extensions
+  extensions = localCfg.getOption( cfgInstallPath( 'Extensions' ), [] )
+  while 'Web' in list( extensions ):
+    extensions.remove( value )
+  centralCfg.createNewSection( 'DIRAC', '' )
+  if extensions:
+    centralCfg['DIRAC'].addKey( 'Extensions', ','.join( extensions ), '' )
+
+  vo = localCfg.getOption( cfgInstallPath( 'VirtualOrganization' ), '' )
+  if vo:
+    centralCfg['DIRAC'].addKey( 'VirtualOrganization', vo, '' )
+
   for section in [ 'Systems', 'Resources', 'Operations', 'WebSite', 'Registry' ]:
     if installCfg.isSection( section ):
       centralCfg.createNewSection( section, contents = installCfg[section] )
@@ -268,16 +279,12 @@ def _getCentralCfg( installCfg ):
   adminUserDN = localCfg.getOption( cfgInstallPath( 'AdminUserDN' ), '' )
   adminUserEmail = localCfg.getOption( cfgInstallPath( 'AdminUserEmail' ), '' )
   adminGroupName = localCfg.getOption( cfgInstallPath( 'AdminGroupName' ), 'dirac_admin' )
-  installHost = localCfg.getOption( cfgInstallPath( 'Host' ), '' )
-  if not installHost:
-    installHost = socket.getfqdn()
-  hostType = localCfg.getOption( cfgInstallPath( 'HostType' ), 'Normal' )    
+  hostType = localCfg.getOption( cfgInstallPath( 'HostType' ), 'Normal' )
   hostDN = localCfg.getOption( cfgInstallPath( 'HostDN' ), '' )
   defaultGroupName = 'user'
   adminGroupProperties = ['CSAdministrator', 'ServiceAdministrator', 'JobAdministrator', 'Operator', 'FullDelegation', 'ProxyManagment', 'AlarmsManagement']
   defaultGroupProperties = ['NormalUser']
-  defaultHostProperties = []
-  masterHostProperties = [ 'JobAdministrator','FullDelegation','Operator','CSAdministrator','ProxyManagement','TrustedHost']
+  defaultHostProperties = [ 'JobAdministrator', 'FullDelegation', 'Operator', 'CSAdministrator', 'ProxyManagement', 'TrustedHost']
 
   if adminUserName:
     if not ( adminUserDN and adminUserEmail ):
@@ -290,7 +297,7 @@ def _getCentralCfg( installCfg ):
                       cfgPath( 'Registry', 'Groups', defaultGroupName ),
                       cfgPath( 'Registry', 'Groups', adminGroupName ),
                       cfgPath( 'Registry', 'Hosts' ),
-                      cfgPath( 'Registry', 'Hosts', installHost ) ]:
+                      cfgPath( 'Registry', 'Hosts', host ) ]:
         section, centralCfg.isSection( section )
         if not centralCfg.isSection( section ):
           centralCfg.createNewSection( section )
@@ -321,33 +328,30 @@ def _getCentralCfg( installCfg ):
       for property in adminGroupProperties:
         if property not in properties:
           properties.append( property )
-          print adminGroupName, property
           centralCfg['Registry']['Groups'][adminGroupName].appendToOption( 'Properties', ', %s' % property )
 
       properties = centralCfg['Registry']['Groups'][defaultGroupName].getOption( 'Properties', [] )
       for property in defaultGroupProperties:
         if property not in properties:
           properties.append( property )
-          print defaultGroupName, property
           centralCfg['Registry']['Groups'][defaultGroupName].appendToOption( 'Properties', ', %s' % property )
-          
-      # Add the master Host description  
-      if centralCfg['Registry']['Hosts'][installHost].existsKey( 'DN' ):
-        centralCfg['Registry']['Hosts'][installHost].deleteKey( 'DN' )
-      centralCfg['Registry']['Hosts'][installHost].addKey('DN',hostDN,'')  
-      if not centralCfg['Registry']['Hosts'][installHost].isOption( 'Properties' ):
-        centralCfg['Registry']['Hosts'][installHost].addKey( 'Properties', '', '' )    
-      properties = centralCfg['Registry']['Hosts'][installHost].getOption( 'Properties', [] )
-      if hostType == "Power":
-        hostProperties = masterHostProperties
-      elif hostType == "Normal":
-        hostProperties = defaultHostProperties     
-      for property in hostProperties:
-        if property not in properties:
-          properties.append( property )
-          print installHost, property
-          centralCfg['Registry']['Hosts'][installHost].appendToOption( 'Properties', ', %s' % property )    
 
+      # Add the master Host description
+      if hostDN:
+        if centralCfg['Registry']['Hosts'][host].existsKey( 'DN' ):
+          centralCfg['Registry']['Hosts'][host].deleteKey( 'DN' )
+        centralCfg['Registry']['Hosts'][host].addKey( 'DN', hostDN, '' )
+        if not centralCfg['Registry']['Hosts'][host].isOption( 'Properties' ):
+          centralCfg['Registry']['Hosts'][host].addKey( 'Properties', '', '' )
+        properties = centralCfg['Registry']['Hosts'][host].getOption( 'Properties', [] )
+        for property in defaultHostProperties:
+          if property not in properties:
+            properties.append( property )
+            centralCfg['Registry']['Hosts'][host].appendToOption( 'Properties', ', %s' % property )
+
+  if adminUserEmail:
+    operationsCfg = __getCfg( 'Operations/EMail', 'Production', adminUserEmail )
+    centralCfg = centralCfg.mergeWith( operationsCfg )
 
   return centralCfg
 
@@ -902,6 +906,7 @@ def setupSite( scriptCfg, cfg = None ):
   # by default use dirac.cfg, but if a cfg is given use it and
   # merge it into the dirac.cfg
   diracCfg = CFG()
+  installCfg = None
   if cfg:
     try:
       installCfg = CFG()
@@ -1037,7 +1042,10 @@ def setupSite( scriptCfg, cfg = None ):
     cfg.setOption( cfgPath( 'DIRAC', 'Configuration', 'Name' ) , setupConfigurationName )
     _addCfgToDiracCfg( cfg )
     addDefaultOptionsToComponentCfg( 'service', 'Configuration', 'Server', [] )
-    centralCfg = _getCentralCfg( installCfg )
+    if installCfg:
+      centralCfg = _getCentralCfg( installCfg )
+    else:
+      centralCfg = _getCentralCfg( localCfg )
     _addCfgToLocalCS( centralCfg )
     setupComponent( 'service', 'Configuration', 'Server', [] )
     runsvctrlComponent( 'Configuration', 'Server', 't' )
