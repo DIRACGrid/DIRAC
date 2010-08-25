@@ -516,6 +516,8 @@ if cliParams.useVersionsDir:
 # Now create bashrc at basePath
 try:
   bashrcFile = os.path.join( cliParams.targetPath, 'bashrc' )
+  if cliParams.useVersionsDir:
+    bashrcFile = os.path.join( cliParams.basePath, 'bashrc' )
   logINFO( 'Creating %s' % bashrcFile )
   if not os.path.exists( bashrcFile ):
     lines = [ '# DIRAC bashrc file, used by service and agent run scripts to set environment',
