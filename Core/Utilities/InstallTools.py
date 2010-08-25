@@ -38,6 +38,8 @@ The setupSite method (used by the setup_site.py command) will use the following 
 /LocalInstallation/Services:      List of System/ServiceName to be setup
 /LocalInstallation/Agents:        List of System/AgentName to be setup
 /LocalInstallation/WebPortal:     Boolean to setup the Web Portal (default no)
+/LocalInstallation/ConfigurationMaster: Boolean, requires Configuration/Server to be given in the list of Services (default: no)
+/LocalInstallation/ConfigurationName: Name of the Configuration (default: Setup )
 
 """
 __RCSID__ = "$Id: TaskQueueDirector.py 23253 2010-03-18 08:34:57Z rgracian $"
@@ -818,6 +820,8 @@ def setupSite( scriptCfg, cfg = None ):
   setupServices = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Services' ), [] ) ]
   setupAgents = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Agents' ), [] ) ]
   setupWeb = localCfg.getOption( cfgInstallPath( 'WebPortal' ), False )
+  setupConfigurationMaster = localCfg.getOption( cfgInstallPath( 'ConfigurationMaster' ), False )
+  setupConfigurationName = localCfg.getOption( cfgInstallPath( 'ConfigurationName' ), setup )
 
   for serviceTuple in setupServices:
     error = ''
@@ -914,10 +918,13 @@ def setupSite( scriptCfg, cfg = None ):
       gLogger.info( 'Starting runsvdir ...' )
       os.system( "runsvdir %s 'log:  DIRAC runsv' &" % startDir )
 
-  if ['Configuration', 'Server'] in setupServices and diracCfg.getOption( cfgPath( 'DIRAC', 'Configuration', 'Master' ), False ):
+  if ['Configuration', 'Server'] in setupServices and setupConfigurationMaster:
     # This server hosts the Master of the CS
     gLogger.info( 'Installing Master Configuration Server' )
     cfg = __getCfg( cfgPath( 'DIRAC', 'Setups', setup ), 'Configuration', instance )
+    _addCfgToDiracCfg( cfg )
+    cfg = __getCfg( cfgPath( 'DIRAC', 'Configuration' ), 'Master' , 'yes' )
+    cfg.setOption( cfgPath( 'DIRAC', 'Configuration', 'Name' ) , setupConfigurationName )
     _addCfgToDiracCfg( cfg )
     addDefaultOptionsToComponentCfg( 'service', 'Configuration', 'Server', [] )
     _addCfgToLocalCS( centralCfg )
@@ -1685,7 +1692,7 @@ def execMySQL( cmd, dbName = 'mysql' ):
   global db
   from DIRAC.Core.Utilities.MySQL import MySQL
   if not mysqlRootPwd:
-    return S_ERROR('MySQL root password is not defined')
+    return S_ERROR( 'MySQL root password is not defined' )
   if dbName not in db:
     db[dbName] = MySQL( mysqlHost, 'root', mysqlRootPwd, dbName )
   if not db[dbName]._connected:
@@ -1736,4 +1743,3 @@ def execCommand( timeout, cmd ):
   gLogger.verbose( result['Value'][1] )
 
   return result
-
