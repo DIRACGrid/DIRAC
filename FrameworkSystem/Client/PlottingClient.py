@@ -74,7 +74,7 @@ class PlottingClient:
       return result
     
     plotName = result['Value']
-    if fname or fname != 'Memory':
+    if fname and fname != 'Memory':
       result = self.getPlotToFile(plotName,fname)
     else:
       result = self.getPlotToMemory(plotName)
