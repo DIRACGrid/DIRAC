@@ -58,7 +58,7 @@ installDir=`grep TargetPath $installCfg | grep -v '#' | cut -d '=' -f 2 | sed -e
 #
 mkdir -p $installDir || exit
 #
-python dirac-install $installCfg
+python dirac-install -t server $installCfg
 source $installDir/bashrc
 dirac-configure $installCfg $DEBUG 
 dirac-setup-site $installCfg $DEBUG
