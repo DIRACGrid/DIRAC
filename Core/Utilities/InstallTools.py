@@ -39,7 +39,15 @@ The setupSite method (used by the setup_site.py command) will use the following 
 /LocalInstallation/Agents:        List of System/AgentName to be setup
 /LocalInstallation/WebPortal:     Boolean to setup the Web Portal (default no)
 /LocalInstallation/ConfigurationMaster: Boolean, requires Configuration/Server to be given in the list of Services (default: no)
+
+If a Master Configuration Server is being installed the following Options can be used:
+
 /LocalInstallation/ConfigurationName: Name of the Configuration (default: Setup )
+
+/LocalInstallation/AdminUserName:  Name of the Admin user (default: None )
+/LocalInstallation/AdminUserDN:    DN of the Admin user certificate (default: None )
+/LocalInstallation/AdminUserEmail: Email of the Admin user (default: None )
+/LocalInstallation/AdminGroupName: Name of the Admin group (default: dirac_admin )
 
 """
 __RCSID__ = "$Id: TaskQueueDirector.py 23253 2010-03-18 08:34:57Z rgracian $"
@@ -236,6 +244,80 @@ def _addCfgToLocalCS( cfg ):
   else:
     newCfg = cfg
   return newCfg.writeToFile( csFile )
+
+def _getCentralCfg( installCfg ):
+  """
+  Create the esqueleton of central Cfg for an initial Master CS
+  """
+  # First copy over from installation cfg
+  centralCfg = CFG()
+  for section in [ 'Systems', 'Resources', 'Operations', 'WebSite', 'Registry' ]:
+    if installCfg.isSection( section ):
+      centralCfg.createNewSection( section, contents = installCfg[section] )
+
+  # Now try to add things from the Installation section
+  # Registry
+  adminUserName = localCfg.getOption( cfgInstallPath( 'AdminUserName' ), '' )
+  adminUserDN = localCfg.getOption( cfgInstallPath( 'AdminUserDN' ), '' )
+  adminUserEmail = localCfg.getOption( cfgInstallPath( 'AdminUserEmail' ), '' )
+  adminGroupName = localCfg.getOption( cfgInstallPath( 'AdminGroupName' ), 'dirac_admin' )
+  defaultGroupName = 'user'
+  adminGroupProperties = ['CSAdministrator', 'ServiceAdministrator', 'JobAdministrator', 'Operator', 'FullDelegation', 'ProxyManagment', 'AlarmsManagement']
+  defaultGroupProperties = ['NormalUser']
+
+  if adminUserName:
+    if not ( adminUserDN and adminUserEmail ):
+      gLogger.error( 'AdminUserName is given but DN or Mail is missing it will not be configured' )
+    else:
+      for section in [cfgPath( 'Registry' ),
+                      cfgPath( 'Registry', 'Users' ),
+                      cfgPath( 'Registry', 'Users', adminUserName ),
+                      cfgPath( 'Registry', 'Groups' ),
+                      cfgPath( 'Registry', 'Groups', defaultGroupName ),
+                      cfgPath( 'Registry', 'Groups', adminGroupName ),
+                      cfgPath( 'Registry', 'Hosts' ) ]:
+        section, centralCfg.isSection( section )
+        if not centralCfg.isSection( section ):
+          centralCfg.createNewSection( section )
+
+      if centralCfg['Registry'].existsKey( 'DefaultGroup' ):
+        centralCfg['Registry'].deleteKey( 'DefaultGroup' )
+      centralCfg['Registry'].addKey( 'DefaultGroup', defaultGroupName, '' )
+
+      if centralCfg['Registry']['Users'][adminUserName].existsKey( 'DN' ):
+        centralCfg['Registry']['Users'][adminUserName].deleteKey( 'DN' )
+      centralCfg['Registry']['Users'][adminUserName].addKey( 'DN', adminUserDN, '' )
+
+      if centralCfg['Registry']['Users'][adminUserName].existsKey( 'Email' ):
+        centralCfg['Registry']['Users'][adminUserName].deleteKey( 'Email' )
+      centralCfg['Registry']['Users'][adminUserName].addKey( 'Email' , adminUserEmail, '' )
+
+      # Add Admin User to Admin Group and default group
+      for group in [adminGroupName, defaultGroupName]:
+        if not centralCfg['Registry']['Groups'][group].isOption( 'users' ):
+          centralCfg['Registry']['Groups'][group].addKey( 'users', '', '' )
+        users = centralCfg['Registry']['Groups'][group].getOption( 'users', [] )
+        if adminUserName not in users:
+          centralCfg['Registry']['Groups'][group].appendToOption( 'users', ', %s' % adminUserName )
+        if not centralCfg['Registry']['Groups'][group].isOption( 'Properties' ):
+          centralCfg['Registry']['Groups'][group].addKey( 'Properties', '', '' )
+
+      properties = centralCfg['Registry']['Groups'][adminGroupName].getOption( 'Properties', [] )
+      for property in adminGroupProperties:
+        if property not in properties:
+          properties.append( property )
+          print adminGroupName, property
+          centralCfg['Registry']['Groups'][adminGroupName].appendToOption( 'Properties', ', %s' % property )
+
+      properties = centralCfg['Registry']['Groups'][defaultGroupName].getOption( 'Properties', [] )
+      for property in defaultGroupProperties:
+        if property not in properties:
+          properties.append( property )
+          print defaultGroupName, property
+          centralCfg['Registry']['Groups'][defaultGroupName].appendToOption( 'Properties', ', %s' % property )
+
+
+  return centralCfg
 
 def __getCfg( section, option = '', value = '' ):
   """
@@ -788,7 +870,6 @@ def setupSite( scriptCfg, cfg = None ):
   # by default use dirac.cfg, but if a cfg is given use it and
   # merge it into the dirac.cfg
   diracCfg = CFG()
-  centralCfg = CFG()
   if cfg:
     try:
       installCfg = CFG()
@@ -798,9 +879,6 @@ def setupSite( scriptCfg, cfg = None ):
         if installCfg.isSection( section ):
           diracCfg.createNewSection( section, contents = installCfg[section] )
 
-      for section in [ 'Systems', 'Resource', 'Operation', 'WebSite', 'Registry' ]:
-        if installCfg.isSection( section ):
-          centralCfg.createNewSection( section, contents = installCfg[section] )
       if instancePath != basePath:
         if not diracCfg.isSection( 'LocalSite' ):
           diracCfg.createNewSection( 'LocalSite' )
@@ -927,6 +1005,7 @@ def setupSite( scriptCfg, cfg = None ):
     cfg.setOption( cfgPath( 'DIRAC', 'Configuration', 'Name' ) , setupConfigurationName )
     _addCfgToDiracCfg( cfg )
     addDefaultOptionsToComponentCfg( 'service', 'Configuration', 'Server', [] )
+    centralCfg = _getCentralCfg( installCfg )
     _addCfgToLocalCS( centralCfg )
     setupComponent( 'service', 'Configuration', 'Server', [] )
     runsvctrlComponent( 'Configuration', 'Server', 't' )
