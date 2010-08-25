@@ -309,11 +309,11 @@ def _getCentralCfg( installCfg ):
 
       # Add Admin User to Admin Group and default group
       for group in [adminGroupName, defaultGroupName]:
-        if not centralCfg['Registry']['Groups'][group].isOption( 'users' ):
-          centralCfg['Registry']['Groups'][group].addKey( 'users', '', '' )
-        users = centralCfg['Registry']['Groups'][group].getOption( 'users', [] )
+        if not centralCfg['Registry']['Groups'][group].isOption( 'Users' ):
+          centralCfg['Registry']['Groups'][group].addKey( 'Users', '', '' )
+        users = centralCfg['Registry']['Groups'][group].getOption( 'Users', [] )
         if adminUserName not in users:
-          centralCfg['Registry']['Groups'][group].appendToOption( 'users', ', %s' % adminUserName )
+          centralCfg['Registry']['Groups'][group].appendToOption( 'Users', ', %s' % adminUserName )
         if not centralCfg['Registry']['Groups'][group].isOption( 'Properties' ):
           centralCfg['Registry']['Groups'][group].addKey( 'Properties', '', '' )
 
