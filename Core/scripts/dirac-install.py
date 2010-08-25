@@ -490,25 +490,31 @@ if cliParams.lcgVer:
     logERROR( "Check that there is a release for your platform: %s" % tarBallName )
 
 for file in ( "releases.cfg", "CFG.py", "CFG.pyc", "CFG.pyo" ):
-  filePath = os.path.join( cliParams.targetPath, file )
-  if os.path.isfile( filePath ):
-    os.unlink( filePath )
+  dirs = [ cliParams.targetPath, os.getcwd() ]
+  if cliParams.useVersionsDir:
+    dirs.append( cliParams.basePath )
+  for dir in dirs:
+    filePath = os.path.join( dir, file )
+    if os.path.isfile( filePath ):
+      os.unlink( filePath )
+
 
 proPath = cliParams.targetPath
 if cliParams.useVersionsDir:
   oldPath = os.path.join( cliParams.basePath, 'old' )
   proPath = os.path.join( cliParams.basePath, 'pro' )
-  fakeEtc = os.path.join( cliParams.targetPath, 'etc' )
-  realEtc = os.path.join( cliParams.basePath, 'etc' )
   try:
     if os.path.exists( proPath ):
       if os.path.exists( oldPath ):
         os.unlink( oldPath )
       os.rename( proPath, oldPath )
     os.symlink( cliParams.targetPath, proPath )
-    if not os.path.exists( realEtc ):
-      os.makedirs( realEtc )
-    os.symlink( realEtc, fakeEtc )
+    for dir in ['startup', 'runit', 'data', 'work', 'control', 'sbin', 'etc']:
+      fake = os.path.join( cliParams.targetPath, dir )
+      real = os.path.join( cliParams.basePath, dir )
+      if not os.path.exists( real ):
+        os.makedirs( real )
+      os.symlink( real, fake )
   except Exception, x:
     logERROR( str( x ) )
     sys.exit( 1 )
