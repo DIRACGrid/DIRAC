@@ -351,9 +351,24 @@ def _getCentralCfg( installCfg ):
             properties.append( property )
             centralCfg['Registry']['Hosts'][host].appendToOption( 'Properties', ', %s' % property )
 
+  # Operations
   if adminUserEmail:
-    operationsCfg = __getCfg( 'Operations/EMail', 'Production', adminUserEmail )
+    operationsCfg = __getCfg( cfgPath( 'Operations', 'EMail' ), 'Production', adminUserEmail )
     centralCfg = centralCfg.mergeWith( operationsCfg )
+
+  # WebSite
+  websiteCfg = __getCfg( cfgPath( 'WebSite', 'Authorization', 'systems', 'configuration' ), 'Default', 'all' )
+  websiteCfg['WebSite'].addKey( 'DefaultGroups', ', '.join( [defaultGroupName, adminGroupName] ), '' )
+  websiteCfg['WebSite'].addKey( 'DefaultSetup', setup, '' )
+  websiteCfg['WebSite']['Authorization']['systems']['configuration'].addKey( 'showHistory' , 'CSAdministrator' , '' )
+  websiteCfg['WebSite']['Authorization']['systems']['configuration'].addKey( 'commitConfiguration' , 'CSAdministrator' , '' )
+  websiteCfg['WebSite']['Authorization']['systems']['configuration'].addKey( 'showCurrentDiff' , 'CSAdministrator' , '' )
+  websiteCfg['WebSite']['Authorization']['systems']['configuration'].addKey( 'showDiff' , 'CSAdministrator' , '' )
+  websiteCfg['WebSite']['Authorization']['systems']['configuration'].addKey( 'rollbackToVersion' , 'CSAdministrator' , '' )
+  websiteCfg['WebSite']['Authorization']['systems']['configuration'].addKey( 'manageRemoteConfig' , 'CSAdministrator' , '' )
+  websiteCfg['WebSite']['Authorization']['systems']['configuration'].appendToOption( 'manageRemoteConfig' , ', ServiceAdministrator' )
+
+  centralCfg = centralCfg.mergeWith( websiteCfg )
 
   return centralCfg
 
