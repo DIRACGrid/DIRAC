@@ -139,7 +139,7 @@ def loadDiracCfg( verbose = False ):
 
   mysqlStartupScript = os.path.join( rootPath, 'mysql', 'share', 'mysql', 'mysql.server' )
 
-  mysqlRootPwd = localCfg.getOption( cfgInstallPath( 'Database', 'RootPwd' ), '' )
+  mysqlRootPwd = localCfg.getOption( cfgInstallPath( 'Database', 'RootPwd' ), mysqlRootPwd )
   if verbose and mysqlRootPwd:
     gLogger.info( 'Reading Root MySQL Password from local configuration' )
 
@@ -149,7 +149,7 @@ def loadDiracCfg( verbose = False ):
   else:
     mysqlUser = 'Dirac'
 
-  mysqlPassword = localCfg.getOption( cfgInstallPath( 'Database', 'Password' ), '' )
+  mysqlPassword = localCfg.getOption( cfgInstallPath( 'Database', 'Password' ), mysqlPassword )
   if verbose and mysqlPassword:
     gLogger.info( 'Reading %s MySQL Password from local configuration' % mysqlUser )
 
@@ -169,6 +169,8 @@ def loadDiracCfg( verbose = False ):
   if verbose and mysqlLargeMem:
     gLogger.info( 'Configuring MySQL server for Large Memory uasge' )
 
+mysqlRootPwd = ''
+mysqlPassword = ''
 loadDiracCfg()
 
 def getInfo( extensions ):
