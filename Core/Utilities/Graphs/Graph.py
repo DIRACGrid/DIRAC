@@ -59,6 +59,8 @@ class Graph(object):
     
     title = prefs.get('title','')
     subtitle = ''
+    title_size = 0
+    title_padding = 0
     if title:
       title_size = prefs.get('title_size',1.5*text_size)
       title_padding = float(prefs.get('title_padding',1.5*text_padding))
