@@ -31,7 +31,7 @@ The Following Options are used:
 /LocalInstallation/Database/MySQLSmallMem:        Configure a MySQL with small memory requirements for testing purposes innodb_buffer_pool_size=200MB
 /LocalInstallation/Database/MySQLLargeMem:        Configure a MySQL with high memory requirements for production purposes innodb_buffer_pool_size=10000MB
 
-The setupSite method (used by the setup_site.py command) will use the following info:
+The setupSite method (used by the dirac-setup-site command) will use the following info:
 
 /LocalInstallation/Systems:       List of Systems to be defined for this instance in the CS (default: Configuration, Framework)
 /LocalInstallation/Databases:     List of Databases to be installed and configured
@@ -49,8 +49,15 @@ If a Master Configuration Server is being installed the following Options can be
 /LocalInstallation/AdminUserEmail: Email of the Admin user (default: None )
 /LocalInstallation/AdminGroupName: Name of the Admin group (default: dirac_admin )
 
+/LocalInstallation/Host: Name of the installation host (default: the current host )
+/LocalInstallation/HostType: Type of the installation host Normal or Power (default: Normal )
+/LocalInstallation/HostDN: DN of the host certificate (default: None )
+
+/LocalInstallation/VirtualOrganization: Name of the main Virtual Organization (default: None)
 """
+
 __RCSID__ = "$Id: TaskQueueDirector.py 23253 2010-03-18 08:34:57Z rgracian $"
+
 #
 import os, re, glob, stat, time, shutil
 
@@ -261,9 +268,16 @@ def _getCentralCfg( installCfg ):
   adminUserDN = localCfg.getOption( cfgInstallPath( 'AdminUserDN' ), '' )
   adminUserEmail = localCfg.getOption( cfgInstallPath( 'AdminUserEmail' ), '' )
   adminGroupName = localCfg.getOption( cfgInstallPath( 'AdminGroupName' ), 'dirac_admin' )
+  installHost = localCfg.getOption( cfgInstallPath( 'Host' ), '' )
+  if not installHost:
+    installHost = socket.getfqdn()
+  hostType = localCfg.getOption( cfgInstallPath( 'HostType' ), 'Normal' )    
+  hostDN = localCfg.getOption( cfgInstallPath( 'HostDN' ), '' )
   defaultGroupName = 'user'
   adminGroupProperties = ['CSAdministrator', 'ServiceAdministrator', 'JobAdministrator', 'Operator', 'FullDelegation', 'ProxyManagment', 'AlarmsManagement']
   defaultGroupProperties = ['NormalUser']
+  defaultHostProperties = []
+  masterHostProperties = [ 'JobAdministrator','FullDelegation','Operator','CSAdministrator','ProxyManagement','TrustedHost']
 
   if adminUserName:
     if not ( adminUserDN and adminUserEmail ):
@@ -275,7 +289,8 @@ def _getCentralCfg( installCfg ):
                       cfgPath( 'Registry', 'Groups' ),
                       cfgPath( 'Registry', 'Groups', defaultGroupName ),
                       cfgPath( 'Registry', 'Groups', adminGroupName ),
-                      cfgPath( 'Registry', 'Hosts' ) ]:
+                      cfgPath( 'Registry', 'Hosts' ),
+                      cfgPath( 'Registry', 'Hosts', installHost ) ]:
         section, centralCfg.isSection( section )
         if not centralCfg.isSection( section ):
           centralCfg.createNewSection( section )
@@ -315,6 +330,23 @@ def _getCentralCfg( installCfg ):
           properties.append( property )
           print defaultGroupName, property
           centralCfg['Registry']['Groups'][defaultGroupName].appendToOption( 'Properties', ', %s' % property )
+          
+      # Add the master Host description  
+      if centralCfg['Registry']['Hosts'][installHost].existsKey( 'DN' ):
+        centralCfg['Registry']['Hosts'][installHost].deleteKey( 'DN' )
+      centralCfg['Registry']['Hosts'][installHost].addKey('DN',hostDN,'')  
+      if not centralCfg['Registry']['Hosts'][installHost].isOption( 'Properties' ):
+        centralCfg['Registry']['Hosts'][installHost].addKey( 'Properties', '', '' )    
+      properties = centralCfg['Registry']['Hosts'][installHost].getOption( 'Properties', [] )
+      if hostType == "Power":
+        hostProperties = masterHostProperties
+      elif hostType == "Normal":
+        hostProperties = defaultHostProperties     
+      for property in hostProperties:
+        if property not in properties:
+          properties.append( property )
+          print installHost, property
+          centralCfg['Registry']['Hosts'][installHost].appendToOption( 'Properties', ', %s' % property )    
 
 
   return centralCfg
@@ -1015,7 +1047,7 @@ def setupSite( scriptCfg, cfg = None ):
 
   time.sleep( 5 )
 
-  # Now need to check is there is valid CS to register the info
+  # Now need to check if there is valid CS to register the info
   result = scriptCfg.enableCS()
   if not result['OK']:
     if exitOnError:
