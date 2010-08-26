@@ -271,7 +271,7 @@ def _getCentralCfg( installCfg ):
   if vo:
     centralCfg['DIRAC'].addKey( 'VirtualOrganization', vo, '' )
 
-  for section in [ 'Systems', 'Resources', 'Operations', 'WebSite', 'Registry' ]:
+  for section in [ 'Systems', 'Resources', 'Operations', 'Website', 'Registry' ]:
     if installCfg.isSection( section ):
       centralCfg.createNewSection( section, contents = installCfg[section] )
 
@@ -281,7 +281,6 @@ def _getCentralCfg( installCfg ):
   adminUserDN = localCfg.getOption( cfgInstallPath( 'AdminUserDN' ), '' )
   adminUserEmail = localCfg.getOption( cfgInstallPath( 'AdminUserEmail' ), '' )
   adminGroupName = localCfg.getOption( cfgInstallPath( 'AdminGroupName' ), 'dirac_admin' )
-  hostType = localCfg.getOption( cfgInstallPath( 'HostType' ), 'Normal' )
   hostDN = localCfg.getOption( cfgInstallPath( 'HostDN' ), '' )
   defaultGroupName = 'user'
   adminGroupProperties = ['CSAdministrator', 'ServiceAdministrator', 'JobAdministrator', 'Operator', 'FullDelegation', 'ProxyManagment', 'AlarmsManagement']
@@ -356,17 +355,17 @@ def _getCentralCfg( installCfg ):
     operationsCfg = __getCfg( cfgPath( 'Operations', 'EMail' ), 'Production', adminUserEmail )
     centralCfg = centralCfg.mergeWith( operationsCfg )
 
-  # WebSite
-  websiteCfg = __getCfg( cfgPath( 'WebSite', 'Authorization', 'systems', 'configuration' ), 'Default', 'all' )
-  websiteCfg['WebSite'].addKey( 'DefaultGroups', ', '.join( [defaultGroupName, adminGroupName] ), '' )
-  websiteCfg['WebSite'].addKey( 'DefaultSetup', setup, '' )
-  websiteCfg['WebSite']['Authorization']['systems']['configuration'].addKey( 'showHistory' , 'CSAdministrator' , '' )
-  websiteCfg['WebSite']['Authorization']['systems']['configuration'].addKey( 'commitConfiguration' , 'CSAdministrator' , '' )
-  websiteCfg['WebSite']['Authorization']['systems']['configuration'].addKey( 'showCurrentDiff' , 'CSAdministrator' , '' )
-  websiteCfg['WebSite']['Authorization']['systems']['configuration'].addKey( 'showDiff' , 'CSAdministrator' , '' )
-  websiteCfg['WebSite']['Authorization']['systems']['configuration'].addKey( 'rollbackToVersion' , 'CSAdministrator' , '' )
-  websiteCfg['WebSite']['Authorization']['systems']['configuration'].addKey( 'manageRemoteConfig' , 'CSAdministrator' , '' )
-  websiteCfg['WebSite']['Authorization']['systems']['configuration'].appendToOption( 'manageRemoteConfig' , ', ServiceAdministrator' )
+  # Website
+  websiteCfg = __getCfg( cfgPath( 'Website', 'Authorization', 'systems', 'configuration' ), 'Default', 'all' )
+  websiteCfg['Website'].addKey( 'DefaultGroups', ', '.join( [defaultGroupName, adminGroupName] ), '' )
+  websiteCfg['Website'].addKey( 'DefaultSetup', setup, '' )
+  websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'showHistory' , 'CSAdministrator' , '' )
+  websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'commitConfiguration' , 'CSAdministrator' , '' )
+  websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'showCurrentDiff' , 'CSAdministrator' , '' )
+  websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'showDiff' , 'CSAdministrator' , '' )
+  websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'rollbackToVersion' , 'CSAdministrator' , '' )
+  websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'manageRemoteConfig' , 'CSAdministrator' , '' )
+  websiteCfg['Website']['Authorization']['systems']['configuration'].appendToOption( 'manageRemoteConfig' , ', ServiceAdministrator' )
 
   centralCfg = centralCfg.mergeWith( websiteCfg )
 
