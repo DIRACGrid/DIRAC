@@ -7,7 +7,7 @@ __RCSID__ = "$Id$"
 #
 from DIRAC.Core.Base import Script
 Script.disableCS()
-Script.setUsageMessage( '\n'.join( ['Setup a DIRAC server (DBs, Services, Agents, Portal,...)',
+Script.setUsageMessage( '\n'.join( ['Setup a DIRAC server (DBs, Services, Agents, Web Portal,...)',
                                     'Usage:',
                                     '%s [option] ... [cfgfile]' % Script.scriptName,
                                     'Arguments:',
