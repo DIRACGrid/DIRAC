@@ -1634,7 +1634,7 @@ def installMySQL():
       return result
 
   if not _addMySQLToDiracCfg():
-    return S_ERROR( 'Failed to add MySQL logging info to local configuration' )
+    return S_ERROR( 'Failed to add MySQL user password to local configuration' )
 
   return S_OK()
 
