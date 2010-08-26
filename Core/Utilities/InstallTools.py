@@ -1690,6 +1690,9 @@ def installDatabase( dbName ):
   """
   Install requested DB in MySQL server
   """
+  
+  global mysqlRootPwd, mysqlPassword
+  
   result = mysqlInstalled()
   if not result['OK']:
     return result
@@ -1699,8 +1702,10 @@ def installDatabase( dbName ):
     return S_ERROR( 'Missing %s in %s' % ( rootPwdPath, cfgFile ) )
 
   if not mysqlPassword:
-    mysqlPwdPath = cfgInstallPath( 'Database', 'Password' )
-    return S_ERROR( 'Missing %sin %s' % ( mysqlPwdPath, cfgFile ) )
+    mysqlPassword = localCfg.getOption(cfgPath( 'Systems', 'Databases', 'Password' ),mysqlPassword)
+    if not mysqlPassword:
+      mysqlPwdPath = cfgPath( 'Systems', 'Databases', 'Password' )
+      return S_ERROR( 'Missing %s in %s' % ( mysqlPwdPath, cfgFile ) )
 
   gLogger.info( 'Installing', dbName )
 
