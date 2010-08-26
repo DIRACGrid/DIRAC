@@ -7,12 +7,12 @@
 #
 function usage {
   echo Usage:
-  echo "    " install_site.sh [Options] CFG_file
+  echo "    install_site.sh [Options] ... CFG_file"
   echo 
-  echo  CFG_file - is the name of the installation configuration file which contains
+  echo "CFG_file - is the name of the installation configuration file which contains"
   echo "           all the instructions for the DIRAC installation. See DIRAC Administrator "
   echo "           Guide for the details"        
-  echo Options:
+  echo "Options:"
   echo "    -d, --debug    debug mode"
   echo "    -h, --help     print this"
   exit 1
@@ -61,4 +61,4 @@ mkdir -p $installDir || exit
 python dirac-install -t server $installCfg
 source $installDir/bashrc
 dirac-configure $installCfg $DEBUG 
-dirac-setup-site $installCfg $DEBUG
+dirac-setup-site $DEBUG
