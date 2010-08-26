@@ -135,9 +135,11 @@ class SystemAdministratorHandler( RequestHandler ):
     return InstallTools.getMySQLStatus()
 
   types_getDatabases = [ ]
-  def export_getDatabases( self ):
+  def export_getDatabases( self, mysqlPassword=None ):
     """ Get the list of installed databases
     """
+    if mysqlPassword :
+      InstallTools.setMySQLPasswords(mysqlPassword)
     return InstallTools.getDatabases()
 
   types_getAvailableDatabases = [ ]
@@ -147,9 +149,12 @@ class SystemAdministratorHandler( RequestHandler ):
     return InstallTools.getAvailableDatabases( gConfig.getValue( '/DIRAC/Extensions', [] ) )
 
   types_installMySQL = []
-  def export_installMySQL( self ):
+  def export_installMySQL( self, mysqlPassword=None, diracPassword=None ):
     """ Install MySQL database server
     """
+    
+    if mysqlPassword or diracPassword:
+      InstallTools.setMySQLPasswords(mysqlPassword,diracPassword)
     if InstallTools.mysqlInstalled()['OK']:
       return S_OK( 'Already installed' )
 
@@ -160,9 +165,11 @@ class SystemAdministratorHandler( RequestHandler ):
     return S_OK( 'Successfully installed' )
 
   types_installDatabase = [ StringTypes ]
-  def export_installDatabase( self, dbName ):
+  def export_installDatabase( self, dbName, mysqlPassword=None ):
     """ Install a DIRAC database named dbName
     """
+    if mysqlPassword :
+      InstallTools.setMySQLPasswords(mysqlPassword)
     return InstallTools.installDatabase( dbName )
 
   types_addDatabaseOptionsToCS = [ StringTypes, StringTypes ]
