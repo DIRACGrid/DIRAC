@@ -225,8 +225,6 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     if option == "mysql":
       print "Installing MySQL database, this can take a while ..."
       client = SystemAdministratorClient( self.host, self.port )
-      if InstallTools.mysqlPassword == "LocalConfig":
-        InstallTools.mysqlPassword = ''
       InstallTools.getMySQLPasswords()
       result = client.installMySQL(InstallTools.mysqlRootPwd,InstallTools.mysqlPassword)
       if not result['OK']:
@@ -416,8 +414,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     if option == "instance":
       system = argss[0]
       instance = argss[1]
-      client = SystemAdministratorClient( self.host, self.port )
-      result = client.addSystemInstance( system, instance )
+      #client = SystemAdministratorClient( self.host, self.port )
+      result = InstallTools.addSystemInstance( system, instance )
       if not result['OK']:
         print "ERROR:", result['Message']
       else:
