@@ -9,14 +9,14 @@ __RCSID__ = "$Id$"
 import cmd
 import sys
 import pprint
+import getpass
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
-from DIRAC.Core.Utilities.InstallTools import *
+import DIRAC.Core.Utilities.InstallTools as InstallTools
 from DIRAC import gConfig
 
 class SystemAdministratorClientCLI( cmd.Cmd ):
   """ 
   """
-
   def __init__( self, host = None ):
     cmd.Cmd.__init__( self )
     # Check if Port is given
@@ -130,7 +130,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
                 print
     elif option == 'database' or option == 'databases':
       client = SystemAdministratorClient( self.host, self.port )
-      result = client.getDatabases()
+      InstallTools.getMySQLPasswords()
+      result = client.getDatabases(InstallTools.mysqlRootPwd)
       if not result['OK']:
         print "ERROR:", result['Message']
         return
@@ -223,7 +224,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     if option == "mysql":
       print "Installing MySQL database, this can take a while ..."
       client = SystemAdministratorClient( self.host, self.port )
-      result = client.installMySQL()
+      InstallTools.getMySQLPasswords()
+      result = client.installMySQL(InstallTools.mysqlRootPwd)
       if not result['OK']:
         print "ERROR:", result['Message']
       else:
@@ -236,13 +238,14 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
 
       database = argss[0]
       client = SystemAdministratorClient( self.host, self.port )
-      result = client.installDatabase( database )
+      InstallTools.getMySQLPasswords()
+      result = client.installDatabase( database, InstallTools.mysqlRootPwd, InstallTools.mysqlPassword )
       if not result['OK']:
         print "ERROR:", result['Message']
         return
       extension, system = result['Value']
       # result = client.addDatabaseOptionsToCS( system, database )
-      result = addDatabaseOptionsToCS(gConfig,system, database)
+      result = InstallTools.addDatabaseOptionsToCS(gConfig,system, database)
       if not result['OK']:
         print "ERROR:", result['Message']
         return
@@ -258,7 +261,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       # First need to update the CS
       # result = client.addDefaultOptionsToCS( option, system, component )
       extensions = gConfig.getValue('/DIRAC/Extensions',[])
-      result = addDefaultOptionsToCS(gConfig, option, system, component, extensions)
+      result = InstallTools.addDefaultOptionsToCS(gConfig, option, system, component, extensions)
       if not result['OK']:
         print "ERROR:", result['Message']
         return
