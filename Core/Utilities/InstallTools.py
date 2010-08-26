@@ -1628,14 +1628,10 @@ def installMySQL():
   if not result['OK']:
     return result
   if mysqlHost:
-    result = execCommand( 0, ['mysqladmin', '-u', 'root', '-p%s' % mysqlRootPwd,
+    result = execCommand( 0, ['mysqladmin', '-u', 'root',
                               '-h', '%s' % mysqlHost, 'password', mysqlRootPwd] )
     if not result['OK']:
       return result
-  result = execCommand( 0, ['mysqladmin', '-u', 'root', '-p%s' % mysqlRootPwd,
-                            'flush-privileges'] )
-  if not result['OK']:
-    return result
 
   if not _addMySQLToDiracCfg():
     return S_ERROR( 'Failed to add MySQL logging info to local configuration' )
