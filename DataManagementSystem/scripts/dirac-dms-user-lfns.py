@@ -50,10 +50,8 @@ def usage():
   gLogger.info(' Type "%s --help" for the available options and syntax' % Script.scriptName)
   DIRAC.exit(2)
 
-def isOlderThan(stringTime,days):
+def isOlderThan(cTimeStruct,days):
   timeDelta = timedelta(days=days)
-  st = time.strptime(stringTime, "%a %b %d %H:%M:%S %Y")
-  cTimeStruct = datetime(st[0],st[1],st[2],st[3],st[4],st[5],st[6],None)
   maxCTime = datetime.utcnow() -  timeDelta
   if cTimeStruct < maxCTime:
     return True
