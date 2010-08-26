@@ -357,7 +357,7 @@ def _getCentralCfg( installCfg ):
 
   # Website
   websiteCfg = __getCfg( cfgPath( 'Website', 'Authorization', 'systems', 'configuration' ), 'Default', 'all' )
-  websiteCfg['Website'].addKey( 'DefaultGroups', ', '.join( [defaultGroupName, adminGroupName] ), '' )
+  websiteCfg['Website'].addKey( 'DefaultGroups', ', '.join( ['visitor', defaultGroupName, adminGroupName] ), '' )
   websiteCfg['Website'].addKey( 'DefaultSetup', setup, '' )
   websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'showHistory' , 'CSAdministrator' , '' )
   websiteCfg['Website']['Authorization']['systems']['configuration'].addKey( 'commitConfiguration' , 'CSAdministrator' , '' )
