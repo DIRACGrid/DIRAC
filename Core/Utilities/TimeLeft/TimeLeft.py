@@ -123,6 +123,28 @@ class TimeLeft:
       return S_ERROR( 'No time left for slot' )
 
   #############################################################################
+  def _runCommand( self, cmd ):
+    """Wrapper around shellCall to return S_OK(stdout) or S_ERROR(message)
+    """
+    result = shellCall( 0, cmd )
+    if not result['OK']:
+      return result
+    status = result['Value'][0]
+    stdout = result['Value'][1]
+    stderr = result['Value'][2]
+
+    if status:
+      self.log.warn( 'Status %s while executing %s' % ( status, cmd ) )
+      self.log.warn( stderr )
+      if stdout:
+        return S_ERROR( stdout )
+      if stderr:
+        return S_ERROR( stderr )
+      return S_ERROR( 'Status %s while executing %s' % ( status, cmd ) )
+    else:
+      return S_OK( stdout )
+
+  #############################################################################
   def __loadLocalCFGFiles( self ):
     """Loads any extra CFG files residing in the local DIRAC site root.
     """
