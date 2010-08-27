@@ -1668,15 +1668,16 @@ def getMySQLStatus():
 
 def getAvailableDatabases( extensions ):
 
-  dbList = []
+  dbDict = {}
   for extension in extensions + ['']:
-    databases = glob.glob( os.path.join( rootPath, 'DIRAC%s' % extension, '*', 'DB', '*.sql' ) )
+    databases = glob.glob( os.path.join( rootPath, '%sDIRAC' % extension, '*', 'DB', '*.sql' ) )
     for db in databases:
-      dbName = os.path.basename( db )
-      if not dbName in dbList:
-        dbList.append( dbName.replace( '.sql', '' ) )
+      dbName = os.path.basename( db ).replace( '.sql', '' )
+      dbDict[dbName] = {}
+      dbDict[dbName]['Extension'] = extension
+      dbDict[dbName]['System'] = db.split('/')[-3].replace('System','')
 
-  return S_OK( dbList )
+  return S_OK( dbDict )
 
 
 def getDatabases():
