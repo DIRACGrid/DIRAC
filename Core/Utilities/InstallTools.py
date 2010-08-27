@@ -561,8 +561,8 @@ def addSystemInstance( systemName, instance ):
   gLogger.info( 'Adding %s system as %s instance for %s setup to dirac.cfg and CS' % ( system, instance, setup ) )
 
   cfg = __getCfg( cfgPath( 'DIRAC', 'Setups', setup ), system, instance )
-  #if not _addCfgToDiracCfg( cfg ):
-  #  return S_ERROR( 'Failed to add system instance to dirac.cfg' )
+  if not _addCfgToDiracCfg( cfg ):
+    return S_ERROR( 'Failed to add system instance to dirac.cfg' )
 
   return _addCfgToCS( cfg )
 
