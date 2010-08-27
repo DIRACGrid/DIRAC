@@ -515,7 +515,10 @@ def addDatabaseOptionsToCS( gConfig, systemName, dbName, overwrite = False ):
   """
   system = systemName.replace( 'System', '' )
   instanceOption = cfgPath( 'DIRAC', 'Setups', setup, system )
-  instance = localCfg.getOption( instanceOption, '' )
+  if gConfig:
+    instance = gConfig.getValue( instanceOption, '' )
+  else:  
+    instance = localCfg.getOption( instanceOption, '' )
   if not instance:
     return S_ERROR( '%s not defined in %s' % ( instanceOption, cfgFile ) )
 
@@ -1123,8 +1126,10 @@ def setupSite( scriptCfg, cfg = None ):
       if db not in installedDatabases:
         extension, system = installDatabase( db )['Value']
         gLogger.info( 'Database %s from %s/%s installed' % ( db, extension, system ) )
-        addDatabaseOptionsToCS( None, system, db, True )
-      gLogger.info( 'Database already %s installed' % db )
+        result = addDatabaseOptionsToCS( None, system, db, True )
+        if not result['OK']:
+          gLogger.error('Database %s CS registration failed' % db )
+      gLogger.info( 'Database %s already installed' % db )
 
   # 4.- Then installed requested services
   for system, service in setupServices:
