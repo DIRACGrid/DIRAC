@@ -15,6 +15,7 @@ import os, string, re, time
 
 class BQSTimeLeft:
 
+
   #############################################################################
   def __init__( self ):
     """ Standard constructor
@@ -25,7 +26,7 @@ class BQSTimeLeft:
       self.jobID = os.environ['QSUB_REQNAME']
 
     self.log.verbose( 'QSUB_REQNAME=%s' % ( self.jobID ) )
-    self.scaleFactor = gConfig.getValue('/LocalSite/CPUScalingFactor',0.0)
+    self.scaleFactor = gConfig.getValue( '/LocalSite/CPUScalingFactor', 0.0 )
 
   #############################################################################
   def getResourceUsage( self ):
@@ -36,10 +37,10 @@ class BQSTimeLeft:
       return S_ERROR( 'Could not determine batch jobID from QSUB_REQNAME env var.' )
 
     if not self.scaleFactor:
-      return S_ERROR('CPU scala factor is not defined')
+      return S_ERROR( 'CPU scala factor is not defined' )
 
-    cmd = 'qjob -a -nh -wide %s' %(self.jobID)
-    result = self.__runCommand(cmd)
+    cmd = 'qjob -a -nh -wide %s' % ( self.jobID )
+    result = self.__runCommand( cmd )
     if not result['OK']:
       return result
 
@@ -50,25 +51,25 @@ class BQSTimeLeft:
     try:
       cpuItems = result['Value'].split()
       if cpuItems[5][-1] == '/':
-        cpu = float(cpuItems[5][:-1])
-        cpuLimit = float(cpuItems[6])
+        cpu = float( cpuItems[5][:-1] )
+        cpuLimit = float( cpuItems[6] )
       else:
-        cpuList = cpuItems[5].split('/')
-        cpu = float(cpuList[0])
-        cpuLimit = float(cpuList[1])
+        cpuList = cpuItems[5].split( '/' )
+        cpu = float( cpuList[0] )
+        cpuLimit = float( cpuList[1] )
     except Exception, x:
-      self.log.warn('Problem parsing "%s" for CPU usage' %(result['Value']))
+      self.log.warn( 'Problem parsing "%s" for CPU usage' % ( result['Value'] ) )
 
     #BQS has no wallclock limit so will simply return the same as for CPU to the TimeLeft utility
     wallClock = cpu
     wallClockLimit = cpuLimit
     # Divide the numbers by 5 to bring it to HS06 units from the CC UI units
     # and remove HS06 normalization factor
-    consumed = {'CPU':cpu/5./self.scaleFactor,
-                'CPULimit':cpuLimit/5./self.scaleFactor,
-                'WallClock':wallClock/5./self.scaleFactor,
-                'WallClockLimit':wallClockLimit/5./self.scaleFactor}
-    self.log.debug(consumed)
+    consumed = {'CPU':cpu / 5. / self.scaleFactor,
+                'CPULimit':cpuLimit / 5. / self.scaleFactor,
+                'WallClock':wallClock / 5. / self.scaleFactor,
+                'WallClockLimit':wallClockLimit / 5. / self.scaleFactor}
+    self.log.debug( consumed )
     failed = False
     for k, v in consumed.items():
       if v == None:
