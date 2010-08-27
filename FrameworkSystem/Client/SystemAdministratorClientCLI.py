@@ -109,7 +109,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       else:
         rDict = result['Value']
         print
-        print "   System", ' '*20, 'Name', ' '*5, 'Type', ' '*23, 'Setup    Installed   Runit    Uptime    PID'
+        print "   System", ' '*20, 'Name', ' '*15, 'Type', ' '*13, 'Setup    Installed   Runit    Uptime    PID'
         print '-' * 116
         for compType in rDict:
           for system in rDict[compType]:
@@ -241,6 +241,25 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         return
       database = argss[0]
       client = SystemAdministratorClient( self.host, self.port )
+      
+      result = client.getAvailableDatabases()
+      if not result['OK']:
+        print "ERROR: can not get database list: %s" % result['Message']
+        return
+      if not result['Value'].has_key(database):
+        print "ERROR: unknown database %s: " % database  
+        return
+      system = result['Value'][database]['System']
+      setup = gConfig.getValue('/DIRAC/Setup','')
+      if not setup:
+        print "ERROR: unknown current setup"  
+        return
+      instance = gConfig.getValue('/DIRAC/Setups/%s/%s' % (setup,system),'')
+      if not instance:
+        print "ERROR: no instance defined for system %s" % system
+        print "       Add new instance with 'add instance %s <instance_name>'" % system
+        return
+      
       if not InstallTools.mysqlPassword:
         InstallTools.mysqlPassword = 'LocalConfig'
       InstallTools.getMySQLPasswords()
