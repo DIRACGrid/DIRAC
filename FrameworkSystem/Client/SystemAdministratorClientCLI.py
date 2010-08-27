@@ -50,6 +50,9 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     del argss[0]
     if option == 'host':
       host = argss[0]
+      if host.find('.') == -1:
+        print "ERROR: you should provide the full host name including its domain"
+        return
       self.__setHost( host )
     else:
       print "Unknown option:", option
