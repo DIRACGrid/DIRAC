@@ -15,7 +15,6 @@ import os, string, re, time
 
 class PBSTimeLeft:
 
-
   #############################################################################
   def __init__( self ):
     """ Standard constructor
@@ -41,7 +40,7 @@ class PBSTimeLeft:
        and WallClockLimit for current slot.  All values returned in seconds.
     """
     cmd = 'qstat -f %s' % ( self.jobID )
-    result = self.__runCommand( cmd )
+    result = self._runCommand( cmd )
     if not result['OK']:
       return result
 
@@ -93,23 +92,5 @@ class PBSTimeLeft:
       retVal = S_ERROR( 'Could not determine some parameters' )
       retVal['Value'] = consumed
       return retVal
-
-  #############################################################################
-  def __runCommand( self, cmd ):
-    """Wrapper around shellCall to return S_OK(stdout) or S_ERROR(message)
-    """
-    result = shellCall( 0, cmd )
-    if not result['OK']:
-      return result
-    status = result['Value'][0]
-    stdout = result['Value'][1]
-    stderr = result['Value'][2]
-
-    if status:
-      self.log.warn( 'Status %s while executing %s' % ( status, cmd ) )
-      self.log.warn( stderr )
-      return S_ERROR( stdout )
-    else:
-      return S_OK( stdout )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
