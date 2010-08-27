@@ -1,51 +1,88 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-admin-add-user
-# Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__ = "$Id$"
 import DIRAC
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Base                                   import Script
 
-Script.registerSwitch( "p:", "property=", "Add property to the user <name>=<value>" )
+userName = None
+userDN = None
+userMail = None
+userGroups = ['user']
 
-from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
+def setUserName( arg ):
+  global userName
+  if userName or not arg:
+    Script.showHelp()
+    DIRAC.exit( -1 )
+  userName = arg
+
+def setUserDN( arg ):
+  global userDN
+  if userDN or not arg:
+    Script.showHelp()
+    DIRAC.exit( -1 )
+  userDN = arg
+
+def setUserMail( arg ):
+  global userMail
+  if userMail or not arg:
+    Script.showHelp()
+    DIRAC.exit( -1 )
+  if not arg.find( '@' ) > 0:
+    Script.gLogger.error( 'Not a valid mail address', arg )
+    DIRAC.exit( -1 )
+  userMail = arg
+
+def addUserGroup( arg ):
+  global userGroups
+  if not arg:
+    Script.showHelp()
+    DIRAC.exit( -1 )
+  if not arg in userGroups:
+    userGroups.append( arg )
+
+Script.setUsageMessage( '\n'.join( ['Add or Modify a User info in DIRAC',
+                                    'Usage:',
+                                    '%s [option|cfgfile] ... Property=<Value> ...' % Script.scriptName,
+                                    'Arguments:',
+                                    ' Property=<Value>: Properties to be added to the User like (Phone=XXXX)', ] ) )
+
+Script.registerSwitch( 'N:', 'UserName:', 'Short Name of the User (Mandatory)', setUserName )
+Script.registerSwitch( 'D:', 'UserDN:', 'DN of the User Certificate (Mandatory)', setUserDN )
+Script.registerSwitch( 'M:', 'UserMail:', 'eMail of the user (Mandatory)', setUserMail )
+Script.registerSwitch( 'G:', 'UserGroup:', 'Name of the Group for the User (Allow Multiple instances or None)', addUserGroup )
+
+Script.parseCommandLine( ignoreErrors = True )
+
+if userName == None or userDN == None or userMail == None:
+  Script.showHelp()
+  DIRAC.exit( -1 )
 
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s [<options>] <username> <DN> <groups>+' %(Script.scriptName)
-  DIRAC.exit(2)
-
-
+from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []
 
-if len(args) < 3:
-  usage()
+userProps = {'DN': userDN, 'Email': userMail}
+if userGroups:
+  userProps['Groups' ] = userGroups
+for prop in args:
+  pl = prop.split( "=" )
+  if len( pl ) < 2:
+    errorList.append( ( "in arguments", "Property %s has to include a '=' to separate name from value" % prop ) )
+    exitCode = 255
+  else:
+    pName = pl[0]
+    pValue = "=".join( pl[1:] )
+    Script.gLogger.info( "Setting property %s to %s" % ( pName, pValue ) )
+    userProps[ pName ] = pValue
 
-userProps = {}
-for unprocSw in Script.getUnprocessedSwitches():
-  if unprocSw[0] in ( "p", "property" ):
-    prop = unprocSw[1]
-    pl = prop.split( "=" )
-    if len( pl ) < 2:
-      errorList.append( ( "in arguments", "Property %s has to include a '=' to separate name from value" % prop ) )
-      exitCode = 255
-    else:
-      pName = pl[0]
-      pValue = "=".join( pl[1:] )
-      print "Setting property %s to %s" % ( pName, pValue )
-      userProps[ pName ] = pValue
-
-userProps[ 'DN' ] = args[1]
-userProps[ 'groups' ] = args[2:]
-
-if not diracAdmin.csRegisterUser( args[0], userProps ):
-  errorList.append( ( "add user", "Cannot register user %s" % args[0] ) )
+if not diracAdmin.csModifyUser( userName, userProps, createIfNonExistant = True )['Value']:
+  errorList.append( ( "add user", "Cannot register user %s" % userName ) )
   exitCode = 255
 else:
   result = diracAdmin.csCommitChanges()
@@ -54,6 +91,6 @@ else:
     exitCode = 255
 
 for error in errorList:
-  print "ERROR %s: %s" % error
+  Script.gLogger.error( "%s: %s" % error )
 
-DIRAC.exit(exitCode)
+DIRAC.exit( exitCode )
