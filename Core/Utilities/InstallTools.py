@@ -1128,7 +1128,7 @@ def setupSite( scriptCfg, cfg = None ):
         gLogger.info( 'Database %s from %s/%s installed' % ( db, extension, system ) )
         result = addDatabaseOptionsToCS( None, system, db, True )
         if not result['OK']:
-          gLogger.error('Database %s CS registration failed' % db )
+          gLogger.error('Database %s CS registration failed: %s' % (db,result['Message']) )
       gLogger.info( 'Database %s already installed' % db )
 
   # 4.- Then installed requested services
