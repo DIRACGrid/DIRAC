@@ -15,7 +15,6 @@ import os, string, re, time
 
 class BQSTimeLeft:
 
-
   #############################################################################
   def __init__( self ):
     """ Standard constructor
@@ -40,7 +39,7 @@ class BQSTimeLeft:
       return S_ERROR( 'CPU scala factor is not defined' )
 
     cmd = 'qjob -a -nh -wide %s' % ( self.jobID )
-    result = self.__runCommand( cmd )
+    result = self._runCommand( cmd )
     if not result['OK']:
       return result
 
@@ -81,23 +80,5 @@ class BQSTimeLeft:
     else:
       self.log.info( 'Could not determine some parameters, this is the stdout from the batch system call\n%s' % ( result['Value'] ) )
       return S_ERROR( 'Could not determine some parameters' )
-
-  #############################################################################
-  def __runCommand( self, cmd ):
-    """Wrapper around shellCall to return S_OK(stdout) or S_ERROR(message)
-    """
-    result = shellCall( 0, cmd )
-    if not result['OK']:
-      return result
-    status = result['Value'][0]
-    stdout = result['Value'][1]
-    stderr = result['Value'][2]
-
-    if status:
-      self.log.warn( 'Status %s while executing %s' % ( status, cmd ) )
-      self.log.warn( stderr )
-      return S_ERROR( stdout )
-    else:
-      return S_OK( stdout )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
