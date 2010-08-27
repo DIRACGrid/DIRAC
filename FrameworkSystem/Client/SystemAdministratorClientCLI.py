@@ -130,7 +130,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
                 print
     elif option == 'database' or option == 'databases':
       client = SystemAdministratorClient( self.host, self.port )
-      InstallTools.mysqlPassword = "LocalConfig"
+      if not InstallTools.mysqlPassword:
+        InstallTools.mysqlPassword = "LocalConfig"
       InstallTools.getMySQLPasswords()
       result = client.getDatabases(InstallTools.mysqlRootPwd)
       if not result['OK']:
@@ -225,6 +226,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     if option == "mysql":
       print "Installing MySQL database, this can take a while ..."
       client = SystemAdministratorClient( self.host, self.port )
+      if InstallTools.mysqlPassword == 'LocalConfig':
+        InstallTools.mysqlPassword = ''
       InstallTools.getMySQLPasswords()
       result = client.installMySQL(InstallTools.mysqlRootPwd,InstallTools.mysqlPassword)
       if not result['OK']:
@@ -236,16 +239,18 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if not argss:
         print self.do_install.__doc__
         return
-
       database = argss[0]
       client = SystemAdministratorClient( self.host, self.port )
+      if not InstallTools.mysqlPassword:
+        InstallTools.mysqlPassword = 'LocalConfig'
       InstallTools.getMySQLPasswords()
-      result = client.installDatabase( database, InstallTools.mysqlRootPwd )
+      result = client.installDatabase( database, InstallTools.mysqlRootPwd)
       if not result['OK']:
         print "ERROR:", result['Message']
         return
       extension, system = result['Value']
       # result = client.addDatabaseOptionsToCS( system, database )
+      InstallTools.mysqlHost = self.host
       result = InstallTools.addDatabaseOptionsToCS(gConfig,system, database)
       if not result['OK']:
         print "ERROR:", result['Message']
