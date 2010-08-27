@@ -161,7 +161,7 @@ class FTSMonitorAgent(AgentModule):
       if res['OK']:
         failReason = res['Value']
       if self.missingSource(failReason):
-        gLogger.error('The source SURL does not exist.', '%s %s' % (lfn,ftsReq.getSourceSURL(lfn)))
+        gLogger.error('The source SURL does not exist.', '%s %s' % (lfn,oFTSRequest.getSourceSURL(lfn)))
         filesToReschedule.append(fileID)
       else:
         filesToRetry.append(fileID)
