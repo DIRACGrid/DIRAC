@@ -16,7 +16,6 @@ import os, string, re, time
 
 class LSFTimeLeft:
 
-
   #############################################################################
   def __init__( self ):
     """ Standard constructor
@@ -44,7 +43,7 @@ class LSFTimeLeft:
     self.hostNorm = None
 
     cmd = '%s/bqueues -l %s' % ( self.bin, self.queue )
-    result = self.__runCommand( cmd )
+    result = self._runCommand( cmd )
     if not result['OK']:
       return
 
@@ -71,7 +70,7 @@ class LSFTimeLeft:
       # it must be either a Model, a Host or the largest Model
 
       cmd = '%s/lshosts -w %s' % ( self.bin, self.cpuRef )
-      result = self.__runCommand( cmd )
+      result = self._runCommand( cmd )
       if result['OK']:
         # At CERN this command will return an error since there is no host defined 
         # with the name of the reference Host.
@@ -95,7 +94,7 @@ class LSFTimeLeft:
       if not self.normRef:
         # Try if there is a model define with the name of cpuRef
         cmd = '%s/lsinfo -m' % ( self.bin )
-        result = self.__runCommand( cmd )
+        result = self._runCommand( cmd )
         if result['OK']:
           lines = result['Value'].split( '\n' )
           for line in lines[1:]:
@@ -155,7 +154,7 @@ class LSFTimeLeft:
     # Now get the Normalization for the current Host
     if self.host:
       cmd = '%s/lshosts -w %s' % ( self.bin, self.host )
-      result = self.__runCommand( cmd )
+      result = self._runCommand( cmd )
       if result['OK']:
         lines = result['Value'].split( '\n' )
         l1 = lines[0].split()
@@ -193,7 +192,7 @@ class LSFTimeLeft:
     wallClock = None
 
     cmd = '%s/bjobs -W %s' % ( self.bin, self.jobID )
-    result = self.__runCommand( cmd )
+    result = self._runCommand( cmd )
     if not result['OK']:
       return result
     lines = result['Value'].split( '\n' )
@@ -244,24 +243,5 @@ class LSFTimeLeft:
     else:
       self.log.info( 'Could not determine some parameters, this is the stdout from the batch system call\n%s' % ( result['Value'] ) )
       return S_ERROR( 'Could not determine some parameters' )
-
-  #############################################################################
-  def __runCommand( self, cmd ):
-    """Wrapper around shellCall to return S_OK(stdout) or S_ERROR(message)
-    """
-    result = shellCall( 0, cmd )
-    if not result['OK']:
-      return result
-    status = result['Value'][0]
-    stdout = result['Value'][1]
-    stderr = result['Value'][2]
-
-    if status:
-      self.log.warn( 'Status %s while executing %s' % ( status, cmd ) )
-      self.log.warn( stderr )
-      return S_ERROR( stdout )
-    else:
-      self.log.debug( stdout )
-      return S_OK( stdout )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
