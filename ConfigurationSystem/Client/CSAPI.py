@@ -346,7 +346,7 @@ class CSAPI:
       gLogger.info( "Nothing to modify for group %s" % groupname )
     return S_OK( True )
 
-  def addHost( self, groupname, properties ):
+  def addHost( self, hostname, properties ):
     """
     Add a host to the cs
       -hostname
