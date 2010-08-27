@@ -976,6 +976,13 @@ class DiracAdmin:
     return self.csAPI.describeUsers( mask )
 
   #############################################################################
+  def csModifyGroup( self, groupname, properties, createIfNonExistant = False ):
+    """Modify a user in the CS. Takes the same params as in addGroup and applies
+      the changes
+    """
+    return self.csAPI.modifyGroup( groupname, properties, createIfNonExistant )
+
+  #############################################################################
   def csListHosts( self ):
     """Lists the hosts in the CS
     """
@@ -986,6 +993,13 @@ class DiracAdmin:
     """Gets extended info for the hosts in the CS
     """
     return self.csAPI.describeHosts( mask )
+
+  #############################################################################
+  def csModifyHost( self, hostname, properties, createIfNonExistant = False ):
+    """Modify a host in the CS. Takes the same params as in addHost and applies
+      the changes
+    """
+    return self.csAPI.modifyHost( hostname, properties, createIfNonExistant )
 
   #############################################################################
   def csListGroups( self ):
