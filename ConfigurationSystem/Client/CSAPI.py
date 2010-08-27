@@ -284,11 +284,125 @@ class CSAPI:
       for group in groupsToBeAddedTo:
         self.__addUserToGroup( group, username )
         gLogger.info( "Added user %s to group %s" % ( username, group ) )
-      if modifiedUser:
-        gLogger.info( "Modified user %s" % username )
-        self.__csModified = True
-      else:
-        gLogger.info( "Nothing to modify for user %s" % username )
+    if modifiedUser:
+      gLogger.info( "Modified user %s" % username )
+      self.__csModified = True
+    else:
+      gLogger.info( "Nothing to modify for user %s" % username )
+    return S_OK( True )
+
+  def addGroup( self, groupname, properties ):
+    """
+    Add a group to the cs
+      -groupname
+      -properties is a dict with keys:
+        Users
+        Properties
+        <extra params>
+      Returns True/False
+    """
+    if not self.__initialized:
+      return S_ERROR( "CSAPI didn't initialize properly" )
+    if groupname in self.listGroups()['Value']:
+      gLogger.error( "Group %s is already registered" % groupname )
+      return S_OK( False )
+    self.__csMod.createSection( "%s/Groups/%s" % ( self.__baseSecurity, groupname ) )
+    for prop in properties:
+      self.__csMod.setOptionValue( "%s/Groups/%s/%s" % ( self.__baseSecurity, groupname, prop ), properties[ prop ] )
+    gLogger.info( "Registered group %s" % groupname )
+    self.__csModified = True
+    return S_OK( True )
+
+  def modifyGroup( self, groupname, properties, createIfNonExistant = False ):
+    """
+    Modify a user
+      -groupname
+      -properties is a dict with keys:
+        Users
+        Properties
+        <extra params>
+      Returns True/False
+    """
+    if not self.__initialized:
+      return S_ERROR( "CSAPI didn't initialize properly" )
+    modifiedGroup = False
+    groupData = self.describeGroups( [ groupname ] )['Value']
+    if groupname not in groupData:
+      if createIfNonExistant:
+        gLogger.info( "Registering group %s" % groupname )
+        return self.addGroup( groupname, properties )
+      gLogger.error( "Group %s is not registered" % groupname )
+      return S_OK( False )
+    for prop in properties:
+      prevVal = self.__csMod.getValue( "%s/Groups/%s/%s" % ( self.__baseSecurity, groupname, prop ) )
+      if not prevVal or prevVal != properties[ prop ]:
+        gLogger.info( "Setting %s property for group %s to %s" % ( prop, groupname, properties[ prop ] ) )
+        self.__csMod.setOptionValue( "%s/Groups/%s/%s" % ( self.__baseSecurity, groupname, prop ), properties[ prop ] )
+        modifiedGroup = True
+    if modifiedGroup:
+      gLogger.info( "Modified group %s" % groupname )
+      self.__csModified = True
+    else:
+      gLogger.info( "Nothing to modify for group %s" % groupname )
+    return S_OK( True )
+
+  def addHost( self, groupname, properties ):
+    """
+    Add a host to the cs
+      -hostname
+      -properties is a dict with keys:
+        DN
+        Properties
+        <extra params>
+      Returns True/False
+    """
+    if not self.__initialized:
+      return S_ERROR( "CSAPI didn't initialize properly" )
+    for prop in ( "DN", ):
+      if prop not in properties:
+        gLogger.error( "Missing %s property for host %s" % ( prop, hostname ) )
+        return S_OK( False )
+    if hostname in self.listHosts()['Value']:
+      gLogger.error( "Host %s is already registered" % hostname )
+      return S_OK( False )
+    self.__csMod.createSection( "%s/Hosts/%s" % ( self.__baseSecurity, hostname ) )
+    for prop in properties:
+      self.__csMod.setOptionValue( "%s/Hosts/%s/%s" % ( self.__baseSecurity, hostname, prop ), properties[ prop ] )
+    gLogger.info( "Registered host %s" % hostname )
+    self.__csModified = True
+    return S_OK( True )
+
+  def modifyHost( self, hostname, properties, createIfNonExistant = False ):
+    """
+    Modify a user
+      -hostname
+      -properties is a dict with keys:
+        DN
+        Properties
+        <extra params>
+      Returns True/False
+    """
+    if not self.__initialized:
+      return S_ERROR( "CSAPI didn't initialize properly" )
+    modifiedHost = False
+    hostData = self.describeHosts( [ hostname ] )['Value']
+    if hostname not in hostData:
+      if createIfNonExistant:
+        gLogger.info( "Registering host %s" % hostname )
+        return self.addHost( hostname, properties )
+      gLogger.error( "Host %s is not registered" % hostname )
+      return S_OK( False )
+    for prop in properties:
+      prevVal = self.__csMod.getValue( "%s/Hosts/%s/%s" % ( self.__baseSecurity, hostname, prop ) )
+      if not prevVal or prevVal != properties[ prop ]:
+        gLogger.info( "Setting %s property for host %s to %s" % ( prop, hostname, properties[ prop ] ) )
+        self.__csMod.setOptionValue( "%s/Hosts/%s/%s" % ( self.__baseSecurity, hostname, prop ), properties[ prop ] )
+        modifiedHost = True
+    if modifiedHost:
+      gLogger.info( "Modified host %s" % hostname )
+      self.__csModified = True
+    else:
+      gLogger.info( "Nothing to modify for host %s" % hostname )
     return S_OK( True )
 
   def syncUsersWithCFG( self, usersCFG ):
