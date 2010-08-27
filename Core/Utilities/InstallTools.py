@@ -415,7 +415,10 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName, component, extens
   """
   system = systemName.replace( 'System', '' )
   instanceOption = cfgPath( 'DIRAC', 'Setups', setup, system )
-  instance = localCfg.getOption( instanceOption, '' )
+  if gConfig:
+    instance = gConfig.getValue( instanceOption, '' )
+  else:  
+    instance = localCfg.getOption( instanceOption, '' )
   if not instance:
     return S_ERROR( '%s not defined in %s' % ( instanceOption, cfgFile ) )
 
