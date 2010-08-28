@@ -46,7 +46,7 @@ class PilotAgentsDB(DB):
 
 ##########################################################################################
   def addPilotTQReference(self,pilotRef,taskQueueID,ownerDN,ownerGroup,broker='Unknown',
-                        gridType='DIRAC',requirements='Unknown'):
+                        gridType='DIRAC',requirements='Unknown',pilotStampDict={}):
     """ Add a new pilot job reference """
 
     result = self._getConnection()
@@ -62,11 +62,14 @@ class PilotAgentsDB(DB):
     e_requirements = result['Value']
 
     for ref in pilotRef:
+      stamp = ''
+      if ref in pilotStampDict:
+        stamp = pilotStampDict[ref]
 
       req = "INSERT INTO PilotAgents( PilotJobReference, TaskQueueID, OwnerDN, " + \
-            "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status ) " + \
-            "VALUES ('%s',%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted')" % \
-            (ref,int(taskQueueID),ownerDN,ownerGroup,broker,gridType)
+            "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp ) " + \
+            "VALUES ('%s',%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')" % \
+            (ref,int(taskQueueID),ownerDN,ownerGroup,broker,gridType,stamp)
 
       result = self._update(req,connection)
       if not result['OK']:
