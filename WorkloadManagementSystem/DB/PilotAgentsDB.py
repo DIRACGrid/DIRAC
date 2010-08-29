@@ -254,7 +254,7 @@ class PilotAgentsDB(DB):
 
     parameters = ['PilotJobReference','OwnerDN','OwnerGroup','GridType','Broker',
                   'Status','DestinationSite','BenchMark','ParentID','OutputReady',
-                  'SubmissionTime', 'PilotID', 'LastUpdateTime', 'TaskQueueID', 'GridSite' ]
+                  'SubmissionTime', 'PilotID', 'LastUpdateTime', 'TaskQueueID', 'GridSite','PilotStamp' ]
     if paramNames:
       parameters = paramNames
 
