@@ -43,14 +43,15 @@ class SiteDirector( AgentModule ):
     self.genericPilotDN = self.am_getOption('GenericPilotDN','Unknown')
     self.genericPilotGroup = self.am_getOption('GenericPilotGroup','Unknown')
     self.pilot = DIRAC_PILOT
-    self.install = DIRAC_INSTALL
+    self.install = DIRAC_INSTALL 
+    self.workingDirectory = self.am_getOption('WorkingDirectory', os.path.join( DIRAC.rootPath, 'data','SiteDirector') )
     
     # Flags
     self.updateStatus = self.am_getOption('UpdatePilotStatus',True)
     self.getOutput = self.am_getOption('GetPilotOutput',True)
     
     self.localhost = socket.getfqdn()
-    
+    self.proxy = ''     
     self.queueDict = {}
     result = self.getQueues()
     if not result['OK']:
@@ -103,9 +104,13 @@ class SiteDirector( AgentModule ):
         self.queueDict[queueName]['ParametersDict'] = result['Value']
         self.queueDict[queueName]['ParametersDict']['Queue'] = queue
         self.queueDict[queueName]['ParametersDict']['Site'] = self.siteName
+        qwDir = os.path.join(self.workingDirectory,queue)
+        if not os.path.exists(qwDir):
+          os.mkdir(qwDir)
+        self.queueDict[queueName]['ParametersDict']['WorkingDirectory'] = qwDir
         queueDict = dict(ceDict)
         queueDict.update(self.queueDict[queueName]['ParametersDict'])
-        result = ceFactory.getCE(ceName=queueName,
+        result = ceFactory.getCE(ceName=ce,
                                  ceType=ceType, 
                                  ceParametersDict = queueDict)
         if not result['OK']:
@@ -143,7 +148,16 @@ class SiteDirector( AgentModule ):
       ce = self.queueDict[queue]['CE']
       ceName = self.queueDict[queue]['CEName']
       queueName = self.queueDict[queue]['QueueName']
-      result = ce.available()
+      queueCPUTime = int(self.queueDict[queue]['ParametersDict']['CPUTime'])
+
+      # Get the working proxy
+      cpuTime = queueCPUTime + 86400
+      result = gProxyManager.getPilotProxyFromDIRACGroup(self.genericPilotDN, self.genericPilotGroup, cpuTime )
+      if not result['OK']:
+        return result
+      self.proxy = result['Value']
+ 
+      result = ce.available(proxy=self.proxy)
       if not result['OK']:
         self.log.warn('Failed to check the availability of queue %s: %s' (queue,result['message']))
         continue
@@ -158,7 +172,7 @@ class SiteDirector( AgentModule ):
         return result
       taskQueueDict = result['Value']
       
-      print taskQueueDict
+      print "AT >>> TasQueueDict",taskQueueDict
       if not taskQueueDict:
         continue
       
@@ -167,24 +181,31 @@ class SiteDirector( AgentModule ):
         totalTQJobs += taskQueueDict[tq]['Jobs']
         
       pilotsToSubmit = min(totalSlots,totalTQJobs)  
-      
+    
       pilotsToSubmit = 1
-      
+ 
       if pilotsToSubmit > 0:
         self.log.info('Going to submit %d pilots to %s queue' % (pilotsToSubmit,queue) )
   
-        result = self.__getExecutable(queue,pilotsToSubmit)
+        bundleProxy = self.queueDict[queue].get('BundleProxy',False)
+        result = self.__getExecutable(queue,pilotsToSubmit,bundleProxy)
         if not result['OK']:
           return result
         
-        executable = result['Value']
-        result = ce.submitJob(executable,'',pilotsToSubmit)
+        # If proxy is not bundled in, submit with the user proxy 
+
+        executable = result['Executable']
+        proxy = result['Proxy']
+        result = ce.submitJob(executable,proxy,pilotsToSubmit)
         if not result['OK']:
           self.log.error('Failed submission to queue %s: %s' (queue,result['Message']))
         
         # Add pilots to the PilotAgentsDB assign pilots to TaskQueue proportionally to the
         # task queue priorities
         pilotList = result['Value']
+        stampDict = {}
+        if result.has_key('PilotStampDict'):
+          stampDict = result['PilotStampDict']
         nPilots = len(pilotList)
         tqPriorityList = []
         sumPriority = 0.
@@ -210,12 +231,15 @@ class SiteDirector( AgentModule ):
                                                      self.genericPilotGroup,
                                                      self.localhost,
                                                      'DIRAC',
-                                                     '')
+                                                     '',
+                                                     stampDict)
           if not result['OK']:
             self.log.error('Failed add pilots to the PilotAgentsDB: %s' % result['Message'])
             continue
           for pilot in pilotList: 
-            result = pilotAgentsDB.setPilotStatus(pilot,'Submitted',ceName,'Successfuly submitted by the SiteDirector','',queueName)
+            result = pilotAgentsDB.setPilotStatus(pilot,'Submitted',ceName,
+                                                  'Successfuly submitted by the SiteDirector',
+                                                  self.siteName,queueName)
             if not result['OK']:
               self.log.error('Failed to set pilot status: %s' % result['Message'])
               continue
@@ -223,7 +247,7 @@ class SiteDirector( AgentModule ):
     return S_OK()  
   
 #####################################################################################
-  def __getExecutable(self,queue,pilotsToSubmit):
+  def __getExecutable(self,queue,pilotsToSubmit,bundleProxy=True):
     """ Prepare the full executable for queue
     """ 
     
@@ -231,12 +255,17 @@ class SiteDirector( AgentModule ):
     if not result['OK']:
       return result
     
-    proxy = result['Value']
-    
+    proxyString = result['Value']
+    proxy = ''
+    if bundleProxy:
+      proxy = proxyString
     pilotOptions = self.__getPilotOptions(queue,pilotsToSubmit)
-    workingDirectory = '/Users/atsareg/Documents/workspace/DIRAC_SVN/test/CREATIS/SiteDirector'
-    executable = self.__writePilotScript(workingDirectory, pilotOptions, proxy)
-    return S_OK(executable)
+    workingDirectory = '/afs/cern.ch/user/a/atsareg/test/CREAM'
+    executable = self.__writePilotScript(self.workingDirectory, pilotOptions, proxy)
+    result = S_OK()
+    result['Executable'] = executable
+    result['Proxy'] = proxyString
+    return result 
  
 #####################################################################################    
   def __getPilotOptions(self,queue,pilotsToSubmit):
@@ -359,7 +388,6 @@ EOF
     pilotWrapper = os.fdopen(fd, 'w')
     pilotWrapper.write( localPilot )
     pilotWrapper.close()
-
     return name
     
   def updatePilotStatus(self):
@@ -370,12 +398,13 @@ EOF
       ceName = self.queueDict[queue]['CEName']
       queueName = self.queueDict[queue]['QueueName']
       result = pilotAgentsDB.selectPilots({'DestinationSite':ceName,
-                                           'Queue':queueName,'GridType':'DIRAC',
-                                           'GridSite':self.siteName})
+                                           'Queue':queueName,
+                                           'GridType':'DIRAC',
+                                           'GridSite':self.siteName,
+                                           'Status':TRANSIENT_PILOT_STATUS})
       if not result['OK']:
         self.log.error('Failed to select pilots: %s' % result['Message'])
         continue
-      
       pilotRefs = result['Value']
       if not pilotRefs:
         continue
@@ -390,7 +419,7 @@ EOF
       
       #print "AT >>> pilotDict", pilotDict
       
-      result = ce.getJobStatus(pilotRefs)
+      result = ce.getJobStatus(pilotRefs,self.proxy)
       if not result['OK']:
         self.log.error('Failed to get pilots status from CE: %s' % result['Message'])
         continue
@@ -400,31 +429,37 @@ EOF
       
       for pRef in pilotRefs:
         newStatus = ''
-        if pilotDict[pRef]['Status'] == pilotCEDict[pRef]:
+        oldStatus = pilotDict[pRef]['Status']
+        ceStatus = pilotCEDict[pRef]
+        if oldStatus == ceStatus:
           # Status did not change, continue
           continue
-        elif pilotCEDict[pRef] == "Unknown" and not pilotDict[pRef]['Status'] in FINAL_PILOT_STATUS:
+        elif ceStatus == "Unknown" and not oldStatus in FINAL_PILOT_STATUS:
           # Pilot finished without reporting, consider it Aborted
           newStatus = 'Aborted'
-        elif pilotCEDict[pRef] != 'Unknown' :
+        elif ceStatus != 'Unknown' :
           # Update the pilot status to the new value
-          newStatus = pilotCEDict[pRef]     
+          newStatus = ceStatus     
         
         if newStatus:
           self.log.info('Updating status to %s for pilot %s' % (newStatus,pRef) )  
           result = pilotAgentsDB.setPilotStatus(pRef,newStatus,'','Updated by SiteDirector')
-          
-        # Retrieve the pilot output now            
-        if pilotDict[pRef]['OutputReady'].lower() == 'false' and self.getOutput:
-          self.log.info('Retrieving output for pilot %s' % pRef )  
-          result = ce.getJobOutput(pRef)
-          if not result['OK']:
-            self.log.error('Failed to get pilot output: %s' % result['Message'])
-          else:
-            output,error = result['Value']
-            result = pilotAgentsDB.storePilotOutput(pRef,output,error)
+        # Retrieve the pilot output now 
+        if newStatus in FINAL_PILOT_STATUS:           
+          if pilotDict[pRef]['OutputReady'].lower() == 'false' and self.getOutput:
+            self.log.info('Retrieving output for pilot %s' % pRef ) 
+            pilotStamp = pilotDict[pRef]['PilotStamp']
+            pRefStamp = pRef 
+            if pilotStamp:
+              pRefStamp = pRef+':::'+pilotStamp
+            result = ce.getJobOutput(pRefStamp,proxy=self.proxy)
             if not result['OK']:
-              self.log.error('Failed to store pilot output: %s' % result['Message'])  
+              self.log.error('Failed to get pilot output: %s' % result['Message'])
+            else:
+              output,error = result['Value']
+              result = pilotAgentsDB.storePilotOutput(pRef,output,error)
+              if not result['OK']:
+                self.log.error('Failed to store pilot output: %s' % result['Message'])  
                  
     return S_OK()      
     
