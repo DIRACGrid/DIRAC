@@ -44,35 +44,37 @@ class CREAMComputingElement( ComputingElement ):
     # First assure that any global parameters are loaded
     ComputingElement._addCEConfigDefaults( self )
     
-  def __writeJDL(self,executableFile):   
+  def __writeJDL(self,executableFile):
     """ Create the JDL for submission
     """
- 
+
     workingDirectory = self.ceParameters['WorkingDirectory']
+    fd, name = tempfile.mkstemp( suffix = '.jdl', prefix = 'CREAM_', dir = workingDirectory )
+    diracStamp = os.path.basename(name).replace('.jdl','').replace('CREAM_','')
+    jdlFile = os.fdopen( fd, 'w' )
 
     jdl = """
 [
   JobType = "Normal";
   Executable = "%(executable)s";
-  StdOutput="out.out";
-  StdError="err.err";
+  StdOutput="%(diracStamp)s.out";
+  StdError="%(diracStamp)s.err";
   InputSandbox={"%(executableFile)s"};
-  OutputSandbox={"out.out", "err.err"};
+  OutputSandbox={"%(diracStamp)s.out", "%(diracStamp)s.err"};
   OutputSandboxBaseDestUri="%(outputURL)s";
 ]
     """ % {
             'executableFile':executableFile,
             'executable':os.path.basename(executableFile),
-            'outputURL':self.outputURL
+            'outputURL':self.outputURL,
+            'ceName':self.ceName,
+            'queueName':self.queue,
+            'diracStamp':diracStamp
            }
-    
-    fd, name = tempfile.mkstemp( suffix = '.jdl', prefix = 'CREAM_', dir = workingDirectory )
-    jdlFile = os.fdopen( fd, 'w' )
+
     jdlFile.write( jdl )
     jdlFile.close()
-    
-    return name
-  
+    return name,diracStamp  
     
   def reset(self):
     self.queue = self.ceParameters['Queue']
@@ -87,32 +89,41 @@ class CREAMComputingElement( ComputingElement ):
     self.log.info( "Executable file path: %s" % executableFile )
     if not os.access( executableFile, 5 ):
       os.chmod( executableFile, 0755 )
-      
-    jdlName = self.__writeJDL(executableFile)      
+
     batchIDList = []
-    if numberOfJobs == 1: 
+    stampDict = {}
+    if numberOfJobs == 1:
+      jdlName,diracStamp = self.__writeJDL(executableFile)
       cmd = 'glite-ce-job-submit -n -a -N -r %s/%s %s ' % (self.ceName,self.queue,jdlName)
       result = executeGridCommand(proxy,cmd,self.gridEnv)
       if result['OK']:
-        batchIDList.append(result['Value'][1].strip())
+        pilotJobReference = result['Value'][1].strip()
+        batchIDList.append(pilotJobReference)
+        stampDict[pilotJobReference] = diracStamp
+      os.unlink(jdlName)
     else:
-      delegationID = makeGuid() 
+      delegationID = makeGuid()
       cmd = 'glite-ce-delegate-proxy -e %s %s' % (self.ceName,delegationID)
       result = executeGridCommand(proxy,cmd,self.gridEnv)
-      for i in range(numberOfJobs):  
+      for i in range(numberOfJobs):
+        jdlName,diracStamp = self.__writeJDL(executableFile)
         cmd = 'glite-ce-job-submit -n -N -r %s/%s -D %s %s ' % (self.ceName,self.queue,delegationID,jdlName)
         result = executeGridCommand(proxy,cmd,self.gridEnv)
         print result
         if not result['OK']:
           break
-        batchIDList.append(result['Value'][1].strip())
-    
+        pilotJobReference = result['Value'][1].strip()
+        batchIDList.append(pilotJobReference)
+        stampDict[pilotJobReference] = diracStamp
+        os.unlink(jdlName)
+
     os.unlink(executableFile)
-    os.unlink(jdlName)
-   
+
     print "AT >>>", batchIDList
 
-    return S_OK( batchIDList )
+    result = S_OK( batchIDList )
+    result['PilotStampDict'] = stampDict
+    return result
 
   #############################################################################
   def getDynamicInfo( self, proxy = '' ):
@@ -144,8 +155,9 @@ class CREAMComputingElement( ComputingElement ):
   def getJobStatus(self,jobIDList, proxy=''):
     """ Get the status information for the given list of jobs
     """
-        
-    fd, idFileName = tempfile.mkstemp( suffix = '.ids', prefix = 'CREAM_', dir = os.getcwd() )
+     
+    workingDirectory = self.ceParameters['WorkingDirectory']   
+    fd, idFileName = tempfile.mkstemp( suffix = '.ids', prefix = 'CREAM_', dir = workingDirectory )
     idFile = os.fdopen( fd, 'w' )
     idFile.write('##CREAMJOBS##')
     for id in jobIDList:
@@ -191,6 +203,8 @@ class CREAMComputingElement( ComputingElement ):
            resultDict[ref] = 'Killed' 
          elif creamStatus in ['RUNNING','REALLY-RUNNING']:
            resultDict[ref] = 'Running'
+         elif creamStatus == 'N/A':
+           resultDict[ref] = 'Unknown'
          else:
            resultDict[ref] = creamStatus.capitalize()  
    
@@ -198,13 +212,49 @@ class CREAMComputingElement( ComputingElement ):
     return resultDict
     
   
-  def getJobOutput(self,jobID,localDir=None):
+  def getJobOutput(self,jobID,localDir=None,proxy=''):
     """ Get the specified job standard output and error files. If the localDir is provided,
         the output is returned as file in this directory. Otherwise, the output is returned 
         as strings. 
-    """     
+    """ 
+    if jobID.find(':::') != -1:
+      pilotRef,stamp = jobID.split(':::')
+    else:
+      pilotRef = jobID
+      stamp = ''
+    if not stamp:
+      return S_ERROR('Pilot stamp not defined for %s' % pilotRef ) 
+
+    outputURL = os.path.join(self.ceParameters['OutputURL'],'%s.out' % stamp)
+    errorURL = os.path.join(self.ceParameters['OutputURL'],'%s.err' % stamp)
+    workingDirectory = self.ceParameters['WorkingDirectory']
+    outFileName = os.path.join(workingDirectory,os.path.basename(outputURL))
+    errFileName = os.path.join(workingDirectory,os.path.basename(errorURL))
+
+    cmd = 'globus-url-copy %s file://%s' % (outputURL,outFileName)
+    result = executeGridCommand(proxy,cmd,self.gridEnv)
     output = ''
+    if result['OK']:
+      if not result['Value'][0]:
+        outFile = open(outFileName,'r')
+        output = outFile.read()
+        outFile.close()
+        os.unlink(outFileName)
+    else:
+      return S_ERROR('Failed to retrieve output for %s' % jobID)
+        
+    cmd = 'globus-url-copy %s %s' % (errorURL,errFileName)
+    result = executeGridCommand(proxy,cmd,self.gridEnv)
     error = ''
+    if result['OK']:
+      if not result['Value'][0]:
+        errFile = open(errFileName,'r')
+        error = errFile.read()
+        errFile.close()
+        os.unlink(errFileName)
+    else:
+      return S_ERROR('Failed to retrieve error for %s' % jobID)
+
     return S_OK((output,error))
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
