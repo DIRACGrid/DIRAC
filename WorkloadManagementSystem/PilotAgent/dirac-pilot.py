@@ -181,7 +181,7 @@ cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
             ( 's:', 'section=', 'Set base section for relative parsed options' ),
             ( 'o:', 'option=', 'Option=value to add' ),
             ( 'c', 'cert', 'Use server certificate instead of proxy' ),
-            ( 'R', 'reference', 'Use this pilot reference' ),
+            ( 'R:', 'reference=', 'Use this pilot reference' ),
           )
 
 cliParams = CliParams()
@@ -296,17 +296,9 @@ if os.environ.has_key( 'GLITE_WMS_JOBID' ):
   pilotRef = os.environ['GLITE_WMS_JOBID']
   
 # This is the CREAM direct submission case  
-if os.environ.has_key( '__delegationProxyCertSandboxPath' ):
-
-  logDEBUG(os.environ['__delegationProxyCertSandboxPath'])
-
-  match = re.search('gsiftp://([a-zA-Z0-9-\.]*)/.*(CREAM\d*)/',os.environ['__delegationProxyCertSandboxPath'])
-  if match:
-    ce = match.group(1)
-    creamJob = match.group(2)
-    cliParams.flavour = 'CREAM'
-    pilotRef = 'https://%s:8443/%s' % (ce,creamJob)
-    logDEBUG('%s %s %s' % (ce,creamJob,pilotRef))  
+if os.environ.has_key( 'CREAM_JOBID' ):
+  cliParams.flavour = 'CREAM'
+  pilotRef = os.environ['CREAM_JOBID']
 
 configureOpts.append( '-o /LocalSite/GridMiddleware=%s' % cliParams.flavour )
 if pilotRef != 'Unknown':
@@ -325,6 +317,12 @@ if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
     configureOpts.append( '-o /LocalSite/CEQueue="%s"' % cliParams.queueName )
   else:
     logERROR( "There was an error executing brokerinfo. Setting ceName to local " )
+elif cliParams.flavour == "CREAM":
+  if os.environ.has_key( 'CE_ID' ):
+    cliParams.ceName = os.environ['CE_ID'].split( ':' )[0]
+    cliParams.queueName = os.environ['CE_ID'].split( '/' )[1]
+    configureOpts.append( '-N "%s"' % cliParams.ceName )
+    configureOpts.append( '-o /LocalSite/CEQueue="%s"' % cliParams.queueName )
 
 if cliParams.queueName:
   configureOpts.append( '-o /LocalSite/CEQueue="%s"' % cliParams.queueName )
