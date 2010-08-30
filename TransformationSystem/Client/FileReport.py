@@ -4,7 +4,7 @@
 
 __RCSID__ = "$Id: FileReport.py 18161 2009-11-11 12:07:09Z acasajus $"
 
-from DIRAC                                                      import S_OK, S_ERROR
+from DIRAC                                                      import S_OK, S_ERROR, gLogger
 from DIRAC.TransformationSystem.Client.TransformationDBClient   import TransformationDBClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
 
@@ -52,9 +52,13 @@ class FileReport:
     summaryDict = {}
     for status,lfns in sDict.items():
       res = self.client.setFileStatusForTransformation(self.transformation,status,lfns) 
-      if res['OK']:
-        summaryDict[status] = len(lfns)
-        for lfn in lfns:
+      if not res['OK']:
+        continue
+      for lfn,error in res['Value']['Failed'].items():
+        gLogger.error("Failed to update file status","%s %s" % (lfn,error))
+      if res['Value']['Successful']:
+        summaryDict[status] = len(res['Value']['Successful'])
+        for lfn in res['Value']['Successful']:
           self.statusDict.pop(lfn)
     
     if not self.statusDict:
