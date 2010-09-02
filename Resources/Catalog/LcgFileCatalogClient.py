@@ -5,6 +5,7 @@ import DIRAC
 from DIRAC                                      import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Resources.Catalog.FileCatalogueBase  import FileCatalogueBase
 from DIRAC.Core.Utilities.Time                  import fromEpoch
+from DIRAC.Core.Utilities.List                  import sortList,breakListIntoChunks
 from stat import *
 import os, re, string, commands, types,time
 
@@ -550,48 +551,76 @@ class LcgFileCatalogClient(FileCatalogueBase):
     if not res['OK']:
       return res
     lfns = res['Value']
+    created = self.__openSession()
     failed = {}
     successful = {}
-    for lfn,info in lfns.items():
-      created = self.__openSession()
-      pfn = info['PFN']
-      se = info['SE']
-      size = info['Size']
-      guid = info['GUID']
-      checksum = info['Checksum']
-      master = True
-      res = self.__checkAddFile(lfn,pfn,size,se,guid,checksum)
-      if created: self.__closeSession()
+    baseDirs = []
+    for lfn in lfns.keys():
+      baseDir = os.path.dirname(lfn)
+      if baseDir in baseDirs:
+        continue
+      baseDirs.append(baseDir)
+      res = self.__executeOperation(baseDir,'exists')
+      # If we failed to find out whether the directory exists
       if not res['OK']:
-        errStr = "LcgFileCatalogClient.addFile: Failed pre-registration check."
-        gLogger.error(errStr, res['Message'])
-        failed[lfn] = "%s %s" % (errStr,res['Message'])
-      elif not res['Value']:
-        gLogger.verbose("This file was already registered.")
-        successful[lfn] = True
-      else:
-        size = long(size)
-        self.__startTransaction()
-        res = self.__addFile(lfn,pfn,size,se,guid,checksum)
+        continue
+      # If the directory exists
+      if res['Value']:
+        continue
+      #Make the directories recursively if needed
+      res = self.__makeDirs(baseDir)
+      # If we failed to make the directory for the file
+      if not res['OK']:
+        continue
+    lfc.lfc_umask(0000)
+    for lfnList in breakListIntoChunks(sortList(lfns.keys()),1000):
+      fileChunk = []
+      for lfn in lfnList:
+        lfnInfo = lfns[lfn]
+        pfn = lfnInfo['PFN']
+        size = lfnInfo['Size']
+        se = lfnInfo['SE']
+        guid = lfnInfo['GUID']
+        checksum = lfnInfo['Checksum']
+        res = self.__checkAddFile(lfn,pfn,size,se,guid,checksum)
         if not res['OK']:
-          self.__abortTransaction()
           failed[lfn] = res['Message']
-          gLogger.error("LcgFileCatalogClient.addFile: Failed to perform __addFile.",res['Message'])
-          res = self.__unlinkPath(lfn)
-          if not res['OK']:
-            gLogger.error("LcgFileCatalogClient.addFile: Failed to remove file after failure.", res['Message'])
+          lfnList.remove(lfn)
+        elif not res['Value']:
+          successful[lfn] = True
+          lfnList.remove(lfn)
         else:
-          #Finally, register the pfn replica
-          res = self.__addReplica(guid,pfn,se,master)
-          if not res['OK']:
-            self.__abortTransaction()
-            failed[lfn] = res['Message']
-            res = self.__unlinkPath(lfn)
-            if not res['OK']:
-              gLogger.error("LcgFileCatalogClient.addFile: Failed to remove file after failure.", res['Message'])
-          else:
-            self.__endTransaction()
-            successful[lfn] = True
+          oFile = lfc.lfc_filereg()
+          oFile.lfn = "%s/%s" % (self.prefix,lfn)
+          oFile.sfn = pfn
+          oFile.size = size 
+          oFile.mode = 0664
+          oFile.server = se
+          oFile.guid = guid
+          oFile.csumtype = 'AD'
+          oFile.status = 'U' 
+          oFile.csumvalue = lfnInfo['Checksum'] 
+          fileChunk.append(oFile)
+      if not fileChunk:
+        continue
+      value, errCodes = lfc.lfc_registerfiles(fileChunk)
+      if (value != 0) or (len(errCodes) != len(lfnList)):
+        for lfn in lfnList:
+          failed[lfn] = lfc.sstrerror(lfc.cvar.serrno)
+        continue
+      for index in range(len(errCodes)):
+        lfn = lfnList[index]
+        errCode = errCodes[index]
+        if errCode == 0: 
+          successful[lfn] = True
+        elif errCode == 17:
+          failed[lfn] = "The supplied GUID is already used"
+          res = self.__getLfnForGUID(guid)
+          if res['OK']:
+            failed[lfn] = "The supplied GUID is already used by %s" % res['Value']
+        else:
+          failed[lfn] = lfc.sstrerror(errCode)
+    if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -1035,10 +1064,11 @@ class LcgFileCatalogClient(FileCatalogueBase):
     gLogger.verbose("LcgFileCatalogClient.__getACLInformation: %s owned by %s:%s." % (path,permissionsDict['DN'],permissionsDict['Role'])) 
     return S_OK(permissionsDict)
 
-  def __getPathStat(self,path):
-    fullLfn = '%s%s' % (self.prefix,path)
+  def __getPathStat(self,path='',guid=''):
+    if path:
+      path = '%s%s' % (self.prefix,path)
     fstat = lfc.lfc_filestatg()
-    value = lfc.lfc_statg(fullLfn,'',fstat)
+    value = lfc.lfc_statg(path,guid,fstat)
     if value == 0:
       return S_OK(fstat)
     else:
@@ -1102,15 +1132,11 @@ class LcgFileCatalogClient(FileCatalogueBase):
     return S_ERROR("No replica at supplied site")
 
   def __checkAddFile(self,lfn,pfn,size,se,guid,checksum):
-    res = self.__executeOperation({lfn:guid},'exists')
+    res = self.__getPathStat(lfn)
     if not res['OK']:
-      return S_ERROR("Failed to find pre-existance of LFN")
-    if res['Value']:
-      if res['Value'] != lfn:
-        return S_ERROR("The supplied GUID is already used by %s" % res['Value'])
-      res = self.__getPathStat(lfn)
-      if not res['OK']:
-        return S_ERROR("Failed to obtain metadata for existing LFN")
+      if res['Message'] != 'No such file or directory':
+        return S_ERROR("Failed to find pre-existance of LFN")
+    else:
       fstat = res['Value']
       if fstat.guid != guid:
         return S_ERROR("This LFN is already registered with another GUID")
@@ -1693,3 +1719,36 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return S_OK()
     else:
       return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
+
+  # THIS IS NOT YET WORKING
+  def getReplicasNew(self,lfn,allStatus=False):
+    """ Returns replicas for an LFN or list of LFNs
+    """
+    res = self.__checkArgumentFormat(lfn)
+    if not res['OK']:
+      return res
+    lfns = res['Value']
+    lfnChunks = breakListIntoChunks(sortList(lfns.keys()),1000)
+    # If we have less than three groups to query a session doesn't make sense
+    created = False
+    if len(lfnChunks) > 2:
+      created = self.__openSession()
+    failed = {}
+    successful = {}
+    for lfnList in lfnChunks:
+      value,replicaList = lfc.lfc_getreplicasl(lfnList,'')
+      if value != 0:
+        for lfn in lfnList:
+          failed[lfn] = lfc.sstrerror(lfc.cvar.serrno)
+        continue
+      for oReplica in replicaList:
+        #TODO WORK OUT WHICH LFN THIS CORRESPONDS
+        status = oReplica.status
+        if (status != 'P') or allStatus:
+          se = replica.host
+          pfn = replica.sfn#.strip()
+          replicas[se] = pfn
+    if created: self.__closeSession()
+    resDict = {'Failed':failed,'Successful':successful}
+    return S_OK(resDict)
+
