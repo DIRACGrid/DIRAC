@@ -75,7 +75,10 @@ class FailoverTransfer:
 
       fileDict = errorDict['register']
       #Therefore the registration failed but the upload was successful
-      result = self.__setRegistrationRequest(fileDict['LFN'],se,'',fileDict)
+      if not fileCatalog:
+        fileCatalog=''
+      
+      result = self.__setRegistrationRequest(fileDict['LFN'],se,fileCatalog,fileDict)
       if not result['OK']:
         self.log.error('Failed to set registration request for: SE %s and metadata: \n%s' %(se,fileDict))
         errorList.append('Failed to set registration request for: SE %s and metadata: \n%s' %(se,fileDict))
