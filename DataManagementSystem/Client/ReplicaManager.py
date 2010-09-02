@@ -1001,10 +1001,15 @@ class ReplicaManager( CatalogToStorage ):
     res = self.__getCatalogDirectoryContents( [dir] )
     if not res['OK']:
       return res
-    filesFound = res['Value'].keys()
-    if filesFound:
-      gLogger.info( "Attempting to remove %d files from the catalog and storage" % len( filesFound ) )
-      res = self.removeFile( filesFound )
+    replicaDict = {}
+    for lfn,lfnDict in res['Value'].items():
+      lfnReplicas = lfnDict['Replicas']
+      replicaDict[lfn] = {}
+      for se,seDict in lfnReplicas.items():
+        replicaDict[lfn][se] = seDict['PFN']
+    if replicaDict:
+      gLogger.info( "Attempting to remove %d files from the catalog and storage" % len(replicaDict) )
+      res = self.__removeFile(replicaDict)
       if not res['OK']:
         return res
       for lfn, reason in res['Value']['Failed'].items():
@@ -1354,7 +1359,7 @@ class ReplicaManager( CatalogToStorage ):
     resDict = {'Successful': successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def replicateAndRegister( self, lfn, destSE, sourceSE='', destPath='', localCache='' ):
+  def replicateAndRegister( self, lfn, destSE, sourceSE='', destPath='', localCache='' ,catalog=''):
     """ Replicate a LFN to a destination SE and register the replica.
 
         'lfn' is the LFN to be replicated
@@ -1386,7 +1391,7 @@ class ReplicaManager( CatalogToStorage ):
     gLogger.verbose( "ReplicaManager.replicateAndRegister: Attempting to register %s at %s." % ( destPfn, destSE ) )
     replicaTuple = ( lfn, destPfn, destSE )
     startRegistration = time.time()
-    res = self.registerReplica( replicaTuple )
+    res = self.registerReplica( replicaTuple, catalog=catalog )
     registrationTime = time.time() - startRegistration
     if not res['OK']:
       # Need to return to the client that the file was replicated but not registered
