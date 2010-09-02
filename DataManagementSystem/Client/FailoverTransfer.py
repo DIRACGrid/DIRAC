@@ -89,6 +89,7 @@ class FailoverTransfer:
         metadata['filedict']=fileDict
         metadata['uploadedSE']=se
         metadata['lfn']=lfn
+        metadata['registration']='request'
         return S_OK(metadata)
 
     self.log.error('Encountered %s errors during attempts to upload output data' %len(errorList))
