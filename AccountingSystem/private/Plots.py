@@ -1,5 +1,6 @@
 import time
 import datetime
+import cStringIO
 try:
   from DIRAC.Core.Utilities.Graphs import barGraph, lineGraph, pieGraph, cumulativeGraph, qualityGraph, textGraph
 except Exception, e:
@@ -25,6 +26,14 @@ def generateNoDataPlot( fileName, data, metadata ):
   textGraph( 'No data for this selection', fn, metadata )
   fn.close()
   return S_OK()
+
+def generateErrorMessagePlot( msgText ):
+  fn = cStringIO.StringIO()
+  textGraph( msgText, fn, {} )
+  data = fn.getvalue()
+  fn.close()
+  return S_OK( data )
+
 
 def generateTimedStackedBarPlot( fileName, data, metadata ):
   try:
