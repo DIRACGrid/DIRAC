@@ -21,7 +21,7 @@ from DIRAC                                           import S_OK, S_ERROR
 
 import os, re, time, string
 
-class OptimizerModule(AgentModule):
+class OptimizerModule( AgentModule ):
 
   #############################################################################
   def initialize( self, jobDB = False, logDB = False ):
@@ -44,17 +44,17 @@ class OptimizerModule(AgentModule):
 
     self.startingMinorStatus = self.am_getModuleParam( 'optimizerName' )
     self.startingMajorStatus = "Checking"
-    self.failedStatus        = self.am_getOption( "FailedJobStatus" , 'Failed' )
+    self.failedStatus = self.am_getOption( "FailedJobStatus" , 'Failed' )
     self.requiredJobInfo = 'jdl'
     self.am_setOption( "PollingTime", 30 )
 
     return self.initializeOptimizer()
 
-  def initializeOptimizer(self):
+  def initializeOptimizer( self ):
     return S_OK()
 
   #############################################################################
-  def execute(self):
+  def execute( self ):
     """ The main agent execution method
     """
 
@@ -69,12 +69,12 @@ class OptimizerModule(AgentModule):
 
     result = self.jobDB.selectJobs( condition )
     if not result['OK']:
-      self.log.warn('Failed to get a job list from the JobDB')
-      return S_ERROR('Failed to get a job list from the JobDB')
+      self.log.warn( 'Failed to get a job list from the JobDB' )
+      return S_ERROR( 'Failed to get a job list from the JobDB' )
 
     if not len( result['Value'] ):
-      self.log.verbose('No pending jobs to process')
-      return S_OK('No work to do')
+      self.log.verbose( 'No pending jobs to process' )
+      return S_OK( 'No work to do' )
 
     for job in result['Value']:
       result = self.getJobDefinition( job )
@@ -88,7 +88,7 @@ class OptimizerModule(AgentModule):
 
   #############################################################################
   def optimizeJob( self, job, classAdJob ):
-    self.log.info('Job %s will be processed by %sAgent' % ( job, self.am_getModuleParam( 'optimizerName' ) ) )
+    self.log.info( 'Job %s will be processed by %sAgent' % ( job, self.am_getModuleParam( 'optimizerName' ) ) )
     result = self.checkJob( job, classAdJob )
     if not result['OK']:
       self.setFailedJob( job, result['Message'], classAdJob )
@@ -101,7 +101,7 @@ class OptimizerModule(AgentModule):
     #If not jdl in jobinfo load it
     if 'jdl' not in jobDef:
       if 'jdlOriginal' == self.requiredJobInfo:
-        result = self.jobDB.getJobJDL( job, original=True )
+        result = self.jobDB.getJobJDL( job, original = True )
         if not result[ 'OK' ]:
           self.log.error( "No JDL for job", "%s" % job )
           return S_ERROR( "No JDL for job" )
@@ -120,7 +120,7 @@ class OptimizerModule(AgentModule):
         self.log.debug( "Cannot load JDL" )
         return S_ERROR( 'Illegal Job JDL' )
       if not classad.isOK():
-        self.log.debug("Warning: illegal JDL for job %s, will be marked problematic" % (job))
+        self.log.debug( "Warning: illegal JDL for job %s, will be marked problematic" % ( job ) )
         return S_ERROR( 'Illegal Job JDL' )
       jobDef[ 'classad' ] = classad
     return S_OK( jobDef )
@@ -130,40 +130,40 @@ class OptimizerModule(AgentModule):
     """This method gets job optimizer information that will
        be used for
     """
-    self.log.verbose("self.jobDB.getJobOptParameter(%s,'%s')" %(job,reportName))
-    result = self.jobDB.getJobOptParameter(job,reportName)
+    self.log.verbose( "self.jobDB.getJobOptParameter(%s,'%s')" % ( job, reportName ) )
+    result = self.jobDB.getJobOptParameter( job, reportName )
     if result['OK']:
       value = result['Value']
       if not value:
-        self.log.warn('JobDB returned null value for %s %s' %(job,reportName))
-        return S_ERROR('No optimizer info returned')
+        self.log.warn( 'JobDB returned null value for %s %s' % ( job, reportName ) )
+        return S_ERROR( 'No optimizer info returned' )
       else:
         try:
-          return S_OK( eval(value) )
-        except Exception,x:
-          return S_ERROR('Could not evaluate optimizer parameters')
+          return S_OK( eval( value ) )
+        except Exception, x:
+          return S_ERROR( 'Could not evaluate optimizer parameters' )
 
     return result
 
   #############################################################################
-  def setOptimizerJobInfo(self,job,reportName,value):
+  def setOptimizerJobInfo( self, job, reportName, value ):
     """This method sets the job optimizer information that will subsequently
        be used for job scheduling and TURL queries on the WN.
     """
-    self.log.verbose("self.jobDB.setJobOptParameter(%s,'%s','%s')" %(job,reportName,value))
+    self.log.verbose( "self.jobDB.setJobOptParameter(%s,'%s','%s')" % ( job, reportName, value ) )
     if not self.am_Enabled():
       return S_OK()
-    return self.jobDB.setJobOptParameter(job,reportName,str(value))
+    return self.jobDB.setJobOptParameter( job, reportName, str( value ) )
 
   #############################################################################
-  def setOptimizerChain(self,job,value):
+  def setOptimizerChain( self, job, value ):
     """This method sets the job optimizer chain, in principle only needed by
        one of the optimizers.
     """
-    self.log.verbose("self.jobDB.setOptimizerChain(%s,%s)" %(job,value))
+    self.log.verbose( "self.jobDB.setOptimizerChain(%s,%s)" % ( job, value ) )
     if not self.am_Enabled():
       return S_OK()
-    return self.jobDB.setOptimizerChain(job,value)
+    return self.jobDB.setOptimizerChain( job, value )
 
   #############################################################################
   def setNextOptimizer( self, job ):
@@ -172,13 +172,13 @@ class OptimizerModule(AgentModule):
        start to work on the job.
     """
 
-    result = self.logDB.addLoggingRecord( job, status=self.startingMajorStatus,
-                                               minor=self.startingMinorStatus,
-                                               source=self.am_getModuleParam( "optimizerName" ) )
+    result = self.logDB.addLoggingRecord( job, status = self.startingMajorStatus,
+                                               minor = self.startingMinorStatus,
+                                               source = self.am_getModuleParam( "optimizerName" ) )
     if not result['OK']:
       self.log.warn( result['Message'] )
 
-    self.log.verbose("self.jobDB.setNextOptimizer(%s,'%s')" %( job, self.am_getModuleParam( "optimizerName" ) ) )
+    self.log.verbose( "self.jobDB.setNextOptimizer(%s,'%s')" % ( job, self.am_getModuleParam( "optimizerName" ) ) )
     return self.jobDB.setNextOptimizer( job, self.am_getModuleParam( "optimizerName" ) )
 
 
@@ -187,7 +187,7 @@ class OptimizerModule(AgentModule):
     """This method updates the job status in the JobDB, this should only be
        used to fail jobs due to the optimizer chain.
     """
-    self.log.verbose("self.jobDB.setJobStatus(%s,'Status/Minor/Application','%s'/'%s'/'%s',update=True)" % (job,status,str(minorStatus),str(appStatus)))
+    self.log.verbose( "self.jobDB.setJobStatus(%s,'Status/Minor/Application','%s'/'%s'/'%s',update=True)" % ( job, status, str( minorStatus ), str( appStatus ) ) )
     if not self.am_Enabled():
       return S_OK()
 
@@ -198,38 +198,38 @@ class OptimizerModule(AgentModule):
     result = self.logDB.addLoggingRecord( job, status = status, minor = minorStatus, application = appStatus,
                                           source = self.am_getModuleParam( 'optimizerName' ) )
     if not result['OK']:
-      self.log.warn (result['Message'] )
+      self.log.warn ( result['Message'] )
 
     return S_OK()
 
   #############################################################################
-  def setJobParam(self,job,reportName,value):
+  def setJobParam( self, job, reportName, value ):
     """This method updates a job parameter in the JobDB.
     """
-    self.log.verbose("self.jobDB.setJobParameter(%s,'%s','%s')" %(job,reportName,value))
+    self.log.verbose( "self.jobDB.setJobParameter(%s,'%s','%s')" % ( job, reportName, value ) )
     if not self.am_Enabled():
       return S_OK()
-    return self.jobDB.setJobParameter(job,reportName,value)
+    return self.jobDB.setJobParameter( job, reportName, value )
 
   #############################################################################
-  def setFailedJob(self, job, msg, classAdJob ):
+  def setFailedJob( self, job, msg, classAdJob ):
     """This method moves the job to the failed status
     """
-    self.log.verbose("self.updateJobStatus(%s,'%s','%s')" % ( job, self.failedStatus, msg ) )
+    self.log.verbose( "self.updateJobStatus(%s,'%s','%s')" % ( job, self.failedStatus, msg ) )
     if not self.am_Enabled():
       return S_OK()
     self.updateJobStatus( job, self.failedStatus, msg )
     self.sendAccountingRecord( job, msg, classAdJob )
 
   #############################################################################
-  def checkJob(self,job,classad):
+  def checkJob( self, job, classad ):
     """This method controls the checking of the job, should be overridden in a subclass
     """
-    self.log.warn('Optimizer: checkJob method should be implemented in a subclass')
-    return S_ERROR('Optimizer: checkJob method should be implemented in a subclass')
+    self.log.warn( 'Optimizer: checkJob method should be implemented in a subclass' )
+    return S_ERROR( 'Optimizer: checkJob method should be implemented in a subclass' )
 
   #############################################################################
-  def sendAccountingRecord(self, job, msg, classAdJob ):
+  def sendAccountingRecord( self, job, msg, classAdJob ):
     """
       Send and accounting record for the failed job
     """
@@ -237,23 +237,23 @@ class OptimizerModule(AgentModule):
     accountingReport.setStartTime()
     accountingReport.setEndTime()
 
-    owner = classAdJob.getAttributeString('Owner')
-    userGroup = classAdJob.getAttributeString('OwnerGroup')
-    jobGroup = classAdJob.getAttributeString('JobGroup')
-    jobType = classAdJob.getAttributeString('JobType')
-    jobClass='unknown'
-    if classAdJob.lookupAttribute('JobSplitType'):
-      jobClass = classAdJob.getAttributeString('JobSplitType')
+    owner = classAdJob.getAttributeString( 'Owner' )
+    userGroup = classAdJob.getAttributeString( 'OwnerGroup' )
+    jobGroup = classAdJob.getAttributeString( 'JobGroup' )
+    jobType = classAdJob.getAttributeString( 'JobType' )
+    jobClass = 'unknown'
+    if classAdJob.lookupAttribute( 'JobSplitType' ):
+      jobClass = classAdJob.getAttributeString( 'JobSplitType' )
     inputData = []
-    processingType='unknown'
-    if classAdJob.lookupAttribute('ProcessingType'):
-      processingType = classAdJob.getAttributeString('ProcessingType')
-    if classAdJob.lookupAttribute('InputData'):
-      inputData = classAdJob.getListFromExpression('InputData')
+    processingType = 'unknown'
+    if classAdJob.lookupAttribute( 'ProcessingType' ):
+      processingType = classAdJob.getAttributeString( 'ProcessingType' )
+    if classAdJob.lookupAttribute( 'InputData' ):
+      inputData = classAdJob.getListFromExpression( 'InputData' )
     inputDataFiles = len( inputData )
     outputData = []
-    if classAdJob.lookupAttribute('OutputData'):
-      outputData = classAdJob.getListFromExpression('OutputData')
+    if classAdJob.lookupAttribute( 'OutputData' ):
+      outputData = classAdJob.getListFromExpression( 'OutputData' )
     outputDataFiles = len( outputData )
 
     acData = {
@@ -278,8 +278,8 @@ class OptimizerModule(AgentModule):
                'ProcessedEvents' : 0.0
              }
 
-    self.log.verbose('Accounting Report is:')
-    self.log.verbose(acData)
+    self.log.verbose( 'Accounting Report is:' )
+    self.log.verbose( acData )
     accountingReport.setValuesFromDict( acData )
     return accountingReport.commit()
 
