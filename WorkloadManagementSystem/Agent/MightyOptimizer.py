@@ -78,7 +78,7 @@ class MightyOptimizer( AgentModule ):
     if not jobDef:
       result = optimizer.getJobDefinition( jobId, jobDef )
       if not result['OK']:
-        optimizer.setFailedJob( jobId, result[ 'Message' ] )
+        optimizer.setFailedJob( jobId, result[ 'Message' ], '' )
         return result
       jobDef = result[ 'Value' ]
     #Does the optimizer require a proxy?
