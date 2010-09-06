@@ -5,6 +5,7 @@ import os
 import base64
 import zlib
 import datetime
+
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
 from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
 from DIRAC.AccountingSystem.private.Summaries import Summaries
@@ -12,6 +13,7 @@ from DIRAC.AccountingSystem.private.DataCache import gDataCache
 from DIRAC.AccountingSystem.private.MainReporter import MainReporter
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 from DIRAC.AccountingSystem.private.Policies import gPoliciesList
+from DIRAC.AccountingSystem.private.Plots import generateErrorMessagePlot
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time, DEncode
@@ -209,6 +211,14 @@ class ReportGeneratorHandler( RequestHandler ):
     gLogger.info( "Returning %s file: %s " % ( fileToReturn, result[ 'Value' ][ fileToReturn ] ) )
     return S_OK( result[ 'Value' ][ fileToReturn ] )
 
+  def __sendErrorAsImg( self, msgText, fileHelper ):
+    plotData = generateErrorMessagePlot( result[ 'Message' ] )
+    retVal = fileHelper.sendData( retVal[ 'Value' ] )
+    if not retVal[ 'OK' ]:
+      return retVal
+    fileHelper.sendEOF()
+    return S_OK()
+
   def transfer_toClient( self, fileId, token, fileHelper ):
     """
     Get graphs data
@@ -219,10 +229,12 @@ class ReportGeneratorHandler( RequestHandler ):
       #Seems a request for a plot!
       result = self.__generatePlotFromFileId( fileId )
       if not result[ 'OK' ]:
+        self.__sendErrorAsImg( result[ 'Message' ] )
         return result
       fileId = result[ 'Value' ]
     retVal = gDataCache.getPlotData( fileId )
     if not retVal[ 'OK' ]:
+      self.__sendErrorAsImg( result[ 'Message' ] )
       return retVal
     retVal = fileHelper.sendData( retVal[ 'Value' ] )
     if not retVal[ 'OK' ]:
