@@ -538,7 +538,8 @@ try:
                    'export DIRAC=%s' % proPath,
                    'export DIRACBIN=%s' % os.path.join( proPath, cliParams.platform, 'bin' ),
                    'export DIRACSCRIPTS=%s' % os.path.join( proPath, 'scripts' ),
-                   'export DIRACLIB=%s' % os.path.join( proPath, cliParams.platform, 'lib' ) ] )
+                   'export DIRACLIB=%s' % os.path.join( proPath, cliParams.platform, 'lib' ),
+                   'export TERMINFO=%s' % os.path.join( proPath, cliParans.platform, 'share', 'terminfo' ) ] )
 
     lines.extend( ['# Clear the PYTHONPATH and the LD_LIBRARY_PATH',
                   'PYTHONPATH=""',
