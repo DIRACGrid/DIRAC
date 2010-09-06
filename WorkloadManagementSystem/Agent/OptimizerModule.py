@@ -212,14 +212,15 @@ class OptimizerModule( AgentModule ):
     return self.jobDB.setJobParameter( job, reportName, value )
 
   #############################################################################
-  def setFailedJob( self, job, msg, classAdJob ):
+  def setFailedJob( self, job, msg, classAdJob = None ):
     """This method moves the job to the failed status
     """
     self.log.verbose( "self.updateJobStatus(%s,'%s','%s')" % ( job, self.failedStatus, msg ) )
     if not self.am_Enabled():
       return S_OK()
     self.updateJobStatus( job, self.failedStatus, msg )
-    self.sendAccountingRecord( job, msg, classAdJob )
+    if classAdJob:
+      self.sendAccountingRecord( job, msg, classAdJob )
 
   #############################################################################
   def checkJob( self, job, classad ):
