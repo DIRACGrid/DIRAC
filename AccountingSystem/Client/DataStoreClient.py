@@ -55,15 +55,17 @@ class DataStoreClient:
   def disableFailover( self ):
     self.__failoverEnabled = False
 
+  def __getRPCClient( self ):
+    if self.__setup:
+      return RPCClient( "Accounting/DataStore", setup = self.__setup, timeout = 3600 )
+    return RPCClient( "Accounting/DataStore", timeout = 3600 )
+
   @gAccountingSynchro
   def commit( self ):
     """
     Send the registers in a bundle mode
     """
-    if self.__setup:
-      rpcClient = RPCClient( "Accounting/DataStore", setup = self.__setup, timeout = 3600 )
-    else:
-      rpcClient = RPCClient( "Accounting/DataStore", timeout = 3600 )
+    rpcClient = self.__getRPCClient()
     sent = 0
     while len( self.__registersList ) > 0:
       registersToSend = self.__registersList[ :self.__maxRecordsInABundle ]
@@ -73,7 +75,7 @@ class DataStoreClient:
       else:
         if self.__failoverEnabled and time.time() - self.__lastSuccessfulCommit > self.__maxTimeRetrying:
           gLogger.verbose( "Sending accounting records to failover" )
-          result =  self.__sendToFailover( retVal[ 'rpcStub' ] )
+          result = self.__sendToFailover( retVal[ 'rpcStub' ] )
           if not result[ 'OK' ]:
             return result
         else:
@@ -90,5 +92,15 @@ class DataStoreClient:
     requestStub = request.toXML()['Value']
     return requestClient.setRequest( "Accounting.DataStore.%s.%s" % ( time.time(), random.random() ),
                                      requestStub )
+
+  def remove ( self, register ):
+    if not self.__checkBaseType( register.__class__ ):
+      return S_ERROR( "register is not a valid type (has to inherit from BaseAccountingType" )
+    retVal = register.checkValues()
+    if not retVal[ 'OK' ]:
+      return retVal
+    if gConfig.getValue( '/LocalSite/DisableAccounting', False ):
+      return S_OK()
+    return self.__getRPCClient().remove( register.getValues() )
 
 gDataStoreClient = DataStoreClient()
