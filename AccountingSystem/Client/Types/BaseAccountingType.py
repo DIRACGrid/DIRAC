@@ -125,7 +125,7 @@ class BaseAccountingType:
     """
     Get a tuple containing type definition
     """
-    return (  self.__class__.__name__,
+    return ( self.__class__.__name__,
              self.definitionKeyFields,
              self.definitionAccountingFields,
              self.bucketsLength
@@ -135,7 +135,7 @@ class BaseAccountingType:
     """
     Get a tuple containing report values
     """
-    return (  self.__class__.__name__,
+    return ( self.__class__.__name__,
              self.startTime,
              self.endTime,
              self.valuesList
@@ -162,7 +162,7 @@ class BaseAccountingType:
     rpcClient = RPCClient( "Accounting/DataStore" )
     return rpcClient.registerType( *self.getDefinition() )
 
-  def commit(self):
+  def commit( self ):
     """
     Commit register to server
     """
@@ -170,3 +170,9 @@ class BaseAccountingType:
     if not retVal[ 'OK' ]:
       return retVal
     return gDataStoreClient.commit()
+
+  def remove( self ):
+    """
+    Remove a register from server
+    """
+    return gDataStoreClient.removeRecord( self )
