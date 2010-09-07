@@ -717,14 +717,14 @@ class RequestDBMySQL(DB):
 
     for row in result['Value']:
       digestList = []
-      digestList.append(row[0])
-      digestList.append(row[1])
-      digestList.append(row[2])
+      digestList.append(str(row[0]))
+      digestList.append(str(row[1]))
+      digestList.append(str(row[2]))
       digestList.append(str(row[3]))
       if row[0] == "transfer" or row[0] == "register":
-        digestList.append(row[4])
+        digestList.append(str(row[4]))
       if row[0] == "register":
-        digestList.append(row[5])
+        digestList.append(str(row[5]))
       subRequestID = int(row[6])
       req = "SELECT LFN from Files WHERE SubRequestID = %s ORDER BY FileID;" % subRequestID
       resFile = self._query(req)
