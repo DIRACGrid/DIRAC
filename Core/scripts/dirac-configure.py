@@ -18,6 +18,7 @@
   -V --VO=<vo>                                     To define the VO for the installation
   -  --UseServerCertificate                        To use Server Certificate for all clients
   -  --SkipCAChecks                                To skip check of CAs for all clients
+  -  --SkipCADownload                              To skip download of CAs 
   -v --UseVersionsDir                              Use versions directory (This option will properly define RootPath and InstancePath)
   --Architecture=<architecture>                    To define /LocalSite/Architecture=<architecture>
   --LocalSE=<localse>                              To define /LocalSite/LocalSE=<localse>
@@ -35,6 +36,7 @@ CEName
 VirtualOrganization
 UseServerCertificate
 SkipCAChecks
+SkipCADownload
 UseVersionsDir
 Architecture
 LocalSE
@@ -64,6 +66,7 @@ gatewayServer = None
 siteName = None
 useServerCert = False
 skipCAChecks = False
+skipCADownload = False
 useVersionsDir = False
 architecture = None
 localSE = None
@@ -134,6 +137,12 @@ def setSkipCAChecks( optionValue ):
   DIRAC.gConfig.setOptionValue( cfgInstallPath( 'SkipCAChecks' ), skipCAChecks )
   return DIRAC.S_OK()
 
+def setSkipCADownload( optionValue ):
+  global skipCADownload
+  skipCADownload = True
+  DIRAC.gConfig.setOptionValue( cfgInstallPath( 'SkipCADownload' ), skipCADownload )
+  return DIRAC.S_OK()
+
 def setUseVersionsDir( optionValue ):
   global useVersionsDir
   useVersionsDir = True
@@ -177,6 +186,8 @@ Script.registerSwitch( "W:", "gateway=", "Configure <gateway> as DIRAC Gateway f
 
 Script.registerSwitch( "", "UseServerCertificate", "Configure to use Server Certificate", setServerCert )
 Script.registerSwitch( "", "SkipCAChecks", "Configure to skip check of CAs", setSkipCAChecks )
+Script.registerSwitch( "", "SkipCADownload", "Configure to skip download of CAs", setSkipCADownload )
+
 Script.registerSwitch( "v", "UseVersionsDir", "Use versions directory", setUseVersionsDir )
 
 Script.registerSwitch( "", "Architecture=", "Configure /Architecture=<architecture>", setArchitecture )
@@ -229,6 +240,11 @@ if not skipCAChecks:
   if newSkipCAChecks:
     setSkipCAChecks( newSkipCAChecks )
 
+if not skipCADownload:
+  newSkipCADownload = DIRAC.gConfig.getValue( cfgInstallPath( 'SkipCADownload' ), False )
+  if newSkipCADownload:
+    setSkipCADownload( newSkipCADownload )
+
 if not useVersionsDir:
   newUseVersionsDir = DIRAC.gConfig.getValue( cfgInstallPath( 'UseVersionsDir' ), False )
   if newUseVersionsDir:
@@ -270,7 +286,8 @@ if skipCAChecks:
   Script.localCfg.addDefaultEntry( '/DIRAC/Security/SkipCAChecks', 'yes' )
 else:
   # Necessary to allow initial download of CA's
-  DIRAC.gConfig.setOptionValue( '/DIRAC/Security/SkipCAChecks', 'yes' )
+  if not skipCADownload:
+    DIRAC.gConfig.setOptionValue( '/DIRAC/Security/SkipCAChecks', 'yes' )
   Script.enableCS()
   try:
     dirName = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'certificates' )
@@ -280,6 +297,7 @@ else:
     DIRAC.gLogger.exception()
     DIRAC.gLogger.fatal( 'Fail to create directory:', dirName )
     DIRAC.exit( -1 )
+if not skipCADownload:
   try:
     from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
     bdc = BundleDeliveryClient()
@@ -289,7 +307,8 @@ else:
   except:
     DIRAC.gLogger.exception( 'Could not import BundleDeliveryClient' )
     pass
-  Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
+  if not skipCAChecks:
+    Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
 
 if ceName or siteName:
   # This is used in the pilot context, we should have a proxy and access to CS
@@ -334,6 +353,7 @@ if ceName or siteName:
 if useServerCert:
   Script.localCfg.deleteOption( '/DIRAC/Security/UseServerCertificate' )
   # When using Server Certs CA's will be checked, the flag only disables initial download
+  # this will be replaced by the use of SkipCADownload
   Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
 
 if gatewayServer:
