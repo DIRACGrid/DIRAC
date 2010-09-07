@@ -15,22 +15,19 @@ class BundleDeliveryClient:
     self.transferClient = transferClient
     self.log = gLogger.getSubLogger( "BundleDelivery" )
 
-  def __getRPCClient(self):
+  def __getRPCClient( self ):
     if self.rpcClient:
       return self.rpcClient
-    return RPCClient( "Framework/BundleDelivery", 
+    return RPCClient( "Framework/BundleDelivery",
                       skipCACheck = CS.skipCACheck() )
-  
-  def __getTransferClient(self):
+
+  def __getTransferClient( self ):
     if self.transferClient:
       return self.transferClient
-    return TransferClient( "Framework/BundleDelivery", 
+    return TransferClient( "Framework/BundleDelivery",
                            skipCACheck = CS.skipCACheck() )
 
   def __getHash( self, bundleID, dirToSyncTo ):
-    if not os.path.isdir( dirToSyncTo ):
-      self.log.info( "Creating dir %s" % dirToSyncTo )
-      os.makedirs( dirToSyncTo )
     try:
       fd = open( os.path.join( dirToSyncTo, ".dab.%s" % bundleID ), "rb" )
       hash = fd.read().strip()
@@ -38,17 +35,22 @@ class BundleDeliveryClient:
       return hash
     except:
       return ""
-    
+
   def __setHash( self, bundleID, dirToSyncTo, hash ):
     try:
-      fileName =  os.path.join( dirToSyncTo, ".dab.%s" % bundleID )
+      fileName = os.path.join( dirToSyncTo, ".dab.%s" % bundleID )
       fd = open( fileName, "wb" )
       fd.write( hash )
       fd.close()
     except Exception, e:
-      self.log.error( "Could not save hash after synchronization", "%s: %s" % ( fileName, str(e) ) )
+      self.log.error( "Could not save hash after synchronization", "%s: %s" % ( fileName, str( e ) ) )
 
   def syncDir( self, bundleID, dirToSyncTo ):
+    dirCreated = False
+    if not os.path.isdir( dirToSyncTo ):
+      self.log.info( "Creating dir %s" % dirToSyncTo )
+      os.makedirs( dirToSyncTo )
+      dirCreated = True
     currentHash = self.__getHash( bundleID, dirToSyncTo )
     self.log.info( "Current hash for bundle %s in dir %s is '%s'" % ( bundleID, dirToSyncTo, currentHash ) )
     buff = cStringIO.StringIO()
@@ -56,6 +58,9 @@ class BundleDeliveryClient:
     result = transferClient.receiveFile( buff, ( bundleID, currentHash ) )
     if not result[ 'OK' ]:
       self.log.error( "Could not sync dir", result[ 'Message' ] )
+      if dirCreated:
+        self.log.info( "Removing dir %s" % dirTpSyncTo )
+        os.unlink( dirToSyncTo )
       buff.close()
       return result
     newHash = result[ 'Value' ]
@@ -72,7 +77,7 @@ class BundleDeliveryClient:
     self.__setHash( bundleID, dirToSyncTo, newHash )
     self.log.info( "Dir has been synchronized" )
     return S_OK( True )
-  
+
   def syncCAs( self ):
     X509_CERT_DIR = False
     if 'X509_CERT_DIR' in os.environ:
@@ -82,7 +87,7 @@ class BundleDeliveryClient:
     if X509_CERT_DIR:
       os.environ['X509_CERT_DIR'] = X509_CERT_DIR
     return result
-  
+
   def syncCRLs( self ):
     X509_CERT_DIR = False
     if 'X509_CERT_DIR' in os.environ:
