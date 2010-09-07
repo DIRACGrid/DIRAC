@@ -72,6 +72,7 @@ class TransformationAgent(AgentModule):
     if not res['OK']:
       gLogger.error("%s.processTransformation: Failed to obtain input data." % AGENT_NAME, res['Message'])
       return res
+    transFiles = res['Value']  
     lfns = res['LFNs']
     if not lfns:
       gLogger.info("%s.processTransformation: No 'Unused' files found for transformation." % AGENT_NAME)
@@ -103,6 +104,7 @@ class TransformationAgent(AgentModule):
     # Get the plug-in and set the required params
     oPlugin.setParameters(transDict)
     oPlugin.setInputData(dataReplicas)
+    oPlugin.setTransformationFiles(transFiles)
     res = oPlugin.generateTasks()
     if not res['OK']:
       gLogger.error("%s.processTransformation: Failed to generate tasks for transformation." % AGENT_NAME,res['Message'])

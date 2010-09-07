@@ -13,6 +13,7 @@ class TransformationPlugin:
     self.params = False
     self.data = False
     self.plugin = plugin
+    self.files = False
 
   def isOK(self):
     self.valid = True
@@ -22,6 +23,9 @@ class TransformationPlugin:
 
   def setInputData(self,data):
     self.data = data
+
+  def setTransformationFiles(self,files): #TODO ADDED
+    self.files = files
 
   def setParameters(self,params):
     self.params = params
@@ -238,6 +242,7 @@ class TransformationPlugin:
       return S_ERROR("TransformationPlugin._BySize: The 'BySize' plug-in requires parameters.")
     status = self.params['Status']
     requestedSize = float(self.params['GroupSize'])*1000*1000*1000 # input size in GB converted to bytes
+    maxFiles = self.params.get('MaxFiles',100)
     # Group files by SE
     fileGroups = self._getFileGroups(self.data)
     # Get the file sizes
@@ -255,7 +260,7 @@ class TransformationPlugin:
       for lfn in lfns:
         taskSize += fileSizes[lfn]
         taskLfns.append(lfn)
-        if taskSize > requestedSize:
+        if (taskSize > requestedSize) or (len(taskLfns) >= maxFiles):
           tasks.append((replicaSE,taskLfns))
           taskLfns = []
           taskSize = 0
