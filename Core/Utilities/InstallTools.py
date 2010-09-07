@@ -71,6 +71,7 @@ from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgInstallPath, cfgInstallSection
+from DIRAC.Core.Security.Properties import *
 
 # On command line tools this can be set to True to abort after the first error.
 exitOnError = False
@@ -283,9 +284,9 @@ def _getCentralCfg( installCfg ):
   adminGroupName = localCfg.getOption( cfgInstallPath( 'AdminGroupName' ), 'dirac_admin' )
   hostDN = localCfg.getOption( cfgInstallPath( 'HostDN' ), '' )
   defaultGroupName = 'user'
-  adminGroupProperties = ['CSAdministrator', 'ServiceAdministrator', 'JobAdministrator', 'Operator', 'FullDelegation', 'ProxyManagment', 'AlarmsManagement']
-  defaultGroupProperties = ['NormalUser']
-  defaultHostProperties = [ 'JobAdministrator', 'FullDelegation', 'Operator', 'CSAdministrator', 'ProxyManagement', 'TrustedHost']
+  adminGroupProperties = [ ALARMS_MANAGEMENT, SERVICE_ADMINISTRATOR, CS_ADMINISTRATOR, JOB_ADMINISTRATOR, FULL_DELEGATION, PROXY_MANAGEMENT, OPERATOR ]
+  defaultGroupProperties = [ NORMAL_USER ]
+  defaultHostProperties = [ TRUSTED_HOST, CS_ADMINISTRATOR, JOB_ADMINISTRATOR, FULL_DELEGATION, PROXY_MANAGEMENT, OPERATOR ]
 
   if adminUserName:
     if not ( adminUserDN and adminUserEmail ):
