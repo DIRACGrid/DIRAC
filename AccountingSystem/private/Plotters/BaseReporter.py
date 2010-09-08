@@ -22,9 +22,9 @@ class BaseReporter( DBUtils ):
   _EA_TITLE = 'plotTitle'
 
   _UNITS = { 'days' : ( ( 'days / day', 1, 15 ), ( 'weeks / day', 7, 10 ), ( 'months / day', 30, 12 ), ( 'years / day', 365, 1 ) ),
-             'bytes' : ( ( 'MiB / s', 1024 ^ 2, 1024 ), ( 'GiB / s', 1024 ^ 3, 1024 ), ( 'TiB / s', 1024 ^ 4, 1024 ), ( 'PiB / s', 1024 ^ 5, 1 ) ),
-             'jobs' : ( ( 'jobs / hour', 1 / 3600.0, 1000 ), ( 'Kjobs / hour', ( 10 ^ 3 ) / 3600.0, 1000 ), ( 'Mjobs / hour', ( 10 ^ 6 ) / 3600.0, 1 ) ),
-             'files' : ( ( 'files / hour', 1 / 3600.0, 1000 ), ( 'Kfiles / hour', ( 10 ^ 3 ) / 3600.0, 1000 ), ( 'Mfiles / hour', ( 10 ^ 6 ) / 3600.0, 1 ) )
+             'bytes' : ( ( 'MiB / s', 1024 ** 2, 1024 ), ( 'GiB / s', 1024 ** 3, 1024 ), ( 'TiB / s', 1024 ** 4, 1024 ), ( 'PiB / s', 1024 ** 5, 1 ) ),
+             'jobs' : ( ( 'jobs / hour', 1 / 3600.0, 1000 ), ( 'Kjobs / hour', ( 10 ** 3 ) / 3600.0, 1000 ), ( 'Mjobs / hour', ( 10 ** 6 ) / 3600.0, 1 ) ),
+             'files' : ( ( 'files / hour', 1 / 3600.0, 1000 ), ( 'Kfiles / hour', ( 10 ** 3 ) / 3600.0, 1000 ), ( 'Mfiles / hour', ( 10 ** 6 ) / 3600.0, 1 ) )
             }
 
   def __init__( self, db, setup, extraArgs = {} ):
@@ -202,6 +202,7 @@ class BaseReporter( DBUtils ):
           break
     #Apply divFactor to all units
     unitData = self._UNITS[ unit ][ unitIndex ]
+    print "SELECTED UNIT", unitData
     dataDict, maxValue = self._divideByFactor( dataDict, unitData[1] )
     return dataDict, maxValue, unitData[0]
 ##
