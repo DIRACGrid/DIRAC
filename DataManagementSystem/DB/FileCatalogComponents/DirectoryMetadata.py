@@ -73,7 +73,7 @@ class DirectoryMetadata:
   #  return S_OK() 
   ###########################################################
 
-  def setMetadata(self,dpath="",metaName="",metaValue="",credDict=None):
+  def setMetadata(self,dpath,metaName,metaValue,credDict):
     """ Set the value of a given metadata field for the the given directory path
     """
     result = self.getMetadataFields(credDict)
