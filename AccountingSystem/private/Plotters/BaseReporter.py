@@ -202,7 +202,6 @@ class BaseReporter( DBUtils ):
           break
     #Apply divFactor to all units
     unitData = self._UNITS[ unit ][ unitIndex ]
-    print "SELECTED UNIT", unitData
     dataDict, maxValue = self._divideByFactor( dataDict, unitData[1] )
     return dataDict, maxValue, unitData[0]
 ##
