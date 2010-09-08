@@ -24,6 +24,7 @@ CREATE TABLE Transformations (
     GroupSize INT NOT NULL DEFAULT 1,
     InheritedFrom INTEGER DEFAULT 0,
     Body LONGBLOB,
+    InputDataQueryID INT DEFAULT 0,
     MaxNumberOfTasks INT NOT NULL DEFAULT 0,
     EventsPerTask INT NOT NULL DEFAULT 0,
     PRIMARY KEY(TransformationID),
@@ -98,6 +99,15 @@ TransformationID INTEGER NOT NULL,
 TaskID INTEGER NOT NULL,
 InputVector BLOB,
 PRIMARY KEY(TransformationID,TaskID)
+);
+
+-- -------------------------------------------------------------------------------
+DROP TABLE IF EXISTS InputDataQuery;
+CREATE TABLE InputDataQuery(
+InputDataQueryID INTEGER NOT NULL,
+ParameterName VARCHAR(1024) NOT NULL,
+ParameterValue BLOB NOT NULL,
+PRIMARY KEY(InputDataQueryID,ParameterName)
 );
 
 -- -------------------------------------------------------------------------------
