@@ -420,7 +420,7 @@ class StorageBase:
     gLogger.debug( "ReplicaManager._executeStorageElementFunction: Attempting to perform '%s' operation with %s pfns." % ( method, len( pfns ) ) )
     # Check we can instantiate the storage element correctly
     overwride = False
-    if method == 'removeFile':
+    if method  in ['removeFile','removeDirectory']:
       overwride = True
     storageElement = StorageElement(storageElementName, overwride=overwride)
     res = storageElement.isValid( method )
