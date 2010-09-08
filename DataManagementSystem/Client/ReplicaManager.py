@@ -419,7 +419,10 @@ class StorageBase:
       return S_ERROR( errMessage )
     gLogger.debug( "ReplicaManager._executeStorageElementFunction: Attempting to perform '%s' operation with %s pfns." % ( method, len( pfns ) ) )
     # Check we can instantiate the storage element correctly
-    storageElement = StorageElement( storageElementName )
+    overwride = False
+    if method == 'removeFile':
+      overwride = True
+    storageElement = StorageElement(storageElementName, overwride=overwride)
     res = storageElement.isValid( method )
     if not res['OK']:
       errStr = "ReplicaManager._executeStorageElementFunction: Failed to instantiate Storage Element"
@@ -1666,7 +1669,7 @@ class ReplicaManager( CatalogToStorage ):
     failed = {}
     fileDict = {}
     for storageElementName, fileTuple in seDict.items():
-      destStorageElement = StorageElement( storageElementName, overwride=True )
+      destStorageElement = StorageElement(storageElementName,overwride=True)
       res = destStorageElement.isValid()
       if not res['OK']:
         errStr = "ReplicaManager.__registerFile: The storage element is not currently valid."
