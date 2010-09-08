@@ -303,15 +303,15 @@ class CatalogDirectory( CatalogBase ):
     else:
       return self._executeFileCatalogFunction( lfn, 'createDirectory', catalogs=catalogs )
 
-  def removeCatalogDirectory( self, lfn, singleFile=False, catalogs=[] ):
+  def removeCatalogDirectory( self, lfn, recursive=False, singleFile=False, catalogs=[] ):
     """ Remove the directory supplied from the FileCatalog
 
         'lfn' is the directory to remove
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'removeDirectory', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction(lfn, 'removeDirectory', argsDict={'recursive':recursive}, catalogs=catalogs)
     else:
-      return self._executeFileCatalogFunction( lfn, 'removeDirectory', catalogs=catalogs )
+      return self._executeFileCatalogFunction(lfn, 'removeDirectory', argsDict={'recursive':recursive}, catalogs=catalogs)
 
 class CatalogLink( CatalogBase ):
 
@@ -1028,6 +1028,9 @@ class ReplicaManager( CatalogToStorage ):
         failed = True
     if failed:
       return S_ERROR( "Failed to clean storage directory at all SEs" )
+    res = self.removeCatalogDirectory(dir, recursive=True,singleFile=True)
+    if not res['OK']:
+      return res
     return S_OK()
 
   def __removeStorageDirectory( self, directory, storageElement ):
