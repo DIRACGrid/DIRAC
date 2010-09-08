@@ -681,28 +681,28 @@ class ResourceStatusDB:
 
     if granularity in ('Site', 'Sites'):
       if (paramsList == None or paramsList == []):
-        params = 'SiteName, Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode '
+        params = 'SiteName, Status, Reason, DateCreated, DateEffective, DateEnd, TokenOwner '
       DBtable = 'SitesHistory'
       DBtableP = 'Sites'
       DBname = 'SiteName'
       DBid = 'SitesHistoryID'
     elif granularity in ('Service', 'Services'):
       if (paramsList == None or paramsList == []):
-        params = 'ServiceName, Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode '
+        params = 'ServiceName, Status, Reason, DateCreated, DateEffective, DateEnd, TokenOwner '
       DBtable = 'ServicesHistory'
       DBtableP = 'Services'
       DBname = 'ServiceName'
       DBid = 'ServicesHistoryID'
     elif granularity in ('Resource', 'Resources'):
       if (paramsList == None or paramsList == []):
-        params = 'ResourceName, Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode '
+        params = 'ResourceName, Status, Reason, DateCreated, DateEffective, DateEnd, TokenOwner '
       DBtable = 'ResourcesHistory'
       DBtableP = 'Resources'
       DBname = 'ResourceName'
       DBid = 'ResourcesHistoryID'
     elif granularity in ('StorageElement', 'StorageElements'):
       if (paramsList == None or paramsList == []):
-        params = 'StorageElementName, Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode '
+        params = 'StorageElementName, Status, Reason, DateCreated, DateEffective, DateEnd, TokenOwner '
       DBtable = 'StorageElementsHistory'
       DBtableP = 'StorageElements'
       DBname = 'StorageElementName'
@@ -796,7 +796,7 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def setMonitoredReason(self, granularity, name, reason, operatorCode):
+  def setMonitoredReason(self, granularity, name, reason, tokenOwner):
     """
     Set new reason to name.
         
@@ -807,7 +807,7 @@ class ResourceStatusDB:
 
       :attr:`reason`: string, reason
 
-      :attr:`operatorCode`: string, who's making this change 
+      :attr:`tokenOwner`: string, who's making this change 
       (RS_SVC if it's the service itslef)
     """
     
@@ -827,7 +827,7 @@ class ResourceStatusDB:
       raise InvalidRes, where(self, self.setMonitoredReason)
     
     req = "UPDATE %s SET Reason = '%s', " %(DBtable, reason)
-    req = req + "OperatorCode = '%s' WHERE %s = '%s';"  %(operatorCode, DBname, name)
+    req = req + "TokenOwner = '%s' WHERE %s = '%s';"  %(tokenOwner, DBname, name)
     resUpdate = self.db._update(req)
     
     if not resUpdate['OK']:
@@ -841,7 +841,7 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def setSiteStatus(self, siteName, status, reason, operatorCode):
+  def setSiteStatus(self, siteName, status, reason, tokenOwner):
     """ 
     Set a Site status, effective from now, with no ending
         
@@ -853,7 +853,7 @@ class ResourceStatusDB:
   
       :attr:`reason`: string
   
-      :attr:`operatorCode`: string. For the service itself: `RS_SVC`
+      :attr:`tokenOwner`: string. For the service itself: `RS_SVC`
     """
 
     gLogger.info("Setting Site %s new status: %s" % (siteName, status))
@@ -868,13 +868,13 @@ class ResourceStatusDB:
     siteType = resQuery['Value'][0][0]
   
     self.addOrModifySite(siteName, siteType, status, reason, 
-                         datetime.utcnow().replace(microsecond = 0), operatorCode, 
+                         datetime.utcnow().replace(microsecond = 0), tokenOwner, 
                          datetime(9999, 12, 31, 23, 59, 59))
     
 #############################################################################
 
   def addOrModifySite(self, siteName, siteType, status, reason, dateEffective, 
-                      operatorCode, dateEnd):
+                      tokenOwner, dateEnd):
     """ 
     Add or modify a site to the Sites table.
     
@@ -891,7 +891,7 @@ class ResourceStatusDB:
       
       :attr:`dateEffective`: datetime - date from which the site status is effective
 
-      :attr:`operatorCode`: string - free
+      :attr:`tokenOwner`: string - free
 
       :attr:`dateEnd`: datetime - date from which the site status ends to be effective
     """
@@ -925,18 +925,18 @@ class ResourceStatusDB:
         oldStatus = 'Active'
       self._addSiteHistoryRow(siteName, oldStatus, reason, dateCreated, dateEffective, 
                               datetime.utcnow().replace(microsecond = 0).isoformat(' '), 
-                              operatorCode)
+                              tokenOwner)
 
     #in any case add a row to present Sites table
     self._addSiteRow(siteName, siteType, status, reason, dateCreated, dateEffective, 
-                     dateEnd, operatorCode)
+                     dateEnd, tokenOwner)
 #    siteRow = "Added %s --- %s " %(siteName, dateEffective)
 #    return siteRow
 
 #############################################################################
 
   def _addSiteRow(self, siteName, siteType, status, reason, dateCreated, dateEffective, 
-                  dateEnd, operatorCode):
+                  dateEnd, tokenOwner):
     """
     Add a new site row in Sites table
 
@@ -955,7 +955,7 @@ class ResourceStatusDB:
 
       :attr:`dateEnd`: datetime or string - date from which the site status ends to be effective
 
-      :attr:`operatorCode`: string - free
+      :attr:`tokenOwner`: string - free
     """
 
     if not isinstance(dateCreated, basestring):
@@ -969,9 +969,9 @@ class ResourceStatusDB:
       
 
     req = "INSERT INTO Sites (SiteName, SiteType, Status, Reason, "
-    req = req + "DateCreated, DateEffective, DateEnd, OperatorCode) "
+    req = req + "DateCreated, DateEffective, DateEnd, TokenOwner, TokenExpiration) "
     req = req + "VALUES ('%s', '%s', '%s', '%s', " % (siteName, siteType, status, reason) 
-    req = req + "'%s', '%s', '%s', '%s');" %(dateCreated, dateEffective, dateEnd, operatorCode)
+    req = req + "'%s', '%s', '%s', '%s', '9999-12-31 23:59:59');" %(dateCreated, dateEffective, dateEnd, tokenOwner)
 
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
@@ -980,7 +980,7 @@ class ResourceStatusDB:
 #############################################################################
 
   def _addSiteHistoryRow(self, siteName, status, reason, dateCreated, dateEffective, 
-                         dateEnd, operatorCode):
+                         dateEnd, tokenOwner):
     """ 
     Add an old site row in the SitesHistory table
 
@@ -999,7 +999,7 @@ class ResourceStatusDB:
       :attr:`dateEnd`: datetime or string - date from which the site status 
       ends to be effective
 
-      :attr:`operatorCode`: string - free
+      :attr:`tokenOwner`: string - free
     """
 
     if not isinstance(dateCreated, basestring):
@@ -1010,9 +1010,9 @@ class ResourceStatusDB:
       dateEnd = dateEnd.isoformat(' ')
 
     req = "INSERT INTO SitesHistory (SiteName, Status, Reason, DateCreated,"
-    req = req + " DateEffective, DateEnd, OperatorCode) "
+    req = req + " DateEffective, DateEnd, TokenOwner) "
     req = req + "VALUES ('%s', '%s', '%s', '%s', " % (siteName, status, reason, dateCreated)
-    req = req + "'%s', '%s', '%s');" % (dateEffective, dateEnd, operatorCode)
+    req = req + "'%s', '%s', '%s');" % (dateEffective, dateEnd, tokenOwner)
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
       raise RSSDBException, where(self, self._addSiteHistoryRow) + resUpdate['Message']
@@ -1050,7 +1050,7 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def setResourceStatus(self, resourceName, status, reason, operatorCode):
+  def setResourceStatus(self, resourceName, status, reason, tokenOwner):
     """ 
     Set a Resource status, effective from now, with no ending
     
@@ -1062,7 +1062,7 @@ class ResourceStatusDB:
 
       :attr:`reason`: string
 
-      :attr:`operatorCode`: string. For the service itself: `RS_SVC`
+      :attr:`tokenOwner`: string. For the service itself: `RS_SVC`
     """
 
     gLogger.info("Setting Resource %s new status: %s" % (resourceName, status))
@@ -1080,12 +1080,12 @@ class ResourceStatusDB:
 
     self.addOrModifyResource(resourceName, resourceType, serviceName, siteName, status, 
                              reason, datetime.utcnow().replace(microsecond = 0), 
-                             operatorCode, datetime(9999, 12, 31, 23, 59, 59))
+                             tokenOwner, datetime(9999, 12, 31, 23, 59, 59))
     
 #############################################################################
 
   def addOrModifyResource(self, resourceName, resourceType, serviceName, siteName, status, 
-                          reason, dateEffective, operatorCode, dateEnd):
+                          reason, dateEffective, tokenOwner, dateEnd):
     """ 
     Add or modify a resource to the Resources table.
     
@@ -1102,7 +1102,7 @@ class ResourceStatusDB:
       
       :attr:`dateEffective`: datetime - date from which the resource status is effective
 
-      :attr:`operatorCode`: string - free
+      :attr:`tokenOwner`: string - free
 
       :attr:`dateEnd`: datetime - date from which the resource status ends to be effective
     """
@@ -1113,7 +1113,7 @@ class ResourceStatusDB:
     if dateEnd < dateEffective:
       raise NotAllowedDate, where(self, self.addOrModifyResource)
     if status not in ValidStatus:
-      raise InvalidStatus, where(self, self.addOrModifySite)
+      raise InvalidStatus, where(self, self.addOrModifyResource)
 
     #check if the resource is already there
     query = "SELECT ResourceName FROM Resources WHERE ResourceName='%s'" % (resourceName)
@@ -1136,18 +1136,18 @@ class ResourceStatusDB:
       self._addResourcesHistoryRow(resourceName, serviceName, siteName, oldStatus, reason, 
                                    dateCreated, dateEffective, 
                                    datetime.utcnow().replace(microsecond = 0).isoformat(' '), 
-                                   operatorCode)
+                                   tokenOwner)
 
     #in any case add a row to present Sites table
     self._addResourcesRow(resourceName, resourceType, serviceName, siteName, status, reason, 
-                          dateCreated, dateEffective, dateEnd, operatorCode)
+                          dateCreated, dateEffective, dateEnd, tokenOwner)
 #    resourceRow = "Added %s --- %s --- %s " %(resourceName, siteName, dateEffective)
 #    return resAddResourcesRow
 
 #############################################################################
 
   def _addResourcesRow(self, resourceName, resourceType, serviceName, siteName, status, 
-                       reason, dateCreated, dateEffective, dateEnd, operatorCode):
+                       reason, dateCreated, dateEffective, dateEnd, tokenOwner):
     """ 
     Add a new resource row in Resources table
 
@@ -1170,7 +1170,7 @@ class ResourceStatusDB:
       :attr:`dateEnd`: datetime  or string - date from which the resource status 
       ends to be effective
 
-      :attr:`operatorCode`: string - free
+      :attr:`tokenOwner`: string - free
     """
 
     if not isinstance(dateCreated, basestring):
@@ -1184,10 +1184,10 @@ class ResourceStatusDB:
 
     
     req = "INSERT INTO Resources (ResourceName, ResourceType, ServiceName, SiteName, Status, "
-    req = req + "Reason, DateCreated, DateEffective, DateEnd, OperatorCode) "
+    req = req + "Reason, DateCreated, DateEffective, DateEnd, TokenOwner, TokenExpiration) "
     req = req + "VALUES ('%s', '%s', '%s', " %(resourceName, resourceType, serviceName)
     req = req + "'%s', '%s', '%s', " %(siteName, status, reason)
-    req = req + "'%s', '%s', '%s', '%s');" %(dateCreated, dateEffective, dateEnd, operatorCode)
+    req = req + "'%s', '%s', '%s', '%s', '9999-12-31 23:59:59');" %(dateCreated, dateEffective, dateEnd, tokenOwner)
 
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
@@ -1197,7 +1197,7 @@ class ResourceStatusDB:
 #############################################################################
 
   def _addResourcesHistoryRow(self, resourceName, serviceName, siteName, status, 
-                              reason, dateCreated, dateEffective, dateEnd, operatorCode):
+                              reason, dateCreated, dateEffective, dateEnd, tokenOwner):
     """
     Add an old resource row in the ResourcesHistory table
 
@@ -1217,7 +1217,7 @@ class ResourceStatusDB:
       :attr:`dateEnd`: datetime  or string - date from which the resource status ends 
       to be effective
 
-      :attr:`operatorCode`: string - free
+      :attr:`tokenOwner`: string - free
     """
 
     if not isinstance(dateCreated, basestring):
@@ -1230,10 +1230,10 @@ class ResourceStatusDB:
 
     req = "INSERT INTO ResourcesHistory (ResourceName, ServiceName, SiteName,"
     req = req + " Status, Reason, DateCreated," 
-    req = req + " DateEffective, DateEnd, OperatorCode) "
+    req = req + " DateEffective, DateEnd, TokenOwner) "
     req = req + "VALUES ('%s', '%s', '%s', " % (resourceName, serviceName, siteName)
     req = req + "'%s', '%s', '%s', " %(status, reason, dateCreated)
-    req = req + "'%s', '%s', '%s');" %(dateEffective, dateEnd, operatorCode)
+    req = req + "'%s', '%s', '%s');" %(dateEffective, dateEnd, tokenOwner)
     
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
@@ -1334,7 +1334,7 @@ class ResourceStatusDB:
 
 #############################################################################
   
-  def setServiceStatus(self, serviceName, status, reason, operatorCode):
+  def setServiceStatus(self, serviceName, status, reason, tokenOwner):
     """ 
     Set a Service status, effective from now, with no ending
         
@@ -1346,7 +1346,7 @@ class ResourceStatusDB:
       
       :attr:`reason`: string
       
-      :attr:`operatorCode`: string. For the service itself: `RS_SVC`
+      :attr:`tokenOwner`: string. For the service itself: `RS_SVC`
     """
 
     gLogger.info("Setting Service %s new status: %s" % (serviceName, status))
@@ -1363,13 +1363,13 @@ class ResourceStatusDB:
     siteName = resQuery['Value'][0][1]
   
     self.addOrModifyService(serviceName, serviceType, siteName, status, reason, 
-                            datetime.utcnow().replace(microsecond = 0), operatorCode, 
+                            datetime.utcnow().replace(microsecond = 0), tokenOwner, 
                             datetime(9999, 12, 31, 23, 59, 59))
     
 #############################################################################
 
   def addOrModifyService(self, serviceName, serviceType, siteName, status, reason, 
-                         dateEffective, operatorCode, dateEnd):
+                         dateEffective, tokenOwner, dateEnd):
     """ 
     Add or modify a service to the Services table.
     
@@ -1386,7 +1386,7 @@ class ResourceStatusDB:
       
       :attr:`dateEffective`: datetime - date from which the service status is effective
 
-      :attr:`operatorCode`: string - free
+      :attr:`tokenOwner`: string - free
 
       :attr:`dateEnd`: datetime - date from which the service status ends to be effective
     """
@@ -1420,18 +1420,18 @@ class ResourceStatusDB:
       self._addServiceHistoryRow(serviceName, siteName, oldStatus, reason, dateCreated, 
                                  dateEffective, 
                                  datetime.utcnow().replace(microsecond = 0).isoformat(' '), 
-                                 operatorCode)
+                                 tokenOwner)
 
     #in any case add a row to present Services table
     self._addServiceRow(serviceName, serviceType, siteName, status, reason, 
-                        dateCreated, dateEffective, dateEnd, operatorCode)
+                        dateCreated, dateEffective, dateEnd, tokenOwner)
 #    serviceRow = "Added %s --- %s " %(serviceName, dateEffective)
 #    return serviceRow
 
 #############################################################################
 
   def _addServiceRow(self, serviceName, serviceType, siteName, status, reason, 
-                     dateCreated, dateEffective, dateEnd, operatorCode):
+                     dateCreated, dateEffective, dateEnd, tokenOwner):
     """
     Add a new service row in Services table
 
@@ -1455,7 +1455,7 @@ class ResourceStatusDB:
       :attr:`dateEnd`: datetime or string - 
       date from which the service status ends to be effective
 
-      :attr:`operatorCode`: string - free
+      :attr:`tokenOwner`: string - free
     """
     
     if not isinstance(dateCreated, basestring):
@@ -1469,10 +1469,10 @@ class ResourceStatusDB:
       
 
     req = "INSERT INTO Services (ServiceName, ServiceType, SiteName, Status, Reason, "
-    req = req + "DateCreated, DateEffective, DateEnd, OperatorCode) "
+    req = req + "DateCreated, DateEffective, DateEnd, TokenOwner, TokenExpiration) "
     req = req + "VALUES ('%s', '%s', '%s', " % (serviceName, serviceType, siteName)
     req = req + "'%s', '%s', '%s', '%s'" %(status, reason, dateCreated, dateEffective)
-    req = req + ", '%s', '%s');" %(dateEnd, operatorCode)
+    req = req + ", '%s', '%s', '9999-12-31 23:59:59');" %(dateEnd, tokenOwner)
     
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
@@ -1481,7 +1481,7 @@ class ResourceStatusDB:
 #############################################################################
 
   def _addServiceHistoryRow(self, serviceName, siteName, status, reason, dateCreated, 
-                            dateEffective, dateEnd, operatorCode):
+                            dateEffective, dateEnd, tokenOwner):
     """
     Add an old service row in the ServicesHistory table
 
@@ -1502,7 +1502,7 @@ class ResourceStatusDB:
       :attr:`dateEnd`: datetime or string - 
       date from which the service status ends to be effective
 
-      :attr:`operatorCode`: string - free
+      :attr:`tokenOwner`: string - free
 
     """
 
@@ -1514,9 +1514,9 @@ class ResourceStatusDB:
       dateEnd = dateEnd.isoformat(' ')
 
     req = "INSERT INTO ServicesHistory (ServiceName, SiteName, Status, Reason, DateCreated,"
-    req = req + " DateEffective, DateEnd, OperatorCode) "
+    req = req + " DateEffective, DateEnd, TokenOwner) "
     req = req + "VALUES ('%s', '%s', '%s', '%s', " % (serviceName, siteName, status, reason)
-    req = req + "'%s', '%s', '%s', '%s');" %(dateCreated, dateEffective, dateEnd, operatorCode)
+    req = req + "'%s', '%s', '%s', '%s');" %(dateCreated, dateEffective, dateEnd, tokenOwner)
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
       raise RSSDBException, where(self, self._addServiceHistoryRow) + resUpdate['Message']
@@ -1776,7 +1776,7 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def setStorageElementStatus(self, storageElementName, status, reason, operatorCode):
+  def setStorageElementStatus(self, storageElementName, status, reason, tokenOwner):
     """ 
     Set a StorageElement status, effective from now, with no ending
         
@@ -1788,7 +1788,7 @@ class ResourceStatusDB:
   
       :attr:`reason`: string
   
-      :attr:`operatorCode`: string. For the service itself: `RS_SVC`
+      :attr:`tokenOwner`: string. For the service itself: `RS_SVC`
     """
 
     gLogger.info("Setting StorageElement %s new status: %s" % (storageElementName, status))
@@ -1805,12 +1805,12 @@ class ResourceStatusDB:
   
     self.addOrModifyStorageElement(storageElementName, resourceName, siteName, status, 
                                    reason, datetime.utcnow().replace(microsecond = 0), 
-                                   operatorCode, datetime(9999, 12, 31, 23, 59, 59))
+                                   tokenOwner, datetime(9999, 12, 31, 23, 59, 59))
     
 #############################################################################
 
   def addOrModifyStorageElement(self, storageElementName, resourceName, siteName, 
-                                status, reason, dateEffective, operatorCode, dateEnd):
+                                status, reason, dateEffective, tokenOwner, dateEnd):
     """ 
     Add or modify a storageElement to the StorageElements table.
     
@@ -1829,7 +1829,7 @@ class ResourceStatusDB:
       :attr:`dateEffective`: datetime - 
       date from which the storageElement status is effective
 
-      :attr:`operatorCode`: string - free
+      :attr:`tokenOwner`: string - free
 
       :attr:`dateEnd`: datetime - 
       date from which the storageElement status ends to be effective
@@ -1866,18 +1866,18 @@ class ResourceStatusDB:
       self._addStorageElementHistoryRow(storageElementName, resourceName, siteName, 
                                         oldStatus, reason, dateCreated, dateEffective, 
                                         datetime.utcnow().replace(microsecond = 0).isoformat(' '), 
-                                        operatorCode)
+                                        tokenOwner)
 
     #in any case add a row to present StorageElements table
     self._addStorageElementRow(storageElementName, resourceName, siteName, status, 
-                               reason, dateCreated, dateEffective, dateEnd, operatorCode)
+                               reason, dateCreated, dateEffective, dateEnd, tokenOwner)
 #    storageElementRow = "Added %s --- %s " %(storageElementName, dateEffective)
 #    return storageElementRow
 
 #############################################################################
 
   def _addStorageElementRow(self, storageElementName, resourceName, siteName, status, 
-                            reason, dateCreated, dateEffective, dateEnd, operatorCode):
+                            reason, dateCreated, dateEffective, dateEnd, tokenOwner):
     """
     Add a new storageElement row in StorageElements table
 
@@ -1902,7 +1902,7 @@ class ResourceStatusDB:
       :attr:`dateEnd`: datetime or string - date from which the storageElement status 
       ends to be effective
 
-      :attr:`operatorCode`: string - free
+      :attr:`tokenOwner`: string - free
     """
 
     if not isinstance(dateCreated, basestring):
@@ -1916,10 +1916,10 @@ class ResourceStatusDB:
       
 
     req = "INSERT INTO StorageElements (StorageElementName, ResourceName, SiteName, "
-    req = req + "Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode) "
+    req = req + "Status, Reason, DateCreated, DateEffective, DateEnd, TokenOwner, TokenExpiration) "
     req = req + "VALUES ('%s', '%s', '%s', " %(storageElementName, resourceName, siteName)
     req = req + "'%s', '%s', '%s', " %(status, reason, dateCreated, )
-    req = req + "'%s', '%s', '%s');" %(dateEffective, dateEnd, operatorCode)
+    req = req + "'%s', '%s', '%s', '9999-12-31 23:59:59');" %(dateEffective, dateEnd, tokenOwner)
     
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
@@ -1928,7 +1928,7 @@ class ResourceStatusDB:
 #############################################################################
 
   def _addStorageElementHistoryRow(self, storageElementName, resourceName, siteName, status, 
-                                   reason, dateCreated, dateEffective, dateEnd, operatorCode):
+                                   reason, dateCreated, dateEffective, dateEnd, tokenOwner):
     """ 
     Add an old storageElement row in the StorageElementsHistory table
 
@@ -1953,7 +1953,7 @@ class ResourceStatusDB:
       :attr:`dateEnd`: datetime or string - 
       date from which the storageElement status ends to be effective
 
-      :attr:`operatorCode`: string - free
+      :attr:`tokenOwner`: string - free
     """
 
     if not isinstance(dateCreated, basestring):
@@ -1964,10 +1964,10 @@ class ResourceStatusDB:
       dateEnd = dateEnd.isoformat(' ')
 
     req = "INSERT INTO StorageElementsHistory (StorageElementName, ResourceName, SiteName, "
-    req = req + "Status, Reason, DateCreated, DateEffective, DateEnd, OperatorCode) "
+    req = req + "Status, Reason, DateCreated, DateEffective, DateEnd, TokenOwner) "
     req = req + "VALUES ('%s', '%s', '%s'," % (storageElementName, resourceName, siteName)
     req = req + " '%s', '%s', '%s', '%s'," %(status, reason, dateCreated, dateEffective)
-    req = req + " '%s', '%s');" %(dateEnd, operatorCode)
+    req = req + " '%s', '%s');" %(dateEnd, tokenOwner)
 
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
@@ -2821,14 +2821,14 @@ class ResourceStatusDB:
 #      return S_OK('No columns')
 #    
 #    req = "SELECT %s, Description, DateCreated, "
-#    req = req + "DateEffective, OperatorCode from Sites "
+#    req = req + "DateEffective, TokenOwner from Sites "
 #    req = req + "WHERE (SiteName='%s' and DateEffective < '%s');" % (args[1], args[2])
     
     if args[0] in ('Site', 'Sites'):
       #get row to be put in history Sites table
       if len(args) == 3:
         req = "SELECT Status, Reason, DateCreated, "
-        req = req + "DateEffective, DateEnd, OperatorCode from Sites "
+        req = req + "DateEffective, DateEnd, TokenOwner from Sites "
         req = req + "WHERE (SiteName='%s' AND DateEffective < '%s');" % (args[1], args[2])
         resQuery = self.db._query(req)
         if not resQuery['OK']:
@@ -2840,16 +2840,16 @@ class ResourceStatusDB:
         oldDateCreated = resQuery['Value'][0][2]
         oldDateEffective = resQuery['Value'][0][3]
         oldDateEnd = resQuery['Value'][0][4]
-        oldOperatorCode = resQuery['Value'][0][5]
+        oldTokenOwner = resQuery['Value'][0][5]
 
         #start "transaction" to history -- should be better to use a real transaction
         self._addSiteHistoryRow(args[1], oldStatus, oldReason, oldDateCreated, 
-                                oldDateEffective, oldDateEnd, oldOperatorCode)
+                                oldDateEffective, oldDateEnd, oldTokenOwner)
         self.removeRow(args[0], args[1], oldDateEffective)
 
       elif len(args) == 2:
         req = "SELECT SiteName, Status, Reason, DateCreated, "
-        req = req + "DateEffective, DateEnd, OperatorCode from Sites "
+        req = req + "DateEffective, DateEnd, TokenOwner from Sites "
         req = req + "WHERE (SiteID='%s');" % (args[1])
         resQuery = self.db._query(req)
         if not resQuery['OK']:
@@ -2862,11 +2862,11 @@ class ResourceStatusDB:
         oldDateCreated = resQuery['Value'][0][3]
         oldDateEffective = resQuery['Value'][0][4]
         oldDateEnd = resQuery['Value'][0][5]
-        oldOperatorCode = resQuery['Value'][0][6]
+        oldTokenOwner = resQuery['Value'][0][6]
 
         #start "transaction" to history -- should be better to use a real transaction
         self._addSiteHistoryRow(siteName, oldStatus, oldReason, oldDateCreated, 
-                                oldDateEffective, oldDateEnd, oldOperatorCode)
+                                oldDateEffective, oldDateEnd, oldTokenOwner)
         self.removeRow(args[0], siteName, oldDateEffective)
 
 
@@ -2874,7 +2874,7 @@ class ResourceStatusDB:
       #get row to be put in history Services table
       if len(args) == 4:
         req = "SELECT Status, Reason, DateCreated, "
-        req = req + "DateEffective, DateEnd, OperatorCode from Services "
+        req = req + "DateEffective, DateEnd, TokenOwner from Services "
         req = req + "WHERE (ServiceName='%s' AND DateEffective < '%s');" % (args[1], args[2])
         resQuery = self.db._query(req)
         if not resQuery['OK']:
@@ -2886,17 +2886,17 @@ class ResourceStatusDB:
         oldDateCreated = resQuery['Value'][0][2]
         oldDateEffective = resQuery['Value'][0][3]
         oldDateEnd = resQuery['Value'][0][4]
-        oldOperatorCode = resQuery['Value'][0][5]
+        oldTokenOwner = resQuery['Value'][0][5]
 
         #start "transaction" to history -- should be better to use a real transaction
         self._addServiceHistoryRow(args[1], args[2], oldStatus, oldReason, 
                                    oldDateCreated, oldDateEffective, oldDateEnd, 
-                                   oldOperatorCode)
+                                   oldTokenOwner)
         self.removeRow(args[0], args[1], oldDateEffective)
 
       elif len(args) == 2:
         req = "SELECT ServiceName, SiteName, Status, Reason, DateCreated, "
-        req = req + "DateEffective, DateEnd, OperatorCode from Services "
+        req = req + "DateEffective, DateEnd, TokenOwner from Services "
         req = req + "WHERE (ServiceID='%s');" % (args[1])
         resQuery = self.db._query(req)
         if not resQuery['OK']:
@@ -2910,19 +2910,19 @@ class ResourceStatusDB:
         oldDateCreated = resQuery['Value'][0][4]
         oldDateEffective = resQuery['Value'][0][5]
         oldDateEnd = resQuery['Value'][0][6]
-        oldOperatorCode = resQuery['Value'][0][7]
+        oldTokenOwner = resQuery['Value'][0][7]
 
         #start "transaction" to history -- should be better to use a real transaction
         self._addServiceHistoryRow(serviceName, siteName, oldStatus, oldReason, 
                                    oldDateCreated, oldDateEffective, oldDateEnd, 
-                                   oldOperatorCode)
+                                   oldTokenOwner)
         self.removeRow(args[0], serviceName, oldDateEffective)
 
         
     if args[0] in ('Resource', 'Resources'):
       if len(args) == 5:
         req = "SELECT Status, Reason, DateCreated, "
-        req = req + "DateEffective, DateEnd, OperatorCode from Resources "
+        req = req + "DateEffective, DateEnd, TokenOwner from Resources "
         req = req + "WHERE (ResourceName='%s' AND DateEffective < '%s' );" % (args[1], args[4])
         resQuery = self.db._query(req)
         if not resQuery['OK']:
@@ -2934,16 +2934,16 @@ class ResourceStatusDB:
         oldDateCreated = resQuery['Value'][0][2]
         oldDateEffective = resQuery['Value'][0][3]
         oldDateEnd = resQuery['Value'][0][4]
-        oldOperatorCode = resQuery['Value'][0][5]
+        oldTokenOwner = resQuery['Value'][0][5]
 
         self._addResourcesHistoryRow(args[1], args[2], args[3], oldStatus, oldReason, 
                                      oldDateCreated, oldDateEffective, oldDateEnd, 
-                                     oldOperatorCode)
+                                     oldTokenOwner)
         self.removeRow(args[0], args[1], oldDateEffective)
         
       elif len(args) == 2:
         req = "SELECT ResourceName, ServiceName, SiteName, Status, Reason, DateCreated, "
-        req = req + "DateEffective, DateEnd, OperatorCode from Resources "
+        req = req + "DateEffective, DateEnd, TokenOwner from Resources "
         req = req + "WHERE (ResourceID='%s');" % (args[1])
         resQuery = self.db._query(req)
         if not resQuery['OK']:
@@ -2958,18 +2958,18 @@ class ResourceStatusDB:
         oldDateCreated = resQuery['Value'][0][5]
         oldDateEffective = resQuery['Value'][0][6]
         oldDateEnd = resQuery['Value'][0][7]
-        oldOperatorCode = resQuery['Value'][0][8]
+        oldTokenOwner = resQuery['Value'][0][8]
         
         #start "transaction" to history -- should be better to use a real transaction
         self._addResourcesHistoryRow(resourceName, serviceName, siteName, oldStatus, 
                                      oldReason, oldDateCreated, oldDateEffective, 
-                                     oldDateEnd, oldOperatorCode)
+                                     oldDateEnd, oldTokenOwner)
         self.removeRow(args[0], resourceName, oldDateEffective)
 
     if args[0] in ('StorageElement', 'StorageElements'):
       if len(args) == 5:
         req = "SELECT Status, Reason, DateCreated, "
-        req = req + "DateEffective, DateEnd, OperatorCode from StorageElements "
+        req = req + "DateEffective, DateEnd, TokenOwner from StorageElements "
         req = req + "WHERE (StorageElementName='%s' AND DateEffective < '%s' );" % (args[1], args[4])
         resQuery = self.db._query(req)
         if not resQuery['OK']:
@@ -2981,16 +2981,16 @@ class ResourceStatusDB:
         oldDateCreated = resQuery['Value'][0][2]
         oldDateEffective = resQuery['Value'][0][3]
         oldDateEnd = resQuery['Value'][0][4]
-        oldOperatorCode = resQuery['Value'][0][5]
+        oldTokenOwner = resQuery['Value'][0][5]
 
         self._addStorageElementHistoryRow(args[1], args[2], args[3], oldStatus, oldReason, 
                                           oldDateCreated, oldDateEffective, oldDateEnd, 
-                                          oldOperatorCode)
+                                          oldTokenOwner)
         self.removeRow(args[0], args[1], oldDateEffective)
         
       elif len(args) == 2:
         req = "SELECT StorageElementName, ResourceName, SiteName, Status, Reason, "
-        req = req + "DateCreated, DateEffective, DateEnd, OperatorCode from StorageElements "
+        req = req + "DateCreated, DateEffective, DateEnd, TokenOwner from StorageElements "
         req = req + "WHERE (StorageElementID='%s');" % (args[1])
         resQuery = self.db._query(req)
         if not resQuery['OK']:
@@ -3005,12 +3005,12 @@ class ResourceStatusDB:
         oldDateCreated = resQuery['Value'][0][5]
         oldDateEffective = resQuery['Value'][0][6]
         oldDateEnd = resQuery['Value'][0][7]
-        oldOperatorCode = resQuery['Value'][0][8]
+        oldTokenOwner = resQuery['Value'][0][8]
         
         #start "transaction" to history -- should be better to use a real transaction
         self._addStorageElementHistoryRow(storageElementName, resourceName, siteName, 
                                           oldStatus, oldReason, oldDateCreated, 
-                                          oldDateEffective, oldDateEnd, oldOperatorCode)
+                                          oldDateEffective, oldDateEnd, oldTokenOwner)
         self.removeRow(args[0], storageElementName, oldDateEffective)
 
 
@@ -3224,6 +3224,83 @@ class ResourceStatusDB:
  
 #############################################################################
 
+  def getTokens(self, granularity, name = None, dateExpiration = None):
+    """ 
+    Get tokens, either by name, those expiring or expired
+    
+    :params:
+      :attr:`granularity`: a ValidRes
+      
+      :attr:`granularity`: optional name of the res
+      
+      :attr:`dateExpiration`: optional, datetime - date from which to consider
+    """
+
+    if granularity in ('Site', 'Sites'):
+      DBtable = 'Sites'
+      DBname = 'SiteName'
+    elif granularity in ('Service', 'Services'):
+      DBtable = 'Services'
+      DBname = 'ServiceName'
+    elif granularity in ('Resource', 'Resources'):
+      DBtable = 'Resources'
+      DBname = 'ResourceName'
+    elif granularity in ('StorageElement', 'StorageElements'):
+      DBtable = 'StorageElements'
+      DBname = 'StorageElementName'
+    else:
+      raise InvalidRes, where(self, self.getTokens)
+    
+    req = "SELECT %s, TokenOwner, TokenExpiration FROM %s WHERE " %(DBname, DBtable)
+    if name is not None:
+      req = req + "%s = '%s' " % (DBname, name)
+      if dateExpiration is not None:
+        req = req + "AND "
+    if dateExpiration is not None:
+      req = req + "TokenExpiration < '%s'" % (dateExpiration)
+
+    resQuery = self.db._query(req)
+    if not resQuery['OK']:
+      raise RSSDBException, where(self, self.getTokens) + resQuery['Message']
+    if not resQuery['Value']:
+      return []
+    tokenList = []
+    tokenList = [ x for x in resQuery['Value']]
+    return tokenList
+    
+
+#############################################################################
+
+  def setToken(self, granularity, name, newTokenOwner, dateExpiration):    
+    """ 
+    (re)Set token properties.
+    """
+    
+    if granularity in ('Site', 'Sites'):
+      DBtable = 'Sites'
+      DBname = 'SiteName'
+    elif granularity in ('Service', 'Services'):
+      DBtable = 'Services'
+      DBname = 'ServiceName'
+    elif granularity in ('Resource', 'Resources'):
+      DBtable = 'Resources'
+      DBname = 'ResourceName'
+    elif granularity in ('StorageElement', 'StorageElements'):
+      DBtable = 'StorageElements'
+      DBname = 'StorageElementName'
+    else:
+      raise InvalidRes, where(self, self.setToken)
+      
+    query = "UPDATE %s SET TokenOwner = '%s', TokenExpiration" % (DBtable, newTokenOwner)
+    query = query + " = '%s' WHERE %s = '%s'" %(dateExpiration, DBname, name)
+    resUpdate = self.db._update(query)
+    if not resUpdate['OK']:
+      raise RSSDBException, where(self, self.setToken) + resUpdate['Message']
+
+    
+#############################################################################
+  
+  
   def getStuffToCheck(self, granularity, checkFrequency = None, maxN = None, name = None):
     """ 
     Get Sites, Services, or Resources to be checked.
@@ -3264,13 +3341,13 @@ class ResourceStatusDB:
       T2dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2bannedCheckFrequecy)).isoformat(' ')
 
     if granularity in ('Site', 'Sites'):
-      req = "SELECT SiteName, Status, FormerStatus, SiteType, OperatorCode FROM PresentSites"
+      req = "SELECT SiteName, Status, FormerStatus, SiteType, TokenOwner FROM PresentSites"
     elif granularity in ('Service', 'Services'):
-      req = "SELECT ServiceName, Status, FormerStatus, SiteType, ServiceType, OperatorCode FROM PresentServices"
+      req = "SELECT ServiceName, Status, FormerStatus, SiteType, ServiceType, TokenOwner FROM PresentServices"
     elif granularity in ('Resource', 'Resources'):
-      req = "SELECT ResourceName, Status, FormerStatus, SiteType, ResourceType, OperatorCode FROM PresentResources"
+      req = "SELECT ResourceName, Status, FormerStatus, SiteType, ResourceType, TokenOwner FROM PresentResources"
     elif granularity in ('StorageElement', 'StorageElements'):
-      req = "SELECT StorageElementName, Status, FormerStatus, SiteType, OperatorCode FROM PresentStorageElements"
+      req = "SELECT StorageElementName, Status, FormerStatus, SiteType, TokenOwner FROM PresentStorageElements"
     else:
       raise InvalidRes, where(self, self.getStuffToCheck)
     if name is None:

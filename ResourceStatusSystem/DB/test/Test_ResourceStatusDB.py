@@ -455,6 +455,17 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
 #    self.assertEqual(res, None)
 
 
+  def test_getTokens(self):
+    for g in ValidRes:
+      res = self.rsDB.getTokens(g, datetime(9999, 12, 31, 23, 59, 59))
+      self.assertEqual(res, [])
+
+  def test_setToken(self):
+    for g in ValidRes:
+      res = self.rsDB.setToken(g, 'LCG.Ferrara.it', 'Federico', datetime(9999, 12, 31, 23, 59, 59))
+      self.assertEqual(res, None)
+
+
 class ResourceStatusDBFailure(ResourceStatusDBTestCase):
 
   def test_InvalidStatus(self):

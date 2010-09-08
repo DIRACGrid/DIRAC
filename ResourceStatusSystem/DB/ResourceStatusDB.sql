@@ -60,7 +60,8 @@ CREATE TABLE Sites(
   DateEffective DATETIME NOT NULL,
   DateEnd DATETIME,
   LastCheckTime DATETIME NOT NULL,
-  OperatorCode VARCHAR(255),
+  TokenOwner VARCHAR(8) NOT NULL Default 'RS_SVC',
+  TokenExpiration DATETIME NOT NULL,
   FOREIGN KEY(SiteType) REFERENCES SiteTypes(SiteType),
   FOREIGN KEY (Status) REFERENCES Status(Status),
   PRIMARY KEY(SiteID)
@@ -82,7 +83,8 @@ CREATE TABLE Services(
   DateEffective DATETIME NOT NULL,
   DateEnd DATETIME,
   LastCheckTime DATETIME NOT NULL,
-  OperatorCode VARCHAR(255),
+  TokenOwner VARCHAR(8) NOT NULL Default 'RS_SVC',
+  TokenExpiration DATETIME NOT NULL,
   FOREIGN KEY (ServiceType) REFERENCES ServiceTypes(ServiceType),
   FOREIGN KEY (Status) REFERENCES Status(Status),
   PRIMARY KEY(ServiceID)
@@ -104,8 +106,9 @@ CREATE TABLE Resources(
   DateEffective DATETIME NOT NULL,
   INDEX (DateEffective),
   DateEnd DATETIME,
-  OperatorCode VARCHAR(255) NOT NULL,
   LastCheckTime DATETIME NOT NULL,
+  TokenOwner VARCHAR(8) NOT NULL Default 'RS_SVC',
+  TokenExpiration DATETIME NOT NULL,
   FOREIGN KEY (ResourceType) REFERENCES ResourceTypes(ResourceType),
   FOREIGN KEY (Status) REFERENCES Status(Status),
   PRIMARY KEY (ResourceID)
@@ -126,8 +129,9 @@ CREATE TABLE StorageElements(
   DateEffective DATETIME NOT NULL,
   INDEX (DateEffective),
   DateEnd DATETIME,
-  OperatorCode VARCHAR(255) NOT NULL,
   LastCheckTime DATETIME NOT NULL,
+  TokenOwner VARCHAR(8) NOT NULL Default 'RS_SVC',
+  TokenExpiration DATETIME NOT NULL,
   FOREIGN KEY (Status) REFERENCES Status(Status),
   PRIMARY KEY (StorageElementID)
 ) Engine = InnoDB ;
@@ -142,7 +146,7 @@ CREATE TABLE SitesHistory(
   DateCreated DATETIME NOT NULL,
   DateEffective DATETIME NOT NULL,
   DateEnd DATETIME NOT NULL,
-  OperatorCode VARCHAR(255),
+  TokenOwner VARCHAR(255),
   PRIMARY KEY(SitesHistoryID)
 ) Engine = InnoDB ;
 
@@ -156,7 +160,7 @@ CREATE TABLE ServicesHistory(
   DateCreated DATETIME NOT NULL,
   DateEffective DATETIME NOT NULL,
   DateEnd DATETIME,
-  OperatorCode VARCHAR(255),
+  TokenOwner VARCHAR(255),
   PRIMARY KEY(ServicesHistoryID)
 ) Engine=InnoDB;
 
@@ -171,7 +175,7 @@ CREATE TABLE ResourcesHistory(
   DateCreated DATETIME NOT NULL,
   DateEffective DATETIME NOT NULL,
   DateEnd DATETIME NOT NULL,
-  OperatorCode VARCHAR(255) NOT NULL,
+  TokenOwner VARCHAR(255) NOT NULL,
   PRIMARY KEY (ResourcesHistoryID)
 ) Engine=InnoDB;
 
@@ -186,7 +190,7 @@ CREATE TABLE StorageElementsHistory(
   DateCreated DATETIME NOT NULL,
   DateEffective DATETIME NOT NULL,
   DateEnd DATETIME NOT NULL,
-  OperatorCode VARCHAR(255) NOT NULL,
+  TokenOwner VARCHAR(255) NOT NULL,
   PRIMARY KEY (StorageElementsHistoryID)
 ) Engine=InnoDB;
 
@@ -200,7 +204,8 @@ CREATE VIEW PresentSites AS SELECT
   SitesHistory.Status AS FormerStatus,
   Sites.Reason,
   Sites.LastCheckTime,
-  Sites.OperatorCode
+  Sites.TokenOwner,
+  Sites.TokenExpiration
 FROM Sites INNER JOIN SitesHistory ON 
   Sites.SiteName = SitesHistory.SiteName AND 
   Sites.DateEffective = SitesHistory.DateEnd 
@@ -218,7 +223,8 @@ CREATE VIEW PresentServices AS SELECT
   ServicesHistory.Status AS FormerStatus,
   Services.Reason,
   Services.LastCheckTime,
-  Services.OperatorCode
+  Services.TokenOwner, 
+  Services.TokenExpiration
 FROM (
 	(Services INNER JOIN Sites ON
 	 Services.Sitename = Sites.SiteName)
@@ -240,7 +246,8 @@ CREATE VIEW PresentResources AS SELECT
   ResourcesHistory.Status AS FormerStatus,
   Resources.Reason,
   Resources.LastCheckTime,
-  Resources.OperatorCode
+  Resources.TokenOwner, 
+  Resources.TokenExpiration
 FROM (
   (Resources INNER JOIN Sites ON 
    Resources.SiteName = Sites.SiteName) 
@@ -262,7 +269,8 @@ CREATE VIEW PresentStorageElements AS SELECT
   StorageElementsHistory.Status AS FormerStatus,
   StorageElements.Reason,
   StorageElements.LastCheckTime,
-  StorageElements.OperatorCode
+  StorageElements.TokenOwner,
+  StorageElements.TokenExpiration
 FROM ( 
   (StorageElements INNER JOIN Sites ON 
    StorageElements.SiteName = Sites.SiteName)
