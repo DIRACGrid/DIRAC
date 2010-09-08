@@ -208,15 +208,14 @@ class BaseReporter( DBUtils ):
         unitIndex += 1
         if maxValue / unitDivFactor < unitThreshold:
           break
+      unitData = self._RATE_UNITS[ unit ][ unitIndex ]
     #Apply divFactor to all units
-    unitData = self._RATE_UNITS[ unit ][ unitIndex ]
     dataDict, maxValue = self._divideByFactor( dataDict, unitData[1] )
     return dataDict, maxValue, unitData[0]
 
   def _findSuitableUnit( self, dataDict, maxValue, unit ):
     if unit not in self._UNITS:
       raise AttributeError( "%s is not a known unit" % unit )
-    print maxValue
     if 'staticUnits' in self._extraArgs and self._extraArgs[ 'staticUnits' ]:
       unitData = self._UNITS[ unit ][ 0 ]
     else:
@@ -226,8 +225,8 @@ class BaseReporter( DBUtils ):
         unitIndex += 1
         if maxValue / unitDivFactor < unitThreshold:
           break
+      unitData = self._UNITS[ unit ][ unitIndex ]
     #Apply divFactor to all units
-    unitData = self._UNITS[ unit ][ unitIndex ]
     dataDict, maxValue = self._divideByFactor( dataDict, unitData[1] )
     return dataDict, maxValue, unitData[0]
 ##
