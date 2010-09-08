@@ -199,7 +199,7 @@ class BaseReporter( DBUtils ):
   def _findSuitableRateUnit( self, dataDict, maxValue, unit ):
     if unit not in self._RATE_UNITS:
       raise AttributeError( "%s is not a known rate unit" % unit )
-    if 'autoUnits' in self._extraArgs and not self._extraArgs[ 'autoUnits' ]:
+    if 'staticUnits' in self._extraArgs and self._extraArgs[ 'staticUnits' ]:
       unitData = self._RATE_UNITS[ unit ][ 0 ]
     else:
       unitList = self._RATE_UNITS[ unit ]
@@ -217,19 +217,17 @@ class BaseReporter( DBUtils ):
     if unit not in self._UNITS:
       raise AttributeError( "%s is not a known unit" % unit )
     print maxValue
-    if 'autoUnits' in self._extraArgs and not self._extraArgs[ 'autoUnits' ]:
+    if 'staticUnits' in self._extraArgs and self._extraArgs[ 'staticUnits' ]:
       unitData = self._UNITS[ unit ][ 0 ]
     else:
       unitList = self._UNITS[ unit ]
       unitIndex = -1
       for unitName, unitDivFactor, unitThreshold in unitList:
-        print unitName, unitDivFactor, unitThreshold, maxValue / unitDivFactor < unitThreshold
         unitIndex += 1
         if maxValue / unitDivFactor < unitThreshold:
           break
     #Apply divFactor to all units
     unitData = self._UNITS[ unit ][ unitIndex ]
-    print "UNIT IS ", unitData
     dataDict, maxValue = self._divideByFactor( dataDict, unitData[1] )
     return dataDict, maxValue, unitData[0]
 ##
