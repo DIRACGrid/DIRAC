@@ -776,7 +776,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
   # The following are write methods for directories
   #
 
-  def removeDirectory(self, lfn):
+  def removeDirectory(self, lfn,recursive=False):
     res = self.__checkArgumentFormat(lfn)
     if not res['OK']:
       return res
@@ -791,12 +791,15 @@ class LcgFileCatalogClient(FileCatalogueBase):
     for lfn,exists in res['Value']['Successful'].items():
       if not exists:   
         successful[lfn] = True
+        continue
+      if recursive:
+        res = self.__removeDirs(lfn)
       else:
         res = self.__removeDirectory(lfn)  
-        if res['OK']:
-          successful[lfn] = True
-        else:
-          failed[lfn] = res['Message']
+      if res['OK']:
+        successful[lfn] = True
+      else:
+        failed[lfn] = res['Message']
     if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
@@ -1264,6 +1267,22 @@ class LcgFileCatalogClient(FileCatalogueBase):
       return S_OK()
     else:
       return S_ERROR(lfc.sstrerror(lfc.cvar.serrno))
+
+  def __removeDirs(self,path):
+    """ Black magic contained within...
+    """
+    res = self.__getDirectoryContents(path)
+    if not res['OK']:
+      return res
+    subDirs = res['Value']['SubDirs']
+    files = res['Value']['Files']
+    for subDir in subDirs.keys():
+      res = self.__removeDirs(subDir)
+      if not res['OK']:
+        return res
+    if files:
+      return S_ERROR("Directory not empty")
+    return self.__removeDirectory(path)
 
   def __makeDirs(self,path,mode=0775):
     """  Black magic contained within....

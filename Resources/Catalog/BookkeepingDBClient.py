@@ -102,7 +102,7 @@ class BookkeepingDBClient(FileCatalogueBase):
     resDict = {'Failed':{},'Successful':successful}
     return S_OK(resDict)
 
-  def removeDirectory(self,lfn):
+  def removeDirectory(self,lfn,recursive=False):
     res = self.__checkArgumentFormat(lfn)
     if not res['OK']:
       return res
