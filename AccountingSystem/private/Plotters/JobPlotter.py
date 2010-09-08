@@ -100,7 +100,7 @@ class JobPlotter( BaseReporter ):
     return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportCPUUsage( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)/86400",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'CPUTime'
                                    ]
@@ -115,20 +115,22 @@ class JobPlotter( BaseReporter ):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
+    dataDict, maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, maxValue, "days" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
   def _plotCPUUsage( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'CPU usage by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'ylabel' : "days" }
+                 'ylabel' : plotInfo[ 'unit' ] }
     return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
   #WallTime
   def _reportWallTime( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)/86400",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'ExecTime'
                                    ]
@@ -143,15 +145,17 @@ class JobPlotter( BaseReporter ):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
+    dataDict, maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, maxValue, "days" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
   def _plotWallTime( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Wall Time by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'ylabel' : "days" }
+                 'ylabel' : plotInfo[ 'unit' ] }
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportAccumulatedWallTime( self, reportRequest ):
@@ -200,7 +204,7 @@ class JobPlotter( BaseReporter ):
     return S_OK( { 'data' : dataDict  } )
 
   def _plotTotalWallTime( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'Wall Time days used by %s' % reportRequest[ 'grouping' ],
+    metadata = { 'title' : 'Wall Time used by %s' % reportRequest[ 'grouping' ],
                  'ylabel' : 'cpu days',
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ]
@@ -252,15 +256,17 @@ class JobPlotter( BaseReporter ):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
+    dataDict, maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, maxValue, "jobs" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
   def _plotNumberOfJobs( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Jobs by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'ylabel' : "jobs"  }
+                 'ylabel' : plotInfo[ 'unit' ]  }
     return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportTotalNumberOfJobs( self, reportRequest ):
@@ -288,7 +294,7 @@ class JobPlotter( BaseReporter ):
     return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportProcessingBandwidth( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM((%s/1000000)/(%s))/SUM(%s)",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM((%s)/(%s))/SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength', 'InputDataSize', 'CPUTime', 'entriesInBucket' ]
                    )
     retVal = self._getTimedData( reportRequest[ 'startTime' ],
@@ -301,15 +307,17 @@ class JobPlotter( BaseReporter ):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
+    dataDict, maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, maxValue, "bytes" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
   def _plotProcessingBandwidth( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Processing Bandwidth by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'ylabel' : "MB/sec"  }
+                 'ylabel' : plotInfo[ 'unit' ]  }
     return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportInputSandboxSize( self, reportRequest ):
@@ -328,7 +336,7 @@ class JobPlotter( BaseReporter ):
     return self.__reportFieldSizeinMB( reportRequest, ( "OutputDataSize", "Output data" ) )
 
   def __reportFieldSizeinMB( self, reportRequest, fieldTuple ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)/1000000",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength', fieldTuple[0] ]
                    )
     retVal = self._getTimedData( reportRequest[ 'startTime' ],
@@ -341,8 +349,10 @@ class JobPlotter( BaseReporter ):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
+    dataDict, maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, maxValue, "bytes" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
   def _plotInputSandboxSize( self, reportRequest, plotInfo, filename ):
     return self.__plotFieldSizeinMB( reportRequest, plotInfo, filename, ( "InputSandBoxSize", "Input sand box size" ) )
@@ -364,7 +374,7 @@ class JobPlotter( BaseReporter ):
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'ylabel' : "MB" }
+                 'ylabel' : plotInfo[ 'unit' ] }
     return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportInputDataFiles( self, reportRequest ):
@@ -387,8 +397,10 @@ class JobPlotter( BaseReporter ):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
+    dataDict, maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, maxValue, "files" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
   def _plotInputDataFiles( self, reportRequest, plotInfo, filename ):
     return self.__plotDataFiles( reportRequest, plotInfo, filename, ( "InputDataFiles", "Input files" ) )
@@ -401,7 +413,7 @@ class JobPlotter( BaseReporter ):
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'ylabel' : "files" }
+                 'ylabel' : plotInfo[ 'unit' ] }
     return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportTotalCPUUsed( self, reportRequest ):
@@ -421,7 +433,7 @@ class JobPlotter( BaseReporter ):
     return S_OK( { 'data' : dataDict  } )
 
   def _plotTotalCPUUsed( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'CPU days used by %s' % reportRequest[ 'grouping' ],
+    metadata = { 'title' : 'CPU used by %s' % reportRequest[ 'grouping' ],
                  'ylabel' : 'cpu days',
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ]

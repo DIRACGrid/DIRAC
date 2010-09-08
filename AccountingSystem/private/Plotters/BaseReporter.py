@@ -21,6 +21,12 @@ class BaseReporter( DBUtils ):
   _EA_PADDING = 'figurePadding'
   _EA_TITLE = 'plotTitle'
 
+  _UNITS = { 'days' : ( ( 'days / day', 1, 15 ), ( 'weeks / day', 7, 10 ), ( 'months / day', 30, 12 ), ( 'years / day', 365, 1 ) ),
+             'bytes' : ( ( 'MiB / s', 1024 ^ 2, 1024 ), ( 'GiB / s', 1024 ^ 3, 1024 ), ( 'TiB / s', 1024 ^ 4, 1024 ), ( 'PiB / s', 1024 ^ 5, 1 ) ),
+             'jobs' : ( ( 'jobs / hour', 1 / 3600.0, 1000 ), ( 'Kjobs / hour', ( 10 ^ 3 ) / 3600.0, 1000 ), ( 'Mjobs / hour', ( 10 ^ 6 ) / 3600.0, 1 ) ),
+             'files' : ( ( 'files / hour', 1 / 3600.0, 1000 ), ( 'Kfiles / hour', ( 10 ^ 3 ) / 3600.0, 1000 ), ( 'Mfiles / hour', ( 10 ^ 6 ) / 3600.0, 1 ) )
+            }
+
   def __init__( self, db, setup, extraArgs = {} ):
     DBUtils.__init__( self, db, setup )
     self._extraArgs = extraArgs
@@ -56,11 +62,11 @@ class BaseReporter( DBUtils ):
     sT = time.time()
     retVal = self.__generatePlotForReport( reportRequest, reportHash, reportData )
     plotGenerationTime = time.time() - sT
-    gLogger.info( "Time for %s:%s - Report %.2f Plot %.2f (%.2f%% g/r)" % ( reportRequest[ 'typeName' ],
+    gLogger.info( "Time for %s:%s - Report %.2f Plot %.2f (%.2f%% r/p)" % ( reportRequest[ 'typeName' ],
                                                                             reportRequest[ 'reportName' ],
                                                                             reportGenerationTime,
                                                                             plotGenerationTime,
-                                                                            ( plotGenerationTime * 100 / reportGenerationTime ) ) )
+                                                                            ( reportGenerationTime * 100 / plotGenerationTime ) ) )
     if not retVal[ 'OK' ]:
       return retVal
     plotDict = retVal[ 'Value' ]
@@ -180,6 +186,27 @@ class BaseReporter( DBUtils ):
       return groupingFields[0]
     else:
       return "CONCAT( %s )" % ", ".join( [ "%s, '-'" % sqlRep for sqlRep in groupingFields[0] ] )
+
+
+  def _findSuitableUnit( self, dataDict, maxValue, unit ):
+    if unit not in self._UNITS:
+      raise AttributeError( "%s is not a known unit" % unit )
+    if 'scaleUnit' in self._extraArgs and not self._extraArgs[ 'scaleUnit' ]:
+      unitData = self._UNITS[ unit ][ 0 ]
+    else:
+      unitList = self._UNITS[ unit ]
+      unitIndex = -1
+      for unitName, unitDivFactor, unitThreshold in unitList:
+        unitIndex += 1
+        if maxValue / unitDivFactor < unitThreshold:
+          break
+    #Apply divFactor to all units
+    unitData = self._UNITS[ unit ][ unitIndex ]
+    dataDict, maxValue = self._divideByFactor( dataDict, unitData[1] )
+    return dataDict, maxValue, unitData[0]
+##
+# Plotting
+##
 
   def __checkPlotMetadata( self, metadata ):
     if self._EA_WIDTH in self._extraArgs and self._extraArgs[ self._EA_WIDTH ]:

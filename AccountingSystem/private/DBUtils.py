@@ -34,7 +34,7 @@ class DBUtils:
     typeName = "%s_%s" % ( self._setup, typeName )
     validCondDict = {}
     for key in condDict:
-      if type( condDict[ key ] ) in ( types.ListType, types.TupleType ) and len( condDict[ key ]  ) > 0:
+      if type( condDict[ key ] ) in ( types.ListType, types.TupleType ) and len( condDict[ key ] ) > 0:
         validCondDict[ key ] = condDict[ key ]
     retVal = self._acDB._getConnection()
     if not retVal[ 'OK' ]:
@@ -62,7 +62,7 @@ class DBUtils:
         groupDict[ groupingField ] = []
       if type( row ) == types.TupleType:
         rowL = list( row[ :fieldIndex ] )
-        rowL.extend( row[ fieldIndex+1: ] )
+        rowL.extend( row[ fieldIndex + 1: ] )
         row = rowL
       else:
         del( row[ fieldIndex ] )
@@ -138,7 +138,7 @@ class DBUtils:
     normData = self._spanToGranularity( granularity, bucketsData )
     for bDate in normData:
       for iP in range( len( normData[ bDate ] ) ):
-        normData[ bDate ][iP] =  float( normData[ bDate ][iP] ) / normData[ bDate ][-1]
+        normData[ bDate ][iP] = float( normData[ bDate ][iP] ) / normData[ bDate ][-1]
       del( normData[ bDate ][-1] )
     return normData
 
@@ -169,6 +169,19 @@ class DBUtils:
         if timeEpoch not in currentDict:
           currentDict[ timeEpoch ] = 0
     return dataDict
+
+  def _divideByFactor( self, dataDict, factor ):
+    """
+    Divide by factor the values and get the maximum value
+    dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
+    """
+    maxValue = 0.0
+    for key in dataDict:
+      currentDict = dataDict[ key ]
+      for timeEpoch in currentDict:
+          currentDict[ timeEpoch ] /= float( factor )
+          maxValue = max( maxValue, currentDict[ timeEpoch ] )
+    return dataDict, maxValue
 
   def _transformToRate( self, granularity, dataDict ):
     """
@@ -260,11 +273,11 @@ class DBUtils:
         bucketSums[ timeKey ][2] += timeData[0] / timeData[1]
     #Calculate proportionalFactor
     for timeKey in bucketSums:
-      timeData  = bucketSums[ timeKey ]
+      timeData = bucketSums[ timeKey ]
       if bucketSums[ timeKey ][0] == 0:
         bucketSums[ timeKey  ] = 0
       else:
-        bucketSums[ timeKey ] =  ( timeData[0] / timeData[1] )  / timeData[2]
+        bucketSums[ timeKey ] = ( timeData[0] / timeData[1] ) / timeData[2]
     #Calculate proportional Gauges
     for key in dataDict:
       for timeKey in dataDict[ key ]:

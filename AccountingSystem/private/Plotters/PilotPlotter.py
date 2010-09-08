@@ -54,15 +54,17 @@ class PilotPlotter( BaseReporter ):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
+    dataDict, maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, maxValue, "jobs" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
   def _plotNumberOfJobs( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Jobs by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'ylabel' : "jobs"  }
+                 'ylabel' : plotInfo[ 'unit' ]  }
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportCumulativeNumberOfPilots( self, reportRequest ):
@@ -110,15 +112,17 @@ class PilotPlotter( BaseReporter ):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
+    dataDict, maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, maxValue, "jobs" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
   def _plotNumberOfPilots( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Pilots by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'ylabel' : "pilots"  }
+                 'ylabel' : plotInfo[ 'unit' ].replace( 'job', 'pilot' )  }
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportJobsPerPilot( self, reportRequest ):

@@ -39,8 +39,10 @@ class DataOperationPlotter( BaseReporter ):
     strippedData = self.stripDataField( dataDict, togetherFieldsToPlot[1] )
     if strippedData:
       dataDict[ togetherFieldsToPlot[0] ] = strippedData[0]
+    dataDict, maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, maxValue, "files" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
   def _plotSuceededTransfers( self, reportRequest, plotInfo, filename ):
     return self.__plotTransfers( reportRequest, plotInfo, filename, 'Suceeded', ( 'Failed', 0 ) )
@@ -50,7 +52,7 @@ class DataOperationPlotter( BaseReporter ):
 
   def __plotTransfers( self, reportRequest, plotInfo, filename, titleType, togetherFieldsToPlot ):
     metadata = { 'title' : '%s Transfers by %s' % ( titleType, reportRequest[ 'grouping' ] ),
-                 'ylabel' : 'files',
+                 'ylabel' : plotInfo[ 'unit' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ] }
@@ -136,7 +138,7 @@ class DataOperationPlotter( BaseReporter ):
     return self._generateCumulativePlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportThroughput( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)/1000000",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                        'TransferSize'
                       ]
@@ -151,13 +153,14 @@ class DataOperationPlotter( BaseReporter ):
       return retVal
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
+    dataDict, maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, maxValue, "bytes" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    dataDict = self._transformToRate( granularity, dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
   def _plotThroughput( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Throughput by %s' % reportRequest[ 'grouping' ] ,
-                 'ylabel' : 'Mbyte/s',
+                 'ylabel' : plotInfo[ 'unit' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ] }
