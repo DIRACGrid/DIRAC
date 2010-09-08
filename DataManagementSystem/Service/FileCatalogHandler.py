@@ -285,20 +285,20 @@ class FileCatalogHandler(RequestHandler):
 
   #############################################################
   # S. Poss
-  # Would be a useful method
+  # Replaces the following
   #############################################################
-  #types_setMetadata = [ StringTypes, DictType ]
-  #def export_setMetadata(self, path, metadatadict ):
-  #  """ Set metadata parameter for the given path
-  #  """
-  #  return fcDB.setMetadata( path, metadatadict, self.getRemoteCredentials() )
-  #############################################################
-
-  types_setMetadata = [ StringTypes, StringTypes ]
-  def export_setMetadata(self, path, fieldName, fieldValue ):
+  types_setMetadata = [ StringTypes, DictType ]
+  def export_setMetadata(self, path, metadatadict ):
     """ Set metadata parameter for the given path
     """
-    return fcDB.setMetadata( path, fieldName, fieldValue, self.getRemoteCredentials() )
+    return fcDB.setMetadata( path, metadatadict, self.getRemoteCredentials() )
+  #############################################################
+
+  #types_setMetadata = [ StringTypes, StringTypes ]
+  #def export_setMetadata(self, path, fieldName, fieldValue ):
+  #  """ Set metadata parameter for the given path
+  #  """
+  #  return fcDB.setMetadata( path, fieldName, fieldValue, self.getRemoteCredentials() )
   
   types_getDirectoryMetadata = [ StringTypes ]
   def export_getDirectoryMetadata(self,path):

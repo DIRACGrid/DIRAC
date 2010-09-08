@@ -62,29 +62,15 @@ class DirectoryMetadata:
 #############################################################################################  
   ###########################################################
   # S. Poss:
-  # Something like below would be very useful
-  # Does not work because of overload of method does not work
-  ###########################################################
-  #def setMetadata(self,dpath="",metadict={},credDict=None):
-  #  for key,value in metadict.items():
-  #    res = self.setMetadata(dpath, key, value, credDict)
-  #    if not res['OK']:
-  #      return res
-  #  return S_OK() 
-  ###########################################################
+  # Instead of passing individual tags, pass dictionary
 
-  def setMetadata(self,dpath,metaName,metaValue,credDict):
+  def setMetadata(self,dpath,metadict,credDict):
     """ Set the value of a given metadata field for the the given directory path
     """
     result = self.getMetadataFields(credDict)
     if not result['OK']:
       return result
     metaFields = result['Value']
-    
-    if not metaName in metaFields:
-      result = self.setMetaParameter(dpath,metaName,metaValue,credDict)
-      result['Warning'] = "Added metadata is not searchable"
-      return result
     
     result = self.dtree.findDir(dpath)
     if not result['OK']:
@@ -93,21 +79,27 @@ class DirectoryMetadata:
     if not dirID:
       return S_ERROR('%s: directory not found' % dpath)
     
-    # Check that the metadata is not defined for the parent directories
-    result = self.getDirectoryMetadata(dpath,credDict,owndata=False)
-    if not result['OK']:
-      return result
-    if metaName in result['Value']:
-      return S_ERROR('Metadata conflict detected for %s for directory %s' % (metaName,dpath) )
-    result = self._insert('FC_Meta_%s' % metaName,['DirID','Value'],[dirID,metaValue])
-    if not result['OK']:
-      if result['Message'].find('Duplicate') != -1:
-        req = "UPDATE FC_Meta_%s SET Value='%s' WHERE DirID=%d" % (metaName,metaValue,dirID)
-        result = self._update(req)
-        if not result['OK']:
+    dirmeta = self.getDirectoryMetadata(dpath,credDict,owndata=False)
+    if not dirmeta['OK']:
+      return dirmeta
+    
+    for metaName,metaValue in metadict.items():
+      if not metaName in metaFields:
+        result = self.setMetaParameter(dpath,metaName,metaValue,credDict)
+        result['Warning'] = "Added metadata is not searchable"
+        return result
+      # Check that the metadata is not defined for the parent directories
+      if metaName in dirmeta['Value']:
+        return S_ERROR('Metadata conflict detected for %s for directory %s' % (metaName,dpath) )
+      result = self._insert('FC_Meta_%s' % metaName,['DirID','Value'],[dirID,metaValue])
+      if not result['OK']:
+        if result['Message'].find('Duplicate') != -1:
+          req = "UPDATE FC_Meta_%s SET Value='%s' WHERE DirID=%d" % (metaName,metaValue,dirID)
+          result = self._update(req)
+          if not result['OK']:
+            return result       
+        else:
           return result       
-      else:
-        return result       
         
     return S_OK() 
   

@@ -761,7 +761,9 @@ File Catalog Client $Revision: 1.17 $Date:
       meta = argss[1]
       value = argss[2]
       print path,meta,value
-      result = self.fc.setMetadata(path,meta,value)
+      metadict = {}
+      metadict[meta]=value
+      result = self.fc.setMetadata(path,metadict)
       if not result['OK']:
         print ("Error: %s" % result['Message'])              
       
