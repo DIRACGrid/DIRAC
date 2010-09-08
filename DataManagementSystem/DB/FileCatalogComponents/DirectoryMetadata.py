@@ -55,13 +55,25 @@ class DirectoryMetadata:
       metaDict[row[0]] = row[1]
       
     return S_OK(metaDict)  
-
 #############################################################################################  
 #
 # Set and get directory metadata
 #
 #############################################################################################  
-  def setMetadata(self,dpath,metaName,metaValue,credDict):
+  ###########################################################
+  # S. Poss:
+  # Something like below would be very useful
+  # Does not work because of overload of method does not work
+  ###########################################################
+  #def setMetadata(self,dpath="",metadict={},credDict=None):
+  #  for key,value in metadict.items():
+  #    res = self.setMetadata(dpath, key, value, credDict)
+  #    if not res['OK']:
+  #      return res
+  #  return S_OK() 
+  ###########################################################
+
+  def setMetadata(self,dpath="",metaName="",metaValue="",credDict=None):
     """ Set the value of a given metadata field for the the given directory path
     """
     result = self.getMetadataFields(credDict)
