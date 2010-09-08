@@ -2045,7 +2045,7 @@ class ReplicaManager( CatalogToStorage ):
 
   def __removePhysicalReplica( self, storageElementName, pfnsToRemove ):
     gLogger.verbose( "ReplicaManager.__removePhysicalReplica: Attempting to remove %s pfns at %s." % ( len( pfnsToRemove ), storageElementName ) )
-    storageElement = StorageElement( storageElementName )
+    storageElement = StorageElement(storageElementName, overwride=True)
     res = storageElement.isValid()
     if not res['OK']:
       errStr = "ReplicaManager.__removePhysicalReplica: The storage element is not currently valid."
