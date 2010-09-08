@@ -40,7 +40,7 @@ class DataOperationPlotter( BaseReporter ):
     if strippedData:
       dataDict[ togetherFieldsToPlot[0] ] = strippedData[0]
     dataDict, maxValue = self._divideByFactor( dataDict, granularity )
-    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, maxValue, "files" )
+    dataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict, maxValue, "files" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
@@ -126,14 +126,15 @@ class DataOperationPlotter( BaseReporter ):
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, self._getAccumulationMaxValue( dataDict ), "bytes" )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
   def _plotTransferedData( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Transfered data by %s' % reportRequest[ 'grouping' ] ,
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'ylabel' : "Gbyte",
+                 'ylabel' : plotInfo[ 'unit' ],
                  'sort_labels' : 'last_value' }
     return self._generateCumulativePlot( filename, plotInfo[ 'data' ], metadata )
 
@@ -154,7 +155,7 @@ class DataOperationPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict, maxValue = self._divideByFactor( dataDict, granularity )
-    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, maxValue, "bytes" )
+    dataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict, maxValue, "bytes" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 

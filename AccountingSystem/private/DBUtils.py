@@ -170,6 +170,40 @@ class DBUtils:
           currentDict[ timeEpoch ] = 0
     return dataDict
 
+  def _getAccumulationMaxValue( self, dataDict ):
+    """
+    Divide by factor the values and get the maximum value
+    dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
+    """
+    maxValue = 0
+    maxEpoch = 0
+    for key in dataDict:
+      currentDict = dataDict[ key ]
+      for timeEpoch in currentDict:
+        if timeEpoch > maxEpoch:
+          maxEpoch = timeEpoch
+          maxValue = 0
+        if timeEpoch == maxEpoch:
+          maxValue += currentDict[ timeEpoch ]
+    return maxValue
+
+  def _getMaxValue( self, dataDict ):
+    """
+    Divide by factor the values and get the maximum value
+    dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
+    """
+    maxValues = {}
+    for key in dataDict:
+      currentDict = dataDict[ key ]
+      for timeEpoch in currentDict:
+        if timeEpoch not in maxValues:
+          maxValues[ timeEpoch ] = 0
+        maxValues[ timeEpoch ] += currentDict[ timeEpoch ]
+    maxValue = 0
+    for k in maxValues:
+      maxValue = max( maxValue, k )
+    return maxValue
+
   def _divideByFactor( self, dataDict, factor ):
     """
     Divide by factor the values and get the maximum value
@@ -182,17 +216,6 @@ class DBUtils:
           currentDict[ timeEpoch ] /= float( factor )
           maxValue = max( maxValue, currentDict[ timeEpoch ] )
     return dataDict, maxValue
-
-  def _transformToRate( self, granularity, dataDict ):
-    """
-    Transform value to <data>/secs
-    dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
-    """
-    for key in dataDict:
-      currentDict = dataDict[ key ]
-      for timeEpoch in currentDict:
-        currentDict[ timeEpoch ] /= granularity
-    return dataDict
 
   def _acumulate( self, granularity, startEpoch, endEpoch, dataDict ):
     """

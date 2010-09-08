@@ -21,11 +21,19 @@ class BaseReporter( DBUtils ):
   _EA_PADDING = 'figurePadding'
   _EA_TITLE = 'plotTitle'
 
-  _UNITS = { 'days' : ( ( 'days / day', 1, 15 ), ( 'weeks / day', 7, 10 ), ( 'months / day', 30, 12 ), ( 'years / day', 365, 1 ) ),
-             'bytes' : ( ( 'MiB / s', 1024 ** 2, 1024 ), ( 'GiB / s', 1024 ** 3, 1024 ), ( 'TiB / s', 1024 ** 4, 1024 ), ( 'PiB / s', 1024 ** 5, 1 ) ),
-             'jobs' : ( ( 'jobs / hour', 1 / 3600.0, 1000 ), ( 'Kjobs / hour', ( 10 ** 3 ) / 3600.0, 1000 ), ( 'Mjobs / hour', ( 10 ** 6 ) / 3600.0, 1 ) ),
-             'files' : ( ( 'files / hour', 1 / 3600.0, 1000 ), ( 'Kfiles / hour', ( 10 ** 3 ) / 3600.0, 1000 ), ( 'Mfiles / hour', ( 10 ** 6 ) / 3600.0, 1 ) )
-            }
+  _RATE_UNITS = { 'time' : ( ( 'hours / s', 3600, 24 ), ( 'days / s', 86400, 15 ), ( 'weeks / s', 86400 * 7, 10 ), ( 'months / s', 86400 * 30, 12 ), ( 'years / s', 86400 * 365, 1 ) ),
+                  'bytes' : ( ( 'MiB / s', 1024 ** 2, 1024 ), ( 'GiB / s', 1024 ** 3, 1024 ), ( 'TiB / s', 1024 ** 4, 1024 ), ( 'PiB / s', 1024 ** 5, 1 ) ),
+                  'jobs' : ( ( 'jobs / hour', 1 / 3600.0, 1000 ), ( 'Kjobs / hour', ( 10 ** 3 ) / 3600.0, 1000 ), ( 'Mjobs / hour', ( 10 ** 6 ) / 3600.0, 1 ) ),
+                  #'files' : ( ( 'files / hour', 1 / 3600.0, 1000 ), ( 'Kfiles / hour', ( 10 ** 3 ) / 3600.0, 1000 ), ( 'Mfiles / hour', ( 10 ** 6 ) / 3600.0, 1 ) )
+                  'files' : ( ( 'files / hour', 1 / 3600.0, 1000 ), )
+                }
+
+  _UNITS = { 'time' : ( ( 'hours', 3600, 24 ), ( 'days', 86400, 15 ), ( 'weeks', 86400 * 7, 10 ), ( 'months', 86400 * 30, 12 ), ( 'years', 86400 * 365, 1 ) ),
+             'bytes' : ( ( 'MiB', 1024 ** 2, 1024 ), ( 'GiB', 1024 ** 3, 1024 ), ( 'TiB', 1024 ** 4, 1024 ), ( 'PiB / s', 1024 ** 5, 1 ) ),
+             'jobs' : ( ( 'jobs', 1, 1000 ), ( 'Kjobs', 10 ** 3, 1000 ), ( 'Mjobs', 10 ** 6, 1 ) ),
+             'files' : ( ( 'files', 1, 1000 ), ( 'Kfiles', 10 ** 3, 1000 ), ( 'Mfiles / hour', 10 ** 6, 1 ) )
+           }
+
 
   def __init__( self, db, setup, extraArgs = {} ):
     DBUtils.__init__( self, db, setup )
@@ -188,20 +196,40 @@ class BaseReporter( DBUtils ):
       return "CONCAT( %s )" % ", ".join( [ "%s, '-'" % sqlRep for sqlRep in groupingFields[0] ] )
 
 
-  def _findSuitableUnit( self, dataDict, maxValue, unit ):
-    if unit not in self._UNITS:
-      raise AttributeError( "%s is not a known unit" % unit )
-    if 'scaleUnit' in self._extraArgs and not self._extraArgs[ 'scaleUnit' ]:
-      unitData = self._UNITS[ unit ][ 0 ]
+  def _findSuitableRateUnit( self, dataDict, maxValue, unit ):
+    if unit not in self._RATE_UNITS:
+      raise AttributeError( "%s is not a known rate unit" % unit )
+    if 'autoUnits' in self._extraArgs and not self._extraArgs[ 'autoUnits' ]:
+      unitData = self._RATE_UNITS[ unit ][ 0 ]
     else:
-      unitList = self._UNITS[ unit ]
+      unitList = self._RATE_UNITS[ unit ]
       unitIndex = -1
       for unitName, unitDivFactor, unitThreshold in unitList:
         unitIndex += 1
         if maxValue / unitDivFactor < unitThreshold:
           break
     #Apply divFactor to all units
+    unitData = self._RATE_UNITS[ unit ][ unitIndex ]
+    dataDict, maxValue = self._divideByFactor( dataDict, unitData[1] )
+    return dataDict, maxValue, unitData[0]
+
+  def _findSuitableUnit( self, dataDict, maxValue, unit ):
+    if unit not in self._UNITS:
+      raise AttributeError( "%s is not a known unit" % unit )
+    print maxValue
+    if 'autoUnits' in self._extraArgs and not self._extraArgs[ 'autoUnits' ]:
+      unitData = self._UNITS[ unit ][ 0 ]
+    else:
+      unitList = self._UNITS[ unit ]
+      unitIndex = -1
+      for unitName, unitDivFactor, unitThreshold in unitList:
+        print unitName, unitDivFactor, unitThreshold, maxValue / unitDivFactor < unitThreshold
+        unitIndex += 1
+        if maxValue / unitDivFactor < unitThreshold:
+          break
+    #Apply divFactor to all units
     unitData = self._UNITS[ unit ][ unitIndex ]
+    print "UNIT IS ", unitData
     dataDict, maxValue = self._divideByFactor( dataDict, unitData[1] )
     return dataDict, maxValue, unitData[0]
 ##

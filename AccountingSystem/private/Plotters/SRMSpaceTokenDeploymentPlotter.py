@@ -4,7 +4,7 @@ from DIRAC.AccountingSystem.Client.Types.SRMSpaceTokenDeployment import SRMSpace
 from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
 from DIRAC.Core.Utilities import Time
 
-class SRMSpaceTokenDeploymentPlotter(BaseReporter):
+class SRMSpaceTokenDeploymentPlotter( BaseReporter ):
 
   _typeName = "SRMSpaceTokenDeployment"
   _typeKeyFields = [ dF[0] for dF in SRMSpaceTokenDeployment().definitionKeyFields ]
@@ -37,7 +37,7 @@ class SRMSpaceTokenDeploymentPlotter(BaseReporter):
     return self._historicReport( reportRequest, "ReservedNearline" )
 
   def _historicReport( self, reportRequest, fieldToBeReported ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s/%s)/1073741824",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s/%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     fieldToBeReported, 'entriesInBucket'
                                    ]
@@ -53,7 +53,8 @@ class SRMSpaceTokenDeploymentPlotter(BaseReporter):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, self._getMaxValue( dataDict ), "bytes" )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
   def _plotAvailableSpace( self, reportRequest, plotInfo, filename ):
     title = 'Available space by %s' % reportRequest[ 'grouping' ]
@@ -96,5 +97,5 @@ class SRMSpaceTokenDeploymentPlotter(BaseReporter):
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'ylabel' : "GiB"  }
+                 'ylabel' : plotInfo[ 'unit' ]  }
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )

@@ -71,7 +71,7 @@ class JobPlotter( BaseReporter ):
     return self._generateQualityPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportCPUUsed( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)/86400",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'CPUTime'
                                    ]
@@ -88,14 +88,15 @@ class JobPlotter( BaseReporter ):
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, self._getAccumulationMaxValue( dataDict ), "time" )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
   def _plotCPUUsed( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'CPU used by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'ylabel' : "days",
+                 'ylabel' : plotInfo[ 'unit' ],
                  'sort_labels' : 'last_value' }
     return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
 
@@ -116,7 +117,7 @@ class JobPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict, maxValue = self._divideByFactor( dataDict, granularity )
-    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, maxValue, "days" )
+    dataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict, maxValue, "time" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
@@ -146,7 +147,7 @@ class JobPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict, maxValue = self._divideByFactor( dataDict, granularity )
-    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, maxValue, "days" )
+    dataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict, maxValue, "time" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
@@ -159,7 +160,7 @@ class JobPlotter( BaseReporter ):
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
 
   def _reportAccumulatedWallTime( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)/86400",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'ExecTime'
                                    ]
@@ -176,14 +177,16 @@ class JobPlotter( BaseReporter ):
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, self._getAccumulationMaxValue( dataDict ), "time" )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+
 
   def _plotAccumulatedWallTime( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Accumulated Wall Time by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'ylabel' : "days",
+                 'ylabel' : plotInfo[ 'unit' ],
                  'sort_labels' : 'last_value' }
     return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
 
@@ -205,7 +208,7 @@ class JobPlotter( BaseReporter ):
 
   def _plotTotalWallTime( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Wall Time used by %s' % reportRequest[ 'grouping' ],
-                 'ylabel' : 'cpu days',
+                 'ylabel' : 'CPU days',
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ]
                 }
@@ -229,14 +232,18 @@ class JobPlotter( BaseReporter ):
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity } )
+    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
+                                                           self._getAccumulationMaxValue( dataDict ),
+                                                           "jobs" )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+
 
   def _plotCumulativeNumberOfJobs( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Cumulative Jobs by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
-                 'ylabel' : "jobs",
+                 'ylabel' : plotInfo[ 'unit' ],
                  'sort_labels' : 'last_value' }
     return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
 
@@ -257,7 +264,7 @@ class JobPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict, maxValue = self._divideByFactor( dataDict, granularity )
-    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, maxValue, "jobs" )
+    dataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict, maxValue, "jobs" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
@@ -308,7 +315,7 @@ class JobPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict, maxValue = self._divideByFactor( dataDict, granularity )
-    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, maxValue, "bytes" )
+    dataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict, maxValue, "bytes" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
@@ -350,7 +357,7 @@ class JobPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict, maxValue = self._divideByFactor( dataDict, granularity )
-    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, maxValue, "bytes" )
+    dataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict, maxValue, "bytes" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
@@ -398,7 +405,7 @@ class JobPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict, maxValue = self._divideByFactor( dataDict, granularity )
-    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, maxValue, "files" )
+    dataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict, maxValue, "files" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
@@ -434,7 +441,7 @@ class JobPlotter( BaseReporter ):
 
   def _plotTotalCPUUsed( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'CPU used by %s' % reportRequest[ 'grouping' ],
-                 'ylabel' : 'cpu days',
+                 'ylabel' : 'CPU days',
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ]
                 }
