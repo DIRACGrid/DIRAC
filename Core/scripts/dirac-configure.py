@@ -289,6 +289,7 @@ else:
   if not skipCADownload:
     DIRAC.gConfig.setOptionValue( '/DIRAC/Security/SkipCAChecks', 'yes' )
   Script.enableCS()
+if not skipCADownload:
   try:
     dirName = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'certificates' )
     if not os.path.exists( dirName ):
@@ -297,7 +298,6 @@ else:
     DIRAC.gLogger.exception()
     DIRAC.gLogger.fatal( 'Fail to create directory:', dirName )
     DIRAC.exit( -1 )
-if not skipCADownload:
   try:
     from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
     bdc = BundleDeliveryClient()
