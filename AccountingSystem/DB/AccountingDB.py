@@ -271,18 +271,21 @@ class AccountingDB( DB ):
     #ADRI: TEST COMPACT BUCKETS
     #self.dbBucketsLength[ typeName ] = [ ( 31104000, 3600 ) ]
 
-  @gSynchro
   def changeBucketsLength( self, typeName, bucketsLength ):
-    if not typeName in self.dbCatalog:
-      return S_ERROR( "%s is not a valid type name" % typeName )
-    bucketsLength.sort()
-    bucketsEncoding = DEncode.encode( bucketsLength )
-    retVal = self._update( "UPDATE `%s` set bucketsLength = '%s' where name = '%s'" % ( self.catalogTableName,
-                                                                              bucketsEncoding,
-                                                                              typeName ) )
-    if not retVal[ 'OK' ]:
-      return retVal
-    self.dbBucketsLength[ typeName ] = bucketsLength
+    gSynchro.lock()
+    try:
+      if not typeName in self.dbCatalog:
+        return S_ERROR( "%s is not a valid type name" % typeName )
+      bucketsLength.sort()
+      bucketsEncoding = DEncode.encode( bucketsLength )
+      retVal = self._update( "UPDATE `%s` set bucketsLength = '%s' where name = '%s'" % ( self.catalogTableName,
+                                                                                bucketsEncoding,
+                                                                                typeName ) )
+      if not retVal[ 'OK' ]:
+        return retVal
+      self.dbBucketsLength[ typeName ] = bucketsLength
+    finally:
+      gSynchro.unlock()
     return self.regenerateBuckets( typeName )
 
   @gSynchro
