@@ -282,7 +282,18 @@ class FileCatalogHandler(RequestHandler):
     """ Get all the metadata fields
     """
     return fcDB.getMetadataFields(self.getRemoteCredentials())
-  
+
+  #############################################################
+  # S. Poss
+  # Would be a useful method
+  #############################################################
+  #types_setMetadata = [ StringTypes, DictType ]
+  #def export_setMetadata(self, path, metadatadict ):
+  #  """ Set metadata parameter for the given path
+  #  """
+  #  return fcDB.setMetadata( path, metadatadict, self.getRemoteCredentials() )
+  #############################################################
+
   types_setMetadata = [ StringTypes, StringTypes ]
   def export_setMetadata(self, path, fieldName, fieldValue ):
     """ Set metadata parameter for the given path
