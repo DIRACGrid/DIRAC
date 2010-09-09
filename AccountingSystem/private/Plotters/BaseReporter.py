@@ -38,6 +38,20 @@ class BaseReporter( DBUtils ):
   def __init__( self, db, setup, extraArgs = {} ):
     DBUtils.__init__( self, db, setup )
     self._extraArgs = extraArgs
+    reportsRevMap = {}
+    for attr in dir( self ):
+      if attr.find( "_report" ) == 0:
+        if attr.find( 'Name', len( attr ) - 4 ) == len( attr ) - 4:
+          reportId = attr[ 7 :-4 ]
+          reportName = getattr( self, attr )
+          reportsRevMap[ reportId ] = reportName
+        else:
+          reportId = attr[ 7: ]
+          if reportId not in reportsRevMap:
+            reportsRevMap[ reportId ] = reportId
+    self.__reportNameMapping = {}
+    for rId in reportsRevMap:
+      self.__reportNameMapping[ reportsRevMap[ rId ] ] = rId
 
   def _translateGrouping( self, grouping ):
     return ( "%s", [ grouping ] )
@@ -57,6 +71,9 @@ class BaseReporter( DBUtils ):
   def generate( self, reportRequest ):
     reportRequest[ 'groupingFields' ] = self._translateGrouping( reportRequest[ 'grouping' ] )
     reportHash = reportRequest[ 'hash' ]
+    reportName = reportRequest[ 'reportName' ]
+    if reportName in self.__reportNameMapping:
+      reportRequest[ 'reportName' ] = self.__reportNameMapping[ reportName ]
     gLogger.info( "Retrieving data for %s:%s" % ( reportRequest[ 'typeName' ], reportRequest[ 'reportName' ] ) )
     sT = time.time()
     retVal = self.__retrieveReportData( reportRequest, reportHash )
@@ -83,12 +100,7 @@ class BaseReporter( DBUtils ):
     return S_OK( plotDict )
 
   def plotsList( self ):
-    viewList = []
-    for attr in dir( self ):
-      if attr.find( "_report" ) == 0:
-        viewList.append( attr.replace( "_report", "" ) )
-    viewList.sort()
-    return viewList
+    return sorted( [ k for k in self.__reportNameMapping ] )
 
   def __retrieveReportData( self, reportRequest, reportHash ):
     funcName = "_report%s" % reportRequest[ 'reportName' ]
