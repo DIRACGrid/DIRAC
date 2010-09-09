@@ -25,7 +25,6 @@ def getProxyLocation():
 def getCAsLocation():
   """ Retrieve the CA's files location
   """
-
   #Grid-Security
   retVal = gConfig.getOption( '%s/Grid-Security' % g_SecurityConfPath )
   if retVal[ 'OK' ]:
@@ -61,6 +60,15 @@ def getCAsLocation():
     return casPath
   #No CA's location found
   return False
+
+#Retrieve CA's location
+def getCAsDefaultLocation():
+  """ Retrievethe CAs Location inside DIRAC etc directory
+  """
+  #rootPath./etc/grid-security/certificates
+  casPath = "%s/etc/grid-security/certificates" % DIRAC.rootPath
+  gLogger.debug( "Returning autodiscovered %s location for CA's" % casPath )
+  return casPath
 
 #TODO: Static depending on files specified on CS
 #Retrieve certificate
@@ -106,28 +114,28 @@ def getCertificateAndKeyLocation():
   """
 
   certfile = ''
-  if os.environ.has_key("X509_USER_CERT"):
-    if os.path.exists(os.environ["X509_USER_CERT"]):
+  if os.environ.has_key( "X509_USER_CERT" ):
+    if os.path.exists( os.environ["X509_USER_CERT"] ):
       certfile = os.environ["X509_USER_CERT"]
   if not certfile:
-    if os.path.exists(os.environ["HOME"]+'/.globus/usercert.pem'):
-      certfile = os.environ["HOME"]+'/.globus/usercert.pem'
+    if os.path.exists( os.environ["HOME"] + '/.globus/usercert.pem' ):
+      certfile = os.environ["HOME"] + '/.globus/usercert.pem'
 
   if not certfile:
     return False
 
   keyfile = ''
-  if os.environ.has_key("X509_USER_KEY"):
-    if os.path.exists(os.environ["X509_USER_KEY"]):
+  if os.environ.has_key( "X509_USER_KEY" ):
+    if os.path.exists( os.environ["X509_USER_KEY"] ):
       keyfile = os.environ["X509_USER_KEY"]
   if not keyfile:
-    if os.path.exists(os.environ["HOME"]+'/.globus/userkey.pem'):
-      keyfile = os.environ["HOME"]+'/.globus/userkey.pem'
+    if os.path.exists( os.environ["HOME"] + '/.globus/userkey.pem' ):
+      keyfile = os.environ["HOME"] + '/.globus/userkey.pem'
 
   if not keyfile:
     return False
 
-  return (certfile,keyfile)
+  return ( certfile, keyfile )
 
 def getDefaultProxyLocation():
   """ Get the location of a possible new grid proxy file
