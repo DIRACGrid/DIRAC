@@ -288,8 +288,8 @@ else:
   # Necessary to allow initial download of CA's
   if not skipCADownload:
     DIRAC.gConfig.setOptionValue( '/DIRAC/Security/SkipCAChecks', 'yes' )
-  Script.enableCS()
 if not skipCADownload:
+  Script.enableCS()
   try:
     dirName = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'certificates' )
     if not os.path.exists( dirName ):
