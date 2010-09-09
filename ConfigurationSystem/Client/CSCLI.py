@@ -3,7 +3,7 @@
 # File :   CSCLI.py
 # Author : Adria Casajus
 ########################################################################
-__RCSID__   = "$Id$"
+__RCSID__ = "$Id$"
 __VERSION__ = "$Revision: 1.5 $"
 
 import cmd
@@ -21,7 +21,7 @@ class CSCLI( cmd.Cmd ):
     cmd.Cmd.__init__( self )
     self.do_connect()
     if self.connected:
-      self.modificator =  Modificator ( self.rpcClient )
+      self.modificator = Modificator ( self.rpcClient )
     else:
       self.modificator = Modificator()
     self.identSpace = 20
@@ -34,7 +34,7 @@ class CSCLI( cmd.Cmd ):
   def start( self ):
     if self.connected:
       self.modificator.loadFromRemote()
-      retVal = self.modificator.getCredentials()
+      retVal = self.modificator.loadCredentials()
       if not retVal[ 'OK' ]:
         print "There was an error gathering your credentials"
         print retVal[ 'Message' ]
@@ -76,7 +76,7 @@ class CSCLI( cmd.Cmd ):
       self.prompt = "(%s)-%s> " % ( self.masterURL, colorize( "Disconnected", "red" ) )
 
 
-  def printPair( self, key, value, separator=":" ):
+  def printPair( self, key, value, separator = ":" ):
     valueList = value.split( "\n" )
     print "%s%s%s %s" % ( key, " " * ( self.identSpace - len( key ) ), separator, valueList[0].strip() )
     for valueLine in valueList[ 1:-1 ]:
@@ -173,7 +173,7 @@ class CSCLI( cmd.Cmd ):
       self.masterURL = splitted[0].strip()
       self.tryConnection()
     except Exception, v:
-      gLogger.error( "Couldn't connect to %s (%s)" % ( self.masterURL, str(v) ) )
+      gLogger.error( "Couldn't connect to %s (%s)" % ( self.masterURL, str( v ) ) )
       self.setConnected( False, False )
 
   def do_sections( self, args ):
@@ -262,7 +262,7 @@ class CSCLI( cmd.Cmd ):
       assured = ""
       if not self.modifiedData:
         while True:
-          choice = raw_input( "Data has not been modified, do you still want to upload changes? yes/no [no]: ")
+          choice = raw_input( "Data has not been modified, do you still want to upload changes? yes/no [no]: " )
           choice = choice.lower()
           if choice in ( "yes", "y" ):
             break
@@ -515,7 +515,7 @@ class CSCLI( cmd.Cmd ):
         print "What version to rollback?"
         return
       version = " ".join ( argsList[0:2] )
-      choice = raw_input( "Do you really want to rollback to version %s? yes/no [no]: " % version)
+      choice = raw_input( "Do you really want to rollback to version %s? yes/no [no]: " % version )
       choice = choice.lower()
       if choice in ( "yes", "y" ):
         response = self.modificator.rollbackToVersion( version )
@@ -534,7 +534,7 @@ class CSCLI( cmd.Cmd ):
     Usage: diffWithServer
     """
     try:
-      choice = raw_input( "Do you want to merge with server configuration? yes/no [no]: ")
+      choice = raw_input( "Do you want to merge with server configuration? yes/no [no]: " )
       choice = choice.lower()
       if choice in ( "yes", "y" ):
         retVal = self.modificator.mergeWithServer()
