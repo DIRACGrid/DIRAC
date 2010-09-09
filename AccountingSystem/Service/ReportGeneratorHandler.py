@@ -212,7 +212,7 @@ class ReportGeneratorHandler( RequestHandler ):
     return S_OK( result[ 'Value' ][ fileToReturn ] )
 
   def __sendErrorAsImg( self, msgText, fileHelper ):
-    plotData = generateErrorMessagePlot( result[ 'Message' ] )
+    retVal = generateErrorMessagePlot( msgText )
     retVal = fileHelper.sendData( retVal[ 'Value' ] )
     if not retVal[ 'OK' ]:
       return retVal
@@ -227,9 +227,14 @@ class ReportGeneratorHandler( RequestHandler ):
     if len( fileId ) > 5 and fileId[1] == ':':
       gLogger.info( "Seems the file request is a plot generation request!" )
       #Seems a request for a plot!
-      result = self.__generatePlotFromFileId( fileId )
+      try:
+        result = self.__generatePlotFromFileId( fileId )
+      except Exception, e:
+        gLogger.exception( "Exception while generating plot" )
+        result = S_ERROR( "Error while generating plot: %s" % str( e ) )
       if not result[ 'OK' ]:
-        self.__sendErrorAsImg( result[ 'Message' ] )
+        self.__sendErrorAsImg( result[ 'Message' ], fileHelper )
+        fileHelper.sendEOF()
         return result
       fileId = result[ 'Value' ]
     retVal = gDataCache.getPlotData( fileId )
