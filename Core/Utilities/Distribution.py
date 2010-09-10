@@ -109,11 +109,12 @@ class Distribution:
     remoteLocation = "%s/%s" % ( self.svnRoot, svnPath )
     try:
       remoteFile = urllib2.urlopen( remoteLocation )
-    finally:
       remoteData = remoteFile.read()
       remoteFile.close()
       if remoteData:
         return remoteData
+    except:
+      pass
     #Web cat failed. Try directly with svn
     exitStatus, remoteData = execAndGetOutput( "svn cat '%s" % remoteLocation )
     if exitStatus:
