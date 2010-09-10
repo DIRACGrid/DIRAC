@@ -39,6 +39,7 @@ The setupSite method (used by the dirac-setup-site command) will use the followi
 /LocalInstallation/Agents:        List of System/AgentName to be setup
 /LocalInstallation/WebPortal:     Boolean to setup the Web Portal (default no)
 /LocalInstallation/ConfigurationMaster: Boolean, requires Configuration/Server to be given in the list of Services (default: no)
+/LocalInstallation/PrivateConfiguration: Boolean, requires Configuration/Server to be given in the list of Services (default: no)
 
 If a Master Configuration Server is being installed the following Options can be used:
 
@@ -959,14 +960,15 @@ def setupSite( scriptCfg, cfg = None ):
   setupAgents = [ k.split( '/' ) for k in localCfg.getOption( cfgInstallPath( 'Agents' ), [] ) ]
   setupWeb = localCfg.getOption( cfgInstallPath( 'WebPortal' ), False )
   setupConfigurationMaster = localCfg.getOption( cfgInstallPath( 'ConfigurationMaster' ), False )
+  setupPrivateConfiguration = localCfg.getOption( cfgInstallPath( 'PrivateConfiguration' ), False )
   setupConfigurationName = localCfg.getOption( cfgInstallPath( 'ConfigurationName' ), setup )
 
   for serviceTuple in setupServices:
     error = ''
     if len( serviceTuple ) != 2:
       error = 'Wrong service specification: system/service'
-    elif serviceTuple[0] not in setupSystems:
-      error = 'System %s not available' % serviceTuple[0]
+    # elif serviceTuple[0] not in setupSystems:
+    #   error = 'System %s not available' % serviceTuple[0]
     if error:
       if exitOnError:
         gLogger.error( error )
@@ -977,8 +979,8 @@ def setupSite( scriptCfg, cfg = None ):
     error = ''
     if len( agentTuple ) != 2:
       error = 'Wrong agent specification: system/service'
-    elif agentTuple[0] not in setupSystems:
-      error = 'System %s not available' % agentTuple[0]
+    # elif agentTuple[0] not in setupSystems:
+    #   error = 'System %s not available' % agentTuple[0]
     if error:
       if exitOnError:
         gLogger.error( error )
@@ -1111,6 +1113,10 @@ def setupSite( scriptCfg, cfg = None ):
     addDefaultOptionsToCS( None, 'service', system, service, extensions, True )
   for system, agent in setupAgents:
     addDefaultOptionsToCS( None, 'agent', system, agent, extensions, True )
+
+  if ['Configuration', 'Server'] in setupServices and setupPrivateConfiguration:
+    cfg = __getCfg( cfgPath( 'DIRAC', 'Configuration' ), 'AutoPublish' , 'no' )
+    _addCfgToDiracCfg( cfg ) 
 
   # 2.- Check if MySQL is required
   if setupDatabases:
@@ -1633,10 +1639,12 @@ def installMySQL():
     return result
 
   gLogger.info( 'Setting MySQL root password' )
+  print ['mysqladmin', '-u', 'root', 'password', mysqlRootPwd]
   result = execCommand( 0, ['mysqladmin', '-u', 'root', 'password', mysqlRootPwd] )
   if not result['OK']:
     return result
-  if mysqlHost:
+  if mysqlHost and mysqlHost not in ['localhost', '127.0.0.1'] :
+    print ['mysqladmin', '-u', 'root', '-h', '%s' % mysqlHost, 'password', mysqlRootPwd]
     result = execCommand( 0, ['mysqladmin', '-u', 'root',
                               '-h', '%s' % mysqlHost, 'password', mysqlRootPwd] )
     if not result['OK']:
