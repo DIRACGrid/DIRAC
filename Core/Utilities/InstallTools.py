@@ -58,7 +58,7 @@ If a Master Configuration Server is being installed the following Options can be
 __RCSID__ = "$Id: TaskQueueDirector.py 23253 2010-03-18 08:34:57Z rgracian $"
 
 #
-import os, re, glob, stat, time, shutil
+import os, re, glob, stat, time, shutil, socket
 
 defaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 
@@ -1141,6 +1141,14 @@ def setupSite( scriptCfg, cfg = None ):
           gLogger.error('Database %s CS registration failed: %s' % (db,result['Message']) )
       gLogger.info( 'Database %s already installed' % db )
 
+  if mysqlPassword:
+    if not _addMySQLToDiracCfg():
+      error = 'Failed to add MySQL user password to local configuration'
+      if exitOnError:
+        gLogger.error( error )
+        exit( -1 )
+      return S_ERROR( error )
+
   # 4.- Then installed requested services
   for system, service in setupServices:
     setupComponent( 'service', system, service, extensions )
@@ -1639,19 +1647,14 @@ def installMySQL():
     return result
 
   gLogger.info( 'Setting MySQL root password' )
-  print ['mysqladmin', '-u', 'root', 'password', mysqlRootPwd]
   result = execCommand( 0, ['mysqladmin', '-u', 'root', 'password', mysqlRootPwd] )
   if not result['OK']:
     return result
-  if mysqlHost and mysqlHost not in ['localhost', '127.0.0.1'] :
-    print ['mysqladmin', '-u', 'root', '-h', '%s' % mysqlHost, 'password', mysqlRootPwd]
+  if mysqlHost and socket.gethostbyname( mysqlHost ) != '127.0.0.1' :
     result = execCommand( 0, ['mysqladmin', '-u', 'root',
                               '-h', '%s' % mysqlHost, 'password', mysqlRootPwd] )
     if not result['OK']:
       return result
-
-  if not _addMySQLToDiracCfg():
-    return S_ERROR( 'Failed to add MySQL user password to local configuration' )
 
   return S_OK()
 
