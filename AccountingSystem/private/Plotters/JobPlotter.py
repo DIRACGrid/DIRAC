@@ -193,7 +193,7 @@ class JobPlotter( BaseReporter ):
                  'sort_labels' : 'last_value' }
     return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
 
-  _reportTotalWallTimeName = "Share wall time usage"
+  _reportTotalWallTimeName = "Pie plot of wall time usage"
   def _reportTotalWallTime( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s)/86400",
                      reportRequest[ 'groupingFields' ][1] + [ 'ExecTime'
@@ -211,7 +211,7 @@ class JobPlotter( BaseReporter ):
     return S_OK( { 'data' : dataDict  } )
 
   def _plotTotalWallTime( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'Wall Time used by %s' % reportRequest[ 'grouping' ],
+    metadata = { 'title' : 'Wall time days used by %s' % reportRequest[ 'grouping' ],
                  'ylabel' : 'CPU days',
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ]
@@ -283,7 +283,7 @@ class JobPlotter( BaseReporter ):
                  'ylabel' : plotInfo[ 'unit' ]  }
     return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
-  _reportTotalNumberOfJobsName = "Share of executed jobs"
+  _reportTotalNumberOfJobsName = "Pie plot of executed jobs"
   def _reportTotalNumberOfJobs( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'entriesInBucket'
@@ -439,7 +439,7 @@ class JobPlotter( BaseReporter ):
                  'ylabel' : plotInfo[ 'unit' ] }
     return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
-  _reportTotalCPUUsedName = "Share of CPU used"
+  _reportTotalCPUUsedName = "Pie plot of CPU used"
   def _reportTotalCPUUsed( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s)/86400",
                      reportRequest[ 'groupingFields' ][1] + [ 'CPUTime'
@@ -457,7 +457,7 @@ class JobPlotter( BaseReporter ):
     return S_OK( { 'data' : dataDict  } )
 
   def _plotTotalCPUUsed( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'CPU used by %s' % reportRequest[ 'grouping' ],
+    metadata = { 'title' : 'CPU days used by %s' % reportRequest[ 'grouping' ],
                  'ylabel' : 'CPU days',
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ]
