@@ -71,7 +71,7 @@ class JobPlotter( BaseReporter ):
                  'span' : plotInfo[ 'granularity' ] }
     return self._generateQualityPlot( filename, plotInfo[ 'data' ], metadata )
 
-  _reportCPUUsedName = "CPU time used"
+  _reportCPUUsedName = "Cumulative CPU time"
   def _reportCPUUsed( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
@@ -102,7 +102,7 @@ class JobPlotter( BaseReporter ):
                  'sort_labels' : 'last_value' }
     return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
 
-  _reportCPUUsageName = "CPU time usage"
+  _reportCPUUsageName = "CPU time"
   def _reportCPUUsage( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
@@ -132,7 +132,7 @@ class JobPlotter( BaseReporter ):
                  'ylabel' : plotInfo[ 'unit' ] }
     return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
-  _reportWallTimeName = "Wall time usage"
+  _reportWallTimeName = "Wall time"
   def _reportWallTime( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
@@ -154,6 +154,36 @@ class JobPlotter( BaseReporter ):
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
+
+  _reportTotalCPUUsedName = "Pie plot of CPU used"
+  def _reportTotalCPUUsed( self, reportRequest ):
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s)/86400",
+                     reportRequest[ 'groupingFields' ][1] + [ 'CPUTime'
+                                   ]
+                   )
+    retVal = self._getSummaryData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
+                                selectFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
+                                {} )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict = retVal[ 'Value' ]
+    return S_OK( { 'data' : dataDict  } )
+
+  def _plotTotalCPUUsed( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'CPU days used by %s' % reportRequest[ 'grouping' ],
+                 'ylabel' : 'CPU days',
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ]
+                }
+    return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )
+
+##
+# Wall time
+##
+
   def _plotWallTime( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Wall Time by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
@@ -162,7 +192,7 @@ class JobPlotter( BaseReporter ):
                  'ylabel' : plotInfo[ 'unit' ] }
     return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
 
-  _reportAccumulatedWallTimeName = "Wall time used"
+  _reportAccumulatedWallTimeName = "Cumulative wall time"
   def _reportAccumulatedWallTime( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
@@ -185,7 +215,7 @@ class JobPlotter( BaseReporter ):
     return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
 
   def _plotAccumulatedWallTime( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'Accumulated Wall Time by %s' % reportRequest[ 'grouping' ],
+    metadata = { 'title' : 'Cumulative wall time by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
@@ -218,7 +248,11 @@ class JobPlotter( BaseReporter ):
                 }
     return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )
 
-  _reportCumulativeNumberOfJobsName = "Executed jobs"
+##
+#  Jobs
+## 
+
+  _reportCumulativeNumberOfJobsName = "Cumulative executed jobs"
   def _reportCumulativeNumberOfJobs( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
@@ -253,7 +287,7 @@ class JobPlotter( BaseReporter ):
     return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
 
 
-  _reportNumberOfJobsName = "Jobs rate"
+  _reportNumberOfJobsName = "Job execution rate"
   def _reportNumberOfJobs( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
@@ -279,7 +313,7 @@ class JobPlotter( BaseReporter ):
     metadata = { 'title' : 'Jobs by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
-                 'span' : plotInfo[ 'granularity' ],
+                 'span' : plotInfo[ 'gran#ds9:_plotNames14:CPU time usages9:_groupings4:Users13:_timeSelectors6:604800s5:_Sites11:LCG.CNAF.its17:_FinalMajorStatuss14:Done,Completeds9:_typeNames3:Jobeularity' ],
                  'ylabel' : plotInfo[ 'unit' ]  }
     return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
@@ -307,6 +341,10 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ]
                 }
     return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )
+
+##
+# Proc bw
+##
 
   _reportProcessingBandwidthName = "Processing bandwidth"
   def _reportProcessingBandwidth( self, reportRequest ):
@@ -336,23 +374,27 @@ class JobPlotter( BaseReporter ):
                  'ylabel' : plotInfo[ 'unit' ]  }
     return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
-  _reportInputSandboxSizeName = "Input sandbox size"
+##
+# Data sizes
+##
+
+  _reportInputSandboxSizeName = "Input sandbox"
   def _reportInputSandboxSize( self, reportRequest ):
     return self.__reportFieldSizeinMB( reportRequest, ( "InputSandBoxSize", "Input sand box size" ) )
 
-  _reportOutputSandboxSizeName = "Ouput sandbox size"
+  _reportOutputSandboxSizeName = "Ouput sandbox"
   def _reportOutputSandboxSize( self, reportRequest ):
     return self.__reportFieldSizeinMB( reportRequest, ( "OutputSandBoxSize", "Output sand box size" ) )
 
-  _reportDiskSpaceSizeName = "Disk space size"
+  _reportDiskSpaceSizeName = "Disk space"
   def _reportDiskSpaceSize( self, reportRequest ):
     return self.__reportFieldSizeinMB( reportRequest, ( "DiskSpace", "Used disk space" ) )
 
-  _reportInputDataSizeName = "Input data size"
+  _reportInputDataSizeName = "Input data"
   def _reportInputDataSize( self, reportRequest ):
     return self.__reportFieldSizeinMB( reportRequest, ( "InputDataSize", "Input data" ) )
 
-  _reportOutputDataSizeName = "Output data size"
+  _reportOutputDataSizeName = "Output data"
   def _reportOutputDataSize( self, reportRequest ):
     return self.__reportFieldSizeinMB( reportRequest, ( "OutputDataSize", "Output data" ) )
 
@@ -398,6 +440,78 @@ class JobPlotter( BaseReporter ):
                  'ylabel' : plotInfo[ 'unit' ] }
     return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
+##
+#  Cumulative data sizes
+##
+
+  _reportCumulativeInputSandboxSizeName = "Cumulative Input sandbox"
+  def _reportCumulativeInputSandboxSize( self, reportRequest ):
+    return self.__reportCumulativeFieldSizeinMB( reportRequest, ( "InputSandBoxSize", "Input sand box size" ) )
+
+  _reportCumulativeOutputSandboxSizeName = "Cumulative Ouput sandbox"
+  def _reportCumulativeOutputSandboxSize( self, reportRequest ):
+    return self.__reportCumulativeFieldSizeinMB( reportRequest, ( "OutputSandBoxSize", "Output sand box size" ) )
+
+  _reportCumulativeDiskSpaceSizeName = "Cumulative Disk space"
+  def _reportCumulativeDiskSpaceSize( self, reportRequest ):
+    return self.__reportCumulativeFieldSizeinMB( reportRequest, ( "DiskSpace", "Used disk space" ) )
+
+  _reportCumulativeInputDataSizeName = "Cumulative Input data"
+  def _reportCumulativeInputDataSize( self, reportRequest ):
+    return self.__reportCumulativeFieldSizeinMB( reportRequest, ( "InputDataSize", "Input data" ) )
+
+  _reportCumulativeOutputDataSizeName = "Cumulative Output data"
+  def _reportCumulativeOutputDataSize( self, reportRequest ):
+    return self.__reportCumulativeFieldSizeinMB( reportRequest, ( "OutputDataSize", "Output data" ) )
+
+  def __reportCumulativeFieldSizeinMB( self, reportRequest, fieldTuple ):
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength', fieldTuple[0] ]
+                   )
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
+                                selectFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
+                                {} )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict, granularity = retVal[ 'Value' ]
+    self.stripDataField( dataDict, 0 )
+    dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
+                                                           self._getAccumulationMaxValue( dataDict ),
+                                                           "bytes" )
+    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+
+  def _plotCumulativeInputSandboxSize( self, reportRequest, plotInfo, filename ):
+    return self.__plotCumulativeFieldSizeinMB( reportRequest, plotInfo, filename, ( "InputSandBoxSize", "Input sand box size" ) )
+
+  def _plotCumulativeOutputSandboxSize( self, reportRequest, plotInfo, filename ):
+    return self.__plotCumulativeFieldSizeinMB( reportRequest, plotInfo, filename, ( "OutputSandBoxSize", "Output sand box size" ) )
+
+  def _plotCumulativeDiskSpaceSize( self, reportRequest, plotInfo, filename ):
+    return self.__plotCumulativeFieldSizeinMB( reportRequest, plotInfo, filename, ( "DiskSpace", "Used disk space" ) )
+
+  def _plotCumulativeInputDataSize( self, reportRequest, plotInfo, filename ):
+    return self.__plotCumulativeFieldSizeinMB( reportRequest, plotInfo, filename, ( "InputDataSize", "Input data" ) )
+
+  def _plotCumulativeOutputDataSize( self, reportRequest, plotInfo, filename ):
+    return self.__plotCumulativeFieldSizeinMB( reportRequest, plotInfo, filename, ( "OutputDataSize", "Output data" ) )
+
+  def __plotCumulativeFieldSizeinMB( self, reportRequest, plotInfo, filename, fieldTuple ):
+    metadata = { 'title' : 'Cumulative %s by %s' % ( fieldTuple[1], reportRequest[ 'grouping' ] ),
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ],
+                 'ylabel' : plotInfo[ 'unit' ] }
+    return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
+
+##
+#  Input/Ouput data files
+##
+
   _reportInputDataFilesName = "Input data files"
   def _reportInputDataFiles( self, reportRequest ):
     return self.__reportDataFiles( reportRequest, ( "InputDataFiles", "Input files" ) )
@@ -439,27 +553,3 @@ class JobPlotter( BaseReporter ):
                  'ylabel' : plotInfo[ 'unit' ] }
     return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
-  _reportTotalCPUUsedName = "Pie plot of CPU used"
-  def _reportTotalCPUUsed( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s)/86400",
-                     reportRequest[ 'groupingFields' ][1] + [ 'CPUTime'
-                                   ]
-                   )
-    retVal = self._getSummaryData( reportRequest[ 'startTime' ],
-                                reportRequest[ 'endTime' ],
-                                selectFields,
-                                reportRequest[ 'condDict' ],
-                                reportRequest[ 'groupingFields' ],
-                                {} )
-    if not retVal[ 'OK' ]:
-      return retVal
-    dataDict = retVal[ 'Value' ]
-    return S_OK( { 'data' : dataDict  } )
-
-  def _plotTotalCPUUsed( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'CPU days used by %s' % reportRequest[ 'grouping' ],
-                 'ylabel' : 'CPU days',
-                 'starttime' : reportRequest[ 'startTime' ],
-                 'endtime' : reportRequest[ 'endTime' ]
-                }
-    return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )
