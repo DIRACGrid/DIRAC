@@ -44,7 +44,7 @@ for jobID in args:
     continue
   taskQueueDict[tqID]['TaskQueueID'] = tqID
   if not director:
-    director = gLitePilotDirector()
+    director = gLitePilotDirector('gLite')
     director.configure('/','gLite')
     
   result = director.submitPilots( taskQueueDict[tqID], 1 )
