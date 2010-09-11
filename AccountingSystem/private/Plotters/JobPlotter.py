@@ -313,7 +313,7 @@ class JobPlotter( BaseReporter ):
     metadata = { 'title' : 'Jobs by %s' % reportRequest[ 'grouping' ],
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
-                 'span' : plotInfo[ 'gran#ds9:_plotNames14:CPU time usages9:_groupings4:Users13:_timeSelectors6:604800s5:_Sites11:LCG.CNAF.its17:_FinalMajorStatuss14:Done,Completeds9:_typeNames3:Jobeularity' ],
+                 'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ]  }
     return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
 
