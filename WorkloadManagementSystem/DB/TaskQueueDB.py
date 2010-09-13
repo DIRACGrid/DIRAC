@@ -929,8 +929,8 @@ class TaskQueueDB( DB ):
     """
     Recalculate all priorities for TQ's
     """
-    self.log.info( "Updating correctors state" )
     if self.isSharesCorrectionEnabled():
+      self.log.info( "Updating correctors state" )
       self.__sharesCorrector.update()
     self.__updateGlobalShares()
     self.log.info( "Recalculating shares for all TQs" )
