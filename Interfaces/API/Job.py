@@ -46,7 +46,7 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
 from DIRAC.Core.Utilities.Subprocess                import shellCall
 from DIRAC.Core.Utilities.List                      import uniqueElements
-from DIRAC.Core.Utilities.SiteCEMapping             import getSiteCEMapping
+from DIRAC.Core.Utilities.SiteCEMapping             import getSiteForCE,getSiteCEMapping
 from DIRAC                                          import gLogger
 
 COMPONENT_NAME='/Interfaces/API/Job'
@@ -505,6 +505,24 @@ class Job:
       return S_ERROR('Specified site %s is not in list of defined sites' %site)
 
     return S_OK('%s is valid' %site)
+
+  #############################################################################
+  def setDestinationCE(self,ceName):
+    """ Developer function. 
+        
+        Allows to direct a job to a particular Grid CE.         
+    """
+    kwargs = {'ceName':ceName}
+    diracSite = getSiteForCE(ceName)
+    if not diracSite['OK']:
+      return self.__reportError(diracSite['Message'],**kwargs)
+    if not diracSite['Value']:
+      return self.__reportErrror('No DIRAC site name found for CE %s' %(ceName),**kwargs)
+
+    diracSite = diracSite['Value']
+    self.setDestination(diracSite)
+    self._addJDLParameter('GridRequiredCEs',ceName)
+    return S_OK()
 
   #############################################################################
   def setBannedSites(self,sites):
