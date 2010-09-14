@@ -9,7 +9,7 @@
 """
 __docformat__ = "restructuredtext en"
 
-from datetime import datetime, timedelta
+import datetime
 
 from types import *
 from DIRAC import S_OK, S_ERROR
@@ -176,7 +176,7 @@ class ResourceStatusHandler(RequestHandler):
 #############################################################################
 
   types_setSiteStatus = [StringType, StringType, StringType, StringType]
-  def export_setSiteStatus(self, siteName, status, reason, operatorCode):
+  def export_setSiteStatus(self, siteName, status, reason, tokenOwner):
     """ 
     Set Site status to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.setSiteStatus`
@@ -191,14 +191,14 @@ class ResourceStatusHandler(RequestHandler):
       `reason`
         a string representing the reason
 
-      `operatorCode`
+      `tokenOwner`
         a string representing the operator Code
         (can be a user name, or ``RS_SVC`` for the service itself)
     """
     try:
       gLogger.info("ResourceStatusHandler.setSiteStatus: Attempting to modify site %s status" % siteName)
       try:
-        rsDB.setSiteStatus(siteName, status, reason, operatorCode)
+        rsDB.setSiteStatus(siteName, status, reason, tokenOwner)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -213,10 +213,10 @@ class ResourceStatusHandler(RequestHandler):
 #############################################################################
 
   #ok
-  types_addOrModifySite = [StringType, StringType, StringType, StringType, Time._dateTimeType, 
-                           StringType, Time._dateTimeType]
-  def export_addOrModifySite(self, siteName, siteType, status, reason, dateEffective, 
-                             operatorCode, dateEnd):
+  types_addOrModifySite = [StringType, StringType, StringType, StringType, StringType,  
+                           StringType, Time._dateTimeType, StringType, Time._dateTimeType]
+  def export_addOrModifySite(self, siteName, siteType, gridSiteName, gridTier, status, reason, dateEffective, 
+                             tokenOwner, dateEnd):
     """ 
     Add or modify a site to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifySite`
@@ -228,6 +228,12 @@ class ResourceStatusHandler(RequestHandler):
       `siteType`
         string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
+      `gridSiteName`
+        string - name of the site in the GOC DB
+    
+      `gridTier`
+        string - Tier of the Site (in the GOC DB)
+      
       `status`
         string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
@@ -235,18 +241,19 @@ class ResourceStatusHandler(RequestHandler):
         string - free
       
       `dateEffective`
-        datetime - date from which the site status is effective
+        datetime.datetime - date from which the site status is effective
 
-      `operatorCode`
+      `tokenOwner`
         string - free
 
       `dateEnd`
-        datetime - date from which the site status ends to be effective
+        datetime.datetime - date from which the site status ends to be effective
     """
     try:
       gLogger.info("ResourceStatusHandler.addOrModifySite: Attempting to add or modify site %s" % siteName)
       try:
-        rsDB.addOrModifySite(siteName, siteType, status, reason, dateEffective, operatorCode, dateEnd)
+        rsDB.addOrModifySite(siteName, siteType, gridSiteName, gridTier, status, reason, 
+                             dateEffective, tokenOwner, dateEnd)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -434,7 +441,7 @@ class ResourceStatusHandler(RequestHandler):
 #############################################################################
 
   types_setServiceStatus = [StringType, StringType, StringType, StringType]
-  def export_setServiceStatus(self, serviceName, status, reason, operatorCode):
+  def export_setServiceStatus(self, serviceName, status, reason, tokenOwner):
     """ 
     Set Service status to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.setServiceStatus`
@@ -449,14 +456,14 @@ class ResourceStatusHandler(RequestHandler):
       `reason`
         a string representing the reason
 
-      `operatorCode`
+      `tokenOwner`
         a string representing the operator Code
       (can be a user name, or ``RS_SVC`` for the service itself)
     """
     try:
       gLogger.info("ResourceStatusHandler.setServiceStatus: Attempting to modify service %s status" % serviceName)
       try:
-        rsDB.setServiceStatus(serviceName, status, reason, operatorCode)
+        rsDB.setServiceStatus(serviceName, status, reason, tokenOwner)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -473,8 +480,8 @@ class ResourceStatusHandler(RequestHandler):
   #ok
   types_addOrModifyService = [StringType, StringType, StringType, StringType, StringType, Time._dateTimeType, StringType, Time._dateTimeType]
   def export_addOrModifyService(self, serviceName, serviceType, siteName, status, 
-                                reason, dateEffective, operatorCode, 
-                                dateEnd=datetime(9999, 12, 31, 23, 59, 59)):
+                                reason, dateEffective, tokenOwner, 
+                                dateEnd=datetime.datetime(9999, 12, 31, 23, 59, 59)):
     """ 
     Add or modify a service to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifyService`
@@ -494,20 +501,20 @@ class ResourceStatusHandler(RequestHandler):
         string - free
       
       `dateEffective`
-        datetime - date from which the service status is effective
+        datetime.datetime - date from which the service status is effective
 
-      `operatorCode`
+      `tokenOwner`
         string - free
 
       `dateEnd`
-        datetime - date from which the service status ends to be effective
+        datetime.datetime - date from which the service status ends to be effective
     
     """
     try:
       gLogger.info("ResourceStatusHandler.addOrModifyService: Attempting to add or modify service %s" % serviceName)
       try:
         rsDB.addOrModifyService(serviceName, serviceType, siteName, status, reason, 
-                                dateEffective, operatorCode, dateEnd)
+                                dateEffective, tokenOwner, dateEnd)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -734,7 +741,7 @@ class ResourceStatusHandler(RequestHandler):
 #############################################################################
 
   types_setResourceStatus = [StringType, StringType, StringType, StringType]
-  def export_setResourceStatus(self, resourceName, status, reason, operatorCode):
+  def export_setResourceStatus(self, resourceName, status, reason, tokenOwner):
     """ 
     Set Resource status to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.setResourceStatus`
@@ -749,14 +756,14 @@ class ResourceStatusHandler(RequestHandler):
       `reason`
         a string representing the reason
 
-      `operatorCode`
+      `tokenOwner`
         a string representing the operator Code
         (can be a user name, or ``RS_SVC`` for the service itself)
     """
     try:
       gLogger.info("ResourceStatusHandler.setResourceStatus: Attempting to modify resource %s status" % resourceName)
       try:
-        rsDB.setResourceStatus(resourceName, status, reason, operatorCode)
+        rsDB.setResourceStatus(resourceName, status, reason, tokenOwner)
         return S_OK()
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
@@ -775,8 +782,8 @@ class ResourceStatusHandler(RequestHandler):
   types_addOrModifyResource = [StringType, StringType, StringType, StringType, StringType, 
                                StringType, Time._dateTimeType, StringType, Time._dateTimeType]
   def export_addOrModifyResource(self, resourceName, resourceType, serviceName, siteName, 
-                                 status, reason, dateEffective, operatorCode, 
-                                 dateEnd=datetime(9999, 12, 31, 23, 59, 59)):
+                                 status, reason, dateEffective, tokenOwner, 
+                                 dateEnd=datetime.datetime(9999, 12, 31, 23, 59, 59)):
     """ 
     Add or modify a resource to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifyResource`
@@ -796,19 +803,19 @@ class ResourceStatusHandler(RequestHandler):
         string - free
       
       `dateEffective`
-        datetime - date from which the resource status is effective
+        datetime.datetime - date from which the resource status is effective
 
-      `operatorCode`
+      `tokenOwner`
         string - free
 
       `dateEnd`
-        datetime - date from which the resource status ends to be effective
+        datetime.datetime - date from which the resource status ends to be effective
         
     """
     try:
       gLogger.info("ResourceStatusHandler.addOrModifyResource: Attempting to add or modify resource %s %s" % (resourceName, siteName))
       try:
-        rsDB.addOrModifyResource(resourceName, resourceType, serviceName, siteName, status, reason, dateEffective, operatorCode, dateEnd)
+        rsDB.addOrModifyResource(resourceName, resourceType, serviceName, siteName, status, reason, dateEffective, tokenOwner, dateEnd)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -1146,7 +1153,7 @@ class ResourceStatusHandler(RequestHandler):
 #############################################################################
 
   types_setStorageElementStatus = [StringType, StringType, StringType, StringType]
-  def export_setStorageElementStatus(self, seName, status, reason, operatorCode):
+  def export_setStorageElementStatus(self, seName, status, reason, tokenOwner):
     """ 
     Set StorageElement status to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.setStorageElementStatus`
@@ -1161,14 +1168,14 @@ class ResourceStatusHandler(RequestHandler):
       `reason`
         a string representing the reason
 
-      `operatorCode`
+      `tokenOwner`
         a string representing the operator Code
         (can be a user name, or ``RS_SVC`` for the service itself)
     """
     try:
       gLogger.info("ResourceStatusHandler.setStorageElementStatus: Attempting to modify se %s status" % seName)
       try:
-        rsDB.setStorageElementStatus(seName, status, reason, operatorCode)
+        rsDB.setStorageElementStatus(seName, status, reason, tokenOwner)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -1186,7 +1193,7 @@ class ResourceStatusHandler(RequestHandler):
   types_addOrModifyStorageElement = [StringType, StringType, StringType, StringType, StringType, 
                                      Time._dateTimeType, StringType, Time._dateTimeType]
   def export_addOrModifyStorageElement(self, seName, resourceName, siteName, status, reason, 
-                                       dateEffective, operatorCode, dateEnd):
+                                       dateEffective, tokenOwner, dateEnd):
     """ 
     Add or modify a site to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifyStorageElement`
@@ -1208,19 +1215,19 @@ class ResourceStatusHandler(RequestHandler):
         string - free
       
       `dateEffective`
-        datetime - date from which the site status is effective
+        datetime.datetime - date from which the site status is effective
 
-      `operatorCode`
+      `tokenOwner`
         string - free
 
       `dateEnd`
-        datetime - date from which the site status ends to be effective
+        datetime.datetime - date from which the site status ends to be effective
     """
     try:
       gLogger.info("ResourceStatusHandler.addOrModifyStorageElement: Attempting to add or modify se %s" % seName)
       try:
         rsDB.addOrModifyStorageElement(seName, resourceName, siteName, status, reason, 
-                                       dateEffective, operatorCode, dateEnd)
+                                       dateEffective, tokenOwner, dateEnd)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -1683,17 +1690,17 @@ class ResourceStatusHandler(RequestHandler):
                         description = dt_t[3]
                         toTake.remove('Description')
               
-              now = datetime.utcnow().replace(microsecond = 0, second = 0)
-              startDate_datetime = datetime.strptime(startDate, '%Y-%m-%d %H:%M')
-              endDate_datetime = datetime.strptime(endDate, '%Y-%m-%d %H:%M')
+              now = datetime.datetime.utcnow().replace(microsecond = 0, second = 0)
+              startDate_datetime.datetime = datetime.datetime.strptime(startDate, '%Y-%m-%d %H:%M')
+              endDate_datetime.datetime = datetime.datetime.strptime(endDate, '%Y-%m-%d %H:%M')
               
-              if endDate_datetime < now:
+              if endDate_datetime.datetime < now:
                 when = 'Finished'
               else:
-                if startDate_datetime < now:
+                if startDate_datetime.datetime < now:
                   when = 'OnGoing'
                 else:
-                  hours = str(convertTime(startDate_datetime - now, 'hours'))
+                  hours = str(convertTime(startDate_datetime.datetime - now, 'hours'))
                   when = 'In ' + hours + ' hours.'
               
               if sev in severity:
@@ -1750,7 +1757,7 @@ class ResourceStatusHandler(RequestHandler):
         status = res[1]
         formerStatus = res[2]
         siteType = res[3]
-        operatorCode = res[len(res)-1]
+        tokenOwner = res[len(res)-1]
         if granularity == 'Resource':
           resourceType = res[4]
         elif granularity == 'Service':
@@ -1758,7 +1765,7 @@ class ResourceStatusHandler(RequestHandler):
         
         from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
         pep = PEP(VOExtension, granularity, name, status, formerStatus, reason, siteType, 
-                  serviceType, resourceType, operatorCode, useNewRes)
+                  serviceType, resourceType, tokenOwner, useNewRes)
         pep.enforce(rsDBIn = rsDB)
         
       except RSSDBException, x:
@@ -1800,10 +1807,10 @@ class ResourceStatusHandler(RequestHandler):
             status = res[1]
             formerStatus = res[2]
             siteType = res[3]
-            operatorCode = res[4]
+            tokenOwner = res[4]
             
             pep = PEP(VOExtension, granularity, name, status, formerStatus, None, siteType, 
-                      None, None, operatorCode, useNewRes)
+                      None, None, tokenOwner, useNewRes)
             pep.enforce(rsDBIn = rsDB)
 
             res = rsDB.getMonitoredsList('Service', paramsList = ['ServiceName'], siteName = name)
@@ -1816,7 +1823,7 @@ class ResourceStatusHandler(RequestHandler):
               serviceType = res[4]
               
               pep = PEP(VOExtension, 'Service', s, status, formerStatus, None, siteType, 
-                        serviceType, None, operatorCode, useNewRes)
+                        serviceType, None, tokenOwner, useNewRes)
               pep.enforce(rsDBIn = rsDB)
           else:
             reason = serviceType = resourceType = None 
@@ -1825,7 +1832,7 @@ class ResourceStatusHandler(RequestHandler):
             status = res[1]
             formerStatus = res[2]
             siteType = res[3]
-            operatorCode = res[len(res)-1]
+            tokenOwner = res[len(res)-1]
             if granularity == 'Resource':
               resourceType = res[4]
             elif granularity == 'Service':
@@ -1833,7 +1840,7 @@ class ResourceStatusHandler(RequestHandler):
             
             from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
             pep = PEP(VOExtension, granularity, name, status, formerStatus, reason, siteType, 
-                      serviceType, resourceType, operatorCode, useNewRes)
+                      serviceType, resourceType, tokenOwner, useNewRes)
             pep.enforce(rsDBIn = rsDB)
             
         res = publisher.getInfo(granularity, name, useNewRes)
@@ -1852,3 +1859,89 @@ class ResourceStatusHandler(RequestHandler):
       return S_ERROR(errorStr)
 
 #############################################################################
+
+  types_reAssignToken = [StringType, StringType, StringType]
+  def export_reAssignToken(self, granularity, name, requester):
+    """ 
+    Re-assign a token: if it was assigned to a human, assign it to 'RS_SVC' and viceversa.
+    """
+    try:
+      str = "ResourceStatusHandler.reAssignToken: attempting to re-assign token "
+      str = str + "%s: %s: %s" % (granularity, name, requester)
+      gLogger.info(str)
+      try:
+        token = rsDB.getTokens(granularity, name)
+        tokenOwner = token[0][1]
+        if tokenOwner == 'RS_SVC':
+          if requester != 'RS_SVC':
+            rsDB.setToken(granularity, name, requester, datetime.datetime.utcnow() + datetime.timedelta(hours = 24))
+        else:
+          rsDB.setToken(granularity, name, 'RS_SVC', datetime.datetime(9999, 12, 31, 23, 59, 59))
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.reAssignToken: re-assigned token %s: %s: %s" % (granularity, name, requester))
+      return S_OK()
+    except Exception:
+      errorStr = where(self, self.export_reAssignToken)
+      gLogger.exception(errorStr)
+      return S_ERROR(errorStr)
+    
+    
+#############################################################################
+
+  types_extendToken = [StringType, StringType, IntType]
+  def export_extendToken(self, granularity, name, hrs):
+    """ 
+    Extend the duration of token by the number of provided hours. 
+    """
+    try:
+      str = "ResourceStatusHandler.extendToken: attempting to extend token "
+      str = str + "%s: %s for %i hours" % (granularity, name, hrs)
+      gLogger.info(str)
+      try:
+        token = rsDB.getTokens(granularity, name)
+        tokenOwner = token[0][1]
+        tokenExpiration = token[0][2]
+        try:
+          tokenNewExpiration = tokenExpiration + datetime.timedelta(hours = hrs)
+        except OverflowError:
+          pass
+        rsDB.setToken(granularity, name, tokenOwner, tokenNewExpiration)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.extendToken: extended token %s: %s for %i hours" % (granularity, name, hrs))
+      return S_OK()
+    except Exception:
+      errorStr = where(self, self.export_extendToken)
+      gLogger.exception(errorStr)
+      return S_ERROR(errorStr)
+    
+#############################################################################
+
+  types_whatIs = [StringType]
+  def export_whatIs(self, name):
+    """ 
+    Find which is the granularity of name. 
+    """
+    try:
+      str = "ResourceStatusHandler.whatIs: attempting to find granularity of %s" %name
+      gLogger.info(str)
+      try:
+        g = rsDB.whatIs(name)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.whatIs: got %s granularity" % (name))
+      return S_OK(g)
+    except Exception:
+      errorStr = where(self, self.export_whatIs)
+      gLogger.exception(errorStr)
+      return S_ERROR(errorStr)
+
+#############################################################################
+  

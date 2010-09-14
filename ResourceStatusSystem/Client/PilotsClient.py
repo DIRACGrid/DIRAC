@@ -2,7 +2,7 @@
 """
 __docformat__ = "restructuredtext en"
 
-from datetime import datetime, timedelta
+import datetime
 
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -51,12 +51,12 @@ class PilotsClient:
     
     #######TODO
 #    numberOfPilotsLash2Hours = self.rc.getReport('Pilot', 'NumberOfPilots', 
-#                                                 datetime.utcnow()-timedelta(hours = 2), 
-#                                                 datetime.utcnow(), {granularity:[entity]}, 
+#                                                 datetime.datetime.utcnow()-datetime.timedelta(hours = 2), 
+#                                                 datetime.datetime.utcnow(), {granularity:[entity]}, 
 #                                                 'GridStatus')
 #    numberOfPilotsLash2Hours = self.rc.getReport('Pilot', 'NumberOfPilots', 
-#                                                 datetime.utcnow()-timedelta(hours = 2), 
-#                                                 datetime.utcnow(), {granularity:[entity]}, 
+#                                                 datetime.datetime.utcnow()-datetime.timedelta(hours = 2), 
+#                                                 datetime.datetime.utcnow(), {granularity:[entity]}, 
 #                                                 'GridStatus')
 #    
 #    for x in numberOfPilots['Value']['data'].itervalues():
@@ -98,8 +98,8 @@ class PilotsClient:
     
     #######TODO
 #    numberOfPilots = self.rc.getReport('Pilot', 'NumberOfPilots', 
-#                                       datetime.utcnow()-timedelta(hours = 24), 
-#                                       datetime.utcnow(), {self._granularity:[self_entity]}, 
+#                                       datetime.datetime.utcnow()-datetime.timedelta(hours = 24), 
+#                                       datetime.datetime.utcnow(), {self._granularity:[self_entity]}, 
 #                                       'GridStatus')
     
     

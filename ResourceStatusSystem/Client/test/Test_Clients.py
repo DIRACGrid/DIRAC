@@ -1,5 +1,4 @@
 import unittest
-from datetime import datetime
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Client.GOCDBClient import GOCDBClient
 from DIRAC.ResourceStatusSystem.Client.SLSClient import *

@@ -12,11 +12,12 @@ class ResourceStatusHandlerTestCase(unittest.TestCase):
   """ Base class for the ResourceStatusHandlerTestCase test cases
   """
   def setUp(self):
-    from DIRAC.Core.Base import Script
-    Script.parseCommandLine() 
+#    from DIRAC.Core.Base import Script
+#    Script.parseCommandLine() 
     sys.modules["DIRAC.Core.DISET.RequestHandler"] = DIRAC.ResourceStatusSystem.test.fake_RequestHandler
     sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
     sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    sys.modules["DIRAC.ResourceStatusSystem.Utilities.CS"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     from DIRAC.ResourceStatusSystem.Service.ResourceStatusHandler import ResourceStatusHandler, initializeResourceStatusHandler
     
     a = Mock()
@@ -38,7 +39,7 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
 
   def test_export_addOrModifySite(self):
     for status in ValidStatus:
-      res = self.rsh.export_addOrModifySite('XX', 'XX', status, 'reason', 'dateEffective', 'OP', '')
+      res = self.rsh.export_addOrModifySite('XX', 'XX', 'XX', 'XX', status, 'reason', 'dateEffective', 'OP', '')
       self.assert_(res['OK'])
 
   def test_export_removeSite(self):
@@ -252,6 +253,22 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
       for g_2 in ValidRes:
         res = self.rsh.export_getGeneralName(g_1, 'XX', g_2)
         self.assert_(res['OK'])
+        
+  def test_export_reAssignToken(self):
+    for g in ValidRes:
+      res = self.rsh.export_reAssignToken(g, 'XX', 'Fede')
+      self.assert_(res['OK'])
+      
+  def test_export_extendToken(self):
+    for g in ValidRes:
+      res = self.rsh.export_extendToken(g, 'XX', 8)
+      self.assert_(res['OK'])
+      
+  def test_export_whatIs(self):
+    for g in ValidRes:
+      res = self.rsh.export_whatIs('XX')
+      self.assert_(res['OK'])
+      
 
 #  def test_export_enforcePolicies(self):
 #    for g in ValidRes:

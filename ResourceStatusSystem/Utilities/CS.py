@@ -33,12 +33,6 @@ def getOperationMails( op ):
 
 #############################################################################
 
-def getVOMSEndpoints():
-  voms_S = gConfig.getSections("%s/VOMS/Servers/lhcb/" %(g_BaseRegistrySection) ,'')
-  return voms_S
-
-#############################################################################
-
 def getSetup():
   setup = gConfig.getValue("DIRAC/Setup")
   return S_OK(setup)

@@ -121,12 +121,12 @@ class SSInspectorAgent(AgentModule):
         status = toBeChecked[2]
         formerStatus = toBeChecked[3]
         siteType = toBeChecked[4]
-        operatorCode = toBeChecked[5]
+        tokenOwner = toBeChecked[5]
         
         gLogger.info("Checking Site %s, with status %s" % (siteName, status))
         
         newPEP = PEP(self.VOExtension, granularity = granularity, name = siteName, status = status, 
-                     formerStatus = formerStatus, siteType = siteType, operatorCode = operatorCode)
+                     formerStatus = formerStatus, siteType = siteType, tokenOwner = tokenOwner)
         
         newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup, ncIn = self.nc, 
                        daIn = self.diracAdmin, csAPIIn = self.csAPI)

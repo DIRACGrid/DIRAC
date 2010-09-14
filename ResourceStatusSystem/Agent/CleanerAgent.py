@@ -4,12 +4,11 @@
 """ CleanerAgent is in charge of different cleanings
 """
 
-from datetime import datetime, timedelta
+import datetime
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC import gLogger
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 
@@ -63,8 +62,8 @@ class CleanerAgent(AgentModule):
             self.rsDB.transact2History(table, row)
 
       # Cleans history tables from entries older than 6 months.
-      sixMonthsAgo = str((datetime.utcnow()).replace(microsecond = 0, 
-                                                     second = 0) - timedelta(days = 180))
+      sixMonthsAgo = str((datetime.datetime.utcnow()).replace(microsecond = 0, 
+                                                     second = 0) - datetime.timedelta(days = 180))
       
       for table in self.historyTables:
         req = "DELETE FROM %s WHERE DateEnd < '%s'" %(table, sixMonthsAgo)
@@ -74,8 +73,8 @@ class CleanerAgent(AgentModule):
 
       
       # Cleans ClientsCache table from DownTimes older than a day.
-      aDayAgo = str((datetime.utcnow()).replace(microsecond = 0, 
-                                                second = 0) - timedelta(days = 1))
+      aDayAgo = str((datetime.datetime.utcnow()).replace(microsecond = 0, 
+                                                second = 0) - datetime.timedelta(days = 1))
       
       req = "SELECT Opt_ID FROM ClientsCache WHERE Value = 'EndDate' AND Result < '%s'" %aDayAgo
       resQuery = self.rsDB.db._query(req)
@@ -92,8 +91,8 @@ class CleanerAgent(AgentModule):
 
 
       # Cleans AccountingCache table from plots not updated nor checked in the last 30 mins 
-      anHourAgo = str((datetime.utcnow()).replace(microsecond = 0, 
-                                                  second = 0) - timedelta(minutes = 30))
+      anHourAgo = str((datetime.datetime.utcnow()).replace(microsecond = 0, 
+                                                  second = 0) - datetime.timedelta(minutes = 30))
       req = "DELETE FROM AccountingCache WHERE LastCheckTime < '%s'" %(anHourAgo)
       resDel = self.rsDB.db._update(req)
       if not resDel['OK']:

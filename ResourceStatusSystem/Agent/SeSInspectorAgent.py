@@ -121,13 +121,13 @@ class SeSInspectorAgent(AgentModule):
         formerStatus = toBeChecked[3]
         siteType = toBeChecked[4]
         serviceType = toBeChecked[5]
-        operatorCode = toBeChecked[6]
+        tokenOwner = toBeChecked[6]
         
         gLogger.info("Checking Service %s, with status %s" % (serviceName, status))
         
         newPEP = PEP(self.VOExtension, granularity = granularity, name = serviceName, status = status, 
                      formerStatus = formerStatus, siteType = siteType, 
-                     serviceType = serviceType, operatorCode = operatorCode)
+                     serviceType = serviceType, tokenOwner = tokenOwner)
         
         newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup, ncIn = self.nc, 
                        daIn = self.diracAdmin, csAPIIn = self.csAPI)

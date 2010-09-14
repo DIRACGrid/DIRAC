@@ -3,7 +3,7 @@
 
 import sys
 import unittest
-from datetime import datetime 
+import datetime 
 
 from DIRAC import S_OK, S_ERROR
 import DIRAC.ResourceStatusSystem.test.fake_Logger
@@ -223,16 +223,16 @@ class GOCDBStatus_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
 
-    now = datetime.utcnow().replace(microsecond = 0, second = 0)
-    tomorrow = datetime.utcnow().replace(microsecond = 0, second = 0) + timedelta(hours = 24)
-    inAWeek = datetime.utcnow().replace(microsecond = 0, second = 0) + timedelta(days = 7)
+    now = datetime.datetime.utcnow().replace(microsecond = 0, second = 0)
+    tomorrow = datetime.datetime.utcnow().replace(microsecond = 0, second = 0) + datetime.timedelta(hours = 24)
+    inAWeek = datetime.datetime.utcnow().replace(microsecond = 0, second = 0) + datetime.timedelta(days = 7)
     
-    nowLess12h = str( now - timedelta(hours = 12) )[:-3]
-    nowPlus8h = str( now + timedelta(hours = 8) )[:-3]
-    nowPlus24h = str( now + timedelta(hours = 24) )[:-3]
-    nowPlus40h = str( now + timedelta(hours = 40) )[:-3]
-    nowPlus50h = str( now + timedelta(hours = 50) )[:-3]
-    nowPlus60h = str( now + timedelta(hours = 60) )[:-3]
+    nowLess12h = str( now - datetime.timedelta(hours = 12) )[:-3]
+    nowPlus8h = str( now + datetime.timedelta(hours = 8) )[:-3]
+    nowPlus24h = str( now + datetime.timedelta(hours = 24) )[:-3]
+    nowPlus40h = str( now + datetime.timedelta(hours = 40) )[:-3]
+    nowPlus50h = str( now + datetime.timedelta(hours = 50) )[:-3]
+    nowPlus60h = str( now + datetime.timedelta(hours = 60) )[:-3]
 
 
     for granularity in ValidRes:
@@ -925,7 +925,7 @@ class TransferOperations_CommandSuccess(ClientsCommandsTestCase):
     self.DQ_C.setClient(self.mock_client)
     res = self.DQ_C.doCommand()
     self.assertEqual(res['Result'], 'Unknown')
-    self.DQ_C.setArgs(('StorageElement', 'XXX', datetime.utcnow()))
+    self.DQ_C.setArgs(('StorageElement', 'XXX', datetime.datetime.utcnow()))
     res = self.DQ_C.doCommand()
     self.assertEqual(res['Result'], 'Unknown')
       

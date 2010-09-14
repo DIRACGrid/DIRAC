@@ -2,7 +2,7 @@
     (to be cached)
 """
 
-from datetime import datetime, timedelta
+import datetime
 
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getDIRACSiteName
@@ -143,8 +143,8 @@ class TransferQualityEverySEs_Command(Command):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       self.client = ReportsClient(rpcClient = self.RPC)
 
-    fromD = datetime.utcnow()-timedelta(hours = 2)
-    toD = datetime.utcnow()
+    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 2)
+    toD = datetime.datetime.utcnow()
 
     try:
       qualityAll = self.client.getReport('DataOperation', 'Quality', fromD, toD, 

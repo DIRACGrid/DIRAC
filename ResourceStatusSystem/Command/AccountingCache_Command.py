@@ -2,7 +2,7 @@
     accounting results in the accounting cache.
 """
 
-from datetime import datetime, timedelta
+import datetime
 
 from DIRAC import gLogger
 
@@ -53,8 +53,8 @@ class TransferQualityByDestSplitted_Command(Command):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       self.client = ReportsClient(rpcClient = self.RPC)
 
-    fromD = datetime.utcnow()-timedelta(hours = 2)
-    toD = datetime.utcnow()
+    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 2)
+    toD = datetime.datetime.utcnow()
 
     try:
       qualityAll = self.client.getReport('DataOperation', 'Quality', fromD, toD, 
@@ -133,8 +133,8 @@ class FailedTransfersBySourceSplitted_Command(Command):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       self.client = ReportsClient(rpcClient = self.RPC)
 
-    fromD = datetime.utcnow()-timedelta(hours = 2)
-    toD = datetime.utcnow()
+    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 2)
+    toD = datetime.datetime.utcnow()
 
     try:
       ft_source = self.client.getReport('DataOperation', 'FailedTransfers', 
@@ -205,8 +205,8 @@ class SuccessfullJobsBySiteSplitted_Command(Command):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       self.client = ReportsClient(rpcClient = self.RPC)
 
-    fromD = datetime.utcnow()-timedelta(hours = 24)
-    toD = datetime.utcnow()
+    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 24)
+    toD = datetime.datetime.utcnow()
 
     try:
       succ_jobs = self.client.getReport('Job', 'NumberOfJobs', fromD, toD, 
@@ -273,8 +273,8 @@ class FailedJobsBySiteSplitted_Command(Command):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       self.client = ReportsClient(rpcClient = self.RPC)
 
-    fromD = datetime.utcnow()-timedelta(hours = 24)
-    toD = datetime.utcnow()
+    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 24)
+    toD = datetime.datetime.utcnow()
 
     try:
       failed_jobs = self.client.getReport('Job', 'NumberOfJobs', fromD, toD, 
@@ -340,8 +340,8 @@ class SuccessfullPilotsBySiteSplitted_Command(Command):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       self.client = ReportsClient(rpcClient = self.RPC)
 
-    fromD = datetime.utcnow()-timedelta(hours = 24)
-    toD = datetime.utcnow()
+    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 24)
+    toD = datetime.datetime.utcnow()
 
     try:
       succ_pilots = self.client.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
@@ -408,8 +408,8 @@ class FailedPilotsBySiteSplitted_Command(Command):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       self.client = ReportsClient(rpcClient = self.RPC)
 
-    fromD = datetime.utcnow()-timedelta(hours = 24)
-    toD = datetime.utcnow()
+    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 24)
+    toD = datetime.datetime.utcnow()
 
     try:
       failed_pilots = self.client.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
@@ -475,8 +475,8 @@ class SuccessfullPilotsByCESplitted_Command(Command):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       self.client = ReportsClient(rpcClient = self.RPC)
 
-    fromD = datetime.utcnow()-timedelta(hours = 24)
-    toD = datetime.utcnow()
+    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 24)
+    toD = datetime.datetime.utcnow()
 
     try:
       succ_pilots = self.client.getReport('Pilot', 'NumberOfPilots', fromD, toD, 
@@ -543,8 +543,8 @@ class FailedPilotsByCESplitted_Command(Command):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       self.client = ReportsClient(rpcClient = self.RPC)
 
-    fromD = datetime.utcnow()-timedelta(hours = 24)
-    toD = datetime.utcnow()
+    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 24)
+    toD = datetime.datetime.utcnow()
 
     try:
       failed_pilots = self.client.getReport('Pilot', 'NumberOfPilots', fromD, toD, 

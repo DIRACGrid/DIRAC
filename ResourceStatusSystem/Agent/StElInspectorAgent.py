@@ -120,13 +120,13 @@ class StElInspectorAgent(AgentModule):
         status = toBeChecked[2]
         formerStatus = toBeChecked[3]
         siteType = toBeChecked[4]
-        operatorCode = toBeChecked[5]
+        tokenOwner = toBeChecked[5]
        
         gLogger.info("Checking StorageElement %s, with status %s" % (storageElementName, status))
         
         newPEP = PEP(self.VOExtension, granularity = granularity, name = storageElementName, 
                      status = status, formerStatus = formerStatus, siteType = siteType, 
-                     operatorCode = operatorCode)
+                     tokenOwner = tokenOwner)
         
         newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup, ncIn = self.nc, 
                        daIn = self.diracAdmin, csAPIIn = self.csAPI)

@@ -28,8 +28,8 @@ risorsa2 = {'name':'ccsrm.in2p3.fr', 'siteType':'T1', 'resourceType':'SE'} #OK
 risorsa3 = {'name':'lhcb-lfc.gridpp.rl.ac.uk', 'siteType':'T1', 'resourceType':'LFC_L'} #OK
 risorsa = {'name':'ce.gina.sara.nl', 'siteType':'T2', 'resourceType':'CE'} #OK
 #risorsa3 = {'name':'prod-lfc-lhcb-central.cern.ch', 'siteType':'T1', 'resourceType':'LFC_C'} #OK
-#se = {'name':'CERN-RAW', 'siteType':'T0'} #OK
-se = {'name':'PIC_MC_M-DST', 'siteType':'T1'} #OK
+se = {'name':'CERN-RAW', 'siteType':'T0'} #OK
+#se = {'name':'PIC_MC_M-DST', 'siteType':'T1'} #OK
 
 useNewRes = False
 
@@ -39,186 +39,186 @@ useNewRes = False
 #risorsa2 = {'name':'srm-lhcb.cern.ch#', 'siteType':'T0', 'resourceType':'SE'} #WRONG
 #se = {'name':'CERN_MC_M-DST#', 'siteType':'T0'} #WRONG
 
-print "\n\n ~~~~~~~ SITO ~~~~~~~ %s \n" %(sito)
-
-for status in ValidStatus:
-#  for oldStatus in ValidStatus:
-#    if status == oldStatus:
-#      continue
-  print "############################"
-  print " "
-  print 'nel test:', status#, oldStatus
-  pdp = PDP(VO, granularity = 'Site', name = sito['name'], status = status, 
-#            formerStatus = oldStatus, 
-            reason = 'XXXXX', siteType = sito['siteType'],
-             useNewRes = useNewRes
-            )  
-  res = pdp.takeDecision()
-  print res
-
-print "\n\n ~~~~~~~ SERVICE 1 ~~~~~~~ : %s \n " %servizio
-
-for status in ValidStatus:
-#  for oldStatus in ValidStatus:
-#    if status == oldStatus:
-#      continue
-  print "############################"
-  print " "
-  print 'nel test:', status#, oldStatus
-  pdp = PDP(VO, granularity = 'Service', name = servizio['name'], status = status, 
-#            formerStatus = oldStatus, 
-            reason = 'XXXXX', siteType = servizio['siteType'],
-            serviceType = servizio['serviceType'],
-            useNewRes = useNewRes
-            ) 
-  res = pdp.takeDecision()
-  print res
-
-print "\n\n ~~~~~~~ SERVICE 2 ~~~~~~~ : %s \n " %servizio2
-
-for status in ValidStatus:
-#  for oldStatus in ValidStatus:
-#    if status == oldStatus:
-#      continue
-    print "############################"
-    print " "
-    print 'nel test:', status#, oldStatus
-    pdp = PDP(VO, granularity = 'Service', name = servizio2['name'], status = status, 
-#              formerStatus = oldStatus, 
-              reason = 'XXXXX', siteType = servizio2['siteType'],
-              serviceType = servizio2['serviceType'], 
-              useNewRes = useNewRes
-              ) 
-    res = pdp.takeDecision()
-    print res
-
-print "\n\n ~~~~~~~ SERVICE 3 ~~~~~~~ : %s \n " %servizio3
-
-for status in ValidStatus:
-#  for oldStatus in ValidStatus:
-#    if status == oldStatus:
-#      continue
-    print "############################"
-    print " "
-    print 'nel test:', status#, oldStatus
-    pdp = PDP(VO, granularity = 'Service', name = servizio3['name'], status = status, 
-#              formerStatus = oldStatus, 
-              reason = 'XXXXX', siteType = servizio3['siteType'],
-              serviceType = servizio3['serviceType'], 
-              useNewRes = useNewRes
-              ) 
-    res = pdp.takeDecision()
-    print res
-
-print "\n\n ~~~~~~~ SERVICE 4 ~~~~~~~ : %s \n " %servizio4
-
-for status in ValidStatus:
-#  for oldStatus in ValidStatus:
-#    if status == oldStatus:
-#      continue
-    print "############################"
-    print " "
-    print 'nel test:', status#, oldStatus
-    pdp = PDP(VO, granularity = 'Service', name = servizio4['name'], status = status, 
-#              formerStatus = oldStatus, 
-              reason = 'XXXXX', siteType = servizio4['siteType'],
-              serviceType = servizio4['serviceType'], 
-              useNewRes = useNewRes
-              ) 
-    res = pdp.takeDecision()
-    print res
-
-
-
-print "\n\n ~~~~~~~ RISORSA 1 ~~~~~~~ : %s \n " %risorsa
-
-for status in ValidStatus:
-#  for oldStatus in ValidStatus:
-#    if status == oldStatus:
-#      continue
-  print "############################"
-  print " "
-  print status#, oldStatus
-  pdp = PDP(VO, granularity = 'Resource', name = risorsa['name'], status = status, 
-#            formerStatus = oldStatus, 
-            reason = 'XXXXX', siteType = risorsa['siteType'], 
-            resourceType = risorsa['resourceType'],
-            useNewRes = useNewRes
-            ) 
-  res = pdp.takeDecision()
-  print res
-
-print "\n\n ~~~~~~~ RISORSA 2 ~~~~~~~ : %s \n " %risorsa2
-
-for status in ValidStatus:
-#  for oldStatus in ValidStatus:
-#    if status == oldStatus:
-#      continue
-  print "############################"
-  print " "
-  print status#, oldStatus
-  pdp = PDP(VO, granularity = 'Resource', name = risorsa2['name'], status = status, 
-#              formerStatus = oldStatus, 
-            reason = 'XXXXX', siteType = risorsa2['siteType'], 
-            resourceType = risorsa2['resourceType'],
-            useNewRes = useNewRes
-            ) 
-  res = pdp.takeDecision()
-  print res
-
-print "\n\n ~~~~~~~ RISORSA 3 ~~~~~~~ : %s \n " %risorsa3
-
-for status in ValidStatus:
-#  for oldStatus in ValidStatus:
-#    if status == oldStatus:
-#      continue
-  print "############################"
-  print " "
-  print status#, oldStatus
-  pdp = PDP(VO, granularity = 'Resource', name = risorsa3['name'], status = status, 
-#            formerStatus = oldStatus, 
-            reason = 'XXXXX', siteType = risorsa3['siteType'], 
-            resourceType = risorsa3['resourceType'],
-            useNewRes = useNewRes
-            ) 
-  res = pdp.takeDecision()
-  print res
-
-print "\n\n ~~~~~~~ RISORSA 4 ~~~~~~~ : %s \n " %risorsa4
-
-for status in ValidStatus:
-#  for oldStatus in ValidStatus:
-#    if status == oldStatus:
-#      continue
-  print "############################"
-  print " "
-  print status#, oldStatus
-  pdp = PDP(VO, granularity = 'Resource', name = risorsa4['name'], status = status, 
-#            formerStatus = oldStatus, 
-            reason = 'XXXXX', siteType = risorsa3['siteType'], 
-            resourceType = risorsa4['resourceType'],
-            useNewRes = useNewRes
-            ) 
-  res = pdp.takeDecision()
-  print res
-
-print "\n\n ~~~~~~~ RISORSA 5 ~~~~~~~ : %s \n " %risorsa5
-
-for status in ValidStatus:
-#  for oldStatus in ValidStatus:
-#    if status == oldStatus:
-#      continue
-  print "############################"
-  print " "
-  print status#, oldStatus
-  pdp = PDP(VO, granularity = 'Resource', name = risorsa5['name'], status = status, 
-#            formerStatus = oldStatus, 
-            reason = 'XXXXX', siteType = risorsa5['siteType'], 
-            resourceType = risorsa5['resourceType'],
-            useNewRes = useNewRes
-            ) 
-  res = pdp.takeDecision()
-  print res
+#print "\n\n ~~~~~~~ SITO ~~~~~~~ %s \n" %(sito)
+#
+#for status in ValidStatus:
+##  for oldStatus in ValidStatus:
+##    if status == oldStatus:
+##      continue
+#  print "############################"
+#  print " "
+#  print 'nel test:', status#, oldStatus
+#  pdp = PDP(VO, granularity = 'Site', name = sito['name'], status = status, 
+##            formerStatus = oldStatus, 
+#            reason = 'XXXXX', siteType = sito['siteType'],
+#             useNewRes = useNewRes
+#            )  
+#  res = pdp.takeDecision()
+#  print res
+#
+#print "\n\n ~~~~~~~ SERVICE 1 ~~~~~~~ : %s \n " %servizio
+#
+#for status in ValidStatus:
+##  for oldStatus in ValidStatus:
+##    if status == oldStatus:
+##      continue
+#  print "############################"
+#  print " "
+#  print 'nel test:', status#, oldStatus
+#  pdp = PDP(VO, granularity = 'Service', name = servizio['name'], status = status, 
+##            formerStatus = oldStatus, 
+#            reason = 'XXXXX', siteType = servizio['siteType'],
+#            serviceType = servizio['serviceType'],
+#            useNewRes = useNewRes
+#            ) 
+#  res = pdp.takeDecision()
+#  print res
+#
+#print "\n\n ~~~~~~~ SERVICE 2 ~~~~~~~ : %s \n " %servizio2
+#
+#for status in ValidStatus:
+##  for oldStatus in ValidStatus:
+##    if status == oldStatus:
+##      continue
+#    print "############################"
+#    print " "
+#    print 'nel test:', status#, oldStatus
+#    pdp = PDP(VO, granularity = 'Service', name = servizio2['name'], status = status, 
+##              formerStatus = oldStatus, 
+#              reason = 'XXXXX', siteType = servizio2['siteType'],
+#              serviceType = servizio2['serviceType'], 
+#              useNewRes = useNewRes
+#              ) 
+#    res = pdp.takeDecision()
+#    print res
+#
+#print "\n\n ~~~~~~~ SERVICE 3 ~~~~~~~ : %s \n " %servizio3
+#
+#for status in ValidStatus:
+##  for oldStatus in ValidStatus:
+##    if status == oldStatus:
+##      continue
+#    print "############################"
+#    print " "
+#    print 'nel test:', status#, oldStatus
+#    pdp = PDP(VO, granularity = 'Service', name = servizio3['name'], status = status, 
+##              formerStatus = oldStatus, 
+#              reason = 'XXXXX', siteType = servizio3['siteType'],
+#              serviceType = servizio3['serviceType'], 
+#              useNewRes = useNewRes
+#              ) 
+#    res = pdp.takeDecision()
+#    print res
+#
+#print "\n\n ~~~~~~~ SERVICE 4 ~~~~~~~ : %s \n " %servizio4
+#
+#for status in ValidStatus:
+##  for oldStatus in ValidStatus:
+##    if status == oldStatus:
+##      continue
+#    print "############################"
+#    print " "
+#    print 'nel test:', status#, oldStatus
+#    pdp = PDP(VO, granularity = 'Service', name = servizio4['name'], status = status, 
+##              formerStatus = oldStatus, 
+#              reason = 'XXXXX', siteType = servizio4['siteType'],
+#              serviceType = servizio4['serviceType'], 
+#              useNewRes = useNewRes
+#              ) 
+#    res = pdp.takeDecision()
+#    print res
+#
+#
+#
+#print "\n\n ~~~~~~~ RISORSA 1 ~~~~~~~ : %s \n " %risorsa
+#
+#for status in ValidStatus:
+##  for oldStatus in ValidStatus:
+##    if status == oldStatus:
+##      continue
+#  print "############################"
+#  print " "
+#  print status#, oldStatus
+#  pdp = PDP(VO, granularity = 'Resource', name = risorsa['name'], status = status, 
+##            formerStatus = oldStatus, 
+#            reason = 'XXXXX', siteType = risorsa['siteType'], 
+#            resourceType = risorsa['resourceType'],
+#            useNewRes = useNewRes
+#            ) 
+#  res = pdp.takeDecision()
+#  print res
+#
+#print "\n\n ~~~~~~~ RISORSA 2 ~~~~~~~ : %s \n " %risorsa2
+#
+#for status in ValidStatus:
+##  for oldStatus in ValidStatus:
+##    if status == oldStatus:
+##      continue
+#  print "############################"
+#  print " "
+#  print status#, oldStatus
+#  pdp = PDP(VO, granularity = 'Resource', name = risorsa2['name'], status = status, 
+##              formerStatus = oldStatus, 
+#            reason = 'XXXXX', siteType = risorsa2['siteType'], 
+#            resourceType = risorsa2['resourceType'],
+#            useNewRes = useNewRes
+#            ) 
+#  res = pdp.takeDecision()
+#  print res
+#
+#print "\n\n ~~~~~~~ RISORSA 3 ~~~~~~~ : %s \n " %risorsa3
+#
+#for status in ValidStatus:
+##  for oldStatus in ValidStatus:
+##    if status == oldStatus:
+##      continue
+#  print "############################"
+#  print " "
+#  print status#, oldStatus
+#  pdp = PDP(VO, granularity = 'Resource', name = risorsa3['name'], status = status, 
+##            formerStatus = oldStatus, 
+#            reason = 'XXXXX', siteType = risorsa3['siteType'], 
+#            resourceType = risorsa3['resourceType'],
+#            useNewRes = useNewRes
+#            ) 
+#  res = pdp.takeDecision()
+#  print res
+#
+#print "\n\n ~~~~~~~ RISORSA 4 ~~~~~~~ : %s \n " %risorsa4
+#
+#for status in ValidStatus:
+##  for oldStatus in ValidStatus:
+##    if status == oldStatus:
+##      continue
+#  print "############################"
+#  print " "
+#  print status#, oldStatus
+#  pdp = PDP(VO, granularity = 'Resource', name = risorsa4['name'], status = status, 
+##            formerStatus = oldStatus, 
+#            reason = 'XXXXX', siteType = risorsa3['siteType'], 
+#            resourceType = risorsa4['resourceType'],
+#            useNewRes = useNewRes
+#            ) 
+#  res = pdp.takeDecision()
+#  print res
+#
+#print "\n\n ~~~~~~~ RISORSA 5 ~~~~~~~ : %s \n " %risorsa5
+#
+#for status in ValidStatus:
+##  for oldStatus in ValidStatus:
+##    if status == oldStatus:
+##      continue
+#  print "############################"
+#  print " "
+#  print status#, oldStatus
+#  pdp = PDP(VO, granularity = 'Resource', name = risorsa5['name'], status = status, 
+##            formerStatus = oldStatus, 
+#            reason = 'XXXXX', siteType = risorsa5['siteType'], 
+#            resourceType = risorsa5['resourceType'],
+#            useNewRes = useNewRes
+#            ) 
+#  res = pdp.takeDecision()
+#  print res
 
 
 print "\n\n ~~~~~~~ StorageElement ~~~~~~~ : %s \n " %se

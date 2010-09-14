@@ -2,7 +2,7 @@
     interrogate the DIRAC Accounting.
 """
 
-from datetime import datetime, timedelta
+import datetime
 
 from DIRAC import gLogger
 
@@ -48,8 +48,8 @@ class DIRACAccounting_Command(Command):
     plot = self.args[3]
     period = self.args[4]
     if period['Format'] == 'LastHours':
-      fromT = datetime.utcnow()-timedelta(hours = period['hours'])
-      toT = datetime.utcnow()
+      fromT = datetime.datetime.utcnow()-datetime.timedelta(hours = period['hours'])
+      toT = datetime.datetime.utcnow()
     elif period['Format'] == 'Periods':
       #TODO
       pass
@@ -120,18 +120,18 @@ class TransferQuality_Command(Command):
 
     try:
       if self.args[2] is None:
-        fromD = datetime.utcnow()-timedelta(hours = 2)
+        fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 2)
       else:
         fromD = self.args[2]
     except:
-      fromD = datetime.utcnow()-timedelta(hours = 2)
+      fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 2)
     try:
       if self.args[3] is None:
-        toD = datetime.utcnow()
+        toD = datetime.datetime.utcnow()
       else:
         toD = self.args[3]
     except:
-      toD = datetime.utcnow()
+      toD = datetime.datetime.utcnow()
 
     try:
       pr_quality = self.client.getReport('DataOperation', 'Quality', fromD, toD, 

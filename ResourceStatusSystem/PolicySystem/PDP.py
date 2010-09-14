@@ -8,7 +8,7 @@ The PDP (Policy Decision Point) module is used to:
 #############################################################################
 
 import time
-from datetime import datetime, timedelta
+import datetime
 
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
@@ -123,7 +123,7 @@ class PDP:
             'Action': True|False,
             'Status': 'Active'|'Probing'|'Banned',
             'Reason': a reason
-            'EndDate: datetime (in a string)}
+            'EndDate: datetime.datetime (in a string)}
     """
   
     self.args = argsIn
@@ -352,7 +352,7 @@ class PDP:
     oldReason = res[1]
     lastCheckTime = res[2]
     
-    if ( lastCheckTime + timedelta(hours = 2) ) < datetime.utcnow():
+    if ( lastCheckTime + datetime.timedelta(hours = 2) ) < datetime.datetime.utcnow():
       return {'SAT':None}
     
     result = {}

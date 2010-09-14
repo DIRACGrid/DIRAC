@@ -264,20 +264,20 @@ class ResourceStatusClient:
   
 #############################################################################
 #  
-#  def addOrModifySite(self, siteName, siteType, description, status, reason, dateEffective, operatorCode, dateEnd):
+#  def addOrModifySite(self, siteName, siteType, description, status, reason, dateEffective, tokenOwner, dateEnd):
 #    try:
 #      server = RPCClient('ResourceStatus/ResourceStatus', useCertificates=self.useCerts, timeout=120)
-#      result = server.addOrModifySite(siteName, siteType, description, status, reason, dateEffective, operatorCode, dateEnd)
+#      result = server.addOrModifySite(siteName, siteType, description, status, reason, dateEffective, tokenOwner, dateEnd)
 #      return result
 #    except Exception, x:
 #      errorStr = "ResourceStatusClient.addOrModifySite failed"
 #      gLogger.exception(errorStr,lException=x)
 #      return S_ERROR(errorStr+": "+str(x))
 #
-#  def addOrModifyResource(self, resourceName, resourceType, siteName, status, reason, dateEffective, operatorCode, dateEnd):
+#  def addOrModifyResource(self, resourceName, resourceType, siteName, status, reason, dateEffective, tokenOwner, dateEnd):
 #    try:
 #      server = RPCClient('ResourceStatus/ResourceStatus', useCertificates=self.useCerts, timeout=120)
-#      result = server.addOrModifyResource(resourceName, resourceType, siteName, status, reason, dateEffective, operatorCode, dateEnd)
+#      result = server.addOrModifyResource(resourceName, resourceType, siteName, status, reason, dateEffective, tokenOwner, dateEnd)
 #      return result
 #    except Exception, x:
 #      errorStr = "ResourceStatusClient.addOrModifyResource failed"

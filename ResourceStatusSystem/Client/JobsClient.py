@@ -4,7 +4,7 @@ __docformat__ = "restructuredtext en"
 
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 
-from datetime import datetime, timedelta
+#import datetime
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 #from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 
@@ -35,12 +35,12 @@ class JobsClient:
    
     #######TODO
 #    numberOfJobsLash2Hours = self.rc.getReport('Job', 'NumberOfJobs', 
-#                                               datetime.utcnow()-timedelta(hours = 2), 
-#                                               datetime.utcnow(), {granularity:[entity]}, 
+#                                               datetime.datetime.utcnow()-datetime.timedelta(hours = 2), 
+#                                               datetime.datetime.utcnow(), {granularity:[entity]}, 
 #                                               'GridStatus')
 #    numberOfJobsLash2Hours = self.rc.getReport('Job', 'NumberOfJobs', 
-#                                               datetime.utcnow()-timedelta(hours = 2), 
-#                                               datetime.utcnow(), {granularity:[entity]}, 
+#                                               datetime.datetime.utcnow()-datetime.timedelta(hours = 2), 
+#                                               datetime.datetime.utcnow(), {granularity:[entity]}, 
 #                                               'GridStatus')
 #    
 #    for x in numberOfJobs['Value']['data'].itervalues():
@@ -82,8 +82,8 @@ class JobsClient:
     
     #######TODO
 #    numberOfJobs = self.rc.getReport('Job', 'NumberOfJobs', 
-#                                     datetime.utcnow()-timedelta(hours = 24), 
-#                                     datetime.utcnow(), {self._granularity:[self_entity]}, 
+#                                     datetime.datetime.utcnow()-datetime.timedelta(hours = 24), 
+#                                     datetime.datetime.utcnow(), {self._granularity:[self_entity]}, 
 #                                     'GridStatus')
     
 
@@ -104,8 +104,8 @@ class JobsClient:
     #######TODO
 
 #    numberOfJobsLastHour = self.rc.getReport('Job', 'TotalNumberOfJobs', 
-#                                             datetime.utcnow()-timedelta(hours = 1), 
-#                                             datetime.utcnow(), {}, 'Grid')
+#                                             datetime.datetime.utcnow()-datetime.timedelta(hours = 1), 
+#                                             datetime.datetime.utcnow(), {}, 'Grid')
     
     
 #############################################################################

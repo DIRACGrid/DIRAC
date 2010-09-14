@@ -121,13 +121,13 @@ class RSInspectorAgent(AgentModule):
         formerStatus = toBeChecked[3]
         siteType = toBeChecked[4]
         resourceType = toBeChecked[5]
-        operatorCode = toBeChecked[6]
+        tokenOwner = toBeChecked[6]
         
         gLogger.info("Checking Resource %s, with status %s" % (resourceName, status))
         
         newPEP = PEP(self.VOExtension, granularity = granularity, name = resourceName, 
                      status = status, formerStatus = formerStatus, siteType = siteType, 
-                     resourceType = resourceType, operatorCode = operatorCode)
+                     resourceType = resourceType, tokenOwner = tokenOwner)
         
         newPEP.enforce(rsDBIn = self.rsDB, setupIn = self.setup, ncIn = self.nc, 
                        daIn = self.diracAdmin, csAPIIn = self.csAPI)

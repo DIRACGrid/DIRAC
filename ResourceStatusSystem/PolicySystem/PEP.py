@@ -56,7 +56,7 @@ class PEP:
  
   def __init__(self, VOExtension, granularity = None, name = None, status = None, formerStatus = None, 
                reason = None, siteType = None, serviceType = None, resourceType = None, 
-               operatorCode = None, #futureEnforcement = None, 
+               tokenOwner = None, #futureEnforcement = None, 
                useNewRes = False):
     
     self.VOExtension = VOExtension
@@ -100,8 +100,8 @@ class PEP:
         raise InvalidResourceType, where(self, self.__init__)
 
     self.__realBan = False
-    if operatorCode is not None:
-      if operatorCode == 'RS_SVC':
+    if tokenOwner is not None:
+      if tokenOwner == 'RS_SVC':
         self.__realBan = True
     
 #    if futureEnforcement is not None:
@@ -217,6 +217,11 @@ class PEP:
     # policy decision
     resDecisions = pdp.takeDecision(knownInfo=knownInfo)
     
+    
+    if self.__name == 'CERN-RAW':
+      print resDecisions
+    
+    
     for res in resDecisions['PolicyCombinedResult']:
       
       self.__policyType = res['PolicyType']
@@ -270,6 +275,9 @@ class PEP:
         rsDB.setMonitoredToBeChecked(['Site', 'Service', 'StorageElement'], 'Resource', self.__name)
 
       elif self.__granularity == 'StorageElement':
+        
+        print "********* CHANGE", self.__name, res['Status'], res['Reason']
+        
         rsDB.setStorageElementStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
         rsDB.setMonitoredToBeChecked(['Site', 'Service', 'Resource'], 'StorageElement', self.__name)
 

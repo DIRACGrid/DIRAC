@@ -2,6 +2,8 @@
     Every function can simply return S_OK() (or nothing)
 """
 
+import datetime
+
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
@@ -55,37 +57,39 @@ class ResourceStatusDB:
   def setLastMonitoredCheckTime(self, granularity, name):
     pass
   
-  def setMonitoredReason(self, granularity, name, reason, operatorCode):
+  def setMonitoredReason(self, granularity, name, reason, tokenOwner):
     pass
   
-  def setSiteStatus(self, siteName, status, reason, operatorCode):
+  def setSiteStatus(self, siteName, status, reason, tokenOwner):
     pass
   
-  def addOrModifySite(self, siteName, siteType, status, reason, dateEffective, operatorCode, dateEnd):
+  def addOrModifySite(self, siteName, siteType, gridSiteName, gridTier, 
+                      status, reason, dateEffective, tokenOwner, dateEnd):
     pass
   
-  def _addSiteRow(self, siteName, siteType, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+  def _addSiteRow(self, siteName, siteType, gridSiteName, gridTier, status, 
+                  reason, dateCreated, dateEffective, dateEnd, tokenOwner):
     pass
   
-  def _addSiteHistoryRow(self, siteName, status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+  def _addSiteHistoryRow(self, siteName, status, reason, dateCreated, dateEffective, dateEnd, tokenOwner):
     pass
   
   def removeSite(self, siteName):
     pass
   
-  def setResourceStatus(self, resourceName, status, reason, operatorCode):
+  def setResourceStatus(self, resourceName, status, reason, tokenOwner):
     pass
   
   def addOrModifyResource(self, resourceName, resourceType, serviceName, siteName, status, 
-                          reason, dateEffective, operatorCode, dateEnd):
+                          reason, dateEffective, tokenOwner, dateEnd):
     pass
   
   def _addResourcesRow(self, resourceName, resourceType, serviceName, siteName, status, 
-                       reason, dateCreated, dateEffective, dateEnd, operatorCode):
+                       reason, dateCreated, dateEffective, dateEnd, tokenOwner):
     pass
   
   def _addResourcesHistoryRow(self, resourceName, serviceName, siteName, status, reason, 
-                              dateCreated, dateEffective, dateEnd, operatorCode):
+                              dateCreated, dateEffective, dateEnd, tokenOwner):
     pass
   
   def addType(self, granularity, type, description=''):
@@ -94,19 +98,19 @@ class ResourceStatusDB:
   def removeResource(self, resourceName = None, serviceName = None, siteName = None):
     pass
   
-  def setServiceStatus(self, serviceName, status, reason, operatorCode):
+  def setServiceStatus(self, serviceName, status, reason, tokenOwner):
     pass
   
   def addOrModifyService(self, serviceName, serviceType, siteName, status, reason, 
-                         dateEffective, operatorCode, dateEnd):
+                         dateEffective, tokenOwner, dateEnd):
     pass
   
   def _addServiceRow(self, serviceName, serviceType, siteName, status, reason, 
-                     dateCreated, dateEffective, dateEnd, operatorCode):
+                     dateCreated, dateEffective, dateEnd, tokenOwner):
     pass
   
   def _addServiceHistoryRow(self, serviceName, siteName, status, reason, dateCreated, 
-                            dateEffective, dateEnd, operatorCode):
+                            dateEffective, dateEnd, tokenOwner):
     pass
 
   def removeService(self, serviceName = None, siteName = None):
@@ -118,19 +122,19 @@ class ResourceStatusDB:
   def getResourceStats(self, granularity, name):
     return []
     
-  def setStorageElementStatus(self, storageElementName, status, reason, operatorCode):
+  def setStorageElementStatus(self, storageElementName, status, reason, tokenOwner):
     pass
 
   def addOrModifyStorageElement(self, storageElementName, resourceName, siteName, 
-                                status, reason, dateEffective, operatorCode, dateEnd):
+                                status, reason, dateEffective, tokenOwner, dateEnd):
     pass
 
   def _addStorageElementRow(self, storageElementName, resourceName, siteName, status, 
-                            reason, dateCreated, dateEffective, dateEnd, operatorCode):
+                            reason, dateCreated, dateEffective, dateEnd, tokenOwner):
     pass
 
   def _addStorageElementHistoryRow(self, storageElementName, resourceName, siteName,
-                                    status, reason, dateCreated, dateEffective, dateEnd, operatorCode):
+                                    status, reason, dateCreated, dateEffective, dateEnd, tokenOwner):
     pass
 
   def removeStorageElement(self, storageElementName = None, resourceName = None, siteName = None):
@@ -249,7 +253,16 @@ class ResourceStatusDB:
 
   def getStuffToCheck(self, granularity, checkFrequency = None, maxN = None, name = None):
     return []
-    
+
+  def getTokens(self, granularity, name = None, dateExpiration = None):
+    return [('LCG.Ferrara.it', 'RS_SVC', datetime.datetime(9998, 12, 31, 23, 59, 59))]
+
+  def setToken(self, granularity, name, newTokenOwner, dateExpiration):    
+    pass
+  
+  def whatIs(self, name):
+    return 'Site'
+  
   def rankRes(self, granularity, days, startingDate = None):
     pass
 

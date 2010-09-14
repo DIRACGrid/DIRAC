@@ -3,8 +3,9 @@ The ResourcesStatusDB module contains a couple of exception classes, and a
 class to interact with the ResourceStatus DB.
 """
 
+import datetime
 from types import *
-from datetime import datetime, timedelta
+
 from DIRAC import gLogger, gConfig
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
@@ -772,20 +773,21 @@ class ResourceStatusDB:
       :attr:`name`: string
     """
     
-    if granularity in ('Site', 'Sites'):
-      DBtable = 'Sites'
-      DBname = 'SiteName'
-    elif granularity in ('Service', 'Services'):
-      DBtable = 'Services'
-      DBname = 'ServiceName'
-    elif granularity in ('Resource', 'Resources'):
-      DBtable = 'Resources'
-      DBname = 'ResourceName'
-    elif granularity in ('StorageElement', 'StorageElements'):
-      DBtable = 'StorageElements'
-      DBname = 'StorageElementName'
-    else:
-      raise InvalidRes, where(self, self.setLastMonitoredCheckTime)
+    DBtable, DBname = self.__DBchoice(granularity)
+#    if granularity in ('Site', 'Sites'):
+#      DBtable = 'Sites'
+#      DBname = 'SiteName'
+#    elif granularity in ('Service', 'Services'):
+#      DBtable = 'Services'
+#      DBname = 'ServiceName'
+#    elif granularity in ('Resource', 'Resources'):
+#      DBtable = 'Resources'
+#      DBname = 'ResourceName'
+#    elif granularity in ('StorageElement', 'StorageElements'):
+#      DBtable = 'StorageElements'
+#      DBname = 'StorageElementName'
+#    else:
+#      raise InvalidRes, where(self, self.setLastMonitoredCheckTime)
     
     req = "UPDATE %s SET LastCheckTime = UTC_TIMESTAMP() WHERE " %(DBtable)
     req = req + "%s = '%s' AND DateEffective <= UTC_TIMESTAMP();" % (DBname, name)
@@ -811,20 +813,21 @@ class ResourceStatusDB:
       (RS_SVC if it's the service itslef)
     """
     
-    if granularity in ('Site', 'Sites'):
-      DBtable = 'Sites'
-      DBname = 'SiteName'
-    elif granularity in ('Service', 'Services'):
-      DBtable = 'Services'
-      DBname = 'ServiceName'
-    elif granularity in ('Resource', 'Resources'):
-      DBtable = 'Resources'
-      DBname = 'ResourceName'
-    elif granularity in ('StorageElement', 'StorageElements'):
-      DBtable = 'StorageElements'
-      DBname = 'StorageElementName'
-    else:
-      raise InvalidRes, where(self, self.setMonitoredReason)
+    DBtable, DBname = self.__DBchoice(granularity)
+#    if granularity in ('Site', 'Sites'):
+#      DBtable = 'Sites'
+#      DBname = 'SiteName'
+#    elif granularity in ('Service', 'Services'):
+#      DBtable = 'Services'
+#      DBname = 'ServiceName'
+#    elif granularity in ('Resource', 'Resources'):
+#      DBtable = 'Resources'
+#      DBname = 'ResourceName'
+#    elif granularity in ('StorageElement', 'StorageElements'):
+#      DBtable = 'StorageElements'
+#      DBname = 'StorageElementName'
+#    else:
+#      raise InvalidRes, where(self, self.setMonitoredReason)
     
     req = "UPDATE %s SET Reason = '%s', " %(DBtable, reason)
     req = req + "TokenOwner = '%s' WHERE %s = '%s';"  %(tokenOwner, DBname, name)
@@ -857,7 +860,7 @@ class ResourceStatusDB:
     """
 
     gLogger.info("Setting Site %s new status: %s" % (siteName, status))
-    req = "SELECT SiteType FROM Sites WHERE SiteName = '%s' " %(siteName)
+    req = "SELECT SiteType, GridSiteName, GridTier FROM Sites WHERE SiteName = '%s' " %(siteName)
     req = req + "AND DateEffective < UTC_TIMESTAMP();"
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -866,15 +869,17 @@ class ResourceStatusDB:
       return None
 
     siteType = resQuery['Value'][0][0]
+    gridSiteName = resQuery['Value'][0][1]
+    gridTier = resQuery['Value'][0][2]
   
-    self.addOrModifySite(siteName, siteType, status, reason, 
-                         datetime.utcnow().replace(microsecond = 0), tokenOwner, 
-                         datetime(9999, 12, 31, 23, 59, 59))
+    self.addOrModifySite(siteName, siteType, gridSiteName, gridTier, status, reason, 
+                         datetime.datetime.utcnow().replace(microsecond = 0), tokenOwner, 
+                         datetime.datetime(9999, 12, 31, 23, 59, 59))
     
 #############################################################################
 
-  def addOrModifySite(self, siteName, siteType, status, reason, dateEffective, 
-                      tokenOwner, dateEnd):
+  def addOrModifySite(self, siteName, siteType, gridSiteName, gridTier, status,
+                      reason, dateEffective, tokenOwner, dateEnd):
     """ 
     Add or modify a site to the Sites table.
     
@@ -882,21 +887,25 @@ class ResourceStatusDB:
       :attr:`siteName`: string - name of the site (DIRAC name)
     
       :attr:`siteType`: string - ValidSiteType: 
-      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`. LHCb Tier of the site
+      
+      :attr:`gridSiteName`: string - name of the site in GOC DB
+    
+      :attr:`gridTier`: string - tier of the site as reported in GOC DB
       
       :attr:`status`: string - ValidStatus: 
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
       :attr:`reason`: string - free
       
-      :attr:`dateEffective`: datetime - date from which the site status is effective
+      :attr:`dateEffective`: datetime.datetime - date from which the site status is effective
 
       :attr:`tokenOwner`: string - free
 
-      :attr:`dateEnd`: datetime - date from which the site status ends to be effective
+      :attr:`dateEnd`: datetime.datetime - date from which the site status ends to be effective
     """
 
-    dateCreated = datetime.utcnow().replace(microsecond = 0)
+    dateCreated = datetime.datetime.utcnow().replace(microsecond = 0)
     if dateEffective < dateCreated:
       dateEffective = dateCreated
     if dateEnd < dateEffective:
@@ -912,7 +921,7 @@ class ResourceStatusDB:
       raise RSSDBException, where(self, self.addOrModifySite) + resQuery['Message']
 
     if resQuery['Value']: 
-      if dateEffective <= (dateCreated + timedelta(minutes=2)):
+      if dateEffective <= (dateCreated + datetime.timedelta(minutes=2)):
         #site modification, effective in less than 2 minutes
         self.setDateEnd('Site', siteName, dateEffective)
         self.transact2History('Site', siteName, dateEffective)
@@ -924,19 +933,19 @@ class ResourceStatusDB:
       else:
         oldStatus = 'Active'
       self._addSiteHistoryRow(siteName, oldStatus, reason, dateCreated, dateEffective, 
-                              datetime.utcnow().replace(microsecond = 0).isoformat(' '), 
+                              datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '), 
                               tokenOwner)
 
     #in any case add a row to present Sites table
-    self._addSiteRow(siteName, siteType, status, reason, dateCreated, dateEffective, 
-                     dateEnd, tokenOwner)
+    self._addSiteRow(siteName, siteType, gridSiteName, gridTier, status, reason,  
+                     dateCreated, dateEffective, dateEnd, tokenOwner)
 #    siteRow = "Added %s --- %s " %(siteName, dateEffective)
 #    return siteRow
 
 #############################################################################
 
-  def _addSiteRow(self, siteName, siteType, status, reason, dateCreated, dateEffective, 
-                  dateEnd, tokenOwner):
+  def _addSiteRow(self, siteName, siteType, gridSiteName, gridTier, status, reason,  
+                  dateCreated, dateEffective, dateEnd, tokenOwner):
     """
     Add a new site row in Sites table
 
@@ -945,15 +954,19 @@ class ResourceStatusDB:
     
       :attr:`siteType`: string - ValidSiteType: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
+      :attr:`gridSiteName`: string - name of the site in GOC DB
+    
+      :attr:`gridTier`: string - Tier of the Site as reported in GOC DB
+      
       :attr:`status`: string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
       :attr:`reason`: string - free
       
-      :attr:`dateCreated`: datetime or string - date when which the site row is created
+      :attr:`dateCreated`: datetime.datetime or string - date when which the site row is created
 
-      :attr:`dateEffective`: datetime or string - date from which the site status is effective
+      :attr:`dateEffective`: datetime.datetime or string - date from which the site status is effective
 
-      :attr:`dateEnd`: datetime or string - date from which the site status ends to be effective
+      :attr:`dateEnd`: datetime.datetime or string - date from which the site status ends to be effective
 
       :attr:`tokenOwner`: string - free
     """
@@ -968,10 +981,11 @@ class ResourceStatusDB:
       raise InvalidStatus, where(self, self._addSiteRow)
       
 
-    req = "INSERT INTO Sites (SiteName, SiteType, Status, Reason, "
+    req = "INSERT INTO Sites (SiteName, SiteType, GridSiteName, GridTier, Status, Reason, "
     req = req + "DateCreated, DateEffective, DateEnd, TokenOwner, TokenExpiration) "
-    req = req + "VALUES ('%s', '%s', '%s', '%s', " % (siteName, siteType, status, reason) 
-    req = req + "'%s', '%s', '%s', '%s', '9999-12-31 23:59:59');" %(dateCreated, dateEffective, dateEnd, tokenOwner)
+    req = req + "VALUES ('%s', '%s', '%s', " % (siteName, siteType, gridSiteName) 
+    req = req + "'%s', '%s', '%s', '%s', " %(gridTier, status, reason, dateCreated)
+    req = req + "'%s', '%s', '%s', '9999-12-31 23:59:59');" %(dateEffective, dateEnd, tokenOwner)
 
     resUpdate = self.db._update(req)
     if not resUpdate['OK']:
@@ -992,11 +1006,11 @@ class ResourceStatusDB:
       
       :attr:`reason`: string - free
       
-      :attr:`dateCreated`: datetime or string - date when which the site row is created
+      :attr:`dateCreated`: datetime.datetime or string - date when which the site row is created
 
-      :attr:`dateEffective`: datetime or string - date from which the site status is effective
+      :attr:`dateEffective`: datetime.datetime or string - date from which the site status is effective
 
-      :attr:`dateEnd`: datetime or string - date from which the site status 
+      :attr:`dateEnd`: datetime.datetime or string - date from which the site status 
       ends to be effective
 
       :attr:`tokenOwner`: string - free
@@ -1079,8 +1093,8 @@ class ResourceStatusDB:
     siteName = resQuery['Value'][0][2]
 
     self.addOrModifyResource(resourceName, resourceType, serviceName, siteName, status, 
-                             reason, datetime.utcnow().replace(microsecond = 0), 
-                             tokenOwner, datetime(9999, 12, 31, 23, 59, 59))
+                             reason, datetime.datetime.utcnow().replace(microsecond = 0), 
+                             tokenOwner, datetime.datetime(9999, 12, 31, 23, 59, 59))
     
 #############################################################################
 
@@ -1100,14 +1114,14 @@ class ResourceStatusDB:
       
       :attr:`reason`: string - free
       
-      :attr:`dateEffective`: datetime - date from which the resource status is effective
+      :attr:`dateEffective`: datetime.datetime - date from which the resource status is effective
 
       :attr:`tokenOwner`: string - free
 
-      :attr:`dateEnd`: datetime - date from which the resource status ends to be effective
+      :attr:`dateEnd`: datetime.datetime - date from which the resource status ends to be effective
     """
 
-    dateCreated = datetime.utcnow().replace(microsecond = 0)
+    dateCreated = datetime.datetime.utcnow().replace(microsecond = 0)
     if dateEffective < dateCreated:
       dateEffective = dateCreated
     if dateEnd < dateEffective:
@@ -1123,7 +1137,7 @@ class ResourceStatusDB:
 
     if resQuery['Value']: 
       #site modification, effective from now
-      if dateEffective <= (dateCreated + timedelta(minutes=2)):
+      if dateEffective <= (dateCreated + datetime.timedelta(minutes=2)):
         self.setDateEnd('Resource', resourceName, dateEffective)
         self.transact2History('Resource', resourceName, serviceName, siteName, dateEffective)
       else:
@@ -1135,7 +1149,7 @@ class ResourceStatusDB:
         oldStatus = 'Active'
       self._addResourcesHistoryRow(resourceName, serviceName, siteName, oldStatus, reason, 
                                    dateCreated, dateEffective, 
-                                   datetime.utcnow().replace(microsecond = 0).isoformat(' '), 
+                                   datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '), 
                                    tokenOwner)
 
     #in any case add a row to present Sites table
@@ -1162,12 +1176,12 @@ class ResourceStatusDB:
       
       :attr:`reason`: string - free
       
-      :attr:`dateCreated`: datetime  or string - date when which the resource row is created
+      :attr:`dateCreated`: datetime.datetime  or string - date when which the resource row is created
 
-      :attr:`dateEffective`: datetime or string - date from which the resource status 
+      :attr:`dateEffective`: datetime.datetime or string - date from which the resource status 
       is effective
 
-      :attr:`dateEnd`: datetime  or string - date from which the resource status 
+      :attr:`dateEnd`: datetime.datetime  or string - date from which the resource status 
       ends to be effective
 
       :attr:`tokenOwner`: string - free
@@ -1209,12 +1223,12 @@ class ResourceStatusDB:
       
       :attr:`reason`: string - free
       
-      :attr:`dateCreated`: datetime  or string - date when which the resource row is created
+      :attr:`dateCreated`: datetime.datetime  or string - date when which the resource row is created
 
-      :attr:`dateEffective`: datetime  or string - date from which the resource status 
+      :attr:`dateEffective`: datetime.datetime  or string - date from which the resource status 
       is effective
 
-      :attr:`dateEnd`: datetime  or string - date from which the resource status ends 
+      :attr:`dateEnd`: datetime.datetime  or string - date from which the resource status ends 
       to be effective
 
       :attr:`tokenOwner`: string - free
@@ -1363,8 +1377,8 @@ class ResourceStatusDB:
     siteName = resQuery['Value'][0][1]
   
     self.addOrModifyService(serviceName, serviceType, siteName, status, reason, 
-                            datetime.utcnow().replace(microsecond = 0), tokenOwner, 
-                            datetime(9999, 12, 31, 23, 59, 59))
+                            datetime.datetime.utcnow().replace(microsecond = 0), tokenOwner, 
+                            datetime.datetime(9999, 12, 31, 23, 59, 59))
     
 #############################################################################
 
@@ -1384,14 +1398,14 @@ class ResourceStatusDB:
       
       :attr:`reason`: string - free
       
-      :attr:`dateEffective`: datetime - date from which the service status is effective
+      :attr:`dateEffective`: datetime.datetime - date from which the service status is effective
 
       :attr:`tokenOwner`: string - free
 
-      :attr:`dateEnd`: datetime - date from which the service status ends to be effective
+      :attr:`dateEnd`: datetime.datetime - date from which the service status ends to be effective
     """
 
-    dateCreated = datetime.utcnow().replace(microsecond = 0)
+    dateCreated = datetime.datetime.utcnow().replace(microsecond = 0)
     if dateEffective < dateCreated:
       dateEffective = dateCreated
     if dateEnd < dateEffective:
@@ -1406,7 +1420,7 @@ class ResourceStatusDB:
       raise RSSDBException, where(self, self.addOrModifyService) + resQuery['Message']
 
     if resQuery['Value']: 
-      if dateEffective <= (dateCreated + timedelta(minutes=2)):
+      if dateEffective <= (dateCreated + datetime.timedelta(minutes=2)):
         #service modification, effective in less than 2 minutes
         self.setDateEnd('Service', serviceName, dateEffective)
         self.transact2History('Service', serviceName, siteName, dateEffective)
@@ -1419,7 +1433,7 @@ class ResourceStatusDB:
         oldStatus = 'Active'
       self._addServiceHistoryRow(serviceName, siteName, oldStatus, reason, dateCreated, 
                                  dateEffective, 
-                                 datetime.utcnow().replace(microsecond = 0).isoformat(' '), 
+                                 datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '), 
                                  tokenOwner)
 
     #in any case add a row to present Services table
@@ -1446,13 +1460,13 @@ class ResourceStatusDB:
       
       :attr:`reason`: string - free
       
-      :attr:`dateCreated`: datetime or string - 
+      :attr:`dateCreated`: datetime.datetime or string - 
       date when which the service row is created
 
-      :attr:`dateEffective`: datetime or string - 
+      :attr:`dateEffective`: datetime.datetime or string - 
       date from which the service status is effective
 
-      :attr:`dateEnd`: datetime or string - 
+      :attr:`dateEnd`: datetime.datetime or string - 
       date from which the service status ends to be effective
 
       :attr:`tokenOwner`: string - free
@@ -1493,13 +1507,13 @@ class ResourceStatusDB:
       
       :attr:`reason`: string - free
       
-      :attr:`dateCreated`: datetime or string - 
+      :attr:`dateCreated`: datetime.datetime or string - 
       date when which the service row is created
 
-      :attr:`dateEffective`: datetime or string - 
+      :attr:`dateEffective`: datetime.datetime or string - 
       date from which the service status is effective
 
-      :attr:`dateEnd`: datetime or string - 
+      :attr:`dateEnd`: datetime.datetime or string - 
       date from which the service status ends to be effective
 
       :attr:`tokenOwner`: string - free
@@ -1804,8 +1818,8 @@ class ResourceStatusDB:
     siteName = resQuery['Value'][0][1]
   
     self.addOrModifyStorageElement(storageElementName, resourceName, siteName, status, 
-                                   reason, datetime.utcnow().replace(microsecond = 0), 
-                                   tokenOwner, datetime(9999, 12, 31, 23, 59, 59))
+                                   reason, datetime.datetime.utcnow().replace(microsecond = 0), 
+                                   tokenOwner, datetime.datetime(9999, 12, 31, 23, 59, 59))
     
 #############################################################################
 
@@ -1826,16 +1840,16 @@ class ResourceStatusDB:
       
       :attr:`reason`: string - free
       
-      :attr:`dateEffective`: datetime - 
+      :attr:`dateEffective`: datetime.datetime - 
       date from which the storageElement status is effective
 
       :attr:`tokenOwner`: string - free
 
-      :attr:`dateEnd`: datetime - 
+      :attr:`dateEnd`: datetime.datetime - 
       date from which the storageElement status ends to be effective
     """
 
-    dateCreated = datetime.utcnow().replace(microsecond = 0)
+    dateCreated = datetime.datetime.utcnow().replace(microsecond = 0)
     if dateEffective < dateCreated:
       dateEffective = dateCreated
     if dateEnd < dateEffective:
@@ -1851,7 +1865,7 @@ class ResourceStatusDB:
       raise RSSDBException, where(self, self.addOrModifyStorageElement) + resQuery['Message']
 
     if resQuery['Value']: 
-      if dateEffective <= (dateCreated + timedelta(minutes=2)):
+      if dateEffective <= (dateCreated + datetime.timedelta(minutes=2)):
         #storageElement modification, effective in less than 2 minutes
         self.setDateEnd('StorageElement', storageElementName, dateEffective)
         self.transact2History('StorageElement', storageElementName, resourceName, 
@@ -1865,7 +1879,7 @@ class ResourceStatusDB:
         oldStatus = 'Active'
       self._addStorageElementHistoryRow(storageElementName, resourceName, siteName, 
                                         oldStatus, reason, dateCreated, dateEffective, 
-                                        datetime.utcnow().replace(microsecond = 0).isoformat(' '), 
+                                        datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '), 
                                         tokenOwner)
 
     #in any case add a row to present StorageElements table
@@ -1893,13 +1907,13 @@ class ResourceStatusDB:
       
       :attr:`reason`: string - free
       
-      :attr:`dateCreated`: datetime or string - date when which the storageElement 
+      :attr:`dateCreated`: datetime.datetime or string - date when which the storageElement 
       row is created
 
-      :attr:`dateEffective`: datetime or string - date from which the storageElement 
+      :attr:`dateEffective`: datetime.datetime or string - date from which the storageElement 
       status is effective
 
-      :attr:`dateEnd`: datetime or string - date from which the storageElement status 
+      :attr:`dateEnd`: datetime.datetime or string - date from which the storageElement status 
       ends to be effective
 
       :attr:`tokenOwner`: string - free
@@ -1944,13 +1958,13 @@ class ResourceStatusDB:
       
       :attr:`reason`: string - free
       
-      :attr:`dateCreated`: datetime or string - 
+      :attr:`dateCreated`: datetime.datetime or string - 
       date when which the storageElement row is created
 
-      :attr:`dateEffective`: datetime or string - 
+      :attr:`dateEffective`: datetime.datetime or string - 
       date from which the storageElement status is effective
 
-      :attr:`dateEnd`: datetime or string - 
+      :attr:`dateEnd`: datetime.datetime or string - 
       date from which the storageElement status ends to be effective
 
       :attr:`tokenOwner`: string - free
@@ -2052,11 +2066,11 @@ class ResourceStatusDB:
       
       :attr:`reason`: string - free
       
-      :attr:`dateEffective`: datetime - 
+      :attr:`dateEffective`: datetime.datetime - 
       date from which the result is effective
     """
     
-    now = datetime.utcnow().replace(microsecond = 0).isoformat(' ')
+    now = datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' ')
     
     if dateEffective is None:
       dateEffective = now
@@ -2137,11 +2151,11 @@ class ResourceStatusDB:
       
       :attr:`opt_ID`: string or integer - optional ID (e.g. used for downtimes)
       
-      :attr:`dateEffective`: datetime - 
+      :attr:`dateEffective`: datetime.datetime - 
       date from which the result is effective
     """
     
-    now = datetime.utcnow().replace(microsecond = 0).isoformat(' ')
+    now = datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' ')
     
     if dateEffective is None:
       dateEffective = now
@@ -2306,11 +2320,11 @@ class ResourceStatusDB:
     
       :attr:`result`: string - command result
       
-      :attr:`dateEffective`: datetime - 
+      :attr:`dateEffective`: datetime.datetime - 
       date from which the result is effective
     """
     
-    now = datetime.utcnow().replace(microsecond = 0).isoformat(' ')
+    now = datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' ')
     
     if dateEffective is None:
       dateEffective = now
@@ -2442,30 +2456,32 @@ class ResourceStatusDB:
     
       :attr:`name`: string
       
-      :attr:`dateEffective`: string or datetime
+      :attr:`dateEffective`: string or datetime.datetime
     """
 
     if dateEffective is not None:
       if not isinstance(dateEffective, basestring):
         dateEffective = dateEffective.isoformat(' ')
 
-    if fromWhere in ('Site', 'Sites'):
-      DBname = 'SiteName'
-      DBtable = 'Sites'
-    elif fromWhere in ('Service', 'Services'):
-      DBname = 'ServiceName'
-      DBtable = 'Services'
-    elif fromWhere in ('Resource', 'Resources'):
-      DBname = 'ResourceName'
-      DBtable = 'Resources'
-    elif fromWhere in ('StorageElement', 'StorageElements'):
-      DBname = 'StorageElementName'
-      DBtable = 'StorageElements'
-    elif fromWhere in ('Cache', 'ClientsCache', 'ClientCache'):
-      DBname = 'Name'
-      DBtable = 'ClientsCache'
-    else:
-      raise InvalidRes, where(self, self.removeRow)
+    DBtable, DBname = self.__DBchoice(fromWhere)
+
+#    if fromWhere in ('Site', 'Sites'):
+#      DBname = 'SiteName'
+#      DBtable = 'Sites'
+#    elif fromWhere in ('Service', 'Services'):
+#      DBname = 'ServiceName'
+#      DBtable = 'Services'
+#    elif fromWhere in ('Resource', 'Resources'):
+#      DBname = 'ResourceName'
+#      DBtable = 'Resources'
+#    elif fromWhere in ('StorageElement', 'StorageElements'):
+#      DBname = 'StorageElementName'
+#      DBtable = 'StorageElements'
+#    elif fromWhere in ('Cache', 'ClientsCache', 'ClientCache'):
+#      DBname = 'Name'
+#      DBtable = 'ClientsCache'
+#    else:
+#      raise InvalidRes, where(self, self.removeRow)
     
     req = "DELETE from %s WHERE %s = '%s'" % (DBtable, DBname, name)
     if dateEffective is not None:
@@ -2673,7 +2689,7 @@ class ResourceStatusDB:
     if days is not None:
       hours = 24*days
     
-    hours = timedelta(hours = hours)
+    hours = datetime.timedelta(hours = hours)
     
     if granularity in ('Site', 'Sites'):
       req = "SELECT DateEffective FROM Sites WHERE SiteName = '%s' AND DateEffective < UTC_TIMESTAMP() AND Status = '%s'" %(name, status)
@@ -2693,16 +2709,16 @@ class ResourceStatusDB:
       elif resQuery['Value'] == ():
         #actual status is not what was requested
         periods = []
-        timeInStatus = timedelta(0)
+        timeInStatus = datetime.timedelta(0)
       else:
         #actual status is what was requested
         effFrom = resQuery['Value'][0][0]
-        timeInStatus = datetime.utcnow().replace(microsecond = 0) - effFrom
+        timeInStatus = datetime.datetime.utcnow().replace(microsecond = 0) - effFrom
    
         if timeInStatus > hours:
-          return [((datetime.utcnow().replace(microsecond = 0)-hours).isoformat(' '), datetime.utcnow().replace(microsecond = 0).isoformat(' '))] 
+          return [((datetime.datetime.utcnow().replace(microsecond = 0)-hours).isoformat(' '), datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '))] 
         
-        periods = [(effFrom.isoformat(' '), datetime.utcnow().replace(microsecond = 0).isoformat(' '))]
+        periods = [(effFrom.isoformat(' '), datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' '))]
    
       if granularity in ('Site', 'Sites'):
         req = "SELECT DateEffective, DateEnd FROM SitesHistory WHERE " 
@@ -2795,19 +2811,19 @@ class ResourceStatusDB:
     Examples of possible way to call it:
     
     >>> trasact2History(('Site', 'LCG.CERN.ch', 
-          datetime.utcnow().replace(microsecond = 0).isoformat(' ')) 
+          datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' ')) 
           - the date is the DateEffective parameter
         trasact2History(('Site', 523)) - the number if the SiteID
         trasact2History(('Service', 'Computing@LCG.CERN.ch', 'LCG.CERN.ch', 
-          datetime.utcnow().replace(microsecond = 0).isoformat(' ')) 
+          datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' ')) 
           - the date is the DateEffective parameter
         trasact2History(('Service', 523)) - the number if the ServiceID
         trasact2History(('Resource', 'srm-lhcb.cern.ch', 'Computing@LCG.CERN.ch', 
-          'LCG.CERN.ch', datetime.utcnow().replace(microsecond = 0).isoformat(' ')) 
+          'LCG.CERN.ch', datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' ')) 
           - the date is the DateEffective parameter
         trasact2History(('Resource', 523)) - the number if the ResourceID
         trasact2History(('StorageElement', 'CERN-RAW', 'srm-lhcb.cern.ch', 
-          'LCG.CERN.ch', datetime.utcnow().replace(microsecond = 0).isoformat(' ')) 
+          'LCG.CERN.ch', datetime.datetime.utcnow().replace(microsecond = 0).isoformat(' ')) 
           - the date is the DateEffective parameter
         trasact2History(('StorageElement', 523)) - the number if the StorageElementID
     """
@@ -3025,23 +3041,24 @@ class ResourceStatusDB:
       
       :attr:`name`: string, the name of the ValidRes
         
-      :attr:`dateEffective`: a datetime
+      :attr:`dateEffective`: a datetime.datetime
     """
     
-    if granularity in ('Site', 'Sites'):
-      DBtable = 'Sites'
-      DBname = 'SiteName'
-    elif granularity in ('Service', 'Services'):
-      DBtable = 'Services'
-      DBname = 'ServiceName'
-    elif granularity in ('Resource', 'Resources'):
-      DBtable = 'Resources'
-      DBname = 'ResourceName'
-    elif granularity in ('StorageElement', 'StorageElements'):
-      DBtable = 'StorageElements'
-      DBname = 'StorageElementName'
-    else:
-      raise InvalidRes, where(self, self.setDateEnd)
+    DBtable, DBname = self.__DBchoice(granularity)
+#    if granularity in ('Site', 'Sites'):
+#      DBtable = 'Sites'
+#      DBname = 'SiteName'
+#    elif granularity in ('Service', 'Services'):
+#      DBtable = 'Services'
+#      DBname = 'ServiceName'
+#    elif granularity in ('Resource', 'Resources'):
+#      DBtable = 'Resources'
+#      DBname = 'ResourceName'
+#    elif granularity in ('StorageElement', 'StorageElements'):
+#      DBtable = 'StorageElements'
+#      DBname = 'StorageElementName'
+#    else:
+#      raise InvalidRes, where(self, self.setDateEnd)
       
     query = "UPDATE %s SET DateEnd = '%s' " % (DBtable, dateEffective)
     query = query + "WHERE %s = '%s' AND DateEffective < '%s'" %(DBname, name, dateEffective)
@@ -3097,16 +3114,17 @@ class ResourceStatusDB:
       :attr:`granularity`: string - a ValidRes
     """
     
-    if granularity in ('Site', 'Sites'):
-      DBtable = 'Sites'
-    elif granularity in ('Service', 'Services'):
-      DBtable = 'Services'
-    elif granularity in ('Resource', 'Resources'):
-      DBtable = 'Resources'
-    elif granularity in ('StorageElement', 'StorageElements'):
-      DBtable = 'StorageElements'
-    else:
-      raise InvalidRes, where(self, self.getCountries)
+    DBtable, DBname = self.__DBchoice(granularity)
+#    if granularity in ('Site', 'Sites'):
+#      DBtable = 'Sites'
+#    elif granularity in ('Service', 'Services'):
+#      DBtable = 'Services'
+#    elif granularity in ('Resource', 'Resources'):
+#      DBtable = 'Resources'
+#    elif granularity in ('StorageElement', 'StorageElements'):
+#      DBtable = 'StorageElements'
+#    else:
+#      raise InvalidRes, where(self, self.getCountries)
 
     req = "SELECT SiteName FROM %s" %DBtable
     resQuery = self.db._query(req)
@@ -3233,23 +3251,10 @@ class ResourceStatusDB:
       
       :attr:`granularity`: optional name of the res
       
-      :attr:`dateExpiration`: optional, datetime - date from which to consider
+      :attr:`dateExpiration`: optional, datetime.datetime - date from which to consider
     """
 
-    if granularity in ('Site', 'Sites'):
-      DBtable = 'Sites'
-      DBname = 'SiteName'
-    elif granularity in ('Service', 'Services'):
-      DBtable = 'Services'
-      DBname = 'ServiceName'
-    elif granularity in ('Resource', 'Resources'):
-      DBtable = 'Resources'
-      DBname = 'ResourceName'
-    elif granularity in ('StorageElement', 'StorageElements'):
-      DBtable = 'StorageElements'
-      DBname = 'StorageElementName'
-    else:
-      raise InvalidRes, where(self, self.getTokens)
+    DBtable, DBname = self.__DBchoice(granularity)
     
     req = "SELECT %s, TokenOwner, TokenExpiration FROM %s WHERE " %(DBname, DBtable)
     if name is not None:
@@ -3276,21 +3281,8 @@ class ResourceStatusDB:
     (re)Set token properties.
     """
     
-    if granularity in ('Site', 'Sites'):
-      DBtable = 'Sites'
-      DBname = 'SiteName'
-    elif granularity in ('Service', 'Services'):
-      DBtable = 'Services'
-      DBname = 'ServiceName'
-    elif granularity in ('Resource', 'Resources'):
-      DBtable = 'Resources'
-      DBname = 'ResourceName'
-    elif granularity in ('StorageElement', 'StorageElements'):
-      DBtable = 'StorageElements'
-      DBname = 'StorageElementName'
-    else:
-      raise InvalidRes, where(self, self.setToken)
-      
+    DBtable, DBname = self.__DBchoice(granularity)
+    
     query = "UPDATE %s SET TokenOwner = '%s', TokenExpiration" % (DBtable, newTokenOwner)
     query = query + " = '%s' WHERE %s = '%s'" %(dateExpiration, DBname, name)
     resUpdate = self.db._update(query)
@@ -3299,11 +3291,30 @@ class ResourceStatusDB:
 
     
 #############################################################################
+
+  def whatIs(self, name):
+    """
+    Find which is the granularity of name. 
+    """
+    
+    for g in ValidRes:
+      DBtable, DBname = self.__DBchoice(g)
+      req = "SELECT %s FROM %s WHERE %s = '%s'" %(DBname, DBtable, DBname, name)
+      resQuery = self.db._query(req)
+      if not resQuery['OK']:
+        raise RSSDBException, where(self, self.whatIs) + resQuery['Message']
+      if not resQuery['Value']:
+        continue
+      else:
+        return g
+    
+    return 'Unknown' 
   
+#############################################################################
   
   def getStuffToCheck(self, granularity, checkFrequency = None, maxN = None, name = None):
     """ 
-    Get Sites, Services, or Resources to be checked.
+    Get Sites, Services, Resources, StorageElements to be checked using Present-x views.
     
     :params:
       :attr:`granularity`: a ValidRes
@@ -3327,18 +3338,18 @@ class ResourceStatusDB:
       T2badCheckFrequecy = checkFrequency['T2_BAD_CHECK_FREQUENCY']
       T2bannedCheckFrequecy = checkFrequency['T2_BANNED_CHECK_FREQUENCY']
   
-      T0dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0activeCheckFrequecy)).isoformat(' ')
-      T0dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0probingCheckFrequecy)).isoformat(' ')
-      T0dateToCheckFromBad = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0badCheckFrequecy)).isoformat(' ')
-      T0dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T0bannedCheckFrequecy)).isoformat(' ')
-      T1dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1activeCheckFrequecy)).isoformat(' ')
-      T1dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1probingCheckFrequecy)).isoformat(' ')
-      T1dateToCheckFromBad = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1badCheckFrequecy)).isoformat(' ')
-      T1dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T1bannedCheckFrequecy)).isoformat(' ')
-      T2dateToCheckFromActive = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2activeCheckFrequecy)).isoformat(' ')
-      T2dateToCheckFromProbing = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2probingCheckFrequecy)).isoformat(' ')
-      T2dateToCheckFromBad = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2badCheckFrequecy)).isoformat(' ')
-      T2dateToCheckFromBanned = (datetime.utcnow().replace(microsecond = 0)-timedelta(minutes=T2bannedCheckFrequecy)).isoformat(' ')
+      T0dateToCheckFromActive = (datetime.datetime.utcnow().replace(microsecond = 0)-datetime.timedelta(minutes=T0activeCheckFrequecy)).isoformat(' ')
+      T0dateToCheckFromProbing = (datetime.datetime.utcnow().replace(microsecond = 0)-datetime.timedelta(minutes=T0probingCheckFrequecy)).isoformat(' ')
+      T0dateToCheckFromBad = (datetime.datetime.utcnow().replace(microsecond = 0)-datetime.timedelta(minutes=T0badCheckFrequecy)).isoformat(' ')
+      T0dateToCheckFromBanned = (datetime.datetime.utcnow().replace(microsecond = 0)-datetime.timedelta(minutes=T0bannedCheckFrequecy)).isoformat(' ')
+      T1dateToCheckFromActive = (datetime.datetime.utcnow().replace(microsecond = 0)-datetime.timedelta(minutes=T1activeCheckFrequecy)).isoformat(' ')
+      T1dateToCheckFromProbing = (datetime.datetime.utcnow().replace(microsecond = 0)-datetime.timedelta(minutes=T1probingCheckFrequecy)).isoformat(' ')
+      T1dateToCheckFromBad = (datetime.datetime.utcnow().replace(microsecond = 0)-datetime.timedelta(minutes=T1badCheckFrequecy)).isoformat(' ')
+      T1dateToCheckFromBanned = (datetime.datetime.utcnow().replace(microsecond = 0)-datetime.timedelta(minutes=T1bannedCheckFrequecy)).isoformat(' ')
+      T2dateToCheckFromActive = (datetime.datetime.utcnow().replace(microsecond = 0)-datetime.timedelta(minutes=T2activeCheckFrequecy)).isoformat(' ')
+      T2dateToCheckFromProbing = (datetime.datetime.utcnow().replace(microsecond = 0)-datetime.timedelta(minutes=T2probingCheckFrequecy)).isoformat(' ')
+      T2dateToCheckFromBad = (datetime.datetime.utcnow().replace(microsecond = 0)-datetime.timedelta(minutes=T2badCheckFrequecy)).isoformat(' ')
+      T2dateToCheckFromBanned = (datetime.datetime.utcnow().replace(microsecond = 0)-datetime.timedelta(minutes=T2bannedCheckFrequecy)).isoformat(' ')
 
     if granularity in ('Site', 'Sites'):
       req = "SELECT SiteName, Status, FormerStatus, SiteType, TokenOwner FROM PresentSites"
@@ -3401,7 +3412,7 @@ class ResourceStatusDB:
       
       :attr:`days`: integer, amount of days in the past to look at
       
-      :attr:`startingDate`: datetime or string - optional date to start from  
+      :attr:`startingDate`: datetime.datetime or string - optional date to start from  
     """
 
     if granularity not in ValidRes:
@@ -3409,11 +3420,11 @@ class ResourceStatusDB:
 
     if startingDate is not None:
       if isinstance(startingDate, basestring):
-        startingDate = datetime.strptime(startingDate, '%Y-%m-%d %H:%M:%S')
+        startingDate = datetime.datetime.strptime(startingDate, '%Y-%m-%d %H:%M:%S')
     else:
-      startingDate = datetime.utcnow().replace(microsecond = 0)
+      startingDate = datetime.datetime.utcnow().replace(microsecond = 0)
     
-    dateToCheckFrom = startingDate - timedelta(days = days)
+    dateToCheckFrom = startingDate - datetime.timedelta(days = days)
     
     if granularity in ('Site', 'Sites'):
       resList = self.getMonitoredsList(granularity, paramsList = ['SiteName'])
@@ -3432,8 +3443,8 @@ class ResourceStatusDB:
     for res in resList:
 
       periodsActive = self.getPeriods(granularity, res[0], 'Active', None, days)
-      periodsActive = [ [ datetime.strptime(period[0], '%Y-%m-%d %H:%M:%S'), 
-                         datetime.strptime(period[1], '%Y-%m-%d %H:%M:%S') ] for period in periodsActive ]
+      periodsActive = [ [ datetime.datetime.strptime(period[0], '%Y-%m-%d %H:%M:%S'), 
+                         datetime.datetime.strptime(period[1], '%Y-%m-%d %H:%M:%S') ] for period in periodsActive ]
       
       for p in periodsActive:
         if p[1] < dateToCheckFrom:
@@ -3448,8 +3459,8 @@ class ResourceStatusDB:
       
       
       periodsProbing = self.getPeriods(granularity, res[0], 'Probing', None, days)
-      periodsProbing = [ [ datetime.strptime(period[0], '%Y-%m-%d %H:%M:%S'), 
-                          datetime.strptime(period[1], '%Y-%m-%d %H:%M:%S') ] for period in periodsProbing ]
+      periodsProbing = [ [ datetime.datetime.strptime(period[0], '%Y-%m-%d %H:%M:%S'), 
+                          datetime.datetime.strptime(period[1], '%Y-%m-%d %H:%M:%S') ] for period in periodsProbing ]
 
       for p in periodsProbing:
         if p[1] < dateToCheckFrom:
@@ -3466,8 +3477,8 @@ class ResourceStatusDB:
 
       
       periodsBad = self.getPeriods(granularity, res[0], 'Bad', None, days)
-      periodsBad = [ [ datetime.strptime(period[0], '%Y-%m-%d %H:%M:%S'), 
-                      datetime.strptime(period[1], '%Y-%m-%d %H:%M:%S') ] for period in periodsBad ]
+      periodsBad = [ [ datetime.datetime.strptime(period[0], '%Y-%m-%d %H:%M:%S'), 
+                      datetime.datetime.strptime(period[1], '%Y-%m-%d %H:%M:%S') ] for period in periodsBad ]
 
       for p in periodsBad:
         if p[1] < dateToCheckFrom:
@@ -3492,5 +3503,29 @@ class ResourceStatusDB:
             'BadsRank':badRankList}
 
     return rank
+
+#############################################################################
+
+  def __DBchoice(self, granularity):
+    
+    if granularity in ('Site', 'Sites'):
+      DBtable = 'Sites'
+      DBname = 'SiteName'
+    elif granularity in ('Service', 'Services'):
+      DBtable = 'Services'
+      DBname = 'ServiceName'
+    elif granularity in ('Resource', 'Resources'):
+      DBtable = 'Resources'
+      DBname = 'ResourceName'
+    elif granularity in ('StorageElement', 'StorageElements'):
+      DBtable = 'StorageElements'
+      DBname = 'StorageElementName'
+    elif fromWhere in ('Cache', 'ClientsCache', 'ClientCache'):
+      DBtable = 'ClientsCache'
+      DBname = 'Name'
+    else:
+      raise InvalidRes, where(self, self.__DBchoice)
+    
+    return (DBtable, DBname)
 
 #############################################################################
