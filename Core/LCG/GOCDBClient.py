@@ -138,6 +138,19 @@ class GOCDBClient:
     
 #############################################################################
   
+#  def getSiteInfo(self, site):
+#    """
+#    Get site info (in a dictionary)
+#    
+#    :params:
+#      :attr:`entity` : a string. Actual name of the site.
+#    """
+#    
+#    siteXML = self._getSiteCurlDonwload(site)
+#    return S_OK(self._siteXMLParsing(siteXML))
+    
+#############################################################################
+
 #  def buildURL(self, DTList):
 #    '''build the URL relative to the DT '''
 #    baseURL = "https://goc.gridops.org/downtime/list?id="
@@ -198,6 +211,24 @@ class GOCDBClient:
     service_endpoint_page = urllib2.urlopen(req)
 
     return service_endpoint_page.read()
+
+#############################################################################
+
+#  def _getSiteCurlDonwload(self, site):
+#    """ 
+#    Calls method `get_site` from the GOC DB programmatic interface.
+#    
+#    :params:
+#      :attr:`site` : a string. Actual name of the site.
+#    """
+#    
+#    # GOCDB-PI query
+#    gocdb_ep = "https://goc.gridops.org/gocdbpi_v4/public/?method=get_site&sitename="+site
+#
+#    req = urllib2.Request(gocdb_ep)
+#    site_page = urllib2.urlopen(req)
+#
+#    return site_page.read()
 
 #############################################################################
 
