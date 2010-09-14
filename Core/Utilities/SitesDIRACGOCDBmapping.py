@@ -37,10 +37,14 @@ def getDIRACSiteName(GOCSiteName):
     return sitesList
   
   sitesList = sitesList['Value']
+  DIRACsites = []
   for site in sitesList:
     GOCName = gConfig.getValue("/Resources/Sites/LCG/%s/Name" %site)
     if GOCName == GOCSiteName:
-      return S_OK(site)
+      DIRACsites.append(site)
+  
+  if DIRACsites:
+    return S_OK(DIRACsites)
   
   return S_ERROR("There's no site with GOCDB name = %s in DIRAC CS" %GOCSiteName)
 
