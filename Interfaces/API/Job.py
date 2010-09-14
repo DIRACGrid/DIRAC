@@ -292,6 +292,50 @@ class Job:
     return S_OK()
 
   #############################################################################
+  def setInputDataPolicy(self,policy,dataScheduling=True):
+    """Helper function.
+
+       Specify a job input data policy, this takes precedence over any site specific or
+       global settings.
+
+       Possible values for policy are 'Download' or 'Protocol' (case-insensitive). This
+       requires that the module locations are defined for the VO in the CS. 
+
+       Example usage:
+
+       >>> job = Job()
+       >>> job.setInputDataPolicy('download')
+
+    """
+    kwargs = {'policy':policy,'dataScheduling':dataScheduling}
+    csSection = '/Operations/InputDataPolicy'
+    possible = ['Download','Protocol']
+    finalPolicy = ''
+    for p in possible:
+      if string.lower(policy)==string.lower(p):
+        finalPolicy = p
+
+    if not finalPolicy:
+      return self._reportError('Expected one of %s for input data policy' %(string.join(possible,', ')),__name__,**kwargs)                
+
+    jobPolicy = gConfig.getValue('%s/%s' %(csSection,finalPolicy),'')
+    if not jobPolicy:
+      return self._reportError('Could not get value for CS option %s/%s' %(csSection,finalPolicy),__name__,**kwargs)                
+
+    description = 'User specified input data policy'
+    self._addParameter(self.workflow,'InputDataPolicy','JDL',jobPolicy,description)
+    
+    if not dataScheduling and policy.lower()=='download':
+      self.log.verbose('Scheduling by input data is disabled, jobs will run anywhere and download input data')
+      self._addParameter(self.workflow,'DisableDataScheduling','JDL','True','Disable scheduling by input data')
+    
+    if not dataScheduling and policy.lower()!='download':
+      self.log.error('Expected policy to be "download" for bypassing data scheduling')
+      return self._reportError('Expected policy to be "download" for bypassing data scheduling',__name__,**kwargs)                
+    
+    return S_OK()
+
+  #############################################################################
   def setOutputData(self,lfns,OutputSE=[],OutputPath=''):
     """Helper function.
 
