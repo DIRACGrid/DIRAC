@@ -19,17 +19,17 @@ class Job( BaseAccountingType ):
                                  ( 'FinalMajorStatus', 'VARCHAR(32)' ),
                                  ( 'FinalMinorStatus', 'VARCHAR(64)' )
                                ]
-    self.definitionAccountingFields = [ ( 'CPUTime', "UNSIGNED INT" ),
-                                        ( 'NormCPUTime', "UNSIGNED INT" ),
-                                        ( 'ExecTime', "UNSIGNED INT" ),
-                                        ( 'InputDataSize', 'UNSIGNED BIGINT' ),
-                                        ( 'OutputDataSize', 'UNSIGNED BIGINT' ),
-                                        ( 'InputDataFiles', 'UNSIGNED BIGINT' ),
-                                        ( 'OutputDataFiles', 'UNSIGNED BIGINT' ),
-                                        ( 'DiskSpace', 'UNSIGNED BIGINT' ),
-                                        ( 'InputSandBoxSize', 'UNSIGNED BIGINT' ),
-                                        ( 'OutputSandBoxSize', 'UNSIGNED BIGINT' ),
-                                        ( 'ProcessedEvents', 'UNSIGNED INT' )
+    self.definitionAccountingFields = [ ( 'CPUTime', "INT UNSIGNED" ),
+                                        ( 'NormCPUTime', "INT UNSIGNED" ),
+                                        ( 'ExecTime', "INT UNSIGNED" ),
+                                        ( 'InputDataSize', 'BIGINT UNSIGNED' ),
+                                        ( 'OutputDataSize', 'BIGINT UNSIGNED' ),
+                                        ( 'InputDataFiles', 'BIGINT UNSIGNED' ),
+                                        ( 'OutputDataFiles', 'BIGINT UNSIGNED' ),
+                                        ( 'DiskSpace', 'BIGINT UNSIGNED' ),
+                                        ( 'InputSandBoxSize', 'BIGINT UNSIGNED' ),
+                                        ( 'OutputSandBoxSize', 'BIGINT UNSIGNED' ),
+                                        ( 'ProcessedEvents', 'INT UNSIGNED' )
                                       ]
     self.bucketsLength = [ ( 86400 * 7, 3600 ), #<1w = 1h
                            ( 86400 * 35, 3600 * 4 ), #<35d = 4h

@@ -17,13 +17,13 @@ class DataOperation( BaseAccountingType ):
                                  ( 'Protocol', 'VARCHAR(32)' ),
                                  ( 'FinalStatus', 'VARCHAR(32)' )
                                ]
-    self.definitionAccountingFields = [ ( 'TransferSize', 'UNSIGNED BIGINT' ),
+    self.definitionAccountingFields = [ ( 'TransferSize', 'BIGINT UNSIGNED' ),
                                         ( 'TransferTime', 'FLOAT' ),
                                         ( 'RegistrationTime', 'FLOAT' ),
-                                        ( 'TransferOK', 'UNSIGNED INT' ),
-                                        ( 'TransferTotal', 'UNSIGNED INT' ),
-                                        ( 'RegistrationOK', 'UNSIGNED INT' ),
-                                        ( 'RegistrationTotal', 'UNSIGNED INT' )
+                                        ( 'TransferOK', 'INT UNSIGNED' ),
+                                        ( 'TransferTotal', 'INT UNSIGNED' ),
+                                        ( 'RegistrationOK', 'INT UNSIGNED' ),
+                                        ( 'RegistrationTotal', 'INT UNSIGNED' )
                                       ]
     self.bucketsLength = [ ( 172800, 900 ), #<2d = 15m
                            ( 604800, 3600 ), #<1w = 1h

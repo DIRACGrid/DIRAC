@@ -16,8 +16,8 @@ class WMSHistory( BaseAccountingType ):
                                  ( 'JobGroup', 'VARCHAR(32)' ),
                                  ( 'JobSplitType', 'VARCHAR(32)' )
                                ]
-    self.definitionAccountingFields = [ ( 'Jobs', "UNSIGNED INT" ),
-                                        ( 'Reschedules', "UNSIGNED INT" ),
+    self.definitionAccountingFields = [ ( 'Jobs', "INT UNSIGNED" ),
+                                        ( 'Reschedules', "INT UNSIGNED" ),
                                       ]
     self.bucketsLength = [ ( 86400 * 2, 900 ), #<2d = 15m
                            ( 86400 * 10, 9000 ), #<10d = 2.5h

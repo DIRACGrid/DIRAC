@@ -12,15 +12,15 @@ class SRMSpaceTokenDeployment( BaseAccountingType ):
                                  ( 'Hostname', "VARCHAR(80)" ),
                                  ( 'SpaceTokenDesc', 'VARCHAR(64)' )
                                ]
-    self.definitionAccountingFields = [ ( 'AvailableSpace', 'UNSIGNED BIGINT' ),
-                                        ( 'UsedSpace', 'UNSIGNED BIGINT' ),
-                                        ( 'TotalOnline', 'UNSIGNED BIGINT' ),
-                                        ( 'UsedOnline', 'UNSIGNED BIGINT' ),
-                                        ( 'FreeOnline', 'UNSIGNED BIGINT' ),
-                                        ( 'TotalNearline', 'UNSIGNED BIGINT' ),
-                                        ( 'UsedNearline', 'UNSIGNED BIGINT' ),
-                                        ( 'FreeNearline', 'UNSIGNED BIGINT' ),
-                                        ( 'ReservedNearline', 'UNSIGNED BIGINT' )
+    self.definitionAccountingFields = [ ( 'AvailableSpace', 'BIGINT UNSIGNED' ),
+                                        ( 'UsedSpace', 'BIGINT UNSIGNED' ),
+                                        ( 'TotalOnline', 'BIGINT UNSIGNED' ),
+                                        ( 'UsedOnline', 'BIGINT UNSIGNED' ),
+                                        ( 'FreeOnline', 'BIGINT UNSIGNED' ),
+                                        ( 'TotalNearline', 'BIGINT UNSIGNED' ),
+                                        ( 'UsedNearline', 'BIGINT UNSIGNED' ),
+                                        ( 'FreeNearline', 'BIGINT UNSIGNED' ),
+                                        ( 'ReservedNearline', 'BIGINT UNSIGNED' )
                                       ]
     self.bucketsLength = [ ( 15552000, 86400 ), #<6m = 1d
                            ( 31104000, 604800 ), #>6m = 1w
