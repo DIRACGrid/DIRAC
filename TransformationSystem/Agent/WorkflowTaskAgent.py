@@ -17,7 +17,7 @@ class WorkflowTaskAgent( TaskManagerAgentBase, WorkflowTasks ):
     """ Sets defaults """
     TaskManagerAgentBase.initialize( self )
     WorkflowTasks.__init__( self )
-    self.transType = ['MCSimulation', 'DataReconstruction', 'DataStripping', 'MCStripping', 'Merge']
+    self.transType = self.am_getOption("TransType",['MCSimulation', 'DataReconstruction', 'DataStripping', 'MCStripping', 'Merge'])
     self.am_setModuleParam( 'shifterProxy', 'ProductionManager' )
     self.am_setModuleParam( "shifterProxyLocation", "%s/runit/%s/proxy" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), AGENT_NAME ) )
     self.hospitalProds = self.am_getOption('HospitalProds',[])
