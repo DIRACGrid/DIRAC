@@ -19,17 +19,17 @@ class Job( BaseAccountingType ):
                                  ( 'FinalMajorStatus', 'VARCHAR(32)' ),
                                  ( 'FinalMinorStatus', 'VARCHAR(64)' )
                                ]
-    self.definitionAccountingFields = [ ( 'CPUTime', "INT" ),
-                                        ( 'NormCPUTime', "INT" ),
-                                        ( 'ExecTime', "INT" ),
-                                        ( 'InputDataSize', 'INT' ),
-                                        ( 'OutputDataSize', 'INT' ),
-                                        ( 'InputDataFiles', 'INT' ),
-                                        ( 'OutputDataFiles', 'INT' ),
-                                        ( 'DiskSpace', 'INT' ),
-                                        ( 'InputSandBoxSize', 'INT' ),
-                                        ( 'OutputSandBoxSize', 'INT' ),
-                                        ( 'ProcessedEvents', 'INT' )
+    self.definitionAccountingFields = [ ( 'CPUTime', "UNSIGNED INT" ),
+                                        ( 'NormCPUTime', "UNSIGNED INT" ),
+                                        ( 'ExecTime', "UNSIGNED INT" ),
+                                        ( 'InputDataSize', 'UNSIGNED BIGINT' ),
+                                        ( 'OutputDataSize', 'UNSIGNED BIGINT' ),
+                                        ( 'InputDataFiles', 'UNSIGNED BIGINT' ),
+                                        ( 'OutputDataFiles', 'UNSIGNED BIGINT' ),
+                                        ( 'DiskSpace', 'UNSIGNED BIGINT' ),
+                                        ( 'InputSandBoxSize', 'UNSIGNED BIGINT' ),
+                                        ( 'OutputSandBoxSize', 'UNSIGNED BIGINT' ),
+                                        ( 'ProcessedEvents', 'UNSIGNED INT' )
                                       ]
     self.bucketsLength = [ ( 86400 * 7, 3600 ), #<1w = 1h
                            ( 86400 * 35, 3600 * 4 ), #<35d = 4h

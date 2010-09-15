@@ -17,12 +17,12 @@ class JobStep( BaseAccountingType ):
                                  ( 'Site', 'VARCHAR(32)' ),
                                  ( 'FinalState', 'VARCHAR(32)' )
                                ]
-    self.definitionAccountingFields = [ ( 'CPUTime', "INT" ),
-                                        ( 'NormCPUTime', "INT" ),
-                                        ( 'ExecTime', "INT" ),
-                                        ( 'InputData', 'INT' ),
-                                        ( 'OutputData', 'INT' ),
-                                        ( 'InputEvents', 'INT' ),
-                                        ( 'OutputEvents', 'INT' )
+    self.definitionAccountingFields = [ ( 'CPUTime', "UNSIGNED INT" ),
+                                        ( 'NormCPUTime', "UNSIGNED INT" ),
+                                        ( 'ExecTime', "UNSIGNED INT" ),
+                                        ( 'InputData', 'UNSIGNED BIGINT' ),
+                                        ( 'OutputData', 'UNSIGNED BIGINT' ),
+                                        ( 'InputEvents', 'UNSIGNED BIGINT' ),
+                                        ( 'OutputEvents', 'UNSIGNED BIGINT' )
                                       ]
     self.checkType()

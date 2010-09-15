@@ -16,6 +16,6 @@ class Pilot( BaseAccountingType ):
                                  ( 'GridResourceBroker', 'VARCHAR(128)' ),
                                  ( 'GridStatus', 'VARCHAR(32)' ),
                                ]
-    self.definitionAccountingFields = [ ( 'Jobs', "INT" ),
+    self.definitionAccountingFields = [ ( 'Jobs', "UNSIGNED INT" ),
                                       ]
     self.checkType()
