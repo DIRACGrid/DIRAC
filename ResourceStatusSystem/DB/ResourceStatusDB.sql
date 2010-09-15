@@ -98,7 +98,6 @@ CREATE TABLE Resources(
   ResourceName VARCHAR(64) NOT NULL,
   INDEX (ResourceName),
   ResourceType VARCHAR(8) NOT NULL,
-  ServiceName VARCHAR(64) NOT NULL,
   SiteName VARCHAR(64),
   INDEX (SiteName),
   GridSiteName VARCHAR(64),
@@ -123,9 +122,6 @@ CREATE TABLE StorageElements(
   StorageElementName VARCHAR(64) NOT NULL,
   INDEX (StorageElementName),
   ResourceName VARCHAR(64) NOT NULL,
-  SiteName VARCHAR(64) NOT NULL,
-  
-  INDEX (SiteName),
   Status VARCHAR(8) NOT NULL,
   INDEX (Status),
   Reason VARCHAR(255) NOT NULL DEFAULT 'Unspecified',
@@ -172,8 +168,6 @@ DROP TABLE IF EXISTS ResourcesHistory;
 CREATE TABLE ResourcesHistory(
   ResourcesHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   ResourceName VARCHAR(64) NOT NULL,
-  ServiceName VARCHAR(64) NOT NULL,
-  SiteName VARCHAR(64) NOT NULL,
   Status VARCHAR(8) NOT NULL,
   Reason VARCHAR(255) NOT NULL,
   DateCreated DATETIME NOT NULL,
@@ -188,7 +182,6 @@ CREATE TABLE StorageElementsHistory(
   StorageElementsHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   StorageElementName VARCHAR(64) NOT NULL,
   ResourceName VARCHAR(64) NOT NULL,
-  SiteName VARCHAR(64) NOT NULL,
   Status VARCHAR(8) NOT NULL,
   Reason VARCHAR(255) NOT NULL,
   DateCreated DATETIME NOT NULL,
@@ -245,8 +238,7 @@ CREATE VIEW PresentResources AS SELECT
   Resources.ResourceName, 
   Resources.SiteName, 
   Resources.GridSiteName, 
-  Resources.ServiceName, 
-  Sites.SiteType, 
+  GridSites.GridTier AS SiteType, 
   Resources.ResourceType,
   Resources.Status,
   Resources.DateEffective, 
@@ -256,21 +248,20 @@ CREATE VIEW PresentResources AS SELECT
   Resources.TokenOwner, 
   Resources.TokenExpiration
 FROM (
-  (Resources INNER JOIN Sites ON 
-   Resources.SiteName = Sites.SiteName) 
+  (Resources INNER JOIN GridSites ON 
+   Resources.GridSiteName = GridSites.GridSiteName) 
     INNER JOIN ResourcesHistory ON 
       Resources.ResourceName = ResourcesHistory.ResourceName AND 
       Resources.DateEffective = ResourcesHistory.DateEnd
 ) WHERE Resources.DateEffective < UTC_TIMESTAMP()
-ORDER BY SiteName;
+ORDER BY ResourceName;
 
 
 DROP VIEW IF EXISTS PresentStorageElements;
 CREATE VIEW PresentStorageElements AS SELECT 
   StorageElements.StorageElementName, 
-  StorageElements.ResourceName, 
-  StorageElements.SiteName, 
-  Sites.SiteType,
+  StorageElements.ResourceName,
+  GridSites.GridTier AS SiteType,
   StorageElements.Status,
   StorageElements.DateEffective, 
   StorageElementsHistory.Status AS FormerStatus,
@@ -279,8 +270,8 @@ CREATE VIEW PresentStorageElements AS SELECT
   StorageElements.TokenOwner,
   StorageElements.TokenExpiration
 FROM ( 
-  (StorageElements INNER JOIN Sites ON 
-   StorageElements.SiteName = Sites.SiteName)
+  (StorageElements INNER JOIN GridSites ON 
+   StorageElements.GridSiteName = GridSites.GridTier)
     INNER JOIN StorageElementsHistory ON 
       StorageElements.StorageElementName = StorageElementsHistory.StorageElementName AND 
       StorageElements.DateEffective = StorageElementsHistory.DateEnd 
@@ -331,4 +322,12 @@ CREATE TABLE AccountingCache(
   DateEffective DATETIME NOT NULL,
   LastCheckTime DATETIME NOT NULL,
   PRIMARY KEY(acID)
+) Engine=InnoDB;
+
+DROP TABLE IF EXISTS GridSites;
+CREATE TABLE GridSites(
+  gsID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  GridSiteName VARCHAR(64) NOT NULL,
+  GridTier VARCHAR(4) NOT NULL,
+  PRIMARY KEY(gsID)
 ) Engine=InnoDB;
