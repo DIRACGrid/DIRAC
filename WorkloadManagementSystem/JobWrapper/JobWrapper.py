@@ -46,7 +46,7 @@ class JobWrapper:
     self.initialTiming = os.times()
     self.section = os.path.join( getSystemSection( 'WorkloadManagement/JobWrapper' ), 'JobWrapper' )
     self.log = gLogger
-    #Create the acctounting report
+    #Create the accounting report
     self.accountingReport = AccountingJob()
     # Initialize for accounting
     self.wmsMajorStatus = "unknown"
@@ -519,6 +519,8 @@ class JobWrapper:
         optDict = eval( self.optArgs['InputData'] )
         optReplicas = optDict['Value']
         self.log.info( 'Found optimizer catalogue result' )
+        for key,item in optReplicas['Successful'].items():
+          print 'DBG (resolveInputData)', key, item
         self.log.verbose( optReplicas )
       except Exception, x:
         optDict = None
@@ -542,6 +544,7 @@ class JobWrapper:
 
     #add input data size to accounting report (since resolution successful)
     for lfn, mdata in resolvedData['Value']['Successful'].items():
+      print 'DBG (resolveInputData)', lfn, mdata
       if mdata.has_key( 'Size' ):
         lfnSize = mdata['Size']
         if not type( lfnSize ) == type( long( 1 ) ):
@@ -586,12 +589,10 @@ class JobWrapper:
         return replicas
 
     self.log.verbose( replicas )
-    failedReplicas = []
-    pfnList = []
-    originalReplicaInfo = replicas
 
     failedGUIDs = []
     for lfn, reps in replicas['Value']['Successful'].items():
+      print 'DBG (__checkFileCatalog)', lfn, reps
       if not reps.has_key( 'GUID' ):
         failedGUIDs.append( lfn )
 
@@ -655,6 +656,7 @@ class JobWrapper:
       return S_ERROR( 'Missing GUIDs' )
 
     for lfn, reps in repsResult['Value']['Successful'].items():
+      print 'DBG (__getReplicaMetadata)',lfn,reps
       guidDict['Value']['Successful'][lfn].update( reps )
 
     catResult = guidDict
@@ -1197,7 +1199,7 @@ class ExecutionThread( threading.Thread ):
 
   #############################################################################
   def run( self ):
-    # FIXME: why local intances of object variables are created?
+    # FIXME: why local instances of object variables are created?
     cmd = self.cmd
     spObject = self.spObject
     start = time.time()
