@@ -109,7 +109,7 @@ class DataOperationPlotter( BaseReporter ):
     return self._generateQualityPlot( filename, plotInfo[ 'data' ], metadata )
 
   def _reportTransferedData( self, reportRequest ):
-    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)/1000000000",
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
                      reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
                                     'TransferSize'
                                    ]
