@@ -51,15 +51,7 @@ class SAMResults_Command(Command):
       siteName = getGOCSiteName(name)['Value']
     elif granularity in ('Resource', 'Resources'):
       if siteName is None:
-        try:
-          siteName = rsc.getGeneralName(granularity, name, 'Site')
-        except:
-          gLogger.error("Can't get a general name for %s %s" %(granularity, name))
-          return {'Result':'Unknown'}      
-        if siteName is None or siteName == []:
-          gLogger.info('%s is not a resource in DIRAC' %name)
-          return {'Result':None}
-        siteName = getGOCSiteName(siteName)['Value']
+        siteName = rsc.getGridSiteName(granularity, name)
       else:
         siteName = getGOCSiteName(siteName)['Value']
     else:
@@ -71,9 +63,6 @@ class SAMResults_Command(Command):
       tests = None
     finally:
       try:
-        
-        print self.client, granularity, name, siteName, tests, self.timeout
-        
         
         res = self.client.getStatus(granularity, name, siteName, tests, 
                                     timeout = self.timeout)

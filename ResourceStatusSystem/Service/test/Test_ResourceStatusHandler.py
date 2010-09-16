@@ -39,7 +39,7 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
 
   def test_export_addOrModifySite(self):
     for status in ValidStatus:
-      res = self.rsh.export_addOrModifySite('XX', 'XX', 'XX', 'XX', status, 'reason', 'dateEffective', 'OP', '')
+      res = self.rsh.export_addOrModifySite('XX', 'XX', 'XX', status, 'reason', 'dateEffective', 'OP', '')
       self.assert_(res['OK'])
 
   def test_export_removeSite(self):
@@ -122,7 +122,8 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
 
   def test_export_addOrModifyResource(self):
     for status in ValidStatus:
-      res = self.rsh.export_addOrModifyResource('resourceName', 'resourceType', 'serviceName', 'siteName', status, 'reason', 'dateEffective', 'operatorCode', 'dateEnd')
+      res = self.rsh.export_addOrModifyResource('resourceName', 'resourceType', 'siteName', 'gridSiteName', 
+                                                status, 'reason', 'dateEffective', 'operatorCode', 'dateEnd')
       self.assert_(res['OK'])
 
   def test_export_removeResource(self):
@@ -253,6 +254,11 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
       for g_2 in ValidRes:
         res = self.rsh.export_getGeneralName(g_1, 'XX', g_2)
         self.assert_(res['OK'])
+        
+  def test_export_getGridSiteName(self):
+    for g in ValidRes:
+      res = self.rsh.export_getGridSiteName(g, 'XX')
+      self.assert_(res['OK'])
         
   def test_export_reAssignToken(self):
     for g in ValidRes:

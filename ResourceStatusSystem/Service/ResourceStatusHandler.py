@@ -213,9 +213,9 @@ class ResourceStatusHandler(RequestHandler):
 #############################################################################
 
   #ok
-  types_addOrModifySite = [StringType, StringType, StringType, StringType, StringType,  
+  types_addOrModifySite = [StringType, StringType, StringType, StringType,  
                            StringType, Time._dateTimeType, StringType, Time._dateTimeType]
-  def export_addOrModifySite(self, siteName, siteType, gridSiteName, gridTier, status, reason, dateEffective, 
+  def export_addOrModifySite(self, siteName, siteType, gridSiteName, status, reason, dateEffective, 
                              tokenOwner, dateEnd):
     """ 
     Add or modify a site to the ResourceStatusDB.
@@ -231,9 +231,6 @@ class ResourceStatusHandler(RequestHandler):
       `gridSiteName`
         string - name of the site in the GOC DB
     
-      `gridTier`
-        string - Tier of the Site (in the GOC DB)
-      
       `status`
         string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
@@ -252,7 +249,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.addOrModifySite: Attempting to add or modify site %s" % siteName)
       try:
-        rsDB.addOrModifySite(siteName, siteType, gridSiteName, gridTier, status, reason, 
+        rsDB.addOrModifySite(siteName, siteType, gridSiteName, status, reason, 
                              dateEffective, tokenOwner, dateEnd)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
@@ -478,10 +475,10 @@ class ResourceStatusHandler(RequestHandler):
 #############################################################################
   
   #ok
-  types_addOrModifyService = [StringType, StringType, StringType, StringType, StringType, Time._dateTimeType, StringType, Time._dateTimeType]
+  types_addOrModifyService = [StringType, StringType, StringType, StringType, StringType, 
+                              Time._dateTimeType, StringType, Time._dateTimeType]
   def export_addOrModifyService(self, serviceName, serviceType, siteName, status, 
-                                reason, dateEffective, tokenOwner, 
-                                dateEnd=datetime.datetime(9999, 12, 31, 23, 59, 59)):
+                                reason, dateEffective, tokenOwner, dateEnd):
     """ 
     Add or modify a service to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifyService`
@@ -494,6 +491,9 @@ class ResourceStatusHandler(RequestHandler):
         string - ValidServiceType: 
         see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
+      `siteName`
+        string - name of the site (DIRAC name)
+
       `status`
         string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
@@ -781,9 +781,8 @@ class ResourceStatusHandler(RequestHandler):
   #ok
   types_addOrModifyResource = [StringType, StringType, StringType, StringType, StringType, 
                                StringType, Time._dateTimeType, StringType, Time._dateTimeType]
-  def export_addOrModifyResource(self, resourceName, resourceType, serviceName, siteName, 
-                                 status, reason, dateEffective, tokenOwner, 
-                                 dateEnd=datetime.datetime(9999, 12, 31, 23, 59, 59)):
+  def export_addOrModifyResource(self, resourceName, resourceType, siteName, gridSiteName, 
+                                 status, reason, dateEffective, tokenOwner, dateEnd):
     """ 
     Add or modify a resource to the ResourceStatusDB.
     Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.addOrModifyResource`
@@ -796,6 +795,12 @@ class ResourceStatusHandler(RequestHandler):
         string - ValidResourceType: 
         see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
+      `siteName`
+        string - name of the site (DIRAC name, can be 'NULL')
+
+      `gridSiteName`
+        string - name of the site (Grid name, found in GOC DB)
+
       `status`
         string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
@@ -815,7 +820,8 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.addOrModifyResource: Attempting to add or modify resource %s %s" % (resourceName, siteName))
       try:
-        rsDB.addOrModifyResource(resourceName, resourceType, serviceName, siteName, status, reason, dateEffective, tokenOwner, dateEnd)
+        rsDB.addOrModifyResource(resourceName, resourceType, siteName, gridSiteName, 
+                                 status, reason, dateEffective, tokenOwner, dateEnd)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:
@@ -1192,7 +1198,7 @@ class ResourceStatusHandler(RequestHandler):
   #ok
   types_addOrModifyStorageElement = [StringType, StringType, StringType, StringType, StringType, 
                                      Time._dateTimeType, StringType, Time._dateTimeType]
-  def export_addOrModifyStorageElement(self, seName, resourceName, siteName, status, reason, 
+  def export_addOrModifyStorageElement(self, seName, resourceName, gridSiteName, status, reason, 
                                        dateEffective, tokenOwner, dateEnd):
     """ 
     Add or modify a site to the ResourceStatusDB.
@@ -1205,8 +1211,8 @@ class ResourceStatusHandler(RequestHandler):
       `resourceName`
         string - name of the node (resource)
     
-      `siteName`
-        string - name of the site (DIRAC name)
+      `gridSiteName`
+        string - name of the site (GOC DB name)
     
       `status`
         string - ValidStatus: see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
@@ -1226,7 +1232,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.addOrModifyStorageElement: Attempting to add or modify se %s" % seName)
       try:
-        rsDB.addOrModifyStorageElement(seName, resourceName, siteName, status, reason, 
+        rsDB.addOrModifyStorageElement(seName, resourceName, gridSiteName, status, reason, 
                                        dateEffective, tokenOwner, dateEnd)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
@@ -1940,6 +1946,29 @@ class ResourceStatusHandler(RequestHandler):
       return S_OK(g)
     except Exception:
       errorStr = where(self, self.export_whatIs)
+      gLogger.exception(errorStr)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  types_getGridSiteName = [StringType, StringType]
+  def export_getGridSiteName(self, granularity, name):
+    """
+    Get Grid Site Name, given granularity and a name.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getGridSiteName`
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getGridSiteName: Attempting to get the Grid Site Name")
+      try:
+        res = rsDB.getGridSiteName(granularity, name)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getGridSiteName: got GridSiteName list")
+      return S_OK(res)
+    except Exception:
+      errorStr = where(self, self.export_getGridSiteName)
       gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 

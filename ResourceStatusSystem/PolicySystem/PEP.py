@@ -218,8 +218,8 @@ class PEP:
     resDecisions = pdp.takeDecision(knownInfo=knownInfo)
     
     
-    if self.__name == 'CERN-RAW':
-      print resDecisions
+#    if self.__name == 'CERN-RAW':
+#      print resDecisions
     
     
     for res in resDecisions['PolicyCombinedResult']:
@@ -276,7 +276,7 @@ class PEP:
 
       elif self.__granularity == 'StorageElement':
         
-        print "********* CHANGE", self.__name, res['Status'], res['Reason']
+#        print "********* CHANGE", self.__name, res['Status'], res['Reason']
         
         rsDB.setStorageElementStatus(self.__name, res['Status'], res['Reason'], 'RS_SVC')
         rsDB.setMonitoredToBeChecked(['Site', 'Service', 'Resource'], 'StorageElement', self.__name)

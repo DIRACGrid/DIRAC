@@ -69,10 +69,10 @@ def getFTSSites():
   return {'OK': True, 'Value': ['LCG.NIKHEF.nl', 'LCG.CNAF.it', 'LCG.IN2P3.fr', 'LCG.PIC.es', 'LCG.RAL.uk', 'LCG.GRIDKA.de', 'LCG.CERN.ch', 'LCG.SARA.nl']}
 
 def getFTSEndpoint( sites = None ):
-  return {'OK': True, 'Value': ['LCG.NIKHEF.nl', 'LCG.CNAF.it']}
+  return {'OK': True, 'Value': ['fts.grid.sara.nl', 'fts.cr.cnaf.infn.it', 'cclcgftsprod.in2p3.fr', 'fts.pic.es', 'lcgfts.gridpp.rl.ac.uk', 'fts-fzk.gridka.de', 'fts22-t0-export.cern.ch']}
 
 def getVOMSEndpoints():
-  return {'OK': True, 'Value': ['LCG.NIKHEF.nl', 'LCG.CNAF.it']}
+  return {'OK': True, 'Value': ['voms.cern.ch', 'lcg-voms.cern.ch']}
 
 def getCEType(a= None, b = None):
   return {'OK': True, 'Value': 'LCG'}

@@ -21,14 +21,14 @@ USE ResourceStatusDB;
 
 DROP TABLE IF EXISTS SiteTypes;
 CREATE TABLE SiteTypes(
-  SiteType VARCHAR(8) NOT NULL,
+  SiteType VARCHAR(4) NOT NULL,
   Description BLOB,
   PRIMARY KEY(SiteType)
 ) Engine=InnoDB;
 
 DROP TABLE IF EXISTS ServiceTypes;
 CREATE TABLE ServiceTypes(
-  ServiceType VARCHAR(16) NOT NULL,
+  ServiceType VARCHAR(32) NOT NULL,
   Description BLOB,
   PRIMARY KEY(ServiceType)
 ) Engine=InnoDB;
@@ -54,7 +54,7 @@ CREATE TABLE Sites(
   INDEX (SiteName),
   SiteType VARCHAR(8) NOT NULL,
   GridSiteName VARCHAR(64) NOT NULL,
-  GridTier VARCHAR(8) NOT NULL,
+  INDEX (GridSiteName),
   Status VARCHAR(8) NOT NULL,
   Index(Status),
   Reason VARCHAR(255) NOT NULL DEFAULT 'Unspecified',
@@ -101,6 +101,7 @@ CREATE TABLE Resources(
   SiteName VARCHAR(64),
   INDEX (SiteName),
   GridSiteName VARCHAR(64),
+  INDEX (GridSiteName),
   Status VARCHAR(8) NOT NULL,
   INDEX (Status),
   Reason VARCHAR(255) NOT NULL DEFAULT 'Unspecified',
@@ -122,6 +123,9 @@ CREATE TABLE StorageElements(
   StorageElementName VARCHAR(64) NOT NULL,
   INDEX (StorageElementName),
   ResourceName VARCHAR(64) NOT NULL,
+  INDEX (ResourceName),
+  GridSiteName VARCHAR(64),
+  INDEX (GridSiteName),
   Status VARCHAR(8) NOT NULL,
   INDEX (Status),
   Reason VARCHAR(255) NOT NULL DEFAULT 'Unspecified',
@@ -141,6 +145,7 @@ DROP TABLE IF EXISTS SitesHistory;
 CREATE TABLE SitesHistory(
   SitesHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   SiteName VARCHAR(64) NOT NULL,
+  INDEX (SiteName),
   Status VARCHAR(8) NOT NULL,
   Reason VARCHAR(255) NOT NULL,
   DateCreated DATETIME NOT NULL,
@@ -154,7 +159,7 @@ DROP TABLE IF EXISTS ServicesHistory;
 CREATE TABLE ServicesHistory(
   ServicesHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   ServiceName VARCHAR(64) NOT NULL,
-  SiteName VARCHAR(64) NOT NULL,
+  INDEX (ServiceName),
   Status VARCHAR(8) NOT NULL,
   Reason VARCHAR(255) NOT NULL,
   DateCreated DATETIME NOT NULL,
@@ -168,6 +173,7 @@ DROP TABLE IF EXISTS ResourcesHistory;
 CREATE TABLE ResourcesHistory(
   ResourcesHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   ResourceName VARCHAR(64) NOT NULL,
+  INDEX (ResourceName),
   Status VARCHAR(8) NOT NULL,
   Reason VARCHAR(255) NOT NULL,
   DateCreated DATETIME NOT NULL,
@@ -181,7 +187,7 @@ DROP TABLE IF EXISTS StorageElementsHistory;
 CREATE TABLE StorageElementsHistory(
   StorageElementsHistoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   StorageElementName VARCHAR(64) NOT NULL,
-  ResourceName VARCHAR(64) NOT NULL,
+  INDEX (StorageElementName),
   Status VARCHAR(8) NOT NULL,
   Reason VARCHAR(255) NOT NULL,
   DateCreated DATETIME NOT NULL,
@@ -197,7 +203,7 @@ CREATE VIEW PresentSites AS SELECT
   Sites.SiteName, 
   Sites.SiteType,
   Sites.GridSiteName,
-  Sites.GridTier,
+  GridSites.GridTier,
   Sites.Status,
   Sites.DateEffective, 
   SitesHistory.Status AS FormerStatus,
@@ -205,10 +211,13 @@ CREATE VIEW PresentSites AS SELECT
   Sites.LastCheckTime,
   Sites.TokenOwner,
   Sites.TokenExpiration
-FROM Sites INNER JOIN SitesHistory ON 
-  Sites.SiteName = SitesHistory.SiteName AND 
-  Sites.DateEffective = SitesHistory.DateEnd 
-WHERE Sites.DateEffective < UTC_TIMESTAMP()
+FROM (
+  	(Sites INNER JOIN GridSites ON
+  	Sites.GridSiteName = GridSites.GridSiteName)
+  	INNER JOIN SitesHistory ON 
+  	 Sites.SiteName = SitesHistory.SiteName AND 
+  	 Sites.DateEffective = SitesHistory.DateEnd 
+) WHERE Sites.DateEffective < UTC_TIMESTAMP()
 ORDER BY SiteName;
 
 DROP VIEW IF EXISTS PresentServices;
@@ -271,7 +280,7 @@ CREATE VIEW PresentStorageElements AS SELECT
   StorageElements.TokenExpiration
 FROM ( 
   (StorageElements INNER JOIN GridSites ON 
-   StorageElements.GridSiteName = GridSites.GridTier)
+   StorageElements.GridSiteName = GridSites.GridSiteName)
     INNER JOIN StorageElementsHistory ON 
       StorageElements.StorageElementName = StorageElementsHistory.StorageElementName AND 
       StorageElements.DateEffective = StorageElementsHistory.DateEnd 
@@ -328,6 +337,7 @@ DROP TABLE IF EXISTS GridSites;
 CREATE TABLE GridSites(
   gsID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   GridSiteName VARCHAR(64) NOT NULL,
+  INDEX (GridSiteName),
   GridTier VARCHAR(4) NOT NULL,
   PRIMARY KEY(gsID)
 ) Engine=InnoDB;

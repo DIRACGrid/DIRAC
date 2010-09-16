@@ -63,11 +63,11 @@ class ResourceStatusDB:
   def setSiteStatus(self, siteName, status, reason, tokenOwner):
     pass
   
-  def addOrModifySite(self, siteName, siteType, gridSiteName, gridTier, 
+  def addOrModifySite(self, siteName, siteType, gridSiteName, 
                       status, reason, dateEffective, tokenOwner, dateEnd):
     pass
   
-  def _addSiteRow(self, siteName, siteType, gridSiteName, gridTier, status, 
+  def _addSiteRow(self, siteName, siteType, gridSiteName, status, 
                   reason, dateCreated, dateEffective, dateEnd, tokenOwner):
     pass
   
@@ -80,15 +80,15 @@ class ResourceStatusDB:
   def setResourceStatus(self, resourceName, status, reason, tokenOwner):
     pass
   
-  def addOrModifyResource(self, resourceName, resourceType, serviceName, siteName, status, 
+  def addOrModifyResource(self, resourceName, resourceType, siteName, gridSiteName, status, 
                           reason, dateEffective, tokenOwner, dateEnd):
     pass
   
-  def _addResourcesRow(self, resourceName, resourceType, serviceName, siteName, status, 
+  def _addResourcesRow(self, resourceName, resourceType, siteName, gridSiteName, status, 
                        reason, dateCreated, dateEffective, dateEnd, tokenOwner):
     pass
   
-  def _addResourcesHistoryRow(self, resourceName, serviceName, siteName, status, reason, 
+  def _addResourcesHistoryRow(self, resourceName, status, reason, 
                               dateCreated, dateEffective, dateEnd, tokenOwner):
     pass
   
@@ -174,6 +174,12 @@ class ResourceStatusDB:
   def addOrModifyPolicyRes(self, granularity, name, policyName, 
                            status, reason, dateEffective = None):
     pass
+  
+  def addOrModifyGridSite(self, name, tier):
+    pass
+  
+  def getGridSite(self, name):
+    return {}
   
   def getPolicyRes(self, name, policyName, lastCheckTime = False):
     return ('Active', 'DT:None')
@@ -280,3 +286,6 @@ class ResourceStatusDB:
   
   def __convertTime(self, t):
     pass
+
+  def getGridSiteName(self, granularity, name):
+    return 'IN2P3-CPPM'

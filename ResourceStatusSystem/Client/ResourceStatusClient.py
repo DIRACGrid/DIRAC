@@ -263,6 +263,28 @@ class ResourceStatusClient:
     return ID_list
   
 #############################################################################
+
+  def getGridSiteName(self, granularity, name):
+    """ 
+    Returns the grid site name (what is in GOC BD)
+        
+    :Parameters:
+      `granularity`
+        string, should be a ValidRes
+      
+      `name`
+        string, name of site or resource
+    """
+
+    res = self.rsS.getGridSiteName(granularity, name)
+    if not res['OK']:
+      raise RSSException, where(self, self.getGridSiteName) + " " + res['Message'] 
+  
+    return res['Value']
+  
+#############################################################################
+
+
 #  
 #  def addOrModifySite(self, siteName, siteType, description, status, reason, dateEffective, tokenOwner, dateEnd):
 #    try:
