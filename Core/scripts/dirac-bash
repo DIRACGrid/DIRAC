@@ -9,6 +9,7 @@
 [ -z "$DIRACROOT" ] && export DIRACROOT=`python -c "import os,sys ; print os.path.dirname(os.path.dirname( os.path.realpath( sys.argv[1] ) ))" $0`
 [ -z "$DIRACPLAT" ] && export DIRACPLAT=`$DIRACROOT/scripts/dirac-platform`
 
+export TERMINFO=$DIRACROOT/$DIRACPLAT/share/terminfo
 export PATH=$DIRACROOT/$DIRACPLAT/bin:$DIRACROOT/scripts:$PATH
 if [ -z "$LD_LIBRARY_PATH" ] ; then
   export LD_LIBRARY_PATH=$DIRACROOT/$DIRACPLAT/lib:$DIRACROOT/$DIRACPLAT/lib/mysql
