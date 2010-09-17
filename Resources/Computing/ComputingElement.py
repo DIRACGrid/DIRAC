@@ -38,6 +38,7 @@ class ComputingElement:
     self.ceRequirementDict = {}
     self.ceParameters = {}
     
+    self.ceConfigDict = getLocalCEConfigDict(ceName)
     self.initializeParameters()
         
   def initializeParameters(self):
