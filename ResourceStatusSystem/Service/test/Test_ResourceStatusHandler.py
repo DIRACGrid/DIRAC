@@ -122,7 +122,7 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
 
   def test_export_addOrModifyResource(self):
     for status in ValidStatus:
-      res = self.rsh.export_addOrModifyResource('resourceName', 'resourceType', 'siteName', 'gridSiteName', 
+      res = self.rsh.export_addOrModifyResource('resourceName', 'resourceType', 'Computing', 'siteName', 'gridSiteName', 
                                                 status, 'reason', 'dateEffective', 'operatorCode', 'dateEnd')
       self.assert_(res['OK'])
 

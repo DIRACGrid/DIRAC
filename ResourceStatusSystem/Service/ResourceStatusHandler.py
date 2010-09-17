@@ -66,7 +66,6 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
-  #Ok
   types_getSitesList = []
   def export_getSitesList(self):
     """
@@ -88,6 +87,32 @@ class ResourceStatusHandler(RequestHandler):
       return S_OK(res)
     except Exception:
       errorStr = where(self, self.export_getSitesList)
+      gLogger.exception(errorStr)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
+  types_getGridSitesList = []
+  def export_getGridSitesList(self):
+    """
+    Get sites list from the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getGridSitesList`
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getGridSitesList: Attempting to get sites list")
+      try:
+        r = rsDB.getGridSitesList(paramsList = ['GridSiteName'])
+        res = []
+        for x in r:
+          res.append(x[0])
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getGridSitesList: got sites list")
+      return S_OK(res)
+    except Exception:
+      errorStr = where(self, self.export_getGridSitesList)
       gLogger.exception(errorStr)
       return S_ERROR(errorStr)
 
@@ -779,9 +804,9 @@ class ResourceStatusHandler(RequestHandler):
 #############################################################################
 
   #ok
-  types_addOrModifyResource = [StringType, StringType, StringType, StringType, StringType, 
+  types_addOrModifyResource = [StringType, StringType, StringType, StringType, StringType, StringType, 
                                StringType, Time._dateTimeType, StringType, Time._dateTimeType]
-  def export_addOrModifyResource(self, resourceName, resourceType, siteName, gridSiteName, 
+  def export_addOrModifyResource(self, resourceName, resourceType, serviceType, siteName, gridSiteName, 
                                  status, reason, dateEffective, tokenOwner, dateEnd):
     """ 
     Add or modify a resource to the ResourceStatusDB.
@@ -793,6 +818,10 @@ class ResourceStatusHandler(RequestHandler):
     
       `resourceType`
         string - ValidResourceType: 
+        see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      `resourceType`
+        string - ValidServiceType: 
         see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
       `siteName`
@@ -820,7 +849,7 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.addOrModifyResource: Attempting to add or modify resource %s %s" % (resourceName, siteName))
       try:
-        rsDB.addOrModifyResource(resourceName, resourceType, siteName, gridSiteName, 
+        rsDB.addOrModifyResource(resourceName, resourceType, serviceType, siteName, gridSiteName, 
                                  status, reason, dateEffective, tokenOwner, dateEnd)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
@@ -1007,7 +1036,7 @@ class ResourceStatusHandler(RequestHandler):
 #############################################################################
 
   #ok
-  types_getResourceStats = [StringType]
+  types_getResourceStats = [StringType, StringType]
   def export_getResourceStats(self, granularity, name):
     """ 
     Returns simple statistics of active, probing and banned resources of a site or service;
@@ -1295,7 +1324,7 @@ class ResourceStatusHandler(RequestHandler):
 #############################################################################
 
   #ok
-  types_getStorageElementsStats = [StringType]
+  types_getStorageElementsStats = [StringType, StringType]
   def export_getStorageElementsStats(self, granularity, name):
     """ 
     Returns simple statistics of active, probing and banned storageElementss of a site or resource;

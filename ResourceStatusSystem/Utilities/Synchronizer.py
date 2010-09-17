@@ -138,7 +138,7 @@ class Synchronizer:
         if len(DIRACSitesOfGridSites) == 1:
           gt = t
         else:
-          gt = __getGOCTier(DIRACSitesOfGridSites)
+          gt = self.__getGOCTier(DIRACSitesOfGridSites)
           
         self.rsDB.addOrModifySite(site, t, gridSiteName, 'Active', 'init', 
                                   datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
@@ -256,37 +256,38 @@ class Synchronizer:
     
     # CEs
     for site in siteCE.keys():
-      siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo('hostname', ce)
-      if not siteInGOCDB['OK']:
-        raise RSSException, siteInGOCDB['Message']
-      if siteInGOCDB['Value'] == []:
-        trueName = socket.gethostbyname_ex(ce)[0]
-        siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo('hostname', trueName)
-      try:
-        siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
-      except IndexError:
-        continue
       if site == 'LCG.Dummy.ch':
         continue
       for ce in siteCE[site]:
         if ce is None:
           continue
-        service = 'Computing@' + site
+        siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo('hostname', ce)
+        if not siteInGOCDB['OK']:
+          raise RSSException, siteInGOCDB['Message']
+        if siteInGOCDB['Value'] == []:
+          trueName = socket.gethostbyname_ex(ce)[0]
+          siteInGOCDB = self.GOCDBClient.getServiceEndpointInfo('hostname', trueName)
+        try:
+          siteInGOCDB = siteInGOCDB['Value'][0]['SITENAME']
+        except IndexError:
+          continue
+        serviceType = 'Computing'
+        service = serviceType + '@' + site
         
         if service not in servicesList:
           servicesList.append(service)
         if service not in servicesIn:
-          self.rsDB.addOrModifyService(service, 'Computing', site, 'Active', 'init', 
+          self.rsDB.addOrModifyService(service, serviceType, site, 'Active', 'init', 
                                        datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
                                        datetime.datetime(9999, 12, 31, 23, 59, 59))
           servicesIn.append(service)
           
-        if ce not in  resourcesIn:
+        if ce not in resourcesIn:
           CEType = getCEType(site, ce)['Value']
           ceType = 'CE'
           if CEType == 'CREAM':
             ceType = 'CREAMCE'
-          self.rsDB.addOrModifyResource(ce, ceType, site, siteInGOCDB, 'Active', 'init', 
+          self.rsDB.addOrModifyResource(ce, ceType, serviceType, site, siteInGOCDB, 'Active', 'init', 
                                         datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
                                         datetime.datetime(9999, 12, 31, 23, 59, 59))
           resourcesIn.append(ce)
@@ -308,17 +309,18 @@ class Synchronizer:
         raise RSSException, siteInDIRAC['Message']
       sites = siteInDIRAC['Value']
       for site in sites: 
-        service = 'Storage@' + site
+        serviceType = 'Storage'
+        service = serviceType + '@' + site
         if service not in servicesList:
           servicesList.append(service)
         if service not in servicesIn:
-          self.rsDB.addOrModifyService(service, 'Storage', site, 'Active', 'init', 
+          self.rsDB.addOrModifyService(service, serviceType, site, 'Active', 'init', 
                                        datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
                                        datetime.datetime(9999, 12, 31, 23, 59, 59))
           servicesIn.append(service)
             
         if srm not in resourcesIn and srm is not None:
-          self.rsDB.addOrModifyResource(srm, 'SE', 'NULL', siteInGOCDB, 'Active', 'init', 
+          self.rsDB.addOrModifyResource(srm, 'SE', serviceType, 'NULL', siteInGOCDB, 'Active', 'init', 
                                         datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
                                         datetime.datetime(9999, 12, 31, 23, 59, 59))
           resourcesIn.append(srm)
@@ -340,16 +342,17 @@ class Synchronizer:
         raise RSSException, siteInDIRAC['Message']
       sites = siteInDIRAC['Value']
       for site in sites:
-        service = 'Storage@' + site
+        serviceType = 'Storage'
+        service = serviceType + '@' + site
         if service not in servicesList:
           servicesList.append(service)
         if service not in servicesIn:
-          self.rsDB.addOrModifyService(service, 'Storage', site, 'Active', 'init', 
+          self.rsDB.addOrModifyService(service, serviceType, site, 'Active', 'init', 
                                        datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
                                        datetime.datetime(9999, 12, 31, 23, 59, 59))
           servicesIn.append(service)
         if lfc not in resourcesIn and lfc is not None:
-          self.rsDB.addOrModifyResource(lfc, 'LFC_C', 'NULL', siteInGOCDB, 'Active', 'init', 
+          self.rsDB.addOrModifyResource(lfc, 'LFC_C', serviceType, 'NULL', siteInGOCDB, 'Active', 'init', 
                                         datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
                                         datetime.datetime(9999, 12, 31, 23, 59, 59))
           resourcesIn.append(lfc)
@@ -371,16 +374,17 @@ class Synchronizer:
         raise RSSException, siteInDIRAC['Message']
       sites = siteInDIRAC['Value']
       for site in sites:
-        service = 'Storage@' + site
+        serviceType = 'Storage'
+        service = serviceType + '@' + site
         if service not in servicesList:
           servicesList.append(service)
         if service not in servicesIn:
-          self.rsDB.addOrModifyService(service, 'Storage', site, 'Active', 'init', 
+          self.rsDB.addOrModifyService(service, serviceType, site, 'Active', 'init', 
                                        datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
                                        datetime.datetime(9999, 12, 31, 23, 59, 59))
           servicesIn.append(service)
         if lfc not in resourcesIn and lfc is not None:
-          self.rsDB.addOrModifyResource(lfc, 'LFC_L', 'NULL', siteInGOCDB, 'Active', 'init', 
+          self.rsDB.addOrModifyResource(lfc, 'LFC_L', serviceType, 'NULL', siteInGOCDB, 'Active', 'init', 
                                         datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
                                         datetime.datetime(9999, 12, 31, 23, 59, 59))
           resourcesIn.append(lfc)
@@ -403,16 +407,17 @@ class Synchronizer:
         raise RSSException, siteInDIRAC['Message']
       sites = siteInDIRAC['Value']
       for site in sites:
-        service = 'Storage@' + site
+        serviceType = 'Storage'
+        service = serviceType + '@' + site
         if service not in servicesList:
           servicesList.append(service)
         if service not in servicesIn:
-          self.rsDB.addOrModifyService(service, 'Storage', site, 'Active', 'init', 
+          self.rsDB.addOrModifyService(service, serviceType, site, 'Active', 'init', 
                                        datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
                                        datetime.datetime(9999, 12, 31, 23, 59, 59))
           servicesIn.append(service)
         if fts not in resourcesIn and fts is not None:
-          self.rsDB.addOrModifyResource(fts, 'FTS', 'NULL', siteInGOCDB, 'Active', 'init', 
+          self.rsDB.addOrModifyResource(fts, 'FTS', serviceType, 'NULL', siteInGOCDB, 'Active', 'init', 
                                         datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
                                         datetime.datetime(9999, 12, 31, 23, 59, 59))
           resourcesIn.append(fts)
@@ -434,16 +439,17 @@ class Synchronizer:
         raise RSSException, siteInDIRAC['Message']
       site = siteInDIRAC['Value']
       for site in sites:
-        service = 'VOMS@' + site
+        serviceType = 'VOMS'
+        service = serviceType + '@' + site
         if service not in servicesList:
           servicesList.append(service)
         if service not in servicesIn:
-          self.rsDB.addOrModifyService(service, 'VOMS', site, 'Active', 'init', 
+          self.rsDB.addOrModifyService(service, serviceType, site, 'Active', 'init', 
                                        datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
                                        datetime.datetime(9999, 12, 31, 23, 59, 59))
           servicesIn.append(service)
         if voms not in resourcesIn and voms is not None:
-          self.rsDB.addOrModifyResource(voms, 'VOMS', 'NULL', siteInGOCDB, 'Active', 'init', 
+          self.rsDB.addOrModifyResource(voms, 'VOMS', serviceType, 'NULL', siteInGOCDB, 'Active', 'init', 
                                         datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
                                         datetime.datetime(9999, 12, 31, 23, 59, 59))
           resourcesIn.append(voms)
@@ -501,35 +507,35 @@ class Synchronizer:
 
 #############################################################################
 
-def __getGOCTier(sitesList):
+  def __getGOCTier(self, sitesList):
+    
+    gridTier = 3
+    
+    for site in sitesList:
+    
+      tier = getSiteTier(site)['Value'][0]
   
-  gridTier = 3
+      if tier == 0 or tier == '0':
+        tn = 0
+      elif tier == 1 or tier == '1':
+        tn = 1
+      elif tier == 3 or tier == '3':
+        tn = 3
+      else:
+        tn = 2
+               
+      if tn < gridTier:
+        gridTier = tn
   
-  for site in sitesList:
-  
-    tier = getSiteTier(site)['Value'][0]
-
-    if tier == 0 or tier == '0':
-      tn = 0
-    elif tier == 1 or tier == '1':
-      tn = 1
-    elif tier == 3 or tier == '3':
-      tn = 3
+    if gridTier == 0:
+      gt = 'T0'
+    elif gridTier == 1:
+      gt = 'T1'
+    elif gridTier == 3:
+      gt = 'T3'
     else:
-      tn = 2
-             
-    if tn < gridTier:
-      gridTier = tn
-
-  if gridTier == 0:
-    gt = 'T0'
-  elif gridTier == 1:
-    gt = 'T1'
-  elif gridTier == 3:
-    gt = 'T3'
-  else:
-    gt = 'T2'
-
-  return gt
+      gt = 'T2'
+  
+    return gt
 
 #############################################################################

@@ -24,7 +24,6 @@ class JobsEffSimpleEveryOne_Command(Command):
     :returns:
       {'SiteName': {'JE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'}, ...}
     """
-#    super(JobsEffSimpleEveryOne_Command, self).doCommand()
     
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.JobsClient import JobsClient   
@@ -73,7 +72,6 @@ class PilotsEffSimpleEverySites_Command(Command):
     :returns:
       {'SiteName':  {'PE_S': 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
     """
-#    super(PilotsEffSimpleEverySites_Command, self).doCommand()
     
     if self.client is None:
       from DIRAC.ResourceStatusSystem.Client.PilotsClient import PilotsClient   
@@ -124,7 +122,6 @@ class TransferQualityEverySEs_Command(Command):
     :returns:
       {'SiteName': {TQ : 'Good'|'Fair'|'Poor'|'Idle'|'Bad'} ...}
     """
-#    super(TransferQualityEverySEs_Command, self).doCommand()
 
     if SEs is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -209,7 +206,6 @@ class DTEverySites_Command(Command):
       {'SiteName': {'SEVERITY': 'OUTAGE'|'AT_RISK', 
                     'StartDate': 'aDate', ...} ... }
     """
-#    super(PilotsEffSimpleEverySites_Command, self).doCommand()
     
     if self.client is None:
       from DIRAC.Core.LCG.GOCDBClient import GOCDBClient   
@@ -218,17 +214,11 @@ class DTEverySites_Command(Command):
     if sites is None:
       from DIRAC.Core.DISET.RPCClient import RPCClient
       RPC = RPCClient("ResourceStatus/ResourceStatus")
-      sites = RPC.getSitesList()
-      if not sites['OK']:
+      GOC_sites = RPC.getGridSitesList()
+      if not GOC_sites['OK']:
         raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:
-        sites = sites['Value']
-    
-    GOC_sites = []
-    for site in sites:
-      GOC_site = getGOCSiteName(site)
-      if GOC_site['OK']:
-        GOC_sites.append(GOC_site['Value'])
+        GOC_sites = GOC_sites['Value']
     
     try:
       res = self.client.getStatus('Site', GOC_sites, None, 120)
@@ -255,8 +245,9 @@ class DTEverySites_Command(Command):
         dt['Severity'] = res[dt_ID]['SEVERITY']
         dt['Description'] = res[dt_ID]['DESCRIPTION'].replace('\'', '')
         dt['Link'] = res[dt_ID]['GOCDB_PORTAL_URL']
-        DIRACname = getDIRACSiteName(res[dt_ID]['SITENAME'])['Value']
-        resToReturn[DIRACname] = dt
+        DIRACnames = getDIRACSiteName(res[dt_ID]['SITENAME'])['Value']
+        for DIRACname in DIRACnames:
+          resToReturn[DIRACname] = dt
       except KeyError:
         continue
     
@@ -280,7 +271,6 @@ class DTEveryResources_Command(Command):
       {'ResourceName': {'SEVERITY': 'OUTAGE'|'AT_RISK', 
                     'StartDate': 'aDate', ...} ... }
     """
-#    super(PilotsEffSimpleEverySites_Command, self).doCommand()
     
     if self.client is None:
       from DIRAC.Core.LCG.GOCDBClient import GOCDBClient   

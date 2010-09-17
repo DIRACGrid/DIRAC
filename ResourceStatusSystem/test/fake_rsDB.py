@@ -35,6 +35,9 @@ class ResourceStatusDB:
                         status = None, siteType = None, resourceType = None, serviceType = None):
     return [('NAME@X', 'Banned'), ('NAME@X', 'Active')]
   
+  def getGridSitesList(self, paramsList = None, gridSiteName = None, gridTier = None):
+    return [('NAME', 'T0'), ('NAME1', 'T1')]
+  
   def getMonitoredsStatusWeb(self, granularity, selectDict, sortList, startItem, maxItems):
     if granularity in ('Resource', 'Resources'):
       return {'TotalRecords': 1, 
@@ -80,11 +83,11 @@ class ResourceStatusDB:
   def setResourceStatus(self, resourceName, status, reason, tokenOwner):
     pass
   
-  def addOrModifyResource(self, resourceName, resourceType, siteName, gridSiteName, status, 
+  def addOrModifyResource(self, resourceName, resourceType, serviceType, siteName, gridSiteName, status, 
                           reason, dateEffective, tokenOwner, dateEnd):
     pass
   
-  def _addResourcesRow(self, resourceName, resourceType, siteName, gridSiteName, status, 
+  def _addResourcesRow(self, resourceName, resourceType, serviceType, siteName, gridSiteName, status, 
                        reason, dateCreated, dateEffective, dateEnd, tokenOwner):
     pass
   

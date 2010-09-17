@@ -167,11 +167,11 @@ class ResourceStatusDB:
     elif granularity in ('Resource', 'Resources'):
       DBname = 'ResourceName'
       DBtable = 'PresentResources'
-      getInfo = getInfo + ['SiteType', 'ResourceName', 'ResourceType']
+      getInfo = getInfo + ['SiteType', 'ResourceName', 'ResourceType', 'ServiceType']
     elif granularity in ('StorageElement', 'StorageElements'):
       DBname = 'StorageElementName'
       DBtable = 'PresentStorageElements'
-      getInfo = getInfo + ['SiteName', 'StorageElementName']
+      getInfo = getInfo + ['StorageElementName']
     else:
       raise InvalidRes, where(self, self.getMonitoredsList)
 
@@ -288,8 +288,11 @@ class ResourceStatusDB:
     else:
       if type(countries) is not type([]):
         countries = [countries]
-    str = ' OR %s LIKE ' %DBname
-    countries = str.join(['"%.'+x.strip()+'"' for x in countries])
+    if countries == None:
+      countries = " '%%'"
+    else:
+      str = ' OR %s LIKE ' %DBname
+      countries = str.join(['"%.'+x.strip()+'"' for x in countries])
 
 
     #storageElementType
@@ -329,8 +332,9 @@ class ResourceStatusDB:
       req = req + " AND ResourceType IN (%s)" % (resourceType)
 #    if 'StorageElementType' in getInfo:
 #      req = req + " WHERE StorageElementName LIKE \'%" + "%s\'" %(storageElementType)
-    req = req + " AND (%s LIKE %s)" % (DBname, countries)
-    
+    if granularity not in ('StorageElement', 'StorageElements'):
+      req = req + " AND (%s LIKE %s)" % (DBname, countries)
+
     resQuery = self.db._query(req)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.getMonitoredsList)+resQuery['Message']
@@ -1262,8 +1266,8 @@ class ResourceStatusDB:
     
 #############################################################################
 
-  def addOrModifyResource(self, resourceName, resourceType, siteName, gridSiteName, status, 
-                          reason, dateEffective, tokenOwner, dateEnd):
+  def addOrModifyResource(self, resourceName, resourceType, serviceType, siteName,  
+                          gridSiteName, status, reason, dateEffective, tokenOwner, dateEnd):
     """ 
     Add or modify a resource to the Resources table.
     
@@ -1271,6 +1275,9 @@ class ResourceStatusDB:
       :attr:`resourceName`: string - name of the resource (DIRAC name)
     
       :attr:`resourceType`: string - ValidResourceType: 
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`serviceType`: string - ValidServiceType: 
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
       :attr:`siteName`: string - name of the site (DIRAC name). Can be NULL.
@@ -1314,13 +1321,13 @@ class ResourceStatusDB:
                                    tokenOwner)
 
     #in any case add a row to present Sites table
-    self._addResourcesRow(resourceName, resourceType, siteName, gridSiteName, status, reason, 
-                          dateCreated, dateEffective, dateEnd, tokenOwner)
+    self._addResourcesRow(resourceName, resourceType, serviceType, siteName, gridSiteName,  
+                          status, reason, dateCreated, dateEffective, dateEnd, tokenOwner)
 
 #############################################################################
 
-  def _addResourcesRow(self, resourceName, resourceType, siteName, gridSiteName, status, 
-                       reason, dateCreated, dateEffective, dateEnd, tokenOwner):
+  def _addResourcesRow(self, resourceName, resourceType, serviceType, siteName, gridSiteName,  
+                       status, reason, dateCreated, dateEffective, dateEnd, tokenOwner):
     """ 
     Add a new resource row in Resources table
 
@@ -1328,6 +1335,9 @@ class ResourceStatusDB:
       :attr:`resourceName`: string - name of the resource (DIRAC name)
     
       :attr:`resourceType`: string - ValidResourceType: 
+      see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
+      
+      :attr:`serviceType`: string - ValidServiceType: 
       see :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils`
       
       :attr:`siteName`: string - name of the site (DIRAC name). Can be NULL.
@@ -1352,9 +1362,9 @@ class ResourceStatusDB:
 
     dateCreated, dateEffective, dateEnd = self.__usualChecks(dateCreated, dateEffective, dateEnd, status)
     
-    req = "INSERT INTO Resources (ResourceName, ResourceType, SiteName, GridSiteName, Status, "
-    req = req + "Reason, DateCreated, DateEffective, DateEnd, TokenOwner, TokenExpiration) "
-    req = req + "VALUES ('%s', '%s', " %(resourceName, resourceType)
+    req = "INSERT INTO Resources (ResourceName, ResourceType, ServiceType, SiteName, GridSiteName, "
+    req = req + "Status, Reason, DateCreated, DateEffective, DateEnd, TokenOwner, TokenExpiration) "
+    req = req + "VALUES ('%s', '%s', '%s', " %(resourceName, resourceType, serviceType)
     if siteName == 'NULL':
       req = req + "%s, " %siteName
     else:
@@ -1609,12 +1619,27 @@ class ResourceStatusDB:
     
     res = {'Active':0, 'Probing':0, 'Bad':0, 'Banned':0, 'Total':0}
     
-    if granularity in ('Site', 'Sites'): 
-      req = "SELECT Status, COUNT(*)" 
-      req = req + " FROM Resources WHERE SiteName = '%s' GROUP BY Status" %name
-    elif granularity in ('Service', 'Services'): 
-      req = "SELECT Status, COUNT(*)" 
-      req = req + " FROM Resources WHERE ServiceName = '%s' GROUP BY Status" %name
+    
+    if granularity in ('Site', 'Sites'):
+      name = self.getGridSiteName(granularity, name)
+      DBname = 'GridSiteName'   
+
+    elif granularity in ('Service', 'Services'):
+      serviceType = name.split('@')[0]
+      name = name.split('@')[1]
+      if serviceType == 'Computing':
+        DBname = 'SiteName'
+      
+      else:
+        name = self.getGridSiteName('Site', name)
+        DBname = 'GridSiteName'
+    
+    
+    req = "SELECT Status, COUNT(*) " 
+    req = req + "FROM Resources WHERE %s = '%s' " %(DBname, name)
+    if granularity in ('Service', 'Services') and serviceType != 'Computing':
+      req = req + "AND ServiceType = '%s' " %serviceType
+    req = req + "GROUP BY Status"
     resQuery = self.db._query(req)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.getResourceStats) + resQuery['Message']
@@ -1644,8 +1669,9 @@ class ResourceStatusDB:
     res = {'Active':0, 'Probing':0, 'Bad':0, 'Banned':0, 'Total':0}
     
     if granularity in ('Site', 'Sites'): 
+      gridSiteName = self.getGridSiteName(granularity, name)
       req = "SELECT Status, COUNT(*)" 
-      req = req + " FROM StorageElements WHERE SiteName = '%s' GROUP BY Status" %name
+      req = req + " FROM StorageElements WHERE GridSiteName = '%s' GROUP BY Status" %name
     elif granularity in ('Resource', 'Resources'): 
       req = "SELECT Status, COUNT(*)" 
       req = req + " FROM StorageElements WHERE ResourceName = '%s' GROUP BY Status" %name
@@ -2022,24 +2048,69 @@ class ResourceStatusDB:
     
 #############################################################################
 
-  def getGridSite(self, name):
+  def getGridSitesList(self, paramsList = None, gridSiteName = None, gridTier = None):
     """ 
-    Get a Tier from the GridSites table.
+    Get grid site lists. 
     
     :params:
-      :attr:`name`: string - name of the site
+      :attr:`paramsList`: a list of parameters can be entered. If not given, 
+      a custom list is used. 
+      
+      :attr:`gridSiteName` grid site name. If not given, fetch all.
+      
+      :attr:`gridTier`: a string or a list representing the site type. 
+      If not given, fetch all.
+      
+    :return:
+      list of gridSites paramsList's values
     """
     
-    req = "SELECT GridTier FROM GridSite WHERE"
-    req = req + " GridSiteName = '%s'" %(name)
+    #paramsList
+    if (paramsList == None or paramsList == []):
+      params = 'GridSiteName, GridTier'
+    else:
+      if type(paramsList) is not type([]):
+        paramsList = [paramsList]
+      params = ','.join([x.strip()+' ' for x in paramsList])
 
+    #gridSiteName
+    if (gridSiteName == None or gridSiteName == []):
+      r = "SELECT GridSiteName FROM GridSites"
+      resQuery = self.db._query(r)
+      if not resQuery['OK']:
+        raise RSSDBException, where(self, self.getMonitoredsList)+resQuery['Message']
+      if not resQuery['Value']:
+        gridSiteName = []
+      gridSiteName = [ x[0] for x in resQuery['Value']]
+      gridSiteName = ','.join(['"'+x.strip()+'"' for x in gridSiteName])
+    else:
+      if type(gridSiteName) is not type([]):
+        gridSiteName = [gridSiteName]
+      gridSiteName = ','.join(['"'+x.strip()+'"' for x in gridSiteName])
+    
+    #gridTier
+    if (gridTier == None or gridTier == []):
+      gridTier = ValidSiteType
+    else:
+      if type(gridTier) is not type([]):
+        gridTier = [gridTier]
+    gridTier = ','.join(['"'+x.strip()+'"' for x in gridTier])
+
+    #query construction
+    req = "SELECT %s FROM GridSites WHERE" %(params)
+    if gridSiteName != [] and gridSiteName != None and gridSiteName is not None and gridSiteName != '':
+      req = req + " GridSiteName IN (%s) " %(gridSiteName)
+    req = req + " AND GridTier IN (%s)" % (gridTier)
+    
     resQuery = self.db._query(req)
     if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getGridSite) + resQuery['Message']
+      raise RSSDBException, where(self, self.getMonitoredsList)+resQuery['Message']
     if not resQuery['Value']:
       return []
-    
-    return resQuery['Value'][0]
+    list = []
+    list = [ x for x in resQuery['Value']]
+    return list
+
 
 #############################################################################
 
@@ -2965,6 +3036,10 @@ class ResourceStatusDB:
     """
     
     DBtable, DBname = self.__DBchoice(granularity)
+
+    if granularity in ('StorageElement', 'StorageElements'):
+      DBname = "SiteName"
+      DBtable = "Sites"
 
     req = "SELECT %s FROM %s" %(DBname, DBtable)
     resQuery = self.db._query(req)

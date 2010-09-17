@@ -80,26 +80,34 @@ class ClientsCacheFeeder(AgentModule):
     try:
       
       for co in self.commandObjectsList_ClientsCache:
-        self.clientsInvoker.setCommand(co[1])
-        res = self.clientsInvoker.doCommand()
-        for key in res.keys():
-          if 'ID' in res[key].keys():
-            for value in res[key].keys():
-              if value != 'ID':
+        try:
+          self.clientsInvoker.setCommand(co[1])
+          res = self.clientsInvoker.doCommand()
+          for key in res.keys():
+            if 'ID' in res[key].keys():
+              for value in res[key].keys():
+                if value != 'ID':
+                  self.rsDB.addOrModifyClientsCacheRes(key, co[0][1].split('_')[0], 
+                                                       value, res[key][value], res[key]['ID'])
+            else:
+              for value in res[key].keys():
                 self.rsDB.addOrModifyClientsCacheRes(key, co[0][1].split('_')[0], 
-                                                     value, res[key][value], res[key]['ID'])
-          else:
-            for value in res[key].keys():
-              self.rsDB.addOrModifyClientsCacheRes(key, co[0][1].split('_')[0], 
-                                                   value, res[key][value])
+                                                     value, res[key][value])
+        except:
+          gLogger.exception("Exception when executing " + co[0][1])
+          continue
       
       for co in self.commandObjectsList_AccountingCache:
-        self.clientsInvoker.setCommand(co[1])
-        res = self.clientsInvoker.doCommand()
-        plotType = res.keys()[0]
-        for name in res[plotType].keys():
-          self.rsDB.addOrModifyAccountingCacheRes(name, plotType, co[0][1].split('_')[0],
-                                                  res[plotType][name])
+        try:
+          self.clientsInvoker.setCommand(co[1])
+          res = self.clientsInvoker.doCommand()
+          plotType = res.keys()[0]
+          for name in res[plotType].keys():
+            self.rsDB.addOrModifyAccountingCacheRes(name, plotType, co[0][1].split('_')[0],
+                                                    res[plotType][name])
+        except:
+          gLogger.exception("Exception when executing " + co[0][1])
+          continue
       
       return S_OK()
     

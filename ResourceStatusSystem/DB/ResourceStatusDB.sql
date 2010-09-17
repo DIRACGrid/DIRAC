@@ -98,6 +98,8 @@ CREATE TABLE Resources(
   ResourceName VARCHAR(64) NOT NULL,
   INDEX (ResourceName),
   ResourceType VARCHAR(8) NOT NULL,
+  ServiceType VARCHAR(32) NOT NULL,
+  INDEX (ServiceType),
   SiteName VARCHAR(64),
   INDEX (SiteName),
   GridSiteName VARCHAR(64),
@@ -112,6 +114,7 @@ CREATE TABLE Resources(
   LastCheckTime DATETIME NOT NULL,
   TokenOwner VARCHAR(8) NOT NULL Default 'RS_SVC',
   TokenExpiration DATETIME NOT NULL,
+  FOREIGN KEY (ServiceType) REFERENCES ServiceTypes(ServiceType),
   FOREIGN KEY (ResourceType) REFERENCES ResourceTypes(ResourceType),
   FOREIGN KEY (Status) REFERENCES Status(Status),
   PRIMARY KEY (ResourceID)
@@ -246,6 +249,7 @@ DROP VIEW IF EXISTS PresentResources;
 CREATE VIEW PresentResources AS SELECT 
   Resources.ResourceName, 
   Resources.SiteName, 
+  Resources.ServiceType,
   Resources.GridSiteName, 
   GridSites.GridTier AS SiteType, 
   Resources.ResourceType,
@@ -270,6 +274,7 @@ DROP VIEW IF EXISTS PresentStorageElements;
 CREATE VIEW PresentStorageElements AS SELECT 
   StorageElements.StorageElementName, 
   StorageElements.ResourceName,
+  StorageElements.GridSiteName, 
   GridSites.GridTier AS SiteType,
   StorageElements.Status,
   StorageElements.DateEffective, 
