@@ -27,13 +27,17 @@ class TimeLeft:
     """ Standard constructor
     """
     self.log = gLogger.getSubLogger( 'TimeLeft' )
-    # FIXME: Why do we need to load any .cfg file here????
-    self.__loadLocalCFGFiles()
     # This is the ratio SpecInt published by the site over 250 (the reference used for Matching)
     self.scaleFactor = gConfig.getValue( '/LocalSite/CPUScalingFactor', 0.0 )
     if not self.scaleFactor:
       self.log.warn( '/LocalSite/CPUScalingFactor not defined for site %s' % DIRAC.siteName() )
     self.cpuMargin = gConfig.getValue( '/LocalSite/CPUMargin', 10 ) #percent
+    result = self.__getBatchSystemPlugin()
+    if result['OK']:
+      self.batchPlugin = result['Value']
+    else:
+      self.batchPlugin = False
+      self.batchError = result['Message']
 
   def getScaledCPU( self ):
     """Returns the current CPU Time spend (according to batch system) scaled according 
@@ -43,18 +47,11 @@ class TimeLeft:
     if not self.scaleFactor:
       return S_OK( 0.0 )
 
-    #Work out which type of batch system to query and attempt to instantiate plugin
-    result = self.__checkCurrentBatchSystem()
-    if not result['OK']:
-      return S_OK( 0.0 )
-    name = result['Value']
-
-    batchInstance = self.__getBatchSystemPlugin( name )
-    if not batchInstance['OK']:
+    #ÊQuit if Plugin is not available
+    if not self.batchPlugin:
       return S_OK( 0.0 )
 
-    batchSystem = batchInstance['Value']
-    resourceDict = batchSystem.getResourceUsage()
+    resourceDict = self.batchPlugin.getResourceUsage()
 
     if 'Value' in resourceDict and resourceDict['Value']['CPU']:
       return S_OK( resourceDict['Value']['CPU'] * self.scaleFactor )
@@ -70,18 +67,10 @@ class TimeLeft:
     if not self.scaleFactor:
       return S_ERROR( '/LocalSite/CPUScalingFactor not defined for site %s' % DIRAC.siteName() )
 
-    #Work out which type of batch system to query and attempt to instantiate plugin
-    result = self.__checkCurrentBatchSystem()
-    if not result['OK']:
-      return result
-    name = result['Value']
+    if not self.batchPlugin:
+      return S_ERROR( self.batchError )
 
-    batchInstance = self.__getBatchSystemPlugin( name )
-    if not batchInstance['OK']:
-      return batchInstance
-
-    batchSystem = batchInstance['Value']
-    resourceDict = batchSystem.getResourceUsage()
+    resourceDict = self.batchPlugin.getResourceUsage()
     if not resourceDict['OK']:
       self.log.warn( 'Could not determine timeleft for batch system %s at site %s' % ( name, DIRAC.siteName() ) )
       return resourceDict
@@ -145,21 +134,21 @@ class TimeLeft:
       return S_OK( stdout )
 
   #############################################################################
-  def __loadLocalCFGFiles( self ):
-    """Loads any extra CFG files residing in the local DIRAC site root.
-    """
-    files = os.listdir( rootPath )
-    self.log.debug( 'Checking directory %s' % rootPath )
-    for i in files:
-      if re.search( '.cfg$', i ):
-        gConfig.loadFile( '%s/%s' % ( rootPath, i ) )
-        self.log.debug( 'Found local .cfg file %s' % i )
-
-  #############################################################################
-  def __getBatchSystemPlugin( self, name ):
+  def __getBatchSystemPlugin( self ):
     """Using the name of the batch system plugin, will return an instance
        of the plugin class.
     """
+    batchSystems = {'LSF':'LSB_JOBID', 'PBS':'PBS_JOBID', 'BQS':'QSUB_REQNAME'} #more to be added later
+    name = None
+    for batchSystem, envVar in batchSystems.items():
+      if os.environ.has_key( envVar ):
+        name = batchSystem
+        break
+
+    if name == None:
+      self.log.warn( 'Batch system type for site %s is not currently supported' % DIRAC.siteName() )
+      return S_ERROR( 'Currrent batch system is not supported' )
+    
     self.log.debug( 'Creating plugin for %s batch system' % ( name ) )
     try:
       batchSystemName = "%sTimeLeft" % ( name )
@@ -180,22 +169,5 @@ class TimeLeft:
       return S_ERROR( msg )
 
     return S_OK( batchInstance )
-
-  #############################################################################
-  def __checkCurrentBatchSystem( self ):
-    """Based on the current environment, this utility will return the
-       current batch system name.
-    """
-    batchSystems = {'LSF':'LSB_JOBID', 'PBS':'PBS_JOBID', 'BQS':'QSUB_REQNAME'} #more to be added later
-    current = None
-    for batchSystem, envVar in batchSystems.items():
-      if os.environ.has_key( envVar ):
-        current = batchSystem
-
-    if current:
-      return S_OK( current )
-    else:
-      self.log.warn( 'Batch system type for site %s is not currently supported' % DIRAC.siteName() )
-      return S_ERROR( 'Currrent batch system is not supported' )
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
