@@ -8,86 +8,52 @@ __RCSID__   = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC import S_OK, gConfig, gLogger
 
-configFile = gConfig.diracConfigFilePath
+Script.setUsageMessage( '\n'.join( ['Configure a Local CE to be used in a DIRAC Site',
+                                    'Usage:',
+                                    '%s [option]... [cfgfile]' % Script.scriptName,
+                                    'Arguments:',
+                                    ' cfgfile: DIRAC Cfg with description of the configuration (optional)'] ) )
 
 ceName = ''
 ceType = ''
+setupDirector = False
 
 def setCEName( args ):
   global ceName
   ceName = args
-  return S_OK()
 
 def setCEType( args ):
   global ceType
   ceType = args
-  return S_OK()
+  
+def setDirector( args ):
+  global setupDirector
+  setupDirector = True
 
-Script.registerSwitch( "N:", "Name=", "Computing Element Name", setCEName )
-Script.registerSwitch( "T:", "Type=", "Computing Element Type", setCEType )
+Script.registerSwitch( "N:", "Name=", "Computing Element Name (Mandatory)", setCEName )
+Script.registerSwitch( "T:", "Type=", "Computing Element Type (Mandatory)", setCEType )
+Script.registerSwitch( "D", "Director", "Setup a Director Using this CE", setDirector )
 
 Script.parseCommandLine( ignoreErrors = True )
+args = Script.getExtraCLICFGFiles()
+#
+if len( args ) > 1:
+  Script.showHelp()
+  exit( -1 )
+#
+cfg = None
+if len( args ):
+  cfg = args[0]
 
-if not ceName or not ceType:
-  gLogger.error( 'Missing Mandatory Argument "-N CEName" or "-T CEType"' )
-  Script.localCfg._LocalConfiguration__showHelp()
+from DIRAC.Core.Utilities import InstallTools
+result = InstallTools.configureCE( ceName, ceType, cfg, Script.localCfg.currentSectionPath )
+if not result['OK']:
+  Script.showHelp()
+  DIRAC.exit(-1)
 
-gLogger.info( 'Configuring CE:', ceName )
+ceNameList = result['Value']
 
-from DIRAC.Core.Utilities.CFG import CFG
-cfg = CFG()
-cfg.loadFromFile(configFile)
-
-localsiteCfg = cfg['LocalSite']
-if localsiteCfg.existsKey( ceName ):
-  gLogger.info(' Removing existing configuration', localsiteCfg.deleteKey( ceName ) )
-localsiteCfg.createNewSection( ceName )
-
-ceCfg = localsiteCfg[ceName]
-
-cfgSection = '/Scripts/%s' % Script.localCfg.componentName
-gConfig.setOptionValue( cfgSection+'/CEType', ceType )
-
-configDict = gConfig.getOptionsDict(cfgSection)['Value']
-configOptions = configDict.keys()
-configOptions.sort()
-
-# Add script command line options to CE Configuration
-for option in configOptions:
-  value = configDict[option]
-  gLogger.info(' Adding CE option', '%s = %s' % ( option, value ) )
-  ceCfg.setOption( option, value )
-
-# Now ResourceDict (if it exists)
-resSection = cfgSection + '/ResourceDict'
-resDict = gConfig.getOptionsDict( resSection )
-if resDict['OK']:
-  ceCfg.createNewSection('ResourceDict')
-  resCfg = ceCfg['ResourceDict']
-  resDict = resDict['Value']
-  resOptions = resDict.keys()
-  resOptions.sort()
-  for option in resOptions:
-    value = resDict[option]
-    gLogger.info(' Adding ResourceDict option ', '%s = %s' % ( option, value ) )
-    resCfg.setOption( option, value )
-
-# Now load this cfg into gConfig and try to instantiate the CE
-gConfig.loadCFG( cfg )
-from DIRAC.Resources.Computing.ComputingElementFactory    import ComputingElementFactory
-ceFactory = ComputingElementFactory( ceName )
-try:
-  ceInstance = ceFactory.getCE()
-except Exception, x:
-  DIRAC.abort( -1, 'Fail to instantiate CE', x )
-if not ceInstance['OK']:
-  DIRAC.abort( -1, 'Fail to instantiate CE', ceInstance['Message'] )
-
-# Everything is OK, we can save the new cfg (for the moment let's copy by hand
-newConfigFile = configFile+'.new'
-cfg.writeToFile( newConfigFile )
-gLogger.always( 'Copy %s to %s for final installation' % ( newConfigFile, configFile ) )
-
-
+if setupDirector:
+  print InstallTools.configureLocalDirector( ceNameList )
+    
