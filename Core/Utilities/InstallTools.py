@@ -71,7 +71,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgInstallPath, cfgInstallSection
+from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath, cfgPathToList, cfgInstallPath, cfgInstallSection, ResourcesDefaults
 from DIRAC.Core.Security.Properties import *
 
 # On command line tools this can be set to True to abort after the first error.
@@ -158,6 +158,9 @@ def loadDiracCfg( verbose = False ):
   mysqlHost = localCfg.getOption( cfgInstallPath( 'Database', 'Host' ), '' )
   if verbose and mysqlHost:
     gLogger.info( 'Using MySQL Host from local configuration', mysqlHost )
+  else:
+    # if it is not defined use the same as for dirac services
+    mysqlHost = host
 
   mysqlMode = localCfg.getOption( cfgInstallPath( 'Database', 'MySQLMode' ), '' )
   if verbose and mysqlMode:
@@ -381,17 +384,17 @@ def __getCfg( section, option = '', value = '' ):
     return None
   cfg = CFG()
   sectionList = []
-  for section in section.split( '/' ):
-    if not section:
+  for sect in cfgPathToList( section ):
+    if not sect:
       continue
-    sectionList.append( section )
+    sectionList.append( sect )
     cfg.createNewSection( cfgPath( *sectionList ) )
   if not sectionList:
     return None
 
   if option and value:
     sectionList.append( option )
-    cfg.setOption( '/'.join( sectionList ), value )
+    cfg.setOption( cfgPath( *sectionList ), value )
 
   return cfg
 
@@ -399,7 +402,7 @@ def addOptionToDiracCfg( option, value ):
   """
   Add Option to dirac.cfg
   """
-  optionList = option.split( '/' )
+  optionList = cfgPathToList( option )
   optionName = optionList[-1]
   section = cfgPath( *optionList[:-1] )
   cfg = __getCfg( section, optionName, value )
@@ -466,6 +469,34 @@ def addDefaultOptionsToComponentCfg( componentType, systemName, component, exten
   compCfgFile = os.path.join( rootPath, 'etc', '%s_%s.cfg' % ( system, component ) )
   return compCfg.writeToFile( compCfgFile )
 
+def addCfgToComponentCfg( componentType, systemName, component, cfg ):
+  """
+  Add some extra configuration to the local component cfg
+  """
+  sectionName = 'Services'
+  if componentType == 'agent':
+    sectionName = 'Agents'
+  if not cfg:
+    return S_OK()
+  system = systemName.replace( 'System', '' )
+  instanceOption = cfgPath( 'DIRAC', 'Setups', setup, system )
+  instance = localCfg.getOption( instanceOption, '' )
+
+  if not instance:
+    return S_ERROR( '%s not defined in %s' % ( instanceOption, cfgFile ) )
+  compCfgFile = os.path.join( rootPath, 'etc', '%s_%s.cfg' % ( system, component ) )
+  compCfg = CFG()
+  if os.path.exists(compCfgFile):
+    compCfg.loadFromFile(compCfgFile)
+  sectionPath = cfgPath( 'Systems', system, instance, sectionName )
+
+  newCfg = __getCfg( sectionPath )
+  newCfg.createNewSection( cfgPath( sectionPath, component ), 'Added by InstallTools', cfg )
+  if newCfg.writeToFile( compCfgFile ):
+    return S_OK(compCfgFile)
+  error = 'Can not write %s' % compCfgFile
+  gLogger.error( error )
+  return S_ERROR( error )
 
 def getComponentCfg( componentType, system, component, instance, extensions ):
   """
@@ -1656,6 +1687,9 @@ def installMySQL():
     if not result['OK']:
       return result
 
+  if not _addMySQLToDiracCfg():
+    return S_ERROR( 'Failed to add MySQL user password to local configuration' )
+
   return S_OK()
 
 def getMySQLStatus():
@@ -1872,6 +1906,85 @@ def _addMySQLToDiracCfg():
   cfg.setOption( cfgPath( sectionPath, 'Password' ), mysqlPassword )
 
   return _addCfgToDiracCfg( cfg )
+
+def configureCE( ceName='',ceType='', cfg=None, currentSectionPath='' ):
+  """
+  Produce new dirac.cfg including configuration for new CE
+  """
+  from DIRAC.Resources.Computing.ComputingElementFactory    import ComputingElementFactory
+  from DIRAC.Resources.Computing.ComputingElement          import getLocalCEConfigDict
+  from DIRAC import gConfig
+  cesCfg = ResourcesDefaults.getComputingElementDefaults( ceName, ceType, cfg, currentSectionPath )
+  ceNameList = cesCfg.listSections()
+  if not ceNameList:
+    error = 'No CE Name provided'
+    gLogger.error( error )
+    if exitOnError:
+      exit( -1 )
+    return S_ERROR( error)
+
+  for ceName in ceNameList:
+    if 'CEType' not in cesCfg[ceName]:
+      error = 'Missing Type for CE "%s"' % ceName
+      gLogger.error( error )
+      if exitOnError:
+        exit( -1 )
+      return S_ERROR( error)
+
+  localsiteCfg = localCfg['LocalSite']
+  # Replace Configuration under LocalSite with new Configuration
+  for ceName in ceNameList:
+    if localsiteCfg.existsKey( ceName ):
+      gLogger.info(' Removing existing CE:', ceName )
+      localsiteCfg.deleteKey( ceName )
+    gLogger.info( 'Configuring CE:', ceName )
+    localsiteCfg.createNewSection( ceName, contents=cesCfg[ceName] )
+
+  # Apply configuration and try to instantiate the CEs
+  gConfig.loadCFG( localCfg )
+
+  for ceName in ceNameList:
+    ceFactory = ComputingElementFactory( )
+    try:
+      ceInstance = ceFactory.getCE(ceType, ceName)
+    except Exception, x:
+      error = 'Fail to instantiate CE'
+      gLogger.exception(error)
+      if exitOnError:
+        exit( -1 )
+      return S_ERROR( error)
+    if not ceInstance['OK']:
+      error = 'Fail to instantiate CE: %s' % ceInstance['Message']
+      gLogger.error(error)
+      if exitOnError:
+        exit( -1 )
+      return S_ERROR( error)
+
+  # Everything is OK, we can save the new cfg
+  localCfg.writeToFile( cfgFile )
+  gLogger.always( 'LocalSite section in %s has been uptdated with new configuration:' % os.path.basename(cfgFile) )
+  gLogger.always( str( localCfg['LocalSite'] ) )
+    
+  return S_OK( ceNameList )
+
+def configureLocalDirector( ceNameList = ''):
+  """
+  Install a Local DIRAC TaskQueueDirector, basically write the proper configuration file
+  """
+  if ceNameList:
+    result = setupComponent( 'agent', 'WorkloadManagement', 'TaskQueueDirector', [] )
+    if not result['OK']:
+      return result
+    # Now write a local Configuration for the Director
+  
+  directorCfg = CFG()
+  directorCfg.addKey( 'SubmitPools', 'DIRAC', 'Added by InstallTools' )
+  directorCfg.addKey( 'DefaultSubmitPools', 'DIRAC', 'Added by InstallTools' )
+  directorCfg.addKey( 'ComputingElements', ', '.join(ceNameList), 'Added by InstallTools' )
+  result = addCfgToComponentCfg( 'agent', 'WorkloadManagement', 'TaskQueueDirector', directorCfg )
+  if not result['OK']:
+    return result
+  return runsvctrlComponent( 'WorkloadManagement', 'TaskQueueDirector', 't' )
 
 def execCommand( timeout, cmd ):
   """
