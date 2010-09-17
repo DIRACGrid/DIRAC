@@ -38,6 +38,10 @@ class ComputingElementFactory:
     self.log.info('CEConfigDict',ceConfigDict)
     if 'CEType' in ceConfigDict:
       ceTypeLocal = ceConfigDict['CEType']
+    if not ceTypeLocal:
+      error = 'Can not determine CE Type'
+      self.log.error( error )
+      return S_ERROR( error )
     subClassName = "%sComputingElement" % (ceTypeLocal)
 
     try:
