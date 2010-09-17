@@ -357,8 +357,8 @@ if useServerCert:
   Script.localCfg.deleteOption( '/DIRAC/Security/SkipCAChecks' )
 
 if gatewayServer:
-  DIRAC.gLogger.debug( '/DIRAC/GateWay/%s =' % DIRAC.siteName(), gatewayServer )
-  Script.localCfg.addDefaultEntry( '/DIRAC/GateWay/%s' % DIRAC.siteName(), gatewayServer )
+  DIRAC.gLogger.debug( '/DIRAC/Gateways/%s =' % DIRAC.siteName(), gatewayServer )
+  Script.localCfg.addDefaultEntry( '/DIRAC/Gateways/%s' % DIRAC.siteName(), gatewayServer )
 
 # Create the local dirac.cfg if it is not yet there
 if not os.path.exists( DIRAC.gConfig.diracConfigFilePath ):
