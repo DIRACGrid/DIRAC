@@ -12,3 +12,5 @@ InstallTools.exitOnError = True
 InstallTools.getMySQLPasswords()
 #
 InstallTools.installMySQL()
+#
+InstallTools._addMySQLToDiracCfg()
