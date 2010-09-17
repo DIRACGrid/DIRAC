@@ -109,8 +109,8 @@ class DIRACPilotDirector(PilotDirector):
     """
     for CE in ceList:
       if CE not in self.computingElementDict:
-        ceFactory = ComputingElementFactory( CE )
-        ceInstance = ceFactory.getCE()
+        ceFactory = ComputingElementFactory( )
+        ceInstance = ceFactory.getCE( ceName = CE )
         if not ceInstance['OK']:
           self.log.error('Can not create CE object:', ceInstance['Message'])
           return
