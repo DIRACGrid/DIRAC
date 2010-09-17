@@ -845,8 +845,16 @@ class JobWrapper:
 
 
     #For files correctly uploaded must report LFNs to job parameters
-    if uploaded:
+    if uploaded:      
       report = string.join( uploaded, ', ' )
+      #In case the VO payload has also uploaded data using the same parameter 
+      #name this should be checked prior to setting. 
+      monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )    
+      result = monitoring.getJobParameter(int(self.jobID),'UploadedOutputData')
+      if result['OK']:
+        if result['Value'].has_key('UploadedOutputData'):
+          report+=', ' %(result['Value']['UploadedOutputData'])
+      
       self.jobReport.setJobParameter( 'UploadedOutputData', report, sendFlag = False )
 
     #Write out failover transfer request object in case of deferred operations 
