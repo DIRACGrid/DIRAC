@@ -262,6 +262,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'v', 'useVersionsDir', 'Use versions directory' ),
             ( 'd', 'debug', 'Show debug messages' ),
             ( 'h', 'help', 'Show this help' ),
+            ( 'u:', 'baseURL=', 'Change base URL for Tar Download' )
           )
 
 optList, args = getopt.getopt( sys.argv[1:],
@@ -322,6 +323,8 @@ for o, v in optList:
     cliParams.debug = True
   elif o in ( '-g', '--grid' ):
     cliParams.lcgVer = v
+  elif o in ( '-u', '--baseURL' ):
+    cliParams.downBaseURL = v
   elif o in ( '-P', '--installationPath' ):
     cliParams.targetPath = v
     try:
