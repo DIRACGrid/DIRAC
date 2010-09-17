@@ -406,9 +406,9 @@ class FTSRequest:
       elif metadata['Lost']:
         self.__setFileParameter(lfn,'Reason',"Source file Lost")
         self.__setFileParameter(lfn,'Status','Failed')
-      #elif not metadata['Cached']:
-      #  self.__setFileParameter(lfn,'Reason',"Source file not Cached")
-      #  self.__setFileParameter(lfn,'Status','Failed')
+      elif not metadata['Cached']:
+        self.__setFileParameter(lfn,'Reason',"Source file not Cached")
+        self.__setFileParameter(lfn,'Status','Failed')
       elif metadata['Size'] != self.catalogMetadata[lfn]['Size']:
         self.__setFileParameter(lfn,'Reason',"Source size mismatch")
         self.__setFileParameter(lfn,'Status','Failed')
@@ -489,6 +489,7 @@ class FTSRequest:
       lfnStatus = self.fileDict[lfn].get('Status')
       source = self.fileDict[lfn].get('Source')
       target =  self.fileDict[lfn].get('Target')
+      print lfnStatus,source,target,self.fileDict[lfn].get('Reason')
       if (lfnStatus != 'Failed') and (lfnStatus != 'Done') and source and target:
         return S_OK()
     return S_ERROR()
@@ -790,7 +791,7 @@ class FTSRequest:
       for lfn in toRegister.keys():
         self.__setFileParameter(lfn,'Reason',res['Message'])
         self.__setFileParameter(lfn,'Status','Failed')
-    res = self.oCatalog.addCatalogReplica(toRegister,catalogs=['LcgFileCatalogCombined'])
+    res = self.oCatalog.addCatalogReplica(toRegister)
     if not res['OK']:
       for lfn in toRegister.keys():
         self.__setFileParameter(lfn,'Reason',res['Message'])
@@ -855,7 +856,7 @@ class FTSRequest:
       if self.fileDict[lfn].get('Status','') == 'Failed':
         reason = self.fileDict[lfn].get('Reason','')
         for error in corruptTargetErrors:
-          if re.search(error,reason):
+          if (type(reason) == type('')) and re.search(error,reason):
             corruptedTarget.append(self.fileDict[lfn].get('Target'))
     if corruptedTarget:
       self.oTargetSE.removeFile(corruptedTarget)
@@ -872,6 +873,6 @@ class FTSRequest:
       if self.fileDict[lfn].get('Status','') == 'Failed':
         reason = self.fileDict[lfn].get('Reason','')
         for error in missingSourceErrors:
-          if re.search(error,reason):
+          if (type(reason) == type('')) and re.search(error,reason):
             missingSource.append(lfn)
     return missingSource
