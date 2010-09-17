@@ -9,6 +9,7 @@ Some Helper class to build CFG paths from tuples
 """
 
 cfgInstallSection = 'LocalInstallation'
+cfgResourceSection = 'Resources'
 
 def cfgPath( *args ):
   """
@@ -22,3 +23,14 @@ def cfgInstallPath( *args ):
   """
   return cfgPath( cfgInstallSection, *args )
 
+def cfgPathToList( arg ):
+  """
+  Basic method to split a cfgPath in to a list of strings
+  """
+  from types import StringTypes
+  listPath = []
+  if type(arg) not in StringTypes:
+    return listPath
+  while arg.find('/') == 0:
+    arg = arg[1:]
+  return arg.split('/')
