@@ -247,7 +247,7 @@ class DTEverySites_Command(Command):
         dt['Link'] = res[dt_ID]['GOCDB_PORTAL_URL']
         DIRACnames = getDIRACSiteName(res[dt_ID]['SITENAME'])['Value']
         for DIRACname in DIRACnames:
-          resToReturn[DIRACname] = dt
+          resToReturn[dt_ID.split()[0] + ' ' + DIRACname] = dt
       except KeyError:
         continue
     
@@ -309,7 +309,7 @@ class DTEveryResources_Command(Command):
       dt['Severity'] = res[dt_ID]['SEVERITY']
       dt['Description'] = res[dt_ID]['DESCRIPTION'].replace('\'', '')
       dt['Link'] = res[dt_ID]['GOCDB_PORTAL_URL']
-      resToReturn[res[dt_ID]['HOSTNAME']] = dt
+      resToReturn[dt_ID] = dt
     
     return resToReturn
 
