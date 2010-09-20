@@ -1310,7 +1310,7 @@ def setupComponent( componentType, system, component, extensions ):
   if not os.path.lexists( startCompDir ):
     gLogger.info( 'Creating startup link at', startCompDir )
     os.symlink( runitCompDir, startCompDir )
-    time.sleep( 5 )
+    time.sleep( 10 )
 
   # Check the runsv status
   start = time.time()
