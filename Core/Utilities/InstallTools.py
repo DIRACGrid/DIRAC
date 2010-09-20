@@ -1317,7 +1317,7 @@ def setupComponent( componentType, system, component, extensions ):
   while ( time.time() - 20 ) < start:
     result = getStartupComponentStatus( [ ( system, component )] )
     if not result['OK']:
-      return S_ERROR( 'Failed to start the component %s_%s' % ( system, component ) )
+      continue
     if result['Value'] and result['Value']['%s_%s' % ( system, component )]['RunitStatus'] == "Run":
       break
     time.sleep( 1 )
