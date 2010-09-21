@@ -15,6 +15,8 @@
 """
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR, rootPath
+from DIRAC.Core.Utilities.Subprocess import shellCall
+
 import DIRAC
 __RCSID__ = "$Id$"
 
@@ -72,7 +74,7 @@ class TimeLeft:
 
     resourceDict = self.batchPlugin.getResourceUsage()
     if not resourceDict['OK']:
-      self.log.warn( 'Could not determine timeleft for batch system %s at site %s' % ( name, DIRAC.siteName() ) )
+      self.log.warn( 'Could not determine timeleft for batch system at site %s' % DIRAC.siteName() )
       return resourceDict
 
     resources = resourceDict['Value']
