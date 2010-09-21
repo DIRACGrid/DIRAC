@@ -43,7 +43,7 @@ class InProcessComputingElement( ComputingElement ):
     # Now InProcess specific ones
 
   #############################################################################
-  def submitJob(self,executableFile,proxy):
+  def submitJob(self,executableFile,proxy, dummy=None):
     """ Method to submit job, should be overridden in sub-class.
     """
     # FIXME: when not running on a WN this will not work
