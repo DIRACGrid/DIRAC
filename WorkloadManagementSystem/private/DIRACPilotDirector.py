@@ -222,7 +222,7 @@ class DIRACPilotDirector(PilotDirector):
           break
         # submit the pilots and then check again
         for i in range( min(maxPilotsToSubmit,pilotsToSubmit-submittedPilots) ):
-          submission = computingElement.submitJob(pilotScript, '', '', '')
+          submission = computingElement.submitJob(pilotScript, '')
           if not submission['OK']:
             self.log.error('Pilot submission failed: ', submission['Message'])
             # cleanup
