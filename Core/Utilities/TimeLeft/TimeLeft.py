@@ -47,7 +47,7 @@ class TimeLeft:
     if not self.scaleFactor:
       return S_OK( 0.0 )
 
-    #ÊQuit if Plugin is not available
+    #Quit if Plugin is not available
     if not self.batchPlugin:
       return S_OK( 0.0 )
 
