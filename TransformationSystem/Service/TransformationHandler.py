@@ -141,8 +141,8 @@ class TransformationHandler(RequestHandler):
     return self.__parseRes(res)
 
   types_getTransformationFilesCount = [transTypes,StringTypes]
-  def export_getTransformationFilesCount(self,transName,field):
-    res = database.getTransformationFilesCount(transName,field)
+  def export_getTransformationFilesCount(self,transName,field,selection={}):
+    res = database.getTransformationFilesCount(transName,field,selection=selection)
     return self.__parseRes(res)
 
   types_getTransformationFiles = []

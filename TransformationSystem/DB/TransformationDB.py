@@ -633,16 +633,17 @@ class TransformationDB(DB):
     statusDict['Total']=total
     return S_OK(statusDict)
 
-  def getTransformationFilesCount(self,transName,field,connection=False):
+  def getTransformationFilesCount(self,transName,field,selection={},connection=False):
     """ Get the number of files in the TransformationFiles table grouped by the supplied field """
     res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
+    selection['TransformationID'] = transID
     if field not in self.TRANSFILEPARAMS:
       return S_ERROR("Supplied field not in TransformationFiles table")
-    res = self.getCounters('TransformationFiles',['TransformationID',field],{'TransformationID':transID})
+    res = self.getCounters('TransformationFiles',['TransformationID',field],selection)
     if not res['OK']:
       return res
     countDict = {}
