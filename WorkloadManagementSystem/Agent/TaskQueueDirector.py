@@ -258,7 +258,7 @@ class TaskQueueDirector( AgentModule ):
   def submitPilotsForTaskQueue( self, taskQueueDict, waitingPilots ):
 
     from numpy.random import poisson
-    from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import maxCPUSegments
+    from DIRAC.WorkloadManagementSystem.private.Queues import maxCPUSegments
 
     taskQueueID = taskQueueDict['TaskQueueID']
     maxCPU = maxCPUSegments[-1]
