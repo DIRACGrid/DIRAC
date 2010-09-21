@@ -435,7 +435,7 @@ def getCEConfigDict( ceName ):
 def getResourceDict( ceName = None ):
   """Look into LocalSite for Resource Requirements
   """
-  from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import maxCPUSegments
+  from DIRAC.WorkloadManagementSystem.private.Queues import maxCPUSegments
   ret = gConfig.getOptionsDict( '/LocalSite/ResourceDict' )
   if not ret['OK']:
     resourceDict = {}
