@@ -46,7 +46,7 @@ class glexecComputingElement( ComputingElement ):
     # Now glexec specific ones
 
   #############################################################################
-  def submitJob(self,executableFile,proxy):
+  def submitJob(self,executableFile,proxy,dummy=None):
     """ Method to submit job, should be overridden in sub-class.
     """
     self.log.verbose('Setting up proxy for payload')
