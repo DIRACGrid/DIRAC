@@ -289,6 +289,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       # First need to update the CS
       # result = client.addDefaultOptionsToCS( option, system, component )
       extensions = gConfig.getValue('/DIRAC/Extensions',[])
+      InstallTools.host = self.host
       result = InstallTools.addDefaultOptionsToCS(gConfig, option, system, component, extensions)
       if not result['OK']:
         print "ERROR:", result['Message']
