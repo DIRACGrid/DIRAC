@@ -715,7 +715,6 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
 
-  #ok
   types_getResourcesStatusWeb = [DictType, ListType, IntType, IntType]
   def export_getResourcesStatusWeb(self, selectDict, sortList, startItem, maxItems):
     """ get present resources status list

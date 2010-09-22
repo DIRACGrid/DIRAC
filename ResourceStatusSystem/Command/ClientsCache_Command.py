@@ -219,6 +219,8 @@ class DTEverySites_Command(Command):
         raise RSSException, where(self, self.doCommand) + " " + sites['Message'] 
       else:
         GOC_sites = GOC_sites['Value']
+    else:
+      GOC_sites = [getGOCSiteName(x)['Value'] for x in sites]
     
     try:
       res = self.client.getStatus('Site', GOC_sites, None, 120)
@@ -235,7 +237,7 @@ class DTEverySites_Command(Command):
       return {}
     
     resToReturn = {}
-    
+
     for dt_ID in res:
       try:
         dt = {}

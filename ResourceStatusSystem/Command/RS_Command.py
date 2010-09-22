@@ -193,7 +193,7 @@ class MonitoredStatus_Command(Command):
       if len(self.args) == 3:
         if ValidRes.index(self.args[2]) >= ValidRes.index(self.args[0]):
           raise InvalidRes, where(self, self.doCommand)
-        generalName = self.client.getGeneralName(self.args[0], self.args[1], self.args[2])
+        generalName = self.client.getGeneralName(self.args[0], self.args[1], self.args[2])[0]
         res = self.client.getMonitoredStatus(self.args[2], generalName)
       else:
         res = self.client.getMonitoredStatus(self.args[0], self.args[1])

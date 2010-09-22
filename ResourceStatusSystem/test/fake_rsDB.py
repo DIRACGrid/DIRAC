@@ -156,7 +156,7 @@ class ResourceStatusDB:
     return []
     
   def getGeneralName(self, name, from_g, to_g):
-    return 'LCG.PIC.es'
+    return ['LCG.PIC.es', 'LCG.PIC-test.es']
 
   def getEndings(self, table):
     return []

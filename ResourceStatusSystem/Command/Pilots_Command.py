@@ -83,7 +83,7 @@ class PilotsEffSimple_Command(Command):
         rsc = ResourceStatusClient()
 
       try:
-        name = rsc.getGeneralName(self.args[0], self.args[1], 'Site')
+        name = rsc.getGeneralName(self.args[0], self.args[1], 'Site')[0]
       except:
         gLogger.error("PilotsEffSimple_Command: can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'Result':'Unknown'}      
@@ -139,7 +139,7 @@ class PilotsEffSimpleCached_Command(Command):
       
     if self.args[0] in ('Service', 'Services'):
       try:
-        name = self.client.getGeneralName(self.args[0], self.args[1], 'Site')
+        name = self.client.getGeneralName(self.args[0], self.args[1], 'Site')[0]
       except:
         gLogger.error("PilotsEffSimpleCached_Command: can't get a general name for %s %s" %(self.args[0], self.args[1]))
         return {'Result':'Unknown'}      

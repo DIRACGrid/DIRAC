@@ -7,6 +7,8 @@ import datetime
 from types import *
 
 from DIRAC import gConfig
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import *
+
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
@@ -118,7 +120,8 @@ class ResourceStatusDB:
 
   def getMonitoredsList(self, granularity, paramsList = None, siteName = None, serviceName = None, 
                         resourceName = None, storageElementName = None, status = None, 
-                        siteType = None, resourceType = None, serviceType = None, countries = None):
+                        siteType = None, resourceType = None, serviceType = None, countries = None,
+                        gridSiteName = None):
     """ 
     Get Present Sites/Services/Resources/StorageElements lists. 
     
@@ -146,6 +149,9 @@ class ResourceStatusDB:
       :attr:`countries`: a string or a list representing the countries extensions.
       If not given, fetch all.
       
+      :attr:`gridSiteName`: a string or a list representing the grid site name. 
+      If not given, fetch all.
+      
       See :mod:`DIRAC.ResourceStatusSystem.Utilities.Utils` for these parameters.
       
     :return:
@@ -159,7 +165,7 @@ class ResourceStatusDB:
     if granularity in ('Site', 'Sites'):
       DBname = 'SiteName'
       DBtable = 'PresentSites'
-      getInfo = getInfo + ['SiteName', 'SiteType']
+      getInfo = getInfo + ['SiteName', 'SiteType', 'GridSiteName']
     elif granularity in ('Service', 'Services'):
       DBname = 'ServiceName'
       DBtable = 'PresentServices'
@@ -167,11 +173,11 @@ class ResourceStatusDB:
     elif granularity in ('Resource', 'Resources'):
       DBname = 'ResourceName'
       DBtable = 'PresentResources'
-      getInfo = getInfo + ['SiteType', 'ResourceName', 'ResourceType', 'ServiceType']
+      getInfo = getInfo + ['SiteType', 'ResourceName', 'ResourceType', 'ServiceType', 'GridSiteName']
     elif granularity in ('StorageElement', 'StorageElements'):
       DBname = 'StorageElementName'
       DBtable = 'PresentStorageElements'
-      getInfo = getInfo + ['StorageElementName']
+      getInfo = getInfo + ['StorageElementName', 'GridSiteName']
     else:
       raise InvalidRes, where(self, self.getMonitoredsList)
 
@@ -198,6 +204,22 @@ class ResourceStatusDB:
         if type(siteName) is not type([]):
           siteName = [siteName]
         siteName = ','.join(['"'+x.strip()+'"' for x in siteName])
+    
+    #gridSiteName
+    if 'GridSiteName' in getInfo:
+      if (gridSiteName == None or gridSiteName == []):
+        r = "SELECT GridSiteName FROM GridSites"
+        resQuery = self.db._query(r)
+        if not resQuery['OK']:
+          raise RSSDBException, where(self, self.getMonitoredsList)+resQuery['Message']
+        if not resQuery['Value']:
+          gridSiteName = []
+        gridSiteName = [ x[0] for x in resQuery['Value']]
+        gridSiteName = ','.join(['"'+x.strip()+'"' for x in gridSiteName])
+      else:
+        if type(gridSiteName) is not type([]):
+          gridSiteName = [gridSiteName]
+        gridSiteName = ','.join(['"'+x.strip()+'"' for x in gridSiteName])
     
     #serviceName
     if 'ServiceName' in getInfo:
@@ -312,6 +334,9 @@ class ResourceStatusDB:
     if 'SiteName' in getInfo:
       if siteName != [] and siteName != None and siteName is not None and siteName != '':
         req = req + " SiteName IN (%s) AND" %(siteName)
+    if 'GridSiteName' in getInfo:
+      if gridSiteName != [] and gridSiteName != None and gridSiteName is not None and gridSiteName != '':
+        req = req + " GridSiteName IN (%s) AND" %(gridSiteName)
     if 'ServiceName' in getInfo:
       if serviceName != [] and serviceName != None and serviceName is not None and serviceName != '':
         req = req + " ServiceName IN (%s) AND" %(serviceName)
@@ -390,14 +415,14 @@ class ResourceStatusDB:
       paramsList = ['ServiceName', 'ServiceType', 'SiteName', 'Status', 
                     'DateEffective', 'FormerStatus', 'Reason']
     elif granularity in ('Resource', 'Resources'):
-      paramNames = ['ResourceName', 'SiteName', 'ResourceType', 
+      paramNames = ['ResourceName', 'ServiceType', 'SiteName', 'ResourceType', 
                     'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
-      paramsList = ['ResourceName', 'SiteName', 'ResourceType', 
+      paramsList = ['ResourceName', 'ServiceType', 'SiteName', 'GridSiteName', 'ResourceType', 
                     'Status', 'DateEffective', 'FormerStatus', 'Reason']
     elif granularity in ('StorageElement', 'StorageElements'):
-      paramNames = ['StorageElementName', 'ResourceName', 'SiteName', 'Country', 
-                    'Status', 'DateEffective', 'FormerStatus', 'Reason']
-      paramsList = ['StorageElementName', 'ResourceName', 'SiteName', 'Status', 
+      paramNames = ['StorageElementName', 'ServiceName', 'ResourceName', 'SiteName',  
+                    'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
+      paramsList = ['StorageElementName', 'ResourceName', 'GridSiteName', 'Status', 
                     'DateEffective', 'FormerStatus', 'Reason']
     else:
       raise InvalidRes, where(self, self.getMonitoredsStatusWeb)
@@ -569,9 +594,12 @@ class ResourceStatusDB:
     
     else:
       if granularity in ('Site', 'Sites'):
-        sitesList = self.getMonitoredsList(granularity, paramsList = paramsList, 
-                                           siteName = sites_select, status = status_select, 
-                                           siteType = siteType_select, countries = countries_select)
+        sitesList = self.getMonitoredsList(granularity, 
+                                           paramsList = paramsList, 
+                                           siteName = sites_select, 
+                                           status = status_select, 
+                                           siteType = siteType_select, 
+                                           countries = countries_select)
         for site in sitesList:
           record = []
           record.append(site[0]) #SiteName
@@ -587,9 +615,11 @@ class ResourceStatusDB:
           records.append(record)
 
       elif granularity in ('Service', 'Services'):
-        servicesList = self.getMonitoredsList(granularity, paramsList = paramsList, 
+        servicesList = self.getMonitoredsList(granularity, 
+                                              paramsList = paramsList, 
                                               serviceName = services_select, 
-                                              siteName = sites_select, status = status_select, 
+                                              siteName = sites_select, 
+                                              status = status_select, 
                                               siteType = siteType_select,
                                               serviceType = serviceType_select, 
                                               countries = countries_select)
@@ -607,40 +637,104 @@ class ResourceStatusDB:
           records.append(record)
 
       elif granularity in ('Resource', 'Resources'):
-        resourcesList = self.getMonitoredsList(granularity, paramsList = paramsList, 
+        if sites_select == []:
+          sites_select = self.getMonitoredsList('Site', 
+                                                paramsList = ['SiteName'])
+          sites_select = [x[0] for x in sites_select]
+        gridSites_select = self.getMonitoredsList('Site', 
+                                                  paramsList = ['GridSiteName'], 
+                                                  siteName = sites_select) 
+        gridSites_select = [x[0] for x in gridSites_select]
+        resourcesList = self.getMonitoredsList(granularity, 
+                                               paramsList = paramsList, 
                                                resourceName = resources_select, 
-                                               siteName = sites_select, 
                                                status = status_select, 
                                                siteType = siteType_select,
                                                resourceType = resourceType_select, 
-                                               countries = countries_select)
+                                               countries = countries_select,
+                                               gridSiteName = gridSites_select)
+        
         for resource in resourcesList:
-          record = []
-          record.append(resource[0]) #ResourceName
-          record.append(resource[1]) #ServiceName
-          record.append(resource[2]) #SiteName
-          record.append(resource[3]) #ResourceType
-          country = (resource[2]).split('.').pop()
-          record.append(country) #Country
-          record.append(resource[4]) #Status
-          record.append(resource[5].isoformat(' ')) #DateEffective
-          record.append(resource[6]) #FormerStatus
-          record.append(resource[7]) #Reason
-          records.append(record)
-      
+          DIRACsite = resource[2]
+          
+          if DIRACsite == None:
+            GridSiteName = resource[3]  #self.getGridSiteName(granularity, resource[0])
+            DIRACsites = getDIRACSiteName(GridSiteName)
+            if not DIRACsites['OK']:
+              raise RSSDBException, 'Error executing getDIRACSiteName'
+            DIRACsites = DIRACsites['Value']
+            DIRACsite_comp = '' 
+            for DIRACsite in DIRACsites:
+              if DIRACsite not in sites_select:
+                continue
+              DIRACsite_comp = DIRACsite + ' ' + DIRACsite_comp 
+            record = []
+            record.append(resource[0]) #ResourceName
+            record.append(resource[1]) #ServiceType
+            record.append(DIRACsite_comp) #SiteName
+            record.append(resource[4]) #ResourceType
+            country = (resource[0]).split('.').pop()
+            record.append(country) #Country
+            record.append(resource[5]) #Status
+            record.append(resource[6].isoformat(' ')) #DateEffective
+            record.append(resource[7]) #FormerStatus
+            record.append(resource[8]) #Reason
+            records.append(record)
+          
+          else:
+            if DIRACsite not in sites_select:
+              continue
+            record = []
+            record.append(resource[0]) #ResourceName
+            record.append(resource[1]) #ServiceType
+            record.append(DIRACsite) #SiteName
+            record.append(resource[4]) #ResourceType
+            country = (resource[0]).split('.').pop()
+            record.append(country) #Country
+            record.append(resource[5]) #Status
+            record.append(resource[6].isoformat(' ')) #DateEffective
+            record.append(resource[7]) #FormerStatus
+            record.append(resource[8]) #Reason
+            records.append(record)
+
 
       elif granularity in ('StorageElement', 'StorageElements'):
-        storageElementsList = self.getMonitoredsList(granularity, paramsList = paramsList, 
+        if sites_select == []:
+          sites_select = self.getMonitoredsList('Site', 
+                                                paramsList = ['SiteName'])
+          sites_select = [x[0] for x in sites_select]
+        gridSites_select = self.getMonitoredsList('Site', 
+                                                  paramsList = ['GridSiteName'], 
+                                                  siteName = sites_select) 
+        gridSites_select = [x[0] for x in gridSites_select]
+
+        storageElementsList = self.getMonitoredsList(granularity, 
+                                                     paramsList = paramsList, 
                                                      storageElementName = storageElements_select, 
-                                                     siteName = sites_select, 
                                                      status = status_select, 
-                                                     countries = countries_select)
+                                                     countries = countries_select,
+                                                     gridSiteName = gridSites_select)
+
+#      paramNames = ['StorageElementName', 'ResourceName', 'SiteName', 'Country', 
+#                    'Status', 'DateEffective', 'FormerStatus', 'Reason']
+#      paramsList = ['StorageElementName', 'ResourceName', 'GridSiteName', 'Status', 
+#                    'DateEffective', 'FormerStatus', 'Reason']
+       
         for storageElement in storageElementsList:
+          DIRACsites = getDIRACSiteName(storageElement[2])
+          if not DIRACsites['OK']:
+            raise RSSDBException, 'Error executing getDIRACSiteName'
+          DIRACsites = DIRACsites['Value']
+          DIRACsite_comp = ''
+          for DIRACsite in DIRACsites:
+            if DIRACsite not in sites_select:
+              continue
+            DIRACsite_comp = DIRACsite + ' ' + DIRACsite_comp 
           record = []
           record.append(storageElement[0]) #StorageElementName
           record.append(storageElement[1]) #ResourceName
-          record.append(storageElement[2]) #SiteName
-          country = (storageElement[2]).split('.').pop()
+          record.append(DIRACsite_comp) #SiteName
+          country = (storageElement[1]).split('.').pop()
           record.append(country) #Country
           record.append(storageElement[3]) #Status
           record.append(storageElement[4].isoformat(' ')) #DateEffective
@@ -1248,7 +1342,7 @@ class ResourceStatusDB:
       :attr:`tokenOwner`: string. For the service itself: `RS_SVC`
     """
 
-    req = "SELECT ResourceType, SiteName, GridSiteName FROM Resources WHERE "
+    req = "SELECT ResourceType, ServiceType, SiteName, GridSiteName FROM Resources WHERE "
     req = req + "ResourceName = '%s' AND DateEffective < UTC_TIMESTAMP();" %(resourceName)
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -1257,11 +1351,12 @@ class ResourceStatusDB:
       return None
 
     resourceType = resQuery['Value'][0][0]
-    siteName = resQuery['Value'][0][1]
-    gridSiteName = resQuery['Value'][0][2]
+    serviceType = resQuery['Value'][0][1]
+    siteName = resQuery['Value'][0][2]
+    gridSiteName = resQuery['Value'][0][3]
 
-    self.addOrModifyResource(resourceName, resourceType, siteName, gridSiteName, status, 
-                             reason, datetime.datetime.utcnow().replace(microsecond = 0), 
+    self.addOrModifyResource(resourceName, resourceType, serviceType, siteName, gridSiteName,  
+                             status, reason, datetime.datetime.utcnow().replace(microsecond = 0), 
                              tokenOwner, datetime.datetime(9999, 12, 31, 23, 59, 59))
     
 #############################################################################
@@ -1486,10 +1581,11 @@ class ResourceStatusDB:
     for monitored in monitoreds:
     
       if monitored in ('Site', 'Sites'):
-        
         siteName = self.getGeneralName(name, granularity, monitored)
+        siteName = ','.join(['"'+x.strip()+'"' for x in siteName])
+        
         req = "UPDATE Sites SET LastCheckTime = '00000-00-00 00:00:00'" 
-        req = req + " WHERE SiteName  = '%s';" %(siteName)
+        req = req + " WHERE SiteName IN (%s);" %(siteName)
   
   
       
@@ -1509,8 +1605,10 @@ class ResourceStatusDB:
             req = req + " WHERE ServiceName IN (%s);" %(serviceName)
         else:
           serviceName = self.getGeneralName(name, granularity, monitored)
+          serviceName = ','.join(['"'+x.strip()+'"' for x in serviceName])
+          
           req = "UPDATE Services SET LastCheckTime = '00000-00-00 00:00:00'" 
-          req = req + " WHERE ServiceName  = '%s';" %(serviceName)
+          req = req + " WHERE ServiceName IN (%s);" %(serviceName)
       
   
       
@@ -1546,8 +1644,10 @@ class ResourceStatusDB:
           
         elif granularity in ('StorageElement', 'StorageElements'):
           resourceName = self.getGeneralName(name, granularity, monitored)
+          resourceName = ','.join(['"'+x.strip()+'"' for x in resourceName])
+          
           req = "UPDATE Resources SET LastCheckTime = '00000-00-00 00:00:00'" 
-          req = req + " WHERE ResourceName  = '%s';" %(resourceName)
+          req = req + " WHERE ResourceName IN (%s);" %(resourceName)
       
   
   
@@ -1709,7 +1809,7 @@ class ResourceStatusDB:
       :attr:`tokenOwner`: string. For the service itself: `RS_SVC`
     """
 
-    req = "SELECT ResourceName, SiteName FROM StorageElements WHERE StorageElementName = " 
+    req = "SELECT ResourceName, GridSiteName FROM StorageElements WHERE StorageElementName = " 
     req = req + "'%s' AND DateEffective < UTC_TIMESTAMP();" %(storageElementName)
     resQuery = self.db._query(req)
     if not resQuery['OK']:
@@ -1718,9 +1818,9 @@ class ResourceStatusDB:
       return None
 
     resourceName = resQuery['Value'][0][0]
-    siteName = resQuery['Value'][0][1]
+    gridSiteName = resQuery['Value'][0][1]
   
-    self.addOrModifyStorageElement(storageElementName, resourceName, siteName, status, 
+    self.addOrModifyStorageElement(storageElementName, resourceName, gridSiteName, status, 
                                    reason, datetime.datetime.utcnow().replace(microsecond = 0), 
                                    tokenOwner, datetime.datetime(9999, 12, 31, 23, 59, 59))
     
@@ -2537,37 +2637,40 @@ class ResourceStatusDB:
     """
 
     if from_g in ('Service', 'Services'):
-      DBtable = 'Services'
-      DBnameW = 'ServiceName'
-    elif from_g in ('Resource', 'Resources'):
-      DBtable = 'Resources'
-      DBnameW = 'ResourceName'
-    elif from_g in ('StorageElement', 'StorageElements'):
-      DBtable = 'StorageElements'
-      DBnameW = 'StorageElementName'
-    
-    if to_g in ('Site', 'Sites'):
-      DBname = 'SiteName'
-    elif to_g in ('Service', 'Services'):
-      DBname = 'ServiceName'
-    elif to_g in ('Resource', 'Resources'):
-      DBname = 'ResourceName'
-      
-    if from_g in ('Resource', 'Resources') and to_g in ('Service', 'Services'):
-      req = "SELECT SiteName FROM Resources WHERE ResourceName = '%s'" %(name)
-    else:
-      req = "SELECT %s FROM %s WHERE %s = '%s'" %(DBname, DBtable, DBnameW, name)
+      req = "SELECT SiteName FROM Services WHERE ServiceName = '%s'" %(name)
 
+    elif from_g in ('Resource', 'Resources'):
+      req = "SELECT SiteName FROM Sites WHERE GridSiteName = "
+      req = req + "(SELECT GridSiteName FROM Resources WHERE ResourceName = '%s')" %(name)
+      
+      if to_g in ('Service', 'Services'):
+        reqType = "SELECT ServiceType FROM Resources WHERE ResourceName = '%s'" %(name)
+        resQuery = self.db._query(reqType)
+        if not resQuery['OK']:
+          raise RSSDBException, where(self, self.getGeneralName) + resQuery['Message']
+        serviceType = resQuery['Value'][0][0]
+         
+    elif from_g in ('StorageElement', 'StorageElements'):
+      if to_g in ('Resource', 'Resources'):
+        req = "SELECT ResourceName FROM StorageElements WHERE StorageElementName = '%s'" %name
+      else:
+        req = "SELECT SiteName FROM Sites WHERE GridSiteName = "
+        req = req + "(SELECT GridSiteName FROM StorageElements WHERE StorageElementName = '%s')" %name
+
+        if to_g in ('Service', 'Services'):
+          serviceType = 'Storage'
+         
     resQuery = self.db._query(req)
     if not resQuery['OK']:
       raise RSSDBException, where(self, self.getGeneralName) + resQuery['Message']
     if not resQuery['Value']:
       return []
-    newName = resQuery['Value'][0][0]
-    if from_g in ('Resource', 'Resources') and to_g in ('Service', 'Services'):
-      return 'Computing@'+newName
+    newNames = [ x[0] for x in resQuery['Value'] ]
+    
+    if to_g in ('Service', 'Services'):
+      return [ serviceType + '@' + x for x in newNames ]
     else:
-      return newName
+      return newNames
     
 #############################################################################
 
@@ -2579,7 +2682,7 @@ class ResourceStatusDB:
 
     resQuery = self.db._query(req)
     if not resQuery['OK']:
-      raise RSSDBException, where(self, self.getGeneralName) + resQuery['Message']
+      raise RSSDBException, where(self, self.getGridSiteName) + resQuery['Message']
     if not resQuery['Value']:
       return []
     

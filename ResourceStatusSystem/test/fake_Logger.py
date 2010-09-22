@@ -61,6 +61,10 @@ def getLFCNode( sites = None, readable = None ):
                     'lhcb-lfc-fzk.gridka.de', 'lfc-lhcb-ro.in2p3.fr', 'lfc-lhcb.grid.sara.nl', 'lfclhcb.pic.es', 
                     'lhcb-lfc.gridpp.rl.ac.uk']}
 
+def getGOCSiteName(diracSiteName):
+    return {'OK': True, 
+            'Value': 'CERN-PROD'}
+
 def getDIRACSiteName(a):
   return {'OK': True, 
           'Value': ['LCG.CERN.ch', 'LCG.CERN-MPP.ch']}

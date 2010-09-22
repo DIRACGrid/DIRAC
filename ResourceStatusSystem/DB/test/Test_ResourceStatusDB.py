@@ -403,10 +403,22 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
 #        ((datetime.datetime.datetime.datetime(2009, 9, 21, 14, 38, 54), datetime.datetime.datetime.datetime(2009, 9, 21, 14, 38, 54)), (datetime.datetime.datetime.datetime(2009, 9, 21, 14, 38, 54), datetime.datetime.datetime.datetime(2009, 9, 22, 7, 8, 4)), (datetime.datetime.datetime.datetime(2009, 9, 22, 7, 8, 4), datetime.datetime.datetime.datetime(2009, 9, 22, 10, 48, 26)), (datetime.datetime.datetime.datetime(2009, 9, 22, 10, 48, 26), datetime.datetime.datetime.datetime(2009, 9, 24, 12, 12, 33)), (datetime.datetime.datetime.datetime(2009, 9, 24, 12, 12, 33), datetime.datetime.datetime.datetime(2009, 9, 24, 13, 5, 41)))
 
   def test_getGeneralName(self):
+    mock_DB_1 = Mock()
+    mock_DB_1._query.return_value = {'OK': True, 'Value': (('VOMS',),)}
+    
+    rsDB_1 = ResourceStatusDB(DBin=mock_DB_1)
     for g1 in ('Service', 'Resource', 'StorageElement'):
       for g2 in ('Site', 'Service', 'Resource'):
-        res = self.rsDB.getGeneralName('XX', g1, g2)
-        self.assertEqual(res, [])
+        if g1 == g2:
+          continue
+        res = rsDB_1.getGeneralName('XX', g1, g2)
+        if g2 == 'Service':
+          if g1 == 'StorageElement':
+            self.assertEqual(res, ['Storage@VOMS'])
+          else:
+            self.assertEqual(res, ['VOMS@VOMS'])
+        else:
+          self.assertEqual(res, ['VOMS'])
 
   def test_getResourceStats(self):
     res = self.rsDB.getResourceStats('Site', 'XX')

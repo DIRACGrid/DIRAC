@@ -17,9 +17,6 @@ class ClientsTestCase(unittest.TestCase):
   """
   def setUp(self):
 
-    from DIRAC.Core.Base.Script import parseCommandLine
-    parseCommandLine()
-    
     self.mockRSS = Mock()
     
     self.GOCCli = GOCDBClient()
@@ -92,8 +89,19 @@ class ResourceStatusClientSuccess(ClientsTestCase):
 class JobsClientSuccess(ClientsTestCase):
 
   def test_getJobsSimpleEff(self):
-    res = self.JobsCli.getJobsSimpleEff('XX')
-    self.assertEqual(res, None)
+    WMS_Mock = Mock()
+    WMS_Mock.getSiteSummaryWeb.return_value = {'OK': True, 
+                                               'rpcStub': (('WorkloadManagement/WMSAdministrator', 
+                                                            {'skipCACheck': True, 
+                                                             'delegatedGroup': 'diracAdmin', 
+                                                             'delegatedDN': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=fstagni/CN=693025/CN=Federico Stagni', 'timeout': 600}), 
+                                                             'getSiteSummaryWeb', ({'Site': 'LCG.CERN.ch'}, [], 0, 500)), 
+                                                             'Value': {'TotalRecords': 1, 
+                                                                       'ParameterNames': ['Site', 'GridType', 'Country', 'Tier', 'MaskStatus', 'Received', 'Checking', 'Staging', 'Waiting', 'Matched', 'Running', 'Stalled', 'Done', 'Completed', 'Failed', 'Efficiency', 'Status'], 
+                                                                       'Extras': {'ru': {'Received': 0, 'Staging': 0, 'Checking': 0, 'Completed': 0, 'Waiting': 0, 'Failed': 0, 'Running': 0, 'Done': 0, 'Stalled': 0, 'Matched': 0}, 'fr': {'Received': 0, 'Staging': 0, 'Checking': 0, 'Completed': 0, 'Waiting': 12L, 'Failed': 0, 'Running': 0, 'Done': 0, 'Stalled': 0, 'Matched': 0}, 'ch': {'Received': 0, 'Staging': 0, 'Checking': 0, 'Completed': 0, 'Waiting': 4L, 'Failed': 0, 'Running': 0, 'Done': 0, 'Stalled': 0, 'Matched': 1L}, 'nl': {'Received': 0, 'Staging': 0, 'Checking': 0, 'Completed': 0, 'Waiting': 0, 'Failed': 0, 'Running': 0, 'Done': 0, 'Stalled': 0, 'Matched': 0}, 'uk': {'Received': 0, 'Staging': 0, 'Checking': 0, 'Completed': 0, 'Waiting': 0, 'Failed': 0, 'Running': 0, 'Done': 0, 'Stalled': 0, 'Matched': 0}, 'Unknown': {'Received': 0, 'Staging': 0, 'Checking': 0, 'Completed': 0, 'Waiting': 0, 'Failed': 0, 'Running': 0, 'Done': 0, 'Stalled': 0, 'Matched': 0}, 'de': {'Received': 0, 'Staging': 0, 'Checking': 0, 'Completed': 0, 'Waiting': 1L, 'Failed': 0, 'Running': 0, 'Done': 0, 'Stalled': 0, 'Matched': 0}, 'it': {'Received': 0, 'Staging': 0, 'Checking': 1L, 'Completed': 0, 'Waiting': 2L, 'Failed': 0, 'Running': 0, 'Done': 0, 'Stalled': 0, 'Matched': 0}, 'hu': {'Received': 0, 'Staging': 0, 'Checking': 0, 'Completed': 0, 'Waiting': 0, 'Failed': 0, 'Running': 0, 'Done': 0, 'Stalled': 0, 'Matched': 0}, 'cy': {'Received': 0, 'Staging': 0, 'Checking': 0, 'Completed': 0, 'Waiting': 0, 'Failed': 0, 'Running': 0, 'Done': 0, 'Stalled': 0, 'Matched': 0}, 'bg': {'Received': 0, 'Staging': 0, 'Checking': 0, 'Completed': 0, 'Waiting': 0, 'Failed': 0, 'Running': 0, 'Done': 0, 'Stalled': 0, 'Matched': 0}, 'au': {'Received': 0, 'Staging': 0, 'Checking': 0, 'Completed': 0, 'Waiting': 10L, 'Failed': 0, 'Running': 0, 'Done': 0, 'Stalled': 0, 'Matched': 0}, 'il': {'Received': 0, 'Staging': 0, 'Checking': 0, 'Completed': 0, 'Waiting': 0, 'Failed': 0, 'Running': 0, 'Done': 0, 'Stalled': 0, 'Matched': 0}, 'br': {'Received': 0, 'Staging': 0, 'Checking': 0, 'Completed': 0, 'Waiting': 0, 'Failed': 0, 'Running': 0, 'Done': 0, 'Stalled': 0, 'Matched': 0}, 'ie': {'Received': 0, 'Staging': 0, 'Checking': 0, 'Completed': 0, 'Waiting': 0, 'Failed': 0, 'Running': 0, 'Done': 0, 'Stalled': 0, 'Matched': 0}, 'pl': {'Received': 0, 'Staging': 0, 'Checking': 0, 'Completed': 0, 'Waiting': 0, 'Failed': 0, 'Running': 0, 'Done': 0, 'Stalled': 0, 'Matched': 0}, 'es': {'Received': 0, 'Staging': 0, 'Checking': 0, 'Completed': 0, 'Waiting': 0, 'Failed': 0, 'Running': 0, 'Done': 2L, 'Stalled': 0, 'Matched': 0}}, 
+                                                                       'Records': [['LCG.CERN.ch', 'LCG', 'ch', 'Tier-1', 'Active', 0, 0, 0, 4L, 1L, 0, 0, 0, 0, 0, '0.0', 'Idle']]}} 
+    res = self.JobsCli.getJobsSimpleEff('XX', RPCWMSAdmin = WMS_Mock)
+    self.assertEqual(res, {'LCG.CERN.ch': 'Idle'})
 
 #############################################################################
 
@@ -108,11 +116,23 @@ class PilotsClientSuccess(ClientsTestCase):
          
   def test_getPilotsSimpleEff(self):
     #self.mockRSS.getPilotsSimpleEff.return_value = {'OK':True, 'Value':{'Records': [['', '', 0, 3L, 0, 0, 0, 283L, 66L, 0, 0, 352L, '1.00', '81.25', 'Fair', 'Yes']]}}
-    res = self.PilotsCli.getPilotsSimpleEff('Site', 'LCG.Ferrara.it')
+
+    WMS_Mock = Mock()
+    WMS_Mock.getPilotSummaryWeb.return_value = {'OK': True, 
+                                                'rpcStub': (('WorkloadManagement/WMSAdministrator', 
+                                                             {'skipCACheck': True, 
+                                                              'delegatedGroup': 'diracAdmin', 
+                                                              'delegatedDN': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=fstagni/CN=693025/CN=Federico Stagni', 'timeout': 600}), 
+                                                              'getPilotSummaryWeb', ({'GridSite': 'LCG.Ferrara.it'}, [], 0, 500)), 
+                                                              'Value': {
+                                                                        'TotalRecords': 0, 
+                                                                        'ParameterNames': ['Site', 'CE', 'Submitted', 'Ready', 'Scheduled', 'Waiting', 'Running', 'Done', 'Aborted', 'Done_Empty', 'Aborted_Hour', 'Total', 'PilotsPerJob', 'PilotJobEff', 'Status', 'InMask'], 
+                                                                        'Extras': {'Scheduled': 0, 'Status': 'Poor', 'Aborted_Hour': 20L, 'Waiting': 59L, 'Submitted': 6L, 'PilotsPerJob': '1.03', 'Ready': 0, 'Running': 0, 'PilotJobEff': '39.34', 'Done': 328L, 'Aborted': 606L, 'Done_Empty': 9L, 'Total': 999L},
+                                                                        'Records': []}}
+    
+    res = self.PilotsCli.getPilotsSimpleEff('Site', 'LCG.Ferrara.it', RPCWMSAdmin = WMS_Mock)
     self.assertEqual(res, None)
-    res = self.PilotsCli.getPilotsSimpleEff('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it')
-    self.assertEqual(res, None)
-    res = self.PilotsCli.getPilotsSimpleEff('Resource', 'grid0.fe.infn.it')
+    res = self.PilotsCli.getPilotsSimpleEff('Resource', 'grid0.fe.infn.it', 'LCG.Ferrara.it', RPCWMSAdmin = WMS_Mock)
     self.assertEqual(res, None)
     
 #############################################################################

@@ -3,14 +3,15 @@ import sys
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
-from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
-from DIRAC.ResourceStatusSystem.PolicySystem.PolicyInvoker import PolicyInvoker
+from DIRAC import S_OK, S_ERROR
+import DIRAC.ResourceStatusSystem.test.fake_Logger
+import DIRAC.ResourceStatusSystem.test.fake_Admin
+import DIRAC.ResourceStatusSystem.test.fake_NotificationClient
+
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
 
-import DIRAC.ResourceStatusSystem.test.fake_NotificationClient
 
 #############################################################################
 
@@ -20,15 +21,25 @@ class PolicySystemTestCase(unittest.TestCase):
 #############################################################################
 
   def setUp(self):
-    from DIRAC.Core.Base import Script
-    Script.parseCommandLine() 
-    
+#    from DIRAC.Core.Base import Script
+#    Script.parseCommandLine() 
+    sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    sys.modules["DIRAC.ResourceStatusSystem.Utilities.CS"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    sys.modules["DIRAC.Core.Utilities.SiteCEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    sys.modules["DIRAC.Core.Utilities.SiteSEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    sys.modules["DIRAC.Core.Utilities.SitesDIRACGOCDBmapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    sys.modules["DIRAC.Interfaces.API.DiracAdmin"] = DIRAC.ResourceStatusSystem.test.fake_Admin
+    sys.modules["DIRAC.FrameworkSystem.Client.NotificationClient"] = DIRAC.ResourceStatusSystem.test.fake_NotificationClient
+
+    from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
+    from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
+    from DIRAC.ResourceStatusSystem.PolicySystem.PolicyInvoker import PolicyInvoker
+
     from DIRAC import gConfig
     self.VO = gConfig.getValue("DIRAC/Extensions")
     if 'LHCb' in self.VO:
       self.VO = 'LHCb'
-    
-    sys.modules["DIRAC.FrameworkSystem.Client.NotificationClient"] = DIRAC.ResourceStatusSystem.test.fake_NotificationClient
+
     self.mock_command = Mock()
     self.mock_policy = Mock()
     self.mock_p = Mock()
@@ -86,8 +97,12 @@ class PEPSuccess(PolicySystemTestCase):
                                                                                              'EndDate': '2010-02-16 15:00:00', 
                                                                                              'SAT': True}] }
           #                pep = PEP(granularity, 'XX', status, oldStatus, 'XX', 'T1', 'Computing', 'CE', {'PolicyType':newPolicyType, 'Granularity':newGranularity})
+
+
                         pep = PEP(self.VO, granularity, 'XX', status, oldStatus, 'XX', siteType, 
                                   serviceType, resourceType, user)
+
+        
         #                self.mock_pdp.takeDecision.return_value = {'PolicyCombinedResult': [{'PolicyType':[policyType, newPolicyType], 
         #                                                                                     'Action':True, 'Status':status, 
         #                                                                                     'Reason':'testReason'}, 
