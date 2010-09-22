@@ -1,8 +1,8 @@
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/LHCbDIRAC/trunk/LHCbDIRAC/ConfigurationSystem/Agent/CE2CSAgent.py $
+# $HeadURL$
 ########################################################################
 
-__RCSID__ = "$Id: CE2CSAgent.py 22243 2010-03-03 11:27:24Z acsmith $"
+__RCSID__ = "$Id$"
 
 """ Queries BDII for unknown CE.
     Queries BDII for CE information and put it to CS.
@@ -329,10 +329,13 @@ class CE2CSAgent( AgentModule ):
 
           try:
             rte = bdiice['GlueHostApplicationSoftwareRunTimeEnvironment']
-            if 'VO-lhcb-pilot' in rte:
-              newpilot = 'True'
+            if gConfig.getValue( '/DIRAC/VirtualOrganization', '') == 'lhcb':
+              if 'VO-lhcb-pilot' in rte:
+                newpilot = 'True'
+              else:
+                newpilot = 'False'
             else:
-              newpilot = 'False'
+              newpilot = 'Unknown'
           except:
             newpilot = 'Unknown'
           if pilot != newpilot and newpilot != 'Unknown':
