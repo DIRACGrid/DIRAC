@@ -60,7 +60,8 @@ class LCGPilotDirector(GridPilotDirector):
     NS = ', '.join(NSs)
     LB = ', '.join(LBs)
 
-    if privateTQ:
+    vo = gConfig.getValue( '/DIRAC/VirtualOrganization', '')
+    if privateTQ or vo not in ['lhcb']:
       extraReq = "True"
     else:
       if submitPrivatePilot:

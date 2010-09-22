@@ -74,8 +74,8 @@ class gLitePilotDirector(GridPilotDirector):
     LBs = List.randomize( LBs )
 
     nPilots = 1
-
-    if privateTQ:
+    vo = gConfig.getValue( '/DIRAC/VirtualOrganization', '')
+    if privateTQ or vo not in ['lhcb']:
       extraReq = "True"
     else:
       if submitPrivatePilot:
@@ -96,7 +96,6 @@ ErrorStorage = "%s/pilotError";
 OutputStorage = "%s/pilotOutput";
 # ListenerPort = 44000;
 ListenerStorage = "%s/Storage";
-# VirtualOrganisation = "lhcb";
 RetryCount = 0;
 ShallowRetryCount = 0;
 WMProxyEndPoints = { %s };
