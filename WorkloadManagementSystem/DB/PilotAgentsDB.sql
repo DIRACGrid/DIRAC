@@ -37,6 +37,7 @@ CREATE TABLE PilotAgents (
     CurrentJobID INTEGER NOT NULL DEFAULT 0,
     TaskQueueID INTEGER NOT NULL DEFAULT '0',
     PilotJobReference VARCHAR(255) NOT NULL DEFAULT 'Unknown',
+    PilotStamp VARCHAR(32) NOT NULL DEFAULT '',
     DestinationSite VARCHAR(128) NOT NULL DEFAULT 'NotAssigned',
     Queue VARCHAR(128) NOT NULL DEFAULT 'Unknown',
     GridSite VARCHAR(128) NOT NULL DEFAULT 'Unknown',
