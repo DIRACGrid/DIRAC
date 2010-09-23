@@ -7,6 +7,7 @@
 """
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
 
 __RCSID__ = "$Id$"
 
@@ -39,7 +40,7 @@ class PBSTimeLeft:
        and WallClockLimit for current slot.  All values returned in seconds.
     """
     cmd = 'qstat -f %s' % ( self.jobID )
-    result = self._runCommand( cmd )
+    result = runCommand( cmd )
     if not result['OK']:
       return result
 

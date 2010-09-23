@@ -7,6 +7,8 @@
 """
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
+
 from DIRAC.Core.Utilities.Os import sourceEnv
 
 __RCSID__ = "$Id$"
@@ -42,7 +44,7 @@ class LSFTimeLeft:
     self.hostNorm = None
 
     cmd = '%s/bqueues -l %s' % ( self.bin, self.queue )
-    result = self._runCommand( cmd )
+    result = runCommand( cmd )
     if not result['OK']:
       return
 
@@ -69,7 +71,7 @@ class LSFTimeLeft:
       # it must be either a Model, a Host or the largest Model
 
       cmd = '%s/lshosts -w %s' % ( self.bin, self.cpuRef )
-      result = self._runCommand( cmd )
+      result = runCommand( cmd )
       if result['OK']:
         # At CERN this command will return an error since there is no host defined 
         # with the name of the reference Host.
@@ -93,7 +95,7 @@ class LSFTimeLeft:
       if not self.normRef:
         # Try if there is a model define with the name of cpuRef
         cmd = '%s/lsinfo -m' % ( self.bin )
-        result = self._runCommand( cmd )
+        result = runCommand( cmd )
         if result['OK']:
           lines = result['Value'].split( '\n' )
           for line in lines[1:]:
@@ -153,7 +155,7 @@ class LSFTimeLeft:
     # Now get the Normalization for the current Host
     if self.host:
       cmd = '%s/lshosts -w %s' % ( self.bin, self.host )
-      result = self._runCommand( cmd )
+      result = runCommand( cmd )
       if result['OK']:
         lines = result['Value'].split( '\n' )
         l1 = lines[0].split()
@@ -191,7 +193,7 @@ class LSFTimeLeft:
     wallClock = None
 
     cmd = '%s/bjobs -W %s' % ( self.bin, self.jobID )
-    result = self._runCommand( cmd )
+    result = runCommand( cmd )
     if not result['OK']:
       return result
     lines = result['Value'].split( '\n' )

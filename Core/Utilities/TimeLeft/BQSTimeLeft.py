@@ -7,6 +7,7 @@
 """
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
 
 __RCSID__ = "$Id$"
 
@@ -38,7 +39,7 @@ class BQSTimeLeft:
       return S_ERROR( 'CPU scala factor is not defined' )
 
     cmd = 'qjob -a -nh -wide %s' % ( self.jobID )
-    result = self._runCommand( cmd )
+    result = runCommand( cmd )
     if not result['OK']:
       return result
 
