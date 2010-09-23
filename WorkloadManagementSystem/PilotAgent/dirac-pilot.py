@@ -314,7 +314,6 @@ if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
     cliParams.ceName = CE.split( ':' )[0]
     cliParams.queueName = CE.split( '/' )[1]
     configureOpts.append( '-N "%s"' % cliParams.ceName )
-    configureOpts.append( '-o /LocalSite/CEQueue="%s"' % cliParams.queueName )
   else:
     logERROR( "There was an error executing brokerinfo. Setting ceName to local " )
 elif cliParams.flavour == "CREAM":
@@ -325,7 +324,9 @@ elif cliParams.flavour == "CREAM":
     configureOpts.append( '-o /LocalSite/CEQueue="%s"' % cliParams.queueName )
 
 if cliParams.queueName:
-  configureOpts.append( '-o /LocalSite/CEQueue="%s"' % cliParams.queueName )
+  configureOpts.append( '-o /LocalSite/CEQueue=%s' % cliParams.queueName )
+if cliParams.ceName:
+  configureOpts.append( '-o /LocalSite/GridCE=%s' % cliParams.ceName )  
 
 ###
 # Set the platform if defined
