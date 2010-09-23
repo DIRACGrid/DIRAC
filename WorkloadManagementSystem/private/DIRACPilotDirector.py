@@ -178,7 +178,7 @@ class DIRACPilotDirector(PilotDirector):
       for req, val in getResourceDict( ceName ).items():
         pilotOptions.append( "-o '/AgentJobRequirements/%s=%s'" % ( req, val ) )
         
-        ceConfigDict = self.computingElementDict[CE]
+      ceConfigDict = self.computingElementDict[CE]
 
       if 'ClientPlatform' in ceConfigDict:
         pilotOptions.append( "-p '%s'" % ceConfigDict['ClientPlatform'])
@@ -197,9 +197,13 @@ class DIRACPilotDirector(PilotDirector):
       httpProxy = ''
       if 'HttpProxy' in ceConfigDict:
         httpProxy = ceConfigDict['HttpProxy']
+      
+      pilotDir = ''
+      if 'JobExecDir' in ceConfigDict:
+        pilotExecDir = ceConfigDict['JobExecDir']
   
       try:
-        pilotScript = self._writePilotScript( workingDirectory, pilotOptions, proxy, httpProxy )
+        pilotScript = self._writePilotScript( workingDirectory, pilotOptions, proxy, httpProxy, pilotExecDir )
       except:
         self.log.exception( ERROR_SCRIPT )
         try:
@@ -260,7 +264,7 @@ class DIRACPilotDirector(PilotDirector):
     return result['Value']
 
 
-  def _writePilotScript( self, workingDirectory, pilotOptions, proxy, httpProxy ):
+  def _writePilotScript( self, workingDirectory, pilotOptions, proxy, httpProxy, pilotExecDir ):
     """
      Prepare the script to execute the pilot
      For the moment it will do like Grid Pilots, a full DIRAC installation
@@ -280,7 +284,10 @@ class DIRACPilotDirector(PilotDirector):
 #
 import os, tempfile, sys, shutil, base64, bz2
 try:
-  pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix= 'DIRAC_' )
+  pilotExecDir = '%(pilotExecDir)s'
+  if not pilotExecDir:
+    pilotExecDir = None 
+  pilotWorkingDirectory = tempfile.mkdtemp( suffix = 'pilot', prefix = 'DIRAC_', dir = pilotExecDir )
   os.chdir( pilotWorkingDirectory )
   open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedProxy)s" ) ) )
   open( '%(pilotScript)s', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedPilot)s" ) ) )
@@ -311,13 +318,14 @@ os.system( cmd )
 shutil.rmtree( pilotWorkingDirectory )
 
 EOF
-""" % { 'compressedAndEncodedProxy': compressedAndEncodedProxy, \
-        'compressedAndEncodedPilot': compressedAndEncodedPilot, \
-        'compressedAndEncodedInstall': compressedAndEncodedInstall, \
-        'httpProxy': httpProxy, \
-        'pilotScript': os.path.basename(self.pilot), \
+""" % { 'compressedAndEncodedProxy': compressedAndEncodedProxy, 
+        'compressedAndEncodedPilot': compressedAndEncodedPilot, 
+        'compressedAndEncodedInstall': compressedAndEncodedInstall, 
+        'httpProxy': httpProxy, 
+        'pilotScript': os.path.basename(self.pilot), 
         'installScript': os.path.basename(self.install),
-        'pilotOptions': ' '.join( pilotOptions ) }
+        'pilotOptions': ' '.join( pilotOptions ),
+        'pilotExecDir': pilotExecDir }
 
     fd, name = tempfile.mkstemp( suffix = '_pilotwrapper.py', prefix = 'DIRAC_', dir=workingDirectory)
     pilotWrapper = os.fdopen(fd, 'w')
