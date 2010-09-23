@@ -782,7 +782,10 @@ File Catalog Client $Revision: 1.17 $Date:
     option = argss[0]
     del argss[0]
     if option == 'metadata':
-      path = argss[0]
+      if len(argss) == 0:
+        path ='.'
+      else:  
+        path = argss[0]
       if path == '.':
         path = self.cwd
       elif path[0] != '/':
