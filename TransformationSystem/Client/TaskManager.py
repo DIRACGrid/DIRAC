@@ -15,8 +15,6 @@ from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient  import JobMonito
 from DIRAC.Core.Utilities.ModuleFactory                         import ModuleFactory
 from DIRAC.Interfaces.API.Job                                   import Job
 
-from LHCbDIRAC.Interfaces.API.LHCbJob                           import LHCbJob
-
 import string,re,time,types,os
 
 class TaskBase:
@@ -187,7 +185,6 @@ class WorkflowTasks(TaskBase):
     TaskBase.__init__(self)
     self.submissionClient = WMSClient()
     self.jobMonitoringClient = JobMonitoringClient()
-    print self.hospitalProds
 
   def prepareTransformationTasks(self,transBody,taskDict,owner='',ownerGroup=''):
     if (not owner) or (not ownerGroup):
@@ -197,9 +194,8 @@ class WorkflowTasks(TaskBase):
       proxyInfo = res['Value']
       owner = proxyInfo['username']
       ownerGroup = proxyInfo['group']
-     
-    #oJob = Job(transBody) # TODO PUT BACK HACK
-    oJob = LHCbJob(transBody)
+
+    oJob = Job(transBody)
     for taskNumber in sortList(taskDict.keys()):
       paramsDict = taskDict[taskNumber]
       transID = paramsDict['TransformationID']
@@ -221,7 +217,6 @@ class WorkflowTasks(TaskBase):
           if paramValue:
             self.log.verbose('Setting input data to %s' %paramValue)
             oJob.setInputData(paramValue)
-            oJob.setInputDataPolicy('download')
         elif paramName=='Site':
           if paramValue:
             self.log.verbose('Setting allocated site to: %s' %(paramValue))
@@ -229,13 +224,16 @@ class WorkflowTasks(TaskBase):
         elif paramValue:
           self.log.verbose('Setting %s to %s' % (paramName,paramValue))
           oJob._addJDLParameter(paramName,paramValue)
-      # TODO TAKE OUT
-      # LHCb LHCB TAKE THIS OUT
-      if int(transID) in [7554,7421,7200,7199,7140]:
+
+      hospitalTrans = [int(x) for x in gConfig.getValue("/Operations/Hospital/Transformations",[])]
+      if int(transID) in hospitalTrans:
+        hospitalSite = gConfig.getValue("/Operations/Hospital/HospitalSite",'DIRAC.JobDebugger.ch')
+        hospitalCEs = gConfig.getValue("/Operations/Hospital/HospitalCEs",[])
         oJob.setType('Hospital')
-        oJob.setDestination('DIRAC.JobDebugger.ch')
+        oJob.setDestination(hospitalSite)
         oJob.setInputDataPolicy('download',dataScheduling=False)
-        oJob._addJDLParameter('GridRequiredCEs',"volhcb30.cern.ch")        
+        if hospitalCEs:
+          oJob._addJDLParameter('GridRequiredCEs',hospitalCEs)        
       taskDict[taskNumber]['TaskObject'] = '' 
       res = self.getOutputData({'Job':oJob._toXML(),'TransformationID':transID,'TaskID':taskNumber,'InputData':inputData})
       if not res ['OK']:
