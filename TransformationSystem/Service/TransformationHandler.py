@@ -9,7 +9,6 @@ from DIRAC.TransformationSystem.DB.TransformationDB                      import 
 from types import *
 
 transTypes = list(StringTypes)+[IntType,LongType]
-# This is a global instance of the ProductionDB class
 database = False
 
 def initializeTransformationHandler( serviceInfo ):
@@ -18,6 +17,7 @@ def initializeTransformationHandler( serviceInfo ):
   return S_OK()
 
 class TransformationHandler(RequestHandler):
+
   def setDatabase(self,oDatabase):
     global database
     database = oDatabase
