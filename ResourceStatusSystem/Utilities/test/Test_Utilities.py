@@ -5,16 +5,13 @@ import DIRAC.ResourceStatusSystem.test.fake_Logger
 import DIRAC.ResourceStatusSystem.test.fake_rsDB
 #from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC.ResourceStatusSystem.Utilities.Publisher import Publisher
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import InfoGetter
 
 class UtilitiesTestCase(unittest.TestCase):
   """ Base class for the Utilities test cases
   """
   def setUp(self):
-#    from DIRAC.Core.Base import Script
-#    Script.parseCommandLine() 
-    
+
     sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.ResourceStatusSystem.Utilities.CS"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Utilities.SiteCEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
@@ -24,13 +21,26 @@ class UtilitiesTestCase(unittest.TestCase):
 
     from DIRAC import gConfig
     
-    
+    from DIRAC.ResourceStatusSystem.Utilities.Publisher import Publisher
     from DIRAC.ResourceStatusSystem.Utilities.Synchronizer import Synchronizer
 
 #    from DIRAC.ResourceStatusSystem.test.fake_rsDB import ResourceStatusDB
 #    self.rsDB = ResourceStatusDB()
 
     self.VO = gConfig.getValue("DIRAC/Extensions")
+
+    self.mockCC = Mock()
+    self.mockIG = Mock()
+    self.mockWMSA = Mock()
+    
+    self.mockCC.commandInvocation.return_value = 'INFO_GOT_MOCK'
+    self.mockWMSA.getSiteMaskLogging.return_value = {'OK': True, 
+                                                'Value': {'LCG.CERN.ch': [('Active', '2009-11-25 17:36:14', 'atsareg', 'test')]}}
+    
+    
+    self.p = Publisher(self.VO, rsDBIn = None, commandCallerIn = self.mockCC, infoGetterIn = self.mockIG, 
+                       WMSAdminIn = self.mockWMSA)
+
     self.configModule = __import__(self.VO+"DIRAC.ResourceStatusSystem.Policy.Configurations", 
                                    globals(), locals(), ['*'])
     
@@ -42,17 +52,6 @@ class PublisherSuccess(UtilitiesTestCase):
   
   def test_getInfo(self):
 
-    mockCC = Mock()
-    mockIG = Mock()
-    mockWMSA = Mock()
-    
-    mockCC.commandInvocation.return_value = 'INFO_GOT_MOCK'
-    mockWMSA.getSiteMaskLogging.return_value = {'OK': True, 
-                                                'Value': {'LCG.CERN.ch': [('Active', '2009-11-25 17:36:14', 'atsareg', 'test')]}}
-    
-    p = Publisher(self.VO, rsDBIn = None, commandCallerIn = mockCC, infoGetterIn = mockIG, 
-                  WMSAdminIn = mockWMSA)
-    
     igR = [{'Panels': {'Service_Storage_Panel': 
                         [ {'OnStorageServicePropagation_SE': {'RSS': 'StorageElementsOfSite'}}, 
                           {'OnStorageServicePropagation_Res': {'RSS': 'ResOfStorService'}}], 
@@ -70,9 +69,9 @@ class PublisherSuccess(UtilitiesTestCase):
                                                                        {'PilotsEfficiencySimple_Service': [{'FillChart': {'args': ('Pilot', 'CumulativeNumberOfPilots', {'hours': 24, 'Format': 'LastHours'}, 'GridStatus', None), 'CommandIn': 'DiracAccountingGraph'}}, 
                                                                                                            {'PieChart': {'args': ('Pilot', 'TotalNumberOfPilots', {'hours': 24, 'Format': 'LastHours'}, 'GridCE', None), 'CommandIn': 'DiracAccountingGraph'}}]}]}}]
 
-    mockIG.getInfoToApply.return_value = igR 
+    self.mockIG.getInfoToApply.return_value = igR 
     
-    res = p.getInfo('Site', 'LCG.CERN.ch')
+    res = self.p.getInfo('Site', 'LCG.CERN.ch')
     
     for record in res['Records']:
       self.assert_(record[0] in ('ResultsForResource', 'SpecificInformation'))
@@ -112,9 +111,9 @@ class PublisherSuccess(UtilitiesTestCase):
                                                                                   'CommandIn': 'DiracAccountingGraph'}}]}, 
                        ]}}]
     
-    mockIG.getInfoToApply.return_value = igR
+    self.mockIG.getInfoToApply.return_value = igR
     
-    res = p.getInfo('Resource', 'grid0.fe.infn.it')
+    res = self.p.getInfo('Resource', 'grid0.fe.infn.it')
 
     for record in res['Records']:
       self.assert_(record[0] in ('ResultsForResource', 'SpecificInformation'))
@@ -151,9 +150,9 @@ class PublisherSuccess(UtilitiesTestCase):
                                {'DT_Scheduled': [{'WebLink': {'args': None, 'CommandIn': 'DT_Link'}}]}, 
                        ]}}]
     
-    mockIG.getInfoToApply.return_value = igR
+    self.mockIG.getInfoToApply.return_value = igR
     
-    res = p.getInfo('Resource', 'prod-lfc-lhcb-ro.cern.ch')
+    res = self.p.getInfo('Resource', 'prod-lfc-lhcb-ro.cern.ch')
 
     for record in res['Records']:
       self.assert_(record[0] in ('ResultsForResource', 'SpecificInformation'))
@@ -192,9 +191,9 @@ class PublisherSuccess(UtilitiesTestCase):
                           {'SEOccupancy': [{'WebLink': {'args': None, 'CommandIn': 'SLS_Link'}}]}, 
                           {'SEQueuedTransfers': [{'WebLink': {'args': None, 'CommandIn': 'SLS_Link'}}]}]}}]
     
-    mockIG.getInfoToApply.return_value = igR
+    self.mockIG.getInfoToApply.return_value = igR
     
-    res = p.getInfo('StorageElement', 'CERN-RAW')
+    res = self.p.getInfo('StorageElement', 'CERN-RAW')
 
     for record in res['Records']:
       self.assert_(record[0] in ('ResultsForResource', 'SpecificInformation'))

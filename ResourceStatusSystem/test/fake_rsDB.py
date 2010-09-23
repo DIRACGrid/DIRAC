@@ -31,8 +31,9 @@ class ResourceStatusDB:
     pass
 
   def getMonitoredsList(self, granularity, paramsList = None, siteName = None, 
-                        serviceName = None, resourceName = None, storageElementName = None,
-                        status = None, siteType = None, resourceType = None, serviceType = None):
+                        serviceName = None, resourceName = None, storageElementName = None, 
+                        status = None, siteType = None, resourceType = None, 
+                        serviceType = None, countries = None, gridSiteName = None):
     return [('NAME@X', 'Banned'), ('NAME@X', 'Active')]
   
   def getGridSitesList(self, paramsList = None, gridSiteName = None, gridTier = None):

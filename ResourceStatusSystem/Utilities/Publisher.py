@@ -7,10 +7,11 @@ __RCSID__ = "$Id:  $"
 import copy
 import threading
 
+from DIRAC.Core.Utilities.ThreadPool import ThreadPool
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import *
+
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
-
 from DIRAC.ResourceStatusSystem.Utilities.CS import *
 
 class Publisher:
@@ -98,20 +99,33 @@ class Publisher:
 
     self.infoForPanel_res = {}
 
-    resType = None
+    status = None
+    formerStatus = None
+    siteType = None
+    serviceType = None
+    resourceType = None
+
     if granularity in ('Resource', 'Resources'):
       try:
-        resType = self.rsDB.getMonitoredsList('Resource', ['ResourceType'], 
+        resourceType = self.rsDB.getMonitoredsList('Resource', ['ResourceType'], 
                                               resourceName = name)[0][0]
+      except IndexError:
+        return "%s does not exist!" %name
+                                            
+    if granularity in ('StorageElement', 'StorageElements'):
+      try:
+        siteType = self.rsDB.getMonitoredsList('StorageElement', ['SiteType'], 
+                                              storageElementName = name)[0][0]
       except IndexError:
         return "%s does not exist!" %name
                                             
     paramNames = ['Type', 'Group', 'Name', 'Policy', 'DIRAC Status',
                   'RSS Status', 'Reason', 'Description']
     
-    infoToGet = self.ig.getInfoToApply(('view_info', ), granularity, None, None, 
-                                       None, None, resType, useNewRes)[0]['Panels']
-    
+    infoToGet = self.ig.getInfoToApply(('view_info', ), granularity, status = status, 
+                                       formerStatus = formerStatus, siteType = siteType,
+                                       serviceType = serviceType, resourceType = resourceType, 
+                                       useNewRes = useNewRes)[0]['Panels']
     infoToGet_res = {}
     
     recordsList = []
@@ -153,7 +167,7 @@ class Publisher:
 
       self.threadPool.processAllResults()
 
-      for policy in self.infoForPanel_res.keys():
+      for policy in [x.keys()[0] for x in infoForPanel]:
         record = copy.deepcopy(recordBase)
         record[0] = 'SpecificInformation'
         record[3] = policy #policyName
@@ -205,7 +219,7 @@ class Publisher:
       what = oi.values()[0]
       
       info_bit_got = self._getInfo(granularityForPanel, nameForPanel, format, what)
-                
+
       info_res[format] = info_bit_got
       
     self.lockObj.acquire()
@@ -279,6 +293,8 @@ class Publisher:
     serviceName = None
     resourceName = None
     storageElementName = None
+    serviceType = None
+    gridSiteName = None
     
     if what == 'ServiceOfSite':
       gran = 'Service'
@@ -289,12 +305,14 @@ class Publisher:
       gran = 'Resources'
       paramsL.insert(0, 'ResourceName')
       paramsL.append('Reason')
-      serviceName = name
+      serviceType = name.split('@')[0]
+      gridSiteName = getGOCSiteName(name.split('@')[1])['Value']
     elif what == 'ResOfStorService':
       gran = 'Resources'
       paramsL.insert(0, 'ResourceName')
       paramsL.append('Reason')
-      serviceName = name
+      serviceType = name.split('@')[0]
+      gridSiteName = getGOCSiteName(name.split('@')[1])['Value']
     elif what == 'ResOfStorEl':
       gran = 'StorageElements'
       paramsL.insert(0, 'ResourceName')
@@ -305,9 +323,10 @@ class Publisher:
       paramsL.insert(0, 'StorageElementName')
       paramsL.append('Reason')
       if '@' in name:
-        siteName = name.split('@').pop()
+        DIRACsiteName = name.split('@').pop()
       else:
-        siteName = name
+        DIRACsiteName = name
+      gridSiteName = getGOCSiteName(DIRACsiteName)['Value']
     elif what == 'Site_Panel':
       gran = 'Site'
       paramsL.insert(0, 'SiteName')
@@ -338,8 +357,10 @@ class Publisher:
       storageElementName = name
       
     info_bit_got = self.rsDB.getMonitoredsList(gran, paramsList = paramsL, siteName = siteName, 
-                                               serviceName = serviceName, resourceName = resourceName,
-                                               storageElementName = storageElementName)
+                                               serviceName = serviceName, serviceType = serviceType, 
+                                               resourceName = resourceName,
+                                               storageElementName = storageElementName, 
+                                               gridSiteName = gridSiteName)
     
     return info_bit_got
 

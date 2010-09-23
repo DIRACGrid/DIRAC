@@ -87,6 +87,10 @@ def getStorageElements(a = None):
                     'CERN-FAILOVER', 'CERN-HIST', 'CERN-ARCHIVE', 'CERN-Failover', 'CERN_MC_M-DST', 
                     'CERN-DEBUG', 'CERN-USER']}
 
+def getStorageElementStatus(a, b):
+  return {'OK': True, 'Value': 'Active'}
+
+
 def getSiteCEMapping(gridName=''):
   return {'OK': True, 
           'Value': {'LCG.Cambridge.uk': ['serv07.hep.phy.cam.ac.uk'], 'LCG.LPN.fr': ['polgrid1.in2p3.fr'], 

@@ -308,8 +308,8 @@ class Synchronizer:
       if not siteInDIRAC['OK']:
         raise RSSException, siteInDIRAC['Message']
       sites = siteInDIRAC['Value']
+      serviceType = 'Storage'
       for site in sites: 
-        serviceType = 'Storage'
         service = serviceType + '@' + site
         if service not in servicesList:
           servicesList.append(service)
@@ -319,11 +319,11 @@ class Synchronizer:
                                        datetime.datetime(9999, 12, 31, 23, 59, 59))
           servicesIn.append(service)
             
-        if srm not in resourcesIn and srm is not None:
-          self.rsDB.addOrModifyResource(srm, 'SE', serviceType, 'NULL', siteInGOCDB, 'Active', 'init', 
-                                        datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
-                                        datetime.datetime(9999, 12, 31, 23, 59, 59))
-          resourcesIn.append(srm)
+      if srm not in resourcesIn and srm is not None:
+        self.rsDB.addOrModifyResource(srm, 'SE', serviceType, 'NULL', siteInGOCDB, 'Active', 'init', 
+                                      datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
+                                      datetime.datetime(9999, 12, 31, 23, 59, 59))
+        resourcesIn.append(srm)
         
     # LFC_C
     for lfc in LFCNodeList_C:
@@ -341,8 +341,8 @@ class Synchronizer:
       if not siteInDIRAC['OK']:
         raise RSSException, siteInDIRAC['Message']
       sites = siteInDIRAC['Value']
+      serviceType = 'Storage'
       for site in sites:
-        serviceType = 'Storage'
         service = serviceType + '@' + site
         if service not in servicesList:
           servicesList.append(service)
@@ -351,11 +351,11 @@ class Synchronizer:
                                        datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
                                        datetime.datetime(9999, 12, 31, 23, 59, 59))
           servicesIn.append(service)
-        if lfc not in resourcesIn and lfc is not None:
-          self.rsDB.addOrModifyResource(lfc, 'LFC_C', serviceType, 'NULL', siteInGOCDB, 'Active', 'init', 
-                                        datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
-                                        datetime.datetime(9999, 12, 31, 23, 59, 59))
-          resourcesIn.append(lfc)
+      if lfc not in resourcesIn and lfc is not None:
+        self.rsDB.addOrModifyResource(lfc, 'LFC_C', serviceType, 'NULL', siteInGOCDB, 'Active', 'init', 
+                                      datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
+                                      datetime.datetime(9999, 12, 31, 23, 59, 59))
+        resourcesIn.append(lfc)
       
     # LFC_L
     for lfc in LFCNodeList_L:
@@ -373,8 +373,8 @@ class Synchronizer:
       if not siteInDIRAC['OK']:
         raise RSSException, siteInDIRAC['Message']
       sites = siteInDIRAC['Value']
+      serviceType = 'Storage'
       for site in sites:
-        serviceType = 'Storage'
         service = serviceType + '@' + site
         if service not in servicesList:
           servicesList.append(service)
@@ -383,11 +383,11 @@ class Synchronizer:
                                        datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
                                        datetime.datetime(9999, 12, 31, 23, 59, 59))
           servicesIn.append(service)
-        if lfc not in resourcesIn and lfc is not None:
-          self.rsDB.addOrModifyResource(lfc, 'LFC_L', serviceType, 'NULL', siteInGOCDB, 'Active', 'init', 
-                                        datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
-                                        datetime.datetime(9999, 12, 31, 23, 59, 59))
-          resourcesIn.append(lfc)
+      if lfc not in resourcesIn and lfc is not None:
+        self.rsDB.addOrModifyResource(lfc, 'LFC_L', serviceType, 'NULL', siteInGOCDB, 'Active', 'init', 
+                                      datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
+                                      datetime.datetime(9999, 12, 31, 23, 59, 59))
+        resourcesIn.append(lfc)
       
       
     # FTSs
@@ -406,8 +406,8 @@ class Synchronizer:
       if not siteInDIRAC['OK']:
         raise RSSException, siteInDIRAC['Message']
       sites = siteInDIRAC['Value']
+      serviceType = 'Storage'
       for site in sites:
-        serviceType = 'Storage'
         service = serviceType + '@' + site
         if service not in servicesList:
           servicesList.append(service)
@@ -416,11 +416,11 @@ class Synchronizer:
                                        datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
                                        datetime.datetime(9999, 12, 31, 23, 59, 59))
           servicesIn.append(service)
-        if fts not in resourcesIn and fts is not None:
-          self.rsDB.addOrModifyResource(fts, 'FTS', serviceType, 'NULL', siteInGOCDB, 'Active', 'init', 
-                                        datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
-                                        datetime.datetime(9999, 12, 31, 23, 59, 59))
-          resourcesIn.append(fts)
+      if fts not in resourcesIn and fts is not None:
+        self.rsDB.addOrModifyResource(fts, 'FTS', serviceType, 'NULL', siteInGOCDB, 'Active', 'init', 
+                                      datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
+                                      datetime.datetime(9999, 12, 31, 23, 59, 59))
+        resourcesIn.append(fts)
       
     # VOMSs
     for voms in VOMSNodeList:
@@ -438,8 +438,8 @@ class Synchronizer:
       if not siteInDIRAC['OK']:
         raise RSSException, siteInDIRAC['Message']
       site = siteInDIRAC['Value']
+      serviceType = 'VOMS'
       for site in sites:
-        serviceType = 'VOMS'
         service = serviceType + '@' + site
         if service not in servicesList:
           servicesList.append(service)
@@ -448,11 +448,11 @@ class Synchronizer:
                                        datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
                                        datetime.datetime(9999, 12, 31, 23, 59, 59))
           servicesIn.append(service)
-        if voms not in resourcesIn and voms is not None:
-          self.rsDB.addOrModifyResource(voms, 'VOMS', serviceType, 'NULL', siteInGOCDB, 'Active', 'init', 
-                                        datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
-                                        datetime.datetime(9999, 12, 31, 23, 59, 59))
-          resourcesIn.append(voms)
+      if voms not in resourcesIn and voms is not None:
+        self.rsDB.addOrModifyResource(voms, 'VOMS', serviceType, 'NULL', siteInGOCDB, 'Active', 'init', 
+                                      datetime.datetime.utcnow().replace(microsecond = 0), 'RS_SVC', 
+                                      datetime.datetime(9999, 12, 31, 23, 59, 59))
+        resourcesIn.append(voms)
       
     #remove services no more in the CS
     for ser in servicesIn:

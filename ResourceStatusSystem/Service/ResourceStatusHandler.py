@@ -15,11 +15,13 @@ from types import *
 from DIRAC import S_OK, S_ERROR
 from DIRAC import gLogger, gConfig
 
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import *
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Utilities import Time
+
 from DIRAC.ResourceStatusSystem.Utilities.CS import *
 
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities import Time
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 from DIRAC.ResourceStatusSystem.Utilities.Publisher import Publisher 
@@ -1085,10 +1087,16 @@ class ResourceStatusHandler(RequestHandler):
     try:
       gLogger.info("ResourceStatusHandler.getSESitesList: Attempting to get SE sites list")
       try:
-        r = rsDB.getMonitoredsList('StorageElement', paramsList = ['SiteName'])
+        r = rsDB.getMonitoredsList('StorageElement', paramsList = ['GridSiteName'])
         res = []
-        for x in r:
-          res.append(x[0])
+        for gridSite in r:
+          DIRACsites = getDIRACSiteName(gridSite[0])
+          if not DIRACsites['OK']:
+            raise RSSException, "No DIRAC site name" + where(self, self.export_getSESitesList)
+          DIRACsites = DIRACsites['Value']
+          for DIRACsite in DIRACsites:
+            if DIRACsite not in res:
+              res.append(DIRACsite)
       except RSSDBException, x:
         gLogger.error(whoRaised(x))
       except RSSException, x:

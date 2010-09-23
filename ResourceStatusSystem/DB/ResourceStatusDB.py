@@ -118,10 +118,10 @@ class ResourceStatusDB:
 
 #############################################################################
 
-  def getMonitoredsList(self, granularity, paramsList = None, siteName = None, serviceName = None, 
-                        resourceName = None, storageElementName = None, status = None, 
-                        siteType = None, resourceType = None, serviceType = None, countries = None,
-                        gridSiteName = None):
+  def getMonitoredsList(self, granularity, paramsList = None, siteName = None, 
+                        serviceName = None, resourceName = None, storageElementName = None, 
+                        status = None, siteType = None, resourceType = None, 
+                        serviceType = None, countries = None, gridSiteName = None):
     """ 
     Get Present Sites/Services/Resources/StorageElements lists. 
     
@@ -420,7 +420,7 @@ class ResourceStatusDB:
       paramsList = ['ResourceName', 'ServiceType', 'SiteName', 'GridSiteName', 'ResourceType', 
                     'Status', 'DateEffective', 'FormerStatus', 'Reason']
     elif granularity in ('StorageElement', 'StorageElements'):
-      paramNames = ['StorageElementName', 'ServiceName', 'ResourceName', 'SiteName',  
+      paramNames = ['StorageElementName', 'ResourceName', 'SiteName',  
                     'Country', 'Status', 'DateEffective', 'FormerStatus', 'Reason']
       paramsList = ['StorageElementName', 'ResourceName', 'GridSiteName', 'Status', 
                     'DateEffective', 'FormerStatus', 'Reason']
