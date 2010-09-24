@@ -51,13 +51,6 @@ if not address or not setup:
   exitCode = 2
   DIRAC.exit(exitCode)
 
-userName = diracAdmin._getCurrentUser()
-if not userName['OK']:
-  print 'ERROR: Could not obtain current username from proxy'
-  exitCode = 2
-  DIRAC.exit(exitCode)
-userName = userName['Value']
-
 site = args[0]
 comment = args[1]
 result = diracAdmin.addSiteInMask(site,comment,printOutput=True)
@@ -65,10 +58,17 @@ if not result['OK']:
   errorList.append( (site, result['Message']) )
   exitCode = 2
 else:
-  subject = '%s is added in site mask for %s setup' %(site,setup)
-  body = 'Site %s is added to the site mask for %s setup by %s on %s.\n\n' %(site,setup,userName,time.asctime())
-  body += 'Comment:\n%s' %comment
   if email:
+    userName = diracAdmin._getCurrentUser()
+    if not userName['OK']:
+      print 'ERROR: Could not obtain current username from proxy'
+      exitCode = 2
+      DIRAC.exit(exitCode)
+    userName = userName['Value']
+    subject = '%s is added in site mask for %s setup' %(site,setup)
+    body = 'Site %s is added to the site mask for %s setup by %s on %s.\n\n' %(site,setup,userName,time.asctime())
+    body += 'Comment:\n%s' %comment
+
     result = diracAdmin.sendMail(address,subject,body)
   else:
     print 'Automatic email disabled by flag.'
