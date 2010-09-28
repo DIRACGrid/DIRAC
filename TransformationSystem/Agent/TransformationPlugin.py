@@ -14,6 +14,7 @@ class TransformationPlugin:
     self.data = False
     self.plugin = plugin
     self.files = False
+    self.transClient = TransformationDBClient()
 
   def isOK(self):
     self.valid = True
@@ -162,7 +163,7 @@ class TransformationPlugin:
     return S_OK(shares)
 
   def _getExistingCounters(self,normalise=False,requestedSites=[]):
-    res = TransformationDBClient().getCounters('TransformationFiles',['UsedSE'],{'TransformationID':self.params['TransformationID']}) 
+    res = self.transClient.getCounters('TransformationFiles',['UsedSE'],{'TransformationID':self.params['TransformationID']}) 
     if not res['OK']:
       return res
     usageDict = {}
