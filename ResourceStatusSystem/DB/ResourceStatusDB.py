@@ -1091,7 +1091,13 @@ class ResourceStatusDB:
       :attr:`siteName`: string
     """
     
-    self.removeResource(siteName = siteName)
+    gridSiteName = getGOCSiteName(siteName)
+    DIRACSiteNames = getDIRACSiteName(gridSiteName)
+    if len(DIRACSiteNames) == 1:
+      self.removeResource(gridSiteName = gridSiteName)
+    else:
+      self.removeResource(siteName = siteName)
+    
     self.removeService(siteName = siteName)
     
     req = "DELETE from Sites WHERE SiteName = '%s';" %siteName
@@ -1313,11 +1319,6 @@ class ResourceStatusDB:
       if not resDel['OK']:
         raise RSSDBException, where(self, self.removeService) + resDel['Message']
   
-      req = "DELETE from ServicesHistory WHERE SiteName = '%s';" % (siteName)
-      resDel = self.db._update(req)
-      if not resDel['OK']:
-        raise RSSDBException, where(self, self.removeService) + resDel['Message']
-
 
 #############################################################################
 
@@ -1543,11 +1544,6 @@ class ResourceStatusDB:
       if not resDel['OK']:
         raise RSSDBException, where(self, self.removeResource) + resDel['Message']
   
-      req = "DELETE from ResourcesHistory WHERE SiteName = '%s';" % (siteName)
-      resDel = self.db._update(req)
-      if not resDel['OK']:
-        raise RSSDBException, where(self, self.removeResource) + resDel['Message']
-
     if gridSiteName != None:
         
       req = "DELETE from Resources WHERE GridSiteName = '%s';" % (gridSiteName)
@@ -1555,11 +1551,6 @@ class ResourceStatusDB:
       if not resDel['OK']:
         raise RSSDBException, where(self, self.removeResource) + resDel['Message']
   
-      req = "DELETE from ResourcesHistory WHERE GridSiteName = '%s';" % (gridSiteName)
-      resDel = self.db._update(req)
-      if not resDel['OK']:
-        raise RSSDBException, where(self, self.removeResource) + resDel['Message']
-
 #############################################################################
 
   def setMonitoredToBeChecked(self, monitoreds, granularity, name):

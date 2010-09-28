@@ -154,7 +154,7 @@ CREATE TABLE SitesHistory(
   DateCreated DATETIME NOT NULL,
   DateEffective DATETIME NOT NULL,
   DateEnd DATETIME NOT NULL,
-  TokenOwner VARCHAR(255),
+  TokenOwner VARCHAR(64),
   PRIMARY KEY(SitesHistoryID)
 ) Engine = InnoDB ;
 
@@ -168,7 +168,7 @@ CREATE TABLE ServicesHistory(
   DateCreated DATETIME NOT NULL,
   DateEffective DATETIME NOT NULL,
   DateEnd DATETIME,
-  TokenOwner VARCHAR(255),
+  TokenOwner VARCHAR(64),
   PRIMARY KEY(ServicesHistoryID)
 ) Engine=InnoDB;
 
@@ -182,7 +182,7 @@ CREATE TABLE ResourcesHistory(
   DateCreated DATETIME NOT NULL,
   DateEffective DATETIME NOT NULL,
   DateEnd DATETIME NOT NULL,
-  TokenOwner VARCHAR(255) NOT NULL,
+  TokenOwner VARCHAR(64) NOT NULL,
   PRIMARY KEY (ResourcesHistoryID)
 ) Engine=InnoDB;
 
@@ -196,7 +196,7 @@ CREATE TABLE StorageElementsHistory(
   DateCreated DATETIME NOT NULL,
   DateEffective DATETIME NOT NULL,
   DateEnd DATETIME NOT NULL,
-  TokenOwner VARCHAR(255) NOT NULL,
+  TokenOwner VARCHAR(64) NOT NULL,
   PRIMARY KEY (StorageElementsHistoryID)
 ) Engine=InnoDB;
 

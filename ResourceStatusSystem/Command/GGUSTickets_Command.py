@@ -8,6 +8,7 @@ from DIRAC import gLogger
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 
 from DIRAC.ResourceStatusSystem.Command.Command import Command
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 
 def callClient(args, clientIn = None):
 
@@ -20,7 +21,10 @@ def callClient(args, clientIn = None):
     
   name = args[1]
   
-  name = getGOCSiteName(name)['Value']
+  name = getGOCSiteName(name)
+  if not name['OK']:
+    raise RSSException, name['Message']
+  name = name['Value']
   
   try:
     openTickets = c.getTicketsList(name)
