@@ -407,6 +407,10 @@ for vomsHost in vomsDirHosts:
     CA = DIRAC.gConfig.getValue( "/Registry/VOMS/Servers/%s/%s/CA" % ( voName, vomsHost ), "" )
     Port = DIRAC.gConfig.getValue( "/Registry/VOMS/Servers/%s/%s/Port" % ( voName, vomsHost ), 0 )
     if not DN or not CA or not Port:
+      DIRAC.gLogger.error( 'DN = %s' % DN )
+      DIRAC.gLogger.error( 'CA = %s' % CA )
+      DIRAC.gLogger.error( 'Port = %s' % Port )
+      DIRAC.gLogger.error( 'Missing Parameter for %s' % vomsHost )
       continue
     fd = open( hostFilePath, "wb" )
     fd.write( "%s\n%s\n" % ( DN, CA ) )
