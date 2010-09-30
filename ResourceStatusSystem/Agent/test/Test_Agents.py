@@ -10,14 +10,13 @@ class AgentsTestCase(unittest.TestCase):
   """
   def setUp(self):
 
-#    from DIRAC.Core.Base import Script
-#    Script.parseCommandLine() 
-    
-    
     sys.modules["DIRAC.LoggingSystem.Client.Logger"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Base.AgentModule"] = DIRAC.ResourceStatusSystem.test.fake_AgentModule
     sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
-    
+    sys.modules["DIRAC.Interfaces.API.DiracAdmin"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    sys.modules["DIRAC.ResourceStatusSystem.Utilities.CS"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    sys.modules["DIRAC.ConfigurationSystem.Client.CSAPI"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+
     from DIRAC.ResourceStatusSystem.Agent.ClientsCacheFeeder import ClientsCacheFeeder
     self.ccFeeder = ClientsCacheFeeder("", "")
 
@@ -83,7 +82,6 @@ class RSInspectorSuccess(AgentsTestCase):
     self.rsIAgent.initialize()
     res = self.rsIAgent.execute()
     self.assert_(res['OK'])
-
 
 class SSInspectorSuccess(AgentsTestCase):
 

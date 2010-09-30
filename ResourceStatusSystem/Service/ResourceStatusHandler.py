@@ -1733,16 +1733,16 @@ class ResourceStatusHandler(RequestHandler):
                         toTake.remove('Description')
               
               now = datetime.datetime.utcnow().replace(microsecond = 0, second = 0)
-              startDate_datetime.datetime = datetime.datetime.strptime(startDate, '%Y-%m-%d %H:%M')
-              endDate_datetime.datetime = datetime.datetime.strptime(endDate, '%Y-%m-%d %H:%M')
+              startDate_datetime = datetime.datetime.strptime(startDate, '%Y-%m-%d %H:%M')
+              endDate_datetime = datetime.datetime.strptime(endDate, '%Y-%m-%d %H:%M')
               
-              if endDate_datetime.datetime < now:
+              if endDate_datetime < now:
                 when = 'Finished'
               else:
-                if startDate_datetime.datetime < now:
+                if startDate_datetime < now:
                   when = 'OnGoing'
                 else:
-                  hours = str(convertTime(startDate_datetime.datetime - now, 'hours'))
+                  hours = str(convertTime(startDate_datetime - now, 'hours'))
                   when = 'In ' + hours + ' hours.'
               
               if sev in severity:

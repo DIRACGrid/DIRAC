@@ -2,6 +2,7 @@ import unittest
 import sys
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 import DIRAC.ResourceStatusSystem.test.fake_Logger
+import DIRAC.ResourceStatusSystem.test.fake_NotificationClient
 import DIRAC.ResourceStatusSystem.test.fake_rsDB
 #from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
@@ -18,6 +19,7 @@ class UtilitiesTestCase(unittest.TestCase):
     sys.modules["DIRAC.Core.Utilities.SiteSEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Utilities.SitesDIRACGOCDBmapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
+    sys.modules["DIRAC.FrameworkSystem.Client.NotificationClient"] = DIRAC.ResourceStatusSystem.test.fake_NotificationClient 
 
     from DIRAC import gConfig
     

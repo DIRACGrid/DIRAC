@@ -43,8 +43,19 @@ class Config:
 gConfig = Config()
 
 
+
+class DiracAdmin:
+  pass
+
+class CSAPI:
+  pass
+
 def getExt():
   return "LHCb"
+
+def getSetup():
+  return {'OK': True, 
+          'Value': 'LHCb-Development'}
 
 def getSENodes(SE):
   return {'OK': True, 
