@@ -1,33 +1,43 @@
 """ UnitTest class for ResourceStatusDB
 """
 
-# bisognerebbe testare valori di ritorno "veri" dentro a Value
-
+import sys
 import datetime
 import unittest
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
 from DIRAC.ResourceStatusSystem.Utilities.Utils import *
-from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 from LHCbDIRAC.ResourceStatusSystem.Policy import Configurations
-
+import DIRAC.ResourceStatusSystem.test.fake_Logger
+from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 
 class ResourceStatusDBTestCase(unittest.TestCase):
   """ Base class for the ResourceStatusDB test cases
   """
   def setUp(self):
     # Create a mock of DB class
-#    from DIRAC.Core.Base import Script
-#    Script.parseCommandLine() 
     self.mock_DB = Mock()
 
     # Setting mock return value
     self.mock_DB._query.return_value = {'OK': True, 'Value': ''}
     self.mock_DB._update.return_value = {'OK': True, 'Value': ''}
 
+    sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    sys.modules["DIRAC.ResourceStatusSystem.Utilities.CS"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    sys.modules["DIRAC.Core.Utilities.SiteCEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    sys.modules["DIRAC.Core.Utilities.SiteSEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+    sys.modules["DIRAC.Core.Utilities.SitesDIRACGOCDBmapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
+
+    from LHCbDIRAC.ResourceStatusSystem.Policy import Configurations
+    from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
+    
+    
     # setting mock interface
     self.rsDB = ResourceStatusDB(DBin=self.mock_DB)
 
+    self.mock_DB_1 = Mock()
+    self.mock_DB_1._query.return_value = {'OK': True, 'Value': (('VOMS',),)}
+    
+    self.rsDB_1 = ResourceStatusDB(DBin=self.mock_DB_1)
 
 class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
 
@@ -44,7 +54,7 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
     self.assertEqual(res, None)
   
   def test_setSiteStatus(self):
-    res = self.rsDB.setSiteStatus('CNAF', 'Active', 'reasons', 'Federico')
+    res = self.rsDB.setSiteStatus('LCG.CNAF.it', 'Active', 'reasons', 'Federico')
     self.assertEqual(res, None)
 
   def test_addOrModifySite(self):
@@ -53,7 +63,7 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
       self.assertEqual(res, None)
 
   def test_removeSite(self):
-    res = self.rsDB.removeSite('CNAF')
+    res = self.rsDB.removeSite('LCG.CNAF.it')
     self.assertEqual(res, None)
 
   ##############################
@@ -403,15 +413,11 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
 #        ((datetime.datetime.datetime.datetime(2009, 9, 21, 14, 38, 54), datetime.datetime.datetime.datetime(2009, 9, 21, 14, 38, 54)), (datetime.datetime.datetime.datetime(2009, 9, 21, 14, 38, 54), datetime.datetime.datetime.datetime(2009, 9, 22, 7, 8, 4)), (datetime.datetime.datetime.datetime(2009, 9, 22, 7, 8, 4), datetime.datetime.datetime.datetime(2009, 9, 22, 10, 48, 26)), (datetime.datetime.datetime.datetime(2009, 9, 22, 10, 48, 26), datetime.datetime.datetime.datetime(2009, 9, 24, 12, 12, 33)), (datetime.datetime.datetime.datetime(2009, 9, 24, 12, 12, 33), datetime.datetime.datetime.datetime(2009, 9, 24, 13, 5, 41)))
 
   def test_getGeneralName(self):
-    mock_DB_1 = Mock()
-    mock_DB_1._query.return_value = {'OK': True, 'Value': (('VOMS',),)}
-    
-    rsDB_1 = ResourceStatusDB(DBin=mock_DB_1)
     for g1 in ('Service', 'Resource', 'StorageElement'):
       for g2 in ('Site', 'Service', 'Resource'):
         if g1 == g2:
           continue
-        res = rsDB_1.getGeneralName('XX', g1, g2)
+        res = self.rsDB_1.getGeneralName('XX', g1, g2)
         if g2 == 'Service':
           if g1 == 'StorageElement':
             self.assertEqual(res, ['Storage@VOMS'])
@@ -511,6 +517,7 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
     self.assertRaises(InvalidStatus, self.rsDB._addResourcesRow, 'CE01', 'CE', 'Computing', 'Computing@CERN', 'Ferrara', 'Actives', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
 
   def test_NotAllowedDate(self):
+    from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import NotAllowedDate
     self.assertRaises(NotAllowedDate, self.rsDB.addOrModifySite, 'CNAF', 'T1', 'INFN-FERRARA', 'Active', 'test reason', datetime.datetime.utcnow(), 'testOP', datetime.datetime.utcnow() - datetime.timedelta(minutes=10))
     self.assertRaises(NotAllowedDate, self.rsDB.addOrModifyService, 'Computing@CERN', 'Computing', 'CERN', 'Active', 'test reason', datetime.datetime.utcnow(), 'testOP', datetime.datetime.utcnow() - datetime.timedelta(minutes=10))
     self.assertRaises(NotAllowedDate, self.rsDB.addOrModifyResource, 'CE01', 'CE', 'Computing', 'CERN', 'INFN-T1', 'Active', 'test reason', datetime.datetime.utcnow(), 'testOP', datetime.datetime.utcnow() - datetime.timedelta(minutes=10))
@@ -518,7 +525,8 @@ class ResourceStatusDBFailure(ResourceStatusDBTestCase):
   def test_DBFail(self):
     self.mock_DB._query.return_value = {'OK': False, 'Message': 'boh'}
     self.mock_DB._update.return_value = {'OK': False, 'Message': 'boh'}
-    
+    from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import RSSDBException
+
     self.assertRaises(RSSDBException, self.rsDB.addOrModifySite, 'CNAF', 'T1', 'INFN-FERRARA', 'Banned', 'test reason', datetime.datetime.utcnow(), 'testOP', datetime.datetime.utcnow() + datetime.timedelta(minutes=10)) 
     self.assertRaises(RSSDBException, self.rsDB.setSiteStatus, 'CNAF', 'Active', 'reasons', 'Federico')
     self.assertRaises(RSSDBException, self.rsDB._addSiteRow, 'Ferrara', 'T2', 'INFN-FERRARA', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')

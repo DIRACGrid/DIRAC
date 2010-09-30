@@ -306,13 +306,19 @@ class Publisher:
       paramsL.insert(0, 'ResourceName')
       paramsL.append('Reason')
       serviceType = name.split('@')[0]
-      gridSiteName = getGOCSiteName(name.split('@')[1])['Value']
+      gridSiteName = getGOCSiteName(name.split('@')[1])
+      if not gridSiteName['OK']:
+        raise RSSException, gridSiteName['Message']
+      gridSiteName = gridSiteName['Value']
     elif what == 'ResOfStorService':
       gran = 'Resources'
       paramsL.insert(0, 'ResourceName')
       paramsL.append('Reason')
       serviceType = name.split('@')[0]
-      gridSiteName = getGOCSiteName(name.split('@')[1])['Value']
+      gridSiteName = getGOCSiteName(name.split('@')[1])
+      if not gridSiteName['OK']:
+        raise RSSException, gridSiteName['Message']
+      gridSiteName = gridSiteName['Value']
     elif what == 'ResOfStorEl':
       gran = 'StorageElements'
       paramsL.insert(0, 'ResourceName')
@@ -326,7 +332,10 @@ class Publisher:
         DIRACsiteName = name.split('@').pop()
       else:
         DIRACsiteName = name
-      gridSiteName = getGOCSiteName(DIRACsiteName)['Value']
+      gridSiteName = getGOCSiteName(DIRACsiteName)
+      if not gridSiteName['OK']:
+        raise RSSException, gridSiteName['Message']
+      gridSiteName = gridSiteName['Value']
     elif what == 'Site_Panel':
       gran = 'Site'
       paramsL.insert(0, 'SiteName')

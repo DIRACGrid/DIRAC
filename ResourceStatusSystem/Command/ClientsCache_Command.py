@@ -247,7 +247,10 @@ class DTEverySites_Command(Command):
         dt['Severity'] = res[dt_ID]['SEVERITY']
         dt['Description'] = res[dt_ID]['DESCRIPTION'].replace('\'', '')
         dt['Link'] = res[dt_ID]['GOCDB_PORTAL_URL']
-        DIRACnames = getDIRACSiteName(res[dt_ID]['SITENAME'])['Value']
+        DIRACnames = getDIRACSiteName(res[dt_ID]['SITENAME'])
+        if not DIRACnames['OK']:
+          raise RSSException, DIRACnames['Message']
+        DIRACnames = DIRACnames['Value']
         for DIRACname in DIRACnames:
           resToReturn[dt_ID.split()[0] + ' ' + DIRACname] = dt
       except KeyError:

@@ -74,7 +74,10 @@ class JobsClient:
     """
 
     if granularity == 'Site':
-      entity = getGOCSiteName(name)['Value']
+      entity = getGOCSiteName(name)
+      if not entity['OK']:
+        raise RSSException, entity['Message']
+      entity = entity['Value']
       _granularity = 'Site'
     else:
       entity = name

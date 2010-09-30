@@ -1092,7 +1092,15 @@ class ResourceStatusDB:
     """
     
     gridSiteName = getGOCSiteName(siteName)
+    if not gridSiteName['OK']:
+      raise RSSException, gridSiteName['Message']
+    gridSiteName = gridSiteName['Value']
+    
     DIRACSiteNames = getDIRACSiteName(gridSiteName)
+    if not DIRACSiteNames['OK']:
+      raise RSSException, DIRACSiteNames['Message']
+    DIRACSiteNames = DIRACSiteNames['Value']
+
     if len(DIRACSiteNames) == 1:
       self.removeResource(gridSiteName = gridSiteName)
     else:

@@ -43,7 +43,10 @@ class GOCDBStatus_Command(Command):
       hours = None
 
     if granularity in ('Site', 'Sites'):
-      name = getGOCSiteName(name)['Value']
+      name = getGOCSiteName(name)
+      if not name['OK']:
+        raise RSSException, name['Message']
+      name = name['Value']
 
     try:
       res = self.client.getStatus(granularity, name, None, hours, self.timeout)

@@ -10,8 +10,8 @@ class AgentsTestCase(unittest.TestCase):
   """
   def setUp(self):
 
-    from DIRAC.Core.Base import Script
-    Script.parseCommandLine() 
+#    from DIRAC.Core.Base import Script
+#    Script.parseCommandLine() 
     
     
     sys.modules["DIRAC.LoggingSystem.Client.Logger"] = DIRAC.ResourceStatusSystem.test.fake_Logger

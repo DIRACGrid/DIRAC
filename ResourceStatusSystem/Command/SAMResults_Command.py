@@ -48,12 +48,18 @@ class SAMResults_Command(Command):
       siteName = None
 
     if granularity in ('Site', 'Sites'):
-      siteName = getGOCSiteName(name)['Value']
+      siteName = getGOCSiteName(name)
+      if not siteName['OK']:
+        raise RSSException, siteName['Message']
+      siteName = siteName['Value']
     elif granularity in ('Resource', 'Resources'):
       if siteName is None:
         siteName = rsc.getGridSiteName(granularity, name)
       else:
-        siteName = getGOCSiteName(siteName)['Value']
+        siteName = getGOCSiteName(siteName)
+        if not siteName['OK']:
+          raise RSSException, siteName['Message']
+        siteName = siteName['Value']
     else:
       raise InvalidRes, where(self, self.doCommand)
     
