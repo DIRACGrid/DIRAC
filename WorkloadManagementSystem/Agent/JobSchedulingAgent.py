@@ -16,13 +16,12 @@
 """
 __RCSID__ = "$Id$"
 
-from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
-from DIRAC.Core.Utilities.SiteSEMapping                    import getSEsForSite
-from DIRAC.Core.Utilities.Time                             import fromString, toEpoch
-from DIRAC.StagerSystem.Client.StagerClient                import StagerClient
+from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule      import OptimizerModule
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight                 import ClassAd
+from DIRAC.Core.Utilities.SiteSEMapping                        import getSEsForSite
+from DIRAC.Core.Utilities.Time                                 import fromString, toEpoch
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
-from DIRAC                                                 import S_OK, S_ERROR, List
+from DIRAC                                                     import S_OK, S_ERROR, List
 
 import random, string, re
 
@@ -37,8 +36,6 @@ class JobSchedulingAgent( OptimizerModule ):
     self.dataAgentName = self.am_getOption( 'InputDataAgent', 'InputData' )
     self.stagingStatus = self.am_getOption( 'StagingStatus', 'Staging' )
     self.stagingMinorStatus = self.am_getOption( 'StagingMinorStatus', 'Request Sent' )
-    self.newStaging = self.am_getOption( 'NewStaging', True )
-    self.stagerClient = StagerClient( True )
     delays = self.am_getOption( 'RescheduleDelays', [60, 180, 300, 600] )
     self.rescheduleDelaysList = [ int(x) for x in delays ]
     self.maxRescheduleDelay = self.rescheduleDelaysList[-1]
@@ -333,14 +330,11 @@ class JobSchedulingAgent( OptimizerModule ):
                 stageLfns[se] = []          # NEW WAY
               stageLfns[se].append( lfn )     # NEW WAY
 
-    if self.newStaging:
-      stagerClient = StorageManagerClient()
-      request = stagerClient.setRequest( stageLfns, 'WorkloadManagement', 'updateJobFromStager@WorkloadManagement/JobStateUpdate', job )
-      if request['OK']:
-        self.jobDB.setJobParameter( int( job ), 'StageRequest', str( request['Value'] ) )
-    else:
-      request = self.stagerClient.stageFiles( str( job ), destination, stageSURLs, 'WorkloadManagement' )
-
+    stagerClient = StorageManagerClient()
+    request = stagerClient.setRequest( stageLfns, 'WorkloadManagement', 'updateJobFromStager@WorkloadManagement/JobStateUpdate', job )
+    if request['OK']:
+      self.jobDB.setJobParameter( int( job ), 'StageRequest', str( request['Value'] ) )
+ 
     if not request['OK']:
       self.log.error( 'Problem sending Staging request:' )
       self.log.error( request )
