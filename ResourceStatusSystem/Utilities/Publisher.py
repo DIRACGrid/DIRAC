@@ -130,6 +130,8 @@ class Publisher:
     
     recordsList = []
 
+    infosForPolicy = {}
+
     for panel in infoToGet.keys():
       
       (granularityForPanel, nameForPanel) = self.__getNameForPanel(granularity, name, panel)
@@ -142,7 +144,6 @@ class Publisher:
       nameStatus_res = self._getStatus(nameForPanel, panel)
       
       recordBase = [None, None, None, None, None, None, None, None]
-      infosForPolicy = {}
       
       recordBase[1] = panel.replace('_Panel', '')
       recordBase[2] = nameForPanel #nameForPanel
@@ -176,14 +177,14 @@ class Publisher:
         record[6] = self.infoForPanel_res[policy]['Reason'] #Reason
         record[7] = self.infoForPanel_res[policy]['desc'] #Description
         recordsList.append(record)
-        
+
         infosForPolicy[policy] = self.infoForPanel_res[policy]['infos']
         
-      infoToGet_res['TotalRecords'] = len(recordsList)
-      infoToGet_res['ParameterNames'] = paramNames
-      infoToGet_res['Records'] = recordsList
-  
-      infoToGet_res['Extras'] = infosForPolicy
+    infoToGet_res['TotalRecords'] = len(recordsList)
+    infoToGet_res['ParameterNames'] = paramNames
+    infoToGet_res['Records'] = recordsList
+
+    infoToGet_res['Extras'] = infosForPolicy
 
     return infoToGet_res
 
