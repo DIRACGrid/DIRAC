@@ -434,6 +434,11 @@ architectureScript = ""
 candidate = os.path.join( rootPath, "scripts", architectureScriptName )
 if os.path.isfile( candidate ):
   architectureScript = candidate
+else:
+  # If the extension does not provide a dirac-architecture, use dirac-platform as default value
+  candidate = os.path.join( rootPath, "scripts", "dirac-platform" )
+  if os.path.isfile( candidate ):
+    architectureScript = candidate
 
 if architectureScript:
   retCode, localArchitecture = executeAndGetOutput( architectureScript )
