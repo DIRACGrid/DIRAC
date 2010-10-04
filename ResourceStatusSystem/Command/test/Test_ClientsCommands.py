@@ -905,12 +905,26 @@ class MonitoredStatus_CommandSuccess(ClientsCommandsTestCase):
   
   def test_doCommand(self):
 
-    self.mock_client.getMonitoredStatus.return_value = 'Active'
+    self.mock_client.getMonitoredStatus.return_value = ['Active']
     for g in ValidRes:
       self.MS_C.setArgs((g, ''))
       self.MS_C.setClient(self.mock_client)
       res = self.MS_C.doCommand()
       self.assertEqual(res, {'Result':'Active'})
+      
+    self.mock_client.getMonitoredStatus.return_value = ['Active', 'Probing']
+    for g in ValidRes:
+      self.MS_C.setArgs((g, ''))
+      self.MS_C.setClient(self.mock_client)
+      res = self.MS_C.doCommand()
+      self.assertEqual(res, {'Result':'Probing'})
+      
+    self.mock_client.getMonitoredStatus.return_value = ['Active', 'Probing', 'Banned']
+    for g in ValidRes:
+      self.MS_C.setArgs((g, ''))
+      self.MS_C.setClient(self.mock_client)
+      res = self.MS_C.doCommand()
+      self.assertEqual(res, {'Result':'Banned'})
       
 #############################################################################
 

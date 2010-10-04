@@ -2639,15 +2639,17 @@ class ResourceStatusDB:
       req = "SELECT SiteName FROM Services WHERE ServiceName = '%s'" %(name)
 
     elif from_g in ('Resource', 'Resources'):
-      req = "SELECT SiteName FROM Sites WHERE GridSiteName = "
-      req = req + "(SELECT GridSiteName FROM Resources WHERE ResourceName = '%s')" %(name)
-      
-      if to_g in ('Service', 'Services'):
-        reqType = "SELECT ServiceType FROM Resources WHERE ResourceName = '%s'" %(name)
-        resQuery = self.db._query(reqType)
-        if not resQuery['OK']:
-          raise RSSDBException, where(self, self.getGeneralName) + resQuery['Message']
-        serviceType = resQuery['Value'][0][0]
+      reqType = "SELECT ServiceType FROM Resources WHERE ResourceName = '%s'" %(name)
+      resQuery = self.db._query(reqType)
+      if not resQuery['OK']:
+        raise RSSDBException, where(self, self.getGeneralName) + resQuery['Message']
+      serviceType = resQuery['Value'][0][0]
+
+      if serviceType == 'Computing':
+        req = "SELECT SiteName FROM Resources WHERE ResourceName = '%s'" %(name)
+      else:
+        req = "SELECT SiteName FROM Sites WHERE GridSiteName = "
+        req = req + "(SELECT GridSiteName FROM Resources WHERE ResourceName = '%s')" %(name)
          
     elif from_g in ('StorageElement', 'StorageElements'):
       if to_g in ('Resource', 'Resources'):

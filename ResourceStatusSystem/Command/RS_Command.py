@@ -164,7 +164,7 @@ class StorageElementsStats_Command(Command):
 class MonitoredStatus_Command(Command):
   """ 
   The MonitoredStatus_Command class is a command class to know about 
-  monitored status
+  monitored status. 
   """
   
   def doCommand(self):
@@ -194,12 +194,22 @@ class MonitoredStatus_Command(Command):
         if ValidRes.index(self.args[2]) >= ValidRes.index(self.args[0]):
           raise InvalidRes, where(self, self.doCommand)
         generalName = self.client.getGeneralName(self.args[0], self.args[1], self.args[2])[0]
-        res = self.client.getMonitoredStatus(self.args[2], generalName)
+        statuses = self.client.getMonitoredStatus(self.args[2], generalName)
       else:
-        res = self.client.getMonitoredStatus(self.args[0], self.args[1])
+        statuses = self.client.getMonitoredStatus(self.args[0], self.args[1])
     except:
       gLogger.exception("Exception when calling ResourceStatusClient for %s %s" %(self.args[0], self.args[1]))
       return {'Result':'Unknown'}
+    
+    if len(statuses) == 1:
+      res = statuses[0]
+    else:
+      i = 0
+      for status in statuses:
+        ind = ValidStatus.index(status)
+        if ind > i:
+          i = ind
+      res = ValidStatus[i]
     
     return {'Result':res}
   

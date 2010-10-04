@@ -143,42 +143,50 @@ class ResourceStatusClient:
   
 #############################################################################
 
-  def getMonitoredStatus(self, granularity, name):
+  def getMonitoredStatus(self, granularity, names):
     """ 
-    Returns RSS status of name
+    Returns RSS status of names (could be a string or a list of strings)
         
     :Parameters:
       `granularity`
         string, should be a ValidRes
       
-      `name`
-        string, name of the ValidRes
+      `names`
+        string or dict, name(s) of the ValidRes
       
     :returns:
       'Active'|'Probing'|'Banned'|None
     """
 
-    if granularity in ('Site', 'Sites'):
-      res = self.rsS.getSitesStatusWeb({'SiteName':name}, [], 0, 1)
-    elif granularity in ('Service', 'Services'):
-      res = self.rsS.getServicesStatusWeb({'ServiceName':name}, [], 0, 1)
-    elif granularity in ('Resource', 'Resources'):
-      res = self.rsS.getResourcesStatusWeb({'ResourceName':name}, [], 0, 1)
-    elif granularity in ('StorageElement', 'StorageElements'):
-      res = self.rsS.getStorageElementsStatusWeb({'StorageElementName':name}, [], 0, 1)
-    else:
-      raise InvalidRes, where(self, self.getMonitoredStatus)
+    if not isinstance(names, list):
+      names = [names]
     
-    if not res['OK']:
-      raise RSSException, where(self, self.getMonitoredStatus) + " " + res['Message'] 
-    else:
-      try:
-        if granularity in ('Resource', 'Resources'):
-          return res['Value']['Records'][0][5]
-        else:
-          return res['Value']['Records'][0][4]
-      except IndexError:
-        return None
+    statusList = []
+    
+    for name in names:
+      if granularity in ('Site', 'Sites'):
+        res = self.rsS.getSitesStatusWeb({'SiteName':name}, [], 0, 1)
+      elif granularity in ('Service', 'Services'):
+        res = self.rsS.getServicesStatusWeb({'ServiceName':name}, [], 0, 1)
+      elif granularity in ('Resource', 'Resources'):
+        res = self.rsS.getResourcesStatusWeb({'ResourceName':name}, [], 0, 1)
+      elif granularity in ('StorageElement', 'StorageElements'):
+        res = self.rsS.getStorageElementsStatusWeb({'StorageElementName':name}, [], 0, 1)
+      else:
+        raise InvalidRes, where(self, self.getMonitoredStatus)
+    
+      if not res['OK']:
+        raise RSSException, where(self, self.getMonitoredStatus) + " " + res['Message'] 
+      else:
+        try:
+          if granularity in ('Resource', 'Resources'):
+            statusList.append(res['Value']['Records'][0][5])
+          else:
+            statusList.append(res['Value']['Records'][0][4])
+        except IndexError:
+          return None
+    
+    return statusList
     
 #############################################################################
 

@@ -63,8 +63,12 @@ class ResourceStatusClientSuccess(ClientsTestCase):
     self.mockRSS.getResourcesStatusWeb.return_value = {'OK':True, 'Value':{'Records': [['', '', '', '', '', 'Active', '']]}}
     self.mockRSS.getStorageElementsStatusWeb.return_value = {'OK':True, 'Value':{'Records': [['', '', '', '', 'Active', '']]}}
     for g in ValidRes:
-      res = self.RSCli.getMonitoredStatus(g, '')
-      self.assertEqual(res, 'Active')
+      res = self.RSCli.getMonitoredStatus(g, 'a')
+      self.assertEqual(res, ['Active'])
+      res = self.RSCli.getMonitoredStatus(g, ['a'])
+      self.assertEqual(res, ['Active'])
+      res = self.RSCli.getMonitoredStatus(g, ['a', 'b'])
+      self.assertEqual(res, ['Active', 'Active'])
 
   def test_getCachedAccountingResult(self):
     self.mockRSS.getCachedAccountingResult.return_value = {'OK':True, 'Value':[]}
