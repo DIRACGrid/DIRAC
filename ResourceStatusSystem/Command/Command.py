@@ -28,10 +28,6 @@ class Command(object):
       raise TypeError, "`Args` of commands should be in a tuple."
     
     self.args = argsIn
-    if not isinstance(self.args, tuple):
-      raise TypeError, where(self, self.setArgs)
-    if self.args[0] not in ValidRes:
-      raise InvalidRes, where(self, self.setArgs)
 
   def setClient(self, clientIn = None):
     """

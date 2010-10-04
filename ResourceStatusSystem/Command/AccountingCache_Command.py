@@ -16,7 +16,7 @@ class TransferQualityByDestSplitted_Command(Command):
   def doCommand(self, sources = None, SEs = None):
     """ 
     Returns transfer quality using the DIRAC accounting system for every SE 
-    for the last 2 hours 
+    for the last self.args[0] hours 
         
     :params:
       :attr:`sources`: list of source sites (when not given, take every site)
@@ -53,7 +53,7 @@ class TransferQualityByDestSplitted_Command(Command):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       self.client = ReportsClient(rpcClient = self.RPC)
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 2)
+    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
     toD = datetime.datetime.utcnow()
 
     try:
@@ -96,7 +96,7 @@ class FailedTransfersBySourceSplitted_Command(Command):
   def doCommand(self, sources = None, SEs = None):
     """ 
     Returns failed transfer using the DIRAC accounting system for every SE 
-    for the last 2 hours 
+    for the last self.args[0] hours 
         
     :params:
       :attr:`sources`: list of source sites (when not given, take every site)
@@ -133,7 +133,7 @@ class FailedTransfersBySourceSplitted_Command(Command):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       self.client = ReportsClient(rpcClient = self.RPC)
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 2)
+    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
     toD = datetime.datetime.utcnow()
 
     try:
@@ -179,7 +179,7 @@ class SuccessfullJobsBySiteSplitted_Command(Command):
   def doCommand(self, sites = None):
     """ 
     Returns successfull jobs using the DIRAC accounting system for every site 
-    for the last 24 hours 
+    for the last self.args[0] hours 
         
     :params:
       :attr:`sites`: list of sites (when not given, take every site)
@@ -205,7 +205,7 @@ class SuccessfullJobsBySiteSplitted_Command(Command):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       self.client = ReportsClient(rpcClient = self.RPC)
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 24)
+    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
     toD = datetime.datetime.utcnow()
 
     try:
@@ -247,7 +247,7 @@ class FailedJobsBySiteSplitted_Command(Command):
   def doCommand(self, sites = None):
     """ 
     Returns failed jobs using the DIRAC accounting system for every site 
-    for the last 24 hours 
+    for the last self.args[0] hours 
         
     :params:
       :attr:`sites`: list of sites (when not given, take every site)
@@ -273,7 +273,7 @@ class FailedJobsBySiteSplitted_Command(Command):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       self.client = ReportsClient(rpcClient = self.RPC)
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 24)
+    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
     toD = datetime.datetime.utcnow()
 
     try:
@@ -314,7 +314,7 @@ class SuccessfullPilotsBySiteSplitted_Command(Command):
   def doCommand(self, sites = None):
     """ 
     Returns successfull pilots using the DIRAC accounting system for every site 
-    for the last 24 hours 
+    for the last self.args[0] hours 
         
     :params:
       :attr:`sites`: list of sites (when not given, take every site)
@@ -340,7 +340,7 @@ class SuccessfullPilotsBySiteSplitted_Command(Command):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       self.client = ReportsClient(rpcClient = self.RPC)
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 24)
+    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
     toD = datetime.datetime.utcnow()
 
     try:
@@ -382,7 +382,7 @@ class FailedPilotsBySiteSplitted_Command(Command):
   def doCommand(self, sites = None):
     """ 
     Returns failed jobs using the DIRAC accounting system for every site 
-    for the last 24 hours 
+    for the last self.args[0] hours 
         
     :params:
       :attr:`sites`: list of sites (when not given, take every site)
@@ -408,7 +408,7 @@ class FailedPilotsBySiteSplitted_Command(Command):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       self.client = ReportsClient(rpcClient = self.RPC)
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 24)
+    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
     toD = datetime.datetime.utcnow()
 
     try:
@@ -449,7 +449,7 @@ class SuccessfullPilotsByCESplitted_Command(Command):
   def doCommand(self, CEs = None):
     """ 
     Returns successfull pilots using the DIRAC accounting system for every CE 
-    for the last 24 hours 
+    for the last self.args[0] hours 
         
     :params:
       :attr:`CEs`: list of CEs (when not given, take every CE)
@@ -475,7 +475,7 @@ class SuccessfullPilotsByCESplitted_Command(Command):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       self.client = ReportsClient(rpcClient = self.RPC)
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 24)
+    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
     toD = datetime.datetime.utcnow()
 
     try:
@@ -517,7 +517,7 @@ class FailedPilotsByCESplitted_Command(Command):
   def doCommand(self, CEs = None):
     """ 
     Returns failed pilots using the DIRAC accounting system for every CE 
-    for the last 24 hours 
+    for the last self.args[0] hours 
         
     :params:
       :attr:`CEs`: list of CEs (when not given, take every CE)
@@ -543,7 +543,7 @@ class FailedPilotsByCESplitted_Command(Command):
       from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
       self.client = ReportsClient(rpcClient = self.RPC)
 
-    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = 24)
+    fromD = datetime.datetime.utcnow()-datetime.timedelta(hours = self.args[0])
     toD = datetime.datetime.utcnow()
 
     try:

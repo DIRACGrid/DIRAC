@@ -62,7 +62,11 @@ class ClientsCacheFeeder(AgentModule):
       for command in commandsList_AccountingCache:
         cObj = cc.setCommandObject(command)
         cc.setCommandClient(command, cObj, RPCAccounting = RPCAccounting)
-        self.commandObjectsList_AccountingCache.append((command, cObj))
+        try:
+          cArgs = command[2]
+        except IndexError:
+          cArgs = ()
+        self.commandObjectsList_AccountingCache.append((command, cObj, cArgs))
         
       return S_OK()
 
@@ -99,6 +103,7 @@ class ClientsCacheFeeder(AgentModule):
       
       for co in self.commandObjectsList_AccountingCache:
         try:
+          co[1].setArgs(co[2])
           self.clientsInvoker.setCommand(co[1])
           res = self.clientsInvoker.doCommand()
           plotType = res.keys()[0]
