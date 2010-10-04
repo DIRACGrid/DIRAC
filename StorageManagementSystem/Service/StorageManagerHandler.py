@@ -111,6 +111,19 @@ class StorageManagerHandler(RequestHandler):
 
   ####################################################################
   #
+  # The state transition of Replicas method
+  #
+
+  types_updateReplicaStatus = []
+  def export_updateReplicaStatus(self,replicaIDs,newReplicaStatus):
+    """ This allows to update the status of replicas """
+    res = storageDB.updateReplicaStatus(replicaIDs,newReplicaStatus)
+    if not res['OK']:
+      gLogger.error('updateReplicaStatus: Failed to update replica status',res['Message'])
+    return res
+
+  ####################################################################
+  #
   # The state transition of the Replicas from New->Waiting
   #
 
