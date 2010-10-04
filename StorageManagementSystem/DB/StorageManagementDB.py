@@ -152,7 +152,7 @@ class StorageManagementDB(DB):
     if not oldReplicaState:
       toUpdate = replicaIDs
     else:
-      req = "SELECT ReplicaID FROM CacheReplicas WHERE Status = '%s' AND ReplicaID IN (%s)" % (oldReplicaState,intListToString(replicaIDs))
+      req = "SELECT ReplicaID FROM CacheReplicas WHERE Status IN (%s) AND ReplicaID IN (%s)" % (stringListToString(oldReplicaState),intListToString(replicaIDs))
       res = self._query(req,connection)
       if not res['OK']:
         return res
