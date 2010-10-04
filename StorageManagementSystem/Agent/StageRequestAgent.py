@@ -95,6 +95,7 @@ class StageRequestAgent(AgentModule):
 
     # Now issue the prestage requests for the remaining replicas
     stageRequestMetadata = {}
+    updatedPfnIDs = []
     if pfnRepIDs:
       gLogger.info("StageRequest.__issuePrestageRequests: Submitting %s stage requests for %s." % (len(pfnRepIDs),storageElement))
       res = self.replicaManager.prestageStorageFile(pfnRepIDs.keys(),storageElement,lifetime=self.pinLifetime)
@@ -105,11 +106,15 @@ class StageRequestAgent(AgentModule):
           if not stageRequestMetadata.has_key(requestID):
             stageRequestMetadata[requestID] = []
           stageRequestMetadata[requestID].append(pfnRepIDs[pfn])
+          updatedPfnIDs.append(pfnRepIDs[pfn])
     if stageRequestMetadata:
       gLogger.info("StageRequest.__issuePrestageRequests: %s stage request metadata to be updated." % len(stageRequestMetadata))
       res = self.stagerClient.insertStageRequest(stageRequestMetadata,self.pinLifetime)
       if not res['OK']:
         gLogger.error("StageRequest.__issuePrestageRequests: Failed to insert stage request metadata.", res['Message'])
+      res = self.stagerClient.updateReplicaStatus(updatedPfnIDs,'StageSubmitted')
+      if not res['OK']:
+        gLogger.error("StageRequest.__issuePrestageRequests: Failed to insert replica status.", res['Message'])
     return
 
   def __getWaitingReplicas(self):

@@ -58,7 +58,10 @@ class StageMonitorAgent(AgentModule):
     for replicaID in seReplicaIDs:
       pfn = replicaIDs[replicaID]['PFN']
       pfnRepIDs[pfn] = replicaID
-      pfnReqIDs[pfn] = replicaIDs[replicaID]['RequestID']
+      requestID = replicaIDs[replicaID].get('RequestID',None)
+      if requestID:
+        pfnReqIDs[pfn] = replicaIDs[replicaID]['RequestID']
+     
     gLogger.info("StageMonitor.__monitorStorageElementStageRequests: Monitoring %s stage requests for %s." % (len(pfnRepIDs),storageElement))
     #res = self.replicaManager.getPrestageStorageFileStatus(pfnReqIDs,storageElement)
     #if not res['OK']:
@@ -100,6 +103,9 @@ class StageMonitorAgent(AgentModule):
       res = self.stagerClient.setStageComplete(stagedReplicas)
       if not res['OK']:
         gLogger.error("StageMonitor.__monitorStorageElementStageRequests: Failed to updated staged replicas.", res['Message'])
+      res = self.stagerClient.updateReplicaStatus(stagedReplicas,'Staged')
+      if not res['OK']:
+        gLogger.error("StageRequest.__monitorStorageElementStageRequests: Failed to insert replica status.", res['Message'])
     return
 
   def __getStageSubmittedReplicas(self):
@@ -123,7 +129,7 @@ class StageMonitorAgent(AgentModule):
       seReplicas[storageElement].append(replicaID)
       
     # RequestID was missing from replicaIDs dictionary 
-    res = self.stagerClient.getStageRequests({'StageStatus':'StageSubmitted'})
+    res = self.stagerClient.getStageRequests({'ReplicaID':replicaIDs.keys()})
     if not res['OK']:
       return res
     if not res['Value']:
@@ -132,7 +138,7 @@ class StageMonitorAgent(AgentModule):
     for replicaID,info in res['Value'].items():
       reqID = info['RequestID']
       replicaIDs[replicaID]['RequestID'] = reqID
-        
+
     return S_OK({'SEReplicas':seReplicas,'ReplicaIDs':replicaIDs})
 
   def __reportProblematicFiles(self,lfns,reason):
