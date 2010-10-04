@@ -60,18 +60,24 @@ class StageMonitorAgent(AgentModule):
       pfnRepIDs[pfn] = replicaID
       pfnReqIDs[pfn] = replicaIDs[replicaID]['RequestID']
     gLogger.info("StageMonitor.__monitorStorageElementStageRequests: Monitoring %s stage requests for %s." % (len(pfnRepIDs),storageElement))
-    res = self.replicaManager.getPrestageStorageFileStatus(pfnReqIDs,storageElement) 
-    if not res['OK']:
-      gLogger.error("StageMonitor.__monitorStorageElementStageRequests: Completely failed to monitor stage requests for replicas.",res['Message'])
-      return
-    prestageStatus = res['Value']
-    failedMonitor = []
-    for pfn,reason in prestageStatus['Failed'].items():
-      if re.search('File does not exist',reason):
-        gLogger.error("StageMonitor.__monitorStorageElementStageRequests: PFN did not exist in the StorageElement",pfn)
-        terminalReplicaIDs[pfnRepIDs[pfn]] = 'PFN did not exist in the StorageElement'
-      else:
-        failedMonitor.append(pfn)
+    #res = self.replicaManager.getPrestageStorageFileStatus(pfnReqIDs,storageElement)
+    #if not res['OK']:
+    #  gLogger.error("StageMonitor.__monitorStorageElementStageRequests: Completely failed to monitor stage requests for replicas.",res['Message'])
+    #  return
+    #prestageStatus = res['Value']
+    #failedMonitor = []
+    #for pfn,reason in prestageStatus['Failed'].items():
+    #  if re.search('File does not exist',reason):
+    #    gLogger.error("StageMonitor.__monitorStorageElementStageRequests: PFN did not exist in the StorageElement",pfn)
+    #    terminalReplicaIDs[pfnRepIDs[pfn]] = 'PFN did not exist in the StorageElement'
+    #  else:
+    #    failedMonitor.append(pfn)
+
+    # HACK
+    failedMonitor=pfnRepIDs.keys()
+    prestageStatus = {'Successful':{},'Failed':{}}
+    # END OF HACK
+
     # Double check because gfal/srm sometimes returns an error with file requests being expired.
     if failedMonitor:
       res = self.replicaManager.getStorageFileMetadata(failedMonitor,storageElement)
