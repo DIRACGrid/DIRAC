@@ -17,13 +17,8 @@ class TransformationAgent(AgentModule):
   def initialize(self):
     self.pluginLocation = self.am_getOption('PluginLocation','DIRAC.TransformationSystem.Agent.TransformationPlugin')
     self.checkCatalog = self.am_getOption('CheckCatalog','yes')
-    service = self.am_getOption('TransformationService','')
-    if not service:
-      gLogger.fatal("To initialise this agent the TransformationService option must be provided")
-      return S_ERROR()
     self.am_setModuleParam("shifterProxy", "ProductionManager")
     self.transDB = TransformationDBClient('TransformationDB')
-    self.transDB.setServer(service)
     self.rm = ReplicaManager()
     return S_OK()
 
