@@ -66,7 +66,7 @@ class InputDataAgent(AgentModule):
       if not self.fullTimeLog.has_key(transID):
         self.fullTimeLog[transID] = datetime.datetime.utcnow()
 
-      # Perform the query to the Bookkeeping
+      # Perform the query to the metadata catalog
       gLogger.verbose("Using input data query for transformation %d: %s" % (transID,str(inputDataQuery)))
       start = time.time()              
       result = self.metadataClient.findFilesByMetadata(inputDataQuery)    
