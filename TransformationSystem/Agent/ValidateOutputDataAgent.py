@@ -30,11 +30,11 @@ class ValidateOutputDataAgent(AgentModule):
     self.fileCatalogClient = FileCatalogClient()
     self.am_setModuleParam( "shifterProxy", "DataManager" )
     self.am_setModuleParam( "shifterProxyLocation", "%s/runit/%s/proxy" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), AGENT_NAME ) )
-    self.transformationTypes = self.am_getOption('TransformationTypes', ['MCSimulation', 'DataReconstruction', 'DataStripping', 'MCStripping', 'Merge'])
+    self.transformationTypes = sortList(self.am_getOption('TransformationTypes', ['MCSimulation', 'DataReconstruction', 'DataStripping', 'MCStripping', 'Merge']))
     gLogger.info("Will treat the following transformation types: %s" % str(self.transformationTypes))
-    self.directoryLocations = self.am_getOption('DirectoryLocations',['TransformationDB','StorageUsage','MetadataCatalog'])
+    self.directoryLocations = sortList(self.am_getOption('DirectoryLocations',['TransformationDB','StorageUsage','MetadataCatalog']))
     gLogger.info("Will search for directories in the following locations: %s" % str(self.directoryLocations))
-    self.activeStorages = self.am_getOption('ActiveSEs',[])
+    self.activeStorages = sortList(self.am_getOption('ActiveSEs',[]))
     gLogger.info("Will check the following storage elements: %s" % str(self.activeStorages))
     return S_OK()
 
@@ -129,6 +129,7 @@ class ValidateOutputDataAgent(AgentModule):
       directories = self.__addDirs(transID,transDirectories,directories)
     if not directories:
       gLogger.info("No output directories found")
+    directories = sortList(directories)
     return S_OK(directories)
 
   def __addDirs(self,transID,newDirs,existingDirs):
