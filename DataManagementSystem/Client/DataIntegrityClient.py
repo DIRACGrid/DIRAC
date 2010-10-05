@@ -1,263 +1,51 @@
 """ This is the Data Integrity Client which allows the simple reporting of problematic file and replicas to the IntegrityDB and their status correctly updated in the FileCatalog.""" 
-
 __RCSID__ = "$Id$"
 
-import re, time, commands, random,os
-import types
+from DIRAC                                                import S_OK, S_ERROR,gLogger,gConfig
+from DIRAC.DataManagementSystem.Client.ReplicaManager     import ReplicaManager
+from DIRAC.Core.Utilities.List                            import sortList
+from DIRAC.Core.Base.Client                               import Client
+import re,os,types
 
-from DIRAC import S_OK, S_ERROR, gLogger,gConfig
-from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.List import sortList
+class DataIntegrityClient(Client):
 
-class DataIntegrityClient:
-
-  def __init__(self):
-    """ Constructor function.
-    """
-    pass
-
-  ##########################################################################
-  #
-  # This section contains the specific methods for interacting with the IntegrityDB service
-  #
-  def removeProblematic(self,fileID):
-    """ This removes the specified file ID from the integrity DB
-    """
-    if type(fileID) == types.ListType:
-      fileIDs = fileID
-    else:
-      fileIDs = [int(fileID)]
-    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
-    return integrityDB.removeProblematic(fileIDs)
-
-  def getProblematic(self):
-    """ Obtains a problematic file from the IntegrityDB based on the LastUpdate time
-    """
-    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
-    return integrityDB.getProblematic()
-
-  def getPrognosisProblematics(self,prognosis):
-    """ Obtains all the problematics of a particular prognosis from the integrityDB
-    """
-    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
-    return integrityDB.getPrognosisProblematics(prognosis)
-
-  def getProblematicsSummary(self):
-    """ Obtains a count of the number of problematics for each prognosis found
-    """
-    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
-    return integrityDB.getProblematicsSummary()
-
-  def getDistinctPrognosis(self):
-    """ Obtains the distinct prognosis found in the integrityDB
-    """
-    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
-    return integrityDB.getDistinctPrognosis()
-
-  def getProductionProblematics(self,prodID):
-    """ Obtains the problematics for a given production
-    """
-    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
-    return integrityDB.getProductionProblematics(prodID)
-
-  def incrementProblematicRetry(self,fileID):
-    """ Increments the retry count for the supplied file ID
-    """
-    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
-    return integrityDB.incrementProblematicRetry(fileID)
-
-  def changeProblematicPrognosis(self,fileID,newPrognosis):
-    """ Changes the prognosis of the supplied file to the new prognosis
-    """
-    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
-    return integrityDB.changeProblematicPrognosis(fileID,newPrognosis)
-
-  def setProblematicStatus(self,fileID,status):
-    """ Updates the status of a problematic in the integrityDB
-    """
-    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
-    return integrityDB.setProblematicStatus(fileID,status)
-
-  ##########################################################################
-  #
-  # This section contains the specific methods for BK->LFC checks
-  #
+  """  The following methods are supported in the service but are not mentioned explicitly here
   
-  def productionToCatalog(self,productionID):
-    """  This obtains the file information from the BK and checks these files are present in the LFC.
-    """
-    gLogger.info("-" * 40)
-    gLogger.info("Performing the BK->LFC check")
-    gLogger.info("-" * 40)
-    res = self.__getProductionFiles(productionID)
-    if not res['OK']:
-      return res
-    bkMetadata = res['Value']['BKMetadata']
-    noReplicaFiles = res['Value']['GotReplicaNo']
-    yesReplicaFiles = res['Value']['GotReplicaYes']
-    # For the files marked as existing we perfom catalog check
-    res = self.__getCatalogMetadata(yesReplicaFiles)
-    if not res['OK']:
-      return res
-    catalogMetadata = res['Value']
-    # Try and get the metadata for files that shouldn't exist in the catalog
-    if noReplicaFiles:
-      res = self.__checkCatalogForBKNoReplicas(noReplicaFiles)
-      if not res['OK']:
-        return res    
-      catalogMetadata.update(res['Value'])
-    # Get the replicas for the files found to exist in the catalog
-    res = self.__getCatalogReplicas(catalogMetadata.keys())
-    if not res['OK']:
-      return res
-    replicas = res['Value']
-    resDict = {'CatalogMetadata':catalogMetadata,'CatalogReplicas':replicas}
-    return S_OK(resDict)
+          getProblematic()
+             Obtains a problematic file from the IntegrityDB based on the LastUpdate time
 
-  def __checkCatalogForBKNoReplicas(self,lfns):
-    gLogger.info('Checking the catalog existence of %s files' % len(lfns))
-    rm = ReplicaManager()
-    res = rm.getCatalogFileMetadata(lfns)
-    if not res['OK']:
-      gLogger.error('Failed to get catalog metadata',res['Message'])
-      return res
-    allMetadata = res['Value']['Successful']
-    existingCatalogFiles = allMetadata.keys()
-    if existingCatalogFiles:
-      self.__reportProblematicFiles(existingCatalogFiles,'BKReplicaNo')
-    gLogger.info('Checking the catalog existence of files complete')
-    return S_OK(allMetadata)
+          getPrognosisProblematics(prognosis)
+            Obtains all the problematics of a particular prognosis from the integrityDB
+    
+          getProblematicsSummary()
+            Obtains a count of the number of problematics for each prognosis found
 
-  def __getProductionFiles(self,productionID):
-    """ This method queries the bookkeeping and obtains the file metadata for the given production
-    """
-    gLogger.info("Attempting to get files for production %s" % productionID)
-    bk = RPCClient('Bookkeeping/BookkeepingManager')
-    res = bk.getProductionFiles(productionID,'ALL')
-    if not res['OK']:
-      return res
-    yesReplicaFiles = []
-    noReplicaFiles = []
-    badReplicaFiles = []
-    badBKFileSize = []
-    badBKGUID = []
-    allMetadata = res['Value']
-    gLogger.info("Obtained at total of %s files" % len(allMetadata.keys()))
-    totalSize = 0
-    for lfn,bkMetadata in allMetadata.items():
-      if (bkMetadata['FileType'] != 'LOG'):
-        if (bkMetadata['GotReplica'] == 'Yes'):
-          yesReplicaFiles.append(lfn)
-          if bkMetadata['FileSize']:
-            totalSize+= long(bkMetadata['FileSize'])
-        elif (bkMetadata['GotReplica'] == 'No'):
-          noReplicaFiles.append(lfn)
-        else:
-          badReplicaFiles.append(lfn)
-        if not bkMetadata['FileSize']:
-          badBKFileSize.append(lfn)
-        if not bkMetadata['GUID']:
-          badBKGUID.append(lfn)
-    if badReplicaFiles:
-      self.__reportProblematicFiles(badReplicaFiles,'BKReplicaBad')
-    if badBKFileSize:
-      self.__reportProblematicFiles(badBKFileSize,'BKSizeBad')
-    if badBKGUID:
-      self.__reportProblematicFiles(badBKGUID,'BKGUIDBad')
-    gLogger.info("%s files marked with replicas with total size %s bytes" % (len(yesReplicaFiles),totalSize))
-    gLogger.info("%s files marked without replicas" % len(noReplicaFiles))
-    resDict = {'BKMetadata':allMetadata,'GotReplicaYes':yesReplicaFiles,'GotReplicaNo':noReplicaFiles}
-    return S_OK(resDict)
+          getDistinctPrognosis()
+            Obtains the distinct prognosis found in the integrityDB
 
-  ##########################################################################
-  #
-  # This section contains the specific methods for LFC->BK checks
-  #
+          getProductionProblematics(prodID)
+            Obtains the problematics for a given production
 
-  def catalogDirectoryToBK(self,lfnDir):
-    """ This obtains the replica and metadata information from the catalog for the supplied directory and checks against the BK.
-    """
-    gLogger.info("-" * 40)
-    gLogger.info("Performing the LFC->BK check") 
-    gLogger.info("-" * 40)
-    if type(lfnDir) in types.StringTypes:
-      lfnDir = [lfnDir]
-    res = self.__getCatalogDirectoryContents(lfnDir)
-    if not res['OK']:
-      return res
-    replicas = res['Value']['Replicas']
-    catalogMetadata = res['Value']['Metadata']
-    resDict = {'CatalogMetadata':catalogMetadata,'CatalogReplicas':replicas}
-    if not catalogMetadata:
-      return S_ERROR('No files found in directory')
-    res = self.__checkBKFiles(replicas,catalogMetadata)
-    if not res['OK']:
-      return res       
-    return S_OK(resDict)
+          incrementProblematicRetry(fileID)
+            Increments the retry count for the supplied file ID
 
-  def catalogFileToBK(self,lfns):
-    """ This obtains the replica and metadata information from the catalog and checks against the storage elements.
-    """
-    gLogger.info("-" * 40)
-    gLogger.info("Performing the LFC->BK check")
-    gLogger.info("-" * 40)
-    if type(lfns) in types.StringTypes:
-      lfns = [lfns]
-    res = self.__getCatalogMetadata(lfns)
-    if not res['OK']:
-      return res
-    catalogMetadata = res['Value']
-    res = self.__getCatalogReplicas(catalogMetadata.keys())
-    if not res['OK']:
-      return res
-    replicas = res['Value']
-    res = self.__checkBKFiles(replicas,catalogMetadata)
-    if not res['OK']:
-      return res
-    resDict = {'CatalogMetadata':catalogMetadata,'CatalogReplicas':replicas}
-    return S_OK(resDict)
+          changeProblematicPrognosis(fileID,newPrognosis)
+            Changes the prognosis of the supplied file to the new prognosis
 
-  def __checkBKFiles(self,replicas,catalogMetadata):
-    """ This takes the supplied replica and catalog metadata information and ensures the files exist in the BK with the correct metadata.
-    """
-    gLogger.info('Checking the bookkeeping existence of %s files' % len(catalogMetadata))
-    rm = ReplicaManager()
-    res = rm.getCatalogFileMetadata(catalogMetadata.keys(),catalogs=['BookkeepingDB'])
-    if not res['OK']:
-      gLogger.error('Failed to get bookkeeping metadata',res['Message'])
-      return res
-    allMetadata = res['Value']['Successful']
-    missingBKFiles = []
-    sizeMismatchFiles = []
-    guidMismatchFiles = []
-    noBKReplicaFiles = []
-    withBKReplicaFiles = []
-    for lfn,error in res['Value']['Failed'].items():
-      if re.search('No such file or directory',error):
-        missingBKFiles.append(lfn)
-    for lfn,bkMetadata in allMetadata.items():
-      if not bkMetadata['FileSize'] == catalogMetadata[lfn]['Size']:
-        sizeMismatchFiles.append(lfn)
-      if not bkMetadata['GUID'] ==  catalogMetadata[lfn]['GUID']:
-        guidMismatchFiles.append(lfn)
-      gotReplica = bkMetadata['GotReplica'].lower()
-      if (gotReplica == 'yes') and (not replicas.has_key(lfn)):
-        withBKReplicaFiles.append(lfn)
-      if (gotReplica != 'yes') and (replicas.has_key(lfn)):
-        noBKReplicaFiles.append(lfn)
-    if missingBKFiles:
-      self.__reportProblematicFiles(missingBKFiles,'LFNBKMissing')
-    if sizeMismatchFiles:
-      self.__reportProblematicFiles(sizeMismatchFiles,'BKCatalogSizeMismatch')
-    if guidMismatchFiles:
-      self.__reportProblematicFiles(guidMismatchFiles,'BKCatalogGUIDMismatch')
-    if withBKReplicaFiles:
-      self.__reportProblematicFiles(withBKReplicaFiles,'BKReplicaYes')
-    if noBKReplicaFiles:
-      self.__reportProblematicFiles(noBKReplicaFiles,'BKReplicaNo')
-    gLogger.info('Checking the bookkeeping existence of files complete')
-    return S_OK(allMetadata)
+          setProblematicStatus(fileID,status)
+            Updates the status of a problematic in the integrityDB
+            
+          removeProblematic(self,fileID)
+            This removes the specified file ID from the integrity DB
+            
+          insertProblematic(sourceComponent,fileMetadata)
+            Inserts file with supplied metadata into the integrity DB
+  """
+  
+  def __init__(self):
+    self.setServer('DataManagement/DataIntegrity')
+    self.rm = ReplicaManager()
+
 
   ##########################################################################
   #
@@ -354,8 +142,8 @@ class DataIntegrityClient:
     """ Check obtain the physical file metadata and check the files are available
     """
     gLogger.info('Checking the integrity of %s physical files at %s' % (len(pfnLfns),se))
-    rm = ReplicaManager()
-    res = rm.getStorageFileMetadata(pfnLfns.keys(),se)
+
+    res = self.rm.getStorageFileMetadata(pfnLfns.keys(),se)
     if not res['OK']:
       gLogger.error('Failed to get metadata for pfns.', res['Message'])
       return res
@@ -410,9 +198,9 @@ class DataIntegrityClient:
 
   def __checkCatalogForSEFiles(self,storageMetadata,storageElement):
     gLogger.info('Checking %s storage files exist in the catalog' % len(storageMetadata))
-    rm = ReplicaManager()
+
     # First get all the PFNs as they should be registered in the catalog
-    res = rm.getPfnForProtocol(storageMetadata.keys(),storageElement,withPort=False)
+    res = self.rm.getPfnForProtocol(storageMetadata.keys(),storageElement,withPort=False)
     if not res['OK']:
       gLogger.error("Failed to get registered PFNs for physical files",res['Message'])
       return res
@@ -423,7 +211,7 @@ class DataIntegrityClient:
     for original,registered in res['Value']['Successful'].items():
       storageMetadata[registered] = storageMetadata.pop(original)
     # Determine whether these PFNs are registered and if so obtain the LFN
-    res = rm.getCatalogLFNForPFN(storageMetadata.keys())
+    res = self.rm.getCatalogLFNForPFN(storageMetadata.keys())
     if not res['OK']:
       gLogger.error("Failed to get registered LFNs for PFNs",res['Message'])
       return res
@@ -469,8 +257,8 @@ class DataIntegrityClient:
     """ Obtians the contents of the supplied directory on the storage
     """
     gLogger.info('Obtaining the contents for %s directories at %s' % (len(lfnDir),storageElement))
-    rm = ReplicaManager()
-    res = rm.getPfnForLfn(lfnDir,storageElement)
+
+    res = self.rm.getPfnForLfn(lfnDir,storageElement)
     if not res['OK']:
       gLogger.error("Failed to get PFNs for directories",res['Message'])
       return res
@@ -479,7 +267,7 @@ class DataIntegrityClient:
     if res['Value']['Failed']:
       return S_ERROR('Failed to obtain directory PFN from LFNs')
     storageDirectories = res['Value']['Successful'].values()
-    res = rm.getStorageFileExists(storageDirectories,storageElement)
+    res = self.rm.getStorageFileExists(storageDirectories,storageElement)
     if not res['OK']:
       gLogger.error("Failed to obtain existance of directories",res['Message'])
       return res
@@ -496,7 +284,7 @@ class DataIntegrityClient:
     allFiles = {}
     while len(activeDirs) > 0:
       currentDir = activeDirs[0]
-      res = rm.getStorageListDirectory(currentDir,storageElement)
+      res = self.rm.getStorageListDirectory(currentDir,storageElement)
       activeDirs.remove(currentDir)
       if not res['OK']:
         gLogger.error('Failed to get directory contents',res['Message'])
@@ -508,7 +296,7 @@ class DataIntegrityClient:
         dirContents = res['Value']['Successful'][currentDir]
         activeDirs.extend(dirContents['SubDirs'])
         fileMetadata = dirContents['Files']
-        res = rm.getLfnForPfn(fileMetadata.keys(),storageElement)
+        res = self.rm.getLfnForPfn(fileMetadata.keys(),storageElement)
         if not res['OK']:
           gLogger.error('Failed to get directory content LFNs',res['Message'])
           return res
@@ -545,8 +333,8 @@ class DataIntegrityClient:
 
   def __getStoragePathExists(self,lfnPaths,storageElement):
     gLogger.info('Determining the existance of %d files at %s' % (len(lfnPaths),storageElement))
-    rm = ReplicaManager()
-    res = rm.getPfnForLfn(lfnPaths,storageElement)
+
+    res = self.rm.getPfnForLfn(lfnPaths,storageElement)
     if not res['OK']:
       gLogger.error("Failed to get PFNs for LFNs",res['Message'])
       return res
@@ -558,7 +346,7 @@ class DataIntegrityClient:
     pfnLfns = {}
     for lfn,pfn in lfnPfns.items():
       pfnLfns[pfn] = lfn
-    res = rm.getStorageFileExists(pfnLfns.keys(),storageElement)
+    res = self.rm.getStorageFileExists(pfnLfns.keys(),storageElement)
     if not res['OK']:
       gLogger.error("Failed to obtain existance of paths",res['Message'])
       return res
@@ -582,12 +370,12 @@ class DataIntegrityClient:
     """ Obtain the contents of the supplied directory 
     """
     gLogger.info('Obtaining the catalog contents for %s directories' % len(lfnDir))
-    rm = ReplicaManager()
+
     activeDirs = lfnDir
     allFiles = {}
     while len(activeDirs) > 0:
       currentDir = activeDirs[0]
-      res = rm.getCatalogListDirectory(currentDir)
+      res = self.rm.getCatalogListDirectory(currentDir)
       activeDirs.remove(currentDir)
       if not res['OK']:
         gLogger.error('Failed to get directory contents',res['Message'])
@@ -625,9 +413,9 @@ class DataIntegrityClient:
     """ Obtain the file replicas from the catalog while checking that there are replicas
     """
     gLogger.info('Obtaining the replicas for %s files' % len(lfns))
-    rm = ReplicaManager()
+
     zeroReplicaFiles = []
-    res = rm.getCatalogReplicas(lfns,allStatus=True)
+    res = self.rm.getCatalogReplicas(lfns,allStatus=True)
     if not res['OK']:
       gLogger.error('Failed to get catalog replicas',res['Message'])
       return res
@@ -646,10 +434,10 @@ class DataIntegrityClient:
     if not lfns:
       return S_OK({})
     gLogger.info('Obtaining the catalog metadata for %s files' % len(lfns))
-    rm = ReplicaManager()
+
     missingCatalogFiles = []
     zeroSizeFiles = []
-    res = rm.getCatalogFileMetadata(lfns)
+    res = self.rm.getCatalogFileMetadata(lfns)
     if not res['OK']:
       gLogger.error('Failed to get catalog metadata',res['Message'])
       return res
@@ -703,10 +491,9 @@ class DataIntegrityClient:
     successful = {}
     failed = {}
     fileMetadata = {}
-    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
     for lfn in lfns:
       fileMetadata[lfn] = {'Prognosis':reason,'LFN':lfn,'PFN':'','SE':''}
-    res = integrityDB.insertProblematic(sourceComponent,fileMetadata)
+    res = self.insertProblematic(sourceComponent,fileMetadata)
     if not res['OK']:
       gLogger.error("DataIntegrityClient.setReplicaProblematic: Failed to insert problematics to integrity DB")
     return res
@@ -745,18 +532,17 @@ class DataIntegrityClient:
       gLogger.error(errStr)
       return S_ERROR(errStr)
     gLogger.info("DataIntegrityClient.setReplicaProblematic: Attempting to update %s replicas." % len(replicaTuple))
-    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
     replicaDict = {}
     for lfn,pfn,se,reason in replicaTuple:
       replicaDict[lfn] = {'Prognosis':reason,'LFN':lfn,'PFN':pfn,'SE':se}
-    res = integrityDB.insertProblematic(sourceComponent,replicaDict)
+    res = self.insertProblematic(sourceComponent,replicaDict)
     if not res['OK']:
       gLogger.error("DataIntegrityClient.setReplicaProblematic: Failed to insert problematic to integrity DB")
       return res
     for lfn in replicaDict.keys():
       replicaDict[lfn]['Status'] = 'Problematic'
-    rm = ReplicaManager()
-    res = rm.setCatalogReplicaStatus(replicaDict)
+
+    res = self.rm.setCatalogReplicaStatus(replicaDict)
     if not res['OK']:
       errStr = "DataIntegrityClient.setReplicaProblematic: Completely failed to update replicas."
       gLogger.error(errStr,res['Message'])
@@ -773,7 +559,6 @@ class DataIntegrityClient:
 
   def __updateCompletedFiles(self,prognosis,fileID):
     gLogger.info("%s file (%d) is resolved" % (prognosis,fileID))
-    #return integrityDB.removeProblematic(fileID)
     return self.setProblematicStatus(fileID,'Resolved')
 
   def __returnProblematicError(self,fileID,res):
@@ -782,8 +567,8 @@ class DataIntegrityClient:
     return res
 
   def __getRegisteredPFNLFN(self,pfn,storageElement):
-    rm = ReplicaManager()
-    res = rm.getPfnForProtocol([pfn],storageElement,withPort=False)
+
+    res = self.rm.getPfnForProtocol([pfn],storageElement,withPort=False)
     if not res['OK']:
       gLogger.error("Failed to get registered PFN for physical files",res['Message'])
       return res
@@ -792,7 +577,7 @@ class DataIntegrityClient:
     if res['Value']['Failed']:
       return S_ERROR('Failed to obtain registered PFNs from physical file')
     registeredPFN = res['Value']['Successful'][pfn]
-    res = rm.getCatalogLFNForPFN(registeredPFN,singleFile=True)
+    res = self.rm.getCatalogLFNForPFN(registeredPFN,singleFile=True)
     if (not res['OK']) and re.search('No such file or directory',res['Message']):
       return S_OK(False)
     return S_OK(res['Value'])
@@ -802,8 +587,8 @@ class DataIntegrityClient:
     fileID = problematicDict['FileID']
     prognosis = problematicDict['Prognosis']
     problematicDict['Status'] = 'Checked'
-    rm = ReplicaManager()
-    res = rm.setCatalogReplicaStatus({lfn:problematicDict},singleFile=True)
+
+    res = self.rm.setCatalogReplicaStatus({lfn:problematicDict},singleFile=True)
     if not res['OK']:
       return self.__returnProblematicError(fileID,res)
     gLogger.info("%s replica (%d) is updated to Checked status" % (prognosis,fileID))
@@ -812,21 +597,20 @@ class DataIntegrityClient:
   def resolveCatalogPFNSizeMismatch(self,problematicDict):
     """ This takes the problematic dictionary returned by the integrity DB and resolved the CatalogPFNSizeMismatch prognosis
     """
-    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
     lfn = problematicDict['LFN']
     pfn = problematicDict['PFN']
     se = problematicDict['SE']
     fileID = problematicDict['FileID']
-    rm = ReplicaManager()
-    res = rm.getCatalogFileSize(lfn,singleFile=True)
+
+    res = self.rm.getCatalogFileSize(lfn,singleFile=True)
     if not res['OK']:
       return self.__returnProblematicError(fileID,res)
     catalogSize = res['Value']
-    res = rm.getStorageFileSize(pfn,se,singleFile=True)
+    res = self.rm.getStorageFileSize(pfn,se,singleFile=True)
     if not res['OK']:
       return self.__returnProblematicError(fileID,res)
     storageSize = res['Value']
-    res = rm.getCatalogFileSize(lfn,singleFile=True,catalogs=['BookkeepingDB'])
+    res = self.rm.getCatalogFileSize(lfn,singleFile=True,catalogs=['BookkeepingDB'])
     if not res['OK']:
       return self.__returnProblematicError(fileID,res)
     bookkeepingSize = res['Value']
@@ -835,7 +619,7 @@ class DataIntegrityClient:
       return self.__updateReplicaToChecked(problematicDict)
     if (catalogSize == bookkeepingSize):
       gLogger.info("CatalogPFNSizeMismatch replica (%d) found to mismatch the bookkeeping also" % fileID)
-      res = rm.getCatalogReplicas(lfn,singleFile=True)
+      res = self.rm.getCatalogReplicas(lfn,singleFile=True)
       if not res['OK']:
         return self.__returnProblematicError(fileID,res)
       if len(res['Value']) <= 1:
@@ -843,7 +627,7 @@ class DataIntegrityClient:
         return S_ERROR("Not removing catalog file mismatch since the only replica")
       else:
         gLogger.info("CatalogPFNSizeMismatch replica (%d) has other replicas. Removing..." % fileID)
-        res = rm.removeReplica(se,lfn)
+        res = self.rm.removeReplica(se,lfn)
         if not res['OK']:
           return self.__returnProblematicError(fileID,res)
         return self.__updateCompletedFiles('CatalogPFNSizeMismatch',fileID)
@@ -859,22 +643,21 @@ class DataIntegrityClient:
   def resolvePFNNotRegistered(self,problematicDict):
     """ This takes the problematic dictionary returned by the integrity DB and resolved the PFNNotRegistered prognosis
     """
-    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
     lfn = problematicDict['LFN']
     pfn = problematicDict['PFN']
     se = problematicDict['SE']
     fileID = problematicDict['FileID']
-    rm = ReplicaManager()
-    res = rm.getCatalogExists(lfn,singleFile=True)
+
+    res = self.rm.getCatalogExists(lfn,singleFile=True)
     if not res['OK']:
       return self.__returnProblematicError(fileID,res)
     if not res['Value']:
       # The file does not exist in the catalog
-      res = rm.removeStorageFile(pfn,se,singleFile=True)
+      res = self.rm.removeStorageFile(pfn,se,singleFile=True)
       if not res['OK']:
         return self.__returnProblematicError(fileID,res)
       return self.__updateCompletedFiles('PFNNotRegistered',fileID)
-    res = rm.getStorageFileMetadata(pfn,se,singleFile=True)
+    res = self.rm.getStorageFileMetadata(pfn,se,singleFile=True)
     if (not res['OK']) and (re.search('File does not exist',res['Message'])):
       gLogger.info("PFNNotRegistered replica (%d) found to be missing." % fileID)
       return self.__updateCompletedFiles('PFNNotRegistered',fileID)
@@ -907,7 +690,7 @@ class DataIntegrityClient:
         se = '%s_MC-DST' % site
 
     problematicDict['SE'] = se
-    res = rm.getPfnForProtocol([pfn],se,withPort=False)
+    res = self.rm.getPfnForProtocol([pfn],se,withPort=False)
     if not res['OK']:
       return self.__returnProblematicError(fileID,res)
     for pfn, error in res['Value']['Failed'].items():
@@ -915,10 +698,10 @@ class DataIntegrityClient:
     if res['Value']['Failed']:
       return S_ERROR('Failed to obtain registered PFNs from physical file')
     problematicDict['PFN'] = res['Value']['Successful'][pfn]
-    res = rm.addCatalogReplica({lfn:problematicDict},singleFile=True)
+    res = self.rm.addCatalogReplica({lfn:problematicDict},singleFile=True)
     if not res['OK']:
       return self.__returnProblematicError(fileID,res)
-    res = rm.getCatalogFileMetadata(lfn,singleFile=True)
+    res = self.rm.getCatalogFileMetadata(lfn,singleFile=True)
     if not res['OK']:
       return self.__returnProblematicError(fileID,res)
     if res['Value']['Size'] != storageMetadata['Size']:
@@ -929,17 +712,16 @@ class DataIntegrityClient:
   def resolveLFNCatalogMissing(self,problematicDict):
     """ This takes the problematic dictionary returned by the integrity DB and resolved the LFNCatalogMissing prognosis
     """
-    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
     lfn = problematicDict['LFN']
     fileID = problematicDict['FileID']
-    rm = ReplicaManager()
-    res = rm.getCatalogExists(lfn,singleFile=True)
+
+    res = self.rm.getCatalogExists(lfn,singleFile=True)
     if not res['OK']:
       return self.__returnProblematicError(fileID,res)
     if res['Value']:
       return self.__updateCompletedFiles('LFNCatalogMissing',fileID)
     # Remove the file from all catalogs
-    res = rm.removeCatalogFile(lfn,singleFile=True)
+    res = self.rm.removeCatalogFile(lfn,singleFile=True)
     if not res['OK']:
       return self.__returnProblematicError(fileID,res)
     return self.__updateCompletedFiles('LFNCatalogMissing',fileID)
@@ -947,26 +729,25 @@ class DataIntegrityClient:
   def resolvePFNMissing(self,problematicDict):
     """ This takes the problematic dictionary returned by the integrity DB and resolved the PFNMissing prognosis
     """
-    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
     pfn = problematicDict['PFN']
     se = problematicDict['SE']
     lfn = problematicDict['LFN']
     fileID = problematicDict['FileID']
-    rm = ReplicaManager()
-    res = rm.getCatalogExists(lfn,singleFile=True)
+
+    res = self.rm.getCatalogExists(lfn,singleFile=True)
     if not res['OK']:
       return self.__returnProblematicError(fileID,res)
     if not res['Value']:
       gLogger.info("PFNMissing file (%d) no longer exists in catalog" % fileID)
       return self.__updateCompletedFiles('PFNMissing',fileID)
-    res = rm.getStorageFileExists(pfn,se,singleFile=True)
+    res = self.rm.getStorageFileExists(pfn,se,singleFile=True)
     if not res['OK']:
       return self.__returnProblematicError(fileID,res)
     if res['Value']:
       gLogger.info("PFNMissing replica (%d) is no longer missing" % fileID)
       return self.__updateReplicaToChecked(problematicDict)
     gLogger.info("PFNMissing replica (%d) does not exist" % fileID)
-    res = rm.getCatalogReplicas(lfn,allStatus=True,singleFile=True)
+    res = self.rm.getCatalogReplicas(lfn,allStatus=True,singleFile=True)
     if not res['OK']:
       return self.__returnProblematicError(fileID,res)
     replicas = res['Value']
@@ -982,13 +763,13 @@ class DataIntegrityClient:
       gLogger.info("PFNMissing replica (%d) is no longer registered at SE. Resolved." % fileID)
       return self.__updateCompletedFiles('PFNMissing',fileID)
     gLogger.info("PFNMissing replica (%d) does not exist. Removing from catalog..." % fileID)
-    res = rm.removeCatalogReplica({lfn:problematicDict},singleFile=True)
+    res = self.rm.removeCatalogReplica({lfn:problematicDict},singleFile=True)
     if not res['OK']:
       return self.__returnProblematicError(fileID,res)
     if len(replicas) == 1:
       gLogger.info("PFNMissing replica (%d) had a single replica. Updating prognosis" % fileID)
       return self.changeProblematicPrognosis(fileID,'LFNZeroReplicas')
-    res = rm.replicateAndRegister(problematicDict['LFN'],se)
+    res = self.rm.replicateAndRegister(problematicDict['LFN'],se)
     if not res['OK']:
       return self.__returnProblematicError(fileID,res)
     # If we get here the problem is solved so we can update the integrityDB
@@ -1000,8 +781,8 @@ class DataIntegrityClient:
     pfn = problematicDict['PFN']
     se = problematicDict['SE']
     fileID = problematicDict['FileID']
-    rm = ReplicaManager()
-    res = rm.getStorageFileMetadata(pfn,se,singleFile=True)
+
+    res = self.rm.getStorageFileMetadata(pfn,se,singleFile=True)
     if (not res['OK']) and (re.search('File does not exist',res['Message'])):
       # The file is no longer Unavailable but has now dissapeared completely
       gLogger.info("PFNUnavailable replica (%d) found to be missing. Updating prognosis" % fileID)
@@ -1015,62 +796,6 @@ class DataIntegrityClient:
     gLogger.info("PFNUnavailable replica (%d) is no longer Unavailable" % fileID) 
     # Need to make the replica okay in the Catalog
     return self.__updateReplicaToChecked(problematicDict)
-
-  def resolveBKReplicaYes(self,problematicDict):
-    """ This takes the problematic dictionary returned by the integrity DB and resolved the BKReplicaYes prognosis
-    """
-    lfn = problematicDict['LFN']
-    fileID = problematicDict['FileID']
-    rm = ReplicaManager()
-    res = rm.getCatalogExists(lfn,singleFile=True)
-    if not res['OK']:
-      return self.__returnProblematicError(fileID,res)
-    removeBKFile = False
-    # If the file does not exist in the catalog
-    if not res['Value']:
-      gLogger.info("BKReplicaYes file (%d) does not exist in the catalog. Removing..." % fileID)
-      removeBKFile = True
-    else:
-      gLogger.info("BKReplicaYes file (%d) found to exist in the catalog" % fileID)
-      # If the file has no replicas in the catalog
-      res = rm.getCatalogReplicas(lfn,singleFile=True)
-      if (not res['OK']) and (res['Message'] == 'File has zero replicas'):
-        gLogger.info("BKReplicaYes file (%d) found to exist without replicas. Removing..." % fileID)
-        removeBKFile = True
-    if removeBKFile:
-      # Remove the file from the BK because it does not exist
-      res = rm.removeCatalogFile(lfn,singleFile=True,catalogs=['BookkeepingDB'])
-      if not res['OK']:
-        return self.__returnProblematicError(fileID,res)
-      gLogger.info("BKReplicaYes file (%d) removed from bookkeeping" % fileID)
-    return self.__updateCompletedFiles('BKReplicaYes',fileID)
-
-  def resolveBKReplicaNo(self,problematicDict):
-    """ This takes the problematic dictionary returned by the integrity DB and resolved the BKReplicaNo prognosis
-    """
-    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
-    lfn = problematicDict['LFN']
-    fileID = problematicDict['FileID']
-    rm = ReplicaManager()
-    res = rm.getCatalogExists(lfn,singleFile=True)
-    if not res['OK']:
-      return self.__returnProblematicError(fileID,res)
-    # If the file exists in the catalog
-    if not res['Value']:
-      return self.__updateCompletedFiles('BKReplicaNo',fileID)
-    gLogger.info("BKReplicaNo file (%d) found to exist in the catalog" % fileID)
-    # and has available replicas
-    res = rm.getCatalogReplicas(lfn,singleFile=True)
-    if not res['OK']:
-      return self.__returnProblematicError(fileID,res)
-    if not res['Value']:
-      gLogger.info("BKReplicaNo file (%d) found to have no replicas" % fileID)
-      return self.changeProblematicPrognosis(fileID,'LFNZeroReplicas')
-    gLogger.info("BKReplicaNo file (%d) found to have replicas" % fileID)
-    res = rm.addCatalogFile(lfn,singleFile=True,catalogs=['BookkeepingDB'])
-    if not res['OK']:
-      return self.__returnProblematicError(fileID,res)
-    return self.__updateCompletedFiles('BKReplicaNo',fileID)
    
   def resolvePFNZeroSize(self,problematicDict):
     """ This takes the problematic dictionary returned by the integrity DB and resolves the PFNZeroSize prognosis
@@ -1078,14 +803,14 @@ class DataIntegrityClient:
     pfn = problematicDict['PFN']
     se = problematicDict['SE']
     fileID = problematicDict['FileID']
-    rm = ReplicaManager()
-    res = rm.getStorageFileSize(pfn,se,singleFile=True)
+
+    res = self.rm.getStorageFileSize(pfn,se,singleFile=True)
     if (not res['OK']) and (re.search('File does not exist',res['Message'])):
       gLogger.info("PFNZeroSize replica (%d) found to be missing. Updating prognosis" % problematicDict['FileID'])
       return self.changeProblematicPrognosis(fileID,'PFNMissing')
     storageSize = res['Value']
     if storageSize == 0:
-      res = rm.removeStorageFile(pfn,se,singleFile=True)
+      res = self.rm.removeStorageFile(pfn,se,singleFile=True)
       if not res['OK']:
         return self.__returnProblematicError(fileID,res)
       gLogger.info("PFNZeroSize replica (%d) removed. Updating prognosis" % problematicDict['FileID'])
@@ -1097,7 +822,7 @@ class DataIntegrityClient:
     if not lfn:
       gLogger.info("PFNZeroSize replica (%d) not registered in catalog. Updating prognosis" % problematicDict['FileID'])
       return self.changeProblematicPrognosis(fileID,'PFNNotRegistered')
-    res = rm.getCatalogFileMetadata(lfn,singleFile=True)
+    res = self.rm.getCatalogFileMetadata(lfn,singleFile=True)
     if not res['OK']:
       return self.__returnProblematicError(fileID,res)
     catalogSize = res['Value']['Size']
@@ -1111,11 +836,10 @@ class DataIntegrityClient:
   def resolveLFNZeroReplicas(self,problematicDict):
     """ This takes the problematic dictionary returned by the integrity DB and resolves the LFNZeroReplicas prognosis
     """
-    integrityDB = RPCClient('DataManagement/DataIntegrity',timeout=120)
     lfn = problematicDict['LFN']
     fileID = problematicDict['FileID']
-    rm = ReplicaManager()
-    res = rm.getCatalogReplicas(lfn,allStatus=True,singleFile=True)
+
+    res = self.rm.getCatalogReplicas(lfn,allStatus=True,singleFile=True)
     if res['OK'] and res['Value']:
       gLogger.info("LFNZeroReplicas file (%d) found to have replicas" % fileID)
     else:
@@ -1130,13 +854,12 @@ class DataIntegrityClient:
           pfnsFound = True
       if not pfnsFound:
         gLogger.info("LFNZeroReplicas file (%d) did not have storage files. Removing..." % fileID)
-        res = rm.removeCatalogFile(lfn,singleFile=True)
+        res = self.rm.removeCatalogFile(lfn,singleFile=True)
         if not res['OK']:
           gLogger.error(res['Message'])  
           # Increment the number of retries for this file
-          integrityDB.incrementProblematicRetry(fileID)
+          self.server.incrementProblematicRetry(fileID)
           return res
         gLogger.info("LFNZeroReplicas file (%d) removed from catalog" % fileID)
     # If we get here the problem is solved so we can update the integrityDB
-    #return integrityDB.removeProblematic(fileID)   
     return self.__updateCompletedFiles('LFNZeroReplicas',fileID)
