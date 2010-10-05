@@ -46,10 +46,6 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     res = self.rsh.export_removeSite('')
     self.assert_(res['OK'])
 
-  def test_export_removeSiteType(self):
-    res = self.rsh.export_removeSiteType('')
-    self.assert_(res['OK'])
-
   def test_export_getSitesHistory(self):
     res = self.rsh.export_getSitesHistory('')
     self.assert_(res['OK'])
@@ -83,10 +79,6 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
 
   def test_export_removeService(self):
     res = self.rsh.export_removeService('')
-    self.assert_(res['OK'])
-
-  def test_export_removeServiceType(self):
-    res = self.rsh.export_removeServiceType('')
     self.assert_(res['OK'])
 
   def test_export_getServicesHistory(self):
@@ -128,10 +120,6 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
 
   def test_export_removeResource(self):
     res = self.rsh.export_removeResource('')
-    self.assert_(res['OK'])
-
-  def test_export_removeResourceType(self):
-    res = self.rsh.export_removeResourceType('')
     self.assert_(res['OK'])
 
   def test_export_getResourcesList(self):
@@ -207,18 +195,10 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     res = self.rsh.export_getStatusList()
     self.assert_(res['OK'])
         
-  def test_export_addStatus(self):
-    res = self.rsh.export_addStatus('')
-    self.assert_(res['OK'])
-
   def test_export_getCountries(self):
     res = self.rsh.export_getCountries('Site')
     self.assert_(res['OK'])
         
-  def test_export_removeStatus(self):
-    res = self.rsh.export_removeStatus('')
-    self.assert_(res['OK'])
-
   def test_export_getPeriods(self):
     for granularity in ValidRes:
       for status in ValidStatus:
