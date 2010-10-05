@@ -63,7 +63,7 @@ class MCExtensionAgent(AgentModule):
     # Determine the number of tasks to be created
     numberOfTasks = self.calculateTaskNumber(maxTasks,statusDict)
     if not numberOfTasks:
-      gLogger.info("No tasks required for transformation %d" % taskID)
+      gLogger.info("No tasks required for transformation %d" % transID)
       return S_OK()
     # Extend the transformation by the determined number of tasks
     res = self.transClient.extendTransformation(transID,numberOfTasks)
@@ -77,7 +77,8 @@ class MCExtensionAgent(AgentModule):
     done = statusDict.get('Done',0)
     failed = statusDict.get('Failed',0)
     running = statusDict.get('Running',0)
-    total = statusDict.get('Total',0)
+    waiting = statusDict.get('Waiting',0)
+    total = statusDict.get('Created',0)
     # If the failure rate is higher than acceptable
     if (total != 0) and ((100.0*float(failed)/float(total)) > self.maxFailRate):
       return 0
