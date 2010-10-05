@@ -10,6 +10,8 @@ from DIRAC.Core.Utilities.List                                 import sortList
 from DIRAC.Core.Utilities.Shifter                              import setupShifterProxyInEnv
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient     import DataIntegrityClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager          import ReplicaManager
+from DIRAC.DataManagementSystem.Client.StorageUsageClient      import StorageUsageClient
+from DIRAC.Resources.Catalog.FileCatalogClient                 import FileCatalogClient 
 from DIRAC.TransformationSystem.Client.TransformationDBClient  import TransformationDBClient
 import re, os
 
@@ -24,8 +26,12 @@ class ValidateOutputDataAgent(AgentModule):
     self.integrityClient = DataIntegrityClient()
     self.replicaManager = ReplicaManager()
     self.transClient = TransformationDBClient()
+    self.storageUsageClient = StorageUsageClient()
+    self.fileCatalogClient = FileCatalogClient()
     self.am_setModuleParam( "shifterProxy", "DataManager" )
+    self.am_setModuleParam( "shifterProxyLocation", "%s/runit/%s/proxy" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), AGENT_NAME ) )
     self.transformationTypes = self.am_getOption('TransformationTypes', ['MCSimulation', 'DataReconstruction', 'DataStripping', 'MCStripping', 'Merge'])
+    self.directoryLocations = self.am_getOption('DirectoryLocations',['TransformationDB','StorageUsage','MetadataCatalog'])
     self.activeStorages = self.am_getOption('ActiveSEs',[])
     return S_OK()
 
@@ -95,27 +101,40 @@ class ValidateOutputDataAgent(AgentModule):
   def getTransformationDirectories(self,transID):
     """ Get the directories for the supplied transformation from the transformation system """
     directories = []
-    res = self.transClient.getParameters( transID, pname = 'OutputDirectories' )
-    if not res['OK']:
-      gLogger.error("Failed to obtain transformation directories",res['Message'])
-      return res
-    directories = res['Value'].splitlines()
-    from DIRAC.Core.DISET.RPCClient import RPCClient
-    client = RPCClient("DataManagement/StorageUsage")
-    res = client.getStorageDirectories('','',transID,[])
-    if not res['OK']:
-      gLogger.error("Failed to obtain storage usage directories",res['Message'])
-      return res
-    for dir in res['Value']:
-      if not dir in directories:
-        directories.append(dir)
-    for dir in directories:
-      transStr = str(transID).zfill(8)
-      if not re.search(transStr,dir):
-        directories.remove(dir)
+    if 'TransformationDB' in self.directoryLocations:
+      res = self.transClient.getParameters( transID, pname = 'OutputDirectories' )
+      if not res['OK']:
+        gLogger.error("Failed to obtain transformation directories",res['Message'])
+        return res
+      transDirectories = res['Value'].splitlines()
+      directories = self.__addDirs(transID,transDirectories,directories)
+
+    if 'StorageUsage' in self.directoryLocations:
+      res = self.storageUsageClient.getStorageDirectories('','',transID,[])
+      if not res['OK']:
+        gLogger.error("Failed to obtain storage usage directories",res['Message'])
+        return res
+      transDirectories = res['Value']
+      directories = self.__addDirs(transID,transDirectories,directories)
+      
+    if 'MetadataCatalog' in self.directoryLocations:   
+      res = self.fileCatalogClient.findDirectoriesByMetadata({'TransformationID':transID})
+      if not res['OK']:
+        gLogger.error("Failed to obtain metadata catalog directories",res['Message'])
+        return res
+      transDirectories = res['Value']
+      directories = self.__addDirs(transID,transDirectories,directories)
     if not directories:
       gLogger.info("No output directories found")
     return S_OK(directories)
+
+  def __addDirs(self,transID,newDirs,existingDirs):
+    for dir in newDirs:
+      transStr = str(transID).zfill(8)
+      if re.search(transStr,dir):
+        if not dir in existingDirs:
+          existingDirs.append(dir)
+    return existingDirs
 
   #############################################################################
   def checkTransformationIntegrity(self, transID):
