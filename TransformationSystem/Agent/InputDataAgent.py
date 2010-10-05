@@ -7,7 +7,7 @@ __RCSID__ = "$Id: InputDataAgent.py 28908 2010-10-05 07:57:08Z acsmith $"
 from DIRAC                                                                import S_OK, S_ERROR, gConfig, gLogger, gMonitor
 from DIRAC.Core.Base.AgentModule                                          import AgentModule
 from DIRAC.TransformationSystem.Client.TransformationDBClient             import TransformationDBClient
-from DIRAC.Resources.Catalog.Client.FileCatalogClient                     import FileCatalogClient
+from DIRAC.Resources.Catalog.FileCatalogClient                            import FileCatalogClient
 from DIRAC.Core.Utilities.List                                            import sortList
 import os, time, datetime
 
@@ -46,7 +46,10 @@ class InputDataAgent(AgentModule):
       transID = long(transDict['TransformationID'])
       res = self.transClient.getTransformationInputDataQuery(transID)
       if not res['OK']:
-        gLogger.warn("InputDataAgent.execute: Failed to get InputDataQuery", res['Message'])
+        if res['Message'] == 'No InputDataQuery found for transformation':
+          gLogger.info("InputDataAgent.execute: No input data query found for transformation %d" % transID)
+        else:
+          gLogger.error("InputDataAgent.execute: Failed to get input data query for %d" % transID, res['Message'])
         continue
       inputDataQuery = res['Value']
         
