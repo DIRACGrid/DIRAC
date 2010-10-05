@@ -128,7 +128,9 @@ class ValidateOutputDataAgent(AgentModule):
     if not res['OK']:
       return res
     directories = res['Value']
-
+    if not directories:
+      return S_OK()
+    
     ######################################################
     #
     # This check performs Catalog->SE for possible output directories
