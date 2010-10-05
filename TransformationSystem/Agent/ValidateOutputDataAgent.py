@@ -151,8 +151,6 @@ class ValidateOutputDataAgent(AgentModule):
       if not iRes['OK']:
         gLogger.error( iRes['Message'] )
         return iRes
-      #catalogDirMetadata = iRes['Value']['CatalogMetadata']
-      #catalogDirReplicas = iRes['Value']['CatalogReplicas']
 
     ###################################################### 
     #
@@ -163,8 +161,6 @@ class ValidateOutputDataAgent(AgentModule):
       if not res['OK']:
         gLogger.error( res['Message'] )
         return res
-      #catalogMetadata = res['Value']['CatalogMetadata']
-      #storageMetadata = res['Value']['StorageMetadata']
 
     gLogger.info( "-" * 40 )
     gLogger.info( "Completed integrity check for transformation %s" % transID)
