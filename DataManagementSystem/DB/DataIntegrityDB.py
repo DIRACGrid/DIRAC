@@ -125,7 +125,7 @@ class DataIntegrityDB(DB):
       problematics.append({'FileID':fileid,'LFN':lfn,'PFN':pfn,'Size':size,'SE':se,'GUID':guid,'Prognosis':prognosis})
     return S_OK(problematics)
 
-  def getProductionProblematics(self,prodID):
+  def getTransformationProblematics(self,transID):
     req = "SELECT LFN,FileID FROM Problematics WHERE Status = 'New' AND LFN LIKE '%s/%s/%s';" % ('%',('%8.f' % prodID).replace(' ','0'),'%')
     res = self._query(req)
     if not res['OK']:

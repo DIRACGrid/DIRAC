@@ -23,7 +23,7 @@ class DataIntegrityClient(Client):
           getDistinctPrognosis()
             Obtains the distinct prognosis found in the integrityDB
 
-          getProductionProblematics(prodID)
+          getTransformationProblematics(prodID)
             Obtains the problematics for a given production
 
           incrementProblematicRetry(fileID)

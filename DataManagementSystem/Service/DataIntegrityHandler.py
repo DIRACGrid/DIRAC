@@ -96,13 +96,13 @@ class DataIntegrityHandler(RequestHandler):
       gLogger.error("DataIntegrityHandler.changeProblematicPrognosis: Failed to update.", res['Message'])
     return res
 
-  types_getProductionProblematics = [[IntType,LongType]]
-  def export_getProductionProblematics(self,prodID):
-    """ Get the problematics for a given production """
-    gLogger.info("DataIntegrityHandler.getProductionProblematics: Attempting to get problematics for production.")
-    res = integrityDB.getProductionProblematics(prodID)
+  types_getTransformationProblematics = [[IntType,LongType]]
+  def export_getTransformationProblematics(self,transID):
+    """ Get the problematics for a given transformation """
+    gLogger.info("DataIntegrityHandler.getTransformationProblematics: Attempting to get problematics for transformation.")
+    res = integrityDB.getTransformationProblematics(transID)
     if not res['OK']:
-      gLogger.error("DataIntegrityHandler.getProductionProblematics: Failed.", res['Message'])
+      gLogger.error("DataIntegrityHandler.getTransformationProblematics: Failed.", res['Message'])
     return res
  
   types_getProblematicsSummary = []
