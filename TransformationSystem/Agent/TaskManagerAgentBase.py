@@ -13,7 +13,7 @@ from DIRAC.Core.Security.Misc                                       import getPr
 from DIRAC.Core.Utilities.List                                      import sortList
 import os, time, string, datetime, re
 
-AGENT_NAME = 'TransformationSystem/TaskManagerAgentBase'
+AGENT_NAME = 'Transformation/TaskManagerAgentBase'
 
 class TaskManagerAgentBase(AgentModule):
 

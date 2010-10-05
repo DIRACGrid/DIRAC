@@ -10,7 +10,7 @@ from DIRAC.TransformationSystem.Client.TransformationDBClient   import Transform
 from DIRAC.DataManagementSystem.Client.ReplicaManager           import ReplicaManager
 import time,re
 
-AGENT_NAME = 'TransformationSystem/TransformationAgent'
+AGENT_NAME = 'Transformation/TransformationAgent'
 
 class TransformationAgent(AgentModule):
 

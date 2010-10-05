@@ -8,7 +8,7 @@ from DIRAC                                                          import S_OK,
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase          import TaskManagerAgentBase
 from DIRAC.TransformationSystem.Client.TaskManager                  import RequestTasks
 
-AGENT_NAME = 'TransformationSystem/RequestTaskAgent'
+AGENT_NAME = 'Transformation/RequestTaskAgent'
 
 class RequestTaskAgent( TaskManagerAgentBase, RequestTasks ):
 

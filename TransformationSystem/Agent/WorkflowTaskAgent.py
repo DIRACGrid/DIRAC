@@ -8,7 +8,7 @@ from DIRAC                                                          import S_OK,
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase          import TaskManagerAgentBase
 from DIRAC.TransformationSystem.Client.TaskManager                  import WorkflowTasks
 
-AGENT_NAME = 'TransformationSystem/WorkflowTaskAgent'
+AGENT_NAME = 'Transformation/WorkflowTaskAgent'
 
 class WorkflowTaskAgent( TaskManagerAgentBase, WorkflowTasks ):
 
