@@ -38,7 +38,6 @@ CREATE TABLE Transformations (
     GroupSize INT NOT NULL DEFAULT 1,
     InheritedFrom INTEGER DEFAULT 0,
     Body LONGBLOB,
-    InputDataQueryID INT DEFAULT 0,
     MaxNumberOfTasks INT NOT NULL DEFAULT 0,
     EventsPerTask INT NOT NULL DEFAULT 0,
     PRIMARY KEY(TransformationID),
