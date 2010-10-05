@@ -992,6 +992,76 @@ class TransformationDB(DB):
     req = "DELETE FROM TransformationTasks WHERE TransformationID=%d AND TaskID=%d" % (transID,taskID)
     return self._update(req,connection)
   
+  ####################################################################
+  #
+  # These methods manipulate the TransformationInputDataQuery table 
+  #
+
+  def createTransformationInputDataQuery(self, transName, queryDict, connection=False):
+    res = self._getConnectionTransID(connection,transName)
+    if not res['OK']:
+      return res
+    connection = res['Value']['Connection']
+    transID = res['Value']['TransformationID']
+    return self.__addInputDataQuery(transID,queryDict,connection=connection)
+  
+  def __addInputDataQuery(self, transID, queryDict, connection=False):
+    insertTuples = []
+    for parameterName in sortList(queryDict.keys()):
+      parameterValue = queryDict[parameterName]
+      if not parameterValue:
+        continue
+      parameterType = 'String'
+      if type(parameterValue) in [ListType,TupleType]:
+        if type(parameterValue[0]) in [IntType,LongType]:
+          parameterType = 'Integer'
+          parameterValue = [str(x) for x in parameterValue]
+        parameterValue = ';;;'.join(parameterValue)
+      else:
+        if type(parameterValue) in [IntType,LongType]:
+          parameterType = 'Integer'
+          parameterValue = str(parameterValue)
+      insertTuples.append("(%d,'%s','%s','%s')" % (transID,parameterName,parameterValue,parameterType))    
+    if not insertTuples:
+      return S_ERROR("No input data query to be inserted")
+    req = "INSERT INTO TransformationInputDataQuery (TransformationID,ParameterName,ParameterValue,ParameterType) VALUES %s" % ','.join(insertTuples)
+    res = self._insert(req,connection)
+    if not res['OK']:
+      self.deleteTransformationInputDataQuery(transID,connection=connection)
+    return res
+  
+  def deleteTransformationInputDataQuery(self, transName, connection=False):
+    res = self._getConnectionTransID(connection,transName)
+    if not res['OK']:
+      return res
+    connection = res['Value']['Connection']
+    transID = res['Value']['TransformationID']
+    req = "DELETE FROM TransformationInputDataQuery WHERE TransformationID=%d;" % transID
+    return self._update(req,connection)
+  
+  def getTransformationInputDataQuery(self, transName, connection=False):
+    res = self._getConnectionTransID(connection,transName)
+    if not res['OK']:
+      return res
+    connection = res['Value']['Connection']
+    transID = res['Value']['TransformationID']
+    req = "SELECT ParameterName,ParameterValue,ParameterType FROM TransformationInputDataQuery WHERE TransformationID=%d;" % transID
+    res = self._query(req,connection)
+    if not res['OK']:
+      return res
+    queryDict = {}
+    for parameterName,parameterValue,parameterType in res['Value']:
+      if re.search(';;;',str(parameterValue)):
+        parameterValue = parameterValue.split(';;;')
+        if parameterType == 'Integer':
+          parameterValue = [int(x) for x in parameterValue]
+      elif parameterType == 'Integer':
+        parameterValue = int(parameterValue)
+      queryDict[parameterName] = parameterValue
+    if not queryDict:
+      return S_ERROR("No InputDataQuery found for transformation.")
+    return S_OK(queryDict)
+
   ###########################################################################
   #
   # These methods manipulate the TaskInputs table

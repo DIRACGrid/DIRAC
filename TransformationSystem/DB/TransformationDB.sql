@@ -116,12 +116,13 @@ PRIMARY KEY(TransformationID,TaskID)
 );
 
 -- -------------------------------------------------------------------------------
-DROP TABLE IF EXISTS InputDataQuery;
-CREATE TABLE InputDataQuery(
-InputDataQueryID INTEGER NOT NULL,
+DROP TABLE IF EXISTS TransformationInputDataQuery;
+CREATE TABLE TransformationInputDataQuery(
+TransformationID INTEGER NOT NULL,
 ParameterName VARCHAR(1024) NOT NULL,
 ParameterValue BLOB NOT NULL,
-PRIMARY KEY(InputDataQueryID,ParameterName)
+ParameterType VARCHAR(8) NOT NULL,
+PRIMARY KEY(TransformationID,ParameterName)
 );
 
 -- -------------------------------------------------------------------------------

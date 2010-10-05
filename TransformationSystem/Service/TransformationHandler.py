@@ -208,6 +208,28 @@ class TransformationHandlerBase(RequestHandler):
           submitDict[taskID] = taskDict
     transDict['JobDictionary'] = submitDict
     return S_OK(transDict)
+  
+  ####################################################################
+  #
+  # These are the methods for TransformationInputDataQuery table 
+  #
+  
+  types_createTransformationInputDataQuery = [ [LongType, IntType, StringType], DictType ]
+  def export_createTransformationInputDataQuery(self,transName,queryDict):
+    authorDN = self._clientTransport.peerCredentials['DN']
+    res = database.createTransformationInputDataQuery(transName, queryDict,author=authorDN)
+    return self._parseRes(res)
+
+  types_deleteTransformationInputDataQuery = [ [LongType, IntType, StringType] ]
+  def export_deleteTransformationInputDataQuery(self, transName):
+    authorDN = self._clientTransport.peerCredentials['DN']
+    res = database.deleteTransformationInputDataQuery(transName,author=authorDN)
+    return self._parseRes(res)
+
+  types_getTransformationInputDataQuery = [ [LongType, IntType, StringType] ]
+  def export_getTransformationInputDataQuery(self, transName):
+    res = database.getTransformationInputDataQuery(transName)
+    return self._parseRes(res)
 
   ####################################################################
   #
