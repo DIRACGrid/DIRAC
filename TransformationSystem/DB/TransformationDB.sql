@@ -119,7 +119,7 @@ PRIMARY KEY(TransformationID,TaskID)
 DROP TABLE IF EXISTS TransformationInputDataQuery;
 CREATE TABLE TransformationInputDataQuery(
 TransformationID INTEGER NOT NULL,
-ParameterName VARCHAR(1024) NOT NULL,
+ParameterName VARCHAR(512) NOT NULL,
 ParameterValue BLOB NOT NULL,
 ParameterType VARCHAR(8) NOT NULL,
 PRIMARY KEY(TransformationID,ParameterName)

@@ -16,7 +16,7 @@ from DIRAC.Core.Base.DB                                                import DB
 from DIRAC.DataManagementSystem.Client.ReplicaManager                  import CatalogDirectory
 from DIRAC.Core.DISET.RPCClient                                        import RPCClient
 from DIRAC.Core.Security.Misc                                          import getProxyInfo
-from DIRAC.Core.Utilities.List                                         import stringListToString, intListToString
+from DIRAC.Core.Utilities.List                                         import stringListToString, intListToString,sortList
 from DIRAC.Core.Utilities.SiteSEMapping                                import getSEsForSite, getSitesForSE
 from DIRAC.Core.Utilities.Shifter                                      import setupShifterProxyInEnv
 from DIRAC.Core.Utilities.Subprocess                                   import pythonCall
@@ -997,15 +997,20 @@ class TransformationDB(DB):
   # These methods manipulate the TransformationInputDataQuery table 
   #
 
-  def createTransformationInputDataQuery(self, transName, queryDict, connection=False):
+  def createTransformationInputDataQuery(self, transName, queryDict, author='', connection=False):
     res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    return self.__addInputDataQuery(transID,queryDict,connection=connection)
+    return self.__addInputDataQuery(transID,queryDict,author=author,connection=connection)
   
-  def __addInputDataQuery(self, transID, queryDict, connection=False):
+  def __addInputDataQuery(self, transID, queryDict, author='', connection=False):
+    res = self.getTransformationInputDataQuery(transID, connection=connection)
+    if res['OK']:
+      return S_ERROR("Input data query already exists for transformation")
+    if res['Message'] != 'No InputDataQuery found for transformation':
+      return res
     insertTuples = []
     for parameterName in sortList(queryDict.keys()):
       parameterValue = queryDict[parameterName]
@@ -1025,19 +1030,30 @@ class TransformationDB(DB):
     if not insertTuples:
       return S_ERROR("No input data query to be inserted")
     req = "INSERT INTO TransformationInputDataQuery (TransformationID,ParameterName,ParameterValue,ParameterType) VALUES %s" % ','.join(insertTuples)
-    res = self._insert(req,connection)
+    res = self._update(req,connection)
     if not res['OK']:
+      message = 'Failed to add input data query'
       self.deleteTransformationInputDataQuery(transID,connection=connection)
+    else:
+      message = 'Added input data query'
+    self.__updateTransformationLogging(transID,message,author,connection=connection)      
     return res
   
-  def deleteTransformationInputDataQuery(self, transName, connection=False):
+  def deleteTransformationInputDataQuery(self, transName, author='', connection=False):
     res = self._getConnectionTransID(connection,transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
     req = "DELETE FROM TransformationInputDataQuery WHERE TransformationID=%d;" % transID
-    return self._update(req,connection)
+    res = self._update(req,connection)
+    if not res['OK']:
+      return res
+    if res['Value']:
+      # Add information to the transformation logging
+      message = 'Deleted input data query'
+      self.__updateTransformationLogging(transID,message,author,connection=connection)
+    return res
   
   def getTransformationInputDataQuery(self, transName, connection=False):
     res = self._getConnectionTransID(connection,transName)
@@ -1059,7 +1075,7 @@ class TransformationDB(DB):
         parameterValue = int(parameterValue)
       queryDict[parameterName] = parameterValue
     if not queryDict:
-      return S_ERROR("No InputDataQuery found for transformation.")
+      return S_ERROR("No InputDataQuery found for transformation")
     return S_OK(queryDict)
 
   ###########################################################################
