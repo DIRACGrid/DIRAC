@@ -53,9 +53,13 @@ class MCExtensionAgent(AgentModule):
     # Get the current count of tasks submitted for this transformation
     res = self.transClient.getTransformationTaskStats(transID)
     if not res['OK']:
-      gLogger.error("Failed to get task statistics","%s %s"  % (transID,res['Message']))
-      return res
-    statusDict = res['Value']
+      if res['Message'] != 'No records found':
+        gLogger.error("Failed to get task statistics","%s %s"  % (transID,res['Message']))
+        return res
+      else:
+        statusDict= {}
+    else:
+      statusDict = res['Value']
     gLogger.verbose("Current task count for transformation %d" % transID)
     for status in sortList(statusDict.keys()):
       statusCount = statusDict[status]
