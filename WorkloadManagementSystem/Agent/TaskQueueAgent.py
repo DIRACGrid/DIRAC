@@ -82,6 +82,11 @@ class TaskQueueAgent(OptimizerModule):
     result = self.taskQueueDB.insertJob( job, jobReqDict, jobPriority )
     if not result[ 'OK' ]:
       self.log.error( "Cannot insert job %s in task queue: %s" % ( job, result[ 'Message' ] ) )
+      # Force removing the job from the TQ if it was actually inserted
+      result = self.taskQueueDB.deleteJob(job)
+      if result['OK']:
+        if result['Value']:
+          self.log.info( "Job %s removed from the TQ" % job )
       return S_ERROR( "Cannot insert in task queue" )
     return S_OK()
 
