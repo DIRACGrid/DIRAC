@@ -58,7 +58,7 @@ class ValidateOutputDataAgent(AgentModule):
     if not transDicts:
       gLogger.info( "No transformations found in ValidatingOutput status" )
       return S_OK()
-    gLogger.info( "Found %s transformations in ValidatingOutput status" % len( prods ) )
+    gLogger.info( "Found %s transformations in ValidatingOutput status" % len( transDicts ) )
     for transDict in transDicts:
       transID = transDict['TransformationID']
       res = self.checkTransformationIntegrity(int(transID))
@@ -79,7 +79,7 @@ class ValidateOutputDataAgent(AgentModule):
     if not transDicts:
       gLogger.info( "No transformations found in WaitingIntegrity status" )
       return S_OK()
-    gLogger.info( "Found %s transformations in WaitingIntegrity status" % len( prods ) )
+    gLogger.info( "Found %s transformations in WaitingIntegrity status" % len( transDicts ) )
     for transDict in transDicts:
       transID = transDict['TransformationID']
       gLogger.info( "-" * 40 )
