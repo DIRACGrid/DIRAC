@@ -1491,6 +1491,8 @@ class ReplicaManager( CatalogToStorage ):
     for sourceSE, sourcePfn in replicaPreference:
       gLogger.verbose( "ReplicaManager.__replicate: Attempting replication from %s to %s." % ( sourceSE, destSE ) )
       fileDict = {destPfn:sourcePfn}
+      if sourcePfn == destPfn:
+        continue
       res = destStorageElement.replicateFile( fileDict, catalogueSize, singleFile=True )
       if res['OK']:
         gLogger.info( "ReplicaManager.__replicate: Replication successful." )
