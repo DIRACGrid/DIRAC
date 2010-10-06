@@ -129,8 +129,9 @@ class FileManagerBase:
           toPurge.append(lfns[lfn]['FileID'])
       if toPurge:
         self._deleteFiles(toPurge,connection=connection)
-        
+
     # Register the replicas
+    newlyRegistered = {}
     if lfns:
       res = self._insertReplicas(lfns,master=True,connection=connection)
       toPurge =[]
@@ -139,13 +140,55 @@ class FileManagerBase:
           failed[lfn] = "Failed while registering replica"
           toPurge.append(lfns[lfn]['FileID'])
       else:
-        successful.update(res['Value']['Successful'])
+        newlyRegistered = res['Value']['Successful']
+        successful.update(newlyRegistered)
         failed.update(res['Value']['Failed'])
         for lfn,error in res['Value']['Failed'].items():
           toPurge.append(lfns[lfn]['FileID'])
       if toPurge:
         self._deleteFiles(toPurge,connection=connection)
+
+    # Update storage usage
+    dirSEDict = {}
+    for lfn in newlyRegistered:
+      dirID = lfns[lfn]['DirectoryID']
+      if not dirSEDict.has_key(dirID):
+        dirSEDict[dirID] = {}
+      res = self.db.seManager.findSE(lfns[lfn]['SE'])
+      if not res['OK']:
+        continue
+      seID = res['Value']
+      if not dirSEDict[dirID].has_key(seID):
+        dirSEDict[dirID][seID] = {'Files':0,'Size':0}
+      dirSEDict[dirID][seID]['Files'] += 1
+      dirSEDict[dirID][seID]['Size'] += lfns[lfn]['Size']
+    if dirSEDict:
+      self._updateDirectoryUsage(dirSEDict,'+',connection=connection)
     return S_OK({'Successful':successful,'Failed':failed})
+
+  def _updateDirectoryUsage(self,directorySEDict,change,connection=False):
+    connection = self._getConnection(connection)
+    for dirID in sortList(directorySEDict.keys()):
+      dirDict = directorySEDict[dirID]
+      for seID in sortList(dirDict.keys()):
+        seDict = dirDict[seID]
+        files = seDict['Files']
+        size = seDict['Size']
+        req = "UPDATE FC_DirectoryUsage SET SESize=SESize%s%d,SEFiles=SEFiles%s%d,LastUpdate=UTC_TIMESTAMP() WHERE DirID=%d AND SEID=%d;" % (change,size,change,files,dirID,seID)
+        res = self.db._update(req)
+        print req,res
+        if not res['OK']:
+          gLogger.warn("Failed to update FC_DirectoryUsage",res['Message'])
+        if res['Value']:
+          continue
+        if  change != '+':
+          gLogger.warn("Decrement of usage for DirID,SEID that didnt exist","%d %d" % (dirID,seID))
+          continue
+        req = "INSERT INTO FC_DirectoryUsage (DirID,SEID,SESize,SEFiles,LastUpdate) VALUES (%d,%d,%d,%d,UTC_TIMESTAMP());" % (dirID,seID,size,files)
+        res = self.db._update(req)
+        if not res['OK']:
+          gLogger.warn("Failed to insert FC_DirectoryUsage",res['Message'])
+    return S_OK()
 
   def _populateFileAncestors(self,lfns,connection=False):
     connection = self._getConnection(connection)

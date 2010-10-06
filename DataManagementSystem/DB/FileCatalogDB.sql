@@ -229,6 +229,19 @@ CREATE TABLE FC_DirectoryLevelTree (
 );
 
 -- ------------------------------------------------------------------------------
+DROP TABLE IF EXISTS FC_DirectoryUsage;
+CREATE TABLE FC_DirectoryUsage(
+   DirID INTEGER NOT NULL,
+   INDEX(DirID),
+   SEID INTEGER NOT NULL,
+   INDEX(SEID),
+   SESize BIGINT NOT NULL,
+   SEFiles BIGINT NOT NULL,
+   LastUpdate DATETIME NOT NULL,
+   PRIMARY KEY (DirID,SEID)
+);
+
+-- ------------------------------------------------------------------------------
 drop table if exists FC_Meta_Fields;
 CREATE TABLE FC_Meta_Fields (
   MetaID INT AUTO_INCREMENT PRIMARY KEY,
