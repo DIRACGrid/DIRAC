@@ -32,7 +32,7 @@ class MyProxyRenewalAgent(AgentModule):
     return S_OK()
 
   def __renewProxyForCredentials( self, userDN, userGroup ):
-    lifeTime = gConfig.getValue( "%s/RenewedLifeTime" % self.section, 54000 )
+    lifeTime = self.am_getOption( "RenewedLifeTime", 54000 )
     gLogger.info( "Renewing for %s@%s %s secs" % ( userDN, userGroup, lifeTime ) )
     retVal = self.proxyDB.renewFromMyProxy( userDN,
                                             userGroup,
@@ -57,7 +57,7 @@ class MyProxyRenewalAgent(AgentModule):
     retVal = self.proxyDB.purgeExpiredProxies()
     if retVal[ 'OK' ]:
       gLogger.info( " purged %s proxies" % retVal[ 'Value' ] )
-    retVal = self.proxyDB.getCredentialsAboutToExpire( gConfig.getValue( "%s/MinimumLifeTime" % self.section, 3600 ) )
+    retVal = self.proxyDB.getCredentialsAboutToExpire( self.am_getOption( "MinimumLifeTime" , 3600 ) )
     if not retVal[ 'OK' ]:
       return retVal
     data = retVal[ 'Value' ]
