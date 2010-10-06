@@ -359,6 +359,8 @@ def _getCentralCfg( installCfg ):
   if adminUserEmail:
     operationsCfg = __getCfg( cfgPath( 'Operations', 'EMail' ), 'Production', adminUserEmail )
     centralCfg = centralCfg.mergeWith( operationsCfg )
+    operationsCfg = __getCfg( cfgPath( 'Operations', 'EMail' ), 'Logging', adminUserEmail )
+    centralCfg = centralCfg.mergeWith( operationsCfg )
 
   # Website
   websiteCfg = __getCfg( cfgPath( 'Website', 'Authorization', 'systems', 'configuration' ), 'Default', 'all' )

@@ -35,6 +35,9 @@ class TopErrorMessagesReporter( AgentModule ):
       else:
         mailList.append( retval['Value'] )
     
+    if not mailList:
+      mailList = gConfig.getValue( '/Operations/EMail/Logging', [] )
+
     if not len( mailList ):
       errString = "There are no valid users in the list"
       varString = "[" + ','.join( userList ) + "]"

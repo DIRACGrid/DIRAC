@@ -37,15 +37,18 @@ class ErrorMessageMonitor(AgentModule):
         self.log.warn( "Could not get user's mail", retval['Message'] )
       else:
         mailList.append( retval['Value'] )
+        
+    if not mailList:
+      mailList = gConfig.getValue( '/Operations/EMail/Logging', [] )
 
-    self.log.info( "List of mails to be notified", ','.join( mailList ) )
-   
     if not len(mailList):
       errString = "There are no valid users in the list"
       varString = "[" + ','.join( userList ) + "]"
       self.log.error( errString, varString )
       return S_ERROR( errString + varString )
     
+    self.log.info( "List of mails to be notified", ','.join( mailList ) )
+   
     self._mailAddress = mailList
     self._subject = 'New error messages were entered in the SystemLoggingDB'
     return S_OK()
