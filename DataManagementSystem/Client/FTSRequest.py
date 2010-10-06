@@ -489,7 +489,6 @@ class FTSRequest:
       lfnStatus = self.fileDict[lfn].get('Status')
       source = self.fileDict[lfn].get('Source')
       target =  self.fileDict[lfn].get('Target')
-      print lfnStatus,source,target,self.fileDict[lfn].get('Reason')
       if (lfnStatus != 'Failed') and (lfnStatus != 'Done') and source and target:
         return S_OK()
     return S_ERROR()
