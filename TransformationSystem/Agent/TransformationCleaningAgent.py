@@ -81,7 +81,7 @@ class TransformationCleaningAgent(AgentModule):
     """ Get the directories for the supplied transformation from the transformation system """
     directories = []
     if 'TransformationDB' in self.directoryLocations:
-      res = self.transClient.getParameters( transID, pname = 'OutputDirectories' )
+      res = self.transClient.getTransformationParameters(transID,['OutputDirectories'])
       if not res['OK']:
         gLogger.error("Failed to obtain transformation directories",res['Message'])
         return res
@@ -322,7 +322,7 @@ class TransformationCleaningAgent(AgentModule):
       return res
     externalIDs = res['Value']
     if externalIDs:
-      res = self.transClient.getTransformationParameter(transID,'Type')
+      res = self.transClient.getTransformationParameters(transID,['Type'])
       if not res['OK']:
         gLogger.error("Failed to determine transformation type")
         return res
