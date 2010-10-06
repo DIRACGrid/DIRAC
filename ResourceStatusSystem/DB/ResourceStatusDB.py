@@ -1091,15 +1091,10 @@ class ResourceStatusDB:
       :attr:`siteName`: string
     """
     
-    gridSiteName = getGOCSiteName(siteName)
-    if not gridSiteName['OK']:
-      raise RSSException, gridSiteName['Message']
-    gridSiteName = gridSiteName['Value']
+    gridSiteName = self.getGridSiteName('Site', siteName)
     
-    DIRACSiteNames = getDIRACSiteName(gridSiteName)
-    if not DIRACSiteNames['OK']:
-      raise RSSException, DIRACSiteNames['Message']
-    DIRACSiteNames = DIRACSiteNames['Value']
+    DIRACSiteNames = [x[0] for x in self.getMonitoredsList('Site', 'GridSiteName', 
+                                                           gridSiteName = gridSiteName)]
 
     if len(DIRACSiteNames) == 1:
       self.removeResource(gridSiteName = gridSiteName)
@@ -1465,6 +1460,11 @@ class ResourceStatusDB:
     """
 
     dateCreated, dateEffective, dateEnd = self.__usualChecks(dateCreated, dateEffective, dateEnd, status)
+    
+    if siteName is None:
+      siteName = 'NULL'
+    if gridSiteName is None:
+      gridSiteName = 'NULL'
     
     req = "INSERT INTO Resources (ResourceName, ResourceType, ServiceType, SiteName, GridSiteName, "
     req = req + "Status, Reason, DateCreated, DateEffective, DateEnd, TokenOwner, TokenExpiration) "
@@ -1913,9 +1913,16 @@ class ResourceStatusDB:
 
     dateCreated, dateEffective, dateEnd = self.__usualChecks(dateCreated, dateEffective, dateEnd, status)
 
+    if gridSiteName is None:
+      gridSiteName = 'NULL'
+
     req = "INSERT INTO StorageElements (StorageElementName, ResourceName, GridSiteName, "
     req = req + "Status, Reason, DateCreated, DateEffective, DateEnd, TokenOwner, TokenExpiration) "
-    req = req + "VALUES ('%s', '%s', '%s', " %(storageElementName, resourceName, gridSiteName)
+    req = req + "VALUES ('%s', '%s', " %(storageElementName, resourceName)
+    if gridSiteName == 'NULL':
+      req = req + "%s, " %gridSiteName
+    else:
+      req = req + "'%s', " %gridSiteName
     req = req + "'%s', '%s', '%s', " %(status, reason, dateCreated, )
     req = req + "'%s', '%s', '%s', '9999-12-31 23:59:59');" %(dateEffective, dateEnd, tokenOwner)
     

@@ -99,6 +99,10 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
   def test__addResourcesRow(self):
     res = self.rsDB._addResourcesRow('CE01', 'CE', 'Computing', 'Ferrara', 'INFN-Ferrara', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
     self.assertEqual(res, None)
+    res = self.rsDB._addResourcesRow('CE01', 'CE', 'Computing', None, 'INFN-Ferrara', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
+    self.assertEqual(res, None)
+    res = self.rsDB._addResourcesRow('CE01', 'CE', 'Computing', 'NULL', 'INFN-Ferrara', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
+    self.assertEqual(res, None)
     
   def test__addResourcesHistoryRow(self):
     res = self.rsDB._addResourcesHistoryRow('CE01', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
@@ -128,6 +132,10 @@ class ResourceStatusDBSuccess(ResourceStatusDBTestCase):
   
   def test__addStorageElementRow(self):
     res = self.rsDB._addStorageElementRow('xxx', 'xxx.Ferrara.it', 'Ferrara', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
+    self.assertEqual(res, None)
+    res = self.rsDB._addStorageElementRow('xxx', 'xxx.Ferrara.it', None, 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
+    self.assertEqual(res, None)
+    res = self.rsDB._addStorageElementRow('xxx', 'xxx.Ferrara.it', 'NULL', 'Active', 'reasons', datetime.datetime.utcnow(), datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(minutes=10), 'Federico')
     self.assertEqual(res, None)
     
   def test__addStorageElementHistoryRow(self):
