@@ -68,7 +68,7 @@ class MCExtensionAgent(AgentModule):
     # Extend the transformation by the determined number of tasks
     res = self.transClient.extendTransformation(transID,numberOfTasks)
     if not res['OK']:
-      gLoger.error("Failed to extend transformation", "%s %s" % (transID,res['Message']))
+      gLogger.error("Failed to extend transformation", "%s %s" % (transID,res['Message']))
       return res
     gLogger.info("Successfully extended transformation %d by %d tasks" % (transID,numberOfTasks))
     return S_OK()
