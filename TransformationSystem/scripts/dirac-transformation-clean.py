@@ -16,7 +16,7 @@ else:
 
 
 from DIRAC.TransformationSystem.Agent.TransformationCleaningAgent     import TransformationCleaningAgent
-from DIRAC.TransformationSystem.Client.TransformationDBClient         import TransformationClient
+from DIRAC.TransformationSystem.Client.TransformationDBClient         import TransformationDBClient
 from DIRAC                                                            import gLogger
 import DIRAC
 
