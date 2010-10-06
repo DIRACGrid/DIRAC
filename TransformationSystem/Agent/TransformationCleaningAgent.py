@@ -99,7 +99,7 @@ class TransformationCleaningAgent(AgentModule):
       directories = self.__addDirs(transID,transDirectories,directories)
       
     if 'MetadataCatalog' in self.directoryLocations:   
-      res = self.fileCatalogClient.findDirectoriesByMetadata({'TransformationID':transID})
+      res = self.metadataClient.findDirectoriesByMetadata({self.transfidmeta:transID})
       if not res['OK']:
         gLogger.error("Failed to obtain metadata catalog directories",res['Message'])
         return res
