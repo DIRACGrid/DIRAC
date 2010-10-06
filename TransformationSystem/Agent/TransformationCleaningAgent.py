@@ -34,6 +34,8 @@ class TransformationCleaningAgent(AgentModule):
     gLogger.info("Will consider the following transformation types: %s" % str(self.transformationTypes))
     self.directoryLocations = sortList(self.am_getOption('DirectoryLocations',['TransformationDB','StorageUsage','MetadataCatalog']))
     gLogger.info("Will search for directories in the following locations: %s" % str(self.directoryLocations))
+    self.transfidmeta = self.am_getOption('TransfIDMeta',"TransformationID")
+    gLogger.info("Will use %s as metadata tag name for TransformationID"%self.transfidmeta)
     self.archiveAfter = self.am_getOption('ArchiveAfter',7) # days
     gLogger.info("Will archive Completed transformations after %d days" % self.archiveAfter)
     self.activeStorages = sortList(self.am_getOption('ActiveSEs',[]))
@@ -297,10 +299,10 @@ class TransformationCleaningAgent(AgentModule):
     return S_OK()
 
   def cleanMetadataCatalogFiles(self,transID,directories):
-    res = self.metadataClient.findFilesByMetadata({'TransformationID':transID})
+    res = self.metadataClient.findFilesByMetadata({self.transfidmeta:transID})
     if not res['OK']:
       return res
-    fileToRemove = result['Value']
+    fileToRemove = res['Value']
     res = self.replicaManager.removeFile(fileToRemove)
     if not res['OK']:
       return res
