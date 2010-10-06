@@ -9,7 +9,7 @@ from DIRAC.Core.Base import Script
 unit = 'TB'
 dir = ''
 fileType = ''
-prod = ''
+prods = []
 sites = []
 ses = []
 lcg = False
@@ -17,7 +17,7 @@ full = False
 Script.registerSwitch( "u:", "Unit=","   Unit to use [%s] (MB,GB,TB,PB)" % unit)
 Script.registerSwitch( "d:", "Dir=", "   Dir to search [ALL]")
 Script.registerSwitch( "t:", "Type=", "   File type to search [ALL]")
-Script.registerSwitch( "p:", "Prod=", "   Production ID to search [ALL]")
+Script.registerSwitch( "p:", "Prod=", "   Production ID to search [ALL] (space or comma seperated list)")
 Script.registerSwitch( "g:", "Sites=", "  Sites to consider [ALL] (space or comma seperated list)")
 Script.registerSwitch( "c:", "SEs=", "  SEs to consider [ALL] (space or comma seperated list)")
 Script.registerSwitch( "l", "LCG", "  Group results by tape and disk")
@@ -47,7 +47,7 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "t" or switch[0].lower() == "type":
     fileType = switch[1]
   if switch[0].lower() == "p" or switch[0].lower() == "prod":
-    prod = switch[1]
+    prods = switch[1].replace(',',' ').split()
   if switch[0].lower() == "g" or switch[0].lower() == "sites":
     sites = switch[1].replace(',',' ').split()
   if switch[0].lower() == "c" or switch[0].lower() == "ses":
@@ -78,26 +78,32 @@ scaleFactor = scaleDict[unit]
 rpc = RPCClient('DataManagement/StorageUsage')
 
 if full:
-  res = rpc.getStorageDirectorySummary(dir,fileType,prod,ses)
-  if not res['OK']:
-    print 'Failed to get directories',res['Message']
-    DIRAC.exit(2)
-  for found in sortList(res['Value']):
-    print found
+  for prodID in sortList(prods):
+    res = rpc.getStorageDirectorySummary(dir,fileType,prodID,ses)
+    if not res['OK']:
+      print 'Failed to get directories',res['Message']
+      DIRAC.exit(2)
+    for found in sortList(res['Value']):
+      print found
 
-res = rpc.getStorageSummary(dir,fileType,prod,ses)
-if not res['OK']:
-  print 'No usage found'
-  DIRAC.exit(2)
+totalUsage = {}
+for prodID in prods:
+  res = rpc.getStorageSummary(dir,fileType,prodID,ses)
+  if res['OK']:
+    for se in sortList(res['Value'].keys()):
+      if not totalUsage.has_key(se):
+        totalUsage[se] = {'Files':0,'Size':0}
+      totalUsage[se]['Files'] += res['Value'][se]['Files']
+      totalUsage[se]['Size'] += res['Value'][se]['Size']
 
 if lcg:
   tapeTotalFiles = 0
   diskTotalFiles = 0
   tapeTotalSize = 0
   diskTotalSize = 0
-  for se in sortList(res['Value'].keys()):
-    files = res['Value'][se]['Files']
-    size = res['Value'][se]['Size']
+  for se in sortList(totalUsage.keys()):
+    files = totalUsage[se]['Files']
+    size = totalUsage[se]['Size']
     if re.search('-RAW',se) or re.search('-RDST',se) or re.search('-tape',se) or re.search('M-DST',se):
       tapeTotalFiles+= files
       tapeTotalSize+= size
@@ -112,8 +118,8 @@ if lcg:
 
 print '%s %s %s' % ('DIRAC SE'.ljust(20),('Size (%s)' % unit).ljust(20),'Files'.ljust(20))
 print '-'*50
-for se in sortList(res['Value'].keys()):
-  dict = res['Value'][se]
+for se in sortList(totalUsage.keys()):
+  dict = totalUsage[se]
   files = dict['Files']
   size = dict['Size']
   print "%s %s %s" % (se.ljust(20),('%.1f' % (size/scaleFactor)).ljust(20),str(files).ljust(20))
