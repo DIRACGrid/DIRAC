@@ -925,9 +925,14 @@ class TransformationDB(DB):
     if not res['Value']:
       return S_ERROR('No records found')
     statusDict = {}
+    total = 0
     for attrDict,count in res['Value']:
       status = attrDict['ExternalStatus']
       statusDict[status] = count
+      total+=count
+    created = statusDict.get('Created',0)
+    statusDict['Created'] = total
+    statusDict['Submitted'] = (total-created)
     return S_OK(statusDict)
 
   def __setTaskParameterValue(self,transID,taskID,paramName,paramValue,connection=False):
