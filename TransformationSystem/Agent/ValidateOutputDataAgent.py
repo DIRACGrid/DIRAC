@@ -37,7 +37,7 @@ class ValidateOutputDataAgent(AgentModule):
     self.activeStorages = sortList(self.am_getOption('ActiveSEs',[]))
     gLogger.info("Will check the following storage elements: %s" % str(self.activeStorages))
     self.transfidmeta = self.am_getOption('TransfIDMeta',"TransformationID")
-    gLogger.info("Will use %s as metadata tag name for TrnaformationID")
+    gLogger.info("Will use %s as metadata tag name for TransformationID"%self.transfidmeta)
     return S_OK()
 
   #############################################################################
