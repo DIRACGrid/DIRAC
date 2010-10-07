@@ -159,6 +159,14 @@ class MatcherHandler(RequestHandler):
       return S_ERROR( 'No match found' )
 
     jobID = result['jobId']
+    resAtt = jobDB.getJobAttributes(jobID,['OwnerDN','OwnerGroup','Status'])
+    if not resAtt['OK']:
+      return S_ERROR('Could not retrieve job attributes')
+    if not resAtt['Value']:
+      return S_ERROR('No attributes returned for job')
+    if not resAtt['Value']['Status'] == 'Waiting':
+      gLogger.error( 'Job %s matched by the TQ is not in Waiting state' % str(jobID) )
+      result = taskQueueDB.deleteJob(jobID)
 
     result = jobDB.setJobStatus(jobID,status='Matched',minor='Assigned')
     result = jobLoggingDB.addLoggingRecord(jobID,
