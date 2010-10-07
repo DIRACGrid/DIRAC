@@ -14,8 +14,8 @@ if len(sys.argv) < 2:
 else:
   transIDs = [int(arg) for arg in sys.argv[1:]]
 
-from LHCbDIRAC.TransformationSystem.Agent.ValidateOutputDataAgent       import ValidateOutputDataAgent
-from LHCbDIRAC.TransformationSystem.Client.TransformationDBClient       import TransformationDBClient
+from DIRAC.TransformationSystem.Agent.ValidateOutputDataAgent       import ValidateOutputDataAgent
+from DIRAC.TransformationSystem.Client.TransformationDBClient       import TransformationDBClient
 from DIRAC import gLogger
 import DIRAC
 
