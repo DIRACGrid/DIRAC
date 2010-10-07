@@ -79,5 +79,5 @@ class FileReport:
       if result.has_key('FailedResults'):
         for res in result['FailedResults']:
           if res.has_key('rpcStub'):
-            request.setDISETRequest(result['rpcStub'])
+            request.setDISETRequest(res['rpcStub'])
     return S_OK(request)
