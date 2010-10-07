@@ -176,7 +176,7 @@ class RequestTasks(TaskBase):
         elif newStatus == 'Done':
           updateDict[lfn] = 'Processed'
         elif newStatus == 'Failed':
-          updateDict[lfn] = 'Failed'
+          updateDict[lfn] = 'Problematic'
     return S_OK(updateDict)  
 
 class WorkflowTasks(TaskBase):
