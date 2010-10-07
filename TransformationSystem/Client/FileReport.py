@@ -50,9 +50,11 @@ class FileReport:
       sDict[status].append(lfn)
 
     summaryDict = {}
+    failedResults = []
     for status,lfns in sDict.items():
       res = self.client.setFileStatusForTransformation(self.transformation,status,lfns) 
       if not res['OK']:
+        failedResults.append(res)
         continue
       for lfn,error in res['Value']['Failed'].items():
         gLogger.error("Failed to update file status","%s %s" % (lfn,error))
@@ -63,7 +65,8 @@ class FileReport:
     
     if not self.statusDict:
       return S_OK(summaryDict)
-    return S_ERROR("Failed to update all file statuses")
+    result = S_ERROR("Failed to update all file statuses")
+    result['FailedResults'] = failedResults
   
   def generateRequest(self):
     """ Commit the accumulated records and generate request eventually """
@@ -72,6 +75,8 @@ class FileReport:
     if not result['OK']:
       # Generate Request
       request = RequestContainer()
-      if result.has_key('rpcStub'):
-        request.setDISETRequest(result['rpcStub'])
+      if result.has_key('FailedResults'):
+        for res in result['FailedResults']:
+          if res.has_key('rpcStub'):
+            request.setDISETRequest(result['rpcStub'])
     return S_OK(request)
