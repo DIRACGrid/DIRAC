@@ -67,6 +67,7 @@ class FileReport:
       return S_OK(summaryDict)
     result = S_ERROR("Failed to update all file statuses")
     result['FailedResults'] = failedResults
+    return result
   
   def generateRequest(self):
     """ Commit the accumulated records and generate request eventually """
