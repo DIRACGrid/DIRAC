@@ -90,8 +90,8 @@ class FileManagerFlat(FileManagerBase):
       if not directoryFiles.has_key(dirName):
         directoryFiles[dirName] = []
       directoryFiles[dirName].append(fileName)  
-      insertTuples.append("(%d,'%s','%s',%d,'%s','%s',%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (dirID,fileName,guid,size,checksum,checksumtype,uid,gid,self.db.umask,statusID))
-    req = "INSERT INTO FC_Files (DirID,FileName,GUID,Size,Checksum,ChecksumType,UID,GID,CreationDate,ModificationDate,Mode,Status) VALUES %s" % (','.join(insertTuples))
+      insertTuples.append("(%d,%d,'%s','%s','%s','%s',%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (dirID,size,fileName,guid,checksum,checksumtype,uid,gid,self.db.umask,statusID))
+    req = "INSERT INTO FC_Files (DirID,Size,FileName,GUID,Checksum,ChecksumType,UID,GID,CreationDate,ModificationDate,Mode,Status) VALUES %s" % (','.join(insertTuples))
     res = self.db._update(req,connection)
     if not res['OK']:
       return res
@@ -169,6 +169,7 @@ class FileManagerFlat(FileManagerBase):
     deleteTuples = []
     successful = {}
     failed = {}
+    directorySESizeDict = {}  
     for lfn in sortList(lfns.keys()):
       fileID = lfns[lfn]['FileID']
       pfn = lfns[lfn]['PFN']
@@ -186,6 +187,13 @@ class FileManagerFlat(FileManagerBase):
         elif res['Value']:
           successful[lfn] = True
           continue
+      dirID = lfns[lfn]['DirID']
+      if not directorySESizeDict.has_key(dirID):
+        directorySESizeDict[dirID] = {}
+      if not directorySESizeDict[dirID].has_key(seID):
+        directorySESizeDict[dirID][seID] = {'Files':0,'Size':0}
+      directorySESizeDict[dirID][seID]['Size'] += lfns[lfn]['Size']
+      directorySESizeDict[dirID][seID]['Files'] += 1
       insertTuples[lfn] = ("(%d,%d,'%s',%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s')" % (fileID,seID,replicaType,statusID,pfn))
       deleteTuples.append((fileID,seID))
     if insertTuples:
@@ -196,6 +204,8 @@ class FileManagerFlat(FileManagerBase):
         for lfn in insertTuples.keys():
           failed[lfn] = res['Message']
       else:
+        # Update the directory usage
+        self._updateDirectoryUsage(directorySESizeDict,'+',connection=connection)
         for lfn in insertTuples.keys():
           successful[lfn] = True
     return S_OK({'Successful':successful,'Failed':failed})
@@ -225,19 +235,34 @@ class FileManagerFlat(FileManagerBase):
   def _deleteReplicas(self,lfns,connection=False):
     connection = self._getConnection(connection)
     successful = {}
-    res = self._findFiles(lfns.keys(),['FileID'],connection=connection)
+    res = self._findFiles(lfns.keys(),['DirID','FileID','Size'],connection=connection)
     failed = res['Value']['Failed']
     lfnFileIDDict = res['Value']['Successful']
     toRemove = []
+    directorySESizeDict = {}
     for lfn,fileDict in lfnFileIDDict.items():
       fileID = fileDict['FileID']
       se = lfns[lfn]['SE']
       toRemove.append((fileID,se))
+      #Now prepare the storage usage dict
+      res = self.db.seManager.findSE(seID)
+      if not res['OK']:
+          return res
+      seID = res['Value']
+      dirID = fileDict['DirID']
+      if not directorySESizeDict.has_key(dirID):
+        directorySESizeDict[dirID] = {}
+      if not directorySESizeDict[dirID].has_key(seID):
+        directorySESizeDict[dirID][seID] = {'Files':0,'Size':0}
+      directorySESizeDict[dirID][seID]['Size'] += fileDict['Size']
+      directorySESizeDict[dirID][seID]['Files'] += 1
     res = self.__deleteReplicas(toRemove)
     if not res['OK']:
       for lfn in lfnFileIDDict.keys():
         failed[lfn] = res['Message']
     else:
+      # Update the directory usage
+      self._updateDirectoryUsage(directorySESizeDict,'-',connection=connection)
       for lfn in lfnFileIDDict.keys():
         successful[lfn] = True
     return S_OK({'Successful':successful,'Failed':failed})

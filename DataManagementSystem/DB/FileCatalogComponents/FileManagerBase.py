@@ -402,14 +402,13 @@ class FileManagerBase:
   def _addReplicas(self,lfns,connection=False):
     connection = self._getConnection(connection)
     successful = {}
-    res = self._findFiles(lfns.keys(),['FileID'],connection=connection)
+    res = self._findFiles(lfns.keys(),['DirID','FileID','Size'],connection=connection)
     failed = res['Value']['Failed']
     for lfn in failed.keys():
       lfns.pop(lfn)
     lfnFileIDDict = res['Value']['Successful']
     for lfn,fileDict in lfnFileIDDict.items():
-      fileID = fileDict['FileID']
-      lfns[lfn]['FileID'] = fileID
+      lfns[lfn] = fileDict
     res = self._insertReplicas(lfns,connection=connection)
     if not res['OK']:
       for lfn in lfns.keys():

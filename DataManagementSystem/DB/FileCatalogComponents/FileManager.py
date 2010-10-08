@@ -58,7 +58,7 @@ class FileManager(FileManagerBase):
   def _getDirectoryFiles(self,dirID,fileNames,metadata,connection=False):
     connection = self._getConnection(connection)
     # metadata can be any of ['FileID','Size','Checksum','CheckSumType','Type','UID','GID','CreationDate','ModificationDate','Mode','Status']
-    req = "SELECT FileName,FileID FROM FC_Files WHERE DirID=%d" % (dirID)
+    req = "SELECT FileName,DirID,FileID,Size FROM FC_Files WHERE DirID=%d" % (dirID)
     if fileNames:
       req = "%s AND FileName IN (%s)" % (req,stringListToString(fileNames))
     res = self.db._query(req,connection)
@@ -70,24 +70,33 @@ class FileManager(FileManagerBase):
     filesDict = {}
     # If we only requested the FileIDs then there is no need to do anything else
     if metadata == ['FileID']:
-      for fileName,fileID in fileNameIDs:
+      for fileName,dirID,fileID,size in fileNameIDs:
         filesDict[fileName] = {'FileID':fileID}
       return S_OK(filesDict)
     # Otherwise get the additionally requested metadata from the FC_FileInfo table
-    for fileName,fileID in fileNameIDs:
+    files = {}
+    for fileName,dirID,fileID,size in fileNameIDs:
       filesDict[fileID] = fileName
+      files[fileName] = {}
+      if 'Size' in metadata:
+        files[fileName]['Size'] = size
+      if 'DirID' in metadata:
+        files[fileName]['DirID'] = dirID
     if 'FileID' in metadata:
       metadata.remove('FileID')
+    if 'Size' in metadata:
+      metadata.remove('Size')
+    if 'DirID' in metadata:
+      metadata.remove('DirID')
     metadata.append('FileID')
     metadata.reverse()
     req = "SELECT %s FROM FC_FileInfo WHERE FileID IN (%s)" % (intListToString(metadata),intListToString(filesDict.keys()))  
     res = self.db._query(req,connection)
     if not res['OK']:
       return res
-    files = {}
     for tuple in res['Value']:
       fileID = tuple[0]
-      files[filesDict[fileID]] = dict(zip(metadata,tuple))
+      files[filesDict[fileID]].update(dict(zip(metadata,tuple)))
     return S_OK(files)
 
   ######################################################
@@ -103,8 +112,9 @@ class FileManager(FileManagerBase):
     for lfn in lfns.keys():
       dirID = lfns[lfn]['DirectoryID']
       fileName = os.path.basename(lfn)
-      insertTuples.append("(%d,'%s')" % (dirID,fileName))
-    req = "INSERT INTO FC_Files (DirID,FileName) VALUES %s" % (','.join(insertTuples))
+      size = lfns[lfn]['Size']
+      insertTuples.append("(%d,%d'%s')" % (dirID,size,fileName))
+    req = "INSERT INTO FC_Files (DirID,Size,FileName) VALUES %s" % (','.join(insertTuples))
     res = self.db._update(req,connection)
     if not res['OK']:
       return res
@@ -130,15 +140,14 @@ class FileManager(FileManagerBase):
       fileInfo = lfns[lfn]     
       fileID = fileInfo['FileID']
       dirID = fileInfo['DirectoryID']
-      size = fileInfo['Size']
       checksum = fileInfo['Checksum']
       checksumtype = fileInfo.get('ChecksumType','Adler32')
       guid = fileInfo.get('GUID','')
       dirName = os.path.dirname(lfn)
       toDelete.append(fileID)
-      insertTuples.append("(%d,'%s',%d,'%s','%s',%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (fileID,guid,size,checksum,checksumtype,uid,gid,self.db.umask,statusID))
+      insertTuples.append("(%d,'%s','%s','%s',%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (fileID,guid,checksum,checksumtype,uid,gid,self.db.umask,statusID))
     if insertTuples:
-      req = "INSERT INTO FC_FileInfo (FileID,GUID,Size,Checksum,CheckSumType,UID,GID,CreationDate,ModificationDate,Mode,Status) VALUES %s" % ','.join(insertTuples)
+      req = "INSERT INTO FC_FileInfo (FileID,GUID,Checksum,CheckSumType,UID,GID,CreationDate,ModificationDate,Mode,Status) VALUES %s" % ','.join(insertTuples)
       res = self.db._update(req)
       if not res['OK']:
         self._deleteFiles(toDelete,connection=connection)
@@ -209,7 +218,6 @@ class FileManager(FileManagerBase):
   #
   
   def _insertReplicas(self,lfns,master=False,connection=False): 
-    """ This is from elsewhere """
     connection = self._getConnection(connection)
     # Add the files
     failed = {}
@@ -241,10 +249,19 @@ class FileManager(FileManagerBase):
     res = self._getRepIDsForReplica(insertTuples, connection=connection)
     if not res['OK']:
       return res
+    directorySESizeDict = {}
     for fileID,repDict in res['Value'].items():
       lfn = fileIDLFNs[fileID]
       for seID,repID in repDict.items():
         lfns[lfn]['RepID'] = repID
+        dirID = lfns[lfn]['DirID']
+        if not directorySESizeDict.has_key(dirID):
+          directorySESizeDict[dirID] = {}
+        if not directorySESizeDict[dirID].has_key(seID):
+          directorySESizeDict[dirID][seID] = {'Files':0,'Size':0}
+        directorySESizeDict[dirID][seID]['Size'] += lfns[lfn]['Size']
+        directorySESizeDict[dirID][seID]['Files'] += 1
+
     replicaType = 'Replica'
     if master:
       replicaType = 'Master'
@@ -274,6 +291,8 @@ class FileManager(FileManagerBase):
           failed[lfn] = res['Message']
         self.__deleteReplicas(toDelete,connection=connection)
       else:
+        # Update the directory usage
+        self._updateDirectoryUsage(directorySESizeDict,'+',connection=connection)
         for lfn in lfns.keys():
           successful[lfn] = True
     return S_OK({'Successful':successful,'Failed':failed})
@@ -302,10 +321,11 @@ class FileManager(FileManagerBase):
   def _deleteReplicas(self,lfns,connection=False):
     connection = self._getConnection(connection)
     successful = {}
-    res = self._findFiles(lfns.keys(),['FileID'],connection=connection)
+    res = self._findFiles(lfns.keys(),['DirID','FileID','Size'],connection=connection)
     failed = res['Value']['Failed']
     lfnFileIDDict = res['Value']['Successful']
     toRemove = []
+    directorySESizeDict = {}
     for lfn,fileDict in lfnFileIDDict.items():
       fileID = fileDict['FileID']
       se = lfns[lfn]['SE']
@@ -313,8 +333,16 @@ class FileManager(FileManagerBase):
         res = self.db.seManager.findSE(se)
         if not res['OK']:
           return res
-      se = res['Value']
-      toRemove.append((fileID,se))
+      seID = res['Value']
+      toRemove.append((fileID,seID))
+      # Now prepare the storage usage update
+      dirID = fileDict['DirID']
+      if not directorySESizeDict.has_key(dirID):
+        directorySESizeDict[dirID] = {}
+      if not directorySESizeDict[dirID].has_key(seID):
+        directorySESizeDict[dirID][seID] = {'Files':0,'Size':0}
+      directorySESizeDict[dirID][seID]['Size'] += fileDict['Size']
+      directorySESizeDict[dirID][seID]['Files'] += 1
     res = self._getRepIDsForReplica(toRemove, connection)
     if not res['OK']:
       for lfn in lfnFileIDDict.keys():
@@ -329,6 +357,8 @@ class FileManager(FileManagerBase):
         for lfn in lfnFileIDDict.keys():
           failed[lfn] = res['Message']
       else:
+        # Update the directory usage
+        self._updateDirectoryUsage(directorySESizeDict,'-',connection=connection)
         for lfn in lfnFileIDDict.keys():
           successful[lfn] = True
     return S_OK({"Successful":successful,"Failed":failed})
