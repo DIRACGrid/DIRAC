@@ -85,7 +85,7 @@ class FileManagerFlat(FileManagerBase):
       checksum = fileInfo['Checksum']
       checksumtype = fileInfo.get('ChecksumType','Adler32')
       dirName = os.path.dirname(lfn)
-      dirID = fileInfo['DirectoryID']
+      dirID = fileInfo['DirID']
       fileName = os.path.basename(lfn)
       if not directoryFiles.has_key(dirName):
         directoryFiles[dirName] = []
@@ -245,7 +245,7 @@ class FileManagerFlat(FileManagerBase):
       se = lfns[lfn]['SE']
       toRemove.append((fileID,se))
       #Now prepare the storage usage dict
-      res = self.db.seManager.findSE(seID)
+      res = self.db.seManager.findSE(se)
       if not res['OK']:
           return res
       seID = res['Value']

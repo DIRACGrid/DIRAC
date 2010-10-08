@@ -110,10 +110,10 @@ class FileManager(FileManagerBase):
     failed = {}
     insertTuples = []
     for lfn in lfns.keys():
-      dirID = lfns[lfn]['DirectoryID']
+      dirID = lfns[lfn]['DirID']
       fileName = os.path.basename(lfn)
       size = lfns[lfn]['Size']
-      insertTuples.append("(%d,%d'%s')" % (dirID,size,fileName))
+      insertTuples.append("(%d,%d,'%s')" % (dirID,size,fileName))
     req = "INSERT INTO FC_Files (DirID,Size,FileName) VALUES %s" % (','.join(insertTuples))
     res = self.db._update(req,connection)
     if not res['OK']:
@@ -139,7 +139,7 @@ class FileManager(FileManagerBase):
     for lfn in lfns.keys():
       fileInfo = lfns[lfn]     
       fileID = fileInfo['FileID']
-      dirID = fileInfo['DirectoryID']
+      dirID = fileInfo['DirID']
       checksum = fileInfo['Checksum']
       checksumtype = fileInfo.get('ChecksumType','Adler32')
       guid = fileInfo.get('GUID','')

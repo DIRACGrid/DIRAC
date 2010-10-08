@@ -102,7 +102,7 @@ class FileManagerBase:
             failed[lfn] = "Failed to create directory for file"
             lfns.pop(lfn)
           else:
-            lfns[lfn]['DirectoryID'] = res['Value']
+            lfns[lfn]['DirID'] = res['Value']
     # If we still have files left to register
     if lfns:
       res = self._insertFiles(lfns,uid,gid,connection=connection)
@@ -151,7 +151,7 @@ class FileManagerBase:
     # Update storage usage
     dirSEDict = {}
     for lfn in newlyRegistered:
-      dirID = lfns[lfn]['DirectoryID']
+      dirID = lfns[lfn]['DirID']
       if not dirSEDict.has_key(dirID):
         dirSEDict[dirID] = {}
       res = self.db.seManager.findSE(lfns[lfn]['SE'])
@@ -162,8 +162,8 @@ class FileManagerBase:
         dirSEDict[dirID][seID] = {'Files':0,'Size':0}
       dirSEDict[dirID][seID]['Files'] += 1
       dirSEDict[dirID][seID]['Size'] += lfns[lfn]['Size']
-    if dirSEDict:
-      self._updateDirectoryUsage(dirSEDict,'+',connection=connection)
+    #if dirSEDict:
+    #  self._updateDirectoryUsage(dirSEDict,'+',connection=connection)
     return S_OK({'Successful':successful,'Failed':failed})
 
   def _updateDirectoryUsage(self,directorySEDict,change,connection=False):
@@ -331,7 +331,7 @@ class FileManagerBase:
     """ Remove file from the catalog """
     successful = {}
     failed = {}
-    res = self._findFiles(lfns,connection=connection)     
+    res = self._findFiles(lfns,['DirID','FileID','Size'],connection=connection)     
     successful = {} 
     for lfn,error in res['Value']['Failed'].items():
       if error == 'No such file or directory':
@@ -339,13 +339,38 @@ class FileManagerBase:
       else:
         failed[lfn] = error
     fileIDLfns = {}
-    for lfn,lfnDict in res['Value']['Successful'].items():
+    lfns = res['Value']['Successful']
+    for lfn,lfnDict in lfns.items():
       fileIDLfns[lfnDict['FileID']] = lfn
+
+    # Resolve the replicas to calculate reduction in storage usage
+    res = self._getFileReplicas(fileIDLfns.keys(),connection=connection)
+    if not res['OK']:
+      return res
+    directorySESizeDict = {}
+    for fileID,seDict in res['Value'].items():
+      for seName in seDict.keys():
+        res = self.db.seManager.findSE(seName)
+        if not res['OK']:
+          return res
+        seID = res['Value']
+        dirID = lfns[fileIDLfns[fileID]]['DirID']
+        size = lfns[fileIDLfns[fileID]]['Size']
+        if not directorySESizeDict.has_key(dirID):
+          directorySESizeDict[dirID] = {}
+        if not directorySESizeDict[dirID].has_key(seID):
+          directorySESizeDict[dirID][seID] = {'Files':0,'Size':0}
+        directorySESizeDict[dirID][seID]['Size'] += lfns[lfn]['Size']
+        directorySESizeDict[dirID][seID]['Files'] += 1
+
+    # Now do removal  
     res = self._deleteFiles(fileIDLfns.keys(),connection=connection)
     if not res['OK']:
       for lfn in fileIDLfns.values():
         failed[lfn] = res['Message']
     else:
+      # Update the directory usage
+      self._updateDirectoryUsage(directorySESizeDict,'-',connection=connection)
       for lfn in fileIDLfns.values():
         successful[lfn] = True
     return S_OK({"Successful":successful,"Failed":failed})
