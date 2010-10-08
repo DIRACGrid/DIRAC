@@ -433,7 +433,7 @@ class FileManagerBase:
       lfns.pop(lfn)
     lfnFileIDDict = res['Value']['Successful']
     for lfn,fileDict in lfnFileIDDict.items():
-      lfns[lfn] = fileDict
+      lfns[lfn].update(fileDict)
     res = self._insertReplicas(lfns,connection=connection)
     if not res['OK']:
       for lfn in lfns.keys():
