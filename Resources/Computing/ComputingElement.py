@@ -451,8 +451,9 @@ def getResourceDict( ceName = None ):
 
   # now add some defaults
   resourceDict['Setup'] = gConfig.getValue('/DIRAC/Setup','None')
-  if not 'CPUTime' in resourceDict:
-    resourceDict['CPUTime'] = maxCPUSegments[-1]
+  # A.T. causing problems if not defined. We should get rid of this method completely
+  #if not 'CPUTime' in resourceDict:
+  #  resourceDict['CPUTime'] = maxCPUSegments[-1]
   if not 'PilotType' in resourceDict:
     # FIXME: this is a test, we need the list of available types
     resourceDict['PilotType'] = 'private'
