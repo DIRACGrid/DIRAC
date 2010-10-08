@@ -8,7 +8,6 @@
 """
 
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Resources.Computing.ComputingElement import getResourceDict
 from DIRAC.Core.Utilities.ThreadPool                       import ThreadPool
 from DIRAC.Resources.Computing.ComputingElementFactory    import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, taskQueueDB
