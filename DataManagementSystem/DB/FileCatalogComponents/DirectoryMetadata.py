@@ -31,7 +31,12 @@ class DirectoryMetadata:
     if not result['OK']:
       return result
     
-    return S_OK(result['lastRowId']) 
+    metadataID = result['lastRowId']
+    result = self.__transformMetaParameterToData(pname)
+    if not result['OK']:
+      return result
+    
+    return S_OK(metadataID) 
   
   def deleteMetadataField(self,pname,credDict):
     """ Remove metadata field
@@ -196,6 +201,43 @@ class DirectoryMetadata:
       metaDict.update(result['Value'])
        
     return S_OK(metaDict)  
+  
+  def __transformMetaParameterToData(self,metaname):
+    """ Relocate the meta parameters of all the directories to the corresponding
+        indexed metadata table
+    """
+    
+    req = "SELECT DirID,MetaValue from FC_DirMeta WHERE MetaKey='%s'" % metaname
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      return S_OK()
+    
+    dirDict = {}
+    for dirID,meta in result['Value']:
+      dirDict[dirID] = meta
+    dirList = dirDict.keys()
+    
+    # Exclude child directories from the list
+    for dirID in dirList:
+      result = self.dtree.getSubdirectoriesByID(dirID)
+      if not result['OK']:
+        return result
+      if not result['Value']:
+        continue
+      childIDs = result['Value'].keys()
+      for childID in childIDs:
+        if childID in dirList:
+          del dirList[dirList.index(childID)]
+          
+    insertValueList = []      
+    for dirID in dirList:
+      insertValueList.append("( %d,'%s' )" % (dirID,meta) )
+      
+    req = "INSERT INTO FC_Meta_%s (DirID,Value) VALUES %s" % (metaname,', '.join(insertValueList) )
+    result = self._update(req)
+    return result  
 
 ############################################################################################
 #
