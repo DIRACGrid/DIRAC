@@ -15,6 +15,7 @@ import string
 from types  import *
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Security import CS
+from DIRAC.Core.Utilities.List import uniqueElements
 
 class DirectoryListing:
   
@@ -790,19 +791,17 @@ File Catalog Client $Revision: 1.17 $Date:
         path = self.cwd
       elif path[0] != '/':
         path = self.cwd+'/'+path  
-      result = self.fc.getDirectoryMetadata(path)
+      result = self.fc.getDirectoryMetadata(path)      
       if not result['OK']:
         print ("Error: %s" % result['Message']) 
         return
-      pmetaDict = {}
-      if path != '/':
-        resultParent = self.fc.getDirectoryMetadata(os.path.dirname(path))
-        if resultParent['OK']:
-          pmetaDict = resultParent['Value']
       if result['Value']:
+        metaDict = result['MetadataType']
         for meta,value in result['Value'].items():
-          if meta in pmetaDict:
-            print ('*'+meta).rjust(20),':',value 
+          if metaDict[meta] == 'ParentMetadata':
+            print ('*'+meta).rjust(20),':',value
+          elif metaDict[meta] == 'OwnMetadata':
+            print ('!'+meta).rjust(20),':',value   
           else:
             print meta.rjust(20),':',value   
       else:
@@ -877,52 +876,113 @@ File Catalog Client $Revision: 1.17 $Date:
         usage: find <meta_name>=<meta_value> [<meta_name>=<meta_value>]
     """   
     
-    argss = args.split()
-    
-    result = self.fc.getMetadataFields()
-    if not result['OK']:
-      print ("Error: %s" % result['Message']) 
-      return
-    if not result['Value']:
-      print "Error: no metadata fields defined"
-      return
-    
-    typeDict = result['Value']
-    metaDict = {}
-    for arg in argss:
-      try:
-        name,value = arg.split('=')
-        if not name in typeDict:
-          print "Error: metadata field %s not defined" % name
-          return
-        mtype = typeDict[name]
-        if value.find(',') != -1:
-          valueList = value.split(',')
-          mvalue = valueList
-          if mtype[0:3].lower() == 'int':
-            mvalue = [ int(x) for x in valueList if not x in ['Missing','Any'] ]
-            mvalue += [ x for x in valueList if x in ['Missing','Any'] ]
-          if mtype[0:5].lower() == 'float':
-            mvalue = [ float(x) for x in valueList if not x in ['Missing','Any'] ]
-            mvalue += [ x for x in valueList if x in ['Missing','Any'] ]
-        else:  
-          mvalue = value
-          if not value in ['Missing','Any']:
-            if mtype[0:3].lower() == 'int':
-              mvalue = int(value)
-            if mtype[0:5].lower() == 'float':
-              mvalue = float(value)
-        metaDict[name] = mvalue        
-      except Exception,x:
-        print "Error:",str(x)
-        return  
-      
+    if args[0] == '{':
+      metaDict = eval(args)
+    else:  
+      metaDict = self.__createQuery(args)
+      print "Query:",metaDict
+          
     result = self.fc.findFilesByMetadata(metaDict)
     if not result['OK']:
       print ("Error: %s" % result['Message']) 
       return 
     for dir in result['Value']:
       print dir  
+      
+  def __createQuery(self,args):
+    """ Create the metadata query out of the command line arguments
+    """    
+    argss = args.split()
+    result = self.fc.getMetadataFields()
+    if not result['OK']:
+      print ("Error: %s" % result['Message']) 
+      return None
+    if not result['Value']:
+      print "Error: no metadata fields defined"
+      return None
+    typeDict = result['Value']
+    metaDict = {}
+    for arg in argss:
+      operation = ''
+      for op in ['>','<','>=','<=','!=','=']:
+        if arg.find(op) != -1:
+          operation = op
+          break
+      if not operation:
+        print "Error: operation is not found in the query"
+        return None
+        
+      name,value = arg.split(operation)
+      if not name in typeDict:
+        print "Error: metadata field %s not defined" % name
+        return None
+      mtype = typeDict[name]
+      if value.find(',') != -1:
+        valueList = value.split(',')
+        mvalue = valueList
+        if mtype[0:3].lower() == 'int':
+          mvalue = [ int(x) for x in valueList if not x in ['Missing','Any'] ]
+          mvalue += [ x for x in valueList if x in ['Missing','Any'] ]
+        if mtype[0:5].lower() == 'float':
+          mvalue = [ float(x) for x in valueList if not x in ['Missing','Any'] ]
+          mvalue += [ x for x in valueList if x in ['Missing','Any'] ]
+        if operation == "=":
+          operation = 'in'
+        if operation == "!=":
+          operation = 'nin'    
+        mvalue = {operation:mvalue}  
+      else:            
+        mvalue = value
+        if not value in ['Missing','Any']:
+          if mtype[0:3].lower() == 'int':
+            mvalue = int(value)
+          if mtype[0:5].lower() == 'float':
+            mvalue = float(value)               
+        if operation != '=':     
+          mvalue = {operation:mvalue}      
+                                
+      if name in metaDict:
+        if type(metaDict[name]) == DictType:
+          if type(mvalue) == DictType:
+            op,value = mvalue.items()[0]
+            if op in metaDict[name]:
+              if type(metaDict[name][op]) == ListType:
+                if type(value) == ListType:
+                  metaDict[name][op] = uniqueElements(metaDict[name][op] + value)
+                else:
+                  metaDict[name][op] = uniqueElements(metaDict[name][op].append(value))     
+              else:
+                if type(value) == ListType:
+                  metaDict[name][op] = uniqueElements([metaDict[name][op]] + value)
+                else:
+                  metaDict[name][op] = uniqueElements([metaDict[name][op],value])       
+            else:
+              metaDict[name].update(mvalue)
+          else:
+            if type(mvalue) == ListType:
+              metaDict[name].update({'in':mvalue})
+            else:  
+              metaDict[name].update({'=':mvalue})
+        elif type(metaDict[name]) == ListType:   
+          if type(mvalue) == DictType:
+            metaDict[name] = {'in':metaDict[name]}
+            metaDict[name].update(mvalue)
+          elif type(mvalue) == ListType:
+            metaDict[name] = uniqueElements(metaDict[name] + mvalue)
+          else:
+            metaDict[name] = uniqueElements(metaDict[name].append(mvalue))      
+        else:
+          if type(mvalue) == DictType:
+            metaDict[name] = {'=':metaDict[name]}
+            metaDict[name].update(mvalue)
+          elif type(mvalue) == ListType:
+            metaDict[name] = uniqueElements([metaDict[name]] + mvalue)
+          else:
+            metaDict[name] = uniqueElements([metaDict[name],mvalue])          
+      else:            
+        metaDict[name] = mvalue         
+    
+    return metaDict 
           
   def do_rmpfn(self,args):
     """ Remove replica from the catalog
