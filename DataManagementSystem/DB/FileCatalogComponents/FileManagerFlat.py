@@ -50,7 +50,7 @@ class FileManagerFlat(FileManagerBase):
 
   def _getDirectoryFiles(self,dirID,fileNames,metadata,connection=False):
     connection = self._getConnection(connection)
-    # metadata can be any of ['FileID','Size','Checksum','ChecksumType','Type','UID','GID','CreationDate','ModificationDate','Mode','Status']
+    # metadata can be any of ['FileID','Size','UID','GID','Checksum','ChecksumType','Type','CreationDate','ModificationDate','Mode','Status']
     req = "SELECT FileName,%s FROM FC_Files WHERE DirID=%d" % (intListToString(metadata),dirID)
     if fileNames:
       req = "%s AND FileName IN (%s)" % (req,stringListToString(fileNames))
@@ -90,8 +90,8 @@ class FileManagerFlat(FileManagerBase):
       if not directoryFiles.has_key(dirName):
         directoryFiles[dirName] = []
       directoryFiles[dirName].append(fileName)  
-      insertTuples.append("(%d,%d,'%s','%s','%s','%s',%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (dirID,size,fileName,guid,checksum,checksumtype,uid,gid,self.db.umask,statusID))
-    req = "INSERT INTO FC_Files (DirID,Size,FileName,GUID,Checksum,ChecksumType,UID,GID,CreationDate,ModificationDate,Mode,Status) VALUES %s" % (','.join(insertTuples))
+      insertTuples.append("(%d,%d,%d,%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (dirID,size,uid,gid,fileName,guid,checksum,checksumtype,self.db.umask,statusID))
+    req = "INSERT INTO FC_Files (DirID,Size,UID,GID,FileName,GUID,Checksum,ChecksumType,CreationDate,ModificationDate,Mode,Status) VALUES %s" % (','.join(insertTuples))
     res = self.db._update(req,connection)
     if not res['OK']:
       return res

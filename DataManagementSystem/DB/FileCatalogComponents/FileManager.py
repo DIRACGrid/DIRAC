@@ -58,7 +58,7 @@ class FileManager(FileManagerBase):
   def _getDirectoryFiles(self,dirID,fileNames,metadata,connection=False):
     connection = self._getConnection(connection)
     # metadata can be any of ['FileID','Size','Checksum','CheckSumType','Type','UID','GID','CreationDate','ModificationDate','Mode','Status']
-    req = "SELECT FileName,DirID,FileID,Size FROM FC_Files WHERE DirID=%d" % (dirID)
+    req = "SELECT FileName,DirID,FileID,Size,UID,GID FROM FC_Files WHERE DirID=%d" % (dirID)
     if fileNames:
       req = "%s AND FileName IN (%s)" % (req,stringListToString(fileNames))
     res = self.db._query(req,connection)
@@ -88,6 +88,10 @@ class FileManager(FileManagerBase):
       metadata.remove('Size')
     if 'DirID' in metadata:
       metadata.remove('DirID')
+    if 'UID' in metadata:
+      metadata.remove('UID')
+    if 'GID' in metadata:
+      metadata.remove('GID')
     metadata.append('FileID')
     metadata.reverse()
     req = "SELECT %s FROM FC_FileInfo WHERE FileID IN (%s)" % (intListToString(metadata),intListToString(filesDict.keys()))  
@@ -113,8 +117,8 @@ class FileManager(FileManagerBase):
       dirID = lfns[lfn]['DirID']
       fileName = os.path.basename(lfn)
       size = lfns[lfn]['Size']
-      insertTuples.append("(%d,%d,'%s')" % (dirID,size,fileName))
-    req = "INSERT INTO FC_Files (DirID,Size,FileName) VALUES %s" % (','.join(insertTuples))
+      insertTuples.append("(%d,%d,%d,%d,'%s')" % (dirID,size,uid,gid,fileName))
+    req = "INSERT INTO FC_Files (DirID,Size,UID,GID,FileName) VALUES %s" % (','.join(insertTuples))
     res = self.db._update(req,connection)
     if not res['OK']:
       return res
@@ -145,9 +149,9 @@ class FileManager(FileManagerBase):
       guid = fileInfo.get('GUID','')
       dirName = os.path.dirname(lfn)
       toDelete.append(fileID)
-      insertTuples.append("(%d,'%s','%s','%s',%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (fileID,guid,checksum,checksumtype,uid,gid,self.db.umask,statusID))
+      insertTuples.append("(%d,'%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (fileID,guid,checksum,checksumtype,self.db.umask,statusID))
     if insertTuples:
-      req = "INSERT INTO FC_FileInfo (FileID,GUID,Checksum,CheckSumType,UID,GID,CreationDate,ModificationDate,Mode,Status) VALUES %s" % ','.join(insertTuples)
+      req = "INSERT INTO FC_FileInfo (FileID,GUID,Checksum,CheckSumType,CreationDate,ModificationDate,Mode,Status) VALUES %s" % ','.join(insertTuples)
       res = self.db._update(req)
       if not res['OK']:
         self._deleteFiles(toDelete,connection=connection)
