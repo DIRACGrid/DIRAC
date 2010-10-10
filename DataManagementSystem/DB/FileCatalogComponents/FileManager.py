@@ -82,16 +82,9 @@ class FileManager(FileManagerBase):
         files[fileName]['Size'] = size
       if 'DirID' in metadata:
         files[fileName]['DirID'] = dirID
-    if 'FileID' in metadata:
-      metadata.remove('FileID')
-    if 'Size' in metadata:
-      metadata.remove('Size')
-    if 'DirID' in metadata:
-      metadata.remove('DirID')
-    if 'UID' in metadata:
-      metadata.remove('UID')
-    if 'GID' in metadata:
-      metadata.remove('GID')
+    for element in ['FileID','Size','DirID','UID','GID']:
+      if element in metadata:
+        metadata.remove(element)    
     metadata.append('FileID')
     metadata.reverse()
     req = "SELECT %s FROM FC_FileInfo WHERE FileID IN (%s)" % (intListToString(metadata),intListToString(filesDict.keys()))  
