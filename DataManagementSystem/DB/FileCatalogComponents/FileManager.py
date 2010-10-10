@@ -70,12 +70,12 @@ class FileManager(FileManagerBase):
     filesDict = {}
     # If we only requested the FileIDs then there is no need to do anything else
     if metadata == ['FileID']:
-      for fileName,dirID,fileID,size in fileNameIDs:
+      for fileName,dirID,fileID,size,uid,gid in fileNameIDs:
         filesDict[fileName] = {'FileID':fileID}
       return S_OK(filesDict)
     # Otherwise get the additionally requested metadata from the FC_FileInfo table
     files = {}
-    for fileName,dirID,fileID,size in fileNameIDs:
+    for fileName,dirID,fileID,size,uid,gid in fileNameIDs:
       filesDict[fileID] = fileName
       files[fileName] = {}
       if 'Size' in metadata:
