@@ -90,8 +90,8 @@ class FileManagerFlat(FileManagerBase):
       if not directoryFiles.has_key(dirName):
         directoryFiles[dirName] = []
       directoryFiles[dirName].append(fileName)  
-      insertTuples.append("(%d,%d,%d,%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (dirID,size,uid,gid,fileName,guid,checksum,checksumtype,self.db.umask,statusID))
-    req = "INSERT INTO FC_Files (DirID,Size,UID,GID,FileName,GUID,Checksum,ChecksumType,CreationDate,ModificationDate,Mode,Status) VALUES %s" % (','.join(insertTuples))
+      insertTuples.append("(%d,%d,%d,%d,%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d)" % (dirID,size,uid,gid,statusID,fileName,guid,checksum,checksumtype,self.db.umask))
+    req = "INSERT INTO FC_Files (DirID,Size,UID,GID,Status,FileName,GUID,Checksum,ChecksumType,CreationDate,ModificationDate,Mode) VALUES %s" % (','.join(insertTuples))
     res = self.db._update(req,connection)
     if not res['OK']:
       return res
@@ -194,10 +194,10 @@ class FileManagerFlat(FileManagerBase):
         directorySESizeDict[dirID][seID] = {'Files':0,'Size':0}
       directorySESizeDict[dirID][seID]['Size'] += lfns[lfn]['Size']
       directorySESizeDict[dirID][seID]['Files'] += 1
-      insertTuples[lfn] = ("(%d,%d,'%s',%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s')" % (fileID,seID,replicaType,statusID,pfn))
+      insertTuples[lfn] = ("(%d,%d,%d,'%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s')" % (fileID,seID,statusID,replicaType,pfn))
       deleteTuples.append((fileID,seID))
     if insertTuples:
-      req = "INSERT INTO FC_Replicas (FileID,SEID,RepType,Status,CreationDate,ModificationDate,PFN) VALUES %s" % ','.join(insertTuples.values())
+      req = "INSERT INTO FC_Replicas (FileID,SEID,Status,RepType,Status,CreationDate,ModificationDate,PFN) VALUES %s" % ','.join(insertTuples.values())
       res = self.db._update(req,connection)
       if not res['OK']:
         self.__deleteReplicas(deleteTuples,connection=connection)

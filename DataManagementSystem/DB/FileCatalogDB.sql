@@ -20,11 +20,13 @@ CREATE TABLE FC_Files(
     FileID INT AUTO_INCREMENT PRIMARY KEY,
     DirID INT NOT NULL,
     Size BIGINT UNSIGNED NOT NULL,
-    UID SMALLINT UNSIGNED NOT NULL DEFAULT 0,
-    GID TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    UID SMALLINT UNSIGNED NOT NULL,
+    GID TINYINT UNSIGNED NOT NULL,
+    Status SMALLINT UNSIGNED NOT NULL,
     FileName VARCHAR(128) NOT NULL,
     INDEX (DirID),
     INDEX (UID,GID),
+    INDEX (Status),
     INDEX (FileName),
     INDEX (DirID,FileName)
 );
@@ -42,7 +44,6 @@ CREATE TABLE FC_FileInfo (
     CreationDate DATETIME,
     ModificationDate DATETIME,
     Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
-    Status SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     INDEX(Status)
 );
 
@@ -55,8 +56,6 @@ ALTER TABLE FC_Files ADD COLUMN Type ENUM('File','Link') NOT NULL DEFAULT 'File'
 ALTER TABLE FC_Files ADD COLUMN CreationDate DATETIME AFTER Type;
 ALTER TABLE FC_Files ADD COLUMN ModificationDate DATETIME AFTER CreationDate;
 ALTER TABLE FC_Files ADD COLUMN Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775 AFTER ModificationDate;
-ALTER TABLE FC_Files ADD COLUMN Status SMALLINT UNSIGNED NOT NULL DEFAULT 0 AFTER Mode;
-ALTER TABLE FC_Files ADD INDEX (Status);
 
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS FC_Statuses;
@@ -73,9 +72,11 @@ CREATE TABLE FC_Replicas (
     RepID INT AUTO_INCREMENT PRIMARY KEY,
     FileID INT NOT NULL,
     SEID INTEGER NOT NULL,
+    Status SMALLINT UNSIGNED NOT NULL,
     INDEX (FileID),
     INDEX (SEID),
-    INDEX (FileID,SEID)
+    INDEX (FileID,SEID),
+    INDEX (Status)
 );
 
 -- ------------------------------------------------------------------------------
@@ -83,28 +84,18 @@ drop table if exists FC_ReplicaInfo;
 CREATE TABLE FC_ReplicaInfo (
     RepID INTEGER NOT NULL AUTO_INCREMENT,
     RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master',
-    Status SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     CreationDate DATETIME,
     ModificationDate DATETIME,
     PFN VARCHAR(1024),
     PRIMARY KEY (RepID),
-    INDEX (Status),
     INDEX (RepID)
 );
 
 -- Make additions to the FC_Replicas table to include the FC_ReplicaInfo information
 ALTER TABLE FC_Replicas ADD COLUMN RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master' AFTER SEID;
-ALTER TABLE FC_Replicas ADD COLUMN Status SMALLINT UNSIGNED NOT NULL DEFAULT 0 AFTER RepType;
-ALTER TABLE FC_Replicas ADD INDEX (Status);
 ALTER TABLE FC_Replicas ADD COLUMN CreationDate DATETIME AFTER Status;
 ALTER TABLE FC_Replicas ADD COLUMN ModificationDate DATETIME AFTER CreationDate;
 ALTER TABLE FC_Replicas ADD COLUMN PFN VARCHAR(1024) AFTER ModificationDate;
-
--- Make additions to the FC_ReplicaInfo table to include the FC_Replicas information
--- ALTER TABLE FC_ReplicaInfo ADD COLUMN FileID INTEGER NOT NULL AFTER RepID;
--- ALTER TABLE FC_ReplicaInfo ADD INDEX (FileID);
--- ALTER TABLE FC_ReplicaInfo ADD COLUMN SEID INTEGER NOT NULL AFTER FileID;
--- ALTER TABLE FC_ReplicaInfo ADD INDEX (SEID);
 
 -- ------------------------------------------------------------------------------
 

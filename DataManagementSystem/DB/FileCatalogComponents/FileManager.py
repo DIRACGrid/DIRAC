@@ -57,8 +57,8 @@ class FileManager(FileManagerBase):
 
   def _getDirectoryFiles(self,dirID,fileNames,metadata,connection=False):
     connection = self._getConnection(connection)
-    # metadata can be any of ['FileID','Size','Checksum','CheckSumType','Type','UID','GID','CreationDate','ModificationDate','Mode','Status']
-    req = "SELECT FileName,DirID,FileID,Size,UID,GID FROM FC_Files WHERE DirID=%d" % (dirID)
+    # metadata can be any of ['FileID','Size','UID','GID','Status','Checksum','CheckSumType','Type','CreationDate','ModificationDate','Mode']
+    req = "SELECT FileName,DirID,FileID,Size,UID,GID,Status FROM FC_Files WHERE DirID=%d" % (dirID)
     if fileNames:
       req = "%s AND FileName IN (%s)" % (req,stringListToString(fileNames))
     res = self.db._query(req,connection)
@@ -70,19 +70,19 @@ class FileManager(FileManagerBase):
     filesDict = {}
     # If we only requested the FileIDs then there is no need to do anything else
     if metadata == ['FileID']:
-      for fileName,dirID,fileID,size,uid,gid in fileNameIDs:
+      for fileName,dirID,fileID,size,uid,gid,status in fileNameIDs:
         filesDict[fileName] = {'FileID':fileID}
       return S_OK(filesDict)
     # Otherwise get the additionally requested metadata from the FC_FileInfo table
     files = {}
-    for fileName,dirID,fileID,size,uid,gid in fileNameIDs:
+    for fileName,dirID,fileID,size,uid,gid,status in fileNameIDs:
       filesDict[fileID] = fileName
       files[fileName] = {}
       if 'Size' in metadata:
         files[fileName]['Size'] = size
       if 'DirID' in metadata:
         files[fileName]['DirID'] = dirID
-    for element in ['FileID','Size','DirID','UID','GID']:
+    for element in ['FileID','Size','DirID','UID','GID','Status']:
       if element in metadata:
         metadata.remove(element)    
     metadata.append('FileID')
@@ -106,12 +106,16 @@ class FileManager(FileManagerBase):
     # Add the files
     failed = {}
     insertTuples = []
+    res = self._getStatusInt('U',connection=connection)
+    statusID = 0
+    if res['OK']:
+      statusID = res['Value']
     for lfn in lfns.keys():
       dirID = lfns[lfn]['DirID']
       fileName = os.path.basename(lfn)
       size = lfns[lfn]['Size']
-      insertTuples.append("(%d,%d,%d,%d,'%s')" % (dirID,size,uid,gid,fileName))
-    req = "INSERT INTO FC_Files (DirID,Size,UID,GID,FileName) VALUES %s" % (','.join(insertTuples))
+      insertTuples.append("(%d,%d,%d,%d,%d,'%s')" % (dirID,size,uid,gid,statusID,fileName))
+    req = "INSERT INTO FC_Files (DirID,Size,UID,GID,Status,FileName) VALUES %s" % (','.join(insertTuples))
     res = self.db._update(req,connection)
     if not res['OK']:
       return res
@@ -128,10 +132,6 @@ class FileManager(FileManagerBase):
       for lfn,fileDict in res['Value']['Successful'].items():
         lfns[lfn]['FileID'] = fileDict['FileID']
     insertTuples = []
-    res = self._getStatusInt('U',connection=connection)
-    statusID = 0
-    if res['OK']:
-      statusID = res['Value']
     toDelete = []
     for lfn in lfns.keys():
       fileInfo = lfns[lfn]     
@@ -142,9 +142,9 @@ class FileManager(FileManagerBase):
       guid = fileInfo.get('GUID','')
       dirName = os.path.dirname(lfn)
       toDelete.append(fileID)
-      insertTuples.append("(%d,'%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (fileID,guid,checksum,checksumtype,self.db.umask,statusID))
+      insertTuples.append("(%d,'%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d)" % (fileID,guid,checksum,checksumtype,self.db.umask))
     if insertTuples:
-      req = "INSERT INTO FC_FileInfo (FileID,GUID,Checksum,CheckSumType,CreationDate,ModificationDate,Mode,Status) VALUES %s" % ','.join(insertTuples)
+      req = "INSERT INTO FC_FileInfo (FileID,GUID,Checksum,CheckSumType,CreationDate,ModificationDate,Mode) VALUES %s" % ','.join(insertTuples)
       res = self.db._update(req)
       if not res['OK']:
         self._deleteFiles(toDelete,connection=connection)
@@ -221,6 +221,10 @@ class FileManager(FileManagerBase):
     successful = {}
     insertTuples = []
     fileIDLFNs = {}
+    res = self._getStatusInt('U')
+    statusID = 0
+    if res['OK']:
+      statusID = res['Value']
     for lfn in lfns.keys():
       fileID = lfns[lfn]['FileID']
       fileIDLFNs[fileID] = lfn
@@ -238,8 +242,8 @@ class FileManager(FileManagerBase):
       for fileID,repDict in res['Value'].items():
         for seID,repID in repDict.items():
           successful[fileIDLFNs[fileID]] = True
-          insertTuples.remove((fileID,seID))
-    req = "INSERT INTO FC_Replicas (FileID,SEID) VALUES %s" % (','.join(["(%d,%d)" % (tuple[0],tuple[1]) for tuple in insertTuples]))
+          insertTuples.remove((fileID,seID,statusID))
+    req = "INSERT INTO FC_Replicas (FileID,SEID,Status) VALUES %s" % (','.join(["(%d,%d,%d)" % (tuple[0],tuple[1],tuple[2]) for tuple in insertTuples]))
     res = self.db._update(req,connection)
     if not res['OK']:
       return res
@@ -262,10 +266,6 @@ class FileManager(FileManagerBase):
     replicaType = 'Replica'
     if master:
       replicaType = 'Master'
-    res = self._getStatusInt('U')
-    statusID = 0
-    if res['OK']:
-      statusID = res['Value']
     insertTuples = []
     toDelete = []
     for lfn in lfns.keys():
@@ -279,9 +279,9 @@ class FileManager(FileManagerBase):
         return res
       seID = res['Value']
       toDelete.append(repID)
-      insertTuples.append("(%d,'%s',%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s')" % (repID,replicaType,statusID,pfn))    
+      insertTuples.append("(%d,'%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s')" % (repID,replicaType,pfn))    
     if insertTuples:
-      req = "INSERT INTO FC_ReplicaInfo (RepID,RepType,Status,CreationDate,ModificationDate,PFN) VALUES %s" % (','.join(insertTuples))
+      req = "INSERT INTO FC_ReplicaInfo (RepID,RepType,CreationDate,ModificationDate,PFN) VALUES %s" % (','.join(insertTuples))
       res = self.db._update(req,connection)    
       if not res['OK']:
         for lfn in lfns.keys():
