@@ -43,8 +43,7 @@ CREATE TABLE FC_FileInfo (
     Type ENUM('File','Link') NOT NULL DEFAULT 'File',
     CreationDate DATETIME,
     ModificationDate DATETIME,
-    Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
-    INDEX(Status)
+    Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775
 );
 
 -- Make additions to the FC_Files table to include the FC_FileInfo information
@@ -92,8 +91,8 @@ CREATE TABLE FC_ReplicaInfo (
 );
 
 -- Make additions to the FC_Replicas table to include the FC_ReplicaInfo information
-ALTER TABLE FC_Replicas ADD COLUMN RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master' AFTER SEID;
-ALTER TABLE FC_Replicas ADD COLUMN CreationDate DATETIME AFTER Status;
+ALTER TABLE FC_Replicas ADD COLUMN RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master' AFTER Status;
+ALTER TABLE FC_Replicas ADD COLUMN CreationDate DATETIME AFTER RepType;
 ALTER TABLE FC_Replicas ADD COLUMN ModificationDate DATETIME AFTER CreationDate;
 ALTER TABLE FC_Replicas ADD COLUMN PFN VARCHAR(1024) AFTER ModificationDate;
 

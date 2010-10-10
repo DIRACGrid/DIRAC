@@ -242,8 +242,8 @@ class FileManager(FileManagerBase):
       for fileID,repDict in res['Value'].items():
         for seID,repID in repDict.items():
           successful[fileIDLFNs[fileID]] = True
-          insertTuples.remove((fileID,seID,statusID))
-    req = "INSERT INTO FC_Replicas (FileID,SEID,Status) VALUES %s" % (','.join(["(%d,%d,%d)" % (tuple[0],tuple[1],tuple[2]) for tuple in insertTuples]))
+          insertTuples.remove((fileID,seID))
+    req = "INSERT INTO FC_Replicas (FileID,SEID,Status) VALUES %s" % (','.join(["(%d,%d,%d)" % (tuple[0],tuple[1],statusID) for tuple in insertTuples]))
     res = self.db._update(req,connection)
     if not res['OK']:
       return res
