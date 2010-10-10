@@ -357,6 +357,9 @@ class DirectoryLevelTree(DirectoryTreeBase):
         return S_ERROR('Directory %d not found' % dirID)
       level = result['Value'][0][0]
     
+    sPaths = []
+    for i in range(1,level+1):
+      sPaths.append('LPATH%d' % i)
     pathString = ','.join(sPaths)  
     req = "SELECT Level,DirID FROM FC_DirectoryLevelTree AS F1"
     req += " JOIN (SELECT %s FROM FC_DirectoryLevelTree WHERE DirID=%d) AS F2 ON " % (pathString,dirID)

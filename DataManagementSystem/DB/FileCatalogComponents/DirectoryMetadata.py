@@ -22,6 +22,15 @@ class DirectoryMetadata:
         pname - parameter name, ptype - parameter type in the MySQL notation
     """
     
+    result = self.getMetadataFields(credDict)
+    if not result['OK']:
+      return result
+    if pname in result['Value'].keys():
+      if ptype.lower() == result['Value'][pname].lower():
+        return S_OK('Already exists')
+      else:
+        return S_ERROR('Attempt to add an existing metadata with different type: %s/%s' % (ptype,result['Value'][pname]) )
+    
     req = "CREATE TABLE FC_Meta_%s ( DirID INTEGER NOT NULL, Value %s, PRIMARY KEY (DirID), INDEX (Value) )" % (pname,ptype)
     result = self._query(req)
     if not result['OK']:
@@ -36,7 +45,7 @@ class DirectoryMetadata:
     if not result['OK']:
       return result
     
-    return S_OK(metadataID) 
+    return S_OK("Added new metadata: %d" % metadataID) 
   
   def deleteMetadataField(self,pname,credDict):
     """ Remove metadata field
@@ -166,7 +175,8 @@ class DirectoryMetadata:
   
   def getDirectoryMetadata(self,path,credDict,inherited=True,owndata=True):
     """ Get metadata for the given directory aggregating metadata for the directory itself
-        and for all the parent directories if inherited flag is True
+        and for all the parent directories if inherited flag is True. Get also the non-indexed
+        metadata parameters.
     """
     
     result = self.dtree.getPathIDs(path)
@@ -180,6 +190,8 @@ class DirectoryMetadata:
     metaFields = result['Value']
     
     metaDict = {}
+    metaTypeDict = {}
+    dirID = pathIDs[-1]
     if not inherited:
       pathIDs = pathIDs[-1:]
     if not owndata:
@@ -194,13 +206,21 @@ class DirectoryMetadata:
         return S_ERROR('Metadata conflict for directory %s' % path)
       if result['Value']:
         metaDict[meta] = result['Value'][0][0]
+        if int(result['Value'][0][1]) == dirID:
+          metaTypeDict[meta] = 'OwnMetadata'
+        else:
+          metaTypeDict[meta] = 'ParentMetadata'   
       
     # Get also non-searchable data  
     result = self.getDirectoryMetaParameters(path,credDict,inherited,owndata) 
     if result['OK']:
       metaDict.update(result['Value'])
+      for meta in result['Value']:
+        metaTypeDict[meta] = 'OwnParameter'   
        
-    return S_OK(metaDict)  
+    result = S_OK(metaDict)
+    result['MetadataType'] = metaTypeDict
+    return result  
   
   def __transformMetaParameterToData(self,metaname):
     """ Relocate the meta parameters of all the directories to the corresponding
@@ -237,6 +257,11 @@ class DirectoryMetadata:
       
     req = "INSERT INTO FC_Meta_%s (DirID,Value) VALUES %s" % (metaname,', '.join(insertValueList) )
     result = self._update(req)
+    if not result['OK']:
+      return result
+    
+    req = "DELETE FROM FC_DirMeta WHERE MetaKey='%s'" % metaname
+    result = self._update(req)
     return result  
 
 ############################################################################################
@@ -250,14 +275,43 @@ class DirectoryMetadata:
         for which the meta datum is defined at all.
     """
   
-    if type(value) == types.ListType:
+    if type(value) == types.DictType:
+      selectList = []
+      for operation,operand in value.items():
+        if operation in ['>','<','>=','<=']:
+          if type(operand) == types.ListType:
+            return S_ERROR('Illegal query: list of values for comparison operation')
+          if type(operand) in [types.IntType,types.LongType]:
+            selectList.append( "Value%s%d" % (operation,operand) )
+          elif type(operand) == types.FloatType:
+            selectList.append( "Value%s%f" % (operation,operand) )   
+          else:
+            selectList.append( "Value%s'%s'" % (operation,operand) )     
+        elif operation == 'in' or operation == "=":
+          if type(operand) == types.ListType:
+            vString = ','.join( [ "'"+str(x)+"'" for x in operand] )
+            selectList.append("Value IN (%s)" % vString)
+          else:
+            selectList.append("Value='%s'" % operand )       
+        elif operation == 'nin' or operation == "!=":
+          if type(operand) == types.ListType:
+            vString = ','.join( [ "'"+str(x)+"'" for x in operand] )
+            selectList.append("Value NOT IN (%s)" % vString)
+          else:
+            selectList.append("Value!='%s'" % operand )     
+        selectString = ' AND '.join(selectList)
+        req = " SELECT DirID FROM FC_Meta_%s WHERE %s" % (meta,selectString)
+    elif type(value) == types.ListType:
       vString = ','.join( [ "'"+str(x)+"'" for x in value] )
-      req = " SELECT DirID FROM FC_Meta_%s WHERE Value IN (%s) " % (meta,vString)
+      req = " SELECT DirID FROM FC_Meta_%s WHERE Value IN (%s) " % (meta,vString)    
     else:  
       if value == "Any":
         req = " SELECT DirID FROM FC_Meta_%s " % meta
       else:  
         req = " SELECT DirID FROM FC_Meta_%s WHERE Value='%s' " % (meta,value)
+        
+    print req    
+        
     result = self._query(req)
     if not result['OK']:
       return result
