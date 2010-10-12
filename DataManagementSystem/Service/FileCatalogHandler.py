@@ -41,7 +41,8 @@ def initializeFileCatalogHandler(serviceInfo):
                     'GlobalReadAccess'  : True,
                     'LFNPFNConvention'  : True,
                     'ResolvePFN'        : True,
-                    'DefaultUmask'      : 0775}
+                    'DefaultUmask'      : 0775,
+                    'VisibleStatus'     : ['AprioriGood']}
   for configKey in sortList(defaultConfig.keys()):
     defaultValue = defaultConfig[configKey]
     configValue = gConfig.getValue('%s/%s' % (serviceCS,configKey),defaultValue)

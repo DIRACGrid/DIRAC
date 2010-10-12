@@ -48,10 +48,17 @@ class FileManagerFlat(FileManagerBase):
           successful["%s/%s" % (dirPath,fileName)] = fileDict
     return S_OK({"Successful":successful,"Failed":failed})
 
-  def _getDirectoryFiles(self,dirID,fileNames,metadata,connection=False):
+  def _getDirectoryFiles(self,dirID,fileNames,metadata,allStatus=False,connection=False):
     connection = self._getConnection(connection)
     # metadata can be any of ['FileID','Size','UID','GID','Checksum','ChecksumType','Type','CreationDate','ModificationDate','Mode','Status']
     req = "SELECT FileName,%s FROM FC_Files WHERE DirID=%d" % (intListToString(metadata),dirID)
+    if not allStatus:
+      statusIDs = []
+      res = self._getStatusInt('AprioriGood',connection=connection)
+      if res['OK']:
+        statusIDs.append(res['Value'])
+      if statusIDs:
+        req = "%s AND Status IN (%s)" % (req,intListToString(statusIDs))
     if fileNames:
       req = "%s AND FileName IN (%s)" % (req,stringListToString(fileNames))
     res = self.db._query(req,connection)
@@ -74,7 +81,7 @@ class FileManagerFlat(FileManagerBase):
     failed = {}
     directoryFiles = {}
     insertTuples = []
-    res = self._getStatusInt('U',connection=connection)
+    res = self._getStatusInt('AprioriGood',connection=connection)
     statusID = 0
     if res['OK']:
       statusID = res['Value']
@@ -158,7 +165,7 @@ class FileManagerFlat(FileManagerBase):
   
   def _insertReplicas(self,lfns,master=False,connection=False): 
     connection = self._getConnection(connection)
-    res = self._getStatusInt('U',connection=connection)
+    res = self._getStatusInt('AprioriGood',connection=connection)
     statusID = 0
     if res['OK']:
       statusID = res['Value']

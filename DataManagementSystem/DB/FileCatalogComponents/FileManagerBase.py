@@ -176,7 +176,6 @@ class FileManagerBase:
         size = seDict['Size']
         req = "UPDATE FC_DirectoryUsage SET SESize=SESize%s%d,SEFiles=SEFiles%s%d,LastUpdate=UTC_TIMESTAMP() WHERE DirID=%d AND SEID=%d;" % (change,size,change,files,dirID,seID)
         res = self.db._update(req)
-        print req,res
         if not res['OK']:
           gLogger.warn("Failed to update FC_DirectoryUsage",res['Message'])
         if res['Value']:
@@ -618,7 +617,7 @@ class FileManagerBase:
         replicas[lfn] = {}
         for se,repDict in seDict.items():
           repStatus = repDict['Status']
-          if (repStatus.lower() != 'p') or (allStatus):
+          if (repStatus in self.db.visibleStatus) or (allStatus):
             pfn = repDict['PFN']
             if not pfn:
               res = self._resolvePFN(lfn,se)

@@ -45,6 +45,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     self.lfnPfnConvention = databaseConfig['LFNPFNConvention']
     self.resolvePfn = databaseConfig['ResolvePFN']
     self.umask = databaseConfig['DefaultUmask']
+    self.visibleStatus = databaseConfig['VisibleStatus']
 
     try:
       # Obtain the plugins to be used for DB interaction
