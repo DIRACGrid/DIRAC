@@ -287,6 +287,13 @@ if os.environ.has_key( 'PBS_JOBID' ):
   pilotRef = os.environ['PBS_JOBID']  
   cliParams.queueName = os.environ['PBS_QUEUE']  
       
+# This is the CREAM direct submission case  
+if os.environ.has_key( 'CREAM_JOBID' ):
+  cliParams.flavour = 'CREAM'
+  pilotRef = os.environ['CREAM_JOBID']
+
+# If we still have the GLITE_WMS_JOBID, it means that the submission
+# was through the WMS, take this reference then
 if os.environ.has_key( 'EDG_WL_JOBID' ):
   cliParams.flavour = 'LCG'
   pilotRef = os.environ['EDG_WL_JOBID']
@@ -295,11 +302,6 @@ if os.environ.has_key( 'GLITE_WMS_JOBID' ):
   cliParams.flavour = 'gLite'
   pilotRef = os.environ['GLITE_WMS_JOBID']
   
-# This is the CREAM direct submission case  
-if os.environ.has_key( 'CREAM_JOBID' ):
-  cliParams.flavour = 'CREAM'
-  pilotRef = os.environ['CREAM_JOBID']
-
 configureOpts.append( '-o /LocalSite/GridMiddleware=%s' % cliParams.flavour )
 if pilotRef != 'Unknown':
   configureOpts.append( '-o /LocalSite/PilotReference=%s' % pilotRef )
