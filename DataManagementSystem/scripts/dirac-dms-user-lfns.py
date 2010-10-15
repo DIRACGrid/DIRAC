@@ -95,11 +95,11 @@ while len(activeDirs) > 0:
     dirContents = res['Value']['Successful'][currentDir]
     subdirs = dirContents['SubDirs']
     for subdir,metadata in subdirs.items():
-      if (not verbose) or isOlderThan(metadata['CreationTime'],totalDays):
+      if (not verbose) or isOlderThan(metadata['CreationDate'],totalDays):
         activeDirs.append(subdir)
     for filename,fileInfo in dirContents['Files'].items():
       metadata = fileInfo['MetaData']
-      if (not verbose) or isOlderThan(metadata['CreationTime'],totalDays):
+      if (not verbose) or isOlderThan(metadata['CreationDate'],totalDays):
         if fnmatch.fnmatch(filename,wildcard):
           allFiles.append(filename)
     files = dirContents['Files'].keys()
