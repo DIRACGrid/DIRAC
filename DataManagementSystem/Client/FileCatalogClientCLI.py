@@ -30,7 +30,7 @@ class DirectoryListing:
       fileDict = fileDict['MetaData']
 
     perm = fileDict['Permissions']
-    date = fileDict['ModificationTime']
+    date = fileDict['ModificationDate']
     nlinks = fileDict.get('NumberOfLinks',0)
     size = fileDict['Size']
     if fileDict.has_key('Owner'):
@@ -70,7 +70,7 @@ class DirectoryListing:
     """ Pretty print of the file ls output
     """    
     perm = dirDict['Permissions']
-    date = dirDict['ModificationTime']
+    date = dirDict['ModificationDate']
     nlinks = 0
     size = 0
     if dirDict.has_key('Owner'):
