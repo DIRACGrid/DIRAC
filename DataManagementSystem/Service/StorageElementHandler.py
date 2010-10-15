@@ -118,7 +118,7 @@ class StorageElementHandler( RequestHandler ):
     resultDict['TimeStamps'] = ( statTuple[ST_ATIME], statTuple[ST_MTIME], statTuple[ST_CTIME] )
     resultDict['Cached'] = 1
     resultDict['Migrated'] = 0
-    resultDict['Permissions'] = S_IMODE( mode )
+    resultDict['Mode'] = S_IMODE( mode )
     return S_OK( resultDict )
 
   types_exists = [StringTypes]

@@ -52,8 +52,6 @@ class FileManager(FileManagerBase):
         for fileName,fileDict in res['Value'].items():
           fname = '%s/%s' % (dirPath,fileName)
           fname = fname.replace('//','/')
-          if "Mode" in fileDict:
-            fileDict['Permissions'] = fileDict['Mode']
           successful[fname] = fileDict
     return S_OK({"Successful":successful,"Failed":failed})
 
@@ -102,9 +100,7 @@ class FileManager(FileManagerBase):
       return res
     for tuple in res['Value']:
       fileID = tuple[0]
-      rowDict = dict(zip(metadata,tuple))
-      if "Mode" in rowDict:
-        rowDict['Permissions'] = rowDict['Mode']
+      rowDict = dict(zip(metadata,tuple))]
       files[filesDict[fileID]].update(rowDict)
     return S_OK(files)
 

@@ -270,7 +270,7 @@ class DirectoryTreeBase:
       group = result['Value']  
     dirDict['OwnerGroup'] = group
     dirDict['Status'] = int(resQuery['Value'][0][3])
-    dirDict['Permissions'] = int(resQuery['Value'][0][4])
+    dirDict['Mode'] = int(resQuery['Value'][0][4])
     dirDict['CreationDate'] = resQuery['Value'][0][5]
     dirDict['ModificationDate'] = resQuery['Value'][0][6]
 

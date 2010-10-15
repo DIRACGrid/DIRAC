@@ -1301,7 +1301,7 @@ class SRM2Storage(StorageBase):
       statDict['Size'] = stat[ST_SIZE]
     if S_ISDIR(stat[ST_MODE]):
       statDict['Directory'] = True
-    statDict['Permissions'] = S_IMODE(stat[ST_MODE])
+    statDict['Mode'] = S_IMODE(stat[ST_MODE])
     return statDict
 
   def __parse_file_metadata(self,urlDict):

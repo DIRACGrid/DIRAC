@@ -698,7 +698,6 @@ class FileManagerBase:
       return S_OK(files)
     for fileName,fileDict in res['Value'].items():
       lfn = "%s/%s" % (path,fileName)
-      fileDict['Permissions'] = fileDict['Mode']
       files[lfn] = fileDict
     return S_OK(files)
 

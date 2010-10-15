@@ -212,7 +212,7 @@ class RFIOStorage(StorageBase):
             successful[pfn]['Type'] = 'Directory'
           else:
             successful[pfn]['Type'] = 'File'
-          successful[pfn]['Permissions'] = self.__permissionsToInt(permissions)
+          successful[pfn]['Mode'] = self.__permissionsToInt(permissions)
           successful[pfn]['NbSubDirs'] = subdirs
           successful[pfn]['Owner'] = owner
           successful[pfn]['Group'] = group

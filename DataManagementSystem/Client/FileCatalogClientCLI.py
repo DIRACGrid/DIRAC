@@ -29,7 +29,7 @@ class DirectoryListing:
     if fileDict.has_key('MetaData'):
       fileDict = fileDict['MetaData']
 
-    perm = fileDict['Permissions']
+    perm = fileDict['Mode']
     date = fileDict['ModificationDate']
     nlinks = fileDict.get('NumberOfLinks',0)
     size = fileDict['Size']
@@ -69,7 +69,7 @@ class DirectoryListing:
   def addDirectory(self,name,dirDict,numericid):
     """ Pretty print of the file ls output
     """    
-    perm = dirDict['Permissions']
+    perm = dirDict['Mode']
     date = dirDict['ModificationDate']
     nlinks = 0
     size = 0

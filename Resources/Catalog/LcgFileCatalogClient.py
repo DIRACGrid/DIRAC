@@ -224,7 +224,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
         successful[lfn]['CreationDate'] = fromEpoch(fstat.ctime)
         successful[lfn]['ModificationDate'] = fromEpoch(fstat.mtime)
         successful[lfn]['NumberOfLinks'] = fstat.nlink
-        successful[lfn]['Permissions'] = S_IMODE(fstat.filemode)
+        successful[lfn]['Mode'] = S_IMODE(fstat.filemode)
         if ownership:
           res = self.__getDNFromUID(fstat.uid)
           if res['OK']:
@@ -389,7 +389,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
           successful[lfn]['OwnerRole'] = res['Value']
         else:
           successful[lfn]['OwnerRole'] = None
-        successful[lfn]['Permissions'] = S_IMODE(fstat.filemode)
+        successful[lfn]['Mode'] = S_IMODE(fstat.filemode)
     if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
@@ -1352,7 +1352,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
     for i in  range(nbfiles):
       entry,fileInfo = lfc.lfc_readdirxr(oDirectory,"")
       pathMetadata = {}
-      pathMetadata['Permissions'] = S_IMODE(entry.filemode)
+      pathMetadata['Mode'] = S_IMODE(entry.filemode)
       subPath = '%s/%s' % (path,entry.d_name)
       if verbose:
         statRes = self.__getPathStat(subPath)

@@ -514,8 +514,8 @@ class DirectoryTestCases(StorageElementTestCase):
     # Perform the checks for the list dir operation
     self.assert_(metadataDirRes['OK'])   
     self.assert_(metadataDirRes['Value'])
-    self.assert_(metadataDirRes['Value']['Permissions'])
-    self.assert_(type(metadataDirRes['Value']['Permissions']) == types.IntType)
+    self.assert_(metadataDirRes['Value']['Mode'])
+    self.assert_(type(metadataDirRes['Value']['Mode']) == types.IntType)
     self.assert_(metadataDirRes['Value']['Directory'])
     self.assertFalse(metadataDirRes['Value']['File'])
     # Perform the checks for the remove directory operation
