@@ -31,12 +31,15 @@ class DirectoryMetadata:
       else:
         return S_ERROR('Attempt to add an existing metadata with different type: %s/%s' % (ptype,result['Value'][pname]) )
     
-    req = "CREATE TABLE FC_Meta_%s ( DirID INTEGER NOT NULL, Value %s, PRIMARY KEY (DirID), INDEX (Value) )" % (pname,ptype)
+    valueType = ptype   
+    if ptype == "MetaSet":
+      valueType = "VARCHAR(64)"      
+    req = "CREATE TABLE FC_Meta_%s ( DirID INTEGER NOT NULL, Value %s, PRIMARY KEY (DirID), INDEX (Value) )" % (pname,valueType)
     result = self._query(req)
     if not result['OK']:
       return result
     
-    result = self._insert('FC_Meta_Fields',['MetaName','MetaType'],[pname,ptype])
+    result = self._insert('FC_MetaFields',['MetaName','MetaType'],[pname,ptype])
     if not result['OK']:
       return result
     
@@ -59,7 +62,7 @@ class DirectoryMetadata:
     """ Get all the defined metadata fields
     """
     
-    req = "SELECT MetaName,MetaType FROM FC_Meta_Fields"
+    req = "SELECT MetaName,MetaType FROM FC_MetaFields"
     result = self._query(req)
     if not result['OK']:
       return result
@@ -69,6 +72,65 @@ class DirectoryMetadata:
       metaDict[row[0]] = row[1]
       
     return S_OK(metaDict)  
+  
+  def addMetadataSet(self,metaSetName,metaSetDict,credDict):
+    """ Add a new metadata set with the contents from metaSetDict
+    """
+    result = self.getMetadataFields(credDict)
+    if not result['OK']:
+      return result
+    metaTypeDict = result['Value']
+    # Check the sanity of the metadata set contents
+    for key in metaSetDict:
+      if not key in metaTypeDict:
+        return S_ERROR('Unknown key %s' % key)
+    
+    result = self._insert('FC_MetaSetNames',['MetaSetName'],[metaSetName])
+    if not result['OK']:
+      return result
+    
+    metaSetID = result['lastRowId']
+    
+    req = "INSERT INTO FC_MetaSets (MetaSetID,MetaKey,MetaValue) VALUES %s"
+    vList = []
+    for key,value in metaSetDict.items():
+      vList.append("(%d,'%s','%s')" % (metaSetID,key,str(value)) )
+    vString = ','.join(vList)
+    result = self._update(req % vString )
+    return result  
+    
+  def getMetadataSet(self,metaSetName,expandFlag,credDict):
+    """ Get fully expanded contents of the metadata set 
+    """
+    result = self.getMetadataFields(credDict)
+    if not result['OK']:
+      return result
+    metaTypeDict = result['Value']
+    
+    req = "SELECT S.MetaKey,S.MetaValue FROM FC_MetaSets as S, FC_MetaSetNames as N WHERE N.MetaSetName='%s' AND N.MetaSetID=S.MetaSetID" % metaSetName
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    
+    if not result['Value']:
+      return S_OK({})
+
+    resultDict = {}    
+    for key,value in result['Value']:
+      if not key in metaTypeDict:
+        return S_ERROR('Unknown key %s' % key)
+      if expandFlag:
+        if metaTypeDict[key] == "MetaSet":
+          result = self.getMetadataSet(value,credDict)
+          if not result['OK']:
+            return result   
+          resultDict.update(result['Value'])
+        else:
+          resultDict[key] = value  
+      else:    
+        resultDict[key] = value  
+    return S_OK(resultDict)
+    
 #############################################################################################  
 #
 # Set and get directory metadata
@@ -190,6 +252,7 @@ class DirectoryMetadata:
     metaFields = result['Value']
     
     metaDict = {}
+    metaOwnerDict = {}
     metaTypeDict = {}
     dirID = pathIDs[-1]
     if not inherited:
@@ -207,18 +270,20 @@ class DirectoryMetadata:
       if result['Value']:
         metaDict[meta] = result['Value'][0][0]
         if int(result['Value'][0][1]) == dirID:
-          metaTypeDict[meta] = 'OwnMetadata'
+          metaOwnerDict[meta] = 'OwnMetadata'
         else:
-          metaTypeDict[meta] = 'ParentMetadata'   
+          metaOwnerDict[meta] = 'ParentMetadata'   
+      metaTypeDict[meta] = metaFields[meta]
       
     # Get also non-searchable data  
     result = self.getDirectoryMetaParameters(path,credDict,inherited,owndata) 
     if result['OK']:
       metaDict.update(result['Value'])
       for meta in result['Value']:
-        metaTypeDict[meta] = 'OwnParameter'   
+        metaOwnerDict[meta] = 'OwnParameter'   
        
     result = S_OK(metaDict)
+    result['MetadataOwner'] = metaOwnerDict
     result['MetadataType'] = metaTypeDict
     return result  
   
@@ -349,9 +414,41 @@ class DirectoryMetadata:
     dirList = [ x[0] for x in result['Value'] ]
     return S_OK(dirList)        
   
-  def findDirectoriesByMetadata(self,metaDict,credDict):
+  def __expandMetaDictionary(self,metaDict,credDict):
+    """ Expand the dictionary with metadata query 
+    """
+    result = self.getMetadataFields(credDict)
+    if not result['OK']:
+      return result
+    metaTypeDict = result['Value']
+    resultDict = {}
+    for key,value in metaDict.items():
+      if not key in metaTypeDict:
+        return S_ERROR('Unknown metadata field %s' % key)
+      keyType = metaTypeDict[key]
+      if keyType != "MetaSet":
+        resultDict[key] = value
+      else:
+        result = self.getMetadataSet(value,True,credDict)
+        if not result['OK']:
+          return result
+        mDict = result['Value']
+        for mk,mv in mDict.items():
+          if mk in resultDict:
+            return S_ERROR('Contradictory query for key %s' % mk)
+          else:
+            resultDict[mk] = mv
+    return S_OK(resultDict)          
+  
+  def findDirectoriesByMetadata(self,queryDict,credDict):
     """ Find Directories satisfying the given metadata
     """
+    result = self.__expandMetaDictionary(queryDict,credDict)
+    if not result['OK']:
+      return result
+    metaDict = result['Value']
+    
+    print "AT >>>", metaDict
     
     dirList = []
     first = True
