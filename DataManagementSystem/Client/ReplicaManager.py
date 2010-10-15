@@ -1116,14 +1116,14 @@ class ReplicaManager( CatalogToStorage ):
         dirContents = res['Value']
         subdirs = dirContents['SubDirs']
         for subdir, metadata in subdirs.items():
-          if ( not days ) or self.__isOlderThan(metadata['CreationTime'], days ):
+          if ( not days ) or self.__isOlderThan(metadata['CreationDate'], days ):
             if subdir[0] <> '/':
               subdir = currentDir + '/' + subdir
             activeDirs.append( subdir )
         for filename, fileInfo in dirContents['Files'].items():
           if fileInfo.has_key( 'MetaData' ):
             fileInfo = fileInfo['MetaData']
-          if ( not days ) or self.__isOlderThan( fileInfo['CreationTime'], days ):
+          if ( not days ) or self.__isOlderThan( fileInfo['CreationDate'], days ):
             if fnmatch.fnmatch( filename, wildcard ):
               if fileInfo.has_key( 'LFN' ):
                 filename = fileInfo['LFN']
