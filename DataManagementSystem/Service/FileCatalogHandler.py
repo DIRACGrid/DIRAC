@@ -284,22 +284,11 @@ class FileCatalogHandler(RequestHandler):
     """
     return fcDB.getMetadataFields(self.getRemoteCredentials())
 
-  #############################################################
-  # S. Poss
-  # Replaces the following
-  #############################################################
   types_setMetadata = [ StringTypes, DictType ]
   def export_setMetadata(self, path, metadatadict ):
     """ Set metadata parameter for the given path
     """
     return fcDB.setMetadata( path, metadatadict, self.getRemoteCredentials() )
-  #############################################################
-
-  #types_setMetadata = [ StringTypes, StringTypes ]
-  #def export_setMetadata(self, path, fieldName, fieldValue ):
-  #  """ Set metadata parameter for the given path
-  #  """
-  #  return fcDB.setMetadata( path, fieldName, fieldValue, self.getRemoteCredentials() )
   
   types_getDirectoryMetadata = [ StringTypes ]
   def export_getDirectoryMetadata(self,path):
@@ -324,3 +313,15 @@ class FileCatalogHandler(RequestHandler):
     """ Get metadata values compatible with the given metadata subset
     """
     return fcDB.getCompatibleMetadata(metaDict, self.getRemoteCredentials())
+
+  types_addMetadataSet = [ StringTypes, DictType ]
+  def export_addMetadataSet(self,setName,setDict):
+    """ Add a new metadata set
+    """
+    return fcDB.addMetadataSet(setName,setDict, self.getRemoteCredentials())
+  
+  types_getMetadataSet = [ StringTypes, BooleanType ]
+  def export_getMetadataSet(self,setName,expandFlag):
+    """ Add a new metadata set
+    """
+    return fcDB.getMetadataSet(setName,expandFlag, self.getRemoteCredentials())
