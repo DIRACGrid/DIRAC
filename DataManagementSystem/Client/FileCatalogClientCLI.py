@@ -230,6 +230,7 @@ File Catalog Client $Revision: 1.17 $Date:
           add file <lfn> <pfn> <size> <SE> [<guid>]  - add new file
           add pfn <lfn> <pfn> <SE>   - add new replica
           add metadata <metaname> <metatype>  - add new metadata field
+          add metaset <metaset_name> <key>=<value> [<key>=<value>]
     """
     
     argss = args.split()
@@ -245,6 +246,8 @@ File Catalog Client $Revision: 1.17 $Date:
       return self.addpfn(argss)
     elif option == 'metadata':
       return self.addmeta(argss)
+    elif option == 'metaset':
+      return self.addmetaset(argss)
     else:
       print "Unknown option:",option
          
@@ -260,6 +263,23 @@ File Catalog Client $Revision: 1.17 $Date:
       print ("Error: %s" % result['Message'])
     else:
       print "Added metadata field %s of type %s" % (mname,mtype)        
+  
+  def addmetaset(self,argss):
+    """ Add metadata set
+    """
+    
+    setDict = {}
+    setName = argss[0]
+    del argss[0]
+    for arg in argss:
+      key,value = arg.split('=')
+      setDict[key] = value
+      
+    result =  self.fc.addMetadataSet(setName,setDict)
+    if not result['OK']:
+      print ("Error: %s" % result['Message'])  
+    else:
+      print "Added metadata set %s" % setName  
   
   def do_delete(self,args):
     """ Delete records from the File Catalog
@@ -577,7 +597,7 @@ File Catalog Client $Revision: 1.17 $Date:
     infoDict = {}
     lfn = self.getPath(path)
     infoDict['PFN'] = args[1]
-    infoDict['Size'] = args[2]
+    infoDict['Size'] = int(args[2])
     infoDict['SE'] = args[3]
     if len(args) == 5:
       guid = args[4]
@@ -782,10 +802,14 @@ File Catalog Client $Revision: 1.17 $Date:
     argss = args.split()
     option = argss[0]
     del argss[0]
+    expandFlag = False
     if option == 'metadata':
       if len(argss) == 0:
         path ='.'
       else:  
+        if argss[0] == "-e":
+          expandFlag = True
+          del argss[0]
         path = argss[0]
       if path == '.':
         path = self.cwd
@@ -796,16 +820,42 @@ File Catalog Client $Revision: 1.17 $Date:
         print ("Error: %s" % result['Message']) 
         return
       if result['Value']:
-        metaDict = result['MetadataType']
+        metaDict = result['MetadataOwner']
+        metaTypeDict = result['MetadataType']
         for meta,value in result['Value'].items():
+          setFlag = metaDict[meta] != 'OwnParameter' and metaTypeDict[meta] == "MetaSet"
+          prefix = ''
+          if setFlag:
+              prefix = "+"
           if metaDict[meta] == 'ParentMetadata':
-            print ('*'+meta).rjust(20),':',value
+            prefix += "*"
+            print (prefix+meta).rjust(20),':',value
           elif metaDict[meta] == 'OwnMetadata':
-            print ('!'+meta).rjust(20),':',value   
+            prefix += "!"
+            print (prefix+meta).rjust(20),':',value   
           else:
-            print meta.rjust(20),':',value   
+            print meta.rjust(20),':',value 
+          if setFlag and expandFlag:
+            result = self.fc.getMetadataSet(value,expandFlag)
+            if not result['OK']:
+              print ("Error: %s" % result['Message']) 
+              return
+            for m,v in result['Value'].items():
+              print " "*10,m.rjust(20),':',v      
       else:
         print "No metadata defined for directory"   
+    elif option == "metaset":
+      expandFlag = False
+      if argss[0] == "-e":
+        expandFlag = True
+        del argss[0]
+      setName = argss[0]
+      result = self.fc.getMetadataSet(setName,expandFlag)
+      if not result['OK']:
+        print ("Error: %s" % result['Message']) 
+        return
+      for meta,value in result['Value'].items():
+        print meta.rjust(20),':',value         
     elif option == 'size': 
       path = argss[0]
       if path == '.':
