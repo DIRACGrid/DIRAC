@@ -221,8 +221,8 @@ class LcgFileCatalogClient(FileCatalogueBase):
         successful[lfn]['Checksum'] = fstat.csumvalue
         successful[lfn]['GUID'] = fstat.guid
         successful[lfn]['Status'] = fstat.status
-        successful[lfn]['CreationTime'] = fromEpoch(fstat.ctime)
-        successful[lfn]['ModificationTime'] = fromEpoch(fstat.mtime)
+        successful[lfn]['CreationDate'] = fromEpoch(fstat.ctime)
+        successful[lfn]['ModificationDate'] = fromEpoch(fstat.mtime)
         successful[lfn]['NumberOfLinks'] = fstat.nlink
         successful[lfn]['Permissions'] = S_IMODE(fstat.filemode)
         if ownership:
@@ -376,8 +376,8 @@ class LcgFileCatalogClient(FileCatalogueBase):
         successful[lfn]['Checksum'] = fstat.csumvalue
         successful[lfn]['GUID'] = fstat.guid
         successful[lfn]['Status'] = fstat.status
-        successful[lfn]['CreationTime'] = fromEpoch(fstat.ctime)
-        successful[lfn]['ModificationTime'] = fromEpoch(fstat.mtime)
+        successful[lfn]['CreationDate'] = fromEpoch(fstat.ctime)
+        successful[lfn]['ModificationDate'] = fromEpoch(fstat.mtime)
         successful[lfn]['NumberOfSubPaths'] = fstat.nlink
         res = self.__getDNFromUID(fstat.uid)
         if res['OK']:
@@ -1363,8 +1363,8 @@ class LcgFileCatalogClient(FileCatalogueBase):
           pathMetadata['Checksum'] = oPath.csumvalue
           pathMetadata['GUID'] = oPath.guid
           pathMetadata['Status'] = oPath.status
-          pathMetadata['CreationTime'] = fromEpoch(oPath.ctime)
-          pathMetadata['ModificationTime'] = fromEpoch(oPath.mtime)
+          pathMetadata['CreationDate'] = fromEpoch(oPath.ctime)
+          pathMetadata['ModificationDate'] = fromEpoch(oPath.mtime)
           pathMetadata['NumberOfLinks'] = oPath.nlink
           pathMetadata['LastAccess'] = oPath.atime
           res = self.__getDNFromUID(oPath.uid)
