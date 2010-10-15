@@ -10,19 +10,19 @@ from DIRAC.Core.DISET.RequestHandler            import RequestHandler
 from DIRAC.DataManagementSystem.DB.testDMSDB    import testDMSDB
 
 # This is a global instance of the DataIntegrityDB class
-testDMSDB = False
+testDB = False
 
-def initializetestDMSDB(serviceInfo):
-  global testDMSDB
-  testDMSDB = testDMSDB()
+def initializetestDMSHandler(serviceInfo):
+  global testDB
+  testDB = testDMSDB()
   return S_OK()
 
 class testDMSHandler(RequestHandler):
 
    types_insertSomething = [StringTypes,[IntType,LongType]]
    def export_insertSomething(self,user,files):
-     return testDMSDB.insertSomething(user,files)
+     return testDB.insertSomething(user,files)
 
    types_querySomething = [StringTypes]
    def export_querySomething(user):
-     return testDMSDB.querySomething(user)
+     return testDB.querySomething(user)
