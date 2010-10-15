@@ -5,6 +5,7 @@
 """
 
 import copy
+import datetime
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC import gLogger
@@ -83,6 +84,8 @@ class ClientsCacheFeeder(AgentModule):
     
     try:
       
+      now = datetime.datetime.utcnow()
+      
       for co in self.commandObjectsList_ClientsCache:
         try:
           self.clientsInvoker.setCommand(co[1])
@@ -102,13 +105,21 @@ class ClientsCacheFeeder(AgentModule):
           continue
       
       for co in self.commandObjectsList_AccountingCache:
+        if co[0][3] == 'Hourly':
+          if now.minute >= 10:
+            continue
+        elif co[0][3] == 'Daily':
+          if now.hour >= 1:
+            continue
+        
         try:
           co[1].setArgs(co[2])
           self.clientsInvoker.setCommand(co[1])
           res = self.clientsInvoker.doCommand()
           plotType = res.keys()[0]
           for name in res[plotType].keys():
-            self.rsDB.addOrModifyAccountingCacheRes(name, plotType, co[0][1].split('_')[0],
+            plotName = co[0][1].split('_')[0] + '_' + str(co[2][0])
+            self.rsDB.addOrModifyAccountingCacheRes(name, plotType, plotName,
                                                     res[plotType][name])
         except:
           gLogger.exception("Exception when executing " + co[0][1])

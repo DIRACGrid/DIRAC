@@ -27,9 +27,6 @@ class ClientsCommandsTestCase(unittest.TestCase):
   """
   def setUp(self):
     
-#    from DIRAC.Core.Base.Script import parseCommandLine
-#    parseCommandLine()
-
     sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.ResourceStatusSystem.Utilities.CS"] = DIRAC.ResourceStatusSystem.test.fake_Logger
     sys.modules["DIRAC.Core.Utilities.SiteCEMapping"] = DIRAC.ResourceStatusSystem.test.fake_Logger
@@ -46,7 +43,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     from DIRAC.ResourceStatusSystem.Command.DIRACAccounting_Command import DIRACAccounting_Command, TransferQuality_Command, TransferQualityCached_Command, CachedPlot_Command, TransferQualityFromCachedPlot_Command
     from DIRAC.ResourceStatusSystem.Command.SLS_Command import SLSStatus_Command, SLSServiceInfo_Command, SLSLink_Command
     from DIRAC.ResourceStatusSystem.Command.ClientsCache_Command import JobsEffSimpleEveryOne_Command, PilotsEffSimpleEverySites_Command, TransferQualityEverySEs_Command, DTEverySites_Command, DTEveryResources_Command
-    from DIRAC.ResourceStatusSystem.Command.AccountingCache_Command import TransferQualityByDestSplitted_Command, FailedTransfersBySourceSplitted_Command, SuccessfullJobsBySiteSplitted_Command, FailedJobsBySiteSplitted_Command, SuccessfullPilotsBySiteSplitted_Command, FailedPilotsBySiteSplitted_Command, SuccessfullPilotsByCESplitted_Command, FailedPilotsByCESplitted_Command
+    from DIRAC.ResourceStatusSystem.Command.AccountingCache_Command import TransferQualityByDestSplitted_Command, TransferQualityByDestSplittedSite_Command, FailedTransfersBySourceSplitted_Command, SuccessfullJobsBySiteSplitted_Command, FailedJobsBySiteSplitted_Command, SuccessfullPilotsBySiteSplitted_Command, FailedPilotsBySiteSplitted_Command, SuccessfullPilotsByCESplitted_Command, FailedPilotsByCESplitted_Command, RunningJobsBySiteSplitted_Command
 
     self.mock_command = Mock()
     self.mock_rsClient = Mock()
@@ -91,6 +88,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.DTC_C = DTCached_Command()
     self.DTIC_C = DTInfo_Cached_Command()
     self.TQBDS_C = TransferQualityByDestSplitted_Command()
+    self.TQBDSS_C = TransferQualityByDestSplittedSite_Command()
     self.FTBSS_C = FailedTransfersBySourceSplitted_Command()
     self.SJBSS_C = SuccessfullJobsBySiteSplitted_Command()
     self.FJBSS_C = FailedJobsBySiteSplitted_Command()
@@ -98,6 +96,7 @@ class ClientsCommandsTestCase(unittest.TestCase):
     self.FPBSS_C = FailedPilotsBySiteSplitted_Command()
     self.SPBCS_C = SuccessfullPilotsByCESplitted_Command()
     self.FPBCS_C = FailedPilotsByCESplitted_Command()
+    self.RJBSS_C = RunningJobsBySiteSplitted_Command()
     self.CP_C = CachedPlot_Command()
     self.TQFCP_C = TransferQualityFromCachedPlot_Command()
 
@@ -143,14 +142,6 @@ class CommandSuccess(ClientsCommandsTestCase):
     for g in ValidRes:
       self.co.setArgs((g, 'XX'))
       self.assertEqual(self.co.args, (g, 'XX'))
-
-#############################################################################
-
-class CommandFailure(ClientsCommandsTestCase):
-
-  def test_setBadArgs(self):
-    self.failUnlessRaises(InvalidRes, self.co.setArgs, ('Sites', 'XX', 'Active'))
-  
 
 #############################################################################
 
@@ -314,9 +305,6 @@ class GOCDBStatus_CommandFailure(ClientsCommandsTestCase):
     res = self.GOCDBS_C.doCommand()
     self.assertEqual(res['Result'], 'Unknown')
       
-  def test_badArgs(self):
-    self.failUnlessRaises(InvalidRes, self.GOCDBS_C.setArgs, (('sites', '')))
-     
 #############################################################################
 
 class GOCDBInfo_CommandSuccess(ClientsCommandsTestCase):
@@ -334,7 +322,6 @@ class GOCDBInfo_CommandSuccess(ClientsCommandsTestCase):
 class GOCDBInfo_CommandFailure(ClientsCommandsTestCase):
 
   def test_badArgs(self):
-    self.failUnlessRaises(InvalidRes, self.GOCDBI_C.doCommand, ('sites', ''))
     self.failUnlessRaises(TypeError, self.GOCDBI_C.doCommand, None)
      
 #############################################################################
@@ -398,9 +385,6 @@ class PilotsEff_CommandFailure(ClientsCommandsTestCase):
         res = self.PE_C.doCommand()
         self.assertEqual(res['Result'], 'Unknown')
 
-  def test_badArgs(self):
-    self.failUnlessRaises(InvalidRes, self.PE_C.setArgs, ('sites', '', []))
-     
 #############################################################################
 
 class PilotsStats_CommandSuccess(ClientsCommandsTestCase):
@@ -429,9 +413,6 @@ class PilotsStats_CommandFailure(ClientsCommandsTestCase):
         res = self.PS_C.doCommand()
         self.assertEqual(res['Result'], 'Unknown')
 
-  def test_badArgs(self):
-    self.failUnlessRaises(InvalidRes, self.PS_C.setArgs, ('sites', '', []))
-     
 #############################################################################
 
 class PilotsEffSimple_CommandSuccess(ClientsCommandsTestCase):
@@ -479,9 +460,6 @@ class PilotsEffSimple_CommandFailure(ClientsCommandsTestCase):
         res = self.PES_C.doCommand()
         self.assertEqual(res['Result'], 'Unknown')
 
-  def test_badArgs(self):
-    self.failUnlessRaises(InvalidRes, self.PES_C.setArgs, ('sites', ''))
-     
 #############################################################################
 
 class JobsEff_CommandSuccess(ClientsCommandsTestCase):
@@ -510,9 +488,6 @@ class JobsEff_CommandFailure(ClientsCommandsTestCase):
         res = self.JE_C.doCommand()
         self.assertEqual(res['Result'], 'Unknown')
 
-  def test_badArgs(self):
-    self.failUnlessRaises(InvalidRes, self.JE_C.setArgs, ('sites', '', []))
-     
 #############################################################################
 
 class JobsStats_CommandSuccess(ClientsCommandsTestCase):
@@ -541,9 +516,6 @@ class JobsStats_CommandFailure(ClientsCommandsTestCase):
         res = self.JS_C.doCommand()
         self.assertEqual(res['Result'], 'Unknown')
     
-  def test_badArgs(self):
-    self.failUnlessRaises(InvalidRes, self.JS_C.setArgs, ('sites', '', []))
-     
 #############################################################################
 
 #class SystemCharge_CommandSuccess(ClientsCommandsTestCase):
@@ -592,9 +564,6 @@ class JobsEffSimple_CommandFailure(ClientsCommandsTestCase):
         res = self.JES_C.doCommand()
         self.assertEqual(res['Result'], 'Unknown')
     
-  def test_badArgs(self):
-    self.failUnlessRaises(InvalidRes, self.JES_C.setArgs, ('sites', ''))
-     
 #############################################################################
 
 class JobsEffSimpleCached_CommandSuccess(ClientsCommandsTestCase):
@@ -623,9 +592,6 @@ class JobsEffSimpleCached_CommandFailure(ClientsCommandsTestCase):
         res = self.JESC_C.doCommand()
         self.assertEqual(res['Result'], 'Unknown')
     
-  def test_badArgs(self):
-    self.failUnlessRaises(InvalidRes, self.JESC_C.setArgs, ('sites', ''))
-     
 #############################################################################
 
 class PilotsEffSimpleCached_CommandSuccess(ClientsCommandsTestCase):
@@ -653,9 +619,6 @@ class PilotsEffSimpleCached_CommandFailure(ClientsCommandsTestCase):
         res = self.PESC_C.doCommand()
         self.assertEqual(res['Result'], 'Unknown')
     
-  def test_badArgs(self):
-    self.failUnlessRaises(InvalidRes, self.PESC_C.setArgs, ('sites', ''))
-     
 #############################################################################
 
 class SAMResults_CommandSuccess(ClientsCommandsTestCase):
@@ -808,7 +771,6 @@ class RSPeriods_CommandFailure(ClientsCommandsTestCase):
       self.assertEqual(res['Result'], 'Unknown')
 
   def test_badArgs(self):
-    self.failUnlessRaises(InvalidRes, self.RSP_C.setArgs, ('sites', '', ''))
     self.failUnlessRaises(TypeError, self.RSP_C.setArgs, None)
      
 #############################################################################
@@ -1019,7 +981,6 @@ class SLSStatus_CommandFailure(ClientsCommandsTestCase):
     
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.SLSS_C.setArgs, None)
-    self.failUnlessRaises(InvalidRes, self.SLSS_C.setArgs, ('sites', ''))
 
 #############################################################################
 
@@ -1061,7 +1022,6 @@ class SLSServiceInfo_CommandFailure(ClientsCommandsTestCase):
     
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.SLSSI_C.setArgs, None)
-    self.failUnlessRaises(InvalidRes, self.SLSSI_C.setArgs, ('sites', ''))
 
 #############################################################################
 
@@ -1092,7 +1052,6 @@ class SLSLink_CommandFailure(ClientsCommandsTestCase):
     
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.SLSL_C.setArgs, None)
-    self.failUnlessRaises(InvalidRes, self.SLSL_C.setArgs, ('sites', ''))
 
 #############################################################################
 
@@ -1120,7 +1079,6 @@ class JobsEffSimpleEveryOne_CommandFailure(ClientsCommandsTestCase):
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.JSEO_C.setArgs, None)
-    self.failUnlessRaises(InvalidRes, self.JSEO_C.setArgs, ('sites', ''))
 
 #############################################################################
 
@@ -1148,7 +1106,6 @@ class PilotsEffSimpleEverySites_CommandFailure(ClientsCommandsTestCase):
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.PSES_C.setArgs, None)
-    self.failUnlessRaises(InvalidRes, self.PSES_C.setArgs, ('sites', ''))
 
 #############################################################################
 
@@ -1213,9 +1170,6 @@ class TransferQualityCached_CommandFailure(ClientsCommandsTestCase):
       res = self.TQC_C.doCommand()
       self.assertEqual(res['Result'], 'Unknown')
     
-  def test_badArgs(self):
-    self.failUnlessRaises(InvalidRes, self.TQC_C.setArgs, ('sites', ''))
-     
 #############################################################################
 
 
@@ -1271,7 +1225,6 @@ class DTEverySites_CommandFailure(ClientsCommandsTestCase):
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.DTES_C.setArgs, None)
-    self.failUnlessRaises(InvalidRes, self.DTES_C.setArgs, ('sites', ''))
 
 #############################################################################
 
@@ -1316,7 +1269,6 @@ class DTEveryResources_CommandFailure(ClientsCommandsTestCase):
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.DTER_C.setArgs, None)
-    self.failUnlessRaises(InvalidRes, self.DTER_C.setArgs, ('resources', ''))
 
 #############################################################################
 
@@ -1348,9 +1300,6 @@ class DTEveryResources_CommandFailure(ClientsCommandsTestCase):
 #      res = self.TQC_C.doCommand()
 #      self.assertEqual(res['Result'], 'Unknown')
 #    
-#  def test_badArgs(self):
-#    self.failUnlessRaises(InvalidRes, self.TQC_C.setArgs, ('sites', ''))
-#     
 ##############################################################################
 
 class TransferQualityByDestSplitted_CommandSuccess(ClientsCommandsTestCase):
@@ -1369,6 +1318,7 @@ class TransferQualityByDestSplitted_CommandSuccess(ClientsCommandsTestCase):
     mock_RPC = Mock()
     self.TQBDS_C.setRPC(mock_RPC)
     self.TQBDS_C.setClient(self.mock_client)
+    self.TQBDS_C.setArgs((2, ))
     res = self.TQBDS_C.doCommand(sources, SEs)
     self.assertEqual( res, {'DataOperation':{
                                              'CNAF-USER': 
@@ -1382,46 +1332,7 @@ class TransferQualityByDestSplitted_CommandSuccess(ClientsCommandsTestCase):
                                             } 
                             } 
                       )
-#    res = self.TQBDS_C.doCommand(None, SEs)
-#    self.assertEqual( res, {'DataOperation':{
-#                                             'CNAF-USER': 
-#                                              {'data': { 'CNAF-USER': {800L: 100.0, 300L: 50.0} }, 
-#                                               'granularity':900
-#                                              },
-#                                             'CERN-USER':
-#                                              {'data': { 'CERN-USER': {800L: 100.0, 700L: 100.0} }, 
-#                                               'granularity':900
-#                                              }
-#                                            } 
-#                            } 
-#                      )
-#    res = self.TQBDS_C.doCommand(sources)
-#    self.assertEqual( res, {'DataOperation':{
-#                                             'CNAF-USER': 
-#                                              {'data': { 'CNAF-USER': {800L: 100.0, 300L: 50.0} }, 
-#                                               'granularity':900
-#                                              },
-#                                             'CERN-USER':
-#                                              {'data': { 'CERN-USER': {800L: 100.0, 700L: 100.0} }, 
-#                                               'granularity':900
-#                                              }
-#                                            } 
-#                            } 
-#                      )
-#    res = self.TQBDS_C.doCommand()
-#    self.assertEqual( res, {'DataOperation':{
-#                                             'CNAF-USER': 
-#                                              {'data': { 'CNAF-USER': {800L: 100.0, 300L: 50.0} }, 
-#                                              'granularity':900
-#                                              },
-#                                             'CERN-USER':
-#                                              {'data': { 'CERN-USER': {800L: 100.0, 700L: 100.0} }, 
-#                                              'granularity':900
-#                                              }
-#                                            } 
-#                            } 
-#                      )
-      
+
 #############################################################################
 
 class TransferQualityByDestSplitted_CommandFailure(ClientsCommandsTestCase):
@@ -1433,17 +1344,66 @@ class TransferQualityByDestSplitted_CommandFailure(ClientsCommandsTestCase):
     mock_RPC = Mock()
     self.TQBDS_C.setRPC(mock_RPC)
     self.TQBDS_C.setClient(self.mock_client)
-#    res = self.TQBDS_C.doCommand()
-#    self.assertEqual(res, {})
-#    res = self.TQBDS_C.doCommand(None, SEs)
-#    self.assertEqual(res, {})
-#    res = self.TQBDS_C.doCommand(sources)
-#    self.assertEqual(res, {})
+    self.TQBDS_C.setArgs((2, ))
+
     res = self.TQBDS_C.doCommand(sources, SEs)
     self.assertEqual(res, {})
 
   def test_badArgs(self):
     self.failUnlessRaises(TypeError, self.TQBDS_C.setArgs, None)
+
+#############################################################################
+
+
+class TransferQualityByDestSplittedSite_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+
+    SEs = ['CNAF-USER', 'CERN-USER']
+    sources = ['LCG.CNAF.it', 'LCG.CERN.it']
+
+    self.mock_client.getReport.return_value = {'OK':True, 'Value':{'data': 
+                                                                     {
+                                                                      'CNAF-USER': {800L: 100.0, 300L: 50.0}, 
+                                                                      'CERN-USER': {800L: 100.0, 700L: 100.0}
+                                                                     }, 
+                                                                   'granularity': 900 }} 
+    mock_RPC = Mock()
+    self.TQBSSS_C.setRPC(mock_RPC)
+    self.TQBSSS_C.setClient(self.mock_client)
+    self.TQBSSS_C.setArgs((24, ))
+    res = self.TQBSSS_C.doCommand(sources, SEs)
+    self.assertEqual( res, {'DataOperation':{
+                                             'CNAF-USER': 
+                                              {'data': { 'CNAF-USER': {800L: 100.0, 300L: 50.0} }, 
+                                               'granularity':900
+                                              },
+                                             'CERN-USER':
+                                              {'data': { 'CERN-USER': {800L: 100.0, 700L: 100.0} }, 
+                                               'granularity':900
+                                              }
+                                            } 
+                            } 
+                      )
+
+#############################################################################
+
+class TransferQualityByDestSplittedSite_CommandFailure(ClientsCommandsTestCase):
+
+  def test_clientFail(self):
+    SEs = ['CNAF-USER', 'CERN-USER']
+    sources = ['LCG.CNAF.it', 'LCG.CERN.it']
+    self.mock_client.getReport.side_effect = Exception()
+    mock_RPC = Mock()
+    self.TQBSSS_C.setRPC(mock_RPC)
+    self.TQBSSS_C.setClient(self.mock_client)
+    self.TQBSSS_C.setArgs((2, ))
+
+    res = self.TQBSSS_C.doCommand(sources, SEs)
+    self.assertEqual(res, {})
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.TQBSSS_C.setArgs, None)
 
 #############################################################################
 
@@ -1475,6 +1435,7 @@ class FailedTransfersBySourceSplitted_CommandSuccess(ClientsCommandsTestCase):
     mock_RPC = Mock()
     self.FTBSS_C.setRPC(mock_RPC)
     self.FTBSS_C.setClient(self.mock_client)
+    self.FTBSS_C.setArgs((24, ))
     res = self.FTBSS_C.doCommand(sources, SEs)
     self.assertEqual( res, {'DataOperation':{
                                              'LCG.IN2P3.fr': 
@@ -1558,6 +1519,7 @@ class FailedTransfersBySourceSplitted_CommandFailure(ClientsCommandsTestCase):
     mock_RPC = Mock()
     self.FTBSS_C.setRPC(mock_RPC)
     self.FTBSS_C.setClient(self.mock_client)
+    self.FTBSS_C.setArgs((24, ))
 #    res = self.FTBSS_C.doCommand()
 #    self.assertEqual(res, {})
 #    res = self.FTBSS_C.doCommand(None, SEs)
@@ -1601,6 +1563,7 @@ class SuccessfullJobsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
     mock_RPC = Mock()
     self.SJBSS_C.setRPC(mock_RPC)
     self.SJBSS_C.setClient(self.mock_client)
+    self.SJBSS_C.setArgs((24, ))
     res = self.SJBSS_C.doCommand(sites)
     self.assertEqual( res, {'Job': {
                                     'LCG.IN2P3.fr':
@@ -1630,35 +1593,6 @@ class SuccessfullJobsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
                                     }, 
                             } 
                       )
-#    res = self.SJBSS_C.doCommand()
-#    self.assertEqual( res, {'Job': {
-#                                    'LCG.IN2P3.fr':
-#                                     {'data': {
-#                                        'LCG.IN2P3.fr': {
-#                                              1279728000L: 7.0667871383999996, 
-#                                              1279724400L: 9.4527226238999997, 
-#                                              1279782000L: 0.14342238769999999, 
-#                                              1279731600L: 4.3287127422999996}},
-#                                      'granularity': 3600},
-#                                    'LCG.CERN.ch':
-#                                     {'data': {
-#                                        'LCG.CERN.ch': {
-#                                              1279728000L: 27.0578966723, 
-#                                              1279724400L: 35.494135291299997, 
-#                                              1279782000L: 1.1481022599999999, 
-#                                              1279731600L: 16.954525820299999}}, 
-#                                      'granularity': 3600},
-#                                    'LCG.Liverpool.uk':
-#                                     {'data': {
-#                                        'LCG.Liverpool.uk': {
-#                                              1279728000L: 26.531777492, 
-#                                              1279724400L: 32.931318204, 
-#                                              1279782000L: 3.3573791108000002, 
-#                                              1279731600L: 21.076516482900001}},
-#                                      'granularity': 3600},
-#                                    }, 
-#                            } 
-#                      )
 
 #############################################################################
 
@@ -1670,6 +1604,7 @@ class SuccessfullJobsBySiteSplitted_CommandFailure(ClientsCommandsTestCase):
     mock_RPC = Mock()
     self.SJBSS_C.setRPC(mock_RPC)
     self.SJBSS_C.setClient(self.mock_client)
+    self.SJBSS_C.setArgs((24, ))
 #    res = self.SJBSS_C.doCommand()
 #    self.assertEqual(res, {})
     res = self.SJBSS_C.doCommand(sites)
@@ -1709,6 +1644,7 @@ class FailedJobsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
     mock_RPC = Mock()
     self.FJBSS_C.setRPC(mock_RPC)
     self.FJBSS_C.setClient(self.mock_client)
+    self.FJBSS_C.setArgs((24, ))
     res = self.FJBSS_C.doCommand(sites)
     self.assertEqual( res, {'Job': {
                                     'LCG.IN2P3.fr':
@@ -1738,35 +1674,6 @@ class FailedJobsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
                                     }, 
                             } 
                       )
-#    res = self.FJBSS_C.doCommand()
-#    self.assertEqual( res, {'Job': {
-#                                    'LCG.IN2P3.fr':
-#                                     {'data': {
-#                                        'LCG.IN2P3.fr': {
-#                                              1279728000L: 7.0667871383999996, 
-#                                              1279724400L: 9.4527226238999997, 
-#                                              1279782000L: 0.14342238769999999, 
-#                                              1279731600L: 4.3287127422999996}},
-#                                      'granularity': 3600},
-#                                    'LCG.CERN.ch':
-#                                     {'data': {
-#                                        'LCG.CERN.ch': {
-#                                              1279728000L: 27.0578966723, 
-#                                              1279724400L: 35.494135291299997, 
-#                                              1279782000L: 1.1481022599999999, 
-#                                              1279731600L: 16.954525820299999}}, 
-#                                      'granularity': 3600},
-#                                    'LCG.Liverpool.uk':
-#                                     {'data': {
-#                                        'LCG.Liverpool.uk': {
-#                                              1279728000L: 26.531777492, 
-#                                              1279724400L: 32.931318204, 
-#                                              1279782000L: 3.3573791108000002, 
-#                                              1279731600L: 21.076516482900001}},
-#                                      'granularity': 3600},
-#                                    }, 
-#                            } 
-#                      )
 
 #############################################################################
 
@@ -1778,6 +1685,7 @@ class FailedJobsBySiteSplitted_CommandFailure(ClientsCommandsTestCase):
     mock_RPC = Mock()
     self.FJBSS_C.setRPC(mock_RPC)
     self.FJBSS_C.setClient(self.mock_client)
+    self.FJBSS_C.setArgs((24, ))
 #    res = self.FJBSS_C.doCommand()
 #    self.assertEqual(res, {})
     res = self.FJBSS_C.doCommand(sites)
@@ -1817,6 +1725,7 @@ class SuccessfullPilotsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
     mock_RPC = Mock()
     self.SPBSS_C.setRPC(mock_RPC)
     self.SPBSS_C.setClient(self.mock_client)
+    self.SPBSS_C.setArgs((24, ))
     res = self.SPBSS_C.doCommand(sites)
     self.assertEqual( res, {'Pilot': {
                                     'LCG.IN2P3.fr':
@@ -1846,35 +1755,6 @@ class SuccessfullPilotsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
                                     }, 
                             } 
                       )
-#    res = self.SPBSS_C.doCommand()
-#    self.assertEqual( res, {'Pilot': {
-#                                    'LCG.IN2P3.fr':
-#                                     {'data': {
-#                                        'LCG.IN2P3.fr': {
-#                                              1279728000L: 7.0667871383999996, 
-#                                              1279724400L: 9.4527226238999997, 
-#                                              1279782000L: 0.14342238769999999, 
-#                                              1279731600L: 4.3287127422999996}},
-#                                      'granularity': 3600},
-#                                    'LCG.CERN.ch':
-#                                     {'data': {
-#                                        'LCG.CERN.ch': {
-#                                              1279728000L: 27.0578966723, 
-#                                              1279724400L: 35.494135291299997, 
-#                                              1279782000L: 1.1481022599999999, 
-#                                              1279731600L: 16.954525820299999}}, 
-#                                      'granularity': 3600},
-#                                    'LCG.Liverpool.uk':
-#                                     {'data': {
-#                                        'LCG.Liverpool.uk': {
-#                                              1279728000L: 26.531777492, 
-#                                              1279724400L: 32.931318204, 
-#                                              1279782000L: 3.3573791108000002, 
-#                                              1279731600L: 21.076516482900001}},
-#                                      'granularity': 3600},
-#                                    }, 
-#                            } 
-#                      )
 
 #############################################################################
 
@@ -1886,6 +1766,7 @@ class SuccessfullPilotsBySiteSplitted_CommandFailure(ClientsCommandsTestCase):
     mock_RPC = Mock()
     self.SPBSS_C.setRPC(mock_RPC)
     self.SPBSS_C.setClient(self.mock_client)
+    self.SPBSS_C.setArgs((24, ))
 #    res = self.SPBSS_C.doCommand()
 #    self.assertEqual(res, {})
     res = self.SPBSS_C.doCommand(sites)
@@ -1925,6 +1806,7 @@ class FailedPilotsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
     mock_RPC = Mock()
     self.FPBSS_C.setRPC(mock_RPC)
     self.FPBSS_C.setClient(self.mock_client)
+    self.FPBSS_C.setArgs((24, ))
     res = self.FPBSS_C.doCommand(sites)
     self.assertEqual( res, {'Pilot': {
                                     'LCG.IN2P3.fr':
@@ -1954,35 +1836,6 @@ class FailedPilotsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
                                     }, 
                             } 
                       )
-#    res = self.FPBSS_C.doCommand()
-#    self.assertEqual( res, {'Pilot': {
-#                                    'LCG.IN2P3.fr':
-#                                     {'data': {
-#                                        'LCG.IN2P3.fr': {
-#                                              1279728000L: 7.0667871383999996, 
-#                                              1279724400L: 9.4527226238999997, 
-#                                              1279782000L: 0.14342238769999999, 
-#                                              1279731600L: 4.3287127422999996}},
-#                                      'granularity': 3600},
-#                                    'LCG.CERN.ch':
-#                                     {'data': {
-#                                        'LCG.CERN.ch': {
-#                                              1279728000L: 27.0578966723, 
-#                                              1279724400L: 35.494135291299997, 
-#                                              1279782000L: 1.1481022599999999, 
-#                                              1279731600L: 16.954525820299999}}, 
-#                                      'granularity': 3600},
-#                                    'LCG.Liverpool.uk':
-#                                     {'data': {
-#                                        'LCG.Liverpool.uk': {
-#                                              1279728000L: 26.531777492, 
-#                                              1279724400L: 32.931318204, 
-#                                              1279782000L: 3.3573791108000002, 
-#                                              1279731600L: 21.076516482900001}},
-#                                      'granularity': 3600},
-#                                    }, 
-#                            } 
-#                      )
 
 #############################################################################
 
@@ -1994,6 +1847,7 @@ class FailedPilotsBySiteSplitted_CommandFailure(ClientsCommandsTestCase):
     mock_RPC = Mock()
     self.FPBSS_C.setRPC(mock_RPC)
     self.FPBSS_C.setClient(self.mock_client)
+    self.FPBSS_C.setArgs((24, ))
 #    res = self.FPBSS_C.doCommand()
 #    self.assertEqual(res, {})
     res = self.FPBSS_C.doCommand(sites)
@@ -2033,6 +1887,7 @@ class SuccessfullPilotsByCESplitted_CommandSuccess(ClientsCommandsTestCase):
     mock_RPC = Mock()
     self.SPBCS_C.setRPC(mock_RPC)
     self.SPBCS_C.setClient(self.mock_client)
+    self.SPBCS_C.setArgs((24, ))
     res = self.SPBCS_C.doCommand(sites)
     self.assertEqual( res, {'Pilot': {
                                     'ce.cyf-kr.edu.pl':
@@ -2062,35 +1917,6 @@ class SuccessfullPilotsByCESplitted_CommandSuccess(ClientsCommandsTestCase):
                                     }, 
                             } 
                       )
-#    res = self.SPBCS_C.doCommand()
-#    self.assertEqual( res, {'Pilot': {
-#                                    'ce.cyf-kr.edu.pl':
-#                                     {'data': {
-#                                        'ce.cyf-kr.edu.pl': {
-#                                              1279728000L: 7.0667871383999996, 
-#                                              1279724400L: 9.4527226238999997, 
-#                                              1279782000L: 0.14342238769999999, 
-#                                              1279731600L: 4.3287127422999996}},
-#                                      'granularity': 3600},
-#                                    'lcgce07.gridpp.rl.ac.uk':
-#                                     {'data': {
-#                                        'lcgce07.gridpp.rl.ac.uk': {
-#                                              1279728000L: 27.0578966723, 
-#                                              1279724400L: 35.494135291299997, 
-#                                              1279782000L: 1.1481022599999999, 
-#                                              1279731600L: 16.954525820299999}}, 
-#                                      'granularity': 3600},
-#                                    'ce08.pic.es':
-#                                     {'data': {
-#                                        'ce08.pic.es': {
-#                                              1279728000L: 26.531777492, 
-#                                              1279724400L: 32.931318204, 
-#                                              1279782000L: 3.3573791108000002, 
-#                                              1279731600L: 21.076516482900001}},
-#                                      'granularity': 3600},
-#                                    }, 
-#                            } 
-#                      )
 
 #############################################################################
 
@@ -2102,6 +1928,7 @@ class SuccessfullPilotsByCESplitted_CommandFailure(ClientsCommandsTestCase):
     mock_RPC = Mock()
     self.SPBCS_C.setRPC(mock_RPC)
     self.SPBCS_C.setClient(self.mock_client)
+    self.SPBCS_C.setArgs((24, ))
 #    res = self.SPBCS_C.doCommand()
 #    self.assertEqual(res, {})
     res = self.SPBCS_C.doCommand(sites)
@@ -2141,6 +1968,7 @@ class FailedPilotsByCESplitted_CommandSuccess(ClientsCommandsTestCase):
     mock_RPC = Mock()
     self.FPBCS_C.setRPC(mock_RPC)
     self.FPBCS_C.setClient(self.mock_client)
+    self.FPBCS_C.setArgs((24, ))
     res = self.FPBCS_C.doCommand(sites)
     self.assertEqual( res, {'Pilot': {
                                     'ce.cyf-kr.edu.pl':
@@ -2170,35 +1998,6 @@ class FailedPilotsByCESplitted_CommandSuccess(ClientsCommandsTestCase):
                                     }, 
                             } 
                       )
-#    res = self.FPBCS_C.doCommand()
-#    self.assertEqual( res, {'Pilot': {
-#                                    'ce.cyf-kr.edu.pl':
-#                                     {'data': {
-#                                        'ce.cyf-kr.edu.pl': {
-#                                              1279728000L: 7.0667871383999996, 
-#                                              1279724400L: 9.4527226238999997, 
-#                                              1279782000L: 0.14342238769999999, 
-#                                              1279731600L: 4.3287127422999996}},
-#                                      'granularity': 3600},
-#                                    'lcgce07.gridpp.rl.ac.uk':
-#                                     {'data': {
-#                                        'lcgce07.gridpp.rl.ac.uk': {
-#                                              1279728000L: 27.0578966723, 
-#                                              1279724400L: 35.494135291299997, 
-#                                              1279782000L: 1.1481022599999999, 
-#                                              1279731600L: 16.954525820299999}}, 
-#                                      'granularity': 3600},
-#                                    'ce08.pic.es':
-#                                     {'data': {
-#                                        'ce08.pic.es': {
-#                                              1279728000L: 26.531777492, 
-#                                              1279724400L: 32.931318204, 
-#                                              1279782000L: 3.3573791108000002, 
-#                                              1279731600L: 21.076516482900001}},
-#                                      'granularity': 3600},
-#                                    }, 
-#                            } 
-#                      )
 
 #############################################################################
 
@@ -2210,6 +2009,7 @@ class FailedPilotsByCESplitted_CommandFailure(ClientsCommandsTestCase):
     mock_RPC = Mock()
     self.FPBCS_C.setRPC(mock_RPC)
     self.FPBCS_C.setClient(self.mock_client)
+    self.FPBCS_C.setArgs((24, ))
 #    res = self.FPBCS_C.doCommand()
 #    self.assertEqual(res, {})
     res = self.FPBCS_C.doCommand(sites)
@@ -2219,6 +2019,89 @@ class FailedPilotsByCESplitted_CommandFailure(ClientsCommandsTestCase):
     self.failUnlessRaises(TypeError, self.FPBCS_C.setArgs, None)
 
 #############################################################################
+
+class RunningJobsBySiteSplitted_CommandSuccess(ClientsCommandsTestCase):
+  
+  def test_doCommand(self):
+
+    sites = ['LCG.Liverpool.uk', 'LCG.IN2P3.fr', 'LCG.CERN.ch']
+
+    self.mock_client.getReport.return_value = {'OK': True, 'Value': {'data': {
+                                                                      'LCG.Liverpool.uk': {
+                                                                            1279728000L: 26.531777492, 
+                                                                            1279724400L: 32.931318204, 
+                                                                            1279782000L: 3.3573791108000002, 
+                                                                            1279731600L: 21.076516482900001}, 
+                                                                      'LCG.CERN.ch': {
+                                                                            1279728000L: 27.0578966723, 
+                                                                            1279724400L: 35.494135291299997, 
+                                                                            1279782000L: 1.1481022599999999, 
+                                                                            1279731600L: 16.954525820299999}, 
+                                                                      'LCG.IN2P3.fr': {
+                                                                            1279728000L: 7.0667871383999996, 
+                                                                            1279724400L: 9.4527226238999997, 
+                                                                            1279782000L: 0.14342238769999999, 
+                                                                            1279731600L: 4.3287127422999996}
+                                                                      }, 
+                                                                      'granularity': 3600}}
+    
+     
+    mock_RPC = Mock()
+    self.RJBSS_C.setRPC(mock_RPC)
+    self.RJBSS_C.setClient(self.mock_client)
+    self.RJBSS_C.setArgs((24, ))
+    res = self.RJBSS_C.doCommand(sites)
+    self.assertEqual( res, {'WMSHistory': {
+                                    'LCG.IN2P3.fr':
+                                     {'data': {
+                                        'LCG.IN2P3.fr': {
+                                              1279728000L: 7.0667871383999996, 
+                                              1279724400L: 9.4527226238999997, 
+                                              1279782000L: 0.14342238769999999, 
+                                              1279731600L: 4.3287127422999996}},
+                                      'granularity': 3600},
+                                    'LCG.CERN.ch':
+                                     {'data': {
+                                        'LCG.CERN.ch': {
+                                              1279728000L: 27.0578966723, 
+                                              1279724400L: 35.494135291299997, 
+                                              1279782000L: 1.1481022599999999, 
+                                              1279731600L: 16.954525820299999}}, 
+                                      'granularity': 3600},
+                                    'LCG.Liverpool.uk':
+                                     {'data': {
+                                        'LCG.Liverpool.uk': {
+                                              1279728000L: 26.531777492, 
+                                              1279724400L: 32.931318204, 
+                                              1279782000L: 3.3573791108000002, 
+                                              1279731600L: 21.076516482900001}},
+                                      'granularity': 3600},
+                                    }, 
+                            } 
+                      )
+
+#############################################################################
+
+class RunningJobsBySiteSplitted_CommandFailure(ClientsCommandsTestCase):
+
+  def test_clientFail(self):
+    sites = ['LCG.Liverpool.uk', 'LCG.IN2P3.fr', 'LCG.CERN.ch']
+    self.mock_client.getReport.side_effect = Exception()
+    mock_RPC = Mock()
+    self.RJBSS_C.setRPC(mock_RPC)
+    self.RJBSS_C.setClient(self.mock_client)
+    self.RJBSS_C.setArgs((24, ))
+#    res = self.RJBSS_C.doCommand()
+#    self.assertEqual(res, {})
+    res = self.RJBSS_C.doCommand(sites)
+    self.assertEqual(res, {})
+
+  def test_badArgs(self):
+    self.failUnlessRaises(TypeError, self.RJBSS_C.setArgs, None)
+
+#############################################################################
+
+
 
 class CachedPlot_CommandSuccess(ClientsCommandsTestCase):
   
@@ -2243,9 +2126,6 @@ class CachedPlot_CommandFailure(ClientsCommandsTestCase):
     res = self.CP_C.doCommand()
     self.assertEqual(res['Result'], 'Unknown')
     
-  def test_badArgs(self):
-    self.failUnlessRaises(InvalidRes, self.CP_C.setArgs, ('sites', ''))
-     
 #############################################################################
 
 class TransferQualityFromCachedPlot_CommandSuccess(ClientsCommandsTestCase):
@@ -2278,15 +2158,11 @@ class TransferQualityFromCachedPlot_CommandFailure(ClientsCommandsTestCase):
     res = self.TQFCP_C.doCommand()
     self.assertEqual(res['Result'], 'Unknown')
     
-  def test_badArgs(self):
-    self.failUnlessRaises(InvalidRes, self.TQFCP_C.setArgs, ('sites', ''))
-     
 #############################################################################
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ClientsCommandsTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(CommandSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MacroCommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(CommandCallerSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ClientsInvokerSuccess))
@@ -2351,6 +2227,8 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DTEveryResources_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQualityByDestSplitted_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQualityByDestSplitted_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQualityByDestSplittedSite_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransferQualityByDestSplittedSite_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FailedTransfersBySourceSplitted_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FailedTransfersBySourceSplitted_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SuccessfullJobsBySiteSplitted_CommandSuccess))
@@ -2365,6 +2243,8 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SuccessfullPilotsByCESplitted_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FailedPilotsByCESplitted_CommandSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FailedPilotsByCESplitted_CommandFailure))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RunningJobsBySiteSplitted_CommandSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RunningJobsBySiteSplitted_CommandFailure))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DTCached_CommandSuccess))
 #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DTCached_CommandFailure))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(CachedPlot_CommandSuccess))

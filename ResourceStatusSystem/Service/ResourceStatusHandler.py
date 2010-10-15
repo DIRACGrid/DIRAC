@@ -1762,3 +1762,29 @@ class ResourceStatusHandler(RequestHandler):
 
 #############################################################################
     
+  types_getSitesStatusList = []
+  def export_getSitesStatusList(self):
+    """
+    Get sites list from the ResourceStatusDB.
+    Calls :meth:`DIRAC.ResourceStatusSystem.DB.ResourceStatusDB.ResourceStatusDB.getMonitoredsList`
+    """
+    try:
+      gLogger.info("ResourceStatusHandler.getSitesList: Attempting to get sites list")
+      try:
+        r = rsDB.getMonitoredsList('Site', paramsList = ['SiteName', 'Status'])
+        res = []
+        for x in r:
+          res.append(x)
+      except RSSDBException, x:
+        gLogger.error(whoRaised(x))
+      except RSSException, x:
+        gLogger.error(whoRaised(x))
+      gLogger.info("ResourceStatusHandler.getSitesList: got sites and status list")
+      return S_OK(res)
+    except Exception:
+      errorStr = where(self, self.export_getSitesList)
+      gLogger.exception(errorStr)
+      return S_ERROR(errorStr)
+
+#############################################################################
+
