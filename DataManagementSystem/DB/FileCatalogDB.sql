@@ -7,9 +7,9 @@ CREATE DATABASE FileCatalogDB;
 use mysql;
 delete from user where user='Dirac';
 --
--- Must set passwords for database user by replacing "must_be_set".
+-- Must set passwords for database user by replacing "lhcbMySQL".
 --
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalogDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalogDB.* TO Dirac@localhost IDENTIFIED BY 'lhcbMySQL';
 
 FLUSH PRIVILEGES;
 
@@ -223,11 +223,28 @@ CREATE TABLE FC_DirectoryUsage(
 );
 
 -- ------------------------------------------------------------------------------
-drop table if exists FC_Meta_Fields;
-CREATE TABLE FC_Meta_Fields (
+drop table if exists FC_MetaFields;
+CREATE TABLE FC_MetaFields (
   MetaID INT AUTO_INCREMENT PRIMARY KEY,
   MetaName VARCHAR(64) NOT NULL,
   MetaType VARCHAR(128) NOT NULL
+);
+
+-- ------------------------------------------------------------------------------
+drop table if exists FC_MetaSetNames;
+CREATE TABLE FC_MetaSetNames (
+  MetaSetID INT AUTO_INCREMENT PRIMARY KEY,
+  MetaSetName VARCHAR(64) NOT NULL,
+  UNIQUE INDEX (MetaSetName)
+);
+
+-- ------------------------------------------------------------------------------
+drop table if exists FC_MetaSets;
+CREATE TABLE FC_MetaSets (
+  MetaSetID INT NOT NULL,
+  MetaKey VARCHAR(31) NOT NULL,
+  MetaValue VARCHAR(31) NOT NULL,
+  INDEX (MetaSetID) 
 );
 
 -- ------------------------------------------------------------------------------
