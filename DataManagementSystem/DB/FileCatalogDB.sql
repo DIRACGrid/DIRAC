@@ -7,9 +7,9 @@ CREATE DATABASE FileCatalogDB;
 use mysql;
 delete from user where user='Dirac';
 --
--- Must set passwords for database user by replacing "lhcbMySQL".
+-- Must set passwords for database user by replacing "must_be_set".
 --
-GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalogDB.* TO Dirac@localhost IDENTIFIED BY 'lhcbMySQL';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalogDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
 
 FLUSH PRIVILEGES;
 
@@ -47,14 +47,14 @@ CREATE TABLE FC_FileInfo (
 );
 
 -- Make additions to the FC_Files table to include the FC_FileInfo information
-ALTER TABLE FC_Files ADD COLUMN GUID CHAR(36) NOT NULL AFTER FileName;
-ALTER TABLE FC_Files ADD INDEX (GUID);
-ALTER TABLE FC_Files ADD COLUMN Checksum VARCHAR(32) AFTER GUID;
-ALTER TABLE FC_Files ADD COLUMN CheckSumType ENUM('Adler32','MD5') AFTER Checksum;
-ALTER TABLE FC_Files ADD COLUMN Type ENUM('File','Link') NOT NULL DEFAULT 'File' AFTER CheckSumType;
-ALTER TABLE FC_Files ADD COLUMN CreationDate DATETIME AFTER Type;
-ALTER TABLE FC_Files ADD COLUMN ModificationDate DATETIME AFTER CreationDate;
-ALTER TABLE FC_Files ADD COLUMN Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775 AFTER ModificationDate;
+-- ALTER TABLE FC_Files ADD COLUMN GUID CHAR(36) NOT NULL AFTER FileName;
+-- ALTER TABLE FC_Files ADD INDEX (GUID);
+-- ALTER TABLE FC_Files ADD COLUMN Checksum VARCHAR(32) AFTER GUID;
+-- ALTER TABLE FC_Files ADD COLUMN CheckSumType ENUM('Adler32','MD5') AFTER Checksum;
+-- ALTER TABLE FC_Files ADD COLUMN Type ENUM('File','Link') NOT NULL DEFAULT 'File' AFTER CheckSumType;
+-- ALTER TABLE FC_Files ADD COLUMN CreationDate DATETIME AFTER Type;
+-- ALTER TABLE FC_Files ADD COLUMN ModificationDate DATETIME AFTER CreationDate;
+-- ALTER TABLE FC_Files ADD COLUMN Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775 AFTER ModificationDate;
 
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS FC_Statuses;
@@ -91,10 +91,10 @@ CREATE TABLE FC_ReplicaInfo (
 );
 
 -- Make additions to the FC_Replicas table to include the FC_ReplicaInfo information
-ALTER TABLE FC_Replicas ADD COLUMN RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master' AFTER Status;
-ALTER TABLE FC_Replicas ADD COLUMN CreationDate DATETIME AFTER RepType;
-ALTER TABLE FC_Replicas ADD COLUMN ModificationDate DATETIME AFTER CreationDate;
-ALTER TABLE FC_Replicas ADD COLUMN PFN VARCHAR(1024) AFTER ModificationDate;
+-- ALTER TABLE FC_Replicas ADD COLUMN RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master' AFTER Status;
+-- ALTER TABLE FC_Replicas ADD COLUMN CreationDate DATETIME AFTER RepType;
+-- ALTER TABLE FC_Replicas ADD COLUMN ModificationDate DATETIME AFTER CreationDate;
+-- ALTER TABLE FC_Replicas ADD COLUMN PFN VARCHAR(1024) AFTER ModificationDate;
 
 -- ------------------------------------------------------------------------------
 
