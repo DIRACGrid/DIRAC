@@ -89,6 +89,12 @@ class FileManager(FileManagerBase):
         files[fileName]['Size'] = size
       if 'DirID' in metadata:
         files[fileName]['DirID'] = dirID
+      if 'UID' in metadata:
+        files[fileName]['UID'] = uid
+      if 'GID' in metadata:
+        files[fileName]['GID'] = gid  
+      if 'Status' in metadata:
+        files[fileName]['Status'] = status      
     for element in ['FileID','Size','DirID','UID','GID','Status']:
       if element in metadata:
         metadata.remove(element)    
