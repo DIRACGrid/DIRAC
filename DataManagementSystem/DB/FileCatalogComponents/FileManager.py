@@ -82,6 +82,8 @@ class FileManager(FileManagerBase):
       return S_OK(filesDict)
     # Otherwise get the additionally requested metadata from the FC_FileInfo table
     files = {}
+    userDict = {}
+    groupDict = {}
     for fileName,dirID,fileID,size,uid,gid,status in fileNameIDs:
       filesDict[fileID] = fileName
       files[fileName] = {}
@@ -91,8 +93,26 @@ class FileManager(FileManagerBase):
         files[fileName]['DirID'] = dirID
       if 'UID' in metadata:
         files[fileName]['UID'] = uid
+        if uid in userDict:
+          owner = userDict[uid]
+        else:  
+          owner = 'unknown'
+          result = self.db.ugManager.getUserName(uid)
+          if result['OK']:
+            owner = result['Value']
+          userDict[uid] = owner  
+        files[fileName]['Owner'] = owner   
       if 'GID' in metadata:
-        files[fileName]['GID'] = gid  
+        files[fileName]['GID'] = gid
+        if gid in groupDict:
+          group = groupDict[gid]
+        else:    
+          group = 'unknown'
+          result = self.db.ugManager.getGroupName(gid)
+          if result['OK']:
+            group = result['Value']
+          groupDict[gid] = group  
+        files[fileName]['OwnerGroup'] = group    
       if 'Status' in metadata:
         files[fileName]['Status'] = status      
     for element in ['FileID','Size','DirID','UID','GID','Status']:
