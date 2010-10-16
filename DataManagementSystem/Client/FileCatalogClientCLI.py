@@ -26,9 +26,6 @@ class DirectoryListing:
   def addFile(self,name,fileDict,numericid):
     """ Pretty print of the file ls output
     """        
-    if fileDict.has_key('MetaData'):
-      fileDict = fileDict['MetaData']
-
     perm = fileDict['Mode']
     date = fileDict['ModificationDate']
     nlinks = fileDict.get('NumberOfLinks',0)
@@ -534,7 +531,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
     # Get directory contents now
     try:
-      result =  self.fc.listDirectory(path,long)               
+      result =  self.fc.listDirectory(path,long)                     
       dList = DirectoryListing()
       if result['OK']:
         if result['Value']['Successful']:
@@ -543,7 +540,7 @@ File Catalog Client $Revision: 1.17 $Date:
             # print entry, fname
             # fname = entry.replace(self.cwd,'').replace('/','')
             if long:
-              fileDict = result['Value']['Successful'][path]['Files'][entry]
+              fileDict = result['Value']['Successful'][path]['Files'][entry]['MetaData']
               if fileDict:
                 dList.addFile(fname,fileDict,numericid)
             else:  
