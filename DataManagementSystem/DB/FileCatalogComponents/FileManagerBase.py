@@ -696,9 +696,19 @@ class FileManagerBase:
       return res
     if not res['Value']:
       return S_OK(files)
+    fileIDLFNs = {}
     for fileName,fileDict in res['Value'].items():
       lfn = "%s/%s" % (path,fileName)
-      files[lfn] = fileDict
+      files[lfn] = {}
+      files[lfn]['MetaData'] = fileDict
+      fileIDLFNs[fileDict['FileID']] = lfn
+    if verbose:  
+      result = self._getFileReplicas(fileIDLFNs.keys(),connection=connection)
+      if not result['OK']:
+        return result
+      for fileID,seDict in result['Value'].items():
+        lfn = fileIDLFNs[fileID]
+        files[lfn]['Replicas'] = seDict
     return S_OK(files)
 
   def _getFileDirectories(self,lfns):
