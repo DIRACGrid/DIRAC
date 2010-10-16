@@ -30,6 +30,7 @@ class Params:
     self.lcgVer = ''
     self.useVersionsDir = False
     self.downBaseURL = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3'
+    self.vo = ''
 
 cliParams = Params()
 
@@ -262,7 +263,8 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'v', 'useVersionsDir', 'Use versions directory' ),
             ( 'd', 'debug', 'Show debug messages' ),
             ( 'h', 'help', 'Show this help' ),
-            ( 'u:', 'baseURL=', 'Change base URL for Tar Download' )
+            ( 'u:', 'baseURL=', 'Change base URL for Tar Download' ),
+            ( 'V:', 'virtualOrganization=', 'Install for this Virtual Organization')
           )
 
 optList, args = getopt.getopt( sys.argv[1:],
@@ -305,6 +307,7 @@ cliParams.lcgVer = optCfg.getOption( 'LcgVer', cliParams.lcgVer )
 cliParams.downBaseURL = optCfg.getOption( 'BaseURL', cliParams.downBaseURL )
 cliParams.useVersionsDir = optCfg.getOption( 'UseVersionsDir', cliParams.useVersionsDir )
 
+
 for o, v in optList:
   if o in ( '-h', '--help' ):
     usage()
@@ -336,10 +339,37 @@ for o, v in optList:
 
   elif o in ( '-b', '--build' ):
     cliParams.buildExternals = True
+  elif o in ( '-V', '--virtualOrganization' ):
+    cliParams.vo = v  
 
 if not cliParams.release:
-  logERROR( ": Need to define a release version to install!" )
-  usage()
+  if cliParams.vo:
+    voURL = "%s/%s_defaults.cfg" % (cliParams.downBaseURL,cliParams.vo)
+    logINFO( "Getting defaults from %s" % voURL )
+    try:
+      urlretrieveTimeout( voURL, '%s_defaults.cfg' % cliParams.vo, 30 )
+    except Exception, e:
+      logDEBUG( "Cannot download VO default release version: %s" % ( str( e ) ) )
+
+  defaultsURL = "%s/defaults.cfg" % cliParams.downBaseURL
+  logINFO( "Getting defaults from %s" % defaultsURL )
+  try:
+    urlretrieveTimeout( defaultsURL, 'defaults.cfg', 30 )
+  except Exception, e:
+    logERROR( "Cannot download default release version: %s" % ( str( e ) ) )
+    sys.exit( 1 )
+
+  if os.path.exists('defaults.cfg'):
+    defaultsCFG = CFG.CFG()
+    defaultsCFG.loadFromFile('defaults.cfg')
+  if cliParams.vo and os.path.exists('%s_defaults.cfg' % cliParams.vo):
+    defaultsCFG.loadFromFile('%s_defaults.cfg' % cliParams.vo)
+  releaseVersion = defaultsCFG.getOption('Release','')
+  if releaseVersion:
+    cliParams.release = releaseVersion
+  else:
+    logERROR( ": Need to define a release version to install!" )
+    usage()
 
 # Make sure Extensions are not duplicated and have the full name
 pkgList = cliParams.packagesToInstall
