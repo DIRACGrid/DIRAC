@@ -344,7 +344,7 @@ class FilesCase(LFCProxyTestCase):
     self.assert_(res['Value']['Successful'].has_key(dir))
     self.assert_(res['Value']['Successful'][dir].has_key('NumberOfSubPaths'))
     self.assertEqual(res['Value']['Successful'][dir]['NumberOfSubPaths'],1)
-    self.assert_(res['Value']['Successful'][dir].has_key('CreationTime'))
+    self.assert_(res['Value']['Successful'][dir].has_key('CreationDate'))
 
     ######################################################
     #
