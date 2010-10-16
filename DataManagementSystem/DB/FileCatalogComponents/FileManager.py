@@ -100,7 +100,7 @@ class FileManager(FileManagerBase):
       return res
     for tuple in res['Value']:
       fileID = tuple[0]
-      rowDict = dict(zip(metadata,tuple))]
+      rowDict = dict(zip(metadata,tuple))
       files[filesDict[fileID]].update(rowDict)
     return S_OK(files)
 
