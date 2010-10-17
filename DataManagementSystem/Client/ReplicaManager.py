@@ -1378,7 +1378,7 @@ class ReplicaManager( CatalogToStorage ):
     failed = {}
     gLogger.verbose( "ReplicaManager.replicateAndRegister: Attempting to replicate %s to %s." % ( lfn, destSE ) )
     startReplication = time.time()
-    res = self.__replicate( lfn, destSE, sourceSE, destPath )
+    res = self.__replicate( lfn, destSE, sourceSE, destPath, localCache )
     replicationTime = time.time() - startReplication
     if not res['OK']:
       errStr = "ReplicaManager.replicateAndRegister: Completely failed to replicate file."
@@ -1425,7 +1425,7 @@ class ReplicaManager( CatalogToStorage ):
         'localCache' is the local file system location to be used as a temporary cache
     """
     gLogger.verbose( "ReplicaManager.replicate: Attempting to replicate %s to %s." % ( lfn, destSE ) )
-    res = self.__replicate( lfn, destSE, sourceSE, destPath )
+    res = self.__replicate( lfn, destSE, sourceSE, destPath, localCache )
     if not res['OK']:
       errStr = "ReplicaManager.replicate: Replication failed."
       gLogger.error( errStr, "%s %s" % ( lfn, destSE ) )
@@ -1436,7 +1436,7 @@ class ReplicaManager( CatalogToStorage ):
       return res
     return S_OK( lfn )
 
-  def __replicate( self, lfn, destSE, sourceSE='', destPath='' ):
+  def __replicate( self, lfn, destSE, sourceSE='', destPath='', localCache='' ):
     """ Replicate a LFN to a destination SE.
 
         'lfn' is the LFN to be replicated
@@ -1493,7 +1493,21 @@ class ReplicaManager( CatalogToStorage ):
       fileDict = {destPfn:sourcePfn}
       if sourcePfn == destPfn:
         continue
+      
+      localFile = ''
+      if sourcePfn.find('srm') == -1 or destPfn.find('srm') == -1:
+        # No third party transfer is possible, we have to replicate through the local cache 
+        localDir = '.'
+        if localCache:
+          localDir = localCache
+        self.getFile(lfn,localDir)
+        localFile = os.path.join(localDir,os.path.basename(lfn))
+        fileDict = {destPfn:localFile}
+
       res = destStorageElement.replicateFile( fileDict, catalogueSize, singleFile=True )
+      if localFile:
+        os.remove(localFile)
+
       if res['OK']:
         gLogger.info( "ReplicaManager.__replicate: Replication successful." )
         resDict = {'DestSE':destSE, 'DestPfn':destPfn}
