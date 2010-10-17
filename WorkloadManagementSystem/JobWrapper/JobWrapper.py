@@ -793,7 +793,7 @@ class JobWrapper:
 
     #Check whether list of outputData has a globbable pattern
     globbedOutputList = List.uniqueElements( getGlobbedFiles( outputData ) )
-    if not globbedOutputList == outputData:
+    if not globbedOutputList == outputData and globbedOutputList:
       self.log.info( 'Found a pattern in the output data file list, files to upload are: %s' % ( string.join( globbedOutputList, ', ' ) ) )
       outputData = globbedOutputList
 
