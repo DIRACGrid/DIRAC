@@ -5,6 +5,7 @@ class LogLevels:
 
   def __init__(self):
     self.always    = 'ALWAYS'
+    self.essence   = 'ESSENCE'
     self.info      = 'INFO'
     self.verbose   = 'VERB'
     self.debug     = 'DEBUG'
@@ -13,15 +14,16 @@ class LogLevels:
     self.exception = 'EXCEPT'
     self.fatal     = 'FATAL'
     self.__levelDict = {
-       self.always    : 30,
+       self.always    : 40,
+       self.essence   : 30,
        self.info      : 20,
        self.verbose   : 10,
        'VERBOSE'      : 10,
        self.debug     : 0,
-       self.warn      : -10,
-       self.error     : -20,
-       self.exception : -20,
-       self.fatal     : -30
+       self.warn      : -20,
+       self.error     : -30,
+       self.exception : -30,
+       self.fatal     : -40
        }
 
   def getLevelValue(self, sName):
