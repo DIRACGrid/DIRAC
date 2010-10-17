@@ -359,11 +359,13 @@ if not cliParams.release:
     logERROR( "Cannot download default release version: %s" % ( str( e ) ) )
     sys.exit( 1 )
 
+  defaultsCFG = CFG.CFG()
   if os.path.exists('defaults.cfg'):
-    defaultsCFG = CFG.CFG()
     defaultsCFG.loadFromFile('defaults.cfg')
   if cliParams.vo and os.path.exists('%s_defaults.cfg' % cliParams.vo):
-    defaultsCFG.loadFromFile('%s_defaults.cfg' % cliParams.vo)
+    voCFG = CFG.CFG()
+    voCFG.loadFromFile('%s_defaults.cfg' % cliParams.vo)
+    defaultsCFG = defaultsCFG.mergeWith(voCFG)
   releaseVersion = defaultsCFG.getOption('Release','')
   if releaseVersion:
     cliParams.release = releaseVersion
