@@ -791,11 +791,21 @@ class JobWrapper:
     missing = []
     uploaded = []
 
-    #Check whether list of outputData has a globbable pattern
-    globbedOutputList = List.uniqueElements( getGlobbedFiles( outputData ) )
-    if not globbedOutputList == outputData and globbedOutputList:
+    # Separate outputdata in the form of lfns and local files
+    lfnList = []
+    nonlfnList = []
+    for out in outputData:
+      if out.lower().find('lfn:') != -1:
+        lfnList.append(out)
+      else:
+        nonlfnList.append(out)  
+        
+    # Check whether list of outputData has a globbable pattern    
+    globbedOutputList = List.uniqueElements( getGlobbedFiles( nonlfnList ) )
+    if not globbedOutputList == nonlfnList and globbedOutputList:
       self.log.info( 'Found a pattern in the output data file list, files to upload are: %s' % ( string.join( globbedOutputList, ', ' ) ) )
-      outputData = globbedOutputList
+      nonlfnList = globbedOutputList
+    outputData = lfnList + nonlfnList  
 
     pfnGUID = {}
     result = getGUID( outputData )
