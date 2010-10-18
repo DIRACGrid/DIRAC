@@ -251,6 +251,7 @@ class ComputingElement:
       return S_ERROR('Wrong type for setCPUTimeLeft argument')
 
     self.classAd.insertAttributeInt('CPUTime', intCPUTimeLeft)
+    self.ceParameters['CPUTime'] = intCPUTimeLeft
 
     return S_OK(intCPUTimeLeft)
 
