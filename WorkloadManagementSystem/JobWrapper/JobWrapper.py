@@ -87,7 +87,7 @@ class JobWrapper:
     self.cpuNormalizationFactor = gConfig.getValue ( "/LocalSite/CPUNormalizationFactor", 0.0 )
     self.vo = gConfig.getValue( '/DIRAC/VirtualOrganization', 'lhcb' )
     self.bufferLimit = gConfig.getValue( self.section + '/BufferLimit', 10485760 )
-    self.defaultOutputSE = gConfig.getValue( '/Resources/StorageElementGroups/Tier1-USER', [] )
+    self.defaultOutputSE = gConfig.getValue( '/Resources/StorageElementGroups/SE-USER', [] )
     self.defaultCatalog = gConfig.getValue( self.section + '/DefaultCatalog', 'LcgFileCatalogCombined' )
     self.defaultFailoverSE = gConfig.getValue( '/Resources/StorageElementGroups/Tier1-Failover', [] )
     self.defaultOutputPath = ''
