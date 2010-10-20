@@ -65,24 +65,25 @@ class SiteDirector( AgentModule ):
     ceFactory = ComputingElementFactory()
     
     ceTypes = self.am_getOption('CETypes',[])
-    ceList = self.am_getOption('CE',[])    
-    if not ceList:
-      # Look up CE definitions in the site CS description
-      gridType = self.siteName.split('.')[0]
-      result = gConfig.getSections('/Resources/Sites/%s/%s/CEs' % (gridType,self.siteName))
-      if not result['OK']:
-        return S_ERROR('Failed to look up the CS for the site %s CEs' % self.siteName)
-      if not result['Value']:
-        return S_ERROR('No CEs found for site %s' % self.siteName)
-      ceTotalList = result['Value']    
-      for ce in ceTotalList:
+    ceConfList = self.am_getOption('CEs',[])    
+    ceList = []
+    # Look up CE definitions in the site CS description
+    gridType = self.siteName.split('.')[0]
+    result = gConfig.getSections('/Resources/Sites/%s/%s/CEs' % (gridType,self.siteName))
+    if not result['OK']:
+      return S_ERROR('Failed to look up the CS for the site %s CEs' % self.siteName)
+    if not result['Value']:
+      return S_ERROR('No CEs found for site %s' % self.siteName)
+    ceTotalList = result['Value']   
+    for ce in ceTotalList:
+      if (ceConfList and ce in ceConfList) or not ceConfList:
         ceType = gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/CEType' % (gridType,self.siteName,ce), 'Unknown')
         result = gConfig.getOptionsDict('/Resources/Sites/%s/%s/CEs/%s' % (gridType,self.siteName,ce) )
         if not result['OK']:
           return S_ERROR('Failed to look up the CS for ce %s' % ce )
         ceDict = result['Value']
         if ceType in ceTypes:
-          ceList.append((ce,ceType,ceDict))
+          ceList.append((ce,ceType,ceDict))      
     
     self.queueDict = {}
     for ce,ceType,ceDict in ceList:
@@ -147,7 +148,21 @@ class SiteDirector( AgentModule ):
       ce = self.queueDict[queue]['CE']
       ceName = self.queueDict[queue]['CEName']
       queueName = self.queueDict[queue]['QueueName']
-      queueCPUTime = int(self.queueDict[queue]['ParametersDict']['CPUTime'])
+      
+      # Evaluate the CPU limit of the queue according to the Glue convention
+      # To Do: should be a utility
+      if "maxCPUTime" in self.queueDict[queue]['ParametersDict'] and \
+         "SI100" in "maxCPUTime" in self.queueDict[queue]['ParametersDict']:
+        maxCPUTime = self.queueDict[queue]['ParametersDict']['maxCPUTime']
+        # For some sites there are crazy values in the CS
+        maxCPUTime = max( maxCPUTime, 0 )
+        maxCPUTime = min( maxCPUTime, 86400 * 12.5 )
+        si00 = self.queueDict[queue]['ParametersDict']['SI00']
+        queueCPUTime = 60. / 250. * maxCPUTime * si00
+      elif 'CPUTime' in self.queueDict[queue]['ParametersDict'] : 
+        queueCPUTime = int(self.queueDict[queue]['ParametersDict']['CPUTime'])
+      else:
+        return S_ERROR('CPU time limit is not specified for queue %s' % queue)  
 
       # Get the working proxy
       cpuTime = queueCPUTime + 86400
