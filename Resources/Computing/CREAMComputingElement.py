@@ -86,7 +86,7 @@ class CREAMComputingElement( ComputingElement ):
     """ Method to submit job
     """
 
-    self.log.info( "Executable file path: %s" % executableFile )
+    self.log.verbose( "Executable file path: %s" % executableFile )
     if not os.access( executableFile, 5 ):
       os.chmod( executableFile, 0755 )
 
@@ -96,6 +96,7 @@ class CREAMComputingElement( ComputingElement ):
       jdlName,diracStamp = self.__writeJDL(executableFile)
       cmd = 'glite-ce-job-submit -n -a -N -r %s/%s %s ' % (self.ceName,self.queue,jdlName)
       result = executeGridCommand(proxy,cmd,self.gridEnv)
+
       if result['OK']:
         pilotJobReference = result['Value'][1].strip()
         batchIDList.append(pilotJobReference)
@@ -109,7 +110,6 @@ class CREAMComputingElement( ComputingElement ):
         jdlName,diracStamp = self.__writeJDL(executableFile)
         cmd = 'glite-ce-job-submit -n -N -r %s/%s -D %s %s ' % (self.ceName,self.queue,delegationID,jdlName)
         result = executeGridCommand(proxy,cmd,self.gridEnv)
-        print result
         if not result['OK']:
           break
         pilotJobReference = result['Value'][1].strip()
@@ -118,9 +118,6 @@ class CREAMComputingElement( ComputingElement ):
         os.unlink(jdlName)
 
     os.unlink(executableFile)
-
-    print "AT >>>", batchIDList
-
     result = S_OK( batchIDList )
     result['PilotStampDict'] = stampDict
     return result
