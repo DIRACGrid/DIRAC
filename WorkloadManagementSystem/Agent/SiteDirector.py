@@ -38,12 +38,13 @@ class SiteDirector( AgentModule ):
       if siteName == 'Unknown':
         return S_ERROR('Unknown site')  
     self.siteName = siteName
+    self.gridEnv = self.am_setOption( "maxPilotWaitingHours", '')
     
     self.genericPilotDN = self.am_getOption('GenericPilotDN','Unknown')
     self.genericPilotGroup = self.am_getOption('GenericPilotGroup','Unknown')
     self.pilot = DIRAC_PILOT
     self.install = DIRAC_INSTALL 
-    self.workingDirectory = self.am_getOption('WorkingDirectory', os.path.join( DIRAC.rootPath, 'data','SiteDirector') )
+    self.workingDirectory = self.am_getOption('WorkDirectory','')
     
     # Flags
     self.updateStatus = self.am_getOption('UpdatePilotStatus',True)
@@ -104,6 +105,18 @@ class SiteDirector( AgentModule ):
         self.queueDict[queueName]['ParametersDict'] = result['Value']
         self.queueDict[queueName]['ParametersDict']['Queue'] = queue
         self.queueDict[queueName]['ParametersDict']['Site'] = self.siteName
+        self.queueDict[queueName]['ParametersDict']['GridEnv'] = self.gridEnv 
+        # Evaluate the CPU limit of the queue according to the Glue convention
+        # To Do: should be a utility
+        if "maxCPUTime" in self.queueDict[queueName]['ParametersDict'] and \
+           "SI100" in "maxCPUTime" in self.queueDict[queueName]['ParametersDict']:
+          maxCPUTime = self.queueDict[queueName]['ParametersDict']['maxCPUTime']
+          # For some sites there are crazy values in the CS
+          maxCPUTime = max( maxCPUTime, 0 )
+          maxCPUTime = min( maxCPUTime, 86400 * 12.5 )
+          si00 = self.queueDict[queueName]['ParametersDict']['SI00']
+          queueCPUTime = 60. / 250. * maxCPUTime * si00
+          self.queueDict[queueName]['ParametersDict']['CPUTime'] = queueCPUTime
         qwDir = os.path.join(self.workingDirectory,queue)
         if not os.path.exists(qwDir):
           os.mkdir(qwDir)
@@ -149,17 +162,7 @@ class SiteDirector( AgentModule ):
       ceName = self.queueDict[queue]['CEName']
       queueName = self.queueDict[queue]['QueueName']
       
-      # Evaluate the CPU limit of the queue according to the Glue convention
-      # To Do: should be a utility
-      if "maxCPUTime" in self.queueDict[queue]['ParametersDict'] and \
-         "SI100" in "maxCPUTime" in self.queueDict[queue]['ParametersDict']:
-        maxCPUTime = self.queueDict[queue]['ParametersDict']['maxCPUTime']
-        # For some sites there are crazy values in the CS
-        maxCPUTime = max( maxCPUTime, 0 )
-        maxCPUTime = min( maxCPUTime, 86400 * 12.5 )
-        si00 = self.queueDict[queue]['ParametersDict']['SI00']
-        queueCPUTime = 60. / 250. * maxCPUTime * si00
-      elif 'CPUTime' in self.queueDict[queue]['ParametersDict'] : 
+      if 'CPUTime' in self.queueDict[queue]['ParametersDict'] : 
         queueCPUTime = int(self.queueDict[queue]['ParametersDict']['CPUTime'])
       else:
         return S_ERROR('CPU time limit is not specified for queue %s' % queue)  
@@ -274,7 +277,8 @@ class SiteDirector( AgentModule ):
     if bundleProxy:
       proxy = proxyString
     pilotOptions = self.__getPilotOptions(queue,pilotsToSubmit)
-    workingDirectory = '/afs/cern.ch/user/a/atsareg/test/CREAM'
+    if pilotOptions is None:
+      return S_ERROR('Errors in compiling pilot options')
     executable = self.__writePilotScript(self.workingDirectory, pilotOptions, proxy)
     result = S_OK()
     result['Executable'] = executable
@@ -290,7 +294,22 @@ class SiteDirector( AgentModule ):
     
     print queueDict
     
-    pilotOptions = [ "-V '%s'" % gConfig.getValue( "/DIRAC/VirtualOrganization", "lhcb" ) ]
+    vo = gConfig.getValue( "/DIRAC/VirtualOrganization", "unknown" )
+    if vo == 'unknown':
+      self.log.error('Virtual Organization is not defined in the configuration')
+      return None
+    pilotOptions = [ "-V '%s'" % vo ]
+    setup = gConfig.getValue( "/DIRAC/Setup", "unknown" )
+    if setup == 'unknown':
+      self.log.error('Setup is not defined in the configuration')
+      return None
+    pilotOptions.append( '-S %s' % setup )
+    diracVersion = gConfig.getValue( "/Operations/%s/%s/Versions/PilotVersion" % (vo,setup), "unknown" )
+    if diracVersion == 'unknown':
+      self.log.error('Setup is not defined in the configuration')
+      return None
+    pilotOptions.append( '-r %s' % diracVersion )
+    
     ownerDN = self.genericPilotDN
     ownerGroup = self.genericPilotGroup
     result = gProxyManager.requestToken( ownerDN, ownerGroup, pilotsToSubmit*5 )
@@ -304,8 +323,6 @@ class SiteDirector( AgentModule ):
 
     # Debug
     pilotOptions.append( '-d' )
-    # Setup.
-    pilotOptions.append( '-S %s' % queueDict['Setup'] )
     # CS Servers
     csServers = gConfig.getValue( "/DIRAC/Configuration/Servers", [] )
     pilotOptions.append( '-C %s' % ",".join( csServers ) )
@@ -313,8 +330,6 @@ class SiteDirector( AgentModule ):
     extensionsList = gConfig.getValue( "/DIRAC/Extensions", [] )
     if extensionsList:
       pilotOptions.append( '-e %s' % ",".join( extensionsList ) )
-    # Requested version of DIRAC
-    pilotOptions.append( '-r %s' % 'v5r8' )
     # Requested CPU time
     pilotOptions.append( '-T %s' % queueDict['CPUTime'] )
     # SiteName
@@ -325,11 +340,15 @@ class SiteDirector( AgentModule ):
     if 'SharedArea' in queueDict:
       pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % queueDict['SharedArea'] )
 
-    if 'CPUScalingFactor' in queueDict:
-      pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % queueDict['CPUScalingFactor'] )
-
-    if 'CPUNormalizationFactor' in queueDict:
-      pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % queueDict['CPUNormalizationFactor'] )
+    if 'SI00' in queueDict:
+      si00 = queueDict['CPUScalingFactor']
+      pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % si00/250. )
+      pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % si00/250. )
+    else:  
+      if 'CPUScalingFactor' in queueDict:
+        pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % queueDict['CPUScalingFactor'] )  
+      if 'CPUNormalizationFactor' in queueDict:
+        pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % queueDict['CPUNormalizationFactor'] )
 
     self.log.info( "pilotOptions: ", ' '.join(pilotOptions))
 
