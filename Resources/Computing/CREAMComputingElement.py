@@ -123,12 +123,12 @@ class CREAMComputingElement( ComputingElement ):
     return result
 
   #############################################################################
-  def getDynamicInfo( self, proxy = '' ):
+  def getDynamicInfo( self ):
     """ Method to return information on running and pending jobs.
     """
     statusList = ['REGISTERED','PENDING','IDLE','RUNNING','REALLY-RUNNING']
     cmd = 'glite-ce-job-status -n -a -e %s -s %s' % (self.ceName,':'.join(statusList) ) 
-    result = executeGridCommand(proxy,cmd,self.gridEnv)     
+    result = executeGridCommand(self.proxy,cmd,self.gridEnv)     
     resultDict = {}
     if not result['OK']:
       return result
@@ -149,7 +149,7 @@ class CREAMComputingElement( ComputingElement ):
     result['SubmittedJobs'] = 0
     return result
   
-  def getJobStatus(self,jobIDList, proxy=''):
+  def getJobStatus(self,jobIDList):
     """ Get the status information for the given list of jobs
     """
      
@@ -162,7 +162,7 @@ class CREAMComputingElement( ComputingElement ):
     idFile.close()
     
     cmd = 'glite-ce-job-status -n -i %s' % idFileName
-    result = executeGridCommand(proxy,cmd,self.gridEnv)
+    result = executeGridCommand(self.proxy,cmd,self.gridEnv)
     os.unlink(idFileName)
     resultDict = {} 
     if result['Value'][1]:
@@ -209,7 +209,7 @@ class CREAMComputingElement( ComputingElement ):
     return resultDict
     
   
-  def getJobOutput(self,jobID,localDir=None,proxy=''):
+  def getJobOutput(self,jobID,localDir=None):
     """ Get the specified job standard output and error files. If the localDir is provided,
         the output is returned as file in this directory. Otherwise, the output is returned 
         as strings. 
@@ -224,19 +224,19 @@ class CREAMComputingElement( ComputingElement ):
     
     outURL = self.ceParameters['OutputURL']
     if outURL == 'gsiftp://localhost':
-      result = self.__resolveOutputURL(pilotRef,proxy)
+      result = self.__resolveOutputURL(pilotRef)
       if not result['OK']:
         return result
       outURL = result['Value']
 
     outputURL = os.path.join(outURL,'%s.out' % stamp)
-    errorURL = os.path.join(self.ceParameters['OutputURL'],'%s.err' % stamp)
+    errorURL = os.path.join(outURL,'%s.err' % stamp)
     workingDirectory = self.ceParameters['WorkingDirectory']
     outFileName = os.path.join(workingDirectory,os.path.basename(outputURL))
     errFileName = os.path.join(workingDirectory,os.path.basename(errorURL))
 
     cmd = 'globus-url-copy %s file://%s' % (outputURL,outFileName)
-    result = executeGridCommand(proxy,cmd,self.gridEnv)
+    result = executeGridCommand(self.proxy,cmd,self.gridEnv)
     output = ''
     if result['OK']:
       if not result['Value'][0]:
@@ -248,7 +248,7 @@ class CREAMComputingElement( ComputingElement ):
       return S_ERROR('Failed to retrieve output for %s' % jobID)
         
     cmd = 'globus-url-copy %s %s' % (errorURL,errFileName)
-    result = executeGridCommand(proxy,cmd,self.gridEnv)
+    result = executeGridCommand(self.proxy,cmd,self.gridEnv)
     error = ''
     if result['OK']:
       if not result['Value'][0]:
@@ -261,12 +261,12 @@ class CREAMComputingElement( ComputingElement ):
 
     return S_OK((output,error))
   
-  def __resolveOutputURL(self,pilotRef,proxy):
+  def __resolveOutputURL(self,pilotRef):
     """ Resolve the URL of the pilot output files
     """
     
     cmd = "glite-ce-job-status -L 2 %s | grep -i osb" % pilotRef
-    result = executeGridCommand(proxy,cmd,self.gridEnv)
+    result = executeGridCommand(self.proxy,cmd,self.gridEnv)
     url = ''
     if result['OK']:
       if not result['Value'][0]:
@@ -274,9 +274,9 @@ class CREAMComputingElement( ComputingElement ):
         for line in output.split('\n'):
           line = line.strip()
           if line.find('OSB') != -1:
-            match = re.seach('(\[.*\])',line)
+            match = re.search('\[(.*)\]',line)
             if match:
-              url = match.groups(0)
+              url = match.group(1)
       if url:
         return S_OK(url) 
       else:
