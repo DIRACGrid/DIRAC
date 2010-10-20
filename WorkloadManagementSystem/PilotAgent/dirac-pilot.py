@@ -299,8 +299,9 @@ if os.environ.has_key( 'EDG_WL_JOBID' ):
   pilotRef = os.environ['EDG_WL_JOBID']
 
 if os.environ.has_key( 'GLITE_WMS_JOBID' ):
-  cliParams.flavour = 'gLite'
-  pilotRef = os.environ['GLITE_WMS_JOBID']
+  if os.environ['GLITE_WMS_JOBID'] != 'N/A':
+    cliParams.flavour = 'gLite'
+    pilotRef = os.environ['GLITE_WMS_JOBID']
   
 configureOpts.append( '-o /LocalSite/GridMiddleware=%s' % cliParams.flavour )
 if pilotRef != 'Unknown':
