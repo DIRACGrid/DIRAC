@@ -303,7 +303,7 @@ class WMSAdministratorHandler(RequestHandler):
 
     result = pilotDB.getPilotInfo(pilotReference)
     if not result['OK'] or not result[ 'Value' ]:
-      return S_ERROR('Failed to determine owner for pilot ' + pilotReference)
+      return S_ERROR('Failed to get info for pilot ' + pilotReference)
 
     pilotDict = result['Value'][pilotReference]
     owner = pilotDict['OwnerDN']
@@ -322,34 +322,41 @@ class WMSAdministratorHandler(RequestHandler):
         resultDict['OwnerGroup'] = group
         resultDict['FileList'] = []
         return S_OK(resultDict)
-
-    ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
-    if not ret['OK']:
-      gLogger.error( ret['Message'] )
-      gLogger.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( owner, group ) )
-      return S_ERROR("Failed to get the pilot's owner proxy")
-    proxy = ret['Value']
+      else:
+        return S_ERROR('Empty pilot output found')
 
     gridType = pilotDict['GridType']
-
-    result = getPilotOutput( proxy, gridType, pilotReference )
-    if not result['OK']:
-      return S_ERROR('Failed to get pilot output: '+result['Message'])
-    # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
-    stdout = result['StdOut']
-    error = result['StdErr']
-    fileList = result['FileList']
-    result = pilotDB.storePilotOutput(pilotReference,stdout,error)
-    if not result['OK']:
-      gLogger.error('Failed to store pilot output:',result['Message'])
-
-    resultDict = {}
-    resultDict['StdOut'] = stdout
-    resultDict['StdErr'] = error
-    resultDict['OwnerDN'] = owner
-    resultDict['OwnerGroup'] = group
-    resultDict['FileList'] = fileList
-    return S_OK(resultDict)
+    if gridType in ["DIRAC","CREAM"]:
+      # For the moment return with error. Later can try to get the output from the CE
+      return S_ERROR('Pilot output is not yet retrieved') 
+    elif gridType in ["LCG","gLite"]:
+      ret = gProxyManager.getPilotProxyFromVOMSGroup( owner, group )
+      if not ret['OK']:
+        gLogger.error( ret['Message'] )
+        gLogger.error( 'Could not get proxy:', 'User "%s", Group "%s"' % ( owner, group ) )
+        return S_ERROR("Failed to get the pilot's owner proxy")
+      proxy = ret['Value']
+  
+      result = getPilotOutput( proxy, gridType, pilotReference )
+      if not result['OK']:
+        return S_ERROR('Failed to get pilot output: '+result['Message'])
+      # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
+      stdout = result['StdOut']
+      error = result['StdErr']
+      fileList = result['FileList']
+      result = pilotDB.storePilotOutput(pilotReference,stdout,error)
+      if not result['OK']:
+        gLogger.error('Failed to store pilot output:',result['Message'])
+  
+      resultDict = {}
+      resultDict['StdOut'] = stdout
+      resultDict['StdErr'] = error
+      resultDict['OwnerDN'] = owner
+      resultDict['OwnerGroup'] = group
+      resultDict['FileList'] = fileList
+      return S_OK(resultDict)
+    else:
+      return S_ERROR('Can not retrieve pilot output for the Grid %s ' % gridType)
 
   ##############################################################################
   types_getPilotSummary = []
