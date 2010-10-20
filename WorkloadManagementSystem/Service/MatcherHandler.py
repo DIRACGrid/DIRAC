@@ -70,6 +70,9 @@ class MatcherHandler(RequestHandler):
   def initialize(self):
 
     self.siteJobLimits = self.getCSOption( "SiteJobLimits", False )
+    self.setup = gConfig.getValue('/DIRAC/Setup','')
+    self.vo = gConfig.getValue('/DIRAC/VirtualOrganization','')
+    self.pilotVersion = gConfig.getValue('/Operations/%s/%s/Versions/PilotVersion' % (self.vo,self.setup),'')
 
   def selectJob(self, resourceDescription):
     """ Main job selection function to find the highest priority job
@@ -100,6 +103,9 @@ class MatcherHandler(RequestHandler):
       # Check if a JobID is requested
       if classAdAgent.lookupAttribute('JobID'):
         resourceDict['JobID'] = classAdAgent.getAttributeInt('JobID')    
+        
+      if classAdAgent.lookupAttribute('DIRACVersion'):
+          resourceDict['DIRACVersion'] = classAdAgent.getAttributeString('DIRACVersion')  
           
     else:
       for name in taskQueueDB.getSingleValueTQDefFields():
@@ -111,7 +117,15 @@ class MatcherHandler(RequestHandler):
           resourceDict[name] = resourceDescription[name]
           
       if resourceDescription.has_key('JobID'):
-        resourceDict[name] = resourceDescription['JobID']    
+        resourceDict['JobID'] = resourceDescription['JobID']    
+      if resourceDescription.has_key('DIRACVersion'):
+        resourceDict['DIRACVersion'] = resourceDescription['DIRACVersion']      
+        
+    # Check the pilot DIRAC version
+    if 'DIRACVersion' in resourceDict:
+      if resourceDict['DIRACVersion'] != self.pilotVersion:
+        return S_ERROR('Pilot version does not match the production version %s:%s' % \
+                       (resourceDict['DIRACVersion'],self.pilotVersion) )     
 
     # Get common site mask and check the agent site
     result = jobDB.getSiteMask(siteState='Active')
