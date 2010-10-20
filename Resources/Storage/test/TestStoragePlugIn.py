@@ -136,8 +136,8 @@ class DirectoryTestCase(StoragePlugInTestCase):
     self.assert_(getMetadataRes['OK'])
     self.assert_(getMetadataRes['Value']['Successful'].has_key(remoteDir))
     resDict = getMetadataRes['Value']['Successful'][remoteDir]
-    self.assert_(resDict.has_key('Permissions'))
-    self.assert_(type(resDict['Permissions']) == IntType)
+    self.assert_(resDict.has_key('Mode'))
+    self.assert_(type(resDict['Mode']) == IntType)
     # Perform the checks for the remove directory operation
     if removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']:
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'],self.numberOfFiles)
