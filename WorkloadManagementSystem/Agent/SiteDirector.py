@@ -175,8 +175,9 @@ class SiteDirector( AgentModule ):
       if not result['OK']:
         return result
       self.proxy = result['Value']
+      ce.setProxy(self.proxy)
  
-      result = ce.available(proxy=self.proxy)
+      result = ce.available()
       if not result['OK']:
         self.log.warn('Failed to check the availability of queue %s: %s' (queue,result['message']))
         continue
@@ -450,7 +451,7 @@ EOF
       
       #print "AT >>> pilotDict", pilotDict
       
-      result = ce.getJobStatus(pilotRefs,self.proxy)
+      result = ce.getJobStatus(pilotRefs)
       if not result['OK']:
         self.log.error('Failed to get pilots status from CE: %s' % result['Message'])
         continue
@@ -483,7 +484,7 @@ EOF
             pRefStamp = pRef 
             if pilotStamp:
               pRefStamp = pRef+':::'+pilotStamp
-            result = ce.getJobOutput(pRefStamp,proxy=self.proxy)
+            result = ce.getJobOutput(pRefStamp)
             if not result['OK']:
               self.log.error('Failed to get pilot output: %s' % result['Message'])
             else:
@@ -522,7 +523,7 @@ EOF
         pRefStamp = pRef 
         if pilotStamp:
           pRefStamp = pRef+':::'+pilotStamp
-        result = ce.getJobOutput(pRefStamp,proxy=self.proxy)
+        result = ce.getJobOutput(pRefStamp)
         if not result['OK']:
           self.log.error('Failed to get pilot output: %s' % result['Message'])
         else:
