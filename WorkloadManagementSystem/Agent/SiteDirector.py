@@ -44,7 +44,7 @@ class SiteDirector( AgentModule ):
     self.genericPilotGroup = self.am_getOption('GenericPilotGroup','Unknown')
     self.pilot = DIRAC_PILOT
     self.install = DIRAC_INSTALL 
-    self.workingDirectory = self.am_getOption('WorkDirectory','')
+    self.workingDirectory = self.am_getOption('WorkDirectory')
     
     # Flags
     self.updateStatus = self.am_getOption('UpdatePilotStatus',True)
@@ -118,7 +118,7 @@ class SiteDirector( AgentModule ):
           maxCPUTime = min( maxCPUTime, 86400 * 12.5 )
           si00 = float(self.queueDict[queueName]['ParametersDict']['SI00'])
           queueCPUTime = 60. / 250. * maxCPUTime * si00
-          self.queueDict[queueName]['ParametersDict']['CPUTime'] = queueCPUTime
+          self.queueDict[queueName]['ParametersDict']['CPUTime'] = int(queueCPUTime)
         qwDir = os.path.join(self.workingDirectory,queue)
         if not os.path.exists(qwDir):
           os.mkdir(qwDir)
