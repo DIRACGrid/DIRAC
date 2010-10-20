@@ -38,7 +38,7 @@ class SiteDirector( AgentModule ):
       if siteName == 'Unknown':
         return S_ERROR('Unknown site')  
     self.siteName = siteName
-    self.gridEnv = self.am_setOption( "maxPilotWaitingHours", '')
+    self.gridEnv = self.am_getOption( "GridEnv", '')
     
     self.genericPilotDN = self.am_getOption('GenericPilotDN','Unknown')
     self.genericPilotGroup = self.am_getOption('GenericPilotGroup','Unknown')
@@ -100,21 +100,23 @@ class SiteDirector( AgentModule ):
         result = gConfig.getOptionsDict('%s/%s' % (section,queue) )
         if not result['OK']:
           return S_ERROR('Failed to look up the CS for ce,queue %s,%s' % (ce,queue) )
+
         queueName = '%s_%s' % (ce,queue)
         self.queueDict[queueName] = {}
         self.queueDict[queueName]['ParametersDict'] = result['Value']
         self.queueDict[queueName]['ParametersDict']['Queue'] = queue
         self.queueDict[queueName]['ParametersDict']['Site'] = self.siteName
         self.queueDict[queueName]['ParametersDict']['GridEnv'] = self.gridEnv 
+        self.queueDict[queueName]['ParametersDict']['Setup'] = gConfig.getValue('/DIRAC/Setup','unknown')
         # Evaluate the CPU limit of the queue according to the Glue convention
         # To Do: should be a utility
         if "maxCPUTime" in self.queueDict[queueName]['ParametersDict'] and \
-           "SI100" in "maxCPUTime" in self.queueDict[queueName]['ParametersDict']:
-          maxCPUTime = self.queueDict[queueName]['ParametersDict']['maxCPUTime']
+           "SI00" in self.queueDict[queueName]['ParametersDict']:
+          maxCPUTime = float(self.queueDict[queueName]['ParametersDict']['maxCPUTime'])
           # For some sites there are crazy values in the CS
           maxCPUTime = max( maxCPUTime, 0 )
           maxCPUTime = min( maxCPUTime, 86400 * 12.5 )
-          si00 = self.queueDict[queueName]['ParametersDict']['SI00']
+          si00 = float(self.queueDict[queueName]['ParametersDict']['SI00'])
           queueCPUTime = 60. / 250. * maxCPUTime * si00
           self.queueDict[queueName]['ParametersDict']['CPUTime'] = queueCPUTime
         qwDir = os.path.join(self.workingDirectory,queue)
@@ -144,12 +146,12 @@ class SiteDirector( AgentModule ):
 
     result = self.submitJobs()
     if not result['OK']:
-      self.log.error('Erros in the job submission: %s' % result['Message'])
+      self.log.error('Errors in the job submission: %s' % result['Message'])
       
     if self.updateStatus:  
       result = self.updatePilotStatus()
       if not result['OK']:
-        self.log.error('Erros in updating pilot status: %s' % result['Message'])  
+        self.log.error('Errors in updating pilot status: %s' % result['Message'])  
       
     return S_OK()  
 
@@ -188,8 +190,6 @@ class SiteDirector( AgentModule ):
         self.log.error( 'Could not retrieve TaskQueues from TaskQueueDB', result['Message'] )
         return result
       taskQueueDict = result['Value']
-      
-      print "AT >>> TasQueueDict",taskQueueDict
       if not taskQueueDict:
         continue
       
@@ -240,7 +240,7 @@ class SiteDirector( AgentModule ):
           if not tqDict.has_key(tqID):
             tqDict[tqID] = []
           tqDict[tqID].append(pilotID)    
-          
+  
         for tqID,pilotList in tqDict.items():    
           result = pilotAgentsDB.addPilotTQReference(pilotList,
                                                      tqID,
@@ -291,9 +291,7 @@ class SiteDirector( AgentModule ):
     """  
     
     queueDict = self.queueDict[queue]['ParametersDict']
-    
-    print queueDict
-    
+   
     vo = gConfig.getValue( "/DIRAC/VirtualOrganization", "unknown" )
     if vo == 'unknown':
       self.log.error('Virtual Organization is not defined in the configuration')
@@ -341,16 +339,16 @@ class SiteDirector( AgentModule ):
       pilotOptions.append( "-o '/LocalSite/SharedArea=%s'" % queueDict['SharedArea'] )
 
     if 'SI00' in queueDict:
-      si00 = queueDict['CPUScalingFactor']
-      pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % si00/250. )
-      pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % si00/250. )
+      factor = float(queueDict['SI00'])/250.
+      pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % factor )
+      pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % factor )
     else:  
       if 'CPUScalingFactor' in queueDict:
         pilotOptions.append( "-o '/LocalSite/CPUScalingFactor=%s'" % queueDict['CPUScalingFactor'] )  
       if 'CPUNormalizationFactor' in queueDict:
         pilotOptions.append( "-o '/LocalSite/CPUNormalizationFactor=%s'" % queueDict['CPUNormalizationFactor'] )
 
-    self.log.info( "pilotOptions: ", ' '.join(pilotOptions))
+    self.log.verbose( "pilotOptions: ", ' '.join(pilotOptions))
 
     return pilotOptions
     
