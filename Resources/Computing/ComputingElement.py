@@ -37,9 +37,15 @@ class ComputingElement:
     self.classAd = ClassAd('[]')
     self.ceRequirementDict = {}
     self.ceParameters = {}
+    self.proxy = ''
     
     self.ceConfigDict = getLocalCEConfigDict(ceName)
     self.initializeParameters()
+        
+  def setProxy(self,proxy):
+    """ Set proxy for this instance
+    """      
+    self.proxy = proxy
         
   def initializeParameters(self):
     """ Initialize the CE parameters after they are collected from various sources
