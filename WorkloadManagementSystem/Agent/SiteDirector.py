@@ -491,7 +491,47 @@ EOF
               result = pilotAgentsDB.storePilotOutput(pRef,output,error)
               if not result['OK']:
                 self.log.error('Failed to store pilot output: %s' % result['Message'])  
-                 
+
+
+    # The pilot can be in Done sate set by the job agentm check if the output is retrieved
+    for queue in self.queueDict:
+      ce = self.queueDict[queue]['CE']
+      ceName = self.queueDict[queue]['CEName']
+      queueName = self.queueDict[queue]['QueueName']  
+      result = pilotAgentsDB.selectPilots({'DestinationSite':ceName,
+                                           'Queue':queueName,
+                                           'GridType':'DIRAC',
+                                           'GridSite':self.siteName,
+                                           'OutputReady':'False',
+                                           'Status':FINAL_PILOT_STATUS})
+      
+      if not result['OK']:
+        self.log.error('Failed to select pilots: %s' % result['Message'])
+        continue
+      pilotRefs = result['Value']
+      if not pilotRefs:
+        continue
+      result = pilotAgentsDB.getPilotInfo(pilotRefs)
+      if not result['OK']:
+        self.log.error('Failed to get pilots info: %s' % result['Message'])
+        continue
+      pilotDict = result['Value']
+      for pRef in pilotRefs:
+        self.log.info('Retrieving output for pilot %s' % pRef ) 
+        pilotStamp = pilotDict[pRef]['PilotStamp']
+        pRefStamp = pRef 
+        if pilotStamp:
+          pRefStamp = pRef+':::'+pilotStamp
+        result = ce.getJobOutput(pRefStamp,proxy=self.proxy)
+        if not result['OK']:
+          self.log.error('Failed to get pilot output: %s' % result['Message'])
+        else:
+          output,error = result['Value']
+          result = pilotAgentsDB.storePilotOutput(pRef,output,error)
+          if not result['OK']:
+            self.log.error('Failed to store pilot output: %s' % result['Message'])  
+                
+         
     return S_OK()      
     
     
