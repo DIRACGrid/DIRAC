@@ -50,6 +50,16 @@ class SiteDirector( AgentModule ):
     self.updateStatus = self.am_getOption('UpdatePilotStatus',True)
     self.getOutput = self.am_getOption('GetPilotOutput',True)
     
+    self.log.always('Site:',self.siteName)
+    ceTypes = self.am_getOption('CETypes',[])
+    if ceTypes:
+      self.log.always('CETypes:',ceTypes)
+    ces = self.am_getOption('CEs',[])
+    if ceTypes:
+      self.log.always('CEs:',ces)
+    self.log.always('GenericPilotDN:',self.genericPilotDN)    
+    self.log.always('GenericPilotGroup:',self.genericPilotGroup)    
+    
     self.localhost = socket.getfqdn()
     self.proxy = ''     
     self.queueDict = {}
