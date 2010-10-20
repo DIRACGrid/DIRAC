@@ -199,9 +199,7 @@ class SiteDirector( AgentModule ):
         totalTQJobs += taskQueueDict[tq]['Jobs']
         
       pilotsToSubmit = min(totalSlots,totalTQJobs)  
-    
-      pilotsToSubmit = 1
- 
+     
       if pilotsToSubmit > 0:
         self.log.info('Going to submit %d pilots to %s queue' % (pilotsToSubmit,queue) )
   
