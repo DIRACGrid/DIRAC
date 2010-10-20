@@ -48,7 +48,8 @@ for ceUniqueID in args:
     exitCode = 2
     continue
 
-  siteCSSEction = '/Resources/Sites/%s/%s/CEs/%s' % ( 'LCG', diracSiteName, subClusterUniqueID )
+  gridType = diracSiteName.split('.')[0]
+  siteCSSEction = '/Resources/Sites/%s/%s/CEs/%s' % ( gridType, diracSiteName, subClusterUniqueID )
   queueCSSection = '%s/Queues/%s' % ( siteCSSEction, queueID )
 
   benchmarkSI00Option = '%s/%s' % ( queueCSSection, 'SI00' )
