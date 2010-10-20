@@ -89,7 +89,10 @@ class PilotDirector:
 
     self.pilot = DIRAC_PILOT
     self.extraPilotOptions = []
-    self.diracVersion = DIRAC_VERSION
+    setup = gConfig.getValue('/DIRAC/Setup','')
+    vo = gConfig.getValue('/DIRAC/VirtualOrganization','')
+    self.diracVersion = gConfig.getValue('/Operations/%s/%s/Versions/PilotVersion' % (vo,setup),
+                                         DIRAC_VERSION)
     self.install = DIRAC_INSTALL
     self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
 
