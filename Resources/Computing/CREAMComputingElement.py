@@ -221,8 +221,15 @@ class CREAMComputingElement( ComputingElement ):
       stamp = ''
     if not stamp:
       return S_ERROR('Pilot stamp not defined for %s' % pilotRef ) 
+    
+    outURL = self.ceParameters['OutputURL']
+    if outURL == 'gsiftp://localhost':
+      result = self.__resolveOutputURL(pilotRef,proxy)
+      if not result['OK']:
+        return result
+      outURL = result['Value']
 
-    outputURL = os.path.join(self.ceParameters['OutputURL'],'%s.out' % stamp)
+    outputURL = os.path.join(outURL,'%s.out' % stamp)
     errorURL = os.path.join(self.ceParameters['OutputURL'],'%s.err' % stamp)
     workingDirectory = self.ceParameters['WorkingDirectory']
     outFileName = os.path.join(workingDirectory,os.path.basename(outputURL))
@@ -253,6 +260,29 @@ class CREAMComputingElement( ComputingElement ):
       return S_ERROR('Failed to retrieve error for %s' % jobID)
 
     return S_OK((output,error))
+  
+  def __resolveOutputURL(self,pilotRef,proxy):
+    """ Resolve the URL of the pilot output files
+    """
+    
+    cmd = "glite-ce-job-status -L 2 %s | grep -i osb" % pilotRef
+    result = executeGridCommand(proxy,cmd,self.gridEnv)
+    url = ''
+    if result['OK']:
+      if not result['Value'][0]:
+        output = result['Value'][1]
+        for line in output.split('\n'):
+          line = line.strip()
+          if line.find('OSB') != -1:
+            match = re.seach('(\[.*\])',line)
+            if match:
+              url = match.groups(0)
+      if url:
+        return S_OK(url) 
+      else:
+        return S_ERROR('output URL not found for %s' % pilotref)       
+    else:
+      return S_ERROR('Failed to retrieve long status for %s' % pilotRef)
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
 
