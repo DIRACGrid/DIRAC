@@ -111,6 +111,13 @@ class PilotAgentsDB(DB):
       setList.append("GridSite='%s'" % gridSite)
     if queue:
       setList.append("Queue='%s'" % queue)  
+    if destination:
+      setList.append("DestinationSite='%s'" % destination) 
+      if not gridSite:
+        result = getSiteForCE(destination)
+        if result['OK']:
+          gridSite = result['Value'] 
+          setList.append("GridSite='%s'" % gridSite)
 
     set_string = ','.join(setList)
     req = "UPDATE PilotAgents SET "+set_string+" WHERE PilotJobReference='%s'" % pilotRef
@@ -118,10 +125,6 @@ class PilotAgentsDB(DB):
     if not result['OK']:
       return result
 
-    if destination:
-      result = self.setPilotDestinationSite(pilotRef,destination, conn = conn)
-      if not result['OK']:
-        return result
     return S_OK()
 
 ##########################################################################################
