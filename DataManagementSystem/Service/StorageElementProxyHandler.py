@@ -17,16 +17,17 @@ base_path = ''
 def initializeStorageElementProxyHandler(serviceInfo):
   global base_path
   cfgPath = serviceInfo['serviceSectionPath']
-  res = gConfig.getOption( "%s/BasePath" % cfgPath )
-  if res['OK']:
-    base_path =  res['Value']
-    gLogger.info('The base path obtained is %s. Checking its existence...' % base_path)
-    if not os.path.exists(base_path):
-      gLogger.info('%s did not exist. Creating....' % base_path)
-      os.makedirs(base_path)
-  else:
-    gLogger.error('Failed to get the base path')
-    return S_ERROR('Failed to get the base path')
+
+  base_path = gConfig.getValue( "%s/BasePath" % cfgPath, base_path )
+  if not base_path:
+    gLogger.error( 'Failed to get the base path' )
+    return S_ERROR( 'Failed to get the base path' )
+  
+  gLogger.info('The base path obtained is %s. Checking its existence...' % base_path)
+  if not os.path.exists(base_path):
+    gLogger.info('%s did not exist. Creating....' % base_path)
+    os.makedirs(base_path)
+
   return S_OK()
 
 class StorageElementProxyHandler(RequestHandler):
