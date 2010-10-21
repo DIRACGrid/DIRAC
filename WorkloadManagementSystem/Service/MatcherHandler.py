@@ -70,6 +70,7 @@ class MatcherHandler(RequestHandler):
   def initialize(self):
 
     self.siteJobLimits = self.getCSOption( "SiteJobLimits", False )
+    self.checkPilotVersion = self.getCSOption( "CheckPilotVersion", True )
     self.setup = gConfig.getValue('/DIRAC/Setup','')
     self.vo = gConfig.getValue('/DIRAC/VirtualOrganization','')
     self.pilotVersion = gConfig.getValue('/Operations/%s/%s/Versions/PilotVersion' % (self.vo,self.setup),'')
@@ -122,10 +123,11 @@ class MatcherHandler(RequestHandler):
         resourceDict['DIRACVersion'] = resourceDescription['DIRACVersion']      
         
     # Check the pilot DIRAC version
-    if 'DIRACVersion' in resourceDict:
-      if resourceDict['DIRACVersion'] != self.pilotVersion:
-        return S_ERROR('Pilot version does not match the production version %s:%s' % \
-                       (resourceDict['DIRACVersion'],self.pilotVersion) )     
+    if self.checkPilotVersion:
+      if 'DIRACVersion' in resourceDict:
+        if resourceDict['DIRACVersion'] != self.pilotVersion:
+          return S_ERROR('Pilot version does not match the production version %s:%s' % \
+                         (resourceDict['DIRACVersion'],self.pilotVersion) )     
 
     # Get common site mask and check the agent site
     result = jobDB.getSiteMask(siteState='Active')
