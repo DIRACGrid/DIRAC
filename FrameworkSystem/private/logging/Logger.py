@@ -125,9 +125,9 @@ class Logger:
                              self.__discoverCallingFrame() )
     return self.processMessage( messageObject )
   
-  def essence( self, sMsg, sVarMsg = '' ):
+  def notice( self, sMsg, sVarMsg = '' ):
     messageObject = Message( self._systemName,
-                             self._logLevels.essence,
+                             self._logLevels.notice,
                              Time.dateTime(),
                              sMsg,
                              sVarMsg,
