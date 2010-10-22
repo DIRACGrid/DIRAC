@@ -841,19 +841,21 @@ class Dirac:
       jobParamsDict['CE']['CompatiblePlatforms'] = localArch
 
     softwarePolicy = self.__getVOPolicyModule( 'SoftwareDistModule' )
-    if not softwarePolicy:
-      return self.__errorReport( 'Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO' )
-    moduleFactory = ModuleFactory()
-    moduleInstance = moduleFactory.getModule( softwarePolicy, jobParamsDict )
-    if not moduleInstance['OK']:
-      self.log.warn( 'Could not create SoftwareDistModule' )
-      return moduleInstance
-
-    module = moduleInstance['Value']
-    result = module.execute()
-    if not result['OK']:
-      self.log.warn( 'Software installation failed with result:\n%s' % ( result ) )
-      return result
+    if softwarePolicy:
+      moduleFactory = ModuleFactory()
+      moduleInstance = moduleFactory.getModule( softwarePolicy, jobParamsDict )
+      if not moduleInstance['OK']:
+        self.log.warn( 'Could not create SoftwareDistModule' )
+        return moduleInstance
+  
+      module = moduleInstance['Value']
+      result = module.execute()
+      if not result['OK']:
+        self.log.warn( 'Software installation failed with result:\n%s' % ( result ) )
+        return result
+    else:
+      self.log.verbose('Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO')
+      #return self.__errorReport( 'Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO' )
 
     if parameters['Value'].has_key( 'InputSandbox' ):
       sandbox = parameters['Value']['InputSandbox']
