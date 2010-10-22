@@ -254,7 +254,9 @@ def tarExternals( mainCFG, targetDir ):
       if not cliParams.forceExternals and requestedExternals in availableExternals:
         gLogger.info( "Externals %s is already compiled, skipping..." % ( requestedExternalsString ) )
         continue
-      compileScript = os.path.join( os.path.dirname( __file__ ), "dirac-compile-externals.py" )
+      compileScript = os.path.join( os.path.dirname( __file__ ), "dirac-compile-externals" )
+      if not os.path.isfile( compileScript ):
+        compileScript = os.path.join( os.path.dirname( __file__ ), "dirac-compile-externals.py" )
       compileTarget = os.path.join( targetDir, platform )
       cmdArgs = []
       cmdArgs.append( "-d '%s'" % compileTarget )
