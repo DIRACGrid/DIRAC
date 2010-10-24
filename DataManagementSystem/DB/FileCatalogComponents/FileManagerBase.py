@@ -619,7 +619,7 @@ class FileManagerBase:
           repStatus = repDict['Status']
           if (repStatus in self.db.visibleStatus) or (allStatus):
             pfn = repDict['PFN']
-            if not pfn:
+            if not pfn or self.db.lfnPfnConvention:
               res = self._resolvePFN(lfn,se)
               if res['OK']:
                 pfn = res['Value']
