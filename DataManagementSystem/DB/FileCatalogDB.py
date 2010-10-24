@@ -485,7 +485,7 @@ class FileCatalogDB(DB, DirectoryMetadata):
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.getDirectorySize(res['Value']['Successful'])
+    res = self.dtree.getDirectorySize(res['Value']['Successful'],credDict)
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
