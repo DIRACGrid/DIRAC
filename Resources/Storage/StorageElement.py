@@ -229,7 +229,7 @@ class StorageElement:
         protocolsToTry.append(protocol)
       else:
         errStr = "StorageElement.getPfnForProtocol: Requested protocol not available for SE."
-        gLogger.error(errStr,'%s for %s' % (protocol,self.name))
+        gLogger.warn(errStr,'%s for %s' % (protocol,self.name))
     if not protocolsToTry:
       errStr = "StorageElement.getPfnForProtocol: None of the requested protocols were available for SE."
       gLogger.error(errStr,'%s for %s' % (protocol,self.name))
