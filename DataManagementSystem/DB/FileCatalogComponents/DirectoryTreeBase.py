@@ -540,7 +540,7 @@ class DirectoryTreeBase:
         dirList = result['Value'].keys()
         dirList.append(dirID)
         dirString = ','.join([ str(x) for x in dirList ])
-        req = "SELECT SUM(I.Size) FROM FC_FileInfo as I, FC_Files as F WHERE I.FileID=F.FileID AND F.DirID IN (%s)" % dirString
+        req = "SELECT SUM(Size) FROM FC_Files WHERE DirID IN (%s)" % dirString
         result = self.db._query(req)
         if not result['OK']:
           failed[path] = result['Message']
