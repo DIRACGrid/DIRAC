@@ -15,7 +15,9 @@ import string
 from types  import *
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Security import CS
+from DIRAC.Core.Security.Misc import getProxyInfo
 from DIRAC.Core.Utilities.List import uniqueElements
+from DIRAC.Interfaces.API.Dirac import Dirac
 
 class DirectoryListing:
   
@@ -214,90 +216,369 @@ File Catalog Client $Revision: 1.17 $Date:
       path = apath
     else:
       path = self.cwd+'/'+apath
+      path = path.replace('//','/')
 
-    return path
+    return os.path.normpath(path)
+  
+  def do_register(self,args):
+    """ Register a record to the File Catalog
+    
+        usage:
+          register file <lfn> <pfn> <size> <SE> [<guid>]  - register new file record in the catalog
+          register replica <lfn> <replica> <SE>   - register new replica in the catalog
+    """
+    
+    argss = args.split()
+    option = argss[0]
+    del argss[0]
+    if option == 'file':
+      return self.registerFile(argss)
+    elif option == 'pfn':
+      return self.registerReplica(argss)
+    else:
+      print "Unknown option:",option
   
   def do_add(self,args):
-    """ Add a record to the File Catalog
+    """ Upload a new file to a SE and register in the File Catalog
     
         usage:
         
-          add user <user_name>  - add new user
-          add group <group_name>  - add new group
-          add file <lfn> <pfn> <size> <SE> [<guid>]  - add new file
-          add pfn <lfn> <pfn> <SE>   - add new replica
-          add metadata <metaname> <metatype>  - add new metadata field
-          add metaset <metaset_name> <key>=<value> [<key>=<value>]
+          add <lfn> <pfn> <size> <SE> [<guid>] 
     """
+    
+    # ToDo - adding directories
     
     argss = args.split()
-    option = argss[0]
-    del argss[0]
-    if option == 'user':
-      return self.adduser(argss) 
-    elif option == 'group':
-      return self.addgroup(argss) 
-    elif option == 'file':
-      return self.addfile(argss)
-    elif option == 'pfn':
-      return self.addpfn(argss)
-    elif option == 'metadata':
-      return self.addmeta(argss)
-    elif option == 'metaset':
-      return self.addmetaset(argss)
-    else:
-      print "Unknown option:",option
-         
-  def addmeta(self,argss):
-    """ Add metadata field
-    """
- 
-    mname = argss[0] 
-    mtype = argss[1]
-    
-    result =  self.fc.addMetadataField(mname,mtype)
+    lfn = argss[0]
+    lfn = self.getPath(lfn)
+    pfn = argss[1]
+    se = argss[2]
+    guid = None
+    if len(argss)>3:
+      guid = argss[3]
+        
+    dirac = Dirac()
+    result = dirac.addFile(lfn,pfn,se,guid,printOutput=False)
     if not result['OK']:
-      print ("Error: %s" % result['Message'])
+      print 'Error: %s' %(result['Message'])
     else:
-      print "Added metadata field %s of type %s" % (mname,mtype)        
-  
-  def addmetaset(self,argss):
-    """ Add metadata set
-    """
-    
-    setDict = {}
-    setName = argss[0]
-    del argss[0]
-    for arg in argss:
-      key,value = arg.split('=')
-      setDict[key] = value
+      print "File %s successfully uploaded to the %s SE" % (lfn,se)  
       
-    result =  self.fc.addMetadataSet(setName,setDict)
-    if not result['OK']:
-      print ("Error: %s" % result['Message'])  
-    else:
-      print "Added metadata set %s" % setName  
-  
-  def do_delete(self,args):
-    """ Delete records from the File Catalog
+  def do_get(self,args):
+    """ Download file from grid and store in a local directory
     
         usage:
         
-          delete user <user_name>
-          delete group <group_name>
+          get <lfn> [<local_directory>] 
     """
     
     argss = args.split()
+    lfn = argss[0]
+    lfn = self.getPath(lfn)
+    dir = ''
+    if len(argss)>1:
+      dir = argss[1]
+        
+    dirac = Dirac()
+    localCWD = ''
+    if dir:
+      localCWD = os.getcwd()
+      os.chdir(dir)
+    result = dirac.getFile(lfn)
+    if localCWD:
+      os.chdir(localCWD)
+      
+    if not result['OK']:
+      print 'Error: %s' %(result['Message'])
+    else:
+      print "File %s successfully downloaded" % lfn      
+
+  def do_unregister(self,args):
+    """ Unregister records in the File Catalog
+    
+        usage:
+          unregister replica  <lfn> <se>
+          unregister file <lfn>
+          unregister dir <path>
+    """        
+    argss = args.split()
     option = argss[0]
     del argss[0]
-    if option == 'user':
-      return self.deleteuser(argss) 
-    elif option == 'group':
-      return self.deletegroup(argss) 
+    if option == 'replica':
+      return self.removeReplica(argss)
+    elif option == 'file': 
+      return self.removeFile(argss)
+    elif option == "dir" or option == "directory":
+      return self.removeDirectory(argss)    
+    else:
+      print "Error: illegal option %s" % option
+      
+  def do_rmreplica(self,args):
+    """ Remove LFN replica from the storage and from the File Catalog
+    
+        usage:
+          rmreplica <lfn> <se>
+    """        
+    argss = args.split()
+    lfn = argss[0]
+    lfn = self.getPath(lfn)
+    print "lfn:",lfn
+    se = argss[1]
+    try:
+      result =  self.fc.setReplicaStatus( {lfn:{'SE':se,'Status':'Trash'}} )
+      done = 1
+      if result['OK']:
+        print "Replica at",rmse,"moved to Trash Bin"
+      else:
+        print "Failed to remove replica at",rmse
+        print result['Message']
+    except Exception, x:
+      print "Error: rmreplica failed with exception: ", x
+    
+  def do_rm(self,args):
+    """ Remove file from the storage and from the File Catalog
+    
+        usage:
+          rm <lfn>
+          
+        NB: this method is not fully implemented !    
+    """  
+    # Not yet really implemented
+    argss = args.split()
+    self.removeFile(argss)
+    
+  def do_rmdir(self,args):
+    """ Remove directory from the storage and from the File Catalog
+    
+        usage:
+          rmdir <path>
+          
+        NB: this method is not fully implemented !  
+    """  
+    # Not yet really implemented yet
+    argss = args.split()
+    self.removeDirectory(argss)  
+          
+  def removeReplica(self,args):
+    """ Remove replica from the catalog
+    """          
+    
+    path = args[0]
+    lfn = self.getPath(path)
+    print "lfn:",lfn
+    rmse = args[1]
+    try:
+      result =  self.fc.removeReplica( {lfn:{'SE':rmse}} )
+      done = 1
+      if result['OK']:
+        print "Replica at",rmse,"removed from the catalog"
+      else:
+        print "Failed to remove replica at",rmse
+        print result['Message']
+    except Exception, x:
+      print "Error: rmpfn failed with exception: ", x
+      
+  def removeFile(self,args):
+    """ Remove file from the catalog
+    """  
+    
+    path = args[0]
+    lfn = self.getPath(path)
+    print "lfn:",lfn
+    try:
+      result =  self.fc.removeFile(lfn)
+      if result['OK']:
+        print "File",lfn,"removed from the catalog"
+      else:
+        print "Failed to remove file from the catalog"  
+        print result['Message']
+    except Exception, x:
+      print "Error: rm failed with exception: ", x       
+      
+  def removeDirectory(self,args):
+    """ Remove file from the catalog
+    """  
+    
+    path = args[0]
+    lfn = self.getPath(path)
+    print "lfn:",lfn
+    try:
+      result =  self.fc.removeDirectory(lfn)
+      if result['OK']:
+        print "Directory",lfn,"removed from the catalog"
+      else:
+        print "Failed to remove directory from the catalog"  
+        print result['Message']
+    except Exception, x:
+      print "Error: rm failed with exception: ", x            
+      
+  def do_replicate(self,args):
+    """ Replicate a given file to a given SE
+        
+        usage:
+          replicate <LFN> <SE> [<SourceSE>]
+    """    
+    argss = args.split()
+    lfn = argss[0]
+    lfn = self.getPath(path)
+    se = argss[1]
+    if len(args)>2:
+      sourceSE=args[2]
+    if len(args)>3:  
+      localCache=args[3]
+    try:
+      dirac = Dirac()
+      result = dirac.replicate(args[0],args[1],sourceSE,printOutput=True)
+      if not result['OK']:
+        print 'Error: %s' %(result['Message'])
+      else:
+        print "File %s successfully replicated to the %s SE" % (lfn,se)  
+    except Exception, x:
+      print "Error: replicate failed with exception: ", x     
+      
+  def do_replicas(self,args):
+    """ Get replicas for the given file specified by its LFN
+
+        usage: replicas <lfn>
+    """
+    apath = args.split()[0]
+    path = self.getPath(apath)
+    print "lfn:",path
+    try:
+      result =  self.fc.getReplicas(path)
+      if result['OK']:
+        if result['Value']['Successful']:
+          for se,entry in result['Value']['Successful'][path].items():
+            print se.ljust(15),entry
+      else:
+        print "Replicas: ",result['Message']
+    except Exception, x:
+      print "replicas failed: ", x
+        
+  def registerFile(self,args):
+    """ Add a file to the catatlog 
+
+        usage: add <lfn> <pfn> <size> <SE> [<guid>]
+    """      
+       
+    path = args[0]
+    infoDict = {}
+    lfn = self.getPath(path)
+    infoDict['PFN'] = args[1]
+    infoDict['Size'] = int(args[2])
+    infoDict['SE'] = args[3]
+    if len(args) == 5:
+      guid = args[4]
+    else:
+      status,guid = commands.getstatusoutput('uuidgen')
+    infoDict['GUID'] = guid
+    infoDict['Checksum'] = ''    
+      
+    fileDict = {}
+    fileDict[lfn] = infoDict  
+      
+    try:
+      result = self.fc.addFile(fileDict)         
+      if not result['OK']:
+        print "Failed to add file to the catalog: ",
+        print result['Message']
+      elif result['Value']['Failed']:
+        if result['Value']['Failed'].has_key(lfn):
+          print 'Failed to add file:',result['Value']['Failed'][lfn]  
+      elif result['Value']['Successful']:
+        if result['Value']['Successful'].has_key(lfn):
+          print "File successfully added to the catalog"    
+    except Exception, x:
+      print "add file failed: ", str(x)    
+    
+  def registerReplica(self,args):
+    """ Add a file to the catatlog 
+
+        usage: addpfn <lfn> <pfn> <SE> 
+    """      
+    path = args[0]
+    infoDict = {}
+    lfn = self.getPath(path)
+    infoDict['PFN'] = args[1]
+    if infoDict['PFN'] == "''" or infoDict['PFN'] == '""':
+      infoDict['PFN'] = ''
+    infoDict['SE'] = args[2]
+      
+    repDict = {}
+    repDict[lfn] = infoDict    
+      
+    try:
+      result = self.fc.addReplica(repDict)          
+      if not result['OK']:
+        print "Failed to add replica to the catalog: ",
+        print result['Message']
+      elif result['Value']['Failed']:
+        print 'Failed to add replica:',result['Value']['Failed'][lfn]   
+      else:
+        print "Replica added successfully:", result['Value']['Successful'][lfn]    
+    except Exception, x:
+      print "add pfn failed: ", str(x)      
+      
+#######################################################################################
+# User and group methods      
+      
+  def do_user(self,args):
+    """ User related commands
+    
+        usage:
+          user add <username>  - register new user in the catalog
+          user delete <username>  - delete user from the catalog
+          user show - show all users registered in the catalog
+    """    
+    argss = args.split()
+    option = argss[0]
+    del argss[0]
+    if option == 'add':
+      return self.registerUser(argss) 
+    elif option == 'delete':
+      return self.deleteUser(argss) 
+    elif option == "show":
+      result = self.fc.getUsers()
+      if not result['OK']:
+        print ("Error: %s" % result['Message'])            
+      else:  
+        if not result['Value']:
+          print "No entries found"
+        else:  
+          for user,id in result['Value'].items():
+            print user.rjust(20),':',id
     else:
       print "Unknown option:",option
+    
+  def do_group(self,args):
+    """ Group related commands
+    
+        usage:
+          group add <groupname>  - register new group in the catalog
+          group delete <groupname>  - delete group from the catalog
+          group show - how all groups registered in the catalog
+    """    
+    argss = args.split()
+    option = argss[0]
+    del argss[0]
+    if option == 'add':
+      return self.registerGroup(argss) 
+    elif option == 'delete':
+      return self.deleteGroup(argss) 
+    elif option == "show":
+      result = self.fc.getGroups()
+      if not result['OK']:
+        print ("Error: %s" % result['Message'])            
+      else:  
+        if not result['Value']:
+          print "No entries found"
+        else:  
+          for user,id in result['Value'].items():
+            print user.rjust(20),':',id
+    else:
+      print "Unknown option:",option  
   
-  def adduser(self,argss):
+  def registerUser(self,argss):
     """ Add new user to the File Catalog
     
         usage: adduser <user_name>
@@ -311,7 +592,7 @@ File Catalog Client $Revision: 1.17 $Date:
     else:
       print "User ID:",result['Value']  
       
-  def deleteuser(self,args):
+  def deleteUser(self,args):
     """ Delete user from the File Catalog
     
         usage: deleteuser <user_name>
@@ -323,7 +604,7 @@ File Catalog Client $Revision: 1.17 $Date:
     if not result['OK']:
       print ("Error: %s" % result['Message'])    
       
-  def addgroup(self,argss):
+  def registerGroup(self,argss):
     """ Add new group to the File Catalog
     
         usage: addgroup <group_name>
@@ -337,7 +618,7 @@ File Catalog Client $Revision: 1.17 $Date:
     else:
       print "Group ID:",result['Value']    
       
-  def deletegroup(self,args):
+  def deleteGroup(self,args):
     """ Delete group from the File Catalog
     
         usage: deletegroup <group_name>
@@ -348,54 +629,6 @@ File Catalog Client $Revision: 1.17 $Date:
     result =  self.fc.deleteGroup(gname)
     if not result['OK']:
       print ("Error: %s" % result['Message'])         
-      
-  def do_show(self,args):
-    """ Show File Catalog info
-    
-        usage: show <option>
-        
-        options:
-          users    - show all the users defined in the catalog
-          groups   -  show all the groups defined in the catalog
-          metadata - show available metadata fields
-    """
-    
-    argss = args.split()
-    option = argss[0] 
-    
-    if option == 'users':
-      result = self.fc.getUsers()
-      if not result['OK']:
-        print ("Error: %s" % result['Message'])            
-      else:  
-        if not result['Value']:
-          print "No entries found"
-        else:  
-          for user,id in result['Value'].items():
-            print user.rjust(20),':',id
-    elif option == 'groups':
-      result = self.fc.getGroups()
-      if not result['OK']:
-        print ("Error: %s" % result['Message'])            
-      else:  
-        if not result['Value']:
-          print "No entries found"
-        else:  
-          for user,id in result['Value'].items():
-            print user.rjust(20),':',id
-    elif option == 'metadata':
-      result = self.fc.getMetadataFields()  
-      if not result['OK']:
-        print ("Error: %s" % result['Message'])            
-      else:
-        if not result['Value']:
-          print "No entries found"
-        else:  
-          for meta,type in result['Value'].items():
-            print meta.rjust(20),':',type
-    else:
-      print ('Unknown option: %s' % option)
-      return
          
   def do_mkdir(self,args):
     """ Make directory
@@ -428,7 +661,6 @@ File Catalog Client $Revision: 1.17 $Date:
     
         usage: cd <path>
                cd -
-               cd ..
     """
  
     argss = args.split()
@@ -439,22 +671,8 @@ File Catalog Client $Revision: 1.17 $Date:
       
     if path == '-':
       path = self.previous_cwd
-    elif path.find('..') == 0:
-        ##allow smoother navigation
-        dirs = path.split("/")
-        nb_returns = dirs.count("..")
-        curdir_elems = self.cwd.split("/")
-        curdir_elems_fin = curdir_elems[0:len(curdir_elems)-nb_returns]
-        curdir_elems_fin.extend(dirs[nb_returns:])
-        path = string.join(curdir_elems_fin,"/")
-        #path = path.replace('..',os.path.dirname(self.cwd))
       
-        
-    if path.find('/') == 0:
-      newcwd = path
-    else:
-      newcwd = self.cwd + '/' + path
-    newcwd = newcwd.replace(r'//','/')
+    newcwd = self.getPath(path)
     if len(newcwd)>1 and not newcwd.find('..') == 0 :
       newcwd=newcwd.rstrip("/")
     
@@ -472,6 +690,40 @@ File Catalog Client $Revision: 1.17 $Date:
         print newcwd,'is not found'
     else:
       print 'Server failed to find the directory',newcwd
+
+  def do_id(self,args):
+    """ Get user identity
+    """
+    result = getProxyInfo()
+    if not result['OK']:
+      print "Error: %s" % result['Message']
+      return
+    user = result['Value']['username']
+    group = result['Value']['group']
+    result = self.fc.getUsers()
+    if not result['OK']:
+      print "Error: %s" % result['Message']
+      return
+    userDict = result['Value']
+    result = self.fc.getGroups()
+    if not result['OK']:
+      print "Error: %s" % result['Message']
+      return
+    groupDict = result['Value']    
+    idUser = userDict.get(user,0)
+    idGroup = groupDict.get(group,0)
+    print "user=%d(%s) group=%d(%s)" % (idUser,user,idGroup,group)
+      
+  def do_lcd(self,args):
+    """ Change local directory
+    
+        usage:
+          lcd <local_directory>
+    """    
+    localDir = args.split()[0]
+    os.chdir(localDir)
+    newDir = os.getcwd()
+    print "Local directory: %s" % newDir
           
   def do_pwd(self,args):
     """ Print out the current directory
@@ -565,89 +817,6 @@ File Catalog Client $Revision: 1.17 $Date:
     except Exception, x:
       print "Error:", str(x)
       
-  def do_replicas(self,args):
-    """ Get replicas for the given file specified by its LFN
-
-        usage: replicas <lfn>
-    """
-    apath = args.split()[0]
-    path = self.getPath(apath)
-    print "lfn:",path
-    try:
-      result =  self.fc.getReplicas(path)
-      if result['OK']:
-        if result['Value']['Successful']:
-          for se,entry in result['Value']['Successful'][path].items():
-            print se.ljust(15),entry
-      else:
-        print "Replicas: ",result['Message']
-    except Exception, x:
-      print "replicas failed: ", x
-        
-  def addfile(self,args):
-    """ Add a file to the catatlog 
-
-        usage: add <lfn> <pfn> <size> <SE> [<guid>]
-    """      
-       
-    path = args[0]
-    infoDict = {}
-    lfn = self.getPath(path)
-    infoDict['PFN'] = args[1]
-    infoDict['Size'] = int(args[2])
-    infoDict['SE'] = args[3]
-    if len(args) == 5:
-      guid = args[4]
-    else:
-      status,guid = commands.getstatusoutput('uuidgen')
-    infoDict['GUID'] = guid
-    infoDict['Checksum'] = ''    
-      
-    fileDict = {}
-    fileDict[lfn] = infoDict  
-      
-    try:
-      result = self.fc.addFile(fileDict)         
-      if not result['OK']:
-        print "Failed to add file to the catalog: ",
-        print result['Message']
-      elif result['Value']['Failed']:
-        if result['Value']['Failed'].has_key(lfn):
-          print 'Failed to add file:',result['Value']['Failed'][lfn]  
-      elif result['Value']['Successful']:
-        if result['Value']['Successful'].has_key(lfn):
-          print "File successfully added to the catalog"    
-    except Exception, x:
-      print "add file failed: ", str(x)    
-    
-  def addpfn(self,args):
-    """ Add a file to the catatlog 
-
-        usage: addpfn <lfn> <pfn> <SE> 
-    """      
-    path = args[0]
-    infoDict = {}
-    lfn = self.getPath(path)
-    infoDict['PFN'] = args[1]
-    if infoDict['PFN'] == "''" or infoDict['PFN'] == '""':
-      infoDict['PFN'] = ''
-    infoDict['SE'] = args[2]
-      
-    repDict = {}
-    repDict[lfn] = infoDict    
-      
-    try:
-      result = self.fc.addReplica(repDict)          
-      if not result['OK']:
-        print "Failed to add replica to the catalog: ",
-        print result['Message']
-      elif result['Value']['Failed']:
-        print 'Failed to add replica:',result['Value']['Failed'][lfn]   
-      else:
-        print "Replica added successfully:", result['Value']['Successful'][lfn]    
-    except Exception, x:
-      print "add pfn failed: ", str(x)    
-      
   def do_chown(self,args):
     """ Change owner of the given path
 
@@ -698,7 +867,6 @@ File Catalog Client $Revision: 1.17 $Date:
       
   def do_chmod(self,args):
     """ Change permissions of the given path
-
         usage: chmod [-R] <mode> <path> 
     """         
     
@@ -724,20 +892,46 @@ File Catalog Client $Revision: 1.17 $Date:
   def do_size(self,args):
     """ Get the file size 
 
-        usage: size <lfn> 
+        usage: size <lfn>|<dir_path> 
     """      
     
-    path = args.split()[0]
-    lfn = self.getPath(path)
-    print "lfn:",path
+    argss = args.split()
+    if len(argss) == 1:
+      path = argss[0]
+      if path == '.':
+        path = self.cwd
+    else:
+      path = self.cwd
+    path = self.getPath(path)
     try:
-      result =  self.fc.getFileSize(path)
-      if result['Status'] == 'OK':
-        print "Size:",result['FileSize']
+      result = self.fc.isFile(path)
+      if not result['OK']:
+        print "Error:",result['Message']
+      if result['Value']['Successful']:
+        if result['Value']['Successful'][path]:  
+          print "lfn:",path
+          result =  self.fc.getFileSize(path)
+          if result['OK']:
+            if result['Value']['Successful']:
+              print "Size:",result['Value']['Successful'][path]
+            else:
+              print "File size failed:", result['Value']['Failed'][path]  
+          else:
+            print "File size failed:",result['Message']
+        else:
+          print "directory:",path
+          result =  self.fc.getDirectorySize(path)
+          if result['OK']:
+            if result['Value']['Successful']:
+              print "Size:",result['Value']['Successful'][path]
+            else:
+              print "Directory size failed:", result['Value']['Failed'][path]
+          else:
+            print "Directory size failed:",result['Message']  
       else:
-        print "Size: failed",result['Message']
+        print "Failed to determine path type"        
     except Exception, x:
-      print "size failed: ", x
+      print "Size failed: ", x
       
   def do_guid(self,args):
     """ Get the file GUID 
@@ -758,164 +952,221 @@ File Catalog Client $Revision: 1.17 $Date:
         print "ERROR:",result['Message']
     except Exception, x:
       print "guid failed: ", x   
+ 
+##################################################################################
+#  Metadata methods
       
-  def do_set(self,args):
-    """ Set metadata value for a directory
-
-        usage: set metadata <directory> <metaname> <metavalue>
-    """      
+  def do_meta(self,args):
+    """ Metadata related operation
     
-    argss = args.split()
-    option = argss[0]
-    del argss[0]
-    if option == 'metadata':
-      if len(argss) != 3:
-        print "Command requires 3 arguments"
-      path = argss[0]
-      if path == '.':
-        path = self.cwd
-      elif path[0] != '/':
-        path = self.cwd+'/'+path  
-      meta = argss[1]
-      value = argss[2]
-      print path,meta,value
-      metadict = {}
-      metadict[meta]=value
-      result = self.fc.setMetadata(path,metadict)
-      if not result['OK']:
-        print ("Error: %s" % result['Message'])              
-      
-  def do_get(self,args):
-    """ Get metadata definitions and values
+        usage:
+          meta index <metaname> <metatype>  - add new metadata index. Possible types are:
+                                              'int', 'float', 'string', 'date'
+          meta set <directory> <metaname> <metavalue> - set metadata value for directory
+          meta get [-e] [<directory>] - get metadata for the given directory
+          meta tags <metaname> where <meta_selection> - get values (tags) of the given metaname compatible with 
+                                                       the metadata selection
+          meta metaset <metaset_name> <key>=<value> [<key>=<value>]
+          meta show - show all defined metadata indice
 
-        usage: 
-          getting metadata for the given directory:
-          get metadata <directory> 
-          
-          getting values of a given metadata tag compatible with the given selection
-          get tags [ where <tagname>=<tagvalue> [<tagname>=<tagvalue>] ]
-        
-    """         
+    """     
     argss = args.split()
     option = argss[0]
     del argss[0]
+    if option == 'set':
+      return self.metaSet(argss)
+    elif option == 'get':
+      return self.metaGet(argss)  
+    elif option[:3] == 'tag':
+      return self.metaTag(argss)    
+    elif option == 'index':
+      return self.registerMeta(argss)
+    elif option == 'metaset':
+      return self.registerMetaset(argss)
+    elif option == 'show':
+      return self.showMeta()
+    else:
+      print "Unknown option:",option  
+      
+  def metaSet(self,argss):
+    """ Set metadata value for a directory
+    """      
+    if len(argss) != 3:
+      print "Error: command requires 3 arguments, %d given" % len(argss)
+      return
+    path = argss[0]
+    if path == '.':
+      path = self.cwd
+    elif path[0] != '/':
+      path = self.cwd+'/'+path  
+    meta = argss[1]
+    value = argss[2]
+    print path,meta,value
+    metadict = {}
+    metadict[meta]=value
+    result = self.fc.setMetadata(path,metadict)
+    if not result['OK']:
+      print ("Error: %s" % result['Message'])     
+      
+  def metaGet(self,argss):
+    """ Get metadata for the given directory
+    """            
     expandFlag = False
-    if option == 'metadata':
-      if len(argss) == 0:
-        path ='.'
-      else:  
-        if argss[0] == "-e":
-          expandFlag = True
-          del argss[0]
-        path = argss[0]
-      if path == '.':
-        path = self.cwd
-      elif path[0] != '/':
-        path = self.cwd+'/'+path  
-      result = self.fc.getDirectoryMetadata(path)      
-      if not result['OK']:
-        print ("Error: %s" % result['Message']) 
-        return
-      if result['Value']:
-        metaDict = result['MetadataOwner']
-        metaTypeDict = result['MetadataType']
-        for meta,value in result['Value'].items():
-          setFlag = metaDict[meta] != 'OwnParameter' and metaTypeDict[meta] == "MetaSet"
-          prefix = ''
-          if setFlag:
-              prefix = "+"
-          if metaDict[meta] == 'ParentMetadata':
-            prefix += "*"
-            print (prefix+meta).rjust(20),':',value
-          elif metaDict[meta] == 'OwnMetadata':
-            prefix += "!"
-            print (prefix+meta).rjust(20),':',value   
-          else:
-            print meta.rjust(20),':',value 
-          if setFlag and expandFlag:
-            result = self.fc.getMetadataSet(value,expandFlag)
-            if not result['OK']:
-              print ("Error: %s" % result['Message']) 
-              return
-            for m,v in result['Value'].items():
-              print " "*10,m.rjust(20),':',v      
-      else:
-        print "No metadata defined for directory"   
-    elif option == "metaset":
-      expandFlag = False
+    if len(argss) == 0:
+      path ='.'
+    else:  
       if argss[0] == "-e":
         expandFlag = True
         del argss[0]
-      setName = argss[0]
-      result = self.fc.getMetadataSet(setName,expandFlag)
-      if not result['OK']:
-        print ("Error: %s" % result['Message']) 
-        return
+      if len(argss) == 0:
+        path ='.'  
+      else:  
+        path = argss[0]
+    if path == '.':
+      path = self.cwd
+    elif path[0] != '/':
+      path = self.cwd+'/'+path  
+    result = self.fc.getDirectoryMetadata(path)      
+    if not result['OK']:
+      print ("Error: %s" % result['Message']) 
+      return
+    if result['Value']:
+      metaDict = result['MetadataOwner']
+      metaTypeDict = result['MetadataType']
       for meta,value in result['Value'].items():
-        print meta.rjust(20),':',value         
-    elif option == 'size': 
-      path = argss[0]
-      if path == '.':
-        path = self.cwd
-      elif path[0] != '/':
-        path = self.cwd+'/'+path  
-      result = self.fc.getDirectorySize(path)
-      if not result['OK']:
-        print ("Error: %s" % result['Message']) 
-        return
-      if result['Value']['Successful']:
-        print result['Value']['Successful'][path]
-      else:
-        print "Error:",result['Value']['Failed'][path]    
-    elif option == 'tags':
-      tag =  argss[0]
-      del argss[0]
-      
-      # Evaluate the selection dictionary
-      metaDict = {}
-      if argss:
-        if argss[0].lower() == 'where':
-          result = self.fc.getMetadataFields()
+        setFlag = metaDict[meta] != 'OwnParameter' and metaTypeDict[meta] == "MetaSet"
+        prefix = ''
+        if setFlag:
+            prefix = "+"
+        if metaDict[meta] == 'ParentMetadata':
+          prefix += "*"
+          print (prefix+meta).rjust(20),':',value
+        elif metaDict[meta] == 'OwnMetadata':
+          prefix += "!"
+          print (prefix+meta).rjust(20),':',value   
+        else:
+          print meta.rjust(20),':',value 
+        if setFlag and expandFlag:
+          result = self.fc.getMetadataSet(value,expandFlag)
           if not result['OK']:
             print ("Error: %s" % result['Message']) 
             return
-          if not result['Value']:
-            print "Error: no metadata fields defined"
-            return
-          typeDict = result['Value']
-          
-          del argss[0]
-          for arg in argss:
-            try:
-              name,value = arg.split('=')
-              if not name in typeDict:
-                print "Error: metadata field %s not defined" % name
-                return
-              mtype = typeDict[name]
-              mvalue = value
-              if mtype[0:3].lower() == 'int':
-                mvalue = int(value)
-              if mtype[0:5].lower() == 'float':
-                mvalue = float(value)
-              metaDict[name] = mvalue
-            except Exception,x:
-              print "Error:",str(x)
-              return  
-        else:
-          print "Error: WHERE keyword is not found after the metadata tag name"
+          for m,v in result['Value'].items():
+            print " "*10,m.rjust(20),':',v      
+    else:
+      print "No metadata defined for directory"   
+      
+  def metaTag(self,argss):
+    """ Get values of a given metadata tag compatible with the given selection
+    """    
+    tag =  argss[0]
+    del argss[0]
+    
+    # Evaluate the selection dictionary
+    metaDict = {}
+    if argss:
+      if argss[0].lower() == 'where':
+        result = self.fc.getMetadataFields()        
+        if not result['OK']:
+          print ("Error: %s" % result['Message']) 
+          return
+        if not result['Value']:
+          print "Error: no metadata fields defined"
+          return
+        typeDict = result['Value']
         
-      result = self.fc.getCompatibleMetadata(metaDict)  
-      if not result['OK']:
-        print ("Error: %s" % result['Message']) 
+        del argss[0]
+        for arg in argss:
+          try:
+            name,value = arg.split('=')
+            if not name in typeDict:
+              print "Error: metadata field %s not defined" % name
+              return
+            mtype = typeDict[name]
+            mvalue = value
+            if mtype[0:3].lower() == 'int':
+              mvalue = int(value)
+            if mtype[0:5].lower() == 'float':
+              mvalue = float(value)
+            metaDict[name] = mvalue
+          except Exception,x:
+            print "Error:",str(x)
+            return  
+      else:
+        print "Error: WHERE keyword is not found after the metadata tag name"
         return
-      tagDict = result['Value']
-      if tag in tagDict:
-        if tagDict[tag]:
-          print "Possible values for %s:" % tag
-          for v in tagDict[tag]:
-            print v
-        else:
-          print "No compatible values found for %s" % tag    
+      
+    result = self.fc.getCompatibleMetadata(metaDict)  
+    if not result['OK']:
+      print ("Error: %s" % result['Message']) 
+      return
+    tagDict = result['Value']
+    if tag in tagDict:
+      if tagDict[tag]:
+        print "Possible values for %s:" % tag
+        for v in tagDict[tag]:
+          print v
+      else:
+        print "No compatible values found for %s" % tag       
+
+  def showMeta(self):
+    """ Show defined metadata indices
+    """
+    result = self.fc.getMetadataFields()  
+    if not result['OK']:
+      print ("Error: %s" % result['Message'])            
+    else:
+      if not result['Value']:
+        print "No entries found"
+      else:  
+        for meta,type in result['Value'].items():
+          print meta.rjust(20),':',type
+
+  def registerMeta(self,argss):
+    """ Add metadata field. 
+    """
+ 
+    mname = argss[0] 
+    mtype = argss[1]
+    
+    if mtype.lower()[:3] == 'int':
+      rtype = 'INT'
+    elif mtype.lower()[:7] == 'varchar':
+      rtype = mtype
+    elif mtype.lower() == 'string':
+      rtype = 'VARCHAR(128)'
+    elif mtype.lower() == 'float':
+      rtype = 'FLOAT'  
+    elif mtype.lower() == 'date':
+      rtype = 'DATETIME'
+    elif mtype.lower() == 'metaset':
+      rtype = 'MetaSet'  
+    else:
+      print "Error: illegal metadata type %s" % mtype
+      return  
+        
+    result =  self.fc.addMetadataField(mname,rtype)
+    if not result['OK']:
+      print ("Error: %s" % result['Message'])
+    else:
+      print "Added metadata field %s of type %s" % (mname,mtype)        
+  
+  def registerMetaset(self,argss):
+    """ Add metadata set
+    """
+    
+    setDict = {}
+    setName = argss[0]
+    del argss[0]
+    for arg in argss:
+      key,value = arg.split('=')
+      setDict[key] = value
+      
+    result =  self.fc.addMetadataSet(setName,setDict)
+    if not result['OK']:
+      print ("Error: %s" % result['Message'])  
+    else:
+      print "Added metadata set %s" % setName  
     
   def do_find(self,args):
     """ Find all files satisfying the given metadata information 
@@ -965,7 +1216,7 @@ File Catalog Client $Revision: 1.17 $Date:
         return None
       mtype = typeDict[name]
       if value.find(',') != -1:
-        valueList = value.split(',')
+        valueList = [ x.replace("'","").replace('"','') for x in value.split(',') ]
         mvalue = valueList
         if mtype[0:3].lower() == 'int':
           mvalue = [ int(x) for x in valueList if not x in ['Missing','Any'] ]
@@ -979,7 +1230,7 @@ File Catalog Client $Revision: 1.17 $Date:
           operation = 'nin'    
         mvalue = {operation:mvalue}  
       else:            
-        mvalue = value
+        mvalue = value.replace("'","").replace('"','')
         if not value in ['Missing','Any']:
           if mtype[0:3].lower() == 'int':
             mvalue = int(value)
@@ -1030,46 +1281,6 @@ File Catalog Client $Revision: 1.17 $Date:
         metaDict[name] = mvalue         
     
     return metaDict 
-          
-  def do_rmpfn(self,args):
-    """ Remove replica from the catalog
-
-        usage: rmpfn <lfn> <se>
-    """          
-    
-    path = args.split()[0]
-    lfn = self.getPath(path)
-    print "lfn:",lfn
-    rmse = args.split()[1]
-    try:
-      result =  self.fc.removeReplica( {lfn:{'SE':rmse}} )
-      done = 1
-      if result['OK']:
-        print "Replica at",rmse,"removed from the catalog"
-      else:
-        print "Failed to remove replica at",rmse
-        print result['Message']
-    except Exception, x:
-      print "rmpfn failed: ", x
-      
-  def do_rm(self,args):
-    """ Remove file from the catalog
-
-        usage: rm <lfn> 
-    """  
-    
-    path = args.split()[0]
-    lfn = self.getPath(path)
-    print "lfn:",lfn
-    try:
-      result =  self.fc.removeFile(lfn)
-      if result['OK']:
-        print "File",lfn,"removed from the catalog"
-      else:
-        print "Failed to remove file from the catalog"  
-        print result['Message']
-    except Exception, x:
-      print "rm failed: ", x           
       
   def do_exit(self, args):
     """ Exit the shell.
