@@ -424,7 +424,14 @@ class FileManager(FileManagerBase):
     if not res['OK']:
       return res
     statusID = res['Value']
-    return self._setReplicaParameter(fileID,se,'Status',statusID,connection=connection)
+    res = self.__getRepIDForReplica(fileID,se,connection=connection)
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      return res
+    repID = res['Value']
+    req = "UPDATE FC_Replicas SET Status=%d WHERE RepID=%d" % (statusID,repID)
+    return self.db._update(req,connection)
 
   def _setReplicaHost(self,fileID,se,newSE,connection=False):
     connection = self._getConnection(connection)
