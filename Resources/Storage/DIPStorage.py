@@ -344,7 +344,7 @@ class DIPStorage(StorageBase):
     for url in urls:
       pfn = url
       if url.find(self.url) == 0:
-        pfn = url[ ( len(self.url) + 2):]
+        pfn = url[ ( len(self.url) ):]
       res = serviceClient.getMetadata(pfn)
       if res['OK']:
         if res['Value']['Exists']:
