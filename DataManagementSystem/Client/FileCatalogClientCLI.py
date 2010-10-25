@@ -243,7 +243,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
         usage:
         
-          add <lfn> <pfn> <size> <SE> [<guid>] 
+          add <lfn> <pfn> <SE> [<guid>] 
     """
     
     # ToDo - adding directories
@@ -328,9 +328,9 @@ File Catalog Client $Revision: 1.17 $Date:
       result =  self.fc.setReplicaStatus( {lfn:{'SE':se,'Status':'Trash'}} )
       done = 1
       if result['OK']:
-        print "Replica at",rmse,"moved to Trash Bin"
+        print "Replica at",se,"moved to Trash Bin"
       else:
-        print "Failed to remove replica at",rmse
+        print "Failed to remove replica at",se
         print result['Message']
     except Exception, x:
       print "Error: rmreplica failed with exception: ", x
@@ -417,24 +417,25 @@ File Catalog Client $Revision: 1.17 $Date:
         
         usage:
           replicate <LFN> <SE> [<SourceSE>]
-    """    
+    """
     argss = args.split()
     lfn = argss[0]
-    lfn = self.getPath(path)
+    lfn = self.getPath(lfn)
     se = argss[1]
-    if len(args)>2:
-      sourceSE=args[2]
-    if len(args)>3:  
-      localCache=args[3]
+    sourceSE = ''
+    if len(argss)>2:
+      sourceSE=argss[2]
+    if len(argss)>3: 
+      localCache=argss[3]
     try:
       dirac = Dirac()
-      result = dirac.replicate(args[0],args[1],sourceSE,printOutput=True)
+      result = dirac.replicate(lfn,se,sourceSE,printOutput=True)
       if not result['OK']:
         print 'Error: %s' %(result['Message'])
       else:
         print "File %s successfully replicated to the %s SE" % (lfn,se)  
     except Exception, x:
-      print "Error: replicate failed with exception: ", x     
+      print "Error: replicate failed with exception: ", x      
       
   def do_replicas(self,args):
     """ Get replicas for the given file specified by its LFN
@@ -445,7 +446,7 @@ File Catalog Client $Revision: 1.17 $Date:
     path = self.getPath(apath)
     print "lfn:",path
     try:
-      result =  self.fc.getReplicas(path)
+      result =  self.fc.getReplicas(path)    
       if result['OK']:
         if result['Value']['Successful']:
           for se,entry in result['Value']['Successful'][path].items():
