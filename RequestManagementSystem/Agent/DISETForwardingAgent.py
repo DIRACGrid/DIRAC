@@ -42,6 +42,8 @@ class DISETForwardingAgent( AgentModule, RequestAgentMixIn ):
 
     self.local = PathFinder.getServiceURL( "RequestManagement/localURL" )
     if not self.local:
+      self.local = AgentModule.am_getOption(self,'localURL','')
+    if not self.local:
       errStr = 'The RequestManagement/localURL option must be defined.'
       gLogger.fatal( errStr )
       return S_ERROR( errStr )
