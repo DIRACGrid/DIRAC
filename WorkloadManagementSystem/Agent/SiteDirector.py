@@ -1,5 +1,5 @@
 ########################################################################
-# $HeadURL:  $
+# $HeadURL$
 # File :   SiteDirector.py
 # Author : A.T.
 ########################################################################
@@ -16,7 +16,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 import os, base64, bz2, tempfile, random, socket
 import DIRAC
 
-__RCSID__ = "$Id: $"
+__RCSID__ = "$Id$"
 
 DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py' )
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
