@@ -4,15 +4,19 @@
 # File :   dirac-production-job-get-output
 # Author : Stuart Paterson
 ########################################################################
+
 __RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.1 $"
+
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.Interfaces.API.Dirac                              import Dirac
 import os
+
+Script.registerSwitch( "d:", "dir=", "Store the output in this directory" )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
+
+from DIRAC.Interfaces.API.Dirac  import Dirac
 
 def usage():
   print 'Usage: %s <JobID> |[<JobID>]' %(Script.scriptName)
@@ -25,6 +29,11 @@ dirac=Dirac()
 exitCode = 0
 errorList = []
 
+outputDir = None
+for sw,v in Script.getUnprocessedSwitches():
+  if sw in ( 'd', 'dir' ):
+    outputDir = v
+
 for job in args:
 
   try:
@@ -34,7 +43,7 @@ for job in args:
     exitCode = 2
     continue
 
-  result = dirac.getOutputSandbox(job)
+  result = dirac.getOutputSandbox(job, outputDir)
   if result['OK']:
     if os.path.exists('%s' %job):
       print 'Job output sandbox retrieved in %s/' %(job)
