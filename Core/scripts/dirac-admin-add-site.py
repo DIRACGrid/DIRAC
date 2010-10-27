@@ -5,6 +5,13 @@
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base                                   import Script
+Script.setUsageMessage('\n'.join( ['Adds DIRACSiteName to DIRAC Configuration including one or more CEs',
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... DIRACSiteName GridSiteName CE [CE] ...' % Script.scriptName,
+                                    'Arguments:',
+                                    '  DIRACSiteName: Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)',
+                                    '  GridSiteName: Name of the site in the Grid (ie: CERN-PROD)',
+                                    '  CE: Name of the CE to be included in the site (ie: ce111.cern.ch)'] ) )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
@@ -16,13 +23,8 @@ from DIRAC.Core.Utilities.List                        import intListToString
 from DIRAC.Core.Security.CS                           import getPropertiesForGroup
 csAPI = CSAPI()
 
-def usage():
-  gLogger.info( '%s DIRACSiteName GridSiteName CE [CE ... ]' % Script.scriptName )
-  gLogger.info( ' Type "%s --help" for the available options and syntax' % Script.scriptName )
-  DIRAC.exit( -1 )
-
 if len( args ) < 3:
-  usage()
+  Script.showHelp()
   DIRAC.exit( -1 )
 
 diracSiteName = args[0]
@@ -43,7 +45,7 @@ group = res['Value']['group']
 
 if not 'CSAdministrator' in getPropertiesForGroup( group ):
    gLogger.error( "You must be CSAdministrator user to execute this script" )
-   gLogger.info( "Please issue 'dirac-proxy-init -g [group with CSAdministrator Property]'" )
+   gLogger.notice( "Please issue 'dirac-proxy-init -g [group with CSAdministrator Property]'" )
    DIRAC.exit( 2 )
 
 cfgBase = "/Resources/Sites/%s/%s" % ( diracGridType, diracSiteName )
@@ -51,7 +53,7 @@ res = gConfig.getOptionsDict( cfgBase )
 if res['OK'] and res['Value']:
   gLogger.error( "The site %s is already defined:" % diracSiteName )
   for key, value in res['Value'].items():
-    gLogger.info( "%s = %s" % ( key, value ) )
+    gLogger.notice( "%s = %s" % ( key, value ) )
   DIRAC.exit( 2 )
 
 csAPI.setOption( "%s/Name" % cfgBase, gridSiteName )
@@ -61,4 +63,4 @@ if not res['OK']:
   gLogger.error( "Failed to commit changes to CS", res['Message'] )
   DIRAC.exit( -1 )
 else:
-  gLogger.info( "Successfully added site %s to the CS with name %s and CEs: %s" % ( diracSiteName, gridSiteName, ','.join( ces ) ) )
+  gLogger.notice( "Successfully added site %s to the CS with name %s and CEs: %s" % ( diracSiteName, gridSiteName, ','.join( ces ) ) )
