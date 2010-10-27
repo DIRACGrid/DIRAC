@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+########################################################################
 # $HeadURL$
+########################################################################
 """
 Tag a new release in SVN
 """
@@ -32,7 +34,7 @@ def setUsername( optionValue ):
 
 def setOnlyReleaseNotes( optionValue ):
   global onlyReleaseNotes
-  gLogger.info( "Only updating release notes!" )
+  gLogger.notice( "Only updating release notes!" )
   onlyReleaseNotes = True
   return S_OK()
 
@@ -43,9 +45,13 @@ Script.registerSwitch( "p:", "package=", "packages to tag comma separated (defau
 Script.registerSwitch( "u:", "username=", "svn username to use", setUsername )
 Script.registerSwitch( "n", "releaseNotes", "Only refresh release notes", setOnlyReleaseNotes )
 
+Script.setUsageMessage('\n'.join( ['Tag a new release in SVN',
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ...' % Script.scriptName ] ) )
+
 Script.parseCommandLine( ignoreErrors = False )
 
-gLogger.info( 'Executing: %s ' % ( ' '.join( sys.argv ) ) )
+gLogger.notice( 'Executing: %s ' % ( ' '.join( sys.argv ) ) )
 
 def usage():
   Script.showHelp()
@@ -57,9 +63,9 @@ if not svnVersions:
 def generateAndUploadReleaseNotes( packageDistribution, svnPath, versionReleased ):
     tmpDir = tempfile.mkdtemp()
     packageName = packageDistribution.getPackageName()
-    gLogger.info( "Generating release notes for %s under %s" % ( packageName, tmpDir ) )
+    gLogger.notice( "Generating release notes for %s under %s" % ( packageName, tmpDir ) )
     for suffix, singleVersion in ( ( "history", False ), ( "notes", True ) ):
-      gLogger.info( "Generating %s rst" % suffix )
+      gLogger.notice( "Generating %s rst" % suffix )
       rstHistory = os.path.join( tmpDir, "release%s.rst" % suffix )
       htmlHistory = os.path.join( tmpDir, "release%s.html" % suffix )
       Distribution.generateReleaseNotes( packageName, rstHistory, versionReleased, singleVersion )
@@ -76,7 +82,7 @@ def generateAndUploadReleaseNotes( packageDistribution, svnPath, versionReleased
       sys.exit( 1 )
 
     os.system( "rm -rf '%s'" % tmpDir )
-    gLogger.info( "Release notes committed" )
+    gLogger.notice( "Release notes committed" )
 
 ##
 #End of helper functions
@@ -85,7 +91,7 @@ def generateAndUploadReleaseNotes( packageDistribution, svnPath, versionReleased
 #Get username
 if not svnUsername:
   svnUsername = getpass.getuser()
-gLogger.info( "Using %s as username" % svnUsername )
+gLogger.notice( "Using %s as username" % svnUsername )
 
 #Start the magic!
 for svnPackage in List.fromChar( svnPackages ):
@@ -112,14 +118,14 @@ for svnPackage in List.fromChar( svnPackages ):
 
   for svnVersion in List.fromChar( svnVersions ):
 
-    gLogger.info( "Start tags for package %s version %s " % ( svnPackage, svnVersion ) )
+    gLogger.notice( "Start tags for package %s version %s " % ( svnPackage, svnVersion ) )
 
     if svnVersion in createdVersions:
       if not onlyReleaseNotes:
         gLogger.error( "Version %s is already there for package %s :P" % ( svnVersion, svnPackage ) )
         continue
       else:
-        gLogger.info( "Generating release notes for version %s" % svnVersion )
+        gLogger.notice( "Generating release notes for version %s" % svnVersion )
         generateAndUploadReleaseNotes( packageDistribution,
                                        "%s/%s" % ( versionsRoot, svnVersion ),
                                        svnVersion )
@@ -136,7 +142,7 @@ for svnPackage in List.fromChar( svnPackages ):
 
     versionCFG = buildCFG[ 'Versions' ][svnVersion]
     packageList = versionCFG.listOptions()
-    gLogger.info( "Tagging packages: %s" % ", ".join( packageList ) )
+    gLogger.notice( "Tagging packages: %s" % ", ".join( packageList ) )
     msg = 'Release %s' % svnVersion
     versionPath = "%s/%s" % ( versionsRoot, svnVersion )
     packageDistribution.queueMakeDir( versionPath, msg )
@@ -154,7 +160,7 @@ for svnPackage in List.fromChar( svnPackages ):
     if packageDistribution.emptyQueue():
       gLogger.error( 'No packages to be included' )
       exit( -1 )
-    gLogger.info( 'Copying packages: %s' % ", ".join( packageList ) )
+    gLogger.notice( 'Copying packages: %s' % ", ".join( packageList ) )
     if not packageDistribution.executeCommandQueue():
       gLogger.error( 'Failed to create tag' )
 

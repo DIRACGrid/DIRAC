@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+########################################################################
 # $HeadURL$
+########################################################################
 """
   Main script to write dirac.cfg for a new DIRAC installation. And do initial download of CA's and CRL's
     if necessary.
@@ -195,6 +197,10 @@ Script.registerSwitch( "", "LocalSE=", "Configure LocalSite/LocalSE=<localse>", 
 
 Script.registerSwitch( "d", "debug", "Set debug flag", setDebug )
 
+Script.setUsageMessage('\n'.join( ['Write dirac.cfg for a new DIRAC installation',
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ...' % Script.scriptName ] ) )
+
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getExtraCLICFGFiles()
 
@@ -265,13 +271,13 @@ if not vo:
   if newVO:
     setVO( newVO )
 
-DIRAC.gLogger.info( 'Executing: %s ' % ( ' '.join( sys.argv ) ) )
+DIRAC.gLogger.notice( 'Executing: %s ' % ( ' '.join( sys.argv ) ) )
 
 def usage():
   Script.showHelp()
   DIRAC.exit( 2 )
 
-DIRAC.gLogger.info( 'Checking DIRAC installation at "%s"' % DIRAC.rootPath )
+DIRAC.gLogger.notice( 'Checking DIRAC installation at "%s"' % DIRAC.rootPath )
 
 if not useServerCert:
   DIRAC.gLogger.debug( '/DIRAC/Security/UseServerCertificate =', 'no' )
@@ -316,7 +322,7 @@ if ceName or siteName:
   # Get the site resource section
   gridSections = DIRAC.gConfig.getSections( '/Resources/Sites/' )
   if not gridSections['OK']:
-    DIRAC.gLogger.error( 'Could not get grid sections list' )
+    DIRAC.gLogger.warn( 'Could not get grid sections list' )
     grids = []
   else:
     grids = gridSections['Value']
@@ -324,7 +330,7 @@ if ceName or siteName:
   for grid in grids:
     siteSections = DIRAC.gConfig.getSections( '/Resources/Sites/%s/' % grid )
     if not siteSections['OK']:
-      DIRAC.gLogger.error( 'Could not get %s site list' % grid )
+      DIRAC.gLogger.warn( 'Could not get %s site list' % grid )
       sites = []
     else:
       sites = siteSections['Value']
@@ -337,16 +343,16 @@ if ceName or siteName:
             siteName = site
             break
     if siteName:
-      DIRAC.gLogger.info( 'Setting /LocalSite/Site = %s' % siteName )
+      DIRAC.gLogger.notice( 'Setting /LocalSite/Site = %s' % siteName )
       Script.localCfg.addDefaultEntry( '/LocalSite/Site', siteName )
       DIRAC.__siteName = False
       if ceName:
-        DIRAC.gLogger.info( 'Setting /LocalSite/GridCE = %s' % ceName )
+        DIRAC.gLogger.notice( 'Setting /LocalSite/GridCE = %s' % ceName )
         Script.localCfg.addDefaultEntry( '/LocalSite/GridCE', ceName )
 
       if not localSE and siteName in sites:
         localSE = DIRAC.gConfig.getValue( '/Resources/Sites/%s/%s/SE' % ( grid, siteName ), 'None' )
-        DIRAC.gLogger.info( 'Setting /LocalSite/LocalSE =', localSE )
+        DIRAC.gLogger.notice( 'Setting /LocalSite/LocalSE =', localSE )
         Script.localCfg.addDefaultEntry( '/LocalSite/LocalSE', localSE )
         break
 
@@ -372,8 +378,8 @@ if not os.path.exists( DIRAC.gConfig.diracConfigFilePath ):
 if not useServerCert:
   result = getProxyInfo()
   if not result['OK']:
-    DIRAC.gLogger.info( 'No user proxy available' )
-    DIRAC.gLogger.info( 'Create one using %s and execute again' % os.path.join( DIRAC.rootPath, 'scripts', 'dirac-proxy-init' ) )
+    DIRAC.gLogger.notice( 'No user proxy available' )
+    DIRAC.gLogger.notice( 'Create one using %s and execute again' % os.path.join( DIRAC.rootPath, 'scripts', 'dirac-proxy-init' ) )
     sys.exit( 0 )
   else:
     Script.enableCS()
@@ -388,7 +394,7 @@ if not voName:
 result = DIRAC.gConfig.getSections( "/Registry/VOMS/Servers/%s" % voName )
 if not result[ 'OK' ]:
   sys.exit( 0 )
-DIRAC.gLogger.info( "Creating VOMSDIR/VOMSES files" )
+DIRAC.gLogger.notice( "Creating VOMSDIR/VOMSES files" )
 vomsDirHosts = result[ 'Value' ]
 vomsDirPath = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'vomsdir', voName )
 vomsesDirPath = os.path.join( DIRAC.rootPath, 'etc', 'grid-security', 'vomses' )
@@ -416,7 +422,7 @@ for vomsHost in vomsDirHosts:
     fd.write( "%s\n%s\n" % ( DN, CA ) )
     fd.close()
     vomsesLines.append( '"%s" "%s" "%s" "%s" "%s" "24"' % ( voName, vomsHost, Port, DN, voName ) )
-    DIRAC.gLogger.info( "Created vomsdir file %s" % hostFilePath )
+    DIRAC.gLogger.notice( "Created vomsdir file %s" % hostFilePath )
   except:
     DIRAC.gLogger.exception( "Could not generate vomsdir file for host", vomsHost )
 
@@ -425,6 +431,6 @@ try:
   fd = open( vomsesFilePath, "wb" )
   fd.write( "%s\n" % "\n".join( vomsesLines ) )
   fd.close()
-  DIRAC.gLogger.info( "Created vomses file %s" % vomsesFilePath )
+  DIRAC.gLogger.notice( "Created vomses file %s" % vomsesFilePath )
 except:
   DIRAC.gLogger.exception( "Could not generate vomses file" )

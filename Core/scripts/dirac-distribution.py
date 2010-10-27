@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+########################################################################
 # $HeadURL$
+########################################################################
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -98,6 +100,9 @@ Script.registerSwitch( "P", "ignorePackages", "Do not make tars of python packag
 Script.registerSwitch( "x:", "externalsLocation=", "Use externals location instead of downloading them", cliParams.setExternalsLocation )
 Script.registerSwitch( "j:", "makeJobs=", "Make jobs (default is 1)", cliParams.setMakeJobs )
 
+Script.setUsageMessage('\n'.join( ['Create tarballs for a given release',
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ...' % Script.scriptName ] ) )
 
 Script.parseCommandLine( ignoreErrors = False )
 
@@ -129,14 +134,14 @@ def tagSVNReleases( mainCFG, taggedReleases ):
 
   for releaseVersion in cliParams.releasesToBuild:
     if not cliParams.forceSVNLinks and releaseVersion in taggedReleases:
-      gLogger.info( "Release %s is already tagged, skipping" % releaseVersion )
+      gLogger.notice( "Release %s is already tagged, skipping" % releaseVersion )
       continue
     if releaseVersion not in releasesCFG.listSections():
       gLogger.error( "Release %s not defined in releases.cfg" % releaseVersion )
       continue
     releaseSVNPath = "tags/%s" % releaseVersion
     if releaseVersion not in taggedReleases:
-      gLogger.info( "Creating global release dir %s" % releaseVersion )
+      gLogger.notice( "Creating global release dir %s" % releaseVersion )
       if not globalDistribution.doMakeDir( releaseSVNPath, "Release %s" % releaseVersion ):
         gLogger.error( "Error while generating release tag" )
         sys.exit( 1 )
@@ -169,7 +174,7 @@ def tagSVNReleases( mainCFG, taggedReleases ):
     svnCmds.append( "svn add '%s'" % releasesFinalFilePath )
     svnCmds.append( "svn propset svn:externals -F '%s/extProp' '%s'" % ( tmpPath, checkOutPath ) )
     #svnCmds.append( "svn ci -m 'Release %s svn:externals' '%s'" % ( releaseVersion, checkOutPath ) )
-    gLogger.info( "Creating svn:externals in %s..." % releaseVersion )
+    gLogger.notice( "Creating svn:externals in %s..." % releaseVersion )
     for cmd in svnCmds:
       result = Subprocess.shellCall( 900, cmd )
       if not result[ 'OK' ]:
@@ -191,7 +196,7 @@ def autoTarPackages( mainCFG, targetDir ):
   autoTarPackages = mainCFG.getOption( 'AutoTarPackages', [] )
   for releaseVersion in cliParams.releasesToBuild:
     releaseTMPPath = os.path.join( targetDir, releaseVersion )
-    gLogger.info( "Getting %s release to %s" % ( releaseVersion, targetDir ) )
+    gLogger.notice( "Getting %s release to %s" % ( releaseVersion, targetDir ) )
     os.mkdir( releaseTMPPath )
     for package in releasesCFG[ releaseVersion ].listOptions():
       if package not in autoTarPackages:
@@ -200,7 +205,7 @@ def autoTarPackages( mainCFG, targetDir ):
       versionPath = getVersionPath( package, version )
       pkgSVNPath = globalDistribution.getSVNPathForPackage( package, versionPath )
       pkgHDPath = os.path.join( releaseTMPPath, package )
-      gLogger.info( " Getting %s" % pkgSVNPath )
+      gLogger.notice( " Getting %s" % pkgSVNPath )
       svnCmd = "svn export '%s' '%s'" % ( pkgSVNPath, pkgHDPath )
       result = Subprocess.shellCall( 900, svnCmd )
       if not result[ 'OK' ]:
@@ -210,7 +215,7 @@ def autoTarPackages( mainCFG, targetDir ):
       if exitStatus:
         gLogger.error( "Error while retrieving %s package" % package, "\n".join( [ stdData, errData ] ) )
         sys.exit( 1 )
-      gLogger.info( "Taring %s..." % package )
+      gLogger.notice( "Taring %s..." % package )
       tarfilePath = os.path.join( targetDir, "%s-%s.tar.gz" % ( package, version ) )
       result = Distribution.createTarball( tarfilePath, pkgHDPath )
       if not result[ 'OK' ]:
@@ -245,14 +250,14 @@ def tarExternals( mainCFG, targetDir ):
   for releaseVersion in cliParams.releasesToBuild:
     externalsVersion = releasesCFG[ releaseVersion ].getOption( "Externals", "" )
     if not externalsVersion:
-      gLogger.info( "Externals is not defined for release %s" % releaseVersion )
+      gLogger.notice( "Externals is not defined for release %s" % releaseVersion )
       continue
     for externalType in cliParams.externalsBuildType:
       requestedExternals = ( externalType, externalsVersion, platform, 'python%s' % cliParams.externalsPython )
       requestedExternalsString = "-".join( list( requestedExternals ) )
-      gLogger.info( "Trying to compile %s externals..." % requestedExternalsString )
+      gLogger.notice( "Trying to compile %s externals..." % requestedExternalsString )
       if not cliParams.forceExternals and requestedExternals in availableExternals:
-        gLogger.info( "Externals %s is already compiled, skipping..." % ( requestedExternalsString ) )
+        gLogger.notice( "Externals %s is already compiled, skipping..." % ( requestedExternalsString ) )
         continue
       compileScript = os.path.join( os.path.dirname( __file__ ), "dirac-compile-externals" )
       if not os.path.isfile( compileScript ):
@@ -300,7 +305,7 @@ else:
     os.makedirs( targetPath )
   except:
     pass
-gLogger.info( "Will generate tarballs in %s" % targetPath )
+gLogger.notice( "Will generate tarballs in %s" % targetPath )
 
 doneSomeTars = False
 
@@ -318,12 +323,12 @@ if not cliParams.ignorePackages:
   doneSomeTars = True
 
 if not doneSomeTars:
-  gLogger.info( "No packages were tared" )
+  gLogger.notice( "No packages were tared" )
 else:
   for release in cliParams.releasesToBuild:
     if not mainCFG.writeToFile( os.path.join( targetPath, "releases-%s.cfg" % release ) ):
       gLogger.error( "Could not write releases.cfg file to %s" % targetPath )
       sys.exit( 1 )
-  gLogger.info( "Everything seems ok" )
-  gLogger.info( "Please upload the tarballs by executing:" )
-  gLogger.info( "( cd %s ; tar -cf - *.tar.gz *.md5 *.cfg ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'" % targetPath )
+  gLogger.notice( "Everything seems ok" )
+  gLogger.notice( "Please upload the tarballs by executing:" )
+  gLogger.notice( "( cd %s ; tar -cf - *.tar.gz *.md5 *.cfg ) | ssh lhcbprod@lxplus.cern.ch 'cd /afs/cern.ch/lhcb/distribution/DIRAC3/tars &&  tar -xvf - && ls *.tar.gz > tars.list'" % targetPath )

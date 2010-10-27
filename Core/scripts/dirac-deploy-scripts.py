@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+########################################################################
 # $HeadURL$
+########################################################################
 """
 Deploy all scripts and extensions
 """
@@ -23,9 +25,9 @@ def logERROR( msg ):
     print "%s UTC dirac-deploy-scripts [ERROR] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
   sys.stdout.flush()
 
-def logINFO( msg ):
+def logNOTICE( msg ):
   for line in msg.split( "\n" ):
-    print "%s UTC dirac-deploy-scripts [INFO]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
+    print "%s UTC dirac-deploy-scripts [NOTICE]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
   sys.stdout.flush()
 
 moduleSuffix = "DIRAC"
@@ -104,7 +106,7 @@ if not rootPath:
 
 targetScriptsPath = os.path.join( rootPath, "scripts" )
 pythonScriptRE = re.compile( "(.*/)*([a-z]+-[a-zA-Z0-9-]+).py" )
-logINFO( "Scripts will be deployed at %s" % targetScriptsPath )
+logNOTICE( "Scripts will be deployed at %s" % targetScriptsPath )
 
 if not os.path.isdir( targetScriptsPath ):
   os.mkdir( targetScriptsPath )
@@ -116,7 +118,7 @@ for rootModule in os.listdir( rootPath ):
   extSuffixPos = rootModule.find( moduleSuffix )
   if extSuffixPos == -1 or extSuffixPos != len( rootModule ) - len( moduleSuffix ):
     continue
-  logINFO( "Inspecting %s module" % rootModule )
+  logNOTICE( "Inspecting %s module" % rootModule )
   scripts = lookForScriptsInPath( modulePath, rootModule )
   for script in scripts:
     scriptPath = script[0]
