@@ -11,17 +11,17 @@ from DIRAC import gConfig
 InstallTools.exitOnError = True
 #
 from DIRAC.Core.Base import Script
+Script.setUsageMessage('\n'.join( ['Do the initial installation and configuration of a DIRAC agent',
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... System Agent' % Script.scriptName,
+                                    'Arguments:',
+                                    '  System:  Name of the DIRAC system (ie: WorkloadManagement)',
+                                    '  Agent:   Name of the DIRAC agent (ie: JobCleaningAgent)'] ) )
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
 
-def usage():
-  Script.showHelp( '\n'.join( ['Arguments:',
-                               '  <system> Name of the system (mandatory)',
-                               '  <agent> Name of the Agent (mandatory)'] ) )
-  exit( -1 )
-
 if len( args ) != 2:
-  usage()
+  Script.showHelp( )
   exit( -1 )
 #
 system = args[0]
