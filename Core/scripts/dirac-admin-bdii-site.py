@@ -1,9 +1,17 @@
 #! /usr/bin/env python
-
+########################################################################
+# $HeadURL$
+########################################################################
+__RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base                                         import Script
 
 Script.registerSwitch( "H:", "host=", "BDII host" )
+Script.setUsageMessage('\n'.join( ['Check Site info on BDII for Site',
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... Site' % Script.scriptName,
+                                    'Arguments:',
+                                    '  Site: Name of the Site (ie: CERN-PROD)'] ) )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
@@ -11,7 +19,7 @@ args = Script.getPositionalArgs()
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
 def usage():
-  print 'Usage: %s site' %(Script.scriptName)
+  Script.showHelp()
   DIRAC.exit(2)
 
 if not len(args)==1:
