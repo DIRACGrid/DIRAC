@@ -9,9 +9,9 @@ from DIRAC.Core.Base import Script
 Script.disableCS()
 Script.setUsageMessage( '\n'.join( ['Setup a DIRAC server (DBs, Services, Agents, Web Portal,...)',
                                     'Usage:',
-                                    '%s [option] ... [cfgfile]' % Script.scriptName,
+                                    '  %s [option] ... [cfgfile]' % Script.scriptName,
                                     'Arguments:',
-                                    ' cfgfile: DIRAC Cfg with description of the configuration (optional)'] ) )
+                                    '  cfgfile: DIRAC Cfg with description of the configuration (optional)'] ) )
 Script.addDefaultOptionValue( '/DIRAC/Security/UseServerCertificate', 'yes' )
 Script.parseCommandLine()
 args = Script.getExtraCLICFGFiles()
