@@ -9,7 +9,7 @@ from DIRAC.Core.Base import Script
 Script.disableCS()
 Script.setUsageMessage( '\n'.join( ['Stop DIRAC MySQL server',
                                     'Usage:',
-                                    '%s [option|cfgfile] ...' % Script.scriptName,
+                                    '  %s [option|cfgfile] ...' % Script.scriptName,
                                      ] ) )
 Script.parseCommandLine()
 #

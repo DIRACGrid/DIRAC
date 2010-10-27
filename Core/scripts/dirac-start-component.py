@@ -9,10 +9,10 @@ from DIRAC.Core.Base import Script
 Script.disableCS()
 Script.setUsageMessage( '\n'.join( ['Start DIRAC component using runsvctrl utility',
                                     'Usage:',
-                                    '%s [option|cfgfile] ... [system [service|agent]]' % Script.scriptName,
+                                    '  %s [option|cfgfile] ... [system [service|agent]]' % Script.scriptName,
                                     'Arguments:',
-                                    ' system:        Name of the system for the component (default *: all)',
-                                    ' service|agent: Name of the particular component (default *: all)' ] ) )
+                                    '  system:        Name of the system for the component (default *: all)',
+                                    '  service|agent: Name of the particular component (default *: all)' ] ) )
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
 if len( args ) > 2:
