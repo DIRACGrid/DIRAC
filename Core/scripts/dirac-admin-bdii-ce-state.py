@@ -1,10 +1,18 @@
 #! /usr/bin/env python
-
+########################################################################
+# $HeadURL$
+########################################################################
+__RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base                                         import Script
 
-Script.registerSwitch( "h:", "host=", "BDII host" )
+Script.registerSwitch( "H:", "host=", "BDII host" )
 Script.registerSwitch( "V:", "vo=", "vo" )
+Script.setUsageMessage('\n'.join( ['Check CE State on BDII',
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... CE' % Script.scriptName,
+                                    'Arguments:',
+                                    '  CE: Name of the CE(ie: ce111.cern.ch)'] ) )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
@@ -12,7 +20,7 @@ args = Script.getPositionalArgs()
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
 def usage():
-  print 'Usage: %s ce' %(Script.scriptName)
+  Script.showHelp()
   DIRAC.exit(2)
 
 if not len(args)==1:
@@ -23,7 +31,7 @@ ce = args[0]
 host = None
 vo = DIRAC.gConfig.getValue('/DIRAC/VirtualOrganization', 'lhcb')
 for unprocSw in Script.getUnprocessedSwitches():
-  if unprocSw[0] in ( "h", "host" ):
+  if unprocSw[0] in ( "H", "host" ):
         host = unprocSw[1]
   if unprocSw[0] in ( "V", "vo" ):
         vo = unprocSw[1]
