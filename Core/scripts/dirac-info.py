@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL:  $
+# $HeadURL$
 ########################################################################
-__RCSID__ = "$Id:  $"
+__RCSID__ = "$Id$"
 
 from pprint import pprint
 import DIRAC
 from DIRAC import gConfig
 from DIRAC.Core.Base import Script
+Script.setUsageMessage('\n'.join( ['Report info about local DIRAC installation',
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... Site' % Script.scriptName,] ) )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 

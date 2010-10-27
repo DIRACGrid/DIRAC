@@ -52,9 +52,9 @@ def logERROR( msg ):
     print "%s UTC dirac-install [ERROR] %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
   sys.stdout.flush()
 
-def logINFO( msg ):
+def logNOTICE( msg ):
   for line in msg.split( "\n" ):
-    print "%s UTC dirac-install [INFO]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
+    print "%s UTC dirac-install [NOTICE]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
   sys.stdout.flush()
 
 def alarmTimeoutHandler( *args ):
@@ -104,7 +104,7 @@ def urlretrieveTimeout( url, fileName, timeout = 0 ):
 
 def downloadFileFromSVN( filePath, destPath, isExecutable = False, filterLines = [] ):
   fileName = os.path.basename( filePath )
-  logINFO( "Downloading %s" % fileName )
+  logNOTICE( "Downloading %s" % fileName )
   viewSVNLocation = "http://svnweb.cern.ch/world/wsvn/dirac/%s?op=dl&rev=0" % filePath
   anonymousLocation = 'http://svnweb.cern.ch/guest/dirac/%s' % filePath
   downOK = False
@@ -234,7 +234,7 @@ def runExternalsPostInstall():
       continue
     scriptPath = os.path.join( postInstallPath, scriptName )
     os.chmod( scriptPath , executablePerms )
-    logINFO( "Executing %s..." % scriptPath )
+    logNOTICE( "Executing %s..." % scriptPath )
     if os.system( "'%s' > '%s.out' 2> '%s.err'" % ( scriptPath, scriptPath, scriptPath ) ):
       logERROR( "Post installation script %s failed. Check %s.err" % ( scriptPath, scriptPath ) )
       sys.exit( 1 )
@@ -346,14 +346,14 @@ defaultsCFG = CFG.CFG()
 if not cliParams.release:
   if cliParams.vo:
     voURL = "%s/%s_defaults.cfg" % (cliParams.downBaseURL,cliParams.vo)
-    logINFO( "Getting defaults from %s" % voURL )
+    logNOTICE( "Getting defaults from %s" % voURL )
     try:
       urlretrieveTimeout( voURL, '%s_defaults.cfg' % cliParams.vo, 30 )
     except Exception, e:
       logDEBUG( "Cannot download VO default release version: %s" % ( str( e ) ) )
 
   defaultsURL = "%s/defaults.cfg" % cliParams.downBaseURL
-  logINFO( "Getting defaults from %s" % defaultsURL )
+  logNOTICE( "Getting defaults from %s" % defaultsURL )
   try:
     urlretrieveTimeout( defaultsURL, 'defaults.cfg', 30 )
   except Exception, e:
@@ -376,7 +376,7 @@ if not cliParams.release:
 if not cliParams.lcgVer:
   lcgVer = defaultsCFG.getOption('LcgVer','')
   if lcgVer:
-    logINFO( "LCG bindings version %s is requested" % lcgVer )
+    logNOTICE( "LCG bindings version %s is requested" % lcgVer )
     cliParams.lcgVer = lcgVer 
 
 # Make sure Extensions are not duplicated and have the full name
@@ -453,7 +453,7 @@ for package in cliParams.packagesToInstall:
   if packageTar not in availableTars:
     logERROR( "%s is not registered" % packageTar )
     sys.exit( 1 )
-  logINFO( "Installing package %s version %s" % ( package, packageVersion ) )
+  logNOTICE( "Installing package %s version %s" % ( package, packageVersion ) )
   if not downloadAndExtractTarball( "%s-%s" % ( package, packageVersion ), cliParams.targetPath ):
     sys.exit( 1 )
   if moduleDIRACRe.match( package ):
@@ -465,7 +465,7 @@ for package in cliParams.packagesToInstall:
   postInstallScript = os.path.join( cliParams.targetPath, package, 'dirac-postInstall.py' )
   if os.path.isfile( postInstallScript ):
     os.chmod( postInstallScript , executablePerms )
-    logINFO( "Executing %s..." % postInstallScript )
+    logNOTICE( "Executing %s..." % postInstallScript )
     if os.system( "python '%s' > '%s.out' 2> '%s.err'" % ( postInstallScript,
                                                            postInstallScript,
                                                            postInstallScript ) ):
@@ -484,7 +484,7 @@ if not cliParams.platform:
   platFD.close()
   cliParams.platform = Platform.getPlatformString()
 
-logINFO( "Using platform: %s" % cliParams.platform )
+logNOTICE( "Using platform: %s" % cliParams.platform )
 
 #Externals stuff
 extVersion = releaseCFG.getOption( 'Externals', "trunk" )
@@ -565,7 +565,7 @@ try:
   bashrcFile = os.path.join( cliParams.targetPath, 'bashrc' )
   if cliParams.useVersionsDir:
     bashrcFile = os.path.join( cliParams.basePath, 'bashrc' )
-  logINFO( 'Creating %s' % bashrcFile )
+  logNOTICE( 'Creating %s' % bashrcFile )
   if not os.path.exists( bashrcFile ):
     lines = [ '# DIRAC bashrc file, used by service and agent run scripts to set environment',
               'export PYTHONUNBUFFERED=yes',
@@ -598,5 +598,5 @@ except Exception, x:
  logERROR( str( x ) )
  sys.exit( 1 )
 
-logINFO( "DIRAC release %s successfully installed" % cliParams.release )
+logNOTICE( "DIRAC release %s successfully installed" % cliParams.release )
 sys.exit( 0 )
