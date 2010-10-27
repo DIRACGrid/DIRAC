@@ -1,10 +1,18 @@
 #! /usr/bin/env python
-
+########################################################################
+# $HeadURL$
+########################################################################
+__RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base                                         import Script
 
 Script.registerSwitch( "H:", "host=", "BDII host" )
 Script.registerSwitch( "V:", "vo=", "vo" )
+Script.setUsageMessage('\n'.join( ['Check CE VoView on BDII',
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... CE' % Script.scriptName,
+                                    'Arguments:',
+                                    '  CE: Name of the CE(ie: ce111.cern.ch)'] ) )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
@@ -12,7 +20,7 @@ args = Script.getPositionalArgs()
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
 def usage():
-  print 'Usage: %s ce' %(Script.scriptName)
+  Script.showHelp()
   DIRAC.exit(2)
 
 if not len(args)==1:
