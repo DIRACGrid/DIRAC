@@ -270,28 +270,6 @@ FROM (
 ORDER BY ResourceName;
 
 
-DROP VIEW IF EXISTS PresentStorageElements;
-CREATE VIEW PresentStorageElements AS SELECT 
-  StorageElements.StorageElementName, 
-  StorageElements.ResourceName,
-  StorageElements.GridSiteName, 
-  GridSites.GridTier AS SiteType,
-  StorageElements.Status,
-  StorageElements.DateEffective, 
-  StorageElementsHistory.Status AS FormerStatus,
-  StorageElements.Reason,
-  StorageElements.LastCheckTime,
-  StorageElements.TokenOwner,
-  StorageElements.TokenExpiration
-FROM ( 
-  (StorageElements INNER JOIN GridSites ON 
-   StorageElements.GridSiteName = GridSites.GridSiteName)
-    INNER JOIN StorageElementsHistory ON 
-      StorageElements.StorageElementName = StorageElementsHistory.StorageElementName AND 
-      StorageElements.DateEffective = StorageElementsHistory.DateEnd 
-) WHERE StorageElements.DateEffective < UTC_TIMESTAMP()
-ORDER BY StorageElementName;
-
 DROP TABLE IF EXISTS PolicyRes;
 CREATE TABLE PolicyRes(
   prID INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -346,3 +324,26 @@ CREATE TABLE GridSites(
   GridTier VARCHAR(4) NOT NULL,
   PRIMARY KEY(gsID)
 ) Engine=InnoDB;
+
+DROP VIEW IF EXISTS PresentStorageElements;
+CREATE VIEW PresentStorageElements AS SELECT 
+  StorageElements.StorageElementName, 
+  StorageElements.ResourceName,
+  StorageElements.GridSiteName, 
+  GridSites.GridTier AS SiteType,
+  StorageElements.Status,
+  StorageElements.DateEffective, 
+  StorageElementsHistory.Status AS FormerStatus,
+  StorageElements.Reason,
+  StorageElements.LastCheckTime,
+  StorageElements.TokenOwner,
+  StorageElements.TokenExpiration
+FROM ( 
+  (StorageElements INNER JOIN GridSites ON 
+   StorageElements.GridSiteName = GridSites.GridSiteName)
+    INNER JOIN StorageElementsHistory ON 
+      StorageElements.StorageElementName = StorageElementsHistory.StorageElementName AND 
+      StorageElements.DateEffective = StorageElementsHistory.DateEnd 
+) WHERE StorageElements.DateEffective < UTC_TIMESTAMP()
+ORDER BY StorageElementName;
+
