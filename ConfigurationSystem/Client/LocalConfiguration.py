@@ -319,16 +319,16 @@ class LocalConfiguration:
 
   def showHelp( self, dummy = False ):
     if self.__usageMessage:
-      gLogger.info( self.__usageMessage )
+      gLogger.notice( self.__usageMessage )
     else:
-      gLogger.info( "Usage:" )
-      gLogger.info( "  %s (<options>|<cfgFile>)*" % sys.argv[0] )
+      gLogger.notice( "Usage:" )
+      gLogger.notice( "  %s (<options>|<cfgFile>)*" % sys.argv[0] )
       if dummy:
-        gLogger.info( dummy )
+        gLogger.notice( dummy )
 
-    gLogger.info( "Options:" )
+    gLogger.notice( "Options:" )
     for optionTuple in self.commandOptionList:
-      gLogger.info( "  -%s  --%s  :  %s" % optionTuple[:3] )
+      gLogger.notice( "  -%s  --%s  :  %s" % optionTuple[:3] )
     DIRAC.exit( 0 )
 
   def deleteOption( self, optionPath ):
