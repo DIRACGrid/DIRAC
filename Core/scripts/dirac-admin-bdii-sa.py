@@ -5,6 +5,11 @@ from DIRAC.Core.Base                                         import Script
 
 Script.registerSwitch( "H:", "host=", "BDII host" )
 Script.registerSwitch( "V:", "vo=", "vo" )
+Script.setUsageMessage('\n'.join( ['Check SA info on BDII for Site',
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... Site' % Script.scriptName,
+                                    'Arguments:',
+                                    '  Site: Name of the Site (ie: CERN-PROD)'] ) )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
@@ -12,7 +17,7 @@ args = Script.getPositionalArgs()
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
 def usage():
-  print 'Usage: %s ce' %(Script.scriptName)
+  Script.showHelp()
   DIRAC.exit(2)
 
 if not len(args)==1:
@@ -30,7 +35,7 @@ for unprocSw in Script.getUnprocessedSwitches():
 
 diracAdmin = DiracAdmin()
 
-result = diracAdmin.getBDIISA(site, vo=vo, host=host)
+result = diracAdmin.getBDIISA(site, useVO=vo, host=host)
 if not ['OK']:
   print test['Message']
   DIRAC.exit(2)
