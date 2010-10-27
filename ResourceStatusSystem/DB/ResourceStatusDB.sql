@@ -201,75 +201,6 @@ CREATE TABLE StorageElementsHistory(
 ) Engine=InnoDB;
 
 
-DROP VIEW IF EXISTS PresentSites;
-CREATE VIEW PresentSites AS SELECT 
-  Sites.SiteName, 
-  Sites.SiteType,
-  Sites.GridSiteName,
-  GridSites.GridTier,
-  Sites.Status,
-  Sites.DateEffective, 
-  SitesHistory.Status AS FormerStatus,
-  Sites.Reason,
-  Sites.LastCheckTime,
-  Sites.TokenOwner,
-  Sites.TokenExpiration
-FROM (
-  	(Sites INNER JOIN GridSites ON
-  	Sites.GridSiteName = GridSites.GridSiteName)
-  	INNER JOIN SitesHistory ON 
-  	 Sites.SiteName = SitesHistory.SiteName AND 
-  	 Sites.DateEffective = SitesHistory.DateEnd 
-) WHERE Sites.DateEffective < UTC_TIMESTAMP()
-ORDER BY SiteName;
-
-DROP VIEW IF EXISTS PresentServices;
-CREATE VIEW PresentServices AS SELECT 
-  Services.ServiceName,
-  Services.SiteName, 
-  Sites.SiteType,
-  Services.ServiceType, 
-  Services.Status,
-  Services.DateEffective, 
-  ServicesHistory.Status AS FormerStatus,
-  Services.Reason,
-  Services.LastCheckTime,
-  Services.TokenOwner, 
-  Services.TokenExpiration
-FROM (
-	(Services INNER JOIN Sites ON
-	 Services.Sitename = Sites.SiteName)
-	 INNER JOIN ServicesHistory ON 
-	  Services.ServiceName = ServicesHistory.ServiceName AND 
-  	Services.DateEffective = ServicesHistory.DateEnd 
-) WHERE Services.DateEffective < UTC_TIMESTAMP()
-ORDER BY ServiceName;
-
-DROP VIEW IF EXISTS PresentResources;
-CREATE VIEW PresentResources AS SELECT 
-  Resources.ResourceName, 
-  Resources.SiteName, 
-  Resources.ServiceType,
-  Resources.GridSiteName, 
-  GridSites.GridTier AS SiteType, 
-  Resources.ResourceType,
-  Resources.Status,
-  Resources.DateEffective, 
-  ResourcesHistory.Status AS FormerStatus,
-  Resources.Reason,
-  Resources.LastCheckTime,
-  Resources.TokenOwner, 
-  Resources.TokenExpiration
-FROM (
-  (Resources INNER JOIN GridSites ON 
-   Resources.GridSiteName = GridSites.GridSiteName) 
-    INNER JOIN ResourcesHistory ON 
-      Resources.ResourceName = ResourcesHistory.ResourceName AND 
-      Resources.DateEffective = ResourcesHistory.DateEnd
-) WHERE Resources.DateEffective < UTC_TIMESTAMP()
-ORDER BY ResourceName;
-
-
 DROP TABLE IF EXISTS PolicyRes;
 CREATE TABLE PolicyRes(
   prID INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -347,3 +278,70 @@ FROM (
 ) WHERE StorageElements.DateEffective < UTC_TIMESTAMP()
 ORDER BY StorageElementName;
 
+DROP VIEW IF EXISTS PresentResources;
+CREATE VIEW PresentResources AS SELECT 
+  Resources.ResourceName, 
+  Resources.SiteName, 
+  Resources.ServiceType,
+  Resources.GridSiteName, 
+  GridSites.GridTier AS SiteType, 
+  Resources.ResourceType,
+  Resources.Status,
+  Resources.DateEffective, 
+  ResourcesHistory.Status AS FormerStatus,
+  Resources.Reason,
+  Resources.LastCheckTime,
+  Resources.TokenOwner, 
+  Resources.TokenExpiration
+FROM (
+  (Resources INNER JOIN GridSites ON 
+   Resources.GridSiteName = GridSites.GridSiteName) 
+    INNER JOIN ResourcesHistory ON 
+      Resources.ResourceName = ResourcesHistory.ResourceName AND 
+      Resources.DateEffective = ResourcesHistory.DateEnd
+) WHERE Resources.DateEffective < UTC_TIMESTAMP()
+ORDER BY ResourceName;
+
+DROP VIEW IF EXISTS PresentSites;
+CREATE VIEW PresentSites AS SELECT 
+  Sites.SiteName, 
+  Sites.SiteType,
+  Sites.GridSiteName,
+  GridSites.GridTier,
+  Sites.Status,
+  Sites.DateEffective, 
+  SitesHistory.Status AS FormerStatus,
+  Sites.Reason,
+  Sites.LastCheckTime,
+  Sites.TokenOwner,
+  Sites.TokenExpiration
+FROM (
+  	(Sites INNER JOIN GridSites ON
+  	Sites.GridSiteName = GridSites.GridSiteName)
+  	INNER JOIN SitesHistory ON 
+  	 Sites.SiteName = SitesHistory.SiteName AND 
+  	 Sites.DateEffective = SitesHistory.DateEnd 
+) WHERE Sites.DateEffective < UTC_TIMESTAMP()
+ORDER BY SiteName;
+
+DROP VIEW IF EXISTS PresentServices;
+CREATE VIEW PresentServices AS SELECT 
+  Services.ServiceName,
+  Services.SiteName, 
+  Sites.SiteType,
+  Services.ServiceType, 
+  Services.Status,
+  Services.DateEffective, 
+  ServicesHistory.Status AS FormerStatus,
+  Services.Reason,
+  Services.LastCheckTime,
+  Services.TokenOwner, 
+  Services.TokenExpiration
+FROM (
+	(Services INNER JOIN Sites ON
+	 Services.Sitename = Sites.SiteName)
+	 INNER JOIN ServicesHistory ON 
+	  Services.ServiceName = ServicesHistory.ServiceName AND 
+  	Services.DateEffective = ServicesHistory.DateEnd 
+) WHERE Services.DateEffective < UTC_TIMESTAMP()
+ORDER BY ServiceName;
