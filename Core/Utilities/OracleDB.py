@@ -224,7 +224,7 @@ class OracleDB:
 
     return retDict
 
-  def executeStoredProcedure(self, packageName, parameters, output = True, conn = False):
+  def executeStoredProcedure(self, packageName, parameters, output = True, array = None, conn = False ):
 
     self.logger.debug( '_query:',packageName+"("+str(parameters)+")")
 
@@ -236,6 +236,9 @@ class OracleDB:
       cursor = connection.cursor()
       result = None
       results = None
+      if array != None:
+        L = cursor.arrayvar(cx_Oracle.STRING, array)
+        parameters += [L]
       if output == True:
         result = connection.cursor()
         result.arraysize=maxArraysize # 500x faster!!
