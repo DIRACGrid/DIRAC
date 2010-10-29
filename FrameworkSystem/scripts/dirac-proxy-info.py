@@ -4,7 +4,7 @@
 # File :   dirac-proxy-init.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id$"
+__RCSID__ = "$Id$"
 __VERSION__ = "$Revision: 1.10 $"
 
 import sys
@@ -28,7 +28,7 @@ class Params:
     print "Version:"
     print " ", __RCSID__
     print " ", __VERSION__
-    sys.exit(0)
+    sys.exit( 0 )
     return DIRAC.S_OK()
 
   def setProxyLocation( self, arg ):
@@ -95,7 +95,7 @@ if params.checkClock:
 result = getProxyInfo( params.proxyLoc, not params.vomsEnabled )
 if not result[ 'OK' ]:
   print "Error: %s" % result[ 'Message' ]
-  sys.exit(1)
+  sys.exit( 1 )
 infoDict = result[ 'Value' ]
 print formatProxyInfoAsString( infoDict )
 
@@ -107,7 +107,7 @@ if params.steps:
 
 def invalidProxy( msg ):
   print "[INVALID] %s" % msg
-  sys.exit(1)
+  sys.exit( 1 )
 
 if params.checkValid:
   if infoDict[ 'secondsLeft' ] == 0:
@@ -117,11 +117,11 @@ if params.checkValid:
   if 'hasVOMS' in infoDict and infoDict[ 'hasVOMS' ]:
     requiredVOMS = CS.getVOMSAttributeForGroup( infoDict[ 'group' ] )
     if 'VOMS' not in infoDict or not infoDict[ 'VOMS' ]:
-      pinvalidProxy( "Unable to retrieve VOMS extension" )
+      invalidProxy( "Unable to retrieve VOMS extension" )
     if len( infoDict[ 'VOMS' ] ) > 1:
       invalidProxy( "More than one voms attribute found" )
     if requiredVOMS not in infoDict[ 'VOMS' ]:
-      invalidProxy( "Unexpected VOMS extension %s. Extension expected for DIRAC group is %s" % (
+      invalidProxy( "Unexpected VOMS extension %s. Extension expected for DIRAC group is %s" % ( 
                                                                                  infoDict[ 'VOMS' ][0],
                                                                                  requiredVOMS ) )
     result = VOMS.VOMS().getVOMSProxyInfo( infoDict[ 'chain' ], 'actime' )
@@ -130,4 +130,4 @@ if params.checkValid:
     if int( result[ 'Value' ].strip() ) == 0:
       invalidProxy( "VOMS attributes are expired" )
 
-sys.exit(0)
+sys.exit( 0 )
