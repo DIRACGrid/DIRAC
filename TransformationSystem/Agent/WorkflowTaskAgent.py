@@ -11,6 +11,8 @@ from DIRAC.TransformationSystem.Client.TaskManager                  import Workf
 AGENT_NAME = 'Transformation/WorkflowTaskAgent'
 
 class WorkflowTaskAgent( TaskManagerAgentBase, WorkflowTasks ):
+  """ An AgentModule class to submit workflow tasks
+  """
 
   #############################################################################
   def initialize( self ):
