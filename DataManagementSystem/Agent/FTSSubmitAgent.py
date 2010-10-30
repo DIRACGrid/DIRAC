@@ -113,6 +113,10 @@ class FTSSubmitAgent(AgentModule):
     if not res['OK']:
       errStr = "FTSSubmitAgent.%s" % res['Message']
       gLogger.error(errStr)
+      gLogger.info('Updating the Channel table for files to retry')
+      res = self.TransferDB.resetFileChannelStatus(channelID,fileIDs)
+      if not res['OK']:
+        gLogger.error('Failed to update the Channel table for file to retry.', res['Message'])
       return S_ERROR(errStr)
     res = oFTSRequest.getFTSGUID()
     if not res['OK']:
