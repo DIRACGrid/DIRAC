@@ -11,6 +11,8 @@ from DIRAC.TransformationSystem.Client.TaskManager                  import Reque
 AGENT_NAME = 'Transformation/RequestTaskAgent'
 
 class RequestTaskAgent( TaskManagerAgentBase, RequestTasks ):
+  """ An AgentModule to submit requests tasks
+  """
 
   #############################################################################
   def initialize( self ):
