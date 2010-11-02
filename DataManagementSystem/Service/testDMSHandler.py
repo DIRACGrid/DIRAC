@@ -24,5 +24,5 @@ class testDMSHandler(RequestHandler):
      return testDB.insertSomething(user,files)
 
    types_querySomething = [StringTypes]
-   def export_querySomething(user):
+   def export_querySomething(self,user):
      return testDB.querySomething(user)
