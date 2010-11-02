@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# $HeadURL:  $
+# $HeadURL$
 """
 Do the initial installation and configuration of a DIRAC service
 """
-__RCSID__ = "$Id:  $"
+__RCSID__ = "$Id$"
 #
 from DIRAC.Core.Utilities import InstallTools
 #

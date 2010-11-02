@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/Core/scripts/dirac-install.py $
+# $HeadURL$
 """
 Do the initial installation and configuration of a DIRAC agent
 """
-__RCSID__ = "$Id: dirac-install.py 26844 2010-07-16 08:44:22Z rgracian $"
+__RCSID__ = "$Id$"
 #
 from DIRAC.Core.Utilities import InstallTools
 #
