@@ -3,7 +3,7 @@
 ########################################################################
 __RCSID__   = "$Id: ...................DataIntegrityDB.py 28966 2010-10-05 13:24:36Z acsmith $"
 __VERSION__ = "$Revision: 1.10 $"
-""" ....................DataIntegrityDB class is a front-end to the Data Integrity Database. """
+""" testDMSDB class is a front-end to the testDMS Database. """
 
 import re, os, sys
 import time, datetime
@@ -11,7 +11,7 @@ from types import *
 
 from DIRAC import gConfig,gLogger,S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
-
+ 
 #############################################################################
 class testDMSDB(DB):
 
@@ -25,16 +25,16 @@ class testDMSDB(DB):
 
 #############################################################################
     
-    def insertSomething(self,user,files):
+  def insertSomething(self,user,files):
       req = "INSERT INTO userAccount (userName,numOfFiles) VALUES ('%s',%d)" % (user,files)
       res = self._update(req)
       if not res['OK']:
           gLogger.error("Failed to insert user files",res['Message']) 
       else:
-          gLogger.info("Succesfully inserted %d files" % res['Value'])
+          gLogger.info("Successfully inserted %d files" % res['Value'])
       return res
 
-    def querySomething(self,user):
+  def querySomething(self,user):
       req = "SELECT userName,numOfFiles from userAccount where userName='%s'" % (user)
       res = self._query(req)
       if not res['OK']:
@@ -43,7 +43,7 @@ class testDMSDB(DB):
       userDict = {}
       for userName,numFiles in res['Value']:
           userDict[userName] = numFiles
-          gLogger.info("Succesfully found %d files for user" % (files,user))
+          gLogger.info("Succesfully found %d files for user %s" % (numFiles,user))
       return S_OK(userDict)
 
   # {'OK':True,'Value':value} = S_OK(value)
