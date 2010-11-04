@@ -437,9 +437,11 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName, component, extens
   addOptions = True
   if not overwrite:
     componentSection = cfgPath( 'Systems', system, instance, sectionName, component )
-    result = gConfig.getOptions( componentSection )
-    if result['OK']:
-      addOptions = False
+    if gConfig:
+      result = gConfig.getOptions( componentSection )
+      if result['OK']:
+        addOptions = False
+          
   if not addOptions:
     return S_OK( 'Component options already exist' )
 
