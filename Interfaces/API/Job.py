@@ -1035,8 +1035,8 @@ class Job:
         ptype = paramsDict[name]['type']
         value = paramsDict[name]['value']
         if not ptype=='dict':
-          if value and not value.lower()=='any':
-            if ptype=='JDLReqt':
+          if ptype=='JDLReqt':
+            if value and not value.lower()=='any':
               plus = ' && '
               if re.search(';',value):
                 for val in value.split(';'):
