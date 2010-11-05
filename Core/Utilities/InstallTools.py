@@ -417,7 +417,7 @@ def addOptionToDiracCfg( option, value ):
 
   return S_ERROR( 'Could not merge %s=%s with local configuration' % ( option, value ) )
 
-def addDefaultOptionsToCS( gConfig, componentType, systemName, component, extensions, overwrite = False ):
+def addDefaultOptionsToCS( gConfig, componentType, systemName, component, extensions, setup = setup, overwrite = False ):
   """ Add the section with the component options to the CS
   """
   system = systemName.replace( 'System', '' )
@@ -549,7 +549,7 @@ def getComponentCfg( componentType, system, component, instance, extensions ):
 
   return S_OK( cfg )
 
-def addDatabaseOptionsToCS( gConfig, systemName, dbName, overwrite = False ):
+def addDatabaseOptionsToCS( gConfig, systemName, dbName, setup = setup, overwrite = False ):
   """
   Add the section with the database options to the CS
   """
@@ -590,7 +590,7 @@ def getDatabaseCfg( system, dbName, instance ):
 
   return S_OK( cfg )
 
-def addSystemInstance( systemName, instance ):
+def addSystemInstance( systemName, instance, setup = setup ):
   """ 
   Add a new system instance to dirac.cfg and CS
   """
@@ -1145,11 +1145,11 @@ def setupSite( scriptCfg, cfg = None ):
   for system in setupSystems:
     addSystemInstance( system, instance )
   for system, service in setupServices:
-    if not addDefaultOptionsToCS( None, 'service', system, service, extensions, True )['OK']:
+    if not addDefaultOptionsToCS( None, 'service', system, service, extensions, overwrite = True )['OK']:
       # If we are not allowed to write to the central CS add the configuration to the local file
       addDefaultOptionsToComponentCfg( 'service', system, service, extensions )
   for system, agent in setupAgents:
-    if not addDefaultOptionsToCS( None, 'agent', system, agent, extensions, True )['OK']:
+    if not addDefaultOptionsToCS( None, 'agent', system, agent, extensions, overwrite = True )['OK']:
       # If we are not allowed to write to the central CS add the configuration to the local file
       addDefaultOptionsToComponentCfg( 'agent', system, agent, extensions )
 
@@ -1175,7 +1175,7 @@ def setupSite( scriptCfg, cfg = None ):
       if db not in installedDatabases:
         extension, system = installDatabase( db )['Value']
         gLogger.notice( 'Database %s from %s/%s installed' % ( db, extension, system ) )
-        result = addDatabaseOptionsToCS( None, system, db, True )
+        result = addDatabaseOptionsToCS( None, system, db, overwrite = True )
         if not result['OK']:
           gLogger.error('Database %s CS registration failed: %s' % (db,result['Message']) )
       gLogger.notice( 'Database %s already installed' % db )
