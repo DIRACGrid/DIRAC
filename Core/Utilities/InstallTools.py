@@ -997,7 +997,6 @@ def setupSite( scriptCfg, cfg = None ):
   setupConfigurationMaster = localCfg.getOption( cfgInstallPath( 'ConfigurationMaster' ), False )
   setupPrivateConfiguration = localCfg.getOption( cfgInstallPath( 'PrivateConfiguration' ), False )
   setupConfigurationName = localCfg.getOption( cfgInstallPath( 'ConfigurationName' ), setup )
-  setupOverrideCSOptions = localCfg.getOption( cfgInstallPath( 'OverrideCSOptions' ), False )
 
   for serviceTuple in setupServices:
     error = ''
@@ -1146,11 +1145,11 @@ def setupSite( scriptCfg, cfg = None ):
   for system in setupSystems:
     addSystemInstance( system, instance )
   for system, service in setupServices:
-    if not addDefaultOptionsToCS( None, 'service', system, service, extensions, setupOverrideCSOptions )['OK']:
+    if not addDefaultOptionsToCS( None, 'service', system, service, extensions, True )['OK']:
       # If we are not allowed to write to the central CS add the configuration to the local file
       addDefaultOptionsToComponentCfg( 'service', system, service, extensions )
   for system, agent in setupAgents:
-    if not addDefaultOptionsToCS( None, 'agent', system, agent, extensions, setupOverrideCSOptions )['OK']:
+    if not addDefaultOptionsToCS( None, 'agent', system, agent, extensions, True )['OK']:
       # If we are not allowed to write to the central CS add the configuration to the local file
       addDefaultOptionsToComponentCfg( 'agent', system, agent, extensions )
 
