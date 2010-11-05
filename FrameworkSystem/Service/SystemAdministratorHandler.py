@@ -176,13 +176,15 @@ class SystemAdministratorHandler( RequestHandler ):
   def export_addDatabaseOptionsToCS( self, system, database, overwrite = False ):
     """ Add the section with the database options to the CS
     """
-    return InstallTools.addDatabaseOptionsToCS( gConfig, system, database, overwrite )
+    return InstallTools.addDatabaseOptionsToCS( gConfig, system, database, setup, overwrite = overwrite)
 
   types_addDefaultOptionsToCS = [StringTypes, StringTypes, StringTypes]
   def export_addDefaultOptionsToCS( self, componentType, system, component, overwrite = False ):
     """ Add default component options to the global CS or to the local options
     """
-    return InstallTools.addDefaultOptionsToCS( gConfig, componentType, system, component, gConfig.getValue( '/DIRAC/Extensions', [] ), overwrite )
+    return InstallTools.addDefaultOptionsToCS( gConfig, componentType, system, component, 
+                                               gConfig.getValue( '/DIRAC/Extensions', [] ), 
+                                               overwrite = overwrite)
 
 #######################################################################################
 # General purpose methods
