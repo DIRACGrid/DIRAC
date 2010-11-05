@@ -106,7 +106,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         pprint.pprint( result['Value'] )
     elif option == 'status':
       client = SystemAdministratorClient( self.host, self.port )
-      result = client.getOverallStatus()
+      result = client.getOverallStatus()      
       if not result['OK']:
         print "ERROR:", result['Message']
       else:
@@ -273,7 +273,11 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       extension, system = result['Value']
       # result = client.addDatabaseOptionsToCS( system, database )
       InstallTools.mysqlHost = self.host
-      result = InstallTools.addDatabaseOptionsToCS(gConfig,system, database)
+      result = client.getInfo()
+      if not result['OK']:
+        print "Error:", result['Message']
+      hostSetup = result['Value']['Setup']  
+      result = InstallTools.addDatabaseOptionsToCS(gConfig, system, database, hostSetup)
       if not result['OK']:
         print "ERROR:", result['Message']
         return
@@ -290,7 +294,11 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       # result = client.addDefaultOptionsToCS( option, system, component )
       extensions = gConfig.getValue('/DIRAC/Extensions',[])
       InstallTools.host = self.host
-      result = InstallTools.addDefaultOptionsToCS(gConfig, option, system, component, extensions)
+      result = client.getInfo()
+      if not result['OK']:
+        print "Error:", result['Message']
+      hostSetup = result['Value']['Setup']  
+      result = InstallTools.addDefaultOptionsToCS(gConfig, option, system, component, extensions, hostSetup)
       if not result['OK']:
         print "ERROR:", result['Message']
         return
@@ -434,16 +442,20 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     
         usage:
         
-          add instance <system> <instance>
+          add system <system> <instance>
     """
     argss = args.split()
     option = argss[0]
     del argss[0]
-    if option == "instance":
+    if option == "instance" or option == "system":
       system = argss[0]
       instance = argss[1]
-      #client = SystemAdministratorClient( self.host, self.port )
-      result = InstallTools.addSystemInstance( system, instance )
+      client = SystemAdministratorClient( self.host, self.port )
+      result = client.getInfo()
+      if not result['OK']:
+        print "Error:", result['Message']
+      hostSetup = result['Value']['Setup']  
+      result = InstallTools.addSystemInstance( system, instance, hostSetup )
       if not result['OK']:
         print "ERROR:", result['Message']
       else:
