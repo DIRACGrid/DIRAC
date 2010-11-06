@@ -105,7 +105,7 @@ class TaskManagerAgentBase(AgentModule):
         gLogger.error("updateTaskStatus: Failed to get tasks to update for transformation", "%s %s" % (transID,res['Message']))
         continue
       if not res['Value']:
-        gLogger.info("updateTaskStatus: No tasks found to update for transformation %s" % transID)
+        gLogger.verbose("updateTaskStatus: No tasks found to update for transformation %s" % transID)
         continue
       res = self.getSubmittedTaskStatus(res['Value'])
       if not res['OK']:
@@ -180,7 +180,7 @@ class TaskManagerAgentBase(AgentModule):
         gLogger.error("checkReservedTasks: Failed to get Reserved tasks for transformation", "%s %s" % (transID,res['Message']))
         continue
       if not res['Value']:
-        gLogger.info("checkReservedTasks: No Reserved tasks found for transformation %s" % transID)
+        gLogger.verbose("checkReservedTasks: No Reserved tasks found for transformation %s" % transID)
         continue
       res = self.updateTransformationReservedTasks(res['Value'])
       if not res['OK']:
@@ -230,7 +230,7 @@ class TaskManagerAgentBase(AgentModule):
         continue
       tasks = res['Value']['JobDictionary']
       if not tasks:
-        gLogger.info("submitTasks: No tasks found for submission for transformation %s" % transID)
+        gLogger.verbose("submitTasks: No tasks found for submission for transformation %s" % transID)
         continue
       gLogger.info("submitTasks: Obtained %d tasks for submission for transformation %s" % (len(tasks),transID))
       res = self.prepareTransformationTasks(transBody,tasks,owner,ownerGroup)
