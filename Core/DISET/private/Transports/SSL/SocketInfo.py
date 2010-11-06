@@ -4,6 +4,7 @@ __RCSID__ = "$Id$"
 import time
 import copy
 import os.path
+from socket import gethostbyname
 import GSI
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Security import Locations
@@ -85,17 +86,33 @@ class SocketInfo:
     else:
       return self._serverCallback( *args, **kwargs )
 
+  def __isSameHost(self,hostCN,hostConn):
+    """ Guess if it is the same host or not
+    """  
+    hostCN_m = hostCN.replace('host/','')
+    if hostCN_m == hostConn:
+      return True
+    try:
+      ip1 = gethostbyname(hostCN_m)
+      ip2 = gethostbyname(hostConn)
+    except Exception,x:
+      return False
+    
+    return ip1 == ip2  
+
   def _clientCallback( self, conn, cert, errnum, depth, ok ):
     # This obviously has to be updated
     if depth == 0 and ok == 1:
       hostnameCN = cert.get_subject().commonName
-      if hostnameCN in ( self.infoDict[ 'hostname' ], "host/%s" % self.infoDict[ 'hostname' ]  ):
+      #if hostnameCN in ( self.infoDict[ 'hostname' ], "host/%s" % self.infoDict[ 'hostname' ]  ):
+      if self.__isSameHost(hostnameCN,self.infodict['hostname']):
         return 1
       else:
         gLogger.warn( "Server is not who it's supposed to be",
                       "Connecting to %s and it's %s" % ( self.infoDict[ 'hostname' ], hostnameCN ) )
         return ok
     return ok
+
 
   def _serverCallback( self, conn, cert, errnum, depth, ok):
     return ok
@@ -222,7 +239,8 @@ class SocketInfo:
     credentialsDict = self.gatherPeerCredentials()
     if self.infoDict[ 'clientMode' ]:
       hostnameCN = credentialsDict[ 'CN' ]
-      if hostnameCN.split("/")[-1] != self.infoDict[ 'hostname' ]:
+      #if hostnameCN.split("/")[-1] != self.infoDict[ 'hostname' ]:
+      if not self.__isSameHost(hostnameCN,self.infoDict[ 'hostname' ]):
         gLogger.warn( "Server is not who it's supposed to be",
                       "Connecting to %s and it's %s" % ( self.infoDict[ 'hostname' ], hostnameCN ) )
     gLogger.debug( "", "Authenticated peer (%s)" % credentialsDict[ 'DN' ] )
