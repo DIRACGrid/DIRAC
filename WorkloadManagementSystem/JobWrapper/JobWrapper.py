@@ -57,10 +57,11 @@ class JobWrapper:
       self.jobID = 0
     else:
       self.jobID = jobID
+    self.siteName = gConfig.getValue( '/LocalSite/Site', 'Unknown' )  
     if jobReport:
       self.jobReport = jobReport
     else:
-      self.jobReport = JobReport( self.jobID, 'JobWrapper' )
+      self.jobReport = JobReport( self.jobID, 'JobWrapper@%s' % self.siteName)
 
     # self.root is the path the Wrapper is running at
     self.root = os.getcwd()
