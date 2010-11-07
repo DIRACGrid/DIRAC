@@ -189,7 +189,7 @@ class SiteDirector( AgentModule ):
  
       result = ce.available()
       if not result['OK']:
-        self.log.warn('Failed to check the availability of queue %s: %s' (queue,result['message']))
+        self.log.warn('Failed to check the availability of queue %s: %s' % (queue,result['Message']))
         continue
             
       totalSlots = result['Value']
@@ -313,7 +313,7 @@ class SiteDirector( AgentModule ):
     pilotOptions.append( '-S %s' % setup )
     diracVersion = gConfig.getValue( "/Operations/%s/%s/Versions/PilotVersion" % (vo,setup), "unknown" )
     if diracVersion == 'unknown':
-      self.log.error('Setup is not defined in the configuration')
+      self.log.error('PilotVersion is not defined in the configuration')
       return None
     pilotOptions.append( '-r %s' % diracVersion )
     
