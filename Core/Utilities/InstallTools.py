@@ -997,6 +997,7 @@ def setupSite( scriptCfg, cfg = None ):
   setupConfigurationMaster = localCfg.getOption( cfgInstallPath( 'ConfigurationMaster' ), False )
   setupPrivateConfiguration = localCfg.getOption( cfgInstallPath( 'PrivateConfiguration' ), False )
   setupConfigurationName = localCfg.getOption( cfgInstallPath( 'ConfigurationName' ), setup )
+  setupAddConfiguration = localCfg.getOption( cfgInstallPath( 'AddConfiguration' ), True )
 
   for serviceTuple in setupServices:
     error = ''
@@ -1141,17 +1142,20 @@ def setupSite( scriptCfg, cfg = None ):
   # 1.- Setup the instances in the CS
   # If the Configuration Server used is not the Master, it can take some time for this
   # info to be propagated, this my cause the later setup to fail
-  gLogger.notice( 'Registering System instances' )
-  for system in setupSystems:
-    addSystemInstance( system, instance )
-  for system, service in setupServices:
-    if not addDefaultOptionsToCS( None, 'service', system, service, extensions, overwrite = True )['OK']:
-      # If we are not allowed to write to the central CS add the configuration to the local file
-      addDefaultOptionsToComponentCfg( 'service', system, service, extensions )
-  for system, agent in setupAgents:
-    if not addDefaultOptionsToCS( None, 'agent', system, agent, extensions, overwrite = True )['OK']:
-      # If we are not allowed to write to the central CS add the configuration to the local file
-      addDefaultOptionsToComponentCfg( 'agent', system, agent, extensions )
+  if setupAddConfiguration:
+    gLogger.notice( 'Registering System instances' )
+    for system in setupSystems:
+      addSystemInstance( system, instance )
+    for system, service in setupServices:
+      if not addDefaultOptionsToCS( None, 'service', system, service, extensions, overwrite = True )['OK']:
+        # If we are not allowed to write to the central CS add the configuration to the local file
+        addDefaultOptionsToComponentCfg( 'service', system, service, extensions )
+    for system, agent in setupAgents:
+      if not addDefaultOptionsToCS( None, 'agent', system, agent, extensions, overwrite = True )['OK']:
+        # If we are not allowed to write to the central CS add the configuration to the local file
+        addDefaultOptionsToComponentCfg( 'agent', system, agent, extensions )
+  else:
+    gLogger.warn( 'Configuration parameters definition is not requested' )      
 
   if ['Configuration', 'Server'] in setupServices and setupPrivateConfiguration:
     cfg = __getCfg( cfgPath( 'DIRAC', 'Configuration' ), 'AutoPublish' , 'no' )
