@@ -548,8 +548,8 @@ class JobAgent( AgentModule ):
     """Wraps around setJobStatus of state update client
     """
     jobReport = RPCClient( 'WorkloadManagement/JobStateUpdate' )
-    jobStatus = jobReport.setJobStatus( int( jobID ), status, minorStatus, 'JobAgent' )
-    self.log.verbose( 'setJobStatus(%s,%s,%s,%s)' % ( jobID, status, minorStatus, 'JobAgent' ) )
+    jobStatus = jobReport.setJobStatus( int( jobID ), status, minorStatus, 'JobAgent@%s' % self.siteName )
+    self.log.verbose( 'setJobStatus(%s,%s,%s,%s)' % ( jobID, status, minorStatus, 'JobAgent@%s' % self.siteName ) )
     if not jobStatus['OK']:
       self.log.warn( jobStatus['Message'] )
 
@@ -616,7 +616,7 @@ class JobAgent( AgentModule ):
     self.log.warn( 'Failure during %s' % ( message ) )
 
     jobManager = RPCClient( 'WorkloadManagement/JobManager' )
-    jobReport = JobReport( int( jobID ), 'JobAgent' )
+    jobReport = JobReport( int( jobID ), 'JobAgent@%s' % self.siteName)
 
     #Setting a job parameter does not help since the job will be rescheduled,
     #instead set the status with the cause and then another status showing the
