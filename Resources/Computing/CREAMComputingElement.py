@@ -1,5 +1,5 @@
 ########################################################################
-# $HeadURL: $
+# $HeadURL$
 # File :   CREAMComputingElement.py
 # Author : A.T.
 ########################################################################
@@ -7,7 +7,7 @@
 """ CREAM Computing Element 
 """
 
-__RCSID__ = "$Id: $"
+__RCSID__ = "$Id$"
 
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.Subprocess                     import shellCall
@@ -94,7 +94,9 @@ class CREAMComputingElement( ComputingElement ):
     stampDict = {}
     if numberOfJobs == 1:
       jdlName,diracStamp = self.__writeJDL(executableFile)
-      cmd = 'glite-ce-job-submit -n -a -N -r %s/%s %s ' % (self.ceName,self.queue,jdlName)
+      cmd = ['glite-ce-job-submit','-n','-a','-N','-r',
+             '%s/%s' % (self.ceName,self.queue),
+             '%s' % jdlName ]
       result = executeGridCommand(proxy,cmd,self.gridEnv)
 
       if result['OK']:
@@ -104,11 +106,13 @@ class CREAMComputingElement( ComputingElement ):
       os.unlink(jdlName)
     else:
       delegationID = makeGuid()
-      cmd = 'glite-ce-delegate-proxy -e %s %s' % (self.ceName,delegationID)
+      cmd = [ 'glite-ce-delegate-proxy','-e','%s' % self.ceName,'%s' % delegationID ]
       result = executeGridCommand(proxy,cmd,self.gridEnv)
       for i in range(numberOfJobs):
         jdlName,diracStamp = self.__writeJDL(executableFile)
-        cmd = 'glite-ce-job-submit -n -N -r %s/%s -D %s %s ' % (self.ceName,self.queue,delegationID,jdlName)
+        cmd = ['glite-ce-job-submit','-n','-N','-r',
+               '%s/%s' % (self.ceName,self.queue),
+               '-D','%s' % delegationID,'%s' % jdlName ]
         result = executeGridCommand(proxy,cmd,self.gridEnv)
         if not result['OK']:
           break
@@ -127,7 +131,9 @@ class CREAMComputingElement( ComputingElement ):
     """ Method to return information on running and pending jobs.
     """
     statusList = ['REGISTERED','PENDING','IDLE','RUNNING','REALLY-RUNNING']
-    cmd = 'glite-ce-job-status -n -a -e %s -s %s' % (self.ceName,':'.join(statusList) ) 
+    cmd = ['glite-ce-job-status','-n','-a','-e',
+           '%s' % self.ceName,'-s',
+           '%s' % ':'.join(statusList) ] 
     result = executeGridCommand(self.proxy,cmd,self.gridEnv)     
     resultDict = {}
     if not result['OK']:
@@ -161,7 +167,7 @@ class CREAMComputingElement( ComputingElement ):
       idFile.write('\n'+id)
     idFile.close()
     
-    cmd = 'glite-ce-job-status -n -i %s' % idFileName
+    cmd = ['glite-ce-job-status','-n','-i','%s' % idFileName ]
     result = executeGridCommand(self.proxy,cmd,self.gridEnv)
     os.unlink(idFileName)
     resultDict = {} 
@@ -235,7 +241,7 @@ class CREAMComputingElement( ComputingElement ):
     outFileName = os.path.join(workingDirectory,os.path.basename(outputURL))
     errFileName = os.path.join(workingDirectory,os.path.basename(errorURL))
 
-    cmd = 'globus-url-copy %s file://%s' % (outputURL,outFileName)
+    cmd = ['globus-url-copy','%s' % outputURL,'file://%s' % outFileName ]
     result = executeGridCommand(self.proxy,cmd,self.gridEnv)
     output = ''
     if result['OK']:
@@ -247,7 +253,7 @@ class CREAMComputingElement( ComputingElement ):
     else:
       return S_ERROR('Failed to retrieve output for %s' % jobID)
         
-    cmd = 'globus-url-copy %s %s' % (errorURL,errFileName)
+    cmd = ['globus-url-copy','%s' % errorURL,'%s' % errFileName ]
     result = executeGridCommand(self.proxy,cmd,self.gridEnv)
     error = ''
     if result['OK']:
@@ -265,7 +271,7 @@ class CREAMComputingElement( ComputingElement ):
     """ Resolve the URL of the pilot output files
     """
     
-    cmd = "glite-ce-job-status -L 2 %s | grep -i osb" % pilotRef
+    cmd = [ 'glite-ce-job-status','-L','2','%s' % pilotRef,'|','grep','-i','osb' ]
     result = executeGridCommand(self.proxy,cmd,self.gridEnv)
     url = ''
     if result['OK']:
