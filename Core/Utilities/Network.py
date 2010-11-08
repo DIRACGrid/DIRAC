@@ -122,11 +122,9 @@ def checkHostsMatch( host1, host2 ):
       return result
     ipLists.append( result[ 'Value' ] )
   #Check
-  for i in range( len( ipLists ) - 1 ):
-    for ip in ipLists[i]:
-      for ipl in ipLists[i + 1]:
-        if ip in ipl:
-          return S_OK( True )
+  for ip1 in ipLists[0]:
+    if ip1 in ipList[1]:
+      return S_OK( True )
   return S_OK( False )
 
 
