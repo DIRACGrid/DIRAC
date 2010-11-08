@@ -10,7 +10,7 @@ from types import *
 
 transTypes = list(StringTypes)+[IntType,LongType]
 
-class TransformationHandlerBase(RequestHandler):
+class TransformationManagerHandlerBase(RequestHandler):
 
   def _parseRes(self,res):
     if not res['OK']:
@@ -595,13 +595,13 @@ class TransformationHandlerBase(RequestHandler):
   ###########################################################################
 
 database = False
-def initializeTransformationHandler( serviceInfo ):
+def initializeTransformationManagerHandler( serviceInfo ):
   global database
   database = TransformationDB('TransformationDB', 'Transformation/TransformationDB')
   return S_OK()
 
-class TransformationHandler(TransformationHandlerBase):
+class TransformationManagerHandler(TransformationManagerHandlerBase):
 
   def __init__(self,*args,**kargs):
     self.setDatabase(database)
-    TransformationHandlerBase.__init__(self, *args,**kargs)
+    Base.__init__(self, *args,**kargs)
