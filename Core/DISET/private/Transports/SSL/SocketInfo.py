@@ -7,6 +7,7 @@ import os.path
 from socket import gethostbyname
 import GSI
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
+from DIRAC.Core.Utilities.Network import checkHostsMatch
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -86,26 +87,23 @@ class SocketInfo:
     else:
       return self._serverCallback( *args, **kwargs )
 
-  def __isSameHost(self,hostCN,hostConn):
+  def __isSameHost( self, hostCN, hostConn ):
     """ Guess if it is the same host or not
-    """  
-    hostCN_m = hostCN.replace('host/','')
+    """
+    hostCN_m = hostCN.replace( 'host/', '' )
     if hostCN_m == hostConn:
       return True
-    try:
-      ip1 = gethostbyname(hostCN_m)
-      ip2 = gethostbyname(hostConn)
-    except Exception,x:
+    result = checkHostsMatch( hostCN_m, hostCN )
+    if not result[ 'OK' ]:
       return False
-    
-    return ip1 == ip2  
+    return result[ 'Value' ]
 
   def _clientCallback( self, conn, cert, errnum, depth, ok ):
     # This obviously has to be updated
     if depth == 0 and ok == 1:
       hostnameCN = cert.get_subject().commonName
       #if hostnameCN in ( self.infoDict[ 'hostname' ], "host/%s" % self.infoDict[ 'hostname' ]  ):
-      if self.__isSameHost(hostnameCN,self.infodict['hostname']):
+      if self.__isSameHost( hostnameCN, self.infodict['hostname'] ):
         return 1
       else:
         gLogger.warn( "Server is not who it's supposed to be",
@@ -114,7 +112,7 @@ class SocketInfo:
     return ok
 
 
-  def _serverCallback( self, conn, cert, errnum, depth, ok):
+  def _serverCallback( self, conn, cert, errnum, depth, ok ):
     return ok
 
   def __createContext( self ):
@@ -140,7 +138,7 @@ class SocketInfo:
     #DO CA Checks?
     if not self.__getValue( 'skipCACheck', False ):
       #self.sslContext.set_verify( SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verifyCallback ) # Demand a certificate
-      self.sslContext.set_verify( GSI.SSL.VERIFY_PEER|GSI.SSL.VERIFY_FAIL_IF_NO_PEER_CERT, None, gsiEnable ) # Demand a certificate
+      self.sslContext.set_verify( GSI.SSL.VERIFY_PEER | GSI.SSL.VERIFY_FAIL_IF_NO_PEER_CERT, None, gsiEnable ) # Demand a certificate
       casPath = Locations.getCAsLocation()
       if not casPath:
         return S_ERROR( "No valid CAs location found" )
@@ -155,14 +153,14 @@ class SocketInfo:
     if not certKeyTuple:
       return S_ERROR( "No valid certificate or key found" )
     self.setLocalCredentialsLocation( certKeyTuple )
-    gLogger.debug("Using certificate %s\nUsing key %s" % certKeyTuple )
+    gLogger.debug( "Using certificate %s\nUsing key %s" % certKeyTuple )
     retVal = self.__createContext()
     if not retVal[ 'OK' ]:
       return retVal
     #Verify depth to 20 to ensure accepting proxies of proxies of proxies....
     self.sslContext.set_verify_depth( 50 )
     self.sslContext.use_certificate_chain_file( certKeyTuple[0] )
-    self.sslContext.use_privatekey_file(  certKeyTuple[1] )
+    self.sslContext.use_privatekey_file( certKeyTuple[1] )
     return S_OK()
 
   def __generateContextWithProxy( self ):
@@ -240,7 +238,7 @@ class SocketInfo:
     if self.infoDict[ 'clientMode' ]:
       hostnameCN = credentialsDict[ 'CN' ]
       #if hostnameCN.split("/")[-1] != self.infoDict[ 'hostname' ]:
-      if not self.__isSameHost(hostnameCN,self.infoDict[ 'hostname' ]):
+      if not self.__isSameHost( hostnameCN, self.infoDict[ 'hostname' ] ):
         gLogger.warn( "Server is not who it's supposed to be",
                       "Connecting to %s and it's %s" % ( self.infoDict[ 'hostname' ], hostnameCN ) )
     gLogger.debug( "", "Authenticated peer (%s)" % credentialsDict[ 'DN' ] )
