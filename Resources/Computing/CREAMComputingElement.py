@@ -271,7 +271,8 @@ class CREAMComputingElement( ComputingElement ):
     """ Resolve the URL of the pilot output files
     """
     
-    cmd = [ 'glite-ce-job-status','-L','2','%s' % pilotRef,'|','grep','-i','osb' ]
+    cmd = [ 'glite-ce-job-status','-L','2','%s' % pilotRef,
+            '| grep -i osb' ]
     result = executeGridCommand(self.proxy,cmd,self.gridEnv)
     url = ''
     if result['OK']:
