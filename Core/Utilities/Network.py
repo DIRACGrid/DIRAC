@@ -123,7 +123,7 @@ def checkHostsMatch( host1, host2 ):
     ipLists.append( result[ 'Value' ] )
   #Check
   for ip1 in ipLists[0]:
-    if ip1 in ipList[1]:
+    if ip1 in ipLists[1]:
       return S_OK( True )
   return S_OK( False )
 
