@@ -127,6 +127,6 @@ def pfnparse(pfn):
     #gLogger.debug("Pfn.pfnparse: Successfully parsed pfn.")
     return S_OK(pfnDict)
   except Exception,x:
-    errStr = "Pfn.pfnparse: Exception while parsing pfn."
+    errStr = "Pfn.pfnparse: Exception while parsing pfn: "+str(pfn)
     gLogger.exception(errStr,'',str(x))
     return S_ERROR(errStr)
