@@ -392,7 +392,8 @@ class ComputingElement:
     else:
       self.classAd.set_expression('Requirements','True')
     
-    self.classAd.insertAttributeString('DIRACVersion',version)
+    release = gConfig.getValue('/LocalSite/ReleaseVersion',version)
+    self.classAd.insertAttributeString('DIRACVersion',release)
     if self.classAd.isOK():
       jdl = self.classAd.asJDL()
       return S_OK(jdl)

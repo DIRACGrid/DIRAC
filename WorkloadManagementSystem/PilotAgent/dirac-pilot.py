@@ -63,6 +63,7 @@ class CliParams:
     self.flavour = 'DIRAC'
     self.gridVersion = '2009-08-13'
     self.pilotReference = ''
+    self.releaseVersion = ''
 
 ###
 # Helper functions
@@ -217,6 +218,7 @@ for o, v in optList:
     cliParams.platform = v
   elif o == '-r' or o == '--release':
     installOpts.append( '-r "%s"' % v )
+    cliParams.releaseVersion = v
   elif o == '-t' or o == '--test':
     cliParams.dryRun = True
   elif o == '-u' or o == '--url':
@@ -330,6 +332,8 @@ if cliParams.queueName:
   configureOpts.append( '-o /LocalSite/CEQueue=%s' % cliParams.queueName )
 if cliParams.ceName:
   configureOpts.append( '-o /LocalSite/GridCE=%s' % cliParams.ceName )  
+if cliParams.releaseVersion:
+  configureOpts.append( '-o /LocalSite/ReleaseVersion=%s' % cliParams.releaseVersion )    
 
 ###
 # Set the platform if defined
