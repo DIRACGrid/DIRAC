@@ -40,9 +40,12 @@ class DataOperationPlotter( BaseReporter ):
     if strippedData:
       dataDict[ togetherFieldsToPlot[0] ] = strippedData[0]
     dataDict, maxValue = self._divideByFactor( dataDict, granularity )
-    dataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict, maxValue, "files" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict,
+                                                                                  self._getAccumulationMaxValue( dataDict ),
+                                                                                  "files" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
 
   def _plotSuceededTransfers( self, reportRequest, plotInfo, filename ):
     return self.__plotTransfers( reportRequest, plotInfo, filename, 'Suceeded', ( 'Failed', 0 ) )
@@ -56,7 +59,7 @@ class DataOperationPlotter( BaseReporter ):
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ] }
-    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
+    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
   def _reportQuality( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s), SUM(%s)",
@@ -126,8 +129,11 @@ class DataOperationPlotter( BaseReporter ):
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, self._getAccumulationMaxValue( dataDict ), "bytes" )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
+                                                                              self._getAccumulationMaxValue( dataDict ),
+                                                                              "bytes" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
 
   def _plotTransferedData( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Transfered data by %s' % reportRequest[ 'grouping' ] ,
@@ -136,7 +142,7 @@ class DataOperationPlotter( BaseReporter ):
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ],
                  'sort_labels' : 'last_value' }
-    return self._generateCumulativePlot( filename, plotInfo[ 'data' ], metadata )
+    return self._generateCumulativePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
   def _reportThroughput( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
@@ -155,9 +161,12 @@ class DataOperationPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict, maxValue = self._divideByFactor( dataDict, granularity )
-    dataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict, maxValue, "bytes" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict,
+                                                                                  self._getAccumulationMaxValue( dataDict ),
+                                                                                  "bytes" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
 
   def _plotThroughput( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Throughput by %s' % reportRequest[ 'grouping' ] ,
@@ -165,7 +174,7 @@ class DataOperationPlotter( BaseReporter ):
                  'starttime' : reportRequest[ 'startTime' ],
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ] }
-    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
+    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
   def _reportDataTransfered( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s)",

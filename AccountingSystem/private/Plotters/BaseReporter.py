@@ -1,4 +1,4 @@
-import time
+import time, copy
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 from DIRAC.AccountingSystem.private.DataCache import gDataCache
@@ -206,40 +206,33 @@ class BaseReporter( DBUtils ):
     else:
       return "CONCAT( %s )" % ", ".join( [ "%s, '-'" % sqlRep for sqlRep in groupingFields[0] ] )
 
-
   def _findSuitableRateUnit( self, dataDict, maxValue, unit ):
-    if unit not in self._RATE_UNITS:
-      raise AttributeError( "%s is not a known rate unit" % unit )
-    if 'staticUnits' in self._extraArgs and self._extraArgs[ 'staticUnits' ]:
-      unitData = self._RATE_UNITS[ unit ][ 0 ]
-    else:
-      unitList = self._RATE_UNITS[ unit ]
-      unitIndex = -1
-      for unitName, unitDivFactor, unitThreshold in unitList:
-        unitIndex += 1
-        if maxValue / unitDivFactor < unitThreshold:
-          break
-      unitData = self._RATE_UNITS[ unit ][ unitIndex ]
-    #Apply divFactor to all units
-    dataDict, maxValue = self._divideByFactor( dataDict, unitData[1] )
-    return dataDict, maxValue, unitData[0]
+    return self._findUnitMagic( dataDict, maxValue, unit, self._RATE_UNITS )
 
   def _findSuitableUnit( self, dataDict, maxValue, unit ):
-    if unit not in self._UNITS:
-      raise AttributeError( "%s is not a known unit" % unit )
+    return self._findUnitMagic( dataDict, maxValue, unit, self._UNITS )
+
+  def _findUnitMagic( self, reportDataDict, maxValue, unit, selectedUnits ):
+    if unit not in selectedUnits:
+      raise AttributeError( "%s is not a known rate unit" % unit )
+    baseUnitData = selectedUnits[ unit ][ 0 ]
     if 'staticUnits' in self._extraArgs and self._extraArgs[ 'staticUnits' ]:
-      unitData = self._UNITS[ unit ][ 0 ]
+      unitData = selectedUnits[ unit ][ 0 ]
     else:
-      unitList = self._UNITS[ unit ]
+      unitList = selectedUnits[ unit ]
       unitIndex = -1
       for unitName, unitDivFactor, unitThreshold in unitList:
         unitIndex += 1
         if maxValue / unitDivFactor < unitThreshold:
           break
-      unitData = self._UNITS[ unit ][ unitIndex ]
+      unitData = selectedUnits[ unit ][ unitIndex ]
     #Apply divFactor to all units
-    dataDict, maxValue = self._divideByFactor( dataDict, unitData[1] )
-    return dataDict, maxValue, unitData[0]
+    graphDataDict, maxValue = self._divideByFactor( copy.deepcopy( reportDataDict ), unitData[1] )
+    if unitData == baseUnitData:
+      reportDataDict = graphDataDict
+    else:
+      reportDataDict, dummyMaxValue = self._divideByFactor( reportDataDict, baseUnitData[1] )
+    return reportDataDict, graphDataDict, maxValue, unitData[0]
 ##
 # Plotting
 ##

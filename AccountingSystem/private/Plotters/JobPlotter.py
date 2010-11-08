@@ -90,8 +90,11 @@ class JobPlotter( BaseReporter ):
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, self._getAccumulationMaxValue( dataDict ), "time" )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
+                                                                              self._getAccumulationMaxValue( dataDict ),
+                                                                              "time" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
 
   def _plotCPUUsed( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'CPU used by %s' % reportRequest[ 'grouping' ],
@@ -100,7 +103,7 @@ class JobPlotter( BaseReporter ):
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ],
                  'sort_labels' : 'last_value' }
-    return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
+    return self._generateCumulativePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
   _reportCPUUsageName = "CPU time"
   def _reportCPUUsage( self, reportRequest ):
@@ -120,9 +123,13 @@ class JobPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict, maxValue = self._divideByFactor( dataDict, granularity )
-    dataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict, maxValue, "time" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict,
+                                                                                  self._getAccumulationMaxValue( dataDict ),
+                                                                                  "time" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
+
 
   def _plotCPUUsage( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'CPU usage by %s' % reportRequest[ 'grouping' ],
@@ -130,7 +137,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ] }
-    return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
+    return self._generateStackedLinePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
   _reportWallTimeName = "Wall time"
   def _reportWallTime( self, reportRequest ):
@@ -150,10 +157,20 @@ class JobPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict, maxValue = self._divideByFactor( dataDict, granularity )
-    dataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict, maxValue, "time" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict,
+                                                                                  self._getAccumulationMaxValue( dataDict ),
+                                                                                  "time" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
 
+  def _plotWallTime( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Wall Time by %s' % reportRequest[ 'grouping' ],
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ],
+                 'ylabel' : plotInfo[ 'unit' ] }
+    return self._generateStackedLinePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
   _reportTotalCPUUsedName = "Pie plot of CPU used"
   def _reportTotalCPUUsed( self, reportRequest ):
@@ -180,17 +197,7 @@ class JobPlotter( BaseReporter ):
                 }
     return self._generatePiePlot( filename, plotInfo[ 'data'], metadata )
 
-##
-# Wall time
-##
 
-  def _plotWallTime( self, reportRequest, plotInfo, filename ):
-    metadata = { 'title' : 'Wall Time by %s' % reportRequest[ 'grouping' ],
-                 'starttime' : reportRequest[ 'startTime' ],
-                 'endtime' : reportRequest[ 'endTime' ],
-                 'span' : plotInfo[ 'granularity' ],
-                 'ylabel' : plotInfo[ 'unit' ] }
-    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data'], metadata )
 
   _reportAccumulatedWallTimeName = "Cumulative wall time"
   def _reportAccumulatedWallTime( self, reportRequest ):
@@ -211,8 +218,11 @@ class JobPlotter( BaseReporter ):
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, self._getAccumulationMaxValue( dataDict ), "time" )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
+                                                                              self._getAccumulationMaxValue( dataDict ),
+                                                                              "time" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
 
   def _plotAccumulatedWallTime( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Cumulative wall time by %s' % reportRequest[ 'grouping' ],
@@ -221,7 +231,7 @@ class JobPlotter( BaseReporter ):
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ],
                  'sort_labels' : 'last_value' }
-    return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
+    return self._generateCumulativePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
   _reportTotalWallTimeName = "Pie plot of wall time usage"
   def _reportTotalWallTime( self, reportRequest ):
@@ -271,11 +281,11 @@ class JobPlotter( BaseReporter ):
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
-                                                           self._getAccumulationMaxValue( dataDict ),
-                                                           "jobs" )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
-
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
+                                                                              self._getAccumulationMaxValue( dataDict ),
+                                                                              "jobs" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
 
   def _plotCumulativeNumberOfJobs( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Cumulative Jobs by %s' % reportRequest[ 'grouping' ],
@@ -284,7 +294,7 @@ class JobPlotter( BaseReporter ):
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ],
                  'sort_labels' : 'last_value' }
-    return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
+    return self._generateCumulativePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
 
   _reportNumberOfJobsName = "Job execution rate"
@@ -305,9 +315,12 @@ class JobPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict, maxValue = self._divideByFactor( dataDict, granularity )
-    dataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict, maxValue, "jobs" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict,
+                                                                                  self._getAccumulationMaxValue( dataDict ),
+                                                                                  "jobs" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
 
   def _plotNumberOfJobs( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Jobs by %s' % reportRequest[ 'grouping' ],
@@ -315,7 +328,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ]  }
-    return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
+    return self._generateStackedLinePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
   _reportTotalNumberOfJobsName = "Pie plot of executed jobs"
   def _reportTotalNumberOfJobs( self, reportRequest ):
@@ -362,9 +375,12 @@ class JobPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict, maxValue = self._divideByFactor( dataDict, granularity )
-    dataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict, maxValue, "bytes" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict,
+                                                                                  self._getAccumulationMaxValue( dataDict ),
+                                                                                  "bytes" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
 
   def _plotProcessingBandwidth( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Processing Bandwidth by %s' % reportRequest[ 'grouping' ],
@@ -372,7 +388,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ]  }
-    return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
+    return self._generateStackedLinePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
 ##
 # Data sizes
@@ -413,9 +429,12 @@ class JobPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict, maxValue = self._divideByFactor( dataDict, granularity )
-    dataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict, maxValue, "bytes" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict,
+                                                                                  self._getAccumulationMaxValue( dataDict ),
+                                                                                  "bytes" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
 
   def _plotInputSandboxSize( self, reportRequest, plotInfo, filename ):
     return self.__plotFieldSizeinMB( reportRequest, plotInfo, filename, ( "InputSandBoxSize", "Input sand box size" ) )
@@ -438,7 +457,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ] }
-    return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
+    return self._generateStackedLinePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
 ##
 #  Cumulative data sizes
@@ -480,10 +499,11 @@ class JobPlotter( BaseReporter ):
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
-                                                           self._getAccumulationMaxValue( dataDict ),
-                                                           "bytes" )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
+                                                                              self._getAccumulationMaxValue( dataDict ),
+                                                                              "bytes" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
 
   def _plotCumulativeInputSandboxSize( self, reportRequest, plotInfo, filename ):
     return self.__plotCumulativeFieldSizeinMB( reportRequest, plotInfo, filename, ( "InputSandBoxSize", "Input sand box size" ) )
@@ -506,7 +526,7 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ] }
-    return self._generateCumulativePlot( filename, plotInfo[ 'data'], metadata )
+    return self._generateCumulativePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
 ##
 #  Input/Ouput data files
@@ -535,9 +555,12 @@ class JobPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict, maxValue = self._divideByFactor( dataDict, granularity )
-    dataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict, maxValue, "files" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict,
+                                                                              self._getAccumulationMaxValue( dataDict ),
+                                                                              "files" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
 
   def _plotInputDataFiles( self, reportRequest, plotInfo, filename ):
     return self.__plotDataFiles( reportRequest, plotInfo, filename, ( "InputDataFiles", "Input files" ) )
@@ -551,5 +574,5 @@ class JobPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ] }
-    return self._generateStackedLinePlot( filename, plotInfo[ 'data'], metadata )
+    return self._generateStackedLinePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 

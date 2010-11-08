@@ -27,8 +27,11 @@ class PilotPlotter( BaseReporter ):
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, self._getAccumulationMaxValue( dataDict ), "jobs" )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
+                                                                              self._getAccumulationMaxValue( dataDict ),
+                                                                              "jobs" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
 
   def _plotCumulativeNumberOfJobs( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Cumulative Jobs by %s' % reportRequest[ 'grouping' ],
@@ -37,7 +40,7 @@ class PilotPlotter( BaseReporter ):
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ],
                  'sort_labels' : 'last_value' }
-    return self._generateCumulativePlot( filename, plotInfo[ 'data' ], metadata )
+    return self._generateCumulativePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
   def _reportNumberOfJobs( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
@@ -56,9 +59,12 @@ class PilotPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict, maxValue = self._divideByFactor( dataDict, granularity )
-    dataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict, maxValue, "jobs" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict,
+                                                                                  self._getAccumulationMaxValue( dataDict ),
+                                                                                  "jobs" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
 
   def _plotNumberOfJobs( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Jobs by %s' % reportRequest[ 'grouping' ],
@@ -66,7 +72,7 @@ class PilotPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ]  }
-    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
+    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
   def _reportCumulativeNumberOfPilots( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
@@ -86,8 +92,11 @@ class PilotPlotter( BaseReporter ):
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
     dataDict = self._acumulate( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, self._getAccumulationMaxValue( dataDict ), "jobs" )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
+                                                                              self._getAccumulationMaxValue( dataDict ),
+                                                                              "jobs" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
 
   def _plotCumulativeNumberOfPilots( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Cumulative Pilots by %s' % reportRequest[ 'grouping' ],
@@ -96,7 +105,7 @@ class PilotPlotter( BaseReporter ):
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ].replace( 'job', 'pilot' ),
                  'sort_labels' : 'last_value' }
-    return self._generateCumulativePlot( filename, plotInfo[ 'data' ], metadata )
+    return self._generateCumulativePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
   def _reportNumberOfPilots( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
@@ -115,9 +124,12 @@ class PilotPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict, maxValue = self._divideByFactor( dataDict, granularity )
-    dataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict, maxValue, "jobs" )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit( dataDict,
+                                                                                  self._getAccumulationMaxValue( dataDict ),
+                                                                                  "jobs" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
 
   def _plotNumberOfPilots( self, reportRequest, plotInfo, filename ):
     metadata = { 'title' : 'Pilots by %s' % reportRequest[ 'grouping' ],
@@ -125,7 +137,7 @@ class PilotPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ].replace( 'job', 'pilot' )  }
-    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
+    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
   def _reportJobsPerPilot( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s), SUM(%s)",

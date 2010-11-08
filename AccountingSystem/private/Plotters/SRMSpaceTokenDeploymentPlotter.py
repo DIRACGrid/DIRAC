@@ -53,8 +53,11 @@ class SRMSpaceTokenDeploymentPlotter( BaseReporter ):
     dataDict, granularity = retVal[ 'Value' ]
     self.stripDataField( dataDict, 0 )
     dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
-    dataDict, maxValue, unitName = self._findSuitableUnit( dataDict, self._getMaxValue( dataDict ), "bytes" )
-    return S_OK( { 'data' : dataDict, 'granularity' : granularity, 'unit' : unitName } )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
+                                                                              self._getAccumulationMaxValue( dataDict ),
+                                                                              "bytes" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
 
   def _plotAvailableSpace( self, reportRequest, plotInfo, filename ):
     title = 'Available space by %s' % reportRequest[ 'grouping' ]
@@ -98,4 +101,4 @@ class SRMSpaceTokenDeploymentPlotter( BaseReporter ):
                  'endtime' : reportRequest[ 'endTime' ],
                  'span' : plotInfo[ 'granularity' ],
                  'ylabel' : plotInfo[ 'unit' ]  }
-    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'data' ], metadata )
+    return self._generateTimedStackedBarPlot( filename, plotInfo[ 'graphDataDict' ], metadata )
