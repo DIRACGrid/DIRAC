@@ -120,9 +120,12 @@ class JobAgent( AgentModule ):
       if re.search( 'No work available', jobRequest['Message'] ):
         self.log.info( 'Job request OK: %s' % ( jobRequest['Message'] ) )
         return S_OK( jobRequest['Message'] )
-      elif jobRequest['Message'].find( "seconds timeout" ):
+      elif jobRequest['Message'].find( "seconds timeout" ) != -1:
         self.log.error( jobRequest['Message'] )
         return S_OK( jobRequest['Message'] )
+      elif jobRequest['Message'].find( "Pilot version does not match" ) != -1 :
+        self.log.error( jobRequest['Message'] )
+        return S_ERROR( jobRequest['Message'] )
       else:
         self.log.info( 'Failed to get jobs: %s' % ( jobRequest['Message'] ) )
         return S_OK( jobRequest['Message'] )
