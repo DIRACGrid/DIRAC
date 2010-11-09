@@ -172,6 +172,41 @@ class JobPlotter( BaseReporter ):
                  'ylabel' : plotInfo[ 'unit' ] }
     return self._generateStackedLinePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
 
+
+  _reportRunningJobsName = "Running jobs"
+  def _reportRunningJobs( self, reportRequest ):
+    selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", %s, %s, SUM(%s)",
+                     reportRequest[ 'groupingFields' ][1] + [ 'startTime', 'bucketLength',
+                                    'ExecTime'
+                                   ]
+                   )
+    retVal = self._getTimedData( reportRequest[ 'startTime' ],
+                                reportRequest[ 'endTime' ],
+                                selectFields,
+                                reportRequest[ 'condDict' ],
+                                reportRequest[ 'groupingFields' ],
+                                {} )
+    if not retVal[ 'OK' ]:
+      return retVal
+    dataDict, granularity = retVal[ 'Value' ]
+    self.stripDataField( dataDict, 0 )
+    dataDict, maxValue = self._divideByFactor( dataDict, granularity )
+    dataDict = self._fillWithZero( granularity, reportRequest[ 'startTime' ], reportRequest[ 'endTime' ], dataDict )
+    baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableUnit( dataDict,
+                                                                              self._getAccumulationMaxValue( dataDict ),
+                                                                              "jobs" )
+    return S_OK( { 'data' : baseDataDict, 'graphDataDict' : graphDataDict,
+                   'granularity' : granularity, 'unit' : unitName } )
+
+  def _plotRunningJobs( self, reportRequest, plotInfo, filename ):
+    metadata = { 'title' : 'Running jobs by %s' % reportRequest[ 'grouping' ],
+                 'starttime' : reportRequest[ 'startTime' ],
+                 'endtime' : reportRequest[ 'endTime' ],
+                 'span' : plotInfo[ 'granularity' ],
+                 'ylabel' : plotInfo[ 'unit' ] }
+    return self._generateStackedLinePlot( filename, plotInfo[ 'graphDataDict' ], metadata )
+
+
   _reportTotalCPUUsedName = "Pie plot of CPU used"
   def _reportTotalCPUUsed( self, reportRequest ):
     selectFields = ( self._getSelectStringForGrouping( reportRequest[ 'groupingFields' ] ) + ", SUM(%s)/86400",
