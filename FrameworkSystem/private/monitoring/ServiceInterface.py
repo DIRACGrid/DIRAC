@@ -150,7 +150,10 @@ class ServiceInterface:
           gLogger.error( "There was an error updating", "%s:%s activity [%s]" % ( sourceId, acName, rrdFile ) )
         else:
           acCatalog.setLastUpdate( sourceId, acName, retDict[ 'Value' ] )
-    self.__cmdb_heartbeatComponent( sourceId, componentExtraInfo )
+    if not self.__cmdb_heartbeatComponent( sourceId, componentExtraInfo ):
+      for acName in activitiesDict:
+        if acName not in unregisteredActivities:
+          unregisteredActivities.append( acName )
     return S_OK( unregisteredActivities )
 
   def fieldValue( self, field, definedFields ):
@@ -348,15 +351,17 @@ class ServiceInterface:
 
   def __cmdb__writeComponent( self, sourceId ):
     if sourceId not in ServiceInterface.__sourceToComponentIdMapping:
-      self.__cmdb__loadComponentFromActivityDB( sourceId )
+      if not self.__cmdb__loadComponentFromActivityDB( sourceId ):
+        return False
     compDict = ServiceInterface.__sourceToComponentIdMapping[ sourceId ]
     result = self.compmonDB.registerComponent( compDict )
     if not result[ 'OK' ]:
       gLogger.error( "Cannot register component in ComponentMonitoringDB", result[ 'Message' ] )
-      return
+      return False
     compDict[ 'compId' ] = result[ 'Value' ]
     self.__cmdb__writeHeartbeat( sourceId )
     gLogger.info( "Registered component in component monitoring db" )
+    return True
 
   def __cmdb__merge( self, sourceId, extraDict ):
     """
@@ -374,6 +379,8 @@ class ServiceInterface:
     """
     sources = gServiceInterface.getSources( { 'id' : sourceId },
                                             [ 'componentType', 'componentName', 'componentLocation', 'setup' ] )
+    if len ( sources ) == 0:
+      return False
     source = [ ts for ts in sources if len( ts ) > 0 ][0]
     compDict = { 'type'          : source[0],
                  'componentName' : source[1],
@@ -387,6 +394,7 @@ class ServiceInterface:
       compDict[ 'host' ] = loc[ :loc.find( ":" ) ]
       compDict[ 'port' ] = loc[ loc.find( ":" ) + 1: ]
     ServiceInterface.__sourceToComponentIdMapping[ sourceId ] = compDict
+    return True
 
   def __cmdb__writeHeartbeat( self, sourceId ):
     compDict = ServiceInterface.__sourceToComponentIdMapping[ sourceId ]
@@ -415,11 +423,13 @@ class ServiceInterface:
   def __cmdb_heartbeatComponent( self, sourceId, componentExtraInfo ):
     #Component heartbeat
     if sourceId not in ServiceInterface.__sourceToComponentIdMapping:
-      self.__cmdb__loadComponentFromActivityDB( sourceId )
+      if not self.__cmdb__loadComponentFromActivityDB( sourceId ):
+        return False
     if ServiceInterface.__sourceToComponentIdMapping[ sourceId ][ 'type' ] not in ( 'service', 'agent' ):
-      return
+      return  True
     self.__cmdb__merge( sourceId, componentExtraInfo )
     self.__cmdb__writeHeartbeat( sourceId )
+    return True
 
   def getComponentsStatus( self, condDict = False ):
     if not condDict:
