@@ -264,7 +264,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'd', 'debug', 'Show debug messages' ),
             ( 'h', 'help', 'Show this help' ),
             ( 'u:', 'baseURL=', 'Change base URL for Tar Download' ),
-            ( 'V:', 'virtualOrganization=', 'Install for this Virtual Organization')
+            ( 'V:', 'virtualOrganization=', 'Install for this Virtual Organization' )
           )
 
 optList, args = getopt.getopt( sys.argv[1:],
@@ -340,12 +340,12 @@ for o, v in optList:
   elif o in ( '-b', '--build' ):
     cliParams.buildExternals = True
   elif o in ( '-V', '--virtualOrganization' ):
-    cliParams.vo = v  
+    cliParams.vo = v
 
 defaultsCFG = CFG.CFG()
 if not cliParams.release:
   if cliParams.vo:
-    voURL = "%s/%s_defaults.cfg" % (cliParams.downBaseURL,cliParams.vo)
+    voURL = "%s/%s_defaults.cfg" % ( cliParams.downBaseURL, cliParams.vo )
     logNOTICE( "Getting defaults from %s" % voURL )
     try:
       urlretrieveTimeout( voURL, '%s_defaults.cfg' % cliParams.vo, 30 )
@@ -360,13 +360,13 @@ if not cliParams.release:
     logERROR( "Cannot download default release version: %s" % ( str( e ) ) )
     sys.exit( 1 )
 
-  if os.path.exists('defaults.cfg'):
-    defaultsCFG.loadFromFile('defaults.cfg')
-  if cliParams.vo and os.path.exists('%s_defaults.cfg' % cliParams.vo):
+  if os.path.exists( 'defaults.cfg' ):
+    defaultsCFG.loadFromFile( 'defaults.cfg' )
+  if cliParams.vo and os.path.exists( '%s_defaults.cfg' % cliParams.vo ):
     voCFG = CFG.CFG()
-    voCFG.loadFromFile('%s_defaults.cfg' % cliParams.vo)
-    defaultsCFG = defaultsCFG.mergeWith(voCFG)
-  releaseVersion = defaultsCFG.getOption('Release','')
+    voCFG.loadFromFile( '%s_defaults.cfg' % cliParams.vo )
+    defaultsCFG = defaultsCFG.mergeWith( voCFG )
+  releaseVersion = defaultsCFG.getOption( 'Release', '' )
   if releaseVersion:
     cliParams.release = releaseVersion
   else:
@@ -374,10 +374,10 @@ if not cliParams.release:
     usage()
 
 if not cliParams.lcgVer:
-  lcgVer = defaultsCFG.getOption('LcgVer','')
+  lcgVer = defaultsCFG.getOption( 'LcgVer', '' )
   if lcgVer:
     logNOTICE( "LCG bindings version %s is requested" % lcgVer )
-    cliParams.lcgVer = lcgVer 
+    cliParams.lcgVer = lcgVer
 
 # Make sure Extensions are not duplicated and have the full name
 pkgList = cliParams.packagesToInstall
@@ -580,7 +580,8 @@ try:
                    'export DIRACBIN=%s' % os.path.join( proPath, cliParams.platform, 'bin' ),
                    'export DIRACSCRIPTS=%s' % os.path.join( proPath, 'scripts' ),
                    'export DIRACLIB=%s' % os.path.join( proPath, cliParams.platform, 'lib' ),
-                   'export TERMINFO=%s' % os.path.join( proPath, cliParams.platform, 'share', 'terminfo' ) ] )
+                   'export TERMINFO=%s' % os.path.join( proPath, cliParams.platform, 'share', 'terminfo' ),
+                   'export RRD_DEFAULT_FONT=%s' % os.path.join( proPath, cliParams.platform, 'share', 'rrdtool', 'fonts', 'DejaVuSansMono-Roman.ttf' ) ] )
 
     lines.extend( ['# Clear the PYTHONPATH and the LD_LIBRARY_PATH',
                   'PYTHONPATH=""',
