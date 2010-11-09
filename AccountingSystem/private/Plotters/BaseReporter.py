@@ -27,7 +27,7 @@ class BaseReporter( DBUtils ):
                   'files' : ( ( 'files / hour', 1 / 3600.0, 1000 ), ( 'kfiles / hour', ( 10 ** 3 ) / 3600.0, 1000 ), ( 'Mfiles / hour', ( 10 ** 6 ) / 3600.0, 1 ) )
                 }
 
-  _UNITS = { 'time' : ( ( 'seconds', 1, 24 )( 'hours', 3600, 24 ), ( 'days', 86400, 15 ), ( 'weeks', 86400 * 7, 10 ), ( 'months', 86400 * 30, 12 ), ( 'years', 86400 * 365, 1 ) ),
+  _UNITS = { 'time' : ( ( 'seconds', 1, 24 ), ( 'hours', 3600, 24 ), ( 'days', 86400, 15 ), ( 'weeks', 86400 * 7, 10 ), ( 'months', 86400 * 30, 12 ), ( 'years', 86400 * 365, 1 ) ),
              'bytes' : ( ( 'MiB', 1024 ** 2, 1024 ), ( 'GiB', 1024 ** 3, 1024 ), ( 'TiB', 1024 ** 4, 1024 ), ( 'PiB', 1024 ** 5, 1 ) ),
              'jobs' : ( ( 'jobs', 1, 1000 ), ( 'kjobs', 10 ** 3, 1000 ), ( 'Mjobs', 10 ** 6, 1 ) ),
              'files' : ( ( 'files', 1, 1000 ), ( 'kfiles', 10 ** 3, 1000 ), ( 'Mfiles', 10 ** 6, 1 ) )
