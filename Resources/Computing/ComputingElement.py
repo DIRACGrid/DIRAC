@@ -292,7 +292,7 @@ class ComputingElement:
     self.log.verbose('Max Waiting Jobs:', maxWaitingJobs )
 
     # Determine how many more jobs can be submitted
-    message = '%sCE: SubmittedJobs=%s' %(self.ceName,submittedJobs)
+    message = '%s CE: SubmittedJobs=%s' %(self.ceName,submittedJobs)
     message += ', WaitingJobs=%s, RunningJobs=%s' %(waitingJobs,runningJobs)
     totalJobs = runningJobs + waitingJobs
 
@@ -301,7 +301,7 @@ class ComputingElement:
     if totalJobs >= maxTotalJobs:
       self.log.info( 'Max Number of Jobs reached:', maxTotalJobs )
       result['Value'] = 0
-      message = 'There are %s waiting jobs and total jobs %s > %s max total jobs' % (waitingJobs,totalJobs,maxTotalJobs)
+      message = 'There are %s waiting jobs and total jobs %s >= %s max total jobs' % (waitingJobs,totalJobs,maxTotalJobs)
     else:
       additionalJobs = 0
       if waitingJobs < maxWaitingJobs:
