@@ -116,6 +116,8 @@ class CREAMComputingElement( ComputingElement ):
         result = executeGridCommand(proxy,cmd,self.gridEnv)
         if not result['OK']:
           break
+        if result['Value'][0] != 0:
+          break 
         pilotJobReference = result['Value'][1].strip()
         batchIDList.append(pilotJobReference)
         stampDict[pilotJobReference] = diracStamp
