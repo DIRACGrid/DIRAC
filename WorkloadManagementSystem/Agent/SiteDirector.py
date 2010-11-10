@@ -194,6 +194,8 @@ class SiteDirector( AgentModule ):
             
       totalSlots = result['Value']
       
+      self.log.verbose(result['Message'])
+      
       ceDict = ce.getParameterDict()
       result = taskQueueDB.getMatchingTaskQueues( ceDict )
       
