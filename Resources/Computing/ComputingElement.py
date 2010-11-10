@@ -280,11 +280,11 @@ class ComputingElement:
       waitingJobs = result['WaitingJobs']
       submittedJobs = result['SubmittedJobs']
 
-    maxTotalJobs = self.__getParameters('MaxTotalJobs')['Value']
-    waitingToRunningRatio = self.__getParameters('WaitingToRunningRatio')['Value']
+    maxTotalJobs = int(self.__getParameters('MaxTotalJobs')['Value'])
+    waitingToRunningRatio = float(self.__getParameters('WaitingToRunningRatio')['Value'])
     # if there are no Running job we can submit to get at most 'MaxWaitingJobs'
     # if there are Running jobs we can increase this to get a ratio W / R 'WaitingToRunningRatio'
-    maxWaitingJobs = int( max( self.__getParameters('MaxWaitingJobs')['Value'],
+    maxWaitingJobs = int( max( int(self.__getParameters('MaxWaitingJobs')['Value']),
                                runningJobs * waitingToRunningRatio ) )
 
     self.log.verbose('Max Number of Jobs:', maxTotalJobs )
