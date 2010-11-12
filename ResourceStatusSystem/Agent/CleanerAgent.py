@@ -1,5 +1,5 @@
 ########################################################################
-# $HeadURL:  $
+# $HeadURL$
 ########################################################################
 """ CleanerAgent is in charge of different cleanings
 """
@@ -12,7 +12,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import *
 from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 
-__RCSID__ = "$Id:  $"
+__RCSID__ = "$Id$"
 
 AGENT_NAME = 'ResourceStatus/CleanerAgent'
 
