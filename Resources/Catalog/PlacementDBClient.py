@@ -1,12 +1,12 @@
 """ Client for PlacementDB file catalog tables
 """
-from DIRAC                                                      import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient                                 import RPCClient
-from DIRAC.ConfigurationSystem.Client                           import PathFinder
-from DIRAC.TransformationSystem.Client.TransformationDBClient   import TransformationDBClient
+from DIRAC                                                    import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.DISET.RPCClient                               import RPCClient
+from DIRAC.ConfigurationSystem.Client                         import PathFinder
+from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
 import types
 
-class PlacementDBClient(TransformationDBClient):
+class PlacementDBClient(TransformationClient):
   """ File catalog client for placement DB
   """
   def __init__(self, url=False, useCertificates=False):

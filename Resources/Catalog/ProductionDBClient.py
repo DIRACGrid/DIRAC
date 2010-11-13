@@ -1,12 +1,12 @@
 """ Client for ProcductionDB file catalog tables
 """
-from DIRAC                                                      import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient                                 import RPCClient
-from DIRAC.ConfigurationSystem.Client                           import PathFinder
-from DIRAC.TransformationSystem.Client.TransformationDBClient   import TransformationDBClient
+from DIRAC                                                    import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.DISET.RPCClient                               import RPCClient
+from DIRAC.ConfigurationSystem.Client                         import PathFinder
+from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
 import types
 
-class ProductionDBClient(TransformationDBClient):
+class ProductionDBClient(TransformationClient):
   """ File catalog client for Production DB
   """
 
