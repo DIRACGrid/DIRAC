@@ -42,7 +42,7 @@ class FileCatalogClient(Client):
 
   def removeDirectory(self, lfn, recursive=False, rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
-    return rpcClient.removeDirectory(lfn,verbose)
+    return rpcClient.removeDirectory(lfn)
 
   def getDirectoryReplicas(self,lfns,allStatus=False,rpc='',url='',timeout=120):
     rpcClient = self._getRPC(rpc=rpc,url=url,timeout=timeout)
