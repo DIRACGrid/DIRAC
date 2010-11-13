@@ -69,7 +69,7 @@ class StorageManagerHandler(RequestHandler):
 
   types_getTasks = [DictType]
   def export_getTasks(self, condDict, older=None, newer=None, timeStamp='LastUpdate', orderAttribute=None, limit=None):
-    """ Get the replcias known to the DB. """
+    """ Get the replicas known to the DB. """
     res = storageDB.getTasks(condDict=condDict,older=older,newer=newer,timeStamp=timeStamp,orderAttribute=orderAttribute,limit=limit) 
     if not res['OK']:
       gLogger.error('getTasks: Failed to get Cache replicas',res['Message'])
