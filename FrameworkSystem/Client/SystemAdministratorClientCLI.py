@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-########################################################################
 """ File Catalog Client Command Line Interface. """
 
 __RCSID__ = "$Id$"
@@ -431,7 +430,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     print "Software update can take a while, please wait ..."
     result = client.updateSoftware( version )
     if not result['OK']:
-      print "ERROR:", result['Message']
+      print "ERROR: Failed to update the software"
+      print result['Message']
     else:
       print "Software successfully updated."
       print "You should restart the services to use the new software version."
@@ -455,6 +455,13 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if not result['OK']:
         print "Error:", result['Message']
       hostSetup = result['Value']['Setup']  
+      instanceName = gConfig.getValue('/DIRAC/Setups/%s/%s' % (hostSetup,system),'')
+      if instanceName:
+        if instanceName == instance:
+          print "System %s already has instance %s defined in %s Setup" % (system,instance,hostSetup)
+        else:
+          print "ERROR: System %s already has instance %s defined in %s Setup" % (system,instance,hostSetup)
+        return   
       result = InstallTools.addSystemInstance( system, instance, hostSetup )
       if not result['OK']:
         print "ERROR:", result['Message']

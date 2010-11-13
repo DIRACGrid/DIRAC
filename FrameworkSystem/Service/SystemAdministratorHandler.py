@@ -6,7 +6,7 @@
 __RCSID__ = "$Id$"
 
 from types import *
-from DIRAC import S_OK, gConfig, shellCall
+from DIRAC import S_OK, S_ERROR, gConfig, shellCall
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.FrameworkSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
 
@@ -194,7 +194,23 @@ class SystemAdministratorHandler( RequestHandler ):
     """ Update the local DIRAC software installation to version
     """
     result = shellCall( 0, 'update_sw.sh %s' % version )
-    return result
+    if not result['OK']:
+      return result
+    status = result['Value'][0]
+    if status != 0:
+      # Get error messages
+      error = []
+      output = result['Value'][1].split('\n')
+      for line in output:
+        line = line.strip()
+        if 'error' in line.lower():
+          error.append(line)
+      if error:
+        message = '\n'.join(error)
+      else:
+        message = "Failed to update software to %s" % version
+      return S_ERROR(message)        
+    return S_OK()
 
   types_addOptionToDiracCfg = [ StringTypes, StringTypes ]
   def export_addOptionToDiracCfg( self, option, value ):
