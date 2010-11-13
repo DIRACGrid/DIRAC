@@ -10,7 +10,7 @@ from DIRAC.Core.Utilities.List                                  import sortList
 from DIRAC.Core.Utilities.Subprocess                            import shellCall
 
 from DIRAC.TransformationSystem.Client.Transformation           import Transformation
-from DIRAC.TransformationSystem.Client.TransformationDBClient   import TransformationDBClient
+from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
 
 import re,time,types,string,signal,sys,os,cmd
 
@@ -29,7 +29,7 @@ def printDict(dictionary):
 class TransformationCLI(cmd.Cmd,API):
 
   def __init__( self ):
-    self.server = TransformationDBClient()
+    self.server = TransformationClient()
     self.indentSpace = 4
     cmd.Cmd.__init__( self )
 
