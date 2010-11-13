@@ -17,8 +17,8 @@ class FileCatalog:
                 'listDirectory','getDirectoryMetadata','getDirectorySize','getDirectoryContents',
                 'resolveDataset','getPathPermissions','getLFNForPFN']
 
-  write_methods = ['createLink','removeLink','addFile','addReplica','removeReplica',
-                   'removeFile','setReplicaStatus','setReplicaHost','createDirectory',
+  write_methods = ['createLink','removeLink','addFile','setFileStatus','addReplica','removeReplica',
+                   'removeFile','setReplicaStatus','setReplicaHost','createDirectory','setDirectoryStatus',
                    'removeDirectory','removeDataset','removeFileFromDataset','createDataset']
 
   def __init__(self,catalogs=[]):
