@@ -5,7 +5,7 @@
 __RCSID__ = "$Id: FileReport.py 18161 2009-11-11 12:07:09Z acasajus $"
 
 from DIRAC                                                      import S_OK, S_ERROR, gLogger
-from DIRAC.TransformationSystem.Client.TransformationDBClient   import TransformationDBClient
+from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer      import RequestContainer
 
 import copy
@@ -13,7 +13,7 @@ import copy
 class FileReport:
 
   def __init__(self,server='Transformation/TransformationManager'):
-    self.client = TransformationDBClient()
+    self.client = TransformationClient()
     self.client.setServer(server)
     self.statusDict = {}
     self.transformation = None

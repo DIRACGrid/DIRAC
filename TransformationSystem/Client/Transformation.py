@@ -8,7 +8,7 @@ import string, os, shutil, types, pprint
 
 from DIRAC                                                        import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.API                                          import API
-from DIRAC.TransformationSystem.Client.TransformationDBClient     import TransformationDBClient
+from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
 
 COMPONENT_NAME='Transformation'
 
@@ -50,7 +50,7 @@ class Transformation(API):
 
     self.supportedPlugins = ['Broadcast','Standard','BySize','ByShare']
     if not transClient:
-      self.transClient = TransformationDBClient()
+      self.transClient = TransformationClient()
     else:
       self.transClient = transClient   
     self.serverURL = self.transClient.getServer()

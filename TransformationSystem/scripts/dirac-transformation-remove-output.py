@@ -15,14 +15,14 @@ else:
   transIDs = [int(arg) for arg in sys.argv[1:]]
 
 from DIRAC.TransformationSystem.Agent.TransformationCleaningAgent     import TransformationCleaningAgent
-from DIRAC.TransformationSystem.Client.TransformationDBClient         import TransformationClient
-from DIRAC                                                                import gLogger
+from DIRAC.TransformationSystem.Client.TransformationClient           import TransformationClient
+from DIRAC                                                            import gLogger
 import DIRAC
 
 agent = TransformationCleaningAgent('Transformation/TransformationCleaningAgent','dirac-transformation-remove-output')
 agent.initialize()
 
-client = TransformationDBClient()
+client = TransformationClient()
 for transID in transIDs:
   res = client.getTransformationParameters(transID,['Status'])
   if not res['OK']:

@@ -6,7 +6,7 @@ __RCSID__ = "$Id: InputDataAgent.py 28908 2010-10-05 07:57:08Z acsmith $"
 
 from DIRAC                                                                import S_OK, S_ERROR, gConfig, gLogger, gMonitor
 from DIRAC.Core.Base.AgentModule                                          import AgentModule
-from DIRAC.TransformationSystem.Client.TransformationDBClient             import TransformationDBClient
+from DIRAC.TransformationSystem.Client.TransformationClient               import TransformationClient
 from DIRAC.Resources.Catalog.FileCatalogClient                            import FileCatalogClient
 from DIRAC.Core.Utilities.List                                            import sortList
 import os, time, datetime
@@ -24,7 +24,7 @@ class InputDataAgent(AgentModule):
     self.pollingTime = self.am_getOption('PollingTime',120)
     self.fullUpdatePeriod = self.am_getOption('FullUpdatePeriod',86400)
     gMonitor.registerActivity("Iteration","Agent Loops",AGENT_NAME,"Loops/min",gMonitor.OP_SUM)
-    self.transClient = TransformationDBClient('TransformationDB')
+    self.transClient = TransformationClient('TransformationDB')
     self.metadataClient = FileCatalogClient()
     return S_OK()
 

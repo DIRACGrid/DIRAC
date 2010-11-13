@@ -12,7 +12,7 @@ from DIRAC.Core.Utilities.List                      import breakListIntoChunks
 from DIRAC.Resources.Catalog.FileCatalogueBase      import FileCatalogueBase
 import types
     
-class TransformationDBClient(Client,FileCatalogueBase):
+class TransformationClient(Client,FileCatalogueBase):
   
   """ Exposes the functionality available in the DIRAC/TransformationHandler
 
@@ -62,7 +62,7 @@ class TransformationDBClient(Client,FileCatalogueBase):
           getTransformationSummaryWeb(selectDict, sortList, startItem, maxItems) 
   """
 
-  def __init__(self,name='TransformationDBClient'):
+  def __init__(self,name='TransformationClient'):
     self.setServer('Transformation/TransformationManager')
 
   def setServer(self,url):
@@ -245,5 +245,5 @@ class TransformationDBClient(Client,FileCatalogueBase):
     elif type(path) == types.DictType:
      urls = path
     else:
-      return S_ERROR("TransformationDBClient.__checkArgumentFormat: Supplied path is not of the correct format.")
+      return S_ERROR("TransformationClient.__checkArgumentFormat: Supplied path is not of the correct format.")
     return S_OK(urls)

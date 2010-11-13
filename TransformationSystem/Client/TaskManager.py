@@ -3,7 +3,7 @@ __RCSID__ = "$Id: TaskManager.py 19505 2009-12-15 15:43:27Z paterson $"
 COMPONENT_NAME='TaskManager'
 
 from DIRAC                                                      import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.TransformationSystem.Client.TransformationDBClient   import TransformationDBClient
+from DIRAC.TransformationSystem.Client.TransformationClient   import TransformationClient
 from DIRAC.Core.Security.Misc                                   import getProxyInfo
 from DIRAC.Core.Utilities.List                                  import sortList
 
@@ -20,7 +20,7 @@ import string,re,time,types,os
 class TaskBase:
   
   def __init__(self):
-    self.transClient = TransformationDBClient()
+    self.transClient = TransformationClient()
 
   def prepareTransformationTasks(self,transBody,taskDict,owner='',ownerGroup=''):
     return S_ERROR("Not implemented")

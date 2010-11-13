@@ -26,7 +26,7 @@ def printDict(dictionary):
   for key,value in dictionary.items():
     print key.rjust(key_max),' : ',str(value).ljust(value_max)
 
-class TransformationDBCLI(cmd.Cmd,API):
+class TransformationCLI(cmd.Cmd,API):
 
   def __init__( self ):
     self.server = TransformationDBClient()

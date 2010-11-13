@@ -8,7 +8,7 @@ from DIRAC                                                          import S_OK,
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
 from DIRAC.Core.Utilities.List                                      import sortList
 from DIRAC.Core.Utilities.Shifter                                   import setupShifterProxyInEnv
-from DIRAC.TransformationSystem.Client.TransformationDBClient       import TransformationDBClient
+from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 
 AGENT_NAME = 'Transformation/MCExtensionAgent'
 
@@ -17,7 +17,7 @@ class MCExtensionAgent(AgentModule):
   #############################################################################
   def initialize( self ):
     """Sets defaults """
-    self.transClient = TransformationDBClient()
+    self.transClient = TransformationClient()
     self.am_setModuleParam( "shifterProxy", "DataManager" )
     self.am_setModuleParam( "shifterProxyLocation", "%s/runit/%s/proxy" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), AGENT_NAME ) )
     self.transformationTypes = sortList(self.am_getOption( 'TransformationTypes', ['MCSimulation','Simulation']))

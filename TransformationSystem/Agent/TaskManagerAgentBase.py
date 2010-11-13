@@ -7,7 +7,7 @@ __RCSID__ = "$Id: TaskManagerAgentBase.py 20001 2010-01-20 12:47:38Z acsmith $"
 
 from DIRAC                                                          import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
 from DIRAC.Core.Base.AgentModule                                    import AgentModule
-from DIRAC.TransformationSystem.Client.TransformationDBClient       import TransformationDBClient
+from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 from DIRAC.TransformationSystem.Client.FileReport                   import FileReport
 from DIRAC.Core.Security.Misc                                       import getProxyInfo
 from DIRAC.Core.Utilities.List                                      import sortList
@@ -21,7 +21,7 @@ class TaskManagerAgentBase(AgentModule):
   def initialize(self):
     self.section = self.am_getOption("section")
     gMonitor.registerActivity("SubmittedTasks","Automatically submitted tasks","Transformation Monitoring","Tasks", gMonitor.OP_ACUM)
-    self.transClient = TransformationDBClient()
+    self.transClient = TransformationClient()
     return S_OK()
 
   #############################################################################

@@ -6,7 +6,7 @@ __RCSID__ = "$Id:  $"
 
 from DIRAC                                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule                                import AgentModule
-from DIRAC.TransformationSystem.Client.TransformationDBClient   import TransformationDBClient
+from DIRAC.TransformationSystem.Client.TransformationClient     import TransformationClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager           import ReplicaManager
 import time,re
 
@@ -18,7 +18,7 @@ class TransformationAgent(AgentModule):
     self.pluginLocation = self.am_getOption('PluginLocation','DIRAC.TransformationSystem.Agent.TransformationPlugin')
     self.checkCatalog = self.am_getOption('CheckCatalog','yes')
     self.am_setModuleParam("shifterProxy", "ProductionManager")
-    self.transDB = TransformationDBClient('TransformationDB')
+    self.transDB = TransformationClient('TransformationDB')
     self.rm = ReplicaManager()
     return S_OK()
 

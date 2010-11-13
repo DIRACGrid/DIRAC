@@ -12,7 +12,7 @@ from DIRAC.DataManagementSystem.Client.DataIntegrityClient     import DataIntegr
 from DIRAC.DataManagementSystem.Client.ReplicaManager          import ReplicaManager
 from DIRAC.DataManagementSystem.Client.StorageUsageClient      import StorageUsageClient
 from DIRAC.Resources.Catalog.FileCatalogClient                 import FileCatalogClient 
-from DIRAC.TransformationSystem.Client.TransformationDBClient  import TransformationDBClient
+from DIRAC.TransformationSystem.Client.TransformationClient    import TransformationClient
 import re, os
 
 AGENT_NAME = 'Transformation/ValidateOutputDataAgent'
@@ -25,7 +25,7 @@ class ValidateOutputDataAgent(AgentModule):
     """
     self.integrityClient = DataIntegrityClient()
     self.replicaManager = ReplicaManager()
-    self.transClient = TransformationDBClient()
+    self.transClient = TransformationClient()
     self.storageUsageClient = StorageUsageClient()
     self.fileCatalogClient = FileCatalogClient()
     self.am_setModuleParam( "shifterProxy", "DataManager" )

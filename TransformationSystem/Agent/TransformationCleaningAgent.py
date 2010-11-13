@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.Shifter                                   import setup
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.RequestManagementSystem.Client.RequestClient             import RequestClient
 from DIRAC.Resources.Catalog.FileCatalogClient                      import FileCatalogClient
-from DIRAC.TransformationSystem.Client.TransformationDBClient       import TransformationDBClient
+from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient                import WMSClient
 from datetime                                                       import datetime, timedelta
 import re, os
@@ -24,7 +24,7 @@ class TransformationCleaningAgent(AgentModule):
   def initialize( self ):
     """Sets defaults """
     self.replicaManager = ReplicaManager()
-    self.transClient = TransformationDBClient()
+    self.transClient = TransformationClient()
     self.wmsClient = WMSClient()
     self.requestClient = RequestClient()
     self.metadataClient = FileCatalogClient()
