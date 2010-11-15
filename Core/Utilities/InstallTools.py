@@ -590,7 +590,7 @@ def getDatabaseCfg( system, dbName, instance ):
 
   return S_OK( cfg )
 
-def addSystemInstance( systemName, instance, setup = setup ):
+def addSystemInstance( systemName, instance, setup = setup, localCfg=False ):
   """ 
   Add a new system instance to dirac.cfg and CS
   """
@@ -598,8 +598,9 @@ def addSystemInstance( systemName, instance, setup = setup ):
   gLogger.notice( 'Adding %s system as %s instance for %s setup to dirac.cfg and CS' % ( system, instance, setup ) )
 
   cfg = __getCfg( cfgPath( 'DIRAC', 'Setups', setup ), system, instance )
-  if not _addCfgToDiracCfg( cfg ):
-    return S_ERROR( 'Failed to add system instance to dirac.cfg' )
+  if localCfg:
+    if not _addCfgToDiracCfg( cfg ):
+      return S_ERROR( 'Failed to add system instance to dirac.cfg' )
 
   return _addCfgToCS( cfg )
 
@@ -1141,7 +1142,7 @@ def setupSite( scriptCfg, cfg = None ):
 
   # 1.- Setup the instances in the CS
   # If the Configuration Server used is not the Master, it can take some time for this
-  # info to be propagated, this my cause the later setup to fail
+  # info to be propagated, this may cause the later setup to fail
   if setupAddConfiguration:
     gLogger.notice( 'Registering System instances' )
     for system in setupSystems:
