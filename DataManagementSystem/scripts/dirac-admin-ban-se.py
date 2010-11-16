@@ -41,10 +41,6 @@ if not res['OK']:
   DIRAC.exit(2)
 userName = res['Value']['username']
 group = res['Value']['group']
-if group != 'diracAdmin':
-  gLogger.error("You must be diracAdmin to execute this script")
-  gLogger.info("Please issue 'lhcb-proxy-init -g diracAdmin'")
-  DIRAC.exit(2)
 
 if not type(ses) == type([]):
   usage()
