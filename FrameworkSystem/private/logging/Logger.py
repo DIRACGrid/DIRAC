@@ -51,6 +51,7 @@ class Logger:
     self._minLevel = self._logLevels.getLevelValue( "NOTICE" )
 
   def initialize( self, systemName, cfgPath ):
+        
     if self._systemName == "Framework":
       from DIRAC.ConfigurationSystem.Client.Config import gConfig
       from os import getpid
@@ -91,8 +92,11 @@ class Logger:
       self.registerBackends( List.fromChar( desiredBackends ) )
       #Configure verbosity
       #self.__printDebug ( gConfig.getOption("%s/LogLevel" % cfgPath))
-      #self.__printDebug ( "%s/LogLevel" % cfgPath ) 
-      self.setLevel( gConfig.getValue( "%s/LogLevel" % cfgPath, "NOTICE" ) )
+      #self.__printDebug ( "%s/LogLevel" % cfgPath )       
+      defaultLogLevel = "NOTICE"
+      if "Scripts" in cfgPath:
+        defaultLogLevel = gConfig.getValue('/Systems/Scripts/LogLevel','NOTICE')        
+      self.setLevel( gConfig.getValue( "%s/LogLevel" % cfgPath, defaultLogLevel ) )
       #Configure framing
       #self.__printDebug ( gConfig.getOption( '/Systems/Framework/Development/Services/SystemLoggingReport/Port' )) 
       #self.__printDebug ( "I shall use %s with LogLevel %s" % 
