@@ -67,7 +67,7 @@ class Params:
     return S_OK()
 
   def setPythonVersion( self, optionValue ):
-    self.pythonVersion = optionValue
+    self.externalsPython = optionValue
     return S_OK()
 
   def setIgnorePackages( self, optionValue ):
