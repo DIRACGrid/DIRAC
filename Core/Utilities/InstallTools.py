@@ -1146,7 +1146,7 @@ def setupSite( scriptCfg, cfg = None ):
   if setupAddConfiguration:
     gLogger.notice( 'Registering System instances' )
     for system in setupSystems:
-      addSystemInstance( system, instance )
+      addSystemInstance( system, instance, setup, True )
     for system, service in setupServices:
       if not addDefaultOptionsToCS( None, 'service', system, service, extensions, overwrite = True )['OK']:
         # If we are not allowed to write to the central CS add the configuration to the local file
