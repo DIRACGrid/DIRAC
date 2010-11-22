@@ -118,6 +118,21 @@ class RequestManagerHandler(RequestHandler):
 
     result = requestDB.getRequestSummaryWeb(selectDict, sortList, startItem, maxItems)
     return result
+  
+  types_getDistinctValues = [StringTypes]
+  def export_getDistinctValues(self,attribute):
+    """ Get distinct values for a given (sub)request attribute
+    """
+    snames = ['RequestType','Operation','Status']
+    rnames = ['OwnerDN','OwnerGroup']
+    if attribute in snames:
+      result = requestDB.getDistinctAttributeValues('SubRequests',attribute)
+    elif attribute in rnames:
+      result = requestDB.getDistinctAttributeValues('Requests',attribute)  
+    else:
+      result = S_ERROR('Invalid attribute %s' % attribute)
+      
+    return result
 
   types_getDigest = [list(StringTypes)+[IntType,LongType]]
   def export_getDigest(self,requestName):
