@@ -802,7 +802,6 @@ class RequestDBMySQL(DB):
     """
     condition = ''
     conjunction = "WHERE"
-
     if condDict != None:
       for attrName, attrValue in condDict.items():
         if type(attrValue) == types.ListType:
@@ -819,13 +818,13 @@ class RequestDBMySQL(DB):
         conjunction = "AND"
 
     if older:
-      condition = ' %s %s LastUpdateTime < \'%s\'' % ( condition,
+      condition = ' %s %s S.LastUpdate < \'%s\'' % ( condition,
                                                  conjunction,
                                                  str(older) )
       conjunction = "AND"
 
     if newer:
-      condition = ' %s %s LastUpdateTime >= \'%s\'' % ( condition,
+      condition = ' %s %s S.LastUpdate >= \'%s\'' % ( condition,
                                                  conjunction,
                                                  str(newer) )
 
@@ -858,7 +857,7 @@ class RequestDBMySQL(DB):
         newer = value    
 
     condition = ''
-    if new_selectDict:
+    if new_selectDict or older or newer:
       condition = self.__buildCondition(new_selectDict,older=older,newer=newer)
       req += condition
 
@@ -869,7 +868,6 @@ class RequestDBMySQL(DB):
 
     if sortList:
       req += " ORDER BY %s %s" % (sortList[0][0],sortList[0][1])
-
     result = self._query(req)
     if not result['OK']:
       return result
