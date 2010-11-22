@@ -23,6 +23,7 @@ class Distribution:
                        'CTADIRAC' : googleAnonRoot,
                        'EELADIRAC' : googleAnonRoot,
                        'ILCDIRAC' : cernAnonRoot,
+                       'Docs' : googleAnonRoot,
                      }
 
   devSVNRoot = { 'global' : cernDevRoot,
@@ -33,7 +34,8 @@ class Distribution:
                  'BelleDIRAC' : googleDevRoot,
                  'MagicDIRAC' : googleDevRoot,
                  'CTADIRAC' : googleDevRoot,
-                 'EELADIRAC' : googleDevRoot
+                 'EELADIRAC' : googleDevRoot,
+                 'Docs' : googleDevRoot,
                }
 
   def __init__( self, package = False ):
