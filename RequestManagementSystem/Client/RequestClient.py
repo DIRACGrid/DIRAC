@@ -11,8 +11,9 @@ from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import randomize, fromChar
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.Core.Base.Client import Client
 
-class RequestClient:
+class RequestClient(Client):
 
   def __init__(self,useCertificates = False):
     """ Constructor of the RequestClient class
@@ -31,6 +32,8 @@ class RequestClient:
     self.central = False
     if central:
       self.central = central
+
+    self.setServer('RequestManagement/centralURL')
 
   ########################################################################
   #
