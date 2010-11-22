@@ -146,8 +146,9 @@ def loadDiracCfg( verbose = False ):
     gLogger.notice( 'Reading Root MySQL Password from local configuration' )
 
   mysqlUser = localCfg.getOption( cfgInstallPath( 'Database', 'User' ), '' )
-  if verbose and mysqlUser:
-    gLogger.notice( 'Reading MySQL User from local configuration' )
+  if mysqlUser:
+    if verbose:
+      gLogger.notice( 'Reading MySQL User from local configuration' )
   else:
     mysqlUser = 'Dirac'
 
@@ -156,8 +157,9 @@ def loadDiracCfg( verbose = False ):
     gLogger.notice( 'Reading %s MySQL Password from local configuration' % mysqlUser )
 
   mysqlHost = localCfg.getOption( cfgInstallPath( 'Database', 'Host' ), '' )
-  if verbose and mysqlHost:
-    gLogger.notice( 'Using MySQL Host from local configuration', mysqlHost )
+  if mysqlHost:
+    if verbose:
+      gLogger.notice( 'Using MySQL Host from local configuration', mysqlHost )
   else:
     # if it is not defined use the same as for dirac services
     mysqlHost = host
