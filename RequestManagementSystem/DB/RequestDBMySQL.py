@@ -839,9 +839,11 @@ class RequestDBMySQL(DB):
     sparameterList = ['RequestType','Status','Operation']
     parameterList = rparameterList + sparameterList
     parameterList.append('Error')
+    parameterList.append('CreationTime')
+    parameterList.append('LastUpdateTime')
 
     req = "SELECT R.RequestID, R.RequestName, R.JobID, R.OwnerDN, R.OwnerGroup,"
-    req += "S.RequestType, S.Status, S.Operation, S.Error FROM Requests as R, SubRequests as S "
+    req += "S.RequestType, S.Status, S.Operation, S.Error, S.CreationTime, S.LastUpdate FROM Requests as R, SubRequests as S "
 
     new_selectDict = {}
     older = None
