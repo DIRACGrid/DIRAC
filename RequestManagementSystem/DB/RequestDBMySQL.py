@@ -845,15 +845,21 @@ class RequestDBMySQL(DB):
     req += "S.RequestType, S.Status, S.Operation, S.Error FROM Requests as R, SubRequests as S "
 
     new_selectDict = {}
+    older = None
+    newer = None
     for key,value in selectDict.items():
       if key in rparameterList:
         new_selectDict['R.'+key] = value
       elif key in sparameterList:
         new_selectDict['S.'+key] = value
+      elif key == 'ToDate':
+        older = value
+      elif key == 'FromDate':
+        newer = value    
 
     condition = ''
     if new_selectDict:
-      condition = self.__buildCondition(new_selectDict)
+      condition = self.__buildCondition(new_selectDict,older=older,newer=newer)
       req += condition
 
     if condition:
