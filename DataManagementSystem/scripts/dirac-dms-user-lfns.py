@@ -11,11 +11,13 @@ months = 0
 years = 0
 wildcard = '*'
 baseDir = ''
+emptyDirsFlag = False
 Script.registerSwitch( "d:", "Days=", "     Match files older than number of days [%s]" % days)
 Script.registerSwitch( "m:", "Months=", "   Match files older than number of months [%s]" % months)
 Script.registerSwitch( "y:", "Years=", "    Match files older than number of years [%s]" % years)
 Script.registerSwitch( "w:", "Wildcard=", " Wildcard for matching filenames [%s]" % wildcard)
-Script.registerSwitch( "b:", "BaseDir=", "  Base directory to begin search /[vo]/user/[initial]/[username]")
+Script.registerSwitch( "b:", "BaseDir=", "  Base directory to begin search (default /[vo]/user/[initial]/[username])")
+Script.registerSwitch( "e:", "EmptyDirs", "  Create a list of empty directories")
 Script.parseCommandLine( ignoreErrors = False )
 
 args = Script.getPositionalArgs()
@@ -30,6 +32,8 @@ for switch in Script.getUnprocessedSwitches():
     wildcard = switch[1]
   if switch[0].lower() == "b" or switch[0].lower() == "basedir":
     baseDir = switch[1]
+  if switch[0].lower() == "e" or switch[0].lower() == "emptydirs":
+    emptyDirsFlag = True
 
 from DIRAC import gLogger
 from DIRAC.Core.Security.Misc import getProxyInfo
@@ -77,12 +81,13 @@ username = proxyInfo['username']
 userBase = '/%s/user/%s/%s' % (vo, username[0], username)
 if not baseDir:
   baseDir = userBase
-elif not baseDir.startswith(userBase):
-  usage()
+#elif not baseDir.startswith(userBase):
+#  usage()
 gLogger.info('Will search for files in %s' % baseDir)
 activeDirs = [baseDir]
 
 allFiles = []
+emptyDirs = []
 while len(activeDirs) > 0:
   currentDir = activeDirs[0]
   res = rm.getCatalogListDirectory(currentDir,verbose)
@@ -94,16 +99,21 @@ while len(activeDirs) > 0:
   else:
     dirContents = res['Value']['Successful'][currentDir]
     subdirs = dirContents['SubDirs']
+    empty = True
     for subdir,metadata in subdirs.items():
       if (not verbose) or isOlderThan(metadata['CreationDate'],totalDays):
         activeDirs.append(subdir)
+      empty = False  
     for filename,fileInfo in dirContents['Files'].items():
       metadata = fileInfo['MetaData']
       if (not verbose) or isOlderThan(metadata['CreationDate'],totalDays):
         if fnmatch.fnmatch(filename,wildcard):
           allFiles.append(filename)
+      empty = False    
     files = dirContents['Files'].keys()
     gLogger.info("%s: %d files, %d sub-directories" % (currentDir,len(files),len(subdirs)))
+    if empty:
+      emptyDirs.append(currentDir)
 
 outputFileName = '%s.lfns' % baseDir.replace( '/%s' % vo, '%s' % vo ).replace('/','-')
 outputFile = open(outputFileName,'w')
@@ -111,4 +121,13 @@ for lfn in sortList(allFiles):
   outputFile.write(lfn+'\n')
 outputFile.close()
 gLogger.info('%d matched files have been put in %s' % (len(allFiles),outputFileName))
+
+if emptyDirsFlag:
+  outputFileName = '%s.emptydirs' % baseDir.replace( '/%s' % vo, '%s' % vo ).replace('/','-')
+  outputFile = open(outputFileName,'w')
+  for dir in sortList(emptyDirs):
+    outputFile.write(dir+'\n')
+  outputFile.close()
+  gLogger.info('%d empty directories have been put in %s' % (len(emptyDirs),outputFileName))
+
 DIRAC.exit(0)
