@@ -17,7 +17,7 @@ Script.registerSwitch( "m:", "Months=", "   Match files older than number of mon
 Script.registerSwitch( "y:", "Years=", "    Match files older than number of years [%s]" % years)
 Script.registerSwitch( "w:", "Wildcard=", " Wildcard for matching filenames [%s]" % wildcard)
 Script.registerSwitch( "b:", "BaseDir=", "  Base directory to begin search (default /[vo]/user/[initial]/[username])")
-Script.registerSwitch( "e:", "EmptyDirs", "  Create a list of empty directories")
+Script.registerSwitch( "e", "EmptyDirs", "  Create a list of empty directories")
 Script.parseCommandLine( ignoreErrors = False )
 
 args = Script.getPositionalArgs()
