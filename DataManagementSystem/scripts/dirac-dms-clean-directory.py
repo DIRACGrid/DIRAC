@@ -22,4 +22,12 @@ else:
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 rm = ReplicaManager()
 for lfn in sortList(lfns):
-  rm.cleanLogicalDirectory(lfn)
+  lfn = lfn.strip()
+  if not lfn: continue
+  print "Cleaning directory %s ... " % lfn,
+  sys.stdout.flush()
+  result = rm.cleanLogicalDirectory(lfn)
+  if result['OK']:
+    print 'OK'
+  else:
+    print "ERROR: %s" % result['Message']  
