@@ -19,7 +19,7 @@ Script.registerSwitch( "d:", "Dir=", "   Dir to search [ALL]")
 Script.registerSwitch( "t:", "Type=", "   File type to search [ALL]")
 Script.registerSwitch( "p:", "Prod=", "   Production ID to search [ALL] (space or comma seperated list)")
 Script.registerSwitch( "g:", "Sites=", "  Sites to consider [ALL] (space or comma seperated list)")
-Script.registerSwitch( "c:", "SEs=", "  SEs to consider [ALL] (space or comma seperated list)")
+Script.registerSwitch( "S:", "SEs=", "  SEs to consider [ALL] (space or comma seperated list)")
 Script.registerSwitch( "l", "LCG", "  Group results by tape and disk")
 Script.registerSwitch( "f", "Full", "  Output the directories matching selection")
 
@@ -50,7 +50,7 @@ for switch in Script.getUnprocessedSwitches():
     prods = switch[1].replace(',',' ').split()
   if switch[0].lower() == "g" or switch[0].lower() == "sites":
     sites = switch[1].replace(',',' ').split()
-  if switch[0].lower() == "c" or switch[0].lower() == "ses":
+  if switch[0] == "S" or switch[0].lower() == "ses":
     ses = switch[1].replace(',',' ').split()
   if switch[0].lower() == "l" or switch[0].lower() == "lcg":
     lcg = True
