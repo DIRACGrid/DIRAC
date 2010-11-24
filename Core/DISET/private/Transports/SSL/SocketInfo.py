@@ -90,7 +90,9 @@ class SocketInfo:
   def __isSameHost( self, hostCN, hostConn ):
     """ Guess if it is the same host or not
     """
-    hostCN_m = hostCN.replace( 'host/', '' )
+    hostCN_m = hostCN
+    if '/' in hostCN:
+      hostCN_m = hostCN.split('/')[1]
     if hostCN_m == hostConn:
       return True
     result = checkHostsMatch( hostCN_m, hostCN )
