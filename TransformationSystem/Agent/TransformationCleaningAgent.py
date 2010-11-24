@@ -10,6 +10,7 @@ from DIRAC.Core.Utilities.List                                      import sortL
 from DIRAC.Core.Utilities.Shifter                                   import setupShifterProxyInEnv
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.RequestManagementSystem.Client.RequestClient             import RequestClient
+from DIRAC.DataManagementSystem.Client.StorageUsageClient           import StorageUsageClient
 from DIRAC.Resources.Catalog.FileCatalogClient                      import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient                import WMSClient
@@ -28,6 +29,7 @@ class TransformationCleaningAgent(AgentModule):
     self.wmsClient = WMSClient()
     self.requestClient = RequestClient()
     self.metadataClient = FileCatalogClient()
+    self.storageUsageClient = StorageUsageClient()    
     self.am_setModuleParam( "shifterProxy", "DataManager" )
     self.am_setModuleParam( "shifterProxyLocation", "%s/runit/%s/proxy" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), AGENT_NAME ) )
     self.transformationTypes = sortList(self.am_getOption( 'TransformationTypes', ['MCSimulation', 'DataReconstruction', 'DataStripping', 'MCStripping', 'Merge','Replication']))
