@@ -215,7 +215,8 @@ class TransformationCleaningAgent(AgentModule):
     gLogger.info( "Removing output data for transformation %s" % transID)
     res = self.getTransformationDirectories(transID)
     if not res['OK']:
-      return res
+      gLogger.error('Problem obtaining directories for transformation %s with result "%s"' %(transID,res))
+      return S_OK()
     directories = res['Value']
     for directory in directories:
       if not re.search('/LOG/', directory):
@@ -265,7 +266,8 @@ class TransformationCleaningAgent(AgentModule):
     gLogger.info( "Cleaning transformation %s" % transID )
     res = self.getTransformationDirectories( transID )
     if not res['OK']:
-      return res
+      gLogger.error('Problem obtaining directories for transformation %s with result "%s"' %(transID,res))
+      return S_OK()
     directories = res['Value']
     # Clean the jobs in the WMS and any failover requests found
     res = self.cleanTransformationTasks( transID )
