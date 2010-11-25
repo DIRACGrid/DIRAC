@@ -53,11 +53,10 @@ class PlottingHandler( RequestHandler ):
     m.update( repr( {'Data':data, 'PlotMetadata':metadata, 'SubplotMetadata':subplotMetadata} ) )
     return m.hexdigest()
 
-  types_generatePlot = [ [DictType, ListType], DictType, [DictType, ListType] ]
-  def export_generatePlot( self, data, plotMetadata, subplotMetadata ):
+  types_generatePlot = [ [DictType, ListType], DictType ]
+  def export_generatePlot( self, data, plotMetadata, subplotMetadata = {} ):
     """ Create a plot according to the client specification and return its name
     """
-
     plotHash = self.__calculatePlotHash( data, plotMetadata, subplotMetadata )
     result = gPlotCache.getPlot( plotHash, data, plotMetadata, subplotMetadata )
     if not result['OK']:
