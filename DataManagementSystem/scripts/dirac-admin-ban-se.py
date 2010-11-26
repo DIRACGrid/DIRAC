@@ -12,7 +12,7 @@ write = True
 site = ''
 Script.registerSwitch( "r", "BanRead","      Ban only reading from the storage element")
 Script.registerSwitch( "w", "BanWrite","     Ban writing to the storage element")
-Script.registerSwitch( "c:", "Site=", "      Ban all SEs associate to site")
+Script.registerSwitch( "S:", "Site=", "      Ban all SEs associate to site")
 Script.parseCommandLine(ignoreErrors = True)
 
 ses = Script.getPositionalArgs()
