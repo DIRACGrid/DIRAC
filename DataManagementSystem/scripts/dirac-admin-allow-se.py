@@ -12,7 +12,7 @@ write = True
 site = ''
 Script.registerSwitch( "r", "AllowRead","      Allow only reading from the storage element")
 Script.registerSwitch( "w", "AllowWrite","     Allow only writing to the storage element")
-Script.registerSwitch( "c:", "Site=", "        Allow all SEs associated to site")
+Script.registerSwitch( "S:", "Site=", "        Allow all SEs associated to site")
 Script.parseCommandLine(ignoreErrors = True)
 
 ses = Script.getPositionalArgs()
