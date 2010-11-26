@@ -1665,39 +1665,54 @@ class SRM2Storage(StorageBase):
 
     # Create an accounting DataOperation record for each operation
     oDataOperation = self.__initialiseAccountingObject(operation,self.name,gfalDict['nbfiles'])
-    
+
     res = self.__importExternals()
     if not res['OK']:
       return res
+
+    timeout = gfalDict['timeout']
+    res = pythonCall( ( timeout + 300 ), self.__gfal_wrapper, operation, gfalDict, srmRequestID )
+
+    if not res['OK']:
+      # oDataOperation.setValueByKey('TransferOK',0)
+      # oDataOperation.setValueByKey('FinalStatus','Failed')
+      # res['AccountingOperation'] = oDataOperation
+      return res
+    return res['Value']
+
+
+
+  def __gfal_wrapper(self, operation, gfalDict, srmRequestID = None ):
+
     res = self.__create_gfal_object(gfalDict)
     if not res['OK']:
-      oDataOperation.setValueByKey('TransferOK',0)
-      oDataOperation.setValueByKey('FinalStatus','Failed')
+      # oDataOperation.setValueByKey('TransferOK',0)
+      # oDataOperation.setValueByKey('FinalStatus','Failed')
       result = S_ERROR(res['Message'])
-      result['AccountingOperation'] = oDataOperation
+      # result['AccountingOperation'] = oDataOperation
       return result
 
     gfalObject = res['Value']
     if srmRequestID:
       res = self.__gfal_set_ids(gfalObject,srmRequestID)
       if not res['OK']:
-        oDataOperation.setValueByKey('TransferOK',0)
-        oDataOperation.setValueByKey('FinalStatus','Failed')
+        # oDataOperation.setValueByKey('TransferOK',0)
+        # oDataOperation.setValueByKey('FinalStatus','Failed')
         result = S_ERROR(res['Message'])
-        result['AccountingOperation'] = oDataOperation
+        # result['AccountingOperation'] = oDataOperation
         return result
 
-    oDataOperation.setStartTime()
+    # oDataOperation.setStartTime()
     start = time.time()
     res = self.__gfal_exec(gfalObject,operation)
     end = time.time()
-    oDataOperation.setEndTime()
-    oDataOperation.setValueByKey('TransferTime',end-start)
+    # oDataOperation.setEndTime()
+    # oDataOperation.setValueByKey('TransferTime',end-start)
     if not res['OK']:
-      oDataOperation.setValueByKey('TransferOK',0)
-      oDataOperation.setValueByKey('FinalStatus','Failed')
+      # oDataOperation.setValueByKey('TransferOK',0)
+      # oDataOperation.setValueByKey('FinalStatus','Failed')
       result = S_ERROR(res['Message'])
-      result['AccountingOperation'] = oDataOperation
+      # result['AccountingOperation'] = oDataOperation
       return result
 
     gfalObject = res['Value']
@@ -1709,10 +1724,10 @@ class SRM2Storage(StorageBase):
 
     res = self.__get_results(gfalObject)
     if not res['OK']:
-      oDataOperation.setValueByKey('TransferOK',0)
-      oDataOperation.setValueByKey('FinalStatus','Failed')
+      # oDataOperation.setValueByKey('TransferOK',0)
+      # oDataOperation.setValueByKey('FinalStatus','Failed')
       result = S_ERROR(res['Message'])
-      result['AccountingOperation'] = oDataOperation
+      # result['AccountingOperation'] = oDataOperation
       return result
 
     resultList = []
@@ -1723,7 +1738,7 @@ class SRM2Storage(StorageBase):
 
     self.__destroy_gfal_object(gfalObject)
     result = S_OK(resultList)
-    result['AccountingOperation'] = oDataOperation
+    # result['AccountingOperation'] = oDataOperation
     return result
 
   def __initialiseAccountingObject(self,operation,se,files):
