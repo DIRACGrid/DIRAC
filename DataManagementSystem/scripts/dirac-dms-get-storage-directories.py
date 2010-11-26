@@ -1,4 +1,8 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
+########################################################################
+# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/DataManagementSystem/scripts/dirac-admin-ban-se.py $
+########################################################################
+__RCSID__   = "$Id: dirac-admin-ban-se.py 18161 2009-11-11 12:07:09Z acasajus $"
 from DIRAC.Core.Base import Script
 
 dir = ''
@@ -7,8 +11,8 @@ ses = []
 prods = []
 Script.registerSwitch( "d:", "Dir=", "   Dir to search [ALL]")
 Script.registerSwitch( "t:", "Type=", "   File type to search [ALL]")
-Script.registerSwitch( "c:", "SEs=", "  SEs to consider [ALL] (space or comma seperated list)")
-Script.registerSwitch( "p:", "Prod=", "   Production ID to search [ALL] (space or comma seperated list)")
+Script.registerSwitch( "S:", "SEs=", "  SEs to consider [ALL] (space or comma separated list)")
+Script.registerSwitch( "p:", "Prod=", "   Production ID to search [ALL] (space or comma separated list)")
 
 Script.parseCommandLine()
 from DIRAC.DataManagementSystem.Client.StorageUsageClient import StorageUsageClient
