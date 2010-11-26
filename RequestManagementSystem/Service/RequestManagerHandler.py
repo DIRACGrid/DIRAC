@@ -230,3 +230,16 @@ class RequestManagerHandler(RequestHandler):
       errStr = "RequestManagerHandler.getRequestForJobs: Exception which getting request names."
       gLogger.exception(errStr,'',lException=x)
       return S_ERROR(errStr)
+    
+  types_selectRequests = [DictType]
+  def export_selectRequests(self,selectDict,limit=100):
+    """ Select requests according to supplied criteria
+    """
+    gLogger.verbose("RequestManagerHandler.selectRequests: Attempting to select requests." )
+    try:
+      res = requestDB.selectRequests(selectDict,limit)
+      return res
+    except Exception,x:
+      errStr = "RequestManagerHandler.selectRequests: Exception while selecting requests."
+      gLogger.exception(errStr,'',lException=x)
+      return S_ERROR(errStr)  

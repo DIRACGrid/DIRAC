@@ -67,6 +67,69 @@ class RequestDBMySQL(DB):
         res = self._setSubRequestAttribute(requestID,subRequestID,'Status',requestStatus)
 
     return S_OK()
+  
+  def __buildCondition(self, condDict, older=None, newer=None ):
+    """ build SQL condition statement from provided condDict
+        and other extra conditions
+    """
+    condition = ''
+    conjunction = "WHERE"
+    if condDict != None:
+      for attrName, attrValue in condDict.items():
+        if type(attrValue) == types.ListType:
+          multiValue = ','.join(['"'+x.strip()+'"' for x in attrValue])
+          condition = ' %s %s %s in (%s)' % ( condition,
+                                             conjunction,
+                                             str(attrName),
+                                             multiValue  )
+        else:
+          condition = ' %s %s %s=\'%s\'' % ( condition,
+                                             conjunction,
+                                             str(attrName),
+                                             str(attrValue)  )
+        conjunction = "AND"
+
+    if older:
+      condition = ' %s %s S.LastUpdate < \'%s\'' % ( condition,
+                                                 conjunction,
+                                                 str(older) )
+      conjunction = "AND"
+
+    if newer:
+      condition = ' %s %s S.LastUpdate >= \'%s\'' % ( condition,
+                                                 conjunction,
+                                                 str(newer) )
+
+    return condition
+  
+  def selectRequests(self,selectDict,limit=100):
+    """ Select requests according to specified criteria
+    """
+    
+    req = "SELECT RequestID, RequestName from Requests as S "
+    
+    condDict = {}
+    older = None
+    newer = None
+    for key,value in selectDict:
+      if key == 'ToDate':
+        older = value
+      elif key == 'FromDate':
+        newer = value
+      else:
+        condDict[key] = value   
+    
+    condition = self.__buildCondition(condDict,older=older,newer=newer)
+    req += condition
+    if limit:
+      req += " LIMIT %d" % limit
+      
+    result = self._query(req)
+    if not result['OK']:
+      return result
+    
+    requestIDs = dict([ (x[0],x[1]) for x in result['Value'] ])
+    return S_OK(requestIDs)  
 
   def _serveRequest(self):
     self.getIdLock.acquire()
@@ -795,40 +858,6 @@ class RequestDBMySQL(DB):
         current_order = order
 
     return S_OK(current_order)
-
-  def __buildCondition(self, condDict, older=None, newer=None ):
-    """ build SQL condition statement from provided condDict
-        and other extra conditions
-    """
-    condition = ''
-    conjunction = "WHERE"
-    if condDict != None:
-      for attrName, attrValue in condDict.items():
-        if type(attrValue) == types.ListType:
-          multiValue = ','.join(['"'+x.strip()+'"' for x in attrValue])
-          condition = ' %s %s %s in (%s)' % ( condition,
-                                             conjunction,
-                                             str(attrName),
-                                             multiValue  )
-        else:
-          condition = ' %s %s %s=\'%s\'' % ( condition,
-                                             conjunction,
-                                             str(attrName),
-                                             str(attrValue)  )
-        conjunction = "AND"
-
-    if older:
-      condition = ' %s %s S.LastUpdate < \'%s\'' % ( condition,
-                                                 conjunction,
-                                                 str(older) )
-      conjunction = "AND"
-
-    if newer:
-      condition = ' %s %s S.LastUpdate >= \'%s\'' % ( condition,
-                                                 conjunction,
-                                                 str(newer) )
-
-    return condition
 
   def getRequestSummaryWeb(self,selectDict, sortList, startItem, maxItems):
     """ Get summary of the requests in the database
