@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/ResourceStatusSystem/scripts/dirac-rss-reassign-token.py $
+# $HeadURL$
 ########################################################################
-__RCSID__   = "$$"
-__VERSION__ = "$$"
+__RCSID__   = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
+Script.parseCommandLine()
 
 hours = 24
 
