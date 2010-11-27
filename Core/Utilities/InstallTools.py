@@ -512,13 +512,15 @@ def getComponentCfg( componentType, system, component, instance, extensions ):
   if componentType == 'agent':
     sectionName = 'Agents'
 
+  extensionsDIRAC += [ x+'DIRAC' for x in extensions ]
+
   compCfg = ''
-  for ext in extensions + ['DIRAC']:
+  for ext in extensionsDIRAC + ['DIRAC']:
     cfgTemplatePath = os.path.join( rootPath, ext, '%sSystem' % system, 'ConfigTemplate.cfg' )
     if os.path.exists( cfgTemplatePath ):
       gLogger.notice( 'Loading configuration template', cfgTemplatePath )
       # Look up the component in this template
-      loadCfg = CFG()
+      loadCfg = CFG()     
       loadCfg.loadFromFile( cfgTemplatePath )
       try:
         compCfg = loadCfg[sectionName][component]
