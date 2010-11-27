@@ -512,7 +512,7 @@ def getComponentCfg( componentType, system, component, instance, extensions ):
   if componentType == 'agent':
     sectionName = 'Agents'
 
-  extensionsDIRAC += [ x+'DIRAC' for x in extensions ]
+  extensionsDIRAC = [ x+'DIRAC' for x in extensions ] + extensions
 
   compCfg = ''
   for ext in extensionsDIRAC + ['DIRAC']:
