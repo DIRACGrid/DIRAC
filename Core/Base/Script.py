@@ -9,7 +9,7 @@ from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 localCfg = LocalConfiguration()
 
-scriptName = os.path.basename( sys.argv[0] )
+scriptName = os.path.basename( sys.argv[0] ).replace('.py','')
 
 def initAsScript( script = False ):
   global scriptName
