@@ -13,12 +13,10 @@ from DIRAC.AccountingSystem.Client.DataStoreClient      import gDataStoreClient
 from stat import *
 import types, re,os,time,sys,string
 
-ISOK = True
-
 class SRM2Storage(StorageBase):
   
   def __init__(self,storageName,protocol,path,host,port,spaceToken,wspath):
-    self.isok = ISOK
+    self.isok = True
     self.gfal = False
     self.lcg_util = False
 
@@ -49,9 +47,6 @@ class SRM2Storage(StorageBase):
 
     self.MAX_SINGLE_STREAM_SIZE = 1024*1024*10 # 10 MB
     self.MIN_BANDWIDTH = 0.5 * (1024*1024) # 0.5 MB/s
-
-  def isOK(self):
-    return self.isok
 
   def __importExternals(self):
     if (self.lcg_util) and (self.gfal):
@@ -1289,7 +1284,7 @@ class SRM2Storage(StorageBase):
       for url in path:
         urls[url] = False
     elif type(path) == types.DictType:
-     urls = path
+      urls = path
     else:
       return S_ERROR("SRM2Storage.checkArgumentFormat: Supplied path is not of the correct format.")
     return S_OK(urls)
@@ -1670,49 +1665,45 @@ class SRM2Storage(StorageBase):
     if not res['OK']:
       return res
 
+    oDataOperation.setStartTime()
+    start = time.time()
+
     timeout = gfalDict['timeout']
     res = pythonCall( ( timeout + 300 ), self.__gfal_wrapper, operation, gfalDict, srmRequestID )
+    end = time.time()
+    oDataOperation.setEndTime()
+    oDataOperation.setValueByKey('TransferTime',end-start)
 
     if not res['OK']:
-      # oDataOperation.setValueByKey('TransferOK',0)
-      # oDataOperation.setValueByKey('FinalStatus','Failed')
-      # res['AccountingOperation'] = oDataOperation
+      oDataOperation.setValueByKey('TransferOK',0)
+      oDataOperation.setValueByKey('FinalStatus','Failed')
+      res['AccountingOperation'] = oDataOperation
       return res
-    return res['Value']
+    res = res['Value']
+    if not res['OK']:
+      oDataOperation.setValueByKey('TransferOK',0)
+      oDataOperation.setValueByKey('FinalStatus','Failed')
 
-
+    res['AccountingOperation'] = oDataOperation
+    return res
 
   def __gfal_wrapper(self, operation, gfalDict, srmRequestID = None ):
 
     res = self.__create_gfal_object(gfalDict)
     if not res['OK']:
-      # oDataOperation.setValueByKey('TransferOK',0)
-      # oDataOperation.setValueByKey('FinalStatus','Failed')
       result = S_ERROR(res['Message'])
-      # result['AccountingOperation'] = oDataOperation
       return result
 
     gfalObject = res['Value']
     if srmRequestID:
       res = self.__gfal_set_ids(gfalObject,srmRequestID)
       if not res['OK']:
-        # oDataOperation.setValueByKey('TransferOK',0)
-        # oDataOperation.setValueByKey('FinalStatus','Failed')
         result = S_ERROR(res['Message'])
-        # result['AccountingOperation'] = oDataOperation
         return result
 
-    # oDataOperation.setStartTime()
-    start = time.time()
     res = self.__gfal_exec(gfalObject,operation)
-    end = time.time()
-    # oDataOperation.setEndTime()
-    # oDataOperation.setValueByKey('TransferTime',end-start)
     if not res['OK']:
-      # oDataOperation.setValueByKey('TransferOK',0)
-      # oDataOperation.setValueByKey('FinalStatus','Failed')
       result = S_ERROR(res['Message'])
-      # result['AccountingOperation'] = oDataOperation
       return result
 
     gfalObject = res['Value']
@@ -1724,10 +1715,7 @@ class SRM2Storage(StorageBase):
 
     res = self.__get_results(gfalObject)
     if not res['OK']:
-      # oDataOperation.setValueByKey('TransferOK',0)
-      # oDataOperation.setValueByKey('FinalStatus','Failed')
       result = S_ERROR(res['Message'])
-      # result['AccountingOperation'] = oDataOperation
       return result
 
     resultList = []
@@ -1738,7 +1726,6 @@ class SRM2Storage(StorageBase):
 
     self.__destroy_gfal_object(gfalObject)
     result = S_OK(resultList)
-    # result['AccountingOperation'] = oDataOperation
     return result
 
   def __initialiseAccountingObject(self,operation,se,files):
