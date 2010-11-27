@@ -370,7 +370,34 @@ class JobMonitoringHandler( RequestHandler ):
     resultDict['Extras'] = statusDict
 
     return S_OK(resultDict)
-
+  
+##############################################################################
+  types_getJobStats = [ StringTypes, DictType ]
+  def export_getJobStats (self, attribute, selectDict):
+    """ Get job statistics distribution per attribute value with a given selection
+    """
+    startDate = selectDict.get('FromDate',None)
+    if startDate:
+      del selectDict['FromDate']
+    # For backward compatibility
+    if startDate is None:
+      startDate = selectDict.get('LastUpdate',None)
+      if startDate:
+        del selectDict['LastUpdate']
+    endDate = selectDict.get('ToDate',None)
+    if endDate:
+      del selectDict['ToDate']  
+      
+    result = jobDB.getCounters('Jobs',[attribute],selectDict,
+                               newer=startDate,
+                               older=endDate,
+                               timeStamp='LastUpdateTime')
+    resultDict = {}
+    if result['OK']:
+      for cDict,count in result['Value']:
+         resultDict[cDict[attribute]] = count
+    
+    return S_OK(resultDict)  
 
 ##############################################################################
   types_getJobsPrimarySummary = [ ListType ]
