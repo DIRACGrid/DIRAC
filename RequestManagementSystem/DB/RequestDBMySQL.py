@@ -107,23 +107,22 @@ class RequestDBMySQL(DB):
     """
     
     req = "SELECT RequestID, RequestName from Requests as S "
-    
     condDict = {}
     older = None
     newer = None
-    for key,value in selectDict:
+    for key,value in selectDict.items():
       if key == 'ToDate':
         older = value
       elif key == 'FromDate':
         newer = value
       else:
         condDict[key] = value   
-    
+
     condition = self.__buildCondition(condDict,older=older,newer=newer)
     req += condition
     if limit:
       req += " LIMIT %d" % limit
-      
+ 
     result = self._query(req)
     if not result['OK']:
       return result
