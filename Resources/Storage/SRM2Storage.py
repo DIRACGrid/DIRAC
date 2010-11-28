@@ -711,8 +711,13 @@ class SRM2Storage(StorageBase):
   def __lcg_cp_wrapper(self,src_url,dest_url,srctype,dsttype,nbstreams,timeout,src_spacetokendesc,dest_spacetokendesc):
     try:
       errCode,errStr = self.lcg_util.lcg_cp3(src_url, dest_url, self.defaulttype, srctype, dsttype, self.nobdii, self.vo, nbstreams, self.conf_file, self.insecure, self.verbose, timeout,src_spacetokendesc,dest_spacetokendesc)
-      if type(errCode) not in [types.ListType,types.IntType]: 
+      if type(errCode) not in [types.IntType]: 
         gLogger.error("SRM2Storage.__lcg_cp_wrapper: Returned errCode was not an integer","%s %s" % (errCode,type(errCode)))
+        if type(errCode) in [types.ListType]:
+          msg = ()
+          for err in errCode:
+            msg.append( '% of type %' % ( err, type(err) ) )
+          gLogger.error("SRM2Storage.__lcg_cp_wrapper: Returned errCode was List:\n" , "\n".join(msg) )
         return S_ERROR("SRM2Storage.__lcg_cp_wrapper: Returned errCode was not an integer")
       if type(errStr) not in types.StringTypes:
         gLogger.error("SRM2Storage.__lcg_cp_wrapper: Returned errStr was not a string","%s %s" % (errCode,type(errStr)))
