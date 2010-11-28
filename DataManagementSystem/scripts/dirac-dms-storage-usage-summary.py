@@ -77,6 +77,9 @@ scaleFactor = scaleDict[unit]
 
 rpc = RPCClient('DataManagement/StorageUsage')
 
+if not prods:
+  prods = ['']
+
 if full:
   for prodID in sortList(prods):
     res = rpc.getStorageDirectorySummary(dir,fileType,prodID,ses)
