@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-admin-bdii-site
+# File :   dirac-configure
 # Author : Ricardo Graciani
 ########################################################################
 """
