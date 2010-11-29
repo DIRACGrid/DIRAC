@@ -921,7 +921,7 @@ def runsvctrlComponent( system, component, mode ):
   Execute runsvctrl and check status of the specified component
   """
   if not mode in ['u', 'd', 'o', 'p', 'c', 'h', 'a', 'i', 'q', '1', '2', 't', 'k', 'x', 'e']:
-    return S_ERROR( 'Unknown runsvctrl mode', mode )
+    return S_ERROR( 'Unknown runsvctrl mode "%"' % mode )
 
   startCompDirs = glob.glob( os.path.join( startDir, '%s_%s' % ( system, component ) ) )
   result = execCommand( 0, ['runsvctrl', mode] + startCompDirs )
@@ -1219,20 +1219,20 @@ def setupSite( scriptCfg, cfg = None ):
   return S_OK()
 
 def _createRunitLog( runitCompDir ):
-    logDir = os.path.join( runitCompDir, 'log' )
-    os.makedirs( logDir )
+  logDir = os.path.join( runitCompDir, 'log' )
+  os.makedirs( logDir )
 
-    logConfigFile = os.path.join( logDir, 'config' )
-    f = open( logConfigFile, 'w' )
-    f.write( 
+  logConfigFile = os.path.join( logDir, 'config' )
+  f = open( logConfigFile, 'w' )
+  f.write( 
 """s10000000
 n20
 """ )
-    f.close()
+  f.close()
 
-    logRunFile = os.path.join( logDir, 'run' )
-    f = open( logRunFile, 'w' )
-    f.write( 
+  logRunFile = os.path.join( logDir, 'run' )
+  f = open( logRunFile, 'w' )
+  f.write( 
 """#!/bin/bash
 #
 rcfile=%(bashrc)s
@@ -1241,9 +1241,9 @@ rcfile=%(bashrc)s
 exec svlogd .
 
 """ % { 'bashrc' : os.path.join( instancePath, 'bashrc' ) } )
-    f.close()
+  f.close()
 
-    os.chmod( logRunFile, defaultPerms )
+  os.chmod( logRunFile, defaultPerms )
 
 
 def installComponent( componentType, system, component, extensions ):
