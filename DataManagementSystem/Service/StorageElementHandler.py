@@ -367,7 +367,7 @@ class StorageElementHandler( RequestHandler ):
         result = S_ERROR( 'Bulk file removal partially failed' )
         result['FailedList'] = failed_list
       else:
-         result = S_ERROR( 'Bulk file removal failed' )
+        result = S_ERROR( 'Bulk file removal failed' )
       return result
 
 ###################################################################
