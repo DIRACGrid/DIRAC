@@ -9,19 +9,19 @@ __RCSID__ = "$Id$"
 from math import sqrt     # Mathematical functions.
 
 def getMean(numbers):
-   "Returns the arithmetic mean of a numeric list."
-   return sum(numbers) / float(len(numbers))
+  "Returns the arithmetic mean of a numeric list."
+  return sum(numbers) / float(len(numbers))
 
 def getMedian(numbers):
-   "Return the median of the list of numbers."
-   # Sort the list and take the middle element.
-   n = len(numbers)
-   copy = numbers[:] # So that "numbers" keeps its original order
-   copy.sort()
-   if n & 1:         # There is an odd number of elements
-      return copy[n // 2]
-   else:
-      return (copy[n // 2 - 1] + copy[n // 2]) / 2
+  "Return the median of the list of numbers."
+  # Sort the list and take the middle element.
+  n = len(numbers)
+  copy = numbers[:] # So that "numbers" keeps its original order
+  copy.sort()
+  if n & 1:         # There is an odd number of elements
+    return copy[n // 2]
+  else:
+    return (copy[n // 2 - 1] + copy[n // 2]) / 2
 
 def getVariance(numbers,posMean='Empty'):
   """Determine the measure of the spread of the data set about the mean.
@@ -38,13 +38,13 @@ def getVariance(numbers,posMean='Empty'):
   # Subtract the mean from each data item and square the difference.
   # Sum all the squared deviations.
   for item in numbers:
-     x += (float(item) - mean)**2.0
+    x += (float(item) - mean)**2.0
 
   try:
-     # Divide sum of squares by N-1 (sample variance).
-     variance = x/(len(numbers))
+    # Divide sum of squares by N-1 (sample variance).
+    variance = x/(len(numbers))
   except:
-     variance = 0
+    variance = 0
   return variance
 
 def getStandardDeviation(numbers,variance='Empty',mean='Empty'):
