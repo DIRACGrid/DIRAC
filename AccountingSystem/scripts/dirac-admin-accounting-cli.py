@@ -1,5 +1,12 @@
 #!/usr/bin/env python
+########################################################################
 # $HeadURL$
+# File :   dirac-admin-accounting-cli
+# Author : Adria Casajus
+########################################################################
+"""
+  Command line administrative interface to DIRAC Accounting DataStore Service
+"""
 __RCSID__ = "$Id$"
 
 import cmd
@@ -11,6 +18,9 @@ from DIRAC.Core.Utilities import ExitCallback, ColorCLI
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 Script.localCfg.addDefaultEntry( "LogLevel", "info" )
+Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ...' % Script.scriptName, ] )   )
 Script.parseCommandLine()
 
 class AccountingCLI( cmd.Cmd ):
@@ -25,6 +35,9 @@ class AccountingCLI( cmd.Cmd ):
     self.do_EOF = self.do_quit
 
   def start( self ):
+    """
+    Start the command loop
+    """
     if not self.connected:
       gLogger.error( "Client is not connected" )
     try:
