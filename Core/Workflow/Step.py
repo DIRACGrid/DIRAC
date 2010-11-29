@@ -15,149 +15,148 @@ from DIRAC import S_OK, S_ERROR
 
 class StepDefinition(AttributeCollection):
 
-    def __init__(self, step_type=None, obj=None, parent=None):
-        AttributeCollection.__init__(self)
-        self.module_instances = None
-        # this object can be shared with the workflow
-        # to if its =None and workflow!=None we have to
-        # pass everything above
-        self.module_definitions = None
-        self.parent = parent
+  def __init__(self, step_type=None, obj=None, parent=None):
+    AttributeCollection.__init__(self)
+    self.module_instances = None
+    # this object can be shared with the workflow
+    # to if its =None and workflow!=None we have to
+    # pass everything above
+    self.module_definitions = None
+    self.parent = parent
 
-        # sort out Parameters and class attributes
-        if (obj == None) or isinstance(obj, ParameterCollection):
-            self.setType('notgiven')
-            self.setDescrShort('')
-            self.setDescription('')
-            self.setOrigin('')
-            self.setVersion(0.0)
-            self.parameters = ParameterCollection(obj) # creating copy
-            self.module_instances = InstancesPool(self)
-            self.module_definitions = DefinitionsPool(self)
-        elif isinstance(obj, StepDefinition):
-            self.setType(obj.getType())
-            self.setDescrShort(obj.getDescrShort())
-            self.setDescription(obj.getDescription())
-            self.setOrigin(obj.getOrigin())
-            self.setVersion(obj.getVersion())
-            # copy instances and definitions
-            self.parameters = ParameterCollection(self, obj.parameters)
-            self.module_instances = InstancesPool(self, obj.module_instances)
-            if obj.module_definitions != None:
-                self.module_definitions = DefinitionsPool(self. obj.module_definitions)
-        else:
-            raise TypeError('Can not create object type '+ str(type(self)) + ' from the '+ str(type(obj)))
-        if step_type :
-          self.setType(step_type)
+    # sort out Parameters and class attributes
+    if (obj == None) or isinstance(obj, ParameterCollection):
+      self.setType('notgiven')
+      self.setDescrShort('')
+      self.setDescription('')
+      self.setOrigin('')
+      self.setVersion(0.0)
+      self.parameters = ParameterCollection(obj) # creating copy
+      self.module_instances = InstancesPool(self)
+      self.module_definitions = DefinitionsPool(self)
+    elif isinstance(obj, StepDefinition):
+      self.setType(obj.getType())
+      self.setDescrShort(obj.getDescrShort())
+      self.setDescription(obj.getDescription())
+      self.setOrigin(obj.getOrigin())
+      self.setVersion(obj.getVersion())
+      # copy instances and definitions
+      self.parameters = ParameterCollection(self, obj.parameters)
+      self.module_instances = InstancesPool(self, obj.module_instances)
+      if obj.module_definitions != None:
+        self.module_definitions = DefinitionsPool(self. obj.module_definitions)
+    else:
+      raise TypeError('Can not create object type '+ str(type(self)) + ' from the '+ str(type(obj)))
+    if step_type :
+      self.setType(step_type)
 
-    def __str__(self):
-        ret =  str(type(self))+':\n'+ AttributeCollection.__str__(self) + self.parameters.__str__()
-        if self.module_definitions != None:
-            ret = ret + str(self.module_definitions)
-        else:
-            ret = ret + 'Module definitions shared in Workflow\n'
-        ret = ret + str(self.module_instances)
-        return ret
+  def __str__(self):
+    ret =  str(type(self))+':\n'+ AttributeCollection.__str__(self) + self.parameters.__str__()
+    if self.module_definitions != None:
+      ret = ret + str(self.module_definitions)
+    else:
+      ret = ret + 'Module definitions shared in Workflow\n'
+    ret = ret + str(self.module_instances)
+    return ret
 
+  def toXML(self):
+    ret = '<StepDefinition>\n'
+    ret = ret + AttributeCollection.toXML(self)
+    ret = ret + self.parameters.toXML()
+    if self.module_definitions != None:
+      ret = ret + self.module_definitions.toXML()
+    ret = ret + self.module_instances.toXML()
+    ret = ret + '</StepDefinition>\n'
+    return ret
 
-    def toXML(self):
-        ret = '<StepDefinition>\n'
-        ret = ret + AttributeCollection.toXML(self)
-        ret = ret + self.parameters.toXML()
-        if self.module_definitions != None:
-            ret = ret + self.module_definitions.toXML()
-        ret = ret + self.module_instances.toXML()
-        ret = ret + '</StepDefinition>\n'
-        return ret
+  def toXMLFile(self, outFile):
+    if os.path.exists(outFile):
+      os.remove(outFile)
+    xmlfile = open(outFile, 'w')
+    xmlfile.write(self.toXML())
+    xmlfile.close()
 
-    def toXMLFile(self, outFile):
-        if os.path.exists(outFile):
-          os.remove(outFile)
-        xmlfile = open(outFile, 'w')
-        xmlfile.write(self.toXML())
-        xmlfile.close()
+  def addModule(self, module):
+    # KGG We need to add code to update existing modules
+    if self.module_definitions == None:
+      self.parent.module_definitions.append(module)
+    else:
+      self.module_definitions.append(module)
+    return module
 
-    def addModule(self, module):
-        # KGG We need to add code to update existing modules
-        if self.module_definitions == None:
-            self.parent.module_definitions.append(module)
-        else:
-            self.module_definitions.append(module)
-        return module
+  def createModuleInstance(self, module_type, name):
+    """ Creates module instance of type 'type' with the name 'name'
+    """
 
-    def createModuleInstance(self, module_type, name):
-      """ Creates module instance of type 'type' with the name 'name'
-      """
+    if self.module_definitions[module_type]:
+      mi = ModuleInstance(name, self.module_definitions[module_type])
+      self.module_instances.append(mi)
+      return mi
+    else:
+      raise KeyError('Can not find ModuleDefinition '+ module_type+' to create ModuleInstrance '+name)
 
-      if self.module_definitions[module_type]:
-        mi = ModuleInstance(name, self.module_definitions[module_type])
-        self.module_instances.append(mi)
-        return mi
-      else:
-        raise KeyError('Can not find ModuleDefinition '+ module_type+' to create ModuleInstrance '+name)
+  def removeModuleInstance(self, name):
+    """ Remove module instance specified by its name
+    """
+    self.module_instances.delete(name)
 
-    def removeModuleInstance(self, name):
-      """ Remove module instance specified by its name
-      """
-      self.module_instances.delete(name)
+  def compare(self, s):
+    """ Custom Step comparison operation
+    """
+    ret = AttributeCollection.compare(self,s) and self.module_instances.compare(s)
+    if self.module_definitions.getOwner() == self:
+      ret = ret and self.module_definitions.compare(s)
+    return ret
 
-    def compare(self, s):
-      """ Custom Step comparison operation
-      """
-      ret = AttributeCollection.compare(self,s) and self.module_instances.compare(s)
-      if self.module_definitions.getOwner() == self:
-        ret = ret and self.module_definitions.compare(s)
-      return ret
+  def updateParent(self, parent):
+    """
+    """
+    AttributeCollection.updateParents(self, parent)
+    self.module_instances.updateParent(self)
+    if( self.module_definitions != None ):
+      self.module_definitions.updateParent(self)
 
-    def updateParent(self, parent):
-      """
-      """
-      AttributeCollection.updateParents(self, parent)
-      self.module_instances.updateParent(self)
-      if( self.module_definitions != None ):
-          self.module_definitions.updateParent(self)
+  def createCode(self):
+    """ Create Step code
+    """
 
-    def createCode(self):
-      """ Create Step code
-      """
-
-      str='class '+self.getType()+ ':\n'
-      str=str+indent(1)+'def execute(self):\n'
-      str=str+self.module_instances.createCode()
-      str=str+indent(2)+'# output assignment\n'
-      for v in self.parameters:
-          if v.isOutput():
-              str=str+v.createParameterCode(2,'self')
-      return str
+    str='class '+self.getType()+ ':\n'
+    str=str+indent(1)+'def execute(self):\n'
+    str=str+self.module_instances.createCode()
+    str=str+indent(2)+'# output assignment\n'
+    for v in self.parameters:
+      if v.isOutput():
+        str=str+v.createParameterCode(2,'self')
+    return str
 
 
 class StepInstance(AttributeCollection):
 
   def __init__(self, name, obj=None, parent=None):
-      AttributeCollection.__init__(self)
-      self.parent = None
+    AttributeCollection.__init__(self)
+    self.parent = None
 
-      if obj == None:
-        self.parameters = ParameterCollection()
-      elif isinstance(obj, StepInstance) or isinstance(obj, StepDefinition):
-        if name == None:
-            self.setName(obj.getName())
-        else:
-            self.setName(name)
-        self.setType(obj.getType())
-        self.setDescrShort(obj.getDescrShort())
-        self.parameters = ParameterCollection(obj.parameters)
-      elif (obj == None) or isinstance(obj, ParameterCollection):
-        # set attributes
-        self.setName(name)
-        self.setType("")
-        self.setDescrShort("")
-        self.parameters = ParameterCollection(obj)
-      elif obj != None:
-        raise TypeError('Can not create object type '+ str(type(self)) + ' from the '+ str(type(obj)))
+    if obj == None:
+      self.parameters = ParameterCollection()
+    elif isinstance(obj, StepInstance) or isinstance(obj, StepDefinition):
+      if name == None:
+          self.setName(obj.getName())
+      else:
+          self.setName(name)
+      self.setType(obj.getType())
+      self.setDescrShort(obj.getDescrShort())
+      self.parameters = ParameterCollection(obj.parameters)
+    elif (obj == None) or isinstance(obj, ParameterCollection):
+      # set attributes
+      self.setName(name)
+      self.setType("")
+      self.setDescrShort("")
+      self.parameters = ParameterCollection(obj)
+    elif obj != None:
+      raise TypeError('Can not create object type '+ str(type(self)) + ' from the '+ str(type(obj)))
 
-      self.step_commons = {}
-      self.stepStatus = S_OK()
+    self.step_commons = {}
+    self.stepStatus = S_OK()
 
   def resolveGlobalVars(self, step_definitions, wf_parameters):
     """ Resolve parameter values defined in the @{<variable>} form
