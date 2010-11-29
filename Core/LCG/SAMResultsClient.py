@@ -1,6 +1,7 @@
 """ SAMResultsClient class is a client for the SAM Results DB.
 """
-__docformat__ = "restructuredtext en"
+# it crashes epydoc
+#__docformat__ = "restructuredtext en"
 
 import urllib2
 from datetime import datetime
