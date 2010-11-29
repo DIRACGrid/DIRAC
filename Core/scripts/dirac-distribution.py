@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
+# File :   dirac-distribution
+# Author : Adria Casajus
 ########################################################################
+"""
+  Create tarballs for a given DIRAC release
+"""
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -100,7 +105,7 @@ Script.registerSwitch( "P", "ignorePackages", "Do not make tars of python packag
 Script.registerSwitch( "x:", "externalsLocation=", "Use externals location instead of downloading them", cliParams.setExternalsLocation )
 Script.registerSwitch( "j:", "makeJobs=", "Make jobs (default is 1)", cliParams.setMakeJobs )
 
-Script.setUsageMessage('\n'.join( ['Create tarballs for a given release',
+Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
                                     'Usage:',
                                     '  %s [option|cfgfile] ...' % Script.scriptName ] ) )
 
