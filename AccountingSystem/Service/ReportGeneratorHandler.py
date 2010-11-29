@@ -63,7 +63,7 @@ class ReportGeneratorHandler( RequestHandler ):
   def __checkPlotRequest( self, reportRequest ):
     #If extraArgs is not there add it
     if 'extraArgs' not in reportRequest:
-        reportRequest[ 'extraArgs' ] = {}
+      reportRequest[ 'extraArgs' ] = {}
     if type( reportRequest[ 'extraArgs' ] ) != self.__reportRequestDict[ 'extraArgs' ]:
       return S_ERROR( "Extra args has to be of type %s" % self.__reportRequestDict[ 'extraArgs' ] )
     reportRequestExtra = reportRequest[ 'extraArgs' ]
