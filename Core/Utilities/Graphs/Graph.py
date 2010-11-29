@@ -312,9 +312,9 @@ class Graph(object):
       img_size = i.size
       resize = 1.0
       if prefs['width'] < img_size[0]:
-          resize = prefs['width'] / float(img_size[0])
+        resize = prefs['width'] / float(img_size[0])
       if prefs['height'] < img_size[1]:
-          resize = min(resize, prefs['height'] / float(img_size[1]))
+        resize = min(resize, prefs['height'] / float(img_size[1]))
       box = (0.5-img_size[0]/float(prefs['width'])*resize/2., 
              0.5-img_size[1]/float(prefs['height'])*resize/2., 
              img_size[0]/float(prefs['width'])*resize, 
