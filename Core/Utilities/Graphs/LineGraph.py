@@ -20,116 +20,112 @@ import time,types
 
 class LineGraph( PlotBase ):
 
-    """
-    The BarGraph class is a straightforward bar graph; given a dictionary
-    of values, it takes the keys as the independent variable and the values
-    as the dependent variable.
-    """
-    
-    def __init__(self,data,ax,prefs,*args,**kw):
+  """
+  The BarGraph class is a straightforward bar graph; given a dictionary
+  of values, it takes the keys as the independent variable and the values
+  as the dependent variable.
+  """
   
-      PlotBase.__init__(self,data,ax,prefs,*args,**kw)
-      if type(data) == types.DictType:
-        self.gdata = GraphData(data)
-      elif type(data) == types.InstanceType and data.__class__ == GraphData:
-        self.gdata = data  
+  def __init__(self,data,ax,prefs,*args,**kw):
 
-    def draw( self ):
-    
-      PlotBase.draw(self)
-      self.x_formatter_cb(self.ax)
-    
-      if self.gdata.isEmpty():
-          return None
-          
-      tmp_x = []; tmp_y = []
-          
-      labels = self.gdata.getLabels()  
-      nKeys = self.gdata.getNumberOfKeys()
-      tmp_b = []
-      for n in range(nKeys):
-        if self.prefs.has_key('log_yaxis'):
-          tmp_b.append(0.001)
-          ymin = 0.001
-        else:
-          tmp_b.append(0.)  
-          ymin = 0.
-          
-      self.polygons = []
-      seq_b = [(self.gdata.max_num_key,0.0),(self.gdata.min_num_key,0.0)]    
-      zorder = 0.0      
-      labels = self.gdata.getLabels()
-      labels.reverse()
-      
-      # If it is a simple plot, no labels are used
-      # Evaluate the most appropriate color in this case
-      if self.gdata.isSimplePlot():
-        labels = [('SimplePlot',0.)]
-        color = self.prefs.get('plot_color','Default')
-        if color.find('#') != -1:
-          self.palette.setColor('SimplePlot',color)
-        else:
-          labels = [(color,0.)]
+    PlotBase.__init__(self,data,ax,prefs,*args,**kw)
+
+  def draw( self ):
+  
+    PlotBase.draw(self)
+    self.x_formatter_cb(self.ax)
+  
+    if self.gdata.isEmpty():
+      return None
         
-      for label,num in labels:  
+    tmp_x = []; tmp_y = []
+        
+    labels = self.gdata.getLabels()  
+    nKeys = self.gdata.getNumberOfKeys()
+    tmp_b = []
+    for n in range(nKeys):
+      if self.prefs.has_key('log_yaxis'):
+        tmp_b.append(0.001)
+        ymin = 0.001
+      else:
+        tmp_b.append(0.)  
+        ymin = 0.
+        
+    self.polygons = []
+    seq_b = [(self.gdata.max_num_key,0.0),(self.gdata.min_num_key,0.0)]    
+    zorder = 0.0      
+    labels = self.gdata.getLabels()
+    labels.reverse()
+    
+    # If it is a simple plot, no labels are used
+    # Evaluate the most appropriate color in this case
+    if self.gdata.isSimplePlot():
+      labels = [('SimplePlot',0.)]
+      color = self.prefs.get('plot_color','Default')
+      if color.find('#') != -1:
+        self.palette.setColor('SimplePlot',color)
+      else:
+        labels = [(color,0.)]
       
-        color = self.palette.getColor(label)
-        ind = 0
-        tmp_x = []
-        tmp_y = []
-        plot_data = self.gdata.getPlotNumData(label)
-        for key, value in plot_data:
-          if value is None:
-            value = 0.
-          tmp_x.append( key )
-          tmp_y.append( float(value)+tmp_b[ind] )   
-          ind += 1       
-        seq_t = zip(tmp_x,tmp_y)     
-        seq = seq_t+seq_b  
-        poly = Polygon( seq, facecolor=color, fill=True, linewidth=.2, zorder=zorder)
-        self.ax.add_patch( poly )
-        self.polygons.append( poly )        
-        tmp_b = list(tmp_y)  
-        zorder -= 0.1
-                      
-      ymax = max(tmp_b); ymax *= 1.1
-      if self.log_xaxis:  
-          xmin = 0.001
-      else: 
-          xmin = 0
-      self.ax.set_xlim( xmin=xmin, xmax=max(tmp_x) )
-      self.ax.set_ylim( ymin=ymin, ymax=ymax )
-      if self.gdata.key_type == 'time':
-          self.ax.set_xlim( xmin=min(tmp_x), xmax=max(tmp_x))     
-            
-    def x_formatter_cb( self, ax ):
-        if self.gdata.key_type == "string":
-          smap = self.gdata.getStringMap()
-          reverse_smap = {}
-          for key, val in smap.items():
-              reverse_smap[val] = key
-          ticks = smap.values()
-          ticks.sort()
-          ax.set_xticks( [i+.5 for i in ticks] )
-          ax.set_xticklabels( [reverse_smap[i] for i in ticks] )
-          labels = ax.get_xticklabels()
-          ax.grid( False )
-          if self.log_xaxis:
-              xmin = 0.001
-          else:
-              xmin = 0
-          ax.set_xlim( xmin=xmin,xmax=len(ticks) )
-        elif self.gdata.key_type == "time":
-          dl = PrettyDateLocator()
-          df = PrettyDateFormatter( dl )
-          ax.xaxis.set_major_locator( dl )
-          ax.xaxis.set_major_formatter( df )
-          ax.xaxis.set_clip_on(False)
-          sf = PrettyScalarFormatter( )
-          ax.yaxis.set_major_formatter( sf )
-            
-        else:
-            try:
-                super(LineGraph, self).x_formatter_cb( ax )
-            except:
-                return None
+    for label,num in labels:  
+    
+      color = self.palette.getColor(label)
+      ind = 0
+      tmp_x = []
+      tmp_y = []
+      plot_data = self.gdata.getPlotNumData(label)
+      for key, value in plot_data:
+        if value is None:
+          value = 0.
+        tmp_x.append( key )
+        tmp_y.append( float(value)+tmp_b[ind] )   
+        ind += 1       
+      seq_t = zip(tmp_x,tmp_y)     
+      seq = seq_t+seq_b  
+      poly = Polygon( seq, facecolor=color, fill=True, linewidth=.2, zorder=zorder)
+      self.ax.add_patch( poly )
+      self.polygons.append( poly )        
+      tmp_b = list(tmp_y)  
+      zorder -= 0.1
+                    
+    ymax = max(tmp_b); ymax *= 1.1
+    if self.log_xaxis:  
+      xmin = 0.001
+    else: 
+      xmin = 0
+    self.ax.set_xlim( xmin=xmin, xmax=max(tmp_x) )
+    self.ax.set_ylim( ymin=ymin, ymax=ymax )
+    if self.gdata.key_type == 'time':
+      self.ax.set_xlim( xmin=min(tmp_x), xmax=max(tmp_x))     
+          
+  def x_formatter_cb( self, ax ):
+    if self.gdata.key_type == "string":
+      smap = self.gdata.getStringMap()
+      reverse_smap = {}
+      for key, val in smap.items():
+        reverse_smap[val] = key
+      ticks = smap.values()
+      ticks.sort()
+      ax.set_xticks( [i+.5 for i in ticks] )
+      ax.set_xticklabels( [reverse_smap[i] for i in ticks] )
+      labels = ax.get_xticklabels()
+      ax.grid( False )
+      if self.log_xaxis:
+        xmin = 0.001
+      else:
+        xmin = 0
+      ax.set_xlim( xmin=xmin,xmax=len(ticks) )
+    elif self.gdata.key_type == "time":
+      dl = PrettyDateLocator()
+      df = PrettyDateFormatter( dl )
+      ax.xaxis.set_major_locator( dl )
+      ax.xaxis.set_major_formatter( df )
+      ax.xaxis.set_clip_on(False)
+      sf = PrettyScalarFormatter( )
+      ax.yaxis.set_major_formatter( sf )
+        
+    else:
+      try:
+        super(LineGraph, self).x_formatter_cb( ax )
+      except:
+        return None
