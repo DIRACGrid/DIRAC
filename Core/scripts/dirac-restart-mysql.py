@@ -1,16 +1,20 @@
 #!/usr/bin/env python
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/Core/scripts/dirac-install.py $
+########################################################################
+# $HeadURL$
+# File :   dirac-restart-mysql
+# Author : Ricardo Graciani
+########################################################################
 """
-Do the initial installation and configuration of the DIRAC MySQL server
+  Restart DIRAC MySQL server
 """
-__RCSID__ = "$Id: dirac-install.py 26844 2010-07-16 08:44:22Z rgracian $"
+__RCSID__ = "$Id$"
 #
 from DIRAC.Core.Base import Script
 Script.disableCS()
-Script.setUsageMessage( '\n'.join( ['Restart DIRAC MySQL server',
-                                    'Usage:',
-                                    '%s [option|cfgfile] ...' % Script.scriptName,
-                                     ] ) )
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ...' % Script.scriptName,
+                                      ] ) )
 Script.parseCommandLine()
 #
 from DIRAC.Core.Utilities import InstallTools
