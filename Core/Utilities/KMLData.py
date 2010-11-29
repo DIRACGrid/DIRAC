@@ -82,7 +82,7 @@ class KMLData:
   def addMultipleScaledStyles(self, pathPrefix, prefix, data, suffix):
     for p in prefix:
       for d in data:
-          self.addNodeStyle('%s%s' % (p, d), '%s%s%s' % (pathPrefix, p, suffix), data[d])
+        self.addNodeStyle('%s%s' % (p, d), '%s%s%s' % (pathPrefix, p, suffix), data[d])
 
   #############################################################################
   def addNode(self, name, description, style, coord):
