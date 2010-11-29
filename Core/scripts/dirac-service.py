@@ -5,7 +5,6 @@
 # Author : Adria Casajus
 ########################################################################
 __RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.7 $"
 
 import sys
 import DIRAC
