@@ -395,7 +395,7 @@ class LocalConfiguration:
 
     gLogger.notice( "Options:" )
     for optionTuple in self.commandOptionList:
-      gLogger.notice( "  -%s  --%s  :  %s" % optionTuple[:3] )
+      gLogger.notice( "  -%s --%s : %s" % ( optionTuple[0].ljust( 3 ), optionTuple[1].ljust( 15 ), optionTuple[2] ) )
     DIRAC.exit( 0 )
 
   def deleteOption( self, optionPath ):
