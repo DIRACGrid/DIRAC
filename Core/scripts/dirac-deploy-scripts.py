@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
+# File :   dirac-deploy-scripts
+# Author : Adria Casajus
 ########################################################################
 """
 Deploy all scripts and extensions
@@ -27,7 +29,8 @@ def logERROR( msg ):
 
 def logNOTICE( msg ):
   for line in msg.split( "\n" ):
-    print "%s UTC dirac-deploy-scripts [NOTICE]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
+    print " ", line
+    # print "%s UTC dirac-deploy-scripts [NOTICE]  %s" % ( time.strftime( '%Y-%m-%d %H:%M:%S', time.gmtime() ), line )
   sys.stdout.flush()
 
 moduleSuffix = "DIRAC"
