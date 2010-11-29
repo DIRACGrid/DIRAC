@@ -72,7 +72,7 @@ class AgentReactor:
         if not hideExceptions:
           gLogger.exception( "Can't load agent %s" % fullName )
     if not moduleLoaded:
-        return S_ERROR( "Can't load agent %s in root modules %s" % ( fullName, ", ".join ( rootModulesToLook ) ) )
+      return S_ERROR( "Can't load agent %s in root modules %s" % ( fullName, ", ".join ( rootModulesToLook ) ) )
     self.__agentModules[ fullName ] = { 'instance' : agent,
                                         'class' : agentClass,
                                         'module' : agentModule,
