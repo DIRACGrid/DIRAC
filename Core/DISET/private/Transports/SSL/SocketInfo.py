@@ -105,7 +105,7 @@ class SocketInfo:
     if depth == 0 and ok == 1:
       hostnameCN = cert.get_subject().commonName
       #if hostnameCN in ( self.infoDict[ 'hostname' ], "host/%s" % self.infoDict[ 'hostname' ]  ):
-      if self.__isSameHost( hostnameCN, self.infodict['hostname'] ):
+      if self.__isSameHost( hostnameCN, self.infoDict['hostname'] ):
         return 1
       else:
         gLogger.warn( "Server is not who it's supposed to be",
