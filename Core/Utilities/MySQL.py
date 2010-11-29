@@ -448,7 +448,7 @@ class MySQL:
                               % ( key, forKey, forTable ) )
 
         if toBeExtracted:
-          self.log.info( 'Table %s ready to be created' % table )
+          self.logger.info( 'Table %s ready to be created' % table )
           extracted = True
           tableList.remove( table )
           tableCreationList[i].append( table )
@@ -509,7 +509,7 @@ class MySQL:
         retDict = self._update( cmd )
         if not retDict['OK']:
           return retDict
-        self.log.info( 'Table %s created' % table )
+        self.logger.info( 'Table %s created' % table )
 
     return S_OK()
 
