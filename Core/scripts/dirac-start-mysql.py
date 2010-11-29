@@ -1,7 +1,11 @@
 #!/usr/bin/env python
+########################################################################
 # $HeadURL$
+# File :    dirac-start-mysql
+# Author :  Ricardo Graciani
+########################################################################
 """
-Do the initial installation and configuration of the DIRAC MySQL server
+Start DIRAC MySQL server
 """
 __RCSID__ = "$Id$"
 #
