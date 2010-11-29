@@ -250,9 +250,9 @@ class ConfigurationData:
     value = self.extractOptionFromCFG( "%s/AutoPublish" % self.configurationPath,
                                         self.localCFG )
     if value and value.lower() in ( "no", "false", "n" ):
-        return False
+      return False
     else:
-        return True
+      return True
 
   def getServers( self ):
     return list( self.remoteServerList )
@@ -287,9 +287,9 @@ class ConfigurationData:
     value = self.extractOptionFromCFG( "%s/Master" % self.configurationPath,
                                             self.localCFG )
     if value and value.lower() in ( "yes", "true", "y" ):
-        return True
+      return True
     else:
-        return False
+      return False
 
   def getServicesPath( self ):
     return "/Services"
