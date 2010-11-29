@@ -191,8 +191,8 @@ class timeInterval:
        If not properly initialized an error flag is set, and subsequent calls
        to any method will return None
     """
-    if ( type( initialDateTime ) <> _dateTimeType or
-       type( intervalTimeDelta ) <> _timeType ):
+    if ( type( initialDateTime ) != _dateTimeType or
+       type( intervalTimeDelta ) != _timeType ):
       self.__error = True
       return None
     self.__error = False
@@ -208,7 +208,7 @@ class timeInterval:
     """
     if self.__error :
       return None
-    if type( myDateTime ) <> _dateTimeType :
+    if type( myDateTime ) != _dateTimeType :
       return None
     if myDateTime < self.__startDateTime :
       return False
