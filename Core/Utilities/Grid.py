@@ -12,42 +12,42 @@ from DIRAC.Core.Security.Misc                         import getProxyInfo
 from DIRAC import systemCall, shellCall, S_OK, S_ERROR
 
 def executeGridCommand(proxy, cmd, gridEnvScript=None ):
-    """ Execute cmd tuple after sourcing GridEnv
-    """
-    currentEnv = dict(os.environ)
-    if gridEnvScript:
-      ret = sourceEnv( 10, [gridEnvScript] )
-      if not ret['OK']:
-        return S_ERROR( 'Failed sourcing GridEnv: %s' % ret['Message'] )
-      gridEnv = ret['outputEnv']
-      #
-      # Preserve some current settings if they are there
-      #
-      if currentEnv.has_key('X509_VOMS_DIR'):
-        gridEnv['X509_VOMS_DIR'] = currentEnv['X509_VOMS_DIR']
-      if currentEnv.has_key('X509_CERT_DIR'):
-        gridEnv['X509_CERT_DIR'] = currentEnv['X509_CERT_DIR']
+  """ Execute cmd tuple after sourcing GridEnv
+  """
+  currentEnv = dict(os.environ)
+  if gridEnvScript:
+    ret = sourceEnv( 10, [gridEnvScript] )
+    if not ret['OK']:
+      return S_ERROR( 'Failed sourcing GridEnv: %s' % ret['Message'] )
+    gridEnv = ret['outputEnv']
+    #
+    # Preserve some current settings if they are there
+    #
+    if currentEnv.has_key('X509_VOMS_DIR'):
+      gridEnv['X509_VOMS_DIR'] = currentEnv['X509_VOMS_DIR']
+    if currentEnv.has_key('X509_CERT_DIR'):
+      gridEnv['X509_CERT_DIR'] = currentEnv['X509_CERT_DIR']
+  else:
+    gridEnv = currentEnv
+    
+  if not proxy:
+    res = getProxyInfo()      
+    if not res['OK']:
+      return res
+    gridEnv['X509_USER_PROXY' ] = res['Value']['path']
+  elif type(proxy) in types.StringTypes:
+    if os.path.exists(proxy):
+      gridEnv[ 'X509_USER_PROXY' ] = proxy
     else:
-      gridEnv = currentEnv
-      
-    if not proxy:
-      res = getProxyInfo()      
-      if not res['OK']:
-        return res
-      gridEnv['X509_USER_PROXY' ] = res['Value']['path']
-    elif type(proxy) in types.StringTypes:
-      if os.path.exists(proxy):
-        gridEnv[ 'X509_USER_PROXY' ] = proxy
-      else:
-        return S_ERROR('Can not treat proxy passed as a string')
-    else:
-      ret = gProxyManager.dumpProxyToFile( proxy )
-      if not ret['OK']:
-        return ret
-      gridEnv[ 'X509_USER_PROXY' ] = ret['Value']
+      return S_ERROR('Can not treat proxy passed as a string')
+  else:
+    ret = gProxyManager.dumpProxyToFile( proxy )
+    if not ret['OK']:
+      return ret
+    gridEnv[ 'X509_USER_PROXY' ] = ret['Value']
 
-    return systemCall( 120, cmd, env = gridEnv )
-  
+  return systemCall( 120, cmd, env = gridEnv )
+
 def ldapsearchBDII( filt=None, attr=None, host=None, base = None ):
   """ Python wrapper for ldapserch at bdii.
       
