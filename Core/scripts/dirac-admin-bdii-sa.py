@@ -1,14 +1,19 @@
 #! /usr/bin/env python
 ########################################################################
 # $HeadURL$
+# File :   dirac-admin-bdii-sa
+# Author : Adria Casajus
 ########################################################################
+"""
+  Check info on BDII for SA
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base                                         import Script
 
 Script.registerSwitch( "H:", "host=", "BDII host" )
 Script.registerSwitch( "V:", "vo=", "vo" )
-Script.setUsageMessage('\n'.join( ['Check SA info on BDII for Site',
+Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
                                     'Usage:',
                                     '  %s [option|cfgfile] ... Site' % Script.scriptName,
                                     'Arguments:',

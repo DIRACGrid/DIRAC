@@ -1,14 +1,19 @@
 #! /usr/bin/env python
 ########################################################################
 # $HeadURL$
+# File :   dirac-admin-bdii-ce-voview
+# Author : Adria Casajus
 ########################################################################
+"""
+  Check info on BDII for VO view of CE
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base                                         import Script
 
 Script.registerSwitch( "H:", "host=", "BDII host" )
 Script.registerSwitch( "V:", "vo=", "vo" )
-Script.setUsageMessage('\n'.join( ['Check CE VoView on BDII',
+Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
                                     'Usage:',
                                     '  %s [option|cfgfile] ... CE' % Script.scriptName,
                                     'Arguments:',
