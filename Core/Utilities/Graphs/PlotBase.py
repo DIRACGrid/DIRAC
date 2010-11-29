@@ -33,6 +33,10 @@ class PlotBase:
     self.prefs = evalPrefs(*aw,**kw)
     self.coords = {}
     self.palette = Palette()
+    if type(data) == types.DictType:
+      self.gdata = GraphData(data)
+    elif type(data) == types.InstanceType and data.__class__ == GraphData:
+      self.gdata = data  
 
   def dumpPrefs(self):
   
