@@ -22,7 +22,7 @@ def generateNoDataPlot( fileName, data, metadata ):
   try:
     fn = file( fileName, "wb" )
   except:
-    return S_ERROR( "Can't open %s" % filename )
+    return S_ERROR( "Can't open %s" % fileName )
   textGraph( 'No data for this selection', fn, metadata )
   fn.close()
   return S_OK()
@@ -79,7 +79,7 @@ def generateStackedLinePlot( fileName, data, metadata ):
   try:
     fn = file( fileName, "wb" )
   except:
-    return S_ERROR( "Can't open %s" % filename )
+    return S_ERROR( "Can't open %s" % fileName )
   checkMetadata( metadata )
   for k, v in ( ( 'sort_labels', 'sum' ), ( 'legend_unit', '%' ) ):
     if k not in metadata:
