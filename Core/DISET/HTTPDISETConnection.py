@@ -97,13 +97,13 @@ class HTTPDISETConnection( httplib.HTTPConnection ):
     errorMsg = ""
     for res in socket.getaddrinfo(self.host, self.port, 0,
                                   socket.SOCK_STREAM):
-        af, socktype, proto, canonname, addTuple = res
-        result = gSSLSocketFactory.createClientSocket( addTuple, useCertificates = gConfig._useServerCertificate() )
-        if not result[ 'OK' ]:
-          errorMsg = result[ 'Message' ]
-          continue
-        self.sock = result[ 'Value' ]
-        break
+      af, socktype, proto, canonname, addTuple = res
+      result = gSSLSocketFactory.createClientSocket( addTuple, useCertificates = gConfig._useServerCertificate() )
+      if not result[ 'OK' ]:
+        errorMsg = result[ 'Message' ]
+        continue
+      self.sock = result[ 'Value' ]
+      break
     if not self.sock:
       raise socket.error, errorMsg
 
