@@ -185,9 +185,9 @@ class GraphData:
       self.all_string_map = {}
       next = 0
       for key in self.all_keys:
-         self.all_string_map[key] = next
-         self.all_num_keys.append(next)
-         next += 1
+        self.all_string_map[key] = next
+        self.all_num_keys.append(next)
+        next += 1
     elif self.key_type == "time":
       self.all_num_keys = [ date2num( datetime.datetime.fromtimestamp(to_timestamp(key)) ) for key in self.all_keys ]
     elif self.key_type == "numeric":
@@ -406,9 +406,9 @@ class PlotData:
       self.string_map = {}
       next = 0
       for key in self.keys:
-         self.string_map[key] = next
-         self.num_keys.append(next)
-         next += 1
+        self.string_map[key] = next
+        self.num_keys.append(next)
+        next += 1
     elif self.key_type == "time":
       self.num_keys = [ date2num( datetime.datetime.fromtimestamp(to_timestamp(key)) ) for key in self.keys ]
     elif self.key_type == "numeric":
@@ -455,62 +455,62 @@ class PlotData:
     return self.sorted_keys
 
   def __data_size( self, item ):
-      """
-      Determine a numerical size for the data; this is used to
-      sort the keys of the graph.
+    """
+    Determine a numerical size for the data; this is used to
+    sort the keys of the graph.
 
-      If the item is a tuple, take the absolute value of the first entry.
-      Otherwise, attempt to take the absolute value of that item.  If that
-      fails, just return -1.
-      """
-      if type(item) == types.TupleType:
-        return abs(item[0])    
-      try:
-          return abs(item)
-      except TypeError, te:
-          return -1
+    If the item is a tuple, take the absolute value of the first entry.
+    Otherwise, attempt to take the absolute value of that item.  If that
+    fails, just return -1.
+    """
+    if type(item) == types.TupleType:
+      return abs(item[0])    
+    try:
+      return abs(item)
+    except TypeError, te:
+      return -1
 
   def parseKey( self, key ):
-      """
-      Parse the name of the pivot; this is the identity function.
-      """
-      
-      if self.key_type == "time":
-        return to_timestamp(key)
-      else:  
-        return key
+    """
+    Parse the name of the pivot; this is the identity function.
+    """
+    
+    if self.key_type == "time":
+      return to_timestamp(key)
+    else:  
+      return key
 
   def parseDatum( self, data ):
-      """
-      Parse the specific data value; this is the identity.
-      """ 
-      try:
-        result = float(data)
-      except:
-        result = None
-      return result  
+    """
+    Parse the specific data value; this is the identity.
+    """ 
+    try:
+      result = float(data)
+    except:
+      result = None
+    return result  
 
   def parseData( self, key_type = None ):
-      """
-      Parse all the data values passed to the graph.  For this super class,
-      basically does nothing except loop through all the data.  A sub-class
-      should override the parseDatum and parse_pivot functions rather than
-      this one.
-      """
-      if key_type:
-        self.key_type = key_type
-      else:  
-        self.key_type = get_key_type(self.data.keys()) 
-      new_parsed_data = {}
-      for key, data in self.data.items():
-          new_key = self.parseKey( key )
-          data = self.parseDatum( data )
-          #if data != None:
-          new_parsed_data[ new_key ] = data
-      self.parsed_data = new_parsed_data  
-      
-      self.keys = self.parsed_data.keys()
-      
+    """
+    Parse all the data values passed to the graph.  For this super class,
+    basically does nothing except loop through all the data.  A sub-class
+    should override the parseDatum and parse_pivot functions rather than
+    this one.
+    """
+    if key_type:
+      self.key_type = key_type
+    else:
+      self.key_type = get_key_type(self.data.keys()) 
+    new_parsed_data = {}
+    for key, data in self.data.items():
+      new_key = self.parseKey( key )
+      data = self.parseDatum( data )
+      #if data != None:
+      new_parsed_data[ new_key ] = data
+    self.parsed_data = new_parsed_data  
+    
+    self.keys = self.parsed_data.keys()
+    
   def makeCumulativePlot(self):
   
     if not self.sorted_keys:
