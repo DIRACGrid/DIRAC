@@ -36,9 +36,9 @@ class ServiceConfiguration:
     if optionValue:
       return optionValue
     elif URL:
-        return URL
+      return URL
     else:
-        return self.serviceURL
+      return self.serviceURL
 
   def registerAlsoAs( self ):
     optionValue = self.getOption( "RegisterAlsoAs" )
