@@ -55,10 +55,6 @@ class FileCache:
       time.sleep( 600 )
       self.purge()
 
-  def __isCurrentTime( self, toSecs ):
-    currentBucket = self.rrdManager.getCurrentBucketTime( self.graceTime )
-    return toSecs + self.graceTime > currentBucket
-
   @gSynchro
   def purge( self ):
     """
