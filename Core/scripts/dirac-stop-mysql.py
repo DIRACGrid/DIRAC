@@ -1,15 +1,19 @@
 #!/usr/bin/env python
+########################################################################
 # $HeadURL$
+# File :   dirac-stop-mysql
+# Author : Ricardo Graciani
+########################################################################
 """
-Do the initial installation and configuration of the DIRAC MySQL server
+  Stop DIRAC MySQL server
 """
 __RCSID__ = "$Id$"
 #
 from DIRAC.Core.Base import Script
 Script.disableCS()
-Script.setUsageMessage( '\n'.join( ['Stop DIRAC MySQL server',
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ...' % Script.scriptName,
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ...' % Script.scriptName,
                                      ] ) )
 Script.parseCommandLine()
 #
