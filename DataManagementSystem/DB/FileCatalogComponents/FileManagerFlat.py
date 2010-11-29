@@ -254,7 +254,7 @@ class FileManagerFlat(FileManagerBase):
       #Now prepare the storage usage dict
       res = self.db.seManager.findSE(se)
       if not res['OK']:
-          return res
+        return res
       seID = res['Value']
       dirID = fileDict['DirID']
       if not directorySESizeDict.has_key(dirID):
