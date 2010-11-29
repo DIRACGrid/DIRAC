@@ -53,7 +53,7 @@ class BaseClient:
     if self.KW_SETUP in self.kwargs and self.kwargs[ self.KW_SETUP ]:
       self.setup = str( self.kwargs[ self.KW_SETUP ] )
     else:
-      self.setup = gConfig.getValue( "/DIRAC/Setup", "LHCb-Development" )
+      self.setup = gConfig.getValue( "/DIRAC/Setup", "Test" )
     return S_OK()
 
   def __discoverURL(self):
@@ -97,8 +97,8 @@ class BaseClient:
         self.kwargs[ self.KW_SKIP_CA_CHECK ] = CS.skipCACheck()
     if self.KW_PROXY_CHAIN in self.kwargs:
       try:
-         self.kwargs[ self.KW_PROXY_STRING ] = self.kwargs[ self.KW_PROXY_CHAIN ].dumpAllToString()[ 'Value' ]
-         del( self.kwargs[ self.KW_PROXY_CHAIN ] )
+        self.kwargs[ self.KW_PROXY_STRING ] = self.kwargs[ self.KW_PROXY_CHAIN ].dumpAllToString()[ 'Value' ]
+        del( self.kwargs[ self.KW_PROXY_CHAIN ] )
       except:
         return S_ERROR( "Invalid proxy chain specified on instantiation" )
     return S_OK()
@@ -106,7 +106,7 @@ class BaseClient:
   def __discoverExtraCredentials( self ):
     #Wich extra credentials to use?
     if self.useCertificates:
-        self.__extraCredentials = self.VAL_EXTRA_CREDENTIALS_HOST
+      self.__extraCredentials = self.VAL_EXTRA_CREDENTIALS_HOST
     else:
       self.__extraCredentials = ""
     if self.KW_EXTRA_CREDENTIALS in self.kwargs:
@@ -189,7 +189,7 @@ and this is thread %s
     stConnectionInfo = ( ( self.URLTuple[3], self.setup ), sAction, self.__extraCredentials )
     retVal = transport.sendData( S_OK( stConnectionInfo ) )
     if not retVal[ 'OK' ]:
-        return retVal
+      return retVal
     serverReturn = transport.receiveData()
     #TODO: Check if delegation is required
     if serverReturn[ 'OK' ] and 'Value' in serverReturn and type( serverReturn[ 'Value' ] ) == types.DictType:
