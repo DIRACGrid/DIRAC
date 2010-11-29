@@ -63,7 +63,7 @@ class AgentModule:
 
 
     for key in properties:
-      self.__moduleProperties[ key ] = self.properties[ key ]
+      self.__moduleProperties[ key ] = properties[ key ]
     self.__moduleProperties[ 'executors' ] = [ ( self.execute, () ) ]
     self.__moduleProperties[ 'shifterProxy' ] = False
     self.__moduleProperties[ 'shifterProxyLocation' ] = False
@@ -239,7 +239,7 @@ class AgentModule:
     cpuStats = self.__startReportToMonitoring()
     cycleResult = self.__executeModuleCycle()
     if cpuStats:
-        self.__endReportToMonitoring( *cpuStats )
+      self.__endReportToMonitoring( *cpuStats )
     #Incrmenent counters
     self.__moduleProperties[ 'cyclesDone' ] += 1
     #Show status
@@ -291,24 +291,24 @@ class AgentModule:
       gMonitor.addMark( 'CPU', percentage )
 
   def __VmB( self, VmKey ):
-      '''Private.
-      '''
-      __memScale = {'kB': 1024.0, 'mB': 1024.0 * 1024.0, 'KB': 1024.0, 'MB': 1024.0 * 1024.0}
-      procFile = '/proc/%d/status' % os.getpid()
-       # get pseudo file  /proc/<pid>/status
-      try:
-          t = open( procFile )
-          v = t.read()
-          t.close()
-      except:
-          return 0.0  # non-Linux?
-       # get VmKey line e.g. 'VmRSS:  9999  kB\n ...'
-      i = v.index( VmKey )
-      v = v[i:].split( None, 3 )  # whitespace
-      if len( v ) < 3:
-          return 0.0  # invalid format?
-       # convert Vm value to bytes
-      return float( v[1] ) * __memScale[v[2]]
+    '''Private.
+    '''
+    __memScale = {'kB': 1024.0, 'mB': 1024.0 * 1024.0, 'KB': 1024.0, 'MB': 1024.0 * 1024.0}
+    procFile = '/proc/%d/status' % os.getpid()
+     # get pseudo file  /proc/<pid>/status
+    try:
+      t = open( procFile )
+      v = t.read()
+      t.close()
+    except:
+      return 0.0  # non-Linux?
+     # get VmKey line e.g. 'VmRSS:  9999  kB\n ...'
+    i = v.index( VmKey )
+    v = v[i:].split( None, 3 )  # whitespace
+    if len( v ) < 3:
+      return 0.0  # invalid format?
+     # convert Vm value to bytes
+    return float( v[1] ) * __memScale[v[2]]
 
   def __executeModuleCycle( self ):
     #Execute the beginExecution function
