@@ -11,9 +11,9 @@ __RCSID__ = "$Id$"
 #
 from DIRAC.Core.Base import Script
 Script.disableCS()
-Script.setUsageMessage( '\n'.join( ['Start DIRAC MySQL server',
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ...' % Script.scriptName,
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ...' % Script.scriptName,
                                      ] ) )
 Script.parseCommandLine()
 #
