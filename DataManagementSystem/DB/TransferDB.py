@@ -22,10 +22,10 @@ class TransferDB(DB):
     self.getIdLock = threading.Lock()
 
   def __getFineTime(self):
-     _date = datetime.datetime.utcnow()
-     epoc = time.mktime(_date.timetuple()) - MAGIC_EPOC_NUMBER
-     time_order = round(epoc,3)
-     return time.time() - MAGIC_EPOC_NUMBER
+    _date = datetime.datetime.utcnow()
+    epoc = time.mktime(_date.timetuple()) - MAGIC_EPOC_NUMBER
+    time_order = round(epoc,3)
+    return time.time() - MAGIC_EPOC_NUMBER
 
   #################################################################################
   # These are the methods for managing the Channels table
@@ -685,13 +685,13 @@ class TransferDB(DB):
 
   def addReplicationTree(self,fileID,tree):
     for channelID,dict in tree.items():
-       ancestor = dict['Ancestor']
-       if not ancestor:
-         ancestor = '-'
-       strategy = dict['Strategy']
-       req = "INSERT INTO ReplicationTree (FileID,ChannelID,AncestorChannel,Strategy,CreationTime) VALUES (%s,%s,'%s','%s',UTC_TIMESTAMP());" % (fileID,channelID,ancestor,strategy)
-       res = self._update(req)
-       if not res['OK']:
+      ancestor = dict['Ancestor']
+      if not ancestor:
+        ancestor = '-'
+      strategy = dict['Strategy']
+      req = "INSERT INTO ReplicationTree (FileID,ChannelID,AncestorChannel,Strategy,CreationTime) VALUES (%s,%s,'%s','%s',UTC_TIMESTAMP());" % (fileID,channelID,ancestor,strategy)
+      res = self._update(req)
+      if not res['OK']:
         err = "TransferDB._addReplicationTree: Failed to add ReplicationTree for file %s" % fileID
         return S_ERROR(err)
     return S_OK()
