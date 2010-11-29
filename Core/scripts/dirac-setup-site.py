@@ -1,17 +1,22 @@
 #!/usr/bin/env python
+########################################################################
 # $HeadURL$
+# File :    dirac-setup-site
+# Author :  Ricardo Graciani
+########################################################################
 """
-Do the initial installation and configuration of a new DIRAC site
+Initial installation and configuration of a new DIRAC server (DBs, Services, Agents, Web Portal,...)
 """
 __RCSID__ = "$Id$"
 #
 from DIRAC.Core.Base import Script
 Script.disableCS()
-Script.setUsageMessage( '\n'.join( ['Setup a DIRAC server (DBs, Services, Agents, Web Portal,...)',
-                                    'Usage:',
-                                    '  %s [option] ... [cfgfile]' % Script.scriptName,
-                                    'Arguments:',
-                                    '  cfgfile: DIRAC Cfg with description of the configuration (optional)'] ) )
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option] ... [cfgfile]' % Script.scriptName,
+                                     'Arguments:',
+                                     '  cfgfile: DIRAC Cfg with description of the configuration (optional)' ] ) )
+
 Script.addDefaultOptionValue( '/DIRAC/Security/UseServerCertificate', 'yes' )
 Script.parseCommandLine()
 args = Script.getExtraCLICFGFiles()
