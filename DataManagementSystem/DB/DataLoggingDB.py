@@ -74,7 +74,7 @@ class DataLoggingDB(DB):
 
     cmd = "INSERT INTO DataLoggingInfo (LFN, Status, MinorStatus, StatusTime, StatusTimeOrder, Source) VALUES"
     for lfn in lfns:
-       cmd = "%s ('%s','%s','%s','%s',%f,'%s')," % (cmd,lfn,status,minor,str(_date),time_order,source)
+      cmd = "%s ('%s','%s','%s','%s',%f,'%s')," % (cmd,lfn,status,minor,str(_date),time_order,source)
     cmd = cmd.rstrip(',')
     cmd = "%s;" % cmd
     return self._update(cmd)
