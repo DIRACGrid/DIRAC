@@ -213,8 +213,8 @@ class DBUtils:
     for key in dataDict:
       currentDict = dataDict[ key ]
       for timeEpoch in currentDict:
-          currentDict[ timeEpoch ] /= float( factor )
-          maxValue = max( maxValue, currentDict[ timeEpoch ] )
+        currentDict[ timeEpoch ] /= float( factor )
+        maxValue = max( maxValue, currentDict[ timeEpoch ] )
     return dataDict, maxValue
 
   def _acumulate( self, granularity, startEpoch, endEpoch, dataDict ):
