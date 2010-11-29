@@ -1038,7 +1038,7 @@ File Catalog Client $Revision: 1.17 $Date:
         setFlag = metaDict[meta] != 'OwnParameter' and metaTypeDict[meta] == "MetaSet"
         prefix = ''
         if setFlag:
-            prefix = "+"
+          prefix = "+"
         if metaDict[meta] == 'ParentMetadata':
           prefix += "*"
           print (prefix+meta).rjust(20),':',value
@@ -1295,20 +1295,20 @@ File Catalog Client $Revision: 1.17 $Date:
       
 if __name__ == "__main__":
   
-    if len(sys.argv) > 2:
-      print FileCatalogClientCLI.__doc__
-      sys.exit(2)      
-    elif len(sys.argv) == 2:
-      catype = sys.argv[1]
-      if catype == "LFC":
-        from DIRAC.Resources.Catalog.LcgFileCatalogProxyClient import LcgFileCatalogProxyClient
-        cli = FileCatalogClientCLI(LcgFileCatalogProxyClient())
-        print "Starting LFC Proxy FileCatalog client"
-        cli.cmdloop() 
-      elif catype == "DiracFC":
-        from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
-        cli = FileCatalogClientCLI(FileCatalogClient())
-        print "Starting ProcDB FileCatalog client"
-        cli.cmdloop()  
-      else:
-        print "Unknown catalog type", catype
+  if len(sys.argv) > 2:
+    print FileCatalogClientCLI.__doc__
+    sys.exit(2)      
+  elif len(sys.argv) == 2:
+    catype = sys.argv[1]
+    if catype == "LFC":
+      from DIRAC.Resources.Catalog.LcgFileCatalogProxyClient import LcgFileCatalogProxyClient
+      cli = FileCatalogClientCLI(LcgFileCatalogProxyClient())
+      print "Starting LFC Proxy FileCatalog client"
+      cli.cmdloop() 
+    elif catype == "DiracFC":
+      from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
+      cli = FileCatalogClientCLI(FileCatalogClient())
+      print "Starting ProcDB FileCatalog client"
+      cli.cmdloop()  
+    else:
+      print "Unknown catalog type", catype
