@@ -46,13 +46,13 @@ class DirectoryTreeBase:
     else:
       result = self.db.ugManager.getUserAndGroupID(credDict)
       if not result['OK']:
-       return result
+        return result
       ( l_uid, l_gid ) = result['Value']
 
     dirDict = {}
     result = self.makeDir(path)
     if not result['OK']:
-     return result
+      return result
     dirID = result['Value']
     if result['NewDirectory']:
       req = "INSERT INTO FC_DirectoryInfo (DirID,UID,GID,CreationDate,ModificationDate,Mode,Status) Values "
@@ -87,13 +87,13 @@ class DirectoryTreeBase:
     else:
       result = self.db.ugManager.getUserAndGroupID(credDict)
       if not result['OK']:
-       return result
+        return result
       ( l_uid, l_gid ) = result['Value']
 
     dirDict = {}
     result = self.makeDir(path)
     if not result['OK']:
-     return result
+      return result
     dirID = result['Value']
     if result['NewDirectory']:
       req = "INSERT INTO FC_DirectoryInfo (DirID,UID,GID,CreationDate,ModificationDate,Mode,Status) Values "
