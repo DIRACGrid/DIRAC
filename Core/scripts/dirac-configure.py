@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
+# File :   dirac-admin-bdii-site
+# Author : Ricardo Graciani
 ########################################################################
 """
-  Main script to write dirac.cfg for a new DIRAC installation. And do initial download of CA's and CRL's
+  Main script to write dirac.cfg for a new DIRAC installation and initial download of CAs and CRLs
     if necessary.
 
   To be used by VO specific scripts to configure new DIRAC installations
@@ -197,7 +199,7 @@ Script.registerSwitch( "", "LocalSE=", "Configure LocalSite/LocalSE=<localse>", 
 
 Script.registerSwitch( "d", "debug", "Set debug flag", setDebug )
 
-Script.setUsageMessage('\n'.join( ['Write dirac.cfg for a new DIRAC installation',
+Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
                                     'Usage:',
                                     '  %s [option|cfgfile] ...' % Script.scriptName ] ) )
 
