@@ -241,7 +241,7 @@ class FileManagerBase:
     connection = self._getConnection(connection)
     req = "SELECT FileID,AncestorID,AncestorDepth FROM FC_FileAncestors WHERE FileID IN (%s)" % intListToString(fileIDs)
     if depths:
-     req = "%s AND AncestorDepth IN (%s);" % (req,intListToString(depths))
+      req = "%s AND AncestorDepth IN (%s);" % (req,intListToString(depths))
     res = self.db._query(req,connection)
     if not res['OK']:
       return res
