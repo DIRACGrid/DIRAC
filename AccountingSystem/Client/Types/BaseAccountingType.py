@@ -22,6 +22,8 @@ class BaseAccountingType:
                            ( 15552000, 86400 ), #>1w <6m = 1d
                            ( 31104000, 604800 ), #>6m = 1w
                          ]
+    self.definitionKeyFields = []
+    self.definitionAccountingFields = []
 
   def checkType( self ):
     """
