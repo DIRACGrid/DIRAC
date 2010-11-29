@@ -86,23 +86,23 @@ class Server:
     gMonitor.addMark( 'RunningThreads', threading.activeCount() )
 
   def __VmB(self, VmKey):
-      '''Private.
-      '''
-      procFile = '/proc/%d/status' % os.getpid()
-       # get pseudo file  /proc/<pid>/status
-      try:
-          t = open( procFile )
-          v = t.read()
-          t.close()
-      except:
-          return 0.0  # non-Linux?
-       # get VmKey line e.g. 'VmRSS:  9999  kB\n ...'
-      i = v.index( VmKey )
-      v = v[i:].split(None, 3)  # whitespace
-      if len(v) < 3:
-          return 0.0  # invalid format?
-       # convert Vm value to bytes
-      return float(v[1]) * self.__memScale[v[2]]
+    '''Private.
+    '''
+    procFile = '/proc/%d/status' % os.getpid()
+    # get pseudo file  /proc/<pid>/status
+    try:
+      t = open( procFile )
+      v = t.read()
+      t.close()
+    except:
+      return 0.0  # non-Linux?
+    # get VmKey line e.g. 'VmRSS:  9999  kB\n ...'
+    i = v.index( VmKey )
+    v = v[i:].split(None, 3)  # whitespace
+    if len(v) < 3:
+      return 0.0  # invalid format?
+    # convert Vm value to bytes
+    return float(v[1]) * self.__memScale[v[2]]
 
   def __startReportToMonitoring(self):
     gMonitor.addMark( "Queries" )
@@ -136,12 +136,12 @@ class Server:
     protocol = serviceCfg.getProtocol()
     serviceURL = serviceCfg.getURL()
     if serviceURL:
-        if serviceURL.find( protocol ) != 0:
-          urlFields = serviceURL.split( ":" )
-          urlFields[0] = protocol
-          self.serviceURL = ":".join( urlFields )
-          serviceCfg.setURL( serviceURL )
-        return
+      if serviceURL.find( protocol ) != 0:
+        urlFields = serviceURL.split( ":" )
+        urlFields[0] = protocol
+        self.serviceURL = ":".join( urlFields )
+        serviceCfg.setURL( serviceURL )
+      return
     hostName = serviceCfg.getHostname()
     port = serviceCfg.getPort()
     sURL = "%s://%s:%s/%s" % ( protocol,
