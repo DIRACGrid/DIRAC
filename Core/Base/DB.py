@@ -127,15 +127,10 @@ class DB(MySQL):
                                                conjunction,
                                                timeStamp,
                                                str(newer) )
-    if orderAttribute:
-      orderType = None
-      orderField = orderAttribute
-      if orderAttribute.find(':') != -1:
-        orderField = orderAttribute.split(':')[0]
-        orderType = orderAttribute.split(':')[1].upper()
-      condition = "%s ORDER BY %s" % (condition,orderField)
-      if orderType:
-        condition = "%s %s" % (condition,orderType)
+
+    if type( orderAttribute ) in types.StringTypes:
+      orderFields = orderAttribute.split(':')
+      condition = "%s ORDER BY %s" % ( condition, ' '.join( orderFields ) )
         
     if limit:
       condition = "%s LIMIT %d" % (condition,limit)
