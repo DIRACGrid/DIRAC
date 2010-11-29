@@ -15,6 +15,13 @@ from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection, getAgentSection
 
 class LocalConfiguration:
+  """
+    Main class to interface with Configuration of a running DIRAC Component.
+    For most cases this is handled via 
+    - DIRAC.Core.Base.Script class for scripts
+    - dirac-agent for agents
+    - dirac-service for services 
+  """
 
   def __init__( self, defaultSectionPath = "" ):
     self.currentSectionPath = defaultSectionPath
@@ -34,7 +41,7 @@ class LocalConfiguration:
     self.__usageMessage = False
 
   def disableParsingCommandLine( self ):
-      self.isParsed = True
+    self.isParsed = True
 
   def __getAbsolutePath( self, optionPath ):
     if optionPath[0] == "/":
@@ -43,9 +50,15 @@ class LocalConfiguration:
       return "%s/%s" % ( self.currentSectionPath, optionPath )
 
   def addMandatoryEntry( self, optionPath ):
+    """
+    Define a mandatory Configuration data option for the parsing of the command line
+    """
     self.mandatoryEntryList.append( optionPath )
 
   def addDefaultEntry( self, optionPath, value ):
+    """
+    Define a default value for a Configuration data option
+    """
     if optionPath[0] == "/":
       if not gConfigurationData.extractOptionFromCFG( optionPath ):
         self.__setOptionValue( optionPath, value )
@@ -53,9 +66,15 @@ class LocalConfiguration:
       self.optionalEntryList.append( ( optionPath,
                                      str( value ) ) )
   def addCFGFile( self, filePath ):
+    """
+    Load additional .cfg file to be parsed
+    """
     self.additionalCFGFiles.append( filePath )
 
   def setUsageMessage( self, usageMsg ):
+    """
+    Define message to be display by the showHelp method
+    """
     self.__usageMessage = usageMsg
 
   def __setOptionValue( self, optionPath, value ):
@@ -73,20 +92,32 @@ class LocalConfiguration:
                          self.showHelp )
 
   def registerCmdOpt( self, shortOption, longOption, helpString, function = False ):
+    """
+    Register a new command line option
+    """
     #TODO: Can't overwrite switches (FATAL)
     self.commandOptionList.append( ( shortOption, longOption, helpString, function ) )
 
   def getExtraCLICFGFiles( self ):
+    """
+    Retrieve list of parsed .cfg files
+    """
     if not self.isParsed:
       self.__parseCommandLine()
     return self.cliAdditionalCFGFiles
 
   def getPositionalArguments( self ):
+    """
+    Retrieve list of command line positional arguments
+    """
     if not self.isParsed:
       self.__parseCommandLine()
     return self.commandArgList
 
   def getUnprocessedSwitches( self ):
+    """
+    Retrieve list of command line switches without a callback function
+    """
     if not self.isParsed:
       self.__parseCommandLine()
     return self.unprocessedSwitches
@@ -108,6 +139,9 @@ class LocalConfiguration:
 
   #TODO: Initialize if not previously initialized
   def initialize( self, componentName ):
+    """
+    Make sure DIRAC is properly initialized
+    """
     if self.initialized:
       return S_OK()
     self.initialized = True
@@ -129,6 +163,14 @@ class LocalConfiguration:
     return S_OK()
 
   def loadUserData( self ):
+    """
+    This is the magic method that reads the command line and processes it
+    It is used by the Script Base class and the dirac-service and dirac-agent scripts
+    Before being called:
+     - any additional switches to be processed 
+     - mandatory and default configuration configuration options
+    must be defined.
+    """
     if self.initialized:
       return S_OK()
     self.initialized = True
@@ -257,17 +299,30 @@ class LocalConfiguration:
     return S_OK()
 
   def disableCS( self ):
+    """
+    Do not contact Configuration Server upon initialization
+    """
     gRefresher.disable()
 
   def enableCS( self ):
+    """
+    Force the connection the Configuration Server
+    """
     gRefresher.enable()
     return S_OK()
 
   def isCSEnabled( self ):
+    """
+    Retrieve current status of the connection to Configuration Server
+    """
     return gRefresher.isEnabled()
 
 
   def syncRemoteConfiguration( self, strict = False ):
+    """
+    Force a Resync with Configuration Server
+    Under normal conditions this is triggered by an access to any configuration data
+    """
     if self.componentName == "Configuration/Server" :
       if gConfigurationData.isMaster():
         gLogger.info( "Starting Master Configuration Server" )
@@ -285,14 +340,23 @@ class LocalConfiguration:
     self.loggingSection = self.currentSectionPath
 
   def setConfigurationForServer( self, serviceName ):
+    """
+    Declare this is a DIRAC service
+    """
     self.componentName = serviceName
     self.componentType = "service"
 
   def setConfigurationForAgent( self, agentName ):
+    """
+    Declare this is a DIRAC agent
+    """
     self.componentName = agentName
     self.componentType = "agent"
 
   def setConfigurationForScript( self, scriptName ):
+    """
+    Declare this is a DIRAC script
+    """
     self.componentName = scriptName
     self.componentType = "script"
 
@@ -318,6 +382,9 @@ class LocalConfiguration:
     return S_OK()
 
   def showHelp( self, dummy = False ):
+    """
+    Printout help message including a Usage message if defined via setUsageMessage method
+    """
     if self.__usageMessage:
       gLogger.notice( self.__usageMessage )
     else:
@@ -332,4 +399,7 @@ class LocalConfiguration:
     DIRAC.exit( 0 )
 
   def deleteOption( self, optionPath ):
+    """
+    Remove a Configuration Option from the local Configuration
+    """
     gConfigurationData.deleteOptionInCFG( optionPath )
