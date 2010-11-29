@@ -45,25 +45,25 @@ def makeGuid( fileName = None ):
   return md5String.upper()
 
 def checkGuid( guid ):
-    """
-       Checks whether a supplied GUID is of the correct format.
-       The guid is a string of 36 characters long split into 5 parts of length 8-4-4-4-12.
+  """
+     Checks whether a supplied GUID is of the correct format.
+     The guid is a string of 36 characters long split into 5 parts of length 8-4-4-4-12.
 
-       INPUT:     guid - string to be checked .
-       OPERATION: Split the string on '-', checking each part is correct length.
-       OUTPUT:    Returns 1 if the supplied string is a GUID.
-                  Returns 0 otherwise.
-    """
-    guidSplit = guid.split( '-' )
-    if len( guid ) == 36 \
-      and len( guidSplit[0] ) == 8 \
-        and len( guidSplit[1] ) == 4 \
-          and len( guidSplit[2] ) == 4 \
-            and len( guidSplit[3] ) == 4 \
-              and len( guidSplit[4] ) == 12:
-      return True
-    else:
-      return False
+     INPUT:     guid - string to be checked .
+     OPERATION: Split the string on '-', checking each part is correct length.
+     OUTPUT:    Returns 1 if the supplied string is a GUID.
+                Returns 0 otherwise.
+  """
+  guidSplit = guid.split( '-' )
+  if len( guid ) == 36 \
+    and len( guidSplit[0] ) == 8 \
+      and len( guidSplit[1] ) == 4 \
+        and len( guidSplit[2] ) == 4 \
+          and len( guidSplit[3] ) == 4 \
+            and len( guidSplit[4] ) == 12:
+    return True
+  else:
+    return False
 
 def getSize( fileName ):
   """
