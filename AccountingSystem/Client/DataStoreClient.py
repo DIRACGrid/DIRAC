@@ -13,8 +13,12 @@ gAccountingSynchro = Synchronizer()
 random.seed()
 
 class DataStoreClient:
-
-
+  """
+    Class providing front end access to DIRAC Accounting DataStore Service
+    - It allows to reduce the interactions with the server by building and list of
+    pending Registers to be sent that are sent in a bundle using the commit method.
+    - In case the DataStore is down Registers are sent as DISET requests.
+  """
   def __init__( self, setup = False, retryGraceTime = 0 ):
     self.__setup = setup
     self.__maxRecordsInABundle = 100
@@ -24,6 +28,9 @@ class DataStoreClient:
     self.__failoverEnabled = True
 
   def setRetryGraceTime( self, retryGraceTime ):
+    """
+    Set Timeout to send failing records to Failover if enabled
+    """
     self.__maxTimeRetrying = retryGraceTime
 
   def __checkBaseType( self, obj ):
@@ -75,7 +82,7 @@ class DataStoreClient:
       else:
         if self.__failoverEnabled and time.time() - self.__lastSuccessfulCommit > self.__maxTimeRetrying:
           gLogger.verbose( "Sending accounting records to failover" )
-          result = self.__sendToFailover( retVal[ 'rpcStub' ] )
+          result = _sendToFailover( retVal[ 'rpcStub' ] )
           if not result[ 'OK' ]:
             return result
         else:
@@ -84,16 +91,10 @@ class DataStoreClient:
       del( self.__registersList[ :self.__maxRecordsInABundle ] )
     return S_OK( sent )
 
-  def __sendToFailover( self, rpcStub ):
-    requestClient = RequestClient()
-    request = RequestContainer()
-    request.setDISETRequest( rpcStub )
-
-    requestStub = request.toXML()['Value']
-    return requestClient.setRequest( "Accounting.DataStore.%s.%s" % ( time.time(), random.random() ),
-                                     requestStub )
-
   def remove ( self, register ):
+    """
+    Remove a Register from the Accounting DataStore
+    """
     if not self.__checkBaseType( register.__class__ ):
       return S_ERROR( "register is not a valid type (has to inherit from BaseAccountingType" )
     retVal = register.checkValues()
@@ -102,5 +103,15 @@ class DataStoreClient:
     if gConfig.getValue( '/LocalSite/DisableAccounting', False ):
       return S_OK()
     return self.__getRPCClient().remove( register.getValues() )
+
+def _sendToFailover( rpcStub ):
+  requestClient = RequestClient()
+  request = RequestContainer()
+  request.setDISETRequest( rpcStub )
+
+  requestStub = request.toXML()['Value']
+  return requestClient.setRequest( "Accounting.DataStore.%s.%s" % ( time.time(), random.random() ),
+                                   requestStub )
+
 
 gDataStoreClient = DataStoreClient()
