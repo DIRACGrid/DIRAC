@@ -50,8 +50,8 @@ class WORM:
     """
     def __doWriteLock( *args, **kwargs ):
       try:
-          self.__startWriteZone()
-          return funcToCall(*args, **kwargs)
+        self.__startWriteZone()
+        return funcToCall(*args, **kwargs)
       finally:
         self.__endWriteZone()
     return __doWriteLock
