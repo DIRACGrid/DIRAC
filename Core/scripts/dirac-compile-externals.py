@@ -1,7 +1,11 @@
 #!/usr/bin/env python
+########################################################################
 # $HeadURL$
+# File :   dirac-compile-externals
+# Author : Adria Casajus
+########################################################################
 """
-Compile the externals
+Compile DIRAC externals (does not require DIRAC code)
 """
 __RCSID__ = "$Id$"
 
@@ -177,9 +181,11 @@ optList, args = getopt.getopt( sys.argv[1:],
                                [ opt[1] for opt in cmdOpts ] )
 for o, v in optList:
   if o in ( '-h', '--help' ):
-    print "Usage %s <opts>" % sys.argv[0]
+    print __doc__.split( '\n' )[1]
+    print "Usage:\n  %s [options]..." % sys.argv[0]
+    print "Options:"
     for cmdOpt in cmdOpts:
-      print "%s %s : %s" % ( cmdOpt[0].ljust( 4 ), cmdOpt[1].ljust( 15 ), cmdOpt[2] )
+      print "-%s --%s : %s" % ( cmdOpt[0].ljust( 3 ), cmdOpt[1].ljust( 15 ), cmdOpt[2] )
     sys.exit( 1 )
   elif o in ( '-t', '--type' ):
     compType = v.lower()
