@@ -3,6 +3,8 @@ __RCSID__ = "$Id$"
 
 import base64
 from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Utilities import DEncode
+
 
 try:
   import zlib
@@ -30,7 +32,7 @@ def codeRequestInFileId( plotRequest, compressIfPossible = True ):
       plotStub = "R:%s" % DEncode.encode( plotRequest )
   return S_OK( { 'plot' : plotStub, 'thumbnail' : thbStub } )
 
-def extractRequestFromFileId( self, fileId ):
+def extractRequestFromFileId( fileId ):
   stub = fileId[2:]
   type = fileId[0]
   if type == 'Z':
