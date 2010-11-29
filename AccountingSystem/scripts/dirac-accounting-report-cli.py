@@ -1,5 +1,12 @@
 #!/usr/bin/env python
+########################################################################
 # $HeadURL$
+# File :   dirac-accounting-report-cli
+# Author : Adria Casajus
+########################################################################
+"""
+  Command line interface to DIRAC Accounting ReportGenerator Service 
+"""
 __RCSID__ = "$Id$"
 
 import cmd
@@ -14,6 +21,9 @@ from DIRAC.Core.Utilities import ExitCallback, ColorCLI, List
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 
 Script.localCfg.addDefaultEntry( "LogLevel", "info" )
+Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ...' % Script.scriptName, ] )   )
 Script.parseCommandLine()
 
 class ReportCLI( cmd.Cmd ):
@@ -39,6 +49,9 @@ class ReportCLI( cmd.Cmd ):
         pass
 
   def start( self ):
+    """
+    Start the command loop
+    """
     if not self.connected:
       gLogger.error( "Client is not connected" )
     try:
