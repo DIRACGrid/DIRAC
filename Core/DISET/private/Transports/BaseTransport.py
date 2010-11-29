@@ -21,6 +21,7 @@ class BaseTransport:
     self.peerCredentials = {}
     self.remoteAddress = False
     self.appData = ""
+    self.oSocket = None
 
   def handshake(self):
     pass
@@ -40,9 +41,6 @@ class BaseTransport:
   def serverMode( self ):
     return self.bServerMode
 
-  def getTransportName( self ):
-    return self.sTransportName
-
   def getRemoteAddress( self ):
     return self.remoteAddress
 
@@ -51,9 +49,6 @@ class BaseTransport:
 
   def getSocket( self ):
     return self.oSocket
-
-  def _write( self, sBuffer ):
-    self.oSocket.send( sBuffer )
 
   def _readReady( self ):
     if not self.iReadTimeout:
