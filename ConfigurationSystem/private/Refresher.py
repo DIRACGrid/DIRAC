@@ -128,16 +128,16 @@ class Refresher( threading.Thread ):
     gLogger.debug( "Randomized server list is %s" % ", ".join( lRandomListOfServers ) )
 
     for sServer in lRandomListOfServers:
-        from DIRAC.Core.DISET.RPCClient import RPCClient
-        oClient = RPCClient( sServer,
-                           useCertificates = gConfigurationData.useServerCertificate(),
-                           skipCACheck = gConfigurationData.skipCACheck() )
-        dRetVal = self.__updateFromRemoteLocation( oClient )
-        if dRetVal[ 'OK' ]:
-          return dRetVal
-        else:
-          updatingErrorsList.append( dRetVal[ 'Message' ] )
-          gLogger.warn( "Can't update from server", "Error while updating from %s: %s" % ( sServer, dRetVal[ 'Message' ] ) )
+      from DIRAC.Core.DISET.RPCClient import RPCClient
+      oClient = RPCClient( sServer,
+                         useCertificates = gConfigurationData.useServerCertificate(),
+                         skipCACheck = gConfigurationData.skipCACheck() )
+      dRetVal = self.__updateFromRemoteLocation( oClient )
+      if dRetVal[ 'OK' ]:
+        return dRetVal
+      else:
+        updatingErrorsList.append( dRetVal[ 'Message' ] )
+        gLogger.warn( "Can't update from server", "Error while updating from %s: %s" % ( sServer, dRetVal[ 'Message' ] ) )
     return S_ERROR( "Reason(s):\n\t%s" % "\n\t".join( List.uniqueElements( updatingErrorsList ) ) )
 
   def __updateFromRemoteLocation( self, serviceClient ):
