@@ -85,7 +85,7 @@ class Distribution:
     if self.package == 'global' :
       webLocation = "%s/tags" % self.svnRoot
     else:
-      webLocation = '%s/%s/tags/%s' % ( self.svnRoot, package, package )
+      webLocation = '%s/%s/tags/%s' % ( self.svnRoot, self.package, self.package )
     try:
       remoteFile = urllib2.urlopen( webLocation )
     except urllib2.URLError:
@@ -94,7 +94,7 @@ class Distribution:
     remoteData = remoteFile.read()
     remoteFile.close()
     if not remoteData:
-      gLogger.error( "Could not retrieve versions for package %s" % package )
+      gLogger.error( "Could not retrieve versions for package %s" % self.package )
       sys.exit( 1 )
     versions = []
     rePackage = ".*"
@@ -118,7 +118,7 @@ class Distribution:
     except:
       pass
     #Web cat failed. Try directly with svn
-    exitStatus, remoteData = execAndGetOutput( "svn cat '%s" % remoteLocation )
+    exitStatus, remoteData = self.executeCommand( "svn cat '%s" % remoteLocation )
     if exitStatus:
       print "Error: Could not retrieve %s from the web nor via SVN. Aborting..." % svnPath
       sys.exit( 1 )
@@ -149,8 +149,11 @@ class Distribution:
     devRoot = self.getDevPath( path )
     isHTTPS = False
     urlRes = urlparse.urlparse( devRoot )
+    # Parse a URL into 6 components:
+    # <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
+    # (scheme, netloc, path, params, query, fragment)
     args = []
-    if urlRes.scheme == "https":
+    if urlRes[0] == "https":
       isHTTPS = True
 
     if self.svnUser:
@@ -158,11 +161,8 @@ class Distribution:
         args.append( "--username '%s'" % self.svnUser )
       else:
         urlRes = urlparse.urlparse( devRoot )
-        devRoot = urlparse.urlunparse( ( urlRes.scheme,
-                                         "%s@%s" % ( self.svnUser, urlRes.netloc ),
-                                         urlRes.path,
-                                         urlRes.params,
-                                         urlRes.query, urlRes.fragment ) )
+        urlRes[1] = "%s@%s" % ( self.svnUser, urlRes[1] )
+        devRoot = urlparse.urlunparse( urlRes )
 
     if self.svnPass and isHTTPS:
       args.append( "--password '%s'" % self.svnPass )
@@ -195,8 +195,8 @@ class Distribution:
   def queueCopy( self, origin, dest, comment ):
     self.addCommandToQueue( self.__cmdCopy( origin, dest, comment ) )
 
-  def doCopy( self, path, comment ):
-    return self.executeCommand( self.__cmdCopy( origin, dest, comment ), False )
+  # def doCopy( self, path, comment ):
+  #   return self.executeCommand( self.__cmdCopy( origin, dest, comment ), False )
 
   def __cmdMakeDir( self, path, comment ):
     t = self.__getDevCmdBase( path )
