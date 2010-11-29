@@ -4,8 +4,10 @@
 # File :   dirac-configuration-cli
 # Author : Adria Casajus
 ########################################################################
+"""
+  Dump DIRAC Configuration data
+"""
 __RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.1 $"
 
 import sys
 import DIRAC
@@ -19,12 +21,13 @@ def setFilename( args ):
   fileName = args
   return DIRAC.S_OK()
 
-Script.registerSwitch( "f:", "file=", "File to dump into", setFilename )
-
+Script.registerSwitch( "f:", "file=", "Dump Configuration data into <file>", setFilename )
+Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ...' % Script.scriptName, ] )   )
 Script.parseCommandLine()
 
 from DIRAC import gConfig, gLogger
-
 result = gConfig.dumpCFGAsLocalCache( fileName )
 if not result[ 'OK' ]:
   print "Error: %s" % result[ 'Message' ]
