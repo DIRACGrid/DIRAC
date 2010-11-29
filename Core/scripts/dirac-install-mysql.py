@@ -1,5 +1,9 @@
 #!/usr/bin/env python
+########################################################################
 # $HeadURL$
+# File :    dirac-install-mysql
+# Author :  Ricardo Graciani
+########################################################################
 """
 Do the initial installation and configuration of the DIRAC MySQL server
 """
