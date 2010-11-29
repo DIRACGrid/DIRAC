@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
+# File :   dirac-admin-add-site
+# Author : Andrew C. Smith
 ########################################################################
+"""
+  Add a new DIRAC SiteName to DIRAC Configuration, including one or more CEs
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base                                   import Script
-Script.setUsageMessage('\n'.join( ['Adds DIRACSiteName to DIRAC Configuration including one or more CEs',
+Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
                                     'Usage:',
                                     '  %s [option|cfgfile] ... DIRACSiteName GridSiteName CE [CE] ...' % Script.scriptName,
                                     'Arguments:',
