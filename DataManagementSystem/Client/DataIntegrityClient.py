@@ -193,7 +193,7 @@ class DataIntegrityClient(Client):
       return res
     storageFileMetadata = res['Value']
     if storageFileMetadata:
-     return self.__checkCatalogForSEFiles(storageFileMetadata,storageElement)
+      return self.__checkCatalogForSEFiles(storageFileMetadata,storageElement)
     return S_OK({'CatalogMetadata':{},'StorageMetadata':{}})
 
   def __checkCatalogForSEFiles(self,storageMetadata,storageElement):
@@ -243,7 +243,7 @@ class DataIntegrityClient(Client):
       if (lfnStorageMetadata['Size'] != lfnCatalogMetadata['Size']) and (lfnStorageMetadata['Size'] != 0):
         sizeMismatch.append((lfn,storageMetadata[lfn]['PFN'],storageElement,'CatalogPFNSizeMismatch'))
     if sizeMismatch:
-     self.__reportProblematicReplicas(sizeMismatch,storageElement,'CatalogPFNSizeMismatch')
+      self.__reportProblematicReplicas(sizeMismatch,storageElement,'CatalogPFNSizeMismatch')
     gLogger.info('Checking storage files exist in the catalog complete')
     resDict = {'CatalogMetadata':catalogMetadata,'StorageMetadata':storageMetadata}
     return S_OK(resDict)
@@ -272,7 +272,7 @@ class DataIntegrityClient(Client):
       gLogger.error("Failed to obtain existance of directories",res['Message'])
       return res
     for directory, error in res['Value']['Failed'].items():
-       gLogger.error('Failed to determine existance of directory','%s %s' % (directory,error))
+      gLogger.error('Failed to determine existance of directory','%s %s' % (directory,error))
     if res['Value']['Failed']:
       return S_ERROR('Failed to determine existance of directory')
     directoryExists = res['Value']['Successful']
@@ -351,7 +351,7 @@ class DataIntegrityClient(Client):
       gLogger.error("Failed to obtain existance of paths",res['Message'])
       return res
     for lfnPath, error in res['Value']['Failed'].items():
-       gLogger.error('Failed to determine existance of path','%s %s' % (lfnPath,error))
+      gLogger.error('Failed to determine existance of path','%s %s' % (lfnPath,error))
     if res['Value']['Failed']:
       return S_ERROR('Failed to determine existance of paths')
     pathExists = res['Value']['Successful']
@@ -524,7 +524,7 @@ class DataIntegrityClient(Client):
         sourceComponent is the component issuing the request.
     """
     if type(replicaTuple) == types.TupleType:
-     replicaTuple = [replicaTuple]
+      replicaTuple = [replicaTuple]
     elif type(replicaTuple) == types.ListType:
       pass
     else:
