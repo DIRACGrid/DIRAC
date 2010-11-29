@@ -48,7 +48,7 @@ class Workflow(AttributeCollection):
       raise TypeError('Can not create object type '+ str(type(self)) + ' from the '+ str(type(obj)))
 
     if name :
-        self.setName(name)
+      self.setName(name)
     self.workflow_commons = {}
     self.workflowStatus = S_OK()
 
@@ -310,14 +310,14 @@ class Workflow(AttributeCollection):
 from DIRAC.Core.Workflow.WorkflowReader import WorkflowXMLHandler
 
 def fromXMLString(xml_string, obj=None):
-    # KGG !!! We need to reset Workflow if it exists
-    handler = WorkflowXMLHandler(obj)
-    xml.sax.parseString(xml_string, handler)
-    return handler.root
+  # KGG !!! We need to reset Workflow if it exists
+  handler = WorkflowXMLHandler(obj)
+  xml.sax.parseString(xml_string, handler)
+  return handler.root
 
 def fromXMLFile(xml_file, obj=None):
-    # KGG !!! We need to reset Workflow if it exists
-    handler = WorkflowXMLHandler(obj)
-    xml.sax.parse(xml_file, handler)
-    return handler.root
+  # KGG !!! We need to reset Workflow if it exists
+  handler = WorkflowXMLHandler(obj)
+  xml.sax.parse(xml_file, handler)
+  return handler.root
 
