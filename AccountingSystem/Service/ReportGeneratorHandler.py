@@ -2,8 +2,6 @@
 __RCSID__ = "$Id$"
 import types
 import os
-import base64
-import zlib
 import datetime
 
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger, gMonitor
@@ -14,6 +12,7 @@ from DIRAC.AccountingSystem.private.MainReporter import MainReporter
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 from DIRAC.AccountingSystem.private.Policies import gPoliciesList
 from DIRAC.AccountingSystem.private.Plots import generateErrorMessagePlot
+from DIRAC.AccountingSystem.private.FileCoding import extractRequestFromFileId
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time, DEncode
@@ -167,37 +166,10 @@ class ReportGeneratorHandler( RequestHandler ):
     return policyFilter.filterListingValues( credDict, retVal[ 'Value' ] )
 
   def __generatePlotFromFileId( self, fileId ):
-    stub = fileId[2:]
-    type = fileId[0]
-    if type == 'Z':
-      gLogger.info( "Compressed request, uncompressing" )
-      try:
-        stub = base64.urlsafe_b64decode( stub )
-      except Exception, e:
-        gLogger.error( "Oops! Plot request is not properly encoded!", str( e ) )
-        return S_ERROR( "Oops! Plot request is not properly encoded!: %s" % str( e ) )
-      try:
-        stub = zlib.decompress( stub )
-      except Exception, e:
-        gLogger.error( "Oops! Plot request is invalid!", str( e ) )
-        return S_ERROR( "Oops! Plot request is invalid!: %s" % str( e ) )
-    elif type == 'S':
-      gLogger.info( "Base64 request, decoding" )
-      try:
-        stub = base64.urlsafe_b64decode( stub )
-      except Exception, e:
-        gLogger.error( "Oops! Plot request is not properly encoded!", str( e ) )
-        return S_ERROR( "Oops! Plot request is not properly encoded!: %s" % str( e ) )
-    elif type == 'R':
-      #Do nothing, it's already uncompressed
-      pass
-    else:
-      gLogger.error( "Oops! Stub type '%s' is unknown :P" % type )
-      return S_ERROR( "Oops! Stub type '%s' is unknown :P" % type )
-    plotRequest, stubLength = DEncode.decode( stub )
-    if len( stub ) != stubLength:
-      gLogger.error( "Oops! The stub is longer than the data :P" )
-      return S_ERROR( "Oops! The stub is longer than the data :P" )
+    result = extractRequestFromFileId( fileId )
+    if not result[ 'OK' ]:
+      return result
+    plotRequest = result[ 'Value' ]
     gLogger.info( "Generating the plots.." )
     result = self.export_generatePlot( plotRequest )
     if not result[ 'OK' ]:

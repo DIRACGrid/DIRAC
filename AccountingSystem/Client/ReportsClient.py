@@ -2,18 +2,12 @@
 __RCSID__ = "$Id$"
 
 import tempfile
-import base64
-
-try:
-  import zlib
-  zCompressionEnabled = True
-except:
-  zCompressionEnabled = False
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time, DEncode
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
+from DIRAC.AccountingSystem.private.FileCoding import codeRequestInFileId
 
 class ReportsClient:
 
@@ -82,24 +76,7 @@ class ReportsClient:
                     'condDict' : condDict,
                     'grouping' : grouping,
                     'extraArgs' : extraArgs }
-    compress = compress and zCompressionEnabled
-    if compress:
-      plotStub = "Z:%s" % base64.urlsafe_b64encode( zlib.compress( DEncode.encode( plotRequest ), 9 ) )
-    elif not self.__forceRawEncoding:
-      plotStub = "S:%s" % base64.urlsafe_b64encode( DEncode.encode( plotRequest ) )
-    else:
-      plotStub = "R:%s" % DEncode.encode( plotRequest )
-    thbStub = False
-    if 'thumbnail' in extraArgs and extraArgs[ 'thumbnail' ]:
-      thbStub = plotStub
-      extraArgs[ 'thumbnail' ] = False
-      if compress:
-        plotStub = "Z:%s" % base64.urlsafe_b64encode( zlib.compress( DEncode.encode( plotRequest ), 9 ) )
-      elif not self.__forceRawEncoding:
-        plotStub = "S:%s" % base64.urlsafe_b64encode( DEncode.encode( plotRequest ) )
-      else:
-        plotStub = "R:%s" % DEncode.encode( plotRequest )
-    return S_OK( { 'plot' : plotStub, 'thumbnail' : thbStub } )
+    return codeRequestInFileId( plotRequest, compress )
 
   def getPlotToMem( self, plotName ):
     transferClient = self.__getTransferClient()
