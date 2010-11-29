@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
+# File :   dirac-create-svn-tag
+# Author : Adria Casajus
 ########################################################################
 """
-Tag a new release in SVN
+  Tag a new release in SVN
 """
 __RCSID__ = "$Id$"
+
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base      import Script
 from DIRAC.Core.Utilities import List, Distribution
@@ -45,7 +48,7 @@ Script.registerSwitch( "p:", "package=", "packages to tag comma separated (defau
 Script.registerSwitch( "u:", "username=", "svn username to use", setUsername )
 Script.registerSwitch( "n", "releaseNotes", "Only refresh release notes", setOnlyReleaseNotes )
 
-Script.setUsageMessage('\n'.join( ['Tag a new release in SVN',
+Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
                                     'Usage:',
                                     '  %s [option|cfgfile] ...' % Script.scriptName ] ) )
 
