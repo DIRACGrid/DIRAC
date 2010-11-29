@@ -283,7 +283,7 @@ class CSCLI( cmd.Cmd ):
           print "Error sending data, server said: %s" % response['Message']
         return
       else:
-          print "Commit aborted"
+        print "Commit aborted"
     except Exception, v:
       self.showTraceback()
       print "Could not upload changes. ", v
