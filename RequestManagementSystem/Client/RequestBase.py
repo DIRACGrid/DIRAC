@@ -108,14 +108,14 @@ class RequestBase:
     return self.attributes[aname]
 
   def __get_attribute(self):
-     """ Generic method to get attributes
-     """
-     return self.attributes[self.item_called]
+    """ Generic method to get attributes
+    """
+    return self.attributes[self.item_called]
 
   def __set_attribute(self,value):
-     """ Generic method to set attribute value
-     """
-     self.attributes[self.item_called] = value
+    """ Generic method to set attribute value
+    """
+    self.attributes[self.item_called] = value
 
 #####################################################################
 #
@@ -135,14 +135,14 @@ class RequestBase:
       return ''
 
   def __get_parameter(self):
-     """ Generic method to get attributes
-     """
-     return self.parameters[self.item_called]
+    """ Generic method to get attributes
+    """
+    return self.parameters[self.item_called]
 
   def __set_parameter(self,value):
-     """ Generic method to set attribute value
-     """
-     self.parameters[self.item_called] = value
+    """ Generic method to set attribute value
+    """
+    self.parameters[self.item_called] = value
 
 #####################################################################
   def setCreationTime(self,time):
