@@ -112,7 +112,7 @@ class SystemLoggingDB(DB):
 
     arrayLength = len( array )
     if arrayLength == 0:
-        return []
+      return []
 
     sortDictionary = {}
 
@@ -210,7 +210,7 @@ class SystemLoggingDB(DB):
       showFieldList = [ showFieldList ]
     elif not type( showFieldList ) is ListType:
       errorString = 'The showFieldList variable should be a string or a list of strings'
-      errorDesc = 'The type provided was: %s' % type ( attrValue )
+      errorDesc = 'The type provided was: %s' % type ( showFieldList )
       gLogger.warn( errorString, errorDesc )
       return S_ERROR( '%s: %s' % ( errorString, errorDesc ) )
        
