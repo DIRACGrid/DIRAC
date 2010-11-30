@@ -123,8 +123,8 @@ class JobPolicy:
     if result['OK']:
       jobOwnerName = result['Value']
     if jobOwnerName and self.userName and jobOwnerName == self.userName:
-        for r in OWNER_RIGHTS:
-          permDict[r] = True
+      for r in OWNER_RIGHTS:
+        permDict[r] = True
 
     # Members of the same group sharing their jobs can do everything
     if jobOwnerGroup == self.userGroup:
