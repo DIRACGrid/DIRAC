@@ -427,7 +427,7 @@ class SandboxStoreHandler( RequestHandler ):
   def __deleteSandboxFromBackend( self, SEName, SEPFN ):
     gLogger.info( "Purging sandbox" "SB:%s|%s" % ( SEName, SEPFN ) )
     if SEName != self.__localSEName:
-     return self.__deleteSandboxFromExternalBackend( SEName, SEPFN )
+      return self.__deleteSandboxFromExternalBackend( SEName, SEPFN )
     else:
       hdPath = self.__sbToHDPath( SEPFN )
       if not os.path.isfile( hdPath ):
