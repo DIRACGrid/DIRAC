@@ -6,7 +6,7 @@
 
 __RCSID__ = "$Id$"
 
-import time
+import time, types
 try:
   import hashlib as md5
 except:
@@ -457,7 +457,7 @@ class UserProfileDB( DB ):
     if filterDict:
       if 'UserGroup' in filterDict:
         groups = filterDict[ 'UserGroup' ]
-        if type( groups ) in ( types.StringType, types.UnicodeType ):
+        if type( groups ) in types.StringTypes:
           groups = [ groups ]
         groupIds = [ userIds[1] ]
         for group in groups:
