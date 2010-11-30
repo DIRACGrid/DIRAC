@@ -854,7 +854,7 @@ class Job:
               resolvedIS.append(check)
             if os.path.isdir(check):
               if re.search('/$',check): #users can specify e.g. /my/dir/lib/
-                 check = check[:-1]
+                check = check[:-1]
               tarname = os.path.basename(check)
               directory = os.path.dirname(check) #if just the directory this is null
               if directory:
@@ -871,7 +871,7 @@ class Job:
       if os.path.isdir(f):
         self.log.verbose('Found specified directory '+f+', appending '+f+'.tar.gz to Input Sandbox')
         if re.search('/$',f): #users can specify e.g. /my/dir/lib/
-           f = f[:-1]
+          f = f[:-1]
         tarname = os.path.basename(f)
         directory = os.path.dirname(f) #if just the directory this is null
         if directory:
