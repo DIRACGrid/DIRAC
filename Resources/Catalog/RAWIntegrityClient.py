@@ -65,7 +65,7 @@ class RAWIntegrityClient(FileCatalogueBase):
       for url in path:
         urls[url] = False
     elif type(path) == types.DictType:
-     urls = path
+      urls = path
     else:
       return S_ERROR("RAWIntegrityClient.__checkArgumentFormat: Supplied path is not of the correct format.")
     return S_OK(urls)
