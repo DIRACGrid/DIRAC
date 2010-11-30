@@ -166,7 +166,7 @@ class ProxyManagerClient:
     #Generate delegated chain
     chainLifeTime = chain.getRemainingSecs()[ 'Value' ] - 60
     if restrictLifeTime and restrictLifeTime < chainLifeTime:
-       chainLifeTime = restrictLifeTime
+      chainLifeTime = restrictLifeTime
     retVal = chain.generateChainFromRequestString( reqDict[ 'request' ],
                                                    lifetime = chainLifeTime,
                                                    diracGroup = diracGroup )
@@ -421,30 +421,6 @@ class ProxyManagerClient:
                                    proxyToConnect = proxyToConnectDict[ 'chain' ] )
 
     File.deleteMultiProxy( proxyToRenewDict )
-    File.deleteMultiProxy( proxyToConnectDict )
-
-    if not retVal[ 'OK' ]:
-      return retVal
-
-    if not proxyToRenewDict[ 'tempFile' ]:
-      return proxyToRenewDict[ 'chain' ].dumpAllToFile( proxyToRenewDict[ 'file' ] )
-
-    return S_OK( proxyToRenewDict[ 'chain' ] )
-
-  def getDBContents( self, condDict = {} ):
-    """
-    Get the contents of the db
-    """
-    rpcClient = RPCClient( "Framework/ProxyManager", timeout = 120 )
-    return rpcClient.getContents( condDict, [ [ 'UserDN', 'DESC' ] ], 0, 0 )
-
-  def getVOMSAttributes( self, chain ):
-    """
-    Get the voms attributes for a chain
-    """
-    return VOMS().getVOMSAttributes( chain )
-
-
     File.deleteMultiProxy( proxyToConnectDict )
 
     if not retVal[ 'OK' ]:
