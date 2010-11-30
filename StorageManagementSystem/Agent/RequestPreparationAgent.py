@@ -136,7 +136,7 @@ class RequestPreparationAgent(AgentModule):
       gLogger.debug("RequestPreparation.__getNewReplicas: No New replicas found to process.")
       return S_OK()
     else:
-     gLogger.debug("RequestPreparation.__getNewReplicas: Obtained %s New replicas(s) to process." % len(res['Value']))
+      gLogger.debug("RequestPreparation.__getNewReplicas: Obtained %s New replicas(s) to process." % len(res['Value']))
     replicas = {}
     replicaIDs = {}
     for replicaID,info in res['Value'].items():
