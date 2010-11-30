@@ -39,7 +39,7 @@ class Params:
 params = Params()
 
 Script.registerSwitch( "f:", "file=", "File to use as proxy", params.setProxyLocation )
-Script.registerSwitch( "d", "dn", "Use DN as myproxy username", params.setDNAsUsername )
+Script.registerSwitch( "D", "DN", "Use DN as myproxy username", params.setDNAsUsername )
 Script.registerSwitch( "i", "version", "Print version", params.showVersion )
 
 Script.addDefaultOptionValue( "LogLevel", "always" )
