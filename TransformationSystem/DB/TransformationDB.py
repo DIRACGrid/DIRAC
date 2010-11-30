@@ -402,17 +402,17 @@ class TransformationDB( DB ):
     return self._update( req, connection )
 
   def __getAdditionalParameters( self, transID, connection = False ):
-     req = "SELECT ParameterName,ParameterValue,ParameterType FROM AdditionalParameters WHERE TransformationID = %d" % transID
-     res = self._query( req, connection )
-     if not res['OK']:
-       return res
-     paramDict = {}
-     for parameterName, parameterValue, parameterType in res['Value']:
-       parameterType = eval( parameterType )
-       if parameterType in [IntType, LongType]:
-         parameterValue = int( parameterValue )
-       paramDict[parameterName] = parameterValue
-     return S_OK( paramDict )
+    req = "SELECT ParameterName,ParameterValue,ParameterType FROM AdditionalParameters WHERE TransformationID = %d" % transID
+    res = self._query( req, connection )
+    if not res['OK']:
+      return res
+    paramDict = {}
+    for parameterName, parameterValue, parameterType in res['Value']:
+      parameterType = eval( parameterType )
+      if parameterType in [IntType, LongType]:
+        parameterValue = int( parameterValue )
+      paramDict[parameterName] = parameterValue
+    return S_OK( paramDict )
 
   def __deleteTransformationParameters( self, transID, parameters = [], connection = False ):
     """ Remove the parameters associated to a transformation """
