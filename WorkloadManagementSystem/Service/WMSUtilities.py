@@ -47,21 +47,14 @@ def getPilotOutput( proxy, grid, pilotRef ):
     return ret
 
   status,output,error = ret['Value']
-  if error.find('already retrieved') != -1:
-    shutil.rmtree(tmp_dir)
-    return S_ERROR('Pilot job output already retrieved')
-
-  if error.find('Output not yet Ready') != -1 :
-    shutil.rmtree(tmp_dir)
-    return S_ERROR(error)
-
-  if output.find('not yet ready') != -1 :
-    shutil.rmtree(tmp_dir)
-    return S_ERROR(output)
-
-  if error.find('the status is ABORTED') != -1 :
-    shutil.rmtree(tmp_dir)
-    return S_ERROR(error)
+  
+  for errorString in [ 'already retrieved',
+                       'Output not yet Ready',
+                       'not yet ready',
+                       'the status is ABORTED' ]:
+    if error.find( errorString ) != -1:
+      shutil.rmtree(tmp_dir)
+      return S_ERROR(error)
 
   if status:
     shutil.rmtree(tmp_dir)
@@ -91,8 +84,10 @@ def getPilotOutput( proxy, grid, pilotRef ):
     else:
       f = ''
     # HACK: removed after the current scheme has been in production for at least 1 week
-    if filename == 'std.out' and f: filename = 'StdOut'
-    if filename == 'std.err' and f: filename = 'StdErr'
+    if filename == 'std.out' and f:
+      filename = 'StdOut'
+    if filename == 'std.err' and f: 
+      filename = 'StdErr'
     result[filename] = f
 
   shutil.rmtree(tmp_dir)
