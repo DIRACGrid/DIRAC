@@ -104,10 +104,10 @@ class TransformationCLI(cmd.Cmd,API):
     return (argss,length)
 
   def check_id_or_name(self, id_or_name):
-      """resolve name or Id by converting type of argument """
-      if id_or_name.isdigit():
-          return long(id_or_name) # its look like id
-      return id_or_name
+    """resolve name or Id by converting type of argument """
+    if id_or_name.isdigit():
+      return long(id_or_name) # its look like id
+    return id_or_name
 
   def do_setServer(self, args):
     """ Set the destination server
@@ -509,6 +509,6 @@ class TransformationCLI(cmd.Cmd,API):
       print "updated replica status %s" % lfn
 
 if __name__ == "__main__":
-    import DIRAC
-    cli = TransformationDBCLI()
-    cli.cmdloop()
+  import DIRAC
+  cli = TransformationDBCLI()
+  cli.cmdloop()
