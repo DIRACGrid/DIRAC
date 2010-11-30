@@ -112,8 +112,8 @@ class Logger:
   def setLevel( self, levelName ):
     levelName = levelName.upper()
     if levelName.upper() in self._logLevels.getLevels():
-        self._minLevel = abs( self._logLevels.getLevelValue( levelName ) )
-        return True
+      self._minLevel = abs( self._logLevels.getLevelValue( levelName ) )
+      return True
     return False
 
 
