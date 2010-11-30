@@ -21,12 +21,13 @@ def initializeSiteMapHandler( serviceInfo ):
 
 class SiteMapHandler( RequestHandler ):
 
-  types_getSiteMask = []
-  def export_getSiteMask( self ):
-    """
-    Get the site mask
-    """
-    return S_OK( gSiteData.getSiteMaskStatus() )
+  # 'SiteMapData' has no 'getSiteMaskStatus' member
+  # types_getSiteMask = []
+  # def export_getSiteMask( self ):
+  #   """
+  #   Get the site mask
+  #   """
+  #   return S_OK( gSiteData.getSiteMaskStatus() )
   
   types_getSitesData = []
   def export_getSitesData( self ):
