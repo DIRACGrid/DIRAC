@@ -949,7 +949,7 @@ class LcgFileCatalogClient(FileCatalogueBase):
       for url in path:
         urls[url] = False
     elif type(path) == types.DictType:
-     urls = path
+      urls = path
     else:
       return S_ERROR("LcgFileCatalogClient.__checkArgumentFormat: Supplied path is not of the correct format.")
     return S_OK(urls)
@@ -1016,13 +1016,13 @@ class LcgFileCatalogClient(FileCatalogueBase):
     lfnlist = []
     listlinks = lfc.lfc_listlinks('',guid,lfc.CNS_LIST_BEGIN,list)
     while listlinks:
-       ll = listlinks.path
-       if re.search ('^'+self.prefix,ll):
-          ll = listlinks.path.replace(self.prefix,"",1)
-       lfnlist.append(ll)
-       listlinks = lfc.lfc_listlinks('',guid,lfc.CNS_LIST_CONTINUE,list)
+      ll = listlinks.path
+      if re.search ('^'+self.prefix,ll):
+        ll = listlinks.path.replace(self.prefix,"",1)
+      lfnlist.append(ll)
+      listlinks = lfc.lfc_listlinks('',guid,lfc.CNS_LIST_CONTINUE,list)
     else:
-       lfc.lfc_listlinks('',guid,lfc.CNS_LIST_END,list)
+      lfc.lfc_listlinks('',guid,lfc.CNS_LIST_END,list)
     return S_OK(lfnlist[0])
 
   def __getBasePath(self,path):
@@ -1632,16 +1632,16 @@ class LcgFileCatalogClient(FileCatalogueBase):
     failed = {}
     created = self.__openSession()
     for dirPath,dn in directory.items():
-       res = self.__getDNUserID(dn)
-       if not res['OK']:
-         failed[dirPath] = res['Message']
-       else:
-         userID = res['Value']
-         res = self.__changeOwner(dirPath,userID)
-         if not res['OK']:
-           failed[dirPath] = res['Message']
-         else:
-           successful[dirPath] = True
+      res = self.__getDNUserID(dn)
+      if not res['OK']:
+        failed[dirPath] = res['Message']
+      else:
+        userID = res['Value']
+        res = self.__changeOwner(dirPath,userID)
+        if not res['OK']:
+          failed[dirPath] = res['Message']
+        else:
+          successful[dirPath] = True
     if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
@@ -1764,9 +1764,9 @@ class LcgFileCatalogClient(FileCatalogueBase):
         #TODO WORK OUT WHICH LFN THIS CORRESPONDS
         status = oReplica.status
         if (status != 'P') or allStatus:
-          se = replica.host
-          pfn = replica.sfn#.strip()
-          replicas[se] = pfn
+          se = oReplica.host
+          pfn = oReplica.sfn#.strip()
+          # replicas[se] = pfn
     if created: self.__closeSession()
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
