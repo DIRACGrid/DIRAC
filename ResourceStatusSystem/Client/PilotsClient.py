@@ -1,6 +1,7 @@
 """ PilotsClient class is a client for to get pilots stats.
 """
-__docformat__ = "restructuredtext en"
+# it crashes epydoc
+# __docformat__ = "restructuredtext en"
 
 import datetime
 
