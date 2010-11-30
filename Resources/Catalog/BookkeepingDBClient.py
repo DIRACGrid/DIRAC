@@ -184,7 +184,7 @@ class BookkeepingDBClient(FileCatalogueBase):
       for url in path:
         urls[url] = False
     elif type(path) == types.DictType:
-     urls = path
+      urls = path
     else:
       errStr = "BookkeepingDBClient.__checkArgumentFormat: Supplied path is not of the correct format."
       gLogger.error(errStr)
