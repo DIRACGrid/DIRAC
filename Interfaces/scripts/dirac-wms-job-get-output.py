@@ -11,7 +11,7 @@ import DIRAC
 from DIRAC.Core.Base import Script
 import os
 
-Script.registerSwitch( "d:", "dir=", "Store the output in this directory" )
+Script.registerSwitch( "D:", "Dir=", "Store the output in this directory" )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
@@ -31,7 +31,7 @@ errorList = []
 
 outputDir = None
 for sw,v in Script.getUnprocessedSwitches():
-  if sw in ( 'd', 'dir' ):
+  if sw in ( 'D', 'Dir' ):
     outputDir = v
 
 for job in args:
