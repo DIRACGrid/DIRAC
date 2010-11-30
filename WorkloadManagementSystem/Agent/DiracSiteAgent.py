@@ -80,7 +80,7 @@ class DiracSiteAgent(AgentModule):
                          '/LocalSite/MaxCPUTime' : ''
                          }
     for optName, optDefault in self.pilotOptions.items():
-        self.pilotOptions[optName] = gConfig.getValue('%(optName)s' %{'optName':optName}, optDefault)
+      self.pilotOptions[optName] = gConfig.getValue('%(optName)s' %{'optName':optName}, optDefault)
 
     self.log.debug('======= Pilot Options =======')
     self.log.debug(self.pilotOptions)
@@ -158,8 +158,8 @@ class DiracSiteAgent(AgentModule):
   def __createCE(self,ceName):
     self.log.info("Creating %s CE" %(ceName) )
 
-    ceFactory = ComputingElementFactory(ceName)
-    ret = ceFactory.getCE()
+    ceFactory = ComputingElementFactory()
+    ret = ceFactory.getCE(ceName)
     if not ret['OK']:
       self.log.warn(ret['Message'])
       return ret
@@ -254,7 +254,7 @@ export LD_LIBRARY_PATH=
     """Force the Dirac Site Agent to complete gracefully.
     """
     self.log.info('Dirac site agent will stop with message "%s", execution complete.' %message)
-    fd = open(self.controlDir+'/stop_agent','w')
+    fd = open(os.path.join( self.am_getControlDirectory(), 'stop_agent' ), 'w' )
     fd.write('Dirac site agent Stopped at %s [UTC]' % (time.asctime(time.gmtime())))
     fd.close()
     return S_OK(message)
