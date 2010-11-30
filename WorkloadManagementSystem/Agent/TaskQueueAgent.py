@@ -15,7 +15,7 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB         import TaskQueueDB
 from DIRAC.ConfigurationSystem.Client.Config               import gConfig
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight             import ClassAd
 from DIRAC.Core.Security.CS                                import getPropertiesForGroup
-from DIRAC                                                 import S_OK, S_ERROR, Time
+from DIRAC                                                 import S_OK, S_ERROR
 import string,re
 
 class TaskQueueAgent(OptimizerModule):
