@@ -268,29 +268,29 @@ class ComponentMonitoringDB( DB ):
     return value == condVal
 
   def __getComponentDefinitionFromCS( self, system, setup, instance, type, component ):
-      componentName = "%s/%s" % ( system, component )
-      compDict = { 'ComponentName' : componentName,
-                   'Type' : type,
-                   'Setup' : setup
-                  }
-      componentSection = "/Systems/%s/%s/%s/%s" % ( system, instance,
-                                                    "%ss" % type.capitalize(), component )
-      compStatus = gConfig.getValue( "%s/Status" % componentSection, 'Active' )
-      if compStatus.lower() in ( "inactive", ):
-        compDict[ 'Status' ] = compStatus.lower().capitalize()
-      if type == 'service':
-        result = gConfig.getOption( "%s/Port" % componentSection )
-        if not result[ 'OK' ]:
-          compDict[ 'Status' ] = 'Error'
-          compDict[ 'Message' ] = "Component seems to be defined wrong in CS: %s" % result[ 'Message' ]
-          return compDict
-        try:
-          compDict[ 'Port' ] = int( result[ 'Value' ] )
-        except:
-          compDict[ 'Status' ] = 'Error'
-          compDict[ 'Message' ] = "Port for component doesn't seem to be a number"
-          return compDict
-      return compDict
+    componentName = "%s/%s" % ( system, component )
+    compDict = { 'ComponentName' : componentName,
+                 'Type' : type,
+                 'Setup' : setup
+                }
+    componentSection = "/Systems/%s/%s/%s/%s" % ( system, instance,
+                                                  "%ss" % type.capitalize(), component )
+    compStatus = gConfig.getValue( "%s/Status" % componentSection, 'Active' )
+    if compStatus.lower() in ( "inactive", ):
+      compDict[ 'Status' ] = compStatus.lower().capitalize()
+    if type == 'service':
+      result = gConfig.getOption( "%s/Port" % componentSection )
+      if not result[ 'OK' ]:
+        compDict[ 'Status' ] = 'Error'
+        compDict[ 'Message' ] = "Component seems to be defined wrong in CS: %s" % result[ 'Message' ]
+        return compDict
+      try:
+        compDict[ 'Port' ] = int( result[ 'Value' ] )
+      except:
+        compDict[ 'Status' ] = 'Error'
+        compDict[ 'Message' ] = "Port for component doesn't seem to be a number"
+        return compDict
+    return compDict
 
   def __componentMatchesCondition( self, compDict, requiredComponents, conditionDict = {} ):
     for key in compDict:
