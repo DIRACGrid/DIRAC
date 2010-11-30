@@ -41,8 +41,8 @@ class PilotAgentsDB(DB):
 
   def __init__(self, maxQueueSize=10 ):
 
-     DB.__init__(self,'PilotAgentsDB','WorkloadManagement/PilotAgentsDB',maxQueueSize)
-     self.lock = threading.Lock()
+    DB.__init__(self,'PilotAgentsDB','WorkloadManagement/PilotAgentsDB',maxQueueSize)
+    self.lock = threading.Lock()
 
 ##########################################################################################
   def addPilotTQReference(self,pilotRef,taskQueueID,ownerDN,ownerGroup,broker='Unknown',
