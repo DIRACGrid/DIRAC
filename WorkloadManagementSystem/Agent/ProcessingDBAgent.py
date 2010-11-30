@@ -34,9 +34,9 @@ class ProcessingDBAgent(OptimizerModule):
     if not self.disableProcDBCheck:
       dbURL = self.am_getOption( 'ProcDBURL', 'processingdb.cern.ch' )
       try:
-        from DIRAC.DataManagement.Client.ProcDBCatalogClient import ProcDBCatalogClient
+        from DIRAC.DataManagementSystem.Client.ProcDBCatalogClient import ProcDBCatalogClient
         self.PDBFileCatalog = ProcDBCatalogClient(dbURL)
-        self.log.debug("Instantiating ProcessingDB Catalog in mode %s %s %s" % (mode,dbURL) )
+        self.log.debug("Instantiating ProcessingDB Catalog at %s" % dbURL )
       except Exception,x:
         msg = "Failed to create ProcDBFileCatalogClient"
         self.log.fatal( msg, str(x) )
@@ -76,7 +76,7 @@ class ProcessingDBAgent(OptimizerModule):
       if not procDBResult['OK']:
         self.log.error(procDBResult['Message'])
         return procDBResult
-      result = self.setOptimizerJobInfo(job,self.optimizerName,procDBResult)
+      result = self.setOptimizerJobInfo(job,self.am_getModuleParam( 'agentName' ),procDBResult)
       if not result['OK']:
         self.log.error(result['Message'])
         return result
@@ -101,7 +101,7 @@ class ProcessingDBAgent(OptimizerModule):
     start = time.time()
     result = self.PDBFileCatalog.getPfnsByLfnList(lfns)
     timing = time.time() - start
-    self.log.info(self.optimizerName+' Lookup Time: %s seconds ' % (timing) )
+    self.log.info(self.am_getModuleParam( 'agentName' ) + ' Lookup Time: %s seconds ' % (timing) )
     return result
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
