@@ -291,7 +291,7 @@ class MonitoringCatalog:
 
   def getLastUpdate( self, sourceId, acName ):
     queryDict = { 'sourceId' : sourceId, "name" : acName }
-    retList = self._update( 'lastUpdate', "activities", queryDict )
+    retList = self.__update( 'lastUpdate', "activities", queryDict )
     if len( retList ) == 0:
       return False
     else:
