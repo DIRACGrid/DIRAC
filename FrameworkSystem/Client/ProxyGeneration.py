@@ -119,7 +119,7 @@ class CLIParams:
     Script.registerSwitch( "b:", "strength=", "Set the proxy strength in bytes", self.setProxyStrength )
     Script.registerSwitch( "l", "limited", "Generate a limited proxy", self.setProxyLimited )
     Script.registerSwitch( "t", "strict", "Fail on each error. Treat warnings as errors.", self.setStrict )
-    Script.registerSwitch( "d", "debug", "Enable debug output", self.setDebug )
+    Script.registerSwitch( "D", "proxydebug", "Enable debug output when generating proxy", self.setDebug )
     Script.registerSwitch( "C:", "Cert=", "File to use as user certificate", self.setCertLocation )
     Script.registerSwitch( "K:", "Key=", "File to use as user key", self.setKeyLocation )
     Script.registerSwitch( "u:", "out=", "File to write as proxy", self.setProxyLocation )
