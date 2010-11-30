@@ -20,7 +20,7 @@ class PlotCache:
   def __init__( self, plotsLocation = False ):
     self.plotsLocation = plotsLocation
     self.alive = True
-    self.__graphCache = DictCache( deleteFunction = self.__deleteGraph )
+    self.__graphCache = DictCache( deleteFunction = _deleteGraph )
     self.__graphLifeTime = 600
     self.purgeThread = threading.Thread( target = self.purgeExpired )
     self.purgeThread.start()
@@ -38,15 +38,6 @@ class PlotCache:
       time.sleep( self.__graphLifeTime )
       self.__graphCache.purgeExpired()
 
-  def __deleteGraph( self, plotDict ):
-    try:
-      for key in plotDict:
-        value = plotDict[ key ]
-        if value and os.path.isfile( value ):
-          os.unlink( value )
-    except:
-      pass
-
   def getPlot( self, plotHash, plotData, plotMetadata, subplotMetadata ):
     """
     Get plot from the cache if exists, else generate it
@@ -56,8 +47,10 @@ class PlotCache:
     if plotDict == False:
       basePlotFileName = "%s/%s.png" % ( self.plotsLocation, plotHash )
       if subplotMetadata:
+        # Assigning to function call which doesn't return
         retVal = graph( plotData, basePlotFileName, plotMetadata, metadata = subplotMetadata )
       else:
+        # Assigning to function call which doesn't return
         retVal = graph( plotData, basePlotFileName, plotMetadata )
       if not retVal[ 'OK' ]:
         return retVal
@@ -76,5 +69,14 @@ class PlotCache:
     except Exception, v:
       return S_ERROR( "Can't open file %s: %s" % ( plotFileName, str( v ) ) )
     return S_OK( data )
+
+def _deleteGraph( plotDict ):
+  try:
+    for key in plotDict:
+      value = plotDict[ key ]
+      if value and os.path.isfile( value ):
+        os.unlink( value )
+  except:
+    pass
 
 gPlotCache = PlotCache()
