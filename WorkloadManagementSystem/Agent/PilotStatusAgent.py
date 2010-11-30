@@ -399,8 +399,8 @@ class PilotStatusAgent( AgentModule ):
       status = re.search( statusRE, job ).group( 1 )
       if re.search( destinationRE, job ):
         destination = re.search( destinationRE, job ).group( 1 )
-      if gridType == 'LCG' and re.search( statusDateRE, job ):
-        statusDate = re.search( statusDateRE, job ).group( 1 )
+      if gridType == 'LCG' and re.search( statusDateLCGRE, job ):
+        statusDate = re.search( statusDateLCGRE, job ).group( 1 )
         statusDate = time.strftime( '%Y-%m-%d %H:%M:%S', time.strptime( statusDate, '%b %d %H:%M:%S %Y' ) )
       if gridType == 'gLite' and re.search( submittedDateRE, job ):
         submittedDate = re.search( submittedDateRE, job ).group( 1 )
