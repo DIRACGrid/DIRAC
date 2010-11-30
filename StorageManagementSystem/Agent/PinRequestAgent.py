@@ -61,7 +61,7 @@ class PinRequestAgent(AgentModule):
       gLogger.debug("PinRequest.__getStagedReplicas: No Staged replicas found to process.")
       return S_OK()
     else:
-     gLogger.debug("PinRequest.__getStagedReplicas: Obtained %s Staged replicas(s) to process." % len(res['Value']))
+      gLogger.debug("PinRequest.__getStagedReplicas: Obtained %s Staged replicas(s) to process." % len(res['Value']))
     seReplicas = {}
     for replicaID,info in res['Value'].items():
       lfn,storageElement,size,pfn,requestID = info
