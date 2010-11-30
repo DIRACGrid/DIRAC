@@ -8,7 +8,7 @@ class NotificationClient:
     pass
 
   def sendMail( self, address, subject, body, fromAddress = None, localAttempt = True ):
-      pass
+    pass
 
   def sendSMS( self, userName, body, fromAddress = None ):
     pass
