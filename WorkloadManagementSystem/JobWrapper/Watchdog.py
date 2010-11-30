@@ -481,7 +481,7 @@ class Watchdog:
       limit = self.jobCPUtime + self.jobCPUtime * ( self.jobCPUMargin / 100 )
       cpuConsumed = float( currentCPU )
       if cpuConsumed > limit:
-        self.log.info( 'Job has consumed more than the specified CPU limit with an additional %s% margin' % ( self.jobCPUMargin ) )
+        self.log.info( 'Job has consumed more than the specified CPU limit with an additional %s\% margin' % ( self.jobCPUMargin ) )
         return S_ERROR( 'Job has exceeded maximum CPU time limit' )
       else:
         return S_OK( 'Job within CPU limit' )
