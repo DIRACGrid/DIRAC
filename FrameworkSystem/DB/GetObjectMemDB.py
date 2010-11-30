@@ -63,30 +63,30 @@ class GetObjectMemDB:
             rangeVars.append(dictTemp[k[0],k[1],k[2],k[4]])
         if len(keyPosition)==2:
           if k[keyPosition[0]]==key[0] and k[keyPosition[1]]==key[1]:
-              rangeVars.append(dictTemp[k[0],k[1],k[2],k[4]])
+            rangeVars.append(dictTemp[k[0],k[1],k[2],k[4]])
         if len(keyPosition)==3:
           if k[keyPosition[0]]==key[0] and k[keyPosition[1]]==key[1] and k[keyPosition[2]]==key[2]:
-              rangeVars.append(dictTemp[k[0],k[1],k[2],k[4]])
+            rangeVars.append(dictTemp[k[0],k[1],k[2],k[4]])
         if len(keyPosition)==4:
           if k[keyPosition[0]]==key[0] and k[keyPosition[1]]==key[1] and k[keyPosition[2]]==key[2] and k[keyPosition[3]]==key[3]:
-              rangeVars.append(dictTemp[k[0],k[1],k[2],k[4]])
+            rangeVars.append(dictTemp[k[0],k[1],k[2],k[4]])
       if fieldsNumber == 3:
-          if len(keyPosition)==1:
-            if k[keyPosition[0]]==key[0]:
-              rangeVars.append(dictTemp[k[0],k[1],k[2]])
-          if len(keyPosition)==2:
-            if k[keyPosition[0]]==key[0] and k[keyPosition[1]]==key[1]:
-                rangeVars.append(dictTemp[k[0],k[1],k[2]])
-          if len(keyPosition)==3:
-            if k[keyPosition[0]]==key[0] and k[keyPosition[1]]==key[1] and k[keyPosition[2]]==key[2]:
-                rangeVars.append(dictTemp[k[0],k[1],k[2]])
+        if len(keyPosition)==1:
+          if k[keyPosition[0]]==key[0]:
+            rangeVars.append(dictTemp[k[0],k[1],k[2]])
+        if len(keyPosition)==2:
+          if k[keyPosition[0]]==key[0] and k[keyPosition[1]]==key[1]:
+            rangeVars.append(dictTemp[k[0],k[1],k[2]])
+        if len(keyPosition)==3:
+          if k[keyPosition[0]]==key[0] and k[keyPosition[1]]==key[1] and k[keyPosition[2]]==key[2]:
+            rangeVars.append(dictTemp[k[0],k[1],k[2]])
       if fieldsNumber == 2:
-          if len(keyPosition)==1:
-            if k[keyPosition[0]]==key[0]:
-              rangeVars.append(dictTemp[k[0],k[1]])
-          if len(keyPosition)==2:
-            if k[keyPosition[0]]==key[0] and k[keyPosition[1]]==key[1]:
-                rangeVars.append(dictTemp[k[0],k[1]])
+        if len(keyPosition)==1:
+          if k[keyPosition[0]]==key[0]:
+            rangeVars.append(dictTemp[k[0],k[1]])
+        if len(keyPosition)==2:
+          if k[keyPosition[0]]==key[0] and k[keyPosition[1]]==key[1]:
+            rangeVars.append(dictTemp[k[0],k[1]])
     print rangeVars
     return rangeVars
   
