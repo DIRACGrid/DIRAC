@@ -1,6 +1,6 @@
 from DIRAC.Resources.Catalog.LcgFileCatalogProxyClient  import LcgFileCatalogProxyClient
 from DIRAC.Core.Utilities.File                          import makeGuid
-import unittest,types,time
+import unittest, types, time, os
 
 class LFCProxyTestCase(unittest.TestCase):
   """ Base class for the TransferDB test cases
