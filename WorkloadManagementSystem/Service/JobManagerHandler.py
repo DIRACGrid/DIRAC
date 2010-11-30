@@ -174,7 +174,7 @@ class JobManagerHandler( RequestHandler ):
       result  = gJobDB.rescheduleJob( jobID )
       gLogger.debug( str( result ) )
       if not result['OK']:
-          return result
+        return result
       gJobLoggingDB.addLoggingRecord( result['JobID'], result['Status'], result['MinorStatus'], 
                                       application = 'Unknown', source = 'JobManager' )
 
