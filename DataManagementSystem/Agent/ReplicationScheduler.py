@@ -264,7 +264,17 @@ class ReplicationScheduler( AgentModule ):
             #
             res = self.TransferDB.addFileToChannel( channelID, fileID, hopSourceSE, sourceSURL, hopDestSE, targetSURL, fileSize, fileStatus = status )
             if not res['OK']:
+              errStr = res['Message']
               gLogger.error( "ReplicationScheduler._execute: Failed to add File to Channel." , "%s %s" % ( fileID, channelID ) )
+              return S_ERROR( errStr )
+            res = self.TransferDB.addFileRegistration(channelID, fileID,lfn,targetSURL,hopDestSE)
+            if not res['OK']:
+              errStr = res['Message']
+              gLogger.error( "ReplicationScheduler._execute: Failed to add File registration." , "%s %s" % ( fileID, channelID ) )
+              result  = self.TransferDB.removeFileFromChannel(channelID, fileID)
+              if not result['OK']:
+                errStr += result['Message']
+                gLogger.error( "ReplicationScheduler._execute: Failed to remove File." , "%s %s" % ( fileID, channelID ) )
               return S_ERROR( errStr )
             oRequest.setSubRequestFileAttributeValue( ind, 'transfer', lfn, 'Status', 'Scheduled' )
           res = self.TransferDB.addReplicationTree( fileID, tree )
