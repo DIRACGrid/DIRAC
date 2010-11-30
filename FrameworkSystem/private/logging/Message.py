@@ -46,8 +46,7 @@ class Message:
     return self.time
 
   def getMessage( self ):
-    messageString = "%s %s" % ( self.getFixedMessage(), self.getVariableMessage() )
-    return messageString.strip()
+    return "%s %s" % ( self.getFixedMessage(), self.getVariableMessage() )
 
   def getFixedMessage( self ):
     return self.msgText
