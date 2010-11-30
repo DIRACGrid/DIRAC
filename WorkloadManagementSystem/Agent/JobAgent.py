@@ -45,9 +45,9 @@ class JobAgent( AgentModule ):
       self.log.info( 'Defining CE from local configuration = %s' % localCE )
       ceUniqueID = localCE
 
-    ceFactory = ComputingElementFactory( ceUniqueID )
+    ceFactory = ComputingElementFactory(  )
     self.ceName = ceUniqueID
-    ceInstance = ceFactory.getCE()
+    ceInstance = ceFactory.getCE(ceUniqueID)
     if not ceInstance['OK']:
       self.log.warn( ceInstance['Message'] )
       return ceInstance
@@ -601,7 +601,7 @@ class JobAgent( AgentModule ):
     jobParam = jobReport.setJobParameter( int( jobID ), str( name ), str( value ) )
     self.log.verbose( 'setJobParameter(%s,%s,%s)' % ( jobID, name, value ) )
     if not jobParam['OK']:
-        self.log.warn( jobParam['Message'] )
+      self.log.warn( jobParam['Message'] )
 
     return jobParam
 
