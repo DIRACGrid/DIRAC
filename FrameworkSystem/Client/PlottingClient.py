@@ -110,4 +110,4 @@ class PlottingClient:
     values,vbins,patches = hist(data,bins)
     histo = dict(zip(vbins,values))
     span = (max(data)-min(data))/float(bins)*0.98 
-    return self.graph( histo, file, plot_type='BarGraph', span=span, statistics_line=True, *args, **kw ) 
+    return self.graph( histo, file, plot_type='BarGraph', span=span, statistics_line=True, *args, **kw )
