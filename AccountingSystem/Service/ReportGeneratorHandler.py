@@ -77,6 +77,10 @@ class ReportGeneratorHandler( RequestHandler ):
       now = Time.dateTime()
       reportRequest[ 'endTime' ] = now
       reportRequest[ 'startTime' ] = now - datetime.timedelta( seconds = lastSeconds )
+    else:
+      #if enddate is not there, just set it to now
+      if not reportRequest.get( 'endTime', False ):
+        reportRequest[ 'endTime' ] = Time.dateTime()
     #Check keys
     for key in self.__reportRequestDict:
       if not key in reportRequest:
