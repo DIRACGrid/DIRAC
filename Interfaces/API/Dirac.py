@@ -190,7 +190,7 @@ class Dirac:
         if ( jobDict.has_key( 'OutputData' ) and ( not int( jobDict['OutputData'] ) ) ) or ( not jobDict.has_key( 'OutputData' ) ):
           destDir = jobID
           if destinationDirectory:
-             destDir = "%s/%s" % ( destinationDirectory, jobID )
+            destDir = "%s/%s" % ( destinationDirectory, jobID )
           self.getJobOutputData( jobID, destinationDir = destDir )
     return S_OK()
 
