@@ -46,13 +46,13 @@ class PolicyBase(object):
         raise TypeError, where(self, self.setArgs)
       for arg in self.args:
         if arg[0] not in ValidRes:
-           raise InvalidRes, where(self, self.setArgs)
+          raise InvalidRes, where(self, self.setArgs)
         if arg[2] not in ValidStatus:
           raise InvalidStatus, where(self, self.setArgs)
       self.oldStatus = self.args[0][2]
     else:
       if self.args[0] not in ValidRes:
-         raise InvalidRes, where(self, self.setArgs)
+        raise InvalidRes, where(self, self.setArgs)
       if self.args[2] not in ValidStatus:
         raise InvalidStatus, where(self, self.setArgs)
       self.oldStatus = self.args[2]
