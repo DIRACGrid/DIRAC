@@ -22,6 +22,7 @@ DIRAC_PILOT = os.path.join( DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem',
 DIRAC_INSTALL = os.path.join( DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py' )
 TRANSIENT_PILOT_STATUS = ['Submitted','Waiting','Running','Scheduled','Ready']
 FINAL_PILOT_STATUS = ['Aborted','Failed','Done']
+ERROR_TOKEN = 'Invalid proxy token request'
 
 class SiteDirector( AgentModule ):
 
@@ -226,7 +227,7 @@ class SiteDirector( AgentModule ):
         proxy = result['Proxy']
         result = ce.submitJob(executable,proxy,pilotsToSubmit)
         if not result['OK']:
-          self.log.error('Failed submission to queue %s: %s' (queue,result['Message']))
+          self.log.error( 'Failed submission to queue %s:' % queue,result['Message'] )
         
         # Add pilots to the PilotAgentsDB assign pilots to TaskQueue proportionally to the
         # task queue priorities
