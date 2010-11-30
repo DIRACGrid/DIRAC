@@ -9,19 +9,15 @@ from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 localCfg = LocalConfiguration()
 
-scriptName = os.path.basename( sys.argv[0] ).replace('.py','')
-
-def initAsScript( script = False ):
-  global scriptName
-  if script:
-    scriptName = script
-  scriptSection = localCfg.setConfigurationForScript( scriptName )
+scriptName = os.path.basename( sys.argv[0] ).replace( '.py', '' )
 
 def parseCommandLine( script = False, ignoreErrors = False, initializeMonitor = False ):
   initialize( script, ignoreErrors, initializeMonitor, True )
 
 def initialize( script = False, ignoreErrors = False, initializeMonitor = False, enableCommandLine = True ):
   global localCfg, scriptName
+
+  gLogger.showHeaders( False )
 
   userDisabled = not localCfg.isCSEnabled()
   if not userDisabled:

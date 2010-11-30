@@ -39,6 +39,7 @@ class LocalConfiguration:
     self.loggingSection = "/DIRAC"
     self.initialized = False
     self.__usageMessage = False
+    self.__debugMode = 0
 
   def disableParsingCommandLine( self ):
     self.isParsed = True
@@ -88,6 +89,8 @@ class LocalConfiguration:
                          self.__setSectionByCmd )
     self.registerCmdOpt( "c:", "cert=", "Use server certificate to connect to Core Services",
                          self.__setUseCertByCmd )
+    self.registerCmdOpt( "d", "debug", "Set debug mode (-dd is extra debug)",
+                         self.__setDebugMode )
     self.registerCmdOpt( "h", "help", "Shows this help",
                          self.showHelp )
 
@@ -151,7 +154,7 @@ class LocalConfiguration:
       self.setConfigurationForScript( componentName )
     try:
       retVal = self.__addUserDataToConfiguration()
-      gLogger.initialize( self.componentName, self.loggingSection )
+      self.__initLogger( self.componentName, self.loggingSection )
       if not retVal[ 'OK' ]:
         return retVal
       retVal = self.__checkMandatoryOptions()
@@ -161,6 +164,17 @@ class LocalConfiguration:
       gLogger.exception()
       return S_ERROR( str( e ) )
     return S_OK()
+
+  def __initLogger( self, componentName, logSection ):
+    gLogger.initialize( componentName, logSection )
+    if self.__debugMode == 1:
+      gLogger.setLevel( "VERBOSE" )
+    elif self.__debugMode == 2:
+      gLogger.setLevel( "VERBOSE" )
+      gLogger.showHeaders( True )
+    elif self.__debugMode >= 3:
+      gLogger.setLevel( "DEBUG" )
+      gLogger.showHeaders( True )
 
   def loadUserData( self ):
     """
@@ -182,7 +196,7 @@ class LocalConfiguration:
         if not gConfigurationData.extractOptionFromCFG( optionPath ):
           gConfigurationData.setOptionInCFG( optionPath, optionTuple[1] )
 
-      gLogger.initialize( self.componentName, self.loggingSection )
+      self.__initLogger( self.componentName, self.loggingSection )
       if not retVal[ 'OK' ]:
         return retVal
 
@@ -379,6 +393,10 @@ class LocalConfiguration:
     if value.lower() in ( "y", "yes", "true" ):
       useCert = "yes"
     self.__setOptionValue( "/DIRAC/Security/UseServerCertificate", useCert )
+    return S_OK()
+
+  def __setDebugMode( self, dummy = False ):
+    self.__debugMode += 1
     return S_OK()
 
   def showHelp( self, dummy = False ):

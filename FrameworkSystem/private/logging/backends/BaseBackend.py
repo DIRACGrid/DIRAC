@@ -18,17 +18,21 @@ class BaseBackend:
 
   def composeString( self, messageObject ):
     from DIRAC.Core.Utilities import Time
+    #If not headers, just show lines
+    if not self._optionsDictionary[ 'showHeaders' ]:
+      return messageObject.getMessage()
+    #Do the full header
     messageName = "%s" % messageObject.getName()
     if messageObject.getSubSystemName():
       messageName += "/%s" % messageObject.getSubSystemName()
 
     if self._showCallingFrame and messageObject.getFrameInfo():
       messageName += "[%s]" % messageObject.getFrameInfo()
-    timeToShow = Time.toString( messageObject.getTime() ).split('.')[0]
+    timeToShow = Time.toString( messageObject.getTime() ).split( '.' )[0]
     lines = []
     for lineString in messageObject.getMessage().split( "\n" ):
       lines.append( "%s UTC %s %s: %s" % ( timeToShow,
                                            messageName,
                                            messageObject.getLevel().rjust( 5 ),
                                            lineString ) )
-    return "\n".join(lines)
+    return "\n".join( lines )

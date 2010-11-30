@@ -22,6 +22,8 @@ DEBUG = 1
 
 class Logger:
 
+  defaultLogLevel = 'NOTICE'
+
   def __init__( self ):
     self._minLevel = 0
     self._showCallingFrame = False
@@ -29,10 +31,15 @@ class Logger:
     self._outputList = []
     self._subLoggersDict = {}
     self._logLevels = LogLevels()
+    self.__backendOptions = { 'showHeaders' : True }
     self.__preinitialize()
+    self.__initialized = False
 
   def initialized( self ):
-    return not self._systemName == False
+    return self.__initialized
+
+  def showHeaders( self, yesno ):
+    self.__backendOptions[ 'showHeaders' ] = yesno
 
   def registerBackends( self, desiredBackends ):
     self._backendsDict = {}
@@ -42,72 +49,62 @@ class Logger:
         self.warn( "Unexistant method for showing messages",
                    "Unexistant %s logging method" % backend )
       else:
-        self._backendsDict[ backend ] = gBackendIndex[ backend ]( self.backendsOptions )
+        self._backendsDict[ backend ] = gBackendIndex[ backend ]( self.__backendOptions )
 
   def __preinitialize ( self ):
     self._systemName = "Framework"
-    self.backendsOptions = {}
     self.registerBackends( [ 'stdout' ] )
     self._minLevel = self._logLevels.getLevelValue( "NOTICE" )
 
   def initialize( self, systemName, cfgPath ):
-        
-    if self._systemName == "Framework":
-      from DIRAC.ConfigurationSystem.Client.Config import gConfig
-      from os import getpid
-            
-      #self.__printDebug( "The configuration path is %s" % cfgPath )
-      #Get the options for the different output backends
-      retDict = gConfig.getOptionsDict( "%s/BackendsOptions" % cfgPath )
-      
-      #self.__printDebug( retDict )
-      if not retDict[ 'OK' ]:
-        self.backendsOptions = { 'FileName': 'Dirac-log_%s.log' % getpid(),
-                                 'Interactive': True, 'SleepTime': 150 }
-      else:
-        #self.__printDebug( "The Options for the Backends are %s\n" % retDict[ 'Value' ] )
-        self.backendsOptions = retDict[ 'Value' ]
+    if self.__initialized:
+      return
+    self.__initialized = True
 
-        if not self.backendsOptions.has_key( 'Filename' ):
-          self.backendsOptions[ 'FileName' ] = 'Dirac-log_%s.log' % getpid()
+    from DIRAC.ConfigurationSystem.Client.Config import gConfig
+    from os import getpid
 
-        if self.backendsOptions.has_key( 'SleepTime' ):
-          self.backendsOptions[ 'SleepTime' ] = int ( self.backendsOptions[ 'SleepTime' ] )
-        else:
-          self.backendsOptions[ 'SleepTime' ] = 150
+    #self.__printDebug( "The configuration path is %s" % cfgPath )
+    #Get the options for the different output backends
+    retDict = gConfig.getOptionsDict( "%s/BackendsOptions" % cfgPath )
 
-        if self.backendsOptions.has_key( 'Interactive' ) and \
-               self.backendsOptions[ 'Interactive' ].lower() \
-               in ( "n", "no", "0", "false" ) :
-          self.backendsOptions[ 'Interactive' ] = False
-        else:
-          self.backendsOptions[ 'Interactive' ] = True
+    #self.__printDebug( retDict )
+    if not retDict[ 'OK' ]:
+      cfgBackOptsDict = { 'FileName': 'Dirac-log_%s.log' % getpid(), 'Interactive': True, 'SleepTime': 150 }
+    else:
+      cfgBackOptsDict = retDict[ 'Value' ]
 
-      self.backendsOptions[ 'Site' ] = DIRAC.siteName()
-      #self.__printDebug( "I'm running at %s" % self.backendsOptions[ 'Site' ] )
+    self.__backendOptions.update( cfgBackOptsDict )
 
-      #Configure outputs
-      desiredBackends = gConfig.getValue( "%s/LogBackends" % cfgPath,
-                                          'stdout' )
-      self.registerBackends( List.fromChar( desiredBackends ) )
-      #Configure verbosity
-      #self.__printDebug ( gConfig.getOption("%s/LogLevel" % cfgPath))
-      #self.__printDebug ( "%s/LogLevel" % cfgPath )       
-      defaultLogLevel = "NOTICE"
-      if "Scripts" in cfgPath:
-        defaultLogLevel = gConfig.getValue('/Systems/Scripts/LogLevel','NOTICE')        
-      self.setLevel( gConfig.getValue( "%s/LogLevel" % cfgPath, defaultLogLevel ) )
-      #Configure framing
-      #self.__printDebug ( gConfig.getOption( '/Systems/Framework/Development/Services/SystemLoggingReport/Port' )) 
-      #self.__printDebug ( "I shall use %s with LogLevel %s" % 
-      #                    ( desiredBackends, 
-      #                      gConfig.getValue( "%s/LogLevel" % cfgPath, "INFO" ) ) )
-      retDict = gConfig.getOption( "%s/LogShowLine" % cfgPath )
-      if retDict[ 'OK' ] and retDict[ 'Value' ].lower() in ( "y", "yes", "1", "true" ) :
-        self._showCallingFrame = True
-      self._systemName = str( systemName )
-      if not self.backendsOptions['Interactive']:
-        ExitCallback.registerExitCallback( self.flushAllMessages )
+    if not self.__backendOptions.has_key( 'Filename' ):
+      self.__backendOptions[ 'FileName' ] = 'Dirac-log_%s.log' % getpid()
+
+    sleepTime = 150
+    try:
+      sleepTime = int ( self.__backendOptions[ 'SleepTime' ] )
+    except:
+      pass
+    self.__backendOptions[ 'SleepTime' ] = sleepTime
+
+    self.__backendOptions[ 'Interactive' ] = gConfig.getValue( "%s/BackendsOptions/Interactive" % cfgPath, True )
+
+    self.__backendOptions[ 'Site' ] = DIRAC.siteName()
+
+    #Configure outputs
+    desiredBackends = gConfig.getValue( "%s/LogBackends" % cfgPath, 'stdout' )
+    self.registerBackends( List.fromChar( desiredBackends ) )
+    #Configure verbosity
+    defaultLevel = Logger.defaultLogLevel
+    if "Scripts" in cfgPath:
+      defaultLevel = gConfig.getValue( '/Systems/Scripts/LogLevel', Logger.defaultLogLevel )
+    self.setLevel( gConfig.getValue( "%s/LogLevel" % cfgPath, defaultLevel ) )
+    #Configure framing
+    self._showCallingFrame = gConfig.getValue( "%s/LogShowLine" % cfgPath, self._showCallingFrame )
+    #Get system name
+    self._systemName = str( systemName )
+
+    if not self.__backendOptions['Interactive']:
+      ExitCallback.registerExitCallback( self.flushAllMessages )
 
   def setLevel( self, levelName ):
     levelName = levelName.upper()
@@ -128,7 +125,7 @@ class Logger:
                              sVarMsg,
                              self.__discoverCallingFrame() )
     return self.processMessage( messageObject )
-  
+
   def notice( self, sMsg, sVarMsg = '' ):
     messageObject = Message( self._systemName,
                              self._logLevels.notice,
@@ -243,7 +240,7 @@ class Logger:
         type = "Unknown exception type"
         value = args[0]
         stack = ""
-      elif len(args) == 2:
+      elif len( args ) == 2:
         type = args[0]
         value = args[1]
         stack = ""
@@ -254,9 +251,9 @@ class Logger:
     else:
       if not lExcInfo:
         lExcInfo = sys.exc_info()
-      type, value = (lExcInfo[0],lExcInfo[1])
+      type, value = ( lExcInfo[0], lExcInfo[1] )
       stack = "\n".join( traceback.format_tb( lExcInfo[2] ) )
-    return "== EXCEPTION ==\n%s:%s\n%s===============" % (
+    return "== EXCEPTION ==\n%s:%s\n%s===============" % ( 
                          type,
                          value,
                          stack )
@@ -289,7 +286,7 @@ class Logger:
     stack = []
     f = tb.tb_frame
     while f:
-      stack.append(f)
+      stack.append( f )
       f = f.f_back
     stack.reverse()
     #traceback.print_exc()
@@ -298,7 +295,7 @@ class Logger:
       sExtendedException += "\n"
       sExtendedException += "Frame %s in %s at line %s\n" % ( frame.f_code.co_name,
                                            frame.f_code.co_filename,
-                                           frame.f_lineno)
+                                           frame.f_lineno )
       for key, value in frame.f_locals.items():
         #We have to be careful not to cause a new error in our error
         #printer! Calling str() on an unknown object could cause an
@@ -315,7 +312,7 @@ class Logger:
      to gLogger.showStack,  self.__getStackString, traceback.print_stack
     """
     stack_list = traceback.extract_stack()
-    return ''.join( traceback.format_list( stack_list[:-2] ))
+    return ''.join( traceback.format_list( stack_list[:-2] ) )
 
   def flushAllMessages( self, exitCode ):
     for backend in self._backendsDict:
