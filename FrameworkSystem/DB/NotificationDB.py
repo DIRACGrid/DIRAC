@@ -108,9 +108,6 @@ class NotificationDB( DB ):
     if name == 'status':
       if value not in self.__validAlarmStatus:
         return S_ERROR( "Status %s is invalid. Valid ones are: %s" % ( value, self.__validAlarmStatus ) )
-    elif name == 'type':
-      if value not in self.__validAlarmTypes:
-        return S_ERROR( "Type %s is invalid. Valid ones are: %s" % ( value, self.__validAlarmTypes ) )
     elif name == 'priority':
       if value not in self.__validAlarmPriorities:
         return S_ERROR( "Type %s is invalid. Valid ones are: %s" % ( value, self.__validAlarmPriorities ) )
@@ -207,22 +204,22 @@ class NotificationDB( DB ):
     self.log.info( "Trying to delete alarms with:\n alamKey %s\n  alarmId %s" % ( alarmKeyList, alarmsIdList ) )
     return self.deleteAlarmsByAlarmId( alarmsIdList )
 
-  def deleteAlarmsByAlarmId( self, alamIdList ):
-    self.log.info( "Trying to delete alarms with ids %s" % alamIdList )
+  def deleteAlarmsByAlarmId( self, alarmIdList ):
+    self.log.info( "Trying to delete alarms with ids %s" % alarmIdList )
     try:
-      alamId = int( alamIdList )
-      alamIdList = [ alarmId ]
+      alarmId = int( alarmIdList )
+      alarmIdList = [ alarmId ]
     except:
       pass
 
     try:
-      alamIdList = [ int( alarmId ) for alarmId in alamIdList ]
+      alarmIdList = [ int( alarmId ) for alarmId in alarmIdList ]
     except:
-      self.log.error( "At least one alarmId is not a number", str( alamIdList ) )
-      return S_ERROR( "At least one alarmId is not a number: %s" % str( alamIdList ) )
+      self.log.error( "At least one alarmId is not a number", str( alarmIdList ) )
+      return S_ERROR( "At least one alarmId is not a number: %s" % str( alarmIdList ) )
 
     tablesToCheck = ( "ntf_AlarmLog", "ntf_AlarmFollowers", "ntf_Alarms" )
-    alamsSQLList = ",".join( [ "%d" % alarmId for alarmId in alamIdList ] )
+    alamsSQLList = ",".join( [ "%d" % alarmId for alarmId in alarmIdList ] )
     for tableName in tablesToCheck:
       delSql = "DELETE FROM `%s` WHERE AlarmId in ( %s )" % ( tableName, alamsSQLList )
       result = self._update( delSql )
