@@ -4,5 +4,5 @@ from DIRAC.FrameworkSystem.private.logging.Logger import Logger
 
 gLogger = Logger()
 def getLogger():
-    return gLogger
+  return gLogger
         
