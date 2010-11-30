@@ -106,7 +106,7 @@ class MatcherHandler(RequestHandler):
         resourceDict['JobID'] = classAdAgent.getAttributeInt('JobID')    
         
       if classAdAgent.lookupAttribute('DIRACVersion'):
-          resourceDict['DIRACVersion'] = classAdAgent.getAttributeString('DIRACVersion')  
+        resourceDict['DIRACVersion'] = classAdAgent.getAttributeString('DIRACVersion')  
           
     else:
       for name in taskQueueDB.getSingleValueTQDefFields():
