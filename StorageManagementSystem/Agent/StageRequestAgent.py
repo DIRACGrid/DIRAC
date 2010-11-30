@@ -128,7 +128,7 @@ class StageRequestAgent(AgentModule):
       gLogger.debug("StageRequest.__getWaitingReplicas: No Waiting replicas found to process.")
       return S_OK()
     else:
-     gLogger.debug("StageRequest.__getWaitingReplicas: Obtained %s Waiting replicas(s) to process." % len(res['Value']))
+      gLogger.debug("StageRequest.__getWaitingReplicas: Obtained %s Waiting replicas(s) to process." % len(res['Value']))
     seReplicas = {}
     replicaIDs = {}
     for replicaID,info in res['Value'].items():
