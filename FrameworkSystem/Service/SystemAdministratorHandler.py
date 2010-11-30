@@ -73,7 +73,7 @@ class SystemAdministratorHandler( RequestHandler ):
   def export_installComponent( self, componentType, system, component ):
     """ Install runit directory for the specified component
     """
-    return InstallTools.installComponent( system, component, gConfig.getValue( '/DIRAC/Extensions', [] ) )
+    return InstallTools.installComponent( componentType, system, component, gConfig.getValue( '/DIRAC/Extensions', [] ) )
 
   types_setupComponent = [ StringTypes, StringTypes, StringTypes ]
   def export_setupComponent( self, componentType, system, component ):
@@ -176,7 +176,7 @@ class SystemAdministratorHandler( RequestHandler ):
   def export_addDatabaseOptionsToCS( self, system, database, overwrite = False ):
     """ Add the section with the database options to the CS
     """
-    return InstallTools.addDatabaseOptionsToCS( gConfig, system, database, setup, overwrite = overwrite)
+    return InstallTools.addDatabaseOptionsToCS( gConfig, system, database, overwrite = overwrite)
 
   types_addDefaultOptionsToCS = [StringTypes, StringTypes, StringTypes]
   def export_addDefaultOptionsToCS( self, componentType, system, component, overwrite = False ):
@@ -216,7 +216,7 @@ class SystemAdministratorHandler( RequestHandler ):
   def export_addOptionToDiracCfg( self, option, value ):
     """ Set option in the local configuration file
     """
-    return InstallTools.addOptionToDiracCfg()
+    return InstallTools.addOptionToDiracCfg( option, value )
 
   types_executeCommand = [ StringTypes ]
   def export_executeCommand( self, command ):
