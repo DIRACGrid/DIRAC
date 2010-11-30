@@ -98,7 +98,11 @@ class LocalConfiguration:
     """
     Register a new command line option
     """
-    #TODO: Can't overwrite switches (FATAL)
+    for optTuple in self.commandOptionList:
+      if optTuple[0] == shortOption:
+        raise Exception( "Short switch %s is already defined!" % shortOption )
+      if optTuple[1] == longOption:
+        raise Exception( "Long switch %s is already defined!" % longOption )
     self.commandOptionList.append( ( shortOption, longOption, helpString, function ) )
 
   def getExtraCLICFGFiles( self ):
@@ -411,9 +415,21 @@ class LocalConfiguration:
       if dummy:
         gLogger.notice( dummy )
 
-    gLogger.notice( "Options:" )
-    for optionTuple in self.commandOptionList:
+    gLogger.notice( "General options:" )
+    iLastOpt = 0
+    for iPos in range( len( self.commandOptionList ) ):
+      optionTuple = self.commandOptionList[ iPos ]
       gLogger.notice( "  -%s --%s : %s" % ( optionTuple[0].ljust( 3 ), optionTuple[1].ljust( 15 ), optionTuple[2] ) )
+      iLastOpt = iPos
+      if optionTuple[0] == 'h':
+        #Last general opt is always help
+        break
+    if iLastOpt + 1 < len( self.commandOptionList ):
+      gLogger.notice( " \nOptions:" )
+      for iPos in range( iLastOpt + 1, len( self.commandOptionList ) ):
+        optionTuple = self.commandOptionList[ iPos ]
+        gLogger.notice( "  -%s --%s : %s" % ( optionTuple[0].ljust( 3 ), optionTuple[1].ljust( 15 ), optionTuple[2] ) )
+
     DIRAC.exit( 0 )
 
   def deleteOption( self, optionPath ):
