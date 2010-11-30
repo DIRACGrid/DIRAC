@@ -366,7 +366,7 @@ class JobMonitoringHandler( RequestHandler ):
                                timeStamp='LastUpdateTime')
     if result['OK']:
       for stDict,count in result['Value']:
-         statusDict[stDict['Status']] = count
+        statusDict[stDict['Status']] = count
     resultDict['Extras'] = statusDict
 
     return S_OK(resultDict)
