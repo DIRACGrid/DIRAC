@@ -10,12 +10,10 @@ from DIRAC.Core.Utilities.Pfn                           import pfnparse,pfnunpar
 
 import types, os
  
-ISOK = True
-
 class ProxyStorage(StorageBase):
 
   def __init__(self,storageName,protocol,path,host,port,spaceToken,wspath):
-    self.isok = ISOK
+    self.isok = True
 
     self.protocolName = 'Proxy'
     self.name = storageName
@@ -118,7 +116,7 @@ class ProxyStorage(StorageBase):
         gLogger.error("ProxyStorage.putFile: Failed to send file to proxy server.", res['Message'])
         failed[dest_url] = res['Message']
       else:
-        res = client.uploadFile(storageElementName,pfn)
+        res = client.uploadFile( self.name, src_file )
         if not res['OK']:
           gLogger.error("ProxyStorage.putFile: Failed to upload file to storage element from proxy server.", res['Message'])
           failed[dest_url] = res['Message']
@@ -218,7 +216,7 @@ class ProxyStorage(StorageBase):
       for url in path:
         urls[url] = False
     elif type(path) == types.DictType:
-     urls = path
+      urls = path
     else:
       return S_ERROR("ProxyStorage.__checkArgumentFormatDict: Supplied path is not of the correct format.")
     return S_OK(urls)

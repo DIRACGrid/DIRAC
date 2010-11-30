@@ -37,6 +37,7 @@ import re
 class StorageBase:
 
   def __init__(self,name,rootdir):
+    self.isok = True
     self.name = name
     self.rootdir = rootdir
     self.cwd = self.rootdir
@@ -158,7 +159,7 @@ class StorageBase:
 
   #############################################################
   #
-  # These are the methods for manipulting the client
+  # These are the methods for manipulating the client
   #
 
   def isOK(self):

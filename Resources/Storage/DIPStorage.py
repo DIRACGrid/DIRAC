@@ -54,9 +54,6 @@ class DIPStorage(StorageBase):
   # The methods below are for manipulating the client
   #
 
-  def isOK(self):
-    return self.isok
-
   def isPfnForProtocol(self,path):
     """ Check that this is a path
     """
@@ -123,7 +120,7 @@ class DIPStorage(StorageBase):
     res = self.exists(path)
     if res['OK']:
       for url in res['Value']['Successful']:
-        if protocols and not self.protocols in protocols:
+        if protocols and not self.protocol in protocols:
           res['Value']['Successful'].pop(url)
           res['Value']['Failed'][url] = 'Protocol not supported'
           continue
@@ -378,20 +375,20 @@ class DIPStorage(StorageBase):
     gLogger.debug("DIPStorage.listDirectory: Attempting to list %s directories." % len(urls))
     serviceClient = RPCClient(self.url)
     for url in urls:
-       res = serviceClient.listDirectory(url,'l')
-       if not res['OK']:
-         failed[url] = res['Message']
-       else:
-         files = {}
-         subDirs = {}
-         for subPath,pathDict in res['Value'].items():
-           if pathDict['Type'] == 'File':
-             files[subPath] = pathDict
-           elif pathDict['Type'] == 'Directory':
-             subDirs[subPath] = pathDict
-         successful[url] = {}
-         successful[url]['SubDirs'] = subDirs
-         successful[url]['Files'] = files
+      res = serviceClient.listDirectory(url,'l')
+      if not res['OK']:
+        failed[url] = res['Message']
+      else:
+        files = {}
+        subDirs = {}
+        for subPath,pathDict in res['Value'].items():
+          if pathDict['Type'] == 'File':
+            files[subPath] = pathDict
+          elif pathDict['Type'] == 'Directory':
+            subDirs[subPath] = pathDict
+        successful[url] = {}
+        successful[url]['SubDirs'] = subDirs
+        successful[url]['Files'] = files
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -512,7 +509,7 @@ class DIPStorage(StorageBase):
       if res['OK']:
         successful[destDir] = {'Files':0,'Size':0}
       else:
-         failed[destDir] = res['Message']
+        failed[destDir] = res['Message']
     resDict = {'Failed':failed,'Successful':successful}
     return S_OK(resDict)
 
@@ -587,7 +584,7 @@ class DIPStorage(StorageBase):
       for url in path:
         urls[url] = False
     elif type(path) == types.DictType:
-     urls = path
+      urls = path
     else:
       return S_ERROR("DIPStorage.checkArgumentFormat: Supplied path is not of the correct format.")
     return S_OK(urls)

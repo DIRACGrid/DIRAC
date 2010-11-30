@@ -528,7 +528,7 @@ class StorageElement:
             gLogger.error(errStr,'%s for protocol %s: %s' % (self.name,protocolName,res['Message']))
             for pfn in pfnDict.values():
               if not failed.has_key(pfn):
-                  failed[pfn] = ''
+                failed[pfn] = ''
               failed[pfn] = "%s %s" % (failed[pfn],res['Message'])
           else:
             for protocolPfn,pfn in pfnDict.items():

@@ -8,12 +8,10 @@ from DIRAC.Core.Utilities.File                  import getSize
 from stat                                       import *
 import types,re,os,xmlrpclib
 
-ISOK = True
-
 class LHCbOnlineStorage(StorageBase):
 
   def __init__(self,storageName,protocol,path,host,port,spaceToken,wspath):
-    self.isok = ISOK
+    self.isok = True
 
     self.protocolName = 'LHCbOnline'
     self.name = storageName
@@ -44,9 +42,6 @@ class LHCbOnlineStorage(StorageBase):
     parameterDict['SpaceToken'] = self.spaceToken
     parameterDict['WSUrl'] = self.wspath
     return S_OK(parameterDict)
-
-  def isOK(self):
-    return self.isok
 
   def getProtocolPfn(self,pfnDict,withPort):
     """ From the pfn dict construct the SURL to be used

@@ -9,12 +9,10 @@ from DIRAC.Core.Utilities.File                  import getSize
 from stat                                       import *
 import types, re,os,time
 
-ISOK = True
-
 class RFIOStorage(StorageBase):
 
   def __init__(self,storageName,protocol,path,host,port,spaceToken,wspath):
-    self.isok = ISOK
+    self.isok = True
 
     self.protocolName = 'RFIO'
     self.name = storageName
@@ -29,9 +27,6 @@ class RFIOStorage(StorageBase):
 
     self.timeout = 100
     self.long_timeout = 600
-
-  def isOK(self):
-    return self.isok
 
   #############################################################
   #
@@ -331,11 +326,11 @@ class RFIOStorage(StorageBase):
       else:
         errStr = "RFIOStorage.__getFile: Failed to get local copy of file."
         gLogger.error(errStr,stderr)
-        errorMessage = "%s %s" (errStr,stderr)
+        errorMessage = "%s %s" % (errStr,stderr)
     else:
       errStr = "RFIOStorage.__getFile: Failed to get local copy of file."
       gLogger.error(errStr, res['Message'])
-      errorMessage = "%s %s" (errStr,res['Message']) 
+      errorMessage = "%s %s" % (errStr,res['Message']) 
     if os.path.exists(dest_file):
       gLogger.debug("RFIOStorage.getFile: Removing local file %s." % dest_file)
       os.remove(dest_file)   
@@ -1072,7 +1067,7 @@ class RFIOStorage(StorageBase):
       for url in path:
         urls[url] = False
     elif type(path) == types.DictType:
-     urls = path
+      urls = path
     else:
       return S_ERROR("RFIOStorage.checkArgumentFormat: Supplied path is not of the correct format.")
     return S_OK(urls)
