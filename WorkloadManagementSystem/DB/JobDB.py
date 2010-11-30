@@ -1577,7 +1577,7 @@ class JobDB( DB ):
     if result['OK']:
       resultDict = result['Value']
     else:
-     return S_ERROR( 'JobDB.getJobAttributes: can not retrieve job attributes' )
+      return S_ERROR( 'JobDB.getJobAttributes: can not retrieve job attributes' )
 
     if not 'VerifiedFlag' in resultDict:
       return S_ERROR( 'Job ' + str( jobID ) + ' not found in the system' )
@@ -2028,7 +2028,7 @@ class JobDB( DB ):
       if not countryCounts.has_key( country ):
         countryCounts[country] = {}
         for state in JOB_STATES:
-           countryCounts[country][state] = 0
+          countryCounts[country][state] = 0
       rList = [siteFullName, grid, country, tier]
       if siteMask.has_key( siteFullName ):
         rList.append( siteMask[siteFullName] )
