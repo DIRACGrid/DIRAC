@@ -7,7 +7,8 @@
     >>> server = RPCCLient("ResourceStatus/ResourceStatus")
 
 """
-__docformat__ = "restructuredtext en"
+# it crashes epydoc
+# __docformat__ = "restructuredtext en"
 
 import datetime
 
