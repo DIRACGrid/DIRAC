@@ -165,10 +165,10 @@ class PDP:
       policyCombinedResults = self._evaluate(singlePolicyResults)
     
       if policyCombinedResults == None:
-          return {'SinglePolicyResults' : singlePolicyResults, 
-                  'PolicyCombinedResult' : [{'PolicyType': policyType, 
-                                             'Action': False, 
-                                             'Reason':'No policy results'}]}
+        return {'SinglePolicyResults' : singlePolicyResults, 
+                'PolicyCombinedResult' : [{'PolicyType': policyType, 
+                                           'Action': False, 
+                                           'Reason':'No policy results'}]}
       
       #policy results communication
       if policyCombinedResults['SAT']:
