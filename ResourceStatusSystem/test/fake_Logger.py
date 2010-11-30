@@ -73,8 +73,8 @@ def getLFCNode( sites = None, readable = None ):
                     'lhcb-lfc.gridpp.rl.ac.uk']}
 
 def getGOCSiteName(diracSiteName):
-    return {'OK': True, 
-            'Value': 'CERN-PROD'}
+  return {'OK': True, 
+          'Value': 'CERN-PROD'}
 
 def getDIRACSiteName(a):
   return {'OK': True, 
