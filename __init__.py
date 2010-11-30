@@ -2,29 +2,67 @@
 """
    DIRAC - Distributed Infrastructure with Remote Agent Control
 
-   The LHCb distributed data production and analysis system
+   The LHCb distributed data production and analysis system.
 
-   DIRAC is a software system which allows to integrate various distributed
-   computing resources in a single system which is used for the MC data
-   production, data reprocessing and final user analysis. It consists
-   of the following main subsystems:
+   DIRAC is a software framework for distributed computing which
+   allows to integrate various computing resources in a single 
+   system. At the same time it integrates all kinds of computing
+   activities like Monte Carlo simulations, data processing, or
+   final user analysis.
 
-     - Core
-       - Utils
+   It is build as number of cooperating systems:
+    - Accounting
+    - Configuration
+    - Core
+      - Base
+      - DISET
+      - Security
+      - Utilities
+      - Workflow
+    - Framework
+    - RequestManagement
+    - Resources
+    - Transformation
 
+    Which are used by other system providing functionality to 
+    the end user:
+    - DataManagement
+    - Interfaces
+    - ResourceStatus
+    - StorageManagement
+    - WorkloadManagement
 
+    It defines the following data members:
+    - majorVersion:  DIRAC Major version number
+    - minorVersion:  DIRAC Minor version number
+    - patchLevel:    DIRAC Patch level number
+    - preVersion:    DIRAC Pre release number
+    - version:       DIRAC version string
+    - buildVersion:  DIRAC version string
+    
+    - errorMail:     mail address for important errors
+    - alarmMail:     mail address for important alarms
+    
+    - pythonPath:    absolute real path to the directory that contains this file
+    - rootPath:      absolute real path to the parent of DIRAC.pythonPath
 
-   It defines the following data members:
+    - platform:      DIRAC platform string for current host
+    - platformTuple: DIRAC platform tuple for current host
 
-     - majorVersion: DIRAC Major version number
-     - minorVersion: DIRAC Minor version number
-     - patchLevel:   DIRAC Patch level number
-     - version:      DIRAC version string
-
-     - pythonPath:   absolute real path to the directory that contains this file
-     - rootPath:     absolute real path to the parent of DIRAC.PythonPath
-
-   It loads Modules from the DIRAC.Core.Utils package.
+    It loads Modules from :
+    - DIRAC.Core.Utililies
+    
+    It loads:
+    - S_OK:           OK return structure
+    - S_ERROR:        ERROR return structure
+    - gLogger:        global Logger object
+    - gConfig:        global Config object
+    - gMonitor:       global Monitor object
+   
+    It defines the following functions:
+    - abort:          aborts execution
+    - exit:           finish execution using callbacks
+    - siteName:       returns DIRAC name for current site
 
 """
 __RCSID__ = "$Id$"
@@ -100,6 +138,9 @@ else:
 __siteName = False
 
 def siteName():
+  """
+  Determine and return DIRAC name for current site
+  """
   global __siteName
   if not __siteName:
     __siteName = gConfig.getValue( '/LocalSite/Site', _siteName )
@@ -114,9 +155,19 @@ platform = getPlatformString()
 platformTuple = tuple( platform.split( '_' ) )
 
 def exit( exitCode = 0 ):
+  """
+  Finish execution using callbacks
+  """
   ExitCallback.execute( exitCode, [] )
   sys.exit( exitCode )
 
 def abort( exitCode, *args, **kwargs ):
-  gLogger.fatal( *args, **kwargs )
-  os._exit( exitCode )
+  """
+  Abort execution
+  """
+  try:
+    gLogger.fatal( *args, **kwargs )
+    os._exit( exitCode )
+  except:
+    gLogger.exception( 'Error while executing DIRAC.abort' )
+    os._exit( exitCode )
