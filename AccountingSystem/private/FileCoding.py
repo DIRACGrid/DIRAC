@@ -11,16 +11,18 @@ try:
   zCompressionEnabled = True
 except:
   zCompressionEnabled = False
-  
+
 def codeRequestInFileId( plotRequest, compressIfPossible = True ):
   compress = compressIfPossible and zCompressionEnabled
+  thbStub = False
   if compress:
     plotStub = "Z:%s" % base64.urlsafe_b64encode( zlib.compress( DEncode.encode( plotRequest ), 9 ) )
   elif not self.__forceRawEncoding:
     plotStub = "S:%s" % base64.urlsafe_b64encode( DEncode.encode( plotRequest ) )
   else:
     plotStub = "R:%s" % DEncode.encode( plotRequest )
-  thbStub = False
+  #If thumbnail requested, use plot as thumbnail, and generate stub for plot without one
+  extraArgs = plotRequest[ 'extraArgs' ]
   if 'thumbnail' in extraArgs and extraArgs[ 'thumbnail' ]:
     thbStub = plotStub
     extraArgs[ 'thumbnail' ] = False
