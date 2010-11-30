@@ -147,24 +147,24 @@ class Request:
     return S_OK()
 
   def __get_attribute(self):
-     """ Generic method to get attributes
-     """
-     return self.attributes[self.item_called]
+    """ Generic method to get attributes
+    """
+    return self.attributes[self.item_called]
 
   def __set_attribute(self,value):
-     """ Generic method to set attribute value
-     """
-     self.attributes[self.item_called] = value
+    """ Generic method to set attribute value
+    """
+    self.attributes[self.item_called] = value
 
   def __get_subattribute(self,ind):
-     """ Generic method to get attributes
-     """
-     return self.subrequests[ind]['Attributes'][self.item_called]
+    """ Generic method to get attributes
+    """
+    return self.subrequests[ind]['Attributes'][self.item_called]
 
   def __set_subattribute(self,ind,value):
-     """ Generic method to set attribute value
-     """
-     self.subrequests[ind]['Attributes'][self.item_called] = value
+    """ Generic method to set attribute value
+    """
+    self.subrequests[ind]['Attributes'][self.item_called] = value
 
 #####################################################################
   def setCreationTime(self,time='now'):
