@@ -59,7 +59,7 @@ class BundleDeliveryClient:
     if not result[ 'OK' ]:
       self.log.error( "Could not sync dir", result[ 'Message' ] )
       if dirCreated:
-        self.log.info( "Removing dir %s" % dirTpSyncTo )
+        self.log.info( "Removing dir %s" % dirToSyncTo )
         os.unlink( dirToSyncTo )
       buff.close()
       return result
