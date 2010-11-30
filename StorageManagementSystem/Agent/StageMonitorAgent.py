@@ -101,7 +101,7 @@ class StageMonitorAgent(AgentModule):
       gLogger.debug("StageRequest.__getStageSubmittedReplicas: No StageSubmitted replicas found to process.")
       return S_OK()
     else:
-     gLogger.debug("StageRequest.__getStageSubmittedReplicas: Obtained %s StageSubmitted replicas(s) to process." % len(res['Value']))
+      gLogger.debug("StageRequest.__getStageSubmittedReplicas: Obtained %s StageSubmitted replicas(s) to process." % len(res['Value']))
 
     seReplicas = {}
     replicaIDs = res['Value']
