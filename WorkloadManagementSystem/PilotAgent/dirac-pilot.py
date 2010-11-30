@@ -314,7 +314,10 @@ if pilotRef != 'Unknown':
 ###
 #cliParams.ceName = 'Local'
 if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
-  retCode, CE = executeAndGetOutput( 'edg-brokerinfo getCE || glite-brokerinfo getCE' )
+  if os.environ.has_key('OSG_APP'):
+    retCode, CE = executeAndGetOutput( 'echo $OSG_HOSTNAME' )
+  else:
+    retCode, CE = executeAndGetOutput( 'edg-brokerinfo getCE || glite-brokerinfo getCE' )
   if not retCode:
     cliParams.ceName = CE.split( ':' )[0]
     cliParams.queueName = CE.split( '/' )[1]
