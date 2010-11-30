@@ -54,9 +54,6 @@ class TaskQueueDB( DB ):
   def getMultiValueMatchFields( self ):
     return self.__multiValueMatchFields
 
-  def getN2NMatchFields( self ):
-    return self.__n2nMatchFields
-
   def __getCSOption( self, optionName, defValue ):
     return gConfig.getValue( "%s/%s" % ( self.__csSection, optionName ), defValue )
 
