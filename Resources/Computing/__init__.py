@@ -3,8 +3,7 @@
 ############################################################
 
 """
-DIRAC.Interfaces.Computing package
+DIRAC.Resources.Computing package
 
 """
-
 __RCSID__ = "$Id$"
