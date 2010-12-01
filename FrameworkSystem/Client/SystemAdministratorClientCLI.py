@@ -11,6 +11,7 @@ import pprint
 import getpass
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 import DIRAC.Core.Utilities.InstallTools as InstallTools
+from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC import gConfig
 
 class SystemAdministratorClientCLI( cmd.Cmd ):
@@ -49,7 +50,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     del argss[0]
     if option == 'host':
       host = argss[0]
-      if host.find('.') == -1:
+      if host.find( '.' ) == -1:
         print "ERROR: you should provide the full host name including its domain"
         return
       self.__setHost( host )
@@ -105,7 +106,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         pprint.pprint( result['Value'] )
     elif option == 'status':
       client = SystemAdministratorClient( self.host, self.port )
-      result = client.getOverallStatus()      
+      result = client.getOverallStatus()
       if not result['OK']:
         print "ERROR:", result['Message']
       else:
@@ -135,7 +136,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if not InstallTools.mysqlPassword:
         InstallTools.mysqlPassword = "LocalConfig"
       InstallTools.getMySQLPasswords()
-      result = client.getDatabases(InstallTools.mysqlRootPwd)
+      result = client.getDatabases( InstallTools.mysqlRootPwd )
       if not result['OK']:
         print "ERROR:", result['Message']
         return
@@ -179,7 +180,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         if result['Value']['Extensions']:
           for e, v in result['Value']['Extensions'].items():
             print "%s version" % e, v
-        print    
+        print
     else:
       print "Unknown option:", option
 
@@ -194,16 +195,16 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
     system = argss[0]
     component = argss[1]
     nLines = 40
-    if len(argss) > 2:
-      nLines = int(argss[2])
+    if len( argss ) > 2:
+      nLines = int( argss[2] )
     client = SystemAdministratorClient( self.host, self.port )
-    result = client.getLogTail( system, component, nLines )        
+    result = client.getLogTail( system, component, nLines )
     if not result['OK']:
       print "ERROR:", result['Message']
-    elif result['Value']:    
-      for line in result['Value']['_'.join([system,component])].split('\n'):
-        print '   ',line
-    
+    elif result['Value']:
+      for line in result['Value']['_'.join( [system, component] )].split( '\n' ):
+        print '   ', line
+
     else:
       print "No logs found"
 
@@ -231,7 +232,7 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       if InstallTools.mysqlPassword == 'LocalConfig':
         InstallTools.mysqlPassword = ''
       InstallTools.getMySQLPasswords()
-      result = client.installMySQL(InstallTools.mysqlRootPwd,InstallTools.mysqlPassword)
+      result = client.installMySQL( InstallTools.mysqlRootPwd, InstallTools.mysqlPassword )
       if not result['OK']:
         print "ERROR:", result['Message']
       else:
@@ -243,29 +244,29 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
         return
       database = argss[0]
       client = SystemAdministratorClient( self.host, self.port )
-      
+
       result = client.getAvailableDatabases()
       if not result['OK']:
         print "ERROR: can not get database list: %s" % result['Message']
         return
-      if not result['Value'].has_key(database):
-        print "ERROR: unknown database %s: " % database  
+      if not result['Value'].has_key( database ):
+        print "ERROR: unknown database %s: " % database
         return
       system = result['Value'][database]['System']
-      setup = gConfig.getValue('/DIRAC/Setup','')
+      setup = gConfig.getValue( '/DIRAC/Setup', '' )
       if not setup:
-        print "ERROR: unknown current setup"  
+        print "ERROR: unknown current setup"
         return
-      instance = gConfig.getValue('/DIRAC/Setups/%s/%s' % (setup,system),'')
+      instance = gConfig.getValue( '/DIRAC/Setups/%s/%s' % ( setup, system ), '' )
       if not instance:
         print "ERROR: no instance defined for system %s" % system
         print "       Add new instance with 'add instance %s <instance_name>'" % system
         return
-      
+
       if not InstallTools.mysqlPassword:
         InstallTools.mysqlPassword = 'LocalConfig'
       InstallTools.getMySQLPasswords()
-      result = client.installDatabase( database, InstallTools.mysqlRootPwd)
+      result = client.installDatabase( database, InstallTools.mysqlRootPwd )
       if not result['OK']:
         print "ERROR:", result['Message']
         return
@@ -275,8 +276,8 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       result = client.getInfo()
       if not result['OK']:
         print "Error:", result['Message']
-      hostSetup = result['Value']['Setup']  
-      result = InstallTools.addDatabaseOptionsToCS(gConfig, system, database, hostSetup)
+      hostSetup = result['Value']['Setup']
+      result = InstallTools.addDatabaseOptionsToCS( gConfig, system, database, hostSetup )
       if not result['OK']:
         print "ERROR:", result['Message']
         return
@@ -291,13 +292,12 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       client = SystemAdministratorClient( self.host, self.port )
       # First need to update the CS
       # result = client.addDefaultOptionsToCS( option, system, component )
-      extensions = gConfig.getValue('/DIRAC/Extensions',[])
       InstallTools.host = self.host
       result = client.getInfo()
       if not result['OK']:
         print "Error:", result['Message']
-      hostSetup = result['Value']['Setup']  
-      result = InstallTools.addDefaultOptionsToCS(gConfig, option, system, component, extensions, hostSetup)
+      hostSetup = result['Value']['Setup']
+      result = InstallTools.addDefaultOptionsToCS( gConfig, option, system, component, getCSExtensions(), hostSetup )
       if not result['OK']:
         print "ERROR:", result['Message']
         return
@@ -454,14 +454,14 @@ class SystemAdministratorClientCLI( cmd.Cmd ):
       result = client.getInfo()
       if not result['OK']:
         print "Error:", result['Message']
-      hostSetup = result['Value']['Setup']  
-      instanceName = gConfig.getValue('/DIRAC/Setups/%s/%s' % (hostSetup,system),'')
+      hostSetup = result['Value']['Setup']
+      instanceName = gConfig.getValue( '/DIRAC/Setups/%s/%s' % ( hostSetup, system ), '' )
       if instanceName:
         if instanceName == instance:
-          print "System %s already has instance %s defined in %s Setup" % (system,instance,hostSetup)
+          print "System %s already has instance %s defined in %s Setup" % ( system, instance, hostSetup )
         else:
-          print "ERROR: System %s already has instance %s defined in %s Setup" % (system,instance,hostSetup)
-        return   
+          print "ERROR: System %s already has instance %s defined in %s Setup" % ( system, instance, hostSetup )
+        return
       result = InstallTools.addSystemInstance( system, instance, hostSetup )
       if not result['OK']:
         print "ERROR:", result['Message']
