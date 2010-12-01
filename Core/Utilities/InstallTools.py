@@ -426,7 +426,7 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName, component, extens
   instanceOption = cfgPath( 'DIRAC', 'Setups', setup, system )
   if gConfig:
     instance = gConfig.getValue( instanceOption, '' )
-  else:  
+  else:
     instance = localCfg.getOption( instanceOption, '' )
   if not instance:
     return S_ERROR( '%s not defined in %s' % ( instanceOption, cfgFile ) )
@@ -443,7 +443,7 @@ def addDefaultOptionsToCS( gConfig, componentType, systemName, component, extens
       result = gConfig.getOptions( componentSection )
       if result['OK']:
         addOptions = False
-          
+
   if not addOptions:
     return S_OK( 'Component options already exist' )
 
@@ -492,14 +492,14 @@ def addCfgToComponentCfg( componentType, systemName, component, cfg ):
     return S_ERROR( '%s not defined in %s' % ( instanceOption, cfgFile ) )
   compCfgFile = os.path.join( rootPath, 'etc', '%s_%s.cfg' % ( system, component ) )
   compCfg = CFG()
-  if os.path.exists(compCfgFile):
-    compCfg.loadFromFile(compCfgFile)
+  if os.path.exists( compCfgFile ):
+    compCfg.loadFromFile( compCfgFile )
   sectionPath = cfgPath( 'Systems', system, instance, sectionName )
 
   newCfg = __getCfg( sectionPath )
   newCfg.createNewSection( cfgPath( sectionPath, component ), 'Added by InstallTools', cfg )
   if newCfg.writeToFile( compCfgFile ):
-    return S_OK(compCfgFile)
+    return S_OK( compCfgFile )
   error = 'Can not write %s' % compCfgFile
   gLogger.error( error )
   return S_ERROR( error )
@@ -512,7 +512,7 @@ def getComponentCfg( componentType, system, component, instance, extensions ):
   if componentType == 'agent':
     sectionName = 'Agents'
 
-  extensionsDIRAC = [ x+'DIRAC' for x in extensions ] + extensions
+  extensionsDIRAC = [ x + 'DIRAC' for x in extensions ] + extensions
 
   compCfg = ''
   for ext in extensionsDIRAC + ['DIRAC']:
@@ -520,7 +520,7 @@ def getComponentCfg( componentType, system, component, instance, extensions ):
     if os.path.exists( cfgTemplatePath ):
       gLogger.notice( 'Loading configuration template', cfgTemplatePath )
       # Look up the component in this template
-      loadCfg = CFG()     
+      loadCfg = CFG()
       loadCfg.loadFromFile( cfgTemplatePath )
       try:
         compCfg = loadCfg[sectionName][component]
@@ -561,7 +561,7 @@ def addDatabaseOptionsToCS( gConfig, systemName, dbName, setup = setup, overwrit
   instanceOption = cfgPath( 'DIRAC', 'Setups', setup, system )
   if gConfig:
     instance = gConfig.getValue( instanceOption, '' )
-  else:  
+  else:
     instance = localCfg.getOption( instanceOption, '' )
   if not instance:
     return S_ERROR( '%s not defined in %s' % ( instanceOption, cfgFile ) )
@@ -594,7 +594,7 @@ def getDatabaseCfg( system, dbName, instance ):
 
   return S_OK( cfg )
 
-def addSystemInstance( systemName, instance, setup = setup, localCfg=False ):
+def addSystemInstance( systemName, instance, setup = setup, localCfg = False ):
   """ 
   Add a new system instance to dirac.cfg and CS
   """
@@ -1160,11 +1160,11 @@ def setupSite( scriptCfg, cfg = None ):
         # If we are not allowed to write to the central CS add the configuration to the local file
         addDefaultOptionsToComponentCfg( 'agent', system, agent, extensions )
   else:
-    gLogger.warn( 'Configuration parameters definition is not requested' )      
+    gLogger.warn( 'Configuration parameters definition is not requested' )
 
   if ['Configuration', 'Server'] in setupServices and setupPrivateConfiguration:
     cfg = __getCfg( cfgPath( 'DIRAC', 'Configuration' ), 'AutoPublish' , 'no' )
-    _addCfgToDiracCfg( cfg ) 
+    _addCfgToDiracCfg( cfg )
 
   # 2.- Check if MySQL is required
   if setupDatabases:
@@ -1186,7 +1186,7 @@ def setupSite( scriptCfg, cfg = None ):
         gLogger.notice( 'Database %s from %s/%s installed' % ( db, extension, system ) )
         result = addDatabaseOptionsToCS( None, system, db, overwrite = True )
         if not result['OK']:
-          gLogger.error('Database %s CS registration failed: %s' % (db,result['Message']) )
+          gLogger.error( 'Database %s CS registration failed: %s' % ( db, result['Message'] ) )
       gLogger.notice( 'Database %s already installed' % db )
 
   if mysqlPassword:
@@ -1738,7 +1738,7 @@ def getAvailableDatabases( extensions ):
       dbName = os.path.basename( db ).replace( '.sql', '' )
       dbDict[dbName] = {}
       dbDict[dbName]['Extension'] = extension
-      dbDict[dbName]['System'] = db.split('/')[-3].replace('System','')
+      dbDict[dbName]['System'] = db.split( '/' )[-3].replace( 'System', '' )
 
   return S_OK( dbDict )
 
@@ -1762,9 +1762,9 @@ def installDatabase( dbName ):
   """
   Install requested DB in MySQL server
   """
-  
+
   global mysqlRootPwd, mysqlPassword
-  
+
   result = mysqlInstalled()
   if not result['OK']:
     return result
@@ -1774,7 +1774,7 @@ def installDatabase( dbName ):
     return S_ERROR( 'Missing %s in %s' % ( rootPwdPath, cfgFile ) )
 
   if not mysqlPassword:
-    mysqlPassword = localCfg.getOption(cfgPath( 'Systems', 'Databases', 'Password' ),mysqlPassword)
+    mysqlPassword = localCfg.getOption( cfgPath( 'Systems', 'Databases', 'Password' ), mysqlPassword )
     if not mysqlPassword:
       mysqlPwdPath = cfgPath( 'Systems', 'Databases', 'Password' )
       return S_ERROR( 'Missing %s in %s' % ( mysqlPwdPath, cfgFile ) )
@@ -1853,6 +1853,7 @@ def installDatabase( dbName ):
       if cmd.lower().find( 'source' ) == 0:
         try:
           dbFile = cmd.split()[1]
+          dbFile = os.path.join( rootPath, dbFile )
           f = open( dbFile )
           dbLines = f.readlines()
           f.close()
@@ -1924,7 +1925,7 @@ def _addMySQLToDiracCfg():
 
   return _addCfgToDiracCfg( cfg )
 
-def configureCE( ceName='',ceType='', cfg=None, currentSectionPath='' ):
+def configureCE( ceName = '', ceType = '', cfg = None, currentSectionPath = '' ):
   """
   Produce new dirac.cfg including configuration for new CE
   """
@@ -1938,7 +1939,7 @@ def configureCE( ceName='',ceType='', cfg=None, currentSectionPath='' ):
     gLogger.error( error )
     if exitOnError:
       exit( -1 )
-    return S_ERROR( error)
+    return S_ERROR( error )
 
   for ceName in ceNameList:
     if 'CEType' not in cesCfg[ceName]:
@@ -1946,45 +1947,45 @@ def configureCE( ceName='',ceType='', cfg=None, currentSectionPath='' ):
       gLogger.error( error )
       if exitOnError:
         exit( -1 )
-      return S_ERROR( error)
+      return S_ERROR( error )
 
   localsiteCfg = localCfg['LocalSite']
   # Replace Configuration under LocalSite with new Configuration
   for ceName in ceNameList:
     if localsiteCfg.existsKey( ceName ):
-      gLogger.notice(' Removing existing CE:', ceName )
+      gLogger.notice( ' Removing existing CE:', ceName )
       localsiteCfg.deleteKey( ceName )
     gLogger.notice( 'Configuring CE:', ceName )
-    localsiteCfg.createNewSection( ceName, contents=cesCfg[ceName] )
+    localsiteCfg.createNewSection( ceName, contents = cesCfg[ceName] )
 
   # Apply configuration and try to instantiate the CEs
   gConfig.loadCFG( localCfg )
 
   for ceName in ceNameList:
-    ceFactory = ComputingElementFactory( )
+    ceFactory = ComputingElementFactory()
     try:
-      ceInstance = ceFactory.getCE(ceType, ceName)
+      ceInstance = ceFactory.getCE( ceType, ceName )
     except Exception, x:
       error = 'Fail to instantiate CE'
-      gLogger.exception(error)
+      gLogger.exception( error )
       if exitOnError:
         exit( -1 )
-      return S_ERROR( error)
+      return S_ERROR( error )
     if not ceInstance['OK']:
       error = 'Fail to instantiate CE: %s' % ceInstance['Message']
-      gLogger.error(error)
+      gLogger.error( error )
       if exitOnError:
         exit( -1 )
-      return S_ERROR( error)
+      return S_ERROR( error )
 
   # Everything is OK, we can save the new cfg
   localCfg.writeToFile( cfgFile )
-  gLogger.always( 'LocalSite section in %s has been uptdated with new configuration:' % os.path.basename(cfgFile) )
+  gLogger.always( 'LocalSite section in %s has been uptdated with new configuration:' % os.path.basename( cfgFile ) )
   gLogger.always( str( localCfg['LocalSite'] ) )
-    
+
   return S_OK( ceNameList )
 
-def configureLocalDirector( ceNameList = ''):
+def configureLocalDirector( ceNameList = '' ):
   """
   Install a Local DIRAC TaskQueueDirector, basically write the proper configuration file
   """
@@ -1993,11 +1994,11 @@ def configureLocalDirector( ceNameList = ''):
     if not result['OK']:
       return result
     # Now write a local Configuration for the Director
-  
+
   directorCfg = CFG()
   directorCfg.addKey( 'SubmitPools', 'DIRAC', 'Added by InstallTools' )
   directorCfg.addKey( 'DefaultSubmitPools', 'DIRAC', 'Added by InstallTools' )
-  directorCfg.addKey( 'ComputingElements', ', '.join(ceNameList), 'Added by InstallTools' )
+  directorCfg.addKey( 'ComputingElements', ', '.join( ceNameList ), 'Added by InstallTools' )
   result = addCfgToComponentCfg( 'agent', 'WorkloadManagement', 'TaskQueueDirector', directorCfg )
   if not result['OK']:
     return result
