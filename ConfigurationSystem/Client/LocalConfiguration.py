@@ -103,8 +103,6 @@ class LocalConfiguration:
     if not shortOption and not longOption:
       raise Exception( "No short or long options defined" )
     for optTuple in self.commandOptionList:
-      if not optTuple:
-        continue
       if shortOption and optTuple[0] == shortOption:
         raise Exception( "Short switch %s is already defined!" % shortOption )
       if longOption and optTuple[1] == longOption:
