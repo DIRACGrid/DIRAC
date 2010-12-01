@@ -105,8 +105,8 @@ Script.registerSwitch( "x:", "externalsLocation=", "Use externals location inste
 Script.registerSwitch( "j:", "makeJobs=", "Make jobs (default is 1)", cliParams.setMakeJobs )
 
 Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ...' % Script.scriptName ] ) )
+                                    '\nUsage:',
+                                    '  %s [option|cfgfile] ...\n' % Script.scriptName ] ) )
 
 Script.parseCommandLine( ignoreErrors = False )
 
