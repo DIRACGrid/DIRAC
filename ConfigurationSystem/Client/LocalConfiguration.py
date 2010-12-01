@@ -98,13 +98,16 @@ class LocalConfiguration:
     """
     Register a new command line option
     """
+    sortOption = shortOption.strip()
+    longOption = longOption.strip()
+    if not shortOption and not longOption:
+      raise Exception( "No short or long options defined" )
     for optTuple in self.commandOptionList:
       if not optTuple:
-        # Allow multiple definition of empty short options
         continue
-      if optTuple[0] == shortOption:
+      if shortOption and optTuple[0] == shortOption:
         raise Exception( "Short switch %s is already defined!" % shortOption )
-      if optTuple[1] == longOption:
+      if longOption and optTuple[1] == longOption:
         raise Exception( "Long switch %s is already defined!" % longOption )
     self.commandOptionList.append( ( shortOption, longOption, helpString, function ) )
 
