@@ -99,6 +99,9 @@ class LocalConfiguration:
     Register a new command line option
     """
     for optTuple in self.commandOptionList:
+      if not optTuple:
+        # Allow multiple definition of empty short options
+        continue
       if optTuple[0] == shortOption:
         raise Exception( "Short switch %s is already defined!" % shortOption )
       if optTuple[1] == longOption:
