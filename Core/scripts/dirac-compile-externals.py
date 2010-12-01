@@ -158,7 +158,7 @@ def fixAbsoluteLinks( path ):
     elif os.path.isdir( entryPath ):
       fixAbsoluteLinks( entryPath )
 
-cmdOpts = ( ( 'd:', 'destination=', 'Destination where to build the externals' ),
+cmdOpts = ( ( 'D:', 'destination=', 'Destination where to build the externals' ),
             ( 't:', 'type=', 'Type of compilation (default: client)' ),
             ( 'e:', 'externalsPath=', 'Path to the externals sources' ),
             ( 'v:', 'version=', 'Version of the externals to compile (default will be trunk)' ),
