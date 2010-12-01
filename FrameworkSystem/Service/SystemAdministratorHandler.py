@@ -9,6 +9,7 @@ from types import *
 from DIRAC import S_OK, S_ERROR, gConfig, shellCall
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.FrameworkSystem.DB.ComponentMonitoringDB import ComponentMonitoringDB
+from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 
 from DIRAC.Core.Utilities import InstallTools
 
@@ -32,14 +33,14 @@ class SystemAdministratorHandler( RequestHandler ):
     """  Get versions of the installed DIRAC software and extensions, setup of the
          local installation
     """
-    return InstallTools.getInfo( gConfig.getValue( '/DIRAC/Extensions', [] ) )
+    return InstallTools.getInfo( getCSExtensions() )
 
   types_getSoftwareComponents = [ ]
   def export_getSoftwareComponents( self ):
     """  Get the list of all the components ( services and agents ) for which the software
          is installed on the system
     """
-    return InstallTools.getSoftwareComponents( gConfig.getValue( '/DIRAC/Extensions', [] ) )
+    return InstallTools.getSoftwareComponents( getCSExtensions() )
 
   types_getInstalledComponents = [ ]
   def export_getInstalledComponents( self ):
@@ -60,7 +61,7 @@ class SystemAdministratorHandler( RequestHandler ):
     """  Get the complete status information for the components in the
          given list
     """
-    return InstallTools.getOverallStatus( gConfig.getValue( '/DIRAC/Extensions', [] ) )
+    return InstallTools.getOverallStatus( getCSExtensions() )
 
   types_getStartupComponentStatus = [ ListType ]
   def export_getStartupComponentStatus( self, componentTupleList ):
@@ -73,20 +74,20 @@ class SystemAdministratorHandler( RequestHandler ):
   def export_installComponent( self, componentType, system, component ):
     """ Install runit directory for the specified component
     """
-    return InstallTools.installComponent( componentType, system, component, gConfig.getValue( '/DIRAC/Extensions', [] ) )
+    return InstallTools.installComponent( componentType, system, component, getCSExtensions() )
 
   types_setupComponent = [ StringTypes, StringTypes, StringTypes ]
   def export_setupComponent( self, componentType, system, component ):
     """ Setup the specified component for running with the runsvdir daemon
         It implies installComponent
     """
-    return InstallTools.setupComponent( componentType, system, component, gConfig.getValue( '/DIRAC/Extensions', [] ) )
+    return InstallTools.setupComponent( componentType, system, component, getCSExtensions() )
 
   types_addDefaultOptionsToComponentCfg = [ StringTypes, StringTypes ]
   def export_addDefaultOptionsToComponentCfg( self, componentType, system, component ):
     """ Add default component options local component cfg
     """
-    return InstallTools.addDefaultOptionsToComponentCfg( componentType, system, component, gConfig.getValue( '/DIRAC/Extensions', [] ) )
+    return InstallTools.addDefaultOptionsToComponentCfg( componentType, system, component, getCSExtensions() )
 
   types_unsetupComponent = [ StringTypes, StringTypes ]
   def export_unsetupComponent( self, system, component ):
@@ -135,26 +136,26 @@ class SystemAdministratorHandler( RequestHandler ):
     return InstallTools.getMySQLStatus()
 
   types_getDatabases = [ ]
-  def export_getDatabases( self, mysqlPassword=None ):
+  def export_getDatabases( self, mysqlPassword = None ):
     """ Get the list of installed databases
     """
     if mysqlPassword :
-      InstallTools.setMySQLPasswords(mysqlPassword)
+      InstallTools.setMySQLPasswords( mysqlPassword )
     return InstallTools.getDatabases()
 
   types_getAvailableDatabases = [ ]
   def export_getAvailableDatabases( self ):
     """ Get the list of databases which software is installed in the system
     """
-    return InstallTools.getAvailableDatabases( gConfig.getValue( '/DIRAC/Extensions', [] ) )
+    return InstallTools.getAvailableDatabases( getCSExtensions() )
 
   types_installMySQL = []
-  def export_installMySQL( self, mysqlPassword=None, diracPassword=None ):
+  def export_installMySQL( self, mysqlPassword = None, diracPassword = None ):
     """ Install MySQL database server
     """
-    
+
     if mysqlPassword or diracPassword:
-      InstallTools.setMySQLPasswords(mysqlPassword,diracPassword)
+      InstallTools.setMySQLPasswords( mysqlPassword, diracPassword )
     if InstallTools.mysqlInstalled()['OK']:
       return S_OK( 'Already installed' )
 
@@ -165,26 +166,26 @@ class SystemAdministratorHandler( RequestHandler ):
     return S_OK( 'Successfully installed' )
 
   types_installDatabase = [ StringTypes ]
-  def export_installDatabase( self, dbName, mysqlPassword=None ):
+  def export_installDatabase( self, dbName, mysqlPassword = None ):
     """ Install a DIRAC database named dbName
     """
     if mysqlPassword :
-      InstallTools.setMySQLPasswords(mysqlPassword)
+      InstallTools.setMySQLPasswords( mysqlPassword )
     return InstallTools.installDatabase( dbName )
 
   types_addDatabaseOptionsToCS = [ StringTypes, StringTypes ]
   def export_addDatabaseOptionsToCS( self, system, database, overwrite = False ):
     """ Add the section with the database options to the CS
     """
-    return InstallTools.addDatabaseOptionsToCS( gConfig, system, database, overwrite = overwrite)
+    return InstallTools.addDatabaseOptionsToCS( gConfig, system, database, overwrite = overwrite )
 
   types_addDefaultOptionsToCS = [StringTypes, StringTypes, StringTypes]
   def export_addDefaultOptionsToCS( self, componentType, system, component, overwrite = False ):
     """ Add default component options to the global CS or to the local options
     """
-    return InstallTools.addDefaultOptionsToCS( gConfig, componentType, system, component, 
-                                               gConfig.getValue( '/DIRAC/Extensions', [] ), 
-                                               overwrite = overwrite)
+    return InstallTools.addDefaultOptionsToCS( gConfig, componentType, system, component,
+                                               getCSExtensions(),
+                                               overwrite = overwrite )
 
 #######################################################################################
 # General purpose methods
@@ -200,16 +201,16 @@ class SystemAdministratorHandler( RequestHandler ):
     if status != 0:
       # Get error messages
       error = []
-      output = result['Value'][1].split('\n')
+      output = result['Value'][1].split( '\n' )
       for line in output:
         line = line.strip()
         if 'error' in line.lower():
-          error.append(line)
+          error.append( line )
       if error:
-        message = '\n'.join(error)
+        message = '\n'.join( error )
       else:
         message = "Failed to update software to %s" % version
-      return S_ERROR(message)        
+      return S_ERROR( message )
     return S_OK()
 
   types_addOptionToDiracCfg = [ StringTypes, StringTypes ]
