@@ -104,7 +104,7 @@ Script.registerSwitch( "P", "ignorePackages", "Do not make tars of python packag
 Script.registerSwitch( "x:", "externalsLocation=", "Use externals location instead of downloading them", cliParams.setExternalsLocation )
 Script.registerSwitch( "j:", "makeJobs=", "Make jobs (default is 1)", cliParams.setMakeJobs )
 
-Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                     '\nUsage:',
                                     '  %s [option|cfgfile] ...\n' % Script.scriptName ] ) )
 
@@ -268,7 +268,7 @@ def tarExternals( mainCFG, targetDir ):
         compileScript = os.path.join( os.path.dirname( __file__ ), "dirac-compile-externals.py" )
       compileTarget = os.path.join( targetDir, platform )
       cmdArgs = []
-      cmdArgs.append( "-d '%s'" % compileTarget )
+      cmdArgs.append( "-D '%s'" % compileTarget )
       cmdArgs.append( "-t '%s'" % externalType )
       cmdArgs.append( "-v '%s'" % externalsVersion )
       cmdArgs.append( "-i '%s'" % cliParams.externalsPython )

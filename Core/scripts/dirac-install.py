@@ -500,7 +500,7 @@ extTar = "Externals-%s" % extDesc
 extAvailable = "%s.tar.gz" % ( extTar ) in availableTars
 
 buildCmd = os.path.join( cliParams.targetPath, "DIRAC", "Core", "scripts", "dirac-compile-externals.py" )
-buildCmd = "%s -t '%s' -d '%s' -v '%s' -i '%s'" % ( buildCmd, cliParams.externalsType,
+buildCmd = "%s -t '%s' -D '%s' -v '%s' -i '%s'" % ( buildCmd, cliParams.externalsType,
                                                     os.path.join( cliParams.targetPath, cliParams.platform ),
                                                     extVersion,
                                                     cliParams.pythonVersion )
