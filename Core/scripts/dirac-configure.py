@@ -26,7 +26,6 @@
   -v --UseVersionsDir                              Use versions directory (This option will properly define RootPath and InstancePath)
   --Architecture=<architecture>                    To define /LocalSite/Architecture=<architecture>
   --LocalSE=<localse>                              To define /LocalSite/LocalSE=<localse>
-  -d  --debug                                      To run in debug mode
 
   Other arguments will take proper defaults if not defined.
   
@@ -76,13 +75,6 @@ architecture = None
 localSE = None
 ceName = None
 vo = None
-
-
-def setDebug( optionValue ):
-  global logLevel
-  logLevel = 'DEBUG'
-  DIRAC.gLogger.setLevel( logLevel )
-  return DIRAC.S_OK()
 
 
 def setGateway( optionValue ):
@@ -197,9 +189,7 @@ Script.registerSwitch( "v", "UseVersionsDir", "Use versions directory", setUseVe
 Script.registerSwitch( "", "Architecture=", "Configure /Architecture=<architecture>", setArchitecture )
 Script.registerSwitch( "", "LocalSE=", "Configure LocalSite/LocalSE=<localse>", setLocalSE )
 
-Script.registerSwitch( "d", "debug", "Set debug flag", setDebug )
-
-Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                     'Usage:',
                                     '  %s [option|cfgfile] ...' % Script.scriptName ] ) )
 
