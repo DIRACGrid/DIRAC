@@ -1,19 +1,11 @@
 ########################################################################
 # $HeadURL$
+# File :    AgentModule.py
+# Author :  Adria Casajus
 ########################################################################
-""" Base class for all agent modules
-
-    The specific agents must provide the following methods:
-    - initialize() for initial settings
-    - execute() - the main method called in the agent cycle
-    - finalize() - the graceful exit of the method, this one is usually used
-               for the agent restart
-
-    The agent can be stopped either by a signal or by creating a 'stop_agent' file
-    in the controlDirectory defined in the agent configuration
-
 """
-
+  Base class for all agent modules
+"""
 __RCSID__ = "$Id$"
 
 import os
@@ -28,6 +20,20 @@ from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities import Time
 
 class AgentModule:
+  """ Base class for all agent modules
+  
+      The specific agents must provide the following methods:
+      - initialize() for initial settings
+      - beginExecution()
+      - execute() - the main method called in the agent cycle
+      - endExecution()
+      - finalize() - the graceful exit of the method, this one is usually used
+                 for the agent restart
+  
+      The agent can be stopped either by a signal or by creating a 'stop_agent' file
+      in the controlDirectory defined in the agent configuration
+  
+  """
 
   def __init__( self, agentName, baseAgentName = False, properties = {} ):
     if baseAgentName and agentName == baseAgentName:
@@ -138,6 +144,26 @@ class AgentModule:
 
   def am_getControlDirectory( self ):
     return os.path.join( self.__basePath, str( self.am_getOption( 'ControlDirectory' ) ) )
+
+  def am_getStopAgentFile( self ):
+    return os.path.join( self.am_getControlDirectory(), 'stop_agent' )
+
+  def am_checkStopAgentFile( self ):
+    return os.path.isfile( self.am_getStopAgentFile() )
+
+  def am_createStopAgentFile( self ):
+    try:
+      fd = open( self.am_getStopAgentFile(), 'w' )
+      fd.write( 'Dirac site agent Stopped at %s' % Time.toString() )
+      fd.close()
+    except:
+      pass
+
+  def am_removeStopAgentFile( self ):
+    try:
+      os.unlink( self.am_getStopAgentFile() )
+    except:
+      pass
 
   def am_getBasePath( self ):
     return self.__basePath
@@ -331,7 +357,7 @@ class AgentModule:
     #Execute the endExecution function
     return  self.am_secureCall( self.endExecution, name = "endExecution" )
 
-  def initialize( self ):
+  def initialize( self, *args, **kwargs ):
     return S_OK()
 
   def beginExecution( self ):
