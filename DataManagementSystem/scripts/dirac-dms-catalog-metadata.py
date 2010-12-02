@@ -1,19 +1,28 @@
 #!/usr/bin/env python
-from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine()
 ########################################################################
 # $HeadURL$
 ########################################################################
 __RCSID__   = "$Id$"
-__VERSION__ = "$ $"
+
+from DIRAC.Core.Base import Script 
+
+Script.setUsageMessage("""
+Get metadata for the given file specified by its Logical File Name or for a list of files
+contained in the specifed file
+
+Usage:
+   %s <lfn | fileContainingLfns> [Catalog]
+""" % Script.scriptName)
+
+Script.parseCommandLine()
 
 from DIRAC.Core.Utilities.List                          import sortList
 from DIRAC.DataManagementSystem.Client.ReplicaManager   import ReplicaManager
 import os,sys
 
 if not len(sys.argv) >= 2:
-  print 'Usage: ./dirac-dms-catalog-metadata.py <lfn | fileContainingLfns> [Catalog]'
-  sys.exit()
+  Script.showHelp()
+  DIRAC.exit( -1 )
 else:
   inputFileName = sys.argv[1]
   catalogs = []
@@ -31,7 +40,7 @@ else:
 rm = ReplicaManager()
 res = rm.getCatalogFileMetadata(lfns,catalogs=catalogs)
 if not res['OK']:
-  print res['Message']
+  print "ERROR:",res['Message']
   sys.exit()
 
 print '%s %s %s %s %s' % ('FileName'.ljust(100),'Size'.ljust(10),'GUID'.ljust(40),'Status'.ljust(8),'Checksum'.ljust(10))

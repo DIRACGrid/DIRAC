@@ -10,6 +10,14 @@ from DIRAC.Core.Base import Script
 read = True
 write = True
 site = ''
+
+Script.setUsageMessage("""
+Enable using one or more Storage Elements
+
+Usage:
+   %s SE1 [SE2 ...]
+""" % Script.scriptName)
+
 Script.registerSwitch( "r", "AllowRead","      Allow only reading from the storage element")
 Script.registerSwitch( "w", "AllowWrite","     Allow only writing to the storage element")
 Script.registerSwitch( "S:", "Site=", "        Allow all SEs associated to site")
@@ -21,12 +29,8 @@ for switch in Script.getUnprocessedSwitches():
     write = False
   if switch[0].lower() == "w" or switch[0].lower() == "allowwrite":
     read = False
-  if switch[0].lower() == "c" or switch[0].lower() == "site":
+  if switch[0] == "S" or switch[0].lower() == "site":
     site = switch[1]
-
-def usage():
-  gLogger.info(' Type "%s --help" for the available options and syntax' % Script.scriptName)
-  DIRAC.exit(-1)
 
 from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
 from DIRAC.FrameworkSystem.Client.NotificationClient  import NotificationClient
@@ -43,7 +47,9 @@ userName = res['Value']['username']
 group = res['Value']['group']
 
 if not type(ses) == type([]):
-  usage()
+  Script.showHelp()
+  DIRAC.exit( -1 )
+  
 if site:
   res = gConfig.getOptionsDict('/Resources/Sites/LCG/%s' % site)
   if not res['OK']:

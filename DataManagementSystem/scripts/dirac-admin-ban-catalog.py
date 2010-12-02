@@ -7,14 +7,16 @@ __VERSION__ = "$Revision: 1.3 $"
 import DIRAC
 from DIRAC.Core.Base                                   import Script
 
+Script.setUsageMessage("""
+Ban the File Catalog mirrors at one or more sites
+
+Usage:
+   %s site1 [site2 ...]
+""" % Script.scriptName)
+
 Script.parseCommandLine(ignoreErrors = True)
 
 sites = Script.getPositionalArgs()
-
-def usage():
-  gLogger.info('dirac-admin-ban-catalog Tier1 [Tier1 ...]')
-  gLogger.info(' Type "%s --help" for the available options and syntax' % Script.scriptName)
-  DIRAC.exit(-1)
 
 from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
 from DIRAC.FrameworkSystem.Client.NotificationClient  import NotificationClient
@@ -30,7 +32,8 @@ userName = res['Value']['username']
 group = res['Value']['group']
 
 if not sites:
-  usage()
+  Script.showHelp()
+  DIRAC.exit( -1 )
 
 catalogCFGBase = "/Resources/FileCatalogs/LcgFileCatalogCombined"
 banned = []
