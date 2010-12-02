@@ -1,26 +1,34 @@
-"""  Agent to manage a DIRAC site.
+########################################################################
+# $HeadURL$
+# File :    DiracSiteAgent.py
+# Author :  Andrei Tsaregorodtsev
+########################################################################
 """
+  Agent to manage a DIRAC site, it submits and monitors pilots to a local cluster
+"""
+__RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.ModuleFactory                  import ModuleFactory
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight           import ClassAd
-from DIRAC.Core.Utilities.TimeLeft.TimeLeft              import TimeLeft
 from DIRAC.Core.Base.AgentModule                         import AgentModule
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Core.Security.Locations                       import getProxyLocation
 from DIRAC.Resources.Computing.ComputingElementFactory   import ComputingElementFactory
-from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
-from DIRAC                                               import S_OK, S_ERROR, gConfig, platform
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
-from DIRAC.Core.Security.Misc                            import getProxyInfo
-from DIRAC.Core.Security                                 import Locations
-from DIRAC.Core.Security                                 import Properties
+from DIRAC                                               import S_OK, S_ERROR, gConfig
 import DIRAC
 
-import os, sys, re, string, time, urllib
+import os, time, urllib
 
 AGENT_NAME = 'WorkloadManagement/DiracSiteAgent'
 
 class DiracSiteAgent( AgentModule ):
+  """
+      The specific agents must provide the following methods:
+      - initialize() for initial settings
+      - beginExecution()
+      - execute() - the main method called in the agent cycle
+      - endExecution()
+      - finalize() - the graceful exit of the method, this one is usually used
+                 for the agent restart
+  """
 
   #############################################################################
   def initialize( self, loops = 0 ):
@@ -49,10 +57,10 @@ class DiracSiteAgent( AgentModule ):
 
     for propLocation, propDefault in self.propertiesDict.items():
       try:
-        property = gConfig.getValue( propLocation, propDefault ).replace( '"', '' )
-        self.propertiesDict[propLocation] = str( property )
-      except Exception, x:
-        print x
+        prop = gConfig.getValue( propLocation, propDefault ).replace( '"', '' )
+        self.propertiesDict[propLocation] = str( prop )
+      except Exception, e:
+        print e
         return S_ERROR( 'Expected string for %s field' % propLocation )
 
     self.matchDict = {
@@ -112,7 +120,9 @@ class DiracSiteAgent( AgentModule ):
         urllib.urlretrieve( self.diracInstallURL, self.diracInstallPath )
         os.chmod( self.diracInstallPath, 0755 )
       except:
-        self.log.error( 'Failed to retrieve %(diracInstallFileName)s from %(diracInstallUrl)s' % {'diracInstallFileName':self.diracInstallFileName, 'diracInstallUrl':self.diracInstallURL} )
+        self.log.error( 'Failed to retrieve %(diracInstallFileName)s from %(diracInstallUrl)s' %
+                        { 'diracInstallFileName':self.diracInstallFileName,
+                          'diracInstallUrl':self.diracInstallURL } )
 
     return S_OK()
 
@@ -156,6 +166,9 @@ class DiracSiteAgent( AgentModule ):
 
   #############################################################################
   def __createCE( self, ceName ):
+    """
+    return a CE object for the given ceName
+    """
     self.log.info( "Creating %s CE" % ( ceName ) )
 
     ceFactory = ComputingElementFactory()
@@ -170,6 +183,9 @@ class DiracSiteAgent( AgentModule ):
 
   #############################################################################
   def __createPilotFile( self ):
+    """
+    write a pilot script and the return the file name
+    """
 
     pilotOptionString = ''
 
@@ -195,7 +211,9 @@ export LD_LIBRARY_PATH=
 
   #############################################################################
   def __getProxy( self ):
-    # get proxy
+    """
+    return proxy string from current environment
+    """
     proxyLocation = getProxyLocation()
 
     fopen = open( proxyLocation, 'r' )
@@ -206,10 +224,17 @@ export LD_LIBRARY_PATH=
 
   #############################################################################
   def __submitPilots( self, pilots, ce ):
+    """
+    submit pilots to CE
+    """
     resourceJDL = ''
     while len( pilots ) > 0:
       pilot = pilots.pop( 0 )
-      ret = ce.submitJob( pilot['pilotFile'], resourceJDL, pilot['proxyString'], '0', [self.diracInstallPath, self.diracPilotPath] )
+      ret = ce.submitJob( pilot['pilotFile'],
+                          resourceJDL,
+                          pilot['proxyString'],
+                          '0',
+                          [self.diracInstallPath, self.diracPilotPath] )
       if not ret['OK']:
         self.log.warn( ret['Message'] )
         return ret
@@ -219,6 +244,9 @@ export LD_LIBRARY_PATH=
 
   #############################################################################
   def __getPilots( self ):
+    """
+    prepare pilot objects for submission to CE
+    """
 
     rpcClient = RPCClient( "WorkloadManagement/Matcher" )
     result = rpcClient.getMatchingTaskQueues( self.matchDict )
@@ -254,10 +282,5 @@ export LD_LIBRARY_PATH=
     """Force the Dirac Site Agent to complete gracefully.
     """
     self.log.info( 'Dirac site agent will stop with message "%s", execution complete.' % message )
-    fd = open( os.path.join( self.am_getControlDirectory(), 'stop_agent' ), 'w' )
-    fd.write( 'Dirac site agent Stopped at %s [UTC]' % ( time.asctime( time.gmtime() ) ) )
-    fd.close()
+    self.am_createStopAgentFile()
     return S_OK( message )
-
-
-  #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
