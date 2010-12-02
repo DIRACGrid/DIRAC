@@ -180,18 +180,18 @@ Script.registerSwitch( "V:", "VO=", "Set the VO name", setVO )
 
 Script.registerSwitch( "W:", "gateway=", "Configure <gateway> as DIRAC Gateway for the site", setGateway )
 
-Script.registerSwitch( "", "UseServerCertificate", "Configure to use Server Certificate", setServerCert )
-Script.registerSwitch( "", "SkipCAChecks", "Configure to skip check of CAs", setSkipCAChecks )
-Script.registerSwitch( "", "SkipCADownload", "Configure to skip download of CAs", setSkipCADownload )
+Script.registerSwitch( "U", "UseServerCertificate", "Configure to use Server Certificate", setServerCert )
+Script.registerSwitch( "H", "SkipCAChecks", "Configure to skip check of CAs", setSkipCAChecks )
+Script.registerSwitch( "D", "SkipCADownload", "Configure to skip download of CAs", setSkipCADownload )
 
 Script.registerSwitch( "v", "UseVersionsDir", "Use versions directory", setUseVersionsDir )
 
-Script.registerSwitch( "", "Architecture=", "Configure /Architecture=<architecture>", setArchitecture )
-Script.registerSwitch( "", "LocalSE=", "Configure LocalSite/LocalSE=<localse>", setLocalSE )
+Script.registerSwitch( "A", "Architecture=", "Configure /Architecture=<architecture>", setArchitecture )
+Script.registerSwitch( "L", "LocalSE=", "Configure LocalSite/LocalSE=<localse>", setLocalSE )
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ...' % Script.scriptName ] ) )
+                                    '\nUsage:',
+                                    '  %s [option|cfgfile] ...\n' % Script.scriptName ] ) )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getExtraCLICFGFiles()
