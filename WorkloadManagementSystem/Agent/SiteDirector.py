@@ -214,13 +214,15 @@ class SiteDirector( AgentModule ):
         return result
       taskQueueDict = result['Value']
       if not taskQueueDict:
+        self.log.verbose('No matching TQs found')
         continue
 
       totalTQJobs = 0
       for tq in taskQueueDict:
         totalTQJobs += taskQueueDict[tq]['Jobs']
-
+        
       pilotsToSubmit = min( totalSlots, totalTQJobs )
+      self.log.verbose('Available slots=%d, TQ jobs=%d, Pilots to submit=%d' % (totalSlots,totalTQJobs,pilotsToSubmit) ) 
 
       if pilotsToSubmit > 0:
         self.log.info( 'Going to submit %d pilots to %s queue' % ( pilotsToSubmit, queue ) )
