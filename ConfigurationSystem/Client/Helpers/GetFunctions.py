@@ -10,6 +10,12 @@ __RCSID__ = "$Id: dirac-admin-submit-pilot-for-job.py 18161 2009-11-11 12:07:09Z
 
 from DIRAC import gConfig
 
+def getVO( defaultVO = '' ):
+  """
+    Return VO from configuration
+  """
+  return gConfig.getValue( '', defaultVO )
+
 def getCSExtensions():
   """
     Return list of extensions registered in the CS
