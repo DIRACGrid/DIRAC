@@ -12,35 +12,37 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.private.GridPilotDirector  import GridPilotDirector
-from DIRAC import S_OK, S_ERROR, List
+from DIRAC import S_OK, S_ERROR, List, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers                import getVO
+
 
 import os, time
 
 # Some default values
 
-BROKERS  = ['rb123.cern.ch']
+BROKERS = ['rb123.cern.ch']
 
-class LCGPilotDirector(GridPilotDirector):
-  def __init__(self, submitPool):
+class LCGPilotDirector( GridPilotDirector ):
+  def __init__( self, submitPool ):
     """
      Define some defaults and call parent __init__
     """
-    self.gridMiddleware   = 'LCG'
-
-    self.resourceBrokers  = BROKERS
-
     GridPilotDirector.__init__( self, submitPool )
 
-  def configure(self, csSection, submitPool):
+    self.gridMiddleware = 'LCG'
+
+    self.resourceBrokers = BROKERS
+
+  def configure( self, csSection, submitPool ):
     """
-     Here goes especific configuration for LCG PilotDirectors
+     Here goes specific configuration for LCG PilotDirectors
     """
     GridPilotDirector.configure( csSection, submitPool )
 
     self.log.info( '' )
     self.log.info( '===============================================' )
 
-  def _prepareJDL(self, taskQueueDict, workingDirectory, pilotOptions, pilotsToSubmit, ceMask, submitPrivatePilot, privateTQ ):
+  def _prepareJDL( self, taskQueueDict, workingDirectory, pilotOptions, pilotsToSubmit, ceMask, submitPrivatePilot, privateTQ ):
     """
       Write JDL for Pilot Submission
     """
@@ -56,11 +58,11 @@ class LCGPilotDirector(GridPilotDirector):
     for LB in self.loggingServers:
       NSs.append( '"%s:7772"' % LB )
 
-    LD = ', '.join(LDs)
-    NS = ', '.join(NSs)
-    LB = ', '.join(LBs)
+    LD = ', '.join( LDs )
+    NS = ', '.join( NSs )
+    LB = ', '.join( LBs )
 
-    vo = gConfig.getValue( '/DIRAC/VirtualOrganization', '')
+    vo = getVO()
     if privateTQ or vo not in ['lhcb']:
       extraReq = "True"
     else:
@@ -89,33 +91,33 @@ DefaultStatusLevel = 0;
 NSAddresses = { %s };
 LBAddresses = { %s };
 MyProxyServer = "no-myproxy.cern.ch";
-""" % ( extraReq, workingDirectory, workingDirectory, workingDirectory, LD, NS, LB)
+""" % ( extraReq, workingDirectory, workingDirectory, workingDirectory, LD, NS, LB )
 
-    pilotJDL,pilotRequirements = self._JobJDL( taskQueueDict, pilotOptions, ceMask )
+    pilotJDL, pilotRequirements = self._JobJDL( taskQueueDict, pilotOptions, ceMask )
 
     jdl = os.path.join( workingDirectory, '%s.jdl' % taskQueueDict['TaskQueueID'] )
     jdl = self._writeJDL( jdl, [pilotJDL, rbJDL] )
 
     return {'JDL':jdl, 'Requirements':pilotRequirements + " && " + extraReq, 'Pilots': pilotsToSubmit, 'RB':RB }
 
-  def _listMatch(self, proxy, jdl, taskQueueID, rb):
+  def _listMatch( self, proxy, jdl, taskQueueID, rb ):
     """
      Check the number of available queues for the pilots to prevent submission
      if there are no matching resources.
     """
-    cmd = ['edg-job-list-match','-c','%s' % jdl , '--config-vo', '%s' % jdl, '%s' % jdl]
+    cmd = ['edg-job-list-match', '-c', '%s' % jdl , '--config-vo', '%s' % jdl, '%s' % jdl]
     return self.parseListMatchStdout( proxy, cmd, taskQueueID, rb )
 
-  def _submitPilot(self, proxy, pilotsToSubmit, jdl, taskQueueID, rb ):
+  def _submitPilot( self, proxy, pilotsToSubmit, jdl, taskQueueID, rb ):
     """
      Submit pilot and get back the reference
     """
     result = []
-    for i in range(pilotsToSubmit):
+    for i in range( pilotsToSubmit ):
       cmd = [ 'edg-job-submit', '-c', '%s' % jdl, '--config-vo', '%s' % jdl, '%s' % jdl ]
       ret = self.parseJobSubmitStdout( proxy, cmd, taskQueueID, rb )
       if ret:
-        result.append(ret)
+        result.append( ret )
 
     return result
 
