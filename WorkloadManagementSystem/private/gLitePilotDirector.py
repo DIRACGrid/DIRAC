@@ -14,38 +14,39 @@ __RCSID__ = "$Id$"
 from DIRAC.WorkloadManagementSystem.private.GridPilotDirector  import GridPilotDirector
 from DIRAC import S_OK, S_ERROR, gConfig, List
 from DIRAC.Core.Utilities.Grid import executeGridCommand
+from DIRAC.ConfigurationSystem.Client.Helpers                import getVO
 
 import os, time, re
 
 # Some default values
 
-BROKERS  = ['wms206.cern.ch']
-LOGGING_SERVER   = 'lb101.cern.ch'
+BROKERS = ['wms206.cern.ch']
+LOGGING_SERVER = 'lb101.cern.ch'
 
 
-class gLitePilotDirector(GridPilotDirector):
-  def __init__(self, submitPool):
+class gLitePilotDirector( GridPilotDirector ):
+  def __init__( self, submitPool ):
     """
      Define some defaults and call parent __init__
     """
-    self.gridMiddleware     = 'gLite'
-
-    self.resourceBrokers    = BROKERS
-    # FIXME: We might be able to remove this
-    self.loggingServers     = [ LOGGING_SERVER ]
-
     GridPilotDirector.__init__( self, submitPool )
 
-  def configure(self, csSection, submitPool):
+    self.gridMiddleware = 'gLite'
+
+    self.resourceBrokers = BROKERS
+    # FIXME: We might be able to remove this
+    self.loggingServers = [ LOGGING_SERVER ]
+
+  def configure( self, csSection, submitPool ):
     """
-     Here goes especific configuration for gLite PilotDirectors
+     Here goes specific configuration for gLite PilotDirectors
     """
     GridPilotDirector.configure( self, csSection, submitPool )
 
     self.reloadConfiguration( csSection, submitPool )
 
     if self.loggingServers:
-      self.log.info( ' LoggingServers:', ', '.join(self.loggingServers) )
+      self.log.info( ' LoggingServers:', ', '.join( self.loggingServers ) )
     self.log.info( '' )
     self.log.info( '===============================================' )
 
@@ -56,10 +57,10 @@ class gLitePilotDirector(GridPilotDirector):
     GridPilotDirector.configureFromSection( self, mySection )
 
 
-    self.loggingServers       = gConfig.getValue( mySection+'/LoggingServers'       , self.loggingServers )
+    self.loggingServers = gConfig.getValue( mySection + '/LoggingServers'       , self.loggingServers )
 
 
-  def _prepareJDL(self, taskQueueDict, workingDirectory, pilotOptions, pilotsToSubmit, ceMask, submitPrivatePilot, privateTQ ):
+  def _prepareJDL( self, taskQueueDict, workingDirectory, pilotOptions, pilotsToSubmit, ceMask, submitPrivatePilot, privateTQ ):
     """
       Write JDL for Pilot Submission
     """
@@ -70,11 +71,11 @@ class gLitePilotDirector(GridPilotDirector):
 
     LBs = []
     for LB in self.loggingServers:
-      LBs.append('"https://%s:9000"' % LB)
+      LBs.append( '"https://%s:9000"' % LB )
     LBs = List.randomize( LBs )
 
     nPilots = 1
-    vo = gConfig.getValue( '/DIRAC/VirtualOrganization', '')
+    vo = getVO()
     if privateTQ or vo not in ['lhcb']:
       extraReq = "True"
     else:
@@ -109,7 +110,7 @@ JdlDefaultAttributes =  [
     PerusalFileEnable  =  false;
     ];
 ];
-""" % ( extraReq, workingDirectory, workingDirectory, workingDirectory, ', '.join(RBs), ', '.join(LBs) )
+""" % ( extraReq, workingDirectory, workingDirectory, workingDirectory, ', '.join( RBs ), ', '.join( LBs ) )
 
     if pilotsToSubmit > 1:
       wmsClientJDL += """
@@ -121,14 +122,14 @@ ParameterStart = 0;
       nPilots = pilotsToSubmit
 
 
-    (pilotJDL , pilotRequirements) = self._JobJDL( taskQueueDict, pilotOptions, ceMask )
+    ( pilotJDL , pilotRequirements ) = self._JobJDL( taskQueueDict, pilotOptions, ceMask )
 
     jdl = os.path.join( workingDirectory, '%s.jdl' % taskQueueDict['TaskQueueID'] )
     jdl = self._writeJDL( jdl, [pilotJDL, wmsClientJDL] )
 
     return {'JDL':jdl, 'Requirements':pilotRequirements + " && " + extraReq, 'Pilots':nPilots, 'RB':RB }
 
-  def _listMatch(self, proxy, jdl, taskQueueID, rb):
+  def _listMatch( self, proxy, jdl, taskQueueID, rb ):
     """
      Check the number of available queues for the pilots to prevent submission
      if there are no matching resources.
@@ -136,7 +137,7 @@ ParameterStart = 0;
     cmd = [ 'glite-wms-job-list-match', '-a', '-c', '%s' % jdl, '%s' % jdl ]
     return self.parseListMatchStdout( proxy, cmd, taskQueueID, rb )
 
-  def _submitPilot(self, proxy, pilotsToSubmit, jdl, taskQueueID, rb):
+  def _submitPilot( self, proxy, pilotsToSubmit, jdl, taskQueueID, rb ):
     """
      Submit pilot and get back the reference
     """
@@ -144,11 +145,11 @@ ParameterStart = 0;
     cmd = [ 'glite-wms-job-submit', '-a', '-c', '%s' % jdl, '%s' % jdl ]
     ret = self.parseJobSubmitStdout( proxy, cmd, taskQueueID, rb )
     if ret:
-      result.append(ret)
+      result.append( ret )
 
     return result
 
-  def _getChildrenReferences(self, proxy, parentReference, taskQueueID ):
+  def _getChildrenReferences( self, proxy, parentReference, taskQueueID ):
     """
      Get reference for all Children
     """
@@ -163,9 +164,9 @@ ParameterStart = 0;
       self.log.error( 'Failed to execute Job Status', ret['Message'] )
       return False
     if ret['Value'][0] != 0:
-      self.log.error( 'Error executing Job Status:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
+      self.log.error( 'Error executing Job Status:', str( ret['Value'][0] ) + '\n'.join( ret['Value'][1:3] ) )
       return False
-    self.log.info( 'Job Status Execution Time: %.2f' % (time.time()-start) )
+    self.log.info( 'Job Status Execution Time: %.2f' % ( time.time() - start ) )
 
     stdout = ret['Value'][1]
     stderr = ret['Value'][2]
@@ -173,15 +174,15 @@ ParameterStart = 0;
     references = []
 
     failed = 1
-    for line in List.fromChar(stdout,'\n'):
-      m = re.search("Status info for the Job : (https:\S+)",line)
-      if (m):
-        glite_id = m.group(1)
+    for line in List.fromChar( stdout, '\n' ):
+      m = re.search( "Status info for the Job : (https:\S+)", line )
+      if ( m ):
+        glite_id = m.group( 1 )
         if glite_id not in references and glite_id != parentReference:
           references.append( glite_id )
         failed = 0
     if failed:
-      self.log.error( 'Job Status returns no Child Reference:', str(ret['Value'][0]) + '\n'.join( ret['Value'][1:3] ) )
+      self.log.error( 'Job Status returns no Child Reference:', str( ret['Value'][0] ) + '\n'.join( ret['Value'][1:3] ) )
       return [parentReference]
 
     return references
