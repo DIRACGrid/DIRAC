@@ -43,6 +43,7 @@ from DIRAC.Core.Workflow.Workflow                   import *
 from DIRAC.Core.Workflow.WorkflowReader             import *
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight      import ClassAd
 from DIRAC.ConfigurationSystem.Client.Config        import gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers       import getVO
 from DIRAC.Core.Utilities.Subprocess                import shellCall
 from DIRAC.Core.Utilities.List                      import uniqueElements
 from DIRAC.Core.Utilities.SiteCEMapping             import getSiteForCE, getSiteCEMapping
@@ -69,7 +70,7 @@ class Job:
     self.name = 'Name'
     self.type = 'User'
     self.priority = 1
-    self.group = gConfig.getValue( '/DIRAC/VirtualOrganization', 'lhcb' )
+    self.group = getVO( 'lhcb' )
     self.site = 'ANY' #ANY
     #self.setup = 'Development'
     self.origin = 'DIRAC'
