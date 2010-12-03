@@ -3,7 +3,8 @@ import types
 import os
 import tempfile
 import DIRAC
-from DIRAC.Core.Security.X509Chain import X509Chain,g_X509ChainType
+from DIRAC.ConfigurationSystem.Client.Helpers import getVO
+from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
 from DIRAC.Core.Security import Locations, File
 from DIRAC import gConfig, S_OK, S_ERROR
 
@@ -24,7 +25,7 @@ class BaseSecurity:
     else:
       self._secServer = server
     if not voName:
-      self._secVO = gConfig.getValue( "/DIRAC/VirtualOrganization", "unknown" )
+      self._secVO = getVO( "unknown" )
     else:
       self._secVO = voName
     ckLoc = Locations.getHostCertificateAndKeyLocation()
@@ -53,7 +54,7 @@ class BaseSecurity:
     retVal = chain.loadChainFromFile( self._secCertLoc )
     if not retVal[ 'OK' ]:
       return retVal
-    return chain.getCertInChain(0)['Value'].getSubjectDN()
+    return chain.getCertInChain( 0 )['Value'].getSubjectDN()
 
   def _getExternalCmdEnvironment( self ):
     return dict( os.environ )
@@ -68,12 +69,12 @@ class BaseSecurity:
       except:
         pass
 
-  def _generateTemporalFile(self):
+  def _generateTemporalFile( self ):
     try:
       fd, filename = tempfile.mkstemp()
-      os.close(fd)
+      os.close( fd )
     except IOError:
-      return S_ERROR('Failed to create temporary file')
+      return S_ERROR( 'Failed to create temporary file' )
     return S_OK( filename )
 
   def _getUsername( self, proxyChain ):
