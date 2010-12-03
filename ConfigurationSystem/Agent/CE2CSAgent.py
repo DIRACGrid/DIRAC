@@ -8,13 +8,13 @@ __RCSID__ = "$Id$"
     Queries BDII for CE information and put it to CS.
 """
 
-from DIRAC                                                    import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC                                                    import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.AgentModule                              import AgentModule
 from DIRAC.Core.Utilities                                     import List
-from DIRAC.Core.Utilities.Shifter                             import setupShifterProxyInEnv
 from DIRAC.Core.Utilities.Grid                                import ldapSite, ldapCluster, ldapCE, ldapCEState, ldapService
 from DIRAC.FrameworkSystem.Client.NotificationClient          import NotificationClient
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
+from DIRAC.Core.Security.Misc                                 import getProxyInfo, formatProxyInfoAsString
 
 import sys, os
 
@@ -22,38 +22,38 @@ class CE2CSAgent( AgentModule ):
 
   def initialize( self ):
 
-    self.name = self.am_getModuleParam( "fullName" )
-    self.logLevel = self.am_getOption( 'LogLevel', 'INFO' )
-    gLogger.info( "LogLevel", self.logLevel )
-    gLogger.setLevel( self.logLevel )
-    self.pollingTime = self.am_getOption( 'PollingTime', 86400 )
-    gLogger.info( "PollingTime %d hours" % ( int( self.pollingTime ) / 3600.0 ) )
-
     # TODO: Have no default and if no mail is found then use the diracAdmin group and resolve all associated mail addresses.
     self.addressTo = self.am_getOption( 'MailTo', '' )
     self.addressFrom = self.am_getOption( 'MailFrom', '' )
     if self.addressTo and self.addressFrom:
-      gLogger.info( "MailTo", self.addressTo )
-      gLogger.info( "MailFrom", self.addressFrom )
+      self.log.info( "MailTo", self.addressTo )
+      self.log.info( "MailFrom", self.addressFrom )
     self.subject = "CE2CSAgent"
 
-    self.am_setModuleParam( "shifterProxy", "SAMManager" )
-#    self.am_setModuleParam( "shifterProxy", "Admin" )
+    # This sets the Default Proxy to used as that defined under 
+    # /Operations/Shifter/SAMManager
+    # the shifterProxy option in the Configuration can be used to change this default.
+    self.am_setOption( 'shifterProxy', 'SAMManager' )
 
-    self.vo = self.am_getOption( '/DIRAC/VirtualOrganization', '' )
-#    self.vo = self.am_getOption('VO','')
+    self.vo = getVO()
     if not self.vo:
-      gLogger.fatal( "VO option not defined for agent" )
+      self.log.fatal( "VO option not defined for agent" )
       return S_ERROR()
     return S_OK()
 
   def execute( self ):
-    gLogger.info( "Executing %s" % ( self.name ) )
-    os.system( 'dirac-proxy-info' )
+
+    self.log.info( "Start Execution" )
+    result = getProxyInfo()
+    if not result[ 'OK' ]:
+      return result
+    infoDict = result[ 'Value' ]
+    self.log.info( formatProxyInfoAsString( infoDict ) )
+
     self.csAPI = CSAPI()
     self._lookForCE()
     self._infoFromCE()
-    gLogger.info( "Executing %s finished" % ( self.name ) )
+    self.log.info( "End Execution" )
     return S_OK()
 
   def _lookForCE( self ):
@@ -78,7 +78,7 @@ class CE2CSAgent( AgentModule ):
 
     response = ldapCEState( '', vo = self.vo )
     if not response['OK']:
-      gLogger.error( "Error during BDII request", response['Message'] )
+      self.log.error( "Error during BDII request", response['Message'] )
       return response
 
     newces = {}
@@ -91,18 +91,18 @@ class CE2CSAgent( AgentModule ):
       cename = queuename.split( ":" )[0]
       if not cename in knownces:
         newces[cename] = None
-        gLogger.debug( "newce", cename )
+        self.log.debug( "newce", cename )
 
     body = ""
     possibleNewSites = []
     for ce in newces.iterkeys():
       response = ldapCluster( ce )
       if not response['OK']:
-        gLogger.warn( "Error during BDII request", response['Message'] )
+        self.log.warn( "Error during BDII request", response['Message'] )
         continue
       clusters = response['Value']
       if len( clusters ) != 1:
-        gLogger.warn( "Error in cluster leng", " CE %s Leng %d" % ( ce, len( clusters ) ) )
+        self.log.warn( "Error in cluster leng", " CE %s Leng %d" % ( ce, len( clusters ) ) )
       if len( clusters ) == 0:
         continue
       cluster = clusters[0]
@@ -118,11 +118,11 @@ class CE2CSAgent( AgentModule ):
         continue
 
       cestring = "CE: %s, GOCDB Name: %s" % ( ce, nameBDII )
-      gLogger.info( cestring )
+      self.log.info( cestring )
 
       response = ldapCE( ce )
       if not response['OK']:
-        gLogger.warn( "Error during BDII request", response['Message'] )
+        self.log.warn( "Error during BDII request", response['Message'] )
         continue
 
       ceinfos = response['Value']
@@ -138,11 +138,11 @@ class CE2CSAgent( AgentModule ):
 
 
       osstring = "SystemName: %s, SystemVersion: %s, SystemRelease: %s" % ( SystemName, SystemVersion, SystemRelease )
-      gLogger.info( osstring )
+      self.log.info( osstring )
 
       response = ldapCEState( ce, vo = self.vo )
       if not response['OK']:
-        gLogger.warn( "Error during BDII request", response['Message'] )
+        self.log.warn( "Error during BDII request", response['Message'] )
         continue
 
       newcestring = "\n\n%s\n%s" % ( cestring, osstring )
@@ -153,7 +153,7 @@ class CE2CSAgent( AgentModule ):
         queuestatus = cestate.get( 'GlueCEStateStatus', 'UnknownStatus' )
 
         queuestring = "%s %s" % ( queuename, queuestatus )
-        gLogger.info( queuestring )
+        self.log.info( queuestring )
         newcestring += "\n%s" % queuestring
         if queuestatus.count( 'Production' ):
           usefull = True
@@ -165,7 +165,7 @@ class CE2CSAgent( AgentModule ):
       body += "\n\nTo suppress information about CE add its name to BannedCEs list."
       for  possibleNewSite in  possibleNewSites:
         body = "%s\n%s" % ( body, possibleNewSite )
-      gLogger.info( body )
+      self.log.info( body )
       if self.addressTo and self.addressFrom:
         notification = NotificationClient()
         result = notification.sendMail( self.addressTo, self.subject, body, self.addressFrom, localAttempt = False )
@@ -190,14 +190,14 @@ class CE2CSAgent( AgentModule ):
 
         result = ldapSite( name )
         if not result['OK']:
-          gLogger.warn( "BDII site", result['Message'] )
+          self.log.warn( "BDII site", result['Message'] )
         else:
           bdiisites = result['Value']
           if len( bdiisites ) == 0:
-            gLogger.warn( name, "Error in bdii: leng = 0" )
+            self.log.warn( name, "Error in bdii: leng = 0" )
           else:
             if not len( bdiisites ) == 1:
-              gLogger.warn( name, "Warning in bdii: leng = %d" % len( bdiisites ) )
+              self.log.warn( name, "Warning in bdii: leng = %d" % len( bdiisites ) )
 
             bdiisite = bdiisites[0]
 
@@ -206,19 +206,19 @@ class CE2CSAgent( AgentModule ):
               latitude = bdiisite['GlueSiteLatitude']
               newcoor = "%s:%s" % ( longitude, latitude )
             except:
-              gLogger.warn( "Error in bdii coor" )
+              self.log.warn( "Error in bdii coor" )
               newcoor = "Unknown"
 
             try:
               newmail = bdiisite['GlueSiteSysAdminContact'].split( ":" )[-1].strip()
             except:
-              gLogger.warn( "Error in bdii mail" )
+              self.log.warn( "Error in bdii mail" )
               newmail = "Unknown"
 
-            gLogger.debug( "%s %s %s" % ( name, newcoor, newmail ) )
+            self.log.debug( "%s %s %s" % ( name, newcoor, newmail ) )
 
             if newcoor != coor:
-              gLogger.info( "%s" % ( name ), "%s -> %s" % ( coor, newcoor ) )
+              self.log.info( "%s" % ( name ), "%s -> %s" % ( coor, newcoor ) )
               section = '/Resources/Sites/LCG/%s/Coordinates' % site
               if coor == 'Unknown':
                 self.csAPI.setOption( section, newcoor )
@@ -227,7 +227,7 @@ class CE2CSAgent( AgentModule ):
               changed = True
 
             if newmail != mail:
-              gLogger.info( "%s" % ( name ), "%s -> %s" % ( mail, newmail ) )
+              self.log.info( "%s" % ( name ), "%s -> %s" % ( mail, newmail ) )
               section = '/Resources/Sites/LCG/%s/Mail' % site
               if mail == 'Unknown':
                 self.csAPI.setOption( section, newmail )
@@ -238,17 +238,17 @@ class CE2CSAgent( AgentModule ):
       celist = List.fromChar( opt.get( 'CE', '' ) )
 
       if not celist:
-        gLogger.warn( site, 'Empty site list' )
+        self.log.warn( site, 'Empty site list' )
         continue
 
 #      result = gConfig.getSections('/Resources/Sites/LCG/%s/CEs'%site)
 #      if not result['OK']:
-#        gLogger.debug("Section CEs:",result['Message'])
+#        self.log.debug("Section CEs:",result['Message'])
 
       for ce in celist:
         result = gConfig.getOptionsDict( '/Resources/Sites/LCG/%s/CEs/%s' % ( site, ce ) )
         if not result['OK']:
-          gLogger.debug( "Section CE", result['Message'] )
+          self.log.debug( "Section CE", result['Message'] )
           wnTmpDir = 'Unknown'
           arch = 'Unknown'
           os = 'Unknown'
@@ -266,12 +266,12 @@ class CE2CSAgent( AgentModule ):
 
         result = ldapCE( ce )
         if not result['OK']:
-          gLogger.warn( 'Error in bdii for %s' % ce, result['Message'] )
+          self.log.warn( 'Error in bdii for %s' % ce, result['Message'] )
           continue
         try:
           bdiice = result['Value'][0]
         except:
-          gLogger.warn( 'Error in bdii for %s' % ce, result )
+          self.log.warn( 'Error in bdii for %s' % ce, result )
           bdiice = None
         if bdiice:
           try:
@@ -280,7 +280,7 @@ class CE2CSAgent( AgentModule ):
             newwnTmpDir = 'Unknown'
           if wnTmpDir != newwnTmpDir and newwnTmpDir != 'Unknown':
             section = '/Resources/Sites/LCG/%s/CEs/%s/wnTmpDir' % ( site, ce )
-            gLogger.info( section, " -> ".join( ( wnTmpDir, newwnTmpDir ) ) )
+            self.log.info( section, " -> ".join( ( wnTmpDir, newwnTmpDir ) ) )
             if wnTmpDir == 'Unknown':
               self.csAPI.setOption( section, newwnTmpDir )
             else:
@@ -293,7 +293,7 @@ class CE2CSAgent( AgentModule ):
             newarch = 'Unknown'
           if arch != newarch and newarch != 'Unknown':
             section = '/Resources/Sites/LCG/%s/CEs/%s/architecture' % ( site, ce )
-            gLogger.info( section, " -> ".join( ( arch, newarch ) ) )
+            self.log.info( section, " -> ".join( ( arch, newarch ) ) )
             if arch == 'Unknown':
               self.csAPI.setOption( section, newarch )
             else:
@@ -306,7 +306,7 @@ class CE2CSAgent( AgentModule ):
             newos = 'Unknown'
           if os != newos and newos != 'Unknown':
             section = '/Resources/Sites/LCG/%s/CEs/%s/OS' % ( site, ce )
-            gLogger.info( section, " -> ".join( ( os, newos ) ) )
+            self.log.info( section, " -> ".join( ( os, newos ) ) )
             if os == 'Unknown':
               self.csAPI.setOption( section, newos )
             else:
@@ -320,7 +320,7 @@ class CE2CSAgent( AgentModule ):
             newsi00 = 'Unknown'
           if si00 != newsi00 and newsi00 != 'Unknown':
             section = '/Resources/Sites/LCG/%s/CEs/%s/SI00' % ( site, ce )
-            gLogger.info( section, " -> ".join( ( si00, newsi00 ) ) )
+            self.log.info( section, " -> ".join( ( si00, newsi00 ) ) )
             if si00 == 'Unknown':
               self.csAPI.setOption( section, newsi00 )
             else:
@@ -329,7 +329,7 @@ class CE2CSAgent( AgentModule ):
 
           try:
             rte = bdiice['GlueHostApplicationSoftwareRunTimeEnvironment']
-            if gConfig.getValue( '/DIRAC/VirtualOrganization', '') == 'lhcb':
+            if self.vo == 'lhcb':
               if 'VO-lhcb-pilot' in rte:
                 newpilot = 'True'
               else:
@@ -340,7 +340,7 @@ class CE2CSAgent( AgentModule ):
             newpilot = 'Unknown'
           if pilot != newpilot and newpilot != 'Unknown':
             section = '/Resources/Sites/LCG/%s/CEs/%s/Pilot' % ( site, ce )
-            gLogger.info( section, " -> ".join( ( pilot, newpilot ) ) )
+            self.log.info( section, " -> ".join( ( pilot, newpilot ) ) )
             if pilot == 'Unknown':
               self.csAPI.setOption( section, newpilot )
             else:
@@ -359,7 +359,7 @@ class CE2CSAgent( AgentModule ):
 
         if cetype != newcetype and newcetype != 'Unknown':
           section = '/Resources/Sites/LCG/%s/CEs/%s/CEType' % ( site, ce )
-          gLogger.info( section, " -> ".join( ( cetype, newcetype ) ) )
+          self.log.info( section, " -> ".join( ( cetype, newcetype ) ) )
           if cetype == 'Unknown':
             self.csAPI.setOption( section, newcetype )
           else:
@@ -368,12 +368,12 @@ class CE2CSAgent( AgentModule ):
 
         result = ldapCEState( ce, vo = self.vo )        #getBDIICEVOView
         if not result['OK']:
-          gLogger.warn( 'Error in bdii for queue %s' % ce, result['Message'] )
+          self.log.warn( 'Error in bdii for queue %s' % ce, result['Message'] )
           continue
         try:
           queues = result['Value']
         except:
-          gLogger.warn( 'Error in bdii for queue %s' % ce, result['Massage'] )
+          self.log.warn( 'Error in bdii for queue %s' % ce, result['Massage'] )
           continue
 
         queueSectionString = '/Resources/Sites/LCG/%s/CEs/%s/Queues' % ( site, ce )
@@ -381,7 +381,7 @@ class CE2CSAgent( AgentModule ):
           try:
             queueName = queue['GlueCEUniqueID'].split( '/' )[-1]
           except:
-            gLogger.warn( 'error in queuename ', queue )
+            self.log.warn( 'error in queuename ', queue )
             continue
 
           try:
@@ -402,7 +402,7 @@ class CE2CSAgent( AgentModule ):
 
           result = gConfig.getOptionsDict( queueSectionString + '/%s' % ( queueName ) )
           if not result['OK']:
-            gLogger.warn( "Section Queues", result['Message'] )
+            self.log.warn( "Section Queues", result['Message'] )
             maxCPUTime = 'Unknown'
             si00 = 'Unknown'
           else:
@@ -412,7 +412,7 @@ class CE2CSAgent( AgentModule ):
 
           if newmaxCPUTime and ( maxCPUTime != newmaxCPUTime ):
             section = queueSectionString + '/%s/maxCPUTime' % ( queueName )
-            gLogger.info( section, " -> ".join( ( maxCPUTime, newmaxCPUTime ) ) )
+            self.log.info( section, " -> ".join( ( maxCPUTime, newmaxCPUTime ) ) )
             if maxCPUTime == 'Unknown':
               self.csAPI.setOption( section, newmaxCPUTime )
             else:
@@ -421,7 +421,7 @@ class CE2CSAgent( AgentModule ):
 
           if newsi00 and ( si00 != newsi00 ):
             section = queueSectionString + '/%s/SI00' % ( queueName )
-            gLogger.info( section, " -> ".join( ( si00, newsi00 ) ) )
+            self.log.info( section, " -> ".join( ( si00, newsi00 ) ) )
             if si00 == 'Unknown':
               self.csAPI.setOption( section, newsi00 )
             else:
@@ -429,12 +429,12 @@ class CE2CSAgent( AgentModule ):
             changed = True
 
     if changed:
-      gLogger.info( body )
+      self.log.info( body )
       if body and self.addressTo and self.addressFrom:
         notification = NotificationClient()
         result = notification.sendMail( self.addressTo, self.subject, body, self.addressFrom, localAttempt = False )
 
       return self.csAPI.commitChanges( sortUsers = False )
     else:
-      gLogger.info( "No changes found" )
+      self.log.info( "No changes found" )
       return S_OK()
