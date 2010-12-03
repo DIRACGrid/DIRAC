@@ -50,7 +50,8 @@ ERROR_TOKEN = 'Invalid proxy token request'
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import jobDB
 from DIRAC.Core.Security.CS                                import getPropertiesForGroup
-from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
+from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions, getVO
+
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig, DictCache
 
@@ -91,7 +92,7 @@ class PilotDirector:
     self.pilot = DIRAC_PILOT
     self.extraPilotOptions = []
     setup = gConfig.getValue( '/DIRAC/Setup', '' )
-    vo = gConfig.getValue( '/DIRAC/VirtualOrganization', '' )
+    vo = getVO()
     self.diracVersion = gConfig.getValue( '/Operations/%s/%s/Versions/PilotVersion' % ( vo, setup ),
                                          DIRAC_VERSION )
     self.install = DIRAC_INSTALL
@@ -241,7 +242,7 @@ class PilotDirector:
 
   def _getPilotOptions( self, taskQueueDict, pilotsToSubmit ):
 
-    pilotOptions = [ "-V '%s'" % gConfig.getValue( "/DIRAC/VirtualOrganization", "lhcb" ) ]
+    pilotOptions = [ "-V '%s'" % getVO( "lhcb" ) ]
     privateIfGenericTQ = self.privatePilotFraction > random.random()
     privateTQ = ( 'PilotTypes' in taskQueueDict and 'private' in [ t.lower() for t in taskQueueDict['PilotTypes'] ] )
     forceGeneric = 'ForceGeneric' in taskQueueDict
