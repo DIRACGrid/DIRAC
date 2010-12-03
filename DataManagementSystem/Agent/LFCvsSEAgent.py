@@ -8,7 +8,6 @@ from DIRAC                                                                  impo
 from DIRAC.Core.Base.AgentModule                                            import AgentModule
 from DIRAC.Core.Utilities.Pfn                                               import pfnparse, pfnunparse
 from DIRAC.Core.DISET.RPCClient                                             import RPCClient
-from DIRAC.Core.Utilities.Shifter                                           import setupShifterProxyInEnv
 from DIRAC.RequestManagementSystem.Client.RequestClient                     import RequestClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer                  import RequestContainer
 from DIRAC.DataManagementSystem.Client.ReplicaManager                       import ReplicaManager
@@ -27,15 +26,10 @@ class LFCvsSEAgent( AgentModule ):
 
     self.RequestDBClient = RequestClient()
     self.ReplicaManager = ReplicaManager()
-
-    self.useProxies = self.am_getOption( 'UseProxies', 'True' ).lower() in ( "y", "yes", "true" )
-    self.proxyLocation = self.am_getOption( 'ProxyLocation', '' )
-    if not self.proxyLocation:
-      self.proxyLocation = False
-
-    if self.useProxies:
-      self.am_setModuleParam( 'shifter', 'DataManager' )
-      self.am_setModuleParam( 'shifterProxyLocation', self.proxyLocation )
+    # This sets the Default Proxy to used as that defined under 
+    # /Operations/Shifter/DataManager
+    # the shifterProxy option in the Configuration can be used to change this default.
+    self.am_setOption( 'shifterProxy', 'DataManager' )
 
     return S_OK()
 
@@ -167,5 +161,3 @@ class LFCvsSEAgent( AgentModule ):
     res = self.RequestDBClient.updateRequest( requestName, requestString, sourceServer )
 
     return S_OK()
-
-
