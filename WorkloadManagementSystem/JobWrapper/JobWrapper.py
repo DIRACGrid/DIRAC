@@ -22,6 +22,7 @@ from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient       import Sandb
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory      import WatchdogFactory
 from DIRAC.AccountingSystem.Client.Types.Job                        import Job as AccountingJob
 from DIRAC.ConfigurationSystem.Client.PathFinder                    import getSystemSection
+from DIRAC.ConfigurationSystem.Client.Helpers                       import getVO
 from DIRAC.WorkloadManagementSystem.Client.JobReport                import JobReport
 from DIRAC.Core.DISET.RPCClient                                     import RPCClient
 from DIRAC.Core.Utilities.ModuleFactory                             import ModuleFactory
@@ -57,11 +58,11 @@ class JobWrapper:
       self.jobID = 0
     else:
       self.jobID = jobID
-    self.siteName = gConfig.getValue( '/LocalSite/Site', 'Unknown' )  
+    self.siteName = gConfig.getValue( '/LocalSite/Site', 'Unknown' )
     if jobReport:
       self.jobReport = jobReport
     else:
-      self.jobReport = JobReport( self.jobID, 'JobWrapper@%s' % self.siteName)
+      self.jobReport = JobReport( self.jobID, 'JobWrapper@%s' % self.siteName )
 
     # self.root is the path the Wrapper is running at
     self.root = os.getcwd()
@@ -86,7 +87,7 @@ class JobWrapper:
     self.cleanUpFlag = gConfig.getValue( self.section + '/CleanUpFlag', False )
     self.pilotRef = gConfig.getValue( '/LocalSite/PilotReference', 'Unknown' )
     self.cpuNormalizationFactor = gConfig.getValue ( "/LocalSite/CPUNormalizationFactor", 0.0 )
-    self.vo = gConfig.getValue( '/DIRAC/VirtualOrganization', 'lhcb' )
+    self.vo = getVO( 'lhcb' )
     self.bufferLimit = gConfig.getValue( self.section + '/BufferLimit', 10485760 )
     self.defaultOutputSE = gConfig.getValue( '/Resources/StorageElementGroups/SE-USER', [] )
     self.defaultCatalog = gConfig.getValue( self.section + '/DefaultCatalog', 'LcgFileCatalogCombined' )
@@ -796,17 +797,17 @@ class JobWrapper:
     lfnList = []
     nonlfnList = []
     for out in outputData:
-      if out.lower().find('lfn:') != -1:
-        lfnList.append(out)
+      if out.lower().find( 'lfn:' ) != -1:
+        lfnList.append( out )
       else:
-        nonlfnList.append(out)  
-        
+        nonlfnList.append( out )
+
     # Check whether list of outputData has a globbable pattern    
     globbedOutputList = List.uniqueElements( getGlobbedFiles( nonlfnList ) )
     if not globbedOutputList == nonlfnList and globbedOutputList:
       self.log.info( 'Found a pattern in the output data file list, files to upload are: %s' % ( string.join( globbedOutputList, ', ' ) ) )
       nonlfnList = globbedOutputList
-    outputData = lfnList + nonlfnList  
+    outputData = lfnList + nonlfnList
 
     pfnGUID = {}
     result = getGUID( outputData )
@@ -856,16 +857,16 @@ class JobWrapper:
 
 
     #For files correctly uploaded must report LFNs to job parameters
-    if uploaded:      
+    if uploaded:
       report = string.join( uploaded, ', ' )
       #In case the VO payload has also uploaded data using the same parameter 
       #name this should be checked prior to setting. 
-      monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )    
-      result = monitoring.getJobParameter(int(self.jobID),'UploadedOutputData')
+      monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
+      result = monitoring.getJobParameter( int( self.jobID ), 'UploadedOutputData' )
       if result['OK']:
-        if result['Value'].has_key('UploadedOutputData'):
+        if result['Value'].has_key( 'UploadedOutputData' ):
           report += ', %s' % result['Value']['UploadedOutputData']
-      
+
       self.jobReport.setJobParameter( 'UploadedOutputData', report, sendFlag = False )
 
     #Write out failover transfer request object in case of deferred operations 
