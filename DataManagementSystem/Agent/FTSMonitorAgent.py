@@ -10,7 +10,6 @@ from DIRAC.ConfigurationSystem.Client.PathFinder             import getDatabaseS
 from DIRAC.DataManagementSystem.DB.TransferDB                import TransferDB
 from DIRAC.DataManagementSystem.Client.FTSRequest            import FTSRequest
 from DIRAC.Core.DISET.RPCClient                              import RPCClient
-from DIRAC.Core.Utilities.Shifter                            import setupShifterProxyInEnv
 from DIRAC.AccountingSystem.Client.Types.DataOperation       import DataOperation
 from DIRAC.Core.Utilities import Time
 import os, time, re
@@ -24,11 +23,12 @@ class FTSMonitorAgent( AgentModule ):
 
   def initialize( self ):
     self.TransferDB = TransferDB()
-    self.useProxies = self.am_getOption( 'UseProxies', 'True' ).lower() in ( "y", "yes", "true" )
-    proxyLocation = self.am_getOption( 'ProxyLocation', False )
-    if self.useProxies:
-      self.am_setModuleParam( 'shifterProxy', 'DataManager' )
-      self.am_setModuleParam( 'shifterProxyLocation', proxyLocation )
+
+    # This sets the Default Proxy to used as that defined under 
+    # /Operations/Shifter/DataManager
+    # the shifterProxy option in the Configuration can be used to change this default.
+    self.am_setOption( 'shifterProxy', 'DataManager' )
+
     return S_OK()
 
   def execute( self ):
