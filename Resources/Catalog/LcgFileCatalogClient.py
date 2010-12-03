@@ -3,6 +3,7 @@
 """
 import DIRAC
 from DIRAC                                      import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers   import getVO
 from DIRAC.Resources.Catalog.FileCatalogueBase  import FileCatalogueBase
 from DIRAC.Core.Utilities.Time                  import fromEpoch
 from DIRAC.Core.Utilities.List                  import sortList, breakListIntoChunks
@@ -1550,7 +1551,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def getUserDirectory( self, username ):
     """ Takes a list of users and determines whether their directories already exist
     """
-    vo = gConfig.getValue( '/DIRAC/VirtualOrganization', 'lhcb' )
+    vo = getVO( 'lhcb' )
     res = self.__checkArgumentFormat( username )
     if not res['OK']:
       return res
@@ -1574,7 +1575,7 @@ class LcgFileCatalogClient( FileCatalogueBase ):
   def createUserDirectory( self, username ):
     """ Creates the user directory
     """
-    vo = gConfig.getValue( '/DIRAC/VirtualOrganization', 'lhcb' )
+    vo = getVO( 'lhcb' )
     res = self.__checkArgumentFormat( username )
     if not res['OK']:
       return res
@@ -1770,4 +1771,3 @@ class LcgFileCatalogClient( FileCatalogueBase ):
     if created: self.__closeSession()
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
-
