@@ -5,10 +5,12 @@ import types
 import os
 import DIRAC
 from DIRAC.Core.Utilities import List
+from DIRAC.ConfigurationSystem.Client.Helpers import getVO
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
+
 
 
 class ConfigurationClient:
@@ -29,7 +31,7 @@ class ConfigurationClient:
 
   def dumpRemoteCFGToFile( self, fileName ):
     return gConfigurationData.dumpRemoteCFGToFile( fileName )
-  
+
   def addListenerToNewVersionEvent( self, functor ):
     gRefresher.addListenerToNewVersionEvent( functor )
 
@@ -49,7 +51,7 @@ class ConfigurationClient:
         fd.write( strData )
         fd.close()
     except Exception, e:
-      return S_ERROR( "Can't write to file %s: %s" % ( fileName, str(e) ) )
+      return S_ERROR( "Can't write to file %s: %s" % ( fileName, str( e ) ) )
     return S_OK( strData )
 
   def getServersList( self ):
@@ -65,30 +67,30 @@ class ConfigurationClient:
     else:
       gLogger.warn( "gConfig.getValue for invalid value", retVal[ 'Message' ] )
       return defaultValue
-    
-  def getSpecialValue(self, optionPath, defaultValue = None, vo = None, setup = None): 
+
+  def getSpecialValue( self, optionPath, defaultValue = None, vo = None, setup = None ):
     """ Get a configuration option value for a specific vo and setup
-    """ 
+    """
     voName = vo
     if not vo:
-      voName = self.getValue('/DIRAC/VirtualOrganization','')
+      voName = getVO()
     setupName = setup
     if not setup:
-      setupName = self.getValue('/DIRAC/Setup','')
-        
+      setupName = self.getValue( '/DIRAC/Setup', '' )
+
     # Get the most specific defined value now
-    section = optionPath.split('/')[1]
-    oPath = '/'.join(optionPath.split('/')[2:])
+    section = optionPath.split( '/' )[1]
+    oPath = '/'.join( optionPath.split( '/' )[2:] )
     if voName:
       if setupName:
-        value = self.getValue(section+'/'+voName+'/'+setupName+oPath,'NotDefined')
+        value = self.getValue( section + '/' + voName + '/' + setupName + oPath, 'NotDefined' )
         if value != 'NotDefined':
           return value
-      value = self.getValue(section+'/'+voName+oPath,'NotDefined')
+      value = self.getValue( section + '/' + voName + oPath, 'NotDefined' )
       if value != 'NotDefined':
         return value
-    value = self.getValue(optionPath,defaultValue)
-    return value 
+    value = self.getValue( optionPath, defaultValue )
+    return value
 
   def getOption( self, optionPath, defaultValue = None ):
     gRefresher.refreshConfigurationIfNeeded()
@@ -146,7 +148,7 @@ class ConfigurationClient:
 
   def getOptionsDict( self, sectionPath ):
     gRefresher.refreshConfigurationIfNeeded()
-    optionsDict ={}
+    optionsDict = {}
     optionList = gConfigurationData.getOptionsFromCFG( sectionPath )
     if type( optionList ) == types.ListType:
       for option in optionList:
@@ -155,7 +157,7 @@ class ConfigurationClient:
       return S_OK( optionsDict )
     else:
       return S_ERROR( "Path %s does not exist or it's not a section" % sectionPath )
-    
+
   def setOptionValue( self, optionPath, value ):
     """
     Set a value in the local configuration
