@@ -4,6 +4,7 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers                import getVO
 
 g_BaseSecuritySection = "/Registry"
 
@@ -99,7 +100,7 @@ def getDefaultVOMSVO():
   vomsVO = gConfig.getValue( "%s/DefaultVOMSVO" % g_BaseSecuritySection, "" )
   if vomsVO:
     return vomsVO
-  return gConfig.getValue( "/DIRAC/VirtualOrganization", "" )
+  return getVO()
 
 def getVOMSVOForGroup( group ):
   return gConfig.getValue( "%s/Groups/%s/VOMSVO" % ( g_BaseSecuritySection, group ), getDefaultVOMSVO() )
