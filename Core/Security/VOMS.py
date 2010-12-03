@@ -1,6 +1,7 @@
 
 import os, stat, tempfile, shutil
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath
+from DIRAC.ConfigurationSystem.Client.Helpers                import getVO
 import DIRAC.Core.Security.Locations as Locations
 import DIRAC.Core.Security.File as File
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
@@ -192,13 +193,11 @@ class VOMS( BaseSecurity ):
         return tmpDir
 
 
-  def setVOMSAttributes( self, proxy, attribute = None, vo = False ):
+  def setVOMSAttributes( self, proxy, attribute = None, vo = getVO() ):
     """ Sets voms attributes to a proxy
     """
     if not vo:
-      vo = gConfig.getValue( "/DIRAC/VirtualOrganization", "" )
-      if not vo:
-        return S_ERROR( "No vo specified, and can't get default in the configuration" )
+      return S_ERROR( "No vo specified, and can't get default in the configuration" )
 
     retVal = File.multiProxyArgument( proxy )
     if not retVal[ 'OK' ]:
