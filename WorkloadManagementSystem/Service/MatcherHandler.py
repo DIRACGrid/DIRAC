@@ -16,6 +16,7 @@ import getopt
 from   types import *
 import threading
 
+from DIRAC.ConfigurationSystem.Client.Helpers          import getVO
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight         import ClassAd
 from DIRAC                                             import gConfig, gLogger, S_OK, S_ERROR
@@ -72,7 +73,7 @@ class MatcherHandler( RequestHandler ):
     self.siteJobLimits = self.getCSOption( "SiteJobLimits", False )
     self.checkPilotVersion = self.getCSOption( "CheckPilotVersion", True )
     self.setup = gConfig.getValue( '/DIRAC/Setup', '' )
-    self.vo = gConfig.getValue( '/DIRAC/VirtualOrganization', '' )
+    self.vo = getVO()
     self.pilotVersion = gConfig.getValue( '/Operations/%s/%s/Versions/PilotVersion' % ( self.vo, self.setup ), '' )
 
   def selectJob( self, resourceDescription ):
@@ -125,7 +126,7 @@ class MatcherHandler( RequestHandler ):
     # Check the pilot DIRAC version
     if self.checkPilotVersion:
       if 'DIRACVersion' in resourceDict:
-        if resourceDict['DIRACVersion'] != self.pilotVersion:
+        if self.pilotVersion and resourceDict['DIRACVersion'] != self.pilotVersion:
           return S_ERROR( 'Pilot version does not match the production version %s:%s' % \
                          ( resourceDict['DIRACVersion'], self.pilotVersion ) )
 
