@@ -42,6 +42,7 @@ from DIRAC.DataManagementSystem.Client.ReplicaManager    import ReplicaManager
 from DIRAC.Core.DISET.RPCClient                          import RPCClient
 from DIRAC.Core.Security.Misc                            import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.PathFinder         import getSystemSection, getServiceURL
+from DIRAC.ConfigurationSystem.Client.Helpers            import getVO
 from DIRAC.Core.Utilities.Time                           import toString
 from DIRAC.Core.Utilities.List                           import breakListIntoChunks, sortList
 from DIRAC.Core.Utilities.SiteSEMapping                  import getSEsForSite
@@ -137,7 +138,7 @@ class Dirac:
       statusDict[state] += 1
     if printOutput:
       print self.pPrint.pformat( statusDict )
-    return S_OK(statusDict)
+    return S_OK( statusDict )
 
   def retrieveRepositorySandboxes( self, requestedStates = ['Done', 'Failed'], destinationDirectory = '' ):
     """ Obtain the output sandbox for the jobs in requested states in the repository
@@ -294,14 +295,14 @@ class Dirac:
       #Run any VO specific checks if desired prior to submission, this may or may not be overidden 
       #in a derived class for example
       try:
-        result = self.preSubmissionChecks(job,mode)
+        result = self.preSubmissionChecks( job, mode )
         if not result['OK']:
-          self.log.error('Pre-submission checks failed for job with message: "%s"' %(result['Message']))
+          self.log.error( 'Pre-submission checks failed for job with message: "%s"' % ( result['Message'] ) )
           return result
-      except Exception,x:
-        msg = 'Error in VO specific function preSubmissionChecks: "%s"' %(x)
-        self.log.error(msg)
-        return S_ERROR(msg)
+      except Exception, x:
+        msg = 'Error in VO specific function preSubmissionChecks: "%s"' % ( x )
+        self.log.error( msg )
+        return S_ERROR( msg )
 
       tmpdir = tempfile.mkdtemp( prefix = 'DIRAC_' )
       self.log.verbose( 'Created temporary directory for submission %s' % ( tmpdir ) )
@@ -323,16 +324,16 @@ class Dirac:
         curDir = os.getcwd()
 
         stopCopies = False
-        if gConfig.getValue('/LocalSite/DisableLocalJobDirectory',''):
+        if gConfig.getValue( '/LocalSite/DisableLocalJobDirectory', '' ):
           stopCopies = True
         else:
           jobDir = tempfile.mkdtemp( suffix = '_JobDir', prefix = 'Local_', dir = curDir )
           os.chdir( jobDir )
 
         stopCallback = False
-        if gConfig.getValue('/LocalSite/DisableLocalModeCallback',''):
+        if gConfig.getValue( '/LocalSite/DisableLocalModeCallback', '' ):
           stopCallback = True
-          
+
         self.log.info( 'Executing at', os.getcwd() )
         result = self.runLocal( jdl, jobDescription, curDir, disableCopies = stopCopies, disableCallback = stopCallback )
         os.chdir( curDir )
@@ -368,12 +369,12 @@ class Dirac:
     return
 
   #############################################################################
-  def preSubmissionChecks(self,job,mode):
+  def preSubmissionChecks( self, job, mode ):
     """Internal function.  The pre-submission checks method allows VOs to 
        make their own checks before job submission. To make use of this the
        method should be overridden in a derived VO-specific Dirac class. 
     """
-    return S_OK('Nothing to do')
+    return S_OK( 'Nothing to do' )
 
   #############################################################################
   def runLocalAgent( self, jdl, jobDescription ):
@@ -586,7 +587,7 @@ class Dirac:
 
     moduleName = ''
     setup = gConfig.getValue( '/DIRAC/Setup', '' )
-    vo = gConfig.getValue( '/DIRAC/VirtualOrganization', '' )
+    vo = getVO()
     if setup and vo:
       moduleName = gConfig.getValue( 'DIRAC/VOPolicy/%s/%s/%s' % ( vo, setup, module ), '' )
       if not moduleName:
@@ -847,14 +848,14 @@ class Dirac:
       if not moduleInstance['OK']:
         self.log.warn( 'Could not create SoftwareDistModule' )
         return moduleInstance
-  
+
       module = moduleInstance['Value']
       result = module.execute()
       if not result['OK']:
         self.log.warn( 'Software installation failed with result:\n%s' % ( result ) )
         return result
     else:
-      self.log.verbose('Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO')
+      self.log.verbose( 'Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO' )
       #return self.__errorReport( 'Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO' )
 
     if parameters['Value'].has_key( 'InputSandbox' ):
@@ -909,7 +910,7 @@ class Dirac:
     cbFunction = self.__printOutput
     if disableCallback:
       cbFunction = None
-    
+
     result = shellCall( 0, command, env = executionEnv, callbackFunction = cbFunction )
     if not result['OK']:
       return result
@@ -1368,12 +1369,12 @@ class Dirac:
 
     if not sourceSE:
       sourceSE = ''
- 
+
     if not type( sourceSE ) == type( " " ):
       return self.__errorReport( 'Expected string for source SE name' )
- 
+
     rm = ReplicaManager()
-    result = rm.replicate( lfn, destinationSE, sourceSE, '')
+    result = rm.replicate( lfn, destinationSE, sourceSE, '' )
     if not result['OK']:
       return self.__errorReport( 'Problem during replicate call', result['Message'] )
     if not printOutput:
@@ -2496,13 +2497,13 @@ class Dirac:
        @type printOutput: Boolean
        @return: S_OK,S_ERROR
     """
-    if type( jobID ) == type(" "):
+    if type( jobID ) == type( " " ):
       try:
-        jobID = int(jobID)
+        jobID = int( jobID )
       except Exception, x:
         return self.__errorReport( str( x ), 'Expected integer or string for existing jobID' )
     elif type( jobID ) == type( [] ):
-      return self.__errorReport('Expected integer or string for jobID' )
+      return self.__errorReport( 'Expected integer or string for jobID' )
 
     monitoring = RPCClient( 'WorkloadManagement/JobMonitoring', timeout = 120 )
     result = monitoring.getJobParameters( jobID )
