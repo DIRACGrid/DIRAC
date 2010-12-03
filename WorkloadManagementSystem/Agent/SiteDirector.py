@@ -1,14 +1,14 @@
 ########################################################################
 # $HeadURL$
-# File :   SiteDirector.py
-# Author : A.T.
+# File :    SiteDirector.py
+# Author :  A.T.
 ########################################################################
 
 """  The Site Director is a simple agent performing pilot job submission to particular sites.
 """
 
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions
+from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions, getVO
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, taskQueueDB
 from DIRAC import S_OK, S_ERROR, gConfig
@@ -314,8 +314,8 @@ class SiteDirector( AgentModule ):
 
     queueDict = self.queueDict[queue]['ParametersDict']
 
-    vo = gConfig.getValue( "/DIRAC/VirtualOrganization", "unknown" )
-    if vo == 'unknown':
+    vo = getVO()
+    if not vo:
       self.log.error( 'Virtual Organization is not defined in the configuration' )
       return None
     pilotOptions = [ "-V '%s'" % vo ]
