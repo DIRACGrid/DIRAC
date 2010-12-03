@@ -22,20 +22,79 @@ from DIRAC.Core.Utilities import Time
 class AgentModule:
   """ Base class for all agent modules
   
-      The specific agents must provide the following methods:
-      - initialize() for initial settings
-      - beginExecution()
-      - execute() - the main method called in the agent cycle
-      - endExecution()
-      - finalize() - the graceful exit of the method, this one is usually used
-                 for the agent restart
-  
+      This class is used by the AgentReactor Class to steer the execution of 
+      DIRAC Agents.
+      
+      For this purpose the following methods are used:
+      - am_initialize()      just after instantiated
+      - am_getPollingTime()  to set the execution frequency
+      - am_getMaxCycles()    to determine the number of cycles
+      - am_go()              for the actual execution of one cycle
+      
+      Before each iteration, the following methods are used to determine 
+      if the new cycle is to be started.
+      - am_getModuleParam( 'alive' )
+      - am_checkStopAgentFile()
+      - am_removeStopAgentFile()
+
+      To start new execution cycle the following methods are used
+      - am_getCyclesDone() 
+      - am_setOption( 'MaxCycles', maxCycles ) 
+      
+      At the same time it provides all Agents with common interface.
+      All Agent class must inherit from this base class and must implement
+      at least the following method:
+      - execute()            main method called in the agent cycle
+
+      Additionally they may provide:
+      - initialize()         for initial settings
+      - finalize()           the graceful exit
+
+      - beginExecution()     before each execution cycle
+      - endExecution()       at the end of each execution cycle
+        
       The agent can be stopped either by a signal or by creating a 'stop_agent' file
       in the controlDirectory defined in the agent configuration
   
   """
 
   def __init__( self, agentName, baseAgentName = False, properties = {} ):
+    """
+      Common __init__ method for all Agents.
+      All Agent modules must define:
+      __doc__
+      __RCSID__
+      They are used to populate __codeProperties
+      
+      The following Options are used from the Configuration:
+      - /LocalSite/InstancePath
+      - /DIRAC/Setup
+      - Status
+      - Enabled
+      - PollingTime            default = 120
+      - MaxCycles              default = 500
+      - ControlDirectory       control/SystemName/AgentName
+      - WorkDirectory          work/SystemName/AgentName
+      - shifterProxy           '' 
+      - shifterProxyLocation   WorkDirectory/SystemName/AgentName/.shifterCred
+      
+      It defines the following default Options that can be set via Configuration (above):
+      - MonitoringEnabled     True
+      - Enabled               True if Status == Active
+      - PollingTime           120
+      - MaxCycles             500
+      - ControlDirectory      control/SystemName/AgentName
+      - WorkDirectory         work/SystemName/AgentName
+      - shifterProxy          False
+      - shifterProxyLocation  work/SystemName/AgentName/.shifterCred
+
+      different defaults can be set in the initialize() method of the Agent using am_setOption()
+      
+      In order to get a shifter proxy in the environment during the execute()
+      the configuration Option 'shifterProxy' must be set, a default may be given
+      in the initialize() method.
+
+    """
     if baseAgentName and agentName == baseAgentName:
       self.log = gLogger
       standaloneModule = True
@@ -43,6 +102,7 @@ class AgentModule:
       self.log = gLogger.getSubLogger( agentName, child = False )
       standaloneModule = False
 
+    self.__basePath = gConfig.getValue( '/LocalSite/InstancePath', rootPath )
     self.__getCodeInfo()
 
     self.__moduleProperties = { 'fullName' : agentName,
@@ -57,13 +117,13 @@ class AgentModule:
     self.__configDefaults[ 'Enabled'] = self.am_getOption( "Status", "Active" ).lower() in ( 'active' )
     self.__configDefaults[ 'PollingTime'] = self.am_getOption( "PollingTime", 120 )
     self.__configDefaults[ 'MaxCycles'] = self.am_getOption( "MaxCycles", 500 )
-    self.__basePath = gConfig.getValue( '/LocalSite/InstancePath', rootPath )
     self.__configDefaults[ 'ControlDirectory' ] = os.path.join( self.__basePath,
-                                                            'control',
-                                                            os.path.join( *self.__moduleProperties[ 'fullName' ].split( "/" ) ) )
+                                                                'control',
+                                                                *agentName.split( "/" ) )
     self.__configDefaults[ 'WorkDirectory' ] = os.path.join( self.__basePath,
-                                                            'work',
-                                                            os.path.join( *self.__moduleProperties[ 'fullName' ].split( "/" ) ) )
+                                                             'work',
+                                                             *agentName.split( "/" ) )
+    self.__configDefaults[ 'shifterProxy' ] = ''
     self.__configDefaults[ 'shifterProxyLocation' ] = os.path.join( self.__configDefaults[ 'WorkDirectory' ],
                                                                         '.shifterCred' )
 
@@ -71,15 +131,15 @@ class AgentModule:
     for key in properties:
       self.__moduleProperties[ key ] = properties[ key ]
     self.__moduleProperties[ 'executors' ] = [ ( self.execute, () ) ]
-    self.__moduleProperties[ 'shifterProxy' ] = False
-    self.__moduleProperties[ 'shifterProxyLocation' ] = False
     self.__moduleProperties[ 'alive' ] = True
+    self.__moduleProperties[ 'shifterProxy' ] = False
 
     self.__initializeMonitor()
     self.__initialized = False
 
   def __getCodeInfo( self ):
     versionVar = "__RCSID__"
+    docVar = "__doc__"
     try:
       self.__agentModule = __import__( self.__class__.__module__,
                                        globals(),
@@ -88,7 +148,7 @@ class AgentModule:
     except Exception, e:
       self.log.exception( "Cannot load agent module" )
     self.__codeProperties = {}
-    for prop in ( ( "__RCSID__", "version" ), ( "__doc__", "description" ) ):
+    for prop in ( ( versionVar, "version" ), ( docVar, "description" ) ):
       try:
         self.__codeProperties[ prop[1] ] = getattr( self.__agentModule, prop[0] )
       except Exception, e:
@@ -106,9 +166,8 @@ class AgentModule:
       return S_ERROR( "Error while initializing %s: %s" % ( agentName, result[ 'Message' ] ) )
     self.__checkDir( self.am_getControlDirectory() )
     self.__checkDir( self.am_getWorkDirectory() )
-    if not self.__moduleProperties[ 'shifterProxyLocation' ]:
-      self.__moduleProperties[ 'shifterProxyLocation' ] = os.path.join( self.am_getWorkDirectory(),
-                                                                        '.shifterCred' )
+
+    self.__moduleProperties[ 'shifterProxy' ] = self.am_getOption( 'shifterProxy' )
     if self.am_monitoringEnabled():
       self.monitor.enable()
     if len( self.__moduleProperties[ 'executors' ] ) < 1:
@@ -123,7 +182,11 @@ class AgentModule:
     self.log.info( " Agent version: %s" % self.__codeProperties[ 'version' ] )
     self.log.info( " DIRAC version: %s" % DIRAC.version )
     self.log.info( " DIRAC platform: %s" % DIRAC.platform )
-    self.log.info( " Polling time: %s" % self.am_getOption( 'PollingTime' ) )
+    pollingTime = self.am_getOption( 'PollingTime' )
+    if pollingTime > 3600:
+      self.log.info( " Polling time: %s hours" % pollingTime / 3600. )
+    else:
+      self.log.info( " Polling time: %s seconds" % self.am_getOption( 'PollingTime' ) )
     self.log.info( " Control dir: %s" % self.am_getControlDirectory() )
     self.log.info( " Work dir: %s" % self.am_getWorkDirectory() )
     if self.am_getOption( 'MaxCycles' ) > 0:
@@ -266,7 +329,7 @@ class AgentModule:
     cycleResult = self.__executeModuleCycle()
     if cpuStats:
       self.__endReportToMonitoring( *cpuStats )
-    #Incrmenent counters
+    #Increment counters
     self.__moduleProperties[ 'cyclesDone' ] += 1
     #Show status
     elapsedTime = time.time() - elapsedTime
