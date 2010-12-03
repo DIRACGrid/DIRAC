@@ -29,4 +29,4 @@ def getInstalledExtensions():
     except:
       pass
   extensions.append( 'DIRAC' )
-  return exceptions
+  return extensions
