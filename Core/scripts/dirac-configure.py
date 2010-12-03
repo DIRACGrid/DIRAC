@@ -58,7 +58,7 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Security.Misc import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath
+from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, getVO
 
 import sys, os
 
@@ -380,7 +380,7 @@ else:
   Script.enableCS()
 
 #Do the vomsdir magic
-voName = DIRAC.gConfig.getValue( "/DIRAC/VirtualOrganization", "" )
+voName = getVO()
 if not voName:
   sys.exit( 0 )
 result = DIRAC.gConfig.getSections( "/Registry/VOMS/Servers/%s" % voName )
