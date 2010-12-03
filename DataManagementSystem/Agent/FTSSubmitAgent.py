@@ -10,7 +10,6 @@ from DIRAC.ConfigurationSystem.Client.PathFinder                     import getD
 from DIRAC.DataManagementSystem.DB.TransferDB                        import TransferDB
 from DIRAC.DataManagementSystem.Client.FTSRequest                    import FTSRequest
 from DIRAC.Core.DISET.RPCClient                                      import RPCClient
-from DIRAC.Core.Utilities.Shifter                                    import setupShifterProxyInEnv
 import os, time
 from types import *
 
@@ -23,15 +22,10 @@ class FTSSubmitAgent( AgentModule ):
     self.TransferDB = TransferDB()
     self.maxJobsPerChannel = self.am_getOption( 'MaxJobsPerChannel', 2 )
 
-    self.useProxies = self.am_getOption( 'UseProxies', 'True' ).lower() in ( "y", "yes", "true" )
-    self.proxyLocation = self.am_getOption( 'ProxyLocation', '' )
-    if not self.proxyLocation:
-      self.proxyLocation = False
-
-    if self.useProxies:
-      self.am_setModuleParam( 'shifterProxy', 'DataManager' )
-      self.am_setModuleParam( 'shifterProxyLocation', self.proxyLocation )
-
+    # This sets the Default Proxy to used as that defined under 
+    # /Operations/Shifter/DataManager
+    # the shifterProxy option in the Configuration can be used to change this default.
+    self.am_setOption( 'shifterProxy', 'DataManager' )
     return S_OK()
 
   def execute( self ):
