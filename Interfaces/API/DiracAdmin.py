@@ -18,6 +18,7 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.CSAPI                   import CSAPI
+from DIRAC.ConfigurationSystem.Client.Helpers                 import getVO
 from DIRAC.Core.DISET.RPCClient                               import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient          import gProxyManager
 from DIRAC.Core.Utilities.SiteCEMapping                       import getCEsForSite, getSiteCEMapping
@@ -30,7 +31,7 @@ from DIRAC.Core.Utilities.Grid                                import ldapSite, l
 import re, os, sys, string, time, shutil, types
 import pprint
 
-vo = gConfig.getValue( '/DIRAC/VirtualOrganization', 'lhcb' )
+vo = getVO( 'lhcb' )
 
 COMPONENT_NAME = '/Interfaces/API/DiracAdmin'
 
