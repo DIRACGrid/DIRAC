@@ -56,6 +56,7 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from types                                     import *
 from DIRAC                                     import gLogger, S_OK, S_ERROR, Time
 from DIRAC.ConfigurationSystem.Client.Config   import gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers  import getVO
 from DIRAC.Core.Base.DB                        import DB
 from DIRAC.Core.Security.CS                    import getUsernameForDN, getDNForUsername
 from DIRAC.WorkloadManagementSystem.Client.JobDescription     import JobDescription
@@ -1418,7 +1419,7 @@ class JobDB( DB ):
     classAdReq.insertAttributeString( 'OwnerGroup', ownerGroup )
 
     setup = gConfig.getValue( '/DIRAC/Setup', '' )
-    vo = gConfig.getValue( '/DIRAC/VirtualOrganization', '' )
+    vo = getVO()
     voPolicyDict = gConfig.getOptionsDict( '/DIRAC/VOPolicy/%s/%s' % ( vo, setup ) )
     #voPolicyDict = gConfig.getOptionsDict('/DIRAC/VOPolicy')
     if voPolicyDict['OK']:
