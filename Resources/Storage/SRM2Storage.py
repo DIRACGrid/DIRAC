@@ -2,6 +2,7 @@
 
 from DIRAC                                              import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Resources.Storage.StorageBase                import StorageBase
+from DIRAC.ConfigurationSystem.Client.Helpers           import getVO
 from DIRAC.Core.Utilities.Subprocess                    import pythonCall
 from DIRAC.Core.Utilities.Pfn                           import pfnparse, pfnunparse
 from DIRAC.Core.Utilities.List                          import breakListIntoChunks
@@ -39,7 +40,7 @@ class SRM2Storage( StorageBase ):
     # setting some variables for use with lcg_utils
     self.nobdii = 1
     self.defaulttype = 2
-    self.vo = gConfig.getValue( '/DIRAC/VirtualOrganization', 'lhcb' )
+    self.vo = getVO( 'lhcb' )
     self.verbose = 0
     self.conf_file = 'ignored'
     self.insecure = 0
