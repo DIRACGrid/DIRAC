@@ -30,8 +30,11 @@ class MigrationMonitoringAgent( AgentModule ):
       from DIRAC.StorageManagementSystem.Client.MigrationMonitoringClient import MigrationMonitoringClient
       self.MigrationMonitoringDB = MigrationMonitoringClient()
 
-    self.am_setModuleParam( "shifterProxy", "DataManager" )
-    self.am_setModuleParam( "shifterProxyLocation", "%s/runit/%s/proxy" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), AGENT_NAME ) )
+    # This sets the Default Proxy to used as that defined under 
+    # /Operations/Shifter/DataManager
+    # the shifterProxy option in the Configuration can be used to change this default.
+    self.am_setOption( 'shifterProxy', 'DataManager' )
+
     self.userName = 'acsmith'
     self.storageElements = self.am_getOption( 'StorageElements', ['CERN-RAW'] )
     self.lastMonitors = {}
