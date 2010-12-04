@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-jobexec
-# Author : Stuart Paterson
+# File :    dirac-jobexec
+# Author :  Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.3 $"
+__RCSID__ = "$Id$"
 
 """ The dirac-jobexec script is equipped to execute workflows that
     are specified via their XML description.  The main client of
@@ -27,61 +26,61 @@ from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContain
 
 import DIRAC
 
-import os,os.path,sys,string
+import os, os.path, sys, string
 
 # Register workflow parameter switch
-Script.registerSwitch('p:','parameter=','Parameters that are passed directly to the workflow')
+Script.registerSwitch( 'p:', 'parameter=', 'Parameters that are passed directly to the workflow' )
 Script.parseCommandLine()
 
 # Forcing the current directory to be the first in the PYTHONPATH
-sys.path.insert(0,os.path.realpath('.'))
+sys.path.insert( 0, os.path.realpath( '.' ) )
 
-def jobexec(jobxml,wfParameters={}):
-  jobfile = os.path.abspath(jobxml)
-  if not os.path.exists(jobfile):
-    gLogger.warn('Path to specified workflow %s does not exist' %(jobfile))
-    sys.exit(1)
-  workflow = fromXMLFile(jobfile)
-  gLogger.debug(workflow)
+def jobexec( jobxml, wfParameters = {} ):
+  jobfile = os.path.abspath( jobxml )
+  if not os.path.exists( jobfile ):
+    gLogger.warn( 'Path to specified workflow %s does not exist' % ( jobfile ) )
+    sys.exit( 1 )
+  workflow = fromXMLFile( jobfile )
+  gLogger.debug( workflow )
   code = workflow.createCode()
-  gLogger.debug(code)
+  gLogger.debug( code )
   jobID = 0
-  if os.environ.has_key('JOBID'):
+  if os.environ.has_key( 'JOBID' ):
     jobID = os.environ['JOBID']
-    gLogger.info('DIRAC JobID %s is running at site %s' %( jobID, DIRAC.siteName() ))
+    gLogger.info( 'DIRAC JobID %s is running at site %s' % ( jobID, DIRAC.siteName() ) )
 
-  workflow.addTool('JobReport',JobReport(jobID))
-  workflow.addTool('AccountingReport',DataStoreClient())
-  workflow.addTool('Request',RequestContainer())
+  workflow.addTool( 'JobReport', JobReport( jobID ) )
+  workflow.addTool( 'AccountingReport', DataStoreClient() )
+  workflow.addTool( 'Request', RequestContainer() )
 
   # Propagate the command line parameters to the workflow if any
-  for name,value in wfParameters.items():
-    workflow.setValue(name,value)
+  for name, value in wfParameters.items():
+    workflow.setValue( name, value )
 
   result = workflow.execute()
   return result
 
 positionalArgs = Script.getPositionalArgs()
 if len( positionalArgs ) != 1:
-  gLogger.debug('Positional arguments were %s' %(positionalArgs))
+  gLogger.debug( 'Positional arguments were %s' % ( positionalArgs ) )
   DIRAC.abort( 1, "Must specify the Job XML file description" )
 
-if os.environ.has_key('JOBID'):
-  gLogger.info('JobID: %s' %(os.environ['JOBID']))
+if os.environ.has_key( 'JOBID' ):
+  gLogger.info( 'JobID: %s' % ( os.environ['JOBID'] ) )
 
 jobXMLfile = positionalArgs[0]
 parList = Script.getUnprocessedSwitches()
 parDict = {}
-for switch,parameter in parList:
+for switch, parameter in parList:
   if switch == "p":
-    name,value = parameter.split('=')
+    name, value = parameter.split( '=' )
     parDict[name] = value
-gLogger.verbose('PYTHONPATH:\n%s' %(string.join(sys.path,'\n')))
-result = jobexec(jobXMLfile,parDict)
+gLogger.verbose( 'PYTHONPATH:\n%s' % ( string.join( sys.path, '\n' ) ) )
+result = jobexec( jobXMLfile, parDict )
 if not result['OK']:
-  gLogger.debug('Workflow execution finished with errors, exiting')
-  sys.exit(1)
+  gLogger.debug( 'Workflow execution finished with errors, exiting' )
+  sys.exit( 1 )
 else:
-  gLogger.debug('Workflow execution successful, exiting')
-  sys.exit(0)
+  gLogger.debug( 'Workflow execution successful, exiting' )
+  sys.exit( 0 )
 

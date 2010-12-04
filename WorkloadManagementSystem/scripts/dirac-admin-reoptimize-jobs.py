@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-admin-submit-pilot-for-job
-# Author : Ricardo Graciani
+# File :    dirac-admin-submit-pilot-for-job
+# Author :  Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__ = "$Id$"
 import sys
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -22,7 +21,7 @@ tqdb = TaskQueueDB()
 result = jobdb.selectJobs( { 'Status' : [ 'Received', 'Checking', 'Waiting' ] } )
 if not result[ 'OK' ]:
   print result[ 'Message' ]
-  sys.exit(1)
+  sys.exit( 1 )
 jobList = result[ 'Value' ]
 print tqdb.forceRecreationOfTables()
 for job in jobList:
@@ -35,4 +34,4 @@ for job in jobList:
     jobdb.setJobAttribute( job, "RescheduleCounter", "0" )
   jobdb.rescheduleJob( job )
   jobdb.setJobAttribute( job, "RescheduleCounter", rC )
-sys.exit(0)
+sys.exit( 0 )

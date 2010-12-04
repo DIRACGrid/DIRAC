@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-admin-submit-pilot-for-job
-# Author : Ricardo Graciani
+# File :    dirac-admin-submit-pilot-for-job
+# Author :  Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__ = "$Id$"
 import sys
 import DIRAC
 
@@ -26,7 +25,7 @@ print "Getting TQs.."
 result = rpcClient.getActiveTaskQueues()
 if not result[ 'OK' ]:
   print 'ERROR: %s' % result['Message']
-  sys.exit(1)
+  sys.exit( 1 )
 
 tqDict = result[ 'Value' ]
 for tqId in sorted( tqDict ):
