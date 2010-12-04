@@ -1,11 +1,10 @@
 #! /usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-wms-jobs-select-output-search
-# Author : Vladimir Romanovsky
+# File :    dirac-wms-jobs-select-output-search
+# Author :  Vladimir Romanovsky
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.3 $"
+__RCSID__ = "$Id$"
 import os, sys, popen2
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -27,79 +26,79 @@ Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
 #Default values
-status=None
-minorStatus=None
-appStatus=None
-site=None
-owner=None
-jobGroup=None
-date=None
+status = None
+minorStatus = None
+appStatus = None
+site = None
+owner = None
+jobGroup = None
+date = None
 filename = 'std.out'
 
 def usage():
-  print 'Usage: %s string to seearch '%(Script.scriptName)
-  DIRAC.exit(2)
+  print 'Usage: %s string to seearch ' % ( Script.scriptName )
+  DIRAC.exit( 2 )
 
-if len(args)!=1:
+if len( args ) != 1:
   usage()
-  
-searchstring = str(args[0])
+
+searchstring = str( args[0] )
 
 for switch in Script.getUnprocessedSwitches():
-  if switch[0].lower()=="status":
-    status=switch[1]
-  elif switch[0].lower()=="minorstatus":
-    minorStatus=switch[1]
-  elif switch[0].lower()=="applicationstatus":
-    appStatus=switch[1]
-  elif switch[0].lower()=="site":
-    site=switch[1]
-  elif switch[0].lower()=="owner":
-    owner=switch[1]
-  elif switch[0].lower()=="jobgroup":
-    jobGroup=switch[1]
-  elif switch[0].lower()=="date":
-    date=switch[1]
-  elif switch[0].lower()=="file":
-    filename=switch[1]
+  if switch[0].lower() == "status":
+    status = switch[1]
+  elif switch[0].lower() == "minorstatus":
+    minorStatus = switch[1]
+  elif switch[0].lower() == "applicationstatus":
+    appStatus = switch[1]
+  elif switch[0].lower() == "site":
+    site = switch[1]
+  elif switch[0].lower() == "owner":
+    owner = switch[1]
+  elif switch[0].lower() == "jobgroup":
+    jobGroup = switch[1]
+  elif switch[0].lower() == "date":
+    date = switch[1]
+  elif switch[0].lower() == "file":
+    filename = switch[1]
 
 selDate = date
 if not date:
-  selDate='Today'
-   
-dirac=Dirac()
+  selDate = 'Today'
+
+dirac = Dirac()
 exitCode = 0
 errorList = []
 resultDict = {}
 
-result = dirac.selectJobs(Status=status,MinorStatus=minorStatus,ApplicationStatus=appStatus,Site=site,Owner=owner,JobGroup=jobGroup,Date=date)
+result = dirac.selectJobs( Status = status, MinorStatus = minorStatus, ApplicationStatus = appStatus, Site = site, Owner = owner, JobGroup = jobGroup, Date = date )
 if result['OK']:
   jobs = result['Value']
 else:
-  print "Error in selectJob",result['Message']
-  DIRAC.exit(2)
-  
+  print "Error in selectJob", result['Message']
+  DIRAC.exit( 2 )
+
 for job in jobs:
 
-  result = dirac.getOutputSandbox(job)
+  result = dirac.getOutputSandbox( job )
   if result['OK']:
-    if os.path.exists('%s' %job):
+    if os.path.exists( '%s' % job ):
 
       lines = []
       try:
-        lines = open(os.path.join(job,filename)).readlines()
-      except Exception,x:
-        errorList.append( (job, x) )
+        lines = open( os.path.join( job, filename ) ).readlines()
+      except Exception, x:
+        errorList.append( ( job, x ) )
       for line in lines:
-        if line.count(searchstring):
-          resultDict[job]= line
-    rmtree("%s" %(job))
+        if line.count( searchstring ):
+          resultDict[job] = line
+    rmtree( "%s" % ( job ) )
   else:
-    errorList.append( (job, result['Message']) )
+    errorList.append( ( job, result['Message'] ) )
     exitCode = 2
 
 for result in resultDict.iteritems():
   print result
 
 
-DIRAC.exit(exitCode)
+DIRAC.exit( exitCode )

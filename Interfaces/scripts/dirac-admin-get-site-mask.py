@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-admin-get-site-mask
-# Author : Stuart Paterson
+# File :    dirac-admin-get-site-mask
+# Author :  Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
@@ -15,10 +14,10 @@ args = Script.getPositionalArgs()
 
 diracAdmin = DiracAdmin()
 
-result = diracAdmin.getSiteMask(printOutput=True)
+result = diracAdmin.getSiteMask( printOutput = True )
 if result['OK']:
-  DIRAC.exit(0)
+  DIRAC.exit( 0 )
 else:
   print result['Message']
-  DIRAC.exit(2)
+  DIRAC.exit( 2 )
 

@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-admin-modify-user
-# Author : Adrian Casajus
+# File :    dirac-admin-modify-user
+# Author :  Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -17,8 +16,8 @@ from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 args = Script.getPositionalArgs()
 
 def usage():
-  print 'Usage: %s [<options>] <username> <DN> <group> [<group>]' %(Script.scriptName)
-  DIRAC.exit(2)
+  print 'Usage: %s [<options>] <username> <DN> <group> [<group>]' % ( Script.scriptName )
+  DIRAC.exit( 2 )
 
 
 diracAdmin = DiracAdmin()
@@ -26,7 +25,7 @@ exitCode = 0
 forceCreation = False
 errorList = []
 
-if len(args) < 3:
+if len( args ) < 3:
   usage()
 
 userProps = {}
@@ -60,4 +59,4 @@ else:
 for error in errorList:
   print "ERROR %s: %s" % error
 
-DIRAC.exit(exitCode)
+DIRAC.exit( exitCode )

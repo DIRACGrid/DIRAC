@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-admin-reset-job
-# Author : Stuart Paterson
+# File :    dirac-admin-reset-job
+# Author :  Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
@@ -14,12 +13,12 @@ Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
 def usage():
-  print 'Usage: %s <JobID> [<JobID>]' %(Script.scriptName)
-  DIRAC.exit(2)
+  print 'Usage: %s <JobID> [<JobID>]' % ( Script.scriptName )
+  DIRAC.exit( 2 )
 
-if len(args) < 1:
+if len( args ) < 1:
   usage()
-  
+
 diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []
@@ -27,20 +26,20 @@ errorList = []
 for job in args:
 
   try:
-    job = int(job)
-  except Exception,x:
+    job = int( job )
+  except Exception, x:
     errorList.append( ( 'Expected integer for jobID', job ) )
     exitCode = 2
     continue
 
-  result = diracAdmin.resetJob(job)
+  result = diracAdmin.resetJob( job )
   if result['OK']:
-    print 'Reset Job %s' %(job)
+    print 'Reset Job %s' % ( job )
   else:
-    errorList.append( (job, result['Message']) )
+    errorList.append( ( job, result['Message'] ) )
     exitCode = 2
 
 for error in errorList:
   print "ERROR %s: %s" % error
 
-DIRAC.exit(exitCode)
+DIRAC.exit( exitCode )

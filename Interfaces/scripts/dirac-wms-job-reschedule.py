@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-production-job-delete
-# Author : Stuart Paterson
+# File :    dirac-production-job-delete
+# Author :  Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.Dirac                              import Dirac
@@ -14,34 +13,34 @@ Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
 def usage():
-  print 'Usage: %s <JobID> |[<JobID>]' %(Script.scriptName)
-  DIRAC.exit(2)
+  print 'Usage: %s <JobID> |[<JobID>]' % ( Script.scriptName )
+  DIRAC.exit( 2 )
 
-if len(args) < 1:
+if len( args ) < 1:
   usage()
-  
-dirac=Dirac()
+
+dirac = Dirac()
 exitCode = 0
 errorList = []
 
 for job in args:
 
   try:
-    job = int(job)
-  except Exception,x:
-    errorList.append( ('Expected integer for jobID', job) )
+    job = int( job )
+  except Exception, x:
+    errorList.append( ( 'Expected integer for jobID', job ) )
     exitCode = 2
     continue
 
-  result = dirac.reschedule(job)
+  result = dirac.reschedule( job )
   if result['OK']:
-    print 'Rescheduled job %s' %(result['Value'][0])
+    print 'Rescheduled job %s' % ( result['Value'][0] )
   else:
-    errorList.append( (job, result['Message']) )
+    errorList.append( ( job, result['Message'] ) )
     print result['Message']
     exitCode = 2
 
 for error in errorList:
   print "ERROR %s: %s" % error
 
-DIRAC.exit(exitCode)
+DIRAC.exit( exitCode )

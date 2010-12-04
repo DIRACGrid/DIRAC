@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-admin-select-requests
-# Author : Stuart Paterson
+# File :    dirac-admin-select-requests
+# Author :  Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.1 $"
-import sys,string
+__RCSID__ = "$Id$"
+import sys, string
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -18,9 +17,9 @@ Script.registerSwitch( "", "RequestType=", "Type of the request e.g. 'transfer'"
 Script.registerSwitch( "", "Status=", "Request status" )
 Script.registerSwitch( "", "Operation=", "Request operation e.g. 'replicateAndRegister'" )
 Script.registerSwitch( "", "RequestStart=", "First request to consider (start from 0 by default)" )
-Script.registerSwitch( "", "Limit=", "Selection limit (default 100)")
-Script.registerSwitch( "", "OwnerDN=", "DN of owner (in double quotes)")
-Script.registerSwitch( "", "OwnerGroup=", "Owner group")
+Script.registerSwitch( "", "Limit=", "Selection limit (default 100)" )
+Script.registerSwitch( "", "OwnerDN=", "DN of owner (in double quotes)" )
+Script.registerSwitch( "", "OwnerGroup=", "Owner group" )
 Script.parseCommandLine( ignoreErrors = True )
 
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
@@ -28,20 +27,20 @@ from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 args = Script.getPositionalArgs()
 
 #Default values
-jobID=None
-requestID=None
-requestName=None
-requestType=None
-status=None
-operation=None
-ownerDN=None
-ownerGroup=None
-requestStart=0
-limit=100
+jobID = None
+requestID = None
+requestName = None
+requestType = None
+status = None
+operation = None
+ownerDN = None
+ownerGroup = None
+requestStart = 0
+limit = 100
 
 def usage():
-  print 'Usage: %s [Try -h,--help for more information]' %(Script.scriptName)
-  DIRAC.exit(2)
+  print 'Usage: %s [Try -h,--help for more information]' % ( Script.scriptName )
+  DIRAC.exit( 2 )
 
 if args:
   usage()
@@ -49,34 +48,34 @@ if args:
 exitCode = 0
 
 for switch in Script.getUnprocessedSwitches():
-  if switch[0].lower()=="jobid":
-    jobID=switch[1]
-  elif switch[0].lower()=="requestid":
-    requestID=switch[1]
-  elif switch[0].lower()=="requestname":
-    requestName=switch[1]
-  elif switch[0].lower()=="requesttype":
-    requestType=switch[1]
-  elif switch[0].lower()=="status":
-    status=switch[1]
-  elif switch[0].lower()=="operation":
-    operation=switch[1]
-  elif switch[0].lower()=="requeststart":
-    requestStart=switch[1]
-  elif switch[0].lower()=="limit":
-    limit=switch[1]
-  elif switch[0].lower()=="ownerDN":
-    ownerDN=switch[1]
-  elif switch[0].lower()=="ownerGroup":
-    ownerGroup=switch[1]
+  if switch[0].lower() == "jobid":
+    jobID = switch[1]
+  elif switch[0].lower() == "requestid":
+    requestID = switch[1]
+  elif switch[0].lower() == "requestname":
+    requestName = switch[1]
+  elif switch[0].lower() == "requesttype":
+    requestType = switch[1]
+  elif switch[0].lower() == "status":
+    status = switch[1]
+  elif switch[0].lower() == "operation":
+    operation = switch[1]
+  elif switch[0].lower() == "requeststart":
+    requestStart = switch[1]
+  elif switch[0].lower() == "limit":
+    limit = switch[1]
+  elif switch[0].lower() == "ownerDN":
+    ownerDN = switch[1]
+  elif switch[0].lower() == "ownerGroup":
+    ownerGroup = switch[1]
 
-conditions = {'RequestID':requestID,'RequestName':requestName,'JobID':jobID,'OwnerDN':ownerDN,
-              'OwnerGroup':ownerGroup,'RequestType':requestType,'Status':status,'Operation':operation}
+conditions = {'RequestID':requestID, 'RequestName':requestName, 'JobID':jobID, 'OwnerDN':ownerDN,
+              'OwnerGroup':ownerGroup, 'RequestType':requestType, 'Status':status, 'Operation':operation}
 
 diracAdmin = DiracAdmin()
-result = diracAdmin.selectRequests(JobID=jobID,RequestID=requestID,RequestName=requestName,RequestType=requestType,Status=status,Operation=operation,OwnerDN=ownerDN,OwnerGroup=ownerGroup,RequestStart=requestStart,Limit=limit,printOutput=True)
+result = diracAdmin.selectRequests( JobID = jobID, RequestID = requestID, RequestName = requestName, RequestType = requestType, Status = status, Operation = operation, OwnerDN = ownerDN, OwnerGroup = ownerGroup, RequestStart = requestStart, Limit = limit, printOutput = True )
 if not result['OK']:
-  print 'ERROR %s' %result['Message']
+  print 'ERROR %s' % result['Message']
   exitCode = 2
 
-DIRAC.exit(exitCode)
+DIRAC.exit( exitCode )

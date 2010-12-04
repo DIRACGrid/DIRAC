@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-admin-site-info
-# Author : Stuart Paterson
+# File :    dirac-admin-site-info
+# Author :  Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
@@ -14,10 +13,10 @@ Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
 def usage():
-  print 'Usage: %s <DIRAC site name> [<DIRAC site name>]' %(Script.scriptName)
-  DIRAC.exit(2)
+  print 'Usage: %s <DIRAC site name> [<DIRAC site name>]' % ( Script.scriptName )
+  DIRAC.exit( 2 )
 
-if len(args) < 1:
+if len( args ) < 1:
   usage()
 
 diracAdmin = DiracAdmin()
@@ -26,12 +25,12 @@ errorList = []
 
 for site in args:
 
-  result = diracAdmin.getSiteSection(site,printOutput=True)
+  result = diracAdmin.getSiteSection( site, printOutput = True )
   if not result['OK']:
-    errorList.append( (site, result['Message']) )
+    errorList.append( ( site, result['Message'] ) )
     exitCode = 2
 
 for error in errorList:
   print "ERROR %s: %s" % error
 
-DIRAC.exit(exitCode)
+DIRAC.exit( exitCode )

@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-admin-list-users
-# Author : Adrian Casajus
+# File :    dirac-admin-list-users
+# Author :  Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -17,10 +16,10 @@ Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
 def usage():
-  print 'Usage: %s [<DIRAC group>/all]+' %(Script.scriptName)
-  DIRAC.exit(2)
+  print 'Usage: %s [<DIRAC group>/all]+' % ( Script.scriptName )
+  DIRAC.exit( 2 )
 
-if len(args) < 1:
+if len( args ) < 1:
   usage()
 
 diracAdmin = DiracAdmin()
@@ -63,4 +62,4 @@ for group in args:
 for error in errorList:
   print "ERROR %s: %s" % error
 
-DIRAC.exit(exitCode)
+DIRAC.exit( exitCode )

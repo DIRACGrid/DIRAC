@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-wms-get-queue-normalization.py
-# Author : Ricardo Graciani
+# File :    dirac-wms-get-queue-normalization.py
+# Author :  Ricardo Graciani
 ########################################################################
 __RCSID__ = "$Id$"
-__VERSION__ = "$Revision: 1.1 $"
 
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -48,7 +47,7 @@ for ceUniqueID in args:
     exitCode = 2
     continue
 
-  gridType = diracSiteName.split('.')[0]
+  gridType = diracSiteName.split( '.' )[0]
   siteCSSEction = '/Resources/Sites/%s/%s/CEs/%s' % ( gridType, diracSiteName, subClusterUniqueID )
   queueCSSection = '%s/Queues/%s' % ( siteCSSEction, queueID )
 
