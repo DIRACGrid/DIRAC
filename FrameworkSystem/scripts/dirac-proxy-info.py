@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-proxy-init.py
-# Author : Adrian Casajus
+# File :    dirac-proxy-init.py
+# Author :  Adrian Casajus
 ########################################################################
 __RCSID__ = "$Id$"
-__VERSION__ = "$Revision: 1.10 $"
 
 import sys
 import os.path
