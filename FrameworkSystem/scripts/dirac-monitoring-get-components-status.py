@@ -2,8 +2,7 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__ = "$Id$"
 import sys
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -16,7 +15,7 @@ fieldsToShow = ( 'ComponentName', 'Type', 'Host', 'Port', 'Status', 'Message' )
 result = DIRAC.gMonitor.getComponentsStatusWebFormatted( sortingList = [ [ 'ComponentName', 'ASC' ] ] )
 if not result[ 'OK' ]:
   print "ERROR: %s" % result[ 'Message' ]
-  sys.exit(1)
+  sys.exit( 1 )
 paramNames = result[ 'Value' ][ 'ParameterNames' ]
 records = result[ 'Value' ][ 'Records' ]
 fieldLengths = []
@@ -34,7 +33,7 @@ for i in range( len( paramNames ) ):
   param = paramNames[i]
   if param in fieldsToShow:
     line.append( "%s%s" % ( param, " " * ( fieldLengths[i] - len( param ) ) ) )
-    sepLine.append( "-" * fieldLengths[i])
+    sepLine.append( "-" * fieldLengths[i] )
 print "|".join( line )
 sepLine = "+".join( sepLine )
 print sepLine
