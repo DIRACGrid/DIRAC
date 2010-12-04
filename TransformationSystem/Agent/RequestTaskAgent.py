@@ -20,6 +20,10 @@ class RequestTaskAgent( TaskManagerAgentBase, RequestTasks ):
     TaskManagerAgentBase.initialize( self )
     RequestTasks.__init__( self )
     self.transType = ['Replication', 'Removal']
-    self.am_setModuleParam( 'shifterProxy', 'ProductionManager' )
-    self.am_setModuleParam( "shifterProxyLocation", "%s/runit/%s/proxy" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), AGENT_NAME ) )
+
+    # This sets the Default Proxy to used as that defined under 
+    # /Operations/Shifter/ProductionManager
+    # the shifterProxy option in the Configuration can be used to change this default.
+    self.am_setOption( 'shifterProxy', 'ProductionManager' )
+
     return S_OK()
