@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-admin-get-proxy
-# Author : Stuart Paterson
+# File :    dirac-admin-get-proxy
+# Author :  Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__ = "$Id$"
 import os
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -21,7 +20,7 @@ class Params:
 
   def setProxyLifeTime( self, arg ):
     try:
-      fields = [ f.strip() for f in arg.split(":") ]
+      fields = [ f.strip() for f in arg.split( ":" ) ]
       self.proxyLifeTime = int( fields[0] ) * 3600 + int( fields[1] ) * 60
     except:
       print "Can't parse %s time! Is it a HH:MM?" % arg
@@ -39,14 +38,14 @@ args = Script.getPositionalArgs()
 result = gProxyManager.getDBContents()
 if not result[ 'OK' ]:
   print "Can't retrieve list of users: %s" % result[ 'Message' ]
-  DIRAC.exit(1)
+  DIRAC.exit( 1 )
 
 keys = result[ 'Value' ][ 'ParameterNames' ]
 records = result[ 'Value' ][ 'Records' ]
 dataDict = {}
 now = Time.dateTime()
 for record in records:
-  expirationDate =  record[ 2 ]
+  expirationDate = record[ 2 ]
   dt = expirationDate - now
   secsLeft = dt.days * 86400 + dt.seconds
   if secsLeft > params.proxyLifeTime:
@@ -62,7 +61,7 @@ for record in records:
 
 for userName in dataDict:
   print "* %s" % userName
-  for iP in range( len( dataDict[ userName ]  ) ):
+  for iP in range( len( dataDict[ userName ] ) ):
     data = dataDict[ userName ][ iP ]
     print " DN         : %s" % data[0]
     print " group      : %s" % data[1]
@@ -73,4 +72,4 @@ for userName in dataDict:
 
 
 
-DIRAC.exit(0)
+DIRAC.exit( 0 )
