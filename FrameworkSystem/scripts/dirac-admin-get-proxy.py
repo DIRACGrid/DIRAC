@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-admin-get-proxy
-# Author : Stuart Paterson
+# File :    dirac-admin-get-proxy
+# Author :  Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.3 $"
+__RCSID__ = "$Id$"
 import os
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -30,7 +29,7 @@ class Params:
 
   def setProxyLifeTime( self, arg ):
     try:
-      fields = [ f.strip() for f in arg.split(":") ]
+      fields = [ f.strip() for f in arg.split( ":" ) ]
       self.proxyLifeTime = int( fields[0] ) * 3600 + int( fields[1] ) * 60
     except:
       print "Can't parse %s time! Is it a HH:MM?" % arg
@@ -60,29 +59,29 @@ Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
 def usage():
-  print 'Usage: %s <DN>/<username> <DIRAC group>' %( Script.scriptName )
+  print 'Usage: %s <DN>/<username> <DIRAC group>' % ( Script.scriptName )
   print " <username> will fail if there's more than one DN registered for that username"
-  DIRAC.exit(2)
+  DIRAC.exit( 2 )
 
-if len(args) != 2:
+if len( args ) != 2:
   usage()
 
-userGroup = str(args[1])
-userDN = str(args[0])
+userGroup = str( args[1] )
+userDN = str( args[0] )
 userName = False
 if userDN.find( "/" ) != 0:
   userName = userDN
   retVal = CS.getDNForUsername( userName )
   if not retVal[ 'OK' ]:
     print "Cannot discover DN for username %s\n\t%s" % ( userName, retVal[ 'Message' ] )
-    DIRAC.exit(2)
+    DIRAC.exit( 2 )
   DNList = retVal[ 'Value' ]
   if len( DNList ) > 1:
     print "Username %s has more than one DN registered" % userName
     for dn in DNList:
       print " %s" % dn
     print "Which dn do you want to download?"
-    DIRAC.exit(2)
+    DIRAC.exit( 2 )
   userDN = DNList[0]
 
 if not params.proxyPath:
@@ -90,7 +89,7 @@ if not params.proxyPath:
     result = CS.getUsernameForDN( userDN )
     if not result[ 'OK' ]:
       print "DN '%s' is not registered in DIRAC" % userDN
-      DIRAC.exit(2)
+      DIRAC.exit( 2 )
     userName = result[ 'Value' ]
   params.proxyPath = "%s/proxy.%s.%s" % ( os.getcwd(), userName, userGroup )
 
@@ -103,11 +102,11 @@ else:
                                         requiredTimeLeft = params.proxyLifeTime )
 if not result['OK']:
   print 'Proxy file cannot be retrieved: %s' % result['Message']
-  DIRAC.exit(2)
+  DIRAC.exit( 2 )
 chain = result[ 'Value' ]
 result = chain.dumpAllToFile( params.proxyPath )
 if not result['OK']:
   print 'Proxy file cannot be written to %s: %s' % ( params.proxyPath, result['Message'] )
-  DIRAC.exit(2)
+  DIRAC.exit( 2 )
 print "Proxy downloaded to %s" % params.proxyPath
-DIRAC.exit(0)
+DIRAC.exit( 0 )
