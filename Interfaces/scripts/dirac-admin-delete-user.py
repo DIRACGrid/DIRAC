@@ -1,37 +1,34 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-admin-modify-user
-# Author : Adrian Casajus
+# File :    dirac-admin-modify-user
+# Author :  Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
-
-Script.registerSwitch( "P:", "property=", "Add property to the user <name>=<value>" )
 
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
 args = Script.getPositionalArgs()
 
 def usage():
-  print 'Usage: %s <username>+' %(Script.scriptName)
-  DIRAC.exit(2)
+  print 'Usage: %s <username>+' % ( Script.scriptName )
+  DIRAC.exit( 2 )
 
 
 diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []
 
-if len(args) < 1:
+if len( args ) < 1:
   usage()
 
 choice = raw_input( "Are you sure you want to delete user/s %s? yes/no [no]: " % ", ".join( args ) )
 choice = choice.lower()
 if choice not in ( "yes", "y" ):
   print "Delete aborted"
-  DIRAC.exit(0)
+  DIRAC.exit( 0 )
 
 for user in args:
   if not diracAdmin.csDeleteUser( user ):
@@ -47,4 +44,4 @@ if not exitCode:
 for error in errorList:
   print "ERROR %s: %s" % error
 
-DIRAC.exit(exitCode)
+DIRAC.exit( exitCode )
