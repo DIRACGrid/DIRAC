@@ -1,24 +1,27 @@
 ########################################################################
 # $HeadURL$
-# File :   InputDataAgent.py
-# Author : Stuart Paterson
+# File :    InputDataAgent.py
+# Author :  Stuart Paterson
 ########################################################################
-
-"""   The Input Data Agent queries the file catalogue for specified job input data and adds the
-      relevant information to the job optimizer parameters to be used during the
-      scheduling decision.
-
+"""   
+  The Input Data Agent queries the file catalog for specified job input data and adds the
+  relevant information to the job optimizer parameters to be used during the
+  scheduling decision.
 """
-
 __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.Agent.OptimizerModule  import OptimizerModule
 from DIRAC.Core.Utilities.SiteSEMapping                    import getSitesForSE
 from DIRAC                                                 import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Client.ReplicaManager      import ReplicaManager
-import os, re, time, string
+import time
 
 class InputDataAgent( OptimizerModule ):
+  """
+      The specific Optimizer must provide the following methods:
+      - initializeOptimizer() before each execution cycle
+      - checkJob() - the main method called for each job
+  """
 
   #############################################################################
   def initializeOptimizer( self ):
@@ -31,16 +34,19 @@ class InputDataAgent( OptimizerModule ):
     self.checkFileMetadata = self.am_getOption( 'CheckFileMetadata', True )
 
     #Define the shifter proxy needed
-    self.am_setModuleParam( "shifterProxy", "ProductionManager" )
+    # This sets the Default Proxy to used as that defined under 
+    # /Operations/Shifter/ProductionManager
+    # the shifterProxy option in the Configuration can be used to change this default.
+    self.am_setOption( 'shifterProxy', 'ProductionManager' )
 
     try:
       self.rm = ReplicaManager()
-    except Exception, x:
-      msg = 'Failed to create ReplicaManager with exception:'
-      self.log.fatal( msg, str( x ) )
-      return S_ERROR( msg + str( x ) )
+    except Exception, e:
+      msg = 'Failed to create ReplicaManager'
+      self.log.exception( msg )
+      return S_ERROR( msg + str( e ) )
 
-    self.SEToSiteMapping = {}
+    self.seToSiteMapping = {}
     self.lastCScheck = 0
     self.cacheLength = 600
 
@@ -48,7 +54,9 @@ class InputDataAgent( OptimizerModule ):
 
   #############################################################################
   def checkJob( self, job, classAdJob ):
-    """This method controls the checking of the job.
+    """
+    This method does the optimization corresponding to this Agent, 
+    it is call for each job by the Optimizer framework
     """
 
     result = self.jobDB.getInputData( job )
@@ -89,7 +97,7 @@ class InputDataAgent( OptimizerModule ):
   def __resolveInputData( self, job, inputData ):
     """This method checks the file catalog for replica information.
     """
-    lfns = [string.replace( fname, 'LFN:', '' ) for fname in inputData]
+    lfns = [ fname.replace( 'LFN:', '' ) for fname in inputData ]
 
     start = time.time()
     # In order to place jobs on Hold if a certain SE is banned we need first to check first if
@@ -142,7 +150,8 @@ class InputDataAgent( OptimizerModule ):
 
   #############################################################################
   def __checkReplicas( self, job, replicaDict ):
-    # Check that all input lfns have valid replicas and can all be found at least in one single site.
+    """Check that all input lfns have valid replicas and can all be found at least in one single site.
+    """
     badLFNs = []
 
     if replicaDict.has_key( 'Successful' ):
@@ -158,7 +167,7 @@ class InputDataAgent( OptimizerModule ):
 
     if badLFNs:
       self.log.info( 'Found %s problematic LFN(s) for job %s' % ( len( badLFNs ), job ) )
-      param = string.join( badLFNs, '\n' )
+      param = '\n'.join( badLFNs )
       self.log.info( param )
       result = self.setJobParam( job, self.am_getModuleParam( 'optimizerName' ), param )
       if not result['OK']:
@@ -169,7 +178,10 @@ class InputDataAgent( OptimizerModule ):
 
   #############################################################################
   def __checkActiveSEs( self, job, replicaDict ):
-
+    """
+    Check active SE and replicas and identify possible Site candidates for 
+    the execution of the job
+    """
     # Now let's check if some replicas might not be available due to banned SE's
     activeReplicas = self.rm.checkActiveReplicas( replicaDict )
     if not activeReplicas['OK']:
@@ -209,16 +221,16 @@ class InputDataAgent( OptimizerModule ):
     # Empty the cache if too old
     if ( time.time() - self.lastCScheck ) > self.cacheLength:
       self.log.verbose( 'Resetting the SE to site mapping cache' )
-      self.SEToSiteMapping = {}
+      self.seToSiteMapping = {}
       self.lastCScheck = time.time()
 
-    if se not in self.SEToSiteMapping:
+    if se not in self.seToSiteMapping:
       sites = getSitesForSE( se )
       if sites['OK']:
-        self.SEToSiteMapping[se] = list( sites['Value'] )
+        self.seToSiteMapping[se] = list( sites['Value'] )
       return sites
     else:
-      return S_OK( self.SEToSiteMapping[se] )
+      return S_OK( self.seToSiteMapping[se] )
 
   #############################################################################
   def __getSiteCandidates( self, inputData ):
@@ -238,7 +250,7 @@ class InputDataAgent( OptimizerModule ):
 
     siteCandidates = []
     i = 0
-    for file, sites in fileSEs.items():
+    for fileName, sites in fileSEs.items():
       if not i:
         siteCandidates = sites
       else:
@@ -255,19 +267,20 @@ class InputDataAgent( OptimizerModule ):
     #In addition, check number of files on tape and disk for each site
     #for optimizations during scheduling
     siteResult = {}
-    for site in siteCandidates: siteResult[site] = {'disk':0, 'tape':0}
+    for site in siteCandidates:
+      siteResult[site] = { 'disk': 0, 'tape': 0 }
 
     for lfn, replicas in inputData.items():
-      for se, surl in replicas.items():
+      for se in replicas.keys():
         sites = self.__getSitesForSE( se )
         if sites['OK']:
           for site in sites['Value']:
             if site in siteCandidates:
               for disk in self.diskSE:
-                if re.search( disk + '$', se ):
+                if se[-4:] == 'disk':
                   siteResult[site]['disk'] = siteResult[site]['disk'] + 1
               for tape in self.tapeSE:
-                if re.search( tape + '$', se ):
+                if se[-4:] == 'tape':
                   siteResult[site]['tape'] = siteResult[site]['tape'] + 1
 
     return S_OK( siteResult )
