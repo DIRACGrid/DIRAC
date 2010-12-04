@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-proxy-init.py
-# Author : Adrian Casajus
+# File :    dirac-proxy-init.py
+# Author :  Adrian Casajus
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__ = "$Id$"
 
 import sys
 import getpass
@@ -29,7 +28,7 @@ class Params:
     print "Version:"
     print " ", __RCSID__
     print " ", __VERSION__
-    sys.exit(0)
+    sys.exit( 0 )
     return DIRAC.S_OK()
 
   def debugMsg( self, msg ):
@@ -55,7 +54,7 @@ if not params.proxyLoc:
 
 if not params.proxyLoc:
   print "Can't find any valid proxy"
-  sys.exit(1)
+  sys.exit( 1 )
 print "Uploading proxy file %s" % params.proxyLoc
 
 mp = MyProxy()
@@ -63,8 +62,8 @@ retVal = mp.uploadProxy( params.proxyLoc, params.dnAsUsername )
 if not retVal[ 'OK' ]:
   print "Can't upload proxy:"
   print " ", retVal[ 'Message' ]
-  sys.exit(1)
+  sys.exit( 1 )
 print "Proxy uploaded"
-sys.exit(0)
+sys.exit( 0 )
 
 
