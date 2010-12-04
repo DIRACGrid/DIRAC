@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-proxy-init.py
-# Author : Adrian Casajus
+# File :    dirac-proxy-init.py
+# Author :  Adrian Casajus
 ###########################################################from DIRAC.Core.Base import Script#############
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.4 $"
+__RCSID__ = "$Id$"
 
 import sys
 import DIRAC
@@ -21,5 +20,5 @@ if __name__ == "__main__":
   retVal = uploadProxy( cliParams )
   if not retVal[ 'OK' ]:
     print retVal[ 'Message' ]
-    sys.exit(1)
-  sys.exit(0)
+    sys.exit( 1 )
+  sys.exit( 0 )
