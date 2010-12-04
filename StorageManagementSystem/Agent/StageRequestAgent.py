@@ -22,11 +22,12 @@ class StageRequestAgent( AgentModule ):
     self.dataIntegrityClient = DataIntegrityClient()
 
     self.pinLifetime = self.am_getOption( 'PinLifetime', 60 * 60 * 24 )
-    proxyLocation = self.am_getOption( 'ProxyLocation', '' )
-    if not proxyLocation:
-      proxyLocation = False
-    self.am_setModuleParam( 'shifterProxy', 'DataManager' )
-    self.am_setModuleParam( 'shifterProxyLocation', proxyLocation )
+
+    # This sets the Default Proxy to used as that defined under 
+    # /Operations/Shifter/DataManager
+    # the shifterProxy option in the Configuration can be used to change this default.
+    self.am_setOption( 'shifterProxy', 'DataManager' )
+
     return S_OK()
 
   def execute( self ):
