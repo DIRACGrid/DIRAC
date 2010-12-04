@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-admin-allow-site
-# Author : Stuart Paterson
+# File :    dirac-admin-allow-site
+# Author :  Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -15,47 +14,47 @@ Script.parseCommandLine( ignoreErrors = True )
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC import gConfig
 
-import time,string
+import time, string
 
-def getBoolean(value):
-  if value.lower()=='true':
+def getBoolean( value ):
+  if value.lower() == 'true':
     return True
-  elif value.lower()=='false':
+  elif value.lower() == 'false':
     return False
   else:
     print 'ERROR: expected boolean'
-    DIRAC.exit(2)
+    DIRAC.exit( 2 )
 
 email = True
 for switch in Script.getUnprocessedSwitches():
-  if switch[0]=="email":
-    email=getBoolean(switch[1])
+  if switch[0] == "email":
+    email = getBoolean( switch[1] )
 
 args = Script.getPositionalArgs()
 
 def usage():
-  print 'Usage: %s <DIRAC site name> <COMMENT>' %(Script.scriptName)
+  print 'Usage: %s <DIRAC site name> <COMMENT>' % ( Script.scriptName )
   print 'Note: emails should only be disabled for bulk operations.'
-  DIRAC.exit(2)
+  DIRAC.exit( 2 )
 
-if len(args) < 2:
+if len( args ) < 2:
   usage()
 
 diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []
-address = gConfig.getValue('/Operations/EMail/Production','')
-setup = gConfig.getValue('/DIRAC/Setup','')
+address = gConfig.getValue( '/Operations/EMail/Production', '' )
+setup = gConfig.getValue( '/DIRAC/Setup', '' )
 if not address or not setup:
   print 'ERROR: Could not contact Configuration Service'
   exitCode = 2
-  DIRAC.exit(exitCode)
+  DIRAC.exit( exitCode )
 
 site = args[0]
 comment = args[1]
-result = diracAdmin.addSiteInMask(site,comment,printOutput=True)
+result = diracAdmin.addSiteInMask( site, comment, printOutput = True )
 if not result['OK']:
-  errorList.append( (site, result['Message']) )
+  errorList.append( ( site, result['Message'] ) )
   exitCode = 2
 else:
   if email:
@@ -63,17 +62,17 @@ else:
     if not userName['OK']:
       print 'ERROR: Could not obtain current username from proxy'
       exitCode = 2
-      DIRAC.exit(exitCode)
+      DIRAC.exit( exitCode )
     userName = userName['Value']
-    subject = '%s is added in site mask for %s setup' %(site,setup)
-    body = 'Site %s is added to the site mask for %s setup by %s on %s.\n\n' %(site,setup,userName,time.asctime())
-    body += 'Comment:\n%s' %comment
+    subject = '%s is added in site mask for %s setup' % ( site, setup )
+    body = 'Site %s is added to the site mask for %s setup by %s on %s.\n\n' % ( site, setup, userName, time.asctime() )
+    body += 'Comment:\n%s' % comment
 
-    result = diracAdmin.sendMail(address,subject,body)
+    result = diracAdmin.sendMail( address, subject, body )
   else:
     print 'Automatic email disabled by flag.'
 
 for error in errorList:
   print "ERROR %s: %s" % error
 
-DIRAC.exit(exitCode)
+DIRAC.exit( exitCode )
