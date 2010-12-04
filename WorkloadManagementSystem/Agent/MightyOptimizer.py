@@ -1,28 +1,37 @@
 ########################################################################
 # $HeadURL$
+# File :   MightyOptimizer.py
+# Author : Adria Casajus
+########################################################################
 
-
-"""  SuperOptimizer
- One optimizer to rule them all, one optimizer to find them, one optimizer to bring them all, and in the darkness bind them.
+"""  
+  SuperOptimizer
+  One optimizer to rule them all, one optimizer to find them, 
+  one optimizer to bring them all, and in the darkness bind them.
 """
-
 __RCSID__ = "$Id$"
 
-import time
 import os
-import threading
-from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR
+from DIRAC  import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.JobDB         import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB  import JobLoggingDB
-from DIRAC.Core.Utilities import Time, ThreadSafe
+from DIRAC.Core.Utilities import ThreadSafe
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 
 
 gOptimizerLoadSync = ThreadSafe.Synchronizer()
 
 class MightyOptimizer( AgentModule ):
-
+  """
+      The specific agents must provide the following methods:
+      - initialize() for initial settings
+      - beginExecution()
+      - execute() - the main method called in the agent cycle
+      - endExecution()
+      - finalize() - the graceful exit of the method, this one is usually used
+                 for the agent restart
+  """
   __jobStates = [ 'Received', 'Checking' ]
 
   def initialize( self ):
@@ -35,12 +44,15 @@ class MightyOptimizer( AgentModule ):
     return S_OK()
 
   def execute( self ):
+    """ The method call by AgentModule on each iteration
+    """
     result = self.jobDB.selectJobs( { 'Status': self.__jobStates  } )
     if not result[ 'OK' ]:
       return result
     jobsList = result[ 'Value' ]
     self.log.info( "Got %s jobs for this iteration" % len( jobsList ) )
-    if not jobsList: return S_OK()
+    if not jobsList:
+      return S_OK()
     result = self.jobDB.getAttributesForJobList( jobsList )
     if not result[ 'OK' ]:
       return result
@@ -67,6 +79,8 @@ class MightyOptimizer( AgentModule ):
 
 
   def optimizeJob( self, jobId, jobAttrs, jobDef ):
+    """ The method call for each Job to be optimized
+    """
     #Get the next optimizer
     result = self._getNextOptimizer( jobAttrs )
     if not result[ 'OK' ]:
@@ -113,6 +127,8 @@ class MightyOptimizer( AgentModule ):
     return S_OK( { 'done' : True, 'jobDef' : jobDef } )
 
   def _getNextOptimizer( self, jobAttrs ):
+    """ Determine next Optimizer in the Path
+    """
     if jobAttrs[ 'Status' ] == 'Received':
       nextOptimizer = "JobPath"
     else:
@@ -129,7 +145,8 @@ class MightyOptimizer( AgentModule ):
 
   @gOptimizerLoadSync
   def __loadOptimizer( self, optimizerName ):
-    #Need to load an optimizer
+    """Need to load an optimizer
+    """
     gLogger.info( "Loading optimizer %s" % optimizerName )
     try:
       agentName = "%sAgent" % optimizerName
