@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/FrameworkSystem/scripts/dirac-proxy-upload.py $
-# File :   dirac-proxy-init.py
-# Author : Adrian Casajus
+# File :    dirac-proxy-init.py
+# Author :  Adrian Casajus
 ###########################################################from DIRAC.Core.Base import Script#############
 __RCSID__ = "$Id: dirac-proxy-upload.py 18161 2009-11-11 12:07:09Z acasajus $"
-__VERSION__ = "$Revision: 1.4 $"
 
 import sys
 import DIRAC
