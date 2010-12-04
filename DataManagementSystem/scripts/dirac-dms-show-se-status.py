@@ -2,12 +2,21 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-__RCSID__ = "$Id$"
-import DIRAC
-from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine()
+__RCSID__   = "$Id$"
 
-from DIRAC                                            import gConfig, gLogger
+from DIRAC.Core.Base import Script 
+
+Script.setUsageMessage("""
+Get status of the available Storage Elements
+
+Usage: 
+  %s [<options>] 
+""" % Script.scriptName)
+
+Script.parseCommandLine()
+
+import DIRAC
+from DIRAC                                            import gConfig,gLogger
 from DIRAC.Core.Utilities.List                        import sortList
 
 storageCFGBase = "/Resources/StorageElements"
@@ -28,5 +37,5 @@ for se in sortList( res['Value'] ):
     writeState = 'Active'
     if res['Value'].has_key( "WriteAccess" ):
       writeState = res["Value"]["WriteAccess"]
-    gLogger.info( "%s %s %s" % ( se.ljust( 25 ), readState.rjust( 15 ), writeState.rjust( 15 ) ) )
-DIRAC.exit( 0 )
+    gLogger.notice("%s %s %s" % (se.ljust(25),readState.rjust(15),writeState.rjust(15)))
+DIRAC.exit(0)

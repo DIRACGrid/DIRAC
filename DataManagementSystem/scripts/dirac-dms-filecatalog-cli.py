@@ -2,20 +2,30 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-__RCSID__ = "$Id$"
-import sys, os
-import DIRAC
-from DIRAC import gLogger, gConfig
+__RCSID__   = "$Id$"
+
 from DIRAC.Core.Base import Script
 
-fcType = ''
+Script.setUsageMessage("""
+Launch the File Catalog shell
 
-Script.registerSwitch( "f:", "file-catalog=", "   Catalog client type to use" )
+Usage:
+   %s [option]
+""" % Script.scriptName)
+
+fcType = 'FileCatalog'
+Script.registerSwitch( "f:", "file-catalog=","   Catalog client type to use (default %s)" % fcType)
+
 Script.parseCommandLine( ignoreErrors = False )
-res = gConfig.getSections( "/Resources/FileCatalogs/" )
+
+import sys,os
+import DIRAC
+from DIRAC import gLogger, gConfig
+
+res = gConfig.getSections("/Resources/FileCatalogs/")
 if res['OK']:
   ##Take catalog -1 as default as it seems that the list returned is reversed compared to CS web interface
-  fcType = res['Value'][-1]
+  fcType = res['Value'][0]
 
 for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "f" or switch[0].lower() == "file-catalog":

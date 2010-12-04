@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/DataManagementSystem/scripts/dirac-admin-ban-se.py $
+# $HeadURL:  $
 ########################################################################
-__RCSID__   = "$Id: dirac-admin-ban-se.py 18161 2009-11-11 12:07:09Z acasajus $"
+__RCSID__   = "$Id: $"
 from DIRAC.Core.Base import Script
 
 dir = ''
@@ -14,7 +14,15 @@ Script.registerSwitch( "t:", "Type=", "   File type to search [ALL]")
 Script.registerSwitch( "S:", "SEs=", "  SEs to consider [ALL] (space or comma separated list)")
 Script.registerSwitch( "p:", "Prod=", "   Production ID to search [ALL] (space or comma separated list)")
 
+Script.setUsageMessage("""
+Get summary of storage directory usage
+
+Usage:
+   %s [option]
+""" % Script.scriptName)
+
 Script.parseCommandLine()
+
 from DIRAC.DataManagementSystem.Client.StorageUsageClient import StorageUsageClient
 rpc = StorageUsageClient()
 

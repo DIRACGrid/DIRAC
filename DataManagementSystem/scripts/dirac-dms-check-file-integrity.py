@@ -1,18 +1,28 @@
 #!/usr/bin/env python
-from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine()
 ########################################################################
 # $HeadURL$
 ########################################################################
-__RCSID__ = "$Id$"
+__RCSID__   = "$Id$"
+
+from DIRAC.Core.Base import Script 
+
+Script.setUsageMessage("""
+Check the integrity of the state of the storages and information in the File Catalogs
+for a given file or a collection of files.
+
+Usage:
+   %s <lfn | fileContainingLfns> <SE> <status>
+""" % Script.scriptName)
+
+Script.parseCommandLine()
 
 from DIRAC import gLogger
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient import DataIntegrityClient
 import sys, os
 
 if len( sys.argv ) < 2:
-  print 'Usage: dirac-dms-check-file-integrity <lfn | fileContainingLfns>'
-  sys.exit()
+  Script.showHelp()
+  DIRAC.exit( -1 )
 else:
   inputFileName = sys.argv[1]
 

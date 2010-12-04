@@ -1,10 +1,19 @@
 #!/usr/bin/env python
-from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine()
 ########################################################################
-# $Header: /local/reps/dirac/DIRAC3/DIRAC/DataManagementSystem/scripts/dirac-dms-remove-catalog-replicas.py,v 1.2 2009/03/19 17:45:06 acsmith Exp $
+# $Header: $
 ########################################################################
-__RCSID__ = "$Id$"
+__RCSID__   = "$Id$"
+
+from DIRAC.Core.Base import Script 
+
+Script.setUsageMessage("""
+Remove the given file replica or a list of file replicas from the File Catalog
+
+Usage:
+   %s <LFN | fileContainingLFNs>
+""" % Script.scriptName)
+
+Script.parseCommandLine()
 
 from DIRAC.Core.Utilities.List import sortList
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
@@ -12,8 +21,8 @@ rm = ReplicaManager()
 import os, sys
 
 if len( sys.argv ) < 3:
-  print 'Usage: ./dirac-dms-remove-replicas.py <LFN | fileContainingLFNs> SE'
-  sys.exit()
+  Script.showHelp()
+  DIRAC.exit( -1 )
 else:
   inputFileName = sys.argv[1]
   storageElementName = sys.argv[2]

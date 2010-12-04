@@ -1,13 +1,28 @@
 #! /usr/bin/env python
-from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine()
+########################################################################
+# $HeadURL: $
+########################################################################
+__RCSID__   = "$Id:  $"
+
+from DIRAC.Core.Base import Script 
+
+Script.setUsageMessage("""
+Clean the given directory or a list of directories by removing it and all the
+contained files and subdirectories from the physical storage and from the
+file catalogs.
+
+Usage:
+   %s <lfn | fileContainingLfns> <SE> <status>
+""" % Script.scriptName)
+
+Script.parseCommandLine()
 import sys,os
 
 from DIRAC.Core.Utilities.List import sortList,randomize
 
 if len(sys.argv) < 2:
-  print 'Usage: dirac-dms-clean-directory <lfn|inputFileOfLfns>'
-  sys.exit()
+  Script.showHelp()
+  DIRAC.exit( -1 )
 else:
   inputFileName = sys.argv[1]
 

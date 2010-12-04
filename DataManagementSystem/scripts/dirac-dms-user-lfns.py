@@ -2,8 +2,8 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-__RCSID__ = "$Id$"
-import DIRAC
+__RCSID__   = "$Id$"
+
 from DIRAC.Core.Base import Script
 days = 0
 months = 0
@@ -11,21 +11,30 @@ years = 0
 wildcard = '*'
 baseDir = ''
 emptyDirsFlag = False
-Script.registerSwitch( "D:", "Days=", "     Match files older than number of days [%s]" % days )
-Script.registerSwitch( "m:", "Months=", "   Match files older than number of months [%s]" % months )
-Script.registerSwitch( "y:", "Years=", "    Match files older than number of years [%s]" % years )
-Script.registerSwitch( "w:", "Wildcard=", " Wildcard for matching filenames [%s]" % wildcard )
-Script.registerSwitch( "b:", "BaseDir=", "  Base directory to begin search (default /[vo]/user/[initial]/[username])" )
-Script.registerSwitch( "e", "EmptyDirs", "  Create a list of empty directories" )
+Script.registerSwitch( "D:", "Days=",     "Match files older than number of days [%s]" % days)
+Script.registerSwitch( "M:", "Months=",   "Match files older than number of months [%s]" % months)
+Script.registerSwitch( "Y:", "Years=",    "Match files older than number of years [%s]" % years)
+Script.registerSwitch( "w:", "Wildcard=", "Wildcard for matching filenames [%s]" % wildcard)
+Script.registerSwitch( "b:", "BaseDir=",  "Base directory to begin search (default /[vo]/user/[initial]/[username])")
+Script.registerSwitch( "e", "EmptyDirs",  "Create a list of empty directories")
+
+Script.setUsageMessage("""
+Get the list of all the user files. Optionally get also a list of all the
+empty directories.
+
+Usage:
+   %s [options]
+""" % Script.scriptName)
+
 Script.parseCommandLine( ignoreErrors = False )
 
 args = Script.getPositionalArgs()
 for switch in Script.getUnprocessedSwitches():
-  if switch[0].lower() == "d" or switch[0].lower() == "days":
+  if switch[0] == "D" or switch[0].lower() == "days":
     days = int( switch[1] )
-  if switch[0].lower() == "m" or switch[0].lower() == "months":
+  if switch[0] == "M" or switch[0].lower() == "months":
     months = int( switch[1] )
-  if switch[0].lower() == "y" or switch[0].lower() == "years":
+  if switch[0] == "Y" or switch[0].lower() == "years":
     years = int( switch[1] )
   if switch[0].lower() == "w" or switch[0].lower() == "wildcard":
     wildcard = switch[1]
@@ -34,6 +43,7 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "e" or switch[0].lower() == "emptydirs":
     emptyDirsFlag = True
 
+import DIRAC
 from DIRAC import gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers                import getVO
 from DIRAC.Core.Security.Misc import getProxyInfo
@@ -46,13 +56,8 @@ rm = ReplicaManager()
 vo = getVO( 'lhcb' )
 
 def usage():
-  gLogger.info( 'Usage: %s [<options>] <Directory>' % ( Script.scriptName ) )
-  gLogger.info( ' Get all the files contained in the supplied directory <or by default the user home directory>' )
-  gLogger.info( ' Only files older than a given date can be found using the -d, -m and -y options.' )
-  gLogger.info( ' Wildcards can be used to match the filename or path with the -w option.' )
-  gLogger.info( ' Users may only search in their own directories according to /%s/user/[initial]/[username] convention.' % vo )
-  gLogger.info( ' Type "%s --help" for the available options and syntax' % Script.scriptName )
-  DIRAC.exit( 2 )
+  Script.showHelp()
+  DIRAC.exit(2)
 
 def isOlderThan( cTimeStruct, days ):
   timeDelta = timedelta( days = days )
@@ -111,7 +116,7 @@ while len( activeDirs ) > 0:
           allFiles.append( filename )
       empty = False
     files = dirContents['Files'].keys()
-    gLogger.info( "%s: %d files, %d sub-directories" % ( currentDir, len( files ), len( subdirs ) ) )
+    gLogger.notice("%s: %d files, %d sub-directories" % (currentDir,len(files),len(subdirs)))
     if empty:
       emptyDirs.append( currentDir )
 
@@ -120,7 +125,7 @@ outputFile = open( outputFileName, 'w' )
 for lfn in sortList( allFiles ):
   outputFile.write( lfn + '\n' )
 outputFile.close()
-gLogger.info( '%d matched files have been put in %s' % ( len( allFiles ), outputFileName ) )
+gLogger.notice('%d matched files have been put in %s' % (len(allFiles),outputFileName))
 
 if emptyDirsFlag:
   outputFileName = '%s.emptydirs' % baseDir.replace( '/%s' % vo, '%s' % vo ).replace( '/', '-' )
@@ -128,6 +133,6 @@ if emptyDirsFlag:
   for dir in sortList( emptyDirs ):
     outputFile.write( dir + '\n' )
   outputFile.close()
-  gLogger.info( '%d empty directories have been put in %s' % ( len( emptyDirs ), outputFileName ) )
+  gLogger.notice('%d empty directories have been put in %s' % (len(emptyDirs),outputFileName))
 
 DIRAC.exit( 0 )

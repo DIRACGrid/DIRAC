@@ -1,19 +1,27 @@
 #!/usr/bin/env python
-from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine()
 ########################################################################
 # $HeadURL$
 ########################################################################
-__RCSID__ = "$Id$"
+__RCSID__   = "$Id$"
+
+from DIRAC.Core.Base import Script 
+
+Script.setUsageMessage("""
+Get the given file replica metadata from the File Catalog
+
+Usage:
+   %s <LFN | fileContainingLFNs> SE 
+""" % Script.scriptName)
+
+Script.parseCommandLine()
 
 from DIRAC import gLogger
-gLogger.setLevel( 'ALWAYS' )
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 import os, sys
 
 if not len( sys.argv ) == 3:
-  print 'Usage: ./dirac-dms-replica-metadata <lfn | fileContainingLfns> SE'
-  sys.exit()
+  Script.showHelp()
+  DIRAC.exit( -1 )
 else:
   inputFileName = sys.argv[1]
   storageElement = sys.argv[2]
@@ -29,7 +37,7 @@ else:
 rm = ReplicaManager()
 res = rm.getReplicaMetadata( lfns, storageElement )
 if not res['OK']:
-  print res['Message']
+  print 'Error:',res['Message']
 print '%s %s %s %s' % ( 'File'.ljust( 100 ), 'Migrated'.ljust( 8 ), 'Cached'.ljust( 8 ), 'Size (bytes)'.ljust( 10 ) )
 for lfn, metadata in res['Value']['Successful'].items():
   print '%s %s %s %s' % ( lfn.ljust( 100 ), str( metadata['Migrated'] ).ljust( 8 ), str( metadata['Cached'] ).ljust( 8 ), str( metadata['Size'] ).ljust( 10 ) )

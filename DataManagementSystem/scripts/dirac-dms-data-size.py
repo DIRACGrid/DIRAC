@@ -2,14 +2,23 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-__RCSID__ = "$Id$"
-import sys, os
+__RCSID__   = "$Id$"
+
+import sys,os
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.Core.Base import Script
 
 unit = 'GB'
-Script.registerSwitch( "u:", "Unit=", "   Unit to use [%s] (MB,GB,TB,PB)" % unit )
+Script.registerSwitch( "u:", "Unit=","   Unit to use [default %s] (MB,GB,TB,PB)" % unit)
+
+Script.setUsageMessage("""
+Get the size of the given file or a list of files
+
+Usage:
+   %s <lfn | fileContainingLfns> <SE> <status>
+""" % Script.scriptName)
+
 Script.parseCommandLine( ignoreErrors = False )
 for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "u" or switch[0].lower() == "unit":
@@ -45,12 +54,13 @@ for lfn, reason in res['Value']['Failed'].items():
   gLogger.error( "Failed to get size for %s" % lfn, reason )
 totalSize = 0
 totalFiles = 0
-for lfn, size in res['Value']['Successful'].items():
-  totalFiles += 1
-  totalSize += size
-gLogger.info( '-' * 30 )
-gLogger.info( '%s|%s' % ( 'Files'.ljust( 15 ), ( 'Size (%s)' % unit ).rjust( 15 ) ) )
-gLogger.info( '-' * 30 )
-gLogger.info( '%s|%s' % ( str( totalFiles ).ljust( 15 ), str( '%.1f' % ( totalSize / scaleFactor ) ).rjust( 15 ) ) )
-gLogger.info( '-' * 30 )
-DIRAC.exit( 0 )
+for lfn,size in res['Value']['Successful'].items():
+  totalFiles+=1
+  totalSize+=size
+gLogger.notice('-' * 30)
+gLogger.notice('%s|%s' % ('Files'.ljust(15),('Size (%s)' % unit).rjust(15))) 
+gLogger.notice('-' * 30)
+gLogger.notice('%s|%s' % (str(totalFiles).ljust(15),str('%.1f' % (totalSize/scaleFactor)).rjust(15)))
+gLogger.notice('-' * 30)
+DIRAC.exit(0)
+

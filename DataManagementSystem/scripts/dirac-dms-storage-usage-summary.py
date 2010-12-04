@@ -2,8 +2,8 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-__RCSID__ = "$Id$"
-import DIRAC
+__RCSID__   = "$Id$"
+
 from DIRAC.Core.Base import Script
 unit = 'TB'
 dir = ''
@@ -13,17 +13,25 @@ sites = []
 ses = []
 lcg = False
 full = False
-Script.registerSwitch( "u:", "Unit=", "   Unit to use [%s] (MB,GB,TB,PB)" % unit )
-Script.registerSwitch( "d:", "Dir=", "   Dir to search [ALL]" )
-Script.registerSwitch( "t:", "Type=", "   File type to search [ALL]" )
-Script.registerSwitch( "p:", "Prod=", "   Production ID to search [ALL] (space or comma seperated list)" )
-Script.registerSwitch( "g:", "Sites=", "  Sites to consider [ALL] (space or comma seperated list)" )
-Script.registerSwitch( "S:", "SEs=", "  SEs to consider [ALL] (space or comma seperated list)" )
-Script.registerSwitch( "l", "LCG", "  Group results by tape and disk" )
-Script.registerSwitch( "f", "Full", "  Output the directories matching selection" )
+Script.registerSwitch( "u:", "Unit=","   Unit to use [%s] (MB,GB,TB,PB)" % unit)
+Script.registerSwitch( "D:", "Dir=", "   Dir to search [ALL]")
+Script.registerSwitch( "t:", "Type=", "   File type to search [ALL]")
+Script.registerSwitch( "p:", "Prod=", "   Production ID to search [ALL] (space or comma seperated list)")
+Script.registerSwitch( "g:", "Sites=", "  Sites to consider [ALL] (space or comma seperated list)")
+Script.registerSwitch( "S:", "SEs=", "  SEs to consider [ALL] (space or comma seperated list)")
+Script.registerSwitch( "l", "LCG", "  Group results by tape and disk")
+Script.registerSwitch( "f", "Full", "  Output the directories matching selection")
+
+Script.setUsageMessage("""
+Get the storage usage summary for the given directories
+
+Usage: 
+  %s [<options>] 
+""" % Script.scriptName)
 
 Script.parseCommandLine( ignoreErrors = False )
 
+import DIRAC
 from DIRAC import gConfig
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import sortList
@@ -41,7 +49,7 @@ args = Script.getPositionalArgs()
 for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "u" or switch[0].lower() == "unit":
     unit = switch[1]
-  if switch[0].lower() == "d" or switch[0].lower() == "dir":
+  if switch[0] == "D" or switch[0].lower() == "dir":
     dir = switch[1]
   if switch[0].lower() == "t" or switch[0].lower() == "type":
     fileType = switch[1]

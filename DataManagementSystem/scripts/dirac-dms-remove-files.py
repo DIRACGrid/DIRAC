@@ -2,12 +2,23 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-__RCSID__ = "$Id$"
-import sys, os
+__RCSID__   = "$Id$"
+
+from DIRAC.Core.Base import Script
+
+Script.setUsageMessage("""
+Remove the given file or a list of files from the File Catalog and from the storage
+
+Usage:
+   %s <LFN | fileContainingLFNs>
+""" % Script.scriptName)
+
+Script.parseCommandLine()
+
+import sys,os
 import DIRAC
 from DIRAC import gLogger
-from DIRAC.Core.Base import Script
-Script.parseCommandLine()
+
 args = Script.getPositionalArgs()
 lfns = []
 for inputFileName in args:
@@ -36,7 +47,8 @@ for lfnList in breakListIntoChunks( lfns, 100 ):
     errorReasons[reason].append( lfn )
   successfullyRemoved += len( res['Value']['Successful'].keys() )
 
-for reason, lfns in errorReasons.items():
-  gLogger.info( "Failed to remove %d files with error: %s" % ( len( lfns ), reason ) )
-gLogger.info( "Successfully removed %d files" % successfullyRemoved )
-DIRAC.exit( 0 )
+for reason,lfns in errorReasons.items():
+  gLogger.notice("Failed to remove %d files with error: %s" % (len(lfns),reason))
+gLogger.notice("Successfully removed %d files" % successfullyRemoved)
+DIRAC.exit(0)
+

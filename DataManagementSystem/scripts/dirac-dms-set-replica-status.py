@@ -2,20 +2,27 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-__RCSID__ = "$Id$"
-import DIRAC
-from DIRAC.Core.Base                                                import Script
+__RCSID__   = "$Id$"
+
+from DIRAC.Core.Base import Script
+
+Script.setUsageMessage("""
+Set the status of the replicas of given files at the provided SE 
+
+Usage: 
+  %s [<options>] <lfn|fileContainingLFNs> SE Status
+""" % Script.scriptName)
+
 Script.parseCommandLine( ignoreErrors = False )
 
+import DIRAC
 from DIRAC                                                          import gConfig, gLogger
 from DIRAC.DataManagementSystem.Client.ReplicaManager               import ReplicaManager
 from DIRAC.Core.Utilities.List                                      import sortList
 import os
 
 def usage():
-  print 'Usage: %s [<options>] <lfn|fileContainingLFNs> SE Status' % ( Script.scriptName )
-  print ' This will set the status of the replicas at the provided SE with the given status'
-  print ' Type "%s --help" for the available options and syntax' % Script.scriptName
+  Script.showHelp()
   DIRAC.exit( 2 )
 
 args = Script.getPositionalArgs()
@@ -54,9 +61,10 @@ if not lfnDict:
 
 res = rm.setCatalogReplicaStatus( lfnDict )
 if not res['OK']:
-  gLogger.error( "Failed to set catalog replica status.", res['Message'] )
-  DIRAC.exit( -1 )
-for lfn, error in res['Value']['Failed'].items():
-  gLogger.error( "Failed to set replica status for file.", "%s:%s" % ( lfn, error ) )
-gLogger.info( "Successfully updated the status of %d files at %s." % ( len( res['Value']['Successful'].keys() ), storageElement ) )
-DIRAC.exit( 0 )
+  gLogger.error("Failed to set catalog replica status.",res['Message'])
+  DIRAC.exit(-1)
+for lfn,error in res['Value']['Failed'].items():
+  gLogger.error("Failed to set replica status for file.","%s:%s" % (lfn,error))
+gLogger.notice("Successfully updated the status of %d files at %s." % (len(res['Value']['Successful'].keys()),storageElement))
+DIRAC.exit(0)
+
