@@ -5,7 +5,6 @@
 # Author :  Stuart Paterson
 ########################################################################
 __RCSID__ = "$Id$"
-__VERSION__ = "$Revision: 1.1 $"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
