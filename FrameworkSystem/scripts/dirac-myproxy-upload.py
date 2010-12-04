@@ -27,7 +27,6 @@ class Params:
   def showVersion( self, arg ):
     print "Version:"
     print " ", __RCSID__
-    print " ", __VERSION__
     sys.exit( 0 )
     return DIRAC.S_OK()
 
