@@ -2,8 +2,7 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.3 $"
+__RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -11,17 +10,17 @@ read = True
 write = True
 site = ''
 
-Script.setUsageMessage("""
+Script.setUsageMessage( """
 Enable using one or more Storage Elements
 
 Usage:
    %s SE1 [SE2 ...]
-""" % Script.scriptName)
+""" % Script.scriptName )
 
-Script.registerSwitch( "r", "AllowRead","      Allow only reading from the storage element")
-Script.registerSwitch( "w", "AllowWrite","     Allow only writing to the storage element")
-Script.registerSwitch( "S:", "Site=", "        Allow all SEs associated to site")
-Script.parseCommandLine(ignoreErrors = True)
+Script.registerSwitch( "r", "AllowRead", "      Allow only reading from the storage element" )
+Script.registerSwitch( "w", "AllowWrite", "     Allow only writing to the storage element" )
+Script.registerSwitch( "S:", "Site=", "        Allow all SEs associated to site" )
+Script.parseCommandLine( ignoreErrors = True )
 
 ses = Script.getPositionalArgs()
 for switch in Script.getUnprocessedSwitches():
@@ -35,73 +34,73 @@ for switch in Script.getUnprocessedSwitches():
 from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
 from DIRAC.FrameworkSystem.Client.NotificationClient  import NotificationClient
 from DIRAC.Core.Security.Misc                         import getProxyInfo
-from DIRAC                                            import gConfig,gLogger
+from DIRAC                                            import gConfig, gLogger
 from DIRAC.Core.Utilities.List                        import intListToString
 csAPI = CSAPI()
 
 res = getProxyInfo()
 if not res['OK']:
-  gLogger.error("Failed to get proxy information",res['Message'])
-  DIRAC.exit(2)
+  gLogger.error( "Failed to get proxy information", res['Message'] )
+  DIRAC.exit( 2 )
 userName = res['Value']['username']
 group = res['Value']['group']
 
-if not type(ses) == type([]):
+if not type( ses ) == type( [] ):
   Script.showHelp()
   DIRAC.exit( -1 )
-  
+
 if site:
-  res = gConfig.getOptionsDict('/Resources/Sites/LCG/%s' % site)
+  res = gConfig.getOptionsDict( '/Resources/Sites/LCG/%s' % site )
   if not res['OK']:
-    gLogger.error("The provided site (%s) is not known." % site)
-    DIRAC.exit(-1) 
-  ses.extend(res['Value']['SE'].replace(' ','').split(','))
+    gLogger.error( "The provided site (%s) is not known." % site )
+    DIRAC.exit( -1 )
+  ses.extend( res['Value']['SE'].replace( ' ', '' ).split( ',' ) )
 if not ses:
-  gLogger.error("There were no SEs provided")
+  gLogger.error( "There were no SEs provided" )
   DIRAC.exit()
 
 readAllowed = []
 writeAllowed = []
 storageCFGBase = "/Resources/StorageElements"
 for se in ses:
-  res = gConfig.getOptionsDict("%s/%s" % (storageCFGBase,se))
+  res = gConfig.getOptionsDict( "%s/%s" % ( storageCFGBase, se ) )
   if not res['OK']:
-    gLogger.error("Storage Element %s does not exist" % se)
+    gLogger.error( "Storage Element %s does not exist" % se )
     continue
   if read:
-    res = csAPI.setOption("%s/%s/ReadAccess" % (storageCFGBase,se),"Active")
+    res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "Active" )
     if not res['OK']:
-      gLogger.error("Failed to update %s read access to Active" % se)
+      gLogger.error( "Failed to update %s read access to Active" % se )
     else:
-      gLogger.debug("Successfully updated %s read access to Active" % se)
-      readAllowed.append(se)
+      gLogger.debug( "Successfully updated %s read access to Active" % se )
+      readAllowed.append( se )
   if write:
-    res = csAPI.setOption("%s/%s/WriteAccess" % (storageCFGBase,se),"Active")
+    res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "Active" )
     if not res['OK']:
-      gLogger.error("Failed to update %s write access to Active" % se)
+      gLogger.error( "Failed to update %s write access to Active" % se )
     else:
-      gLogger.debug("Successfully updated %s write access to Active" % se)
-      writeAllowed.append(se)
+      gLogger.debug( "Successfully updated %s write access to Active" % se )
+      writeAllowed.append( se )
 res = csAPI.commitChanges()
 if not res['OK']:
-  gLogger.error("Failed to commit changes to CS",res['Message'])
-  DIRAC.exit(-1)
+  gLogger.error( "Failed to commit changes to CS", res['Message'] )
+  DIRAC.exit( -1 )
 
-if not (writeAllowed or readAllowed):
-  gLogger.info("No storage elements were allowed")
-  DIRAC.exit(-1)
+if not ( writeAllowed or readAllowed ):
+  gLogger.info( "No storage elements were allowed" )
+  DIRAC.exit( -1 )
 
-subject = '%s storage elements allowed for use' % len(ses)
-address = gConfig.getValue('/Operations/EMail/Production','lhcb-grid@cern.ch')
+subject = '%s storage elements allowed for use' % len( ses )
+address = gConfig.getValue( '/Operations/EMail/Production', 'lhcb-grid@cern.ch' )
 body = ''
 if read:
   body = "%s\n\nThe following storage elements were allowed for reading:" % body
   for se in readAllowed:
-    body = "%s\n%s" % (body,se)
+    body = "%s\n%s" % ( body, se )
 if write:
   body = "%s\n\nThe following storage elements were allowed for writing:" % body
   for se in writeAllowed:
-    body = "%s\n%s" % (body,se)
+    body = "%s\n%s" % ( body, se )
 
-NotificationClient().sendMail(address,subject,body,'%s@cern.ch' % userName)
-DIRAC.exit(0)
+NotificationClient().sendMail( address, subject, body, '%s@cern.ch' % userName )
+DIRAC.exit( 0 )
