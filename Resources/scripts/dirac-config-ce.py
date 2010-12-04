@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-config-ce
-# Author : Ricardo Graciani
+# File :    dirac-config-ce
+# Author :  Ricardo Graciani
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -26,7 +25,7 @@ def setCEName( args ):
 def setCEType( args ):
   global ceType
   ceType = args
-  
+
 def setDirector( args ):
   global setupDirector
   setupDirector = True
@@ -50,10 +49,9 @@ from DIRAC.Core.Utilities import InstallTools
 result = InstallTools.configureCE( ceName, ceType, cfg, Script.localCfg.currentSectionPath )
 if not result['OK']:
   Script.showHelp()
-  DIRAC.exit(-1)
+  DIRAC.exit( -1 )
 
 ceNameList = result['Value']
 
 if setupDirector:
   print InstallTools.configureLocalDirector( ceNameList )
-    
