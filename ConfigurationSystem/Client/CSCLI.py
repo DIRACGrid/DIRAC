@@ -4,7 +4,6 @@
 # Author : Adria Casajus
 ########################################################################
 __RCSID__ = "$Id$"
-__VERSION__ = "$Revision: 1.5 $"
 
 import cmd
 import sys
