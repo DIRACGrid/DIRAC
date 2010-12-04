@@ -1,10 +1,9 @@
 ########################################################################
 # $HeadURL$
-# File :   dirac-proxy-init.py
-# Author : Adrian Casajus
+# File :    dirac-proxy-init.py
+# Author :  Adrian Casajus
 ###########################################################from DIRAC.Core.Base import Script#############
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.1 $"
+__RCSID__ = "$Id$"
 
 import sys
 import getpass
@@ -25,7 +24,7 @@ class CLIParams:
 
   def setProxyLifeTime( self, arg ):
     try:
-      fields = [ f.strip() for f in arg.split(":") ]
+      fields = [ f.strip() for f in arg.split( ":" ) ]
       self.proxyLifeTime = int( fields[0] ) * 3600 + int( fields[1] ) * 60
     except:
       print "Can't parse %s time! Is it a HH:MM?" % arg
@@ -80,7 +79,7 @@ class CLIParams:
     print "Version:"
     print " ", __RCSID__
     print " ", __VERSION__
-    sys.exit(0)
+    sys.exit( 0 )
     return DIRAC.S_OK()
 
   def debugMsg( self, msg ):
@@ -95,7 +94,7 @@ class CLIParams:
     Script.registerSwitch( "K:", "Key=", "File to use as user key", self.setKeyLocation )
     Script.registerSwitch( "P:", "Proxy=", "File to use as proxy", self.setProxyLocation )
     Script.registerSwitch( "f", "onthefly", "Generate a proxy on the fly", self.setOnTheFly )
-    Script.registerSwitch( "p",  "pwstdin", "Get passwd from stdin", self.setStdinPasswd )
+    Script.registerSwitch( "p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd )
     Script.registerSwitch( "i", "version", "Print version", self.showVersion )
     Script.addDefaultOptionValue( "LogLevel", "always" )
 
@@ -138,7 +137,7 @@ def uploadProxy( params ):
     if not retVal[ 'OK' ]:
       passwdPrompt = "Enter Certificate password:"
       if params.stdinPasswd:
-        userPasswd = sys.stdin.readline().strip("\n")
+        userPasswd = sys.stdin.readline().strip( "\n" )
       else:
         userPasswd = getpass.getpass( passwdPrompt )
       params.userPasswd = userPasswd
