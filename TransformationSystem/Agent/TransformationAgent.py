@@ -1,7 +1,7 @@
 ########################################################################
-# $HeadURL:  $
+# $HeadURL$
 ########################################################################
-__RCSID__ = "$Id:  $"
+__RCSID__ = "$Id$"
 """  TransformationAgent processes transformations found in the transformation database. """
 
 from DIRAC                                                      import gLogger, S_OK, S_ERROR
@@ -17,7 +17,12 @@ class TransformationAgent( AgentModule ):
   def initialize( self ):
     self.pluginLocation = self.am_getOption( 'PluginLocation', 'DIRAC.TransformationSystem.Agent.TransformationPlugin' )
     self.checkCatalog = self.am_getOption( 'CheckCatalog', 'yes' )
-    self.am_setModuleParam( "shifterProxy", "ProductionManager" )
+
+    # This sets the Default Proxy to used as that defined under
+    # /Operations/Shifter/ProductionManager
+    # the shifterProxy option in the Configuration can be used to change this default.
+    self.am_setOption( 'shifterProxy', 'ProductionManager' )
+
     self.transDB = TransformationClient( 'TransformationDB' )
     self.rm = ReplicaManager()
     return S_OK()
