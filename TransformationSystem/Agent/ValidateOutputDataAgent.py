@@ -2,7 +2,6 @@
 # $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/LHCbDIRAC/trunk/LHCbDIRAC/TransformationSystem/Agent/ValidateOutputDataAgent.py $
 ########################################################################
 __RCSID__ = "$Id: ValidateOutputDataAgent.py 28415 2010-09-15 17:47:54Z acsmith $"
-__VERSION__ = "$Revision: 1.5 $"
 
 from DIRAC                                                     import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
 from DIRAC.Core.Base.AgentModule                               import AgentModule
@@ -11,13 +10,13 @@ from DIRAC.Core.Utilities.Shifter                              import setupShift
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient     import DataIntegrityClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager          import ReplicaManager
 from DIRAC.DataManagementSystem.Client.StorageUsageClient      import StorageUsageClient
-from DIRAC.Resources.Catalog.FileCatalogClient                 import FileCatalogClient 
+from DIRAC.Resources.Catalog.FileCatalogClient                 import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient    import TransformationClient
 import re, os
 
 AGENT_NAME = 'Transformation/ValidateOutputDataAgent'
 
-class ValidateOutputDataAgent(AgentModule):
+class ValidateOutputDataAgent( AgentModule ):
 
   #############################################################################
   def initialize( self ):
@@ -30,14 +29,14 @@ class ValidateOutputDataAgent(AgentModule):
     self.fileCatalogClient = FileCatalogClient()
     self.am_setModuleParam( "shifterProxy", "DataManager" )
     self.am_setModuleParam( "shifterProxyLocation", "%s/runit/%s/proxy" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), AGENT_NAME ) )
-    self.transformationTypes = sortList(self.am_getOption('TransformationTypes', ['MCSimulation', 'DataReconstruction', 'DataStripping', 'MCStripping', 'Merge']))
-    gLogger.info("Will treat the following transformation types: %s" % str(self.transformationTypes))
-    self.directoryLocations = sortList(self.am_getOption('DirectoryLocations',['TransformationDB','StorageUsage','MetadataCatalog']))
-    gLogger.info("Will search for directories in the following locations: %s" % str(self.directoryLocations))
-    self.activeStorages = sortList(self.am_getOption('ActiveSEs',[]))
-    gLogger.info("Will check the following storage elements: %s" % str(self.activeStorages))
-    self.transfidmeta = self.am_getOption('TransfIDMeta',"TransformationID")
-    gLogger.info("Will use %s as metadata tag name for TransformationID"%self.transfidmeta)
+    self.transformationTypes = sortList( self.am_getOption( 'TransformationTypes', ['MCSimulation', 'DataReconstruction', 'DataStripping', 'MCStripping', 'Merge'] ) )
+    gLogger.info( "Will treat the following transformation types: %s" % str( self.transformationTypes ) )
+    self.directoryLocations = sortList( self.am_getOption( 'DirectoryLocations', ['TransformationDB', 'StorageUsage', 'MetadataCatalog'] ) )
+    gLogger.info( "Will search for directories in the following locations: %s" % str( self.directoryLocations ) )
+    self.activeStorages = sortList( self.am_getOption( 'ActiveSEs', [] ) )
+    gLogger.info( "Will check the following storage elements: %s" % str( self.activeStorages ) )
+    self.transfidmeta = self.am_getOption( 'TransfIDMeta', "TransformationID" )
+    gLogger.info( "Will use %s as metadata tag name for TransformationID" % self.transfidmeta )
     return S_OK()
 
   #############################################################################
@@ -52,7 +51,7 @@ class ValidateOutputDataAgent(AgentModule):
     self.updateWaitingIntegrity()
     gLogger.info( "-" * 40 )
 
-    res = self.transClient.getTransformations({'Status':'ValidatingOutput','Type':self.transformationTypes})
+    res = self.transClient.getTransformations( {'Status':'ValidatingOutput', 'Type':self.transformationTypes} )
     if not res['OK']:
       gLogger.error( "Failed to get ValidatingOutput transformations", res['Message'] )
       return res
@@ -63,17 +62,17 @@ class ValidateOutputDataAgent(AgentModule):
     gLogger.info( "Found %s transformations in ValidatingOutput status" % len( transDicts ) )
     for transDict in transDicts:
       transID = transDict['TransformationID']
-      res = self.checkTransformationIntegrity(int(transID))
+      res = self.checkTransformationIntegrity( int( transID ) )
       if not res['OK']:
         gLogger.error( "Failed to perform full integrity check for transformation %d" % transID )
       else:
-        self.finalizeCheck(transID)
+        self.finalizeCheck( transID )
         gLogger.info( "-" * 40 )
     return S_OK()
 
-  def updateWaitingIntegrity(self):
+  def updateWaitingIntegrity( self ):
     gLogger.info( "Looking for transformations in the WaitingIntegrity status to update" )
-    res = self.transClient.getTransformations({'Status':'WaitingIntegrity'})
+    res = self.transClient.getTransformations( {'Status':'WaitingIntegrity'} )
     if not res['OK']:
       gLogger.error( "Failed to get WaitingIntegrity transformations", res['Message'] )
       return res
@@ -85,17 +84,17 @@ class ValidateOutputDataAgent(AgentModule):
     for transDict in transDicts:
       transID = transDict['TransformationID']
       gLogger.info( "-" * 40 )
-      res = self.integrityClient.getTransformationProblematics(int(transID))
+      res = self.integrityClient.getTransformationProblematics( int( transID ) )
       if not res['OK']:
-        gLogger.error("Failed to determine waiting problematics for transformation", res['Message'])
+        gLogger.error( "Failed to determine waiting problematics for transformation", res['Message'] )
       elif not res['Value']:
-        res = self.transClient.setTransformationParameter(transID,'Status','ValidatedOutput')
+        res = self.transClient.setTransformationParameter( transID, 'Status', 'ValidatedOutput' )
         if not res['OK']:
-          gLogger.error("Failed to update status of transformation %s to ValidatedOutput" % (transID))
+          gLogger.error( "Failed to update status of transformation %s to ValidatedOutput" % ( transID ) )
         else:
-          gLogger.info("Updated status of transformation %s to ValidatedOutput" % (transID))
+          gLogger.info( "Updated status of transformation %s to ValidatedOutput" % ( transID ) )
       else:
-        gLogger.info("%d problematic files for transformation %s were found" % (len(res['Value']), transID))
+        gLogger.info( "%d problematic files for transformation %s were found" % ( len( res['Value'] ), transID ) )
     return
 
   #############################################################################
@@ -103,64 +102,64 @@ class ValidateOutputDataAgent(AgentModule):
   # Get the transformation directories for checking
   #
 
-  def getTransformationDirectories(self,transID):
+  def getTransformationDirectories( self, transID ):
     """ Get the directories for the supplied transformation from the transformation system """
     directories = []
     if 'TransformationDB' in self.directoryLocations:
-      res = self.transClient.getTransformationParameters(transID,['OutputDirectories'])
+      res = self.transClient.getTransformationParameters( transID, ['OutputDirectories'] )
       if not res['OK']:
-        gLogger.error("Failed to obtain transformation directories",res['Message'])
+        gLogger.error( "Failed to obtain transformation directories", res['Message'] )
         return res
       transDirectories = res['Value'].splitlines()
-      directories = self.__addDirs(transID,transDirectories,directories)
+      directories = self.__addDirs( transID, transDirectories, directories )
 
     if 'StorageUsage' in self.directoryLocations:
-      res = self.storageUsageClient.getStorageDirectories('','',transID,[])
+      res = self.storageUsageClient.getStorageDirectories( '', '', transID, [] )
       if not res['OK']:
-        gLogger.error("Failed to obtain storage usage directories",res['Message'])
+        gLogger.error( "Failed to obtain storage usage directories", res['Message'] )
         return res
       transDirectories = res['Value']
-      directories = self.__addDirs(transID,transDirectories,directories)
-      
-    if 'MetadataCatalog' in self.directoryLocations:   
-      res = self.fileCatalogClient.findDirectoriesByMetadata({self.transfidmeta:transID})
-      if not res['OK']:
-        gLogger.error("Failed to obtain metadata catalog directories",res['Message'])
-        return res
-      transDirectories = res['Value']
-      directories = self.__addDirs(transID,transDirectories,directories)
-    if not directories:
-      gLogger.info("No output directories found")
-    directories = sortList(directories)
-    return S_OK(directories)
+      directories = self.__addDirs( transID, transDirectories, directories )
 
-  def __addDirs(self,transID,newDirs,existingDirs):
+    if 'MetadataCatalog' in self.directoryLocations:
+      res = self.fileCatalogClient.findDirectoriesByMetadata( {self.transfidmeta:transID} )
+      if not res['OK']:
+        gLogger.error( "Failed to obtain metadata catalog directories", res['Message'] )
+        return res
+      transDirectories = res['Value']
+      directories = self.__addDirs( transID, transDirectories, directories )
+    if not directories:
+      gLogger.info( "No output directories found" )
+    directories = sortList( directories )
+    return S_OK( directories )
+
+  def __addDirs( self, transID, newDirs, existingDirs ):
     for dir in newDirs:
-      transStr = str(transID).zfill(8)
-      if re.search(transStr,dir):
+      transStr = str( transID ).zfill( 8 )
+      if re.search( transStr, dir ):
         if not dir in existingDirs:
-          existingDirs.append(dir)
+          existingDirs.append( dir )
     return existingDirs
 
   #############################################################################
-  def checkTransformationIntegrity(self, transID):
+  def checkTransformationIntegrity( self, transID ):
     """ This method contains the real work """
     gLogger.info( "-" * 40 )
     gLogger.info( "Checking the integrity of transformation %s" % transID )
     gLogger.info( "-" * 40 )
 
-    res = self.getTransformationDirectories(transID)
+    res = self.getTransformationDirectories( transID )
     if not res['OK']:
       return res
     directories = res['Value']
     if not directories:
       return S_OK()
-    
+
     ######################################################
     #
     # This check performs Catalog->SE for possible output directories
     #
-    res = self.replicaManager.getCatalogExists(directories)
+    res = self.replicaManager.getCatalogExists( directories )
     if not res['OK']:
       gLogger.error( res['Message'] )
       return res
@@ -181,32 +180,32 @@ class ValidateOutputDataAgent(AgentModule):
     #
     # This check performs SE->Catalog for possible output directories
     #
-    for storageElementName in sortList(self.activeStorages):
-      res = self.integrityClient.storageDirectoryToCatalog(directories,storageElementName)
+    for storageElementName in sortList( self.activeStorages ):
+      res = self.integrityClient.storageDirectoryToCatalog( directories, storageElementName )
       if not res['OK']:
         gLogger.error( res['Message'] )
         return res
 
     gLogger.info( "-" * 40 )
-    gLogger.info( "Completed integrity check for transformation %s" % transID)
+    gLogger.info( "Completed integrity check for transformation %s" % transID )
     return S_OK()
 
-  def finalizeCheck(self,transID):
-    res = self.integrityClient.getTransformationProblematics(int(transID))
+  def finalizeCheck( self, transID ):
+    res = self.integrityClient.getTransformationProblematics( int( transID ) )
     if not res['OK']:
-      gLogger.error("Failed to determine whether there were associated problematic files",res['Message'])
+      gLogger.error( "Failed to determine whether there were associated problematic files", res['Message'] )
       newStatus = ''
     elif res['Value']:
-      gLogger.info( "%d problematic files for transformation %s were found" % (len(res['Value'] ),transID))
+      gLogger.info( "%d problematic files for transformation %s were found" % ( len( res['Value'] ), transID ) )
       newStatus = "WaitingIntegrity"
     else:
-      gLogger.info("No problematics were found for transformation %s" % transID)
+      gLogger.info( "No problematics were found for transformation %s" % transID )
       newStatus = "ValidatedOutput"
     if newStatus:
-      res = self.transClient.setTransformationParameter(transID,'Status',newStatus)
+      res = self.transClient.setTransformationParameter( transID, 'Status', newStatus )
       if not res['OK']:
-        gLogger.error("Failed to update status of transformation %s to %s" % (transID,newStatus))
+        gLogger.error( "Failed to update status of transformation %s to %s" % ( transID, newStatus ) )
       else:
-        gLogger.info( "Updated status of transformation %s to %s" % (transID,newStatus))
+        gLogger.info( "Updated status of transformation %s to %s" % ( transID, newStatus ) )
     gLogger.info( "-" * 40 )
     return S_OK()
