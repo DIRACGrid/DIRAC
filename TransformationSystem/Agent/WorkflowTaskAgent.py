@@ -19,7 +19,11 @@ class WorkflowTaskAgent( TaskManagerAgentBase, WorkflowTasks ):
     """ Sets defaults """
     TaskManagerAgentBase.initialize( self )
     WorkflowTasks.__init__( self )
-    self.transType = self.am_getOption("TransType",['MCSimulation', 'DataReconstruction', 'DataStripping', 'MCStripping', 'Merge'])
-    self.am_setModuleParam( 'shifterProxy', 'ProductionManager' )
-    self.am_setModuleParam( "shifterProxyLocation", "%s/runit/%s/proxy" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), AGENT_NAME ) )
+    self.transType = self.am_getOption( "TransType", ['MCSimulation', 'DataReconstruction', 'DataStripping', 'MCStripping', 'Merge'] )
+
+    # This sets the Default Proxy to used as that defined under 
+    # /Operations/Shifter/ProductionManager
+    # the shifterProxy option in the Configuration can be used to change this default.
+    self.am_setOption( 'shifterProxy', 'ProductionManager' )
+
     return S_OK()
