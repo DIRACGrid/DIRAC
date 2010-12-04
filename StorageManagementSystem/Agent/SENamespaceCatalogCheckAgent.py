@@ -1,14 +1,13 @@
 ########################################################################
-# $HeadURL: /tmp/libdirac/tmp.FKduyw2449/dirac/DIRAC3/DIRAC/StorageManagementSystem/Agent/SENamespaceCatalogCheck.py,v 1.1 2009/11/03 10:24:20 acsmith Exp $
+# $HeadURL$
 ########################################################################
-__RCSID__ = "$Id: SENamespaceCatalogCheck.py,v 1.1 2009/11/03 10:24:20 acsmith Exp $"
+__RCSID__ = "$Id$"
 __VERSION__ = "$Revision: 1.1 $"
 
 from DIRAC                                                     import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
 from DIRAC.Core.Base.AgentModule                               import AgentModule
 from DIRAC.DataManagementSystem.Client.ReplicaManager          import ReplicaManager
 from DIRAC.Core.Utilities.List                                 import sortList, breakListIntoChunks
-from DIRAC.Core.Utilities.Shifter                              import setupShifterProxyInEnv
 from datetime                                                  import datetime, timedelta
 
 import re, os, urllib2
@@ -23,8 +22,12 @@ class SENamespaceCatalogCheckAgent( AgentModule ):
     """Sets defaults
     """
     self.replicaManager = ReplicaManager()
-    self.am_setModuleParam( "shifterProxy", "DataManager" )
-    self.am_setModuleParam( "shifterProxyLocation", "%s/runit/%s/proxy" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), AGENT_NAME ) )
+
+    # This sets the Default Proxy to used as that defined under 
+    # /Operations/Shifter/DataManager
+    # the shifterProxy option in the Configuration can be used to change this default.
+    self.am_setOption( 'shifterProxy', 'DataManager' )
+
     return S_OK()
 
   #############################################################################
