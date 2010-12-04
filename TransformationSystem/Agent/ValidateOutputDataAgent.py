@@ -6,7 +6,6 @@ __RCSID__ = "$Id: ValidateOutputDataAgent.py 28415 2010-09-15 17:47:54Z acsmith 
 from DIRAC                                                     import S_OK, S_ERROR, gConfig, gMonitor, gLogger, rootPath
 from DIRAC.Core.Base.AgentModule                               import AgentModule
 from DIRAC.Core.Utilities.List                                 import sortList
-from DIRAC.Core.Utilities.Shifter                              import setupShifterProxyInEnv
 from DIRAC.DataManagementSystem.Client.DataIntegrityClient     import DataIntegrityClient
 from DIRAC.DataManagementSystem.Client.ReplicaManager          import ReplicaManager
 from DIRAC.DataManagementSystem.Client.StorageUsageClient      import StorageUsageClient
@@ -27,8 +26,12 @@ class ValidateOutputDataAgent( AgentModule ):
     self.transClient = TransformationClient()
     self.storageUsageClient = StorageUsageClient()
     self.fileCatalogClient = FileCatalogClient()
-    self.am_setModuleParam( "shifterProxy", "DataManager" )
-    self.am_setModuleParam( "shifterProxyLocation", "%s/runit/%s/proxy" % ( gConfig.getValue( '/LocalSite/InstancePath', rootPath ), AGENT_NAME ) )
+
+    # This sets the Default Proxy to used as that defined under 
+    # /Operations/Shifter/DataManager
+    # the shifterProxy option in the Configuration can be used to change this default.
+    self.am_setOption( 'shifterProxy', 'DataManager' )
+
     self.transformationTypes = sortList( self.am_getOption( 'TransformationTypes', ['MCSimulation', 'DataReconstruction', 'DataStripping', 'MCStripping', 'Merge'] ) )
     gLogger.info( "Will treat the following transformation types: %s" % str( self.transformationTypes ) )
     self.directoryLocations = sortList( self.am_getOption( 'DirectoryLocations', ['TransformationDB', 'StorageUsage', 'MetadataCatalog'] ) )
