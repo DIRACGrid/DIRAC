@@ -1,11 +1,13 @@
 ########################################################################
 # $HeadURL$
-
-
-"""  SuperOptimizer
- One optimizer to rule them all, one optimizer to find them, one optimizer to bring them all, and in the darkness bind them.
+# File :   ThreadedMightyOptimizer.py
+# Author : Adria Casajus
+########################################################################
 """
-
+  SuperOptimizer
+  One optimizer to rule them all, one optimizer to find them, 
+  one optimizer to bring them all, and in the darkness bind them.
+"""
 __RCSID__ = "$Id$"
 
 import time
@@ -23,6 +25,15 @@ from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 gOptimizerLoadSync = ThreadSafe.Synchronizer()
 
 class ThreadedMightyOptimizer( AgentModule ):
+  """
+      The specific agents must provide the following methods:
+      - initialize() for initial settings
+      - beginExecution()
+      - execute() - the main method called in the agent cycle
+      - endExecution()
+      - finalize() - the graceful exit of the method, this one is usually used
+                 for the agent restart
+  """
 
   __jobStates = [ 'Received', 'Checking' ]
   __defaultValidOptimizers = [ 'WorkloadManagement/JobPath',
@@ -43,6 +54,8 @@ class ThreadedMightyOptimizer( AgentModule ):
     return S_OK()
 
   def execute( self ):
+    """ Standard Agent module execute method
+    """
     #Get jobs from DB
     result = self.jobDB.selectJobs( { 'Status': self.__jobStates  } )
     if not result[ 'OK' ]:
@@ -73,6 +86,8 @@ class ThreadedMightyOptimizer( AgentModule ):
     return S_OK()
 
   def __dispatchJob( self, jobId, jobAttrs, jobDef, keepOptimizing = True ):
+    """ Decide what to do with the Job
+    """
     returnValue = S_OK()
     if keepOptimizing:
       result = self.__sendJobToOptimizer( jobId, jobAttrs, jobDef )
@@ -87,6 +102,8 @@ class ThreadedMightyOptimizer( AgentModule ):
     return returnValue
 
   def __sendJobToOptimizer( self, jobId, jobAttrs, jobDef ):
+    """ Send Job to Optimizer queue
+    """
     optimizerName = self.__getNextOptimizerName( jobAttrs )
     if not optimizerName:
       return S_OK( False )
@@ -103,6 +120,8 @@ class ThreadedMightyOptimizer( AgentModule ):
     return S_OK( True )
 
   def __getNextOptimizerName( self, jobAttrs ):
+    """ Determine next Optimizer
+    """
     if jobAttrs[ 'Status' ] == 'Received':
       optList = "JobPath"
     elif jobAttrs[ 'Status' ] == 'Checking':
