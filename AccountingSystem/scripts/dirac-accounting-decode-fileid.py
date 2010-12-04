@@ -1,8 +1,13 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
+# $HeadURL: svn+ssh://svn.cern.ch/reps/dirac/DIRAC/trunk/DIRAC/AccountingSystem/scripts/dirac-accounting-decode-fileid.py $
+# File :    dirac-accounting-decode-fileid
+# Author :  Adria Casajus
 ########################################################################
-__RCSID__ = "$Id$"
+"""
+  Decode Accounting plot URLs
+"""
+__RCSID__ = "$Id: dirac-accounting-decode-fileid.py 31037 2010-11-30 15:06:46Z acasajus $"
 
 import pprint
 import sys
@@ -12,6 +17,11 @@ from DIRAC import gLogger
 from DIRAC.Core.Base import Script
 from DIRAC.AccountingSystem.private.FileCoding import extractRequestFromFileId
 
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... URL ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  URL: encoded URL of a DIRAC Accounting plot'] ) )
 Script.parseCommandLine()
 
 fileIds = Script.getPositionalArgs()
