@@ -1,6 +1,6 @@
-# $HeadURL: /tmp/libdirac/tmp.FKduyw2449/dirac/DIRAC3/DIRAC/StorageManagementSystem/Agent/RequestPreparation.py,v 1.2 2009/10/30 22:03:03 acsmith Exp $
+# $HeadURL$
 
-__RCSID__ = "$Id: RequestPreparation.py,v 1.2 2009/10/30 22:03:03 acsmith Exp $"
+__RCSID__ = "$Id$"
 
 from DIRAC import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 
@@ -21,11 +21,11 @@ class RequestPreparationAgent( AgentModule ):
     self.stagerClient = StorageManagerClient()
     self.dataIntegrityClient = DataIntegrityClient()
 
-    proxyLocation = self.am_getOption( 'ProxyLocation', '' )
-    if not proxyLocation:
-      proxyLocation = False
-    self.am_setModuleParam( 'shifterProxy', 'DataManager' )
-    self.am_setModuleParam( 'shifterProxyLocation', proxyLocation )
+    # This sets the Default Proxy to used as that defined under 
+    # /Operations/Shifter/DataManager
+    # the shifterProxy option in the Configuration can be used to change this default.
+    self.am_setOption( 'shifterProxy', 'DataManager' )
+
     return S_OK()
 
   def execute( self ):
