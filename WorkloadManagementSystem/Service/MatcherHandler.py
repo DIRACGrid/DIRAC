@@ -158,9 +158,8 @@ class MatcherHandler( RequestHandler ):
     extraConditions = {}
     if self.siteJobLimits:
       result = self.getExtraConditions( siteName )
-      if not result['OK']:
-        return result
-      extraConditions = result['Value']
+      if result['OK']:
+        extraConditions = result['Value']
     if extraConditions:
       gLogger.info( 'Job Limits for site %s are: %s' % ( siteName, str( extraConditions ) ) )
 
@@ -245,20 +244,20 @@ class MatcherHandler( RequestHandler ):
     # Check if the site exceeding the given limits
     fields = limitDict.keys()
     for field in fields:
-      for key, value in limitDict[field]:
-        result = jobDB.getCounters( 'Jobs', ['Status'], {'Site':site, field:key} )
+      for key,value in limitDict[field]:
+        result = jobDB.getCounters('Jobs',['Status'],{'Site':site,field:key})
         if not result['OK']:
           return result
         count = 0
         if result['Value']:
-          for countDict, number in result['Value']:
-            if countDict['Status'] == "Running":
-              count = number
-              break
+          for countDict,number in result['Value']:
+            if countDict['Status'] in ["Running","Matched"]:
+              count += number
         if count > value:
-          if not resultDict.has_key( field ):
+          if not resultDict.has_key(field):
             resultDict[field] = []
-          resultDict[field].append( key )
+          resultDict[field].append(key)
+          gLogger.verbose('Job Limit imposed at %s on %s/%s/%d, %d jobs already deployed' % (site,field,key,value,count) )
 
     return S_OK( resultDict )
 
