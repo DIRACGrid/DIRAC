@@ -1,208 +1,208 @@
 ########################################################################
-# $Id: FileManager.py 22623 2010-03-09 19:54:25Z acsmith $
+# $Id$
 ########################################################################
 
-__RCSID__ = "$Id: FileManager.py 22623 2010-03-09 19:54:25Z acsmith $"
+__RCSID__ = "$Id$"
 
-from DIRAC                                  import S_OK,S_ERROR,gLogger
+from DIRAC                                  import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.List              import stringListToString, intListToString, sortList
 from DIRAC.Core.Utilities.Pfn               import pfnparse, pfnunparse
 
-import time,os
+import time, os
 from types import *
 
 
 class FileManagerBase:
 
-  def __init__(self,database=None):
+  def __init__( self, database = None ):
     self.db = database
 
-  def _getConnection(self,connection):
+  def _getConnection( self, connection ):
     if connection:
       return connection
     res = self.db._getConnection()
     if res['OK']:
       return res['Value']
-    gLogger.warn("Failed to get MySQL connection",res['Message'])
+    gLogger.warn( "Failed to get MySQL connection", res['Message'] )
     return connection
 
-  def setDatabase(self,database):
-    self.db = database  
-    
-  def getFileCounters(self,connection=False):
-    connection = self._getConnection(connection)
+  def setDatabase( self, database ):
+    self.db = database
+
+  def getFileCounters( self, connection = False ):
+    connection = self._getConnection( connection )
     req = "SELECT COUNT(*) FROM FC_Files;"
-    res = self.db._query(req,connection)
+    res = self.db._query( req, connection )
     if not res['OK']:
       return res
-    return S_OK({'FC_Files':res['Value'][0][0]})
-  
-  def getReplicaCounters(self,connection=False):
-    connection = self._getConnection(connection)
+    return S_OK( {'FC_Files':res['Value'][0][0]} )
+
+  def getReplicaCounters( self, connection = False ):
+    connection = self._getConnection( connection )
     req = "SELECT COUNT(*) FROM FC_Replicas;"
-    res = self.db._query(req,connection)
+    res = self.db._query( req, connection )
     if not res['OK']:
       return res
-    return S_OK({'FC_Replicas':res['Value'][0][0]})
-  
+    return S_OK( {'FC_Replicas':res['Value'][0][0]} )
+
   ######################################################
   #
   # File write methods
   #
 
-  def addFile(self,lfns,credDict,connection=False):
-    connection = self._getConnection(connection)
-    """ Add files to the catalog """  
+  def addFile( self, lfns, credDict, connection = False ):
+    connection = self._getConnection( connection )
+    """ Add files to the catalog """
     successful = {}
     failed = {}
-    for lfn,info in lfns.items():
-      res = self._checkInfo(info,['PFN','SE','Size','Checksum'])
+    for lfn, info in lfns.items():
+      res = self._checkInfo( info, ['PFN', 'SE', 'Size', 'Checksum'] )
       if not res['OK']:
         failed[lfn] = res['Message']
-        lfns.pop(lfn)
-    res = self._addFiles(lfns,credDict,connection=connection)
+        lfns.pop( lfn )
+    res = self._addFiles( lfns, credDict, connection = connection )
     if not res['OK']:
       for lfn in lfns.keys():
         failed[lfn] = res['Message']
     else:
-      failed.update(res['Value']['Failed'])    
-      successful.update(res['Value']['Successful'])
-    return S_OK({'Successful':successful,'Failed':failed})
-  
-  def _addFiles(self,lfns,credDict,connection=False):
-    connection = self._getConnection(connection)
+      failed.update( res['Value']['Failed'] )
+      successful.update( res['Value']['Successful'] )
+    return S_OK( {'Successful':successful, 'Failed':failed} )
+
+  def _addFiles( self, lfns, credDict, connection = False ):
+    connection = self._getConnection( connection )
     successful = {}
-    result = self.db.ugManager.getUserAndGroupID(credDict)
+    result = self.db.ugManager.getUserAndGroupID( credDict )
     if not result['OK']:
       return result
     uid, gid = result['Value']
     # Check whether the supplied files have been registered already
-    existingMetadata,failed = self._getExistingMetadata(lfns.keys(),connection=connection)
+    existingMetadata, failed = self._getExistingMetadata( lfns.keys(), connection = connection )
     if existingMetadata:
-      success,fail = self._checkExistingMetadata(existingMetadata,lfns)
-      successful.update(success)
-      failed.update(fail)
-      for lfn in (success.keys()+fail.keys()):
-        lfns.pop(lfn)
+      success, fail = self._checkExistingMetadata( existingMetadata, lfns )
+      successful.update( success )
+      failed.update( fail )
+      for lfn in ( success.keys() + fail.keys() ):
+        lfns.pop( lfn )
     # If GUIDs are supposed to be unique check their pre-existance 
     if self.db.uniqueGUID:
-      fail = self._checkUniqueGUID(lfns,connection=connection)
-      failed.update(fail)
+      fail = self._checkUniqueGUID( lfns, connection = connection )
+      failed.update( fail )
       for lfn in fail:
-        lfns.pop(lfn)
+        lfns.pop( lfn )
     # If we have files left to register
     if lfns:
       # Create the directories for the supplied files and store their IDs
-      directories = self._getFileDirectories(lfns.keys())
-      for directory,fileNames in directories.items():
-        res = self.db.dtree.makeDirectories(directory,credDict)
+      directories = self._getFileDirectories( lfns.keys() )
+      for directory, fileNames in directories.items():
+        res = self.db.dtree.makeDirectories( directory, credDict )
         for fileName in fileNames:
-          lfn = "%s/%s" % (directory,fileName)
+          lfn = "%s/%s" % ( directory, fileName )
           if not res['OK']:
             failed[lfn] = "Failed to create directory for file"
-            lfns.pop(lfn)
+            lfns.pop( lfn )
           else:
             lfns[lfn]['DirID'] = res['Value']
     # If we still have files left to register
     if lfns:
-      res = self._insertFiles(lfns,uid,gid,connection=connection)
+      res = self._insertFiles( lfns, uid, gid, connection = connection )
       if not res['OK']:
         for lfn in lfns.keys():
           failed[lfn] = res['Message']
-          lfns.pop(lfn)
+          lfns.pop( lfn )
       else:
-        for lfn,error in res['Value']['Failed'].items():
+        for lfn, error in res['Value']['Failed'].items():
           failed[lfn] = error
-          lfns.pop(lfn)
+          lfns.pop( lfn )
         lfns = res['Value']['Successful']
     # Add the ancestors
     if lfns:
-      res = self._populateFileAncestors(lfns,connection=connection)
-      toPurge =[]
+      res = self._populateFileAncestors( lfns, connection = connection )
+      toPurge = []
       if not res['OK']:
         for lfn in lfns.keys():
           failed[lfn] = "Failed while registering ancestors"
-          toPurge.append(lfns[lfn]['FileID'])
+          toPurge.append( lfns[lfn]['FileID'] )
       else:
-        failed.update(res['Value']['Failed'])
-        for lfn,error in res['Value']['Failed'].items():
-          toPurge.append(lfns[lfn]['FileID'])
+        failed.update( res['Value']['Failed'] )
+        for lfn, error in res['Value']['Failed'].items():
+          toPurge.append( lfns[lfn]['FileID'] )
       if toPurge:
-        self._deleteFiles(toPurge,connection=connection)
+        self._deleteFiles( toPurge, connection = connection )
 
     # Register the replicas
     newlyRegistered = {}
     if lfns:
-      res = self._insertReplicas(lfns,master=True,connection=connection)
-      toPurge =[]
+      res = self._insertReplicas( lfns, master = True, connection = connection )
+      toPurge = []
       if not res['OK']:
         for lfn in lfns.keys():
           failed[lfn] = "Failed while registering replica"
-          toPurge.append(lfns[lfn]['FileID'])
+          toPurge.append( lfns[lfn]['FileID'] )
       else:
         newlyRegistered = res['Value']['Successful']
-        successful.update(newlyRegistered)
-        failed.update(res['Value']['Failed'])
-        for lfn,error in res['Value']['Failed'].items():
-          toPurge.append(lfns[lfn]['FileID'])
+        successful.update( newlyRegistered )
+        failed.update( res['Value']['Failed'] )
+        for lfn, error in res['Value']['Failed'].items():
+          toPurge.append( lfns[lfn]['FileID'] )
       if toPurge:
-        self._deleteFiles(toPurge,connection=connection)
+        self._deleteFiles( toPurge, connection = connection )
 
     # Update storage usage
     dirSEDict = {}
     for lfn in newlyRegistered:
       dirID = lfns[lfn]['DirID']
-      if not dirSEDict.has_key(dirID):
+      if not dirSEDict.has_key( dirID ):
         dirSEDict[dirID] = {}
-      res = self.db.seManager.findSE(lfns[lfn]['SE'])
+      res = self.db.seManager.findSE( lfns[lfn]['SE'] )
       if not res['OK']:
         continue
       seID = res['Value']
-      if not dirSEDict[dirID].has_key(seID):
-        dirSEDict[dirID][seID] = {'Files':0,'Size':0}
+      if not dirSEDict[dirID].has_key( seID ):
+        dirSEDict[dirID][seID] = {'Files':0, 'Size':0}
       dirSEDict[dirID][seID]['Files'] += 1
       dirSEDict[dirID][seID]['Size'] += lfns[lfn]['Size']
     #if dirSEDict:
     #  self._updateDirectoryUsage(dirSEDict,'+',connection=connection)
-    return S_OK({'Successful':successful,'Failed':failed})
+    return S_OK( {'Successful':successful, 'Failed':failed} )
 
-  def _updateDirectoryUsage(self,directorySEDict,change,connection=False):
-    connection = self._getConnection(connection)
-    for dirID in sortList(directorySEDict.keys()):
+  def _updateDirectoryUsage( self, directorySEDict, change, connection = False ):
+    connection = self._getConnection( connection )
+    for dirID in sortList( directorySEDict.keys() ):
       dirDict = directorySEDict[dirID]
-      for seID in sortList(dirDict.keys()):
+      for seID in sortList( dirDict.keys() ):
         seDict = dirDict[seID]
         files = seDict['Files']
         size = seDict['Size']
-        req = "UPDATE FC_DirectoryUsage SET SESize=SESize%s%d,SEFiles=SEFiles%s%d,LastUpdate=UTC_TIMESTAMP() WHERE DirID=%d AND SEID=%d;" % (change,size,change,files,dirID,seID)
-        res = self.db._update(req)
+        req = "UPDATE FC_DirectoryUsage SET SESize=SESize%s%d,SEFiles=SEFiles%s%d,LastUpdate=UTC_TIMESTAMP() WHERE DirID=%d AND SEID=%d;" % ( change, size, change, files, dirID, seID )
+        res = self.db._update( req )
         if not res['OK']:
-          gLogger.warn("Failed to update FC_DirectoryUsage",res['Message'])
+          gLogger.warn( "Failed to update FC_DirectoryUsage", res['Message'] )
         if res['Value']:
           continue
         if  change != '+':
-          gLogger.warn("Decrement of usage for DirID,SEID that didnt exist","%d %d" % (dirID,seID))
+          gLogger.warn( "Decrement of usage for DirID,SEID that didnt exist", "%d %d" % ( dirID, seID ) )
           continue
-        req = "INSERT INTO FC_DirectoryUsage (DirID,SEID,SESize,SEFiles,LastUpdate) VALUES (%d,%d,%d,%d,UTC_TIMESTAMP());" % (dirID,seID,size,files)
-        res = self.db._update(req)
+        req = "INSERT INTO FC_DirectoryUsage (DirID,SEID,SESize,SEFiles,LastUpdate) VALUES (%d,%d,%d,%d,UTC_TIMESTAMP());" % ( dirID, seID, size, files )
+        res = self.db._update( req )
         if not res['OK']:
-          gLogger.warn("Failed to insert FC_DirectoryUsage",res['Message'])
+          gLogger.warn( "Failed to insert FC_DirectoryUsage", res['Message'] )
     return S_OK()
 
-  def _populateFileAncestors(self,lfns,connection=False):
-    connection = self._getConnection(connection)
+  def _populateFileAncestors( self, lfns, connection = False ):
+    connection = self._getConnection( connection )
     successful = {}
     failed = {}
-    for lfn,lfnDict in lfns.items():
+    for lfn, lfnDict in lfns.items():
       originalFileID = lfnDict['FileID']
-      originalDepth = lfnDict.get('AncestorDepth',1)
-      ancestors = lfnDict.get('Ancestors',[])
+      originalDepth = lfnDict.get( 'AncestorDepth', 1 )
+      ancestors = lfnDict.get( 'Ancestors', [] )
       if lfn in ancestors:
-        ancestors.remove(lfn)
+        ancestors.remove( lfn )
       if not ancestors:
         successful[lfn] = True
         continue
-      res = self._findFiles(ancestors,connection=connection)
+      res = self._findFiles( ancestors, connection = connection )
       if res['Value']['Failed']:
         failed[lfn] = "Failed to resolve ancestor files"
         continue
@@ -212,85 +212,85 @@ class FileManagerBase:
       for ancestor in ancestorIDs.keys():
         fileIDLFNs[ancestorIDs[ancestor]['FileID']] = ancestor
         toInsert[ancestorIDs[ancestor]['FileID']] = originalDepth
-      res = self._getFileAncestors(fileIDLFNs.keys())
+      res = self._getFileAncestors( fileIDLFNs.keys() )
       if not res['OK']:
         failed[lfn] = "Failed to obtain all ancestors"
         continue
       fileIDAncestorDict = res['Value']
-      for fileID,fileIDDict in fileIDAncestorDict.items():
-        for ancestorID,relativeDepth in fileIDDict.items():
-          toInsert[ancestorID] = relativeDepth+originalDepth
-      res = self._insertFileAncestors(originalFileID,toInsert,connection=connection)
+      for fileID, fileIDDict in fileIDAncestorDict.items():
+        for ancestorID, relativeDepth in fileIDDict.items():
+          toInsert[ancestorID] = relativeDepth + originalDepth
+      res = self._insertFileAncestors( originalFileID, toInsert, connection = connection )
       if not res['OK']:
         failed[lfn] = "Failed to insert ancestor files"
       else:
         successful[lfn] = True
-    return S_OK({'Successful':successful,'Failed':failed})
+    return S_OK( {'Successful':successful, 'Failed':failed} )
 
-  def _insertFileAncestors(self,fileID,ancestorDict,connection=False):  
-    connection = self._getConnection(connection)
+  def _insertFileAncestors( self, fileID, ancestorDict, connection = False ):
+    connection = self._getConnection( connection )
     ancestorTuples = []
-    for ancestorID,depth in ancestorDict.items():
-      ancestorTuples.append("(%d,%d,%d)" % (fileID,ancestorID,depth))
+    for ancestorID, depth in ancestorDict.items():
+      ancestorTuples.append( "(%d,%d,%d)" % ( fileID, ancestorID, depth ) )
     if not ancestorTuples:
       return S_OK()
-    req = "INSERT INTO FC_FileAncestors (FileID,AncestorID,AncestorDepth) VALUES %s" % intListToString(ancestorTuples)
-    return self.db._update(req,connection)
-    
-  def _getFileAncestors(self,fileIDs,depths=[],connection=False):
-    connection = self._getConnection(connection)
-    req = "SELECT FileID,AncestorID,AncestorDepth FROM FC_FileAncestors WHERE FileID IN (%s)" % intListToString(fileIDs)
+    req = "INSERT INTO FC_FileAncestors (FileID,AncestorID,AncestorDepth) VALUES %s" % intListToString( ancestorTuples )
+    return self.db._update( req, connection )
+
+  def _getFileAncestors( self, fileIDs, depths = [], connection = False ):
+    connection = self._getConnection( connection )
+    req = "SELECT FileID,AncestorID,AncestorDepth FROM FC_FileAncestors WHERE FileID IN (%s)" % intListToString( fileIDs )
     if depths:
-      req = "%s AND AncestorDepth IN (%s);" % (req,intListToString(depths))
-    res = self.db._query(req,connection)
+      req = "%s AND AncestorDepth IN (%s);" % ( req, intListToString( depths ) )
+    res = self.db._query( req, connection )
     if not res['OK']:
       return res
     fileIDAncestors = {}
-    for fileID,ancestorID,depth in res['Value']:
-      if not fileIDAncestors.has_key(fileID):
+    for fileID, ancestorID, depth in res['Value']:
+      if not fileIDAncestors.has_key( fileID ):
         fileIDAncestors[fileID] = {}
       fileIDAncestors[fileID][ancestorID] = depth
-    return S_OK(fileIDAncestors)
+    return S_OK( fileIDAncestors )
 
-  def _getFileDecendents(self,fileIDs,depths,connection=False):
-    connection = self._getConnection(connection)
-    req = "SELECT AncestorID,FileID,AncestorDepth FROM FC_FileAncestors WHERE AncestorID IN (%s)" % intListToString(fileIDs) 
+  def _getFileDecendents( self, fileIDs, depths, connection = False ):
+    connection = self._getConnection( connection )
+    req = "SELECT AncestorID,FileID,AncestorDepth FROM FC_FileAncestors WHERE AncestorID IN (%s)" % intListToString( fileIDs )
     if depths:
-      req = "%s AND AncestorDepth IN (%s);" % (req,intListToString(depths))
-    res = self.db._query(req,connection)
+      req = "%s AND AncestorDepth IN (%s);" % ( req, intListToString( depths ) )
+    res = self.db._query( req, connection )
     if not res['OK']:
       return res
     fileIDAncestors = {}
-    for ancestorID,fileID,depth in res['Value']:
-      if not fileIDAncestors.has_key(ancestorID):
+    for ancestorID, fileID, depth in res['Value']:
+      if not fileIDAncestors.has_key( ancestorID ):
         fileIDAncestors[ancestorID] = {}
       fileIDAncestors[ancestorID][fileID] = depth
-    return S_OK(fileIDAncestors)
+    return S_OK( fileIDAncestors )
 
-  def _getExistingMetadata(self,lfns,connection=False):
-    connection = self._getConnection(connection)
+  def _getExistingMetadata( self, lfns, connection = False ):
+    connection = self._getConnection( connection )
     # Check whether the files already exist before adding
-    res = self._findFiles(lfns,['FileID','Size','Checksum','GUID'],connection=connection)
+    res = self._findFiles( lfns, ['FileID', 'Size', 'Checksum', 'GUID'], connection = connection )
     successful = res['Value']['Successful']
     failed = res['Value']['Failed']
-    for lfn,error in res['Value']['Failed'].items():
+    for lfn, error in res['Value']['Failed'].items():
       if error == 'No such file or directory':
-        failed.pop(lfn)
-    return successful,failed
+        failed.pop( lfn )
+    return successful, failed
 
-  def _checkExistingMetadata(self,existingMetadata,lfns):
+  def _checkExistingMetadata( self, existingMetadata, lfns ):
     failed = {}
     successful = {}
     fileIDLFNs = {}
-    for lfn,fileDict in existingMetadata.items():
+    for lfn, fileDict in existingMetadata.items():
       fileIDLFNs[fileDict['FileID']] = lfn
     # For those that exist get the replicas to determine whether they are already registered
-    res = self._getFileReplicas(fileIDLFNs.keys())  
+    res = self._getFileReplicas( fileIDLFNs.keys() )
     if not res['OK']:
       for lfn in fileIDLFNs.values():
         failed[lfn] = 'Failed checking pre-existing replicas'
     else:
-      for fileID,lfn in fileIDLFNs.items():
+      for fileID, lfn in fileIDLFNs.items():
         fileMetadata = existingMetadata[lfn]
         existingGuid = fileMetadata['GUID']
         existingSize = fileMetadata['Size']
@@ -299,245 +299,245 @@ class FileManagerBase:
         newSize = lfns[lfn]['Size']
         newChecksum = lfns[lfn]['Checksum']
         # If the DB does not have replicas for this file return an error
-        if not res['Value'].has_key(fileID):
+        if not res['Value'].has_key( fileID ):
           failed[lfn] = "File already registered with alternative replicas"
         # If the supplied SE is not in the existing replicas return an error
         elif not lfns[lfn]['SE'] in res['Value'][fileID].keys():
           failed[lfn] = "File already registered with alternative replicas"
         # Ensure that the key file metadata is the same
-        elif (existingGuid != newGuid) or (existingSize != newSize) or (existingChecksum != newChecksum):
+        elif ( existingGuid != newGuid ) or ( existingSize != newSize ) or ( existingChecksum != newChecksum ):
           failed[lfn] = "File already registered with alternative metadata"
         # If we get here the file being registered already exists exactly in the DB
         else:
-          successful[lfn] = True  
-    return successful,failed
+          successful[lfn] = True
+    return successful, failed
 
-  def _checkUniqueGUID(self,lfns,connection=False):
-    connection = self._getConnection(connection)
+  def _checkUniqueGUID( self, lfns, connection = False ):
+    connection = self._getConnection( connection )
     guidLFNs = {}
     failed = {}
-    for lfn,fileDict in lfns.items():
+    for lfn, fileDict in lfns.items():
       guidLFNs[fileDict['GUID']] = lfn
-    res = self._getFileIDFromGUID(guidLFNs.keys(),connection=connection)
+    res = self._getFileIDFromGUID( guidLFNs.keys(), connection = connection )
     if not res['OK']:
-      return dict.fromkeys(lfns,res['Message'])
-    for guid,fileID in res['Value'].items():
+      return dict.fromkeys( lfns, res['Message'] )
+    for guid, fileID in res['Value'].items():
       failed[guidLFNs[guid]] = "GUID already registered for another file %s" % fileID # resolve this to LFN
     return failed
-  
-  def removeFile(self,lfns,connection=False):
-    connection = self._getConnection(connection)
+
+  def removeFile( self, lfns, connection = False ):
+    connection = self._getConnection( connection )
     """ Remove file from the catalog """
     successful = {}
     failed = {}
-    res = self._findFiles(lfns,['DirID','FileID','Size'],connection=connection)     
-    successful = {} 
-    for lfn,error in res['Value']['Failed'].items():
+    res = self._findFiles( lfns, ['DirID', 'FileID', 'Size'], connection = connection )
+    successful = {}
+    for lfn, error in res['Value']['Failed'].items():
       if error == 'No such file or directory':
         successful[lfn] = True
       else:
         failed[lfn] = error
     fileIDLfns = {}
     lfns = res['Value']['Successful']
-    for lfn,lfnDict in lfns.items():
+    for lfn, lfnDict in lfns.items():
       fileIDLfns[lfnDict['FileID']] = lfn
 
     # Resolve the replicas to calculate reduction in storage usage
-    res = self._getFileReplicas(fileIDLfns.keys(),connection=connection)
+    res = self._getFileReplicas( fileIDLfns.keys(), connection = connection )
     if not res['OK']:
       return res
     directorySESizeDict = {}
-    for fileID,seDict in res['Value'].items():
+    for fileID, seDict in res['Value'].items():
       for seName in seDict.keys():
-        res = self.db.seManager.findSE(seName)
+        res = self.db.seManager.findSE( seName )
         if not res['OK']:
           return res
         seID = res['Value']
         dirID = lfns[fileIDLfns[fileID]]['DirID']
         size = lfns[fileIDLfns[fileID]]['Size']
-        if not directorySESizeDict.has_key(dirID):
+        if not directorySESizeDict.has_key( dirID ):
           directorySESizeDict[dirID] = {}
-        if not directorySESizeDict[dirID].has_key(seID):
-          directorySESizeDict[dirID][seID] = {'Files':0,'Size':0}
+        if not directorySESizeDict[dirID].has_key( seID ):
+          directorySESizeDict[dirID][seID] = {'Files':0, 'Size':0}
         directorySESizeDict[dirID][seID]['Size'] += lfns[lfn]['Size']
         directorySESizeDict[dirID][seID]['Files'] += 1
 
     # Now do removal  
-    res = self._deleteFiles(fileIDLfns.keys(),connection=connection)
+    res = self._deleteFiles( fileIDLfns.keys(), connection = connection )
     if not res['OK']:
       for lfn in fileIDLfns.values():
         failed[lfn] = res['Message']
     else:
       # Update the directory usage
-      self._updateDirectoryUsage(directorySESizeDict,'-',connection=connection)
+      self._updateDirectoryUsage( directorySESizeDict, '-', connection = connection )
       for lfn in fileIDLfns.values():
         successful[lfn] = True
-    return S_OK({"Successful":successful,"Failed":failed})
+    return S_OK( {"Successful":successful, "Failed":failed} )
 
-  def _setFileOwner(self,fileID,owner,connection=False):
-    connection = self._getConnection(connection)
+  def _setFileOwner( self, fileID, owner, connection = False ):
+    connection = self._getConnection( connection )
     """ Set the file owner """
-    if type(owner) in StringTypes:
-      result = self.db.ugManager.findUser(owner)
+    if type( owner ) in StringTypes:
+      result = self.db.ugManager.findUser( owner )
       if not result['OK']:
         return result
       owner = result['Value']
-    return self._setFileParameter(fileID,'UID',owner,connection=connection)
+    return self._setFileParameter( fileID, 'UID', owner, connection = connection )
 
-  def _setFileGroup(self,fileID,group,connection=False):
-    connection = self._getConnection(connection)
+  def _setFileGroup( self, fileID, group, connection = False ):
+    connection = self._getConnection( connection )
     """ Set the file group """
-    if type(group) in StringTypes:
-      result = self.db.ugManager.findGroup(group)
+    if type( group ) in StringTypes:
+      result = self.db.ugManager.findGroup( group )
       if not result['OK']:
         return result
       group = result['Value']
-    return self._setFileParameter(fileID,'GID',group,connection=connection)
+    return self._setFileParameter( fileID, 'GID', group, connection = connection )
 
-  def _setFileMode(self,fileID,mode,connection=False):
-    connection = self._getConnection(connection)
+  def _setFileMode( self, fileID, mode, connection = False ):
+    connection = self._getConnection( connection )
     """ Set the file mode """
-    return self._setFileParameter(fileID,'Mode',mode,connection=connection)
-  
+    return self._setFileParameter( fileID, 'Mode', mode, connection = connection )
+
   ######################################################
   #
   # Replica write methods
   #
-  
-  def addReplica(self,lfns,connection=False):
-    connection = self._getConnection(connection)
-    """ Add replica to the catalog """  
+
+  def addReplica( self, lfns, connection = False ):
+    connection = self._getConnection( connection )
+    """ Add replica to the catalog """
     successful = {}
     failed = {}
-    for lfn,info in lfns.items():
-      res = self._checkInfo(info,['PFN','SE'])
+    for lfn, info in lfns.items():
+      res = self._checkInfo( info, ['PFN', 'SE'] )
       if not res['OK']:
         failed[lfn] = res['Message']
-        lfns.pop(lfn)
-    res = self._addReplicas(lfns,connection=connection)
+        lfns.pop( lfn )
+    res = self._addReplicas( lfns, connection = connection )
     if not res['OK']:
       for lfn in lfns.keys():
-        failed[lfn] = res['Message']               
+        failed[lfn] = res['Message']
     else:
-      failed.update(res['Value']['Failed'])
-      successful.update(res['Value']['Successful'])
-    return S_OK({'Successful':successful,'Failed':failed})
-  
-  def _addReplicas(self,lfns,connection=False):
-    connection = self._getConnection(connection)
+      failed.update( res['Value']['Failed'] )
+      successful.update( res['Value']['Successful'] )
+    return S_OK( {'Successful':successful, 'Failed':failed} )
+
+  def _addReplicas( self, lfns, connection = False ):
+    connection = self._getConnection( connection )
     successful = {}
-    res = self._findFiles(lfns.keys(),['DirID','FileID','Size'],connection=connection)
+    res = self._findFiles( lfns.keys(), ['DirID', 'FileID', 'Size'], connection = connection )
     failed = res['Value']['Failed']
     for lfn in failed.keys():
-      lfns.pop(lfn)
+      lfns.pop( lfn )
     lfnFileIDDict = res['Value']['Successful']
-    for lfn,fileDict in lfnFileIDDict.items():
-      lfns[lfn].update(fileDict)
-    res = self._insertReplicas(lfns,connection=connection)
+    for lfn, fileDict in lfnFileIDDict.items():
+      lfns[lfn].update( fileDict )
+    res = self._insertReplicas( lfns, connection = connection )
     if not res['OK']:
       for lfn in lfns.keys():
         failed[lfn] = res['Message']
     else:
       successful = res['Value']['Successful']
-      failed.update(res['Value']['Successful'])
-    return S_OK({'Successful':successful,'Failed':failed})
+      failed.update( res['Value']['Successful'] )
+    return S_OK( {'Successful':successful, 'Failed':failed} )
 
-  def removeReplica(self,lfns,connection=False):
-    connection = self._getConnection(connection)
-    """ Remove replica from catalog """  
+  def removeReplica( self, lfns, connection = False ):
+    connection = self._getConnection( connection )
+    """ Remove replica from catalog """
     successful = {}
     failed = {}
-    for lfn,info in lfns.items():
-      res = self._checkInfo(info,['PFN','SE'])
+    for lfn, info in lfns.items():
+      res = self._checkInfo( info, ['PFN', 'SE'] )
       if not res['OK']:
         failed[lfn] = res['Message']
-        lfns.pop(lfn)
-    res = self._deleteReplicas(lfns,connection=connection)
+        lfns.pop( lfn )
+    res = self._deleteReplicas( lfns, connection = connection )
     if not res['OK']:
       for lfn in lfns.keys():
-        failed[lfn] = res['Message']  
+        failed[lfn] = res['Message']
     else:
-      failed.update(res['Value']['Failed'])
-      successful.update(res['Value']['Successful'])
-    return S_OK({'Successful':successful,'Failed':failed})
+      failed.update( res['Value']['Failed'] )
+      successful.update( res['Value']['Successful'] )
+    return S_OK( {'Successful':successful, 'Failed':failed} )
 
-  def setReplicaStatus(self,lfns,connection=False):
-    connection = self._getConnection(connection)
-    """ Set replica status in the catalog """  
+  def setReplicaStatus( self, lfns, connection = False ):
+    connection = self._getConnection( connection )
+    """ Set replica status in the catalog """
     successful = {}
     failed = {}
-    for lfn,info in lfns.items():
-      res = self._checkInfo(info,['SE','Status'])
+    for lfn, info in lfns.items():
+      res = self._checkInfo( info, ['SE', 'Status'] )
       if not res['OK']:
         failed[lfn] = res['Message']
         continue
       status = info['Status']
       se = info['SE']
-      res = self._findFiles([lfn],['FileID'],connection=connection)
-      if not res['Value']['Successful'].has_key(lfn):
+      res = self._findFiles( [lfn], ['FileID'], connection = connection )
+      if not res['Value']['Successful'].has_key( lfn ):
         failed[lfn] = res['Value']['Failed'][lfn]
         continue
       fileID = res['Value']['Successful'][lfn]['FileID']
-      res = self._setReplicaStatus(fileID,se,status,connection=connection)
+      res = self._setReplicaStatus( fileID, se, status, connection = connection )
       if res['OK']:
         successful[lfn] = res['Value']
       else:
         failed[lfn] = res['Message']
-    return S_OK({'Successful':successful,'Failed':failed})
+    return S_OK( {'Successful':successful, 'Failed':failed} )
 
-  def setReplicaHost(self,lfns,connection=False):
-    connection = self._getConnection(connection)
-    """ Set replica host in the catalog """  
+  def setReplicaHost( self, lfns, connection = False ):
+    connection = self._getConnection( connection )
+    """ Set replica host in the catalog """
     successful = {}
     failed = {}
-    for lfn,info in lfns.items():
-      res = self._checkInfo(info,['SE','NewSE'])
+    for lfn, info in lfns.items():
+      res = self._checkInfo( info, ['SE', 'NewSE'] )
       if not res['OK']:
         failed[lfn] = res['Message']
         continue
       newSE = info['NewSE']
       se = info['SE']
-      res = self._findFiles([lfn],['FileID'],connection=connection)
-      if not res['Value']['Successful'].has_key(lfn):
+      res = self._findFiles( [lfn], ['FileID'], connection = connection )
+      if not res['Value']['Successful'].has_key( lfn ):
         failed[lfn] = res['Value']['Failed'][lfn]
         continue
       fileID = res['Value']['Successful'][lfn]['FileID']
-      res = self._setReplicaHost(fileID,se,newSE,connection=connection)
+      res = self._setReplicaHost( fileID, se, newSE, connection = connection )
       if res['OK']:
         successful[lfn] = res['Value']
       else:
         failed[lfn] = res['Message']
-    return S_OK({'Successful':successful,'Failed':failed})
+    return S_OK( {'Successful':successful, 'Failed':failed} )
 
   ######################################################
   #
   # File read methods
   #
 
-  def exists(self,lfns,connection=False):
-    connection = self._getConnection(connection)
+  def exists( self, lfns, connection = False ):
+    connection = self._getConnection( connection )
     """ Determine whether a file exists in the catalog """
-    res = self._findFiles(lfns,connection=connection)
-    successful = dict.fromkeys(res['Value']['Successful'],True)
+    res = self._findFiles( lfns, connection = connection )
+    successful = dict.fromkeys( res['Value']['Successful'], True )
     failed = {}
-    for lfn,error in res['Value']['Failed'].items():
+    for lfn, error in res['Value']['Failed'].items():
       if error == 'No such file or directory':
         successful[lfn] = False
       else:
         failed[lfn] = error
-    return S_OK({"Successful":successful,"Failed":failed})
+    return S_OK( {"Successful":successful, "Failed":failed} )
 
-  def isFile(self,lfns,connection=False):
-    connection = self._getConnection(connection)
+  def isFile( self, lfns, connection = False ):
+    connection = self._getConnection( connection )
     """ Determine whether a path is a file in the catalog """
     #TO DO, should check whether it is a directory if it fails
-    return self.exists(lfns,connection=connection)
-  
-  def getFileSize(self, lfns,connection=False):
-    connection = self._getConnection(connection)
+    return self.exists( lfns, connection = connection )
+
+  def getFileSize( self, lfns, connection = False ):
+    connection = self._getConnection( connection )
     """ Get file size from the catalog """
     #TO DO, should check whether it is a directory if it fails
-    res = self._findFiles(lfns,['Size'],connection=connection)
+    res = self._findFiles( lfns, ['Size'], connection = connection )
     if not res['OK']:
       return res
     for lfn in res['Value']['Successful'].keys():
@@ -545,24 +545,24 @@ class FileManagerBase:
       res['Value']['Successful'][lfn] = size
     return res
 
-  def getFileMetadata(self, lfns,connection=False):
-    connection = self._getConnection(connection)
+  def getFileMetadata( self, lfns, connection = False ):
+    connection = self._getConnection( connection )
     """ Get file metadata from the catalog """
     #TO DO, should check whether it is a directory if it fails
-    return self._findFiles(lfns,['Size','Checksum','ChecksumType','UID','GID','GUID','CreationDate','ModificationDate','Mode','Status'],connection=connection)
+    return self._findFiles( lfns, ['Size', 'Checksum', 'ChecksumType', 'UID', 'GID', 'GUID', 'CreationDate', 'ModificationDate', 'Mode', 'Status'], connection = connection )
 
-  def getPathPermissions(self,paths,credDict,connection=False):
-    connection = self._getConnection(connection)
+  def getPathPermissions( self, paths, credDict, connection = False ):
+    connection = self._getConnection( connection )
     """ Get the permissions for the supplied paths """
-    res = self.db.ugManager.getUserAndGroupID(credDict)
+    res = self.db.ugManager.getUserAndGroupID( credDict )
     if not res['OK']:
       return res
-    uid,gid = res['Value']
-    res = self._findFiles(paths,metadata=['Mode','UID','GID'],connection=connection)
+    uid, gid = res['Value']
+    res = self._findFiles( paths, metadata = ['Mode', 'UID', 'GID'], connection = connection )
     if not res['OK']:
       return res
     successful = {}
-    for dirName,dirDict in res['Value']['Successful'].items():
+    for dirName, dirDict in res['Value']['Successful'].items():
       mode = dirDict['Mode']
       p_uid = dirDict['UID']
       p_gid = dirDict['GID']
@@ -579,76 +579,76 @@ class FileManagerBase:
         successful[dirName]['Read'] = mode & stat.S_IROTH
         successful[dirName]['Write'] = mode & stat.S_IWOTH
         successful[dirName]['Execute'] = mode & stat.S_IXOTH
-    return S_OK({'Successful':successful,'Failed':res['Value']['Failed']})
+    return S_OK( {'Successful':successful, 'Failed':res['Value']['Failed']} )
 
-  def getFileAncestors(self,lfns,depths,connection=False):
-    connection = self._getConnection(connection)
+  def getFileAncestors( self, lfns, depths, connection = False ):
+    connection = self._getConnection( connection )
     return S_ERROR()
 
-  def getFileDescendents(self,lfns,depths,connection=False):
-    connection = self._getConnection(connection)
+  def getFileDescendents( self, lfns, depths, connection = False ):
+    connection = self._getConnection( connection )
     return S_ERROR()
 
   ######################################################
   #
   # Replica read methods
   #
-  
-  def getReplicas(self,lfns,allStatus,connection=False):
-    connection = self._getConnection(connection)
+
+  def getReplicas( self, lfns, allStatus, connection = False ):
+    connection = self._getConnection( connection )
     """ Get file replicas from the catalog """
     startTime = time.time()
-    res = self._findFiles(lfns,connection=connection)
+    res = self._findFiles( lfns, connection = connection )
     #print 'findFiles',time.time()-startTime
     failed = res['Value']['Failed']
     fileIDLFNs = {}
-    for lfn,fileDict in res['Value']['Successful'].items():
+    for lfn, fileDict in res['Value']['Successful'].items():
       fileID = fileDict['FileID']
       fileIDLFNs[fileID] = lfn
     replicas = {}
     if fileIDLFNs:
-      startTime = time.time() 
-      res = self._getFileReplicas(fileIDLFNs.keys(),connection=connection)
+      startTime = time.time()
+      res = self._getFileReplicas( fileIDLFNs.keys(), connection = connection )
       #print '_getFileReplicas',time.time()-startTime
       if not res['OK']:
         return res
-      for fileID,seDict in res['Value'].items():
+      for fileID, seDict in res['Value'].items():
         lfn = fileIDLFNs[fileID]
         replicas[lfn] = {}
-        for se,repDict in seDict.items():
+        for se, repDict in seDict.items():
           repStatus = repDict['Status']
-          if (repStatus in self.db.visibleStatus) or (allStatus):
+          if ( repStatus in self.db.visibleStatus ) or ( allStatus ):
             pfn = repDict['PFN']
             if not pfn or self.db.lfnPfnConvention:
-              res = self._resolvePFN(lfn,se)
+              res = self._resolvePFN( lfn, se )
               if res['OK']:
                 pfn = res['Value']
             replicas[lfn][se] = pfn
-    return S_OK({'Successful':replicas,'Failed':failed})
+    return S_OK( {'Successful':replicas, 'Failed':failed} )
 
-  def _resolvePFN(self,lfn,se):
-    resSE = self.db.seManager.getSEDefinition(se)
+  def _resolvePFN( self, lfn, se ):
+    resSE = self.db.seManager.getSEDefinition( se )
     if not resSE['OK']:
       return resSE
-    pfnDict = dict(resSE['Value']['SEDict'])
+    pfnDict = dict( resSE['Value']['SEDict'] )
     pfnDict['FileName'] = lfn
-    return pfnunparse(pfnDict)
+    return pfnunparse( pfnDict )
 
-  def getReplicaStatus(self,lfns,connection=False):
-    connection = self._getConnection(connection)
+  def getReplicaStatus( self, lfns, connection = False ):
+    connection = self._getConnection( connection )
     """ Get replica status from the catalog """
-    res = self._findFiles(lfns,connection=connection)
+    res = self._findFiles( lfns, connection = connection )
     failed = res['Value']['Failed']
     fileIDLFNs = {}
-    for lfn,fileDict in res['Value']['Successful'].items():
+    for lfn, fileDict in res['Value']['Successful'].items():
       fileID = fileDict['FileID']
       fileIDLFNs[fileID] = lfn
     successful = {}
     if fileIDLFNs:
-      res = self._getFileReplicas(fileIDLFNs.keys(),connection=connection)
+      res = self._getFileReplicas( fileIDLFNs.keys(), connection = connection )
       if not res['OK']:
         return res
-      for fileID,seDict in res['Value'].items():
+      for fileID, seDict in res['Value'].items():
         lfn = fileIDLFNs[fileID]
         requestedSE = lfns[lfn]
         if not requestedSE:
@@ -657,191 +657,191 @@ class FileManagerBase:
           failed[lfn] = "No replica at supplied site"
         else:
           successful[lfn] = seDict[requestedSE]['Status']
-    return S_OK({'Successful':successful,'Failed':failed})
+    return S_OK( {'Successful':successful, 'Failed':failed} )
 
   ######################################################
   #
   # General usage methods
   #
 
-  def _getStatusInt(self,status,connection=False):
-    connection = self._getConnection(connection)
+  def _getStatusInt( self, status, connection = False ):
+    connection = self._getConnection( connection )
     req = "SELECT StatusID FROM FC_Statuses WHERE Status = '%s';" % status
-    res = self.db._query(req,connection)
+    res = self.db._query( req, connection )
     if not res['OK']:
       return res
     if res['Value']:
-      return S_OK(res['Value'][0][0])
+      return S_OK( res['Value'][0][0] )
     req = "INSERT INTO FC_Statuses (Status) VALUES ('%s');" % status
-    res = self.db._update(req,connection)
+    res = self.db._update( req, connection )
     if not res['OK']:
       return res
-    return S_OK(res['lastRowId'])
-    
-  def _getIntStatus(self,statusID,connection=False):
-    connection = self._getConnection(connection)
+    return S_OK( res['lastRowId'] )
+
+  def _getIntStatus( self, statusID, connection = False ):
+    connection = self._getConnection( connection )
     req = "SELECT Status FROM FC_Statuses WHERE StatusID = %d" % statusID
-    res = self.db._query(req,connection)
+    res = self.db._query( req, connection )
     if not res['OK']:
       return res
     if res['Value']:
-      return S_OK(res['Value'][0][0])
-    return S_OK('Unknown')
+      return S_OK( res['Value'][0][0] )
+    return S_OK( 'Unknown' )
 
-  def getFilesInDirectory(self,dirID,path,verbose=False,connection=False):
-    connection = self._getConnection(connection)
+  def getFilesInDirectory( self, dirID, path, verbose = False, connection = False ):
+    connection = self._getConnection( connection )
     files = {}
-    res = self._getDirectoryFiles(dirID, [], ['FileID','Size','Checksum','ChecksumType','Type','UID','GID','CreationDate','ModificationDate','Mode','Status'],connection=connection)
+    res = self._getDirectoryFiles( dirID, [], ['FileID', 'Size', 'Checksum', 'ChecksumType', 'Type', 'UID', 'GID', 'CreationDate', 'ModificationDate', 'Mode', 'Status'], connection = connection )
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_OK(files)
+      return S_OK( files )
     fileIDLFNs = {}
-    for fileName,fileDict in res['Value'].items():
-      lfn = "%s/%s" % (path,fileName)
+    for fileName, fileDict in res['Value'].items():
+      lfn = "%s/%s" % ( path, fileName )
       files[lfn] = {}
       files[lfn]['MetaData'] = fileDict
       fileIDLFNs[fileDict['FileID']] = lfn
-    if verbose:  
-      result = self._getFileReplicas(fileIDLFNs.keys(),connection=connection)
+    if verbose:
+      result = self._getFileReplicas( fileIDLFNs.keys(), connection = connection )
       if not result['OK']:
         return result
-      for fileID,seDict in result['Value'].items():
+      for fileID, seDict in result['Value'].items():
         lfn = fileIDLFNs[fileID]
         files[lfn]['Replicas'] = seDict
-    return S_OK(files)
+    return S_OK( files )
 
-  def _getFileDirectories(self,lfns):
+  def _getFileDirectories( self, lfns ):
     dirDict = {}
     for lfn in lfns:
-      lfnDir = os.path.dirname(lfn)
-      lfnFile = os.path.basename(lfn)
+      lfnDir = os.path.dirname( lfn )
+      lfnFile = os.path.basename( lfn )
       if not lfnDir in dirDict:
         dirDict[lfnDir] = []
-      dirDict[lfnDir].append(lfnFile)
+      dirDict[lfnDir].append( lfnFile )
     return dirDict
-  
-  def _checkInfo(self,info,requiredKeys):
+
+  def _checkInfo( self, info, requiredKeys ):
     if not info:
-      return S_ERROR("Missing parameters")
+      return S_ERROR( "Missing parameters" )
     for key in requiredKeys:
       if not key in info:
-        return S_ERROR("Missing '%s' parameter" % key)
+        return S_ERROR( "Missing '%s' parameter" % key )
     return S_OK()
-  
-  def _checkLFNPFNConvention(self,lfn,pfn,se):
+
+  def _checkLFNPFNConvention( self, lfn, pfn, se ):
     """ Check that the PFN corresponds to the LFN-PFN convention """
     if pfn == lfn:
       return S_OK()
-    if (len(pfn)<len(lfn)) or (pfn[-len(lfn):] != lfn) :
-      return S_ERROR('PFN does not correspond to the LFN convention')
+    if ( len( pfn ) < len( lfn ) ) or ( pfn[-len( lfn ):] != lfn ) :
+      return S_ERROR( 'PFN does not correspond to the LFN convention' )
     return S_OK()
 
-  def _checkLFNPFNConvention(self,lfn,pfn,se):
+  def _checkLFNPFNConvention( self, lfn, pfn, se ):
     """ Check that the PFN corresponds to the LFN-PFN convention
     """
     # Check if the PFN corresponds to the LFN convention
     if pfn == lfn:
       return S_OK()
     lfn_pfn = True   # flag that the lfn is contained in the pfn
-    if (len(pfn)<len(lfn)) or (pfn[-len(lfn):] != lfn) :
-      return S_ERROR('PFN does not correspond to the LFN convention')
-    if not pfn.endswith(lfn):
+    if ( len( pfn ) < len( lfn ) ) or ( pfn[-len( lfn ):] != lfn ) :
+      return S_ERROR( 'PFN does not correspond to the LFN convention' )
+    if not pfn.endswith( lfn ):
       return S_ERROR()
     # Check if the pfn corresponds to the SE definition
-    result = self._getStorageElement(se)
+    result = self._getStorageElement( se )
     if not result['OK']:
       return result
     selement = result['Value']
-    res = pfnparse(pfn)
+    res = pfnparse( pfn )
     if not res['OK']:
       return res
     pfnDict = res['Value']
     protocol = pfnDict['Protocol']
     pfnpath = pfnDict['Path']
-    result = selement.getStorageParameters(protocol)
+    result = selement.getStorageParameters( protocol )
     if not result['OK']:
       return result
     seDict = result['Value']
     sePath = seDict['Path']
-    ind = pfnpath.find(sePath)
+    ind = pfnpath.find( sePath )
     if ind == -1:
-      return S_ERROR('The given PFN %s does not correspond to the %s SE definition' % (pfn,se))
+      return S_ERROR( 'The given PFN %s does not correspond to the %s SE definition' % ( pfn, se ) )
     # Check the full LFN-PFN-SE convention
     lfn_pfn_se = True
     if lfn_pfn:
-      seAccessDict = dict(seDict)
+      seAccessDict = dict( seDict )
       seAccessDict['Path'] = sePath + '/' + lfn
-      check_pfn = pfnunparse(seAccessDict)
+      check_pfn = pfnunparse( seAccessDict )
       if check_pfn != pfn:
-        return S_ERROR('PFN does not correspond to the LFN convention')
+        return S_ERROR( 'PFN does not correspond to the LFN convention' )
     return S_OK()
 
-  def _getStorageElement(self, seName):
+  def _getStorageElement( self, seName ):
     from DIRAC.Resources.Storage.StorageElement              import StorageElement
-    storageElement = StorageElement(seName)
+    storageElement = StorageElement( seName )
     if not storageElement.valid:
-      return S_ERROR(storageElement.errorReason)
-    return S_OK(storageElement)
+      return S_ERROR( storageElement.errorReason )
+    return S_OK( storageElement )
 
-  def setFileGroup(self,lfns,connection=False):
-    connection = self._getConnection(connection)
+  def setFileGroup( self, lfns, connection = False ):
+    connection = self._getConnection( connection )
     """ Get set the group for the supplied files """
-    res = self._findFiles(lfns,['FileID','GID'],connection=connection)
+    res = self._findFiles( lfns, ['FileID', 'GID'], connection = connection )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
     successful = {}
     for lfn in res['Value']['Successful'].keys():
       group = lfns[lfn]['Group']
-      if type(group) in StringTypes:
-        groupRes = self.db.ugManager.findGroup(group)
+      if type( group ) in StringTypes:
+        groupRes = self.db.ugManager.findGroup( group )
         if not groupRes['OK']:
           return groupRes
         group = groupRes['Value']
       currentGroup = res['Value']['Successful'][lfn]['GID']
-      if int(group) == int(currentGroup):
+      if int( group ) == int( currentGroup ):
         successful[lfn] = True
       else:
         fileID = res['Value']['Successful'][lfn]['FileID']
-        res = self._setFileGroup(fileID,group,connection=connection) 
+        res = self._setFileGroup( fileID, group, connection = connection )
         if not res['OK']:
           failed[lfn] = res['Message']
         else:
           successful[lfn] = True
-    return S_OK({'Successful':successful,'Failed':failed})
+    return S_OK( {'Successful':successful, 'Failed':failed} )
 
-  def setFileOwner(self,lfns,connection=False):
-    connection = self._getConnection(connection)
+  def setFileOwner( self, lfns, connection = False ):
+    connection = self._getConnection( connection )
     """ Get set the group for the supplied files """
-    res = self._findFiles(lfns,['FileID','UID'],connection=connection)
+    res = self._findFiles( lfns, ['FileID', 'UID'], connection = connection )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
     successful = {}
     for lfn in res['Value']['Successful'].keys():
       owner = lfns[lfn]['Owner']
-      if type(owner) in StringTypes:
-        userRes = self.db.ugManager.findUser(owner)
+      if type( owner ) in StringTypes:
+        userRes = self.db.ugManager.findUser( owner )
         if not userRes['OK']:
           return userRes
         owner = userRes['Value']
       currentOwner = res['Value']['Successful'][lfn]['UID']
-      if int(owner) == int(currentOwner):
+      if int( owner ) == int( currentOwner ):
         successful[lfn] = True
       else:
         fileID = res['Value']['Successful'][lfn]['FileID']
-        res = self._setFileOwner(fileID,owner,connection=connection) 
+        res = self._setFileOwner( fileID, owner, connection = connection )
         if not res['OK']:
           failed[lfn] = res['Message']
         else:
           successful[lfn] = True
-    return S_OK({'Successful':successful,'Failed':failed})
+    return S_OK( {'Successful':successful, 'Failed':failed} )
 
-  def setFileMode(self,lfns,connection=False):
-    connection = self._getConnection(connection)
+  def setFileMode( self, lfns, connection = False ):
+    connection = self._getConnection( connection )
     """ Get set the mode for the supplied files """
-    res = self._findFiles(lfns,['FileID','Mode'],connection=connection)
+    res = self._findFiles( lfns, ['FileID', 'Mode'], connection = connection )
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
@@ -849,76 +849,76 @@ class FileManagerBase:
     for lfn in res['Value']['Successful'].keys():
       mode = lfns[lfn]['Mode']
       currentMode = res['Value']['Successful'][lfn]['Mode']
-      if int(currentMode) == int(mode):
+      if int( currentMode ) == int( mode ):
         successful[lfn] = True
       else:
         fileID = res['Value']['Successful'][lfn]['FileID']
-        res = self._setFileMode(fileID,mode,connection=connection) 
+        res = self._setFileMode( fileID, mode, connection = connection )
         if not res['OK']:
           failed[lfn] = res['Message']
         else:
           successful[lfn] = True
-    return S_OK({'Successful':successful,'Failed':failed})
+    return S_OK( {'Successful':successful, 'Failed':failed} )
 
-  def changePathOwner(self,paths,credDict,recursive=False):  
+  def changePathOwner( self, paths, credDict, recursive = False ):
     """ Bulk method to change Owner for the given paths """
-    return self._changePathFunction(paths,credDict,self.db.dtree.changeDirectoryOwner,
-                                    self.setFileOwner, recursive)
-  
-  def changePathGroup(self,paths,credDict,recursive=False):  
-    """ Bulk method to change Owner for the given paths """
-    return self._changePathFunction(paths,credDict,self.db.dtree.changeDirectoryGroup,
-                                    self.setFileGroup, recursive)
-  
-  def changePathMode(self,paths,credDict,recursive=False):  
-    """ Bulk method to change Owner for the given paths """
-    return self._changePathFunction(paths,credDict,self.db.dtree.changeDirectoryMode,
-                                    self.setFileMode, recursive)
+    return self._changePathFunction( paths, credDict, self.db.dtree.changeDirectoryOwner,
+                                    self.setFileOwner, recursive )
 
-  def _changePathFunction(self,paths,credDict,change_function_directory,change_function_file,recursive=False):
+  def changePathGroup( self, paths, credDict, recursive = False ):
+    """ Bulk method to change Owner for the given paths """
+    return self._changePathFunction( paths, credDict, self.db.dtree.changeDirectoryGroup,
+                                    self.setFileGroup, recursive )
+
+  def changePathMode( self, paths, credDict, recursive = False ):
+    """ Bulk method to change Owner for the given paths """
+    return self._changePathFunction( paths, credDict, self.db.dtree.changeDirectoryMode,
+                                    self.setFileMode, recursive )
+
+  def _changePathFunction( self, paths, credDict, change_function_directory, change_function_file, recursive = False ):
     """ A generic function to change Owner, Group or Mode for the given paths """
-    result = self.db.ugManager.getUserAndGroupID(credDict)
+    result = self.db.ugManager.getUserAndGroupID( credDict )
     if not result['OK']:
       return result
-    uid,gid = result['Value']
-    
+    uid, gid = result['Value']
+
     dirList = []
-    result = self.db.isDirectory(paths,credDict)    
+    result = self.db.isDirectory( paths, credDict )
     if not result['OK']:
       return result
     for p in result['Value']['Successful']:
       if result['Value']['Successful'][p]:
-        dirList.append(p)
+        dirList.append( p )
     fileList = []
-    if len(dirList) < len(paths):
-      result = self.isFile(paths)      
+    if len( dirList ) < len( paths ):
+      result = self.isFile( paths )
       if not result['OK']:
         return result
       fileList = result['Value']['Successful'].keys()
-    
+
     successful = {}
     failed = {}
-    
+
     dirArgs = {}
     fileArgs = {}
-    
+
     for path in paths:
-      if (not path in dirList) and (not path in fileList):
+      if ( not path in dirList ) and ( not path in fileList ):
         failed[path] = 'Path not found'
       if path in dirList:
         dirArgs[path] = paths[path]
       elif path in fileList:
-        fileArgs[path] = paths[path]        
-    if dirArgs:        
-      result = change_function_directory(dirArgs,uid,gid)
+        fileArgs[path] = paths[path]
+    if dirArgs:
+      result = change_function_directory( dirArgs, uid, gid )
       if not result['OK']:
         return result
-      successful.update(result['Value']['Successful'])
-      failed.update(result['Value']['Failed'])    
+      successful.update( result['Value']['Successful'] )
+      failed.update( result['Value']['Failed'] )
     if fileArgs:
-      result = change_function_file(fileArgs,uid,gid)
+      result = change_function_file( fileArgs, uid, gid )
       if not result['OK']:
         return result
-      successful.update(result['Value']['Successful'])
-      failed.update(result['Value']['Failed'])    
-    return S_OK({'Successful':successful,'Failed':failed})
+      successful.update( result['Value']['Successful'] )
+      failed.update( result['Value']['Failed'] )
+    return S_OK( {'Successful':successful, 'Failed':failed} )
