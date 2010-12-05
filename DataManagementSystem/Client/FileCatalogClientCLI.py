@@ -19,6 +19,14 @@ from DIRAC.Core.Security.Misc import getProxyInfo
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Interfaces.API.Dirac import Dirac
 
+def int_with_commas(i):
+  s = str(i)
+  news = ''
+  while len(s) > 0:
+    news = s[-3:]+","+news
+    s = s[:-3] 
+  return news[:-1]
+
 class DirectoryListing:
   
   def __init__(self):
@@ -225,7 +233,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
         usage:
           register file <lfn> <pfn> <size> <SE> [<guid>]  - register new file record in the catalog
-          register replica <lfn> <replica> <SE>   - register new replica in the catalog
+          register replica <lfn> <pfn> <SE>   - register new replica in the catalog
     """
     
     argss = args.split()
@@ -233,7 +241,7 @@ File Catalog Client $Revision: 1.17 $Date:
     del argss[0]
     if option == 'file':
       return self.registerFile(argss)
-    elif option == 'pfn':
+    elif option == 'pfn' or option == "replica":
       return self.registerReplica(argss)
     else:
       print "Unknown option:",option
@@ -509,7 +517,7 @@ File Catalog Client $Revision: 1.17 $Date:
     repDict[lfn] = infoDict    
       
     try:
-      result = self.fc.addReplica(repDict)          
+      result = self.fc.addReplica(repDict)               
       if not result['OK']:
         print "Failed to add replica to the catalog: ",
         print result['Message']
@@ -836,11 +844,14 @@ File Catalog Client $Revision: 1.17 $Date:
     pathDict[lfn] = owner
     
     try:
-      result = self.fc.changePathOwner(pathDict,recursive)         
       if not result['OK']:
-        print "chown failed:",result['Message']
+        print "Error:",result['Message']
+        return
+      if lfn in result['Value']['Failed']:
+        print "Error:",result['Value']['Failed'][lfn]
+        return  
     except Exception, x:
-      print "chown failed: ", str(x)       
+      print "Exception:", str(x)         
       
   def do_chgrp(self,args):
     """ Change group of the given path
@@ -862,9 +873,13 @@ File Catalog Client $Revision: 1.17 $Date:
     try:
       result = self.fc.changePathGroup(pathDict,recursive)         
       if not result['OK']:
-        print "chgrp failed:",result['Message']
+        print "Error:",result['Message']
+        return
+      if lfn in result['Value']['Failed']:
+        print "Error:",result['Value']['Failed'][lfn]
+        return  
     except Exception, x:
-      print "chgrp failed: ", str(x)    
+      print "Exception:", str(x)    
       
   def do_chmod(self,args):
     """ Change permissions of the given path
@@ -884,26 +899,38 @@ File Catalog Client $Revision: 1.17 $Date:
     pathDict[lfn] = eval('0'+mode)
     
     try:
-      result = self.fc.changePathMode(pathDict,recursive)         
+      result = self.fc.changePathMode(pathDict,recursive)             
       if not result['OK']:
-        print "chmod failed:",result['Message']
+        print "Error:",result['Message']
+        return
+      if lfn in result['Value']['Failed']:
+        print "Error:",result['Value']['Failed'][lfn]
+        return  
     except Exception, x:
-      print "chmod failed: ", str(x)       
+      print "Exception:", str(x)       
       
   def do_size(self,args):
-    """ Get the file size 
+    """ Get file or directory size. If -l switch is specified, get also the total
+        size per Storage Element 
 
-        usage: size <lfn>|<dir_path> 
+        usage: size [-l] <lfn>|<dir_path> 
     """      
     
     argss = args.split()
+    long = False
+    if len(argss) > 0:
+      if argss[0] == '-l':
+        long = True
+        del argss[0]
+        
     if len(argss) == 1:
       path = argss[0]
       if path == '.':
-        path = self.cwd
+        path = self.cwd    
     else:
       path = self.cwd
     path = self.getPath(path)
+    
     try:
       result = self.fc.isFile(path)
       if not result['OK']:
@@ -921,10 +948,18 @@ File Catalog Client $Revision: 1.17 $Date:
             print "File size failed:",result['Message']
         else:
           print "directory:",path
-          result =  self.fc.getDirectorySize(path)
+          result =  self.fc.getDirectorySize(path,long)          
           if result['OK']:
             if result['Value']['Successful']:
-              print "Size:",result['Value']['Successful'][path]
+              print "Logical Size:",int_with_commas(result['Value']['Successful'][path]['LogicalSize'])
+              if long:
+                if "PhysicalSize" in result['Value']['Successful'][path]:
+                  print "Physical Size:"
+                  total = result['Value']['Successful'][path]['PhysicalSize']['Total']
+                  for se,size in result['Value']['Successful'][path]['PhysicalSize'].items():
+                    if se != "Total":
+                      print se.rjust(20),':',int_with_commas(size)
+                  print 'Total'.rjust(20),':',int_with_commas(total)   
             else:
               print "Directory size failed:", result['Value']['Failed'][path]
           else:
