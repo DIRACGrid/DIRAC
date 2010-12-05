@@ -8,9 +8,8 @@ from DIRAC                                  import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.List              import stringListToString, intListToString, sortList
 from DIRAC.Core.Utilities.Pfn               import pfnparse, pfnunparse
 
-import time, os
+import time, os, stat
 from types import *
-
 
 class FileManagerBase:
 
@@ -50,9 +49,64 @@ class FileManagerBase:
   # File write methods
   #
 
+  def _insertFiles( self, lfns, uid, gid, connection = False ):
+    """To be implemented on derived class
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
+  def _deleteFiles( self, toPurge, connection = False ):
+    """To be implemented on derived class
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
+  def _insertReplicas( self, lfns, master = False, connection = False ):
+    """To be implemented on derived class
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
+  def _findFiles( self, lfns, metadata = ["FileID"], connection = False ):
+    """To be implemented on derived class
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
+  def _getFileReplicas( self, fileIDs, fields = ['PFN'], connection = False ):
+    """To be implemented on derived class
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
+  def _getFileIDFromGUID( self, guid, connection = False ):
+    """To be implemented on derived class
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
+  def _setFileParameter( self, fileID, paramName, paramValue, connection = False ):
+    """To be implemented on derived class
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
+  def _deleteReplicas( self, lfns, connection = False ):
+    """To be implemented on derived class
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
+  def _setReplicaStatus( self, fileID, se, status, connection = False ):
+    """To be implemented on derived class
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
+  def _setReplicaHost( self, fileID, se, newSE, connection = False ):
+    """To be implemented on derived class
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
+  def _getDirectoryFiles( self, dirID, fileNames, metadata, allStatus = False, connection = False ):
+    """To be implemented on derived class
+    """
+    return S_ERROR( "To be implemented on derived class" )
+
   def addFile( self, lfns, credDict, connection = False ):
-    connection = self._getConnection( connection )
     """ Add files to the catalog """
+    connection = self._getConnection( connection )
     successful = {}
     failed = {}
     for lfn, info in lfns.items():
@@ -174,7 +228,9 @@ class FileManagerBase:
         seDict = dirDict[seID]
         files = seDict['Files']
         size = seDict['Size']
-        req = "UPDATE FC_DirectoryUsage SET SESize=SESize%s%d,SEFiles=SEFiles%s%d,LastUpdate=UTC_TIMESTAMP() WHERE DirID=%d AND SEID=%d;" % ( change, size, change, files, dirID, seID )
+        req = "UPDATE FC_DirectoryUsage SET SESize=SESize%s%d, SEFiles=SEFiles%s%d, LastUpdate=UTC_TIMESTAMP() " \
+                                                         % ( change, size, change, files )
+        rep += "WHERE DirID=%d AND SEID=%d;" % ( dirID, seID )
         res = self.db._update( req )
         if not res['OK']:
           gLogger.warn( "Failed to update FC_DirectoryUsage", res['Message'] )
@@ -183,7 +239,8 @@ class FileManagerBase:
         if  change != '+':
           gLogger.warn( "Decrement of usage for DirID,SEID that didnt exist", "%d %d" % ( dirID, seID ) )
           continue
-        req = "INSERT INTO FC_DirectoryUsage (DirID,SEID,SESize,SEFiles,LastUpdate) VALUES (%d,%d,%d,%d,UTC_TIMESTAMP());" % ( dirID, seID, size, files )
+        req = "INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles, LastUpdate)"
+        req += " VALUES (%d, %d, %d, %d, UTC_TIMESTAMP());" % ( dirID, seID, size, files )
         res = self.db._update( req )
         if not res['OK']:
           gLogger.warn( "Failed to insert FC_DirectoryUsage", res['Message'] )
@@ -217,7 +274,7 @@ class FileManagerBase:
         failed[lfn] = "Failed to obtain all ancestors"
         continue
       fileIDAncestorDict = res['Value']
-      for fileID, fileIDDict in fileIDAncestorDict.items():
+      for fileIDDict in fileIDAncestorDict.values():
         for ancestorID, relativeDepth in fileIDDict.items():
           toInsert[ancestorID] = relativeDepth + originalDepth
       res = self._insertFileAncestors( originalFileID, toInsert, connection = connection )
@@ -234,12 +291,14 @@ class FileManagerBase:
       ancestorTuples.append( "(%d,%d,%d)" % ( fileID, ancestorID, depth ) )
     if not ancestorTuples:
       return S_OK()
-    req = "INSERT INTO FC_FileAncestors (FileID,AncestorID,AncestorDepth) VALUES %s" % intListToString( ancestorTuples )
+    req = "INSERT INTO FC_FileAncestors (FileID, AncestorID, AncestorDepth) VALUES %s" \
+                              % intListToString( ancestorTuples )
     return self.db._update( req, connection )
 
   def _getFileAncestors( self, fileIDs, depths = [], connection = False ):
     connection = self._getConnection( connection )
-    req = "SELECT FileID,AncestorID,AncestorDepth FROM FC_FileAncestors WHERE FileID IN (%s)" % intListToString( fileIDs )
+    req = "SELECT FileID, AncestorID, AncestorDepth FROM FC_FileAncestors WHERE FileID IN (%s)" \
+                              % intListToString( fileIDs )
     if depths:
       req = "%s AND AncestorDepth IN (%s);" % ( req, intListToString( depths ) )
     res = self.db._query( req, connection )
@@ -359,7 +418,7 @@ class FileManagerBase:
           directorySESizeDict[dirID] = {}
         if not directorySESizeDict[dirID].has_key( seID ):
           directorySESizeDict[dirID][seID] = {'Files':0, 'Size':0}
-        directorySESizeDict[dirID][seID]['Size'] += lfns[lfn]['Size']
+        directorySESizeDict[dirID][seID]['Size'] += size
         directorySESizeDict[dirID][seID]['Files'] += 1
 
     # Now do removal  
@@ -375,8 +434,8 @@ class FileManagerBase:
     return S_OK( {"Successful":successful, "Failed":failed} )
 
   def _setFileOwner( self, fileID, owner, connection = False ):
-    connection = self._getConnection( connection )
     """ Set the file owner """
+    connection = self._getConnection( connection )
     if type( owner ) in StringTypes:
       result = self.db.ugManager.findUser( owner )
       if not result['OK']:
@@ -385,8 +444,8 @@ class FileManagerBase:
     return self._setFileParameter( fileID, 'UID', owner, connection = connection )
 
   def _setFileGroup( self, fileID, group, connection = False ):
-    connection = self._getConnection( connection )
     """ Set the file group """
+    connection = self._getConnection( connection )
     if type( group ) in StringTypes:
       result = self.db.ugManager.findGroup( group )
       if not result['OK']:
@@ -395,8 +454,8 @@ class FileManagerBase:
     return self._setFileParameter( fileID, 'GID', group, connection = connection )
 
   def _setFileMode( self, fileID, mode, connection = False ):
-    connection = self._getConnection( connection )
     """ Set the file mode """
+    connection = self._getConnection( connection )
     return self._setFileParameter( fileID, 'Mode', mode, connection = connection )
 
   ######################################################
@@ -405,8 +464,8 @@ class FileManagerBase:
   #
 
   def addReplica( self, lfns, connection = False ):
-    connection = self._getConnection( connection )
     """ Add replica to the catalog """
+    connection = self._getConnection( connection )
     successful = {}
     failed = {}
     for lfn, info in lfns.items():
@@ -443,8 +502,8 @@ class FileManagerBase:
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
   def removeReplica( self, lfns, connection = False ):
-    connection = self._getConnection( connection )
     """ Remove replica from catalog """
+    connection = self._getConnection( connection )
     successful = {}
     failed = {}
     for lfn, info in lfns.items():
@@ -462,8 +521,8 @@ class FileManagerBase:
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
   def setReplicaStatus( self, lfns, connection = False ):
-    connection = self._getConnection( connection )
     """ Set replica status in the catalog """
+    connection = self._getConnection( connection )
     successful = {}
     failed = {}
     for lfn, info in lfns.items():
@@ -486,8 +545,8 @@ class FileManagerBase:
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
   def setReplicaHost( self, lfns, connection = False ):
-    connection = self._getConnection( connection )
     """ Set replica host in the catalog """
+    connection = self._getConnection( connection )
     successful = {}
     failed = {}
     for lfn, info in lfns.items():
@@ -515,8 +574,8 @@ class FileManagerBase:
   #
 
   def exists( self, lfns, connection = False ):
-    connection = self._getConnection( connection )
     """ Determine whether a file exists in the catalog """
+    connection = self._getConnection( connection )
     res = self._findFiles( lfns, connection = connection )
     successful = dict.fromkeys( res['Value']['Successful'], True )
     failed = {}
@@ -528,14 +587,14 @@ class FileManagerBase:
     return S_OK( {"Successful":successful, "Failed":failed} )
 
   def isFile( self, lfns, connection = False ):
-    connection = self._getConnection( connection )
     """ Determine whether a path is a file in the catalog """
+    connection = self._getConnection( connection )
     #TO DO, should check whether it is a directory if it fails
     return self.exists( lfns, connection = connection )
 
   def getFileSize( self, lfns, connection = False ):
-    connection = self._getConnection( connection )
     """ Get file size from the catalog """
+    connection = self._getConnection( connection )
     #TO DO, should check whether it is a directory if it fails
     res = self._findFiles( lfns, ['Size'], connection = connection )
     if not res['OK']:
@@ -546,14 +605,18 @@ class FileManagerBase:
     return res
 
   def getFileMetadata( self, lfns, connection = False ):
-    connection = self._getConnection( connection )
     """ Get file metadata from the catalog """
+    connection = self._getConnection( connection )
     #TO DO, should check whether it is a directory if it fails
-    return self._findFiles( lfns, ['Size', 'Checksum', 'ChecksumType', 'UID', 'GID', 'GUID', 'CreationDate', 'ModificationDate', 'Mode', 'Status'], connection = connection )
+    return self._findFiles( lfns, ['Size', 'Checksum',
+                                   'ChecksumType', 'UID',
+                                   'GID', 'GUID',
+                                   'CreationDate', 'ModificationDate',
+                                   'Mode', 'Status'], connection = connection )
 
   def getPathPermissions( self, paths, credDict, connection = False ):
-    connection = self._getConnection( connection )
     """ Get the permissions for the supplied paths """
+    connection = self._getConnection( connection )
     res = self.db.ugManager.getUserAndGroupID( credDict )
     if not res['OK']:
       return res
@@ -595,8 +658,8 @@ class FileManagerBase:
   #
 
   def getReplicas( self, lfns, allStatus, connection = False ):
-    connection = self._getConnection( connection )
     """ Get file replicas from the catalog """
+    connection = self._getConnection( connection )
     startTime = time.time()
     res = self._findFiles( lfns, connection = connection )
     #print 'findFiles',time.time()-startTime
@@ -635,8 +698,8 @@ class FileManagerBase:
     return pfnunparse( pfnDict )
 
   def getReplicaStatus( self, lfns, connection = False ):
-    connection = self._getConnection( connection )
     """ Get replica status from the catalog """
+    connection = self._getConnection( connection )
     res = self._findFiles( lfns, connection = connection )
     failed = res['Value']['Failed']
     fileIDLFNs = {}
@@ -691,7 +754,12 @@ class FileManagerBase:
   def getFilesInDirectory( self, dirID, path, verbose = False, connection = False ):
     connection = self._getConnection( connection )
     files = {}
-    res = self._getDirectoryFiles( dirID, [], ['FileID', 'Size', 'Checksum', 'ChecksumType', 'Type', 'UID', 'GID', 'CreationDate', 'ModificationDate', 'Mode', 'Status'], connection = connection )
+    res = self._getDirectoryFiles( dirID, [], ['FileID', 'Size',
+                                               'Checksum', 'ChecksumType',
+                                               'Type', 'UID',
+                                               'GID', 'CreationDate',
+                                               'ModificationDate', 'Mode',
+                                               'Status'], connection = connection )
     if not res['OK']:
       return res
     if not res['Value']:
@@ -785,8 +853,8 @@ class FileManagerBase:
     return S_OK( storageElement )
 
   def setFileGroup( self, lfns, connection = False ):
-    connection = self._getConnection( connection )
     """ Get set the group for the supplied files """
+    connection = self._getConnection( connection )
     res = self._findFiles( lfns, ['FileID', 'GID'], connection = connection )
     if not res['OK']:
       return res
@@ -812,8 +880,8 @@ class FileManagerBase:
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
   def setFileOwner( self, lfns, connection = False ):
-    connection = self._getConnection( connection )
     """ Get set the group for the supplied files """
+    connection = self._getConnection( connection )
     res = self._findFiles( lfns, ['FileID', 'UID'], connection = connection )
     if not res['OK']:
       return res
@@ -839,8 +907,8 @@ class FileManagerBase:
     return S_OK( {'Successful':successful, 'Failed':failed} )
 
   def setFileMode( self, lfns, connection = False ):
-    connection = self._getConnection( connection )
     """ Get set the mode for the supplied files """
+    connection = self._getConnection( connection )
     res = self._findFiles( lfns, ['FileID', 'Mode'], connection = connection )
     if not res['OK']:
       return res
