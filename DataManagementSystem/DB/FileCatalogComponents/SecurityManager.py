@@ -8,6 +8,8 @@ __RCSID__ = "$Id:  $"
 
 import time,os
 from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.Core.Security.CS import getPropertiesForGroup
+from DIRAC.Core.Security.Properties import *
 
 class SecurityManagerBase:
   
@@ -27,7 +29,8 @@ class SecurityManagerBase:
     return S_OK(resDict)
 
   def hasAdminAccess(self,credDict):
-    if credDict.get('group','') == 'diracAdmin':
+    group = credDict.get('group','')
+    if FC_MANAGEMENT in getPropertiesForGroup(group):
       return S_OK(True)
     return S_OK(False)
 
@@ -58,8 +61,7 @@ class DirectorySecurityManager(SecurityManagerBase):
     permissions = {}
     failed = {}
     while toGet:
-      paths = toGet.keys()
-      res = self.db.dtree.getPathPermissions(paths,credDict)
+      res = self.db.dtree.getPathPermissions(toGet.keys(),credDict)
       if not res['OK']:
         return res
       for path,mode in res['Value']['Successful'].items():
