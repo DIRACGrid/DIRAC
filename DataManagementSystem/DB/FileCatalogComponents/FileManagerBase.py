@@ -230,7 +230,7 @@ class FileManagerBase:
         size = seDict['Size']
         req = "UPDATE FC_DirectoryUsage SET SESize=SESize%s%d, SEFiles=SEFiles%s%d, LastUpdate=UTC_TIMESTAMP() " \
                                                          % ( change, size, change, files )
-        rep += "WHERE DirID=%d AND SEID=%d;" % ( dirID, seID )
+        req += "WHERE DirID=%d AND SEID=%d;" % ( dirID, seID )
         res = self.db._update( req )
         if not res['OK']:
           gLogger.warn( "Failed to update FC_DirectoryUsage", res['Message'] )
@@ -313,7 +313,8 @@ class FileManagerBase:
 
   def _getFileDecendents( self, fileIDs, depths, connection = False ):
     connection = self._getConnection( connection )
-    req = "SELECT AncestorID,FileID,AncestorDepth FROM FC_FileAncestors WHERE AncestorID IN (%s)" % intListToString( fileIDs )
+    req = "SELECT AncestorID, FileID, AncestorDepth FROM FC_FileAncestors WHERE AncestorID IN (%s)" \
+                                % intListToString( fileIDs )
     if depths:
       req = "%s AND AncestorDepth IN (%s);" % ( req, intListToString( depths ) )
     res = self.db._query( req, connection )
@@ -797,13 +798,13 @@ class FileManagerBase:
         return S_ERROR( "Missing '%s' parameter" % key )
     return S_OK()
 
-  def _checkLFNPFNConvention( self, lfn, pfn, se ):
-    """ Check that the PFN corresponds to the LFN-PFN convention """
-    if pfn == lfn:
-      return S_OK()
-    if ( len( pfn ) < len( lfn ) ) or ( pfn[-len( lfn ):] != lfn ) :
-      return S_ERROR( 'PFN does not correspond to the LFN convention' )
-    return S_OK()
+  # def _checkLFNPFNConvention( self, lfn, pfn, se ):
+  #   """ Check that the PFN corresponds to the LFN-PFN convention """
+  #   if pfn == lfn:
+  #     return S_OK()
+  #   if ( len( pfn ) < len( lfn ) ) or ( pfn[-len( lfn ):] != lfn ) :
+  #     return S_ERROR( 'PFN does not correspond to the LFN convention' )
+  #  return S_OK()
 
   def _checkLFNPFNConvention( self, lfn, pfn, se ):
     """ Check that the PFN corresponds to the LFN-PFN convention
