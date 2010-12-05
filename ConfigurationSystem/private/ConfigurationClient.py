@@ -5,7 +5,7 @@ import types
 import os
 import DIRAC
 from DIRAC.Core.Utilities import List
-from DIRAC.ConfigurationSystem.Client.Helpers import getVO
+#from DIRAC.ConfigurationSystem.Client.Helpers.GetFunctions import getVO
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -68,29 +68,29 @@ class ConfigurationClient:
       gLogger.warn( "gConfig.getValue for invalid value", retVal[ 'Message' ] )
       return defaultValue
 
-  def getSpecialValue( self, optionPath, defaultValue = None, vo = None, setup = None ):
-    """ Get a configuration option value for a specific vo and setup
-    """
-    voName = vo
-    if not vo:
-      voName = getVO()
-    setupName = setup
-    if not setup:
-      setupName = self.getValue( '/DIRAC/Setup', '' )
-
-    # Get the most specific defined value now
-    section = optionPath.split( '/' )[1]
-    oPath = '/'.join( optionPath.split( '/' )[2:] )
-    if voName:
-      if setupName:
-        value = self.getValue( section + '/' + voName + '/' + setupName + oPath, 'NotDefined' )
-        if value != 'NotDefined':
-          return value
-      value = self.getValue( section + '/' + voName + oPath, 'NotDefined' )
-      if value != 'NotDefined':
-        return value
-    value = self.getValue( optionPath, defaultValue )
-    return value
+#  def getSpecialValue( self, optionPath, defaultValue = None, vo = None, setup = None ):
+#    """ Get a configuration option value for a specific vo and setup
+#    """
+#    voName = vo
+#    if not vo:
+#      voName = getVO()
+#    setupName = setup
+#    if not setup:
+#      setupName = self.getValue( '/DIRAC/Setup', '' )
+#
+#    # Get the most specific defined value now
+#    section = optionPath.split( '/' )[1]
+#    oPath = '/'.join( optionPath.split( '/' )[2:] )
+#    if voName:
+#      if setupName:
+#        value = self.getValue( section + '/' + voName + '/' + setupName + oPath, 'NotDefined' )
+#        if value != 'NotDefined':
+#          return value
+#      value = self.getValue( section + '/' + voName + oPath, 'NotDefined' )
+#      if value != 'NotDefined':
+#        return value
+#    value = self.getValue( optionPath, defaultValue )
+#    return value
 
   def getOption( self, optionPath, defaultValue = None ):
     gRefresher.refreshConfigurationIfNeeded()
