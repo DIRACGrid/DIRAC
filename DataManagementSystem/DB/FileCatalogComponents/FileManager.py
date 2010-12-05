@@ -55,7 +55,11 @@ class FileManager(FileManagerBase):
           successful[fname] = fileDict
     return S_OK({"Successful":successful,"Failed":failed})
 
-  def _getDirectoryFiles(self,dirID,fileNames,metadata,allStatus=False,connection=False):
+  def _getDirectoryFiles(self,dirID,fileNames,metadata_input,allStatus=False,connection=False):
+    """ Get the metadata for files in the same directory
+    """
+    metadata = list(metadata_input)
+    
     connection = self._getConnection(connection)
     # metadata can be any of ['FileID','Size','UID','GID','Status','Checksum','CheckSumType','Type','CreationDate','ModificationDate','Mode']
     req = "SELECT FileName,DirID,FileID,Size,UID,GID,Status FROM FC_Files WHERE DirID=%d" % (dirID)
@@ -269,6 +273,7 @@ class FileManager(FileManagerBase):
         continue
       seID = res['Value']
       insertTuples.append((fileID,seID))
+           
     if not master:
       res = self._getRepIDsForReplica(insertTuples, connection=connection)
       if not res['OK']:
@@ -277,8 +282,9 @@ class FileManager(FileManagerBase):
         for seID,repID in repDict.items():
           successful[fileIDLFNs[fileID]] = True
           insertTuples.remove((fileID,seID))
-    req = "INSERT INTO FC_Replicas (FileID,SEID,Status) VALUES %s" % (','.join(["(%d,%d,%d)" % (tuple[0],tuple[1],statusID) for tuple in insertTuples]))
-    res = self.db._update(req,connection)
+         
+    req = "INSERT INTO FC_Replicas (FileID,SEID,Status) VALUES %s" % (','.join(["(%d,%d,%d)" % (tuple[0],tuple[1],statusID) for tuple in insertTuples]))   
+    res = self.db._update(req,connection)    
     if not res['OK']:
       return res
     res = self._getRepIDsForReplica(insertTuples, connection=connection)
@@ -489,7 +495,10 @@ class FileManager(FileManagerBase):
   # _getFileReplicas related methods
   #
 
-  def _getFileReplicas(self,fileIDs,fields=['PFN'],connection=False):
+  def _getFileReplicas(self,fileIDs,fields_input=['PFN'],connection=False):
+    
+    
+    fields = list(fields_input)
     connection = self._getConnection(connection)
     res = self.__getFileIDReplicas(fileIDs,connection=connection)
     if not res['OK']:
@@ -497,7 +506,7 @@ class FileManager(FileManagerBase):
     fileIDDict = res['Value']
     if fileIDDict:
       if 'Status' in fields:
-        field.remove('Status')
+        fields.remove('Status')
       req = "SELECT RepID,%s FROM FC_ReplicaInfo WHERE RepID IN (%s);" % (intListToString(fields),intListToString(fileIDDict.keys()))
       res = self.db._query(req,connection)
       if not res['OK']:
