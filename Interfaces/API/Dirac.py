@@ -341,7 +341,7 @@ class Dirac:
         self.log.info( 'Executing workflow locally with full WMS submission and DIRAC Job Agent' )
         result = self.runLocalAgent( jdl, jobDescription )
       if mode.lower() == 'wms':
-        self.log.info( 'Will submit job to WMS' ) #this will happen by default anyway
+        self.log.verbose( 'Will submit job to WMS' ) #this will happen by default anyway
         result = self._sendJob( jdl )
         if not result['OK']:
           self.log.error( 'Job submission failure', result['Message'] )
