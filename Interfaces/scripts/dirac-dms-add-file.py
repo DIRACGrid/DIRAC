@@ -5,19 +5,25 @@
 # Author :  Stuart Paterson
 ########################################################################
 __RCSID__ = "$Id$"
-import DIRAC
+
 from DIRAC.Core.Base import Script
-from DIRAC.Interfaces.API.Dirac                       import Dirac
+
+Script.setUsageMessage( """
+Upload a file to the grid storage and register it in the File Catalog
+
+Usage:
+   %s <LFN> <FILE PATH> <DIRAC SE> [<GUID>]
+""" % Script.scriptName )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s <LFN> <FILE PATH> <DIRAC SE> [<GUID>]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
+import DIRAC
+from DIRAC.Interfaces.API.Dirac import Dirac    
 
 if len( args ) < 3 or len( args ) > 4:
-  usage()
+  Script.showHelp()
+  DIRAC.exit( 2 )
 
 guid = None
 if len( args ) > 3:
