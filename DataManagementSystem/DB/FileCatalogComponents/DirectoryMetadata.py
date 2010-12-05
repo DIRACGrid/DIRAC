@@ -29,12 +29,14 @@ class DirectoryMetadata:
       if ptype.lower() == result['Value'][pname].lower():
         return S_OK( 'Already exists' )
       else:
-        return S_ERROR( 'Attempt to add an existing metadata with different type: %s/%s' % ( ptype, result['Value'][pname] ) )
+        return S_ERROR( 'Attempt to add an existing metadata with different type: %s/%s' %
+                        ( ptype, result['Value'][pname] ) )
 
     valueType = ptype
     if ptype == "MetaSet":
       valueType = "VARCHAR(64)"
-    req = "CREATE TABLE FC_Meta_%s ( DirID INTEGER NOT NULL, Value %s, PRIMARY KEY (DirID), INDEX (Value) )" % ( pname, valueType )
+    req = "CREATE TABLE FC_Meta_%s ( DirID INTEGER NOT NULL, Value %s, PRIMARY KEY (DirID), INDEX (Value) )" \
+                              % ( pname, valueType )
     result = self._query( req )
     if not result['OK']:
       return result
@@ -107,7 +109,8 @@ class DirectoryMetadata:
       return result
     metaTypeDict = result['Value']
 
-    req = "SELECT S.MetaKey,S.MetaValue FROM FC_MetaSets as S, FC_MetaSetNames as N WHERE N.MetaSetName='%s' AND N.MetaSetID=S.MetaSetID" % metaSetName
+    req = "SELECT S.MetaKey,S.MetaValue FROM FC_MetaSets as S, FC_MetaSetNames as N "
+    req += "WHERE N.MetaSetName='%s' AND N.MetaSetID=S.MetaSetID" % metaSetName
     result = self._query( req )
     if not result['OK']:
       return result
