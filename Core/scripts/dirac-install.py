@@ -263,7 +263,7 @@ cmdOpts = ( ( 'r:', 'release=', 'Release version to install' ),
             ( 'v', 'useVersionsDir', 'Use versions directory' ),
             ( 'd', 'debug', 'Show debug messages' ),
             ( 'h', 'help', 'Show this help' ),
-            ( 'u:', 'baseURL=', 'Change base URL for Tar Download' ),
+            ( 'u:', 'baseURL=', 'Change base URL for Tar Download repository' ),
             ( 'V:', 'virtualOrganization=', 'Install for this Virtual Organization' )
           )
 
