@@ -5,16 +5,28 @@
 # Author :  Stuart Paterson
 ########################################################################
 __RCSID__ = "$Id$"
-import DIRAC
+
+
 from DIRAC.Core.Base import Script
-from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
+
+Script.setUsageMessage( """
+Get the list of sites enabled in the mask for job submission
+
+Usage:
+   %s [options]
+""" % Script.scriptName )
 
 Script.parseCommandLine( ignoreErrors = True )
-args = Script.getPositionalArgs()
+
+import DIRAC
+from DIRAC import gLogger
+from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
 diracAdmin = DiracAdmin()
 
-result = diracAdmin.getSiteMask( printOutput = True )
+gLogger.setLevel('ALWAYS')
+
+result = diracAdmin.getSiteMask(printOutput=True)
 if result['OK']:
   DIRAC.exit( 0 )
 else:
