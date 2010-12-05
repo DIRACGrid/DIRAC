@@ -2086,7 +2086,7 @@ class ReplicaManager( CatalogToStorage ):
     else:
       oDataOperation.setValueByKey( 'TransferOK', len( res['Value']['Successful'].keys() ) )
       gDataStoreClient.addRegister( oDataOperation )
-      infoStr = "ReplicaManager.__removePhysicalReplica: Successfully issued removal request."
+      infoStr = "ReplicaManager.__removePhysicalReplica: Successfully issued accounting removal request."
       gLogger.info( infoStr )
       return res
 
