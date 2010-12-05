@@ -220,11 +220,11 @@ class FileCatalogDB(DB, DirectoryMetadata):
   def changePathMode(self, lfns, credDict, recursive=False):
     """ Change the mode of the given list of paths
     """
-    res = self._checkPathPermissions('Write', lfns, credDict)
+    res = self._checkPathPermissions('Write', lfns, credDict)    
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.fileManager.changePathMode(res['Value']['Successful'],credDict, recursive)
+    res = self.fileManager.changePathMode(res['Value']['Successful'],credDict, recursive)    
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
@@ -480,12 +480,12 @@ class FileCatalogDB(DB, DirectoryMetadata):
     successful = res['Value']['Successful']
     return S_OK( {'Successful':successful,'Failed':failed} )
 
-  def getDirectorySize(self,lfns,credDict):
+  def getDirectorySize(self,lfns,longOutput,credDict):
     res = self._checkPathPermissions('Read', lfns, credDict)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    res = self.dtree.getDirectorySize(res['Value']['Successful'],credDict)
+    res = self.dtree.getDirectorySize(res['Value']['Successful'],longOutput)
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])
