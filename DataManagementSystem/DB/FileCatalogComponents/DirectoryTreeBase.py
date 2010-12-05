@@ -9,6 +9,7 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities  import *
 from DIRAC                                                          import S_OK, S_ERROR, gLogger
 import string, time, datetime,threading, re, os, sys, md5, random
 from types import *
+import stat
 
 DEBUG = 0
      
@@ -426,12 +427,10 @@ class DirectoryTreeBase:
 
   def getPathPermissions(self, lfns, credDict):
     """ Get permissions for the given user/group to manipulate the given lfns 
-    """
-    paths = lfns.keys()
-    
+    """    
     successful = {}
     failed = {}
-    for path in paths:
+    for path in lfns:
       result = self.getDirectoryPermissions(path,credDict)
       if not result['OK']:
         failed[path] = result['Message']
@@ -444,13 +443,29 @@ class DirectoryTreeBase:
   def getDirectoryPermissions(self,path,credDict):
     """ Get permissions for the given user/group to manipulate the given directory 
     """ 
+    result = self.db.ugManager.getUserAndGroupID(credDict)
+    if not result['OK']:
+      return result
+    uid,gid = result['Value']
+    
+    result = self.getDirectoryParameters(path)
+    if not result['OK']:
+      return result 
+    
+    dUid = result['Value']['UID']
+    dGid = result['Value']['GID']
+    mode = result['Value']['Mode']
+    
+    owner = uid == dUid
+    group = gid == dGid
     
     resultDict = {}
     if self.db.globalReadAccess:
       resultDict['Read'] = True
-      
-    resultDict['Write'] = True
-    resultDict['Execute'] = True
+    else:
+      resultDict['Read'] = (owner and mode&stat.S_IRUSR) or (group and mode&stat.S_IRGRP) or mode&stat.S_IROTH       
+    resultDict['Write'] = (owner and mode&stat.S_IWUSR) or (group and mode&stat.S_IWGRP) or mode&stat.S_IWOTH
+    resultDict['Execute'] = (owner and mode&stat.S_IXUSR) or (group and mode&stat.S_IXGRP) or mode&stat.S_IXOTH
     return S_OK(resultDict)
   
   def __getFilesInDirectory(self,dirID):
@@ -518,7 +533,67 @@ class DirectoryTreeBase:
         
     return S_OK({'Successful':successful,'Failed':failed})      
   
-  def getDirectorySize(self,lfns,credDict):
+  def getDirectorySize(self,lfns,longOutput=False):
+    """ Get the total size of the requested directories. If long flag
+        is True, get also physical size per Storage Element
+    """
+    
+    resultLogical = self._getDirectoryLogicalSize(lfns)
+    if not resultLogical['OK']:
+      return resultLogical
+    
+    resultDict = resultLogical['Value']
+    if not resultDict['Successful']:
+      return resultLogical
+    
+    if longOutput:
+      # Continue with only successful directories
+      resultPhysical = self._getDirectoryPhysicalSize(resultDict['Successful'])
+      if not resultPhysical['OK']:
+        result = S_OK(resultDict)
+        result['Message'] = "Failed to get the physical size on storage"
+        return result     
+      for lfn in resultPhysical['Value']['Successful']:
+        resultDict['Successful'][lfn]['PhysicalSize'] = resultPhysical['Value']['Successful'][lfn]
+        
+    return S_OK(resultDict)            
+  
+  def _getDirectoryLogicalSize(self,lfns):
+    """ Get the total "logical" size of the requested directories
+    """
+    paths = lfns.keys()
+    successful = {}
+    failed = {}
+    for path in paths:
+      result = self.findDir(path)
+      if not result['OK']:
+        failed[path] = "Directory not found"
+        continue
+      if not result['Value']:
+        failed[path] = "Directory not found"
+        continue
+      dirID = result['Value']
+      result = self.getSubdirectoriesByID(dirID)
+      if not result['OK']:
+        failed[path] = result['Message']
+      else:
+        dirList = result['Value'].keys()
+        dirList.append(dirID)
+        dirString = ','.join([ str(x) for x in dirList ])
+        req = "SELECT SUM(Size) FROM FC_Files WHERE DirID IN (%s)" % dirString      
+        result = self.db._query(req)       
+        if not result['OK']:
+          failed[path] = result['Message']
+        elif not result['Value']:
+          successful[path] = {"LogicalSize":0}
+        elif result['Value'][0][0]:
+          successful[path] = {"LogicalSize":int(result['Value'][0][0])}
+        else:
+          successful[path] = {"LogicalSize":0}
+          
+    return S_OK({'Successful':successful,'Failed':failed})  
+  
+  def _getDirectoryPhysicalSize(self,lfns):
     """ Get the total size of the requested directories
     """
     paths = lfns.keys()
@@ -541,12 +616,23 @@ class DirectoryTreeBase:
         dirList.append(dirID)
         dirString = ','.join([ str(x) for x in dirList ])
         req = "SELECT SUM(Size) FROM FC_Files WHERE DirID IN (%s)" % dirString
-        result = self.db._query(req)
+        req = "SELECT SUM(F.Size),S.SEName from FC_Files as F, FC_Replicas as R, FC_StorageElements as S "
+        req += "WHERE R.SEID=S.SEID AND F.FileID=R.FileID AND F.DirID IN (%s) " % dirString
+        req += "GROUP BY S.SEID"        
+        result = self.db._query(req)        
         if not result['OK']:
           failed[path] = result['Message']
         elif not result['Value']:
-          successful[path] = 0
+          successful[path] = {}
+        elif result['Value'][0][0]:
+          seDict = {}
+          total = 0
+          for size,seName in result['Value']:
+            seDict[seName] = int(size)
+            total += size
+          seDict['Total'] = int(total)  
+          successful[path] = seDict
         else:
-          successful[path] = int(result['Value'][0][0])
+          successful[path] = {} 
           
     return S_OK({'Successful':successful,'Failed':failed})          
