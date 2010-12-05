@@ -629,7 +629,7 @@ class FileManagerBase:
   def _resolvePFN(self,lfn,se):
     resSE = self.db.seManager.getSEDefinition(se)
     if not resSE['OK']:
-      return res
+      return resSE
     pfnDict = dict(resSE['Value']['SEDict'])
     pfnDict['FileName'] = lfn
     return pfnunparse(pfnDict)
@@ -860,21 +860,22 @@ class FileManagerBase:
           successful[lfn] = True
     return S_OK({'Successful':successful,'Failed':failed})
 
-class ToFinalize:
-
-  def changePathOwner(self,paths,credDict):  
+  def changePathOwner(self,paths,credDict,recursive=False):  
     """ Bulk method to change Owner for the given paths """
-    return self._changePathFunction(paths,credDict,self.db.dtree.changeDirectoryOwner,self.setFileOwner)
+    return self._changePathFunction(paths,credDict,self.db.dtree.changeDirectoryOwner,
+                                    self.setFileOwner, recursive)
   
-  def changePathGroup(self,paths,credDict):  
+  def changePathGroup(self,paths,credDict,recursive=False):  
     """ Bulk method to change Owner for the given paths """
-    return self._changePathFunction(paths,credDict,self.db.dtree.changeDirectoryGroup,self.setFileGroup)
+    return self._changePathFunction(paths,credDict,self.db.dtree.changeDirectoryGroup,
+                                    self.setFileGroup, recursive)
   
-  def changePathMode(self,paths,credDict):  
+  def changePathMode(self,paths,credDict,recursive=False):  
     """ Bulk method to change Owner for the given paths """
-    return self._changePathFunction(paths,credDict,self.db.dtree.changeDirectoryMode,self.setFileMode)
+    return self._changePathFunction(paths,credDict,self.db.dtree.changeDirectoryMode,
+                                    self.setFileMode, recursive)
 
-  def _changePathFunction(self,paths,credDict,change_function_directory,change_function_file):
+  def _changePathFunction(self,paths,credDict,change_function_directory,change_function_file,recursive=False):
     """ A generic function to change Owner, Group or Mode for the given paths """
     result = self.db.ugManager.getUserAndGroupID(credDict)
     if not result['OK']:
@@ -901,23 +902,23 @@ class ToFinalize:
     dirArgs = {}
     fileArgs = {}
     
-    for path in arguments:
+    for path in paths:
       if (not path in dirList) and (not path in fileList):
         failed[path] = 'Path not found'
       if path in dirList:
-        dirArgs[path] = arguments[path]
+        dirArgs[path] = paths[path]
       elif path in fileList:
-        fileArgs[path] = arguments[path]        
+        fileArgs[path] = paths[path]        
     if dirArgs:        
       result = change_function_directory(dirArgs,uid,gid)
       if not result['OK']:
         return result
       successful.update(result['Value']['Successful'])
-      failed.update(result['Value']['Successful'])    
+      failed.update(result['Value']['Failed'])    
     if fileArgs:
       result = change_function_file(fileArgs,uid,gid)
       if not result['OK']:
         return result
       successful.update(result['Value']['Successful'])
-      failed.update(result['Value']['Successful'])    
+      failed.update(result['Value']['Failed'])    
     return S_OK({'Successful':successful,'Failed':failed})
