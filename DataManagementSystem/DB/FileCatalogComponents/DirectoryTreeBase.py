@@ -450,7 +450,13 @@ class DirectoryTreeBase:
     
     result = self.getDirectoryParameters(path)
     if not result['OK']:
-      return result 
+      if "not found" in result['Message']:
+        # If the directory does not exist, check the nearest parent for the permissions
+        pDir = os.path.dirname(path)
+        result = self.getDirectoryPermissions(pDir,credDict)
+        return result
+      else:  
+        return result 
     
     dUid = result['Value']['UID']
     dGid = result['Value']['GID']
