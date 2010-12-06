@@ -14,7 +14,7 @@ def getVO( defaultVO = '' ):
   """
     Return VO from configuration
   """
-  return gConfig.getValue( '', defaultVO )
+  return gConfig.getValue( '/DIRAC/VirtualOrganization', defaultVO )
 
 def getCSExtensions():
   """
