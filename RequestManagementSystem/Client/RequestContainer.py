@@ -154,15 +154,15 @@ class RequestContainer:
     self.attributes[self.item_called] = value
     return S_OK()
 
-  def __get_subattribute(self,ind):
+  def __get_subattribute(self,ind,type):
     """ Generic method to get attributes
     """
-    return S_OK(self.subRequests[ind]['Attributes'][self.item_called])
+    return S_OK(self.subRequests[type][ind]['Attributes'][self.item_called])
 
-  def __set_subattribute(self,ind,value):
+  def __set_subattribute(self,ind,type,value):
     """ Generic method to set attribute value
     """
-    self.subRequests[ind]['Attributes'][self.item_called] = value
+    self.subRequests[type][ind]['Attributes'][self.item_called] = value
     return S_OK()
 
   #####################################################################
