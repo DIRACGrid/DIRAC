@@ -160,7 +160,7 @@ class Distribution:
       if isHTTPS:
         args.append( "--username '%s'" % self.svnUser )
       else:
-        urlRes = urlparse.urlparse( devRoot )
+        urlRes = list(urlparse.urlparse( devRoot ))        
         urlRes[1] = "%s@%s" % ( self.svnUser, urlRes[1] )
         devRoot = urlparse.urlunparse( urlRes )
 
