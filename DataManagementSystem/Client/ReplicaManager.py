@@ -1237,7 +1237,7 @@ class ReplicaManager( CatalogToStorage ):
         'guid' is the guid with which the file is to be registered (if not provided will be generated)
         'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
     """
-    res = self.__verifyOperationPermission( lfn )
+    res = self.__verifyOperationPermission( os.path.dirname(lfn) )
     if not res['OK']:
       return res
     if not res['Value']:
