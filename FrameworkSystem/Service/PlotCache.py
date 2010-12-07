@@ -47,10 +47,8 @@ class PlotCache:
     if plotDict == False:
       basePlotFileName = "%s/%s.png" % ( self.plotsLocation, plotHash )
       if subplotMetadata:
-        # Assigning to function call which doesn't return
         retVal = graph( plotData, basePlotFileName, plotMetadata, metadata = subplotMetadata )
       else:
-        # Assigning to function call which doesn't return
         retVal = graph( plotData, basePlotFileName, plotMetadata )
       if not retVal[ 'OK' ]:
         return retVal
