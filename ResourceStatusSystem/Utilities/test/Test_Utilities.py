@@ -353,7 +353,7 @@ class SynchronizerSuccess(UtilitiesTestCase):
   def test__syncSites(self):
     self.syncC._syncSites()
 
-  def test__syncSites(self):
+  def test__syncVOBOX(self):
     self.syncC._syncVOBOX()
 
   def test__syncResources(self):
