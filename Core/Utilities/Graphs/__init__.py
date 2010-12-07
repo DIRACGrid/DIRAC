@@ -129,6 +129,7 @@ def graph( data, file, *args, **kw ):
   start = time.time()
   graph.writeGraph( file, 'PNG' )
   #print "AT >>>> writeGraph time",time.time()-start
+  return DIRAC.S_OK({'plot':file})
 
 def __checkKW( kw ):
   if 'watermark' not in kw:
