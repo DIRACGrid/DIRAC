@@ -43,7 +43,7 @@ class MacroCommand(Command):
     
     if len(self.args) == len(self.commands):
       commArgs = [(self.commands[x], self.args[x]) for x in range(len(self.commands))]
-    elif len(args) == 1:
+    elif len(self.args) == 1:
       commArgs = [(self.commands[x], self.args[0]) for x in range(len(self.commands))]
     else:
       raise RSSException, "Tuples or `args` provided are nor 1 nor the same number of the commands"
@@ -68,7 +68,7 @@ class MacroCommand(Command):
   
     if len(self.clients) == len(self.commands):
       commArgs = [(self.commands[x], self.clients[x]) for x in range(len(self.commands))]
-    elif len(args) == 1:
+    elif len(self.args) == 1:
       commArgs = [(self.commands[x], self.clients[0]) for x in range(len(self.commands))]
     else:
       raise RSSException, "`clients` provided are nor 1 nor the same number of the commands"
