@@ -1,5 +1,4 @@
 import unittest
-import sys
 from types import *
 from DIRAC.ResourceStatusSystem.Utilities.mock import Mock
 import DIRAC.ResourceStatusSystem.test.fake_RequestHandler
@@ -14,6 +13,7 @@ class ResourceStatusHandlerTestCase(unittest.TestCase):
   def setUp(self):
 #    from DIRAC.Core.Base import Script
 #    Script.parseCommandLine() 
+    import sys
     sys.modules["DIRAC.Core.DISET.RequestHandler"] = DIRAC.ResourceStatusSystem.test.fake_RequestHandler
     sys.modules["DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"] = DIRAC.ResourceStatusSystem.test.fake_rsDB
     sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
@@ -209,10 +209,6 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
     res = self.rsh.export_getPolicyRes('XX', 'XX', False)
     self.assert_(res['OK'])
         
-  def test_export_getServiceStats(self):
-    res = self.rsh.export_getServiceStats('')
-    self.assert_(res['OK'])
-
   def test_export_getDownTimesWeb(self):
     res = self.rsh.export_getDownTimesWeb({}, [], 0, 500)
     self.assert_(res['OK'])
@@ -251,9 +247,8 @@ class ResourceStatusHandlerSuccess(ResourceStatusHandlerTestCase):
       self.assert_(res['OK'])
       
   def test_export_whatIs(self):
-    for g in ValidRes:
-      res = self.rsh.export_whatIs('XX')
-      self.assert_(res['OK'])
+    res = self.rsh.export_whatIs('XX')
+    self.assert_(res['OK'])
       
 
 #  def test_export_enforcePolicies(self):
