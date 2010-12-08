@@ -184,7 +184,7 @@ class AgentModule:
     self.log.info( " DIRAC platform: %s" % DIRAC.platform )
     pollingTime = self.am_getOption( 'PollingTime' )
     if pollingTime > 3600:
-      self.log.info( " Polling time: %s hours" % pollingTime / 3600. )
+      self.log.info( " Polling time: %s hours" % int(pollingTime) / 3600. )
     else:
       self.log.info( " Polling time: %s seconds" % self.am_getOption( 'PollingTime' ) )
     self.log.info( " Control dir: %s" % self.am_getControlDirectory() )
