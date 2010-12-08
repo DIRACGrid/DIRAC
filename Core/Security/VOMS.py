@@ -1,7 +1,8 @@
+# $HeadURL$
+__RCSID__ = "$Id$"
 
 import os, stat, tempfile, shutil
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath
-from DIRAC.ConfigurationSystem.Client.Helpers                import getVO
 import DIRAC.Core.Security.Locations as Locations
 import DIRAC.Core.Security.File as File
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
@@ -193,7 +194,7 @@ class VOMS( BaseSecurity ):
         return tmpDir
 
 
-  def setVOMSAttributes( self, proxy, attribute = None, vo = getVO() ):
+  def setVOMSAttributes( self, proxy, attribute = None, vo = None ):
     """ Sets voms attributes to a proxy
     """
     if not vo:
