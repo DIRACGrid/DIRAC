@@ -29,9 +29,8 @@ class gLitePilotDirector( GridPilotDirector ):
     """
      Define some defaults and call parent __init__
     """
-    GridPilotDirector.__init__( self, submitPool )
-
     self.gridMiddleware = 'gLite'
+    GridPilotDirector.__init__( self, submitPool )
 
     self.resourceBrokers = BROKERS
     # FIXME: We might be able to remove this
