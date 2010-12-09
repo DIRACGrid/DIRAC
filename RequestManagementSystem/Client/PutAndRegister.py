@@ -4,7 +4,6 @@ __RCSID__ = "$Id: TransferAgent.py 18891 2009-12-02 17:12:46Z atsareg $"
 from DIRAC  import gLogger, gConfig, gMonitor, S_OK, S_ERROR, rootPath
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool, ThreadedJob
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
