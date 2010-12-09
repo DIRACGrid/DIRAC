@@ -237,7 +237,7 @@ for o, v in optList:
     except:
       pass
   elif o == '-R' or o == '--reference':
-    cliParams.pilotReference = v  
+    cliParams.pilotReference = v
   elif o in ( '-S', '--setup' ):
     configureOpts.append( '-S "%s"' % v )
   elif o in ( '-C', '--configurationServer' ):
@@ -282,13 +282,13 @@ pilotRef = 'Unknown'
 if cliParams.pilotReference:
   cliParams.flavor = 'DIRAC'
   pilotRef = cliParams.pilotReference
-  
+
 # Take the reference from the Torque batch system  
 if os.environ.has_key( 'PBS_JOBID' ):
   cliParams.flavour = 'DIRAC'
-  pilotRef = os.environ['PBS_JOBID']  
-  cliParams.queueName = os.environ['PBS_QUEUE']  
-      
+  pilotRef = os.environ['PBS_JOBID']
+  cliParams.queueName = os.environ['PBS_QUEUE']
+
 # This is the CREAM direct submission case  
 if os.environ.has_key( 'CREAM_JOBID' ):
   cliParams.flavour = 'CREAM'
@@ -304,7 +304,7 @@ if os.environ.has_key( 'GLITE_WMS_JOBID' ):
   if os.environ['GLITE_WMS_JOBID'] != 'N/A':
     cliParams.flavour = 'gLite'
     pilotRef = os.environ['GLITE_WMS_JOBID']
-  
+
 configureOpts.append( '-o /LocalSite/GridMiddleware=%s' % cliParams.flavour )
 if pilotRef != 'Unknown':
   configureOpts.append( '-o /LocalSite/PilotReference=%s' % pilotRef )
@@ -314,7 +314,7 @@ if pilotRef != 'Unknown':
 ###
 #cliParams.ceName = 'Local'
 if cliParams.flavour == 'LCG' or cliParams.flavour == 'gLite' :
-  if os.environ.has_key('OSG_APP'):
+  if os.environ.has_key( 'OSG_APP' ):
     retCode, CE = executeAndGetOutput( 'echo $OSG_HOSTNAME' )
   else:
     retCode, CE = executeAndGetOutput( 'edg-brokerinfo getCE || glite-brokerinfo getCE' )
@@ -334,9 +334,9 @@ elif cliParams.flavour == "CREAM":
 if cliParams.queueName:
   configureOpts.append( '-o /LocalSite/CEQueue=%s' % cliParams.queueName )
 if cliParams.ceName:
-  configureOpts.append( '-o /LocalSite/GridCE=%s' % cliParams.ceName )  
+  configureOpts.append( '-o /LocalSite/GridCE=%s' % cliParams.ceName )
 if cliParams.releaseVersion:
-  configureOpts.append( '-o /LocalSite/ReleaseVersion=%s' % cliParams.releaseVersion )    
+  configureOpts.append( '-o /LocalSite/ReleaseVersion=%s' % cliParams.releaseVersion )
 
 ###
 # Set the platform if defined
@@ -598,7 +598,6 @@ inProcessOpts .append( '-o MaxTotalJobs=%s' % 10 )
 
 jobAgentOpts = [ '-o MaxCycles=%s' % cliParams.maxCycles ]
 # jobAgentOpts.append( '-o CEUniqueID=%s' % JOB_AGENT_CE )
-# jobAgentOpts.append( '-o ControlDirectory=%s' % jobAgentControl )
 if cliParams.debug:
   jobAgentOpts.append( '-o LogLevel=DEBUG' )
 
