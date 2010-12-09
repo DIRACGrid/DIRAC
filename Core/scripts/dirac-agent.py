@@ -4,8 +4,7 @@
 # File :   dirac-agent
 # Author : Adria Casajus, Andrei Tsaregorodtsev, Stuart Paterson
 ########################################################################
-__RCSID__   = "$Id$"
-__VERSION__ = "$Revision: 1.2 $"
+__RCSID__ = "$Id$"
 
 """  This is a script to launch DIRAC agents
 """
@@ -22,7 +21,7 @@ positionalArgs = localCfg.getPositionalArguments()
 if len( positionalArgs ) == 0:
   gLogger.initialize( "NOT SPECIFIED", "/" )
   gLogger.fatal( "You must specify which agent to run!" )
-  sys.exit(1)
+  sys.exit( 1 )
 
 agentName = positionalArgs[0]
 localCfg.setConfigurationForAgent( agentName )
@@ -31,7 +30,7 @@ localCfg.addDefaultEntry( "/DIRAC/Security/UseServerCertificate", "yes" )
 resultDict = localCfg.loadUserData()
 if not resultDict[ 'OK' ]:
   gLogger.error( "There were errors when loading configuration", resultDict[ 'Message' ] )
-  sys.exit(1)
+  sys.exit( 1 )
 
 if len( positionalArgs ) == 1:
   mainName = positionalArgs[0]
@@ -39,7 +38,6 @@ else:
   mainName = "Framework/MultiAgent"
 
 agentReactor = AgentReactor( mainName )
-#result = agentReactor.loadAgentModules( positionalArgs )
 result = agentReactor.loadAgentModules( positionalArgs )
 if result[ 'OK' ]:
   agentReactor.go()
