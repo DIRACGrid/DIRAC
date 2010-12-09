@@ -43,8 +43,8 @@ class CatalogBase:
     """
     pass
 
-  def _executeSingleFileCatalogFunction( self, lfn, method, argsDict={}, catalogs=[] ):
-    res = self._executeFileCatalogFunction( lfn, method, argsDict, catalogs=catalogs )
+  def _executeSingleFileCatalogFunction( self, lfn, method, argsDict = {}, catalogs = [] ):
+    res = self._executeFileCatalogFunction( lfn, method, argsDict, catalogs = catalogs )
     if type( lfn ) == types.ListType:
       singleLfn = lfn[0]
     elif type( lfn ) == types.DictType:
@@ -59,7 +59,7 @@ class CatalogBase:
     else:
       return S_OK( res['Value']['Successful'][singleLfn] )
 
-  def _executeFileCatalogFunction( self, lfn, method, argsDict={}, catalogs=[] ):
+  def _executeFileCatalogFunction( self, lfn, method, argsDict = {}, catalogs = [] ):
     """ A simple wrapper around the file catalog functionality
     """
     # First check the supplied lfn(s) are the correct format.
@@ -109,251 +109,251 @@ class CatalogBase:
 
 class CatalogFile( CatalogBase ):
 
-  def getCatalogExists( self, lfn, singleFile=False, catalogs=[] ):
+  def getCatalogExists( self, lfn, singleFile = False, catalogs = [] ):
     """ Determine whether the path is registered in the FileCatalog
        
         'lfn' is the files to check (can be a single file or list of lfns)
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'exists', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'exists', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'exists', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'exists', catalogs = catalogs )
 
-  def getCatalogIsFile( self, lfn, singleFile=False, catalogs=[] ):
+  def getCatalogIsFile( self, lfn, singleFile = False, catalogs = [] ):
     """ Determine whether the path is registered as a file in the FileCatalog
     
         'lfn' is the files to check (can be a single file or list of lfns)
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'isFile', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'isFile', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'isFile', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'isFile', catalogs = catalogs )
 
-  def getCatalogFileMetadata( self, lfn, singleFile=False, catalogs=[] ):
+  def getCatalogFileMetadata( self, lfn, singleFile = False, catalogs = [] ):
     """ Get the metadata associated to a file in the FileCatalog
     
         'lfn' is the files to check (can be a single file or list of lfns)
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'getFileMetadata', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'getFileMetadata', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'getFileMetadata', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'getFileMetadata', catalogs = catalogs )
 
-  def getCatalogFileSize( self, lfn, singleFile=False, catalogs=[] ):
+  def getCatalogFileSize( self, lfn, singleFile = False, catalogs = [] ):
     """ Get the size registered for files in the FileCatalog
 
         'lfn' is the files to check (can be a single lfn or list of lfns)
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'getFileSize', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'getFileSize', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'getFileSize', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'getFileSize', catalogs = catalogs )
 
-  def getCatalogReplicas( self, lfn, allStatus=False, singleFile=False, catalogs=[] ):
+  def getCatalogReplicas( self, lfn, allStatus = False, singleFile = False, catalogs = [] ):
     """ Get the replicas registered for files in the FileCatalog
 
         'lfn' is the files to check (can be a single lfn or list of lfns)
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'getReplicas', argsDict={'allStatus':allStatus}, catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'getReplicas', argsDict = {'allStatus':allStatus}, catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'getReplicas', argsDict={'allStatus':allStatus}, catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'getReplicas', argsDict = {'allStatus':allStatus}, catalogs = catalogs )
 
-  def getCatalogLFNForPFN( self, pfn, singleFile=False, catalogs=[] ):
+  def getCatalogLFNForPFN( self, pfn, singleFile = False, catalogs = [] ):
     """ Get the LFNs registered with the supplied PFNs from the FileCatalog
       
         'pfn' is the files to obtain (can be a single pfn or list of pfns)
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( pfn, 'getLFNForPFN', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( pfn, 'getLFNForPFN', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( pfn, 'getLFNForPFN', catalogs=catalogs )
+      return self._executeFileCatalogFunction( pfn, 'getLFNForPFN', catalogs = catalogs )
 
-  def addCatalogFile( self, lfn, singleFile=False, catalogs=[] ):
+  def addCatalogFile( self, lfn, singleFile = False, catalogs = [] ):
     """ Add a new file to the FileCatalog
         
         'lfn' is the dictionary containing the file properties
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'addFile', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'addFile', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'addFile', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'addFile', catalogs = catalogs )
 
-  def removeCatalogFile( self, lfn, singleFile=False, catalogs=[] ):
+  def removeCatalogFile( self, lfn, singleFile = False, catalogs = [] ):
     """ Remove a file from the FileCatalog
   
         'lfn' is the file to be removed
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'removeFile', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'removeFile', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'removeFile', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'removeFile', catalogs = catalogs )
 
 class CatalogReplica( CatalogBase ):
 
-  def getCatalogReplicaStatus( self, lfn, singleFile=False, catalogs=[] ):
+  def getCatalogReplicaStatus( self, lfn, singleFile = False, catalogs = [] ):
     """ Get the status of the replica as registered in the FileCatalog
 
         'lfn' is a dictionary containing {LFN:SE}
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'getReplicaStatus', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'getReplicaStatus', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'getReplicaStatus', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'getReplicaStatus', catalogs = catalogs )
 
-  def addCatalogReplica( self, lfn, singleFile=False, catalogs=[] ):
+  def addCatalogReplica( self, lfn, singleFile = False, catalogs = [] ):
     """ Add a new replica to the FileCatalog
 
         'lfn' is the dictionary containing the replica properties
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'addReplica', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'addReplica', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'addReplica', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'addReplica', catalogs = catalogs )
 
-  def removeCatalogReplica( self, lfn, singleFile=False, catalogs=[] ):
+  def removeCatalogReplica( self, lfn, singleFile = False, catalogs = [] ):
     """ Remove a replica from the FileCatalog
    
          'lfn' is the file to be removed
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'removeReplica', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'removeReplica', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'removeReplica', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'removeReplica', catalogs = catalogs )
 
-  def setCatalogReplicaStatus( self, lfn, singleFile=False, catalogs=[] ):
+  def setCatalogReplicaStatus( self, lfn, singleFile = False, catalogs = [] ):
     """ Change the status for a replica in the FileCatalog
       
         'lfn' is the replica information to change
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'setReplicaStatus', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'setReplicaStatus', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'setReplicaStatus', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'setReplicaStatus', catalogs = catalogs )
 
-  def setCatalogReplicaHost( self, lfn, singleFile=False, catalogs=[] ):
+  def setCatalogReplicaHost( self, lfn, singleFile = False, catalogs = [] ):
     """ Change the registered SE for a replica in the FileCatalog
       
         'lfn' is the replica information to change
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'setReplicaHost', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'setReplicaHost', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'setReplicaHost', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'setReplicaHost', catalogs = catalogs )
 
 class CatalogDirectory( CatalogBase ):
 
-  def getCatalogIsDirectory( self, lfn, singleFile=False, catalogs=[] ):
+  def getCatalogIsDirectory( self, lfn, singleFile = False, catalogs = [] ):
     """ Determine whether the path is registered as a directory in the FileCatalog
       
         'lfn' is the files to check (can be a single file or list of lfns)
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'isDirectory', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'isDirectory', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'isDirectory', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'isDirectory', catalogs = catalogs )
 
-  def getCatalogDirectoryMetadata( self, lfn, singleFile=False, catalogs=[] ):
+  def getCatalogDirectoryMetadata( self, lfn, singleFile = False, catalogs = [] ):
     """ Get the metadata associated to a directory in the FileCatalog
       
         'lfn' is the directories to check (can be a single directory or list of directories)
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'getDirectoryMetadata', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'getDirectoryMetadata', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'getDirectoryMetadata', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'getDirectoryMetadata', catalogs = catalogs )
 
-  def getCatalogDirectoryReplicas( self, lfn, singleFile=False, catalogs=[] ):
+  def getCatalogDirectoryReplicas( self, lfn, singleFile = False, catalogs = [] ):
     """ Get the replicas for the contents of a directory in the FileCatalog
       
         'lfn' is the directories to check (can be a single directory or list of directories)
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'getDirectoryReplicas', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'getDirectoryReplicas', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'getDirectoryReplicas', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'getDirectoryReplicas', catalogs = catalogs )
 
-  def getCatalogListDirectory( self, lfn, verbose=False, singleFile=False, catalogs=[] ):
+  def getCatalogListDirectory( self, lfn, verbose = False, singleFile = False, catalogs = [] ):
     """ Get the contents of a directory in the FileCatalog
       
         'lfn' is the directories to check (can be a single directory or list of directories)
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'listDirectory', argsDict={'verbose':verbose}, catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'listDirectory', argsDict = {'verbose':verbose}, catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'listDirectory', argsDict={'verbose':verbose}, catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'listDirectory', argsDict = {'verbose':verbose}, catalogs = catalogs )
 
-  def getCatalogDirectorySize( self, lfn, singleFile=False, catalogs=[] ):
+  def getCatalogDirectorySize( self, lfn, singleFile = False, catalogs = [] ):
     """ Get the size a directory in the FileCatalog
       
         'lfn' is the directories to check (can be a single directory or list of directories)
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'getDirectorySize', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'getDirectorySize', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'getDirectorySize', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'getDirectorySize', catalogs = catalogs )
 
-  def createCatalogDirectory( self, lfn, singleFile=False, catalogs=[] ):
+  def createCatalogDirectory( self, lfn, singleFile = False, catalogs = [] ):
     """ Create the directory supplied in the FileCatalog
 
         'lfn' is the directory to create
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'createDirectory', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'createDirectory', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'createDirectory', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'createDirectory', catalogs = catalogs )
 
-  def removeCatalogDirectory( self, lfn, recursive=False, singleFile=False, catalogs=[] ):
+  def removeCatalogDirectory( self, lfn, recursive = False, singleFile = False, catalogs = [] ):
     """ Remove the directory supplied from the FileCatalog
 
         'lfn' is the directory to remove
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction(lfn, 'removeDirectory', argsDict={'recursive':recursive}, catalogs=catalogs)
+      return self._executeSingleFileCatalogFunction( lfn, 'removeDirectory', argsDict = {'recursive':recursive}, catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction(lfn, 'removeDirectory', argsDict={'recursive':recursive}, catalogs=catalogs)
+      return self._executeFileCatalogFunction( lfn, 'removeDirectory', argsDict = {'recursive':recursive}, catalogs = catalogs )
 
 class CatalogLink( CatalogBase ):
 
-  def getCatalogIsLink( self, lfn, singleFile=False, catalogs=[] ):
+  def getCatalogIsLink( self, lfn, singleFile = False, catalogs = [] ):
     """ Determine whether the path is registered as a link in the FileCatalog
       
         'lfn' is the paths to check (can be a single path or list of paths)
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'isLink', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'isLink', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'isLink', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'isLink', catalogs = catalogs )
 
-  def getCatalogReadLink( self, lfn, singleFile=False, catalogs=[] ):
+  def getCatalogReadLink( self, lfn, singleFile = False, catalogs = [] ):
     """ Get the target of a link as registered in the FileCatalog
       
         'lfn' is the links to check (can be a single link or list of links)
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'readLink', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'readLink', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'readLink', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'readLink', catalogs = catalogs )
 
-  def createCatalogLink( self, lfn, singleFile=False, catalogs=[] ):
+  def createCatalogLink( self, lfn, singleFile = False, catalogs = [] ):
     """ Create the link supplied in the FileCatalog
 
         'lfn' is the link dictionary containing the target lfn and link name to create 
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'createLink', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'createLink', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'createLink', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'createLink', catalogs = catalogs )
 
-  def removeCatalogLink( self, lfn, singleFile=False, catalogs=[] ):
+  def removeCatalogLink( self, lfn, singleFile = False, catalogs = [] ):
     """ Remove the link supplied from the FileCatalog
 
         'lfn' is the link to remove
     """
     if singleFile:
-      return self._executeSingleFileCatalogFunction( lfn, 'removeLink', catalogs=catalogs )
+      return self._executeSingleFileCatalogFunction( lfn, 'removeLink', catalogs = catalogs )
     else:
-      return self._executeFileCatalogFunction( lfn, 'removeLink', catalogs=catalogs )
+      return self._executeFileCatalogFunction( lfn, 'removeLink', catalogs = catalogs )
 
 class CatalogInterface( CatalogFile, CatalogReplica, CatalogDirectory, CatalogLink ):
   """ Dummy class to expose all the methods of the CatalogInterface
@@ -382,7 +382,7 @@ class StorageBase:
     """
     pass
 
-  def _executeSingleStorageElementFunction( self, storageElementName, pfn, method, argsDict={} ):
+  def _executeSingleStorageElementFunction( self, storageElementName, pfn, method, argsDict = {} ):
     res = self._executeStorageElementFunction( storageElementName, pfn, method, argsDict )
     if type( pfn ) == types.ListType:
       pfn = pfn[0]
@@ -396,7 +396,7 @@ class StorageBase:
     else:
       return S_OK( res['Value']['Successful'][pfn] )
 
-  def _executeStorageElementFunction( self, storageElementName, pfn, method, argsDict={} ):
+  def _executeStorageElementFunction( self, storageElementName, pfn, method, argsDict = {} ):
     """ A simple wrapper around the storage element functionality
     """
     # First check the supplied pfn(s) are the correct format.
@@ -420,9 +420,9 @@ class StorageBase:
     gLogger.debug( "ReplicaManager._executeStorageElementFunction: Attempting to perform '%s' operation with %s pfns." % ( method, len( pfns ) ) )
     # Check we can instantiate the storage element correctly
     overwride = False
-    if method  in ['removeFile','removeDirectory']:
+    if method  in ['removeFile', 'removeDirectory']:
       overwride = True
-    storageElement = StorageElement(storageElementName, overwride=overwride)
+    storageElement = StorageElement( storageElementName, overwride = overwride )
     res = storageElement.isValid( method )
     if not res['OK']:
       errStr = "ReplicaManager._executeStorageElementFunction: Failed to instantiate Storage Element"
@@ -488,7 +488,7 @@ class StorageBase:
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def getPfnForProtocol( self, pfns, storageElementName, protocol='SRM2', withPort=True ):
+  def getPfnForProtocol( self, pfns, storageElementName, protocol = 'SRM2', withPort = True ):
     storageElement = StorageElement( storageElementName )
     res = storageElement.isValid( 'getPfnForProtocol' )
     if not res['OK']:
@@ -498,7 +498,7 @@ class StorageBase:
     successful = {}
     failed = {}
     for pfn in pfns:
-      res = storageElement.getPfnForProtocol( pfn, protocol, withPort=withPort )
+      res = storageElement.getPfnForProtocol( pfn, protocol, withPort = withPort )
       if res['OK']:
         successful[pfn] = res['Value']
       else:
@@ -513,7 +513,7 @@ class StorageFile( StorageBase ):
   # These are the storage element wrapper functions available for physical files
   #
 
-  def getStorageFileExists( self, physicalFile, storageElementName, singleFile=False ):
+  def getStorageFileExists( self, physicalFile, storageElementName, singleFile = False ):
     """ Determine the existance of the physical files
         
         'physicalFile' is the pfn(s) to be checked
@@ -524,7 +524,7 @@ class StorageFile( StorageBase ):
     else:
       return self._executeStorageElementFunction( storageElementName, physicalFile, 'exists' )
 
-  def getStorageFileIsFile( self, physicalFile, storageElementName, singleFile=False ):
+  def getStorageFileIsFile( self, physicalFile, storageElementName, singleFile = False ):
     """ Determine the physical paths are files
 
         'physicalFile' is the pfn(s) to be checked
@@ -535,7 +535,7 @@ class StorageFile( StorageBase ):
     else:
       return self._executeStorageElementFunction( storageElementName, physicalFile, 'isFile' )
 
-  def getStorageFileSize( self, physicalFile, storageElementName, singleFile=False ):
+  def getStorageFileSize( self, physicalFile, storageElementName, singleFile = False ):
     """ Obtain the size of the physical files
    
         'physicalFile' is the pfn(s) size to be obtained
@@ -546,18 +546,18 @@ class StorageFile( StorageBase ):
     else:
       return self._executeStorageElementFunction( storageElementName, physicalFile, 'getFileSize' )
 
-  def getStorageFileAccessUrl( self, physicalFile, storageElementName, protocol=[], singleFile=False ):
+  def getStorageFileAccessUrl( self, physicalFile, storageElementName, protocol = [], singleFile = False ):
     """ Obtain the access url for a physical file
 
         'physicalFile' is the pfn(s) to access
         'storageElementName' is the Storage Element
     """
     if singleFile:
-      return self._executeSingleStorageElementFunction( storageElementName, physicalFile, 'getAccessUrl', argsDict={'protocol':protocol} )
+      return self._executeSingleStorageElementFunction( storageElementName, physicalFile, 'getAccessUrl', argsDict = {'protocol':protocol} )
     else:
-      return self._executeStorageElementFunction( storageElementName, physicalFile, 'getAccessUrl', argsDict={'protocol':protocol} )
+      return self._executeStorageElementFunction( storageElementName, physicalFile, 'getAccessUrl', argsDict = {'protocol':protocol} )
 
-  def getStorageFileMetadata( self, physicalFile, storageElementName, singleFile=False ):
+  def getStorageFileMetadata( self, physicalFile, storageElementName, singleFile = False ):
     """ Obtain the metadata for physical files
       
         'physicalFile' is the pfn(s) to be checked
@@ -568,7 +568,7 @@ class StorageFile( StorageBase ):
     else:
       return self._executeStorageElementFunction( storageElementName, physicalFile, 'getFileMetadata' )
 
-  def removeStorageFile( self, physicalFile, storageElementName, singleFile=False ):
+  def removeStorageFile( self, physicalFile, storageElementName, singleFile = False ):
     """ Remove physical files
    
        'physicalFile' is the pfn(s) to be removed
@@ -579,18 +579,18 @@ class StorageFile( StorageBase ):
     else:
       return self._executeStorageElementFunction( storageElementName, physicalFile, 'removeFile' )
 
-  def prestageStorageFile(self,physicalFile,storageElementName,lifetime=60*60*24,singleFile=False):
+  def prestageStorageFile( self, physicalFile, storageElementName, lifetime = 60 * 60 * 24, singleFile = False ):
     """ Prestage physical files 
   
         'physicalFile' is the pfn(s) to be pre-staged
         'storageElementName' is the Storage Element
     """
     if singleFile:
-      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'prestageFile',{'lifetime':lifetime})
+      return self._executeSingleStorageElementFunction( storageElementName, physicalFile, 'prestageFile', {'lifetime':lifetime} )
     else:
-      return self._executeStorageElementFunction(storageElementName,physicalFile,'prestageFile',{'lifetime':lifetime})
+      return self._executeStorageElementFunction( storageElementName, physicalFile, 'prestageFile', {'lifetime':lifetime} )
 
-  def getPrestageStorageFileStatus( self, physicalFile, storageElementName, singleFile=False ):
+  def getPrestageStorageFileStatus( self, physicalFile, storageElementName, singleFile = False ):
     """ Obtain the status of a pre-stage request
           
         'physicalFile' is the pfn(s) to obtain the status
@@ -601,18 +601,18 @@ class StorageFile( StorageBase ):
     else:
       return self._executeStorageElementFunction( storageElementName, physicalFile, 'prestageFileStatus' )
 
-  def pinStorageFile( self, physicalFile, storageElementName, lifetime=60*60*24, singleFile=False ):
+  def pinStorageFile( self, physicalFile, storageElementName, lifetime = 60 * 60 * 24, singleFile = False ):
     """ Pin physical files with a given lifetime
     
         'physicalFile' is the pfn(s) to pin
         'storageElementName' is the Storage Element
     """
     if singleFile:
-      return self._executeSingleStorageElementFunction(storageElementName,physicalFile,'pinFile',{'lifetime':lifetime})
+      return self._executeSingleStorageElementFunction( storageElementName, physicalFile, 'pinFile', {'lifetime':lifetime} )
     else:
-      return self._executeStorageElementFunction(storageElementName,physicalFile,'pinFile',{'lifetime':lifetime})
+      return self._executeStorageElementFunction( storageElementName, physicalFile, 'pinFile', {'lifetime':lifetime} )
 
-  def releaseStorageFile( self, physicalFile, storageElementName, singleFile=False ):
+  def releaseStorageFile( self, physicalFile, storageElementName, singleFile = False ):
     """ Release the pin on physical files
       
         'physicalFile' is the pfn(s) to release
@@ -623,18 +623,18 @@ class StorageFile( StorageBase ):
     else:
       return self._executeStorageElementFunction( storageElementName, physicalFile, 'releaseFile' )
 
-  def getStorageFile( self, physicalFile, storageElementName, localPath=False, singleFile=False ):
+  def getStorageFile( self, physicalFile, storageElementName, localPath = False, singleFile = False ):
     """ Get a local copy of a physical file
   
         'physicalFile' is the pfn(s) to get
         'storageElementName' is the Storage Element
     """
     if singleFile:
-      return self._executeSingleStorageElementFunction( storageElementName, physicalFile, 'getFile', argsDict={'localPath':localPath} )
+      return self._executeSingleStorageElementFunction( storageElementName, physicalFile, 'getFile', argsDict = {'localPath':localPath} )
     else:
-      return self._executeStorageElementFunction( storageElementName, physicalFile, 'getFile', argsDict={'localPath':localPath} )
+      return self._executeStorageElementFunction( storageElementName, physicalFile, 'getFile', argsDict = {'localPath':localPath} )
 
-  def putStorageFile( self, physicalFile, storageElementName, singleFile=False ):
+  def putStorageFile( self, physicalFile, storageElementName, singleFile = False ):
     """ Put a local file to the storage element
 
         'physicalFile' is the pfn(s) dict to put
@@ -645,16 +645,16 @@ class StorageFile( StorageBase ):
     else:
       return self._executeStorageElementFunction( storageElementName, physicalFile, 'putFile' )
 
-  def replicateStorageFile( self, physicalFile, size, storageElementName, singleFile=False ):
+  def replicateStorageFile( self, physicalFile, size, storageElementName, singleFile = False ):
     """ Replicate a physical file to a storage element
 
         'physicalFile' is the pfn(s) dict to replicate
         'storageElementName' is the target StorageElement
     """
     if singleFile:
-      return self._executeSingleStorageElementFunction( storageElementName, physicalFile, 'replicateFile', argsDict={'sourceSize':size} )
+      return self._executeSingleStorageElementFunction( storageElementName, physicalFile, 'replicateFile', argsDict = {'sourceSize':size} )
     else:
-      return self._executeStorageElementFunction( storageElementName, physicalFile, 'replicateFile', argsDict={'sourceSize':size} )
+      return self._executeStorageElementFunction( storageElementName, physicalFile, 'replicateFile', argsDict = {'sourceSize':size} )
 
 class StorageDirectory( StorageBase ):
 
@@ -663,7 +663,7 @@ class StorageDirectory( StorageBase ):
   # These are the storage element wrapper functions available for directories
   #
 
-  def getStorageDirectoryIsDirectory( self, storageDirectory, storageElementName, singleDirectory=False ):
+  def getStorageDirectoryIsDirectory( self, storageDirectory, storageElementName, singleDirectory = False ):
     """ Determine the storage paths are directories
 
         'storageDirectory' is the pfn(s) to be checked
@@ -674,7 +674,7 @@ class StorageDirectory( StorageBase ):
     else:
       return self._executeStorageElementFunction( storageElementName, storageDirectory, 'isDirectory' )
 
-  def getStorageDirectoryMetadata( self, storageDirectory, storageElementName, singleDirectory=False ):
+  def getStorageDirectoryMetadata( self, storageDirectory, storageElementName, singleDirectory = False ):
     """ Obtain the metadata for storage directories
 
         'storageDirectory' is the pfn(s) to be checked
@@ -685,7 +685,7 @@ class StorageDirectory( StorageBase ):
     else:
       return self._executeStorageElementFunction( storageElementName, storageDirectory, 'getDirectoryMetadata' )
 
-  def getStorageDirectorySize( self, storageDirectory, storageElementName, singleDirectory=False ):
+  def getStorageDirectorySize( self, storageDirectory, storageElementName, singleDirectory = False ):
     """ Obtain the size of the storage directories
 
         'storageDirectory' is the pfn(s) size to be obtained
@@ -696,7 +696,7 @@ class StorageDirectory( StorageBase ):
     else:
       return self._executeStorageElementFunction( storageElementName, storageDirectory, 'getDirectorySize' )
 
-  def getStorageListDirectory( self, storageDirectory, storageElementName, singleDirectory=False ):
+  def getStorageListDirectory( self, storageDirectory, storageElementName, singleDirectory = False ):
     """  List the contents of a directory in the Storage Element
      
         'storageDirectory' is the pfn(s) directory to be obtained
@@ -707,18 +707,18 @@ class StorageDirectory( StorageBase ):
     else:
       return self._executeStorageElementFunction( storageElementName, storageDirectory, 'listDirectory' )
 
-  def getStorageDirectory( self, storageDirectory, storageElementName, localPath=False, singleDirectory=False ):
+  def getStorageDirectory( self, storageDirectory, storageElementName, localPath = False, singleDirectory = False ):
     """  Get locally the contents of a directory from the Storage Element
 
         'storageDirectory' is the pfn(s) directory to be obtained 
         'storageElementName' is the Storage Element
     """
     if singleDirectory:
-      return self._executeSingleStorageElementFunction( storageElementName, storageDirectory, 'getDirectory', argsDict={'localPath':localPath} )
+      return self._executeSingleStorageElementFunction( storageElementName, storageDirectory, 'getDirectory', argsDict = {'localPath':localPath} )
     else:
-      return self._executeStorageElementFunction( storageElementName, storageDirectory, 'getDirectory', argsDict={'localPath':localPath} )
+      return self._executeStorageElementFunction( storageElementName, storageDirectory, 'getDirectory', argsDict = {'localPath':localPath} )
 
-  def putStorageDirectory( self, storageDirectory, storageElementName, singleDirectory=False ):
+  def putStorageDirectory( self, storageDirectory, storageElementName, singleDirectory = False ):
     """ Put a local directory to the storage element
   
         'storageDirectory' is the pfn(s) directory to be put 
@@ -729,16 +729,16 @@ class StorageDirectory( StorageBase ):
     else:
       return self._executeStorageElementFunction( storageElementName, storageDirectory, 'putDirectory' )
 
-  def removeStorageDirectory( self, storageDirectory, storageElementName, recursive=False, singleDirectory=False ):
+  def removeStorageDirectory( self, storageDirectory, storageElementName, recursive = False, singleDirectory = False ):
     """ Revove a directory from the storage element
     
         'storageDirectory' is the pfn(s) directory to be removed
         'storageElementName' is the Storage Element
     """
     if singleDirectory:
-      return self._executeSingleStorageElementFunction( storageElementName, storageDirectory, 'removeDirectory', argsDict={'recursive':recursive} )
+      return self._executeSingleStorageElementFunction( storageElementName, storageDirectory, 'removeDirectory', argsDict = {'recursive':recursive} )
     else:
-      return self._executeStorageElementFunction( storageElementName, storageDirectory, 'removeDirectory', argsDict={'recursive':recursive} )
+      return self._executeStorageElementFunction( storageElementName, storageDirectory, 'removeDirectory', argsDict = {'recursive':recursive} )
 
 class StorageInterface( StorageFile, StorageDirectory ):
   """ Dummy class to expose all the methods of the StorageInterface
@@ -752,7 +752,7 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
   # These are the wrapper functions for doing simple replica->SE operations
   #
 
-  def getReplicaIsFile( self, lfn, storageElementName, singleFile=False ):
+  def getReplicaIsFile( self, lfn, storageElementName, singleFile = False ):
     """ Determine whether the supplied lfns are files at the supplied StorageElement
 
         'lfn' is the file(s) to check
@@ -763,7 +763,7 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     else:
       return self.__executeReplicaStorageElementOperation( storageElementName, lfn, 'isFile' )
 
-  def getReplicaSize( self, lfn, storageElementName, singleFile=False ):
+  def getReplicaSize( self, lfn, storageElementName, singleFile = False ):
     """ Obtain the file size for the lfns at the supplied StorageElement
   
         'lfn' is the file(s) for which to get the size
@@ -774,7 +774,7 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     else:
       return self.__executeReplicaStorageElementOperation( storageElementName, lfn, 'getFileSize' )
 
-  def getReplicaAccessUrl( self, lfn, storageElementName, singleFile=False ):
+  def getReplicaAccessUrl( self, lfn, storageElementName, singleFile = False ):
     """ Obtain the access url for lfns at the supplied StorageElement
         
         'lfn' is the file(s) for which to obtain access URLs
@@ -785,7 +785,7 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     else:
       return self.__executeReplicaStorageElementOperation( storageElementName, lfn, 'getAccessUrl' )
 
-  def getReplicaMetadata( self, lfn, storageElementName, singleFile=False ):
+  def getReplicaMetadata( self, lfn, storageElementName, singleFile = False ):
     """ Obtain the file metadata for lfns at the supplied StorageElement
 
         'lfn' is the file(s) for which to get metadata
@@ -796,23 +796,23 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     else:
       return self.__executeReplicaStorageElementOperation( storageElementName, lfn, 'getFileMetadata' )
 
-  def prestageReplica(self,lfn,storageElementName,lifetime=60*60*24,singleFile=False):
+  def prestageReplica( self, lfn, storageElementName, lifetime = 60 * 60 * 24, singleFile = False ):
     """ Issue prestage requests for the lfns at the supplied StorageElement
 
         'lfn' is the file(s) for which to issue prestage requests
         'storageElementName' is the target Storage Element
     """
     if singleFile:
-      return self.__executeSingleReplicaStorageElementOperation(storageElementName,lfn,'prestageFile',{'lifetime':lifetime})
+      return self.__executeSingleReplicaStorageElementOperation( storageElementName, lfn, 'prestageFile', {'lifetime':lifetime} )
     else:
-      return self.__executeReplicaStorageElementOperation(storageElementName,lfn,'prestageFile',{'lifetime':lifetime})
+      return self.__executeReplicaStorageElementOperation( storageElementName, lfn, 'prestageFile', {'lifetime':lifetime} )
 
-  def getPrestageReplicaStatus( self, lfn, storageElementName, singleFile=False ):
+  def getPrestageReplicaStatus( self, lfn, storageElementName, singleFile = False ):
     """ This functionality is not supported.
     """
     return S_ERROR( "This functionality is not supported. Please use getReplicaMetadata and check the 'Cached' element." )
 
-  def pinReplica( self, lfn, storageElementName, lifetime=60 * 60 * 24, singleFile=False ):
+  def pinReplica( self, lfn, storageElementName, lifetime = 60 * 60 * 24, singleFile = False ):
     """ Issue a pin for the lfns at the supplied StorageElement
         
         'lfn' is the file(s) for which to issue pins
@@ -824,7 +824,7 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     else:
       return self.__executeReplicaStorageElementOperation( storageElementName, lfn, 'pinFile', {'lifetime':lifetime} )
 
-  def releaseReplica( self, lfn, storageElementName, singleFile=False ):
+  def releaseReplica( self, lfn, storageElementName, singleFile = False ):
     """ Release pins for the lfns at the supplied StorageElement
     
         'lfn' is the file(s) for which to release pins
@@ -835,7 +835,7 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     else:
       return self.__executeReplicaStorageElementOperation( storageElementName, lfn, 'releaseFile' )
 
-  def getReplica( self, lfn, storageElementName, localPath=False, singleFile=False ):
+  def getReplica( self, lfn, storageElementName, localPath = False, singleFile = False ):
     """ Get the lfns to the local disk from the supplied StorageElement
 
         'lfn' is the file(s) for which to release pins
@@ -847,7 +847,7 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     else:
       return self.__executeReplicaStorageElementOperation( storageElementName, lfn, 'getFile', {'localPath':localPath} )
 
-  def __executeSingleReplicaStorageElementOperation( self, storageElementName, lfn, method, argsDict={} ):
+  def __executeSingleReplicaStorageElementOperation( self, storageElementName, lfn, method, argsDict = {} ):
     res = self.__executeReplicaStorageElementOperation( storageElementName, lfn, method, argsDict )
     if type( lfn ) == types.ListType:
       lfn = lfn[0]
@@ -861,7 +861,7 @@ class CatalogToStorage( CatalogInterface, StorageInterface ):
     else:
       return S_OK( res['Value']['Successful'][lfn] )
 
-  def __executeReplicaStorageElementOperation( self, storageElementName, lfn, method, argsDict={} ):
+  def __executeReplicaStorageElementOperation( self, storageElementName, lfn, method, argsDict = {} ):
     """ A simple wrapper that allows replica querying then perform the StorageElement operation
     """
     res = self._executeFileCatalogFunction( lfn, 'getReplicas' )
@@ -1005,14 +1005,14 @@ class ReplicaManager( CatalogToStorage ):
     if not res['OK']:
       return res
     replicaDict = {}
-    for lfn,lfnDict in res['Value'].items():
+    for lfn, lfnDict in res['Value'].items():
       lfnReplicas = lfnDict['Replicas']
       replicaDict[lfn] = {}
-      for se,seDict in lfnReplicas.items():
+      for se, seDict in lfnReplicas.items():
         replicaDict[lfn][se] = seDict['PFN']
     if replicaDict:
-      gLogger.info( "Attempting to remove %d files from the catalog and storage" % len(replicaDict) )
-      res = self.__removeFile(replicaDict)
+      gLogger.info( "Attempting to remove %d files from the catalog and storage" % len( replicaDict ) )
+      res = self.__removeFile( replicaDict )
       if not res['OK']:
         return res
       for lfn, reason in res['Value']['Failed'].items():
@@ -1031,7 +1031,7 @@ class ReplicaManager( CatalogToStorage ):
         failed = True
     if failed:
       return S_ERROR( "Failed to clean storage directory at all SEs" )
-    res = self.removeCatalogDirectory(dir, recursive=True,singleFile=True)
+    res = self.removeCatalogDirectory( dir, recursive = True, singleFile = True )
     if not res['OK']:
       return res
     return S_OK()
@@ -1047,7 +1047,7 @@ class ReplicaManager( CatalogToStorage ):
     if res['Value']['Failed']:
       return S_ERROR( 'Failed to obtain directory PFN from LFNs' )
     storageDirectory = res['Value']['Successful'].values()[0]
-    res = self.getStorageFileExists( storageDirectory, storageElement, singleFile=True )
+    res = self.getStorageFileExists( storageDirectory, storageElement, singleFile = True )
     if not res['OK']:
       gLogger.error( "Failed to obtain existance of directory", res['Message'] )
       return res
@@ -1055,7 +1055,7 @@ class ReplicaManager( CatalogToStorage ):
     if not exists:
       gLogger.info( "The directory %s does not exist at %s " % ( directory, storageElement ) )
       return S_OK()
-    res = self.removeStorageDirectory( storageDirectory, storageElement, recursive=True, singleDirectory=True )
+    res = self.removeStorageDirectory( storageDirectory, storageElement, recursive = True, singleDirectory = True )
     if not res['OK']:
       gLogger.error( "Failed to remove storage directory", res['Message'] )
       return res
@@ -1070,7 +1070,7 @@ class ReplicaManager( CatalogToStorage ):
     allFiles = {}
     while len( activeDirs ) > 0:
       currentDir = activeDirs[0]
-      res = self.getCatalogListDirectory( currentDir, singleFile=True )
+      res = self.getCatalogListDirectory( currentDir, singleFile = True )
       activeDirs.remove( currentDir )
       if not res['OK'] and res['Message'].endswith( 'The supplied path does not exist' ):
         gLogger.info( "The supplied directory %s does not exist" % currentDir )
@@ -1096,7 +1096,7 @@ class ReplicaManager( CatalogToStorage ):
       allReplicas[lfn] = metadata['Replicas']
     return S_OK( allReplicas )
 
-  def getFilesFromDirectory( self, directory, days=0, wildcard='*' ):
+  def getFilesFromDirectory( self, directory, days = 0, wildcard = '*' ):
     if type( directory ) in types.StringTypes:
       directories = [directory]
     else:
@@ -1108,7 +1108,7 @@ class ReplicaManager( CatalogToStorage ):
     allFiles = []
     while len( activeDirs ) > 0:
       currentDir = activeDirs[0]
-      res = self.getCatalogListDirectory( currentDir, True, singleFile=True )
+      res = self.getCatalogListDirectory( currentDir, True, singleFile = True )
       activeDirs.remove( currentDir )
       if not res['OK']:
         gLogger.error( "Error retrieving directory contents", "%s %s" % ( currentDir, res['Message'] ) )
@@ -1116,7 +1116,7 @@ class ReplicaManager( CatalogToStorage ):
         dirContents = res['Value']
         subdirs = dirContents['SubDirs']
         for subdir, metadata in subdirs.items():
-          if ( not days ) or self.__isOlderThan(metadata['CreationDate'], days ):
+          if ( not days ) or self.__isOlderThan( metadata['CreationDate'], days ):
             if subdir[0] <> '/':
               subdir = currentDir + '/' + subdir
             activeDirs.append( subdir )
@@ -1133,7 +1133,7 @@ class ReplicaManager( CatalogToStorage ):
     return S_OK( allFiles )
 
   def __isOlderThan( self, stringTime, days ):
-    timeDelta = timedelta( days=days )
+    timeDelta = timedelta( days = days )
     maxCTime = datetime.utcnow() - timeDelta
     #st = time.strptime( stringTime, "%a %b %d %H:%M:%S %Y" )
     #cTimeStruct = datetime( st[0], st[1], st[2], st[3], st[4], st[5], st[6], None )
@@ -1147,7 +1147,7 @@ class ReplicaManager( CatalogToStorage ):
   # These are the data transfer methods
   #
 
-  def getFile( self, lfn, destinationDir='' ):
+  def getFile( self, lfn, destinationDir = '' ):
     """ Get a local copy of a LFN from Storage Elements.
 
         'lfn' is the logical file name for the desired file
@@ -1191,7 +1191,7 @@ class ReplicaManager( CatalogToStorage ):
       return res
     for storageElementName in res['Value']:
       physicalFile = replicas[storageElementName]
-      res = self.getStorageFile( physicalFile, storageElementName, localPath=os.path.realpath( destinationDir ), singleFile=True )
+      res = self.getStorageFile( physicalFile, storageElementName, localPath = os.path.realpath( destinationDir ), singleFile = True )
       if not res['OK']:
         gLogger.error( "Failed to get %s from %s" % ( lfn, storageElementName ), res['Message'] )
       else:
@@ -1228,7 +1228,7 @@ class ReplicaManager( CatalogToStorage ):
         sortedSEs.append( se )
     return S_OK( sortedSEs )
 
-  def putAndRegister( self, lfn, file, diracSE, guid=None, path=None, checksum=None, catalog=None ):
+  def putAndRegister( self, lfn, file, diracSE, guid = None, path = None, checksum = None, catalog = None ):
     """ Put a local file to a Storage Element and register in the File Catalogues
 
         'lfn' is the file LFN
@@ -1237,7 +1237,7 @@ class ReplicaManager( CatalogToStorage ):
         'guid' is the guid with which the file is to be registered (if not provided will be generated)
         'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
     """
-    res = self.__verifyOperationPermission( os.path.dirname(lfn) )
+    res = self.__verifyOperationPermission( os.path.dirname( lfn ) )
     if not res['OK']:
       return res
     if not res['Value']:
@@ -1365,7 +1365,7 @@ class ReplicaManager( CatalogToStorage ):
     resDict = {'Successful': successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def replicateAndRegister( self, lfn, destSE, sourceSE='', destPath='', localCache='' ,catalog=''):
+  def replicateAndRegister( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' , catalog = '' ):
     """ Replicate a LFN to a destination SE and register the replica.
 
         'lfn' is the LFN to be replicated
@@ -1397,7 +1397,7 @@ class ReplicaManager( CatalogToStorage ):
     gLogger.verbose( "ReplicaManager.replicateAndRegister: Attempting to register %s at %s." % ( destPfn, destSE ) )
     replicaTuple = ( lfn, destPfn, destSE )
     startRegistration = time.time()
-    res = self.registerReplica( replicaTuple, catalog=catalog )
+    res = self.registerReplica( replicaTuple, catalog = catalog )
     registrationTime = time.time() - startRegistration
     if not res['OK']:
       # Need to return to the client that the file was replicated but not registered
@@ -1415,7 +1415,7 @@ class ReplicaManager( CatalogToStorage ):
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def replicate( self, lfn, destSE, sourceSE='', destPath='', localCache='' ):
+  def replicate( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' ):
     """ Replicate a LFN to a destination SE and register the replica.
 
         'lfn' is the LFN to be replicated
@@ -1436,7 +1436,7 @@ class ReplicaManager( CatalogToStorage ):
       return res
     return S_OK( lfn )
 
-  def __replicate( self, lfn, destSE, sourceSE='', destPath='', localCache='' ):
+  def __replicate( self, lfn, destSE, sourceSE = '', destPath = '', localCache = '' ):
     """ Replicate a LFN to a destination SE.
 
         'lfn' is the LFN to be replicated
@@ -1493,20 +1493,20 @@ class ReplicaManager( CatalogToStorage ):
       fileDict = {destPfn:sourcePfn}
       if sourcePfn == destPfn:
         continue
-      
+
       localFile = ''
-      if sourcePfn.find('srm') == -1 or destPfn.find('srm') == -1:
+      if sourcePfn.find( 'srm' ) == -1 or destPfn.find( 'srm' ) == -1:
         # No third party transfer is possible, we have to replicate through the local cache 
         localDir = '.'
         if localCache:
           localDir = localCache
-        self.getFile(lfn,localDir)
-        localFile = os.path.join(localDir,os.path.basename(lfn))
+        self.getFile( lfn, localDir )
+        localFile = os.path.join( localDir, os.path.basename( lfn ) )
         fileDict = {destPfn:localFile}
 
-      res = destStorageElement.replicateFile( fileDict, catalogueSize, singleFile=True )
+      res = destStorageElement.replicateFile( fileDict, catalogueSize, singleFile = True )
       if localFile:
-        os.remove(localFile)
+        os.remove( localFile )
 
       if res['OK']:
         gLogger.info( "ReplicaManager.__replicate: Replication successful." )
@@ -1654,7 +1654,7 @@ class ReplicaManager( CatalogToStorage ):
   # These are the file catalog write methods
   #
 
-  def registerFile( self, fileTuple, catalog='' ):
+  def registerFile( self, fileTuple, catalog = '' ):
     """ Register a file.
 
         'fileTuple' is the file tuple to be registered of the form (lfn,physicalFile,fileSize,storageElementName,fileGuid)
@@ -1685,7 +1685,7 @@ class ReplicaManager( CatalogToStorage ):
     failed = {}
     fileDict = {}
     for storageElementName, fileTuple in seDict.items():
-      destStorageElement = StorageElement(storageElementName,overwride=True)
+      destStorageElement = StorageElement( storageElementName, overwride = True )
       res = destStorageElement.isValid()
       if not res['OK']:
         errStr = "ReplicaManager.__registerFile: The storage element is not currently valid."
@@ -1695,7 +1695,7 @@ class ReplicaManager( CatalogToStorage ):
       else:
         storageElementName = destStorageElement.getStorageElementName()['Value']
         for lfn, physicalFile, fileSize, storageElementName, fileGuid, checksum in fileTuple:
-          res = destStorageElement.getPfnForProtocol( physicalFile, self.registrationProtocol, withPort=False )
+          res = destStorageElement.getPfnForProtocol( physicalFile, self.registrationProtocol, withPort = False )
           if not res['OK']:
             pfn = physicalFile
           else:
@@ -1717,7 +1717,7 @@ class ReplicaManager( CatalogToStorage ):
     resDict = {'Successful':successful, 'Failed':failed}
     return S_OK( resDict )
 
-  def registerReplica( self, replicaTuple, catalog='' ):
+  def registerReplica( self, replicaTuple, catalog = '' ):
     """ Register a replica supplied in the replicaTuples.
 
         'replicaTuple' is a tuple or list of tuples of the form (lfn,pfn,se)
@@ -1757,7 +1757,7 @@ class ReplicaManager( CatalogToStorage ):
       else:
         storageElementName = destStorageElement.getStorageElementName()['Value']
         for lfn, pfn in replicaTuple:
-          res = destStorageElement.getPfnForProtocol( pfn, self.registrationProtocol, withPort=False )
+          res = destStorageElement.getPfnForProtocol( pfn, self.registrationProtocol, withPort = False )
           if not res['OK']:
             failed[lfn] = res['Message']
           else:
@@ -1953,7 +1953,7 @@ class ReplicaManager( CatalogToStorage ):
       gLogger.error( errStr )
       return S_ERROR( errStr )
     gLogger.verbose( "ReplicaManager.removeCatalogReplica: Attempting to remove catalogue entry for %s lfns at %s." % ( len( lfns ), storageElementName ) )
-    res = self.getCatalogReplicas( lfns, allStatus=True )
+    res = self.getCatalogReplicas( lfns, allStatus = True )
     if not res['OK']:
       errStr = "ReplicaManager.removeCatalogReplica: Completely failed to get replicas for lfns."
       gLogger.error( errStr, res['Message'] )
@@ -2064,7 +2064,7 @@ class ReplicaManager( CatalogToStorage ):
 
   def __removePhysicalReplica( self, storageElementName, pfnsToRemove ):
     gLogger.verbose( "ReplicaManager.__removePhysicalReplica: Attempting to remove %s pfns at %s." % ( len( pfnsToRemove ), storageElementName ) )
-    storageElement = StorageElement(storageElementName, overwride=True)
+    storageElement = StorageElement( storageElementName, overwride = True )
     res = storageElement.isValid()
     if not res['OK']:
       errStr = "ReplicaManager.__removePhysicalReplica: The storage element is not currently valid."
@@ -2095,7 +2095,7 @@ class ReplicaManager( CatalogToStorage ):
   # File transfer methods
   #
 
-  def put( self, lfn, file, diracSE, path=None ):
+  def put( self, lfn, file, diracSE, path = None ):
     """ Put a local file to a Storage Element
 
         'lfn' is the file LFN
@@ -2146,7 +2146,7 @@ class ReplicaManager( CatalogToStorage ):
     ##########################################################
     #  Perform the put here.
     startTime = time.time()
-    res = storageElement.putFile( fileDict, singleFile=True )
+    res = storageElement.putFile( fileDict, singleFile = True )
     putTime = time.time() - startTime
     if not res['OK']:
       errStr = "ReplicaManager.put: Failed to put file to Storage Element."
@@ -2169,15 +2169,15 @@ class ReplicaManager( CatalogToStorage ):
     if not res['OK']:
       return res
     replicas = res['Value']
-    return self.checkActiveReplicas(replicas)
+    return self.checkActiveReplicas( replicas )
 
   def checkActiveReplicas( self, replicaDict ):
     """ Check a replica dictionary for active replicas
     """
-    
+
     if type( replicaDict ) != types.DictType:
       return S_ERROR( 'Wrong argument type %s, expected a Dictionary' % type( replicaDict ) )
-    
+
     for key in [ 'Successful', 'Failed' ]:
       if not key in replicaDict:
         return S_ERROR( 'Missing key "%s" in replica Dictionary' % key )
