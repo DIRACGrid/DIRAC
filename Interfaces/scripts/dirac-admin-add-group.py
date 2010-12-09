@@ -73,7 +73,7 @@ for prop in args:
     Script.gLogger.info( "Setting property %s to %s" % ( pName, pValue ) )
     groupProps[ pName ] = pValue
 
-if not diracAdmin.csModifyGroup( groupName, groupProps, createIfNonExistant = True )['Value']:
+if not diracAdmin.csModifyGroup( groupName, groupProps, createIfNonExistant = True )['OK']:
   errorList.append( ( "add group", "Cannot register group %s" % groupName ) )
   exitCode = 255
 else:
