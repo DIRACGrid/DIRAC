@@ -2,7 +2,10 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-__RCSID__   = "$Id$"
+"""
+Get the list of all the user files.
+"""
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
 days = 0
@@ -11,24 +14,19 @@ years = 0
 wildcard = '*'
 baseDir = ''
 emptyDirsFlag = False
-Script.registerSwitch( "D:", "Days=",     "Match files older than number of days [%s]" % days)
-Script.registerSwitch( "M:", "Months=",   "Match files older than number of months [%s]" % months)
-Script.registerSwitch( "Y:", "Years=",    "Match files older than number of years [%s]" % years)
-Script.registerSwitch( "w:", "Wildcard=", "Wildcard for matching filenames [%s]" % wildcard)
-Script.registerSwitch( "b:", "BaseDir=",  "Base directory to begin search (default /[vo]/user/[initial]/[username])")
-Script.registerSwitch( "e", "EmptyDirs",  "Create a list of empty directories")
+Script.registerSwitch( "D:", "Days=", "Match files older than number of days [%s]" % days )
+Script.registerSwitch( "M:", "Months=", "Match files older than number of months [%s]" % months )
+Script.registerSwitch( "Y:", "Years=", "Match files older than number of years [%s]" % years )
+Script.registerSwitch( "w:", "Wildcard=", "Wildcard for matching filenames [%s]" % wildcard )
+Script.registerSwitch( "b:", "BaseDir=", "Base directory to begin search (default /[vo]/user/[initial]/[username])" )
+Script.registerSwitch( "e", "EmptyDirs", "Create a list of empty directories" )
 
-Script.setUsageMessage("""
-Get the list of all the user files. Optionally get also a list of all the
-empty directories.
-
-Usage:
-   %s [options]
-""" % Script.scriptName)
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ...' % Script.scriptName, ] ) )
 
 Script.parseCommandLine( ignoreErrors = False )
 
-args = Script.getPositionalArgs()
 for switch in Script.getUnprocessedSwitches():
   if switch[0] == "D" or switch[0].lower() == "days":
     days = int( switch[1] )
@@ -54,10 +52,6 @@ import sys, os, time, fnmatch
 rm = ReplicaManager()
 
 vo = getVO( 'lhcb' )
-
-def usage():
-  Script.showHelp()
-  DIRAC.exit(2)
 
 def isOlderThan( cTimeStruct, days ):
   timeDelta = timedelta( days = days )
@@ -86,8 +80,7 @@ username = proxyInfo['username']
 userBase = '/%s/user/%s/%s' % ( vo, username[0], username )
 if not baseDir:
   baseDir = userBase
-#elif not baseDir.startswith(userBase):
-#  usage()
+
 gLogger.info( 'Will search for files in %s' % baseDir )
 activeDirs = [baseDir]
 
@@ -116,7 +109,7 @@ while len( activeDirs ) > 0:
           allFiles.append( filename )
       empty = False
     files = dirContents['Files'].keys()
-    gLogger.notice("%s: %d files, %d sub-directories" % (currentDir,len(files),len(subdirs)))
+    gLogger.notice( "%s: %d files, %d sub-directories" % ( currentDir, len( files ), len( subdirs ) ) )
     if empty:
       emptyDirs.append( currentDir )
 
@@ -125,7 +118,7 @@ outputFile = open( outputFileName, 'w' )
 for lfn in sortList( allFiles ):
   outputFile.write( lfn + '\n' )
 outputFile.close()
-gLogger.notice('%d matched files have been put in %s' % (len(allFiles),outputFileName))
+gLogger.notice( '%d matched files have been put in %s' % ( len( allFiles ), outputFileName ) )
 
 if emptyDirsFlag:
   outputFileName = '%s.emptydirs' % baseDir.replace( '/%s' % vo, '%s' % vo ).replace( '/', '-' )
@@ -133,6 +126,6 @@ if emptyDirsFlag:
   for dir in sortList( emptyDirs ):
     outputFile.write( dir + '\n' )
   outputFile.close()
-  gLogger.notice('%d empty directories have been put in %s' % (len(emptyDirs),outputFileName))
+  gLogger.notice( '%d empty directories have been put in %s' % ( len( emptyDirs ), outputFileName ) )
 
 DIRAC.exit( 0 )
