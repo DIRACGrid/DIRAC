@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-admin-bdii-site
-# Author : Adria Casajus
+# File :    dirac-admin-bdii-site
+# Author :  Adria Casajus
 ########################################################################
 """
   Check info on BDII for Site
@@ -12,23 +12,19 @@ import DIRAC
 from DIRAC.Core.Base                                         import Script
 
 Script.registerSwitch( "H:", "host=", "BDII host" )
-Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... Site' % Script.scriptName,
-                                    'Arguments:',
-                                    '  Site: Name of the Site (ie: CERN-PROD)'] ) )
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... Site' % Script.scriptName,
+                                     'Arguments:',
+                                     '  Site:     Name of the Site (ie: CERN-PROD)'] ) )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
-def usage():
+if not len( args ) == 1:
   Script.showHelp()
-  DIRAC.exit(2)
-
-if not len(args)==1:
-  usage()
 
 site = args[0]
 
@@ -40,17 +36,17 @@ for unprocSw in Script.getUnprocessedSwitches():
 
 diracAdmin = DiracAdmin()
 
-result = diracAdmin.getBDIISite(site, host=host)
+result = diracAdmin.getBDIISite( site, host = host )
 if not result['OK']:
-  print test['Message']
-  DIRAC.exit(2)
-  
+  print result['Message']
+  DIRAC.exit( 2 )
+
 
 sites = result['Value']
 for site in sites:
-  print "Site: %s {"%site.get('GlueSiteName','Unknown')
+  print "Site: %s {" % site.get( 'GlueSiteName', 'Unknown' )
   for item in site.iteritems():
-    print "%s: %s"%item
+    print "%s: %s" % item
   print "}"
 
 
