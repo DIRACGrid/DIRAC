@@ -604,4 +604,4 @@ class TransformationManagerHandler(TransformationManagerHandlerBase):
 
   def __init__(self,*args,**kargs):
     self.setDatabase(database)
-    Base.__init__(self, *args,**kargs)
+    TransformationManagerHandlerBase.__init__(self, *args,**kargs)
