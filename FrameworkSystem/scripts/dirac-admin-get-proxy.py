@@ -4,6 +4,9 @@
 # File :    dirac-admin-get-proxy
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Retrieve a delegated proxy for the given user and group
+"""
 __RCSID__ = "$Id$"
 import os
 import DIRAC
@@ -55,16 +58,19 @@ class Params:
 params = Params()
 params.registerCLISwitches()
 
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... <DN|user> group' % Script.scriptName,
+                                     'Arguments:',
+                                     '  DN:       DN of the user',
+                                     '  user:     DIRAC user name (will fail if there is more than 1 DN registered)',
+                                     '  group:    DIRAC group name' ] ) )
+
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s <DN>/<username> <DIRAC group>' % ( Script.scriptName )
-  print " <username> will fail if there's more than one DN registered for that username"
-  DIRAC.exit( 2 )
-
 if len( args ) != 2:
-  usage()
+  Script.showHelp()
 
 userGroup = str( args[1] )
 userDN = str( args[0] )
