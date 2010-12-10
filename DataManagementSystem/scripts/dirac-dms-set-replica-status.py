@@ -2,16 +2,21 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-__RCSID__   = "$Id$"
+"""
+Set the status of the replicas of given files at the provided SE
+"""
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
 
-Script.setUsageMessage("""
-Set the status of the replicas of given files at the provided SE 
-
-Usage: 
-  %s [<options>] <lfn|fileContainingLFNs> SE Status
-""" % Script.scriptName)
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     '\nUsage:',
+                                     '  %s [option|cfgfile] ... <LFN|File> SE Status' % Script.scriptName,
+                                     'Arguments:',
+                                     '  LFN:      LFN',
+                                     '  File:     File name containing a list of affected LFNs',
+                                     '  SE:       Name of Storage Element',
+                                     '  Status:   New Status for the replica'    ] ) )
 
 Script.parseCommandLine( ignoreErrors = False )
 
@@ -21,13 +26,10 @@ from DIRAC.DataManagementSystem.Client.ReplicaManager               import Repli
 from DIRAC.Core.Utilities.List                                      import sortList
 import os
 
-def usage():
-  Script.showHelp()
-  DIRAC.exit( 2 )
-
 args = Script.getPositionalArgs()
 if not len( args ) == 3:
-  usage()
+  Script.showHelp()
+
 inputFileName = args[0]
 storageElement = args[1]
 status = args[2]
@@ -61,10 +63,9 @@ if not lfnDict:
 
 res = rm.setCatalogReplicaStatus( lfnDict )
 if not res['OK']:
-  gLogger.error("Failed to set catalog replica status.",res['Message'])
-  DIRAC.exit(-1)
-for lfn,error in res['Value']['Failed'].items():
-  gLogger.error("Failed to set replica status for file.","%s:%s" % (lfn,error))
-gLogger.notice("Successfully updated the status of %d files at %s." % (len(res['Value']['Successful'].keys()),storageElement))
-DIRAC.exit(0)
-
+  gLogger.error( "Failed to set catalog replica status.", res['Message'] )
+  DIRAC.exit( -1 )
+for lfn, error in res['Value']['Failed'].items():
+  gLogger.error( "Failed to set replica status for file.", "%s:%s" % ( lfn, error ) )
+gLogger.notice( "Successfully updated the status of %d files at %s." % ( len( res['Value']['Successful'].keys() ), storageElement ) )
+DIRAC.exit( 0 )
