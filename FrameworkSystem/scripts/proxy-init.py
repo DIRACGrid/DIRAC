@@ -4,8 +4,8 @@
 # File :    proxy-init.py
 # Author :  Adrian Casajus
 ########################################################################
-
-""" This is a command to do all the proxy generation related operations:
+""" 
+  This is a command to do all the proxy generation related operations:
     - DIRAC proxy generation
     - proxy upload to the DIRAC ProxyManager
     - proxy upload to the MyProxy server if requested
@@ -20,6 +20,7 @@ import getpass
 import imp
 import DIRAC
 from DIRAC.Core.Base import Script
+Script.disableCS()
 
 from DIRAC.FrameworkSystem.Client.ProxyGeneration import CLIParams, generateProxy
 from DIRAC.FrameworkSystem.Client.ProxyUpload import uploadProxy
@@ -27,7 +28,10 @@ from DIRAC.FrameworkSystem.Client.ProxyUpload import uploadProxy
 cliParams = CLIParams()
 cliParams.registerCLISwitches()
 
-Script.disableCS()
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ...' % Script.scriptName, ] ) )
+
 Script.parseCommandLine()
 
 diracGroup = cliParams.getDIRACGroup()
