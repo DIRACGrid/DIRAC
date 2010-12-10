@@ -4,11 +4,20 @@
 # File :    dirac-admin-allow-site
 # Author :  Stuart Paterson
 ########################################################################
+"""
+  Add Site to Active mask for current Setup
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.registerSwitch( "", "email=", "Boolean True/False (True by default)" )
+Script.registerSwitch( "E:", "email=", "Boolean True/False (True by default)" )
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... Site Comment' % Script.scriptName,
+                                     'Arguments:',
+                                     '  Site:     Name of the Site',
+                                     '  Comment:  Reason of the action' ] ) )
 Script.parseCommandLine( ignoreErrors = True )
 
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
@@ -22,8 +31,7 @@ def getBoolean( value ):
   elif value.lower() == 'false':
     return False
   else:
-    print 'ERROR: expected boolean'
-    DIRAC.exit( 2 )
+    Script.showHelp()
 
 email = True
 for switch in Script.getUnprocessedSwitches():
@@ -32,13 +40,8 @@ for switch in Script.getUnprocessedSwitches():
 
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s <DIRAC site name> <COMMENT>' % ( Script.scriptName )
-  print 'Note: emails should only be disabled for bulk operations.'
-  DIRAC.exit( 2 )
-
 if len( args ) < 2:
-  usage()
+  Script.showHelp()
 
 diracAdmin = DiracAdmin()
 exitCode = 0
