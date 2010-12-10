@@ -1,29 +1,46 @@
 #! /usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :    dirac-admin-site-info
+# File :    dirac-admin-ce-info
 # Author :  Vladimir Romanovsky
 ########################################################################
+"""
+  Retrieve Site Associated to a given CE
+"""
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
+from DIRAC.ConfigurationSystem.Client.Helpers                import cfgPath
+
+grid = 'LCG'
+
+def setGrid( value ):
+  global grid
+  grid = value
+  return DIRAC.S_OK()
+
+Script.registerSwitch( 'G:', 'Grid=', 'Define the Grid where to look (Default: LCG)', setGrid )
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... CE ...' % Script.scriptName,
+                                     'Arguments:',
+                                     '  CE:       Name of the CE' ] ) )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
-def usage():
-  print 'Usage: %s < ce name> [< ce name>]' % ( Script.scriptName )
-  DIRAC.exit( 2 )
-
 if len( args ) < 1:
-  usage()
+  Script.showHelp()
 
 diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []
 
-result = DIRAC.gConfig.getSections( '/Resources/Sites/LCG' )
+gridCfgPath = cfgPath( 'Resources', 'Sites', grid )
+
+result = DIRAC.gConfig.getSections( gridCfgPath )
 if not result['OK']:
   print 'Could not get DIRAC site list'
   DIRAC.exit( 2 )
@@ -31,7 +48,7 @@ if not result['OK']:
 sites = result['Value']
 
 for site in sites:
-  result = diracAdmin.getCSDict( '/Resources/Sites/LCG/%s' % site )
+  result = diracAdmin.getCSDict( cfgPath( gridCfgPath, site ) )
   if result['OK']:
     ces = result['Value'].get( 'CE', [] )
     for ce in args:
