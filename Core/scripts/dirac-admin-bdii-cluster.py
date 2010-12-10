@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-admin-bdii-cluster
-# Author : Adria Casajus
+# File :    dirac-admin-bdii-cluster
+# Author :  Adria Casajus
 ########################################################################
 """
   Check info on BDII for Cluster
@@ -12,23 +12,19 @@ import DIRAC
 from DIRAC.Core.Base                                         import Script
 
 Script.registerSwitch( "H:", "host=", "BDII host" )
-Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... CE' % Script.scriptName,
-                                    'Arguments:',
-                                    '  CE: Name of the CE(ie: ce111.cern.ch)'] ) )
+Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ... CE' % Script.scriptName,
+                                     'Arguments:',
+                                     '  CE:       Name of the CE(ie: ce111.cern.ch)'] ) )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 
-def usage():
+if not len( args ) == 1:
   Script.showHelp()
-  DIRAC.exit(2)
-
-if not len(args)==1:
-  usage()
 
 ce = args[0]
 
@@ -40,16 +36,16 @@ for unprocSw in Script.getUnprocessedSwitches():
 
 diracAdmin = DiracAdmin()
 
-result = diracAdmin.getBDIICluster(ce, host=host)
+result = diracAdmin.getBDIICluster( ce, host = host )
 if not ['OK']:
-  print test['Message']
-  DIRAC.exit(2)  
+  print result['Message']
+  DIRAC.exit( 2 )
 
 ces = result['Value']
 for ce in ces:
-  print "Cluster: %s {"%ce.get('GlueClusterName','Unknown')
+  print "Cluster: %s {" % ce.get( 'GlueClusterName', 'Unknown' )
   for item in ce.iteritems():
-    print "%s: %s"%item
+    print "%s: %s" % item
   print "}"
 
 
