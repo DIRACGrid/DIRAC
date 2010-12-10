@@ -10,8 +10,8 @@
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers              import getCSExtensions, getVO
 from DIRAC.Resources.Computing.ComputingElementFactory     import ComputingElementFactory
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, taskQueueDB
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils     import pilotAgentsDB, taskQueueDB, jobDB
+from DIRAC                                                 import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient       import gProxyManager
 import os, base64, bz2, tempfile, random, socket
 import DIRAC
@@ -163,10 +163,17 @@ class SiteDirector( AgentModule ):
   def execute( self ):
     """ Main execution method
     """
-
-    result = self.submitJobs()
+    # Check if the site is allowed in the mask
+    result = jobDB.getSiteMask()
     if not result['OK']:
-      self.log.error( 'Errors in the job submission: %s' % result['Message'] )
+      return S_ERROR('Can not get the site mask')
+    siteMask = result['Value']
+    if self.siteName in siteMask:
+      result = self.submitJobs()
+      if not result['OK']:
+        self.log.error( 'Errors in the job submission: %s' % result['Message'] )
+    else:
+      self.log.verbose('Site %s is not in the site mask' % self.siteName )    
 
     if self.updateStatus:
       result = self.updatePilotStatus()
