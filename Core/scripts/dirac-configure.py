@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 ########################################################################
 # $HeadURL$
-# File :   dirac-configure
-# Author : Ricardo Graciani
+# File :    dirac-configure
+# Author :  Ricardo Graciani
 ########################################################################
 """
   Main script to write dirac.cfg for a new DIRAC installation and initial download of CAs and CRLs
@@ -264,10 +264,6 @@ if not vo:
     setVO( newVO )
 
 DIRAC.gLogger.notice( 'Executing: %s ' % ( ' '.join( sys.argv ) ) )
-
-def usage():
-  Script.showHelp()
-  DIRAC.exit( 2 )
 
 DIRAC.gLogger.notice( 'Checking DIRAC installation at "%s"' % DIRAC.rootPath )
 
