@@ -17,7 +17,7 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s [option|cfgfile] ... CE' % Script.scriptName,
                                      'Arguments:',
-                                     '  CE: Name of the CE(ie: ce111.cern.ch)'] ) )
+                                     '  CE:       Name of the CE(ie: ce111.cern.ch)'] ) )
 
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
@@ -25,12 +25,8 @@ args = Script.getPositionalArgs()
 from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.Helpers                import getVO
 
-def usage():
-  Script.showHelp()
-  DIRAC.exit( 2 )
-
 if not len( args ) == 1:
-  usage()
+  Script.showHelp()
 
 ce = args[0]
 
